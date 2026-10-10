@@ -193,6 +193,15 @@ Keep the client structure similarly explicit:
 Do not leave large domain controllers parked under `src/app/` once a real
 domain module exists for them.
 
+### `nc-fuzz`
+
+`nc-fuzz` is the test-only engine fuzzer. It plays seeded games through
+`nc-harness` with generated turns submitted through the real turn KDL path,
+checks invariants after every maintenance turn, and writes failures as
+`nc-harness` scenarios. Drivers (Hegel and proptest, in its `tests/`) only
+supply choices. It owns no rules: invariants reuse `nc-engine` and `nc-data`
+helpers, and a rule it needs belongs in those crates.
+
 ## Current Structural Direction
 
 The current workspace shape is:

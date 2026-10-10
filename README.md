@@ -195,6 +195,24 @@ cd rust
 cargo run -q -p nc-game --bin nc-game -- submit-turn --check --dir /tmp/nc-game --player 1 --file /tmp/turn.kdl
 ```
 
+Fuzz the engine with generated multi-turn games. A short run of each driver
+is part of `cargo test`; `NC_FUZZ_CASES` sets the number of games and
+`NC_FUZZ_TURNS` the most turns per game for longer runs:
+
+```bash
+cd rust
+NC_FUZZ_CASES=2000 NC_FUZZ_TURNS=12 cargo test -p nc-fuzz --test hegel_driver
+NC_FUZZ_CASES=2000 cargo test -p nc-fuzz --test proptest_driver
+```
+
+A failing game is shrunk and written as an `nc-harness` combat scenario with
+its turn files under `$NC_FUZZ_OUT/<driver>` (default `nc-fuzz/<driver>` in
+the system temp directory). Replay it with:
+
+```bash
+cargo run -q -p nc-cli -- harness run-combat /tmp/nc-fuzz/hegel/scenario.kdl
+```
+
 `nc-cli` remains the internal developer, oracle, and compatibility surface.
 Normal player and sysop workflows should prefer `nc-game`, `nc-door`, and
 `nc-sysop`.
