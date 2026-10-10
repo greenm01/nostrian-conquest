@@ -66,6 +66,11 @@ The exported text still follows the classic shell:
 
 Compatibility rules:
 
+- encode text as printable ASCII before wrapping; any other character becomes
+  `?`, so one character is always one record byte
+- the length byte never exceeds 72; wrapping and padding count bytes
+- body lines that already fit in 72 bytes are written unchanged (structured
+  label columns keep their padding); only longer lines are re-wrapped
 - preserve explicit blank body lines when they are part of the rendered report
 - do not let wrapped text overflow into the next logical report
 - fleet-origin headers must name a fleet when that identity is known

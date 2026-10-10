@@ -846,8 +846,8 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
         .join(" ")
         .replace('\n', " ");
     assert!(text.contains("ALERT: Orbital bombardment underway!"));
-    assert!(text.contains("Our forces: 10BB, 11CA, 14TT*, 7TT"));
-    assert!(text.contains("World defenses: undefended"));
+    assert!(text.contains("Our forces:       10BB, 11CA, 14TT*, 7TT"));
+    assert!(text.contains("World defenses:   undefended"));
     assert!(text.contains("Bombing damage: 336 points of industry destroyed."));
     assert!(text.contains("Bombing damage: 25 stored production destroyed."));
     assert!(!text.contains("336 factories"));
@@ -1567,9 +1567,9 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
         .next()
         .expect("expected Alien forces section");
     assert!(before_forces.ends_with("\n\n"), "{:?}", texts[0]);
-    assert!(texts[0].contains("Last contact: destroyed by"));
+    assert!(texts[0].contains("Last contact:     destroyed by"));
     assert!(texts[0].contains("ALERT: Starbase contact lost!"));
-    assert!(texts[0].contains("Alien forces: 1BB, 3CA, 11TT*, 3TT"));
+    assert!(texts[0].contains("Alien forces:     1BB, 3CA, 11TT*, 3TT"));
 }
 
 #[test]

@@ -35,7 +35,7 @@ mod tests {
 
     #[test]
     fn classic_results_lines_wrap_body_without_leading_indent() {
-        let text = "From your 13th Fleet, located in System(24,14)         Stardate: 52/3011 Sensor contact \u{2014} detected and identified an alien fleet in System(24,14). It is the 5th Fleet of \"Enemy\", (Empire #2). Their fleet contains 2 small vessel(s) of unknown type.";
+        let text = "From your 13th Fleet, located in System(24,14)         Stardate: 52/3011 Sensor contact -- detected and identified an alien fleet in System(24,14). It is the 5th Fleet of \"Enemy\", (Empire #2). Their fleet contains 2 small vessel(s) of unknown type.";
         let lines = classic_results_lines(text);
         assert_eq!(
             lines[0],
@@ -43,7 +43,7 @@ mod tests {
         );
         assert_eq!(
             lines[1],
-            "Sensor contact \u{2014} detected and identified an alien fleet in"
+            "Sensor contact -- detected and identified an alien fleet in"
         );
         assert_eq!(
             lines[2],

@@ -654,9 +654,11 @@ fn maint_rust_results_emit_left_justified_wrapped_lines_without_generic_fleet_he
             "classic RESULTS line exceeded width: {:?}",
             line
         );
+        // Structured label rows wrap with an 18-column hanging indent.
+        let body = line.strip_prefix(&" ".repeat(18)).unwrap_or(&line);
         if !line.starts_with("From ") && line != "<end of transmission>" {
             assert!(
-                !line.starts_with(' '),
+                !body.starts_with(' '),
                 "body lines should be left-justified: {:?}",
                 line
             );
@@ -1304,13 +1306,13 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
     assert!(
         report_texts
             .iter()
-            .any(|report| report.contains("Our forces: 3DD, 2TT*")),
+            .any(|report| report.contains("Our forces:       3DD, 2TT*")),
         "expected friendly force summary with loaded armies, got: {report_texts:?}"
     );
     assert!(
         report_texts
             .iter()
-            .any(|report| { report.contains("Alien forces: 1DD, 2TT") })
+            .any(|report| { report.contains("Alien forces:     1DD, 2TT") })
     );
     assert!(
         !report_texts
@@ -2120,11 +2122,11 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     let attacker_report =
         joined_report_containing(&results, "ALERT: Planetary invasion successful!");
     assert!(
-        attacker_report.contains("World defenses: 15 ground batteries and 142 armies"),
+        attacker_report.contains("World defenses:   15 ground batteries and 142 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy losses: 15 ground batteries and 142 armies"),
+        attacker_report.contains("Enemy losses:     15 ground batteries and 142 armies"),
         "{attacker_report}"
     );
     assert!(
@@ -2148,7 +2150,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     );
     assert!(defender_report.contains("120TT*"), "{defender_report}");
     assert!(
-        defender_report.contains("Our defenses: 15 ground batteries and 142 armies"),
+        defender_report.contains("Our defenses:     15 ground batteries and 142 armies"),
         "{defender_report}"
     );
     assert!(
@@ -2305,11 +2307,11 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let attacker_report = joined_report_containing(&results, "ALERT: Blitz assault successful!");
     assert!(
-        attacker_report.contains("World defenses: 1 ground battery and 1 army"),
+        attacker_report.contains("World defenses:   1 ground battery and 1 army"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy losses: 1 ground battery and 1 army"),
+        attacker_report.contains("Enemy losses:     1 ground battery and 1 army"),
         "{attacker_report}"
     );
 
@@ -2321,7 +2323,7 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     assert!(defender_report.contains("1DD"), "{defender_report}");
     assert!(defender_report.contains("10TT*"), "{defender_report}");
     assert!(
-        defender_report.contains("Our defenses: 1 ground battery and 1 army"),
+        defender_report.contains("Our defenses:     1 ground battery and 1 army"),
         "{defender_report}"
     );
 
@@ -4174,7 +4176,7 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
     let text = decode_chunked_report(&results);
     assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
     assert!(
-        text.contains("Alien forces: 15 ground batteries and 25 armies"),
+        text.contains("Alien forces:     15 ground batteries and 25 armies"),
         "{text}"
     );
     assert!(
@@ -4238,7 +4240,7 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
     let text = decode_chunked_report(&results);
     assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
     assert!(
-        text.contains("Alien forces: 15 ground batteries and 25 armies"),
+        text.contains("Alien forces:     15 ground batteries and 25 armies"),
         "{text}"
     );
     assert!(
@@ -4350,7 +4352,7 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
     let text = decode_chunked_report(&results);
     assert!(text.contains("ALERT: Fleet contact lost!"), "{text}");
     assert!(
-        text.contains("Alien forces: 15 ground batteries and 25 armies"),
+        text.contains("Alien forces:     15 ground batteries and 25 armies"),
         "{text}"
     );
     assert!(
