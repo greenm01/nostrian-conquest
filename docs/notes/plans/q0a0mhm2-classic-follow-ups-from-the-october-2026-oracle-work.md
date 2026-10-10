@@ -27,6 +27,11 @@ all three today.
 
 Source: the t037b report; rules in [ec-starbase-spec.md](../../dev/ec-starbase-spec.md).
 
+Decision (user, 2026-10-10): all three are classic bugs. Rust reports an
+arrival once; a guard in orbit next to a deep-space base climbs to the base's
+depth and joins it; an escort follows its base's depth when the base lifts on
+tick 52. Document each in ec-starbase-spec.md as a deliberate difference.
+
 ## t041
 
 Rust's economy counts a planet as having a starbase when a base is anywhere
@@ -48,6 +53,10 @@ system?" prompt. When a fleet is already in the nearest owned system, ECGAME
 asks, defaulting to yes. Rust's clients take the yes without asking; a turn
 file can still name either target.
 
+Decision (user, 2026-10-10): match classic. When the fleet is already in
+the nearest owned system, nc-game and nc-helm ask "seek the next closest
+system?", defaulting to yes.
+
 ## t044
 
 Report gaps between classic and Rust:
@@ -58,6 +67,12 @@ Report gaps between classic and Rust:
   it, which changes the speed term in its visibility (t035).
 - Classic keeps old RESULTS.DAT reports until the player reads them; Rust
   clears them each year (t031b). Decide which the runtime store should do.
+
+Decision (user, 2026-10-10): match classic on all three. Add the
+starbase-sighting and unable-to-intercept reports; zero a Hold fleet's speed
+once a probe confirms classic does; keep reports until the player reads
+them. Classic's purge-after setting never purged anything, so Rust adds no
+cap for now.
 
 ## t045
 
