@@ -78,6 +78,34 @@ comparisons skip them. Each case is listed in `docs/dev/ec-file-formats.md`.
   merge. Rust merges stop summing it.
 - CONQUEST.DAT snapshot slots for empires past the player count, which
   ECMAINT fills from uninitialised memory.
+- PLAYER.DAT empire-name tails and diplomacy slots past the player count,
+  which ECUTIL inherits from the previous PLAYER.DAT.
+
+## Phase 1 result (2026-10-10)
+
+Every byte of all seven files is decoded in
+[ec-file-formats.md](../../dev/ec-file-formats.md). Corrections the typed
+model must carry, beyond the fleet, base, and planet layouts already fixed:
+
+- CONQUEST.DAT: after the year, player count, and 7 maintenance-day
+  booleans, bytes 0x0A..0x54 are two arrays, previous-year production (u16)
+  and planet count (u8) per empire, shown in the rankings in parentheses;
+  bytes 0x55..0x824 are unused zeros. Rust's `control_word_*` accessors and
+  the engine's conquest "control" logic go.
+- SETUP.DAT: COM IRQ and flow-control arrays at 5..12; 513, 518, and 520 are
+  u16; bytes 13..511 are unused zeros.
+- PLAYER.DAT: 0x1A is ECGAME's page length (lines per screen), not a name
+  length; the empire name is a `String[20]` at 0x1B; 0x30/0x34/0x38/0x3C are
+  i32 first/last message and results records; 0x40..0x4B are three
+  first/last chain pairs (fleets, bases, IPBMs); 0x4C is the homeworld
+  (ECUTIL only); 0x4E last sign-on year; 0x50 planet count and 0x52 u16
+  production, both recounted by ECMAINT; diplomacy at 0x54..0x6C.
+  `set_controlled_empire_name_raw` wrongly writes 19 into 0x1A, and the
+  civil-disorder setter zeroes 0x1C..0x6D (classic stores 25 spaces in the
+  handle and leaves the rest).
+- IPBM.DAT: a fleet-shaped record (number, owner, chain links, sector, three
+  reals, target x/y/z) for a dormant feature; nothing in v1.5 creates one.
+  The typed model keeps the record for file round trips only.
 
 ## Phase 2 — typed model and codecs (additive, behaviour unchanged)
 
@@ -160,4 +188,4 @@ phase split into several signed commits; every commit keeps
 - t039 in [todo.md](../../../todo.md).
 - [rust-architecture.md](../../dev/rust-architecture.md): the Core Rules this
   plan implements.
-- `docs/dev/ec-file-formats.md`: the Phase 1 byte maps (written in Phase 1).
+- [ec-file-formats.md](../../dev/ec-file-formats.md): the Phase 1 byte maps.

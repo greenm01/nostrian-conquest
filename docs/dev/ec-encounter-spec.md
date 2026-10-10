@@ -31,7 +31,7 @@ Starbase record (BASES.DAT, 35 bytes): `+0x02` base id (u16), `+0x04` owner,
 ### Unit table (built once per ECMAINT run) [C]
 `2895:56d4` (loader) walks each player's fleet chain (player `+0x40` first
 fleet, fleet `+0x03` next) and starbase chain (player `+0x44`, base `+0x05`
-next) and appends one 12-byte entry per unit. IPBMs and planets are not units.
+next) and appends one 12-byte entry per unit. Planets are not units; IPBMs are units of kind 3 that the encounter scan skips.
 
 | Entry byte | Meaning |
 | --- | --- |
