@@ -46,7 +46,7 @@ fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
 fn guard_starbase_related_accessors_expose_linkage_words() {
     let player = PlayerDat::parse(&read_fixture("PLAYER.DAT")).unwrap();
     assert_eq!(player.records[0].fleet_chain_head_raw(), 1);
-    assert_eq!(player.records[0].ipbm_count_raw(), 0);
+    assert_eq!(player.records[0].ipbm_chain_head_raw(), 0);
 
     let fleet_bytes = read_ecmaint_starbase_pre_fixture("FLEETS.DAT");
     let fleets = FleetDat::parse(&fleet_bytes).unwrap();
@@ -149,18 +149,18 @@ fn controlled_empire_name_setter_does_not_clobber_later_player_fields() {
     let mut record = PlayerRecord::new_zeroed();
     record.set_homeworld_planet_index_1_based_raw(7);
     record.set_tax_rate_raw(50);
-    record.set_ipbm_count_raw(3);
-    record.raw[0x30] = 1;
-    record.raw[0x34] = 1;
+    record.set_ipbm_chain_head_raw(3);
+    record.set_classic_messages_pending_flag_raw(1);
+    record.set_classic_reports_pending_flag_raw(1);
 
     record.set_controlled_empire_name_raw("Codex Dominion");
 
     assert_eq!(record.controlled_empire_name_summary(), "Codex Dominion");
     assert_eq!(record.homeworld_planet_index_1_based_raw(), 7);
     assert_eq!(record.tax_rate(), 50);
-    assert_eq!(record.ipbm_count_raw(), 3);
-    assert_eq!(record.raw[0x30], 1);
-    assert_eq!(record.raw[0x34], 1);
+    assert_eq!(record.ipbm_chain_head_raw(), 3);
+    assert_eq!(record.classic_messages_pending_flag_raw(), 1);
+    assert_eq!(record.classic_reports_pending_flag_raw(), 1);
 }
 
 #[test]
@@ -1261,7 +1261,7 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
         data.player.records[3].first_base_record_raw(),
         player4_starbase_before
     );
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 3);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 3);
     assert_eq!(data.player1_starbase_count_current_known(), 2);
     assert_eq!(
         data.player_owned_planet_counts_current_known(),
@@ -1729,7 +1729,7 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
     };
 
     data.player.records[0].set_first_base_record_raw(9);
-    data.player.records[0].set_ipbm_count_raw(9);
+    data.player.records[0].set_ipbm_chain_head_raw(9);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
     data.conquest.raw[0..2].copy_from_slice(&2999u16.to_le_bytes());
@@ -1739,7 +1739,7 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
     data.sync_current_known_baseline_controls_and_counts();
 
     assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 1);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 1);
     assert!(data.current_known_setup_baseline_errors().is_empty());
     assert!(data.current_known_conquest_baseline_errors().is_empty());
 }
@@ -1817,7 +1817,7 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
     };
 
     data.player.records[0].set_first_base_record_raw(7);
-    data.player.records[0].set_ipbm_count_raw(4);
+    data.player.records[0].set_ipbm_chain_head_raw(4);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.bases.records.push(BaseRecord::new_zeroed());
     data.ipbm.records.push(IpbmRecord::new_zeroed());
@@ -2058,7 +2058,7 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
     assert_eq!(data.bases.records[0].coords_raw(), [0x10, 0x0D]);
 
     data.set_ipbm_zero_records(2);
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 2);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 2);
     assert_eq!(data.ipbm.records.len(), 2);
     assert_eq!(data.ipbm.to_bytes().len(), 2 * IPBM_RECORD_SIZE);
 

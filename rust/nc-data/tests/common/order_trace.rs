@@ -363,7 +363,7 @@ pub fn build_join_chase_trace() -> CoreGameData {
 
 pub fn build_join_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = [10, 10];
 
     let host = &mut game_data.fleets.records[0];
@@ -396,7 +396,7 @@ pub fn build_rendezvous_travel_trace() -> CoreGameData {
 
 pub fn build_rendezvous_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
 
     let slow = &mut game_data.fleets.records[0];
     configure_cruiser_fleet(slow);

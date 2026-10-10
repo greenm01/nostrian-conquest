@@ -562,5 +562,6 @@ fn relation_label(value: nc_data::DiplomaticRelation) -> &'static str {
     match value {
         nc_data::DiplomaticRelation::Neutral => "neutral",
         nc_data::DiplomaticRelation::Enemy => "enemy",
+        nc_data::DiplomaticRelation::Unknown(_) => "unknown",
     }
 }

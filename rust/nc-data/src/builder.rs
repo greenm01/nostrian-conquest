@@ -232,7 +232,7 @@ impl GameStateBuilder {
         for (idx, player) in data.player.records.iter_mut().enumerate() {
             player.set_player_mode_raw(0x01);
             player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-            player.set_ipbm_count_raw(self.ipbm_count);
+            player.set_ipbm_chain_head_raw(self.ipbm_count);
             player.set_autopilot_flag(if idx == 0 { 1 } else { 0 });
         }
 
@@ -488,7 +488,7 @@ pub fn reset_player_slot_to_baseline(
         .player
         .records
         .get(player_idx)
-        .map(|p| p.ipbm_count_raw())
+        .map(|p| p.ipbm_chain_head_raw())
         .unwrap_or(0);
     if let Some(player) = data.player.records.get_mut(player_idx) {
         seed_unjoined_player_slot(
@@ -604,14 +604,16 @@ fn seed_unjoined_player_slot(
     *player = PlayerRecord::new_zeroed();
     player.set_player_mode_raw(0x00);
     player.set_assigned_player_handle_raw("");
-    player.set_legacy_status_name_field_raw(0x18, "In Civil Disorder");
+    // ECUTIL F1 writes 24 lines per screen.
+    player.set_page_lines(24);
+    player.set_controlled_empire_name_raw("In Civil Disorder");
     player.set_fleet_chain_head_raw(fleet_start);
     player.set_fleet_chain_tail_raw(fleet_end);
     player.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_1_based);
     player.set_planet_count_raw(0x01);
     player.set_production_score_raw(100);
     player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-    player.set_ipbm_count_raw(ipbm_count);
+    player.set_ipbm_chain_head_raw(ipbm_count);
     player.set_autopilot_flag(1);
 }
 

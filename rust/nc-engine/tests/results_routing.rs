@@ -141,7 +141,10 @@ fn walk_player_chain(
     results: &[u8],
 ) -> Vec<u16> {
     let player = &game_data.player.records[empire_raw as usize - 1];
-    let (first, last) = (word(&player.raw, 0x38), word(&player.raw, 0x3c));
+    let (first, last) = (
+        player.classic_results_first_header_raw(),
+        player.classic_results_last_header_raw(),
+    );
     let mut headers = Vec::new();
     let mut previous = 0;
     let mut header = first;

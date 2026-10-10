@@ -168,8 +168,8 @@ fn preserve_orbit_record(
             && planet_owner > 0
             && planet_owner == player_idx + 1
         {
-            let player_mode = game_data.player.records[player_idx].raw[0x00];
-            let autopilot = game_data.player.records[player_idx].raw[0x6D];
+            let player_mode = game_data.player.records[player_idx].player_mode_raw();
+            let autopilot = game_data.player.records[player_idx].autopilot_flag();
             let ai_ran = player_mode == 0xff || (player_mode == 0x01 && autopilot == 0x01);
             if ai_ran {
                 let owner_slot = planet_owner as u8;

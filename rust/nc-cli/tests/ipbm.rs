@@ -10,7 +10,7 @@ use std::fs;
 fn ipbm_report_prints_known_empty_post_fixture_state() {
     let stdout = run_nc_cli(&["ipbm-report", "fixtures/ecmaint-post/v1.5"]);
     assert!(stdout.contains("IPBM Report"));
-    assert!(stdout.contains("player[1].ipbm_count_raw=0"));
+    assert!(stdout.contains("player[1].ipbm_chain_head=0"));
     assert!(stdout.contains("file_record_count=0"));
     assert!(stdout.contains("expected_size_from_player1=0"));
 }
@@ -24,14 +24,14 @@ fn ipbm_zero_sets_player_count_and_file_size() {
         &["ipbm-zero", target.to_str().unwrap(), "3"],
         common::rust_workspace(),
     );
-    assert!(stdout.contains("player[1].ipbm_count_raw = 3"));
+    assert!(stdout.contains("player[1].ipbm_chain_head = 3"));
     assert!(stdout.contains("IPBM.DAT size = 96"));
 
     let report = run_nc_cli_in_dir(
         &["ipbm-report", target.to_str().unwrap()],
         common::rust_workspace(),
     );
-    assert!(report.contains("player[1].ipbm_count_raw=3"));
+    assert!(report.contains("player[1].ipbm_chain_head=3"));
     assert!(report.contains("file_record_count=3"));
     assert!(report.contains("expected_size_from_player1=96"));
 
@@ -76,7 +76,7 @@ fn ipbm_record_set_updates_known_structural_prefix_fields() {
 fn ipbm_validate_accepts_known_empty_post_fixture_state() {
     let stdout = run_nc_cli(&["ipbm-validate", "fixtures/ecmaint-post/v1.5"]);
     assert!(stdout.contains("Valid IPBM count/length state"));
-    assert!(stdout.contains("player[1].ipbm_count_raw = 0"));
+    assert!(stdout.contains("player[1].ipbm_chain_head = 0"));
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn ipbm_init_materializes_valid_zero_filled_directory() {
         common::rust_workspace(),
     );
     assert!(stdout.contains("IPBM directory initialized at"));
-    assert!(stdout.contains("player[1].ipbm_count_raw = 2"));
+    assert!(stdout.contains("player[1].ipbm_chain_head = 2"));
 
     let validate = run_nc_cli_in_dir(
         &["ipbm-validate", target.to_str().unwrap()],

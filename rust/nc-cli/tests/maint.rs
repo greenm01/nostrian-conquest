@@ -3,8 +3,8 @@ mod common;
 use common::{
     cleanup_dir, copy_fixture_dir, repo_root, run_classic_ecgame_smoke,
     run_classic_ecgame_smoke_with_alias, run_maint_rust_failure_after_import,
-    run_maint_rust_with_export, run_nc_cli_in_dir, set_mutual_enemy_in_player_dat, unique_temp_dir,
-    write_mutual_enemy_diplomacy,
+    run_maint_rust_with_export, run_maint_rust_with_export_and_seed, run_nc_cli_in_dir,
+    set_mutual_enemy_in_player_dat, unique_temp_dir, write_mutual_enemy_diplomacy,
 };
 use nc_compat::DatabaseDat;
 use nc_data::CoreGameData;
@@ -2728,7 +2728,9 @@ fn maint_rust_dominant_invalidated_invade_report_retreats_after_capability_loss(
     write_mutual_enemy_diplomacy(&target, 1, 2);
     configure_dominant_invalidated_invade_directory(&target);
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    // The defender must sight the invader for the battle to happen, a roll
+    // of the campaign seed; pin one where it does.
+    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
@@ -2898,7 +2900,9 @@ fn maint_rust_blitz_clears_hostile_empty_transports_in_orbit() {
     game_data.save(&target).expect("scenario should save");
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    // The attacker must sight the transports before its blitz strikes, a
+    // roll of the campaign seed; pin one where it does.
+    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
@@ -3118,8 +3122,8 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
         }
         if let Some(player) = game_data.player.records.get_mut(0) {
             player.set_tax_rate_raw(255);
-            player.raw[0x54] = 0x01;
-            player.raw[0x55] = 0xfe;
+            player.set_diplomatic_relation_byte_raw(1, 0x01);
+            player.set_diplomatic_relation_byte_raw(2, 0xfe);
         }
         game_data
             .save(&target)
@@ -3155,8 +3159,8 @@ fn maint_rust_reports_invalid_diplomacy_input_sanitization() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x54] = 0x01;
-    game_data.player.records[0].raw[0x55] = 0xfe;
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -3165,8 +3169,14 @@ fn maint_rust_reports_invalid_diplomacy_input_sanitization() {
     assert!(stdout.contains("Rust maintenance complete."));
 
     let reloaded = CoreGameData::load(&target).expect("maint-rust output should remain loadable");
-    assert_eq!(reloaded.player.records[0].raw[0x54], 0x00);
-    assert_eq!(reloaded.player.records[0].raw[0x55], 0x00);
+    assert_eq!(
+        reloaded.player.records[0].diplomatic_relation_byte_raw(1),
+        Some(0x00)
+    );
+    assert_eq!(
+        reloaded.player.records[0].diplomatic_relation_byte_raw(2),
+        Some(0x00)
+    );
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
@@ -3325,7 +3335,7 @@ fn maint_rust_join_merge_generates_join_report() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[1].set_current_location_coords_raw(coords);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);
@@ -3352,7 +3362,7 @@ fn maint_rust_rendezvous_merge_generates_absorbing_report() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[1].set_current_location_coords_raw(coords);
@@ -3409,7 +3419,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
     game_data.fleets.records[0].set_cruiser_count(0);
@@ -3446,7 +3456,7 @@ fn maint_rust_join_retarget_report_uses_fleet_command_summary_without_sector_noi
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner_fleet_number = game_data.fleets.records[1].local_slot_word_raw() as usize;
     let joiner = &mut game_data.fleets.records[1];
@@ -3483,7 +3493,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
     for fleet_idx in [1usize, 2, 3] {
@@ -3545,7 +3555,7 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let survivor_coords = [10, 10];
     let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
@@ -3602,7 +3612,7 @@ fn maint_rust_join_summary_emits_single_footer_line() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
     game_data.fleets.records[1].set_current_location_coords_raw([3, 9]);

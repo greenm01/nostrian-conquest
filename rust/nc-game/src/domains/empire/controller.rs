@@ -149,7 +149,9 @@ impl App {
             .stored_diplomatic_relation(self.player.record_index_1_based as u8, empire_id)
             .unwrap_or(nc_data::DiplomaticRelation::Neutral);
         let next = match current {
-            nc_data::DiplomaticRelation::Neutral => nc_data::DiplomaticRelation::Enemy,
+            nc_data::DiplomaticRelation::Neutral | nc_data::DiplomaticRelation::Unknown(_) => {
+                nc_data::DiplomaticRelation::Enemy
+            }
             nc_data::DiplomaticRelation::Enemy => nc_data::DiplomaticRelation::Neutral,
         };
         self.game_data.set_stored_diplomatic_relation(

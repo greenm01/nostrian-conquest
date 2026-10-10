@@ -11,7 +11,11 @@ use nc_data::*;
 fn round_trip_player_dat() {
     let bytes = read_fixture("PLAYER.DAT");
     let parsed = PlayerDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
+    // Name tails and diplomacy slots past the player count are not carried.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Player, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Player, &bytes)
+    );
 }
 
 #[test]

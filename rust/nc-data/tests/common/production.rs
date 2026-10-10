@@ -23,11 +23,8 @@ pub fn player_with_empire_name(name: &str, tax_rate: u8, stored_points: u16) -> 
     let mut record = PlayerRecord::new_zeroed();
     record.set_owner_empire_raw(1);
     record.set_tax_rate_raw(tax_rate);
-    record.raw[0x4E..0x50].copy_from_slice(&stored_points.to_le_bytes());
-    let bytes = name.as_bytes();
-    let len = bytes.len().min(19);
-    record.raw[27] = len as u8;
-    record.raw[28..28 + len].copy_from_slice(&bytes[..len]);
+    record.set_last_run_year_raw(stored_points);
+    record.set_controlled_empire_name_raw(name);
     record
 }
 

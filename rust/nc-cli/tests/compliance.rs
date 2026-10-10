@@ -92,8 +92,8 @@ fn core_validate_rejects_invalid_diplomacy_bytes() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = CoreGameData::load(&target).unwrap();
-    data.player.records[0].raw[0x54] = 0x01;
-    data.player.records[0].raw[0x55] = 0xfe;
+    data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
+    data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
     data.save(&target).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(
@@ -122,7 +122,7 @@ fn core_sync_counts_repairs_player1_count_words() {
 
     let mut data = CoreGameData::load(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(3);
-    data.player.records[0].set_ipbm_count_raw(2);
+    data.player.records[0].set_ipbm_chain_head_raw(2);
     data.save(&target).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(
@@ -168,7 +168,7 @@ fn core_sync_baseline_repairs_control_and_count_fields() {
 
     let mut data = CoreGameData::load(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(3);
-    data.player.records[0].set_ipbm_count_raw(2);
+    data.player.records[0].set_ipbm_chain_head_raw(2);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
     data.conquest.raw[0..2].copy_from_slice(&2999u16.to_le_bytes());
@@ -258,7 +258,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
 
     let mut data = CoreGameData::load(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(7);
-    data.player.records[0].set_ipbm_count_raw(4);
+    data.player.records[0].set_ipbm_chain_head_raw(4);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.bases.records.push(nc_data::BaseRecord::new_zeroed());
     data.ipbm.records.push(nc_data::IpbmRecord::new_zeroed());

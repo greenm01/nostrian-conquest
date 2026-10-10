@@ -126,7 +126,7 @@ fn joined_homeworld_high_tax_penalty_compounds_each_turn() {
 fn maintenance_recomputes_player_production_from_present_production() {
     let mut game = build_seeded_new_game(4, 3000, 1515).expect("seeded game should build");
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    assert_eq!(game.player.records[0].raw[0x52], 100);
+    assert_eq!(game.player.records[0].production_score_raw(), 100);
 }
 
 #[test]

@@ -25,7 +25,9 @@ impl CoreGameData {
             player_first_base_record: player1
                 .map(|record| record.first_base_record_raw())
                 .unwrap_or(0),
-            player_ipbm_count: player1.map(|record| record.ipbm_count_raw()).unwrap_or(0),
+            player_ipbm_count: player1
+                .map(|record| record.ipbm_chain_head_raw())
+                .unwrap_or(0),
             fleet1_local_slot: fleet1.map(|record| record.local_slot_word_raw()),
             fleet1_id: fleet1.map(|record| record.fleet_id_word_raw()),
             fleet1_guard_index: fleet1.map(|record| record.guard_starbase_index_raw()),

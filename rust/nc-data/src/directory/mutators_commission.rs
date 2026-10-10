@@ -348,7 +348,7 @@ impl CoreGameData {
 
     pub fn set_ipbm_zero_records(&mut self, count: u16) {
         if let Some(player1) = self.player.records.first_mut() {
-            player1.set_ipbm_count_raw(count);
+            player1.set_ipbm_chain_head_raw(count);
         }
 
         self.ipbm = IpbmDat {

@@ -135,7 +135,7 @@ impl CoreGameData {
             return;
         }
         self.relink_base_chain(1);
-        self.player.records[0].set_ipbm_count_raw(ipbm_count);
+        self.player.records[0].set_ipbm_chain_head_raw(ipbm_count);
     }
 
     pub fn sync_current_known_baseline_controls_and_counts(&mut self) {

@@ -244,7 +244,7 @@ fn pad_fleets_to(game_data: &mut CoreGameData, count: usize) {
 #[test]
 fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     pad_fleets_to(&mut game_data, 300);
 
     let mut host = game_data.fleets.records[0].clone();

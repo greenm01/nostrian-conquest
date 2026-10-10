@@ -75,11 +75,6 @@ pub fn copy_array<const N: usize>(data: &[u8]) -> [u8; N] {
     out
 }
 
-pub fn trim_ascii_field(bytes: &[u8]) -> String {
-    let text = String::from_utf8_lossy(bytes);
-    text.trim_matches(char::from(0)).trim().to_string()
-}
-
 pub fn decode_real48(data: [u8; 6]) -> Option<f64> {
     let exponent = data[5];
     if exponent == 0 {

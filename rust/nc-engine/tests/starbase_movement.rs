@@ -91,7 +91,7 @@ fn the_moving_base_matches_classic_year_by_year() {
             "{label} fleet 1"
         );
         assert_eq!(
-            game_data.player.records[0].raw[0x40..0x48],
+            game_data.player.records[0].to_bytes()[0x40..0x48],
             hex("0100040001000100")[..],
             "{label} PLAYER.DAT"
         );
@@ -114,8 +114,8 @@ fn a_base_whose_world_changes_hands_lifts_off_with_its_escort() {
     assert_eq!(game_data.bases.to_bytes(), expected.bases.to_bytes());
     assert_eq!(game_data.fleets.records[0], expected.fleets.records[0]);
     assert_eq!(
-        game_data.player.records[0].raw[0x44..0x48],
-        expected.player.records[0].raw[0x44..0x48]
+        game_data.player.records[0].to_bytes()[0x44..0x48],
+        expected.player.records[0].to_bytes()[0x44..0x48]
     );
 
     let reports: Vec<_> = events

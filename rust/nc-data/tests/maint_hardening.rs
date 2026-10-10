@@ -201,8 +201,8 @@ fn fleet_speed_is_clamped_to_current_maximum() {
 #[test]
 fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x54] = 0x01;
-    game_data.player.records[0].raw[0x55] = 0xfe;
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -212,8 +212,14 @@ fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
             InvalidPlayerStateEvent::DiplomacyInput { player_idx: 0, .. }
         )
     }));
-    assert_eq!(game_data.player.records[0].raw[0x54], 0x00);
-    assert_eq!(game_data.player.records[0].raw[0x55], 0x00);
+    assert_eq!(
+        game_data.player.records[0].diplomatic_relation_byte_raw(1),
+        Some(0x00)
+    );
+    assert_eq!(
+        game_data.player.records[0].diplomatic_relation_byte_raw(2),
+        Some(0x00)
+    );
 }
 
 #[test]

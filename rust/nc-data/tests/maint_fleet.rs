@@ -639,7 +639,7 @@ fn test_rendezvous_arrival_emits_waiting_event() {
 #[test]
 fn test_join_merge_emits_merge_event() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[1].set_current_location_coords_raw(coords);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);
@@ -665,7 +665,7 @@ fn test_merges_that_would_overflow_scout_count_are_refused() {
         (0xff, Order::HoldPosition),
     ] {
         let mut game_data = load_fixture("ecmaint-post");
-        game_data.player.records[0].raw[0x00] = consolidation_flag;
+        game_data.player.records[0].set_player_mode_raw(consolidation_flag);
         let coords = game_data.fleets.records[0].current_location_coords_raw();
         let host_id = game_data.fleets.records[0].fleet_id_word_raw();
         for idx in [0, 1] {
@@ -705,7 +705,7 @@ fn test_merges_that_would_overflow_scout_count_are_refused() {
 #[test]
 fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let host = &mut game_data.fleets.records[0];
     host.set_current_location_coords_raw([10, 10]);
@@ -756,7 +756,7 @@ fn test_join_order_refreshes_target_to_moving_host_each_turn() {
 #[test]
 fn test_join_order_survives_arrival_at_previous_host_position() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let host = &mut game_data.fleets.records[0];
     host.set_current_location_coords_raw([10, 10]);
@@ -866,7 +866,7 @@ fn test_join_order_abandons_mission_when_host_is_destroyed() {
 #[test]
 fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let survivor_coords = [10, 10];
     let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
@@ -929,7 +929,7 @@ fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
 #[test]
 fn test_joiner_merges_same_turn_after_host_merges_into_surviving_fleet() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let coords = [10, 10];
     let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
@@ -1454,7 +1454,7 @@ fn test_delayed_hostile_orders_keep_speed_and_order_just_short_of_orbit() {
 #[test]
 fn test_join_merge_occurs_without_combat_merge_flag() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let host_coords = game_data.fleets.records[0].current_location_coords_raw();
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
@@ -1480,7 +1480,7 @@ fn test_join_merge_occurs_without_combat_merge_flag() {
 fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
     // ECGAME stores Join as 0x22 = 1 (world/fleet target flag) and 0x23 = host id.
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     let host = &mut game_data.fleets.records[2];
     host.set_current_location_coords_raw([10, 10]);
@@ -1534,7 +1534,7 @@ fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
 #[test]
 fn test_join_merge_occurs_when_joiner_has_hidden_exact_transit_in_host_sector() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let host_coords = game_data.fleets.records[0].current_location_coords_raw();
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
@@ -1587,7 +1587,7 @@ fn test_move_only_arrival_completes_when_hidden_exact_transit_reaches_target_sec
 #[test]
 fn test_rendezvous_merge_occurs_without_combat_merge_flag() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[0].set_standing_order_target_coords_raw(coords);
@@ -1610,7 +1610,7 @@ fn test_rendezvous_merge_occurs_without_combat_merge_flag() {
 #[test]
 fn test_rendezvous_merge_occurs_when_arrival_completes_from_hidden_exact_transit() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
 
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
@@ -1638,7 +1638,7 @@ fn test_rendezvous_merge_occurs_when_arrival_completes_from_hidden_exact_transit
 #[test]
 fn test_rendezvous_merge_occurs_same_turn_when_fleet_arrives_at_assigned_sector() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
 
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
@@ -1667,7 +1667,7 @@ fn test_rendezvous_merge_occurs_same_turn_when_fleet_arrives_at_assigned_sector(
 #[test]
 fn test_rendezvous_host_selection_uses_lowest_structural_fleet_id() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
 
     game_data.fleets.records[0].set_local_slot_word_raw(9);
@@ -1696,7 +1696,7 @@ fn test_rendezvous_host_selection_uses_lowest_structural_fleet_id() {
 #[test]
 fn test_rendezvous_does_not_merge_before_reaching_its_assigned_sector() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
 
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
@@ -1891,7 +1891,7 @@ fn test_salvage_fails_at_foreign_planet_without_removing_fleet() {
 #[test]
 fn test_rendezvous_merge_emits_survivor_absorption_event() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[1].set_current_location_coords_raw(coords);
@@ -1913,7 +1913,7 @@ fn test_rendezvous_merge_emits_survivor_absorption_event() {
 #[test]
 fn test_rendezvous_survivor_remains_on_rendezvous_after_merge() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[0].set_standing_order_target_coords_raw(coords);
@@ -1938,7 +1938,7 @@ fn test_rendezvous_survivor_remains_on_rendezvous_after_merge() {
 #[test]
 fn test_rendezvous_merge_recomputes_survivor_speed_to_slowest_member() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
 
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
@@ -1968,7 +1968,7 @@ fn test_rendezvous_merge_recomputes_survivor_speed_to_slowest_member() {
 #[test]
 fn test_merge_preserves_surviving_local_fleet_numbers() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = 0xff;
+    game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[2].set_current_location_coords_raw([1, 1]);
     game_data.fleets.records[3].set_current_location_coords_raw([2, 2]);
@@ -2668,7 +2668,7 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
     let mut game_data = load_fixture("ecmaint-post");
     // Disable early consolidation so it cannot merge or remove fleets before
     // the salvage-triggered remap this test is exercising.
-    game_data.player.records[0].raw[0x00] = 0x00;
+    game_data.player.records[0].set_player_mode_raw(0x00);
 
     // Find a planet owned by player 1 for the salvage fleet to target.
     let (_, planet_coords) = game_data

@@ -1,7 +1,8 @@
 #![allow(dead_code)]
 
+use nc_compat::import_directory_snapshot_with_seed;
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
-use nc_data::{CoreGameData, DiplomaticRelation};
+use nc_data::{CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -81,6 +82,22 @@ pub fn export_campaign_db(source_dir: &Path, target_dir: &Path) {
 
 pub fn run_maint_rust_with_export(target: &Path, turns: u16) -> String {
     import_campaign_db(target);
+    let turns = turns.to_string();
+    let stdout = run_nc_cli_in_dir(
+        &["maint-rust", target.to_str().unwrap(), &turns],
+        rust_workspace(),
+    );
+    export_campaign_db(target, target);
+    stdout
+}
+
+/// `run_maint_rust_with_export` with the campaign seed pinned, for a
+/// scenario whose outcome turns on a sighting roll.
+pub fn run_maint_rust_with_export_and_seed(target: &Path, turns: u16, seed: u64) -> String {
+    let store =
+        CampaignStore::open(target.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open campaign store");
+    import_directory_snapshot_with_seed(&store, target, Some(seed)).expect("import directory");
+    drop(store);
     let turns = turns.to_string();
     let stdout = run_nc_cli_in_dir(
         &["maint-rust", target.to_str().unwrap(), &turns],

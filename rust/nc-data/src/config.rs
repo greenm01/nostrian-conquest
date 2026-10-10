@@ -80,7 +80,7 @@ impl DiplomacyConfig {
         let mut text = String::new();
         for directive in &self.directives {
             let status = match directive.relation {
-                DiplomaticRelation::Neutral => "neutral",
+                DiplomaticRelation::Neutral | DiplomaticRelation::Unknown(_) => "neutral",
                 DiplomaticRelation::Enemy => "enemy",
             };
             text.push_str(&format!(

@@ -106,7 +106,7 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
             player_homeworld_seed_coords.get(idx).copied().flatten(),
             player_owned_base_counts[idx],
             record.first_base_record_raw(),
-            record.ipbm_count_raw(),
+            record.ipbm_chain_head_raw(),
             player_fleet_chain_heads[idx]
         );
     }
@@ -232,17 +232,17 @@ pub(crate) fn print_canonical_transition_details(
                     let current = &data.player.records[record_index - 1];
                     let canonical = &baseline.player.records[record_index - 1];
                     println!(
-                        "    record {} current: first_base_record_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
+                        "    record {} current: first_base_record_raw={} ipbm_chain_head_raw={} fleet_chain_head_raw={}",
                         record_index,
                         current.first_base_record_raw(),
-                        current.ipbm_count_raw(),
+                        current.ipbm_chain_head_raw(),
                         current.fleet_chain_head_raw()
                     );
                     println!(
-                        "    record {} canonical: first_base_record_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
+                        "    record {} canonical: first_base_record_raw={} ipbm_chain_head_raw={} fleet_chain_head_raw={}",
                         record_index,
                         canonical.first_base_record_raw(),
-                        canonical.ipbm_count_raw(),
+                        canonical.ipbm_chain_head_raw(),
                         canonical.fleet_chain_head_raw()
                     );
                 }
@@ -520,7 +520,7 @@ pub(crate) fn sync_core_counts(dir: &Path) -> Result<(), Box<dyn std::error::Err
                 .flatten(),
             owned_base_count,
             data.player.records[idx].first_base_record_raw(),
-            data.player.records[idx].ipbm_count_raw(),
+            data.player.records[idx].ipbm_chain_head_raw(),
             fleet_chain_head
         );
     }
