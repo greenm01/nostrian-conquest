@@ -79,8 +79,8 @@ fn write_player_rows(
             encode_hex(&record.raw[0x1C..0x30]),
             i64::from(record.fleet_chain_head_raw()),
             i64::from(record.fleet_chain_tail_raw()),
-            i64::from(record.starbase_count_raw()),
-            i64::from(record.starbase_presence_flag_raw()),
+            i64::from(record.first_base_record_raw()),
+            i64::from(record.last_base_record_raw()),
             i64::from(record.ipbm_count_raw()),
             i64::from(record.homeworld_planet_index_1_based_raw()),
             i64::from(record.last_run_year_raw()),
@@ -388,8 +388,8 @@ fn load_player_rows(
         record.raw[0x1C..0x30].copy_from_slice(&decode_hex_exact::<20>(&name_block_raw_hex)?);
         record.set_fleet_chain_head_raw(fleet_chain_head_raw as u16);
         record.set_fleet_chain_tail_raw(fleet_chain_tail_raw as u16);
-        record.set_starbase_count_raw(starbase_count_raw as u16);
-        record.set_starbase_presence_flag_raw(starbase_presence_flag_raw as u8);
+        record.set_first_base_record_raw(starbase_count_raw as u16);
+        record.set_last_base_record_raw(starbase_presence_flag_raw as u16);
         record.set_ipbm_count_raw(ipbm_count_raw as u16);
         record.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_raw as u8);
         record.set_last_run_year_raw(last_run_year_raw as u16);

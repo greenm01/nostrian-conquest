@@ -38,7 +38,10 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             campaign_state,
             record.ownership_summary()
         );
-        println!("    starbase_count_raw={}", record.starbase_count_raw());
+        println!(
+            "    first_base_record_raw={}",
+            record.first_base_record_raw()
+        );
     }
     println!();
 

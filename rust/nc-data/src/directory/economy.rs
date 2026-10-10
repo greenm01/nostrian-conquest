@@ -4,12 +4,9 @@ use crate::{
 };
 
 impl CoreGameData {
+    /// The bases player 1's PLAYER chain reaches.
     pub fn player1_starbase_count_current_known(&self) -> usize {
-        self.player
-            .records
-            .first()
-            .map(|record| record.starbase_count_raw() as usize)
-            .unwrap_or(0)
+        self.base_chain(1).map_or(0, |chain| chain.len())
     }
 
     pub fn player1_owned_base_record_count_current_known(&self) -> usize {

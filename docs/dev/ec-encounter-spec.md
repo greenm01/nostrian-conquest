@@ -112,6 +112,8 @@ if O.speed == 0 || at_target(O):
 Starbase observer (record S): it scans only if `S.x==S.tx && S.y==S.ty &&
 S.Z == float(S.TZ)`; then `F = 25` if `layer(S.Z)==1` else `F = 30`
 (`closing` = false). A starbase not at its target does nothing this tick. [P]
+Starbases move ([ec-starbase-spec.md](ec-starbase-spec.md)); a base's step
+updates its entry and its escort's, as a fleet's does.
 
 ### Pairing loop
 ```
@@ -473,8 +475,6 @@ intercept up to three (aw roll, sin draw, speed roll); battles draw more.
 - Battle internals (`1b05:7b74..99d5`): round count confirmed from code only;
   retreat, scatter, and loss rules not decoded.
 - `2895:2ddc` after a battle (probably world-database intel).
-- Moving starbases: they don't scan while away from their target; base
-  movement is in [ec-starbase-spec.md](ec-starbase-spec.md).
 - AI empires (players marked 0xFF) were not probed.
 - ROE > 10 and u16 overflow in vis/strength (more than ~1450 ships of a
   class) are undefined or wrap in classic.

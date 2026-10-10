@@ -9,7 +9,7 @@ fn compliance_report_summarizes_known_post_fixture_failures() {
     assert!(stdout.contains("Compliance Report"));
     assert!(stdout.contains("FAIL guard-starbase-linkage:"));
     assert!(stdout.contains("OK   ipbm-count-length"));
-    assert!(stdout.contains("Key words: player.starbase_count=0 player.ipbm_count=0"));
+    assert!(stdout.contains("Key words: player.first_base_record=0 player.ipbm_count=0"));
     assert!(stdout.contains("guarding_fleet_count=0"));
 }
 
@@ -36,7 +36,7 @@ fn core_report_summarizes_known_post_fixture_counts() {
     assert!(stdout.contains("player1_starbase_count=0"));
     assert!(stdout.contains("player1_owned_base_record_count=0"));
     assert!(stdout.contains("player1_ipbm_count=0"));
-    assert!(stdout.contains("player 01: campaign_state=civil_disorder owned_planet_count=1 homeworld_seed_coords=Some([16, 13]) owned_base_count=0 starbase_count_word_raw=0 ipbm_count_word_raw=0 fleet_chain_head_raw=1"));
+    assert!(stdout.contains("player 01: campaign_state=civil_disorder owned_planet_count=1 homeworld_seed_coords=Some([16, 13]) owned_base_count=0 first_base_record_raw=0 ipbm_count_word_raw=0 fleet_chain_head_raw=1"));
 }
 
 #[test]
@@ -121,7 +121,7 @@ fn core_sync_counts_repairs_player1_count_words() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = CoreGameData::load(&target).unwrap();
-    data.player.records[0].set_starbase_count_raw(3);
+    data.player.records[0].set_first_base_record_raw(3);
     data.player.records[0].set_ipbm_count_raw(2);
     data.save(&target).unwrap();
 
@@ -129,7 +129,7 @@ fn core_sync_counts_repairs_player1_count_words() {
         &["core-validate", target.to_str().unwrap()],
         common::rust_workspace(),
     );
-    assert!(stderr.contains("PLAYER[1]-owned BASES.DAT record count expected 3, got 0"));
+    assert!(stderr.contains("PLAYER[1] base chain names BASES record 3, past the end"));
     assert!(stderr.contains("IPBM.DAT record count expected 2, got 0"));
 
     let sync_stdout = run_nc_cli_in_dir(
@@ -150,7 +150,7 @@ fn core_sync_counts_repairs_player1_count_words() {
     assert!(sync_stdout.contains("empty_auxiliary_state = true"));
     assert!(sync_stdout.contains("setup_baseline = true"));
     assert!(sync_stdout.contains("conquest_baseline = true"));
-    assert!(sync_stdout.contains("player 02: owned_planet_count = 1 homeworld_seed_coords = Some([4, 13]) owned_base_count = 0 starbase_count_word_raw = 0 ipbm_count_word_raw = 0 fleet_chain_head_raw = 5"));
+    assert!(sync_stdout.contains("player 02: owned_planet_count = 1 homeworld_seed_coords = Some([4, 13]) owned_base_count = 0 first_base_record_raw = 0 ipbm_count_word_raw = 0 fleet_chain_head_raw = 5"));
 
     let validate_stdout = run_nc_cli_in_dir(
         &["core-validate", target.to_str().unwrap()],
@@ -167,7 +167,7 @@ fn core_sync_baseline_repairs_control_and_count_fields() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = CoreGameData::load(&target).unwrap();
-    data.player.records[0].set_starbase_count_raw(3);
+    data.player.records[0].set_first_base_record_raw(3);
     data.player.records[0].set_ipbm_count_raw(2);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
@@ -257,7 +257,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = CoreGameData::load(&target).unwrap();
-    data.player.records[0].set_starbase_count_raw(7);
+    data.player.records[0].set_first_base_record_raw(7);
     data.player.records[0].set_ipbm_count_raw(4);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.bases.records.push(nc_data::BaseRecord::new_zeroed());

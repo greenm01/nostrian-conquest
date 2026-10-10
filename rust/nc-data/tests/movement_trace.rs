@@ -277,10 +277,16 @@ fn build_persistent_probe(case: PersistentMovementCase) -> nc_data::CoreGameData
             let mut base = BaseRecord::new_zeroed();
             base.set_base_id_raw(2);
             base.set_owner_empire_raw(1);
+            base.set_record_number_raw(1);
             base.set_coords_raw(case.target);
+            // At rest in orbit, as ECGAME leaves a base that is not moving.
+            base.set_at_rest_motion();
+            base.set_target_coords_raw(case.target);
+            base.set_target_depth_raw(1);
             game_data.bases = BaseDat {
                 records: vec![base],
             };
+            game_data.player.records[0].set_first_base_record_raw(1);
         }
         PersistentProbeSetup::GuardBlockade => {
             fleet.set_mission_aux_bytes([1, 0]);

@@ -119,7 +119,7 @@ pub(crate) fn init_starbase_tax_probe(
         data.set_player_tax_rate(player_record_index_1_based, tax_rate)?;
 
         if let Some(player) = data.player.records.get_mut(player_record_index_1_based - 1) {
-            player.set_starbase_count_raw(0);
+            player.set_first_base_record_raw(0);
         }
         data.bases
             .records

@@ -99,13 +99,13 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
             .map(|state| state.as_str())
             .unwrap_or("unknown");
         println!(
-            "  player {:02}: campaign_state={} owned_planet_count={} homeworld_seed_coords={:?} owned_base_count={} starbase_count_word_raw={} ipbm_count_word_raw={} fleet_chain_head_raw={}",
+            "  player {:02}: campaign_state={} owned_planet_count={} homeworld_seed_coords={:?} owned_base_count={} first_base_record_raw={} ipbm_count_word_raw={} fleet_chain_head_raw={}",
             idx + 1,
             campaign_state,
             player_owned_planet_counts[idx],
             player_homeworld_seed_coords.get(idx).copied().flatten(),
             player_owned_base_counts[idx],
-            record.starbase_count_raw(),
+            record.first_base_record_raw(),
             record.ipbm_count_raw(),
             player_fleet_chain_heads[idx]
         );
@@ -232,16 +232,16 @@ pub(crate) fn print_canonical_transition_details(
                     let current = &data.player.records[record_index - 1];
                     let canonical = &baseline.player.records[record_index - 1];
                     println!(
-                        "    record {} current: starbase_count_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
+                        "    record {} current: first_base_record_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
                         record_index,
-                        current.starbase_count_raw(),
+                        current.first_base_record_raw(),
                         current.ipbm_count_raw(),
                         current.fleet_chain_head_raw()
                     );
                     println!(
-                        "    record {} canonical: starbase_count_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
+                        "    record {} canonical: first_base_record_raw={} ipbm_count_raw={} fleet_chain_head_raw={}",
                         record_index,
-                        canonical.starbase_count_raw(),
+                        canonical.first_base_record_raw(),
                         canonical.ipbm_count_raw(),
                         canonical.fleet_chain_head_raw()
                     );
@@ -511,7 +511,7 @@ pub(crate) fn sync_core_counts(dir: &Path) -> Result<(), Box<dyn std::error::Err
     {
         let fleet_chain_head = data.player_fleet_chain_heads_current_known()[idx];
         println!(
-            "  player {:02}: owned_planet_count = {} homeworld_seed_coords = {:?} owned_base_count = {} starbase_count_word_raw = {} ipbm_count_word_raw = {} fleet_chain_head_raw = {}",
+            "  player {:02}: owned_planet_count = {} homeworld_seed_coords = {:?} owned_base_count = {} first_base_record_raw = {} ipbm_count_word_raw = {} fleet_chain_head_raw = {}",
             idx + 1,
             data.player_owned_planet_counts_current_known()[idx],
             data.player_homeworld_seed_coords_current_known()
@@ -519,7 +519,7 @@ pub(crate) fn sync_core_counts(dir: &Path) -> Result<(), Box<dyn std::error::Err
                 .copied()
                 .flatten(),
             owned_base_count,
-            data.player.records[idx].starbase_count_raw(),
+            data.player.records[idx].first_base_record_raw(),
             data.player.records[idx].ipbm_count_raw(),
             fleet_chain_head
         );

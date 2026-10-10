@@ -36,10 +36,10 @@ impl CoreGameData {
         let mut errors = Vec::new();
 
         match self.player.records.first() {
-            Some(record) if record.starbase_count_raw() == 1 => {}
+            Some(record) if record.first_base_record_raw() == 1 => {}
             Some(record) => errors.push(format!(
-                "PLAYER[1].starbase_count_raw expected 1, got {}",
-                record.starbase_count_raw()
+                "PLAYER[1].first_base_record expected 1, got {}",
+                record.first_base_record_raw()
             )),
             None => errors.push("PLAYER.DAT missing record 1".to_string()),
         }
@@ -104,17 +104,17 @@ impl CoreGameData {
                     base.target_coords_raw()
                 ));
             }
-            if base.record_number_raw() != player1.starbase_count_raw() {
+            if base.record_number_raw() != player1.first_base_record_raw() {
                 errors.push(format!(
-                    "BASES[1].record_number expected PLAYER[1].starbase_count_raw {}, got {}",
-                    player1.starbase_count_raw(),
+                    "BASES[1].record_number expected PLAYER[1].first_base_record {}, got {}",
+                    player1.first_base_record_raw(),
                     base.record_number_raw()
                 ));
             }
-            if fleet.local_slot_word_raw() != player1.starbase_count_raw() {
+            if fleet.local_slot_word_raw() != player1.first_base_record_raw() {
                 errors.push(format!(
-                    "FLEET[1].local slot word expected PLAYER[1].starbase_count_raw {}, got {}",
-                    player1.starbase_count_raw(),
+                    "FLEET[1].local slot word expected PLAYER[1].first_base_record {}, got {}",
+                    player1.first_base_record_raw(),
                     fleet.local_slot_word_raw()
                 ));
             }
@@ -156,8 +156,7 @@ impl CoreGameData {
         player_record_index_1_based: usize,
         fleet_record_index_1_based: usize,
     ) -> Result<CurrentKnownGuardStarbaseLinkageSummary, GameStateMutationError> {
-        let player = self
-            .player
+        self.player
             .records
             .get(player_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlayerRecord {
@@ -179,7 +178,9 @@ impl CoreGameData {
         Ok(CurrentKnownGuardStarbaseLinkageSummary {
             player_record_index_1_based,
             fleet_record_index_1_based,
-            player_starbase_count: player.starbase_count_raw(),
+            player_starbase_count: self
+                .base_chain(player_record_index_1_based as u8)
+                .map_or(0, |chain| chain.len() as u16),
             fleet_order: fleet.standing_order_code_raw(),
             fleet_local_slot: fleet.local_slot_word_raw(),
             fleet_id: fleet.fleet_id_word_raw(),
@@ -236,17 +237,17 @@ impl CoreGameData {
         }
         if summary.player_starbase_count == 0 {
             errors.push(format!(
-                "PLAYER[{}].starbase_count_raw expected non-zero, got 0",
+                "PLAYER[{}] base chain expected non-empty",
                 player_record_index_1_based
             ));
         }
         if summary.guard_index as u16 > summary.player_starbase_count {
             errors.push(format!(
-                "FLEET[{}].guard index {} exceeds PLAYER[{}].starbase_count_raw {}",
+                "FLEET[{}].guard index {} exceeds the {} bases in PLAYER[{}]'s chain",
                 fleet_record_index_1_based,
                 summary.guard_index,
-                player_record_index_1_based,
-                summary.player_starbase_count
+                summary.player_starbase_count,
+                player_record_index_1_based
             ));
         }
         if !summary.selected_base_present {

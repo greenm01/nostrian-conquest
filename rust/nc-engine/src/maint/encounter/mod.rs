@@ -93,7 +93,6 @@ fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
             index,
             owner: base.owner_empire_raw(),
             sector: base.coords_raw(),
-            // Starbases do not move yet; they stay at their stored depth.
             layer: layer_of(base.depth()),
             active: base.base_id_raw() != 0,
         });

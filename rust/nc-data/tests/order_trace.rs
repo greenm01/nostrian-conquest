@@ -335,13 +335,15 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     speed: TRACE_SPEED,
                     ready_flag: None,
                 },
+                // No world of the owner's lies under the base, so it climbs
+                // to deep space in year 1 and the guard settles at its depth.
                 FleetTurnExpectation {
                     turn: 2,
                     coords: TRACE_TARGET,
                     target: TRACE_TARGET,
                     order: Order::GuardStarbase,
                     speed: 0,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -349,7 +351,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::GuardStarbase,
                     speed: 0,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,

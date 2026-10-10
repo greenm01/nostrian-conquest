@@ -1364,7 +1364,7 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     assert!(text.contains("Enemy losses:"));
 
     let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
-    assert_eq!(game_data.player.records[0].starbase_count_raw(), 0);
+    assert_eq!(game_data.player.records[0].first_base_record_raw(), 0);
     assert!(
         game_data
             .bases

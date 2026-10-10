@@ -74,10 +74,10 @@ pub use maintenance_types::{
     DiplomaticEscalationEvent, EmpireEliminationCause, EmpireEliminationEvent,
     EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent, FleetDefectionEvent,
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InvalidPlayerStateEvent,
-    JoinMissionHostEvent, MaintenanceEvents, Mission, MissionAbortReason, MissionEvent,
-    MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
+    JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission, MissionAbortReason,
+    MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
     PlanetOwnershipChangeEvent, SalvageFailureReason, SalvageResolvedEvent, ScoutContactEvent,
-    ShipLosses, StarbaseDestroyedEvent,
+    ShipLosses, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{

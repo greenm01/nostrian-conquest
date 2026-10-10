@@ -303,6 +303,22 @@ docs sometimes say a starbase is "hauled." In practice, that just means moving
 a very slow unit. You may order combat fleets to escort a starbase with
 Mission 4 (Guard Starbase), but the starbase remains its own unit.
 
+A starbase moves one sector a year. A base resting in orbit first spends a
+year climbing out to deep space. It enters orbit at its destination only if
+you own the world there; anywhere else it stops in deep space. Its escort, the
+guard fleet at rest beside it, rides along. Other guard fleets head for the
+base's new position whenever it changes sector or climbs out of a system, and
+a guard that reaches the base joins the escort, unless the two together would
+pass 3000 ships.
+
+A starbase in orbit needs a friendly world beneath it. If you lose that world,
+the base leaves the system for deep space in its own sector. A base bound for
+a world you no longer own stops where it is and awaits new orders. Moving a
+starbase out of orbit also cancels every build order of the world beneath it
+when those builds rely on the base: when a queued unit, or the whole queue,
+costs more than the world's Production and no other starbase rests in orbit
+there.
+
 #admonition("NOTE")[Starbases must be commissioned from stardock before they can be moved or provide orbital benefits. An uncommissioned starbase sitting in stardock has no effect.]
 
 == Ground Forces

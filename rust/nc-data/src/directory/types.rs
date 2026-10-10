@@ -23,7 +23,7 @@ pub struct CurrentKnownComplianceStatus {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CurrentKnownKeyWordSummary {
-    pub player_starbase_count: u16,
+    pub player_first_base_record: u16,
     pub player_ipbm_count: u16,
     pub fleet1_local_slot: Option<u16>,
     pub fleet1_id: Option<u16>,

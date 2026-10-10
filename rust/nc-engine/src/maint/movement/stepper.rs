@@ -95,6 +95,17 @@ impl FleetTrack {
         }
     }
 
+    /// Whether the fleet stepped this tick.
+    pub(super) fn stepped(&self) -> bool {
+        self.before.is_some()
+    }
+
+    /// The order resolved this tick; the fleet stops until it changes.
+    pub(super) fn resolve(&mut self, fleet: &nc_data::FleetRecord) {
+        self.resolved = Some(order_key(fleet));
+        self.motion = None;
+    }
+
     /// Forget the cached position; the record was changed elsewhere.
     pub(super) fn reload(&mut self) {
         self.motion = None;
@@ -141,7 +152,9 @@ pub(super) fn step_fleet(
     };
     // A standing order already settled on station stays put; it resolved in
     // an earlier year (scouts report from station in the observation phase).
+    // A guard always steps: its base may have moved.
     let on_station = !viewing_out
+        && order != Order::GuardStarbase
         && (order_persists_on_arrival(order)
             || matches!(order, Order::ScoutSector | Order::ScoutSolarSystem))
         && ArrivalRule::for_order(order).passes(
@@ -275,9 +288,5 @@ fn apply_resolution_state(fleet: &mut nc_data::FleetRecord, order: Order) {
     }
     if !order_keeps_speed_on_arrival(order) {
         fleet.set_current_speed(0);
-    }
-    if order == Order::GuardStarbase {
-        // ECMAINT's guard-starbase action settles the fleet in orbit.
-        fleet.set_depth(Real48::ONE);
     }
 }

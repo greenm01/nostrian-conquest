@@ -245,12 +245,17 @@ pub fn build_guard_starbase_trace() -> CoreGameData {
     let mut base = BaseRecord::new_zeroed();
     base.set_base_id_raw(1);
     base.set_owner_empire_raw(1);
+    base.set_record_number_raw(1);
     base.set_coords_raw(TRACE_TARGET);
+    // At rest in orbit, as ECGAME leaves a base that is not moving.
+    base.set_at_rest_motion();
+    base.set_target_coords_raw(TRACE_TARGET);
+    base.set_target_depth_raw(1);
     game_data.bases = BaseDat {
         records: vec![base],
     };
-    // Count the placed base so newly commissioned starbases get a fresh id.
-    game_data.player.records[0].set_starbase_count_raw(1);
+    // The base heads player 1's chain.
+    game_data.player.records[0].set_first_base_record_raw(1);
 
     let fleet = &mut game_data.fleets.records[0];
     configure_cruiser_fleet(fleet);

@@ -796,7 +796,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     );
     assert_eq!(data.planets.records[0].stardock_kind_raw(0), 0);
     assert_eq!(data.planets.records[0].stardock_count_raw(0), 0);
-    assert_eq!(data.player.records[0].starbase_count_raw(), 1);
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
     assert_eq!(data.bases.records.len(), 1);
     let base = &data.bases.records[0];
     assert_eq!(base.base_id_raw(), 1);
@@ -1197,10 +1197,13 @@ fn planet_status_prefix_setter_preserves_hidden_tail_bytes() {
 fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
     let mut base1 = BaseRecord::new_zeroed();
     base1.set_owner_empire_raw(1);
+    base1.set_base_id_raw(1);
     let mut base2 = BaseRecord::new_zeroed();
     base2.set_owner_empire_raw(1);
+    base2.set_base_id_raw(2);
     let mut base3 = BaseRecord::new_zeroed();
     base3.set_owner_empire_raw(2);
+    base3.set_base_id_raw(1);
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
         planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
@@ -1255,22 +1258,25 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
             .contains(&"IPBM.DAT expected empty auxiliary baseline, got 3 records".to_string())
     );
 
-    let player2_starbase_before = data.player.records[1].starbase_count_raw();
-    let player3_starbase_before = data.player.records[2].starbase_count_raw();
-    let player4_starbase_before = data.player.records[3].starbase_count_raw();
+    let player2_starbase_before = data.player.records[1].first_base_record_raw();
+    let player3_starbase_before = data.player.records[2].first_base_record_raw();
+    let player4_starbase_before = data.player.records[3].first_base_record_raw();
     data.sync_player1_current_known_counts();
 
-    assert_eq!(data.player.records[0].starbase_count_raw(), 2);
+    // Player 1's chain now runs from record 1 (Starbase 1) to record 2.
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
+    assert_eq!(data.bases.records[0].next_base_link_raw(), 2);
+    assert_eq!(data.bases.records[1].previous_base_link_raw(), 1);
     assert_eq!(
-        data.player.records[1].starbase_count_raw(),
+        data.player.records[1].first_base_record_raw(),
         player2_starbase_before
     );
     assert_eq!(
-        data.player.records[2].starbase_count_raw(),
+        data.player.records[2].first_base_record_raw(),
         player3_starbase_before
     );
     assert_eq!(
-        data.player.records[3].starbase_count_raw(),
+        data.player.records[3].first_base_record_raw(),
         player4_starbase_before
     );
     assert_eq!(data.player.records[0].ipbm_count_raw(), 3);
@@ -1726,6 +1732,7 @@ fn core_game_data_conquest_baseline_errors_catch_changed_year() {
 fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutated_fields() {
     let mut base1 = BaseRecord::new_zeroed();
     base1.set_owner_empire_raw(1);
+    base1.set_base_id_raw(1);
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
         planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
@@ -1742,7 +1749,7 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.player.records[0].set_starbase_count_raw(9);
+    data.player.records[0].set_first_base_record_raw(9);
     data.player.records[0].set_ipbm_count_raw(9);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
@@ -1752,7 +1759,7 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
 
     data.sync_current_known_baseline_controls_and_counts();
 
-    assert_eq!(data.player.records[0].starbase_count_raw(), 1);
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
     assert_eq!(data.player.records[0].ipbm_count_raw(), 1);
     assert!(data.current_known_setup_baseline_errors().is_empty());
     assert!(data.current_known_conquest_baseline_errors().is_empty());
@@ -1830,7 +1837,7 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.player.records[0].set_starbase_count_raw(7);
+    data.player.records[0].set_first_base_record_raw(7);
     data.player.records[0].set_ipbm_count_raw(4);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.bases.records.push(BaseRecord::new_zeroed());
@@ -2055,7 +2062,7 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
     assert!((1..10).all(|slot| data.planets.records[14].build_kind_raw(slot) == 0));
 
     data.set_guard_starbase(1, 1, [0x10, 0x0D], 1, 1).unwrap();
-    assert_eq!(data.player.records[0].starbase_count_raw(), 1);
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
     assert_eq!(data.fleets.records[0].standing_order_code_raw(), 0x04);
     assert_eq!(
         data.fleets.records[0].standing_order_target_coords_raw(),
@@ -2632,7 +2639,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     assert_eq!(
         starbase_data.current_known_key_word_summary(),
         CurrentKnownKeyWordSummary {
-            player_starbase_count: 1,
+            player_first_base_record: 1,
             player_ipbm_count: 0,
             fleet1_local_slot: Some(1),
             fleet1_id: Some(1),

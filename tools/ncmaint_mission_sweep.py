@@ -71,6 +71,11 @@ MISSIONS = {
     15: Mission("move", HOME, CRUISER, (1, 0)),
 }
 
+# Mission 4 with the starbase over the unowned world instead of the home
+# world: with no friendly world beneath it, the base climbs to deep space in
+# the first year and its guards follow its depth (--deep-base).
+DEEP_BASE = Mission("move", WORLD, CRUISER, (1, 1), starbase=True)
+
 
 @dataclass(frozen=True)
 class Case:
@@ -78,13 +83,19 @@ class Case:
     speed: int
     offset: str  # "d3" = 3 sectors diagonally, "s3" = 3 sectors in x
     years: int
+    deep_base: bool = False
 
     @property
     def name(self) -> str:
-        return f"m{self.mission:02d}-v{self.speed}-{self.offset}"
+        suffix = "-deep" if self.deep_base else ""
+        return f"m{self.mission:02d}-v{self.speed}-{self.offset}{suffix}"
+
+    @property
+    def spec(self) -> Mission:
+        return DEEP_BASE if self.deep_base else MISSIONS[self.mission]
 
     def start(self) -> tuple[int, int]:
-        tx, ty = MISSIONS[self.mission].target
+        tx, ty = self.spec.target
         n = int(self.offset[1:])
         return (tx - n, ty - n) if self.offset[0] == "d" else (tx - n, ty)
 
@@ -155,13 +166,13 @@ def snapshot(directory: Path, year: int, target: tuple[int, int]) -> dict:
 
 
 def build_classic(case: Case, directory: Path) -> None:
-    mission = MISSIONS[case.mission]
+    mission = case.spec
     if directory.exists():
         shutil.rmtree(directory)
     directory.parent.mkdir(parents=True, exist_ok=True)
     nc("scenario-init-replayable", DEFAULT_BASELINE, directory, mission.scenario)
     if mission.starbase:
-        nc("guard-starbase-onebase", directory, *HOME)
+        nc("guard-starbase-onebase", directory, *mission.target)
     if mission.scenario == "bombard":
         # Park the scenario's own attacker at home, out of the way.
         nc("fleet-ships", directory, 3, *CRUISER)
@@ -193,14 +204,14 @@ def build_rust(case: Case, classic: Path, directory: Path) -> None:
     directory.mkdir(parents=True)
     for source in classic.glob("*.DAT"):
         shutil.copy2(source, directory / source.name)
-    if MISSIONS[case.mission].scout:
+    if case.spec.scout:
         patch_fleet(directory, 1, {0x24: 1})  # Rust counts scouts at 0x24
     nc("db-import", directory)
 
 
 def run_case(case: Case, work_root: Path, rust: bool) -> dict:
     root = work_root / case.name
-    target = MISSIONS[case.mission].target
+    target = case.spec.target
     classic = root / "classic"
     build_classic(case, classic)
     classic_rows = [snapshot(classic, 0, target)]
@@ -273,7 +284,14 @@ def parse_cases(args: argparse.Namespace) -> list[Case]:
     missions = [int(m) for m in args.missions.split(",")]
     speeds = [int(s) for s in args.speeds.split(",")]
     offsets = args.offsets.split(",")
-    return [Case(m, s, o, args.years) for m in missions for s in speeds for o in offsets]
+    if args.deep_base and missions != [4]:
+        raise SystemExit("--deep-base applies to mission 4 only")
+    return [
+        Case(m, s, o, args.years, args.deep_base)
+        for m in missions
+        for s in speeds
+        for o in offsets
+    ]
 
 
 def main() -> int:
@@ -285,6 +303,11 @@ def main() -> int:
     parser.add_argument("--jobs", type=int, default=4)
     parser.add_argument("--work-root", type=Path, default=DEFAULT_WORK_ROOT)
     parser.add_argument("--classic-only", action="store_true", help="skip the Rust engine")
+    parser.add_argument(
+        "--deep-base",
+        action="store_true",
+        help="mission 4 only: put the starbase over an unowned world, so it climbs to deep space",
+    )
     args = parser.parse_args()
     if not NC_CLI_BIN.exists():
         print(f"build nc-cli first: {NC_CLI_BIN}", file=sys.stderr)
