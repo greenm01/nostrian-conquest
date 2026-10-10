@@ -4,7 +4,7 @@ mod scoring;
 
 use nc_data::{
     CoreGameData, GameRng, GameStateBuilder, GameStateMutationError, PlanetRecord, RNG_TAG_MAPGEN,
-    map_size_for_player_count,
+    is_valid_player_count, map_size_for_player_count,
 };
 use placement::{generate_homeworlds, generate_neutral_worlds};
 use scoring::{all_systems_unique, score_map};
@@ -51,6 +51,7 @@ pub fn build_seeded_new_game(
     year: u16,
     seed: u64,
 ) -> Result<CoreGameData, GameStateMutationError> {
+    ensure_valid_player_count(player_count)?;
     let generated = generate_map(player_count, seed);
     let mut data = GameStateBuilder::new()
         .with_player_count(player_count)
@@ -73,6 +74,7 @@ pub fn build_seeded_initialized_game(
     year: u16,
     seed: u64,
 ) -> Result<CoreGameData, GameStateMutationError> {
+    ensure_valid_player_count(player_count)?;
     let generated = generate_map(player_count, seed);
     let mut data = GameStateBuilder::new()
         .with_player_count(player_count)
@@ -88,6 +90,15 @@ pub fn build_seeded_initialized_game(
     }
 
     Ok(data)
+}
+
+/// The builder would otherwise clamp the count and mismatch the generated map.
+fn ensure_valid_player_count(player_count: u8) -> Result<(), GameStateMutationError> {
+    if is_valid_player_count(player_count) {
+        Ok(())
+    } else {
+        Err(GameStateMutationError::InvalidPlayerCount { player_count })
+    }
 }
 
 pub fn generate_map(player_count: u8, seed: u64) -> GeneratedMap {

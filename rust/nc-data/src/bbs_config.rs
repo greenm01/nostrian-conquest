@@ -65,7 +65,7 @@ impl BbsGameConfig {
                 let players = u8::try_from(value).map_err(|_| {
                     BbsGameConfigError::Parse(format!("players out of u8 range: {value}"))
                 })?;
-                if !(1..=25).contains(&players) {
+                if !crate::is_valid_player_count(players) {
                     return Err(BbsGameConfigError::Parse(format!(
                         "players must be in 1..=25, got {players}"
                     )));

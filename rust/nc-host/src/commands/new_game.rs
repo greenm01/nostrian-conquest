@@ -57,6 +57,9 @@ pub fn run(args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let dir = dir.ok_or("missing game directory argument")?;
+    if !u8::try_from(players).is_ok_and(nc_data::is_valid_player_count) {
+        return Err(format!("--players must be in 1..=25, got {players}").into());
+    }
     let name = name.unwrap_or_else(|| {
         dir.file_name()
             .and_then(|n| n.to_str())

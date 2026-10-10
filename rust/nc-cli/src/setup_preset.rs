@@ -69,7 +69,7 @@ impl SetupPresetConfig {
     }
 
     pub fn validate(self) -> Result<Self, SetupPresetError> {
-        if !(1..=25).contains(&self.player_count) {
+        if !nc_data::is_valid_player_count(self.player_count) {
             return Err(SetupPresetError::Parse(format!(
                 "player_count must be in 1..=25, got {}",
                 self.player_count

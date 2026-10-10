@@ -127,7 +127,7 @@ fn parse_scenario_document(
         baseline: parse_baseline(root)?,
     };
 
-    if !(1..=25).contains(&metadata.player_count) {
+    if !nc_data::is_valid_player_count(metadata.player_count) {
         return Err(HarnessError::Validation(format!(
             "player_count must be 1-25, got {}",
             metadata.player_count

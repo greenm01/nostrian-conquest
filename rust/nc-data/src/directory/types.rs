@@ -245,6 +245,9 @@ pub enum GameDirectoryError {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GameStateMutationError {
+    InvalidPlayerCount {
+        player_count: u8,
+    },
     MissingBaseRecord {
         index_1_based: usize,
     },
@@ -514,6 +517,9 @@ impl std::fmt::Display for FleetOrderValidationError {
 impl std::fmt::Display for GameStateMutationError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::InvalidPlayerCount { player_count } => {
+                write!(f, "player count must be in 1..=25, got {player_count}")
+            }
             Self::MissingBaseRecord { index_1_based } => {
                 write!(f, "missing base record {}", index_1_based)
             }

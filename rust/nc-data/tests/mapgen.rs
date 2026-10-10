@@ -168,3 +168,19 @@ fn seeded_initialized_game_retains_active_campaign_builder_semantics() {
     assert_eq!(data.planets.records[0].planet_name(), "Player 1 HW");
     assert!(data.ecmaint_preflight_errors().is_empty());
 }
+
+#[test]
+fn player_count_validator_accepts_only_supported_counts() {
+    assert!(!nc_data::is_valid_player_count(0));
+    assert!(nc_data::is_valid_player_count(1));
+    assert!(nc_data::is_valid_player_count(25));
+    assert!(!nc_data::is_valid_player_count(26));
+}
+
+#[test]
+fn seeded_games_reject_unsupported_player_counts() {
+    for player_count in [0, 26, 255] {
+        assert!(build_seeded_new_game(player_count, 3000, 1).is_err());
+        assert!(build_seeded_initialized_game(player_count, 3000, 1).is_err());
+    }
+}

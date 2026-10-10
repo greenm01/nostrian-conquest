@@ -708,7 +708,7 @@ fn humanize_slug(slug: &str) -> String {
 
 fn parse_player_count(value: &str) -> Result<u8, Box<dyn std::error::Error>> {
     let player_count = value.parse::<u8>()?;
-    if !(1..=25).contains(&player_count) {
+    if !nc_data::is_valid_player_count(player_count) {
         return Err(format!("player_count must be 1-25, got {player_count}").into());
     }
     Ok(player_count)

@@ -1,3 +1,8 @@
+/// Games support 1..=25 players (the largest manual tier).
+pub fn is_valid_player_count(player_count: u8) -> bool {
+    (1..=25).contains(&player_count)
+}
+
 pub fn map_size_for_player_count(player_count: u8) -> u8 {
     match player_count {
         1..=4 => 18,
