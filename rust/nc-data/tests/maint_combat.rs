@@ -1059,7 +1059,8 @@ fn canonical_invade_failure_removes_attacker_armies_and_holds_planet() {
     assert_eq!(target.owner_empire_slot_raw(), 2);
     assert_eq!(target.ownership_status_raw(), 2);
     assert_eq!(target.army_count_raw(), 10);
-    assert_eq!(target.ground_batteries_raw(), 2);
+    // A lone destroyer's suppression fire cannot pay a battery's 20-hit DS.
+    assert_eq!(target.ground_batteries_raw(), 4);
 }
 
 #[test]
@@ -1144,13 +1145,15 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(attacker.army_count(), 0);
     assert_eq!(target.owner_empire_slot_raw(), 1);
     assert_eq!(target.ownership_status_raw(), 2);
-    assert_eq!(target.ground_batteries_raw(), 0);
-    assert_eq!(target.army_count_raw(), 12);
+    // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
+    // both batteries survive, fire on the landing, and pass to the victor.
+    assert_eq!(target.ground_batteries_raw(), 2);
+    assert_eq!(target.army_count_raw(), 10);
     assert_eq!(events.ownership_change_events.len(), 1);
     assert_eq!(events.assault_report_events.len(), 1);
     assert_eq!(events.assault_report_events[0].attacker_army_losses, 3);
-    assert_eq!(events.assault_report_events[0].transport_army_losses, 0);
-    assert_eq!(events.assault_report_events[0].defender_battery_losses, 2);
+    assert_eq!(events.assault_report_events[0].transport_army_losses, 2);
+    assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 3);
     assert_eq!(events.ownership_change_events[0].planet_idx, 13);
     assert_eq!(
@@ -1204,11 +1207,12 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
     assert_eq!(target.owner_empire_slot_raw(), 2);
     assert_eq!(target.ownership_status_raw(), 2);
     assert_eq!(target.army_count_raw(), 10);
-    assert_eq!(target.ground_batteries_raw(), 0);
+    // Cover fire from one destroyer cannot pay a battery's 20-hit DS.
+    assert_eq!(target.ground_batteries_raw(), 2);
     assert_eq!(events.assault_report_events.len(), 1);
-    assert_eq!(events.assault_report_events[0].attacker_army_losses, 4);
-    assert_eq!(events.assault_report_events[0].transport_army_losses, 0);
-    assert_eq!(events.assault_report_events[0].defender_battery_losses, 2);
+    assert_eq!(events.assault_report_events[0].attacker_army_losses, 2);
+    assert_eq!(events.assault_report_events[0].transport_army_losses, 2);
+    assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 0);
     assert!(
         events
