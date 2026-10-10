@@ -3029,8 +3029,10 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     fleet.set_troop_transport_count(1);
     fleet.set_army_count(3);
     fleet.set_rules_of_engagement(6);
-    game_data.planets.records[0].set_build_count_raw(0, 9);
-    game_data.planets.records[0].set_build_kind_raw(0, 0xfe);
+    // Planet record 15 is Empire #1's world; invalid-input reports for
+    // unowned planets are not delivered to anyone.
+    game_data.planets.records[14].set_build_count_raw(0, 9);
+    game_data.planets.records[14].set_build_kind_raw(0, 0xfe);
     game_data.player.records[0].set_tax_rate_raw(255);
     game_data
         .save(&target)
@@ -3048,8 +3050,8 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     assert_eq!(reloaded.fleets.records[0].army_count(), 1);
     assert_eq!(reloaded.fleets.records[0].rules_of_engagement(), 0);
     assert_eq!(reloaded.player.records[0].tax_rate(), 100);
-    assert_eq!(reloaded.planets.records[0].build_count_raw(0), 0);
-    assert_eq!(reloaded.planets.records[0].build_kind_raw(0), 0);
+    assert_eq!(reloaded.planets.records[14].build_count_raw(0), 0);
+    assert_eq!(reloaded.planets.records[14].build_kind_raw(0), 0);
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let result_text = decode_chunked_report(&results);
