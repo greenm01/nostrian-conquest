@@ -37,7 +37,32 @@ pub struct DoorTerminal {
     frame_seq: u64,
     decoder: DoorInputDecoder,
     io: Box<dyn DoorIo>,
+    session_deadline: Option<Instant>,
+    idle_limit: Option<Duration>,
+    last_key_at: Instant,
 }
+
+/// Why a door read stopped waiting for the caller.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DoorTimeout {
+    /// The session time limit from the dropfile or `--timeout` ran out.
+    SessionLimit,
+    /// No key arrived within the campaign's idle limit.
+    Idle,
+}
+
+impl std::fmt::Display for DoorTimeout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::SessionLimit => {
+                "Your time limit for this session has expired. Returning to the BBS."
+            }
+            Self::Idle => "No key was pressed for too long. Returning to the BBS.",
+        })
+    }
+}
+
+impl std::error::Error for DoorTimeout {}
 
 impl DoorTerminal {
     pub fn with_transport_and_color_mode(
@@ -58,7 +83,25 @@ impl DoorTerminal {
             frame_seq: 0,
             decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
+            session_deadline: None,
+            idle_limit: None,
+            last_key_at: Instant::now(),
         })
+    }
+
+    /// Stop waiting for keys once `session_limit` has passed since this call
+    /// or no key has arrived for `idle_limit`; `read_key` then fails with
+    /// [`DoorTimeout`].
+    pub fn with_input_limits(
+        mut self,
+        session_limit: Option<Duration>,
+        idle_limit: Option<Duration>,
+    ) -> Self {
+        let now = Instant::now();
+        self.session_deadline = session_limit.map(|limit| now + limit);
+        self.idle_limit = idle_limit;
+        self.last_key_at = now;
+        self
     }
 
     pub fn with_encoding_and_color_mode(
@@ -84,8 +127,27 @@ impl Terminal for DoorTerminal {
     }
 
     fn read_key(&mut self) -> Result<KeyEvent, Box<dyn std::error::Error>> {
-        self.decoder
-            .next_key(self.io.as_mut(), self.trace_dir.as_deref())
+        let session = self
+            .session_deadline
+            .map(|deadline| (deadline, DoorTimeout::SessionLimit));
+        let idle = self
+            .idle_limit
+            .map(|limit| (self.last_key_at + limit, DoorTimeout::Idle));
+        let limit = [session, idle]
+            .into_iter()
+            .flatten()
+            .min_by_key(|(deadline, _)| *deadline);
+        let Some(key) = self.decoder.next_key(
+            self.io.as_mut(),
+            self.trace_dir.as_deref(),
+            limit.map(|(deadline, _)| deadline),
+        )?
+        else {
+            let timeout = limit.map_or(DoorTimeout::SessionLimit, |(_, timeout)| timeout);
+            return Err(Box::new(timeout));
+        };
+        self.last_key_at = Instant::now();
+        Ok(key)
     }
 
     fn dump_text_capture(&mut self, text: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -277,18 +339,20 @@ impl DoorInputDecoder {
         }
     }
 
+    /// Return the next key, or `None` once `deadline` passes with no key.
     fn next_key(
         &mut self,
         input: &mut dyn DoorIo,
         trace_dir: Option<&Path>,
-    ) -> Result<KeyEvent, Box<dyn std::error::Error>> {
+        deadline: Option<Instant>,
+    ) -> Result<Option<KeyEvent>, Box<dyn std::error::Error>> {
         loop {
             match try_decode_complete(&self.pending) {
                 ParseResult::Event(event, consumed) => {
                     drain_pending(&mut self.pending, consumed);
                     self.sequence_deadline = None;
                     self.orphaned_escape_suffix_deadline = None;
-                    return Ok(event);
+                    return Ok(Some(event));
                 }
                 ParseResult::Drop(consumed) => {
                     drain_pending(&mut self.pending, consumed);
@@ -298,7 +362,14 @@ impl DoorInputDecoder {
                 ParseResult::NeedMore => {
                     if self.pending.is_empty() {
                         self.sequence_deadline = None;
-                        self.read_burst(input, trace_dir, None)?;
+                        let wait_ms = match deadline {
+                            Some(deadline) => match millis_until(deadline) {
+                                0 => return Ok(None),
+                                ms => Some(ms),
+                            },
+                            None => None,
+                        };
+                        self.read_burst(input, trace_dir, wait_ms)?;
                         continue;
                     }
                     let timeout_ms = self.remaining_sequence_timeout_ms();
@@ -311,7 +382,7 @@ impl DoorInputDecoder {
                                 orphaned_suffix_deadline(event, &self.pending, consumed);
                             drain_pending(&mut self.pending, consumed);
                             self.sequence_deadline = None;
-                            return Ok(event);
+                            return Ok(Some(event));
                         }
                         ParseResult::Drop(consumed) => {
                             drain_pending(&mut self.pending, consumed);
@@ -371,13 +442,19 @@ impl DoorInputDecoder {
         let deadline = self
             .sequence_deadline
             .get_or_insert_with(|| Instant::now() + Duration::from_millis(timeout as u64));
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        let ms = remaining.as_millis().min(i32::MAX as u128) as i32;
-        if ms == 0 && !remaining.is_zero() {
-            1
-        } else {
-            ms
-        }
+        millis_until(*deadline)
+    }
+}
+
+/// Milliseconds left until `deadline` as a poll timeout: 0 only once it has
+/// passed, rounded up to 1 inside the last millisecond.
+fn millis_until(deadline: Instant) -> i32 {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    let ms = remaining.as_millis().min(i32::MAX as u128) as i32;
+    if ms == 0 && !remaining.is_zero() {
+        1
+    } else {
+        ms
     }
 }
 
@@ -816,6 +893,18 @@ pub fn read_scripted_door_keys_for_test(
     reads: &[(u64, &[u8])],
     transport: DoorTransport,
 ) -> Vec<KeyEvent> {
+    read_scripted_door_session_for_test(reads, transport, None, None).0
+}
+
+/// Like [`read_scripted_door_keys_for_test`], with session and idle limits.
+/// Also returns the timeout that ended the reads, if any.
+#[doc(hidden)]
+pub fn read_scripted_door_session_for_test(
+    reads: &[(u64, &[u8])],
+    transport: DoorTransport,
+    session_limit: Option<Duration>,
+    idle_limit: Option<Duration>,
+) -> (Vec<KeyEvent>, Option<DoorTimeout>) {
     let mut terminal = DoorTerminal {
         encoding: OutputEncoding::Cp437,
         color_mode: ColorMode::Ansi16,
@@ -824,12 +913,18 @@ pub fn read_scripted_door_keys_for_test(
         frame_seq: 0,
         decoder: DoorInputDecoder::new(transport),
         io: Box::new(ScriptedDoorIo::new(reads)),
-    };
-    let mut keys = Vec::new();
-    while let Ok(key) = terminal.read_key() {
-        keys.push(key);
+        session_deadline: None,
+        idle_limit: None,
+        last_key_at: Instant::now(),
     }
-    keys
+    .with_input_limits(session_limit, idle_limit);
+    let mut keys = Vec::new();
+    loop {
+        match terminal.read_key() {
+            Ok(key) => keys.push(key),
+            Err(err) => return (keys, err.downcast_ref::<DoorTimeout>().copied()),
+        }
+    }
 }
 
 struct ScriptedDoorIo {

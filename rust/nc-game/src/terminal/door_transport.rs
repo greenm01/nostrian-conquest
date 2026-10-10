@@ -260,6 +260,11 @@ impl DoorIo for SocketDoorIo {
     }
 }
 
+/// `POLLERR | POLLHUP | POLLNVAL`: a hung-up or failed fd counts as ready so
+/// the following read reports the closure instead of the wait spinning.
+#[cfg(unix)]
+const POLL_CLOSED: i16 = 0x0008 | 0x0010 | 0x0020;
+
 #[cfg(unix)]
 fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
     use std::os::fd::AsRawFd;
@@ -287,7 +292,7 @@ fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
     loop {
         let rc = unsafe { poll(fds.as_mut_ptr(), fds.len(), timeout_ms) };
         if rc >= 0 {
-            return Ok(rc > 0 && (fds[0].revents & POLLIN) != 0);
+            return Ok(rc > 0 && (fds[0].revents & (POLLIN | POLL_CLOSED)) != 0);
         }
         let err = io::Error::last_os_error();
         if err.kind() == io::ErrorKind::Interrupted {
@@ -347,7 +352,8 @@ fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
                 return Ok(false);
             }
             if err.kind() == io::ErrorKind::BrokenPipe {
-                return Ok(false);
+                // Closed pipe: the read reports EOF instead of waiting.
+                return Ok(true);
             }
             std::thread::sleep(Duration::from_millis(5));
         }
@@ -487,7 +493,7 @@ fn socket_wait(
     loop {
         let rc = unsafe { poll(fds.as_mut_ptr(), fds.len(), timeout_ms) };
         if rc >= 0 {
-            return Ok(rc > 0 && (fds[0].revents & events) != 0);
+            return Ok(rc > 0 && (fds[0].revents & (events | POLL_CLOSED)) != 0);
         }
         let err = io::Error::last_os_error();
         if err.kind() == io::ErrorKind::Interrupted {

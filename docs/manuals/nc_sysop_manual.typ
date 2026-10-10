@@ -439,6 +439,13 @@ flags always override drop file values. When `--dropfile` is given and
 
 `--timeout <minutes>` sets a session time limit independently of a drop file.
 
+In door mode the time limit is enforced: when it runs out, `nc-door` shows a
+short message and exits normally, just as if the caller had quit. Game state
+is saved as each action is applied, so nothing is lost. A non-BBS campaign
+played through door mode also ends the session after
+`session_max_idle_minutes` without a keypress. BBS campaigns have no idle
+setting; the time limit bounds an abandoned session instead.
+
 Reserve seats in the BBS campaign's `config.kdl` when you want the caller
 alias to determine the empire automatically. You can either edit the file
 directly or use:
@@ -730,7 +737,7 @@ Interactive client flags:
 - *`--socket-descriptor <value>`:* Native Windows door socket handle. Mainly
   for Synchronet-style socket door launches.
 - *`--timeout <minutes>`:* Session time limit in minutes. It overrides any
-  drop file value.
+  drop file value. Door mode ends the session when it runs out.
 - *`--export-root <path>`:* Optional map or export staging root for local or
   BBS file handoff.
 - *`--queue-dir <path>`:* Override turn queue directory. Default:

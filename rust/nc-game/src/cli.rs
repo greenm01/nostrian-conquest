@@ -1,6 +1,7 @@
 use std::io::IsTerminal;
 use std::io::{self, ErrorKind};
 use std::path::PathBuf;
+use std::time::Duration;
 
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode};
 
@@ -10,7 +11,7 @@ use crate::screen::ScreenGeometry;
 use crate::terminal::ColorMode;
 use crate::terminal::OutputEncoding;
 use crate::terminal::Terminal;
-use crate::terminal::door::{DoorTerminal, DoorTransport};
+use crate::terminal::door::{DoorTerminal, DoorTimeout, DoorTransport};
 use crate::terminal::stdout::StdoutTerminal;
 use nc_data::{BbsGameConfig, CampaignStore, CampaignStoreError};
 use nc_session::launch::{
@@ -55,7 +56,8 @@ pub fn run(args: impl IntoIterator<Item = String>) -> Result<(), Box<dyn std::er
             return Err(err);
         }
     };
-    let mut terminal = build_terminal(&parsed)?;
+    let idle_limit = app.game_config.idle_timeout_secs().map(Duration::from_secs);
+    let mut terminal = build_terminal(&parsed, idle_limit)?;
 
     let stdout_is_terminal = std::io::stdout().is_terminal();
     let stdin_is_terminal = std::io::stdin().is_terminal();
@@ -115,9 +117,10 @@ fn prepare_launch(parsed: &ParsedLaunchArgs) -> Result<App, Box<dyn std::error::
 
 fn build_terminal(
     parsed: &ParsedLaunchArgs,
+    idle_limit: Option<Duration>,
 ) -> Result<Box<dyn Terminal>, Box<dyn std::error::Error>> {
     if parsed.use_door_terminal {
-        Ok(Box::new(build_door_terminal(parsed)?))
+        Ok(Box::new(build_door_terminal(parsed, idle_limit)?))
     } else {
         Ok(Box::new(StdoutTerminal::with_encoding_and_color_mode(
             parsed.encoding,
@@ -126,20 +129,27 @@ fn build_terminal(
     }
 }
 
-fn build_door_terminal(parsed: &ParsedLaunchArgs) -> io::Result<DoorTerminal> {
-    DoorTerminal::with_transport_and_color_mode(
+fn build_door_terminal(
+    parsed: &ParsedLaunchArgs,
+    idle_limit: Option<Duration>,
+) -> io::Result<DoorTerminal> {
+    let session_limit = parsed
+        .session_timeout_secs
+        .map(|secs| Duration::from_secs(u64::from(secs)));
+    Ok(DoorTerminal::with_transport_and_color_mode(
         parsed.encoding,
         parsed.color_mode,
         parsed.screen_geometry,
         parsed.door_transport,
-    )
+    )?
+    .with_input_limits(session_limit, idle_limit))
 }
 
 fn show_door_startup_error(parsed: &ParsedLaunchArgs, error: &(dyn std::error::Error + 'static)) {
     if !parsed.use_door_terminal {
         return;
     }
-    let Ok(mut terminal) = build_door_terminal(parsed) else {
+    let Ok(mut terminal) = build_door_terminal(parsed, None) else {
         return;
     };
     let message = format_door_startup_error(error);
@@ -224,20 +234,48 @@ fn run_interactive(
     };
     let result = run_interactive_inner(app, terminal);
     drop(_guard);
-    let cleanup_result = terminal.clear_and_restore();
-    result.and(cleanup_result)
+    match result {
+        Ok(SessionEnd::Quit | SessionEnd::InputClosed) => terminal.clear_and_restore(),
+        // The caller may be gone (half-open socket); the message is best
+        // effort and must not turn a normal exit into an error.
+        Ok(SessionEnd::TimedOut(timeout)) => {
+            let _ = terminal.dump_text_capture(&timeout.to_string());
+            Ok(())
+        }
+        Err(err) => {
+            let _ = terminal.clear_and_restore();
+            Err(err)
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum SessionEnd {
+    Quit,
+    InputClosed,
+    TimedOut(DoorTimeout),
 }
 
 fn run_interactive_inner(
     app: &mut App,
     terminal: &mut dyn Terminal,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<SessionEnd, Box<dyn std::error::Error>> {
     loop {
         render_with_logging(app, terminal)?;
         let key = match terminal.read_key() {
             Ok(key) => key,
-            Err(err) if is_closed_input_error(err.as_ref()) => return Ok(()),
-            Err(err) => return Err(err),
+            Err(err) if is_closed_input_error(err.as_ref()) => return Ok(SessionEnd::InputClosed),
+            Err(err) => match err.downcast_ref::<DoorTimeout>() {
+                Some(timeout) => {
+                    tracing::info!(
+                        player = app.player.record_index_1_based,
+                        reason = ?timeout,
+                        "door session timed out"
+                    );
+                    return Ok(SessionEnd::TimedOut(*timeout));
+                }
+                None => return Err(err),
+            },
         };
         let screen_before = app.current_screen();
         tracing::debug!(
@@ -276,7 +314,7 @@ fn run_interactive_inner(
             "nc-game action applied"
         );
         if matches!(outcome, AppOutcome::Quit) {
-            return Ok(());
+            return Ok(SessionEnd::Quit);
         }
     }
 }
@@ -804,14 +842,14 @@ mod tests {
     use super::{
         LOOPBACK_DOOR_HOST, LaunchPlayerBinding, LaunchPlayerBindingSource, ParsedLaunchArgs,
         apply_launch_context, format_door_startup_error, local_exit_lines,
-        resolve_launch_player_binding, run_interactive_inner, select_door_transport,
-        should_emit_local_exit_attribution,
+        resolve_launch_player_binding, run_interactive, run_interactive_inner,
+        select_door_transport, should_emit_local_exit_attribution,
     };
     use crate::app::{App, AppConfig, RuntimeConfig};
     use crate::domains::fleet::state::FleetCommandContext;
     use crate::screen::ScreenGeometry;
     use crate::screen::ScreenId;
-    use crate::terminal::door::DoorTransport;
+    use crate::terminal::door::{DoorTimeout, DoorTransport};
     use crate::terminal::{ColorMode, OutputEncoding, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use nc_compat::import_directory_snapshot;
@@ -941,6 +979,8 @@ mod tests {
     struct ScriptedTerminal {
         keys: VecDeque<KeyEvent>,
         frames: Vec<Vec<String>>,
+        captures: Vec<String>,
+        timeout_after_keys: Option<DoorTimeout>,
     }
 
     impl ScriptedTerminal {
@@ -948,6 +988,8 @@ mod tests {
             Self {
                 keys: keys.into_iter().collect(),
                 frames: Vec::new(),
+                captures: Vec::new(),
+                timeout_after_keys: None,
             }
         }
     }
@@ -965,17 +1007,21 @@ mod tests {
             Ok(())
         }
 
-        fn dump_text_capture(&mut self, _text: &str) -> Result<(), Box<dyn std::error::Error>> {
+        fn dump_text_capture(&mut self, text: &str) -> Result<(), Box<dyn std::error::Error>> {
+            self.captures.push(text.to_string());
             Ok(())
         }
 
         fn read_key(&mut self) -> Result<KeyEvent, Box<dyn std::error::Error>> {
-            self.keys.pop_front().ok_or_else(|| {
-                Box::new(io::Error::new(
-                    io::ErrorKind::UnexpectedEof,
-                    "end of scripted keys",
-                )) as Box<dyn std::error::Error>
-            })
+            self.keys
+                .pop_front()
+                .ok_or_else(|| match self.timeout_after_keys {
+                    Some(timeout) => Box::new(timeout) as Box<dyn std::error::Error>,
+                    None => Box::new(io::Error::new(
+                        io::ErrorKind::UnexpectedEof,
+                        "end of scripted keys",
+                    )) as Box<dyn std::error::Error>,
+                })
         }
 
         fn clear_and_restore(&mut self) -> Result<(), Box<dyn std::error::Error>> {
@@ -1152,6 +1198,31 @@ mod tests {
             terminal.frames
         );
         assert_eq!(app.current_screen, ScreenId::FleetList);
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn door_timeout_ends_the_session_cleanly_with_a_message() {
+        let game_dir = temp_first_time_game_copy();
+        let config = AppConfig {
+            game_dir: game_dir.clone(),
+            player_record_index_1_based: 1,
+            export_root: None,
+            queue_dir: None,
+            session_timeout_secs: None,
+            game_config: RuntimeConfig::default(),
+        };
+        for timeout in [DoorTimeout::SessionLimit, DoorTimeout::Idle] {
+            let mut app = App::load(config.clone()).expect("app should load");
+            let mut terminal = ScriptedTerminal::new([key(KeyCode::Char('x'))]);
+            terminal.timeout_after_keys = Some(timeout);
+
+            run_interactive(&mut app, &mut terminal, false)
+                .expect("a timed-out door session is a normal exit");
+
+            assert_eq!(terminal.captures, vec![timeout.to_string()]);
+        }
 
         let _ = fs::remove_dir_all(&game_dir);
     }

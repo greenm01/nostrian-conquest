@@ -1,11 +1,12 @@
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use nc_game::screen::{FirstTimeMenuScreen, PlayfieldBuffer, ScreenGeometry};
-use nc_game::terminal::door::DoorTransport;
 use nc_game::terminal::door::{
-    decode_fragmented_input_for_test, decode_input_bytes_for_test, decode_input_stream_for_test,
-    decode_timed_input_stream_for_test, read_scripted_door_keys_for_test,
+    DoorTimeout, DoorTransport, decode_fragmented_input_for_test, decode_input_bytes_for_test,
+    decode_input_stream_for_test, decode_timed_input_stream_for_test,
+    read_scripted_door_keys_for_test, read_scripted_door_session_for_test,
     serialize_playfield_frame,
 };
 use nc_game::terminal::{ColorMode, OutputEncoding};
@@ -570,4 +571,73 @@ fn dos_extended_keys_still_decode_when_not_preceded_by_cr() {
         stdio_keys(&[(0, b"\r\xe0H")]),
         vec![plain(KeyCode::Enter), plain(KeyCode::Up)]
     );
+}
+
+fn ms(value: u64) -> Option<Duration> {
+    Some(Duration::from_millis(value))
+}
+
+#[test]
+fn idle_limit_ends_a_silent_door_session() {
+    let started = Instant::now();
+    let got = read_scripted_door_session_for_test(&[], DoorTransport::Stdio, None, ms(150));
+    assert_eq!(got, (vec![], Some(DoorTimeout::Idle)));
+    assert!(started.elapsed() >= Duration::from_millis(150));
+}
+
+#[test]
+fn each_key_restarts_the_idle_limit() {
+    let started = Instant::now();
+    let got = read_scripted_door_session_for_test(
+        &[(100, b"a"), (200, b"b")],
+        DoorTransport::Stdio,
+        None,
+        ms(150),
+    );
+    assert_eq!(
+        got,
+        (
+            vec![plain(KeyCode::Char('a')), plain(KeyCode::Char('b'))],
+            Some(DoorTimeout::Idle)
+        )
+    );
+    assert!(started.elapsed() >= Duration::from_millis(350));
+}
+
+#[test]
+fn telnet_traffic_does_not_restart_the_idle_limit() {
+    let got = read_scripted_door_session_for_test(
+        &[
+            (50, b"\xff\xfa\x1f\x00\x50\x00\x18\xff\xf0"),
+            (100, b"\xff\xf1"),
+            (400, b"a"),
+        ],
+        SOCKET,
+        None,
+        ms(200),
+    );
+    assert_eq!(got, (vec![], Some(DoorTimeout::Idle)));
+}
+
+#[test]
+fn session_limit_ends_the_door_session_even_while_typing() {
+    let got = read_scripted_door_session_for_test(
+        &[(0, b"a"), (100, b"b"), (400, b"c")],
+        DoorTransport::Stdio,
+        ms(250),
+        ms(1000),
+    );
+    assert_eq!(
+        got,
+        (
+            vec![plain(KeyCode::Char('a')), plain(KeyCode::Char('b'))],
+            Some(DoorTimeout::SessionLimit)
+        )
+    );
+}
+
+#[test]
+fn door_session_without_limits_reads_until_input_closes() {
+    let got = read_scripted_door_session_for_test(&[(300, b"a")], DoorTransport::Stdio, None, None);
+    assert_eq!(got, (vec![plain(KeyCode::Char('a'))], None));
 }
