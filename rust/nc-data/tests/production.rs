@@ -8,7 +8,7 @@ use nc_data::{
     BaseDat, BaseRecord, CoreGameData, EmpireProductionRankingSort, FleetDat, IpbmDat, PlanetDat,
     PlayerDat, decode_real48, encode_real48, starbase_growth_bonus_percent,
 };
-use nc_engine::{build_seeded_new_game, run_maintenance_turn};
+use nc_engine::{build_seeded_initialized_game, build_seeded_new_game, run_maintenance_turn};
 
 #[test]
 fn decode_real48_matches_current_known_homeworld_values() {
@@ -108,6 +108,32 @@ fn total_available_points_matches_first_turn_tax_budget() {
 fn homeworld_present_production_clamps_to_potential() {
     let planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x86], 10, 4);
     assert_eq!(planet.present_production_points(), Some(100));
+}
+
+#[test]
+fn named_homeworld_present_production_reads_its_stored_value() {
+    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 10, 4);
+    planet.set_planet_name("Dust Bowl");
+    planet.set_factories_raw([0x00, 0x00, 0x00, 0x00, 0x48, 0x86]);
+    assert_eq!(planet.present_production_points(), Some(50));
+}
+
+#[test]
+fn naming_a_homeworld_seed_keeps_its_full_production() {
+    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x86], 10, 4);
+    planet.set_planet_name("Codex Prime");
+    assert_eq!(planet.present_production_points(), Some(100));
+}
+
+#[test]
+fn joined_homeworld_high_tax_penalty_compounds_each_turn() {
+    let mut game = build_seeded_initialized_game(4, 3000, 1515).expect("seeded game should build");
+    game.player.records[1].set_tax_rate_raw(100);
+
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+    assert_eq!(game.planets.records[1].present_production_points(), Some(93));
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+    assert_eq!(game.planets.records[1].present_production_points(), Some(87));
 }
 
 #[test]

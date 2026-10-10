@@ -86,6 +86,14 @@ fn setup_classic_probe_planets(target: &Path) {
     // Keep the foreign-intel storage probe independent of mapgen drift: the
     // scout/view tests below intentionally target planet record 5 at (9,2).
     game_data.planets.records[4].set_coords_raw([9, 2]);
+    // The probe worlds reuse the homeworld-seed marker (potential high byte
+    // 135) after being named, so give them full production explicitly.
+    for planet in &mut game_data.planets.records {
+        if planet.is_homeworld_seed_ignoring_name() {
+            let potential = planet.potential_production_points();
+            let _ = planet.set_present_production_points(potential);
+        }
+    }
     let planet_intel_by_viewer = (1..=game_data.conquest.player_count())
         .map(|viewer_empire_id| {
             store
