@@ -17,11 +17,13 @@ from rules import CLASSES
 
 # Value vector layout for solve() and the sampled records: outcome
 # probabilities, exchanges, build points destroyed and crippled per side,
-# withdrawal flags, then units destroyed per class for each side.
+# withdrawal flags, units destroyed per class for each side, then whether
+# at least half of each side's transports survived (mission survival).
 P_A, P_B, P_MUTUAL, P_STALEMATE, ROUNDS, LOSS_A, LOSS_B, CRIP_A, CRIP_B, WD_A, WD_B = range(11)
 LOST_A = slice(11, 11 + len(CLASSES))
 LOST_B = slice(11 + len(CLASSES), 11 + 2 * len(CLASSES))
-VECTOR = 11 + 2 * len(CLASSES)
+VIABLE_A, VIABLE_B = 11 + 2 * len(CLASSES), 12 + 2 * len(CLASSES)
+VECTOR = 13 + 2 * len(CLASSES)
 OUTCOMES = ('A', 'B', 'mutual', 'stalemate')
 
 
@@ -74,6 +76,12 @@ class Model:
         self.crit_order = sorted(k, key=lambda i: self.DS[i])
         self.mixed = [CLASSES.index(c) for c in ('DD', 'CA', 'BB') if c in CLASSES]
         self.sb = CLASSES.index('SB')
+        self.tt = CLASSES.index('TT')
+        # The finishing step of a crippled unit costs its DS again, or half
+        # of it (rounded down like crippled AS, at least 1) under
+        # crippled_ds='half'.
+        self.FIN = [max(1, d // 2) if rules['crippled_ds'] == 'half' else d for d in self.DS]
+        self.KILL = [d + f for d, f in zip(self.DS, self.FIN)]
 
     # ----- strengths -------------------------------------------------
     def class_as(self, n, c, i):
@@ -143,7 +151,7 @@ class Model:
                     progress = True
             if all(n[i] == c[i] for i in order):
                 for i in order:
-                    d = self.DS[i]
+                    d = self.FIN[i]
                     if hits < d:
                         continue
                     k = min(c[i], hits // d)
@@ -157,12 +165,13 @@ class Model:
         return hits
 
     def _execute(self, n, c, hits, order_fn):
-        """Finish crippled at 1xDS, destroy nominal at 2xDS, in order."""
+        """Finish crippled at the finishing cost, destroy nominal at DS plus
+        the finishing cost (2xDS unless crippled_ds is 'half'), in order."""
         while hits > 0:
             order = order_fn(n)
             progress = False
             for i in order:
-                d = self.DS[i]
+                d, kill = self.FIN[i], self.KILL[i]
                 if d == 0 or hits < d:
                     continue
                 k = min(c[i], hits // d)
@@ -171,12 +180,12 @@ class Model:
                     n[i] -= k
                     hits -= k * d
                     progress = True
-                if hits < 2 * d:
+                if hits < kill:
                     continue
-                k = min(n[i] - c[i], hits // (2 * d))
+                k = min(n[i] - c[i], hits // kill)
                 if k:
                     n[i] -= k
-                    hits -= 2 * k * d
+                    hits -= k * kill
                     progress = True
             if not progress:
                 break
@@ -187,11 +196,12 @@ class Model:
         DS affordable step in the current target set, finishing a crippled
         unit before crippling a nominal one, until it can afford none."""
         while hits > 0:
-            eligible = [i for i in order_fn(n) if n[i] > 0 and hits >= self.DS[i]]
+            cost = lambda i: self.FIN[i] if c[i] else self.DS[i]
+            eligible = [i for i in order_fn(n) if n[i] > 0 and hits >= cost(i)]
             if not eligible:
                 break
             i = max(eligible, key=lambda i: self.DS[i])
-            hits -= self.DS[i]
+            hits -= cost(i)
             if c[i]:
                 c[i] -= 1
                 n[i] -= 1
@@ -217,13 +227,13 @@ class Model:
                 return i, self.DS[i], True
         for i in order:
             if c[i] > 0:
-                return i, self.DS[i], False
+                return i, self.FIN[i], False
         return None
 
     def _residual_exe(self, n, c, hits, order_fn):
         for i in order_fn(n):
             if n[i] > 0:
-                return i, (self.DS[i] if c[i] else 2 * self.DS[i]), c[i] > 0
+                return i, (self.FIN[i] if c[i] else self.KILL[i]), c[i] > 0
         return None
 
     def apply(self, side, sup, exe, crit, exposed=False):
@@ -395,46 +405,44 @@ class Model:
         v[WD_B] = float(wd_b)
         v[LOST_A] = [a0[0][i] - a[0][i] for i in range(len(CLASSES))]
         v[LOST_B] = [b0[0][i] - b[0][i] for i in range(len(CLASSES))]
+        v[VIABLE_A] = float(2 * a[0][self.tt] >= a0[0][self.tt])
+        v[VIABLE_B] = float(2 * b[0][self.tt] >= b0[0][self.tt])
         return v
 
     def solve(self, a0, b0, roe=(10, 10), limit=100_000):
-        """Exact expectations over every roll path. Raises TooLarge past
-        `limit` distinct states. A state that cannot change is a stalemate
-        at the round cap; there is no other cap."""
+        """Exact expectations over every roll path, round by round up to the
+        round cap, past which `step` ends an undecided battle as a
+        stalemate. Raises TooLarge past `limit` distinct (state, round)
+        pairs. The round is part of the key, so no state leads back to
+        itself: a state that cannot change is followed once per remaining
+        round and reaches the cap like any other."""
         memo = {}
+        exchanges = {}
         sys.setrecursionlimit(max(sys.getrecursionlimit(), 50_000))
 
-        def key_of(a, b, r):
-            return (a, b, min(r, 4) if self.rules['roe'] == 'lock3' else 1)
+        def exchange(a, b, pressed=False, expose_a=False, expose_b=False):
+            key = (a, b, pressed, expose_a, expose_b)
+            if key not in exchanges:
+                exchanges[key] = self.exchange(a, b, pressed, expose_a, expose_b)
+            return exchanges[key]
 
         def value(a, b, r):
-            key = key_of(a, b, r)
+            key = (a, b, r)
             if key in memo:
                 return memo[key]
             if len(memo) >= limit:
                 raise TooLarge(len(memo))
-            memo[key] = None
             total = [0.0] * VECTOR
-            p_self = 0.0
-            for p, fought, nxt in self.step(a, b, key[2], roe, self.exchange):
+            for p, fought, nxt in self.step(a, b, r, roe, exchange):
                 total[ROUNDS] += p * fought
                 if nxt[0] == 'terminal':
                     for i, x in enumerate(self.terminal(a0, b0, *nxt[1:])):
                         total[i] += p * x
-                elif key_of(*nxt[1:]) == key:
-                    p_self += p
                 else:
                     for i, x in enumerate(value(*nxt[1:])):
                         total[i] += p * x
-            if p_self >= 1.0 - 1e-12:
-                result = self.terminal(a0, b0, a, b, False, False)
-                result[P_A] = result[P_B] = result[P_MUTUAL] = 0.0
-                result[P_STALEMATE] = 1.0
-                result[ROUNDS] = float(self.rules['round_cap'])
-            else:
-                result = [x / (1.0 - p_self) for x in total]
-            memo[key] = result
-            return result
+            memo[key] = total
+            return total
 
         result = value(a0, b0, 1)
         return result, len(memo)
