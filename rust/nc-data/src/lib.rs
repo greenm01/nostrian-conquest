@@ -140,7 +140,7 @@ pub use storage::{
     IntelTier, PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
     SeatBindSource, TerminalOutcome, WinnerState,
 };
-pub use support::{ParseError, decode_real48, encode_real48, is_classic_text_char};
+pub use support::{ParseError, is_classic_text_char};
 pub use turns::{
     FleetTurnAction, FleetTurnBlock, MAX_MESSAGE_BODY_CHARS, MAX_MESSAGE_SUBJECT_CHARS,
     PlanetTurnAction, PlanetTurnBlock, TurnDiplomacyDirective, TurnMessage, TurnSubmission,

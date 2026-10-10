@@ -1,6 +1,6 @@
 # EC Classic File Formats
 
-Every byte of the classic data files, as ECMAINT, ECGAME, and ECUTIL use them. The Rust codecs in nc-classic follow this.
+Every byte of the classic data files, as ECMAINT, ECGAME, and ECUTIL use them. The Rust codecs in `rust/nc-data/src/classic/` follow this.
 
 ## CONQUEST.DAT
 
@@ -142,8 +142,7 @@ section.
 Every real in PLANETS, FLEETS, and BASES is a Turbo Pascal 6-byte `Real`:
 exponent byte first (bias 129, 0 means 0.0), then a 39-bit mantissa
 little-endian with the sign in the top bit of the last byte. The Rust `Real48`
-type uses this layout. `support::decode_real48` puts the exponent in the last
-byte; no classic field uses that layout.
+type uses this layout.
 
 The fixture column below summarizes all 880 records in the 44 PLANETS.DAT
 files under `fixtures/` and `original/v1.5`.

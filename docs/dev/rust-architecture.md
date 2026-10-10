@@ -53,7 +53,18 @@ The Rust workspace should follow pragmatic data-oriented design:
 
 It is responsible for:
 
-- explicit runtime record/file layouts under `records/`
+- the typed game state under `model/`: `Player`, `Planet`, `Fleet`,
+  `Starbase`, `Ipbm`, `Setup`, and `Conquest`, plain structs with `pub`
+  fields named by meaning; each field's doc comment gives its classic offset
+- the classic `.DAT` codecs under `classic/`: `decode_*` and `encode_*` per
+  record and parse/serialize per file, following
+  [ec-file-formats.md](ec-file-formats.md). `classic::ignored_bytes` lists
+  the bytes no classic program reads; the model does not carry them, and
+  `encode` writes zeros or the documented constant there. t039 phase 4 moves
+  the codecs to `nc-classic`, which nc-data cannot depend on
+- the `*Record` shims under `records/`: thin wrappers over the model that
+  keep the accessor API call sites still use. They go in t039 phase 5;
+  shims that only exist for that are marked `// t039: remove in phase 5`
 - `CoreGameData` and shared multi-file directory semantics
 - semantic SQLite runtime persistence and snapshot/history loading
 - shared validators, normalizers, report/mail/intel state, and typed helpers
@@ -67,11 +78,8 @@ Operationally:
 - the live runtime DB is authoritative for normal play
 - snapshot storage should prefer explicit typed columns over opaque grouped
   residue
-- classic byte layouts belong at the explicit compat/oracle boundary, not in
-  normal gameplay code
-- when classic-derived fields are not yet fully named semantically, keep them
-  as narrowly-scoped explicit runtime fields rather than regressing to whole
-  record blobs or byte-offset tables
+- classic byte layouts belong in the codecs, not in normal gameplay code;
+  a byte comparison against a classic file masks `classic::ignored_bytes`
 
 ### `nc-engine`
 
@@ -216,7 +224,9 @@ rust/
 ├── nc-classic
 │   └── src/          # low-level classic record/codecs
 ├── nc-data
-│   ├── src/records/   # explicit binary/runtime record layouts
+│   ├── src/model/     # typed game state
+│   ├── src/classic/   # .DAT codecs (moving to nc-classic)
+│   ├── src/records/   # accessor shims over the model (pending removal)
 │   ├── src/storage/   # SQLite campaign store + snapshot bridge modules
 │   └── shared runtime/support modules
 ├── nc-engine
