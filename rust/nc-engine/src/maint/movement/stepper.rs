@@ -1,6 +1,6 @@
 use crate::navigation::{
-    advance_exact_position, plan_route_with_intel, rounded_coords_from_exact,
-    visible_hazard_intel_is_empty,
+    advance_exact_position, decode_movement_fraction, encode_movement_fraction,
+    plan_route_with_intel, rounded_coords_from_exact, visible_hazard_intel_is_empty,
 };
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use nc_data::fleet_motion_state::{
@@ -175,8 +175,7 @@ pub(super) fn process_single_fleet_movement(
     let sub_acc_prev: u32 = if is_at_rest {
         0
     } else {
-        let i8_val = raw_0f as i8;
-        (9i32 + i8_val as i32 * 3 / 2) as u32
+        decode_movement_fraction(raw_0f)
     };
 
     let sub_acc_new = sub_acc_prev + (speed as u32) * 8;
@@ -242,8 +241,8 @@ pub(super) fn process_single_fleet_movement(
 
     store_exact_position(&mut game_data.fleets.records[fleet_idx], exact_end);
 
-    let new_0f = ((sub_acc_after as i32 - 9) * 2 / 3) as i8;
-    game_data.fleets.records[fleet_idx].set_movement_fraction_raw(new_0f as u8);
+    game_data.fleets.records[fleet_idx]
+        .set_movement_fraction_raw(encode_movement_fraction(sub_acc_after));
 
     Ok(false)
 }

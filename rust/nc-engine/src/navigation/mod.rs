@@ -7,6 +7,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use nc_data::{CoreGameData, Order, PlanetIntelSnapshot};
 
+pub(crate) use eta::{decode_movement_fraction, encode_movement_fraction};
 pub(crate) use geometry::{
     advance_exact_position, rounded_coords_from_exact, visible_hazard_intel_is_empty,
 };
