@@ -52,8 +52,8 @@ fn guard_starbase_related_accessors_expose_linkage_words() {
     assert_eq!(fleet.local_slot_word_raw(), 1);
     assert_eq!(fleet.next_fleet_link_word_raw(), 2);
     assert_eq!(fleet.fleet_id_word_raw(), 1);
+    assert_eq!(fleet.world_target_flag_raw(), 1);
     assert_eq!(fleet.guard_starbase_index_raw(), 1);
-    assert_eq!(fleet.guard_starbase_enable_raw(), 1);
 
     let base_bytes = read_ecmaint_starbase_pre_fixture("BASES.DAT");
     let bases = BaseDat::parse(&base_bytes).unwrap();
@@ -2032,29 +2032,6 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
 }
 
 #[test]
-fn set_fleet_order_clears_aux_bytes_the_order_does_not_use() {
-    let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
-    };
-    // The ECUTIL starting fleets carry a join-host byte of 1; ECGAME clears
-    // it for a move, and classic ECMAINT finishes a move a year late with it.
-    assert_eq!(data.fleets.records[0].mission_aux_bytes()[0], 1);
-
-    let aux = data
-        .set_fleet_order(1, 1, Order::MoveOnly.to_raw(), [0x0F, 0x0D], None, None)
-        .unwrap();
-
-    assert_eq!(aux, [0, 0]);
-    assert_eq!(data.fleets.records[0].mission_aux_bytes(), [0, 0]);
-}
-
-#[test]
 fn set_fleet_order_rejects_speed_above_current_maximum() {
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
@@ -2381,6 +2358,80 @@ fn set_join_fleet_order_targets_host_fleet_and_records_host_id() {
 }
 
 #[test]
+fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
+    let mut data = CoreGameData {
+        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+    };
+    data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
+    let base = data.bases.records[0].clone();
+    let host_id = data.fleets.records[0].fleet_id();
+    let owner = data.fleets.records[1].owner_empire_raw();
+    let planet_coords = |predicate: &dyn Fn(u8) -> bool| {
+        data.planets
+            .records
+            .iter()
+            .find(|planet| predicate(planet.owner_empire_slot_raw()))
+            .map(|planet| planet.coords_raw())
+            .expect("fixture planet")
+    };
+    let owned = planet_coords(&|planet_owner| planet_owner == owner);
+    let foreign = planet_coords(&|planet_owner| planet_owner != 0 && planet_owner != owner);
+    let sector = [1, 1];
+    {
+        let fleet = &mut data.fleets.records[1];
+        fleet.set_scout_count(1);
+        fleet.set_destroyer_count(1);
+        fleet.set_troop_transport_count(1);
+        fleet.set_army_count(1);
+        fleet.set_etac_count(1);
+    }
+
+    let cases = [
+        (Order::HoldPosition, sector, None, [1, 0]),
+        (Order::MoveOnly, sector, None, [0, 0]),
+        (Order::SeekHome, owned, None, [1, 0]),
+        (Order::PatrolSector, sector, None, [0, 0]),
+        (
+            Order::GuardStarbase,
+            base.coords_raw(),
+            Some(base.base_id_raw()),
+            [1, base.base_id_raw()],
+        ),
+        (Order::GuardBlockadeWorld, owned, None, [1, 0]),
+        (Order::BombardWorld, foreign, None, [1, 0]),
+        (Order::InvadeWorld, foreign, None, [1, 0]),
+        (Order::BlitzWorld, foreign, None, [1, 0]),
+        (Order::ViewWorld, foreign, None, [1, 0]),
+        (Order::ScoutSector, sector, None, [0, 0]),
+        (Order::ScoutSolarSystem, foreign, None, [1, 0]),
+        (Order::ColonizeWorld, foreign, None, [1, 0]),
+        (Order::JoinAnotherFleet, sector, Some(host_id), [1, host_id]),
+        (Order::RendezvousSector, sector, None, [0, 0]),
+        (Order::Salvage, owned, None, [1, 0]),
+    ];
+    assert_eq!(cases.len(), 16);
+    for (order, target, aux1, expected) in cases {
+        data.fleets.records[1].set_mission_aux_bytes([0xfe, 0xfe]);
+        let aux = data
+            .set_fleet_order(2, 1, order.to_raw(), target, None, aux1)
+            .unwrap_or_else(|err| panic!("{order:?}: {err}"));
+        assert_eq!(aux, expected, "{order:?}");
+        assert_eq!(
+            data.fleets.records[1].mission_aux_bytes(),
+            expected,
+            "{order:?}"
+        );
+        assert_eq!(order.targets_world(), expected[0] == 1, "{order:?}");
+    }
+}
+
+#[test]
 fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
@@ -2404,8 +2455,8 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
         current_speed,
         Order::GuardStarbase.to_raw(),
         base.coords_raw(),
-        Some(base.base_id_raw()),
         Some(1),
+        Some(base.base_id_raw()),
     )
     .unwrap();
 
@@ -2419,7 +2470,7 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
     );
     assert_eq!(
         data.fleets.records[1].mission_aux_bytes(),
-        [base.base_id_raw(), 1]
+        [1, base.base_id_raw()]
     );
 }
 
@@ -2446,8 +2497,8 @@ fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
         current_speed,
         Order::JoinAnotherFleet.to_raw(),
         host.current_location_coords_raw(),
-        Some(host.fleet_id()),
         None,
+        Some(host.fleet_id()),
     )
     .unwrap();
 
@@ -2528,7 +2579,6 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
             fleet1_local_slot: Some(1),
             fleet1_id: Some(1),
             fleet1_guard_index: Some(1),
-            fleet1_guard_enable: Some(1),
             fleet1_target: Some([0x10, 0x0D]),
             base1_summary: Some(1),
             base1_id: Some(1),
@@ -2549,7 +2599,6 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
             fleet_local_slot: 1,
             fleet_id: 1,
             guard_index: 1,
-            guard_enable: 1,
             target_coords: [0x10, 0x0D],
             selected_base_present: true,
             selected_base_summary_word: Some(1),
@@ -2613,7 +2662,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         post_data
             .guard_starbase_linkage_errors_current_known(1, 1)
             .iter()
-            .any(|error| error.contains("guard enable expected 0x01"))
+            .any(|error| error.contains("guard starbase index expected non-zero"))
     );
 }
 

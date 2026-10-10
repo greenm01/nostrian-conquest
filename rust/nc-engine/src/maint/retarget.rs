@@ -144,20 +144,6 @@ pub(super) fn refresh_guard_starbase_targets(
         let owner_empire_raw = fleet.owner_empire_raw();
         let reporting_fleet_number = Some(fleet.local_slot_word_raw() as u8);
         let base_id = fleet.guard_starbase_index_raw();
-        if fleet.guard_starbase_enable_raw() == 0 {
-            fleet.set_standing_order_kind(Order::HoldPosition);
-            fleet.set_current_speed(0);
-            fleet.set_standing_order_target_coords_raw(current_coords);
-            events.push(MissionRetargetEvent::Abandoned {
-                fleet_idx,
-                reporting_fleet_number,
-                owner_empire_raw,
-                mission: Mission::GuardStarbase,
-                previous_target_coords,
-                coords: current_coords,
-            });
-            continue;
-        }
         let new_target_coords = active_bases_by_id
             .get(&(owner_empire_raw, base_id))
             .copied()

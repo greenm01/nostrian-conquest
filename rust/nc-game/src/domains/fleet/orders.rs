@@ -735,7 +735,7 @@ impl App {
                             );
                             return;
                         };
-                        (base.coords, base.base_id, 1)
+                        (base.coords, Some(1), Some(base.base_id))
                     }
                     FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_fleet_group_host_fleet_for_current_mission()
@@ -845,7 +845,9 @@ impl App {
                     self.fleet.group_status = Some(err);
                     return;
                 }
-                if let Err(err) = self.apply_fleet_group_order(mission_code, destination, 0, 0) {
+                if let Err(err) =
+                    self.apply_fleet_group_order(mission_code, destination, None, None)
+                {
                     self.fleet.group_status = Some(err.to_string());
                 }
             }
@@ -876,7 +878,7 @@ impl App {
                             );
                             return Ok(());
                         };
-                        (base.coords, base.base_id, 1)
+                        (base.coords, Some(1), Some(base.base_id))
                     }
                     FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_fleet_order_host_fleet_for_current_mission()
@@ -971,7 +973,9 @@ impl App {
                     self.fleet.order_status = Some(err);
                     return Ok(());
                 }
-                if let Err(err) = self.apply_fleet_single_order(mission_code, destination, 0, 0) {
+                if let Err(err) =
+                    self.apply_fleet_single_order(mission_code, destination, None, None)
+                {
                     self.fleet.order_status = Some(err.to_string());
                 }
             }
@@ -1044,7 +1048,9 @@ impl App {
                     self.clear_fleet_order_target_inputs();
                     self.fleet.order_status = None;
                     self.current_screen = ScreenId::FleetOrder;
-                } else if let Err(err) = self.apply_fleet_single_order(mission_code, [0, 0], 0, 0) {
+                } else if let Err(err) =
+                    self.apply_fleet_single_order(mission_code, [0, 0], None, None)
+                {
                     self.current_screen = ScreenId::FleetMissionPicker;
                     self.fleet.mission_picker_caller = Some(match self.fleet.command_context {
                         FleetCommandContext::Menu => {
@@ -1080,7 +1086,9 @@ impl App {
                         | FleetTargetInputKind::FleetId
                         | FleetTargetInputKind::None => FleetGroupOrderMode::EnteringTarget,
                     };
-                } else if let Err(err) = self.apply_fleet_group_order(mission_code, [0, 0], 0, 0) {
+                } else if let Err(err) =
+                    self.apply_fleet_group_order(mission_code, [0, 0], None, None)
+                {
                     self.current_screen = ScreenId::FleetMissionPicker;
                     self.fleet.mission_picker_caller = Some(FleetMissionPickerCaller::GroupOrder);
                     self.fleet.mission_picker_status = Some(err.to_string());
@@ -1652,8 +1660,8 @@ impl App {
         selected_rows: &[FleetRow],
         mission_code: u8,
         target: [u8; 2],
-        aux0: u8,
-        aux1: u8,
+        aux0: Option<u8>,
+        aux1: Option<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let selected_records = selected_rows
             .iter()
@@ -1682,8 +1690,8 @@ impl App {
                 } else {
                     [0, 0]
                 },
-                Some(aux0),
-                Some(aux1),
+                aux0,
+                aux1,
             )?;
         }
         self.save_game_data()?;
@@ -1694,8 +1702,8 @@ impl App {
         &mut self,
         mission_code: u8,
         target: [u8; 2],
-        aux0: u8,
-        aux1: u8,
+        aux0: Option<u8>,
+        aux1: Option<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let selected_rows = self.fleet_group_selected_rows();
         if selected_rows.is_empty() {
@@ -1752,8 +1760,8 @@ impl App {
         &mut self,
         mission_code: u8,
         target: [u8; 2],
-        aux0: u8,
-        aux1: u8,
+        aux0: Option<u8>,
+        aux1: Option<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let Some(selected_row) = self.fleet_order_selected_row() else {
             self.open_fleet_menu_prompt(

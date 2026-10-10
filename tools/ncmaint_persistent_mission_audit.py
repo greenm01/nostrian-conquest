@@ -144,6 +144,7 @@ DEFAULT_CASES = [
         target=(11, 10),
         turns=3,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(0, 0),
     ),
     PersistentMissionProbeCase(
         name="guard-starbase-speed3-axial",
@@ -164,6 +165,7 @@ DEFAULT_CASES = [
         target=(11, 8),
         turns=3,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(1, 0),
     ),
 ]
 

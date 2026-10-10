@@ -12,7 +12,6 @@ pub fn guard_fleet_numbers_for_starbase(
         .filter(|fleet| {
             fleet.owner_empire_raw() as usize == player_record_index_1_based
                 && fleet.standing_order_kind() == Order::GuardStarbase
-                && fleet.guard_starbase_enable_raw() != 0
                 && fleet.guard_starbase_index_raw() == base_id
         })
         .map(|fleet| fleet.local_slot_word_raw())

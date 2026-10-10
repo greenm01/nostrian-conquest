@@ -154,6 +154,7 @@ DEFAULT_CASES = [
         target=(16, 10),
         turns=3,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(0, 0),
     ),
     TransitScratchProbeCase(
         name="move-only-speed3-diagonal",
@@ -163,6 +164,7 @@ DEFAULT_CASES = [
         target=(16, 16),
         turns=4,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(0, 0),
     ),
     TransitScratchProbeCase(
         name="move-only-speed1-diagonal",
@@ -172,6 +174,7 @@ DEFAULT_CASES = [
         target=(13, 13),
         turns=6,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(0, 0),
     ),
     TransitScratchProbeCase(
         name="move-only-speed3-shallow",
@@ -181,6 +184,7 @@ DEFAULT_CASES = [
         target=(16, 12),
         turns=3,
         ships=(0, 0, 1, 0, 0, 0, 0),
+        aux=(0, 0),
     ),
     TransitScratchProbeCase(
         name="patrol-speed3-axial",
@@ -190,7 +194,7 @@ DEFAULT_CASES = [
         target=(11, 10),
         turns=3,
         ships=(0, 0, 1, 0, 0, 0, 0),
-        aux=(1, 0),
+        aux=(0, 0),
     ),
     TransitScratchProbeCase(
         name="guard-starbase-speed3-axial",

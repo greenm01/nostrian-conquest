@@ -52,12 +52,6 @@ impl CoreGameData {
                         record.standing_order_code_raw()
                     ));
                 }
-                if record.guard_starbase_enable_raw() != 0x01 {
-                    errors.push(format!(
-                        "FLEET[1].guard enable expected 0x01, got {:#04x}",
-                        record.guard_starbase_enable_raw()
-                    ));
-                }
                 if record.guard_starbase_index_raw() == 0 {
                     errors.push("FLEET[1].guard starbase index expected non-zero".to_string());
                 }
@@ -190,7 +184,6 @@ impl CoreGameData {
             fleet_local_slot: fleet.local_slot_word_raw(),
             fleet_id: fleet.fleet_id_word_raw(),
             guard_index: fleet.guard_starbase_index_raw(),
-            guard_enable: fleet.guard_starbase_enable_raw(),
             target_coords: fleet.standing_order_target_coords_raw(),
             selected_base_present: selected_base.is_some(),
             selected_base_summary_word: selected_base.map(|base| base.summary_word_raw()),
@@ -232,12 +225,6 @@ impl CoreGameData {
             errors.push(format!(
                 "FLEET[{}].order expected 0x04, got {:#04x}",
                 fleet_record_index_1_based, summary.fleet_order
-            ));
-        }
-        if summary.guard_enable != 0x01 {
-            errors.push(format!(
-                "FLEET[{}].guard enable expected 0x01, got {:#04x}",
-                fleet_record_index_1_based, summary.guard_enable
             ));
         }
         if summary.guard_index == 0 {

@@ -1016,7 +1016,7 @@ fn test_guard_starbase_retargets_to_live_base_coords() {
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw([9, 8]);
     fleet.set_current_speed(3);
-    fleet.set_mission_aux_bytes([3, 1]);
+    fleet.set_mission_aux_bytes([1, 3]);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1025,7 +1025,7 @@ fn test_guard_starbase_retargets_to_live_base_coords() {
         [12, 8]
     );
     assert_eq!(game_data.fleets.records[1].current_speed(), 3);
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 1]);
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
     assert!(events.mission_retarget_events.iter().any(|event| {
         matches!(
             event,
@@ -1057,7 +1057,7 @@ fn test_guard_starbase_abandons_when_linked_base_is_missing() {
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw([9, 8]);
     fleet.set_current_speed(3);
-    fleet.set_mission_aux_bytes([3, 1]);
+    fleet.set_mission_aux_bytes([1, 3]);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1104,7 +1104,7 @@ fn test_guard_starbase_persists_after_arrival() {
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw([11, 8]);
     fleet.set_current_speed(3);
-    fleet.set_mission_aux_bytes([3, 1]);
+    fleet.set_mission_aux_bytes([1, 3]);
     fleet.raw[0x0d] = 0x80;
     fleet.raw[0x0f] = 0;
     fleet.raw[0x19] = 0x80;
@@ -1124,7 +1124,7 @@ fn test_guard_starbase_persists_after_arrival() {
         game_data.fleets.records[1].standing_order_target_coords_raw(),
         [11, 8]
     );
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 1]);
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
     assert_eq!(game_data.fleets.records[1].raw[0x0d], 0x7b);
     assert_eq!(game_data.fleets.records[1].raw[0x0e], 0x00);
     assert_eq!(game_data.fleets.records[1].raw[0x0f], 0x84);
@@ -1156,7 +1156,7 @@ fn test_guard_starbase_with_zero_index_stays_armed_when_target_base_exists() {
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw([11, 8]);
     fleet.set_current_speed(0);
-    fleet.set_mission_aux_bytes([0, 1]);
+    fleet.set_mission_aux_bytes([0, 0]);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1165,7 +1165,7 @@ fn test_guard_starbase_with_zero_index_stays_armed_when_target_base_exists() {
         Order::GuardStarbase
     );
     assert_eq!(game_data.fleets.records[1].current_speed(), 0);
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 1]);
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 0]);
     assert!(!events.mission_retarget_events.iter().any(|event| {
         matches!(
             event,
@@ -1188,7 +1188,7 @@ fn test_guard_starbase_with_zero_index_abandons_when_target_base_is_missing() {
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw([11, 8]);
     fleet.set_current_speed(0);
-    fleet.set_mission_aux_bytes([0, 1]);
+    fleet.set_mission_aux_bytes([0, 0]);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1197,7 +1197,7 @@ fn test_guard_starbase_with_zero_index_abandons_when_target_base_is_missing() {
         Order::HoldPosition
     );
     assert_eq!(game_data.fleets.records[1].current_speed(), 0);
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 1]);
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 0]);
     assert!(events.mission_retarget_events.iter().any(|event| {
         matches!(
             event,
@@ -1448,6 +1448,62 @@ fn test_join_merge_occurs_without_combat_merge_flag() {
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
     assert_eq!(game_data.fleets.records.len(), fleet_count_before - 1);
+    assert!(
+        events
+            .fleet_merge_events
+            .iter()
+            .any(|event| { event.kind == Mission::JoinAnotherFleet && !event.survivor_side })
+    );
+}
+
+#[test]
+fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
+    // ECGAME stores Join as 0x22 = 1 (world/fleet target flag) and 0x23 = host id.
+    let mut game_data = load_fixture("ecmaint-post");
+    game_data.player.records[0].raw[0x00] = 0x00;
+
+    let host = &mut game_data.fleets.records[2];
+    host.set_current_location_coords_raw([10, 10]);
+    host.set_standing_order_kind(Order::HoldPosition);
+    host.set_standing_order_target_coords_raw([10, 10]);
+    host.set_current_speed(0);
+    let host_id = game_data.fleets.records[2].fleet_id();
+    assert_ne!(
+        host_id, 1,
+        "host id must differ from the 0x22 world-target flag"
+    );
+
+    let joiner = &mut game_data.fleets.records[1];
+    joiner.set_current_location_coords_raw([7, 10]);
+    joiner.set_standing_order_kind(Order::JoinAnotherFleet);
+    joiner.set_standing_order_target_coords_raw([10, 10]);
+    joiner.set_mission_aux_bytes([1, host_id]);
+    joiner.set_current_speed(3);
+    joiner.raw[0x0d] = 0x80;
+    joiner.raw[0x0f] = 0;
+    joiner.raw[0x19] = 0x80;
+    assert_eq!(joiner.join_host_fleet_id_raw(), host_id);
+
+    let fleet_count_before = game_data.fleets.records.len();
+    run_maintenance_turn(&mut game_data).expect("first maintenance turn should succeed");
+
+    let joiner = &game_data.fleets.records[1];
+    assert_eq!(joiner.standing_order_kind(), Order::JoinAnotherFleet);
+    assert_eq!(joiner.mission_aux_bytes(), [1, host_id]);
+    assert_ne!(
+        joiner.current_location_coords_raw(),
+        [7, 10],
+        "joiner should move toward the host on the first turn"
+    );
+
+    let events =
+        run_maintenance_turn(&mut game_data).expect("second maintenance turn should succeed");
+
+    assert_eq!(
+        game_data.fleets.records.len(),
+        fleet_count_before - 1,
+        "joiner should merge into the host once it arrives"
+    );
     assert!(
         events
             .fleet_merge_events

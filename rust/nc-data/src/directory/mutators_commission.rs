@@ -326,7 +326,7 @@ impl CoreGameData {
         reset_motion_state_for_new_orders(fleet);
         fleet.set_standing_order_kind(Order::GuardStarbase);
         fleet.set_standing_order_target_coords_raw(target);
-        fleet.set_mission_aux_bytes([0x01, 0x01]);
+        fleet.set_mission_aux_bytes([0x01, base_id]);
 
         let base_summary_word = fleet.local_slot_word_raw();
         let base_chain_word = fleet.fleet_id_word_raw();
