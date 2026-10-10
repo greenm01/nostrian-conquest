@@ -205,3 +205,10 @@ Review NC's economy (`docs/dev/economics.md`, the manual's Economy chapter
 and Appendix A) against classic's decoded economy (t050), ec4x's economy,
 and the game-balance findings from the combat review; decide what to keep
 and what to change. Starts after the combat mechanics work is settled.
+
+Design constraints (user, 2026-10-10): the economy stays simple for the
+player, with the tax rate as the one control; useful mechanisms may run
+under the hood. The user designed ec4x's economy. No investment or research
+budgets and no new economic orders as a first step. Codex's analysis of
+classic EC against VBAM and ec4x on that basis is an input to this task,
+kept as an investigation note.
