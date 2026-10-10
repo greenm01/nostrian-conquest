@@ -94,6 +94,19 @@ impl Order {
         }
     }
 
+    /// ECGAME writes `0x22` as 1 for every order whose target is a world
+    /// or fleet and 0 for orders that target a bare sector.
+    pub fn targets_world(self) -> bool {
+        !matches!(
+            self,
+            Self::MoveOnly
+                | Self::PatrolSector
+                | Self::ScoutSector
+                | Self::RendezvousSector
+                | Self::Unknown(_)
+        )
+    }
+
     pub fn display_label(self) -> &'static str {
         match self {
             Self::HoldPosition => "Hold position",
@@ -271,16 +284,22 @@ impl FleetRecord {
     pub fn mission_aux_bytes(&self) -> [u8; 2] {
         [self.raw[0x22], self.raw[0x23]]
     }
-    pub fn join_host_fleet_id_raw(&self) -> u8 {
+    pub fn world_target_flag_raw(&self) -> u8 {
         self.raw[0x22]
+    }
+    pub fn mission_id_raw(&self) -> u8 {
+        self.raw[0x23]
+    }
+    pub fn set_mission_id_raw(&mut self, value: u8) {
+        self.raw[0x23] = value;
+    }
+    pub fn join_host_fleet_id_raw(&self) -> u8 {
+        self.raw[0x23]
     }
     pub fn set_join_host_fleet_id_raw(&mut self, value: u8) {
-        self.raw[0x22] = value;
+        self.raw[0x23] = value;
     }
     pub fn guard_starbase_index_raw(&self) -> u8 {
-        self.raw[0x22]
-    }
-    pub fn guard_starbase_enable_raw(&self) -> u8 {
         self.raw[0x23]
     }
     pub fn set_mission_aux_bytes(&mut self, value: [u8; 2]) {

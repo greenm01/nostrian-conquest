@@ -105,11 +105,10 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
         fleet1.fleet_id_word_raw()
     );
     println!(
-        "  fleet[1].order={:#04x} target={:?} guard_index={} guard_enable={}",
+        "  fleet[1].order={:#04x} target={:?} guard_index={}",
         fleet1.standing_order_code_raw(),
         fleet1.standing_order_target_coords_raw(),
-        fleet1.guard_starbase_index_raw(),
-        fleet1.guard_starbase_enable_raw()
+        fleet1.guard_starbase_index_raw()
     );
     if let Ok(linkage) = data.guard_starbase_linkage_summary_current_known(1, 1) {
         println!(

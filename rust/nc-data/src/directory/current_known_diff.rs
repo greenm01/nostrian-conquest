@@ -29,7 +29,6 @@ impl CoreGameData {
             fleet1_local_slot: fleet1.map(|record| record.local_slot_word_raw()),
             fleet1_id: fleet1.map(|record| record.fleet_id_word_raw()),
             fleet1_guard_index: fleet1.map(|record| record.guard_starbase_index_raw()),
-            fleet1_guard_enable: fleet1.map(|record| record.guard_starbase_enable_raw()),
             fleet1_target: fleet1.map(|record| record.standing_order_target_coords_raw()),
             base1_summary: base1.map(|record| record.summary_word_raw()),
             base1_id: base1.map(|record| record.base_id_raw()),

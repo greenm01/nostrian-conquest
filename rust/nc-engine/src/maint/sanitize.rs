@@ -80,7 +80,6 @@ pub(super) fn sanitize_invalid_player_inputs(
                             fleet.set_standing_order_kind(Order::HoldPosition);
                             fleet.set_current_speed(0);
                             fleet.set_standing_order_target_coords_raw(coords);
-                            fleet.set_join_host_fleet_id_raw(0);
                             fleet.set_mission_aux_bytes([0, 0]);
                         }
                         events.push(InvalidPlayerStateEvent::FleetMission {

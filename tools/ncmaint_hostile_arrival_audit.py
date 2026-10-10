@@ -209,6 +209,8 @@ def configure_probe_dir(target_dir: Path, case: HostileArrivalProbeCase) -> None
                 str(case.order_code),
                 str(case.target[0]),
                 str(case.target[1]),
+                "1",
+                "0",
             ]
         )
 

@@ -250,6 +250,8 @@ pub fn build_guard_starbase_trace() -> CoreGameData {
     game_data.bases = BaseDat {
         records: vec![base],
     };
+    // Count the placed base so newly commissioned starbases get a fresh id.
+    game_data.player.records[0].set_starbase_count_raw(1);
 
     let fleet = &mut game_data.fleets.records[0];
     configure_cruiser_fleet(fleet);

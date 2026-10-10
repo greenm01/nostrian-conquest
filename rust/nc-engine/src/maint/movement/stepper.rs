@@ -141,9 +141,10 @@ pub(super) fn process_single_fleet_movement(
     };
 
     if order == Order::GuardStarbase {
-        // Classic clears the guard-starbase index byte on the first maintenance pass and
-        // keeps later mission continuity keyed from the active base at the guarded target.
-        game_data.fleets.records[fleet_idx].set_join_host_fleet_id_raw(0x00);
+        // Clears the 0x22 world-target flag on every maintenance pass while keeping the
+        // starbase id in 0x23; pending phase 0 of t031 to confirm classic really does it.
+        let record = &mut game_data.fleets.records[fleet_idx];
+        record.set_mission_aux_bytes([0x00, record.mission_id_raw()]);
     }
 
     if speed == 0 {

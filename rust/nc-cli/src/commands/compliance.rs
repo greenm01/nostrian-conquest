@@ -58,16 +58,15 @@ pub(crate) fn print_compliance_report(dir: &Path) -> Result<(), Box<dyn std::err
             linkage.selected_base_owner_empire
         );
     }
-    if let (Some(local_slot), Some(fleet_id), Some(guard_index), Some(guard_enable), Some(target)) = (
+    if let (Some(local_slot), Some(fleet_id), Some(guard_index), Some(target)) = (
         summary.fleet1_local_slot,
         summary.fleet1_id,
         summary.fleet1_guard_index,
-        summary.fleet1_guard_enable,
         summary.fleet1_target,
     ) {
         println!(
-            "  fleet1.local_slot={} fleet1.id={} fleet1.guard={}/{} target={:?}",
-            local_slot, fleet_id, guard_index, guard_enable, target
+            "  fleet1.local_slot={} fleet1.id={} fleet1.guard={} target={:?}",
+            local_slot, fleet_id, guard_index, target
         );
     }
     if let (Some(summary_word), Some(base_id), Some(chain), Some(coords)) = (

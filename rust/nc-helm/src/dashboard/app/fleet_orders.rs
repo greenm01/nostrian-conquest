@@ -473,7 +473,7 @@ impl DashApp {
                             );
                             return Ok(());
                         };
-                        (base.coords, base.base_id, 1)
+                        (base.coords, Some(1), Some(base.base_id))
                     }
                     nc_engine::FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_host_fleet_for_current_mission() else {
@@ -487,7 +487,7 @@ impl DashApp {
                             _ => self.apply_fleet_single_join_order(host),
                         };
                     }
-                    nc_engine::FleetTargetInputKind::None => ([0, 0], 0, 0),
+                    nc_engine::FleetTargetInputKind::None => ([0, 0], None, None),
                 };
                 if let Err(err) = self.validate_fleet_target_for_mission(mission_code, destination)
                 {
@@ -576,9 +576,9 @@ impl DashApp {
                 }
                 match self.fleet_overlay.order_scope {
                     FleetOrderScope::Group => {
-                        self.apply_fleet_group_order(mission_code, destination, 0, 0)
+                        self.apply_fleet_group_order(mission_code, destination, None, None)
                     }
-                    _ => self.apply_fleet_single_order(mission_code, destination, 0, 0),
+                    _ => self.apply_fleet_single_order(mission_code, destination, None, None),
                 }
             }
             _ => Ok(()),
@@ -1457,8 +1457,8 @@ impl DashApp {
         &mut self,
         mission_code: u8,
         target: [u8; 2],
-        aux0: u8,
-        aux1: u8,
+        aux0: Option<u8>,
+        aux1: Option<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let Some(selected_row) = self.selected_fleet_order_row() else {
             self.fleet_overlay.order_status =
@@ -1480,16 +1480,16 @@ impl DashApp {
             speed,
             mission_code,
             target,
-            Some(aux0),
-            Some(aux1),
+            aux0,
+            aux1,
         )?;
         self.stage_hosted_fleet_order(
             selected_row.fleet_record_index_1_based,
             speed,
             mission_code,
             target,
-            Some(aux0),
-            Some(aux1),
+            aux0,
+            aux1,
         );
         self.save_and_refresh_runtime()?;
         self.reselect_fleet_overlay_row(FleetOverlayRowKey::Fleet(
@@ -1503,8 +1503,8 @@ impl DashApp {
         &mut self,
         mission_code: u8,
         target: [u8; 2],
-        aux0: u8,
-        aux1: u8,
+        aux0: Option<u8>,
+        aux1: Option<u8>,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let selected_rows = self.selected_group_order_rows();
         if selected_rows.is_empty() {
@@ -1527,16 +1527,16 @@ impl DashApp {
                 speed,
                 mission_code,
                 target,
-                Some(aux0),
-                Some(aux1),
+                aux0,
+                aux1,
             )?;
             self.stage_hosted_fleet_order(
                 row.fleet_record_index_1_based,
                 speed,
                 mission_code,
                 target,
-                Some(aux0),
-                Some(aux1),
+                aux0,
+                aux1,
             );
         }
         let reselect = self.fleet_overlay.active_row_key;

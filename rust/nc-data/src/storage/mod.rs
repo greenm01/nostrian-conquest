@@ -26,7 +26,7 @@ pub use settings::{
 };
 
 pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
-const RUNTIME_SCHEMA_VERSION: i64 = 12;
+const RUNTIME_SCHEMA_VERSION: i64 = 13;
 const LEGACY_RECORD_TABLES: [&str; 7] = [
     "player_record_fields",
     "planet_record_fields",

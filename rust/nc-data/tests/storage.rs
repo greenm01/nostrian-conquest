@@ -150,6 +150,53 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
 }
 
 #[test]
+fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-join-aux");
+    let exported = temp_dir("nc-data-storage-join-aux-export");
+    copy_dir_all(&source, &imported);
+
+    let store = CampaignStore::open(imported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    state
+        .game_data
+        .set_join_fleet_order(1, 2, 1)
+        .expect("join order");
+    let host_id = state.game_data.fleets.records[0].fleet_id();
+    assert_eq!(
+        state.game_data.fleets.records[1].mission_aux_bytes(),
+        [1, host_id]
+    );
+    store
+        .save_runtime_state_structured(
+            &state.game_data,
+            &state.planet_scorch_orders,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+
+    let runtime_game = store
+        .load_latest_runtime_game_data()
+        .expect("load latest runtime game data");
+    let joiner = &runtime_game.fleets.records[1];
+    assert_eq!(joiner.mission_aux_bytes(), [1, host_id]);
+    assert_eq!(joiner.join_host_fleet_id_raw(), host_id);
+
+    export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
+    let exported_game = nc_data::CoreGameData::load(&exported).expect("load exported directory");
+    assert_eq!(
+        exported_game.fleets.records[1].mission_aux_bytes(),
+        [1, host_id]
+    );
+}
+
+#[test]
 fn sqlite_store_persists_explicit_campaign_seed() {
     let source = repo_root().join("fixtures/ecutil-init/v1.5");
     let imported = temp_dir("nc-data-storage-seed-explicit");
@@ -401,7 +448,7 @@ fn sqlite_store_rejects_legacy_byte_table_schema() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 12,
+                expected: 13,
                 found: None
             }
         ),
@@ -426,7 +473,7 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
              int_value INTEGER NOT NULL
          );
          INSERT INTO campaign_metadata(key, int_value)
-         VALUES ('runtime_schema_version', 11);",
+         VALUES ('runtime_schema_version', 12);",
     )
     .expect("seed prior runtime schema");
     drop(conn);
@@ -437,8 +484,8 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 12,
-                found: Some(11)
+                expected: 13,
+                found: Some(12)
             }
         ),
         "unexpected error: {err}"
