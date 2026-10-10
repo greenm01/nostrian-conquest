@@ -3,8 +3,9 @@
 Classic ECMAINT's battles: planetary assault (bombard, invade, blitz), fleet
 against fleet, and fleet against starbase. Read from the unpacked ECMAINT
 (`tools/unlzexe/ecmaint_640k.bin`, seg:off -> file offset `seg*16+off-0x8140`,
-DS = `0x3529`) and checked against classic probes. Rust ports this rule and
-its odds (task t036), except the classic bugs listed in section 8.
+DS = `0x3529`) and checked against classic probes. This is a reference to
+classic's behaviour only. Rust does not port it; Rust's combat rules are in
+[nc-combat-spec.md](nc-combat-spec.md).
 
 - **[P]**: confirmed by classic probes (statistically, section 6).
 - **[C]**: read from code only.
@@ -785,8 +786,7 @@ Appendix B.
 
 ## 8. Classic bugs (Rust should not copy them)
 
-Rust fixes all ten, B6 and B10 included (user decision, 2026-10-10; see the
-[battle bugs ADR](../notes/decisions/sb0sfjgt-rust-fixes-classic-battle-bugs.md)).
+These are classic's defects, recorded for reference.
 - **B1. A destroyed assault fleet is resurrected.** [P]
   - Where: `110a:5169` (orbital battle), `5a9e` (landing), and `6a87` mark the
     unit entry inactive before calling `2895:3d0c(delete)`, which returns at
