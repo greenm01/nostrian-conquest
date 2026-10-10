@@ -626,7 +626,7 @@ impl App {
             .get_mut(self.player.record_index_1_based - 1)
         {
             player.set_classic_login_reviewables_present(false);
-            player.set_classic_results_chain_state(false, 0);
+            player.set_classic_results_chain(None);
         }
         self.save_game_data()?;
         self.messaging.delete_reviewables_prompt_active = false;

@@ -440,7 +440,7 @@ fn maint_rust_fleet_battle_generates_results_report_from_battle_events() {
         0,
         "EOT should have next-header id zero (matching oracle behavior)"
     );
-    assert_eq!(post.player.records[0].classic_results_chain_flag_raw(), 1);
+    assert_eq!(post.player.records[0].classic_results_first_header_raw(), 1);
     assert_ne!(
         u16::from_le_bytes([
             records[*header_indexes.last().unwrap()][74],
@@ -449,14 +449,15 @@ fn maint_rust_fleet_battle_generates_results_report_from_battle_events() {
         0,
         "later headers should remain on a linked results chain"
     );
-    assert_ne!(
-        post.player.records[0].classic_results_chain_next_free_raw(),
-        0,
-        "player review state should advertise a nonzero undeleted-results cursor"
-    );
+    let last_header = usize::from(post.player.records[0].classic_results_last_header_raw());
     assert!(
-        post.player.records[0].classic_results_chain_next_free_raw() >= first_next_id,
-        "player should advertise classic undeleted results"
+        header_indexes.contains(&last_header.wrapping_sub(1)),
+        "player should point at the last header of its results chain"
+    );
+    assert_eq!(
+        u16::from_le_bytes([records[last_header - 1][78], records[last_header - 1][79]]),
+        0,
+        "the last header should end the player's results chain"
     );
     let messages = fs::read(target.join("MESSAGES.DAT")).expect("MESSAGES.DAT should exist");
     assert!(messages.is_empty());

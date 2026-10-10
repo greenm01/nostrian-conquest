@@ -15,6 +15,7 @@ pub const MAINTENANCE_DAY_ENABLED_CODES: [u8; 7] = [0x01, 0x01, 0xCA, 0x01, 0x0A
 
 mod bbs_config;
 mod builder;
+mod classic_results;
 mod config;
 mod directory;
 mod economy;
@@ -43,6 +44,10 @@ pub use bbs_config::{BbsGameConfig, BbsGameConfigError, SeatReservation};
 pub use builder::{
     FleetOrderSpec, GameStateBuilder, GuardStarbaseSpec, PlanetBuildSpec,
     reset_player_slot_to_baseline,
+};
+pub use classic_results::{
+    CLASSIC_RESULTS_RECORD_SIZE, ClassicResultsChain, ClassicResultsLayout,
+    classic_results_header_viewers, layout_classic_results,
 };
 pub use config::{DiplomacyConfig, DiplomacyDirective, SetupConfigError};
 pub use directory::{

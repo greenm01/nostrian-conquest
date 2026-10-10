@@ -73,6 +73,19 @@ They let us:
     three required patches: `FLEETS.DAT[0x1F]=0x04`, `FLEETS.DAT[0x23]=0x01`,
     `PLAYER.DAT[0x44]=0x01`
 
+### Reports With Several Human Empires
+
+Both start from `ecmaint-fleet-battle-pre` with empire 1 joined as a human
+(`PLAYER.DAT[0x00]=0x01`, handle `BAR`).
+
+- `fixtures/ecmaint-results-two-human-pre/v1.5/` / `fixtures/ecmaint-results-two-human-post/v1.5/`
+  - two human empires whose fleets meet; `RESULTS.DAT` holds one contiguous
+    chain per empire
+- `fixtures/ecmaint-results-interleaved-pre/v1.5/` / `fixtures/ecmaint-results-interleaved-post/v1.5/`
+  - empire 3 also joined (handle `BAZ`) and the location, movement and order
+    fields `FLEETS.DAT[0x0A..0x24]` of fleets 1 and 9 swapped, so empire 1
+    arrives late; three chains interleave in event order
+
 ## Rules For New Fixtures
 
 Only create a new fixture set when it captures a meaningful state transition.

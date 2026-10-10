@@ -1,5 +1,5 @@
-use crate::PLAYER_RECORD_SIZE;
 use crate::support::{ParseError, copy_array, trim_ascii_field};
+use crate::{ClassicResultsChain, PLAYER_RECORD_SIZE};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiplomaticRelation {
@@ -152,34 +152,41 @@ impl PlayerRecord {
             || self.classic_results_review_carry_word_raw() != 0
     }
 
-    /// Classic undeleted-results flag / cursor family.
+    /// Classic `RESULTS.DAT` chain pointers at `+0x38..+0x3f`.
     ///
-    /// Recent live `ECGAME` report-view probes show the `+0x38..+0x3f` region
-    /// controlling whether classic offers undeleted `RESULTS.DAT` review at
-    /// login time. Preserved and oracle-compatible states consistently use:
+    /// Original `ECMAINT` output (two- and three-human oracle runs, see
+    /// `fixtures/ecmaint-results-*`) writes:
     ///
-    /// - `+0x38..+0x39 = 0x0001` when undeleted reports exist
-    /// - `+0x3c..+0x3d = next free report chain id`
-    /// - `+0x3a..+0x3b` and `+0x3e..+0x3f` remain zero in the recovered cases
-    pub fn classic_results_chain_flag_raw(&self) -> u16 {
+    /// - `+0x38..+0x39` = 1-based record index of this empire's first report
+    ///   header in the shared `RESULTS.DAT`, or `0` when it has none
+    /// - `+0x3c..+0x3d` = 1-based record index of its last report header
+    /// - `+0x3a..+0x3b` and `+0x3e..+0x3f` = zero
+    pub fn classic_results_first_header_raw(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x38], self.raw[0x39]])
     }
 
-    pub fn set_classic_results_chain_flag_raw(&mut self, value: u16) {
+    pub fn set_classic_results_first_header_raw(&mut self, value: u16) {
         self.raw[0x38..0x3A].copy_from_slice(&value.to_le_bytes());
     }
 
-    pub fn classic_results_chain_next_free_raw(&self) -> u16 {
+    pub fn classic_results_last_header_raw(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x3C], self.raw[0x3D]])
     }
 
-    pub fn set_classic_results_chain_next_free_raw(&mut self, value: u16) {
+    pub fn set_classic_results_last_header_raw(&mut self, value: u16) {
         self.raw[0x3C..0x3E].copy_from_slice(&value.to_le_bytes());
     }
 
+    pub fn classic_results_chain(&self) -> Option<ClassicResultsChain> {
+        let first_header = self.classic_results_first_header_raw();
+        (first_header != 0).then(|| ClassicResultsChain {
+            first_header,
+            last_header: self.classic_results_last_header_raw(),
+        })
+    }
+
     pub fn has_classic_results_chain_state(&self) -> bool {
-        self.classic_results_chain_flag_raw() != 0
-            || self.classic_results_chain_next_free_raw() != 0
+        self.classic_results_first_header_raw() != 0 || self.classic_results_last_header_raw() != 0
     }
 
     pub fn has_any_classic_review_state(&self) -> bool {
@@ -228,11 +235,14 @@ impl PlayerRecord {
         self.set_classic_results_review_state_present(present);
     }
 
-    pub fn set_classic_results_chain_state(&mut self, present: bool, next_free_id: u16) {
-        self.set_classic_results_chain_flag_raw(u16::from(present));
-        self.raw[0x3A..0x3C].fill(0);
-        self.set_classic_results_chain_next_free_raw(if present { next_free_id } else { 0 });
-        self.raw[0x3E..0x40].fill(0);
+    /// Point this empire at its chain in the shared `RESULTS.DAT`.  Lay the
+    /// file out with [`crate::layout_classic_results`] to get the chain.
+    pub fn set_classic_results_chain(&mut self, chain: Option<ClassicResultsChain>) {
+        self.raw[0x38..0x40].fill(0);
+        if let Some(chain) = chain {
+            self.set_classic_results_first_header_raw(chain.first_header);
+            self.set_classic_results_last_header_raw(chain.last_header);
+        }
     }
 
     pub fn set_controlled_empire_name_raw(&mut self, value: &str) {

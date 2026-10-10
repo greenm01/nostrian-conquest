@@ -49,12 +49,60 @@ Implementation rule:
 
 ## Chain Semantics
 
-Chain pointers use 1-based record indexes:
+`RESULTS.DAT` is one file shared by every empire. Each empire's reports form
+their own linked chain of report headers. Chain pointers are 1-based record
+indexes into the whole file:
 
-- header `ChainId` = previous header index + 1, or `0` for the first report
-- header `NextChainId` = next header index + 1, or `0` for the last report
+- header `ChainId` = record index of the previous header in the same empire's
+  chain, or `0` for that empire's first report
+- header `NextChainId` = record index of the next header in the same empire's
+  chain, or `0` for its last report
 - continuation and EOT records must have `NextChainId = 0`
 - all records in one logical report share the same `ChainId`
+
+Each report belongs to exactly one empire's chain. Original ECMAINT appends
+reports in event order, so chains of different empires can interleave in the
+file. A file whose chains sit in contiguous per-empire blocks is equally valid.
+
+## PLAYER.DAT Pointers
+
+Each `PLAYER.DAT` record points at its empire's chain:
+
+```
+Offset     Size  Field
+0x38-0x39  2     FirstHeader (u16 LE): record index of the first header, or 0
+0x3A-0x3B  2     zero
+0x3C-0x3D  2     LastHeader (u16 LE): record index of the last header, or 0
+0x3E-0x3F  2     zero
+```
+
+An empire with no reports has both pointers zero. `+0x3C` is the last header
+of the chain, not a record count or a next-free index.
+
+## Rust Export Rule
+
+The Rust engine stores report rows per viewer. A row with viewer `0` is a
+broadcast report. `nc_data::layout_classic_results` is the one place that turns
+rows into a classic file:
+
+- write each empire's visible rows together, empires in ascending order
+- copy a broadcast row into the chain of every active human empire
+- rewrite every record's chain ids to absolute header indexes
+- return each empire's first and last header for `PLAYER.DAT`
+
+The `nc-compat` export, the maintenance commands, the scenario harness, and
+the player client all set the `PLAYER.DAT` pointers from this layout through
+`ClassicResultsLayout::apply_to_players` or `PlayerRecord::set_classic_results_chain`. The
+`nc-compat` import reverses it: it walks each empire's chain from `+0x38` and
+tags the report with that empire, so a re-export keeps every chain.
+
+## Oracle Evidence
+
+Original ECMAINT runs with two and three joined human empires are preserved
+as `fixtures/ecmaint-results-two-human-*` and
+`fixtures/ecmaint-results-interleaved-*`. The
+[investigation note](../notes/investigations/e752ccc3-classic-results-dat-chain-ids-across-several-players.md)
+records the setup and the observed layout.
 
 ## Text Contract
 
@@ -85,7 +133,8 @@ The text payload is a Borland Pascal `String[72]`:
 
 Rust may zero-fill trailing bytes. Original EC sometimes reused old buffer
 contents. That difference is acceptable as long as the declared string content
-is correct.
+is correct. The import decoder ignores bytes past the declared length in
+records whose kind byte is nonzero.
 
 ## Export Boundary
 

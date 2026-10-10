@@ -2,8 +2,10 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::Path;
 
-use nc_compat::export_latest_snapshot_to_dir;
-use nc_data::{CampaignStore, CoreGameData, QueuedPlayerMail, ReportBlockRow};
+use nc_compat::{encode_report_block_rows, export_latest_snapshot_to_dir};
+use nc_data::{
+    CampaignStore, CoreGameData, QueuedPlayerMail, ReportBlockRow, layout_classic_results,
+};
 use nc_engine::{build_seeded_initialized_game, build_seeded_new_game};
 
 use crate::error::HarnessError;
@@ -61,7 +63,7 @@ pub fn build_scenario(spec: &ScenarioSpec) -> Result<BuiltScenario, HarnessError
     apply_message_blocks(spec, &mut queued_mail, game_data.conquest.player_count());
 
     let report_block_rows = build_report_block_rows(&spec.results_blocks);
-    sync_review_flags(&mut game_data, &spec.results_blocks, &spec.message_blocks);
+    sync_review_flags(&mut game_data, &report_block_rows, &spec.message_blocks);
 
     Ok(BuiltScenario {
         report: ScenarioBuildReport {
@@ -398,25 +400,18 @@ fn synthetic_message_sender(recipient_empire_id: u8, player_count: u8) -> u8 {
 
 fn sync_review_flags(
     game_data: &mut CoreGameData,
-    results_blocks: &[ReviewBlockSpec],
+    report_block_rows: &[ReportBlockRow],
     message_blocks: &[ReviewBlockSpec],
 ) {
     for player in &mut game_data.player.records {
         player.set_classic_login_reviewables_present(false);
         player.set_classic_reports_pending_flag_raw(0);
         player.set_classic_messages_pending_flag_raw(0);
-        player.set_classic_results_chain_state(false, 0);
     }
+    layout_classic_results(&game_data.player.records, report_block_rows)
+        .apply_to_players(&mut game_data.player.records);
 
-    let mut results_counts = vec![0usize; game_data.player.records.len()];
     let mut message_counts = vec![0usize; game_data.player.records.len()];
-    for block in results_blocks {
-        if let Some(player) = block.player_record_index_1_based {
-            if let Some(count) = results_counts.get_mut(player - 1) {
-                *count += 1;
-            }
-        }
-    }
     for block in message_blocks {
         if let Some(player) = block.player_record_index_1_based {
             if let Some(count) = message_counts.get_mut(player - 1) {
@@ -426,10 +421,9 @@ fn sync_review_flags(
     }
 
     for (idx, player) in game_data.player.records.iter_mut().enumerate() {
-        if results_counts[idx] > 0 {
+        if player.classic_results_chain().is_some() {
             player.set_classic_results_review_state_present(true);
             player.set_classic_reports_pending_flag_raw(1);
-            player.set_classic_results_chain_state(true, (results_counts[idx] as u16) + 1);
         }
         if message_counts[idx] > 0 {
             player.set_classic_messages_review_state_present(true);
@@ -442,12 +436,16 @@ fn build_report_block_rows(blocks: &[ReviewBlockSpec]) -> Vec<ReportBlockRow> {
     blocks
         .iter()
         .enumerate()
-        .map(|(idx, block)| ReportBlockRow {
-            viewer_empire_id: 0,
-            block_index: idx,
-            decoded_text: normalize_report_block_text(&block.text),
-            raw_bytes: None,
-            recipient_deleted: false,
+        .map(|(idx, block)| {
+            let mut row = ReportBlockRow {
+                viewer_empire_id: block.player_record_index_1_based.unwrap_or(0) as u8,
+                block_index: idx,
+                decoded_text: normalize_report_block_text(&block.text),
+                raw_bytes: None,
+                recipient_deleted: false,
+            };
+            row.raw_bytes = Some(encode_report_block_rows(std::slice::from_ref(&row)));
+            row
         })
         .collect()
 }

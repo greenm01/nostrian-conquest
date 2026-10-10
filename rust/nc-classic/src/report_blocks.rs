@@ -31,18 +31,6 @@ pub fn decode_report_blocks(bytes: &[u8]) -> Vec<ClassicReportBlock> {
     }]
 }
 
-pub fn rebuild_results_bytes(blocks: &[ClassicReportBlock]) -> Vec<u8> {
-    let mut rebuilt = Vec::new();
-    for block in blocks {
-        if let Some(raw) = block.raw_bytes.as_ref() {
-            rebuilt.extend_from_slice(raw);
-        } else {
-            rebuilt.extend_from_slice(&encode_report_block_text(&block.decoded_text));
-        }
-    }
-    rebuilt
-}
-
 pub fn encode_report_blocks(blocks: &[ClassicReportBlock]) -> Vec<u8> {
     let mut rebuilt = Vec::new();
     for block in blocks {
@@ -118,9 +106,14 @@ fn decode_length_prefixed_chunked_records(bytes: &[u8]) -> Option<Vec<(Vec<Strin
         }) {
             return None;
         }
-        if chunk[RESULTS_TEXT_START + used..RESULTS_TEXT_END]
-            .iter()
-            .any(|byte| *byte != 0)
+        // Original ECMAINT records carry the report's record count in byte 0
+        // and leave stale buffer contents past the declared length, which
+        // ECGAME ignores.  Without a record count, nonzero padding means the
+        // record is not length-prefixed.
+        if chunk[0] == 0
+            && chunk[RESULTS_TEXT_START + used..RESULTS_TEXT_END]
+                .iter()
+                .any(|byte| *byte != 0)
         {
             return None;
         }

@@ -8,8 +8,9 @@ mod intel;
 use database_projection::build_database_dat;
 use nc_classic::decode_report_blocks;
 use nc_data::{
-    CampaignStore, CampaignStoreError, ConquestDat, CoreGameData, MaintenanceEvents, PlanetDat,
-    QueuedPlayerMail, ReportBlockRow, derive_campaign_seed_from_runtime, load_mail_queue,
+    CLASSIC_RESULTS_RECORD_SIZE, CampaignStore, CampaignStoreError, ConquestDat, CoreGameData,
+    MaintenanceEvents, PlanetDat, QueuedPlayerMail, ReportBlockRow, classic_results_header_viewers,
+    derive_campaign_seed_from_runtime, layout_classic_results, load_mail_queue,
 };
 
 pub use intel::{extract_player_intel_from_compat_database, merge_player_intel_from_compat};
@@ -49,7 +50,8 @@ pub fn import_directory_snapshot_with_seed(
     let database = load_database_snapshot_or_default(dir, &game_data)?;
     let results_bytes = read_optional_path(dir.join("RESULTS.DAT"))?;
     let queued_mail = load_mail_queue_file(dir)?;
-    let report_block_rows = decode_report_block_rows(&results_bytes);
+    let mut report_block_rows = decode_report_block_rows(&results_bytes);
+    assign_classic_results_viewers(&mut report_block_rows, &game_data, &results_bytes);
     let derived_seed = campaign_seed.or_else(|| {
         Some(derive_campaign_seed_from_runtime(
             &game_data,
@@ -92,7 +94,13 @@ pub fn export_snapshot_to_dir(
         path: dir.to_path_buf(),
         source,
     })?;
-    let game_data = store.load_snapshot_game_data(snapshot_id)?;
+    let mut game_data = store.load_snapshot_game_data(snapshot_id)?;
+    let report_rows = store.load_snapshot_report_block_rows(snapshot_id, true)?;
+    let results = layout_classic_results(
+        &game_data.player.records,
+        &with_classic_record_bytes(&report_rows),
+    );
+    results.apply_to_players(&mut game_data.player.records);
     game_data.save(dir)?;
     let planet_intel_by_viewer = store
         .load_snapshot_planet_intel_by_viewer(snapshot_id, game_data.conquest.player_count())?;
@@ -106,14 +114,7 @@ pub fn export_snapshot_to_dir(
     );
     write_path(dir.join("DATABASE.DAT"), &database.to_bytes())?;
 
-    let report_rows = store.load_snapshot_report_block_rows(snapshot_id, true)?;
-    let active: Vec<_> = report_rows
-        .iter()
-        .filter(|row| !row.recipient_deleted)
-        .cloned()
-        .collect();
-    let results_bytes = rebuild_results_bytes(&active).unwrap_or_default();
-    write_path(dir.join("RESULTS.DAT"), &results_bytes)?;
+    write_path(dir.join("RESULTS.DAT"), &results.bytes)?;
     write_path(dir.join("MESSAGES.DAT"), &[])?;
     Ok(())
 }
@@ -172,15 +173,40 @@ pub fn decode_report_block_rows(bytes: &[u8]) -> Vec<ReportBlockRow> {
         .collect()
 }
 
-pub fn rebuild_results_bytes(rows: &[ReportBlockRow]) -> Option<Vec<u8>> {
-    let blocks = rows
-        .iter()
-        .map(|row| nc_classic::ClassicReportBlock {
-            decoded_text: row.decoded_text.clone(),
-            raw_bytes: row.raw_bytes.clone(),
+/// Tag each decoded classic report with the empire whose `PLAYER.DAT` chain
+/// reaches its header.  Reports no chain reaches stay broadcast (`0`).
+fn assign_classic_results_viewers(
+    rows: &mut [ReportBlockRow],
+    game_data: &CoreGameData,
+    results_bytes: &[u8],
+) {
+    let header_viewers = classic_results_header_viewers(&game_data.player.records, results_bytes);
+    let mut header = 1usize;
+    for row in rows {
+        let Some(raw_bytes) = row.raw_bytes.as_ref() else {
+            continue;
+        };
+        if let Some(&viewer) = u16::try_from(header)
+            .ok()
+            .and_then(|header| header_viewers.get(&header))
+        {
+            row.viewer_empire_id = viewer;
+        }
+        header += raw_bytes.len() / CLASSIC_RESULTS_RECORD_SIZE;
+    }
+}
+
+/// Rows with classic record bytes, encoding any text-only row.
+fn with_classic_record_bytes(rows: &[ReportBlockRow]) -> Vec<ReportBlockRow> {
+    rows.iter()
+        .cloned()
+        .map(|mut row| {
+            if row.raw_bytes.is_none() {
+                row.raw_bytes = Some(encode_report_block_rows(std::slice::from_ref(&row)));
+            }
+            row
         })
-        .collect::<Vec<_>>();
-    Some(nc_classic::rebuild_results_bytes(&blocks))
+        .collect()
 }
 
 pub fn encode_report_block_rows(rows: &[ReportBlockRow]) -> Vec<u8> {
