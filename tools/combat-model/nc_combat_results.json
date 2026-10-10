@@ -1,0 +1,884 @@
+{
+  "battles": [
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.952,
+        "A": 0.04475,
+        "mutual": 0.00325
+      },
+      "rounds": 1.23,
+      "lost_cost_A": 146.446,
+      "lost_cost_B": 86.896,
+      "crippled_cost_A": 3.554,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.99775,
+        "A": 0.00225
+      },
+      "rounds": 4.788,
+      "lost_cost_A": 149.77,
+      "lost_cost_B": 8.279,
+      "crippled_cost_A": 0.221,
+      "crippled_cost_B": 79.996
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.90867,
+        "A": 0.09008,
+        "mutual": 0.00125
+      },
+      "rounds": 2.362,
+      "lost_cost_A": 142.535,
+      "lost_cost_B": 35.666,
+      "crippled_cost_A": 7.151,
+      "crippled_cost_B": 75.619
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.89783,
+        "A": 0.09858,
+        "mutual": 0.00358
+      },
+      "rounds": 2.342,
+      "lost_cost_A": 141.622,
+      "lost_cost_B": 73.949,
+      "crippled_cost_A": 8.035,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.97933,
+        "mutual": 0.00233,
+        "A": 0.01833
+      },
+      "rounds": 1.233,
+      "lost_cost_A": 445.431,
+      "lost_cost_B": 222.611,
+      "crippled_cost_A": 4.569,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.99967,
+        "A": 0.00033
+      },
+      "rounds": 4.452,
+      "lost_cost_A": 449.924,
+      "lost_cost_B": 20.606,
+      "crippled_cost_A": 0.076,
+      "crippled_cost_B": 172.477
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.95358,
+        "A": 0.04583,
+        "mutual": 0.00058
+      },
+      "rounds": 2.358,
+      "lost_cost_A": 437.936,
+      "lost_cost_B": 81.829,
+      "crippled_cost_A": 11.783,
+      "crippled_cost_B": 235.811
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.9425,
+        "A": 0.05492,
+        "mutual": 0.00258
+      },
+      "rounds": 2.322,
+      "lost_cost_A": 436.242,
+      "lost_cost_B": 198.667,
+      "crippled_cost_A": 13.271,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.62642,
+        "A": 0.37342,
+        "mutual": 0.00017
+      },
+      "rounds": 2.746,
+      "lost_cost_A": 332.666,
+      "lost_cost_B": 228.896,
+      "crippled_cost_A": 109.79,
+      "crippled_cost_B": 195.9
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.90775,
+        "A": 0.09183,
+        "cap": 0.00025,
+        "mutual": 0.00017
+      },
+      "rounds": 11.798,
+      "lost_cost_A": 420.587,
+      "lost_cost_B": 100.29,
+      "crippled_cost_A": 27.839,
+      "crippled_cost_B": 255.54
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.60858,
+        "A": 0.38958,
+        "mutual": 0.00183
+      },
+      "rounds": 5.069,
+      "lost_cost_A": 326.359,
+      "lost_cost_B": 246.101,
+      "crippled_cost_A": 104.957,
+      "crippled_cost_B": 164.621
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.60858,
+        "A": 0.38958,
+        "mutual": 0.00183
+      },
+      "rounds": 5.069,
+      "lost_cost_A": 326.359,
+      "lost_cost_B": 246.101,
+      "crippled_cost_A": 104.957,
+      "crippled_cost_B": 164.621
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.88025,
+        "mutual": 0.09917,
+        "A": 0.02058
+      },
+      "rounds": 1.177,
+      "lost_cost_A": 14.745,
+      "lost_cost_B": 1.796,
+      "crippled_cost_A": 0.255,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.61133,
+        "A": 0.31458,
+        "mutual": 0.07408
+      },
+      "rounds": 3.818,
+      "lost_cost_A": 11.083,
+      "lost_cost_B": 5.83,
+      "crippled_cost_A": 2.685,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.78283,
+        "mutual": 0.05858,
+        "A": 0.15858
+      },
+      "rounds": 1.953,
+      "lost_cost_A": 13.42,
+      "lost_cost_B": 3.257,
+      "crippled_cost_A": 1.449,
+      "crippled_cost_B": 7.696
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.58417,
+        "mutual": 0.1855,
+        "A": 0.23033
+      },
+      "rounds": 1.564,
+      "lost_cost_A": 11.802,
+      "lost_cost_B": 6.237,
+      "crippled_cost_A": 2.528,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.74658,
+        "A": 0.16883,
+        "mutual": 0.08458
+      },
+      "rounds": 2.264,
+      "lost_cost_A": 38.65,
+      "lost_cost_B": 11.404,
+      "crippled_cost_A": 5.375,
+      "crippled_cost_B": 13.477
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.7425,
+        "B": 0.233,
+        "mutual": 0.0245
+      },
+      "rounds": 7.591,
+      "lost_cost_A": 17.251,
+      "lost_cost_B": 34.515,
+      "crippled_cost_A": 10.075,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.43675,
+        "B": 0.525,
+        "mutual": 0.03825
+      },
+      "rounds": 3.471,
+      "lost_cost_A": 29.42,
+      "lost_cost_B": 21.375,
+      "crippled_cost_A": 12.031,
+      "crippled_cost_B": 14.707
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.43675,
+        "B": 0.525,
+        "mutual": 0.03825
+      },
+      "rounds": 3.471,
+      "lost_cost_A": 29.42,
+      "lost_cost_B": 21.375,
+      "crippled_cost_A": 12.031,
+      "crippled_cost_B": 14.707
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.89767,
+        "mutual": 0.10233
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 5.0,
+      "lost_cost_B": 4.605,
+      "crippled_cost_A": 0.0,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.88892,
+        "mutual": 0.10117,
+        "A": 0.00992
+      },
+      "rounds": 1.09,
+      "lost_cost_A": 4.95,
+      "lost_cost_B": 4.999,
+      "crippled_cost_A": 0.05,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 1.0
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 5.0,
+      "lost_cost_B": 0.0,
+      "crippled_cost_A": 0.0,
+      "crippled_cost_B": 3.015
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.96683,
+        "mutual": 0.03317
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 5.0,
+      "lost_cost_B": 1.492,
+      "crippled_cost_A": 0.0,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.88892,
+        "mutual": 0.10117,
+        "A": 0.00992
+      },
+      "rounds": 1.09,
+      "lost_cost_A": 49.851,
+      "lost_cost_B": 5.554,
+      "crippled_cost_A": 0.0,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.69925,
+        "A": 0.21908,
+        "mutual": 0.08167
+      },
+      "rounds": 2.942,
+      "lost_cost_A": 41.648,
+      "lost_cost_B": 15.037,
+      "crippled_cost_A": 6.687,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.87825,
+        "A": 0.08642,
+        "mutual": 0.03533
+      },
+      "rounds": 1.771,
+      "lost_cost_A": 47.2,
+      "lost_cost_B": 6.088,
+      "crippled_cost_A": 2.624,
+      "crippled_cost_B": 24.092
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.66925,
+        "mutual": 0.1815,
+        "A": 0.14925
+      },
+      "rounds": 1.47,
+      "lost_cost_A": 45.845,
+      "lost_cost_B": 16.538,
+      "crippled_cost_A": 0.0,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.64325,
+        "B": 0.3565,
+        "mutual": 0.00025
+      },
+      "rounds": 2.327,
+      "lost_cost_A": 239.87,
+      "lost_cost_B": 353.796,
+      "crippled_cost_A": 192.347,
+      "crippled_cost_B": 92.224
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.32625,
+        "A": 0.67267,
+        "mutual": 0.00033,
+        "cap": 0.00075
+      },
+      "rounds": 12.24,
+      "lost_cost_A": 220.979,
+      "lost_cost_B": 356.466,
+      "crippled_cost_A": 211.996,
+      "crippled_cost_B": 91.719
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.51817,
+        "A": 0.48125,
+        "mutual": 0.00058
+      },
+      "rounds": 4.901,
+      "lost_cost_A": 295.559,
+      "lost_cost_B": 282.534,
+      "crippled_cost_A": 127.123,
+      "crippled_cost_B": 137.744
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.47108,
+        "B": 0.52767,
+        "mutual": 0.00125
+      },
+      "rounds": 4.901,
+      "lost_cost_A": 299.201,
+      "lost_cost_B": 279.86,
+      "crippled_cost_A": 124.733,
+      "crippled_cost_B": 137.071
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.50258,
+        "B": 0.49492,
+        "mutual": 0.0025
+      },
+      "rounds": 2.669,
+      "lost_cost_A": 96.36,
+      "lost_cost_B": 96.666,
+      "crippled_cost_A": 49.366,
+      "crippled_cost_B": 48.789
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.49783,
+        "A": 0.50042,
+        "cap": 0.00083,
+        "mutual": 0.00092
+      },
+      "rounds": 14.203,
+      "lost_cost_A": 90.522,
+      "lost_cost_B": 90.868,
+      "crippled_cost_A": 51.136,
+      "crippled_cost_B": 51.084
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.49717,
+        "A": 0.49833,
+        "mutual": 0.0045
+      },
+      "rounds": 4.727,
+      "lost_cost_A": 96.095,
+      "lost_cost_B": 95.651,
+      "crippled_cost_A": 44.008,
+      "crippled_cost_B": 44.745
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.49717,
+        "A": 0.49833,
+        "mutual": 0.0045
+      },
+      "rounds": 4.727,
+      "lost_cost_A": 96.095,
+      "lost_cost_B": 95.651,
+      "crippled_cost_A": 44.008,
+      "crippled_cost_B": 44.745
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.84808,
+        "B": 0.15175,
+        "mutual": 0.00017
+      },
+      "rounds": 2.328,
+      "lost_cost_A": 42.528,
+      "lost_cost_B": 134.024,
+      "crippled_cost_A": 95.026,
+      "crippled_cost_B": 14.641
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.73425,
+        "B": 0.26475,
+        "cap": 0.00067,
+        "mutual": 0.00033
+      },
+      "rounds": 13.252,
+      "lost_cost_A": 64.129,
+      "lost_cost_B": 120.034,
+      "crippled_cost_A": 82.692,
+      "crippled_cost_B": 27.049
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.32408,
+        "A": 0.67408,
+        "mutual": 0.00183
+      },
+      "rounds": 4.566,
+      "lost_cost_A": 80.564,
+      "lost_cost_B": 115.295,
+      "crippled_cost_A": 66.138,
+      "crippled_cost_B": 30.141
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "B": 0.32408,
+        "A": 0.67408,
+        "mutual": 0.00183
+      },
+      "rounds": 4.566,
+      "lost_cost_A": 80.564,
+      "lost_cost_B": 115.295,
+      "crippled_cost_A": 66.138,
+      "crippled_cost_B": 30.141
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 1.4,
+      "lost_cost_A": 2.949,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 126.797,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.99933,
+        "B": 0.00067
+      },
+      "rounds": 6.408,
+      "lost_cost_A": 10.035,
+      "lost_cost_B": 149.929,
+      "crippled_cost_A": 105.86,
+      "crippled_cost_B": 0.069
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.97633,
+        "B": 0.02325,
+        "mutual": 0.00042
+      },
+      "rounds": 3.28,
+      "lost_cost_A": 30.44,
+      "lost_cost_B": 148.086,
+      "crippled_cost_A": 116.484,
+      "crippled_cost_B": 1.875
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.97633,
+        "B": 0.02325,
+        "mutual": 0.00042
+      },
+      "rounds": 3.28,
+      "lost_cost_A": 30.44,
+      "lost_cost_B": 148.086,
+      "crippled_cost_A": 116.484,
+      "crippled_cost_B": 1.875
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 1.101,
+      "lost_cost_A": 1.681,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 124.504,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 4.35,
+      "lost_cost_A": 6.549,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 81.475,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.99992,
+        "B": 8e-05
+      },
+      "rounds": 2.068,
+      "lost_cost_A": 14.182,
+      "lost_cost_B": 149.998,
+      "crippled_cost_A": 113.135,
+      "crippled_cost_B": 0.003
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "A": 0.99992,
+        "B": 8e-05
+      },
+      "rounds": 2.068,
+      "lost_cost_A": 14.182,
+      "lost_cost_B": 149.998,
+      "crippled_cost_A": 113.135,
+      "crippled_cost_B": 0.003
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "C",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 1.52,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 78.389,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "S",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 2.873,
+      "lost_cost_A": 4.304,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 62.561,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 1.697,
+      "lost_cost_A": 11.005,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 99.136,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "X",
+      "N": 12000,
+      "outcomes": {
+        "A": 1.0
+      },
+      "rounds": 1.697,
+      "lost_cost_A": 11.005,
+      "lost_cost_B": 150.0,
+      "crippled_cost_A": 99.136,
+      "crippled_cost_B": 0.0
+    },
+    {
+      "case": "10 CA vs 10 CA ROE6",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "retreat": 0.99758,
+        "A": 0.00108,
+        "B": 0.00083,
+        "mutual": 0.0005
+      },
+      "rounds": 1.396,
+      "lost_cost_A": 18.404,
+      "lost_cost_B": 18.0,
+      "crippled_cost_A": 77.874,
+      "crippled_cost_B": 78.537
+    },
+    {
+      "case": "11 CA vs 10 CA ROE6",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "retreat": 0.99983,
+        "A": 0.00017
+      },
+      "rounds": 1.09,
+      "lost_cost_A": 9.75,
+      "lost_cost_B": 13.568,
+      "crippled_cost_A": 81.142,
+      "crippled_cost_B": 82.156
+    },
+    {
+      "case": "15 CA vs 10 CA ROE6",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "retreat": 1.0
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 7.463,
+      "lost_cost_B": 33.134,
+      "crippled_cost_A": 79.149,
+      "crippled_cost_B": 74.741
+    },
+    {
+      "case": "20 CA vs 10 CA ROE6",
+      "mode": "R",
+      "N": 12000,
+      "outcomes": {
+        "retreat": 0.5995,
+        "A": 0.4005
+      },
+      "rounds": 1.0,
+      "lost_cost_A": 7.556,
+      "lost_cost_B": 60.075,
+      "crippled_cost_A": 79.524,
+      "crippled_cost_B": 67.662
+    }
+  ],
+  "ground": {
+    "10": {
+      "current": [
+        0.08,
+        1.02,
+        0.7290000000000001
+      ],
+      "defender_mutual": [
+        0.08,
+        1.02,
+        0.7290000000000001
+      ]
+    },
+    "11": {
+      "current": [
+        0.83,
+        1.1,
+        0.436
+      ],
+      "defender_mutual": [
+        0.426,
+        1.1,
+        0.436
+      ]
+    },
+    "15": {
+      "current": [
+        1.0,
+        1.0,
+        0.3
+      ],
+      "defender_mutual": [
+        0.7,
+        1.0,
+        0.3
+      ]
+    },
+    "20": {
+      "current": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "defender_mutual": [
+        1.0,
+        1.0,
+        0.0
+      ]
+    },
+    "30": {
+      "current": [
+        1.0,
+        1.0,
+        0.0
+      ],
+      "defender_mutual": [
+        1.0,
+        1.0,
+        0.0
+      ]
+    }
+  }
+}
