@@ -17,6 +17,8 @@ Read this together with:
 
 ## Status
 
+Approved change, implementation pending (2026-10-10): [combat decision 1](../notes/decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md) selects EotS 25/50/100% effectiveness without ratio columns, battle-local carry per side and fire pool, and full DS for finishing crippled ships. The ratio CRT below describes the existing implementation until the engine and player manual are updated together. Other combat decisions remain separate.
+
 This is the source of truth for:
 - Fleet-vs-fleet battle resolution (who fights whom follows classic ECMAINT;
   see Contact and Engagement)

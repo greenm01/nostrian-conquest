@@ -226,6 +226,8 @@ with an ADR that supersedes the two-sides clause of the engagement ADR.
 
 ## Decisions for the user
 
+Decision 1 was approved on 2026-10-10: [EotS effectiveness, battle-local carry, and full-DS finishing](../decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md). Implementation is pending. This approval does not select the remaining decisions below.
+
 The candidates above, grouped for a decision after the sweep (t055) has
 numbers: (1) resolution table and remainder rule; (2) ROE, withdrawal, and
 pursuit; (3) persistence and repair; (4) ground combat rule; (5) assault
