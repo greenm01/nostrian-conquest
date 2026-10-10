@@ -115,3 +115,4 @@ releases/*-release-note.md
 /.zk/*.log
 /.todo/report.txt
 /todo.md.bak
+**/__pycache__/

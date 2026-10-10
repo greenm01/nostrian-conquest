@@ -220,7 +220,7 @@ All tactical rounds resolve inside an encounter tick. Increasing a battle from t
 
 **A strike's eligibility tick is not its resolution tick.** This is the most consequential omission from the reviews. The movement dispatcher records hostile strike fleet indices. The maintenance function runs the entire encounter year, processes later maintenance work including builds and economics, and only then calls `process_planetary_assaults`. See [movement/mod.rs](../../../rust/nc-engine/src/maint/movement/mod.rs), [maint/mod.rs](../../../rust/nc-engine/src/maint/mod.rs), and [assault.rs](../../../rust/nc-engine/src/maint/combat/assault.rs).
 
-Consequently, an early eligible attacker can meet late-year relief or lose its mission before the assault resolves. Early and late entrants can be pooled. Newly completed defenses can participate in an assault whose eligibility occurred earlier. Ownership does not change for the remaining encounter ticks. The synthesis and source reviews describe an immediate strike that this call sequence does not implement. Either resolve strikes at their actual ticks or explicitly design an end-of-year assault phase. I recommend actual ticks because movement speed and timely relief should matter. Review economic and production ordering as part of that change.
+Consequently, an early eligible attacker can meet late-year relief or lose its mission before the assault resolves. Early and late entrants can be pooled. Newly completed defenses can participate in an assault whose eligibility occurred earlier. Ownership does not change for the remaining encounter ticks. The synthesis and source reviews describe an immediate strike that this call sequence does not implement. ADR b5u6lekb already requires the actual strike tick, so this is a correctness fix, not an open timing choice. Land it after t048 settles economy and builds before the tick year. Changes to the documented annual ownership cap and mission-class precedence still need to be recorded as NC policy amendments.
 
 **The orbital gate is broader than an unsighted-base bug.** Supremacy selection works over strike entrants rather than every defending force at the position. A stationary defending fleet can therefore be omitted too. Its zero-combat-AS fallback can consider a base at the same coordinates without the required layer distinction. Build the gate from actual eligible layer-1 defenders and fight them. A numeric AS comparison must not silently award the orbit to one assault entrant.
 
@@ -254,6 +254,8 @@ Loss distribution writes new ship counts, but I found no corresponding maximum-s
 **Persistent damage is essential, but repair needs limits.** Keep crippled counts through fleet combat, pursuit, and the later planetary attack. Otherwise a supposedly coordinated siege can start with fresh ships after its orbital battle. Repair at owned worlds for 25% of build price is a reasonable first experiment. Charge the ordinary production budget, require a stated repair interval, and aggregate fractional costs before rounding. Four cost-5 DD repairs should cost 5 points, not four separately rounded charges of 2. Do not allow an instantaneous full repair at a world just captured. Test whether home repair makes sustained offense too costly before adding further supply penalties. NC does not need VBAM's whole logistics system to make damage matter.
 
 **Monte Carlo tooling and a durable balance workflow**
+
+The reusable models and results are retained in [tools/combat-model](../../../tools/combat-model/README.md). The [fleet model](../../../tools/combat-model/nc_combat_analysis.py) and [ship sweep](../../../tools/combat-model/nc_ship_sweep.py) reproduce the review experiments. The [ground comparison](../../../tools/combat-model/ground.py) adds the defender-first candidate below, and [confidence.py](../../../tools/combat-model/confidence.py) reproduces the statistical intervals. The original fleet and ship result values reproduced exactly during preservation. These are experimental Python models; engine validation remains separate.
 
 Python is fast enough for the arithmetic experiments. On this machine, one measured run of 12,000 P battles between ten-cruiser forces took about 0.45 seconds, approximately 27,000 battles per second. This was ordinary Python with aggregated ship counts, not NumPy acceleration. It is a single local microbenchmark, not an engine-throughput claim. At that rate, a million comparable battles is roughly forty seconds. Larger forces, richer state, and campaign simulation need separate measurements.
 
@@ -296,3 +298,40 @@ Preserve excitement through valuable objectives, recoverable setbacks, and occas
 4. **Make retreat and damage persistent as one playable package.** One compulsory exchange, per-fleet ROE, an escape state, bounded pursuit, auxiliary exposure, and paid repair. Ship persistence needs more storage work, but without it a successful raid often leaves no lasting result. Keep DD/base execution while this changes.
 5. **Replace ratio columns and calibrate hulls with a repeatable sweep.** Start with the stronger flat table, budgeted criticals, and a tested remainder rule. Test DD 10/8/cost 5 first. Keep CA, BB, and auxiliary baselines until operational tests justify a change. Recheck battery losses because removing damage floors changes them sharply.
 6. **Broaden joined participation, then add bounded surprise.** The orbital gate supplies the most urgent mutual defense first. Wider joining needs per-fleet withdrawal and fair loss allocation. Surprise needs reliable pre-battle alert state and clear reporting. Neither should precede the rules that let a player survive and understand a failed plan.
+
+**Consultation with the synthesis author, 2026-10-10**
+
+Claude independently checked the timing, survivor speed, retreat target, and mixed-bonus findings against main at `c2779ffa` and confirmed them. The following records agreement between reviewers. It does not turn this investigation into an accepted gameplay ADR or authorize every proposed balance change.
+
+I accept a controlled comparison of three remainder treatments: discard, residual probability, and carry-forward. No default adoption of the residual roll. All other rules must remain the same across that comparison. The P tables above measure the probability variant only; a carry-forward version needs new measurements before selecting hull values. Persistent partial damage is feasible in the typed model, but define which side, class, and damage step owns it, how suppression and execution interact, and what split, merge, retreat, repair, and target destruction do to it. An unspent hit pool must not migrate to a different enemy.
+
+I support A1 before A2: extract one eligible-strike operation and invoke it from tick dispatch after t048. Keep the orbital gate as the next focused change. Preserve once-per-year bombardment eligibility, one-shot invasion/blitz completion, stable fleet identity, and encounter-table updates after casualties and ownership changes. Do not accidentally fire a persistent bombardment order on all 52 ticks. The mandatory base gate restores classic behavior. Automatically joining every defending fleet changes participation and must be recorded as such.
+
+Separate narrow fixes from policy decisions. Recomputing survivor speed and reusing [the existing nearest-world picker](../../../rust/nc-data/src/directory/mutators_nearest_world.rs) are narrow fixes. Dropping the mixed bonus, changing critical screening, replacing the round-cap outcome, introducing withdrawal immunity from voluntary combat, removing annual capture limits, and changing mission precedence affect gameplay. They remain candidates until selected. Suppressing first-identification recommitment already changes the encounter contract; that change cannot be deferred on paper to the later joined-sides ADR.
+
+Define a pursuit episode by the fleeing fleet's retreat identity and its departure sector and layer. It begins at the withdrawal decision and ends on actual departure from that sector/layer or a deliberate new order. The pursuit allowance belongs to each opposing empire, not each pursuing fleet. A pursuer withdrawing ends its eligibility; it must not reset an allowance that another fleet can reopen. Preserve an unfinished episode across the year boundary. The temporary withdrawal state must suppress first-identification commitment. Alert state for surprise also needs an explicit reset or expiry rule: neither yearly amnesia nor permanent immunity after one old sighting is desirable.
+
+For planetary fire, I accept testing batteries first with the shield lasting for the whole exchange. Destroying the final battery does not expose the dock to that same exchange's remainder; the dock becomes eligible from the next exchange. State that rule explicitly. It is separate from whether partial damage on one ship carries forward. For repair, determine eligibility from a maintenance-start snapshot: owned world, fleet at rest in orbit at Z=1, aggregate fractional costs before rounding. Mid-year arrivals and captures do not grant immediate repairs.
+
+**An additional ground candidate: defender-first volleys**
+
+Classic actually uses independent per-army hit rolls, with defenders firing first at 40–49% and surviving attackers at 30%. A count-based volley system can retain the first-shot advantage while being easier to explain through NC's AS and DS.
+
+Keep army AS10 and DS10. Both sides use one d10 effectiveness roll per exchange, with percentages `10, 20, 20, 30, 30, 30, 30, 40, 40, 50`. Defenders fire first. Remove attacker casualties, then calculate return fire from surviving attackers. Damage below 10 remains on the next army on that side through the battle. There are no odds columns, extra criticals, homeworld bonuses, or remnant exceptions. A wiped-out attacker cannot reply, so mutual annihilation cannot occur. First fire alone supplies the defender advantage.
+
+The 0.30 mean is being tested here against one-step armies. Its roughly five-exchange equal battle does not imply that the same table suits two-step fleet combat.
+
+Example: ten defenders rolling 30% produce 30 damage and remove three of twelve attackers. The nine survivors rolling 30% produce 27 damage: two defenders die and seven damage remains on the next defender. That damage carries into the following exchange. The damaged army keeps its AS until destroyed; there is no army cripple state.
+
+| Attackers versus 10 defenders | Exact capture chance | Mean exchanges |
+| --- | ---: | ---: |
+| 8 | 0.87% | 3.64 |
+| 10 | 15.16% | 5.06 |
+| 11 | 34.22% | 5.54 |
+| 12 | 56.89% | 5.56 |
+| 15 | 96.57% | 4.03 |
+| 20 | 99.997% | 2.65 |
+
+These are finite-state enumerations, not sampled estimates. Compare them with the simultaneous candidate above; neither is selected yet. Defender-first volleys are more defensive at equal numbers, while both reward a substantial invasion force. Test multiple scales too: equal forces of one, two, five, and ten armies give attacker odds of about 30.5%, 23.0%, 18.0%, and 15.2% in this candidate. Shared volley rolls and indivisible armies still matter. Choose the desired risk and defender advantage explicitly, rather than selecting a rule solely because it resembles classic.
+
+The [retained ground results](../../../tools/combat-model/nc_ground_comparison.json) compare current, simultaneous, and defender-first rules. Five Python checks cover the original critical lottery and ground cliff, removal before reply, carried subthreshold damage, and seeded reproducibility. No cargo or engine tests were run for this consultation.

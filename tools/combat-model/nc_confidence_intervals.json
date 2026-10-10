@@ -1,0 +1,512 @@
+{
+  "numpy": "2.5.4",
+  "scipy": "1.18.1",
+  "confidence": 0.95,
+  "method": "Clopper-Pearson",
+  "intervals": [
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 537,
+      "trials": 12000,
+      "low": 0.04111992713070315,
+      "high": 0.04860291351579537
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 27,
+      "trials": 12000,
+      "low": 0.00148327162372561,
+      "high": 0.0032719560532946126
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 1081,
+      "trials": 12000,
+      "low": 0.085019062070802,
+      "high": 0.0953474430571077
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 1183,
+      "trials": 12000,
+      "low": 0.09330587878254061,
+      "high": 0.10405640052731978
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "C",
+      "variant": null,
+      "wins": 220,
+      "trials": 12000,
+      "low": 0.016008785241137417,
+      "high": 0.020895500064825552
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "S",
+      "variant": null,
+      "wins": 4,
+      "trials": 12000,
+      "low": 9.082934389808549e-05,
+      "high": 0.000853243787326596
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "R",
+      "variant": null,
+      "wins": 550,
+      "trials": 12000,
+      "low": 0.042160611408779684,
+      "high": 0.049728329014228745
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "mode": "X",
+      "variant": null,
+      "wins": 659,
+      "trials": 12000,
+      "low": 0.050907267687467714,
+      "high": 0.059143636824243576
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "C",
+      "variant": null,
+      "wins": 4481,
+      "trials": 12000,
+      "low": 0.3647520377281395,
+      "high": 0.3821427392296695
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "S",
+      "variant": null,
+      "wins": 1102,
+      "trials": 12000,
+      "low": 0.08672410001208578,
+      "high": 0.09714153382344197
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "R",
+      "variant": null,
+      "wins": 4675,
+      "trials": 12000,
+      "low": 0.3808442206481322,
+      "high": 0.39837603959584
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "mode": "X",
+      "variant": null,
+      "wins": 4675,
+      "trials": 12000,
+      "low": 0.3808442206481322,
+      "high": 0.39837603959584
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 247,
+      "trials": 12000,
+      "low": 0.018118095714018227,
+      "high": 0.0232847918044509
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 3775,
+      "trials": 12000,
+      "low": 0.30627933759865805,
+      "high": 0.3229773541221195
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 1903,
+      "trials": 12000,
+      "low": 0.15208936330128317,
+      "high": 0.16524336618148278
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 2764,
+      "trials": 12000,
+      "low": 0.22282444540631402,
+      "high": 0.2379732405904003
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "C",
+      "variant": null,
+      "wins": 2026,
+      "trials": 12000,
+      "low": 0.1621701870626933,
+      "high": 0.17565752351190803
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "S",
+      "variant": null,
+      "wins": 8910,
+      "trials": 12000,
+      "low": 0.7345767300244218,
+      "high": 0.7503054813863462
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "R",
+      "variant": null,
+      "wins": 5241,
+      "trials": 12000,
+      "low": 0.427850474767124,
+      "high": 0.4456802220227498
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "mode": "X",
+      "variant": null,
+      "wins": 5241,
+      "trials": 12000,
+      "low": 0.427850474767124,
+      "high": 0.4456802220227498
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "C",
+      "variant": null,
+      "wins": 0,
+      "trials": 12000,
+      "low": 0.0,
+      "high": 0.00030735937660201216
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "S",
+      "variant": null,
+      "wins": 119,
+      "trials": 12000,
+      "low": 0.008221803543570171,
+      "high": 0.011855178986937465
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "R",
+      "variant": null,
+      "wins": 0,
+      "trials": 12000,
+      "low": 0.0,
+      "high": 0.00030735937660201216
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "mode": "X",
+      "variant": null,
+      "wins": 0,
+      "trials": 12000,
+      "low": 0.0,
+      "high": 0.00030735937660201216
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "C",
+      "variant": null,
+      "wins": 119,
+      "trials": 12000,
+      "low": 0.008221803543570171,
+      "high": 0.011855178986937465
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "S",
+      "variant": null,
+      "wins": 2629,
+      "trials": 12000,
+      "low": 0.21170993170636418,
+      "high": 0.22659323790916874
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "R",
+      "variant": null,
+      "wins": 1037,
+      "trials": 12000,
+      "low": 0.08144851337398903,
+      "high": 0.0915864863673078
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "mode": "X",
+      "variant": null,
+      "wins": 1791,
+      "trials": 12000,
+      "low": 0.14291845140096163,
+      "high": 0.15575218678547315
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 7719,
+      "trials": 12000,
+      "low": 0.6346034396302738,
+      "high": 0.6518270224538681
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 8072,
+      "trials": 12000,
+      "low": 0.6641882654716873,
+      "high": 0.6810612390390945
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 5775,
+      "trials": 12000,
+      "low": 0.47227411567563443,
+      "high": 0.4902349837520516
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 5653,
+      "trials": 12000,
+      "low": 0.46211859514255965,
+      "high": 0.4800621049471151
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 6031,
+      "trials": 12000,
+      "low": 0.493596100794815,
+      "high": 0.5115693121782168
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 6005,
+      "trials": 12000,
+      "low": 0.4914298435965404,
+      "high": 0.5094032875281583
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 5980,
+      "trials": 12000,
+      "low": 0.4893470623688032,
+      "high": 0.5073204131324281
+    },
+    {
+      "case": "10 CA vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 5980,
+      "trials": 12000,
+      "low": 0.4893470623688032,
+      "high": 0.5073204131324281
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 10177,
+      "trials": 12000,
+      "low": 0.8415351974754536,
+      "high": 0.854462138817087
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 8811,
+      "trials": 12000,
+      "low": 0.7262486950869208,
+      "high": 0.7421375316062119
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 8089,
+      "trials": 12000,
+      "low": 0.6656139563292038,
+      "high": 0.6824681931156649
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 8089,
+      "trials": 12000,
+      "low": 0.6656139563292038,
+      "high": 0.6824681931156649
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 11992,
+      "trials": 12000,
+      "low": 0.9986868257763675,
+      "high": 0.9997121381130554
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 11716,
+      "trials": 12000,
+      "low": 0.9734535929112482,
+      "high": 0.9789786956168398
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 11716,
+      "trials": 12000,
+      "low": 0.9734535929112482,
+      "high": 0.9789786956168398
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 11999,
+      "trials": 12000,
+      "low": 0.9995357848173716,
+      "high": 0.9999978901848936
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 11999,
+      "trials": 12000,
+      "low": 0.9995357848173716,
+      "high": 0.9999978901848936
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "C",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "S",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "R",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "mode": "X",
+      "variant": null,
+      "wins": 12000,
+      "trials": 12000,
+      "low": 0.999692640623398,
+      "high": 1.0
+    },
+    {
+      "case": "10 CA vs 10 CA ROE6",
+      "mode": "R",
+      "variant": null,
+      "wins": 13,
+      "trials": 12000,
+      "low": 0.0005769514746370586,
+      "high": 0.0018518205129152694
+    },
+    {
+      "case": "11 CA vs 10 CA ROE6",
+      "mode": "R",
+      "variant": null,
+      "wins": 2,
+      "trials": 12000,
+      "low": 2.0184743889066765e-05,
+      "high": 0.0006019262548422888
+    },
+    {
+      "case": "15 CA vs 10 CA ROE6",
+      "mode": "R",
+      "variant": null,
+      "wins": 0,
+      "trials": 12000,
+      "low": 0.0,
+      "high": 0.00030735937660201216
+    },
+    {
+      "case": "20 CA vs 10 CA ROE6",
+      "mode": "R",
+      "variant": null,
+      "wins": 4806,
+      "trials": 12000,
+      "low": 0.39171630803510366,
+      "high": 0.4093319854092092
+    }
+  ]
+}

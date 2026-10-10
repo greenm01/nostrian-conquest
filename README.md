@@ -224,6 +224,14 @@ cargo run --release -p nc-fuzz --example maint_throughput
 Normal player and sysop workflows should prefer `nc-game`, `nc-door`, and
 `nc-sysop`.
 
+Independent combat balance models and AS/DS/cost sweeps live in
+[tools/combat-model](tools/combat-model/README.md). They reproduce the
+combat review's numerical experiments without building Rust:
+
+```sh
+python3 -B tools/combat-model/ground.py
+```
+
 ## Local Dependencies
 
 - Rust toolchain
