@@ -24,6 +24,8 @@ pub struct HouseSpec {
     pub empire_name: Option<String>,
     pub homeworld_name: Option<String>,
     pub tax_rate: Option<u8>,
+    /// Hand the empire to the autopilot AI, as the in-game toggle does.
+    pub autopilot: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -96,6 +98,9 @@ pub struct FleetSpec {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TurnFileSpec {
     pub path: PathBuf,
+    /// 1-based maintenance turn the file is submitted before; turn 1 files
+    /// apply while the scenario is built.
+    pub turn: u16,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

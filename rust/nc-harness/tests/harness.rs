@@ -170,6 +170,42 @@ fleet-roe fleet=5 6 10
 }
 
 #[test]
+fn combat_scenario_submits_turn_files_before_their_turn() {
+    let dir = unique_temp_dir("nc-harness-turns");
+    write_file(
+        &dir.join("turn-1.kdl"),
+        "turn player=2 year=3000\ntax rate=40\n",
+    );
+    write_file(
+        &dir.join("turn-2.kdl"),
+        "turn player=2 year=3001\ntax rate=60\n",
+    );
+    let combat_path = dir.join("combat.kdl");
+    write_file(
+        &combat_path,
+        r#"combat-scenario player_count=2 year=3000 baseline="builder-compatible" seed=7 turns=2
+
+house record=1 autopilot=#true
+house record=2
+
+turn-file path="turn-2.kdl" turn=2
+turn-file path="turn-1.kdl"
+"#,
+    );
+
+    let spec = CombatScenarioSpec::load_kdl(&combat_path).unwrap();
+    let built = build_scenario(&spec.scenario).unwrap();
+    assert_eq!(built.game_data.player.records[1].tax_rate(), 40);
+    assert!(built.game_data.player.records[1].is_active_human_player());
+    assert_eq!(built.game_data.player.records[0].autopilot_flag(), 1);
+    assert_eq!(built.game_data.player.records[1].autopilot_flag(), 0);
+
+    let run = run_combat_scenario(&spec).unwrap();
+    assert_eq!(run.report.final_year, 3002);
+    assert_eq!(run.built.game_data.player.records[1].tax_rate(), 60);
+}
+
+#[test]
 fn report_preview_family_registry_exposes_implemented_and_stub_families() {
     let families = list_report_preview_families();
     assert!(families.iter().any(|family| family.key == "bombard"));

@@ -1,10 +1,10 @@
 use std::time::Instant;
 
 use nc_data::CoreGameData;
-use nc_engine::run_maintenance_turn;
 
-use crate::build::{BuiltScenario, ScenarioBuildReport, build_scenario};
+use crate::build::{BuiltScenario, ScenarioBuildReport, apply_turn_files, build_scenario};
 use crate::error::HarnessError;
+use crate::play::ScenarioPlay;
 use crate::spec::{
     CombatScenarioSpec, CombatSweepSpec, DiplomacySpec, FleetShipsSpec, PlanetSpec, ScenarioSpec,
     SweepDimension,
@@ -65,8 +65,8 @@ pub struct CombatSweepReport {
 }
 
 pub fn run_combat_scenario(spec: &CombatScenarioSpec) -> Result<CombatRun, HarnessError> {
-    let mut built = build_scenario(&spec.scenario)?;
-    let before = snapshot_empire_summaries(&built.game_data);
+    let mut play = ScenarioPlay::new(build_scenario(&spec.scenario)?);
+    let before = snapshot_empire_summaries(&play.built.game_data);
     let started = Instant::now();
 
     let mut fleet_battle_events = 0usize;
@@ -74,9 +74,17 @@ pub fn run_combat_scenario(spec: &CombatScenarioSpec) -> Result<CombatRun, Harne
     let mut assault_report_events = 0usize;
     let mut ownership_changes = 0usize;
 
-    for _ in 0..spec.maintenance_turns {
-        let events = run_maintenance_turn(&mut built.game_data)
-            .map_err(|err| HarnessError::Validation(err.to_string()))?;
+    for turn in 1..=spec.maintenance_turns {
+        if turn > 1 {
+            let built = &mut play.built;
+            apply_turn_files(
+                &spec.scenario,
+                turn,
+                &mut built.game_data,
+                &mut built.queued_mail,
+            )?;
+        }
+        let events = play.run_maintenance()?;
         fleet_battle_events += events.fleet_battle_events.len();
         bombard_events += events.bombard_events.len();
         assault_report_events += events.assault_report_events.len();
@@ -84,6 +92,7 @@ pub fn run_combat_scenario(spec: &CombatScenarioSpec) -> Result<CombatRun, Harne
     }
 
     let elapsed_millis = started.elapsed().as_millis();
+    let built = play.built;
     let final_year = built.game_data.conquest.game_year();
     let after = snapshot_empire_summaries(&built.game_data);
     let empires = (1..=built.game_data.conquest.player_count())

@@ -1,6 +1,7 @@
 mod build;
 mod error;
 mod parse;
+mod play;
 mod report_preview;
 mod run;
 mod spec;
@@ -9,6 +10,7 @@ pub use build::{
     BuiltScenario, SavedScenarioReport, ScenarioBuildReport, build_scenario, save_built_scenario,
 };
 pub use error::HarnessError;
+pub use play::ScenarioPlay;
 pub use report_preview::{
     PreviewFamilyStatus, ReportPreviewCase, ReportPreviewFamily, ReportPreviewFamilyRun,
     ReportPreviewQuery, ReportPreviewRun, ViewerReportSet, list_report_preview_families,
