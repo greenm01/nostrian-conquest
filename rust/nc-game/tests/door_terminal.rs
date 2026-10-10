@@ -459,3 +459,62 @@ fn stdio_input_is_not_telnet_filtered() {
     let got = read_scripted_door_keys_for_test(&[(0, b"\xff\xfbx")], DoorTransport::Stdio);
     assert_eq!(got, vec![plain(KeyCode::Char('x'))]);
 }
+
+fn stdio_keys(reads: &[(u64, &[u8])]) -> Vec<KeyEvent> {
+    read_scripted_door_keys_for_test(reads, DoorTransport::Stdio)
+}
+
+#[test]
+fn telnet_enter_sequences_decode_as_one_enter() {
+    let enter_then_y = vec![plain(KeyCode::Enter), plain(KeyCode::Char('y'))];
+    assert_eq!(stdio_keys(&[(0, b"\r\ny")]), enter_then_y);
+    assert_eq!(stdio_keys(&[(0, b"\r\0y")]), enter_then_y);
+    assert_eq!(socket_keys(&[(0, b"\r\ny")]), enter_then_y);
+    assert_eq!(socket_keys(&[(0, b"\r\0y")]), enter_then_y);
+    // CR NUL must not turn the next byte into a DOS scan code.
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\0H")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Char('H'))]
+    );
+}
+
+#[test]
+fn telnet_enter_sequences_split_across_reads_decode_as_one_enter() {
+    let enter_then_y = vec![plain(KeyCode::Enter), plain(KeyCode::Char('y'))];
+    assert_eq!(stdio_keys(&[(0, b"\r"), (5, b"\ny")]), enter_then_y);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r"), (5, b"\0"), (10, b"y")]),
+        enter_then_y
+    );
+}
+
+#[test]
+fn bare_cr_and_bare_lf_each_stay_enter() {
+    assert_eq!(stdio_keys(&[(0, b"\r")]), vec![plain(KeyCode::Enter)]);
+    assert_eq!(stdio_keys(&[(0, b"\n")]), vec![plain(KeyCode::Enter)]);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\r\n")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Enter)]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\n\n")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Enter)]
+    );
+}
+
+#[test]
+fn dos_extended_keys_still_decode_when_not_preceded_by_cr() {
+    assert_eq!(stdio_keys(&[(0, b"\0H")]), vec![plain(KeyCode::Up)]);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r"), (5, b"a"), (10, b"\0P")]),
+        vec![
+            plain(KeyCode::Enter),
+            plain(KeyCode::Char('a')),
+            plain(KeyCode::Down)
+        ]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\xe0H")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Up)]
+    );
+}

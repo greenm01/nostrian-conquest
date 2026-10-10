@@ -247,6 +247,9 @@ struct DoorInputDecoder {
     /// Present for socket transports, which carry the caller's raw telnet
     /// stream. Stdio doors get input the BBS has already de-telnetted.
     telnet: Option<TelnetFilter>,
+    /// The last input byte was CR, so a following LF or NUL is the rest of a
+    /// telnet end-of-line (CR LF / CR NUL), not a second key.
+    after_cr: bool,
     pending: VecDeque<u8>,
     sequence_deadline: Option<Instant>,
     orphaned_escape_suffix_deadline: Option<Instant>,
@@ -262,6 +265,7 @@ impl DoorInputDecoder {
     fn new(transport: DoorTransport) -> Self {
         Self {
             telnet: (transport != DoorTransport::Stdio).then(TelnetFilter::default),
+            after_cr: false,
             pending: VecDeque::new(),
             sequence_deadline: None,
             orphaned_escape_suffix_deadline: None,
@@ -328,8 +332,16 @@ impl DoorInputDecoder {
             Some(telnet) => telnet.filter(&raw),
             None => raw,
         };
+        let mut after_cr = self.after_cr;
+        burst.retain(|&byte| {
+            let end_of_line_suffix = after_cr && matches!(byte, b'\n' | 0x00);
+            after_cr = byte == b'\r';
+            !end_of_line_suffix
+        });
+        self.after_cr = after_cr;
         if received && burst.is_empty() {
-            // Only protocol bytes arrived; keep waiting for keys.
+            // Only telnet commands or an end-of-line suffix arrived; keep
+            // waiting for keys.
             return Ok(true);
         }
         drop_orphaned_escape_suffix(
