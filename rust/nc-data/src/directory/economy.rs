@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-    PlayerRecord, ProductionItemKind, build_capacity, yearly_growth_delta, yearly_tax_revenue,
+    PlayerRecord, ProductionItemKind, Real48, build_capacity, yearly_growth_delta,
+    yearly_tax_revenue,
 };
 
 impl CoreGameData {
@@ -313,11 +314,18 @@ impl CoreGameData {
             .collect()
     }
 
+    /// Whether one of the empire's bases orbits the world at `coords` and is
+    /// bound for it, as ECGAME's build screen tests for the 5x budget: in
+    /// the world's sector at depth 0.5 or more, with that sector as its
+    /// target and orbit as its target layer.
     pub fn planet_has_friendly_starbase(&self, owner_empire_raw: u8, coords: [u8; 2]) -> bool {
         self.bases.records.iter().any(|base| {
             base.owner_empire_raw() == owner_empire_raw
                 && base.coords_raw() == coords
                 && base.base_id_raw() != 0
+                && base.depth() >= Real48::HALF
+                && base.target_coords_raw() == coords
+                && base.target_depth_raw() >= 1
         })
     }
 

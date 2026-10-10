@@ -135,14 +135,29 @@ Yearly revenue is credited after this update, on the new
 ## Starbase Effects
 
 ### 1. Growth Bonus
-An active, commissioned starbase in orbit provides a tax-sensitive growth
-bonus. It applies **+50%** of base growth at tax <= 50%, tapering to 0% at tax
-65%. This is the canonical Rust policy.
+A starbase at rest in orbit provides a tax-sensitive growth bonus. It applies
+**+50%** of base growth at tax <= 50%, tapering to 0% at tax 65%. The amount
+is the canonical Rust policy.
+
+Which base counts follows ECMAINT (`1852:011b`). Classic settles it before the
+year's 52 ticks, by scanning the unit table: a base in the world's sector at
+depth layer 1 (`Z >= 0.5`) whose BASES moving flag (`0x1f`) is 0. A base in
+deep space or under way gives nothing, even one that arrives in orbit during
+the year. Rust takes the same test before movement. Classic also requires
+the world's owner to have at least one base (PLAYER `0x44`), but not that the
+base in orbit is the owner's; Rust requires the owner's base, since a base at
+rest over another empire's world lifts away within a tick.
 
 ### 2. Build Capacity Multiplier
 A starbase lets a planet spend up to **5x** its current production on units
 in a single turn. Without a starbase, capacity is **1x**. This affects build
 completion, not tax revenue.
+
+The base must be the empire's, in the world's sector at `Z >= 0.5`, with the
+world's sector as its target and orbit as its target layer. This is ECGAME's
+build-screen test (image offset `0xa3fe`, "There is a starbase orbiting
+planet"); it ignores the moving flag, so a base descending toward the world
+counts.
 
 ## Treasury (Per-Planet Stored Production)
 

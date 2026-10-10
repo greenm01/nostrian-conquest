@@ -849,7 +849,9 @@ Final yearly Production is:
 == Starbase Growth Bonus
 
 A commissioned starbase boosts growth at low and moderate tax rates, but the
-bonus tapers away completely by `65%`.
+bonus tapers away completely by `65%`. Only a base of yours resting in orbit
+over the world when the year begins counts. A base under way, even one that
+arrives during the year, gives no bonus, nor does a base in deep space.
 
 #align(left)[
   #stack(
@@ -874,6 +876,9 @@ Per-turn build capacity is:
     [#text(font: "IBM Plex Mono")[build_capacity = present_production \* 5 with starbase]],
   )
 ]
+
+Here "with starbase" means one of your bases in orbit over the world and bound
+there. A base ordered elsewhere, or one in deep space, does not count.
 
 A planet's *treasury* accumulates unspent production points across turns.
 Each turn, the *budget* is capped by build capacity:
