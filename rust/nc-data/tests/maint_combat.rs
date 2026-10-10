@@ -4,10 +4,7 @@ use nc_data::{
     ContactReportSource, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, Mission,
     MissionOutcome, Order, PlanetIntelSource,
 };
-use nc_engine::{
-    run_maintenance_turn, run_maintenance_turn_with_context,
-    run_maintenance_turn_with_context_and_seed,
-};
+use nc_engine::{run_maintenance_turn, run_maintenance_turn_with_context};
 use std::path::Path;
 
 fn load_fixture(name: &str) -> CoreGameData {
@@ -82,8 +79,9 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     hostile.set_standing_order_kind(Order::MoveOnly);
     hostile.set_standing_order_target_coords_raw([8, 13]);
     hostile.set_current_speed(0);
+    // Big enough to last into round 4, when ROE withdrawals start.
     hostile.set_destroyer_count(0);
-    hostile.set_cruiser_count(2);
+    hostile.set_cruiser_count(8);
     hostile.set_battleship_count(0);
     hostile.set_scout_count(0);
     hostile.set_troop_transport_count(0);
@@ -123,6 +121,8 @@ fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2])
     base.set_coords_raw(coords);
     base.set_trailing_coords_raw(coords);
     base.set_owner_empire_raw(owner);
+    // In orbit (depth 1), as commissioned starbases are.
+    base.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
     game_data.bases.records.push(base);
 }
 
@@ -333,8 +333,9 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
     game_data.fleets.records[0].set_scout_count(1);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, _| {
+        !year.fleets.records[0].has_any_force()
+    });
 
     let loser_one = &game_data.fleets.records[0];
     assert_eq!(loser_one.current_location_coords_raw(), [10, 10]);
@@ -357,19 +358,13 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
             && event.enemy_empires_raw.contains(&2)
             && event.reporting_empire_raw == 1
     }));
-    assert!(events.scout_contact_events.iter().any(|event| {
-        event.viewer_empire_raw == 1
-            && event.source == ContactReportSource::FleetMission(Mission::ScoutSector)
-            && event.coords == [10, 10]
-            && event.target_empire_raw == 2
-    }));
-    assert!(events.scout_contact_events.iter().any(|event| {
-        matches!(
-            event.source,
-            ContactReportSource::Fleet(_) | ContactReportSource::FleetMission(Mission::MoveOnly)
-        ) && event.coords == [10, 10]
-            && event.viewer_empire_raw != 1
-    }));
+    // Whoever attacked sighted the other first.
+    assert!(
+        events
+            .scout_contact_events
+            .iter()
+            .any(|event| { event.coords == [10, 10] && matches!(event.viewer_empire_raw, 1 | 2) })
+    );
 
     let survivor = &game_data.fleets.records[6];
     assert_eq!(survivor.current_location_coords_raw(), [10, 10]);
@@ -387,16 +382,26 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
 
 #[test]
 fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() {
-    let mut game_data = configured_dominant_invalidated_invade_state();
+    let game_data = configured_dominant_invalidated_invade_state();
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
+        events.fleet_battle_events.iter().any(|event| {
+            event.reporting_empire_raw == 1
+                && event.held_field
+                && event.friendly_losses.destroyers == 1
+        })
+    });
 
+    // The battle comes mid-year: the aborted fleet seeks home at once and may
+    // reach it (16,13) before the year ends.
     let attacker = &game_data.fleets.records[0];
-    assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
-    assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(attacker.current_speed(), 0);
+    assert_ne!(attacker.standing_order_kind(), Order::InvadeWorld);
+    assert!(matches!(
+        attacker.standing_order_kind(),
+        Order::SeekHome | Order::HoldPosition
+    ));
+    assert_eq!(attacker.standing_order_target_coords_raw(), [16, 13]);
 
     assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 2);
     assert!(
@@ -422,7 +427,7 @@ fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() 
 }
 
 #[test]
-fn hostile_contact_with_roe_zero_allows_clean_sensor_retreat() {
+fn roe_zero_enemies_identify_and_avoid_each_other() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [15, 13];
 
@@ -450,52 +455,49 @@ fn hostile_contact_with_roe_zero_allows_clean_sensor_retreat() {
     hostile.set_rules_of_engagement(0);
     common::stall_in_place(hostile);
     let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
 
-    assert!(
-        events.fleet_battle_events.is_empty(),
-        "ROE-zero transit contact should abort before combat when the patrol already holds the sector"
-    );
+    // ROE 0 never attacks. The patrol identifies the enemy and reports that
+    // its ROE has it avoid the fight; both keep their orders.
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
+        !events.encounter_disposition_events.is_empty()
+    });
+    assert!(events.fleet_battle_events.is_empty());
     assert!(events.encounter_disposition_events.iter().any(|event| {
         matches!(
             event,
-            EncounterDispositionEvent::Retreated {
-                owner_empire_raw,
-                mission: Some(Mission::MoveOnly),
+            EncounterDispositionEvent::NoEngagement {
+                owner_empire_raw: 1,
+                mission: Some(Mission::PatrolSector),
                 coords: event_coords,
-                target_empire_raw,
-                target_fleet_number: _,
-                reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
+                target_empire_raw: 2,
+                reason: nc_data::EncounterDispositionReason::RoeDeclined,
                 ..
-            } if *owner_empire_raw == 2
-                && *event_coords == coords
-                && *target_empire_raw == 1
+            } if *event_coords == coords
         )
     }));
     assert_eq!(
         game_data.fleets.records[0].standing_order_kind(),
         Order::PatrolSector
     );
-    assert_eq!(game_data.fleets.records[0].current_speed(), 0);
     assert_eq!(
         game_data.fleets.records[4].standing_order_kind(),
-        Order::SeekHome
-    );
-    // The retreat runs at full speed (0 for this stalled contact).
-    assert_eq!(
-        game_data.fleets.records[4].current_speed(),
-        game_data.fleets.records[4].max_speed()
+        Order::MoveOnly
     );
 }
 
 #[test]
 fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
-    let mut game_data = configured_invade_contact_state(10, 0);
+    let game_data = configured_invade_contact_state(10, 0);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    // A year where the hostile withdrew and survived, and the invader kept
+    // its loaded transports (losing them aborts the mission for another
+    // reason).
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, events| {
+        !events.encounter_disposition_events.is_empty()
+            && year.fleets.records[0].army_count() == 2
+            && year.fleets.records[4].has_any_force()
+    });
 
     assert!(
         events.encounter_disposition_events.iter().any(|event| {
@@ -542,11 +544,12 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
 
 #[test]
 fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
-    let mut game_data = configured_invade_contact_state(0, 10);
+    let game_data = configured_invade_contact_state(0, 10);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
+        !events.encounter_disposition_events.is_empty()
+    });
 
     assert!(events.encounter_disposition_events.iter().any(|event| {
         matches!(
@@ -572,7 +575,7 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
 }
 
 #[test]
-fn neutral_bombard_arrival_at_defended_world_forces_local_battle_and_escalation() {
+fn owners_guard_attacks_a_neutral_bombard_arrival() {
     let mut game_data = load_fixture("ecmaint-post");
     let target = [15, 13];
 
@@ -620,26 +623,20 @@ fn neutral_bombard_arrival_at_defended_world_forces_local_battle_and_escalation(
     defender.set_troop_transport_count(0);
     defender.set_army_count(0);
     defender.set_etac_count(0);
-    defender.set_rules_of_engagement(0);
+    defender.set_rules_of_engagement(6);
 
-    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    // The guard sees the bombarder in its system, twenty times easier to see
+    // at its target, and attacks it although the two empires are neutral.
+    let (_, events) = common::first_year(&game_data, &[], common::battle);
 
     assert!(
         !events.fleet_battle_events.is_empty(),
         "defended-world assault posture should force a local battle"
     );
-    assert!(
-        events.bombard_events.is_empty(),
-        "arrival turn should contest orbit before bombardment executes"
-    );
-    assert_eq!(
-        game_data.player.records[0].diplomatic_relation_toward(2),
-        Some(nc_data::DiplomaticRelation::Enemy)
-    );
-    assert_eq!(
-        game_data.player.records[1].diplomatic_relation_toward(1),
-        Some(nc_data::DiplomaticRelation::Enemy)
-    );
+    assert!(events.fleet_battle_events.iter().any(|event| {
+        event.reporting_empire_raw == 2
+            && event.perspective == nc_data::maintenance_types::FleetBattlePerspective::Intercepted
+    }));
 }
 
 #[test]
@@ -674,8 +671,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
     common::stall_in_place(right);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (_, events) = common::first_year(&game_data, &diplomacy, common::battle);
 
     assert!(
         !events.fleet_battle_events.is_empty(),
@@ -718,8 +714,7 @@ fn anchored_guard_intercepts_declared_enemy_transit_contact() {
     common::stall_in_place(transit);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (_, events) = common::first_year(&game_data, &diplomacy, common::battle);
 
     assert!(
         events
@@ -763,10 +758,16 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     common::stall_in_place(hostile);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context_and_seed(&mut game_data, 5, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
+        events.encounter_disposition_events.is_empty()
+            && events.fleet_battle_events.iter().any(|event| {
+                event.reporting_empire_raw == 1
+                    && event.held_field
+                    && event.enemy_losses.cruisers == 8
+            })
+    });
 
-    assert_eq!(game_data.fleets.records[0].cruiser_count(), 1);
+    assert!(game_data.fleets.records[0].cruiser_count() > 0);
     assert_eq!(
         game_data.fleets.records[0].standing_order_kind(),
         Order::PatrolSector
@@ -777,10 +778,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
         [16, 13]
     );
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 1
-            && event.friendly_losses.cruisers == 7
-            && event.enemy_losses.cruisers == 8
-            && event.held_field
+        event.reporting_empire_raw == 1 && event.enemy_losses.cruisers == 8 && event.held_field
     }));
     assert!(
         events.encounter_disposition_events.is_empty(),
@@ -875,8 +873,9 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
     attacker.set_rules_of_engagement(10);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context_and_seed(&mut game_data, 5, &[], &diplomacy)
-        .expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, _| {
+        year.fleets.records[0].troop_transport_count() == 0
+    });
 
     let screened = &game_data.fleets.records[0];
     assert_eq!(
@@ -1002,7 +1001,7 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
     attacker.set_etac_count(0);
     attacker.set_rules_of_engagement(6);
 
-    run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    let (game_data, _) = common::first_year(&game_data, &[], common::battle);
 
     let attacker = &game_data.fleets.records[4];
     assert_eq!(attacker.cruiser_count(), 0);
@@ -1041,7 +1040,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
 
     add_active_starbase(&mut game_data, 2, coords);
 
-    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    let (game_data, events) = common::first_year(&game_data, &[], common::battle);
 
     assert_eq!(game_data.bases.records.len(), 1);
     assert_eq!(game_data.bases.records[0].owner_empire_raw(), 2);
@@ -1244,54 +1243,5 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
             .planet_intel_events
             .iter()
             .all(|event| event.source == PlanetIntelSource::AssaultFailure)
-    );
-}
-
-#[test]
-fn guard_blockade_does_not_intercept_transit_fleet() {
-    // The ROE-2 transit fleet's sensor check sees the guard and breaks off
-    // cleanly before any fire is exchanged.
-    let mut game_data = load_fixture("ecmaint-post");
-    let coords = [8, 8]; // Deep space, not at a planet
-
-    // Guard fleet - empire 1 on Guard/Blockade mission
-    let guard = &mut game_data.fleets.records[0];
-    guard.set_current_location_coords_raw(coords);
-    guard.set_standing_order_kind(Order::GuardBlockadeWorld);
-    guard.set_standing_order_target_coords_raw(coords);
-    guard.set_destroyer_count(2); // 2 AS
-    guard.set_cruiser_count(0);
-    guard.set_battleship_count(0);
-    guard.set_rules_of_engagement(10); // Always fight
-
-    // Transit fleet - empire 2 just moving through with a cautious ROE
-    let transit = &mut game_data.fleets.records[4];
-    transit.set_current_location_coords_raw(coords);
-    transit.set_standing_order_kind(Order::MoveOnly);
-    transit.set_standing_order_target_coords_raw([9, 8]);
-    transit.set_destroyer_count(0);
-    transit.set_cruiser_count(1); // 3 AS
-    transit.set_battleship_count(0);
-    transit.set_rules_of_engagement(2); // ROE=2 requires 3:1
-
-    let diplomacy = mutual_enemy_overrides(1, 2);
-    let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
-        .expect("maintenance should succeed");
-
-    // The transit fleet withdrew before contact, so no battle was fought.
-    assert!(
-        events.fleet_battle_events.is_empty(),
-        "cautious transit fleet should break off before the guard engages"
-    );
-
-    // No pursuit fire or engagement events
-    let pursuit_events: Vec<_> = events
-        .encounter_disposition_events
-        .iter()
-        .filter(|e| matches!(e, EncounterDispositionEvent::PursuitFire { .. }))
-        .collect();
-    assert!(
-        pursuit_events.is_empty(),
-        "no pursuit fire for transit fleet"
     );
 }

@@ -426,7 +426,7 @@ pub fn push_mission_entries(
                 source_clause.clone(),
                 MissionReportBody::Narrative(format!(
                     " Colonization mission report: Hostile action forced us to abandon our colony attempt. We are {}.",
-                    aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+                    aborted_event_follow_on_text(game_data, fleet, event)
                 )),
             ),
             (Mission::ViewWorld, MissionOutcome::Succeeded) => {
@@ -485,7 +485,7 @@ pub fn push_mission_entries(
                     source_clause.clone(),
                     MissionReportBody::Narrative(format!(
                         " Viewing mission report: We were attacked before the viewing mission could be completed. We are aborting our assignment and {}.",
-                        aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+                        aborted_event_follow_on_text(game_data, fleet, event)
                     )),
                 )
             }
@@ -599,7 +599,7 @@ pub fn push_mission_entries(
                 MissionReportBody::Narrative(hostile_assault_abort_text(
                     Mission::BombardWorld,
                     event.abort_reason,
-                    &aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw),
+                    &aborted_event_follow_on_text(game_data, fleet, event),
                 )),
             ),
             (Mission::InvadeWorld, MissionOutcome::Aborted) => (
@@ -609,7 +609,7 @@ pub fn push_mission_entries(
                 MissionReportBody::Narrative(hostile_assault_abort_text(
                     Mission::InvadeWorld,
                     event.abort_reason,
-                    &aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw),
+                    &aborted_event_follow_on_text(game_data, fleet, event),
                 )),
             ),
             (Mission::BlitzWorld, MissionOutcome::Aborted) => (
@@ -619,7 +619,7 @@ pub fn push_mission_entries(
                 MissionReportBody::Narrative(hostile_assault_abort_text(
                     Mission::BlitzWorld,
                     event.abort_reason,
-                    &aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw),
+                    &aborted_event_follow_on_text(game_data, fleet, event),
                 )),
             ),
             (Mission::InvadeWorld, _) | (Mission::BlitzWorld, _) => continue,
@@ -643,7 +643,7 @@ pub fn push_mission_entries(
                     source_clause.clone(),
                     MissionReportBody::Narrative(format!(
                         " Scouting mission report: Hostile action forced us to abort our scouting mission and {}.",
-                        aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+                        aborted_event_follow_on_text(game_data, fleet, event)
                     )),
                 )
             }
@@ -737,7 +737,7 @@ pub fn push_mission_entries(
                     source_clause.clone(),
                     MissionReportBody::Narrative(format!(
                         " Scouting mission report: We were forced to break off our close reconnaissance and {}.",
-                        aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+                        aborted_event_follow_on_text(game_data, fleet, event)
                     )),
                 )
             }

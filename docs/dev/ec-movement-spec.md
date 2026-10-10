@@ -65,10 +65,10 @@ Classic runs 52 ticks a year. Each tick gives a fleet a budget of
 
 Arithmetic is in 6-byte reals. Rounding matters: a fleet can finish a climb
 at `Z = 1 - epsilon` rather than `1.0`, and the arrival tests compare against
-`1.0` exactly, so such a fleet arrives a year later. Rust runs each fleet's 52
-ticks with the same rounding but steps fleets independently, a year at a time;
-classic also interleaves fleets tick by tick in a random order, which matters
-only for mid-year encounters.
+`1.0` exactly, so such a fleet arrives a year later. Rust steps fleets with the
+same rounding and, like classic, interleaves them tick by tick in a random
+order drawn once a year, with the encounter check between each fleet's step
+and its arrival test ([ec-encounter-spec.md](ec-encounter-spec.md)).
 
 A fleet at rest in orbit has `Z = 1`, so it spends its first sector of
 movement climbing out: speed `v` covers `v - 1` sectors in its first year and

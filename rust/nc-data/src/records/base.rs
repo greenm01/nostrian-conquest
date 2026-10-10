@@ -1,5 +1,5 @@
-use crate::BASE_RECORD_SIZE;
 use crate::support::{ParseError, copy_array};
+use crate::{BASE_RECORD_SIZE, Real48};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BaseRecord {
@@ -71,6 +71,10 @@ impl BaseRecord {
     }
     pub fn set_tuple_c_payload_raw(&mut self, payload: [u8; 5]) {
         self.raw[0x19..0x1E].copy_from_slice(&payload);
+    }
+    /// 0x19..=0x1E: depth into the system, a 6-byte real (1.0 in orbit).
+    pub fn depth(&self) -> Real48 {
+        Real48::from_bytes(copy_array(&self.raw[0x19..=0x1E]))
     }
     pub fn trailing_coords_raw(&self) -> [u8; 2] {
         copy_array(&self.raw[0x20..0x22])

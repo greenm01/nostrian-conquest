@@ -209,18 +209,11 @@ fn prelude_arrived(order: Order, motion: Motion, target: [u8; 2], depth: Real48)
         && (order == Order::GuardStarbase || motion.z >= depth)
 }
 
-/// What one year of ticks did to a fleet.
-#[derive(Debug, Clone, Copy)]
-pub(crate) struct FleetYear {
-    pub motion: Motion,
-    pub speed: u8,
-    /// Tick whose arrival test passed; the fleet stopped there.
-    pub resolved_tick: Option<u8>,
-    /// Motion and speed one tick before the resolving tick.
-    pub before_resolution: (Motion, u8),
-}
-
-pub(crate) fn run_year(
+/// One tick of a fleet's movement: the step, then the dispatcher prelude,
+/// which gives a stopped fleet that has not arrived its maximum speed back.
+/// The order's arrival test is separate (`ArrivalRule::passes`) because the
+/// encounter check runs between the two.
+pub(crate) fn advance(
     motion: Motion,
     speed: u8,
     max_speed: u8,
@@ -228,13 +221,25 @@ pub(crate) fn run_year(
     target: [u8; 2],
     depth: Real48,
     course: &mut Course,
-) -> FleetYear {
-    run_ticks(motion, speed, max_speed, order, target, depth, course, 1)
+) -> (Motion, u8) {
+    let motion = step(motion, speed, course, depth);
+    if speed == 0 && !prelude_arrived(order, motion, target, depth) {
+        return (motion, max_speed);
+    }
+    (motion, speed)
 }
 
-/// The year's ticks from `first_tick` to the last.
-#[allow(clippy::too_many_arguments)]
-pub(crate) fn run_ticks(
+/// What one year of ticks did to a fleet.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct FleetYear {
+    pub motion: Motion,
+    pub speed: u8,
+    /// Tick whose arrival test passed; the fleet stopped there.
+    pub resolved_tick: Option<u8>,
+}
+
+/// A whole year of one fleet's ticks, alone (the ETA estimate).
+pub(crate) fn run_year(
     mut motion: Motion,
     mut speed: u8,
     max_speed: u8,
@@ -242,21 +247,15 @@ pub(crate) fn run_ticks(
     target: [u8; 2],
     depth: Real48,
     course: &mut Course,
-    first_tick: u8,
 ) -> FleetYear {
     let rule = ArrivalRule::for_order(order);
-    for tick in first_tick..=TICKS_PER_YEAR {
-        let before = (motion, speed);
-        motion = step(motion, speed, course, depth);
-        if speed == 0 && !prelude_arrived(order, motion, target, depth) {
-            speed = max_speed;
-        }
+    for tick in 1..=TICKS_PER_YEAR {
+        (motion, speed) = advance(motion, speed, max_speed, order, target, depth, course);
         if rule.passes(motion, target, depth, speed, tick == TICKS_PER_YEAR) {
             return FleetYear {
                 motion,
                 speed,
                 resolved_tick: Some(tick),
-                before_resolution: before,
             };
         }
     }
@@ -264,6 +263,5 @@ pub(crate) fn run_ticks(
         motion,
         speed,
         resolved_tick: None,
-        before_resolution: (motion, speed),
     }
 }

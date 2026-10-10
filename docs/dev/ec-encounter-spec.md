@@ -415,12 +415,9 @@ sector with no world belongs to no one and is nobody's system.
 8. Report: both sides get battle reports ("We successfully intercepted ...",
    "We were attacked by ...", "We lost all contact with ...").
 
-Where Rust's current battle differs (brief): Rust forms one task force per
-empire from every fleet present, uses a seeded CRT with a 3-round
-commitment and 64-round cap, escalates diplomacy to Enemy, and treats
-"either direction" declarations as enemies. Classic fights one observer
-against one target (plus guard/base partner) for 5-24 random rounds, and
-leaves diplomacy unchanged.
+Rust follows steps 1-3 and 5-7 but resolves the battle itself with its own
+seeded CRT (see [nc-combat-spec.md](nc-combat-spec.md)), which has no round
+count of its own; classic's battle internals are task t036.
 
 ---------------------------------------------------------------------------
 
@@ -447,10 +444,8 @@ climbing (9 ticks at speed 3), and the normal rules apply:
 - A blockader does attack third-party bombard/invade/blitz arrivals, and
   colonizers of an unowned world (H1), at a foreign world too.
 
-So classic disagrees with Rust's t021 rule ("fights the blockading fleets of
-every other empire, at war or not, before movement"). Classic's rule:
-departures are fought only by blockaders whose empire declared the leaver an
-enemy, by chance, during the climb.
+So departures are fought only by blockaders whose empire declared the leaver
+an enemy, by chance, during the climb. Rust has no departure strike either.
 
 ---------------------------------------------------------------------------
 

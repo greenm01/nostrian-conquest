@@ -75,10 +75,6 @@ pub fn place_fleet(
         // prelude has no speed to restore, so it ends the year here.
         fleet.set_max_speed(0);
     }
-    if order == Order::GuardStarbase {
-        // Escort starbase id 1 (see `add_starbase`).
-        fleet.set_mission_aux_bytes([1, 1]);
-    }
 }
 
 /// Settle a fleet that already sits at its hostile-mission target at rest in
@@ -88,19 +84,6 @@ pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
     fleet.set_current_speed(3);
     fleet.set_mission_aux_bytes([1, fleet.mission_id_raw()]);
     fleet.set_at_rest_motion();
-}
-
-pub fn add_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
-    base.set_local_slot_raw(1);
-    base.set_active_flag_raw(1);
-    base.set_base_id_raw(1);
-    base.set_link_word_raw(0);
-    base.set_chain_word_raw(1);
-    base.set_coords_raw(coords);
-    base.set_trailing_coords_raw(coords);
-    base.set_owner_empire_raw(owner);
-    game_data.bases.records.push(base);
 }
 
 /// Explicit diplomacy among empires 1-4: the listed pairs are mutual enemies,

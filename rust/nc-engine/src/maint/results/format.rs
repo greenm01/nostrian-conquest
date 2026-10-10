@@ -355,6 +355,27 @@ pub fn aborted_mission_follow_on_text(
     }
 }
 
+/// What a fleet did after the abort in `event`. A fleet that withdrew early
+/// in the year may already have reached the world it withdrew toward and
+/// stopped there; it still withdrew.
+pub fn aborted_event_follow_on_text(
+    game_data: &CoreGameData,
+    fleet: &nc_data::FleetRecord,
+    event: &nc_data::MissionEvent,
+) -> String {
+    if let (Some(at), Some(target)) = (event.location_coords, event.target_coords)
+        && at != target
+        && fleet.standing_order_kind() == nc_data::Order::HoldPosition
+        && fleet.current_location_coords_raw() == target
+    {
+        return format!(
+            "withdrawing toward {}",
+            nearest_owned_destination_text(game_data, event.owner_empire_raw, target)
+        );
+    }
+    aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+}
+
 pub fn aborted_mission_follow_on_text_from_idx(
     game_data: &CoreGameData,
     fleet_idx: usize,

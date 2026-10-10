@@ -119,7 +119,7 @@ pub use report_blocks::{
     ReportBlockRow, delete_report_block_for_viewer, delete_report_blocks_for_viewer,
 };
 pub use rng::{
-    GameRng, RNG_TAG_COMBAT, RNG_TAG_MAPGEN, derive_campaign_seed_from_runtime,
+    GameRng, RNG_TAG_COMBAT, RNG_TAG_ENCOUNTER, RNG_TAG_MAPGEN, derive_campaign_seed_from_runtime,
     generate_campaign_seed, mix_seed,
 };
 pub use runtime_reports::{

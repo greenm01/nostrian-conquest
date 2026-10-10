@@ -1,5 +1,3 @@
-use std::collections::{BTreeMap, BTreeSet};
-
 use crate::{CoreGameData, Order, ShipLosses};
 
 pub(super) const IDX_DD: usize = 0;
@@ -34,17 +32,6 @@ pub(super) enum BattleRole {
     Neutral,
 }
 
-/// How a task force came to its battle.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum Encounter {
-    /// Forces sharing a location after movement: the ordinary fleet battle.
-    InPlace,
-    /// Fleets ordered away from a blockaded world, met before they move.
-    Departing,
-    /// The blockade meeting those departing fleets.
-    Blockading,
-}
-
 #[derive(Clone, Debug, Default)]
 pub(super) struct FleetCombatState {
     pub(super) counts: [u32; 7],
@@ -58,12 +45,7 @@ pub(super) struct TaskForce {
     pub(super) coords: [u8; 2],
     pub(super) state: FleetCombatState,
     pub(super) role: BattleRole,
-    pub(super) encounter: Encounter,
     pub(super) withdrew_under_roe: bool,
-    /// An anchored defender whose ROE declined to break formation against a
-    /// contact that is not entering its system. It stays on station and only
-    /// fires back if a willing enemy attacks it.
-    pub(super) holding_formation: bool,
     pub(super) engaged_in_battle: bool,
     /// Guards/blockades get one free hold when ROE threshold fails (per spec).
     /// Set to true once this free hold has been used.
@@ -216,60 +198,6 @@ fn task_force_role(
     }
 }
 
-pub(super) fn has_patrol_order(game_data: &CoreGameData, fleet_indices: &[usize]) -> bool {
-    fleet_indices
-        .iter()
-        .any(|&idx| game_data.fleets.records[idx].standing_order_kind() == Order::PatrolSector)
-}
-
-/// Orders that take a fleet into the solar system at its current location
-/// instead of leaving it in the sector's deep space. View World is excluded:
-/// it scans from the system edge and backs off into deep space.
-fn fleet_enters_system(fleet: &nc_data::FleetRecord) -> bool {
-    fleet.current_location_coords_raw() == fleet.standing_order_target_coords_raw()
-        && matches!(
-            fleet.standing_order_kind(),
-            Order::GuardStarbase
-                | Order::GuardBlockadeWorld
-                | Order::BombardWorld
-                | Order::InvadeWorld
-                | Order::BlitzWorld
-                | Order::ScoutSolarSystem
-        )
-}
-
-pub(super) fn task_force_enters_system(game_data: &CoreGameData, task_force: &TaskForce) -> bool {
-    task_force
-        .fleet_indices
-        .iter()
-        .any(|&idx| fleet_enters_system(&game_data.fleets.records[idx]))
-}
-
-pub(super) fn task_force_blockades_system(
-    game_data: &CoreGameData,
-    task_force: &TaskForce,
-) -> bool {
-    task_force
-        .fleet_indices
-        .iter()
-        .any(|&idx| fleet_blockades_system(&game_data.fleets.records[idx]))
-}
-
-/// A Guard/Blockade World fleet on station at its target world.
-fn fleet_blockades_system(fleet: &nc_data::FleetRecord) -> bool {
-    fleet.standing_order_kind() == Order::GuardBlockadeWorld && fleet_enters_system(fleet)
-}
-
-/// A fleet stopped at its location whose order moves it elsewhere this turn.
-/// Fleets passing through mid-transit are off the sector centre and do not count.
-fn fleet_departs_location(fleet: &nc_data::FleetRecord) -> bool {
-    fleet.standing_order_kind() != Order::HoldPosition
-        && fleet.current_speed() > 0
-        && fleet.x_fraction() == nc_data::Real48::HALF
-        && fleet.y_fraction() == nc_data::Real48::HALF
-        && fleet.standing_order_target_coords_raw() != fleet.current_location_coords_raw()
-}
-
 pub(super) fn starbase_count_at(game_data: &CoreGameData, coords: [u8; 2], owner: u8) -> u32 {
     game_data
         .bases
@@ -281,116 +209,12 @@ pub(super) fn starbase_count_at(game_data: &CoreGameData, coords: [u8; 2], owner
         .count() as u32
 }
 
-pub(super) fn build_task_forces_at_location(
-    game_data: &CoreGameData,
-    coords: [u8; 2],
-) -> Vec<TaskForce> {
-    let mut by_empire: BTreeMap<u8, Vec<usize>> = BTreeMap::new();
-    for (idx, fleet) in game_data.fleets.records.iter().enumerate() {
-        if fleet.current_location_coords_raw() == coords {
-            by_empire
-                .entry(fleet.owner_empire_raw())
-                .or_default()
-                .push(idx);
-        }
-    }
-
-    let mut empires: BTreeSet<u8> = by_empire.keys().copied().collect();
-    if let Some(planet) = game_data
-        .planets
-        .records
-        .iter()
-        .find(|p| p.coords_raw() == coords)
-    {
-        if planet.owner_empire_slot_raw() != 0
-            && starbase_count_at(game_data, coords, planet.owner_empire_slot_raw()) > 0
-        {
-            empires.insert(planet.owner_empire_slot_raw());
-        }
-    }
-
-    empires
-        .into_iter()
-        .map(|empire| {
-            let fleet_indices = by_empire.remove(&empire).unwrap_or_default();
-            let starbases = starbase_count_at(game_data, coords, empire);
-            new_task_force(
-                game_data,
-                empire,
-                coords,
-                fleet_indices,
-                starbases,
-                Encounter::InPlace,
-            )
-        })
-        .collect()
-}
-
-/// Locations where a Guard/Blockade World fleet is on station.
-pub(super) fn blockaded_locations(game_data: &CoreGameData) -> BTreeSet<[u8; 2]> {
-    game_data
-        .fleets
-        .records
-        .iter()
-        .filter(|fleet| fleet_blockades_system(fleet))
-        .map(|fleet| fleet.current_location_coords_raw())
-        .collect()
-}
-
-/// Task forces for the departure interception at a blockaded world, before
-/// movement: each empire's fleets ordered away from the world, and each other
-/// empire's blockading fleets. An empire with departing fleets fields only
-/// those. Starbases do not intercept departures.
-pub(super) fn build_departure_task_forces_at_location(
-    game_data: &CoreGameData,
-    coords: [u8; 2],
-) -> Vec<TaskForce> {
-    let mut departing: BTreeMap<u8, Vec<usize>> = BTreeMap::new();
-    let mut blockading: BTreeMap<u8, Vec<usize>> = BTreeMap::new();
-    for (idx, fleet) in game_data.fleets.records.iter().enumerate() {
-        if fleet.current_location_coords_raw() != coords {
-            continue;
-        }
-        if fleet_departs_location(fleet) {
-            departing
-                .entry(fleet.owner_empire_raw())
-                .or_default()
-                .push(idx);
-        } else if fleet_blockades_system(fleet) {
-            blockading
-                .entry(fleet.owner_empire_raw())
-                .or_default()
-                .push(idx);
-        }
-    }
-    blockading.retain(|empire, _| !departing.contains_key(empire));
-    if blockading.is_empty() {
-        return Vec::new();
-    }
-
-    let departing = departing
-        .into_iter()
-        .map(|(empire, fleets)| (empire, fleets, Encounter::Departing));
-    let blockading = blockading
-        .into_iter()
-        .map(|(empire, fleets)| (empire, fleets, Encounter::Blockading));
-    let mut task_forces: Vec<TaskForce> = departing
-        .chain(blockading)
-        .map(|(empire, fleet_indices, encounter)| {
-            new_task_force(game_data, empire, coords, fleet_indices, 0, encounter)
-        })
-        .collect();
-    task_forces.sort_by_key(|tf| tf.empire);
-    task_forces
-}
-
-fn new_task_force(
+pub(super) fn new_task_force(
     game_data: &CoreGameData,
     empire: u8,
     coords: [u8; 2],
     fleet_indices: Vec<usize>,
     starbases: u32,
-    encounter: Encounter,
 ) -> TaskForce {
     let role = task_force_role(game_data, empire, coords, &fleet_indices);
     let state = fleet_state_from_records(game_data, &fleet_indices, starbases);
@@ -400,9 +224,7 @@ fn new_task_force(
         coords,
         state,
         role,
-        encounter,
         withdrew_under_roe: false,
-        holding_formation: false,
         engaged_in_battle: false,
         free_hold_used: false,
     }
