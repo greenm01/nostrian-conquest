@@ -15,6 +15,7 @@
 //!
 //! Only the fields that `nc-game` actually uses are extracted:
 //! - `alias` — player handle/alias for matching a game record
+//! - `fallback_alias` — DOOR.SYS real name, tried when `alias` binds no seat
 //! - `timeout_minutes` — session time limit sourced from the dropfile
 
 use std::path::Path;
@@ -30,6 +31,10 @@ use crate::terminal::cp437::cp437_to_string;
 pub struct DropfileInfo {
     /// Player handle or alias (used to match a game player record).
     pub alias: Option<String>,
+    /// DOOR.SYS real name (line 10) when the handle came from line 36. Seat
+    /// binding tries it after `alias`, so seats bound under the real name
+    /// before the handle was read keep working.
+    pub fallback_alias: Option<String>,
     /// Session time limit in minutes sourced from the dropfile.
     pub timeout_minutes: Option<u32>,
     /// Terminal width reported by the BBS, when the format provides it.
@@ -170,6 +175,7 @@ fn parse_u64(lines: &[&str], n: usize) -> Option<u64> {
 fn parse_door32(lines: &[&str]) -> DropfileInfo {
     DropfileInfo {
         alias: line(lines, 7).map(ToOwned::to_owned),
+        fallback_alias: None,
         timeout_minutes: parse_u32(lines, 9),
         screen_columns: parse_u32(lines, 11).map(|value| value as usize),
         screen_rows: parse_u32(lines, 12).map(|value| value as usize),
@@ -193,14 +199,21 @@ fn parse_door32(lines: &[&str]) -> DropfileInfo {
 //  20  ANSI flag (Y/N/G)
 //  21  Screen rows
 //  ...
+//  36  User's handle/alias          ← alias
+//  ...
 //
-// DOOR.SYS does not have a dedicated alias field; the closest equivalent is
-// the real name on line 10.  Some BBS software writes the handle there
-// instead; either way it is the best we can do.
+// Short DOOR.SYS files stop before line 36, and some BBS software leaves it
+// blank; the real name on line 10 is the alias then.
 
 fn parse_door_sys(lines: &[&str]) -> DropfileInfo {
+    let real_name = line(lines, 10).map(ToOwned::to_owned);
+    let (alias, fallback_alias) = match line(lines, 36) {
+        Some(handle) => (Some(handle.to_owned()), real_name),
+        None => (real_name, None),
+    };
     DropfileInfo {
-        alias: line(lines, 10).map(ToOwned::to_owned),
+        alias,
+        fallback_alias,
         timeout_minutes: parse_u32(lines, 19),
         screen_columns: None,
         screen_rows: parse_u32(lines, 21).map(|value| value as usize),
@@ -240,6 +253,7 @@ fn parse_chain_txt(lines: &[&str]) -> DropfileInfo {
         .map(|secs| (secs / 60.0) as u32);
     DropfileInfo {
         alias: line(lines, 2).map(ToOwned::to_owned),
+        fallback_alias: None,
         timeout_minutes,
         screen_columns: parse_u32(lines, 9).map(|value| value as usize),
         screen_rows: parse_u32(lines, 10).map(|value| value as usize),

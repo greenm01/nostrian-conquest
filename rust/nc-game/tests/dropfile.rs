@@ -153,7 +153,7 @@ fn door_sys_content() -> String {
         "N",          // 7  printer
         "Y",          // 8  page bell
         "N",          // 9  caller alarm
-        "Tachyon",    // 10 real name / handle ← alias
+        "Tachyon",    // 10 real name ← alias when line 36 is absent
         "Cyberspace", // 11 location
         "555-1234",   // 12 phone home
         "555-5678",   // 13 phone data
@@ -213,6 +213,40 @@ fn door_sys_case_insensitive_filename() {
     let path = write_tmp("door.sys", &door_sys_content());
     let info = parse(&path).expect("should parse");
     assert_eq!(info.alias.as_deref(), Some("Tachyon"));
+}
+
+/// A full 52-line DOOR.SYS with `handle` on line 36 (the alias field).
+fn door_sys_52_line_content(handle: &str) -> String {
+    let mut lines: Vec<String> = door_sys_content().lines().map(str::to_owned).collect();
+    lines.resize(52, "0".to_string());
+    lines[35] = handle.to_string();
+    lines.iter().map(|l| format!("{l}\r\n")).collect()
+}
+
+#[test]
+fn door_sys_reads_the_handle_from_line_36() {
+    let path = write_tmp("DOOR.SYS", &door_sys_52_line_content("Starlord"));
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.alias.as_deref(), Some("Starlord"));
+    // Seats bound before the handle was read used the real name.
+    assert_eq!(info.fallback_alias.as_deref(), Some("Tachyon"));
+    assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
+fn door_sys_uses_the_real_name_when_line_36_is_blank() {
+    let path = write_tmp("DOOR.SYS", &door_sys_52_line_content("  "));
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.alias.as_deref(), Some("Tachyon"));
+    assert_eq!(info.fallback_alias, None);
+}
+
+#[test]
+fn short_door_sys_uses_the_real_name_from_line_10() {
+    let path = write_tmp("DOOR.SYS", &door_sys_content());
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.alias.as_deref(), Some("Tachyon"));
+    assert_eq!(info.fallback_alias, None);
 }
 
 // ---------------------------------------------------------------------------

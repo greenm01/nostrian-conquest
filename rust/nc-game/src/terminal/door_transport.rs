@@ -302,32 +302,84 @@ fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
     }
 }
 
+/// One console `INPUT_RECORD`. Every member of its event union is 16 bytes
+/// with 4-byte alignment, so the key-event member stands in for the union.
+#[cfg_attr(not(windows), allow(dead_code))]
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct ConsoleInputRecord {
+    event_type: u16,
+    key_event: ConsoleKeyEventRecord,
+}
+
+/// `KEY_EVENT_RECORD`, with `uChar` read as its UTF-16 member.
+#[cfg_attr(not(windows), allow(dead_code))]
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+struct ConsoleKeyEventRecord {
+    key_down: i32,
+    repeat_count: u16,
+    virtual_key_code: u16,
+    virtual_scan_code: u16,
+    unicode_char: u16,
+    control_key_state: u32,
+}
+
+#[cfg_attr(not(windows), allow(dead_code))]
+const CONSOLE_KEY_EVENT: u16 = 0x0001;
+
+/// Whether `ReadFile` on the console returns bytes for this record: a key
+/// press that carries a character. Key releases, bare modifier and navigation
+/// keys, and mouse, focus, menu, and resize records produce nothing, so they
+/// must not wake a door wait whose read would then block.
+#[cfg_attr(not(windows), allow(dead_code))]
+fn console_record_has_key_input(record: &ConsoleInputRecord) -> bool {
+    record.event_type == CONSOLE_KEY_EVENT
+        && record.key_event.key_down != 0
+        && record.key_event.unicode_char != 0
+}
+
 #[cfg(windows)]
 fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
+    use std::ffi::c_void;
     use std::os::windows::io::AsRawHandle;
 
     unsafe extern "system" {
         fn PeekNamedPipe(
-            handle: *mut std::ffi::c_void,
+            handle: *mut c_void,
             buffer: *mut u8,
             buffer_size: u32,
             bytes_read: *mut u32,
             total_bytes_available: *mut u32,
             bytes_left_this_message: *mut u32,
         ) -> i32;
-        fn WaitForSingleObject(handle: *mut std::ffi::c_void, millis: u32) -> u32;
+        fn PeekConsoleInputW(
+            handle: *mut c_void,
+            buffer: *mut ConsoleInputRecord,
+            length: u32,
+            events_read: *mut u32,
+        ) -> i32;
+        fn ReadConsoleInputW(
+            handle: *mut c_void,
+            buffer: *mut ConsoleInputRecord,
+            length: u32,
+            events_read: *mut u32,
+        ) -> i32;
+        fn WaitForSingleObject(handle: *mut c_void, millis: u32) -> u32;
     }
 
     const WAIT_OBJECT_0: u32 = 0;
+    const WAIT_TIMEOUT: u32 = 0x102;
+    const INFINITE: u32 = 0xFFFFFFFF;
 
     let stdin = io::stdin();
     let handle = stdin.as_raw_handle();
+    let deadline = if timeout_ms < 0 {
+        None
+    } else {
+        Some(Instant::now() + Duration::from_millis(timeout_ms as u64))
+    };
     if !stdin.is_terminal() {
-        let deadline = if timeout_ms < 0 {
-            None
-        } else {
-            Some(Instant::now() + Duration::from_millis(timeout_ms as u64))
-        };
         loop {
             let mut total_bytes_available = 0u32;
             let rc = unsafe {
@@ -359,13 +411,33 @@ fn stdin_ready(timeout_ms: i32) -> io::Result<bool> {
         }
     }
 
-    let millis = if timeout_ms < 0 {
-        0xFFFFFFFF
-    } else {
-        timeout_ms as u32
-    };
-    let rc = unsafe { WaitForSingleObject(handle as *mut _, millis) };
-    Ok(rc == WAIT_OBJECT_0)
+    // The console handle is signaled while any input record is queued, but
+    // `ReadFile` skips records without a character and then blocks. Discard
+    // those until a usable key press is first in the queue.
+    loop {
+        let mut record = ConsoleInputRecord::default();
+        let mut count = 0u32;
+        if unsafe { PeekConsoleInputW(handle as *mut _, &mut record, 1, &mut count) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+        if count == 0 {
+            let millis = deadline.map_or(INFINITE, |deadline| {
+                let remaining = deadline.saturating_duration_since(Instant::now());
+                remaining.as_millis().min(u128::from(INFINITE - 1)) as u32
+            });
+            match unsafe { WaitForSingleObject(handle as *mut _, millis) } {
+                WAIT_OBJECT_0 => continue,
+                WAIT_TIMEOUT => return Ok(false),
+                _ => return Err(io::Error::last_os_error()),
+            }
+        }
+        if console_record_has_key_input(&record) {
+            return Ok(true);
+        }
+        if unsafe { ReadConsoleInputW(handle as *mut _, &mut record, 1, &mut count) } == 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
 }
 
 #[cfg(windows)]
@@ -511,4 +583,50 @@ fn socket_would_block(err: &io::Error) -> bool {
 #[cfg(not(any(unix, windows)))]
 fn stdin_ready(_timeout_ms: i32) -> io::Result<bool> {
     Ok(false)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{ConsoleInputRecord, ConsoleKeyEventRecord, console_record_has_key_input};
+
+    // Inline: the record layout is a private FFI type.
+    #[test]
+    fn console_input_record_matches_the_windows_layout() {
+        assert_eq!(std::mem::size_of::<ConsoleInputRecord>(), 20);
+        assert_eq!(std::mem::align_of::<ConsoleInputRecord>(), 4);
+        assert_eq!(std::mem::offset_of!(ConsoleInputRecord, key_event), 4);
+        assert_eq!(
+            std::mem::offset_of!(ConsoleKeyEventRecord, unicode_char),
+            10
+        );
+    }
+
+    fn key(key_down: bool, unicode_char: u16) -> ConsoleInputRecord {
+        ConsoleInputRecord {
+            event_type: 0x0001,
+            key_event: ConsoleKeyEventRecord {
+                key_down: i32::from(key_down),
+                repeat_count: 1,
+                unicode_char,
+                ..ConsoleKeyEventRecord::default()
+            },
+        }
+    }
+
+    #[test]
+    fn only_character_key_presses_wake_a_console_door_wait() {
+        assert!(console_record_has_key_input(&key(true, 0x1b)));
+        assert!(console_record_has_key_input(&key(true, u16::from(b'a'))));
+        // Esc released, and an arrow or Shift press without VT input.
+        assert!(!console_record_has_key_input(&key(false, 0x1b)));
+        assert!(!console_record_has_key_input(&key(true, 0)));
+        // Mouse, window resize, menu, and focus records.
+        for event_type in [0x0002, 0x0004, 0x0008, 0x0010] {
+            let record = ConsoleInputRecord {
+                event_type,
+                ..key(true, u16::from(b'a'))
+            };
+            assert!(!console_record_has_key_input(&record), "{event_type:#x}");
+        }
+    }
 }

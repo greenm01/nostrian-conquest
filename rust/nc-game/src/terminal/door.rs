@@ -1,13 +1,15 @@
+use std::cell::RefCell;
 use std::collections::VecDeque;
 use std::fs::OpenOptions;
 use std::io::{self, Read, Write};
 use std::path::{Path, PathBuf};
+use std::rc::Rc;
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 
-use crate::screen::layout::ScreenGeometry;
+use crate::screen::layout::{ScreenGeometry, last_body_row_for};
 use crate::screen::{GameColor, PlayfieldBuffer};
 use crate::terminal::cp437;
 use crate::terminal::{ColorMode, OutputEncoding, Terminal};
@@ -26,6 +28,9 @@ const DOOR_ESCAPE_TIMEOUT_MS: i32 = 100;
 const DOOR_ORPHAN_SUFFIX_WINDOW_MS: u64 = 1000;
 const DOOR_DOS_PREFIX_TIMEOUT_MS: i32 = 2000;
 const MAX_ESCAPE_SEQUENCE_BYTES: usize = 16;
+/// How long before the session time limit the caller is warned.
+const SESSION_WARNING_LEAD: Duration = Duration::from_secs(120);
+const SESSION_WARNING_TEXT: &str = "Two minutes remain in your time limit for this session.";
 const DEFAULT_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[0 q";
 const BLINKING_BLOCK_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[1 q";
 
@@ -38,6 +43,8 @@ pub struct DoorTerminal {
     decoder: DoorInputDecoder,
     io: Box<dyn DoorIo>,
     session_deadline: Option<Instant>,
+    /// When to warn that the session limit is near; cleared once shown.
+    session_warning_at: Option<Instant>,
     idle_limit: Option<Duration>,
     last_key_at: Instant,
 }
@@ -84,6 +91,7 @@ impl DoorTerminal {
             decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
             session_deadline: None,
+            session_warning_at: None,
             idle_limit: None,
             last_key_at: Instant::now(),
         })
@@ -91,14 +99,27 @@ impl DoorTerminal {
 
     /// Stop waiting for keys once `session_limit` has passed since this call
     /// or no key has arrived for `idle_limit`; `read_key` then fails with
-    /// [`DoorTimeout`].
+    /// [`DoorTimeout`]. A session limit longer than two minutes also gets a
+    /// one-line warning two minutes before it runs out.
     pub fn with_input_limits(
-        mut self,
+        self,
         session_limit: Option<Duration>,
         idle_limit: Option<Duration>,
     ) -> Self {
+        self.with_input_limits_and_warning_lead(session_limit, idle_limit, SESSION_WARNING_LEAD)
+    }
+
+    fn with_input_limits_and_warning_lead(
+        mut self,
+        session_limit: Option<Duration>,
+        idle_limit: Option<Duration>,
+        warning_lead: Duration,
+    ) -> Self {
         let now = Instant::now();
         self.session_deadline = session_limit.map(|limit| now + limit);
+        self.session_warning_at = session_limit
+            .filter(|limit| *limit > warning_lead)
+            .map(|limit| now + limit - warning_lead);
         self.idle_limit = idle_limit;
         self.last_key_at = now;
         self
@@ -110,6 +131,39 @@ impl DoorTerminal {
         geometry: ScreenGeometry,
     ) -> io::Result<Self> {
         Self::with_transport_and_color_mode(encoding, color_mode, geometry, DoorTransport::Stdio)
+    }
+
+    /// Once its time comes, draw the session warning over the last body row,
+    /// leaving the cursor where the frame put it. The next frame redraws the
+    /// row.
+    fn show_due_session_warning(&mut self) -> io::Result<()> {
+        if self
+            .session_warning_at
+            .is_none_or(|warning_at| warning_at > Instant::now())
+        {
+            return Ok(());
+        }
+        self.session_warning_at = None;
+        let notice = classic::notice_style();
+        let mut bytes = b"\x1b[s".to_vec();
+        bytes.extend_from_slice(cursor_to(last_body_row_for(self.geometry) as u16, 0).as_bytes());
+        bytes.extend_from_slice(&style_sgr(
+            notice.fg,
+            notice.bg,
+            notice.bold,
+            self.color_mode,
+        ));
+        bytes.extend_from_slice(b"\x1b[2K");
+        bytes.extend_from_slice(SESSION_WARNING_TEXT.as_bytes());
+        bytes.extend_from_slice(&style_sgr(
+            classic::terminal_foreground(),
+            classic::app_background(),
+            false,
+            self.color_mode,
+        ));
+        bytes.extend_from_slice(b"\x1b[u");
+        self.io.write_all(&bytes)?;
+        self.io.flush()
     }
 }
 
@@ -127,27 +181,36 @@ impl Terminal for DoorTerminal {
     }
 
     fn read_key(&mut self) -> Result<KeyEvent, Box<dyn std::error::Error>> {
-        let session = self
-            .session_deadline
-            .map(|deadline| (deadline, DoorTimeout::SessionLimit));
-        let idle = self
-            .idle_limit
-            .map(|limit| (self.last_key_at + limit, DoorTimeout::Idle));
-        let limit = [session, idle]
-            .into_iter()
-            .flatten()
-            .min_by_key(|(deadline, _)| *deadline);
-        let Some(key) = self.decoder.next_key(
-            self.io.as_mut(),
-            self.trace_dir.as_deref(),
-            limit.map(|(deadline, _)| deadline),
-        )?
-        else {
-            let timeout = limit.map_or(DoorTimeout::SessionLimit, |(_, timeout)| timeout);
-            return Err(Box::new(timeout));
-        };
-        self.last_key_at = Instant::now();
-        Ok(key)
+        loop {
+            self.show_due_session_warning()?;
+            let session = self
+                .session_deadline
+                .map(|deadline| (deadline, DoorTimeout::SessionLimit));
+            let idle = self
+                .idle_limit
+                .map(|limit| (self.last_key_at + limit, DoorTimeout::Idle));
+            let limit = [session, idle]
+                .into_iter()
+                .flatten()
+                .min_by_key(|(deadline, _)| *deadline);
+            let wait_until = [limit.map(|(deadline, _)| deadline), self.session_warning_at]
+                .into_iter()
+                .flatten()
+                .min();
+            if let Some(key) =
+                self.decoder
+                    .next_key(self.io.as_mut(), self.trace_dir.as_deref(), wait_until)?
+            {
+                self.last_key_at = Instant::now();
+                return Ok(key);
+            }
+            // Otherwise the wait ended at the warning time; show it and wait on.
+            if let Some((deadline, timeout)) = limit
+                && deadline <= Instant::now()
+            {
+                return Err(Box::new(timeout));
+            }
+        }
     }
 
     fn dump_text_capture(&mut self, text: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -905,24 +968,53 @@ pub fn read_scripted_door_session_for_test(
     session_limit: Option<Duration>,
     idle_limit: Option<Duration>,
 ) -> (Vec<KeyEvent>, Option<DoorTimeout>) {
-    let mut terminal = DoorTerminal {
+    let (keys, timeout, _) = read_scripted_door_session(reads, transport, |terminal| {
+        terminal.with_input_limits(session_limit, idle_limit)
+    });
+    (keys, timeout)
+}
+
+/// Like [`read_scripted_door_session_for_test`] over stdio with a session
+/// limit, warning `warning_lead` before it instead of two minutes. Also
+/// returns everything the door wrote.
+#[doc(hidden)]
+pub fn read_scripted_door_session_with_warning_for_test(
+    reads: &[(u64, &[u8])],
+    session_limit: Duration,
+    warning_lead: Duration,
+) -> (Vec<KeyEvent>, Option<DoorTimeout>, Vec<u8>) {
+    read_scripted_door_session(reads, DoorTransport::Stdio, |terminal| {
+        terminal.with_input_limits_and_warning_lead(Some(session_limit), None, warning_lead)
+    })
+}
+
+fn read_scripted_door_session(
+    reads: &[(u64, &[u8])],
+    transport: DoorTransport,
+    limits: impl FnOnce(DoorTerminal) -> DoorTerminal,
+) -> (Vec<KeyEvent>, Option<DoorTimeout>, Vec<u8>) {
+    let output = Rc::new(RefCell::new(Vec::new()));
+    let mut terminal = limits(DoorTerminal {
         encoding: OutputEncoding::Cp437,
         color_mode: ColorMode::Ansi16,
         geometry: ScreenGeometry::local_default(),
         trace_dir: None,
         frame_seq: 0,
         decoder: DoorInputDecoder::new(transport),
-        io: Box::new(ScriptedDoorIo::new(reads)),
+        io: Box::new(ScriptedDoorIo::new(reads, Rc::clone(&output))),
         session_deadline: None,
+        session_warning_at: None,
         idle_limit: None,
         last_key_at: Instant::now(),
-    }
-    .with_input_limits(session_limit, idle_limit);
+    });
     let mut keys = Vec::new();
     loop {
         match terminal.read_key() {
             Ok(key) => keys.push(key),
-            Err(err) => return (keys, err.downcast_ref::<DoorTimeout>().copied()),
+            Err(err) => {
+                let timeout = err.downcast_ref::<DoorTimeout>().copied();
+                return (keys, timeout, output.take());
+            }
         }
     }
 }
@@ -931,10 +1023,11 @@ struct ScriptedDoorIo {
     start: Instant,
     reads: VecDeque<(u64, Vec<u8>)>,
     current: VecDeque<u8>,
+    output: Rc<RefCell<Vec<u8>>>,
 }
 
 impl ScriptedDoorIo {
-    fn new(reads: &[(u64, &[u8])]) -> Self {
+    fn new(reads: &[(u64, &[u8])], output: Rc<RefCell<Vec<u8>>>) -> Self {
         Self {
             start: Instant::now(),
             reads: reads
@@ -942,6 +1035,7 @@ impl ScriptedDoorIo {
                 .map(|(at_ms, bytes)| (*at_ms, bytes.to_vec()))
                 .collect(),
             current: VecDeque::new(),
+            output,
         }
     }
 
@@ -991,6 +1085,7 @@ impl Read for ScriptedDoorIo {
 
 impl Write for ScriptedDoorIo {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        self.output.borrow_mut().extend_from_slice(buf);
         Ok(buf.len())
     }
 

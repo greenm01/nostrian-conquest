@@ -7,7 +7,7 @@ use nc_game::terminal::door::{
     DoorTimeout, DoorTransport, decode_fragmented_input_for_test, decode_input_bytes_for_test,
     decode_input_stream_for_test, decode_timed_input_stream_for_test,
     read_scripted_door_keys_for_test, read_scripted_door_session_for_test,
-    serialize_playfield_frame,
+    read_scripted_door_session_with_warning_for_test, serialize_playfield_frame,
 };
 use nc_game::terminal::{ColorMode, OutputEncoding};
 
@@ -507,6 +507,24 @@ fn socket_input_drops_negotiation_inside_a_pending_escape_sequence() {
 }
 
 #[test]
+fn socket_input_resumes_after_an_unterminated_subnegotiation() {
+    // IAC SB TTYPE and 1023 more payload bytes reach the 1024-byte cap with
+    // no IAC SE; the bytes after it are keys again.
+    let mut read = b"\xff\xfa\x18".to_vec();
+    read.extend(std::iter::repeat_n(b'x', 1023));
+    read.push(b'q');
+    assert_eq!(socket_keys(&[(0, &read)]), vec![plain(KeyCode::Char('q'))]);
+}
+
+#[test]
+fn socket_input_drops_a_subnegotiation_at_the_length_cap() {
+    let mut read = b"\xff\xfa\x18".to_vec();
+    read.extend(std::iter::repeat_n(b'x', 1023));
+    read.extend_from_slice(b"\xff\xf0r");
+    assert_eq!(socket_keys(&[(0, &read)]), vec![plain(KeyCode::Char('r'))]);
+}
+
+#[test]
 fn stdio_input_is_not_telnet_filtered() {
     // Stdio hosts hand the door already-processed input; a stray 0xFF must
     // not swallow the key after it.
@@ -640,4 +658,55 @@ fn session_limit_ends_the_door_session_even_while_typing() {
 fn door_session_without_limits_reads_until_input_closes() {
     let got = read_scripted_door_session_for_test(&[(300, b"a")], DoorTransport::Stdio, None, None);
     assert_eq!(got, (vec![plain(KeyCode::Char('a'))], None));
+}
+
+const WARNING: &str = "Two minutes remain in your time limit for this session.";
+
+#[test]
+fn session_limit_warning_is_shown_once_before_time_runs_out() {
+    let started = Instant::now();
+    let (keys, timeout, output) = read_scripted_door_session_with_warning_for_test(
+        &[(0, b"a"), (250, b"b"), (350, b"c")],
+        ms(500).unwrap(),
+        ms(200).unwrap(),
+    );
+    assert_eq!(
+        keys,
+        vec![
+            plain(KeyCode::Char('a')),
+            plain(KeyCode::Char('b')),
+            plain(KeyCode::Char('c'))
+        ]
+    );
+    assert_eq!(timeout, Some(DoorTimeout::SessionLimit));
+    assert!(started.elapsed() >= Duration::from_millis(500));
+    let output = String::from_utf8_lossy(&output);
+    assert_eq!(output.matches(WARNING).count(), 1, "{output:?}");
+    // Drawn on the last body row, with the cursor saved and restored.
+    assert!(output.starts_with("\x1b[s\x1b[24;1H"), "{output:?}");
+    assert!(output.ends_with("\x1b[u"), "{output:?}");
+}
+
+#[test]
+fn session_limit_warning_arrives_while_the_caller_is_idle() {
+    let (_, timeout, output) = read_scripted_door_session_with_warning_for_test(
+        &[(0, b"a")],
+        ms(300).unwrap(),
+        ms(100).unwrap(),
+    );
+    assert_eq!(timeout, Some(DoorTimeout::SessionLimit));
+    assert!(String::from_utf8_lossy(&output).contains(WARNING));
+}
+
+#[test]
+fn short_session_limits_get_no_warning() {
+    for limit in [100, 200] {
+        let (_, timeout, output) = read_scripted_door_session_with_warning_for_test(
+            &[],
+            ms(limit).unwrap(),
+            ms(200).unwrap(),
+        );
+        assert_eq!(timeout, Some(DoorTimeout::SessionLimit));
+        assert!(output.is_empty(), "limit {limit} ms");
+    }
 }
