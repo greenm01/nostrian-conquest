@@ -151,6 +151,37 @@ tax rate=20
 }
 
 #[test]
+fn turn_submission_rejects_non_ascii_planet_rename() {
+    let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
+    let planet_record_index_1_based = data
+        .planets
+        .records
+        .iter()
+        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .map(|idx| idx + 1)
+        .unwrap();
+    let before = data.planets.records[planet_record_index_1_based - 1].planet_name();
+    let submission = TurnSubmission::parse_kdl_str(&format!(
+        r#"
+turn player=1 year=3000
+planet record={planet_record_index_1_based} {{
+  rename name="😀😀😀😀"
+}}
+"#
+    ))
+    .unwrap();
+
+    let err = submission
+        .apply_to(&mut data, &mut Vec::new())
+        .expect_err("non-ASCII planet name should be rejected");
+    assert!(err.to_string().contains("printable ASCII"), "{err}");
+    assert_eq!(
+        data.planets.records[planet_record_index_1_based - 1].planet_name(),
+        before
+    );
+}
+
+#[test]
 fn turn_submission_clear_build_kind_round_trips_and_clears_only_selected_kind() {
     let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
     let planet_record_index_1_based = data

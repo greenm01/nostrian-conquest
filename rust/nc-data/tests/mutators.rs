@@ -184,6 +184,55 @@ fn rename_owned_planet_updates_name_for_matching_owner() {
 }
 
 #[test]
+fn rename_owned_planet_rejects_non_printable_ascii_names() {
+    let mut data = GameStateBuilder::new()
+        .with_player_count(2)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let planet_record_index_1_based = data
+        .planets
+        .records
+        .iter()
+        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .map(|idx| idx + 1)
+        .unwrap();
+    let before = data.planets.records[planet_record_index_1_based - 1].planet_name();
+
+    for name in [
+        "\u{1F600}\u{1F600}\u{1F600}\u{1F600}",
+        "\u{C6}gir",
+        "Tab\tWorld",
+    ] {
+        assert_eq!(
+            data.rename_owned_planet(1, planet_record_index_1_based, name),
+            Err(GameStateMutationError::InvalidPlanetName {
+                planet_index_1_based: planet_record_index_1_based,
+            })
+        );
+        assert_eq!(
+            data.rename_player_homeworld(1, name),
+            Err(GameStateMutationError::InvalidPlanetName {
+                planet_index_1_based: planet_record_index_1_based,
+            })
+        );
+    }
+    assert_eq!(
+        data.planets.records[planet_record_index_1_based - 1].planet_name(),
+        before
+    );
+}
+
+#[test]
+fn set_planet_name_truncates_on_a_char_boundary() {
+    let mut planet = PlanetRecord::new_zeroed();
+    planet.set_planet_name("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.planet_name(), "\u{1F600}\u{1F600}\u{1F600}");
+
+    planet.set_planet_name("Fourteen Chars");
+    assert_eq!(planet.planet_name(), "Fourteen Char");
+}
+
+#[test]
 fn join_player_normalizes_zero_tax_slots_to_seeded_opening_tax_rate() {
     let mut data = GameStateBuilder::new()
         .with_player_count(2)

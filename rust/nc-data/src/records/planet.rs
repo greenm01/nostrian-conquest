@@ -191,7 +191,10 @@ impl PlanetRecord {
 
     pub fn set_planet_name(&mut self, name: &str) {
         let bytes = name.as_bytes();
-        let len = bytes.len().min(13);
+        let mut len = bytes.len().min(13);
+        while !name.is_char_boundary(len) {
+            len -= 1;
+        }
         self.raw[0x0F] = len as u8;
         self.raw[0x10..0x1D].fill(0);
         self.raw[0x10..0x10 + len].copy_from_slice(&bytes[..len]);
