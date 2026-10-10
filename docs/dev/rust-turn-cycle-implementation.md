@@ -250,6 +250,7 @@ that exists today.
    - sanitize invalid player inputs
    - refresh retarget / seek-home / join-host / guard-starbase targets
    - apply autopilot fleet recalls
+   - intercept fleets ordered away from blockaded worlds
    - run annual fleet movement
    - merge mission fleets and resolve fleet battles
    - apply colonization
@@ -263,6 +264,8 @@ that exists today.
 Combat location summary:
 
 - fleet-vs-fleet combat happens after annual movement and before colonization
+- departure interceptions at blockaded worlds (a Rust engagement rule) happen
+  before annual movement, so the departing fleets are still at the world
 - build completion and economy happen after fleet battles
 - ready hostile world resolution happens later than both fleet battles and
   build/economy work
@@ -434,7 +437,8 @@ The current best implementation shape for step `4` is:
 4a. Prepare transient simulation workspaces / start-of-turn snapshots
 4b. Advance year
 4c. Merge co-located friendly fleets before movement
-4d. Sanitize invalid player inputs and refresh retarget/autopilot fleet orders
+4d. Sanitize invalid player inputs and refresh retarget/autopilot fleet orders,
+    then intercept fleets ordered away from blockaded worlds
 4e. Annual movement update (one-time position advance for all fleets;
     store fractional travel state in tuple_c for multi-year journeys)
 4f. Mission-fleet merging and local fleet battles
@@ -682,30 +686,31 @@ snapshot drifts from the companion combat, timing, or economics specs.
 3. merge co-located friendly fleets before movement
 4. sanitize invalid player inputs
 5. refresh retarget / seek-home / join-host / guard-starbase targets
-6. process fleet movement
-7. process mission-fleet merging
-8. resolve fleet battles
+6. intercept fleets ordered away from blockaded worlds
+7. process fleet movement
+8. process mission-fleet merging
+9. resolve fleet battles
    - if hostile action strips the ship class that makes the mission possible,
      abort the mission immediately
    - invalidated mission fleets seek home when possible, otherwise hold in
      place
-9. apply colonization
+10. apply colonization
    - only from current post-combat fleet state; do not execute stale
      pre-combat colonization arrivals after ETAC loss or forced retreat
-10. process build completion
+11. process build completion
    - ship/starbase builds stage into stardock
    - army/ground-battery builds apply directly to the planet
-11. run normal planet economy
-12. run autopilot / rogue planet updates
-13. recompute per-player planet count / production totals
-14. apply campaign-state transitions and related player/fleet consequences
-15. update player starbase flags
-16. resolve ready planetary assaults
+12. run normal planet economy
+13. run autopilot / rogue planet updates
+14. recompute per-player planet count / production totals
+15. apply campaign-state transitions and related player/fleet consequences
+16. update player starbase flags
+17. resolve ready planetary assaults
    - revalidate assault fleets against current post-combat state before
      bombard / invade / blitz execution; do not execute stale ready snapshots
-17. apply join-host updates
-18. normalize conquest header fields
-19. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
+18. apply join-host updates
+19. normalize conquest header fields
+20. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
 
 That is the ordering the Rust diagrams should describe when they are trying to
 show the current driver, not just the recovered classic outer boundaries.

@@ -403,9 +403,9 @@ values, force-ratio columns, CRT table, and assault formulas.
 Your fleets attack the fleets of any player you have declared to be an
 enemy, wherever they meet them --- in deep space or at one of your guarded
 systems --- as far as their ROE allows. They also attack any other player's
-fleet that *enters one of your solar systems*, or that enters a world your
-fleet is blockading, whether or not you are at war with him. Starting such a
-fight makes the two empires enemies.
+fleet that *enters one of your solar systems*, or that enters or leaves a
+world your fleet is blockading, whether or not you are at war with him.
+Starting such a fight makes the two empires enemies.
 
 A fleet enters a solar system when its mission takes it in to the planet:
 Guard Starbase, Guard/Blockade World, Bombard, Invade, Blitz, and Scout
@@ -414,6 +414,12 @@ Join, Rendezvous, Seek Home --- keeps the fleet in the sector's deep space,
 and View World scans from the system's edge before backing off. A foreign
 fleet in deep space is reported, but it is not attacked unless you have
 declared its owner an enemy.
+
+A fleet leaves a blockaded world when it starts the turn stopped there and
+its orders take it somewhere else. That includes ships just commissioned from
+the world's stardock and sent on their way. The blockade attacks these fleets
+before they move. Survivors that are not driven off continue on their orders.
+Starbases do not intercept departures.
 
 Only fleets that actually trade fire take part in a battle. A neutral fleet
 that happens to share the sector is not involved, and if neither side can

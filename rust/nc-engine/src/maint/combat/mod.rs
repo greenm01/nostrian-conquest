@@ -14,5 +14,7 @@ mod retreat;
 mod state;
 
 pub(crate) use assault::process_planetary_assaults;
-pub(crate) use fleet_battle::process_fleet_battles;
+pub(crate) use fleet_battle::{
+    FleetBattlePhaseEvents, process_departure_interceptions, process_fleet_battles,
+};
 pub(crate) use retreat::{abort_mission_to_seek_home_or_hold, nearest_owned_planet};

@@ -9,6 +9,7 @@
 
 use std::collections::HashMap;
 
+use super::combat::FleetBattlePhaseEvents;
 use super::{
     ColonizationResolvedEvent, EncounterDispositionEvent, FleetMergeEvent, InvalidPlayerStateEvent,
     JoinMissionHostEvent, MissionEvent, MissionRetargetEvent, MovementEvents, PlanetIntelEvent,
@@ -155,6 +156,12 @@ impl FleetIndexRemap {
         }
     }
 
+    pub(super) fn remap_fleet_battle_phase_events(&self, events: &mut FleetBattlePhaseEvents) {
+        self.remap_mission_events(&mut events.mission_events);
+        self.remap_planet_intel_events(&mut events.planet_intel_events);
+        self.remap_encounter_disposition_events(&mut events.encounter_disposition_events);
+    }
+
     fn remap_movement_events(&self, events: &mut MovementEvents) {
         events
             .colonization_events
@@ -191,6 +198,8 @@ pub(super) struct TurnFleetRefs {
     pub mission_retarget_events: Vec<MissionRetargetEvent>,
     pub invalid_player_state_events: Vec<InvalidPlayerStateEvent>,
     pub movement_events: MovementEvents,
+    /// Departure interceptions fought before movement.
+    pub departure_battle_events: FleetBattlePhaseEvents,
 }
 
 impl TurnFleetRefs {
@@ -236,5 +245,6 @@ impl TurnFleetRefs {
             }
         }
         remap.remap_movement_events(&mut self.movement_events);
+        remap.remap_fleet_battle_phase_events(&mut self.departure_battle_events);
     }
 }

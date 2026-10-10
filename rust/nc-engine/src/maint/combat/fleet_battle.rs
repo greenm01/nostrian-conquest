@@ -8,9 +8,9 @@ use crate::{
 };
 
 use super::exchange::{
-    COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_FLEET, RoundAction, RoundActionKind,
-    apply_hits_to_fleet, fleet_state_changed, has_starbase_column_bonus, resolve_space_exchange,
-    resolve_withdrawal_exchange, rule_threshold_satisfied,
+    COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_DEPARTURE, COMBAT_KIND_FLEET, RoundAction,
+    RoundActionKind, apply_hits_to_fleet, fleet_state_changed, has_starbase_column_bonus,
+    resolve_space_exchange, resolve_withdrawal_exchange, rule_threshold_satisfied,
 };
 use super::reporting::{
     loaded_armies_for_fleet_indices, mission_kind_for_order, preferred_reporting_fleet_index,
@@ -22,8 +22,9 @@ use super::retreat::{
     retreat_task_force, set_fleet_to_hold_current_position,
 };
 use super::state::{
-    BattleRole, FleetCombatState, IDX_SB, TaskForce, build_task_forces_at_location,
-    has_patrol_order, planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states,
+    BattleRole, Encounter, FleetCombatState, IDX_SB, TaskForce, blockaded_locations,
+    build_departure_task_forces_at_location, build_task_forces_at_location, has_patrol_order,
+    planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states,
     task_force_blockades_system, task_force_enters_system, tf_has_any_units,
 };
 
@@ -55,9 +56,9 @@ fn effective_diplomatic_relation(
 
 /// Engagement rule from the 1992 player guide: fleets attack declared enemies
 /// wherever they meet them, and attack any other player's fleet that enters
-/// one of their solar systems or a world they blockade. A fleet only in the
-/// sector's deep space (moving, patrolling, holding, viewing) is not an
-/// intruder.
+/// one of their solar systems, or enters or leaves a world they blockade. A
+/// fleet only in the sector's deep space (moving, patrolling, holding,
+/// viewing) is not an intruder.
 fn hostility_reason_between(
     game_data: &CoreGameData,
     diplomacy_overrides: &[DiplomacyOverride],
@@ -67,6 +68,17 @@ fn hostility_reason_between(
 ) -> Option<HostilityReason> {
     if left.empire == right.empire {
         return None;
+    }
+
+    // A departure interception pits only the leaving fleets against the
+    // blockade, at war or not.
+    if left.encounter != Encounter::InPlace || right.encounter != Encounter::InPlace {
+        return matches!(
+            (left.encounter, right.encounter),
+            (Encounter::Departing, Encounter::Blockading)
+                | (Encounter::Blockading, Encounter::Departing)
+        )
+        .then_some(HostilityReason::DefendedSystemEntry);
     }
 
     if intrudes_on_system(game_data, coords, left, right)
@@ -562,6 +574,47 @@ pub(crate) struct FleetBattlePhaseEvents {
     pub mission_events: Vec<MissionEvent>,
 }
 
+impl FleetBattlePhaseEvents {
+    pub(crate) fn append(&mut self, mut other: Self) {
+        self.fleet_battle_events
+            .append(&mut other.fleet_battle_events);
+        self.fleet_destroyed_events
+            .append(&mut other.fleet_destroyed_events);
+        self.starbase_destroyed_events
+            .append(&mut other.starbase_destroyed_events);
+        self.scout_contact_events
+            .append(&mut other.scout_contact_events);
+        self.planet_intel_events
+            .append(&mut other.planet_intel_events);
+        self.encounter_disposition_events
+            .append(&mut other.encounter_disposition_events);
+        self.mission_events.append(&mut other.mission_events);
+    }
+}
+
+/// Fleets ordered away from a blockaded world, including ships just
+/// launched from its stardock, meet the blockade before movement. Survivors
+/// that are not driven off continue on their orders in the movement phase.
+pub(crate) fn process_departure_interceptions(
+    game_data: &mut CoreGameData,
+    campaign_seed: u64,
+    diplomacy_overrides: &[DiplomacyOverride],
+) -> Result<FleetBattlePhaseEvents, Box<dyn std::error::Error>> {
+    let coord_set = blockaded_locations(game_data);
+    let events = resolve_fleet_battles(
+        game_data,
+        campaign_seed,
+        diplomacy_overrides,
+        coord_set,
+        COMBAT_KIND_DEPARTURE,
+        build_departure_task_forces_at_location,
+    );
+    // A fleet emptied here must not travel on as a ghost.
+    let all_fleets: Vec<usize> = (0..game_data.fleets.records.len()).collect();
+    clear_empty_withdrawn_fleets(game_data, &all_fleets);
+    Ok(events)
+}
+
 pub(crate) fn process_fleet_battles(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
@@ -571,10 +624,28 @@ pub(crate) fn process_fleet_battles(
     for fleet in &game_data.fleets.records {
         coord_set.insert(fleet.current_location_coords_raw());
     }
+    Ok(resolve_fleet_battles(
+        game_data,
+        campaign_seed,
+        diplomacy_overrides,
+        coord_set,
+        COMBAT_KIND_FLEET,
+        build_task_forces_at_location,
+    ))
+}
+
+fn resolve_fleet_battles(
+    game_data: &mut CoreGameData,
+    campaign_seed: u64,
+    diplomacy_overrides: &[DiplomacyOverride],
+    coord_set: BTreeSet<[u8; 2]>,
+    combat_kind: u64,
+    build_task_forces: fn(&CoreGameData, [u8; 2]) -> Vec<TaskForce>,
+) -> FleetBattlePhaseEvents {
     let mut events = FleetBattlePhaseEvents::default();
 
     for coords in coord_set {
-        let mut task_forces = build_task_forces_at_location(game_data, coords);
+        let mut task_forces = build_task_forces(game_data, coords);
         let pre_encounter_orders: HashMap<usize, Order> = task_forces
             .iter()
             .flat_map(|tf| tf.fleet_indices.iter().copied())
@@ -918,7 +989,7 @@ pub(crate) fn process_fleet_battles(
                     campaign_seed,
                     battle_year,
                     coords,
-                    COMBAT_KIND_FLEET,
+                    combat_kind,
                     round,
                     action.empire,
                     action.target_empire,
@@ -1482,5 +1553,5 @@ pub(crate) fn process_fleet_battles(
         }
     }
 
-    Ok(events)
+    events
 }

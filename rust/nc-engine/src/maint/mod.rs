@@ -420,6 +420,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // movement so they can start heading home this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
+    // Fleets ordered away from a blockaded world, and ships launched from its
+    // stardock, meet the blockade before they move.
+    refs.departure_battle_events =
+        combat::process_departure_interceptions(game_data, campaign_seed, diplomacy_overrides)?;
+
     // Process fleet orders; collect side-effect events
     let (movement_events, movement_remap) =
         movement::process_fleet_movement(game_data, visible_hazards_by_empire)?;
@@ -452,8 +457,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Detect and resolve fleet battles: when hostile fleets co-locate after movement,
     // surviving fleets get SeekHome orders (confirmed from fleet-battle oracle).
     // This runs after movement so all fleet positions are final for this turn.
-    let mut fleet_battle_phase_events =
-        combat::process_fleet_battles(game_data, campaign_seed, diplomacy_overrides)?;
+    let mut fleet_battle_phase_events = std::mem::take(&mut refs.departure_battle_events);
+    fleet_battle_phase_events.append(combat::process_fleet_battles(
+        game_data,
+        campaign_seed,
+        diplomacy_overrides,
+    )?);
 
     // Apply colonization results to the in-memory game state.
     let mut colonization_events =
@@ -519,11 +528,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     );
     refs.remap(&defection_remap);
     defection_remap.remap_colonization_events(&mut colonization_events);
-    defection_remap.remap_mission_events(&mut fleet_battle_phase_events.mission_events);
-    defection_remap.remap_planet_intel_events(&mut fleet_battle_phase_events.planet_intel_events);
-    defection_remap.remap_encounter_disposition_events(
-        &mut fleet_battle_phase_events.encounter_disposition_events,
-    );
+    defection_remap.remap_fleet_battle_phase_events(&mut fleet_battle_phase_events);
     defection_remap.remap_mission_events(&mut assault_events.mission_events);
     defection_remap.remap_planet_intel_events(&mut assault_events.planet_intel_events);
 

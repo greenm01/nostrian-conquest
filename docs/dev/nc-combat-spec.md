@@ -146,6 +146,16 @@ or if they try to enter or leave a planet that your fleet is blockading."
   applies against the world's owner, and against any empire blockading that
   world. Intrusion forces the engagement (no sensor check), whether the
   intruder is a declared enemy or not.
+- **Leaving a blockaded world.** Any other player's fleet that starts the
+  turn at rest at a world where a Guard/Blockade World fleet is on station,
+  and whose order moves it elsewhere, is hostile to the blockade, at war or
+  not. This includes ships just commissioned from that world's stardock.
+  Commissioning happens between maintenance runs, so launched ships are
+  ordinary fleets at the world when the turn starts. The interception is
+  fought before movement, between the departing fleets and the blockading
+  fleets only (no starbases, no other fleets at the world). Survivors that
+  are not driven off move on their orders. A fleet passing through the
+  sector mid-transit is not departing.
 - **View World is not an intrusion.** It is a long-range scan from the system
   edge; the fleet then backs off into deep space.
 - **Deep space is neutral ground.** A non-enemy fleet in the sector's deep
