@@ -2,6 +2,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+mod core_diff;
 mod core_files;
 mod database_projection;
 mod intel;
@@ -14,6 +15,11 @@ use nc_data::{
     derive_campaign_seed_from_runtime, layout_classic_results, load_mail_queue,
 };
 
+pub use core_diff::{
+    CoreFileDiffCount, CoreFileDiffOffsets, core_file_diff_counts, core_file_diff_offsets,
+    core_file_exact_match_errors, current_known_baseline_diff_counts,
+    current_known_baseline_diff_offsets,
+};
 pub use core_files::{GameDirectoryError, load_classic_core_files, save_classic_core_files};
 pub use intel::{extract_player_intel_from_compat_database, merge_player_intel_from_compat};
 pub use nc_classic::{DATABASE_RECORD_SIZE, DatabaseDat, DatabaseRecord};

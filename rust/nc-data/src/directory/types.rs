@@ -177,18 +177,6 @@ pub enum PlayerDiplomacyValidationError {
     InvalidStoredRelationByte { target_empire_raw: u8, raw: u8 },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CoreFileDiffCount {
-    pub name: &'static str,
-    pub differing_bytes: usize,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct CoreFileDiffOffsets {
-    pub name: &'static str,
-    pub differing_offsets: Vec<usize>,
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CampaignState {
     CivilDisorder,
