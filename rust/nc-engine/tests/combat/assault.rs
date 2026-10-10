@@ -1,7 +1,7 @@
 //! Planetary assault: which fleets execute, and what each planetary hit costs.
 
-use nc_data::{CoreGameData, Mission, Order, ProductionItemKind};
-use nc_engine::{production_item_kind_raw, run_maintenance_turn};
+use nc_data::{CoreGameData, Mission, Order};
+use nc_engine::run_maintenance_turn;
 
 use super::support::{SYSTEM, SYSTEM_PLANET_IDX, Ships, empty_board, mark_arrived, place_fleet};
 
@@ -40,8 +40,7 @@ fn one_cruiser_cannot_clear_ten_batteries_in_one_round() {
 fn stardock_ships_absorb_their_own_defense_strength() {
     let mut game_data = assault_on_system(Order::BombardWorld, cruiser(), 0, 0);
     let planet = &mut game_data.planets.records[SYSTEM_PLANET_IDX];
-    planet.set_stardock_kind_raw(0, production_item_kind_raw(ProductionItemKind::Battleship));
-    planet.set_stardock_count_raw(0, 1);
+    planet.set_stardock_count_raw(2, 1);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -51,7 +50,7 @@ fn stardock_ships_absorb_their_own_defense_strength() {
         "a docked battleship (DS 100) outlasts a lone cruiser's per-round hits"
     );
     assert_eq!(
-        game_data.planets.records[SYSTEM_PLANET_IDX].stardock_count_raw(0),
+        game_data.planets.records[SYSTEM_PLANET_IDX].stardock_count_raw(2),
         1
     );
 }
@@ -68,8 +67,8 @@ fn breakthrough_hits_reach_industry_on_the_ten_times_scale() {
         0,
     );
     let planet = &mut game_data.planets.records[SYSTEM_PLANET_IDX];
-    planet.set_factories_word_raw(100);
-    planet.set_stored_goods_raw(10_000);
+    planet.set_present_production_points(100);
+    planet.set_stored_production_points(10_000);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 

@@ -56,7 +56,6 @@ pub struct PlanetSpec {
     pub potential_production: Option<u16>,
     pub present_production: Option<u16>,
     pub stored_production: Option<u32>,
-    pub economy_marker: Option<u8>,
     pub armies: Option<u8>,
     pub ground_batteries: Option<u8>,
     pub stardock: Vec<StardockSlotSpec>,

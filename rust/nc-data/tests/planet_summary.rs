@@ -15,8 +15,7 @@ fn compact_planet_summaries_support_all_dashboard_and_game_styles() {
     let planet = &mut game_data.planets.records[0];
     planet.set_build_kind_raw(0, 3);
     planet.set_build_count_raw(0, 90);
-    planet.set_stardock_kind_raw(0, 2);
-    planet.set_stardock_count_raw(0, 5);
+    planet.set_stardock_count_raw(1, 5);
 
     assert_eq!(
         format_build_queue_summary(planet, CompactUnitSummaryStyle::JoinedCodes),
@@ -65,7 +64,7 @@ fn owned_planet_status_distinguishes_damage_and_scorch() {
     let planet = &mut game_data.planets.records[1];
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(1);
-    planet.set_potential_production_raw([10, 0]);
+    planet.set_potential_production_points(10);
     planet.set_present_production_points(0);
     assert_eq!(
         owned_planet_status(&game_data, 1, 1, &BTreeSet::new()),

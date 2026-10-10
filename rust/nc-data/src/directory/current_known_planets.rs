@@ -121,11 +121,11 @@ impl CoreGameData {
                     record.header_value_raw()
                 ));
             }
-            if record.potential_production_high_byte_raw() != 135 {
+            if record.present_production() != 100.0 {
                 errors.push(format!(
-                    "PLANET[{}].header[3] expected 135 for homeworld seed, got {}",
+                    "PLANET[{}].present_production expected 100 for homeworld seed, got {}",
                     planet_index_1_based,
-                    record.potential_production_high_byte_raw()
+                    record.present_production()
                 ));
             }
             if record.ownership_status_raw() != 2 {
@@ -149,25 +149,11 @@ impl CoreGameData {
                     record.ground_batteries_raw()
                 ));
             }
-            if record.economy_marker_raw() != 12 {
+            if record.stored_goods() != 35.0 {
                 errors.push(format!(
-                    "PLANET[{}].economy_marker_raw expected 12 for homeworld seed, got {}",
+                    "PLANET[{}].stored_goods expected 35 for homeworld seed, got {}",
                     planet_index_1_based,
-                    record.economy_marker_raw()
-                ));
-            }
-            if record.factories_raw() != [0, 0, 0, 0, 72, 134] {
-                errors.push(format!(
-                    "PLANET[{}].factories_raw expected [0, 0, 0, 0, 72, 134] for homeworld seed, got {:?}",
-                    planet_index_1_based,
-                    record.factories_raw()
-                ));
-            }
-            if record.stored_goods_raw() != 0 {
-                errors.push(format!(
-                    "PLANET[{}].stored_goods_raw expected 0 for homeworld seed, got {}",
-                    planet_index_1_based,
-                    record.stored_goods_raw()
+                    record.stored_goods()
                 ));
             }
             if record.population_raw() != [0; 6] {
@@ -234,13 +220,6 @@ impl CoreGameData {
                     record.army_count_raw()
                 ));
             }
-            if record.economy_marker_raw() != 0 {
-                errors.push(format!(
-                    "PLANET[{}].economy_marker_raw expected 0 for unowned baseline, got {}",
-                    planet_index_1_based,
-                    record.economy_marker_raw()
-                ));
-            }
             if record.ground_batteries_raw() != 0 {
                 errors.push(format!(
                     "PLANET[{}].ground_batteries_raw expected 0 for unowned baseline, got {}",
@@ -248,18 +227,18 @@ impl CoreGameData {
                     record.ground_batteries_raw()
                 ));
             }
-            if record.factories_raw() != [0; 6] {
+            if record.present_production() != 0.0 {
                 errors.push(format!(
-                    "PLANET[{}].factories_raw expected all zeroes for unowned baseline, got {:?}",
+                    "PLANET[{}].present_production expected 0 for unowned baseline, got {}",
                     planet_index_1_based,
-                    record.factories_raw()
+                    record.present_production()
                 ));
             }
-            if record.stored_goods_raw() != 0 {
+            if record.stored_goods() != 0.0 {
                 errors.push(format!(
-                    "PLANET[{}].stored_goods_raw expected 0 for unowned baseline, got {}",
+                    "PLANET[{}].stored_goods expected 0 for unowned baseline, got {}",
                     planet_index_1_based,
-                    record.stored_goods_raw()
+                    record.stored_goods()
                 ));
             }
             if record.population_raw() != [0; 6] {

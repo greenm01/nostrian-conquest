@@ -50,7 +50,6 @@ fn turn_submission_applies_mixed_player_actions() {
     }
     {
         let planet = &mut data.planets.records[planet_record_index_1_based - 1];
-        planet.set_stardock_kind_raw(0, 1);
         planet.set_stardock_count_raw(0, 2);
         planet.set_stored_production_points(50);
     }

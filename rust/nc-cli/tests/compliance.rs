@@ -228,7 +228,7 @@ fn core_sync_initialized_planets_repairs_planet_payload_baseline() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = CoreGameData::load(&target).unwrap();
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
     data.planets.records[0].set_army_count_raw(9);
     data.save(&target).unwrap();
@@ -266,7 +266,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     });
     data.fleets.records.clear();
     data.fleets.records.push(nc_data::FleetRecord::new_zeroed());
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
     data.save(&target).unwrap();
 

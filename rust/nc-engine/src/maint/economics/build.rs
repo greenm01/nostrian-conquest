@@ -43,23 +43,6 @@ pub(super) fn process_build_completion(
                         continue;
                     }
                 }
-                ProductionItemKind::Starbase => {
-                    let open_slots =
-                        open_stardock_slot_count(&game_data.planets.records[planet_idx]);
-                    if completed_qty > open_slots as u32 {
-                        continue;
-                    }
-                }
-                kind if kind.requires_stardock() => {
-                    if completed_qty > 0
-                        && !can_store_ship_completion(
-                            &game_data.planets.records[planet_idx],
-                            build_kind,
-                        )
-                    {
-                        continue;
-                    }
-                }
                 _ => {}
             }
 
@@ -80,19 +63,12 @@ pub(super) fn process_build_completion(
                     game_data.planets.records[planet_idx]
                         .set_ground_batteries_raw(current.saturating_add(completed_qty as u8));
                 }
-                ProductionItemKind::Starbase => {
-                    add_starbases_to_stardock(
+                kind if kind.requires_stardock() => {
+                    add_to_stardock(
                         &mut game_data.planets.records[planet_idx],
                         build_kind,
                         completed_qty,
                     );
-                }
-                kind if kind.requires_stardock() => {
-                    add_ships_to_stardock(
-                        &mut game_data.planets.records[planet_idx],
-                        build_kind,
-                        completed_qty,
-                    )?;
                 }
                 _ => {}
             }
@@ -126,55 +102,10 @@ fn ceil_div(value: u32, divisor: u32) -> u32 {
     }
 }
 
-fn open_stardock_slot_count(planet: &nc_data::PlanetRecord) -> usize {
-    (0..crate::STARDOCK_SLOT_COUNT)
-        .filter(|&slot| planet.stardock_kind_raw(slot) == 0)
-        .count()
-}
-
-fn can_store_ship_completion(planet: &nc_data::PlanetRecord, kind_raw: u8) -> bool {
-    (0..crate::STARDOCK_SLOT_COUNT).any(|slot| {
-        let existing_kind = planet.stardock_kind_raw(slot);
-        existing_kind == 0 || existing_kind == kind_raw
-    })
-}
-
-fn add_ships_to_stardock(
-    planet: &mut nc_data::PlanetRecord,
-    kind_raw: u8,
-    qty: u32,
-) -> Result<(), Box<dyn std::error::Error>> {
-    if qty == 0 {
-        return Ok(());
-    }
-    for slot in 0..crate::STARDOCK_SLOT_COUNT {
-        if planet.stardock_kind_raw(slot) == kind_raw {
-            let current = planet.stardock_count_raw(slot);
-            planet.set_stardock_count_raw(slot, current.saturating_add(qty as u16));
-            return Ok(());
-        }
-    }
-    for slot in 0..crate::STARDOCK_SLOT_COUNT {
-        if planet.stardock_kind_raw(slot) == 0 {
-            planet.set_stardock_kind_raw(slot, kind_raw);
-            planet.set_stardock_count_raw(slot, qty as u16);
-            return Ok(());
-        }
-    }
-    Err("stardock has no room for completed ships".into())
-}
-
-fn add_starbases_to_stardock(planet: &mut nc_data::PlanetRecord, kind_raw: u8, qty: u32) {
-    let mut remaining = qty;
-    for slot in 0..crate::STARDOCK_SLOT_COUNT {
-        if remaining == 0 {
-            break;
-        }
-        if planet.stardock_kind_raw(slot) != 0 {
-            continue;
-        }
-        planet.set_stardock_kind_raw(slot, kind_raw);
-        planet.set_stardock_count_raw(slot, 1);
-        remaining -= 1;
+/// Completed ships and starbases wait in their type's stardock slot.
+fn add_to_stardock(planet: &mut nc_data::PlanetRecord, kind_raw: u8, qty: u32) {
+    if let Some(slot) = nc_data::stardock_slot_for_kind(kind_raw) {
+        let current = planet.stardock_count(slot);
+        planet.set_stardock_count(slot, current.saturating_add(qty));
     }
 }

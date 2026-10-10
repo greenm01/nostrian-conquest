@@ -81,9 +81,10 @@ impl CoreGameData {
                 .ok_or(GameStateMutationError::MissingPlanetRecord {
                     index_1_based: planet_record_index_1_based,
                 })?;
+            // The starbase slot holds every docked base; one leaves.
             for (slot_0_based, _, _) in selected {
-                planet.set_stardock_count_raw(slot_0_based, 0);
-                planet.set_stardock_kind_raw(slot_0_based, 0);
+                let left = planet.stardock_count(slot_0_based).saturating_sub(1);
+                planet.set_stardock_count(slot_0_based, left);
             }
             Ok(CommissionResult::Starbase {
                 base_record_index_1_based: self.bases.records.len(),
@@ -215,7 +216,10 @@ impl CoreGameData {
                             _ => {}
                         }
                     }
-                    ProductionItemKind::Starbase => starbase_slots.push(slot),
+                    // One commission per docked base.
+                    ProductionItemKind::Starbase => {
+                        starbase_slots.extend(std::iter::repeat_n(slot, count as usize))
+                    }
                     _ => {}
                 }
             }
@@ -469,9 +473,6 @@ fn decrement_selected_ship_slots(
         let consumed = available.min(*remaining_for_kind);
         let new_count = available.saturating_sub(consumed);
         planet.set_stardock_count_raw(*slot_0_based, new_count);
-        if new_count == 0 {
-            planet.set_stardock_kind_raw(*slot_0_based, 0);
-        }
         *remaining_for_kind = remaining_for_kind.saturating_sub(consumed);
     }
 

@@ -88,7 +88,7 @@ fn total_available_points_matches_first_turn_tax_budget() {
             records: vec![owned_homeworld_seed(
                 1,
                 100,
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x86],
+                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
                 10,
                 4,
             )],
@@ -105,22 +105,16 @@ fn total_available_points_matches_first_turn_tax_budget() {
 }
 
 #[test]
-fn homeworld_present_production_clamps_to_potential() {
-    let planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x86], 10, 4);
-    assert_eq!(planet.present_production_points(), Some(100));
-}
-
-#[test]
 fn named_homeworld_present_production_reads_its_stored_value() {
     let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 10, 4);
     planet.set_planet_name("Dust Bowl");
-    planet.set_factories_raw([0x00, 0x00, 0x00, 0x00, 0x48, 0x86]);
+    planet.set_present_production(50.0);
     assert_eq!(planet.present_production_points(), Some(50));
 }
 
 #[test]
 fn naming_a_homeworld_seed_keeps_its_full_production() {
-    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x86], 10, 4);
+    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 10, 4);
     planet.set_planet_name("Codex Prime");
     assert_eq!(planet.present_production_points(), Some(100));
 }
@@ -190,8 +184,8 @@ fn maintenance_adds_tax_revenue_and_grows_planets_faster_under_lower_tax() {
 
     let low_planet = &low_game.planets.records[0];
     let high_planet = &high_game.planets.records[0];
-    assert_eq!(low_planet.stored_goods_raw(), 10);
-    assert_eq!(high_planet.stored_goods_raw(), 22);
+    assert_eq!(low_planet.stored_production_points(), 10);
+    assert_eq!(high_planet.stored_production_points(), 22);
     assert!(
         low_planet.present_production_points().unwrap()
             > high_planet.present_production_points().unwrap()
@@ -277,7 +271,7 @@ fn maintenance_high_tax_above_65_can_reduce_present_production() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     let planet = &game.planets.records[0];
-    assert_eq!(planet.stored_goods_raw(), 22);
+    assert_eq!(planet.stored_production_points(), 22);
     assert_eq!(planet.present_production_points().unwrap(), 28);
 }
 
@@ -337,8 +331,11 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");
     run_maintenance_turn(&mut without_base).expect("maintenance should succeed");
 
-    assert_eq!(with_base.planets.records[0].stored_goods_raw(), 37);
-    assert_eq!(without_base.planets.records[0].stored_goods_raw(), 37);
+    assert_eq!(with_base.planets.records[0].stored_production_points(), 37);
+    assert_eq!(
+        without_base.planets.records[0].stored_production_points(),
+        37
+    );
     assert_eq!(
         with_base.planets.records[0]
             .present_production_points()
@@ -401,8 +398,11 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");
     run_maintenance_turn(&mut without_base).expect("maintenance should succeed");
 
-    assert_eq!(with_base.planets.records[0].stored_goods_raw(), 30);
-    assert_eq!(without_base.planets.records[0].stored_goods_raw(), 28);
+    assert_eq!(with_base.planets.records[0].stored_production_points(), 30);
+    assert_eq!(
+        without_base.planets.records[0].stored_production_points(),
+        28
+    );
     assert_eq!(
         without_base.planets.records[0]
             .present_production_points()
@@ -415,56 +415,6 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
             .unwrap(),
         61
     );
-}
-
-#[test]
-fn maintenance_ship_build_stays_queued_when_stardock_is_full() {
-    let mut player = player_with_empire_name("Alpha", 50, 0);
-    player.set_owner_empire_raw(1);
-
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
-    planet.set_build_count_raw(0, 100);
-    planet.set_build_kind_raw(0, 1);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 2);
-        planet.set_stardock_count_raw(slot, 1);
-    }
-
-    let mut game = single_planet_game(player, planet);
-    run_maintenance_turn(&mut game).expect("maintenance should succeed");
-
-    let planet = &game.planets.records[0];
-    assert_eq!(planet.build_count_raw(0), 100);
-    assert_eq!(planet.build_kind_raw(0), 1);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        assert_eq!(planet.stardock_kind_raw(slot), 2);
-        assert_eq!(planet.stardock_count_raw(slot), 1);
-    }
-}
-
-#[test]
-fn maintenance_starbase_build_stays_queued_when_stardock_is_full() {
-    let mut player = player_with_empire_name("Alpha", 50, 0);
-    player.set_owner_empire_raw(1);
-
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
-    planet.set_build_count_raw(0, 100);
-    planet.set_build_kind_raw(0, 9);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 1);
-        planet.set_stardock_count_raw(slot, 1);
-    }
-
-    let mut game = single_planet_game(player, planet);
-    run_maintenance_turn(&mut game).expect("maintenance should succeed");
-
-    let planet = &game.planets.records[0];
-    assert_eq!(planet.build_count_raw(0), 100);
-    assert_eq!(planet.build_kind_raw(0), 9);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        assert_eq!(planet.stardock_kind_raw(slot), 1);
-        assert_eq!(planet.stardock_count_raw(slot), 1);
-    }
 }
 
 #[test]
@@ -488,12 +438,12 @@ fn maintenance_exact_ship_quantities_arrive_in_stardock() {
     assert_eq!(planet.build_kind_raw(1), 0);
     assert_eq!(planet.stardock_kind_raw(0), 1);
     assert_eq!(planet.stardock_count_raw(0), 2);
-    assert_eq!(planet.stardock_kind_raw(1), 6);
-    assert_eq!(planet.stardock_count_raw(1), 2);
+    assert_eq!(planet.stardock_kind_raw(5), 6);
+    assert_eq!(planet.stardock_count_raw(5), 2);
 }
 
 #[test]
-fn maintenance_starbases_arrive_one_per_stardock_slot() {
+fn maintenance_starbases_arrive_in_the_starbase_stardock_slot() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
@@ -509,10 +459,8 @@ fn maintenance_starbases_arrive_one_per_stardock_slot() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     let planet = &game.planets.records[0];
-    for slot in 0..2 {
-        assert_eq!(planet.stardock_kind_raw(slot), 9);
-        assert_eq!(planet.stardock_count_raw(slot), 1);
-    }
+    assert_eq!(planet.stardock_kind_raw(6), 9);
+    assert_eq!(planet.stardock_count_raw(6), 2);
     assert_eq!(planet.build_count_raw(2), 50);
     assert_eq!(planet.build_kind_raw(2), 9);
 }
@@ -526,7 +474,6 @@ fn maintenance_army_build_completes_even_when_stardock_is_full() {
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 8);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 1);
         planet.set_stardock_count_raw(slot, 1);
     }
 
@@ -548,7 +495,6 @@ fn maintenance_ground_battery_build_completes_even_when_stardock_is_full() {
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 7);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 1);
         planet.set_stardock_count_raw(slot, 1);
     }
 

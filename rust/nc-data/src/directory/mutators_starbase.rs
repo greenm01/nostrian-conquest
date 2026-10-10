@@ -63,7 +63,7 @@ impl CoreGameData {
         });
         let total: u32 = costs.clone().map(|(count, cost)| count * cost).sum();
         let dearest = costs.map(|(_, cost)| cost).max().unwrap_or(0);
-        let production = crate::support::decode_real48(planet.factories_raw()).unwrap_or(0.0);
+        let production = planet.present_production();
         if f64::from(dearest) <= production && f64::from(total) <= production {
             return;
         }

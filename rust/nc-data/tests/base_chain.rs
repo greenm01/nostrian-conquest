@@ -97,11 +97,11 @@ fn commissioning_a_starbase_links_it_under_the_lowest_free_id() {
         .position(|planet| planet.coords_raw() == [16, 13])
         .expect("home world");
     let planet = &mut game_data.planets.records[planet_idx];
-    planet.set_stardock_kind_raw(0, 9);
-    planet.set_stardock_count_raw(0, 1);
+    let slot = nc_data::stardock_slot_for_kind(9).expect("starbase slot");
+    planet.set_stardock_count_raw(slot, 1);
 
     game_data
-        .commission_planet_stardock_slot(1, planet_idx + 1, 0)
+        .commission_planet_stardock_slot(1, planet_idx + 1, slot)
         .expect("commission");
 
     assert_eq!(chain_ids(&game_data), [1, 2]);

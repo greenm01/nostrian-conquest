@@ -113,7 +113,9 @@ pub use records::base::{BaseDat, BaseRecord};
 pub use records::conquest::ConquestDat;
 pub use records::fleet::{FleetDat, FleetRecord, Order};
 pub use records::ipbm::{IpbmDat, IpbmRecord};
-pub use records::planet::{PlanetDat, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT};
+pub use records::planet::{
+    PlanetDat, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT, stardock_slot_for_kind,
+};
 pub use records::player::{DiplomaticRelation, PlayerDat, PlayerRecord};
 pub use records::setup::SetupDat;
 pub use report_blocks::{

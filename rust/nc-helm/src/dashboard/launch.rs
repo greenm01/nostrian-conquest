@@ -349,14 +349,13 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
             record.set_owner_empire_slot_raw(owner);
         }
         if let Some(potential) = world.known_potential_production {
-            let [lo, hi] = potential.to_le_bytes();
-            record.set_potential_production_raw([lo, hi]);
+            record.set_potential_production_points(potential.min(u16::from(u8::MAX)) as u8);
         }
         if let Some(current) = world.known_current_production {
             let _ = record.set_present_production_points(u16::from(current));
         }
         if let Some(stored) = world.known_stored_points {
-            record.set_stored_goods_raw(u32::from(stored));
+            record.set_stored_production_points(u32::from(stored));
         }
         if let Some(armies) = world.known_armies {
             record.set_army_count_raw(armies);
@@ -377,16 +376,17 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
         record.set_coords_raw(planet.coords);
         record.set_planet_name(&planet.name);
         record.set_owner_empire_slot_raw(snapshot.player_seat as u8);
-        let [lo, hi] = planet.potential_production.to_le_bytes();
-        record.set_potential_production_raw([lo, hi]);
+        record.set_potential_production_points(
+            planet.potential_production.min(u16::from(u8::MAX)) as u8
+        );
         let _ = record.set_present_production_points(u16::from(planet.current_production));
-        record.set_stored_goods_raw(u32::from(planet.stored_points));
+        record.set_stored_production_points(u32::from(planet.stored_points));
         record.set_army_count_raw(planet.armies);
         record.set_ground_batteries_raw(planet.ground_batteries);
         for dock in &planet.stardock {
-            let slot = dock.slot.saturating_sub(1);
-            record.set_stardock_count_raw(slot, dock.count);
-            record.set_stardock_kind_raw(slot, production_kind_code(&dock.kind));
+            if let Some(slot) = nc_data::stardock_slot_for_kind(production_kind_code(&dock.kind)) {
+                record.set_stardock_count_raw(slot, dock.count);
+            }
         }
     }
 }

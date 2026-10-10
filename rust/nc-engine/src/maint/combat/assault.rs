@@ -180,9 +180,7 @@ fn reduce_stardock(planet: &mut nc_data::PlanetRecord, mut hits: u32) -> u32 {
             slot,
             planet.stardock_count_raw(slot).saturating_sub(destroyed),
         );
-        if planet.stardock_count_raw(slot) == 0 {
-            planet.set_stardock_kind_raw(slot, 0);
-        }
+        if planet.stardock_count_raw(slot) == 0 {}
         hits -= destroyed as u32 * ds;
     }
     hits
@@ -272,11 +270,14 @@ fn apply_planet_bombardment_damage(planet: &mut nc_data::PlanetRecord, hits: u32
     let hits = hits / 10;
     if hits > 0 {
         let goods_loss = hits.saturating_mul(100);
-        planet.set_stored_goods_raw(planet.stored_goods_raw().saturating_sub(goods_loss));
+        planet.set_stored_production_points(
+            planet.stored_production_points().saturating_sub(goods_loss),
+        );
     }
     if hits > 0 {
-        let loss = hits.min(planet.factories_word_raw() as u32) as u16;
-        planet.set_factories_word_raw(planet.factories_word_raw().saturating_sub(loss));
+        let factories = planet.present_production_points().unwrap_or(0);
+        let loss = hits.min(u32::from(factories)) as u16;
+        planet.set_present_production_points(factories.saturating_sub(loss));
     }
 }
 
@@ -638,8 +639,11 @@ pub(crate) fn process_planetary_assaults(
                 let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
                 let pre_armies = game_data.planets.records[planet_idx].army_count_raw();
                 let pre_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
-                let pre_stored_goods = game_data.planets.records[planet_idx].stored_goods_raw();
-                let pre_factories = game_data.planets.records[planet_idx].factories_word_raw();
+                let pre_stored_goods =
+                    game_data.planets.records[planet_idx].stored_production_points();
+                let pre_factories = game_data.planets.records[planet_idx]
+                    .present_production_points()
+                    .unwrap_or(0);
                 let pre_stardock_items: u32 = (0..STARDOCK_SLOT_COUNT)
                     .map(|s| game_data.planets.records[planet_idx].stardock_count_raw(s) as u32)
                     .sum();
@@ -753,9 +757,9 @@ pub(crate) fn process_planetary_assaults(
                             .sum::<u32>(),
                     ),
                     stored_goods_destroyed: pre_stored_goods
-                        .saturating_sub(post_planet.stored_goods_raw()),
+                        .saturating_sub(post_planet.stored_production_points()),
                     factories_destroyed: pre_factories
-                        .saturating_sub(post_planet.factories_word_raw()),
+                        .saturating_sub(post_planet.present_production_points().unwrap_or(0)),
                     stardate_week: None,
                 });
                 if assault_force_destroyed(game_data, &winner_fleets) {

@@ -195,12 +195,9 @@ pub(crate) fn temp_game_with_auto_commission_copy() -> TempGameDir {
         .iter_mut()
         .find(|planet| planet.owner_empire_slot_raw() == 1)
         .expect("owned planet exists");
-    homeworld.set_stardock_kind_raw(0, 1);
     homeworld.set_stardock_count_raw(0, 4);
-    homeworld.set_stardock_kind_raw(1, 2);
     homeworld.set_stardock_count_raw(1, 2);
-    homeworld.set_stardock_kind_raw(2, 9);
-    homeworld.set_stardock_count_raw(2, 1);
+    homeworld.set_stardock_count_raw(6, 1);
     save_runtime_state(&root, &state);
     root
 }

@@ -44,7 +44,7 @@ relation from=2 to=1 status="enemy"
 
 planet record=1 {
   name "Aurora Prime"
-  production potential=140 present=120 stored=80 economy_marker=25
+  production potential=140 present=120 stored=80
   defenses armies=14 batteries=6
   stardock slot=1 kind="destroyer" count=3
   commission slot=1

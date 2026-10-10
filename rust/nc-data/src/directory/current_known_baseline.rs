@@ -215,10 +215,9 @@ impl CoreGameData {
         for record in &mut self.planets.records {
             let owner = record.owner_empire_slot_raw() as usize;
             if record.is_homeworld_seed_ignoring_name() && (1..=player_count).contains(&owner) {
-                record.set_potential_production_raw([100, 135]);
-                record.set_factories_raw([0, 0, 0, 0, 72, 134]);
-                record.set_stored_goods_raw(0);
-                record.set_economy_marker_raw(12);
+                record.set_potential_production_points(100);
+                record.set_present_production(100.0);
+                record.set_stored_goods(35.0);
                 record.set_status_or_name_summary_raw("Not Named Yet");
                 for slot in 0..10 {
                     record.set_build_count_raw(slot, 0);
@@ -226,7 +225,6 @@ impl CoreGameData {
                 }
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
-                    record.set_stardock_kind_raw(slot, 0);
                 }
                 record.set_population_raw([0; 6]);
                 record.set_army_count_raw(10);
@@ -234,16 +232,14 @@ impl CoreGameData {
                 record.set_ownership_status_raw(2);
             } else if owner == 0 {
                 record.set_status_or_name_prefix_raw("Unowned");
-                record.set_economy_marker_raw(0);
-                record.set_factories_raw([0; 6]);
-                record.set_stored_goods_raw(0);
+                record.set_present_production(0.0);
+                record.set_stored_goods(0.0);
                 for slot in 0..10 {
                     record.set_build_count_raw(slot, 0);
                     record.set_build_kind_raw(slot, 0);
                 }
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
-                    record.set_stardock_kind_raw(slot, 0);
                 }
                 record.set_population_raw([0; 6]);
                 record.set_army_count_raw(0);

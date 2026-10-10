@@ -33,11 +33,9 @@ Notation:
 
 The dock slot order comes from the bombard report (`110a:0438`). P and G come
 from the report's "% of the factories" and "% of the stored goods" lines [P].
-Note: Rust's `PlanetRecord` reads present production as `raw[0x04..0x0a]` with
-the exponent last, and stored goods as a u32 at `0x0a`. ECMAINT reads the real
-at `+0x03` and the real at `+0x09`. Rust also treats the stardock as u16 counts
-at `0x38` plus kind bytes at `0x4c`. Check both against ECMAINT before porting
-the damage code (section 7).
+The preserved fixtures agree: the homeworld seeds read P = 100 and G = 35, and
+ECMAINT's builds land in the typed dock slots. Rust's `PlanetRecord` uses this
+layout.
 
 - `Random(n)` is Turbo Pascal `(RandSeed>>16) mod n`, and `Random(0) = 0`.
 - `Roll(p)` is `Random_real*100 <= p` (`24a3:0000`).
@@ -776,9 +774,8 @@ Appendix B.
   damage state, so there is nothing to repair.
 - [ ] **Scorch-Earth.** Planet `+0x60`, set from ECGAME: on capture P and G
   are halved and the dock is emptied. Check that Rust has it.
-- [ ] **Data layout.** Before writing any damage code, re-check Rust's
-  present-production and stored-goods decoding, and the stardock layout,
-  against the planet table in the Notation section.
+- [x] **Data layout.** Rust reads present production and stored goods as the
+  reals at `+0x03` and `+0x09`, and the stardock as eight typed u32 counts.
 - [ ] **Rogues.** An unclaimed empire slot attacked while weak becomes the
   "Rogues" AI (§2.11). Check whether Rust models it.
 - [ ] **Docs.** Correct the encounter spec: `5+Random(20)` is the starting

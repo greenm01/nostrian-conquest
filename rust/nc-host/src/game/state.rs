@@ -269,7 +269,7 @@ fn owned_planets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<Ho
                     .present_production_points()
                     .unwrap_or(0)
                     .min(u16::from(u8::MAX)) as u8,
-                stored_points: planet.stored_goods_raw().min(u32::from(u16::MAX)) as u16,
+                stored_points: planet.stored_production_points().min(u32::from(u16::MAX)) as u16,
                 armies: planet.army_count_raw(),
                 ground_batteries: planet.ground_batteries_raw(),
                 starbase_count: active_starbase_count_at(game_data, planet.coords_raw()),

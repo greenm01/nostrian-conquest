@@ -26,7 +26,6 @@ fn builder_creates_valid_gamestate() {
         data.planets.records[0].present_production_points(),
         Some(100)
     );
-    assert_eq!(data.planets.records[0].economy_marker_raw(), 50);
 }
 
 #[test]
@@ -119,7 +118,6 @@ fn builder_can_create_joinable_new_game_baseline() {
     assert_eq!(data.planets.records[0].army_count_raw(), 10);
     assert_eq!(data.planets.records[0].ground_batteries_raw(), 4);
     assert_eq!(data.player.records[0].tax_rate(), 50);
-    assert_eq!(data.planets.records[0].economy_marker_raw(), 50);
     assert_eq!(
         data.planets.records[0].present_production_points(),
         Some(100)
@@ -161,8 +159,8 @@ fn pre_joined_baselines_start_with_the_join_path_treasury() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("initialized baseline should build");
-    let seeded = nc_engine::build_seeded_initialized_game(4, 3000, 1515)
-        .expect("seeded game should build");
+    let seeded =
+        nc_engine::build_seeded_initialized_game(4, 3000, 1515).expect("seeded game should build");
     for data in [&initialized, &seeded] {
         for homeworld in &data.planets.records[..4] {
             assert_eq!(homeworld.stored_production_points(), join_treasury);

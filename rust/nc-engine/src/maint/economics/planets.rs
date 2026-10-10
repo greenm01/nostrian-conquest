@@ -61,9 +61,10 @@ pub(super) fn process_planet_economics(
         let revenue = yearly_tax_revenue(new_current_production, tax_rate);
 
         let planet = &mut game_data.planets.records[planet_idx];
-        planet.set_economy_marker_raw(tax_rate);
         let _ = planet.set_present_production_points(new_current_production);
-        planet.set_stored_goods_raw(planet.stored_goods_raw().saturating_add(revenue));
+        planet.set_stored_production_points(
+            planet.stored_production_points().saturating_add(revenue),
+        );
     }
 
     Ok(())
@@ -78,11 +79,7 @@ pub(super) fn recompute_player_planet_stats(game_data: &mut CoreGameData) {
         let owner = planet.owner_empire_slot_raw() as usize;
         if owner > 0 && owner <= n_players {
             planet_counts[owner] = planet_counts[owner].saturating_add(1);
-            let current_prod: u16 = if planet.potential_production_high_byte_raw() == 0x81 {
-                1
-            } else {
-                planet.present_production_points().unwrap_or(0)
-            };
+            let current_prod = planet.present_production_points().unwrap_or(0);
             pot_prod_sums[owner] = pot_prod_sums[owner].saturating_add(current_prod);
         }
     }

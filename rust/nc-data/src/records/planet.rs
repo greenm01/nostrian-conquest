@@ -1,9 +1,41 @@
 use crate::PLANET_RECORD_SIZE;
 use crate::support::{ParseError, classic_text, copy_array, decode_real48, encode_real48};
 
-pub const STARDOCK_SLOT_COUNT: usize = 10;
+/// The stardock is 8 u32 counts at `+0x38`, one per item type, in this
+/// order: destroyer, cruiser, battleship, scout, troop transport, ETAC,
+/// starbase, IPBM (`docs/dev/ec-battle-spec.md`).
+pub const STARDOCK_SLOT_COUNT: usize = 8;
 const STARDOCK_COUNT_BASE_OFFSET: usize = 0x38;
-const STARDOCK_KIND_BASE_OFFSET: usize = 0x4C;
+/// The build kind each stardock slot holds. Rust builds no IPBMs, so that
+/// slot has no kind.
+const STARDOCK_SLOT_KINDS: [u8; STARDOCK_SLOT_COUNT] = [1, 2, 3, 4, 5, 6, 9, 0];
+const PRESENT_PRODUCTION_OFFSET: usize = 0x03;
+const STORED_GOODS_OFFSET: usize = 0x09;
+const SCORCH_EARTH_OFFSET: usize = 0x60;
+
+/// The stardock slot that holds items of build kind `kind_raw`, if any.
+pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
+    (kind_raw != 0)
+        .then(|| {
+            STARDOCK_SLOT_KINDS
+                .iter()
+                .position(|&kind| kind == kind_raw)
+        })
+        .flatten()
+}
+
+/// Decode a Turbo Pascal real stored exponent byte first.
+fn read_real(bytes: &[u8]) -> f64 {
+    decode_real48([bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[0]]).unwrap_or(0.0)
+}
+
+/// Encode a Turbo Pascal real, exponent byte first. Values too small for a
+/// real store as 0.
+fn write_real(bytes: &mut [u8], value: f64) {
+    let encoded = encode_real48(value).unwrap_or([0; 6]);
+    bytes[0] = encoded[5];
+    bytes[1..6].copy_from_slice(&encoded[..5]);
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProductionItemKind {
@@ -105,78 +137,69 @@ impl PlanetRecord {
         &self.raw[0x10..=0x1C]
     }
 
-    pub fn potential_production_raw(&self) -> [u8; 2] {
-        [self.raw[0x02], self.raw[0x03]]
-    }
-    pub fn set_potential_production_raw(&mut self, value: [u8; 2]) {
-        self.raw[0x02] = value[0];
-        self.raw[0x03] = value[1];
-    }
-
-    pub fn potential_production_high_byte_raw(&self) -> u8 {
-        self.raw[0x03]
-    }
-
-    pub fn set_potential_production_high_byte_raw(&mut self, value: u8) {
-        self.raw[0x03] = value;
-    }
-
-    pub fn factories_raw(&self) -> [u8; 6] {
-        copy_array(&self.raw[0x04..0x0A])
-    }
-    pub fn set_factories_raw(&mut self, value: [u8; 6]) {
-        self.raw[0x04..0x0A].copy_from_slice(&value);
-    }
-
     pub fn potential_production_points(&self) -> u16 {
         self.raw[0x02] as u16
     }
 
-    fn decoded_present_production_points(&self) -> Option<u16> {
-        decode_real48(self.factories_raw()).map(|value| value.round().max(0.0) as u16)
+    pub fn set_potential_production_points(&mut self, value: u8) {
+        self.raw[0x02] = value;
     }
 
+    /// Present production ("factories"), a real at `+0x03`.
+    pub fn present_production(&self) -> f64 {
+        read_real(&self.raw[PRESENT_PRODUCTION_OFFSET..PRESENT_PRODUCTION_OFFSET + 6])
+    }
+
+    pub fn set_present_production(&mut self, value: f64) {
+        write_real(
+            &mut self.raw[PRESENT_PRODUCTION_OFFSET..PRESENT_PRODUCTION_OFFSET + 6],
+            value,
+        );
+    }
+
+    /// Present production rounded to whole points.
     pub fn present_production_points(&self) -> Option<u16> {
-        let decoded = self.decoded_present_production_points()?;
-        // Only an uninitialized "Not Named Yet" seed (classic seeds store 50)
-        // reads at potential; named homeworlds report their real production.
-        if self.is_homeworld_seed_ignoring_name() && self.is_named_homeworld_seed() {
-            Some(decoded.max(self.potential_production_points()))
-        } else {
-            Some(decoded)
-        }
+        Some(
+            self.present_production()
+                .round()
+                .clamp(0.0, f64::from(u16::MAX)) as u16,
+        )
     }
 
     pub fn set_present_production_points(&mut self, value: u16) -> bool {
-        match encode_real48(f64::from(value)) {
-            Some(encoded) => {
-                self.set_factories_raw(encoded);
-                true
-            }
-            None => false,
-        }
+        self.set_present_production(f64::from(value));
+        true
     }
 
-    pub fn factories_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x08], self.raw[0x09]])
-    }
-    pub fn set_factories_word_raw(&mut self, value: u16) {
-        self.raw[0x08..0x0A].copy_from_slice(&value.to_le_bytes());
+    /// Stored goods (production points), a real at `+0x09`.
+    pub fn stored_goods(&self) -> f64 {
+        read_real(&self.raw[STORED_GOODS_OFFSET..STORED_GOODS_OFFSET + 6])
     }
 
-    pub fn stored_goods_raw(&self) -> u32 {
-        u32::from_le_bytes(copy_array(&self.raw[0x0A..0x0E]))
-    }
-    pub fn set_stored_goods_raw(&mut self, value: u32) {
-        self.raw[0x0A..0x0E].copy_from_slice(&value.to_le_bytes());
+    pub fn set_stored_goods(&mut self, value: f64) {
+        write_real(
+            &mut self.raw[STORED_GOODS_OFFSET..STORED_GOODS_OFFSET + 6],
+            value,
+        );
     }
 
+    /// Stored goods rounded to whole points.
     pub fn stored_production_points(&self) -> u32 {
-        self.stored_goods_raw()
+        self.stored_goods().round().clamp(0.0, f64::from(u32::MAX)) as u32
     }
 
     pub fn set_stored_production_points(&mut self, value: u32) {
-        self.set_stored_goods_raw(value);
+        self.set_stored_goods(f64::from(value));
+    }
+
+    /// The Scorch-Earth order (`+0x60`): on capture, production and goods
+    /// are halved and the stardock emptied.
+    pub fn scorch_earth_raw(&self) -> u8 {
+        self.raw[SCORCH_EARTH_OFFSET]
+    }
+
+    pub fn set_scorch_earth_raw(&mut self, value: u8) {
+        self.raw[SCORCH_EARTH_OFFSET] = value;
     }
 
     pub fn potential_production_points_current_known(&self) -> u16 {
@@ -187,23 +210,7 @@ impl PlanetRecord {
         self.present_production_points()
     }
 
-    pub fn economy_marker_raw(&self) -> u8 {
-        self.raw[0x0E]
-    }
-    pub fn set_economy_marker_raw(&mut self, value: u8) {
-        self.raw[0x0E] = value;
-    }
-
     pub fn set_planet_name(&mut self, name: &str) {
-        // Naming a "Not Named Yet" seed ends its potential floor, so store the
-        // floored production first; a rename never changes production.
-        if self.is_homeworld_seed_ignoring_name() && self.is_named_homeworld_seed() {
-            if let Some(present) = self.present_production_points()
-                && Some(present) != self.decoded_present_production_points()
-            {
-                let _ = self.set_present_production_points(present);
-            }
-        }
         let bytes = name.as_bytes();
         let mut len = bytes.len().min(13);
         while !name.is_char_boundary(len) {
@@ -263,12 +270,21 @@ impl PlanetRecord {
     }
 
     pub fn stardock_count_raw(&self, slot: usize) -> u16 {
-        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 2;
-        u16::from_le_bytes([self.raw[offset], self.raw[offset + 1]])
+        self.stardock_count(slot).min(u32::from(u16::MAX)) as u16
     }
 
+    pub fn stardock_count(&self, slot: usize) -> u32 {
+        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 4;
+        u32::from_le_bytes(copy_array(&self.raw[offset..offset + 4]))
+    }
+
+    /// The build kind in `slot`, or 0 when the slot is empty.
     pub fn stardock_kind_raw(&self, slot: usize) -> u8 {
-        self.raw[STARDOCK_KIND_BASE_OFFSET + slot]
+        if self.stardock_count(slot) == 0 {
+            0
+        } else {
+            STARDOCK_SLOT_KINDS[slot]
+        }
     }
 
     pub fn stardock_item_kind_current_known(&self, slot: usize) -> ProductionItemKind {
@@ -276,14 +292,12 @@ impl PlanetRecord {
     }
 
     pub fn set_stardock_count_raw(&mut self, slot: usize, value: u16) {
-        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 2;
-        let bytes = value.to_le_bytes();
-        self.raw[offset] = bytes[0];
-        self.raw[offset + 1] = bytes[1];
+        self.set_stardock_count(slot, u32::from(value));
     }
 
-    pub fn set_stardock_kind_raw(&mut self, slot: usize, value: u8) {
-        self.raw[STARDOCK_KIND_BASE_OFFSET + slot] = value;
+    pub fn set_stardock_count(&mut self, slot: usize, value: u32) {
+        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 4;
+        self.raw[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
     }
 
     /// Set the 7 raw bytes at [0x1d..0x24] — the region between the end of the
@@ -297,9 +311,10 @@ impl PlanetRecord {
     ///
     /// Sets:
     /// - coords [0x00..0x01]
-    /// - potential_production [0x02..0x03]
-    /// - factories (6 bytes) [0x04..0x09]
-    /// - economy marker byte [0x0e]
+    /// - potential production and the present-production exponent [0x02..0x03]
+    /// - the rest of present production and the stored-goods exponent
+    ///   (6 bytes) [0x04..0x09]
+    /// - the stored-goods high mantissa byte [0x0e]
     /// - planet name (len + 13-byte buffer) [0x0f..0x1c]
     /// - name_suffix_raw (7 bytes) [0x1d..0x23]
     /// - army_count [0x58], ground_batteries [0x5a]
@@ -313,7 +328,7 @@ impl PlanetRecord {
         coords: [u8; 2],
         potential_production: [u8; 2],
         factories: [u8; 6],
-        economy_marker: u8,
+        goods_high_byte: u8,
         name_len: u8,
         name_buffer: [u8; 13],
         name_suffix_raw: [u8; 7],
@@ -325,9 +340,9 @@ impl PlanetRecord {
         self.raw = [0u8; PLANET_RECORD_SIZE];
         self.raw[0x00] = coords[0];
         self.raw[0x01] = coords[1];
-        self.set_potential_production_raw(potential_production);
-        self.set_factories_raw(factories);
-        self.raw[0x0E] = economy_marker;
+        self.raw[0x02..0x04].copy_from_slice(&potential_production);
+        self.raw[0x04..0x0A].copy_from_slice(&factories);
+        self.raw[0x0E] = goods_high_byte;
         self.set_planet_name_buffer(name_len, &name_buffer);
         self.set_name_suffix_raw(name_suffix_raw);
         self.raw[0x58] = army_count;

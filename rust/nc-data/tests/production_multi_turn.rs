@@ -115,30 +115,8 @@ fn multiple_build_slots_share_one_planet_spend_budget_per_turn() {
     assert_eq!(planet.stored_production_points(), 178);
     assert_eq!(planet.stardock_kind_raw(0), 1);
     assert_eq!(planet.stardock_count_raw(0), 5);
-    assert_eq!(planet.stardock_kind_raw(1), 6);
-    assert_eq!(planet.stardock_count_raw(1), 1);
-}
-
-#[test]
-fn stardock_blocked_build_keeps_full_stored_reserve() {
-    let mut player = player_with_empire_name("Alpha", 50, 0);
-    player.set_player_mode_raw(0x01);
-
-    let mut planet = owned_planet_with_present_production(1, 100, 100, 120, 10, 4);
-    planet.set_build_count_raw(0, 100);
-    planet.set_build_kind_raw(0, 9);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 1);
-        planet.set_stardock_count_raw(slot, 1);
-    }
-
-    let mut game = multi_planet_game(player, vec![planet], vec![]);
-    run_maintenance_turn(&mut game).expect("maintenance should succeed");
-
-    let planet = &game.planets.records[0];
-    assert_eq!(planet.build_count_raw(0), 100);
-    assert_eq!(planet.build_kind_raw(0), 9);
-    assert_eq!(planet.stored_production_points(), 170);
+    assert_eq!(planet.stardock_kind_raw(5), 6);
+    assert_eq!(planet.stardock_count_raw(5), 1);
 }
 
 #[test]

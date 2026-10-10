@@ -293,9 +293,6 @@ fn autopilot_build_queue(
                 let _ = game_data.append_planet_build_order(planet_idx + 1, cost, 9);
             }
         }
-
-        // Economy marker tracks the AI's chosen tax rate.
-        game_data.planets.records[planet_idx].set_economy_marker_raw(posture.tax_rate);
     }
     Ok(())
 }

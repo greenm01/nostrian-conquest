@@ -36,7 +36,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }
-        total_treasury += planet.stored_goods_raw();
+        total_treasury += planet.stored_production_points();
         total_present += planet.present_production_points().unwrap_or(0) as u32;
         total_potential += planet.potential_production_points() as u32;
     }

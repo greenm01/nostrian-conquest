@@ -817,8 +817,7 @@ mod tests {
         let mut planet = PlanetRecord::new_zeroed();
         planet.set_build_kind_raw(0, 3);
         planet.set_build_count_raw(0, 90);
-        planet.set_stardock_kind_raw(0, 2);
-        planet.set_stardock_count_raw(0, 5);
+        planet.set_stardock_count_raw(1, 5);
 
         assert_eq!(format_build_queue_summary(&planet), "2BB");
         assert_eq!(format_stardock_summary(&planet), "5CA");

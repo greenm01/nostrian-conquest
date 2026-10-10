@@ -62,28 +62,21 @@ const P1_DETACH_SPECS: [(u16, u16, u16, u16, u16, u16, u16, u8); 24] = [
 const OTHER_DETACH_SPECS: [(u16, u16, u16, u16, u16, u16, u16, u8); 2] =
     [(0, 1, 0, 0, 0, 0, 0, 3), (0, 0, 1, 0, 0, 0, 0, 5)];
 
-const PLAYER_ONE_STARDOCK_SPECS: [(usize, usize, u8, u16); 12] = [
-    (1, 0, 1, 4),
-    (1, 1, 2, 2),
-    (1, 2, 5, 3),
-    (13, 0, 9, 1),
-    (14, 0, 9, 1),
-    (15, 0, 9, 1),
-    (16, 0, 3, 1),
-    (16, 1, 5, 2),
-    (16, 2, 6, 1),
-    (17, 0, 4, 4),
-    (17, 1, 8, 12),
-    (18, 0, 7, 10),
+const PLAYER_ONE_STARDOCK_SPECS: [(usize, u8, u16); 10] = [
+    (1, 1, 4),
+    (1, 2, 2),
+    (1, 5, 3),
+    (13, 9, 1),
+    (14, 9, 1),
+    (15, 9, 1),
+    (16, 3, 1),
+    (16, 5, 2),
+    (16, 6, 1),
+    (17, 4, 4),
 ];
 
-const FOREIGN_INTEL_STARDOCK_SPECS: [(usize, usize, u8, u16); 5] = [
-    (2, 0, 1, 2),
-    (5, 0, 5, 2),
-    (9, 0, 4, 3),
-    (24, 0, 2, 1),
-    (31, 0, 3, 1),
-];
+const FOREIGN_INTEL_STARDOCK_SPECS: [(usize, u8, u16); 5] =
+    [(2, 1, 2), (5, 5, 2), (9, 4, 3), (24, 2, 1), (31, 3, 1)];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Player1TuiStressSeedReport {
@@ -215,12 +208,6 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
     let total_planets = game_data.planets.records.len();
     let player_count = game_data.conquest.player_count();
     let owners = ownership_sequence_for_players(player_count, total_planets);
-    let player_taxes = game_data
-        .player
-        .records
-        .iter()
-        .map(|record| record.tax_rate())
-        .collect::<Vec<_>>();
     let empire_short_names = game_data
         .player
         .records
@@ -246,7 +233,7 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
         planet.set_owner_empire_slot_raw(owner);
         planet.set_ownership_status_raw(if owner == 0 { 0 } else { 2 });
         planet.set_planet_name(&payload.name);
-        planet.set_potential_production_raw([payload.potential, 0]);
+        planet.set_potential_production_points(payload.potential);
         if !planet.set_present_production_points(payload.present) {
             return Err(format!(
                 "planet {} present production out of range: {}",
@@ -258,11 +245,6 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
         planet.set_stored_production_points(payload.stored);
         planet.set_army_count_raw(payload.armies);
         planet.set_ground_batteries_raw(payload.batteries);
-        planet.set_economy_marker_raw(if owner == 0 {
-            0
-        } else {
-            player_taxes[(owner - 1) as usize]
-        });
         clear_planet_build_queue(planet);
         clear_planet_stardock(planet);
     }
@@ -281,27 +263,28 @@ fn clear_planet_build_queue(planet: &mut PlanetRecord) {
 
 fn clear_planet_stardock(planet: &mut PlanetRecord) {
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 0);
         planet.set_stardock_count_raw(slot, 0);
     }
 }
 
-fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, usize, u8, u16)]) {
+fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, u8, u16)]) {
     let total_planets = game_data.planets.records.len();
-    for (record_index_1_based, slot, kind_raw, count) in specs {
-        if *record_index_1_based > total_planets || *slot >= nc_data::STARDOCK_SLOT_COUNT {
+    for (record_index_1_based, kind_raw, count) in specs {
+        let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
+            continue;
+        };
+        if *record_index_1_based > total_planets {
             continue;
         }
         let planet = &mut game_data.planets.records[*record_index_1_based - 1];
-        planet.set_stardock_kind_raw(*slot, *kind_raw);
-        planet.set_stardock_count_raw(*slot, *count);
+        planet.set_stardock_count_raw(slot, *count);
     }
 }
 
 fn apply_player_owned_stardock_specs(
     game_data: &mut CoreGameData,
     owner_empire_id: u8,
-    specs: &[(usize, usize, u8, u16)],
+    specs: &[(usize, u8, u16)],
 ) {
     let owned_planet_records = game_data
         .planets
@@ -311,17 +294,16 @@ fn apply_player_owned_stardock_specs(
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == owner_empire_id)
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
-    for (owned_ordinal_1_based, slot, kind_raw, count) in specs {
+    for (owned_ordinal_1_based, kind_raw, count) in specs {
         let Some(&record_index_1_based) = owned_planet_records.get(owned_ordinal_1_based - 1)
         else {
             continue;
         };
-        if *slot >= nc_data::STARDOCK_SLOT_COUNT {
+        let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
             continue;
-        }
+        };
         let planet = &mut game_data.planets.records[record_index_1_based - 1];
-        planet.set_stardock_kind_raw(*slot, *kind_raw);
-        planet.set_stardock_count_raw(*slot, *count);
+        planet.set_stardock_count_raw(slot, *count);
     }
 }
 
@@ -852,7 +834,7 @@ fn full_snapshot(
         known_current_production: planet
             .present_production_points()
             .map(|value| value.min(u16::from(u8::MAX)) as u8),
-        known_stored_points: Some(planet.stored_goods_raw().min(u32::from(u16::MAX)) as u16),
+        known_stored_points: Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16),
         known_docked_summary: Some(format_stardock_summary(planet)),
         known_orbit_summary: Some(format_orbit_summary(game_data, planet.coords_raw())),
         compat_word_1e: Some(0x23),
