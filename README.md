@@ -224,12 +224,17 @@ cargo run --release -p nc-fuzz --example maint_throughput
 Normal player and sysop workflows should prefer `nc-game`, `nc-door`, and
 `nc-sysop`.
 
-Independent combat balance models and AS/DS/cost sweeps live in
-[tools/combat-model](tools/combat-model/README.md). They reproduce the
-combat review's numerical experiments without building Rust:
+Combat balance models live in [tools/combat-model](tools/combat-model/README.md).
+The odds sweep compares the combat review's resolution candidates on fixed
+matchups without building Rust, and the `combat_odds` example runs the same
+matchups through the engine with fresh combat seeds so the model's
+current-rule numbers can be checked against it
+([workflow](docs/dev/combat-balance-workflow.md)):
 
 ```sh
-python3 -B tools/combat-model/ground.py
+python3 -I -B tools/combat-model/sweep.py --markdown /tmp/sweep.md --json /tmp/sweep.json
+cargo run --release -p nc-fuzz --example combat_odds -- --trials 20000 --json /tmp/engine.json
+python3 -I -B tools/combat-model/sweep.py --rules current --units baseline --cases engine --engine /tmp/engine.json
 ```
 
 ## Local Dependencies

@@ -61,6 +61,8 @@ These docs explain how to work in the repo and how to structure the Rust side.
   - typed KDL and CLI workflow for campaign play, runtime scenarios, combat scenarios, and combat sweeps
 - [harness/campaign-play.md](harness/campaign-play.md)
   - reproducible conductor workflow for "play to turn N, then inspect in the TUI"
+- [combat-balance-workflow.md](combat-balance-workflow.md)
+  - how combat rule candidates get numbers: exact enumeration, seeded sampling, campaign scenarios
 - [llm-player-guide.md](llm-player-guide.md)
   - strict visible-state operating guide for bots/LLMs playing real campaigns
 
