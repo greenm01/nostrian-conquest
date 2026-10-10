@@ -2,7 +2,7 @@
 
 _Nostrian Conquest is a from-scratch Rust recreation of the 1990's BBS door game Esterian Conquest. It currently ships as a direct localhost client and BBS door stack, with a planned Nostr GameServer path as the modern network mode. All code is original. It is not affiliated with any historical release._
 
-**Status:** `v1.0.0-beta.2`  
+**Status:** `v1.0.0-beta.3`  
 Active beta. The Rust player and sysop stack is playable now. The main work is live playtesting, bug fixing, and tightening the rough edges.
 
 ![Nostrian Conquest title screen](docs/assets/nc-hero.png)

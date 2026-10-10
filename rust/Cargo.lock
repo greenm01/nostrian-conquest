@@ -3038,11 +3038,11 @@ dependencies = [
 
 [[package]]
 name = "nc-classic"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 
 [[package]]
 name = "nc-cli"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "kdl 6.5.0",
  "nc-compat",
@@ -3054,7 +3054,7 @@ dependencies = [
 
 [[package]]
 name = "nc-client"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "chacha20poly1305",
  "dirs 5.0.1",
@@ -3075,7 +3075,7 @@ dependencies = [
 
 [[package]]
 name = "nc-compat"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "nc-classic",
  "nc-data",
@@ -3083,7 +3083,7 @@ dependencies = [
 
 [[package]]
 name = "nc-connect"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "alacritty_terminal",
  "arboard",
@@ -3116,7 +3116,7 @@ dependencies = [
 
 [[package]]
 name = "nc-data"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "blake3",
  "chrono",
@@ -3132,14 +3132,14 @@ dependencies = [
 
 [[package]]
 name = "nc-engine"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "nc-data",
 ]
 
 [[package]]
 name = "nc-fuzz"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "hegeltest",
  "nc-data",
@@ -3150,7 +3150,7 @@ dependencies = [
 
 [[package]]
 name = "nc-game"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "crossterm",
  "kdl 6.5.0",
@@ -3167,7 +3167,7 @@ dependencies = [
 
 [[package]]
 name = "nc-harness"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "kdl 6.5.0",
  "nc-compat",
@@ -3177,7 +3177,7 @@ dependencies = [
 
 [[package]]
 name = "nc-helm"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "bytemuck",
  "chrono",
@@ -3200,7 +3200,7 @@ dependencies = [
 
 [[package]]
 name = "nc-host"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "blake3",
  "chrono",
@@ -3225,7 +3225,7 @@ dependencies = [
 
 [[package]]
 name = "nc-log"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "tracing",
  "tracing-subscriber",
@@ -3233,7 +3233,7 @@ dependencies = [
 
 [[package]]
 name = "nc-nostr"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "base64",
  "blake3",
@@ -3271,7 +3271,7 @@ dependencies = [
 
 [[package]]
 name = "nc-session"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "nc-data",
  "nc-log",
@@ -3279,7 +3279,7 @@ dependencies = [
 
 [[package]]
 name = "nc-sysop"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "nc-data",
  "nc-engine",
@@ -3290,7 +3290,7 @@ dependencies = [
 
 [[package]]
 name = "nc-ui"
-version = "1.0.0-beta.2"
+version = "1.0.0-beta.3"
 dependencies = [
  "crossterm",
  "fontdue",

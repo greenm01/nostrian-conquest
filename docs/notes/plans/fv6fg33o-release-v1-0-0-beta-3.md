@@ -36,8 +36,10 @@ suite passes:
 
 On Windows, after `git pull`: build the Windows x64, Windows x86, and
 Windows 7+ x86 `nc-sysop` archives with the MSVC toolchain the release script
-targets, upload them, and regenerate and re-sign `SHA256SUMS.txt`. Do this in
-the same session as the t019 Windows console check.
+targets, upload them, and regenerate and re-sign `SHA256SUMS.txt`. Then point
+the three Windows links in `website/landing/downloads.html` at beta.3; t023
+moved only the Linux link so every link keeps resolving until then. Do this
+in the same session as the t019 Windows console check.
 
 ## Connections
 
