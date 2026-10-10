@@ -94,7 +94,7 @@ pub(super) fn normalize_fleet_roe_for_composition(record: &mut FleetRecord) {
     } else if record.has_any_combat_ships() && record.rules_of_engagement() == 0 {
         // Combat fleets should not default to Pacifist (ROE 0) upon commissioning.
         // Default to ROE 6 (Engage equal or inferior strength).
-        record.set_rules_of_engagement(6);
+        record.set_rules_of_engagement(crate::NEW_FLEET_DEFAULT_ROE);
     }
 }
 

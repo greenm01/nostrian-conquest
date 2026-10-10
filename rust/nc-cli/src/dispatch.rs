@@ -424,7 +424,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                     .as_deref()
                     .map(|value| parse_u8_arg(value, "new fleet roe"))
                     .transpose()?
-                    .unwrap_or(5),
+                    .unwrap_or(nc_data::NEW_FLEET_DEFAULT_ROE),
             )?;
         }
         "fleet-order-init" => {

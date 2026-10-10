@@ -263,10 +263,6 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             println!("session_local_timeout={}", settings.session_local_timeout);
             println!("session_remote_timeout={}", settings.session_remote_timeout);
             println!(
-                "inactivity_purge_after_turns={}",
-                settings.inactivity_purge_after_turns
-            );
-            println!(
                 "inactivity_autopilot_after_turns={}",
                 settings.inactivity_autopilot_after_turns
             );
@@ -329,11 +325,6 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                     "--session-remote-timeout" => {
                         settings.session_remote_timeout =
                             parse_on_off(&args_value(args, &mut idx, "--session-remote-timeout")?)?;
-                    }
-                    "--inactivity-purge-after" => {
-                        settings.inactivity_purge_after_turns =
-                            args_value(args, &mut idx, "--inactivity-purge-after")?
-                                .parse::<u8>()?;
                     }
                     "--inactivity-autopilot-after" => {
                         settings.inactivity_autopilot_after_turns =
@@ -574,6 +565,9 @@ fn extend_maintenance_events(all_events: &mut MaintenanceEvents, events: Mainten
     all_events
         .scout_contact_events
         .extend(events.scout_contact_events);
+    all_events
+        .starbase_sighting_events
+        .extend(events.starbase_sighting_events);
     all_events
         .encounter_disposition_events
         .extend(events.encounter_disposition_events);

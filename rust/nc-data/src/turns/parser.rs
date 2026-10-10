@@ -2,7 +2,9 @@ use super::{
     FleetTurnAction, FleetTurnBlock, PlanetTurnAction, PlanetTurnBlock, TurnDiplomacyDirective,
     TurnMessage, TurnSubmission, TurnSubmissionError,
 };
-use crate::{DiplomaticRelation, FleetDetachSelection, Order, ProductionItemKind};
+use crate::{
+    DiplomaticRelation, FleetDetachSelection, NEW_FLEET_DEFAULT_ROE, Order, ProductionItemKind,
+};
 
 pub(super) fn parse_turn_submission(input: &str) -> Result<TurnSubmission, TurnSubmissionError> {
     let document: ::kdl::KdlDocument = input
@@ -148,7 +150,7 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
             "detach" => actions.push(FleetTurnAction::Detach {
                 selection: parse_fleet_detach_selection(child)?,
                 donor_speed: opt_prop_u8(child, "donor_speed")?,
-                new_fleet_roe: opt_prop_u8(child, "new_roe")?.unwrap_or(5),
+                new_fleet_roe: opt_prop_u8(child, "new_roe")?.unwrap_or(NEW_FLEET_DEFAULT_ROE),
             }),
             "transfer" => actions.push(FleetTurnAction::Transfer {
                 host_fleet_record_index_1_based: prop_record_index(child, "to")?,

@@ -4,7 +4,7 @@ use nc_data::{
     FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError, GameStateBuilder,
     GameVictoryNoticeEvent, InvalidPlayerStateEvent, MaintenanceEvents, Mission, MissionEvent,
     MissionOutcome, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetRecord,
-    ScoutContactEvent, ShipLosses, StarbaseAlert,
+    ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseSightingEvent,
 };
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, maint::FleetBattlePerspective,
@@ -1733,6 +1733,52 @@ fn attacker_battle_report_explicitly_mentions_enemy_starbase_destruction() {
         .replace('\n', " ");
     assert!(text.contains("Enemy starbase destroyed."));
     assert!(text.contains("The aliens were completely destroyed."));
+}
+
+#[test]
+fn results_reports_a_starbase_sighting_of_an_alien_starbase() {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3024)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let mut events = MaintenanceEvents::default();
+    for (alerting, week) in [(true, 2), (false, 3)] {
+        events.starbase_sighting_events.push(StarbaseSightingEvent {
+            viewer_empire_raw: 1,
+            starbase_id: 5,
+            coords: [9, 13],
+            in_system: false,
+            target_empire_raw: 2,
+            target_starbase_id: 3,
+            alerting,
+            stardate_week: Some(week),
+        });
+    }
+
+    let texts = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .into_iter()
+        .map(|text| text.replace('\n', " "))
+        .collect::<Vec<_>>();
+    assert_eq!(texts.len(), 2, "{texts:?}");
+    assert!(
+        texts[0].contains("From Starbase 5, located in Sector(9,13):"),
+        "{}",
+        texts[0]
+    );
+    assert!(
+        texts[0].contains(
+            "We have located and identified an alien starbase in Sector(9,13). It is Starbase 3 of Empire #2. We are alerting all fleets in the area."
+        ),
+        "{}",
+        texts[0]
+    );
+    assert!(
+        texts[1].contains("Continuing with scanning assignment..."),
+        "{}",
+        texts[1]
+    );
+    assert!(!texts[1].contains("alerting"), "{}", texts[1]);
 }
 
 #[test]

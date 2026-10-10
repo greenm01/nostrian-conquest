@@ -525,7 +525,7 @@ Whom). ROE also decides when your fleet breaks off a battle.
 
 The full ROE threshold table is collected in @appendix-combat.
 
-Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*).
+Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.
 
 == Withdrawal and Retreat
 

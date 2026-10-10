@@ -4,6 +4,7 @@ use crate::{
     CoreGameData, EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent,
     FleetDestroyedEvent, FleetOrderValidationError, MissionAbortReason, MissionEvent,
     MissionOutcome, Order, PlanetIntelEvent, ScoutContactEvent, ShipLosses, StarbaseDestroyedEvent,
+    StarbaseSightingEvent,
 };
 
 use super::super::FleetBattlePerspective;
@@ -412,6 +413,7 @@ pub(crate) struct FleetBattlePhaseEvents {
     pub fleet_destroyed_events: Vec<FleetDestroyedEvent>,
     pub starbase_destroyed_events: Vec<StarbaseDestroyedEvent>,
     pub scout_contact_events: Vec<ScoutContactEvent>,
+    pub starbase_sighting_events: Vec<StarbaseSightingEvent>,
     pub planet_intel_events: Vec<PlanetIntelEvent>,
     pub encounter_disposition_events: Vec<EncounterDispositionEvent>,
     pub mission_events: Vec<MissionEvent>,
@@ -427,6 +429,8 @@ impl FleetBattlePhaseEvents {
             .append(&mut other.starbase_destroyed_events);
         self.scout_contact_events
             .append(&mut other.scout_contact_events);
+        self.starbase_sighting_events
+            .append(&mut other.starbase_sighting_events);
         self.planet_intel_events
             .append(&mut other.planet_intel_events);
         self.encounter_disposition_events

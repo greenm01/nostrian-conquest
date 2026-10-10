@@ -204,7 +204,14 @@ text only; the only state change is awareness 2 for the base owner's empire,
 which every fleet of that empire then shares. [C][P]
 
 ### Starbase observer, starbase target
-Same as above with `vis_base`; awareness 2 and a report only.
+Same as above with `vis_base`; awareness 2 and a report only. The report
+(`18ea:1fea`) reads "We have located and identified an alien starbase in
+Sector(x,y). It is Starbase N of <empire>." ("System" for layer 1), and ends
+with "We are alerting all fleets in the area." when the base owner has
+declared the target's owner an enemy, else "Continuing with scanning
+assignment...". After a fleet's earlier contact (awareness 1) it opens with
+"We have identified previously reported starbase sighting BS-N as " instead.
+There is no "headed at our planet" form for a base. [C]
 
 ---------------------------------------------------------------------------
 

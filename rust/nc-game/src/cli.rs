@@ -816,7 +816,6 @@ fn load_runtime_game_config(
             session_minimum_time_minutes: Some(settings.session_minimum_time_minutes),
             session_local_timeout: Some(settings.session_local_timeout),
             session_remote_timeout: Some(settings.session_remote_timeout),
-            inactivity_purge_after_turns: Some(settings.inactivity_purge_after_turns),
             inactivity_autopilot_after_turns: Some(settings.inactivity_autopilot_after_turns),
         },
     })

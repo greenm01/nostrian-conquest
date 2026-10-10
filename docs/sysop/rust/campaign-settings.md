@@ -29,7 +29,6 @@ session_max_idle_minutes=10
 session_minimum_time_minutes=0
 session_local_timeout=false
 session_remote_timeout=true
-inactivity_purge_after_turns=0
 inactivity_autopilot_after_turns=3
 maintenance_enabled=false
 maintenance_interval_minutes=1440
@@ -103,9 +102,6 @@ them as first-class operator controls for every deployment mode.
   Default: `true`. Stored in state. Hosted sessions currently use
   `session_max_idle_minutes` for lease TTL. Do not treat this flag by itself
   as a separate VPS switch.
-- `inactivity_purge_after_turns`
-  Default: `0`. Stored in state. Not a BBS `config.kdl` feature and not a main
-  direct-host control today.
 - `inactivity_autopilot_after_turns`
   Default: `3`. Stored in state. `0` disables the policy. When maintenance
   sees that an active human player has missed that many consecutive turns, it

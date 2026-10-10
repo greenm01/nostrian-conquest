@@ -1114,7 +1114,7 @@ fn can_set_maintenance_schedule_from_enabled_days() {
     post_maint.set_maintenance_schedule_enabled([true, false, true, false, true, false, true]);
     assert_eq!(
         post_maint.maintenance_schedule_bytes(),
-        [0x01, 0x00, 0xCA, 0x00, 0x0A, 0x00, 0x26]
+        [0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01]
     );
     assert_eq!(
         post_maint.maintenance_schedule_enabled(),

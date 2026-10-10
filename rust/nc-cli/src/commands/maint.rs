@@ -211,6 +211,9 @@ pub fn run_rust_maintenance_with_options(
             .scout_contact_events
             .extend(events.scout_contact_events);
         all_events
+            .starbase_sighting_events
+            .extend(events.starbase_sighting_events);
+        all_events
             .encounter_disposition_events
             .extend(events.encounter_disposition_events);
         all_events

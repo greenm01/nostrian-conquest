@@ -9,7 +9,6 @@ pub struct RuntimeSetupOverrides {
     pub session_minimum_time_minutes: Option<u8>,
     pub session_local_timeout: Option<bool>,
     pub session_remote_timeout: Option<bool>,
-    pub inactivity_purge_after_turns: Option<u8>,
     pub inactivity_autopilot_after_turns: Option<u8>,
 }
 
