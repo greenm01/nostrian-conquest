@@ -94,24 +94,33 @@ merges and colonization, the AI, player statistics, lifecycle, and reports.
 4. **Starbase assistance** (direction approved, eligibility still to be
    finalized). The extra turn can apply only to hulls that were crippled
    before the pass began, belonged to the fleet when it began, and stayed at
-   rest in orbit of the owned world with the starbase for the whole pass.
-   Hulls crippled this pass, and hulls that arrived or merged in during the
-   pass, never receive it. The engine decides this from a snapshot taken at
-   the start of the pass and kept only for that pass, so it needs no new
-   stored state.
-5. **Finishing and detaching.** Fire that finishes a crippled hull takes the
-   hull with the most turns remaining first, newly crippled hulls before
-   all others; detaching crippled hulls follows the same order. A fleet's
-   survivors stay closest to recovery.
-6. **Strength tests see damage.** The ROE engagement test and the orbital
-   gate keep classic's weights (BB 21, CA 7, DD 2, and the starbase
-   constant) but count a crippled hull at half its weight. Bombardment and
-   assault fire use a crippled hull's crippled AS. Replacing the classic
-   weights with NC AS is the separate yardstick question in decision 2.
-7. **Other events.** Destroyed and captured hulls leave their counts. A
-   fleet that defects in civil disorder keeps its counts. Colonization does
-   not consume the ETAC. A classic export between passes writes whole hulls,
-   says that recovery state is lost, and leaves the store unchanged.
+   rest in orbit of the same owned world, with the same starbase and the
+   same owner, through all 52 ticks. Hulls crippled this pass, and hulls
+   that arrived or merged in during the pass, never receive it; a late
+   arrival or merge cannot pass its hulls off as eligible. A starbase does
+   not assist its own recovery. The engine decides this from a snapshot
+   taken at the start of the pass and kept only for that pass, so it needs
+   no new stored state.
+5. **Finishing and detaching.** Hit allocation still chooses the class and
+   whether it strikes nominal or crippled hulls; within that choice, fire
+   that finishes a crippled hull takes the one with the most turns
+   remaining first, newly crippled hulls before all others. Detaching
+   crippled hulls follows the same order. A surviving crippled hull keeps
+   its count; nothing resets it. A fleet's survivors stay closest to
+   recovery.
+6. **Strength tests see damage.** Every strength path counts a crippled
+   hull at its crippled value and keeps its current weights: the ROE
+   engagement test and the orbital gate use classic's weights (BB 21, CA 7,
+   DD 2, and the starbase constant) with a crippled hull at half;
+   bombardment keeps its 5/30/135 weights and its current crippled rounding.
+   No path switches to combat AS; replacing the classic weights is the
+   separate yardstick question in decision 2.
+7. **Other events.** Destroyed hulls leave their counts. A fleet that
+   changes owner, by capture or civil-disorder defection, keeps its counts,
+   and reports name it by its new identity. ETACs are reusable: colonization
+   consumes none, and recovery changes no mission ability. A classic export
+   between passes writes whole hulls, says that recovery state is lost, and
+   leaves the store unchanged.
 
 ## Implementation proposals and remaining choices
 
