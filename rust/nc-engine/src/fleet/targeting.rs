@@ -490,8 +490,8 @@ fn sort_unique_coords_by_distance(anchor: [u8; 2], coords: &mut Vec<[u8; 2]>) {
     coords.dedup();
 }
 
-fn sector_distance_sq(from: [u8; 2], to: [u8; 2]) -> u16 {
-    let dx = i16::from(from[0]) - i16::from(to[0]);
-    let dy = i16::from(from[1]) - i16::from(to[1]);
-    (dx * dx + dy * dy) as u16
+fn sector_distance_sq(from: [u8; 2], to: [u8; 2]) -> u32 {
+    let dx = u32::from(from[0].abs_diff(to[0]));
+    let dy = u32::from(from[1].abs_diff(to[1]));
+    dx * dx + dy * dy
 }

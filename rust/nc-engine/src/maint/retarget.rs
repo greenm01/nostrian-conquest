@@ -204,8 +204,8 @@ pub(super) fn nearest_owned_planet_target_from_list(
         .iter()
         .filter(|(owner, _)| *owner == empire_raw)
         .min_by_key(|(_, coords)| {
-            let dx = i16::from(coords[0]) - i16::from(from[0]);
-            let dy = i16::from(coords[1]) - i16::from(from[1]);
+            let dx = i32::from(coords[0]) - i32::from(from[0]);
+            let dy = i32::from(coords[1]) - i32::from(from[1]);
             dx * dx + dy * dy
         })
         .map(|(_, coords)| *coords)

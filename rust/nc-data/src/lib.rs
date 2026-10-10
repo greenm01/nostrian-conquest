@@ -74,7 +74,7 @@ pub use maintenance_types::{
     PlanetOwnershipChangeEvent, SalvageFailureReason, SalvageResolvedEvent, ScoutContactEvent,
     ShipLosses, StarbaseDestroyedEvent,
 };
-pub use map_dimensions::map_size_for_player_count;
+pub use map_dimensions::{map_size_for_player_count, sector_within_map};
 pub use map_export::{
     PlayerMapExportData, PlayerMapExportFile, STARMAP_CSV_FILE_NAME, STARMAP_DETAILS_CSV_FILE_NAME,
     STARMAP_TEXT_FILE_NAME, build_player_map_export_data,

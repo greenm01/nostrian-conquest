@@ -235,6 +235,38 @@ planet record={planet_record_index_1_based} {{
 }
 
 #[test]
+fn turn_submission_rejects_fleet_targets_outside_the_map() {
+    let data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
+    let fleet_index = data
+        .fleets
+        .records
+        .iter()
+        .position(|fleet| fleet.owner_empire_raw() == 1)
+        .map(|idx| idx + 1)
+        .expect("empire 1 should have a fleet");
+    let submit_move = |x: u8, y: u8| {
+        let kdl = format!(
+            "turn player=1 year=3000\nfleet record={fleet_index} {{\n  order speed=1 kind=\"move\" x={x} y={y}\n}}\n"
+        );
+        let mut data = data.clone();
+        TurnSubmission::parse_kdl_str(&kdl)
+            .unwrap()
+            .apply_to(&mut data, &mut Vec::new())
+    };
+
+    // A 4-player map is 18x18 with 1-based sectors.
+    for (x, y) in [(0, 5), (5, 0), (19, 5), (5, 19), (255, 255)] {
+        let err = submit_move(x, y).expect_err("out-of-map target should be rejected");
+        assert!(
+            err.to_string().contains("outside the map"),
+            "({x},{y}): {err}"
+        );
+    }
+    submit_move(18, 18).expect("map corner should be a valid target");
+    submit_move(1, 1).expect("map origin should be a valid target");
+}
+
+#[test]
 fn turn_submission_rejects_duplicate_friendly_colonize_targets_without_mutation() {
     let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
     let fleet_indexes = data
