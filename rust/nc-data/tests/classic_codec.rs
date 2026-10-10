@@ -5,14 +5,16 @@
 use std::fs;
 use std::path::PathBuf;
 
-use nc_data::Real48;
 use nc_data::classic::{
-    ClassicFile, ignored_bytes, parse_bases_dat, parse_conquest_dat, parse_fleets_dat,
-    parse_ipbm_dat, parse_planets_dat, parse_player_dat, parse_setup_dat, serialize_bases_dat,
-    serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat, serialize_planets_dat,
-    serialize_player_dat, serialize_setup_dat, without_ignored_bytes,
+    ClassicFile, decode_planet, encode_planet, ignored_bytes, parse_bases_dat, parse_conquest_dat,
+    parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat, parse_setup_dat,
+    serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
+    serialize_planets_dat, serialize_player_dat, serialize_setup_dat, without_ignored_bytes,
 };
-use nc_data::model::{DiplomaticRelation, Order, PlayerMode};
+use nc_data::model::{
+    BuildSlot, DiplomaticRelation, Order, Planet, PlayerMode, ProductionItemKind,
+};
+use nc_data::{PLANET_RECORD_SIZE, Real48};
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -232,11 +234,34 @@ fn shipped_fleets_planets_and_bases_read_as_the_byte_maps_say() {
 fn ecmaint_build_fixture_queue_and_dock_use_classic_kind_slots() {
     let pre = fs::read(repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT")).unwrap();
     let post = fs::read(repo_root().join("fixtures/ecmaint-build-post/v1.5/PLANETS.DAT")).unwrap();
-    let pre = &parse_planets_dat(&pre).unwrap()[14];
+    // Classic's queue is ten u16 counts by kind at 0x24 + 2 * (kind - 1).
+    // The model holds Rust's build slots there until t056 translates.
+    let queue_word = |bytes: &[u8], kind: usize| {
+        let at = 14 * PLANET_RECORD_SIZE + 0x22 + 2 * kind;
+        u16::from_le_bytes([bytes[at], bytes[at + 1]])
+    };
+    assert_eq!(queue_word(&pre, 1), 3);
+    assert_eq!(queue_word(&pre, 6), 1);
+    assert!((1..=10).all(|kind| queue_word(&post, kind) == 0));
     let post = &parse_planets_dat(&post).unwrap()[14];
-    assert_eq!(pre.build_queue.destroyers, 3);
-    assert_eq!(pre.build_queue.etacs, 1);
-    assert_eq!(post.build_queue.to_words(), [0; 10]);
     assert_eq!(post.stardock.destroyers, 3);
     assert_eq!(post.stardock.etacs, 1);
+}
+
+#[test]
+fn planet_build_slots_keep_rust_slot_bytes() {
+    let mut planet = Planet::default();
+    planet.build_queue[0] = BuildSlot {
+        points_owed: 15,
+        kind: ProductionItemKind::Cruiser,
+    };
+    planet.build_queue[9] = BuildSlot {
+        points_owed: 4,
+        kind: ProductionItemKind::Unknown(0xAB),
+    };
+    let bytes = encode_planet(&planet);
+    assert_eq!((bytes[0x24], bytes[0x2E]), (15, 2));
+    assert_eq!((bytes[0x2D], bytes[0x37]), (4, 0xAB));
+    assert_eq!(decode_planet(&bytes), planet);
+    assert_eq!(Planet::default().build_queue, [BuildSlot::EMPTY; 10]);
 }

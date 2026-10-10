@@ -4,6 +4,8 @@ use crate::model::{Coords, Planet};
 use crate::real48::Real48;
 use crate::support::{ParseError, classic_text};
 
+pub use crate::model::ProductionItemKind;
+
 /// The stardock is 8 u32 counts at `+0x38`, one per item type, in this
 /// order: destroyer, cruiser, battleship, scout, troop transport, ETAC,
 /// starbase, IPBM (`docs/dev/ec-battle-spec.md`).
@@ -23,65 +25,6 @@ pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
                 .position(|&kind| kind == kind_raw)
         })
         .flatten()
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProductionItemKind {
-    Destroyer,
-    Cruiser,
-    Battleship,
-    Scout,
-    Transport,
-    Etac,
-    GroundBattery,
-    Army,
-    Starbase,
-    Unknown(u8),
-}
-
-impl ProductionItemKind {
-    pub fn from_raw(raw: u8) -> Self {
-        match raw {
-            1 => Self::Destroyer,
-            2 => Self::Cruiser,
-            3 => Self::Battleship,
-            4 => Self::Scout,
-            5 => Self::Transport,
-            6 => Self::Etac,
-            7 => Self::GroundBattery,
-            8 => Self::Army,
-            9 => Self::Starbase,
-            other => Self::Unknown(other),
-        }
-    }
-
-    pub fn requires_stardock(self) -> bool {
-        matches!(
-            self,
-            Self::Destroyer
-                | Self::Cruiser
-                | Self::Battleship
-                | Self::Scout
-                | Self::Transport
-                | Self::Etac
-                | Self::Starbase
-        )
-    }
-
-    pub fn build_cost(self) -> Option<u32> {
-        match self {
-            Self::Destroyer => Some(5),
-            Self::Cruiser => Some(15),
-            Self::Battleship => Some(45),
-            Self::Scout => Some(15),
-            Self::Transport => Some(5),
-            Self::Etac => Some(20),
-            Self::GroundBattery => Some(20),
-            Self::Army => Some(2),
-            Self::Starbase => Some(50),
-            Self::Unknown(_) => None,
-        }
-    }
 }
 
 /// A [`Planet`] behind the accessor API call sites still use.
@@ -219,41 +162,26 @@ impl PlanetRecord {
         self.set_planet_name(value);
     }
 
-    /// The byte at PLANETS.DAT 0x24 + `slot`, the Rust build model's slot
-    /// count. Classic reads the queue as ten words by kind; see
-    /// [`crate::model::BuildQueue`].
+    /// Production points still owed in build slot `slot`.
     // t039: remove in phase 5
     pub fn build_count_raw(&self, slot: usize) -> u8 {
-        self.queue_byte(slot)
+        self.planet.build_queue[slot].points_owed
     }
 
-    /// The byte at PLANETS.DAT 0x2E + `slot`, the Rust build model's slot
-    /// kind.
+    /// The unit kind in build slot `slot` as its byte; 0 for an empty slot.
     // t039: remove in phase 5
     pub fn build_kind_raw(&self, slot: usize) -> u8 {
-        self.queue_byte(10 + slot)
+        self.planet.build_queue[slot].kind.to_raw()
     }
 
     // t039: remove in phase 5
     pub fn set_build_count_raw(&mut self, slot: usize, value: u8) {
-        self.set_queue_byte(slot, value);
+        self.planet.build_queue[slot].points_owed = value;
     }
 
     // t039: remove in phase 5
     pub fn set_build_kind_raw(&mut self, slot: usize, value: u8) {
-        self.set_queue_byte(10 + slot, value);
-    }
-
-    fn queue_byte(&self, index: usize) -> u8 {
-        self.planet.build_queue.to_words()[index / 2].to_le_bytes()[index % 2]
-    }
-
-    fn set_queue_byte(&mut self, index: usize, value: u8) {
-        let mut words = self.planet.build_queue.to_words();
-        let mut bytes = words[index / 2].to_le_bytes();
-        bytes[index % 2] = value;
-        words[index / 2] = u16::from_le_bytes(bytes);
-        self.planet.build_queue = crate::model::BuildQueue::from_words(words);
+        self.planet.build_queue[slot].kind = ProductionItemKind::from_raw(value);
     }
 
     pub fn stardock_count_raw(&self, slot: usize) -> u16 {

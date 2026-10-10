@@ -2,61 +2,104 @@ use crate::Real48;
 
 use super::{Coords, EmpireId};
 
-/// Units ordered this year, PLANETS.DAT 0x24: ten words in classic's kind
-/// order.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub struct BuildQueue {
-    /// 0x24, kind 1
-    pub destroyers: u16,
-    /// 0x26, kind 2
-    pub cruisers: u16,
-    /// 0x28, kind 3
-    pub battleships: u16,
-    /// 0x2A, kind 4
-    pub scouts: u16,
-    /// 0x2C, kind 5
-    pub transports: u16,
-    /// 0x2E, kind 6
-    pub etacs: u16,
-    /// 0x30, kind 7
-    pub starbases: u16,
-    /// 0x32, kind 8: ECGAME refuses it ("reserved for future use").
-    pub reserved: u16,
-    /// 0x34, kind 9
-    pub armies: u16,
-    /// 0x36, kind 10
-    pub ground_batteries: u16,
+/// A unit kind as the build queue stores it, 1 to 9; any other byte is
+/// `Unknown`, and an empty slot holds `Unknown(0)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProductionItemKind {
+    Destroyer,
+    Cruiser,
+    Battleship,
+    Scout,
+    Transport,
+    Etac,
+    GroundBattery,
+    Army,
+    Starbase,
+    Unknown(u8),
 }
 
-impl BuildQueue {
-    pub const fn to_words(self) -> [u16; 10] {
-        [
-            self.destroyers,
-            self.cruisers,
-            self.battleships,
-            self.scouts,
-            self.transports,
-            self.etacs,
-            self.starbases,
-            self.reserved,
-            self.armies,
-            self.ground_batteries,
-        ]
+impl ProductionItemKind {
+    pub fn from_raw(raw: u8) -> Self {
+        match raw {
+            1 => Self::Destroyer,
+            2 => Self::Cruiser,
+            3 => Self::Battleship,
+            4 => Self::Scout,
+            5 => Self::Transport,
+            6 => Self::Etac,
+            7 => Self::GroundBattery,
+            8 => Self::Army,
+            9 => Self::Starbase,
+            other => Self::Unknown(other),
+        }
     }
 
-    pub const fn from_words(words: [u16; 10]) -> Self {
-        Self {
-            destroyers: words[0],
-            cruisers: words[1],
-            battleships: words[2],
-            scouts: words[3],
-            transports: words[4],
-            etacs: words[5],
-            starbases: words[6],
-            reserved: words[7],
-            armies: words[8],
-            ground_batteries: words[9],
+    pub fn to_raw(self) -> u8 {
+        match self {
+            Self::Destroyer => 1,
+            Self::Cruiser => 2,
+            Self::Battleship => 3,
+            Self::Scout => 4,
+            Self::Transport => 5,
+            Self::Etac => 6,
+            Self::GroundBattery => 7,
+            Self::Army => 8,
+            Self::Starbase => 9,
+            Self::Unknown(raw) => raw,
         }
+    }
+
+    pub fn requires_stardock(self) -> bool {
+        matches!(
+            self,
+            Self::Destroyer
+                | Self::Cruiser
+                | Self::Battleship
+                | Self::Scout
+                | Self::Transport
+                | Self::Etac
+                | Self::Starbase
+        )
+    }
+
+    pub fn build_cost(self) -> Option<u32> {
+        match self {
+            Self::Destroyer => Some(5),
+            Self::Cruiser => Some(15),
+            Self::Battleship => Some(45),
+            Self::Scout => Some(15),
+            Self::Transport => Some(5),
+            Self::Etac => Some(20),
+            Self::GroundBattery => Some(20),
+            Self::Army => Some(2),
+            Self::Starbase => Some(50),
+            Self::Unknown(_) => None,
+        }
+    }
+}
+
+/// One slot of Rust's build queue: production points still owed on an
+/// order and the unit kind ordered. The yearly pass pays each slot from the
+/// planet's budget, so an order can span years.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct BuildSlot {
+    /// PLANETS.DAT 0x24 + slot.
+    pub points_owed: u8,
+    /// PLANETS.DAT 0x2E + slot.
+    pub kind: ProductionItemKind,
+}
+
+impl BuildSlot {
+    /// Nothing owed and kind byte 0.
+    pub const EMPTY: Self = Self {
+        points_owed: 0,
+        kind: ProductionItemKind::Unknown(0),
+    };
+}
+
+impl Default for BuildSlot {
+    fn default() -> Self {
+        Self::EMPTY
     }
 }
 
@@ -123,8 +166,10 @@ pub struct Planet {
     pub stored_goods: Real48,
     /// 0x0F: `String[20]`; "Unowned" or "Not Named Yet" until renamed.
     pub name: String,
-    /// 0x24: units ordered this year.
-    pub build_queue: BuildQueue,
+    /// 0x24: Rust's ten build slots. Classic reads these bytes as ten u16
+    /// counts of units ordered, by kind; translating between the two is
+    /// t056's job, so until then the codec carries the slot bytes.
+    pub build_queue: [BuildSlot; 10],
     /// 0x38: built units waiting to be commissioned.
     pub stardock: Stardock,
     /// 0x58: armies on the surface.
