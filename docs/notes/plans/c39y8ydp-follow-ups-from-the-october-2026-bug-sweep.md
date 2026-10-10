@@ -138,6 +138,14 @@ where nc-reports.md shows aligned labels.
 Decision (2026-10-09): approved. The leader sees "our claim"; other empires
 see the leader named. Align scouting report rows with nc-reports.md.
 
+### t026
+
+Found during t008. In `nc-data/src/storage/report_blocks.rs`, when one empire
+deletes its reports, broadcast report rows are deleted for every empire, and
+deleting one report by `block_index` also deletes the broadcast row with the
+same index. Deletion must only remove the deleting empire's view of a
+broadcast report.
+
 ## Connections
 
 The RESULTS.DAT chain-id question is its own

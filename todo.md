@@ -1,5 +1,4 @@
 # One task per line, a blank line between tasks: keep it that way so the file reads as a list. A row is `(priority) date text +lane +project @context id:tNNN order:NNN [details](note)`; closed rows move to done-YYYY-MM.md.
-(B) 2026-10-09 Fix classic RESULTS.DAT chain ids and PLAYER.DAT report pointers when several human empires have reports, proven by a two-player oracle run. +parallel +compat @oracle id:t008 order:030 [details](docs/notes/investigations/e752ccc3-classic-results-dat-chain-ids-across-several-players.md)
 (B) 2026-10-09 Build the nc-fuzz core (choice source, policies, first three invariants, KDL scenario output) with a pinned Hegel driver. +parallel +fuzz @development id:t015 order:040 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t015)
 (B) 2026-10-09 Add the proptest driver over the shared fuzz core and the remaining turn invariants. +parallel +fuzz @development id:t016 order:050 depends:t015 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t016)
 (B) 2026-10-09 Check that both fuzz drivers rediscover four reverted sweep fixes, and compare time to find and shrunk size. +parallel +fuzz @development id:t017 order:060 depends:t015,t016 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t017)
@@ -14,9 +13,7 @@
 (B) 2026-10-09 Harden door edge cases: cap telnet subnegotiation length, exit cleanly on carrier drop during a render, warn before the session limit. +parallel +door @development id:t020 order:220 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t020)
 (B) 2026-10-09 Model fleets leaving a blockaded world as hostile intrusions. +parallel +combat @planning id:t021 order:230 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t021)
 (B) 2026-10-09 Scope the campaign-outlook broadcast wording per recipient and align scouting report owner rows. +parallel +reports @development id:t022 order:240 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t022)
-
 (A) 2026-10-09 Release v1.0.0-beta.3: bump the version, rebuild the manuals, and build, sign, and publish the Linux nc-sysop package. +critical +release @development id:t023 order:300 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t023)
-
 (A) 2026-10-09 Build, upload, and re-sign the three Windows nc-sysop beta.3 packages on Windows. +critical +release @playtest id:t024 order:310 depends:t023 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t024)
-
 2026-10-09 Measure maintenance throughput and build an evolution-tuned scripted opponent as the first step toward a stronger AI. +candidate +ai @planning id:t025 order:400 [details](docs/notes/investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md)
+(B) 2026-10-09 Keep broadcast reports for other empires when one empire deletes its reports. +parallel +reports @development id:t026 order:130 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t026)
