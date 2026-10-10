@@ -92,13 +92,13 @@ fn ensure_planet_target_for_order(
         .find(|planet| planet.owner_empire_slot_raw() == 0)
         .or_else(|| data.planets.records.last())
         .ok_or("no planet record available to clone target coordinates")?
-        .raw;
+        .clone();
     let target = data
         .planets
         .records
         .last_mut()
         .ok_or("no planet record available to receive target coordinates")?;
-    target.raw = template;
+    *target = template;
     target.set_coords_raw(coords);
     Ok(())
 }

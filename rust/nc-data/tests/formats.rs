@@ -1,5 +1,6 @@
 mod common;
 
+use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -10,14 +11,22 @@ use nc_data::*;
 fn round_trip_player_dat() {
     let bytes = read_fixture("PLAYER.DAT");
     let parsed = PlayerDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
+    // Name tails and diplomacy slots past the player count are not carried.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Player, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Player, &bytes)
+    );
 }
 
 #[test]
 fn round_trip_planets_dat() {
     let bytes = read_fixture("PLANETS.DAT");
     let parsed = PlanetDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
+    // The stale name tails are not carried; everything classic reads is.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Planets, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Planets, &bytes)
+    );
 }
 
 #[test]
@@ -29,7 +38,13 @@ fn initialized_planets_expose_named_homeworld_seeds() {
         .iter()
         .enumerate()
         .filter(|(_, record)| record.is_named_homeworld_seed())
-        .map(|(idx, record)| (idx + 1, record.coords_raw(), record.header_value_raw()))
+        .map(|(idx, record)| {
+            (
+                idx + 1,
+                record.coords_raw(),
+                record.potential_production_points(),
+            )
+        })
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -72,9 +87,10 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
     assert_eq!(planet.stardock_count_raw(1), 1);
     assert_eq!(planet.stardock_kind_raw(1), 2);
     assert_eq!(planet.stardock_count_raw(7), 300);
-    assert_eq!(planet.raw[0x3C], 1);
-    assert_eq!(planet.raw[0x54], 44);
-    assert_eq!(planet.raw[0x55], 1);
+    let bytes = planet.to_bytes();
+    assert_eq!(bytes[0x3C], 1);
+    assert_eq!(bytes[0x54], 44);
+    assert_eq!(bytes[0x55], 1);
 }
 
 #[test]
@@ -83,7 +99,7 @@ fn round_trip_setup_dat() {
     let parsed = SetupDat::parse(&bytes).unwrap();
     assert_eq!(parsed.to_bytes(), bytes);
     assert_eq!(parsed.version_tag(), b"EC151");
-    assert_eq!(parsed.option_prefix(), &[4, 3, 4, 3, 1, 1, 1, 1]);
+    assert_eq!(parsed.option_prefix(), [4, 3, 4, 3, 1, 1, 1, 1]);
     assert_eq!(parsed.com_irq_raw(0), Some(4));
     assert_eq!(parsed.com_irq_raw(1), Some(3));
     assert_eq!(parsed.com_irq_raw(2), Some(4));
@@ -105,12 +121,16 @@ fn round_trip_setup_dat() {
 fn round_trip_conquest_dat() {
     let bytes = read_fixture("CONQUEST.DAT");
     let parsed = ConquestDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
-    assert_eq!(parsed.control_header().len(), 0x55);
-    assert_eq!(parsed.header_words()[0], 0x0bce);
+    // Ranking slots past the player count hold ECMAINT's garbage; the
+    // model does not carry them.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Conquest, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Conquest, &bytes)
+    );
     assert_eq!(parsed.game_year(), 3022);
     assert_eq!(parsed.player_count(), 4);
-    assert_eq!(parsed.player_config_word(), 0x0104);
+    assert_eq!(parsed.previous_production()[..4], [100; 4]);
+    assert_eq!(parsed.previous_planet_count()[..4], [1; 4]);
 }
 
 #[test]
@@ -378,9 +398,11 @@ fn core_game_data_round_trips_post_maintenance_directory() {
         "SETUP.DAT",
         "CONQUEST.DAT",
     ] {
+        let file = ClassicFile::from_file_name(name).expect("a core classic file");
+        // Bytes no classic program reads are not carried.
         assert_eq!(
-            fs::read(temp_dir.join(name)).unwrap(),
-            fs::read(source_dir.join(name)).unwrap(),
+            without_ignored_bytes(file, &fs::read(temp_dir.join(name)).unwrap()),
+            without_ignored_bytes(file, &fs::read(source_dir.join(name)).unwrap()),
             "{name} should round-trip through CoreGameData unchanged"
         );
     }

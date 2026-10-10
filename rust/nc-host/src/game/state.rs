@@ -365,6 +365,7 @@ fn diplomacy_label(relation: DiplomaticRelation) -> &'static str {
     match relation {
         DiplomaticRelation::Neutral => "neutral",
         DiplomaticRelation::Enemy => "enemy",
+        DiplomaticRelation::Unknown(_) => "unknown",
     }
 }
 

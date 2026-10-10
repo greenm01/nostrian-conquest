@@ -1,4 +1,3 @@
-mod conquest;
 mod state;
 
 use super::{FleetDefectionEvent, MaintenanceEvents};
@@ -7,13 +6,6 @@ use nc_data::{
     CampaignOutcome, CampaignOutlook, EmpireEliminationEvent, FleetDestroyedEvent,
     PlanetOwnershipChangeEvent, PlayerLifecycleState, WinnerState,
 };
-
-pub(super) fn process_conquest_header(
-    game_data: &mut CoreGameData,
-    should_accumulate: bool,
-) -> Result<(), Box<dyn std::error::Error>> {
-    conquest::process_conquest_header(game_data, should_accumulate)
-}
 
 pub(super) use state::EmpireTurnStartState;
 

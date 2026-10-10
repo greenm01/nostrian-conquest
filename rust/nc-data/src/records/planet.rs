@@ -1,17 +1,18 @@
 use crate::PLANET_RECORD_SIZE;
-use crate::support::{ParseError, classic_text, copy_array, decode_real48, encode_real48};
+use crate::classic::{decode_planet, encode_planet, parse_planets_dat};
+use crate::model::{Coords, Planet};
+use crate::real48::Real48;
+use crate::support::{ParseError, classic_text};
 
 /// The stardock is 8 u32 counts at `+0x38`, one per item type, in this
 /// order: destroyer, cruiser, battleship, scout, troop transport, ETAC,
 /// starbase, IPBM (`docs/dev/ec-battle-spec.md`).
 pub const STARDOCK_SLOT_COUNT: usize = 8;
-const STARDOCK_COUNT_BASE_OFFSET: usize = 0x38;
 /// The build kind each stardock slot holds. Rust builds no IPBMs, so that
 /// slot has no kind.
 const STARDOCK_SLOT_KINDS: [u8; STARDOCK_SLOT_COUNT] = [1, 2, 3, 4, 5, 6, 9, 0];
-const PRESENT_PRODUCTION_OFFSET: usize = 0x03;
-const STORED_GOODS_OFFSET: usize = 0x09;
-const SCORCH_EARTH_OFFSET: usize = 0x60;
+/// Classic stores a planet name as a `String[20]`.
+const PLANET_NAME_MAX_LEN: usize = 20;
 
 /// The stardock slot that holds items of build kind `kind_raw`, if any.
 pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
@@ -22,19 +23,6 @@ pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
                 .position(|&kind| kind == kind_raw)
         })
         .flatten()
-}
-
-/// Decode a Turbo Pascal real stored exponent byte first.
-fn read_real(bytes: &[u8]) -> f64 {
-    decode_real48([bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[0]]).unwrap_or(0.0)
-}
-
-/// Encode a Turbo Pascal real, exponent byte first. Values too small for a
-/// real store as 0.
-fn write_real(bytes: &mut [u8], value: f64) {
-    let encoded = encode_real48(value).unwrap_or([0; 6]);
-    bytes[0] = encoded[5];
-    bytes[1..6].copy_from_slice(&encoded[..5]);
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -96,65 +84,68 @@ impl ProductionItemKind {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// A [`Planet`] behind the accessor API call sites still use.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PlanetRecord {
-    pub raw: [u8; PLANET_RECORD_SIZE],
+    pub planet: Planet,
 }
 
 impl PlanetRecord {
     pub fn new_zeroed() -> Self {
+        Self::default()
+    }
+
+    pub fn from_raw(raw: [u8; PLANET_RECORD_SIZE]) -> Self {
         Self {
-            raw: [0; PLANET_RECORD_SIZE],
+            planet: decode_planet(&raw),
         }
     }
 
-    pub fn header_bytes(&self) -> &[u8] {
-        &self.raw[..3]
+    /// The classic PLANETS.DAT encoding of this record.
+    pub fn to_bytes(&self) -> [u8; PLANET_RECORD_SIZE] {
+        encode_planet(&self.planet)
+    }
+
+    /// Sector x, y and potential production, PLANETS.DAT 0x00..0x02.
+    pub fn header_bytes(&self) -> [u8; 3] {
+        [
+            self.planet.sector.x,
+            self.planet.sector.y,
+            self.planet.potential_production,
+        ]
     }
 
     pub fn coords_raw(&self) -> [u8; 2] {
-        [self.raw[0], self.raw[1]]
+        self.planet.sector.to_array()
     }
 
     pub fn set_coords_raw(&mut self, coords: [u8; 2]) {
-        self.raw[0] = coords[0];
-        self.raw[1] = coords[1];
-    }
-
-    pub fn header_value_raw(&self) -> u8 {
-        self.raw[2]
-    }
-
-    pub fn set_header_value_raw(&mut self, value: u8) {
-        self.raw[2] = value;
+        self.planet.sector = Coords::from_array(coords);
     }
 
     pub fn string_len(&self) -> u8 {
-        self.raw[0x0F]
+        self.planet.name.chars().count() as u8
     }
 
     pub fn status_or_name_bytes(&self) -> &[u8] {
-        &self.raw[0x10..=0x1C]
+        self.planet.name.as_bytes()
     }
 
     pub fn potential_production_points(&self) -> u16 {
-        self.raw[0x02] as u16
+        u16::from(self.planet.potential_production)
     }
 
     pub fn set_potential_production_points(&mut self, value: u8) {
-        self.raw[0x02] = value;
+        self.planet.potential_production = value;
     }
 
-    /// Present production ("factories"), a real at `+0x03`.
+    /// Present production ("factories").
     pub fn present_production(&self) -> f64 {
-        read_real(&self.raw[PRESENT_PRODUCTION_OFFSET..PRESENT_PRODUCTION_OFFSET + 6])
+        self.planet.production.to_f64()
     }
 
     pub fn set_present_production(&mut self, value: f64) {
-        write_real(
-            &mut self.raw[PRESENT_PRODUCTION_OFFSET..PRESENT_PRODUCTION_OFFSET + 6],
-            value,
-        );
+        self.planet.production = Real48::from_f64(value);
     }
 
     /// Present production rounded to whole points.
@@ -171,16 +162,13 @@ impl PlanetRecord {
         true
     }
 
-    /// Stored goods (production points), a real at `+0x09`.
+    /// Stored goods (production points).
     pub fn stored_goods(&self) -> f64 {
-        read_real(&self.raw[STORED_GOODS_OFFSET..STORED_GOODS_OFFSET + 6])
+        self.planet.stored_goods.to_f64()
     }
 
     pub fn set_stored_goods(&mut self, value: f64) {
-        write_real(
-            &mut self.raw[STORED_GOODS_OFFSET..STORED_GOODS_OFFSET + 6],
-            value,
-        );
+        self.planet.stored_goods = Real48::from_f64(value);
     }
 
     /// Stored goods rounded to whole points.
@@ -192,14 +180,14 @@ impl PlanetRecord {
         self.set_stored_goods(f64::from(value));
     }
 
-    /// The Scorch-Earth order (`+0x60`): on capture, production and goods
-    /// are halved and the stardock emptied.
+    /// The Scorch-Earth order: on capture, production and goods are halved
+    /// and the stardock emptied.
     pub fn scorch_earth_raw(&self) -> u8 {
-        self.raw[SCORCH_EARTH_OFFSET]
+        u8::from(self.planet.scorch_earth)
     }
 
     pub fn set_scorch_earth_raw(&mut self, value: u8) {
-        self.raw[SCORCH_EARTH_OFFSET] = value;
+        self.planet.scorch_earth = value != 0;
     }
 
     pub fn potential_production_points_current_known(&self) -> u16 {
@@ -210,63 +198,62 @@ impl PlanetRecord {
         self.present_production_points()
     }
 
+    /// Stores `name` as classic text, cut to the 20 characters a planet
+    /// name holds.
     pub fn set_planet_name(&mut self, name: &str) {
-        let bytes = name.as_bytes();
-        let mut len = bytes.len().min(13);
-        while !name.is_char_boundary(len) {
-            len -= 1;
-        }
-        self.raw[0x0F] = len as u8;
-        self.raw[0x10..0x1D].fill(0);
-        self.raw[0x10..0x10 + len].copy_from_slice(&bytes[..len]);
+        self.planet.name = classic_text(name)
+            .chars()
+            .take(PLANET_NAME_MAX_LEN)
+            .collect();
     }
 
-    /// Get the planet name as a String.
-    /// Uses Pascal-style encoding: length at 0x0F, content at 0x10-0x1C.
     pub fn planet_name(&self) -> String {
-        let len = self.raw[0x0F] as usize;
-        if len == 0 || len > 13 {
-            return String::new();
-        }
-        let name_bytes = &self.raw[0x10..0x10 + len];
-        String::from_utf8_lossy(name_bytes).to_string()
-    }
-
-    pub fn set_planet_name_buffer(&mut self, len: u8, buffer: &[u8; 13]) {
-        self.raw[0x0F] = len;
-        self.raw[0x10..0x1D].copy_from_slice(buffer);
+        self.planet.name.clone()
     }
 
     pub fn set_status_or_name_summary_raw(&mut self, value: &str) {
-        let value = classic_text(value);
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(13);
-        self.raw[0x0F] = len as u8;
-        self.raw[0x10..0x1D].fill(0);
-        self.raw[0x10..0x10 + len].copy_from_slice(&bytes[..len]);
+        self.set_planet_name(value);
     }
 
     pub fn set_status_or_name_prefix_raw(&mut self, value: &str) {
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(13);
-        self.raw[0x0F] = len as u8;
-        self.raw[0x10..0x10 + len].copy_from_slice(&bytes[..len]);
+        self.set_planet_name(value);
     }
 
+    /// The byte at PLANETS.DAT 0x24 + `slot`, the Rust build model's slot
+    /// count. Classic reads the queue as ten words by kind; see
+    /// [`crate::model::BuildQueue`].
+    // t039: remove in phase 5
     pub fn build_count_raw(&self, slot: usize) -> u8 {
-        self.raw[0x24 + slot]
+        self.queue_byte(slot)
     }
 
+    /// The byte at PLANETS.DAT 0x2E + `slot`, the Rust build model's slot
+    /// kind.
+    // t039: remove in phase 5
     pub fn build_kind_raw(&self, slot: usize) -> u8 {
-        self.raw[0x2E + slot]
+        self.queue_byte(10 + slot)
     }
 
+    // t039: remove in phase 5
     pub fn set_build_count_raw(&mut self, slot: usize, value: u8) {
-        self.raw[0x24 + slot] = value;
+        self.set_queue_byte(slot, value);
     }
 
+    // t039: remove in phase 5
     pub fn set_build_kind_raw(&mut self, slot: usize, value: u8) {
-        self.raw[0x2E + slot] = value;
+        self.set_queue_byte(10 + slot, value);
+    }
+
+    fn queue_byte(&self, index: usize) -> u8 {
+        self.planet.build_queue.to_words()[index / 2].to_le_bytes()[index % 2]
+    }
+
+    fn set_queue_byte(&mut self, index: usize, value: u8) {
+        let mut words = self.planet.build_queue.to_words();
+        let mut bytes = words[index / 2].to_le_bytes();
+        bytes[index % 2] = value;
+        words[index / 2] = u16::from_le_bytes(bytes);
+        self.planet.build_queue = crate::model::BuildQueue::from_words(words);
     }
 
     pub fn stardock_count_raw(&self, slot: usize) -> u16 {
@@ -274,8 +261,7 @@ impl PlanetRecord {
     }
 
     pub fn stardock_count(&self, slot: usize) -> u32 {
-        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 4;
-        u32::from_le_bytes(copy_array(&self.raw[offset..offset + 4]))
+        self.planet.stardock.to_counts()[slot]
     }
 
     /// The build kind in `slot`, or 0 when the slot is empty.
@@ -296,33 +282,19 @@ impl PlanetRecord {
     }
 
     pub fn set_stardock_count(&mut self, slot: usize, value: u32) {
-        let offset = STARDOCK_COUNT_BASE_OFFSET + slot * 4;
-        self.raw[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        let mut counts = self.planet.stardock.to_counts();
+        counts[slot] = value;
+        self.planet.stardock = crate::model::Stardock::from_counts(counts);
     }
 
-    /// Set the 7 raw bytes at [0x1d..0x24] — the region between the end of the
-    /// name buffer and the first build-count slot.  These bytes are not decoded
-    /// but are preserved verbatim in fixture-derived target worlds.
-    pub fn set_name_suffix_raw(&mut self, value: [u8; 7]) {
-        self.raw[0x1D..0x24].copy_from_slice(&value);
-    }
-
-    /// Seed this record as an owned target world from explicit field values.
-    ///
-    /// Sets:
-    /// - coords [0x00..0x01]
-    /// - potential production and the present-production exponent [0x02..0x03]
-    /// - the rest of present production and the stored-goods exponent
-    ///   (6 bytes) [0x04..0x09]
-    /// - the stored-goods high mantissa byte [0x0e]
-    /// - planet name (len + 13-byte buffer) [0x0f..0x1c]
-    /// - name_suffix_raw (7 bytes) [0x1d..0x23]
-    /// - army_count [0x58], ground_batteries [0x5a]
-    /// - ownership_status [0x5c], owner_empire_slot [0x5d]
-    ///
-    /// All other bytes are zeroed first.  The caller is responsible for
-    /// passing fixture-accurate values for the opaque fields (potential_production,
-    /// factories, name_buffer, name_suffix_raw) when exact fixture matching is required.
+    /// Seeds this record as an owned world from the byte pieces older
+    /// scenario code passes: `potential_production` is the potential and
+    /// the production real's exponent, `factories` the production
+    /// mantissa and the goods exponent, `goods_high_byte` the goods
+    /// mantissa's top byte. `name_suffix_raw` was the stale name tail,
+    /// which the model does not carry.
+    // t039: remove in phase 5
+    #[allow(clippy::too_many_arguments)]
     pub fn set_as_owned_target_world(
         &mut self,
         coords: [u8; 2],
@@ -331,93 +303,87 @@ impl PlanetRecord {
         goods_high_byte: u8,
         name_len: u8,
         name_buffer: [u8; 13],
-        name_suffix_raw: [u8; 7],
+        _name_suffix_raw: [u8; 7],
         army_count: u8,
         ground_batteries: u8,
         ownership_status: u8,
         owner_empire_slot: u8,
     ) {
-        self.raw = [0u8; PLANET_RECORD_SIZE];
-        self.raw[0x00] = coords[0];
-        self.raw[0x01] = coords[1];
-        self.raw[0x02..0x04].copy_from_slice(&potential_production);
-        self.raw[0x04..0x0A].copy_from_slice(&factories);
-        self.raw[0x0E] = goods_high_byte;
-        self.set_planet_name_buffer(name_len, &name_buffer);
-        self.set_name_suffix_raw(name_suffix_raw);
-        self.raw[0x58] = army_count;
-        self.raw[0x5A] = ground_batteries;
-        self.raw[0x5C] = ownership_status;
-        self.raw[0x5D] = owner_empire_slot;
-    }
-
-    pub fn population_raw(&self) -> [u8; 6] {
-        copy_array(&self.raw[0x52..0x58])
-    }
-    pub fn set_population_raw(&mut self, value: [u8; 6]) {
-        self.raw[0x52..0x58].copy_from_slice(&value);
+        let name_len = usize::from(name_len).min(name_buffer.len());
+        self.planet = Planet {
+            sector: Coords::from_array(coords),
+            potential_production: potential_production[0],
+            production: Real48::from_bytes([
+                potential_production[1],
+                factories[0],
+                factories[1],
+                factories[2],
+                factories[3],
+                factories[4],
+            ]),
+            stored_goods: Real48::from_bytes([factories[5], 0, 0, 0, 0, goods_high_byte]),
+            name: String::from_utf8_lossy(&name_buffer[..name_len]).into_owned(),
+            armies: u16::from(army_count),
+            ground_batteries: u16::from(ground_batteries),
+            years_under_owner: ownership_status,
+            owner: crate::model::EmpireId(owner_empire_slot),
+            ..Planet::default()
+        };
     }
 
     pub fn owner_empire_slot_raw(&self) -> u8 {
-        self.raw[0x5D]
+        self.planet.owner.0
     }
     pub fn set_owner_empire_slot_raw(&mut self, value: u8) {
-        self.raw[0x5D] = value;
+        self.planet.owner.0 = value;
     }
 
-    /// Army count at offset 0x58.
-    /// 0x8E (142) for Dust Bowl, 0x0A (10) for other homeworlds, 0 for unowned.
+    /// Armies on the surface, as far as a byte holds them.
     pub fn army_count_raw(&self) -> u8 {
-        self.raw[0x58]
+        self.planet.armies.min(u16::from(u8::MAX)) as u8
     }
 
     pub fn set_army_count_raw(&mut self, value: u8) {
-        self.raw[0x58] = value;
+        self.planet.armies = u16::from(value);
     }
 
-    /// Ground batteries at offset 0x5A.
-    /// 0x0F (15) for Dust Bowl, 0x04 (4) for other homeworlds, 0 for unowned.
+    /// Ground batteries, as far as a byte holds them.
     pub fn ground_batteries_raw(&self) -> u8 {
-        self.raw[0x5A]
+        self.planet.ground_batteries.min(u16::from(u8::MAX)) as u8
     }
 
     pub fn set_ground_batteries_raw(&mut self, value: u8) {
-        self.raw[0x5A] = value;
+        self.planet.ground_batteries = u16::from(value);
     }
 
+    /// Years under the current owner, capped at 2: 0 just captured, 1
+    /// recently captured, 2 fully functional.
     pub fn ownership_status_raw(&self) -> u8 {
-        self.raw[0x5C]
+        self.planet.years_under_owner
     }
     pub fn set_ownership_status_raw(&mut self, value: u8) {
-        self.raw[0x5C] = value;
-    }
-
-    /// Conversion countdown for conquered planets. While > 0, the planet does
-    /// not produce revenue or growth for the new owner. Decremented each turn.
-    pub fn conversion_countdown_raw(&self) -> u8 {
-        self.raw[0x5E]
-    }
-    pub fn set_conversion_countdown_raw(&mut self, value: u8) {
-        self.raw[0x5E] = value;
+        self.planet.years_under_owner = value;
     }
 
     pub fn status_or_name_summary(&self) -> String {
-        let len = self.string_len() as usize;
-        let text = &self.status_or_name_bytes()[..len.min(self.status_or_name_bytes().len())];
-        String::from_utf8_lossy(text)
-            .trim_matches(char::from(0))
-            .trim()
-            .to_string()
+        self.planet.name.trim().to_string()
     }
 
     pub fn is_named_homeworld_seed(&self) -> bool {
         self.status_or_name_summary() == "Not Named Yet"
     }
 
+    /// Present production in `64 <= P < 128`, the band ECUTIL's homeworld
+    /// seed (100) falls in; older code read this as the production real's
+    /// exponent byte, `0x87`.
+    pub fn has_homeworld_seed_production(&self) -> bool {
+        (64.0..128.0).contains(&self.present_production())
+    }
+
     pub fn is_homeworld_seed_ignoring_name(&self) -> bool {
         self.ownership_status_raw() == 2
             && self.owner_empire_slot_raw() != 0
-            && self.raw[0x03] == 0x87
+            && self.has_homeworld_seed_production()
     }
 
     pub fn derived_summary(&self) -> String {
@@ -458,19 +424,10 @@ pub struct PlanetDat {
 
 impl PlanetDat {
     pub fn parse(data: &[u8]) -> Result<Self, ParseError> {
-        if data.len() % PLANET_RECORD_SIZE != 0 {
-            return Err(ParseError::WrongRecordMultiple {
-                file_type: "PLANETS.DAT",
-                record_size: PLANET_RECORD_SIZE,
-                actual: data.len(),
-            });
-        }
         Ok(Self {
-            records: data
-                .chunks_exact(PLANET_RECORD_SIZE)
-                .map(|chunk| PlanetRecord {
-                    raw: copy_array(chunk),
-                })
+            records: parse_planets_dat(data)?
+                .into_iter()
+                .map(|planet| PlanetRecord { planet })
                 .collect(),
         })
     }
@@ -478,7 +435,7 @@ impl PlanetDat {
     pub fn to_bytes(&self) -> Vec<u8> {
         self.records
             .iter()
-            .flat_map(|record| record.raw)
-            .collect::<Vec<_>>()
+            .flat_map(|record| encode_planet(&record.planet))
+            .collect()
     }
 }

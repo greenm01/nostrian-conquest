@@ -51,7 +51,7 @@ impl CoreGameData {
         self.player
             .records
             .get(player_record_index_1_based - 1)
-            .map(|record| record.ipbm_count_raw() as usize)
+            .map(|record| record.ipbm_chain_head_raw() as usize)
             .unwrap_or(0)
     }
 

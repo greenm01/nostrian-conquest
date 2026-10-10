@@ -182,7 +182,7 @@ strike gate (the smaller change, no new ADR), or join sides as in step 1
 
 Codex reviewed this note independently
 ([rolr9ti0](rolr9ti0-independent-nc-combat-balance-analysis.md), with
-Python models in `tools/combat-model/`). Its four code findings were
+Python models in [tools/combat-model](../../../tools/combat-model/README.md)). Its four code findings were
 verified against main: strikes resolve at year end, not in their tick
 (contrary to the combat ADR); survivors keep a dead hull's speed; retreat
 targets deep space over the home sector by Manhattan distance; the mixed
@@ -242,4 +242,6 @@ Execution fire stays for DD and bases; batteries stay dangerous.
   crippled counts belong in the typed fleet.
 - [ec-movement-spec.md](../../dev/ec-movement-spec.md): the depth axis.
 - [Codex's independent analysis](rolr9ti0-independent-nc-combat-balance-analysis.md)
-  and the models in `tools/combat-model/`.
+  and the models in [tools/combat-model](../../../tools/combat-model/README.md).
+- [The t055 sweep review](qjev5wpq-review-of-the-t055-combat-sweep-semantics.md):
+  solver defects, experimental assumptions, and mission-survival findings.

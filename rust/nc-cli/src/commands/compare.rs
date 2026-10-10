@@ -68,7 +68,7 @@ fn compare_player(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
     let right = PlayerDat::parse(&fs::read(right_dir.join("PLAYER.DAT"))?)?;
     println!("PLAYER.DAT:");
     for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-        let count = diff_count(&a.raw, &b.raw);
+        let count = diff_count(&a.to_bytes(), &b.to_bytes());
         if count == 0 {
             continue;
         }
@@ -88,7 +88,7 @@ fn compare_planets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std:
     let right = PlanetDat::parse(&fs::read(right_dir.join("PLANETS.DAT"))?)?;
     println!("PLANETS.DAT:");
     for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-        let count = diff_count(&a.raw, &b.raw);
+        let count = diff_count(&a.to_bytes(), &b.to_bytes());
         if count == 0 {
             continue;
         }
@@ -117,7 +117,7 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
     let right = FleetDat::parse(&right_bytes);
     if let (Ok(left), Ok(right)) = (left, right) {
         for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-            let count = diff_count(&a.raw, &b.raw);
+            let count = diff_count(&a.to_bytes(), &b.to_bytes());
             if count == 0 {
                 continue;
             }

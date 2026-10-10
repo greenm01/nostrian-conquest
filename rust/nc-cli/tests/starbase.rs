@@ -2,7 +2,7 @@ mod common;
 
 use common::{
     cleanup_dir, copy_fixture_dir, export_campaign_db, repo_root, run_nc_cli, run_nc_cli_in_dir,
-    unique_temp_dir,
+    unique_temp_dir, without_unread_bytes,
 };
 use std::fs;
 
@@ -23,16 +23,16 @@ fn guard_starbase_scenario_recreates_known_valid_starbase_pre_fixture() {
     let expected_bases = repo_root().join("fixtures/ecmaint-starbase-pre/v1.5/BASES.DAT");
 
     assert_eq!(
-        fs::read(target.join("PLAYER.DAT")).unwrap(),
-        fs::read(expected_player).unwrap()
+        without_unread_bytes("PLAYER.DAT", &fs::read(target.join("PLAYER.DAT")).unwrap()),
+        without_unread_bytes("PLAYER.DAT", &fs::read(expected_player).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("FLEETS.DAT")).unwrap(),
-        fs::read(expected_fleets).unwrap()
+        without_unread_bytes("FLEETS.DAT", &fs::read(target.join("FLEETS.DAT")).unwrap()),
+        without_unread_bytes("FLEETS.DAT", &fs::read(expected_fleets).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("BASES.DAT")).unwrap(),
-        fs::read(expected_bases).unwrap()
+        without_unread_bytes("BASES.DAT", &fs::read(target.join("BASES.DAT")).unwrap()),
+        without_unread_bytes("BASES.DAT", &fs::read(expected_bases).unwrap())
     );
 
     cleanup_dir(&target);
@@ -61,16 +61,16 @@ fn guard_starbase_onebase_recreates_known_valid_starbase_pre_fixture() {
     let expected_bases = repo_root().join("fixtures/ecmaint-starbase-pre/v1.5/BASES.DAT");
 
     assert_eq!(
-        fs::read(target.join("PLAYER.DAT")).unwrap(),
-        fs::read(expected_player).unwrap()
+        without_unread_bytes("PLAYER.DAT", &fs::read(target.join("PLAYER.DAT")).unwrap()),
+        without_unread_bytes("PLAYER.DAT", &fs::read(expected_player).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("FLEETS.DAT")).unwrap(),
-        fs::read(expected_fleets).unwrap()
+        without_unread_bytes("FLEETS.DAT", &fs::read(target.join("FLEETS.DAT")).unwrap()),
+        without_unread_bytes("FLEETS.DAT", &fs::read(expected_fleets).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("BASES.DAT")).unwrap(),
-        fs::read(expected_bases).unwrap()
+        without_unread_bytes("BASES.DAT", &fs::read(target.join("BASES.DAT")).unwrap()),
+        without_unread_bytes("BASES.DAT", &fs::read(expected_bases).unwrap())
     );
 
     cleanup_dir(&target);
@@ -240,20 +240,20 @@ fn scenario_init_guard_starbase_materializes_runnable_directory() {
     let expected_setup = repo_root().join("fixtures/ecmaint-post/v1.5/SETUP.DAT");
 
     assert_eq!(
-        fs::read(target.join("PLAYER.DAT")).unwrap(),
-        fs::read(expected_player).unwrap()
+        without_unread_bytes("PLAYER.DAT", &fs::read(target.join("PLAYER.DAT")).unwrap()),
+        without_unread_bytes("PLAYER.DAT", &fs::read(expected_player).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("FLEETS.DAT")).unwrap(),
-        fs::read(expected_fleets).unwrap()
+        without_unread_bytes("FLEETS.DAT", &fs::read(target.join("FLEETS.DAT")).unwrap()),
+        without_unread_bytes("FLEETS.DAT", &fs::read(expected_fleets).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("BASES.DAT")).unwrap(),
-        fs::read(expected_bases).unwrap()
+        without_unread_bytes("BASES.DAT", &fs::read(target.join("BASES.DAT")).unwrap()),
+        without_unread_bytes("BASES.DAT", &fs::read(expected_bases).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("SETUP.DAT")).unwrap(),
-        fs::read(expected_setup).unwrap()
+        without_unread_bytes("SETUP.DAT", &fs::read(target.join("SETUP.DAT")).unwrap()),
+        without_unread_bytes("SETUP.DAT", &fs::read(expected_setup).unwrap())
     );
 
     cleanup_dir(&target);
@@ -306,9 +306,10 @@ fn scenario_init_replayable_guard_starbase_matches_exact_preserved_pre_fixture()
         let expected = repo_root()
             .join("fixtures/ecmaint-starbase-pre/v1.5")
             .join(name);
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            fs::read(target.join(name)).unwrap(),
-            fs::read(expected).unwrap()
+            without_unread_bytes(name, &fs::read(target.join(name)).unwrap()),
+            without_unread_bytes(name, &fs::read(expected).unwrap())
         );
     }
 

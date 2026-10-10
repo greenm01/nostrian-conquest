@@ -51,6 +51,10 @@ CURRENT = dict(
     # Classes whose AS fires into the execution pool (finish crippled at
     # 1xDS, destroy nominal at 2xDS); every other armed class suppresses.
     execution_classes=['DD', 'SB'],
+    # The finishing step of a crippled unit: 'full' costs its DS again
+    # (engine); 'half' costs half its DS, rounded down like crippled AS, so
+    # a crippled ship has half AS and half DS as in VBAM.
+    crippled_ds='full',
     # What happens to hits too few for the next step: 'discard' (engine),
     # 'residual' (they buy that step with probability hits/cost), 'carry'
     # (they are kept against the same side for the next round of this
@@ -72,6 +76,8 @@ CURRENT = dict(
     # in which the pursuer's fire reaches auxiliaries under the conditional
     # screen; 'none' is a clean break.
     withdrawal='pressed',
+    # Ordinary battle iterations; a final withdrawal/pursuit exchange can
+    # add one more volley. The result's ROUNDS counts every exchange.
     round_cap=64,
 )
 
@@ -86,8 +92,10 @@ def variant(base, name, **changes):
 # The consultation's flat-table family: EotS effectiveness, no mixed
 # bonus, +1 die for an undamaged base, DD/SB execution kept, criticals as
 # budget focus, per-fleet ROE after one compulsory exchange with a bounded
-# pursuit exchange, conditional screen. The three members differ only in
-# the remainder rule.
+# pursuit exchange, conditional screen. The remainder members differ only
+# in the remainder rule; flat-half-ds keeps discard and halves the crippled
+# damage step instead. The VBAM-rate pair changes effectiveness alone,
+# then the finishing step, retaining the other NC candidate rules.
 FLAT = variant(
     CURRENT, 'flat-discard',
     effect=dict(kind='flat', rows=EOTS_X4, unit=4),
@@ -99,11 +107,19 @@ FLAT = variant(
     withdrawal='pursuit',
 )
 
+VBAM_FLAT = variant(
+    FLAT, 'vbam-full-ds',
+    effect=dict(kind='flat', rows=VBAM_X10, unit=10),
+)
+
 RULESETS = {
     'current': CURRENT,
     'flat-discard': FLAT,
     'flat-residual': variant(FLAT, 'flat-residual', remainder='residual'),
     'flat-carry': variant(FLAT, 'flat-carry', remainder='carry'),
+    'flat-half-ds': variant(FLAT, 'flat-half-ds', crippled_ds='half'),
+    'vbam-full-ds': VBAM_FLAT,
+    'vbam-half-ds': variant(VBAM_FLAT, 'vbam-half-ds', crippled_ds='half'),
 }
 
 # Hull variants: unit-table overrides by name.

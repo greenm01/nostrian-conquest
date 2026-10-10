@@ -24,13 +24,17 @@ import rules as R  # noqa: E402
 from confidence import binomial_interval, binomial_test  # noqa: E402
 from fleet_model import (  # noqa: E402
     CRIP_A, CRIP_B, LOSS_A, LOSS_B, LOST_A, LOST_B, OUTCOMES, P_A, P_B, P_MUTUAL, P_STALEMATE,
-    ROUNDS, VECTOR, WD_A, WD_B, Model, TooLarge, force,
+    ROUNDS, VECTOR, VIABLE_A, VIABLE_B, WD_A, WD_B, Model, TooLarge, force,
 )
 
 DEFAULT_SEED = 20261010
 OUTCOME_INDEX = {'A': P_A, 'B': P_B, 'mutual': P_MUTUAL, 'stalemate': P_STALEMATE}
-RULE_FIELDS = ('effect', 'mixed_shift', 'base_condition', 'execution_classes', 'remainder',
-               'critical', 'screen', 'roe', 'withdrawal')
+ENGINE_COUNTS = {'A': 'left', 'B': 'right', 'mutual': 'mutual', 'stalemate': 'stalemate'}
+# Mean destroyed build points agree with the engine within this share of a
+# side's starting build points; the engine file carries no loss dispersion.
+LOSS_TOLERANCE = 0.02
+RULE_FIELDS = ('effect', 'mixed_shift', 'base_condition', 'execution_classes', 'crippled_ds',
+               'remainder', 'critical', 'screen', 'roe', 'withdrawal')
 
 # name, left, right, ROE (left, right), tags. The 'engine' tag marks the
 # cases combat_odds.rs runs under the same names; 'dd' marks the cases
@@ -99,6 +103,11 @@ def run_case(model, rules_name, units_name, case, trials, seed, limit):
         withdrew_left=vector[WD_A], withdrew_right=vector[WD_B],
         lost_left=dict(zip(R.CLASSES, vector[LOST_A])),
         lost_right=dict(zip(R.CLASSES, vector[LOST_B])),
+        # Mission survival: transports surviving the battle, and the chance
+        # that at least half of them do.
+        surviving_left=left.get('TT', 0) - vector[LOST_A][R.CLASSES.index('TT')],
+        surviving_right=right.get('TT', 0) - vector[LOST_B][R.CLASSES.index('TT')],
+        viable_left=vector[VIABLE_A], viable_right=vector[VIABLE_B],
         seconds=round(time.time() - started, 2),
     )
     return record
@@ -138,6 +147,17 @@ def ships(lost):
     return ' '.join(f'{cls} {count:.1f}' for cls, count in lost.items() if count) or '-'
 
 
+def surviving(record):
+    """Transports surviving per side that has any: mean of start (chance
+    of at least half)."""
+    parts = []
+    for side in ('left', 'right'):
+        start = record[side].get('TT', 0)
+        if start:
+            parts.append(f"{record[f'surviving_{side}']:.2f} of {start} ({pct(record[f'viable_{side}'])})")
+    return ' / '.join(parts)
+
+
 def table(header, rows):
     out = ['| ' + ' | '.join(header) + ' |', '| ' + ' | '.join('---' for _ in header) + ' |']
     out.extend('| ' + ' | '.join(str(x) for x in row) + ' |' for row in rows)
@@ -154,7 +174,8 @@ def case_label(record):
 def render(results, rulesets, args):
     lines = ['# Combat odds sweep', '']
     lines.append(f"Seed {args.seed}; {args.trials} trials per sampled case; exact enumeration up to "
-                 f"{args.exact_limit} states. Percentages without an interval are exact; intervals are 95%.")
+                 f"{args.exact_limit} (state, round) pairs. Percentages without an interval are exact; "
+                 "intervals are 95%.")
     lines.append('')
     lines.append('## Rule sets')
     lines.append('')
@@ -186,6 +207,14 @@ def render(results, rulesets, args):
                     record = by_key.get((label, name))
                     row.append(fn(record) if record else '')
                 rows.append(row)
+            lines.append(table(['case'] + names, rows))
+            lines.append('')
+        convoys = [label for label in labels if any(surviving(r) for r in battles if case_label(r) == label)]
+        if convoys:
+            lines.append('## Transports surviving the battle, mean of start (chance of at least half)')
+            lines.append('')
+            rows = [[label] + [surviving(by_key[(label, name)]) if (label, name) in by_key else '' for name in names]
+                    for label in convoys]
             lines.append(table(['case'] + names, rows))
             lines.append('')
         for name in names:
@@ -233,8 +262,11 @@ def render(results, rulesets, args):
                             'engine mutual', 'model lost L / R', 'engine lost L / R',
                             'years per battle'], rows))
         lines.append('')
-        lines.append('An exact model value agrees when the engine count passes a two-sided exact binomial '
-                     'test against it at 5%; a sampled one when the two intervals overlap.')
+        lines.append('Agree checks left win, right win, mutual and stalemate: an exact model value when the '
+                     'engine count passes a two-sided exact binomial test against it at 5%, a sampled one '
+                     'when the two 95% intervals overlap; and destroyed build points per side within '
+                     f'{100 * LOSS_TOLERANCE:.0f}% of that side\'s starting build points. A case missing '
+                     'on either side, or without a battle, is listed with the reason.')
         lines.append('')
     return '\n'.join(lines)
 
@@ -247,36 +279,58 @@ def summarise(value):
     return str(value)
 
 
-def compare_engine(path, battles):
+def compare_engine(path, battles, cases):
+    """One row per case in the engine file or tagged `engine`. A case
+    missing on either side, or with no battle, is reported, not skipped.
+    `agree` names every measure that disagrees: each outcome count against
+    the model's odds (exact binomial test at 5%, or overlapping 95%
+    intervals for a sampled model) and each side's destroyed build points
+    within LOSS_TOLERANCE of its starting build points."""
     with open(path) as handle:
         engine = json.load(handle)
     current = {r['case']: r for r in battles if r['ruleset'] == 'current' and r['units'] == 'baseline'}
+    engine_cases = {case['case']: case for case in engine['cases']}
+    names = list(engine_cases) + [case[0] for case in cases
+                                  if 'engine' in case[4].split() and case[0] not in engine_cases]
     rows = []
-    for case in engine['cases']:
-        record = current.get(case['case'])
-        if record is None or case['battles'] == 0:
+    for name in names:
+        case, record = engine_cases.get(name), current.get(name)
+        row = dict(case=name, model_left='', engine_left='', model_mutual='', engine_mutual='',
+                   model_loss='', engine_loss='', years_per_battle='')
+        if case is None or record is None or case['battles'] == 0:
+            row['agree'] = ('not in the engine file' if case is None else
+                            'no battles' if case['battles'] == 0 else 'no model record')
+            rows.append(row)
             continue
         n = case['battles']
         counts = case['counts']
+        failed = []
+        for outcome, label in (('A', 'left win'), ('B', 'right win'), ('mutual', 'mutual'), ('stalemate', 'stalemate')):
+            count = counts[ENGINE_COUNTS[outcome]]
+            if record['method'] == 'exact':
+                agree = binomial_test(count, n, record['p'][outcome]) >= 0.05
+            else:
+                low, high, _ = binomial_interval(count, n)
+                m_low, m_high = record['ci'][outcome]
+                agree = m_low <= high and low <= m_high
+            if not agree:
+                failed.append(label)
+        for side in ('left', 'right'):
+            budget = sum(count * R.UNITS[cls]['cost'] for cls, count in record[side].items())
+            if abs(record[f'loss_{side}'] - case[f'loss_{side}']) > LOSS_TOLERANCE * budget:
+                failed.append(f'loss {side[0].upper()}')
         low, high, _ = binomial_interval(counts['left'], n)
-        model = record['p']['A']
-        if record['method'] == 'exact':
-            # The engine's count is tested against the model's exact odds.
-            agree = binomial_test(counts['left'], n, model) >= 0.05
-        else:
-            m_low, m_high = record['ci']['A']
-            agree = m_low <= high and low <= m_high
-        rows.append(dict(
-            case=case['case'],
+        row.update(
             model_left=cell(record, 'A'),
             engine_left=f"{pct(counts['left'] / n)} [{100 * low:.1f}, {100 * high:.1f}] n={n}",
-            agree='yes' if agree else 'NO',
+            agree='yes' if not failed else 'NO: ' + ', '.join(failed),
             model_mutual=pct(record['p']['mutual']),
             engine_mutual=pct(counts['mutual'] / n),
             model_loss=f"{record['loss_left']:.1f} / {record['loss_right']:.1f}",
             engine_loss=f"{case['loss_left']:.1f} / {case['loss_right']:.1f}",
             years_per_battle=f"{case['years_per_battle']:.2f}",
-        ))
+        )
+        rows.append(row)
     return rows
 
 
@@ -299,8 +353,8 @@ def main():
     parser.add_argument('--cases', help='comma-separated case names or tags (ca, dd, mixed, small, roe, convoy, engine)')
     parser.add_argument('--trials', type=int, default=10_000)
     parser.add_argument('--seed', type=int, default=DEFAULT_SEED)
-    parser.add_argument('--exact-limit', type=int, default=60_000,
-                        help='enumerate exactly up to this many states, else sample')
+    parser.add_argument('--exact-limit', type=int, default=100_000,
+                        help='enumerate exactly up to this many (state, round) pairs, else sample')
     parser.add_argument('--no-ground', action='store_true')
     parser.add_argument('--engine', metavar='JSON', help='combat_odds.rs output to compare the current rules with')
     parser.add_argument('--json', metavar='PATH')
@@ -338,7 +392,7 @@ def main():
     if not args.no_ground:
         results['ground'] = run_ground()
     if args.engine:
-        results['engine'] = compare_engine(args.engine, battles)
+        results['engine'] = compare_engine(args.engine, battles, cases)
     markdown = render(results, rulesets, args)
     if args.json:
         with open(args.json, 'w') as handle:

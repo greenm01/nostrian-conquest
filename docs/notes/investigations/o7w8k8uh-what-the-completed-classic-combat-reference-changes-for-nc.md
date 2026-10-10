@@ -15,6 +15,8 @@ This follows the [independent combat review](rolr9ti0-independent-nc-combat-bala
 
 The formulas below make the consequences reviewable. The [reproduction tool](../../../tools/combat-model/classic_reference.py) and [results](../../../tools/combat-model/classic_reference_results.json) stay in the repository. No cargo or new DOS probes were run.
 
+The [classic model guide](../../../tools/classic-model/README.md) describes the decoded battle models; the [NC combat model guide](../../../tools/combat-model/README.md) documents the comparison commands. Later findings are in the [t055 sweep review](qjev5wpq-review-of-the-t055-combat-sweep-semantics.md) and the [economy investigation](tkce84f0-a-simple-nc-economy-informed-by-classic-ec-vbam-and-ec4x.md).
+
 **The foundation should be EotS and VBAM**
 
 EotS supplies a clear attack-strength-to-damage calculation, qualitative advantages, and meaningful reduced units. VBAM supplies usable retreat, conditional protection of vulnerable ships, and an economic reason to save damaged ships. These are better starting points for the experience NC wants than classic's hidden targeting and range machinery.

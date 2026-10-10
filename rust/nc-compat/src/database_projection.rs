@@ -164,9 +164,12 @@ fn preserve_orbit_record(
     if planet_idx < game_data.planets.records.len() {
         let planet = &game_data.planets.records[planet_idx];
         let planet_owner = planet.owner_empire_slot_raw() as usize;
-        if planet.raw[0x03] == 0x87 && planet_owner > 0 && planet_owner == player_idx + 1 {
-            let player_mode = game_data.player.records[player_idx].raw[0x00];
-            let autopilot = game_data.player.records[player_idx].raw[0x6D];
+        if planet.has_homeworld_seed_production()
+            && planet_owner > 0
+            && planet_owner == player_idx + 1
+        {
+            let player_mode = game_data.player.records[player_idx].player_mode_raw();
+            let autopilot = game_data.player.records[player_idx].autopilot_flag();
             let ai_ran = player_mode == 0xff || (player_mode == 0x01 && autopilot == 0x01);
             if ai_ran {
                 let owner_slot = planet_owner as u8;

@@ -135,7 +135,7 @@ impl CoreGameData {
             return;
         }
         self.relink_base_chain(1);
-        self.player.records[0].set_ipbm_count_raw(ipbm_count);
+        self.player.records[0].set_ipbm_chain_head_raw(ipbm_count);
     }
 
     pub fn sync_current_known_baseline_controls_and_counts(&mut self) {
@@ -187,9 +187,7 @@ impl CoreGameData {
                 record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
                 record.set_current_speed(0);
                 record.set_current_location_coords_raw(coords);
-                record.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+                record.set_at_rest_motion();
                 record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
                 record.set_standing_order_target_coords_raw(coords);
                 record.set_mission_aux_bytes([1, 0]);
@@ -226,7 +224,6 @@ impl CoreGameData {
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
                 }
-                record.set_population_raw([0; 6]);
                 record.set_army_count_raw(10);
                 record.set_ground_batteries_raw(4);
                 record.set_ownership_status_raw(2);
@@ -241,7 +238,6 @@ impl CoreGameData {
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
                 }
-                record.set_population_raw([0; 6]);
                 record.set_army_count_raw(0);
                 record.set_ground_batteries_raw(0);
                 record.set_ownership_status_raw(0);
@@ -257,9 +253,12 @@ impl CoreGameData {
         self.sync_current_known_initialized_conquest_post_maint_header();
     }
 
+    /// CONQUEST.DAT as one pass over the initialized baseline leaves it:
+    /// the year after 3000, and the rankings ECMAINT snapshots at the start
+    /// of the pass.
     pub fn sync_current_known_initialized_conquest_post_maint_header(&mut self) {
-        self.conquest
-            .set_control_header_bytes(&CURRENT_KNOWN_POST_MAINT_CONQUEST_CONTROL_HEADER);
+        self.conquest.set_game_year(3001);
+        self.conquest.snapshot_previous_year(&self.player.records);
     }
 
     pub fn current_known_empty_auxiliary_state_errors(&self) -> Vec<String> {

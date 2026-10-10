@@ -56,13 +56,13 @@ pub(crate) fn set_bombard_onefleet(
                 .records
                 .get(12)
                 .ok_or("planet record 13 missing")?
-                .raw;
+                .clone();
             let p14 = data
                 .planets
                 .records
                 .get_mut(13)
                 .ok_or("planet record 14 missing")?;
-            p14.raw = template;
+            *p14 = template;
             p14.set_coords_raw([target_x, target_y]);
         }
         set_raw_fleet_order(

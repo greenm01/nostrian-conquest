@@ -3993,8 +3993,8 @@ fn apply_action_deletes_reviewables() {
         "Orders",
         "test messages",
     ));
-    runtime.game_data.player.records[0].raw[0x30] = 1;
-    runtime.game_data.player.records[0].raw[0x34] = 1;
+    runtime.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
+    runtime.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -4034,7 +4034,13 @@ fn apply_action_deletes_reviewables() {
     );
     assert_eq!(runtime.queued_mail.len(), 1);
     assert!(runtime.queued_mail[0].recipient_deleted);
-    assert_eq!(runtime.game_data.player.records[0].raw[0x30], 0);
-    assert_eq!(runtime.game_data.player.records[0].raw[0x34], 0);
+    assert_eq!(
+        runtime.game_data.player.records[0].classic_messages_pending_flag_raw(),
+        0
+    );
+    assert_eq!(
+        runtime.game_data.player.records[0].classic_reports_pending_flag_raw(),
+        0
+    );
     assert!(!app.messaging.delete_reviewables_prompt_active);
 }

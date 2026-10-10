@@ -1,6 +1,9 @@
 mod common;
 
-use common::{cleanup_dir, export_campaign_db, repo_root, run_nc_cli_in_dir, unique_temp_dir};
+use common::{
+    cleanup_dir, export_campaign_db, repo_root, run_nc_cli_in_dir, unique_temp_dir,
+    without_unread_bytes,
+};
 use nc_data::FleetDat;
 use std::fs;
 
@@ -23,7 +26,8 @@ fn scenario_invade_recreates_known_valid_pre_fixture() {
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();
     let actual_planets = fs::read(target.join("PLANETS.DAT")).unwrap();
     assert_eq!(
-        actual_planets, expected_planets,
+        without_unread_bytes("PLANETS.DAT", &actual_planets),
+        without_unread_bytes("PLANETS.DAT", &expected_planets),
         "PLANETS.DAT does not match preserved invade pre-fixture"
     );
 
@@ -61,8 +65,10 @@ fn scenario_init_replayable_invade_uses_documented_order_code() {
     for name in ["PLANETS.DAT", "SETUP.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved invade pre-fixture"
         );
     }
@@ -101,7 +107,8 @@ fn invade_init_uses_documented_order_code() {
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();
     let actual_planets = fs::read(target.join("PLANETS.DAT")).unwrap();
     assert_eq!(
-        actual_planets, expected_planets,
+        without_unread_bytes("PLANETS.DAT", &actual_planets),
+        without_unread_bytes("PLANETS.DAT", &expected_planets),
         "PLANETS.DAT does not match preserved invade pre-fixture via invade-init"
     );
 

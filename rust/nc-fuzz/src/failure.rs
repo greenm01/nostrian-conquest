@@ -75,7 +75,7 @@ fn render_setup(kdl: &mut String, spec: &ScenarioSpec, turns: usize) {
     for relation in &spec.diplomacy {
         let status = match relation.relation {
             DiplomaticRelation::Enemy => "enemy",
-            DiplomaticRelation::Neutral => "neutral",
+            DiplomaticRelation::Neutral | DiplomaticRelation::Unknown(_) => "neutral",
         };
         let _ = writeln!(
             kdl,

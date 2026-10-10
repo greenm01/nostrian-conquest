@@ -31,8 +31,8 @@ fn two_empire_game(rows: Vec<ReportBlockRow>) -> TempGameDir {
         .expect("join empire 2");
     state.report_block_rows = rows;
     state.queued_mail.clear();
-    state.game_data.player.records[0].raw[0x30] = 0;
-    state.game_data.player.records[0].raw[0x34] = 1;
+    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
+    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
     save_runtime_state(&fixture_dir, &state);
     fixture_dir
 }

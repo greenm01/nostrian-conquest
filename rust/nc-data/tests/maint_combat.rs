@@ -1,6 +1,7 @@
 mod common;
 
 use common::order_trace::assert_mission_event;
+use nc_data::Real48;
 use nc_data::{
     ContactReportSource, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, Mission,
     MissionOutcome, Order, PlanetIntelSource,
@@ -614,7 +615,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
     attacker.set_standing_order_kind(Order::BombardWorld);
     attacker.set_standing_order_target_coords_raw(target);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x00;
+    attacker.set_depth(Real48::ZERO);
     attacker.set_destroyer_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_battleship_count(0);
@@ -974,8 +975,8 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
 
     for idx in [0usize, 4, 8] {
         assert_eq!(
-            first.fleets.records[idx].raw,
-            second.fleets.records[idx].raw,
+            first.fleets.records[idx],
+            second.fleets.records[idx],
             "seeded combat should resolve reproducibly for fleet record {}",
             idx + 1
         );
@@ -1221,7 +1222,8 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(attacker.current_speed(), 0);
     assert_eq!(attacker.army_count(), 0);
     assert_eq!(target.owner_empire_slot_raw(), 1);
-    assert_eq!(target.ownership_status_raw(), 2);
+    // Just captured (ECMAINT 0xFA41 writes 0); the next pass steps it.
+    assert_eq!(target.ownership_status_raw(), 0);
     // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
     // both batteries survive and fire 180 AS on the landing. Each transport
     // costs 20 hits, so 15 sink; 25 armies land, win, and pass the batteries

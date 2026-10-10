@@ -33,7 +33,7 @@ fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
     assert_eq!(record.target_depth_raw(), 1);
 
     assert_eq!(
-        record.raw,
+        record.to_bytes(),
         [
             0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x10, 0x0D, 0x80,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x81, 0x00, 0x00,
@@ -46,7 +46,7 @@ fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
 fn guard_starbase_related_accessors_expose_linkage_words() {
     let player = PlayerDat::parse(&read_fixture("PLAYER.DAT")).unwrap();
     assert_eq!(player.records[0].fleet_chain_head_raw(), 1);
-    assert_eq!(player.records[0].ipbm_count_raw(), 0);
+    assert_eq!(player.records[0].ipbm_chain_head_raw(), 0);
 
     let fleet_bytes = read_ecmaint_starbase_pre_fixture("FLEETS.DAT");
     let fleets = FleetDat::parse(&fleet_bytes).unwrap();
@@ -149,18 +149,18 @@ fn controlled_empire_name_setter_does_not_clobber_later_player_fields() {
     let mut record = PlayerRecord::new_zeroed();
     record.set_homeworld_planet_index_1_based_raw(7);
     record.set_tax_rate_raw(50);
-    record.set_ipbm_count_raw(3);
-    record.raw[0x30] = 1;
-    record.raw[0x34] = 1;
+    record.set_ipbm_chain_head_raw(3);
+    record.set_classic_messages_pending_flag_raw(1);
+    record.set_classic_reports_pending_flag_raw(1);
 
     record.set_controlled_empire_name_raw("Codex Dominion");
 
     assert_eq!(record.controlled_empire_name_summary(), "Codex Dominion");
     assert_eq!(record.homeworld_planet_index_1_based_raw(), 7);
     assert_eq!(record.tax_rate(), 50);
-    assert_eq!(record.ipbm_count_raw(), 3);
-    assert_eq!(record.raw[0x30], 1);
-    assert_eq!(record.raw[0x34], 1);
+    assert_eq!(record.ipbm_chain_head_raw(), 3);
+    assert_eq!(record.classic_messages_pending_flag_raw(), 1);
+    assert_eq!(record.classic_reports_pending_flag_raw(), 1);
 }
 
 #[test]
@@ -249,13 +249,16 @@ fn rename_owned_planet_rejects_non_printable_ascii_names() {
 }
 
 #[test]
-fn set_planet_name_truncates_on_a_char_boundary() {
+fn set_planet_name_stores_classic_text_up_to_twenty_chars() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_planet_name("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
-    assert_eq!(planet.planet_name(), "\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.planet_name(), "????");
 
     planet.set_planet_name("Fourteen Chars");
-    assert_eq!(planet.planet_name(), "Fourteen Char");
+    assert_eq!(planet.planet_name(), "Fourteen Chars");
+
+    planet.set_planet_name("Twenty-one characters");
+    assert_eq!(planet.planet_name(), "Twenty-one character");
 }
 
 #[test]
@@ -357,9 +360,10 @@ fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
     assert_eq!(planet.stardock_kind_raw(3), 4);
     assert_eq!(planet.stardock_kind_raw(6), 9);
 
-    assert_eq!(planet.raw[0x38..0x3C], [1, 0, 0, 0]);
-    assert_eq!(planet.raw[0x44..0x48], [2, 1, 0, 0]);
-    assert_eq!(planet.raw[0x50..0x54], 70_000u32.to_le_bytes());
+    let bytes = planet.to_bytes();
+    assert_eq!(bytes[0x38..0x3C], [1, 0, 0, 0]);
+    assert_eq!(bytes[0x44..0x48], [2, 1, 0, 0]);
+    assert_eq!(bytes[0x50..0x54], 70_000u32.to_le_bytes());
 }
 
 #[test]
@@ -799,7 +803,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     // A new base as ECMAINT 2000:6642 creates one: no escort, at rest in
     // orbit, target = its own sector.
     assert_eq!(
-        base.raw,
+        base.to_bytes(),
         [
             0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 6, 5, 0x80, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0x81,
             0, 0, 0, 0, 0, 0, 6, 5, 1,
@@ -1073,45 +1077,47 @@ fn unload_fleet_armies_to_planet_rejects_planet_overflow() {
 }
 
 #[test]
-fn ipbm_record_setters_round_trip_structural_prefix_fields() {
-    let mut record = IpbmRecord {
-        raw: [0u8; IPBM_RECORD_SIZE],
-    };
-    record.set_primary_word_raw(0x1234);
+fn ipbm_record_setters_round_trip_chain_fields() {
+    let mut record = IpbmRecord::new_zeroed();
+    record.set_ipbm_number_raw(0x1234);
     record.set_owner_empire_raw(0x02);
-    record.set_gate_word_raw(0x4567);
-    record.set_follow_on_word_raw(0x89ab);
+    record.set_next_ipbm_link_raw(0x4567);
+    record.set_record_number_raw(0x89ab);
 
-    assert_eq!(record.primary_word_raw(), 0x1234);
+    assert_eq!(record.ipbm_number_raw(), 0x1234);
     assert_eq!(record.owner_empire_raw(), 0x02);
-    assert_eq!(record.gate_word_raw(), 0x4567);
-    assert_eq!(record.follow_on_word_raw(), 0x89ab);
+    assert_eq!(record.next_ipbm_link_raw(), 0x4567);
+    assert_eq!(record.record_number_raw(), 0x89ab);
+    let bytes = record.to_bytes();
+    assert_eq!(&bytes[..7], &[0x34, 0x12, 0x02, 0x67, 0x45, 0xab, 0x89]);
 }
 
 #[test]
-fn ipbm_record_setters_round_trip_structural_payload_groups() {
-    let mut record = IpbmRecord {
-        raw: [0u8; IPBM_RECORD_SIZE],
-    };
-    record.set_tuple_a_tag_raw(0x11);
-    record.set_tuple_b_tag_raw(0x22);
-    record.set_tuple_a_payload_raw([1, 2, 3, 4, 5]);
-    record.set_tuple_b_payload_raw([6, 7, 8, 9, 10]);
-    record.set_tuple_c_payload_raw([11, 12, 13, 14, 15]);
-    record.set_trailing_control_raw([0xAA, 0xBB, 0xCC]);
+fn ipbm_record_setters_round_trip_position_and_target() {
+    let mut record = IpbmRecord::new_zeroed();
+    record.set_coords_raw([0x11, 0x22]);
+    record.set_x_fraction(Real48::from_bytes([1, 2, 3, 4, 5, 6]));
+    record.set_y_fraction(Real48::from_bytes([7, 8, 9, 10, 11, 12]));
+    record.set_depth(Real48::from_bytes([13, 14, 15, 16, 17, 18]));
+    record.set_target_coords_raw([0xAA, 0xBB]);
+    record.set_target_depth_raw(0xCC);
 
-    assert_eq!(record.tuple_a_tag_raw(), 0x11);
-    assert_eq!(record.tuple_b_tag_raw(), 0x22);
-    assert_eq!(record.tuple_a_payload_raw(), [1, 2, 3, 4, 5]);
-    assert_eq!(record.tuple_b_payload_raw(), [6, 7, 8, 9, 10]);
-    assert_eq!(record.tuple_c_payload_raw(), [11, 12, 13, 14, 15]);
-    assert_eq!(record.trailing_control_raw(), [0xAA, 0xBB, 0xCC]);
+    assert_eq!(record.coords_raw(), [0x11, 0x22]);
+    assert_eq!(record.target_coords_raw(), [0xAA, 0xBB]);
+    assert_eq!(record.target_depth_raw(), 0xCC);
+    let bytes = record.to_bytes();
+    assert_eq!(&bytes[0x09..0x0B], &[0x11, 0x22]);
+    assert_eq!(&bytes[0x0B..0x11], &[1, 2, 3, 4, 5, 6]);
+    assert_eq!(&bytes[0x11..0x17], &[7, 8, 9, 10, 11, 12]);
+    assert_eq!(&bytes[0x17..0x1D], &[13, 14, 15, 16, 17, 18]);
+    assert_eq!(&bytes[0x1D..0x20], &[0xAA, 0xBB, 0xCC]);
 }
 
 #[test]
 fn can_set_maintenance_schedule_from_enabled_days() {
     let mut post_maint = ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
     post_maint.set_maintenance_schedule_enabled([true, false, true, false, true, false, true]);
+    // ECUTIL writes 0 or 1; ECMAINT tests only for nonzero.
     assert_eq!(
         post_maint.maintenance_schedule_bytes(),
         [0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01]
@@ -1128,7 +1134,7 @@ fn can_toggle_snoop_enabled() {
     assert!(setup.snoop_enabled());
     setup.set_snoop_enabled(false);
     assert!(!setup.snoop_enabled());
-    assert_eq!(setup.raw[512], 0);
+    assert_eq!(setup.to_bytes()[512], 0);
 }
 
 #[test]
@@ -1163,21 +1169,17 @@ fn can_set_purge_after_turns_raw() {
     assert_eq!(setup.purge_after_turns_raw(), 0);
     setup.set_purge_after_turns_raw(1);
     assert_eq!(setup.purge_after_turns_raw(), 1);
-    assert_eq!(setup.raw[518], 1);
+    assert_eq!(setup.to_bytes()[518], 1);
 }
 
 #[test]
-fn planet_status_prefix_setter_preserves_hidden_tail_bytes() {
-    let mut record = PlanetRecord {
-        raw: [0u8; PLANET_RECORD_SIZE],
-    };
-    record.raw[0x17..0x1D].copy_from_slice(&[1, 2, 3, 4, 5, 6]);
-
+fn planet_status_prefix_setter_stores_the_name() {
+    let mut record = PlanetRecord::new_zeroed();
     record.set_status_or_name_prefix_raw("Unowned");
 
     assert_eq!(record.string_len(), 7);
     assert_eq!(record.status_or_name_summary(), "Unowned");
-    assert_eq!(&record.raw[0x17..0x1D], &[1, 2, 3, 4, 5, 6]);
+    assert_eq!(&record.to_bytes()[0x0F..0x17], b"\x07Unowned");
 }
 
 #[test]
@@ -1200,15 +1202,9 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
         },
         ipbm: IpbmDat {
             records: vec![
-                IpbmRecord {
-                    raw: [0u8; IPBM_RECORD_SIZE],
-                },
-                IpbmRecord {
-                    raw: [0u8; IPBM_RECORD_SIZE],
-                },
-                IpbmRecord {
-                    raw: [0u8; IPBM_RECORD_SIZE],
-                },
+                IpbmRecord::new_zeroed(),
+                IpbmRecord::new_zeroed(),
+                IpbmRecord::new_zeroed(),
             ],
         },
         setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
@@ -1266,7 +1262,7 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
         data.player.records[3].first_base_record_raw(),
         player4_starbase_before
     );
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 3);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 3);
     assert_eq!(data.player1_starbase_count_current_known(), 2);
     assert_eq!(
         data.player_owned_planet_counts_current_known(),
@@ -1408,7 +1404,7 @@ fn core_game_data_initialized_fleet_block_errors_catch_broken_local_chain() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[1].raw[0x03] = 9;
+    data.fleets.records[1].set_next_fleet_link_word_raw(9);
 
     assert_eq!(
         data.current_known_initialized_fleet_block_errors(),
@@ -1428,7 +1424,7 @@ fn core_game_data_initialized_fleet_payload_errors_catch_broken_slot_pattern() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[2].raw[0x09] = 3;
+    data.fleets.records[2].set_max_speed(3);
 
     assert_eq!(
         data.current_known_initialized_fleet_payload_errors(),
@@ -1448,13 +1444,11 @@ fn core_game_data_initialized_fleet_payload_errors_catch_missing_tuple_markers()
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[0].set_tuple_a_payload_raw([0; 5]);
+    data.fleets.records[0].set_x_fraction(Real48::ZERO);
 
     assert_eq!(
         data.current_known_initialized_fleet_payload_errors(),
-        vec![
-            "FLEET[1].tuple_a_payload expected [128, 0, 0, 0, 0], got [0, 0, 0, 0, 0]".to_string()
-        ]
+        vec!["FLEET[1].x_fraction expected 0.5, got [0, 0, 0, 0, 0, 0]".to_string()]
     );
 }
 
@@ -1514,7 +1508,7 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5D] = 9;
+    data.planets.records[0].set_owner_empire_slot_raw(9);
     data.bases.records[0].set_base_id_raw(1);
     data.bases.records[0].set_owner_empire_raw(0);
 
@@ -1543,7 +1537,8 @@ fn core_game_data_homeworld_alignment_errors_catch_misaligned_fleet_block() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[4].raw[0x20] = 9;
+    let [_, target_y] = data.fleets.records[4].standing_order_target_coords_raw();
+    data.fleets.records[4].set_standing_order_target_coords_raw([9, target_y]);
 
     assert_eq!(
         data.current_known_initialized_homeworld_alignment_errors(),
@@ -1563,7 +1558,7 @@ fn core_game_data_initialized_planet_ownership_errors_catch_non_homeworld_owner(
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5D] = 2;
+    data.planets.records[0].set_owner_empire_slot_raw(2);
 
     assert_eq!(
         data.current_known_initialized_planet_ownership_errors(),
@@ -1586,7 +1581,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].raw[0x5A] = 1;
+    data.planets.records[14].set_ground_batteries_raw(1);
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1606,7 +1601,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].raw[0x0E] = 11;
+    data.planets.records[14].set_stored_goods(34.75);
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1626,7 +1621,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_owned_marker() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5A] = 1;
+    data.planets.records[0].set_ground_batteries_raw(1);
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
@@ -1646,7 +1641,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x09] = 0x81;
+    data.planets.records[0].set_stored_goods(1.0);
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
@@ -1706,8 +1701,7 @@ fn core_game_data_conquest_baseline_errors_catch_changed_year() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.conquest.raw[0] = 0xB7;
-    data.conquest.raw[1] = 0x0B; // 2999
+    data.conquest.set_game_year(2999);
 
     assert_eq!(
         data.current_known_conquest_baseline_errors(),
@@ -1728,26 +1722,24 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
             records: vec![base1],
         },
         ipbm: IpbmDat {
-            records: vec![IpbmRecord {
-                raw: [0u8; IPBM_RECORD_SIZE],
-            }],
+            records: vec![IpbmRecord::new_zeroed()],
         },
         setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
     data.player.records[0].set_first_base_record_raw(9);
-    data.player.records[0].set_ipbm_count_raw(9);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.player.records[0].set_ipbm_chain_head_raw(9);
+    data.setup.set_version_tag(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
-    data.conquest.raw[0..2].copy_from_slice(&2999u16.to_le_bytes());
-    data.conquest.raw[2] = 9;
+    data.conquest.set_game_year(2999);
+    data.conquest.set_player_count(9);
     data.conquest.set_maintenance_schedule_enabled([false; 7]);
 
     data.sync_current_known_baseline_controls_and_counts();
 
     assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 1);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 1);
     assert!(data.current_known_setup_baseline_errors().is_empty());
     assert!(data.current_known_conquest_baseline_errors().is_empty());
 }
@@ -1825,12 +1817,10 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
     };
 
     data.player.records[0].set_first_base_record_raw(7);
-    data.player.records[0].set_ipbm_count_raw(4);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.player.records[0].set_ipbm_chain_head_raw(4);
+    data.setup.set_version_tag(b"BAD!!");
     data.bases.records.push(BaseRecord::new_zeroed());
-    data.ipbm.records.push(IpbmRecord {
-        raw: [0u8; IPBM_RECORD_SIZE],
-    });
+    data.ipbm.records.push(IpbmRecord::new_zeroed());
     data.fleets.records.clear();
     data.fleets.records.push(FleetRecord::new_zeroed());
     data.planets.records[14].set_stored_goods(3.0);
@@ -1922,7 +1912,7 @@ fn core_game_data_current_known_baseline_diff_counts_detect_mutated_files() {
         .differing_bytes;
     assert_eq!(clean_setup, 0);
 
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_counts();
@@ -1964,7 +1954,7 @@ fn core_game_data_current_known_baseline_diff_offsets_pinpoint_mutated_bytes() {
         .differing_offsets
         .clone();
 
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_offsets();
@@ -2068,17 +2058,17 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
     assert_eq!(data.bases.records[0].coords_raw(), [0x10, 0x0D]);
 
     data.set_ipbm_zero_records(2);
-    assert_eq!(data.player.records[0].ipbm_count_raw(), 2);
+    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 2);
     assert_eq!(data.ipbm.records.len(), 2);
     assert_eq!(data.ipbm.to_bytes().len(), 2 * IPBM_RECORD_SIZE);
 
     data.set_ipbm_record_prefix(2, 0x1234, 0x02, 0x4567, 0x89ab)
         .unwrap();
     let ipbm = &data.ipbm.records[1];
-    assert_eq!(ipbm.primary_word_raw(), 0x1234);
+    assert_eq!(ipbm.ipbm_number_raw(), 0x1234);
     assert_eq!(ipbm.owner_empire_raw(), 0x02);
-    assert_eq!(ipbm.gate_word_raw(), 0x4567);
-    assert_eq!(ipbm.follow_on_word_raw(), 0x89ab);
+    assert_eq!(ipbm.next_ipbm_link_raw(), 0x4567);
+    assert_eq!(ipbm.record_number_raw(), 0x89ab);
 }
 
 #[test]
@@ -2192,7 +2182,7 @@ fn configure_on_station_hostile_order_state() -> (CoreGameData, [u8; 2]) {
     fleet.set_etac_count(0);
     fleet.recompute_max_speed_from_composition();
     fleet.set_current_speed(fleet.max_speed());
-    fleet.set_tuple_c_payload_raw([0x81, 0x00, 0x00, 0x00, 0x00]);
+    fleet.set_depth(Real48::ONE);
 
     (data, target)
 }
@@ -2220,8 +2210,8 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
         // orbit, so its strike test passes on the next maintenance's first tick.
         assert_eq!(fleet.current_speed(), fleet.max_speed());
         assert_eq!(
-            fleet.tuple_c_payload_raw(),
-            [0x81, 0x00, 0x00, 0x00, 0x00],
+            fleet.depth(),
+            Real48::ONE,
             "{order:?} keeps its at-rest depth"
         );
     }
@@ -2728,9 +2718,7 @@ fn detach_ships_creates_new_fleet_and_preserves_donor_order() {
     donor.set_local_slot_word_raw(1);
     donor.set_fleet_id_word_raw(1);
     donor.set_current_location_coords_raw([24, 14]);
-    donor.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-    donor.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-    donor.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+    donor.set_at_rest_motion();
     donor.set_standing_order_kind(Order::GuardBlockadeWorld);
     donor.set_standing_order_target_coords_raw([25, 12]);
     donor.set_destroyer_count(2);

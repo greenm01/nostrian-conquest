@@ -315,7 +315,9 @@ fn apply_fleet_specs(
         if let Some(invasion_armies) = fleet_spec.invasion_armies {
             // An early tool wrote this byte (0x08) as invasion armies; classic
             // reads it as the high byte of the previous-fleet word.
-            fleet.set_previous_fleet_id(u16::from_le_bytes([fleet.raw[0x07], invasion_armies]));
+            fleet.set_previous_fleet_id(
+                (fleet.previous_fleet_id() & 0x00FF) | (u16::from(invasion_armies) << 8),
+            );
         }
         if let Some(rules_of_engagement) = fleet_spec.rules_of_engagement {
             fleet.set_rules_of_engagement(rules_of_engagement);

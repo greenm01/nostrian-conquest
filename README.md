@@ -11,9 +11,19 @@ Active beta. The Rust player and sysop stack is playable now. The main work is l
 
 ## What It Is
 
-Beyond the old Nostrian frontier lies an abandoned galaxy. The old stations are silent.
-The borders are open. You start with four fleets, an isolated homeworld, and enough industry
-to kickstart an empire.
+Beyond the mapped frontiers of the old Nostrian dominion lies a small galaxy
+of contested solar systems. The old masters are gone. Their stations are
+silent, their patrols vanished, and their subjects left with fleets, industry,
+and enough knowledge to build empires.
+
+You rise as one of the new Star Masters. From a single world and a few small
+fleets, you must tax, build, scout, bargain, threaten, and strike before rival
+powers can do the same. Some systems will join your banner willingly. Others
+will require persuasion from orbit.
+
+Each maintenance marks the passage of a year. In that span, fleets cross the
+dark between stars, colonies grow or starve, alliances turn cold, and wars are
+decided by distance, industry, mathematics, and will.
 
 NC preserves the yearly-turn campaign rhythm, the reports, the maps, and the
 old-school pressure of the original game. The engine is modern Rust. Campaigns

@@ -47,6 +47,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!("Planets:");
     for (idx, record) in data.planets.records.iter().enumerate().take(5) {
+        let bytes = record.to_bytes();
         println!(
             "  planet {:02}: coords={:?} hdr={:02x?} len={} text='{}' tail58={:02x?} fact_word={:04x} summary='{}'",
             idx + 1,
@@ -54,8 +55,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.header_bytes(),
             record.string_len(),
             record.status_or_name_summary(),
-            &record.raw[0x58..0x61],
-            u16::from_le_bytes([record.raw[0x08], record.raw[0x09]]),
+            &bytes[0x58..0x61],
+            u16::from_le_bytes([bytes[0x08], bytes[0x09]]),
             record.derived_summary()
         );
     }
@@ -73,10 +74,10 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!("Planet Seeds:");
         for (idx, record) in homeworld_like {
             println!(
-                "  planet {:02}: summary='{}' header_value_raw={:02x}",
+                "  planet {:02}: summary='{}' potential={}",
                 idx + 1,
                 record.derived_summary(),
-                record.header_value_raw()
+                record.potential_production_points()
             );
         }
     }
@@ -170,12 +171,12 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     println!("IPBM:");
     for (idx, record) in data.ipbm.records.iter().enumerate() {
         println!(
-            "  record {:02}: primary={} owner={} gate={} follow_on={}",
+            "  record {:02}: number={} owner={} next={} record_number={}",
             idx + 1,
-            record.primary_word_raw(),
+            record.ipbm_number_raw(),
             record.owner_empire_raw(),
-            record.gate_word_raw(),
-            record.follow_on_word_raw()
+            record.next_ipbm_link_raw(),
+            record.record_number_raw()
         );
     }
 
@@ -278,18 +279,8 @@ pub(crate) fn inspect_fleet_movement(
     println!("max_speed={}", fleet.max_speed());
     println!("roe={}", fleet.rules_of_engagement());
     println!("mission_aux={:02x?}", fleet.mission_aux_bytes());
-    println!("raw_0d={:02x}", fleet.raw[0x0d]);
-    println!("raw_0e={:02x}", fleet.raw[0x0e]);
-    println!("raw_0f={:02x}", fleet.raw[0x0f]);
-    println!("raw_10={:02x}", fleet.raw[0x10]);
-    println!("raw_11={:02x}", fleet.raw[0x11]);
-    println!("raw_12={:02x}", fleet.raw[0x12]);
-    println!("raw_19={:02x}", fleet.raw[0x19]);
-    println!("raw_1a={:02x}", fleet.raw[0x1a]);
-    println!("raw_1b={:02x}", fleet.raw[0x1b]);
-    println!("raw_1c={:02x}", fleet.raw[0x1c]);
-    println!("raw_1d={:02x}", fleet.raw[0x1d]);
-    println!("raw_1e={:02x}", fleet.raw[0x1e]);
+    println!("x_fraction={:02x?}", fleet.x_fraction().to_bytes());
+    println!("depth={:02x?}", fleet.depth().to_bytes());
     println!(
         "route_steps={}",
         route.as_ref().map(|route| route.steps.len()).unwrap_or(0)
@@ -414,15 +405,18 @@ pub(crate) fn dump_headers(dir: &Path) -> Result<(), Box<dyn std::error::Error>>
     println!("CONQUEST.game_year={}", conquest.game_year());
     println!("CONQUEST.player_count={}", conquest.player_count());
     println!(
-        "CONQUEST.player_config_word={:04x}",
-        conquest.player_config_word()
-    );
-    println!(
         "CONQUEST.maintenance_schedule={:02x?}",
         conquest.maintenance_schedule_bytes()
     );
-    println!("CONQUEST.header_len={}", conquest.control_header().len());
-    println!("CONQUEST.header_words={:04x?}", conquest.header_words());
+    let empires = usize::from(conquest.player_count()).min(25);
+    println!(
+        "CONQUEST.previous_production={:?}",
+        &conquest.previous_production()[..empires]
+    );
+    println!(
+        "CONQUEST.previous_planet_count={:?}",
+        &conquest.previous_planet_count()[..empires]
+    );
 
     Ok(())
 }
@@ -489,10 +483,14 @@ fn print_header_summary(setup: &SetupDat, conquest: &ConquestDat) {
         "CONQUEST maintenance schedule: {:02x?}",
         conquest.maintenance_schedule_bytes()
     );
-    println!("CONQUEST header bytes: {}", conquest.control_header().len());
+    let empires = usize::from(conquest.player_count()).min(25);
     println!(
-        "CONQUEST first header words: {:04x?}",
-        &conquest.header_words()[..8]
+        "CONQUEST previous production: {:?}",
+        &conquest.previous_production()[..empires]
+    );
+    println!(
+        "CONQUEST previous planet count: {:?}",
+        &conquest.previous_planet_count()[..empires]
     );
 }
 

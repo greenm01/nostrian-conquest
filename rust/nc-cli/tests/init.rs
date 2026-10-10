@@ -1,7 +1,11 @@
+mod common;
+
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use common::without_unread_bytes;
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -48,7 +52,12 @@ fn init_creates_known_good_fixture_set() {
     ] {
         let actual = fs::read(target.join(name)).unwrap();
         let expected = fs::read(init.join(name)).unwrap();
-        assert_eq!(actual, expected, "{name} should match initialized fixture");
+        // The typed model does not carry the bytes no classic program reads.
+        assert_eq!(
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
+            "{name} should match initialized fixture"
+        );
     }
 
     // DATABASE.DAT is generated from PLANETS.DAT, so just verify it exists and is valid
@@ -92,7 +101,12 @@ fn init_accepts_omitted_source_and_uses_default_fixture_dir() {
     ] {
         let actual = fs::read(target.join(name)).unwrap();
         let expected = fs::read(init.join(name)).unwrap();
-        assert_eq!(actual, expected, "{name} should match initialized fixture");
+        // The typed model does not carry the bytes no classic program reads.
+        assert_eq!(
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
+            "{name} should match initialized fixture"
+        );
     }
 
     // DATABASE.DAT is generated from PLANETS.DAT, so just verify it exists and is valid

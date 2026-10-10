@@ -203,7 +203,7 @@ fn autopilot_build_queue(
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }
-        if planet.conversion_countdown_raw() > 0 {
+        if planet.ownership_status_raw() < 2 {
             continue;
         }
 

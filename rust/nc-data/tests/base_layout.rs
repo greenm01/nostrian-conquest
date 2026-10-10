@@ -103,7 +103,7 @@ fn base_accessors_use_the_classic_offsets() {
     base.set_target_depth_raw(1);
 
     assert_eq!(
-        base.raw,
+        base.to_bytes(),
         [
             0x02, 0x01, 0x04, 0x03, 5, 0x07, 0x06, 0x09, 0x08, 0x0b, 0x0a, 0x0c, 0x0d, 0x11, 1, 2,
             3, 4, 5, 0x12, 1, 2, 3, 4, 5, 0x13, 1, 2, 3, 4, 5, 1, 0x0e, 0x0f, 1,

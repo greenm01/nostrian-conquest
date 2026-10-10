@@ -17,8 +17,8 @@ fn player_record_diplomacy_slots_map_enemy_and_neutral() {
         Some(DiplomaticRelation::Neutral)
     );
 
-    player.raw[0x55] = 0x01;
-    player.raw[0x57] = 0x01;
+    player.set_diplomatic_relation_byte_raw(2, 0x01);
+    player.set_diplomatic_relation_byte_raw(4, 0x01);
 
     assert_eq!(
         player.diplomatic_relation_toward(1),
@@ -37,7 +37,7 @@ fn player_record_diplomacy_slots_map_enemy_and_neutral() {
         Some(DiplomaticRelation::Enemy)
     );
 
-    player.raw[0x6c] = 0x01;
+    player.set_diplomatic_relation_byte_raw(25, 0x01);
     assert_eq!(
         player.diplomatic_relation_toward(25),
         Some(DiplomaticRelation::Enemy)

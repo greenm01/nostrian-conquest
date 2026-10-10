@@ -20,7 +20,6 @@ pub(super) fn merge_one_fleet_into_host(
     let loaded_tt = game_data.fleets.records[donor_idx].loaded_transport_count();
     let et = game_data.fleets.records[donor_idx].etac_count();
     let sc = game_data.fleets.records[donor_idx].scout_count();
-    let strength_cache = game_data.fleets.records[donor_idx].strength_cache_raw();
 
     let host = &mut game_data.fleets.records[host_idx];
     host.set_battleship_count(host.battleship_count().saturating_add(bb));
@@ -30,10 +29,6 @@ pub(super) fn merge_one_fleet_into_host(
     host.set_loaded_transport_count(host.loaded_transport_count().saturating_add(loaded_tt));
     host.set_etac_count(host.etac_count().saturating_add(et));
     host.set_scout_count(host.scout_count().saturating_add(sc));
-    // Every ECMAINT merge (Join, Rendezvous, Guard Starbase, rogue
-    // consolidation) runs 2895:4a6b, which adds the 0x34 word; ECGAME's
-    // merges do not.
-    host.set_strength_cache_raw(host.strength_cache_raw().wrapping_add(strength_cache));
     // 2895:4a6b leaves the host's ROE alone.
     host.recompute_max_speed_from_composition();
 }

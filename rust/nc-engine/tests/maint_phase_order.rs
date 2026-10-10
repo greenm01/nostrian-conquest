@@ -7,7 +7,7 @@ mod support;
 
 use nc_data::{
     CompactUnitSummaryStyle, Mission, MissionOutcome, Order, PlanetIntelSource, Real48,
-    encode_real48, format_stardock_summary,
+    format_stardock_summary,
 };
 use support::{Fleet, Ships, WORLD, board_with_world, put, years};
 
@@ -34,9 +34,7 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
             .max_speed(5)
             .heading(Order::ScoutSolarSystem, WORLD, true, 5),
     );
-    scenario.fleets.records[0].set_depth(Real48::from_bytes(
-        encode_real48(0.95).expect("depth should encode"),
-    ));
+    scenario.fleets.records[0].set_depth(Real48::from_f64(0.95));
 
     let (game_data, events) = years(&scenario, &[], 0..1).next().expect("one year");
 
