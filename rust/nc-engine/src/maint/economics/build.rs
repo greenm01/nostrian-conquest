@@ -1,4 +1,4 @@
-use crate::{CoreGameData, ProductionItemKind, build_capacity};
+use crate::{CoreGameData, ProductionItemKind};
 
 pub(super) fn process_build_completion(
     game_data: &mut CoreGameData,
@@ -7,20 +7,8 @@ pub(super) fn process_build_completion(
     let mut planets_with_builds = Vec::new();
 
     for planet_idx in 0..planet_count {
-        let owner_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-        let current_production = game_data.planets.records[planet_idx]
-            .present_production_points()
-            .unwrap_or(0);
-        let spend_capacity = build_capacity(
-            current_production,
-            owner_empire != 0
-                && super::planet_has_friendly_starbase(
-                    game_data,
-                    owner_empire,
-                    game_data.planets.records[planet_idx].coords_raw(),
-                ),
-        );
-        let mut remaining_spend_capacity = u32::from(spend_capacity);
+        // Spending is capped by the planet budget: min(treasury, build capacity).
+        let mut remaining_spend_capacity = game_data.planet_build_budget(planet_idx + 1)?;
 
         let mut had_builds = false;
         for slot in 0..10 {

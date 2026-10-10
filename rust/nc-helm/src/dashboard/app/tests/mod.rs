@@ -3566,6 +3566,8 @@ fn owned_planet_popup_browse_uses_popup_record_not_crosshair() {
 #[test]
 fn hosted_draft_replay_refreshes_planet_status_cache() {
     let mut app = dash_app();
+    // Turn-file builds must fit the planet budget, so fund the treasury.
+    app.game_data.planets.records[0].set_stored_production_points(50);
     app.crosshair_x = app.game_data.planets.records[0].coords_raw()[0];
     app.crosshair_y = app.game_data.planets.records[0].coords_raw()[1];
     let _ = planet_view::selected_planet_detail(&app).expect("cached detail");

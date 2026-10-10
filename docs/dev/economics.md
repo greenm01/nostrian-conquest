@@ -122,6 +122,9 @@ Every owned planet grows toward its potential production each maintenance turn.
 Final result:
 `present_production = (present_production + growth) - penalty`
 
+Yearly revenue is credited after this update, on the new
+`present_production`. Growth comes first, then revenue.
+
 ### Impact:
 - Lower taxes produce faster growth.
 - Higher taxes yield immediate revenue but slow development.
@@ -156,28 +159,45 @@ consumed.
 The planet's **budget** for a given turn is:
 `budget = min(treasury, build_capacity)`
 
+Maintenance never spends more than the budget, so a planet with an empty
+treasury completes nothing that year. New orders, from the build screen or a
+turn file, may commit only the budget less the points already queued.
+
 ## Special Cases
 
 ### Homeworlds
-Homeworlds start at full production from turn one.
+Homeworlds start at full production from turn one. A homeworld seed still
+named "Not Named Yet" reads at its potential (classic seeds store 50), and
+naming it stores that value. A named homeworld reports its stored production,
+so high-tax penalties compound on it like any other planet.
 
 ### Newly Colonized Planets
 Fresh colonies do not receive same-turn revenue or growth on the maintenance
-tick that establishes ownership. They begin with no treasury,
-then start growing on later maintenance turns according to the normal tax and
-growth formulas. Because yearly tax revenue is credited before yearly growth is
-applied, newly colonized planets can remain at zero budget for
-multiple turns even at moderate tax rates.
+tick that establishes ownership. They begin at production 0 with no
+treasury, then start growing on the next maintenance turn according to the
+normal tax and growth formulas. Growth is applied before revenue is credited,
+so at moderate tax (35-65%) a colony with potential 15 or more has a nonzero
+budget after its first full turn. Very small worlds (potential 5-10) or low
+tax (25% or less) can leave a colony at zero budget for a turn or more, because
+`floor(production * tax_rate / 100)` rounds to zero.
 
 ### Civil Disorder and Autopilot
 The classic autopilot pass handles disorder. Empires in disorder (**0x00**) are
 economically frozen. Normal-planet economy policy does not apply to them.
+Rogue empires (**0xff**) run the normal economy pass.
+
+The autopilot (rogue empires and human players on autopilot) plans builds
+against the same budget, keeps existing queue entries and only tops them up,
+and commissions the starbases it completes.
 
 ## Unit Build Completion
 
 When maintenance applies build spending, completed units are dispatched:
 
-- build spending is applied during maintenance from the planet's treasury
+- orders are whole units: queued points must be an exact multiple of the
+  unit cost
+- build spending is applied during maintenance from the planet's treasury,
+  up to the planet's budget
 - partial progress carries the remaining build cost into later turns
 - units appear as enough points are applied to complete them, even if other
   units from the same order remain queued

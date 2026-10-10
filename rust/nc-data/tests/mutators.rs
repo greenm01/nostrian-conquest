@@ -3037,3 +3037,46 @@ fn unload_armies_invalidated_invade_order_falls_back_to_local_hold() {
     assert_eq!(fleet.current_speed(), 0);
     assert_eq!(fleet.standing_order_target_coords_raw(), [24, 14]);
 }
+
+#[test]
+fn append_planet_build_order_rejects_non_multiple_surface_points() {
+    let mut player = PlayerRecord::new_zeroed();
+    player.set_owner_empire_raw(1);
+
+    let mut planet = PlanetRecord::new_zeroed();
+    planet.set_owner_empire_slot_raw(1);
+
+    let mut data = CoreGameData {
+        player: PlayerDat {
+            records: vec![player],
+        },
+        planets: PlanetDat {
+            records: vec![planet],
+        },
+        fleets: FleetDat { records: vec![] },
+        bases: BaseDat { records: vec![] },
+        ipbm: IpbmDat { records: vec![] },
+        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
+        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+    };
+
+    for (points, kind_raw) in [(1, 7), (21, 7), (1, 8), (3, 8)] {
+        let error = data
+            .append_planet_build_order(1, points, kind_raw)
+            .unwrap_err();
+        assert_eq!(
+            error,
+            GameStateMutationError::InvalidPlanetPlayerInput {
+                planet_index_1_based: 1,
+                reason: PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
+                    kind_raw,
+                    points_remaining_raw: points,
+                },
+            }
+        );
+    }
+    assert_eq!(data.planets.records[0].build_count_raw(0), 0);
+
+    data.append_planet_build_order(1, 40, 7).unwrap();
+    data.append_planet_build_order(1, 4, 8).unwrap();
+}

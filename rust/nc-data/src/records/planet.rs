@@ -132,10 +132,15 @@ impl PlanetRecord {
         self.raw[0x02] as u16
     }
 
+    fn decoded_present_production_points(&self) -> Option<u16> {
+        decode_real48(self.factories_raw()).map(|value| value.round().max(0.0) as u16)
+    }
+
     pub fn present_production_points(&self) -> Option<u16> {
-        let decoded =
-            decode_real48(self.factories_raw()).map(|value| value.round().max(0.0) as u16)?;
-        if self.is_homeworld_seed_ignoring_name() {
+        let decoded = self.decoded_present_production_points()?;
+        // Only an uninitialized "Not Named Yet" seed (classic seeds store 50)
+        // reads at potential; named homeworlds report their real production.
+        if self.is_homeworld_seed_ignoring_name() && self.is_named_homeworld_seed() {
             Some(decoded.max(self.potential_production_points()))
         } else {
             Some(decoded)
@@ -190,6 +195,15 @@ impl PlanetRecord {
     }
 
     pub fn set_planet_name(&mut self, name: &str) {
+        // Naming a "Not Named Yet" seed ends its potential floor, so store the
+        // floored production first; a rename never changes production.
+        if self.is_homeworld_seed_ignoring_name() && self.is_named_homeworld_seed() {
+            if let Some(present) = self.present_production_points()
+                && Some(present) != self.decoded_present_production_points()
+            {
+                let _ = self.set_present_production_points(present);
+            }
+        }
         let bytes = name.as_bytes();
         let mut len = bytes.len().min(13);
         while !name.is_char_boundary(len) {

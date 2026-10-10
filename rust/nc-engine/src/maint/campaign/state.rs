@@ -13,7 +13,6 @@ const RECOVERY_WINDOW_TURNS: u8 = 3;
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct EmpireTurnStartState {
     owned_planets: usize,
-    has_recovery_path: bool,
 }
 
 #[derive(Debug, Default)]
@@ -27,24 +26,11 @@ pub(crate) struct CampaignTransitionEvents {
 
 pub(super) fn capture_empire_turn_start_states(
     game_data: &CoreGameData,
-    player_lifecycle_states: &[PlayerLifecycleState],
+    _player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Vec<EmpireTurnStartState> {
     (1..=game_data.player.records.len())
-        .map(|empire_idx| {
-            let empire_raw = empire_idx as u8;
-            let lifecycle = player_lifecycle_states
-                .get(empire_idx - 1)
-                .copied()
-                .unwrap_or_else(|| PlayerLifecycleState::for_player(empire_idx));
-            let has_recovery_path = if matches!(lifecycle.terminal_outcome, TerminalOutcome::None) {
-                empire_has_recovery_path(game_data, empire_raw)
-            } else {
-                false
-            };
-            EmpireTurnStartState {
-                owned_planets: owned_planet_count(game_data, empire_raw),
-                has_recovery_path,
-            }
+        .map(|empire_idx| EmpireTurnStartState {
+            owned_planets: owned_planet_count(game_data, empire_idx as u8),
         })
         .collect()
 }
@@ -103,10 +89,7 @@ pub(super) fn apply_campaign_state_transitions(
         let start = start_states
             .get(empire_idx - 1)
             .copied()
-            .unwrap_or(EmpireTurnStartState {
-                owned_planets: 0,
-                has_recovery_path: false,
-            });
+            .unwrap_or(EmpireTurnStartState { owned_planets: 0 });
 
         if matches!(
             lifecycle.terminal_outcome,
@@ -114,7 +97,7 @@ pub(super) fn apply_campaign_state_transitions(
         ) {
             continue;
         }
-        if !is_joined_empire(player) {
+        if !is_contesting_empire(player) {
             continue;
         }
 
@@ -145,12 +128,10 @@ pub(super) fn apply_campaign_state_transitions(
             continue;
         }
 
+        // The window only expires in the has-path branch above; losing the
+        // last recovery force inside the window is a force loss.
         let cause = if start.owned_planets > 0 {
             EmpireEliminationCause::LastPlanetLost
-        } else if lifecycle.recovery_window_turns_remaining > 0 {
-            EmpireEliminationCause::RecoveryWindowExpired
-        } else if start.has_recovery_path {
-            EmpireEliminationCause::LastRecoveryForceDestroyed
         } else {
             EmpireEliminationCause::LastRecoveryForceDestroyed
         };
@@ -432,9 +413,6 @@ fn is_contender(
     else {
         return false;
     };
-    if player.owner_mode_raw() == 0xff {
-        return true;
-    }
     let lifecycle = player_lifecycle_states
         .get(empire_raw.saturating_sub(1) as usize)
         .copied()
@@ -442,7 +420,7 @@ fn is_contender(
     if !matches!(lifecycle.terminal_outcome, TerminalOutcome::None) {
         return false;
     }
-    is_joined_empire(player)
+    is_contesting_empire(player)
         && (owns_any_planets(game_data, empire_raw)
             || lifecycle.recovery_window_turns_remaining > 0
             || empire_has_recovery_path(game_data, empire_raw))
@@ -463,6 +441,12 @@ fn owned_planet_count(game_data: &CoreGameData, empire_raw: u8) -> usize {
 
 fn is_joined_empire(player: &nc_data::PlayerRecord) -> bool {
     !matches!(player.owner_mode_raw(), 0x00 | 0xff)
+}
+
+/// Joined and rogue empires both contest the campaign and can be eliminated;
+/// only civil disorder (0x00) is out of it.
+fn is_contesting_empire(player: &nc_data::PlayerRecord) -> bool {
+    player.owner_mode_raw() != 0x00
 }
 
 fn is_rogue_empire(game_data: &CoreGameData, empire_raw: u8) -> bool {

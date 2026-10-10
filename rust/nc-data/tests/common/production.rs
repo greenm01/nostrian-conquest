@@ -84,6 +84,7 @@ pub fn owned_homeworld_seed(
     );
     record.set_potential_production_raw([potential_production, 0x87]);
     record.set_ownership_status_raw(2);
+    record.set_planet_name("Not Named Yet");
     record
 }
 
