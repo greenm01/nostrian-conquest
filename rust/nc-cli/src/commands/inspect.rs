@@ -33,8 +33,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.classic_message_review_carry_word_raw(),
             record.classic_results_review_word_raw(),
             record.classic_results_review_carry_word_raw(),
-            record.classic_results_chain_flag_raw(),
-            record.classic_results_chain_next_free_raw(),
+            record.classic_results_first_header_raw(),
+            record.classic_results_last_header_raw(),
             campaign_state,
             record.ownership_summary()
         );
@@ -346,8 +346,8 @@ pub(crate) fn inspect_classic_login(
             player.classic_message_review_carry_word_raw(),
             player.classic_results_review_word_raw(),
             player.classic_results_review_carry_word_raw(),
-            player.classic_results_chain_flag_raw(),
-            player.classic_results_chain_next_free_raw()
+            player.classic_results_first_header_raw(),
+            player.classic_results_last_header_raw()
         );
     }
 

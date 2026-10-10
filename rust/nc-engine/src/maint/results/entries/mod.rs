@@ -1,10 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use nc_data::{CoreGameData, MaintenanceEvents, ReportBlockRow};
+use nc_data::{CoreGameData, MaintenanceEvents, ReportBlockRow, layout_classic_results};
 
 use super::binary::{
-    RESULTS_END_OF_TRANSMISSION, RESULTS_RECORD_SIZE, classic_results_chain_tail_for_year,
-    classic_results_lines, classic_results_record_count, push_classic_results_chunked,
+    RESULTS_END_OF_TRANSMISSION, classic_results_chain_tail_for_year, classic_results_lines,
+    classic_results_record_count, push_classic_results_chunked,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
@@ -38,10 +38,8 @@ pub struct ReportEntry {
 }
 
 pub fn build_results_dat(game_data: &CoreGameData, events: &MaintenanceEvents) -> Vec<u8> {
-    build_results_rows_with_review(game_data, events)
-        .into_iter()
-        .flat_map(|row| row.raw_bytes.unwrap_or_default())
-        .collect()
+    let rows = build_results_rows_with_review(game_data, events);
+    layout_classic_results(&game_data.player.records, &rows).bytes
 }
 
 pub fn build_results_report_blocks(
@@ -52,37 +50,11 @@ pub fn build_results_report_blocks(
 }
 
 pub fn apply_results_reviewable_flags(game_data: &mut CoreGameData, rows: &[ReportBlockRow]) {
-    let occupied_viewers = occupied_result_viewers(game_data);
-    let mut visible_record_counts = BTreeMap::<u8, u16>::new();
-    for row in rows {
-        if row.recipient_deleted {
-            continue;
-        }
-        let record_count = row
-            .raw_bytes
-            .as_ref()
-            .map(|bytes| (bytes.len() / RESULTS_RECORD_SIZE) as u16)
-            .unwrap_or(0);
-        if row.viewer_empire_id == 0 {
-            for &viewer_empire_raw in &occupied_viewers {
-                *visible_record_counts.entry(viewer_empire_raw).or_default() += record_count;
-            }
-        } else {
-            *visible_record_counts
-                .entry(row.viewer_empire_id)
-                .or_default() += record_count;
-        }
-    }
-
-    for (idx, player) in game_data.player.records.iter_mut().enumerate() {
-        let viewer_empire_raw = (idx + 1) as u8;
-        let visible_record_count = *visible_record_counts.get(&viewer_empire_raw).unwrap_or(&0);
-        let has_results = visible_record_count > 0;
+    layout_classic_results(&game_data.player.records, rows)
+        .apply_to_players(&mut game_data.player.records);
+    for player in &mut game_data.player.records {
+        let has_results = player.classic_results_chain().is_some();
         player.set_classic_results_review_state_present(has_results);
-        player.set_classic_results_chain_state(
-            has_results,
-            if has_results { visible_record_count } else { 0 },
-        );
     }
 }
 

@@ -12,7 +12,7 @@ use crate::screen::{
     StartupReviewMode,
 };
 use crate::startup::{StartupPhase, StartupSummary};
-use nc_data::{PlayerAccessMode, TerminalOutcome};
+use nc_data::{PlayerAccessMode, TerminalOutcome, layout_classic_results};
 use nc_session::onboarding::first_time_onboarding_mode as shared_first_time_onboarding_mode;
 
 impl App {
@@ -1478,6 +1478,9 @@ impl App {
 
     fn sync_player_review_flags(&mut self) {
         let has_results = self.has_active_report_blocks();
+        let results_chain =
+            layout_classic_results(&self.game_data.player.records, &self.report_block_rows)
+                .chain_for(self.player.record_index_1_based as u8);
         if let Some(player) = self
             .game_data
             .player
@@ -1491,7 +1494,7 @@ impl App {
                         &self.queued_mail,
                     ),
             );
-            player.set_classic_results_chain_state(has_results, if has_results { 1 } else { 0 });
+            player.set_classic_results_chain(results_chain);
         }
     }
 

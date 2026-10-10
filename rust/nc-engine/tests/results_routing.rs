@@ -2,7 +2,7 @@ use nc_data::{
     CampaignOutcomeEvent, CampaignOutlookEvent, GameStateBuilder, GameVictoryNoticeEvent,
     InvalidPlayerStateEvent, MaintenanceEvents, PlanetPlayerInputValidationError,
 };
-use nc_engine::{apply_results_reviewable_flags, build_results_report_blocks};
+use nc_engine::{apply_results_reviewable_flags, build_results_dat, build_results_report_blocks};
 
 fn joined_game_data() -> nc_data::CoreGameData {
     GameStateBuilder::new()
@@ -106,4 +106,81 @@ fn invalid_input_on_unowned_planet_is_not_reported_to_empire_one() {
 
     let rows = build_results_report_blocks(&game_data, &events);
     assert!(rows.is_empty(), "unexpected rows: {rows:?}");
+}
+
+fn word(bytes: &[u8], offset: usize) -> u16 {
+    u16::from_le_bytes([bytes[offset], bytes[offset + 1]])
+}
+
+/// Walk one empire's chain from PLAYER.DAT +0x38, checking each header's
+/// ChainId names the previous header and +0x3c names the last one. Returns
+/// the 1-based header record indexes.
+fn walk_player_chain(
+    game_data: &nc_data::CoreGameData,
+    empire_raw: u8,
+    results: &[u8],
+) -> Vec<u16> {
+    let player = &game_data.player.records[empire_raw as usize - 1];
+    let (first, last) = (word(&player.raw, 0x38), word(&player.raw, 0x3c));
+    let mut headers = Vec::new();
+    let mut previous = 0;
+    let mut header = first;
+    while header != 0 {
+        let record = &results[(usize::from(header) - 1) * 84..][..84];
+        assert_eq!(
+            word(record, 74),
+            previous,
+            "empire {empire_raw} header {header} ChainId"
+        );
+        headers.push(header);
+        previous = header;
+        header = word(record, 78);
+    }
+    assert_eq!(
+        headers.last().copied().unwrap_or(0),
+        last,
+        "empire {empire_raw} +0x3c"
+    );
+    headers
+}
+
+#[test]
+fn every_empire_chain_uses_absolute_header_indexes_in_one_shared_file() {
+    let mut game_data = joined_game_data();
+    let mut events = outlook_events();
+    for recipient_empire_raw in [1, 2] {
+        events
+            .game_victory_notice_events
+            .push(GameVictoryNoticeEvent {
+                recipient_empire_raw,
+                winner_empire_raw: 1,
+                stardate_week: Some(4),
+            });
+    }
+
+    let results = build_results_dat(&game_data, &events);
+    let rows = build_results_report_blocks(&game_data, &events);
+    apply_results_reviewable_flags(&mut game_data, &rows);
+
+    let mut reached = std::collections::BTreeSet::new();
+    for empire_raw in 1..=4u8 {
+        let headers = walk_player_chain(&game_data, empire_raw, &results);
+        let expected = rows
+            .iter()
+            .filter(|row| row.is_visible_to_viewer(empire_raw))
+            .count();
+        assert_eq!(headers.len(), expected, "empire {empire_raw} report count");
+        for header in headers {
+            assert!(reached.insert(header), "header {header} is in two chains");
+        }
+    }
+    let records = results.chunks_exact(84).collect::<Vec<_>>();
+    let header_count = (0..records.len())
+        .filter(|&idx| idx == 0 || records[idx - 1][1..23] == *b"\x15<end of transmission>")
+        .count();
+    assert_eq!(
+        reached.len(),
+        header_count,
+        "every report belongs to one chain"
+    );
 }
