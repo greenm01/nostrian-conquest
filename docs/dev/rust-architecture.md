@@ -60,12 +60,14 @@ It is responsible for:
   record and parse/serialize per file, following
   [ec-file-formats.md](ec-file-formats.md). `classic::ignored_bytes` lists
   the bytes no classic program reads; the model does not carry them, and
-  `encode` writes zeros or the documented constant there. t039 phase 4 moves
-  the codecs to `nc-classic`, which nc-data cannot depend on
+  `encode` writes zeros or the documented constant there. The codecs stay in
+  nc-data while the record shims' `parse` and `to_bytes` call them; they move
+  to `nc-classic`, which nc-data cannot depend on, when the shims go
 - the `*Record` shims under `records/`: thin wrappers over the model that
   keep the accessor API call sites still use. They go in t039 phase 5;
   shims that only exist for that are marked `// t039: remove in phase 5`
-- `CoreGameData` and shared multi-file directory semantics
+- `CoreGameData` and the semantics shared across its files; nc-data reads
+  and writes no classic directory
 - semantic SQLite runtime persistence and snapshot/history loading
 - shared validators, normalizers, report/mail/intel state, and typed helpers
   used by more than one frontend
@@ -121,6 +123,9 @@ It is responsible for:
 
 - importing classic directories into normalized SQLite runtime state
 - exporting normalized SQLite snapshots back to classic `.DAT` directories
+- reading and writing a directory's seven core `.DAT` files
+  (`load_classic_core_files`, `save_classic_core_files`) and diffing their
+  bytes against preserved baselines (`core_diff.rs`)
 - classic report/database projection helpers used only for oracle and hybrid
   workflows
 - keeping classic file handling out of normal engine/client code
@@ -359,7 +364,6 @@ Use it when the code needs:
 
 - shared cross-file validation
 - the canonical state snapshot that engine code mutates
-- classic directory load/save
 - reusable scenario/setup/report helpers
 - plain shared event/result payloads
 
