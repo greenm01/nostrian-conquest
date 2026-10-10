@@ -20,6 +20,11 @@ The current-rule model was read from commit
 - `confidence.py`: SciPy exact binomial confidence intervals, saved in
   `nc_confidence_intervals.json` for the fleet results.
 - `test_models.py`: small arithmetic checks. These are not Rust tests.
+- `classic_reference.py`: formulas, exact classic ground odds, and seven
+  fleet comparisons using the retained classic model. See the
+  [completed-reference review](../../docs/notes/investigations/o7w8k8uh-what-the-completed-classic-combat-reference-changes-for-nc.md).
+  `classic_reference_results.json` retains 2,000 fleet trials per case.
+  Classic outcomes explain differences; they are not NC balance targets.
 
 Run from the repository root with Python 3. No Rust build is needed.
 Models and sweeps use the standard library. Only `confidence.py` needs the
@@ -31,6 +36,7 @@ avoid generating bytecode in this analysis directory.
 python3 -B tools/combat-model/nc_combat_analysis.py
 python3 -B tools/combat-model/nc_ship_sweep.py
 python3 -B tools/combat-model/ground.py --output tools/combat-model/nc_ground_comparison.json
+python3 -B tools/combat-model/classic_reference.py --output tools/combat-model/classic_reference_results.json
 python3 -B tools/combat-model/confidence.py tools/combat-model/nc_combat_results.json --output tools/combat-model/nc_confidence_intervals.json
 python3 -B -m unittest discover -s tools/combat-model -p 'test_*.py'
 ```
@@ -38,6 +44,15 @@ python3 -B -m unittest discover -s tools/combat-model -p 'test_*.py'
 Omit `--output` on the ground/interval tools to print JSON without writing
 a file. Preserve new experiments under descriptive result names and
 record their assumptions in the investigation.
+
+The classic reference tool also prints without `--output`. Use
+`--fleet-trials 0` to compute formulas and ground odds without sampling.
+Ground enumeration draws defender accuracy once per battle, as classic
+does; it does not substitute the average accuracy into every exchange.
+Fleet cases use ROE 10 and current manual build prices. They reuse the
+historical model's bugs and 2,000-round guardrail, count unresolved results
+separately, and omit encounters, repairs, and campaign economics. These
+additional matchups have not been checked against DOS.
 
 ## Rule modes
 

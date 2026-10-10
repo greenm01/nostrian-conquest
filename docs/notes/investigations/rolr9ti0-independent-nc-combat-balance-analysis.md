@@ -34,6 +34,8 @@ My recommendation is **decisive simultaneous combat with lasting consequences an
 
 The [decoded classic battle](../../dev/ec-battle-spec.md), sections 1.1–1.3, makes the distinction concrete. Classic DD and CA both have 0.6 raw HP per build point, but the cruiser gains armor and range. NC's current CA has twice the DD's DS per point, while DD gains execution fire. Classic also limits how many units of a superior force fire at once; NC fires the assembled force and adds an odds-column advantage. These are different systems. Do not infer equivalent balance from familiar hull names or import classic's hidden engagement-count formula to repair NC's concentration incentives.
 
+The [completed-reference follow-up](o7w8k8uh-what-the-completed-classic-combat-reference-changes-for-nc.md) adds formulas, exact classic ground odds, and sampled comparisons. The owner explicitly rejects classic combat results as a balance target. EotS and VBAM remain the stronger foundations. The follow-up also identifies NC's existing Blitz reward of capturing surviving batteries, distinguishes a coherent VBAM durability experiment from copying its effectiveness table alone, and records corrections needed in the new classic summary.
+
 **Where I disagree with the synthesis**
 
 The [synthesis](ebrogywq-nc-combat-design-review-against-its-sources.md) correctly identifies double use of force ratios, ineffective retreat, free repair, and a leaky orbital gate. Its proposed replacement needs more scrutiny.

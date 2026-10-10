@@ -1,0 +1,269 @@
+{
+  "method": "Formula enumeration; fleet Monte Carlo uses retained fsim.py, ROE10, fresh whole hulls.",
+  "reference_commit": "4825ba5e",
+  "engine_validated": false,
+  "expected_shot_damage": [
+    {
+      "unit": "DD",
+      "build_cost": 5,
+      "damage_by_armor": [
+        1.375,
+        0.8250000000000001,
+        0.41250000000000003,
+        0.1375
+      ]
+    },
+    {
+      "unit": "CA",
+      "build_cost": 15,
+      "damage_by_armor": [
+        3.25,
+        2.75,
+        2.2916666666666665,
+        1.875
+      ]
+    },
+    {
+      "unit": "BB",
+      "build_cost": 45,
+      "damage_by_armor": [
+        8.325,
+        7.875,
+        7.4375,
+        7.0125
+      ]
+    },
+    {
+      "unit": "base",
+      "build_cost": 50,
+      "damage_by_armor": [
+        11.1,
+        10.5,
+        9.916666666666666,
+        9.35
+      ]
+    },
+    {
+      "unit": "battery",
+      "build_cost": 20,
+      "damage_by_armor": [
+        12.025,
+        11.375,
+        10.743055555555555,
+        10.129166666666668
+      ]
+    }
+  ],
+  "fleet_engagement": [
+    {
+      "ratio": 1,
+      "approximate_firing_value_ratio": 1.0
+    },
+    {
+      "ratio": 1.5,
+      "approximate_firing_value_ratio": 1.1307353966869316
+    },
+    {
+      "ratio": 2,
+      "approximate_firing_value_ratio": 1.2337330834345674
+    },
+    {
+      "ratio": 3,
+      "approximate_firing_value_ratio": 1.3475128337515885
+    },
+    {
+      "ratio": 5,
+      "approximate_firing_value_ratio": 1.464289990899644
+    },
+    {
+      "ratio": 10,
+      "approximate_firing_value_ratio": 1.6546165012825238
+    },
+    {
+      "ratio": 30,
+      "approximate_firing_value_ratio": 2.0
+    }
+  ],
+  "sine_intercept": [
+    {
+      "speed_ratio": 1,
+      "probability": 0.6366197723675814
+    },
+    {
+      "speed_ratio": 2,
+      "probability": 0.8372484205582453
+    },
+    {
+      "speed_ratio": 6,
+      "probability": 0.9468245113039331
+    }
+  ],
+  "ground": [
+    {
+      "attackers": 1,
+      "defenders": 1,
+      "capture": 0.273040409948681,
+      "rounds": 1.6370942898802556
+    },
+    {
+      "attackers": 5,
+      "defenders": 5,
+      "capture": 0.09421693791077243,
+      "rounds": 3.013474463567859
+    },
+    {
+      "attackers": 8,
+      "defenders": 10,
+      "capture": 0.0032642986599006633,
+      "rounds": 2.4251010730665277
+    },
+    {
+      "attackers": 10,
+      "defenders": 10,
+      "capture": 0.03339994009355719,
+      "rounds": 3.138150220474089
+    },
+    {
+      "attackers": 11,
+      "defenders": 10,
+      "capture": 0.07818097021883122,
+      "rounds": 3.551968471423629
+    },
+    {
+      "attackers": 12,
+      "defenders": 10,
+      "capture": 0.1546768431555759,
+      "rounds": 3.9441472470565357
+    },
+    {
+      "attackers": 15,
+      "defenders": 10,
+      "capture": 0.5455637550358994,
+      "rounds": 4.4100648748466
+    },
+    {
+      "attackers": 20,
+      "defenders": 10,
+      "capture": 0.9656084158707816,
+      "rounds": 3.0636210077458994
+    },
+    {
+      "attackers": 20,
+      "defenders": 20,
+      "capture": 0.005636356673438647,
+      "rounds": 3.1232682044072906
+    },
+    {
+      "attackers": 30,
+      "defenders": 20,
+      "capture": 0.5718757147164136,
+      "rounds": 4.930010655356487
+    },
+    {
+      "attackers": 40,
+      "defenders": 20,
+      "capture": 0.994734571450266,
+      "rounds": 2.9690442713369203
+    }
+  ],
+  "fleet_samples": [
+    {
+      "case": "10 CA vs 10 CA",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 955,
+        "b_win": 1023,
+        "mutual": 22,
+        "unresolved": 0
+      },
+      "mean_rounds": 8.4705,
+      "mean_cost_lost_a": 123.885,
+      "mean_cost_lost_b": 122.28
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 1971,
+        "b_win": 26,
+        "mutual": 3,
+        "unresolved": 0
+      },
+      "mean_rounds": 8.1805,
+      "mean_cost_lost_a": 109.38,
+      "mean_cost_lost_b": 149.5575
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 2000,
+        "b_win": 0,
+        "mutual": 0,
+        "unresolved": 0
+      },
+      "mean_rounds": 7.131,
+      "mean_cost_lost_a": 91.14,
+      "mean_cost_lost_b": 150.0
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 1892,
+        "b_win": 102,
+        "mutual": 6,
+        "unresolved": 0
+      },
+      "mean_rounds": 9.265,
+      "mean_cost_lost_a": 97.04,
+      "mean_cost_lost_b": 148.0425
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 2000,
+        "b_win": 0,
+        "mutual": 0,
+        "unresolved": 0
+      },
+      "mean_rounds": 14.105,
+      "mean_cost_lost_a": 200.155,
+      "mean_cost_lost_b": 450.0
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 1936,
+        "b_win": 63,
+        "mutual": 1,
+        "unresolved": 0
+      },
+      "mean_rounds": 9.9335,
+      "mean_cost_lost_a": 271.23,
+      "mean_cost_lost_b": 446.13
+    },
+    {
+      "case": "10 DD vs 1 base",
+      "trials": 2000,
+      "seed": 20261010,
+      "outcomes": {
+        "a_win": 0,
+        "b_win": 2000,
+        "mutual": 0,
+        "unresolved": 0
+      },
+      "mean_rounds": 17.6825,
+      "mean_cost_lost_a": 50.0,
+      "mean_cost_lost_b": 0.0
+    }
+  ]
+}
