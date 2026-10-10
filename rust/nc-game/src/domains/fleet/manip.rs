@@ -568,11 +568,8 @@ impl App {
                         self.fleet.transfer_selection.empty_transports += value
                     }
                     FleetDetachClass::Scouts => {
-                        self.fleet.transfer_selection.scouts = self
-                            .fleet
-                            .transfer_selection
-                            .scouts
-                            .saturating_add(value.min(u16::from(u8::MAX)) as u8);
+                        self.fleet.transfer_selection.scouts =
+                            self.fleet.transfer_selection.scouts.saturating_add(value);
                     }
                     FleetDetachClass::Etacs => self.fleet.transfer_selection.etacs += value,
                 }
@@ -696,11 +693,8 @@ impl App {
                         self.fleet.detach_selection.empty_transports += value;
                     }
                     FleetDetachClass::Scouts => {
-                        self.fleet.detach_selection.scouts = self
-                            .fleet
-                            .detach_selection
-                            .scouts
-                            .saturating_add(value.min(u16::from(u8::MAX)) as u8);
+                        self.fleet.detach_selection.scouts =
+                            self.fleet.detach_selection.scouts.saturating_add(value);
                     }
                     FleetDetachClass::Etacs => {
                         self.fleet.detach_selection.etacs += value;
@@ -883,11 +877,9 @@ impl App {
                 .troop_transport_count()
                 .saturating_sub(fleet.army_count())
                 .saturating_sub(self.fleet.detach_selection.empty_transports),
-            FleetDetachClass::Scouts => u16::from(
-                fleet
-                    .scout_count()
-                    .saturating_sub(self.fleet.detach_selection.scouts),
-            ),
+            FleetDetachClass::Scouts => fleet
+                .scout_count()
+                .saturating_sub(self.fleet.detach_selection.scouts),
             FleetDetachClass::Etacs => fleet
                 .etac_count()
                 .saturating_sub(self.fleet.detach_selection.etacs),
@@ -929,7 +921,7 @@ impl App {
     ) -> String {
         let mut parts = Vec::new();
         for (label, count) in [
-            ("SC", u16::from(selection.scouts)),
+            ("SC", selection.scouts),
             ("BB", selection.battleships),
             ("CA", selection.cruisers),
             ("DD", selection.destroyers),
@@ -1291,11 +1283,9 @@ impl App {
                 .troop_transport_count()
                 .saturating_sub(fleet.army_count())
                 .saturating_sub(self.fleet.transfer_selection.empty_transports),
-            FleetDetachClass::Scouts => u16::from(
-                fleet
-                    .scout_count()
-                    .saturating_sub(self.fleet.transfer_selection.scouts),
-            ),
+            FleetDetachClass::Scouts => fleet
+                .scout_count()
+                .saturating_sub(self.fleet.transfer_selection.scouts),
             FleetDetachClass::Etacs => fleet
                 .etac_count()
                 .saturating_sub(self.fleet.transfer_selection.etacs),

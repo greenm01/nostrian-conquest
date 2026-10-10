@@ -325,7 +325,7 @@ impl CoreGameData {
         )?;
         fleet.set_standing_order_kind(Order::GuardStarbase);
         fleet.set_standing_order_target_coords_raw(target);
-        fleet.set_mission_aux_bytes([0x01, base_id]);
+        fleet.set_mission_target(1, u16::from(base_id));
 
         let base_summary_word = fleet.local_slot_word_raw();
         let base_chain_word = fleet.fleet_id_word_raw();
@@ -559,12 +559,12 @@ fn build_commissioned_fleet(
     fleet.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
     fleet.set_standing_order_kind(Order::HoldPosition);
     fleet.set_standing_order_target_coords_raw(coords);
-    fleet.set_mission_aux_bytes([0, 0]);
+    fleet.set_mission_target(0, 0);
     fleet.set_rules_of_engagement(6);
     fleet.set_destroyer_count(draft.destroyers);
     fleet.set_cruiser_count(draft.cruisers);
     fleet.set_battleship_count(draft.battleships);
-    fleet.set_scout_count(draft.scouts.min(u16::from(u8::MAX)) as u8);
+    fleet.set_scout_count(draft.scouts);
     fleet.set_troop_transport_count(draft.transports);
     fleet.set_etac_count(draft.etacs);
     fleet.recompute_max_speed_from_composition();

@@ -130,24 +130,6 @@ fn invalid_tax_rate_is_clamped_before_economy_processing() {
 }
 
 #[test]
-fn invalid_loaded_armies_are_clamped_to_transport_capacity() {
-    let mut game_data = load_fixture("ecmaint-post");
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_troop_transport_count(1);
-    fleet.set_army_count(3);
-
-    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
-
-    assert!(events.invalid_player_state_events.iter().any(|event| {
-        matches!(
-            event,
-            InvalidPlayerStateEvent::FleetInput { fleet_idx: 0, .. }
-        )
-    }));
-    assert_eq!(game_data.fleets.records[0].army_count(), 1);
-}
-
-#[test]
 fn non_combat_fleet_roe_is_reset_to_zero() {
     let mut game_data = load_fixture("ecmaint-post");
     let fleet = &mut game_data.fleets.records[0];

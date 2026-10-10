@@ -16,9 +16,14 @@ use crate::workspace::copy_init_files;
 /// - Fleet 3 (empire=1, slot=3, index=2): BombardWorld (0x06) order, speed=3/3, target (15,13),
 ///   CA=50, DD=50 (in addition to existing CA=1 for a total of 50 cruisers)
 /// - Fleet 5 (empire=2, slot=1, index=4): Patrol (0x03) order at (10,10), speed=0/6,
-///   SC=10, BB=100, CA=0
+///   SC=0, BB=100, CA=0
 /// - Fleet 9 (empire=3, slot=1, index=8): MoveOnly (0x01) to (10,10), speed=3/6,
-///   loc=(9,10), SC=10, BB=1, CA=0
+///   loc=(9,10), SC=0, BB=1, CA=0
+///
+/// The preserved pre-fixture holds 10 in byte 0x24 of fleets 5 and 9, written
+/// by an earlier tool as a scout count. Classic reads it as the high byte of
+/// the mission id (0x0a00), which Patrol and Move ignore, so the fleets carry
+/// no scouts. The scenario writes that mission id to recreate the fixture.
 /// - Planet 14 (index=13): set via direct raw byte assignment (Dust Bowl-type seeded world
 ///   at (15,13), owned by empire 2, armies=142, batteries=15)
 ///
@@ -29,8 +34,8 @@ pub(crate) fn apply_fleet_battle_scenario(dir: &Path) -> Result<(), Box<dyn std:
         dir, 0x0a, 0x0a, // battle_coords (10,10)
         100, 50, 50, 50, // f0_roe, f0_bb, f0_ca, f0_dd
         50, 50, // f2_ca, f2_dd
-        10, 100, 0, // f4_sc, f4_bb, f4_ca
-        9, 0x0a, 10, 1, 0, // f8_loc_x, f8_loc_y, f8_sc, f8_bb, f8_ca
+        0, 100, 0, // f4_sc, f4_bb, f4_ca
+        9, 0x0a, 0, 1, 0, // f8_loc_x, f8_loc_y, f8_sc, f8_bb, f8_ca
         0x0f, 0x0d, 142, 15, // p14_x, p14_y, p14_armies, p14_batteries
     )?;
     println!("Applied scenario: fleet-battle");
@@ -96,7 +101,8 @@ pub(crate) fn set_fleet_battle(
             f.set_current_location_coords_raw([battle_x, battle_y]);
             f.set_standing_order_kind(Order::PatrolSector);
             f.set_standing_order_target_coords_raw([battle_x, battle_y]);
-            f.set_scout_count(f4_sc);
+            f.set_scout_count(u16::from(f4_sc));
+            f.set_mission_id_raw(0x0a00);
             f.set_battleship_count(f4_bb);
             f.set_cruiser_count(f4_ca);
         }
@@ -107,7 +113,8 @@ pub(crate) fn set_fleet_battle(
             f.set_current_location_coords_raw([f8_loc_x, f8_loc_y]);
             f.set_standing_order_kind(Order::MoveOnly);
             f.set_standing_order_target_coords_raw([battle_x, battle_y]);
-            f.set_scout_count(f8_sc);
+            f.set_scout_count(u16::from(f8_sc));
+            f.set_mission_id_raw(0x0a00);
             f.set_battleship_count(f8_bb);
             f.set_cruiser_count(f8_ca);
         }
@@ -444,7 +451,7 @@ pub(crate) fn validate_fleet_battle_data(
         }
     }
 
-    // Fleet 4 (empire=2, slot=1): Patrol at (10,10), speed=0/6, SC=10, BB=100, CA=0
+    // Fleet 4 (empire=2, slot=1): Patrol at (10,10), speed=0/6, SC=0, BB=100, CA=0
     match data.fleets.records.get(4) {
         None => errors.push("missing fleet record 5".to_string()),
         Some(f) => {
@@ -472,8 +479,8 @@ pub(crate) fn validate_fleet_battle_data(
                     f.standing_order_target_coords_raw()
                 ));
             }
-            if f.scout_count() != 10 {
-                errors.push(format!("FLEET[5].sc expected 10, got {}", f.scout_count()));
+            if f.scout_count() != 0 {
+                errors.push(format!("FLEET[5].sc expected 0, got {}", f.scout_count()));
             }
             if f.battleship_count() != 100 {
                 errors.push(format!(
@@ -487,7 +494,7 @@ pub(crate) fn validate_fleet_battle_data(
         }
     }
 
-    // Fleet 8 (empire=3, slot=1): MoveOnly to (10,10), speed=3/6, loc=(9,10), SC=10, BB=1, CA=0
+    // Fleet 8 (empire=3, slot=1): MoveOnly to (10,10), speed=3/6, loc=(9,10), SC=0, BB=1, CA=0
     match data.fleets.records.get(8) {
         None => errors.push("missing fleet record 9".to_string()),
         Some(f) => {
@@ -521,8 +528,8 @@ pub(crate) fn validate_fleet_battle_data(
                     f.standing_order_target_coords_raw()
                 ));
             }
-            if f.scout_count() != 10 {
-                errors.push(format!("FLEET[9].sc expected 10, got {}", f.scout_count()));
+            if f.scout_count() != 0 {
+                errors.push(format!("FLEET[9].sc expected 0, got {}", f.scout_count()));
             }
             if f.battleship_count() != 1 {
                 errors.push(format!(
@@ -577,8 +584,8 @@ pub(crate) fn validate_fleet_battle_data(
         println!("Valid fleet-battle scenario");
         println!("  FLEET[1]: loc=(10,10) tgt=(10,10) RoE=100 BB=50 CA=50 DD=50");
         println!("  FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 CA=50 DD=50");
-        println!("  FLEET[5]: order=0x03 (PatrolSector) loc=(10,10) speed=0/6 SC=10 BB=100");
-        println!("  FLEET[9]: order=0x01 (MoveOnly) loc=(9,10) tgt=(10,10) speed=3/6 SC=10 BB=1");
+        println!("  FLEET[5]: order=0x03 (PatrolSector) loc=(10,10) speed=0/6 SC=0 BB=100");
+        println!("  FLEET[9]: order=0x01 (MoveOnly) loc=(9,10) tgt=(10,10) speed=3/6 SC=0 BB=1");
         println!("  PLANET[14]: (15,13) empire=2 armies=142 batteries=15");
         Ok(())
     } else {

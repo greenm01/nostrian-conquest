@@ -151,13 +151,14 @@ fn write_fleet_rows(
              next_fleet_link_word_raw, fleet_id_word_raw, previous_fleet_id_raw,
              invasion_army_count_raw, max_speed, current_speed, current_x, current_y,
              tuple_a_raw_hex, tuple_b_raw_hex, tuple_c_raw_hex,
-             standing_order_code_raw, target_x, target_y, mission_aux_raw_hex,
-             scout_count, rules_of_engagement, battleship_count, cruiser_count,
-             destroyer_count, troop_transport_count, army_count, etac_count
+             standing_order_code_raw, target_x, target_y, world_target_flag_raw,
+             mission_id_raw, rules_of_engagement, battleship_count, cruiser_count,
+             destroyer_count, empty_transport_count, loaded_transport_count, etac_count,
+             scout_count, strength_cache_raw
          ) VALUES (
              ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
              ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-             ?21, ?22, ?23, ?24, ?25, ?26, ?27
+             ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
@@ -182,15 +183,17 @@ fn write_fleet_rows(
             i64::from(record.standing_order_code_raw()),
             i64::from(target_x),
             i64::from(target_y),
-            encode_hex(&record.mission_aux_bytes()),
-            i64::from(record.scout_count()),
+            i64::from(record.world_target_flag_raw()),
+            i64::from(record.mission_id_raw()),
             i64::from(record.rules_of_engagement()),
             i64::from(record.battleship_count()),
             i64::from(record.cruiser_count()),
             i64::from(record.destroyer_count()),
-            i64::from(record.troop_transport_count()),
-            i64::from(record.army_count()),
+            i64::from(record.empty_transport_count()),
+            i64::from(record.loaded_transport_count()),
             i64::from(record.etac_count()),
+            i64::from(record.scout_count()),
+            i64::from(record.strength_cache_raw()),
         ])?;
     }
     Ok(())
@@ -484,9 +487,9 @@ fn load_fleet_rows(
                 fleet_id_word_raw, previous_fleet_id_raw, invasion_army_count_raw,
                 max_speed, current_speed, current_x, current_y, tuple_a_raw_hex,
                 tuple_b_raw_hex, tuple_c_raw_hex, standing_order_code_raw, target_x,
-                target_y, mission_aux_raw_hex, scout_count, rules_of_engagement,
-                battleship_count, cruiser_count, destroyer_count, troop_transport_count,
-                army_count, etac_count
+                target_y, world_target_flag_raw, mission_id_raw, rules_of_engagement,
+                battleship_count, cruiser_count, destroyer_count, empty_transport_count,
+                loaded_transport_count, etac_count, scout_count, strength_cache_raw
          FROM snapshot_fleets
          WHERE snapshot_id = ?1
          ORDER BY record_index",
@@ -509,7 +512,7 @@ fn load_fleet_rows(
             row.get::<_, i64>(13)?,
             row.get::<_, i64>(14)?,
             row.get::<_, i64>(15)?,
-            row.get::<_, String>(16)?,
+            row.get::<_, i64>(16)?,
             row.get::<_, i64>(17)?,
             row.get::<_, i64>(18)?,
             row.get::<_, i64>(19)?,
@@ -518,6 +521,8 @@ fn load_fleet_rows(
             row.get::<_, i64>(22)?,
             row.get::<_, i64>(23)?,
             row.get::<_, i64>(24)?,
+            row.get::<_, i64>(25)?,
+            row.get::<_, i64>(26)?,
         ))
     })?;
 
@@ -540,15 +545,17 @@ fn load_fleet_rows(
             standing_order_code_raw,
             target_x,
             target_y,
-            mission_aux_raw_hex,
-            scout_count,
+            world_target_flag_raw,
+            mission_id_raw,
             rules_of_engagement,
             battleship_count,
             cruiser_count,
             destroyer_count,
-            troop_transport_count,
-            army_count,
+            empty_transport_count,
+            loaded_transport_count,
             etac_count,
+            scout_count,
+            strength_cache_raw,
         ) = row?;
 
         let mut record = FleetRecord::new_zeroed();
@@ -566,15 +573,16 @@ fn load_fleet_rows(
         record.set_depth(Real48::from_bytes(decode_hex_exact::<6>(&tuple_c_raw_hex)?));
         record.set_standing_order_code_raw(standing_order_code_raw as u8);
         record.set_standing_order_target_coords_raw([target_x as u8, target_y as u8]);
-        record.set_mission_aux_bytes(decode_hex_exact::<2>(&mission_aux_raw_hex)?);
-        record.set_scout_count(scout_count as u8);
+        record.set_mission_target(world_target_flag_raw as u8, mission_id_raw as u16);
         record.set_rules_of_engagement(rules_of_engagement as u8);
         record.set_battleship_count(battleship_count as u16);
         record.set_cruiser_count(cruiser_count as u16);
         record.set_destroyer_count(destroyer_count as u16);
-        record.set_troop_transport_count(troop_transport_count as u16);
-        record.set_army_count(army_count as u16);
+        record.set_empty_transport_count(empty_transport_count as u16);
+        record.set_loaded_transport_count(loaded_transport_count as u16);
         record.set_etac_count(etac_count as u16);
+        record.set_scout_count(scout_count as u16);
+        record.set_strength_cache_raw(strength_cache_raw as u16);
         records.push(record);
     }
     Ok(FleetDat { records })

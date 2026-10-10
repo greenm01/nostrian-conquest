@@ -34,13 +34,12 @@ impl CoreGameData {
     pub fn current_known_player_input_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
         for (fleet_idx, fleet) in self.fleets.records.iter().enumerate() {
-            let aux = fleet.mission_aux_bytes();
             if let Err(reason) = self.validate_fleet_player_inputs(
                 fleet_idx + 1,
                 fleet.standing_order_code_raw(),
                 fleet.standing_order_target_coords_raw(),
-                Some(aux[0]),
-                Some(aux[1]),
+                None,
+                None,
             ) {
                 errors.push(format!(
                     "FLEET[{}] invalid player input: {:?}",

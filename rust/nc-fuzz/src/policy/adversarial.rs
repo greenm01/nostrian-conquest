@@ -202,7 +202,7 @@ fn edge_selection(state: &CoreGameData, record: usize, choices: Choices) -> Flee
         selection.battleships = donor.battleship_count() + extra;
         selection.cruisers = donor.cruiser_count() + extra;
         selection.destroyers = donor.destroyer_count() + extra;
-        selection.scouts = donor.scout_count().saturating_add(extra as u8);
+        selection.scouts = donor.scout_count().saturating_add(extra);
         selection.etacs = donor.etac_count() + extra;
         selection.full_transports = donor.army_count().min(donor.troop_transport_count()) + extra;
         selection.empty_transports = donor

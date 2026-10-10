@@ -186,7 +186,7 @@ fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
         .expect("load latest runtime game data");
     let joiner = &runtime_game.fleets.records[1];
     assert_eq!(joiner.mission_aux_bytes(), [1, host_id]);
-    assert_eq!(joiner.join_host_fleet_id_raw(), host_id);
+    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_id));
 
     export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
     let exported_game = nc_data::CoreGameData::load(&exported).expect("load exported directory");

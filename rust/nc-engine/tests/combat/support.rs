@@ -12,7 +12,7 @@ pub struct Ships {
     pub dd: u16,
     pub ca: u16,
     pub bb: u16,
-    pub sc: u8,
+    pub sc: u16,
     pub tt: u16,
     pub armies: u16,
 }
@@ -86,7 +86,7 @@ pub fn place_fleet(
 pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
     let fleet = &mut game_data.fleets.records[idx];
     fleet.set_current_speed(3);
-    fleet.set_mission_aux_bytes([1, fleet.mission_id_raw()]);
+    fleet.set_mission_target(1, fleet.mission_id_raw());
     fleet.set_at_rest_motion();
 }
 

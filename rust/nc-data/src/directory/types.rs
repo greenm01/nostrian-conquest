@@ -27,7 +27,7 @@ pub struct CurrentKnownKeyWordSummary {
     pub player_ipbm_count: u16,
     pub fleet1_local_slot: Option<u16>,
     pub fleet1_id: Option<u16>,
-    pub fleet1_guard_index: Option<u8>,
+    pub fleet1_guard_index: Option<u16>,
     pub fleet1_target: Option<[u8; 2]>,
     pub base1_summary: Option<u16>,
     pub base1_id: Option<u8>,
@@ -44,7 +44,7 @@ pub struct CurrentKnownGuardStarbaseLinkageSummary {
     pub fleet_order: u8,
     pub fleet_local_slot: u16,
     pub fleet_id: u16,
-    pub guard_index: u8,
+    pub guard_index: u16,
     pub target_coords: [u8; 2],
     pub selected_base_present: bool,
     pub selected_base_summary_word: Option<u16>,
@@ -136,7 +136,6 @@ pub enum FleetOrderValidationError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FleetPlayerInputValidationError {
     InvalidOrder(FleetOrderValidationError),
-    LoadedArmiesExceedTransportCapacity { loaded_armies: u16, transports: u16 },
     SpeedExceedsMaximum { speed: u8, max: u8 },
     RulesOfEngagementOutOfRange { roe: u8 },
     NonCombatFleetMustUseZeroRoe { roe: u8 },
@@ -438,7 +437,7 @@ pub struct FleetDetachSelection {
     pub destroyers: u16,
     pub full_transports: u16,
     pub empty_transports: u16,
-    pub scouts: u8,
+    pub scouts: u16,
     pub etacs: u16,
 }
 

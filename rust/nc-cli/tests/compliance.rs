@@ -68,8 +68,6 @@ fn core_validate_rejects_invalid_fleet_player_inputs() {
 
     let mut data = CoreGameData::load(&target).unwrap();
     let fleet = &mut data.fleets.records[0];
-    fleet.set_troop_transport_count(1);
-    fleet.set_army_count(3);
     fleet.set_current_speed(fleet.max_speed().saturating_add(2));
     fleet.set_destroyer_count(0);
     fleet.set_cruiser_count(0);
@@ -83,7 +81,7 @@ fn core_validate_rejects_invalid_fleet_player_inputs() {
         common::rust_workspace(),
     );
     assert!(stderr.contains("FLEET[1] invalid player input"));
-    assert!(stderr.contains("LoadedArmiesExceedTransportCapacity"));
+    assert!(stderr.contains("SpeedExceedsMaximum"));
 
     cleanup_dir(&target);
 }

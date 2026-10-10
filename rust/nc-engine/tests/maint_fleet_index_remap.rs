@@ -37,14 +37,14 @@ fn order_fleet(
     fleet.set_standing_order_target_coords_raw(target);
     fleet.set_current_speed(speed);
     // As ECGAME writes the order, with the fleet in deep space.
-    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_mission_target(u8::from(order.targets_world()), fleet.mission_id_raw());
     fleet.set_depth(nc_data::Real48::ZERO);
 }
 
 /// Order fleet `joiner_idx` to join the co-located fleet `host_idx` this turn.
 fn join_in_place(game_data: &mut CoreGameData, joiner_idx: usize, host_idx: usize) {
     let host = &game_data.fleets.records[host_idx];
-    let (host_id, host_coords) = (host.fleet_id(), host.current_location_coords_raw());
+    let (host_id, host_coords) = (host.fleet_id_word_raw(), host.current_location_coords_raw());
     order_fleet(
         game_data,
         joiner_idx,
@@ -236,7 +236,7 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
         chased,
         1,
     );
-    let host_id = game_data.fleets.records[2].fleet_id();
+    let host_id = game_data.fleets.records[2].fleet_id_word_raw();
     game_data.fleets.records[3].set_join_host_fleet_id_raw(host_id);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -252,7 +252,7 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
     let chaser = fleet_by_number(&game_data, 1, 4);
     assert_eq!(
         chaser.join_host_fleet_id_raw(),
-        fleet_by_number(&game_data, 1, 3).fleet_id()
+        fleet_by_number(&game_data, 1, 3).fleet_id_word_raw()
     );
     assert_eq!(chaser.standing_order_target_coords_raw(), chased);
 }

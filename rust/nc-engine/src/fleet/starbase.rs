@@ -12,7 +12,7 @@ pub fn guard_fleet_numbers_for_starbase(
         .filter(|fleet| {
             fleet.owner_empire_raw() as usize == player_record_index_1_based
                 && fleet.standing_order_kind() == Order::GuardStarbase
-                && fleet.guard_starbase_index_raw() == base_id
+                && fleet.guard_starbase_index_raw() == u16::from(base_id)
         })
         .map(|fleet| fleet.local_slot_word_raw())
         .collect::<Vec<_>>();

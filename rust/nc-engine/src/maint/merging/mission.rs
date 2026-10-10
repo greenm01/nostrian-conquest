@@ -14,12 +14,12 @@ pub(super) fn process_mission_fleet_merging(
     let mut to_remove = vec![false; fleet_count];
     let mut merge_events = Vec::new();
 
-    let fleet_lookup: std::collections::HashMap<u8, usize> = game_data
+    let fleet_lookup: std::collections::HashMap<u16, usize> = game_data
         .fleets
         .records
         .iter()
         .enumerate()
-        .map(|(idx, fleet)| (fleet.fleet_id(), idx))
+        .map(|(idx, fleet)| (fleet.fleet_id_word_raw(), idx))
         .collect();
 
     for joiner_idx in 0..fleet_count {
@@ -32,7 +32,7 @@ pub(super) fn process_mission_fleet_merging(
         }
         let host_id = joiner.join_host_fleet_id_raw();
         let joiner_owner = joiner.owner_empire_raw();
-        let joiner_fleet_id = joiner.fleet_id();
+        let joiner_fleet_id = joiner.fleet_id_word_raw();
         let joiner_coords = joiner.current_location_coords_raw();
         let Some(&host_idx) = fleet_lookup.get(&host_id) else {
             continue;
@@ -61,7 +61,7 @@ pub(super) fn process_mission_fleet_merging(
             fleet_idx: joiner_idx,
             owner_empire_raw: joiner_owner,
             kind: Mission::JoinAnotherFleet,
-            host_fleet_id_raw: game_data.fleets.records[host_idx].fleet_id(),
+            host_fleet_id_raw: game_data.fleets.records[host_idx].fleet_id_word_raw(),
             absorbed_fleet_id_raw: joiner_fleet_id,
             host_fleet_number: game_data.fleets.records[host_idx].local_slot_word_raw() as u8,
             absorbed_fleet_number: game_data.fleets.records[joiner_idx].local_slot_word_raw() as u8,
@@ -91,13 +91,13 @@ pub(super) fn process_mission_fleet_merging(
         if group.len() < 2 {
             continue;
         }
-        group.sort_by_key(|idx| game_data.fleets.records[*idx].fleet_id());
+        group.sort_by_key(|idx| game_data.fleets.records[*idx].fleet_id_word_raw());
         let survivor_idx = group[0];
         for &absorbed_idx in group.iter().skip(1) {
             if to_remove[absorbed_idx] || !merge_fits_host(game_data, survivor_idx, absorbed_idx) {
                 continue;
             }
-            let absorbed_id = game_data.fleets.records[absorbed_idx].fleet_id();
+            let absorbed_id = game_data.fleets.records[absorbed_idx].fleet_id_word_raw();
             let owner_empire_raw = game_data.fleets.records[absorbed_idx].owner_empire_raw();
             merge_one_fleet_into_host(game_data, survivor_idx, absorbed_idx);
             to_remove[absorbed_idx] = true;
@@ -105,7 +105,7 @@ pub(super) fn process_mission_fleet_merging(
                 fleet_idx: absorbed_idx,
                 owner_empire_raw,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id(),
+                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id_word_raw(),
                 absorbed_fleet_id_raw: absorbed_id,
                 host_fleet_number: game_data.fleets.records[survivor_idx].local_slot_word_raw()
                     as u8,
@@ -119,7 +119,7 @@ pub(super) fn process_mission_fleet_merging(
                 fleet_idx: survivor_idx,
                 owner_empire_raw,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id(),
+                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id_word_raw(),
                 absorbed_fleet_id_raw: absorbed_id,
                 host_fleet_number: game_data.fleets.records[survivor_idx].local_slot_word_raw()
                     as u8,
@@ -149,7 +149,7 @@ pub(super) fn process_mission_fleet_merging(
 pub(super) fn process_join_host_updates(
     game_data: &mut CoreGameData,
     merge_events: &[FleetMergeEvent],
-    destroyed_join_host_fleet_numbers: &std::collections::HashMap<u8, u8>,
+    destroyed_join_host_fleet_numbers: &std::collections::HashMap<u16, u8>,
     remap_info: &FleetRemovalRemapInfo,
 ) -> Vec<JoinMissionHostEvent> {
     // Pre-compaction id of each absorbed fleet -> the merge that absorbed it.
@@ -162,13 +162,13 @@ pub(super) fn process_join_host_updates(
         }
     }
 
-    let current_fleet_ids: std::collections::HashSet<u8> = game_data
+    let current_fleet_ids: std::collections::HashSet<u16> = game_data
         .fleets
         .records
         .iter()
-        .map(|fleet| fleet.fleet_id())
+        .map(|fleet| fleet.fleet_id_word_raw())
         .collect();
-    let current_host_viability: std::collections::HashMap<u8, bool> = game_data
+    let current_host_viability: std::collections::HashMap<u16, bool> = game_data
         .fleets
         .records
         .iter()
@@ -179,20 +179,25 @@ pub(super) fn process_join_host_updates(
                 || fleet.scout_count() > 0
                 || fleet.troop_transport_count() > 0
                 || fleet.etac_count() > 0;
-            (fleet.fleet_id(), viable)
+            (fleet.fleet_id_word_raw(), viable)
         })
         .collect();
-    let current_fleet_coords: std::collections::HashMap<u8, [u8; 2]> = game_data
+    let current_fleet_coords: std::collections::HashMap<u16, [u8; 2]> = game_data
         .fleets
         .records
         .iter()
-        .map(|fleet| (fleet.fleet_id(), fleet.current_location_coords_raw()))
+        .map(|fleet| {
+            (
+                fleet.fleet_id_word_raw(),
+                fleet.current_location_coords_raw(),
+            )
+        })
         .collect();
-    let current_fleet_numbers: std::collections::HashMap<u8, u8> = game_data
+    let current_fleet_numbers: std::collections::HashMap<u16, u8> = game_data
         .fleets
         .records
         .iter()
-        .map(|fleet| (fleet.fleet_id(), fleet.local_slot_word_raw() as u8))
+        .map(|fleet| (fleet.fleet_id_word_raw(), fleet.local_slot_word_raw() as u8))
         .collect();
 
     let mut events = Vec::new();
@@ -202,7 +207,7 @@ pub(super) fn process_join_host_updates(
         }
 
         let host_id = fleet.join_host_fleet_id_raw();
-        if host_id == fleet.fleet_id() {
+        if host_id == fleet.fleet_id_word_raw() {
             continue;
         }
 
@@ -212,7 +217,7 @@ pub(super) fn process_join_host_updates(
         if host_id == 0 {
             let absorbing_merge = remap_info
                 .prior_join_host_ids
-                .get(&fleet.fleet_id())
+                .get(&fleet.fleet_id_word_raw())
                 .and_then(|prior_host_id| absorbed_by.get(prior_host_id));
             if let Some(merge) = absorbing_merge {
                 if let Some(new_host_id) =
@@ -241,7 +246,7 @@ pub(super) fn process_join_host_updates(
                 fleet_idx,
                 owner_empire_raw: fleet.owner_empire_raw(),
                 destroyed_host_fleet_number: destroyed_join_host_fleet_numbers
-                    .get(&fleet.fleet_id())
+                    .get(&fleet.fleet_id_word_raw())
                     .copied(),
                 coords,
             });

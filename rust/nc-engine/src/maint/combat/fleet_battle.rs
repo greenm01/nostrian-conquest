@@ -348,15 +348,16 @@ pub(super) fn distribute_fleet_losses(
         fleet.set_battleship_count(fleet.battleship_count().saturating_sub(bb_loss));
         remaining[2] -= bb_loss as u32;
 
-        let sc_loss = remaining[3].min(fleet.scout_count() as u32) as u8;
+        let sc_loss = remaining[3].min(fleet.scout_count() as u32) as u16;
         fleet.set_scout_count(fleet.scout_count().saturating_sub(sc_loss));
         remaining[3] -= sc_loss as u32;
 
+        // Transport losses fall on loaded transports first, each taking its
+        // army with it, then on empty ones.
         let tt_loss = remaining[4].min(fleet.troop_transport_count() as u32) as u16;
-        fleet.set_troop_transport_count(fleet.troop_transport_count().saturating_sub(tt_loss));
-        if tt_loss > 0 {
-            fleet.set_army_count(fleet.army_count().saturating_sub(tt_loss));
-        }
+        let loaded_loss = tt_loss.min(fleet.loaded_transport_count());
+        fleet.set_loaded_transport_count(fleet.loaded_transport_count() - loaded_loss);
+        fleet.set_empty_transport_count(fleet.empty_transport_count() - (tt_loss - loaded_loss));
         remaining[4] -= tt_loss as u32;
 
         let et_loss = remaining[5].min(fleet.etac_count() as u32) as u16;

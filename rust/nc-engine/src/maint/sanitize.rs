@@ -26,15 +26,14 @@ pub(super) fn sanitize_invalid_player_inputs(
             let fleet = &game_data.fleets.records[fleet_idx];
             let order_code = fleet.standing_order_code_raw();
             let target = fleet.standing_order_target_coords_raw();
-            let aux = fleet.mission_aux_bytes();
             let owner_empire_raw = fleet.owner_empire_raw();
             let coords = fleet.current_location_coords_raw();
             if let Err(reason) = game_data.validate_fleet_player_inputs(
                 fleet_idx + 1,
                 order_code,
                 target,
-                Some(aux[0]),
-                Some(aux[1]),
+                None,
+                None,
             ) {
                 match reason {
                     FleetPlayerInputValidationError::InvalidOrder(reason) => {
@@ -80,7 +79,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                             fleet.set_standing_order_kind(Order::HoldPosition);
                             fleet.set_current_speed(0);
                             fleet.set_standing_order_target_coords_raw(coords);
-                            fleet.set_mission_aux_bytes([0, 0]);
+                            fleet.set_mission_target(0, 0);
                         }
                         events.push(InvalidPlayerStateEvent::FleetMission {
                             fleet_idx,
@@ -89,19 +88,6 @@ pub(super) fn sanitize_invalid_player_inputs(
                             coords,
                             reason,
                         });
-                    }
-                    FleetPlayerInputValidationError::LoadedArmiesExceedTransportCapacity {
-                        transports,
-                        ..
-                    } => {
-                        game_data.fleets.records[fleet_idx].set_army_count(transports);
-                        events.push(InvalidPlayerStateEvent::FleetInput {
-                            fleet_idx,
-                            owner_empire_raw,
-                            coords,
-                            reason,
-                        });
-                        rescan = true;
                     }
                     FleetPlayerInputValidationError::SpeedExceedsMaximum { max, .. } => {
                         game_data.fleets.records[fleet_idx].set_current_speed(max);

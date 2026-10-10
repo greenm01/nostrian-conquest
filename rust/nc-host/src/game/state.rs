@@ -290,7 +290,7 @@ fn owned_fleets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<Hos
             current_speed: fleet.current_speed(),
             max_speed: fleet.max_speed(),
             ships: HostedFleetShips {
-                scout: u16::from(fleet.scout_count()),
+                scout: fleet.scout_count(),
                 battleship: fleet.battleship_count(),
                 cruiser: fleet.cruiser_count(),
                 destroyer: fleet.destroyer_count(),

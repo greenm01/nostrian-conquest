@@ -444,7 +444,7 @@ fn build_fleet_record(viewer_empire_id: u8, fleet: &HostedOwnedFleet) -> FleetRe
 }
 
 fn apply_ship_counts(record: &mut FleetRecord, ships: &HostedFleetShips) {
-    record.set_scout_count(ships.scout.min(u16::from(u8::MAX)) as u8);
+    record.set_scout_count(ships.scout);
     record.set_battleship_count(ships.battleship);
     record.set_cruiser_count(ships.cruiser);
     record.set_destroyer_count(ships.destroyer);

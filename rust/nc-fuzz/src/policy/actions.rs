@@ -243,7 +243,7 @@ fn pick_selection(state: &CoreGameData, record: usize, choices: Choices) -> Flee
         destroyers: choices.pick(0, u32::from(donor.destroyer_count())) as u16,
         full_transports: choices.pick(0, full) as u16,
         empty_transports: choices.pick(0, empty) as u16,
-        scouts: choices.pick(0, u32::from(donor.scout_count())) as u8,
+        scouts: choices.pick(0, u32::from(donor.scout_count())) as u16,
         etacs: choices.pick(0, u32::from(donor.etac_count())) as u16,
     }
 }

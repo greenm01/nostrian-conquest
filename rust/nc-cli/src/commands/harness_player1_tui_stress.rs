@@ -32,7 +32,7 @@ const PLAYER_ONE_PLANET_NAMES: [&str; 15] = [
     "Thornhold",
 ];
 
-const P1_DETACH_SPECS: [(u16, u16, u16, u16, u16, u8, u16, u8); 24] = [
+const P1_DETACH_SPECS: [(u16, u16, u16, u16, u16, u16, u16, u8); 24] = [
     (0, 1, 1, 0, 0, 1, 0, 2),
     (0, 1, 0, 0, 0, 1, 0, 3),
     (1, 0, 0, 0, 0, 0, 0, 4),
@@ -59,7 +59,7 @@ const P1_DETACH_SPECS: [(u16, u16, u16, u16, u16, u8, u16, u8); 24] = [
     (0, 0, 1, 0, 1, 0, 0, 10),
 ];
 
-const OTHER_DETACH_SPECS: [(u16, u16, u16, u16, u16, u8, u16, u8); 2] =
+const OTHER_DETACH_SPECS: [(u16, u16, u16, u16, u16, u16, u16, u8); 2] =
     [(0, 1, 0, 0, 0, 0, 0, 3), (0, 0, 1, 0, 0, 0, 0, 5)];
 
 const PLAYER_ONE_STARDOCK_SPECS: [(usize, usize, u8, u16); 12] = [
@@ -525,7 +525,7 @@ fn configure_other_player_fleets(
     for player in 2..=game_data.conquest.player_count() as usize {
         let donor_record_index_1_based = (player - 1) * 4 + 1;
         let home = homeworld_coords[player - 1];
-        let scouts = 4 + (player as u8 % 3);
+        let scouts = 4 + (player as u16 % 3);
         let battleships = 3 + (player as u16 % 2);
         let cruisers = 6 + (player as u16 % 4);
         let destroyers = 8 + (player as u16 % 5);
@@ -582,7 +582,7 @@ fn configure_other_player_fleets(
 
 fn set_fleet_composition(
     fleet: &mut nc_data::FleetRecord,
-    scouts: u8,
+    scouts: u16,
     battleships: u16,
     cruisers: u16,
     destroyers: u16,

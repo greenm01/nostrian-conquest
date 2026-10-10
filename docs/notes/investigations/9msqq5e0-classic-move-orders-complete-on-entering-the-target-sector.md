@@ -179,11 +179,29 @@ Evidence:
   starting from 7: ETAC 3, BB 4, CA 5, DD 6, scout 6, transports 5. ECMAINT
   sets it only when it creates a fleet or merges fleets.
 
-So Rust's `scout_count` (u8 at `0x24`) is wrong, its mission id must be the
-u16 at `0x23`, and a Rust-written scout byte corrupts the host id classic
-sees. Rust's transport model (`0x2c` all transports, `0x2e` armies aboard)
-also differs from classic's (`0x2c` empty, `0x2e` loaded) and needs checking
-under t033. Probe scripts were kept in the session scratchpad only.
+So Rust's `scout_count` (u8 at `0x24`) was wrong, its mission id had to be
+the u16 at `0x23`, and a Rust-written scout byte corrupted the host id
+classic sees. Rust's transport model (`0x2c` all transports, `0x2e` armies
+aboard) also differed from classic's (`0x2c` empty, `0x2e` loaded). Probe
+scripts were kept in the session scratchpad only.
+
+Result (t033): Rust now uses this layout. Loading an army moves a transport
+from `0x2c` to `0x2e` and unloading moves it back; displays still show the
+transport total and the armies aboard. The mission id is a word in every
+Join and Guard Starbase path, so a Join can name a host above 255. Order
+writes set `0x24` to 0; the raw `aux1=` override still writes `0x23` alone.
+The SQLite snapshot stores `0x22..0x35` in named columns and round-trips the
+shipped `original/v1.5/FLEETS.DAT` byte for byte. A Join merge adds the
+`0x34` word as ECMAINT does; Rust does not otherwise interpret it. Fleet
+combat still takes transport losses from loaded transports first; classic's
+order there is not decoded. `nc-data/tests/fleet_layout.rs` holds the import,
+accessor, max-speed, and Join tests.
+
+The fleet-battle and invade pre-fixtures hold `0x24 = 10` and `100`, written
+by an earlier tool as scout counts. Classic read them as mission-id high
+bytes, so those fleets carried no scouts. The fixtures stay untouched; the
+scenario builders now give those fleets no scouts, and the fleet-battle
+builder writes mission id `0x0a00` to recreate its fixture exactly.
 
 ## Engagement by depth layer, t034 (2026-10-10)
 

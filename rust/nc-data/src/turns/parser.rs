@@ -287,7 +287,7 @@ fn parse_fleet_detach_selection(
             .unwrap_or(0),
         empty_transports: opt_prop_u16_with_aliases(node, &["empty_transports", "empty_tt"])?
             .unwrap_or(0),
-        scouts: opt_prop_u8_with_aliases(node, &["scouts", "sc"])?.unwrap_or(0),
+        scouts: opt_prop_u16_with_aliases(node, &["scouts", "sc"])?.unwrap_or(0),
         etacs: opt_prop_u16_with_aliases(node, &["etacs", "etac"])?.unwrap_or(0),
     })
 }

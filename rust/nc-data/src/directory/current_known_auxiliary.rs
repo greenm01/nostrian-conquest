@@ -83,7 +83,7 @@ impl CoreGameData {
                     base.summary_word_raw()
                 ));
             }
-            if base.base_id_raw() != fleet.guard_starbase_index_raw() {
+            if u16::from(base.base_id_raw()) != fleet.guard_starbase_index_raw() {
                 errors.push(format!(
                     "BASES[1].base_id expected FLEET[1].guard index {}, got {}",
                     fleet.guard_starbase_index_raw(),
@@ -257,7 +257,7 @@ impl CoreGameData {
             return errors;
         }
 
-        if summary.selected_base_id != Some(summary.guard_index) {
+        if summary.selected_base_id.map(u16::from) != Some(summary.guard_index) {
             errors.push(format!(
                 "BASES[{}].base_id expected FLEET[{}].guard index {}, got {:?}",
                 summary.guard_index,

@@ -1256,7 +1256,7 @@ fn fleet_order_allows_join_another_fleet_from_fleet_command() {
     assert_ne!(source.join_host_fleet_id_raw(), 0);
     let valid_host = state.game_data.fleets.records.iter().any(|fleet| {
         fleet.owner_empire_raw() == 1
-            && fleet.fleet_id() == source.join_host_fleet_id_raw()
+            && fleet.fleet_id_word_raw() == source.join_host_fleet_id_raw()
             && fleet.current_location_coords_raw() == source.standing_order_target_coords_raw()
     });
     assert!(valid_host);
@@ -4951,7 +4951,7 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
     assert_ne!(ordered_fleet.join_host_fleet_id_raw(), 0);
     assert_ne!(
         ordered_fleet.join_host_fleet_id_raw(),
-        ordered_fleet.fleet_id()
+        ordered_fleet.fleet_id_word_raw()
     );
     assert_eq!(ordered_fleet.standing_order_target_coords_raw(), [16, 13]);
 }

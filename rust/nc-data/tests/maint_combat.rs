@@ -374,7 +374,9 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
     let survivor = &game_data.fleets.records[6];
     assert_eq!(survivor.current_location_coords_raw(), [10, 10]);
     assert_eq!(survivor.battleship_count(), 1);
-    assert_eq!(survivor.scout_count(), 10);
+    // The fixture's byte 0x24 = 10 is the mission id's high byte; the fleet
+    // has no scouts.
+    assert_eq!(survivor.scout_count(), 0);
     assert_eq!(survivor.etac_count(), 1);
 
     for fleet in &game_data.fleets.records {

@@ -74,9 +74,9 @@ impl FleetIndexRemap {
     }
 
     /// New 1-based fleet id of a surviving fleet; `None` when it was removed.
-    pub(super) fn fleet_id(&self, old_id: u8) -> Option<u8> {
+    pub(super) fn fleet_id(&self, old_id: u16) -> Option<u16> {
         let old_idx = usize::from(old_id).checked_sub(1)?;
-        self.index(old_idx).map(|idx| (idx + 1) as u8)
+        self.index(old_idx).map(|idx| (idx + 1) as u16)
     }
 
     /// Remap `idx` in place; returns `false` when its fleet was removed.
@@ -109,7 +109,7 @@ impl FleetIndexRemap {
     }
 
     /// Re-key a map keyed by 1-based fleet id, dropping removed fleets.
-    fn rekey_fleet_ids<V>(&self, by_fleet_id: &mut HashMap<u8, V>) {
+    fn rekey_fleet_ids<V>(&self, by_fleet_id: &mut HashMap<u16, V>) {
         *by_fleet_id = std::mem::take(by_fleet_id)
             .into_iter()
             .filter_map(|(id, value)| self.fleet_id(id).map(|new_id| (new_id, value)))
@@ -189,7 +189,7 @@ impl FleetIndexRemap {
 #[derive(Debug, Default)]
 pub(super) struct TurnFleetRefs {
     /// Destroyed join-host fleet numbers keyed by the joining fleet's id.
-    pub destroyed_join_host_fleet_numbers: HashMap<u8, u8>,
+    pub destroyed_join_host_fleet_numbers: HashMap<u16, u8>,
     pub merge_events: Vec<FleetMergeEvent>,
     pub join_host_events: Vec<JoinMissionHostEvent>,
     pub mission_retarget_events: Vec<MissionRetargetEvent>,

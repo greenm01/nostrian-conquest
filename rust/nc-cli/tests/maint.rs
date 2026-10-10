@@ -2249,7 +2249,8 @@ fn maint_rust_blitz_success_generates_attacker_side_report() {
     attacker.raw[0x19] = 0x80;
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
-    attacker.set_battleship_count(0);
+    // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
+    attacker.set_battleship_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_destroyer_count(1);
     attacker.set_troop_transport_count(10);
@@ -2264,7 +2265,7 @@ fn maint_rust_blitz_success_generates_attacker_side_report() {
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = decode_chunked_report(&results);
-    assert!(text.contains("ALERT: Blitz assault successful!"));
+    assert!(text.contains("ALERT: Blitz assault successful!"), "{text}");
     assert!(text.contains("We have seized planet"), "{text}");
     assert!(
         text.contains("in a fast") && text.contains("assault."),
@@ -2419,8 +2420,8 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
         u16::from_le_bytes([viewer_record.raw[0x1e], viewer_record.raw[0x1f]]),
         65
     );
-    // Seeded garrison: 10 landed armies less 3 lost in the ground battle.
-    assert_eq!(viewer_record.raw[0x23], 7);
+    // Seeded garrison: 10 landed armies less 1 lost in the ground battle.
+    assert_eq!(viewer_record.raw[0x23], 9);
     assert_eq!(viewer_record.raw[0x24], 0x00);
     assert_eq!(viewer_record.raw[0x25], 0);
     assert_eq!(viewer_record.raw[0x26], 0x00);
@@ -3050,8 +3051,6 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
     fleet.set_scout_count(1);
-    fleet.set_troop_transport_count(1);
-    fleet.set_army_count(3);
     fleet.set_rules_of_engagement(6);
     // Planet record 15 is Empire #1's world; invalid-input reports for
     // unowned planets are not delivered to anyone.
@@ -3071,7 +3070,6 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
         Order::HoldPosition
     );
     assert_eq!(reloaded.fleets.records[0].current_speed(), 0);
-    assert_eq!(reloaded.fleets.records[0].army_count(), 1);
     assert_eq!(reloaded.fleets.records[0].rules_of_engagement(), 0);
     assert_eq!(reloaded.player.records[0].tax_rate(), 100);
     assert_eq!(reloaded.planets.records[14].build_count_raw(0), 0);
@@ -3440,7 +3438,7 @@ fn maint_rust_join_contact_uses_join_report_label() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::JoinAnotherFleet);
-    let host_id = game_data.fleets.records[1].fleet_id();
+    let host_id = game_data.fleets.records[1].fleet_id_word_raw();
     game_data.fleets.records[0].set_join_host_fleet_id_raw(host_id);
     // Stalled in place (no speed to restore), so the contact happens here.
     game_data.fleets.records[0].set_max_speed(0);
@@ -3466,7 +3464,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
     game_data.fleets.records[0].set_cruiser_count(0);
     game_data.fleets.records[0].set_battleship_count(0);
@@ -3503,7 +3501,7 @@ fn maint_rust_join_retarget_report_uses_fleet_command_summary_without_sector_noi
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner_fleet_number = game_data.fleets.records[1].local_slot_word_raw() as usize;
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([3, 9]);
@@ -3540,7 +3538,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
     for fleet_idx in [1usize, 2, 3] {
         game_data.fleets.records[fleet_idx].set_current_location_coords_raw([3, 9]);
@@ -3550,7 +3548,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
         game_data.fleets.records[fleet_idx].set_current_speed(3);
     }
 
-    let lost_host = game_data.fleets.records[4].fleet_id();
+    let lost_host = game_data.fleets.records[4].fleet_id_word_raw();
     game_data.fleets.records[4].set_current_location_coords_raw([7, 9]);
     game_data.fleets.records[4].set_standing_order_kind(Order::HoldPosition);
     game_data.fleets.records[4].set_standing_order_target_coords_raw([7, 9]);
@@ -3604,8 +3602,8 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     game_data.player.records[0].raw[0x00] = 0x00;
 
     let survivor_coords = [10, 10];
-    let survivor_id = game_data.fleets.records[0].fleet_id();
-    let absorbed_host_id = game_data.fleets.records[1].fleet_id();
+    let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let absorbed_host_id = game_data.fleets.records[1].fleet_id_word_raw();
 
     game_data.fleets.records[0].set_current_location_coords_raw(survivor_coords);
     game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
@@ -3659,7 +3657,7 @@ fn maint_rust_join_summary_emits_single_footer_line() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
 
     game_data.fleets.records[1].set_current_location_coords_raw([3, 9]);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);

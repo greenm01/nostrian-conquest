@@ -22,7 +22,7 @@ use nc_ui::table_filter::{
 };
 use std::cmp::{Ordering, Reverse};
 
-fn fleet_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, u16, u8, u16, Reverse<u16>) {
+fn fleet_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, u16, u16, u16, Reverse<u16>) {
     (
         fleet.battleship_count(),
         fleet.cruiser_count(),
@@ -1790,9 +1790,9 @@ impl App {
     }
 
     pub(crate) fn fleet_rows(&self) -> Vec<FleetRow> {
-        let fleet_number_by_id: std::collections::HashMap<u8, u16> = self
+        let fleet_number_by_id: std::collections::HashMap<u16, u16> = self
             .active_owned_fleet_records()
-            .map(|(_, fleet)| (fleet.fleet_id(), fleet.local_slot_word_raw()))
+            .map(|(_, fleet)| (fleet.fleet_id_word_raw(), fleet.local_slot_word_raw()))
             .collect();
         let mut rows = self
             .active_owned_fleet_records()

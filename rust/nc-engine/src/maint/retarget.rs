@@ -51,7 +51,7 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
 }
 
 pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
-    let current_host_viability: std::collections::HashMap<u8, bool> = game_data
+    let current_host_viability: std::collections::HashMap<u16, bool> = game_data
         .fleets
         .records
         .iter()
@@ -62,14 +62,19 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
                 || fleet.scout_count() > 0
                 || fleet.troop_transport_count() > 0
                 || fleet.etac_count() > 0;
-            (fleet.fleet_id(), viable)
+            (fleet.fleet_id_word_raw(), viable)
         })
         .collect();
-    let current_fleet_coords: std::collections::HashMap<u8, [u8; 2]> = game_data
+    let current_fleet_coords: std::collections::HashMap<u16, [u8; 2]> = game_data
         .fleets
         .records
         .iter()
-        .map(|fleet| (fleet.fleet_id(), fleet.current_location_coords_raw()))
+        .map(|fleet| {
+            (
+                fleet.fleet_id_word_raw(),
+                fleet.current_location_coords_raw(),
+            )
+        })
         .collect();
 
     let mut events = Vec::new();
@@ -79,7 +84,7 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
         }
 
         let host_id = fleet.join_host_fleet_id_raw();
-        if host_id == 0 || host_id == fleet.fleet_id() {
+        if host_id == 0 || host_id == fleet.fleet_id_word_raw() {
             continue;
         }
 
@@ -115,14 +120,14 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
 pub(super) fn refresh_guard_starbase_targets(
     game_data: &mut CoreGameData,
 ) -> Vec<MissionRetargetEvent> {
-    let active_bases_by_id: std::collections::HashMap<(u8, u8), [u8; 2]> = game_data
+    let active_bases_by_id: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .bases
         .records
         .iter()
         .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
         .map(|base| {
             (
-                (base.owner_empire_raw(), base.base_id_raw()),
+                (base.owner_empire_raw(), u16::from(base.base_id_raw())),
                 base.coords_raw(),
             )
         })

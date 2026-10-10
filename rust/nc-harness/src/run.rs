@@ -531,11 +531,7 @@ fn apply_fleet_ship_value(
         crate::spec::ShipDimensionKind::Battleships => ships.battleships = value,
         crate::spec::ShipDimensionKind::Cruisers => ships.cruisers = value,
         crate::spec::ShipDimensionKind::Destroyers => ships.destroyers = value,
-        crate::spec::ShipDimensionKind::Scouts => {
-            ships.scouts = u8::try_from(value).map_err(|_| {
-                HarnessError::Validation(format!("scout value out of range: {value}"))
-            })?
-        }
+        crate::spec::ShipDimensionKind::Scouts => ships.scouts = value,
         crate::spec::ShipDimensionKind::Transports => ships.transports = value,
         crate::spec::ShipDimensionKind::LoadedArmies => ships.loaded_armies = value,
         crate::spec::ShipDimensionKind::Etacs => ships.etacs = value,

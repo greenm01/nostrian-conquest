@@ -382,7 +382,7 @@ fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
     assert_eq!(data.fleets.records.len(), 1);
     let fleet = &data.fleets.records[0];
     assert_eq!(fleet.owner_empire_raw(), 1);
-    assert_eq!(fleet.fleet_id(), 1);
+    assert_eq!(fleet.fleet_id_word_raw(), 1);
     assert_eq!(fleet.local_slot(), 1);
     assert_eq!(fleet.destroyer_count(), 2);
     assert_eq!(fleet.current_location_coords_raw(), [6, 5]);
@@ -947,6 +947,10 @@ fn load_planet_armies_onto_fleet_moves_armies_into_transports() {
     data.load_planet_armies_onto_fleet(1, 1, 1, 3).unwrap();
     assert_eq!(data.planets.records[0].army_count_raw(), 7);
     assert_eq!(data.fleets.records[0].army_count(), 4);
+    // Each loaded army moves one transport from 0x2c (empty) to 0x2e (loaded).
+    assert_eq!(data.fleets.records[0].empty_transport_count(), 0);
+    assert_eq!(data.fleets.records[0].loaded_transport_count(), 4);
+    assert_eq!(data.fleets.records[0].troop_transport_count(), 4);
 }
 
 #[test]
@@ -984,6 +988,10 @@ fn unload_fleet_armies_to_planet_moves_armies_back_to_planet() {
     data.unload_fleet_armies_to_planet(1, 1, 1, 2).unwrap();
     assert_eq!(data.planets.records[0].army_count_raw(), 6);
     assert_eq!(data.fleets.records[0].army_count(), 1);
+    // Each unloaded army moves one transport from 0x2e back to 0x2c.
+    assert_eq!(data.fleets.records[0].empty_transport_count(), 3);
+    assert_eq!(data.fleets.records[0].loaded_transport_count(), 1);
+    assert_eq!(data.fleets.records[0].troop_transport_count(), 4);
 }
 
 #[test]
@@ -2341,7 +2349,7 @@ fn set_join_fleet_order_targets_host_fleet_and_records_host_id() {
     };
 
     let host_coords = data.fleets.records[0].current_location_coords_raw();
-    let host_fleet_id = data.fleets.records[0].fleet_id();
+    let host_fleet_id = data.fleets.records[0].fleet_id_word_raw();
 
     data.set_join_fleet_order(1, 2, 1).unwrap();
 
@@ -2514,7 +2522,7 @@ fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
     );
     assert_eq!(
         data.fleets.records[1].join_host_fleet_id_raw(),
-        host.fleet_id()
+        host.fleet_id_word_raw()
     );
 }
 
