@@ -196,7 +196,7 @@ fn apply_planet_specs(
             planet.set_planet_name(name);
         }
         if let Some(potential) = planet_spec.potential_production {
-            planet.set_potential_production_raw(potential.to_le_bytes());
+            planet.set_potential_production_points(potential.min(u16::from(u8::MAX)) as u8);
         }
         if let Some(present) = planet_spec.present_production {
             if !planet.set_present_production_points(present) {
@@ -209,9 +209,6 @@ fn apply_planet_specs(
         if let Some(stored) = planet_spec.stored_production {
             planet.set_stored_production_points(stored);
         }
-        if let Some(economy_marker) = planet_spec.economy_marker {
-            planet.set_economy_marker_raw(economy_marker);
-        }
         if let Some(armies) = planet_spec.armies {
             planet.set_army_count_raw(armies);
         }
@@ -221,17 +218,17 @@ fn apply_planet_specs(
         if !planet_spec.stardock.is_empty() {
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
                 planet.set_stardock_count_raw(slot, 0);
-                planet.set_stardock_kind_raw(slot, 0);
             }
             for slot in &planet_spec.stardock {
-                if slot.slot_0_based >= nc_data::STARDOCK_SLOT_COUNT {
+                // Each item type has its own stardock slot.
+                if nc_data::stardock_slot_for_kind(slot.kind_raw) != Some(slot.slot_0_based) {
                     return Err(HarnessError::Validation(format!(
-                        "planet {} stardock slot out of range: {}",
+                        "planet {} stardock slot {} does not hold kind {}",
                         planet_spec.record_index_1_based,
-                        slot.slot_0_based + 1
+                        slot.slot_0_based + 1,
+                        slot.kind_raw
                     )));
                 }
-                planet.set_stardock_kind_raw(slot.slot_0_based, slot.kind_raw);
                 planet.set_stardock_count_raw(slot.slot_0_based, slot.count);
             }
         }

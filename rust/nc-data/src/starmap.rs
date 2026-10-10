@@ -311,7 +311,7 @@ pub fn build_player_starmap_projection_from_snapshots(
                     snapshot.and_then(|row| row.known_current_production)
                 },
                 known_stored_points: if is_owned_world {
-                    Some(planet.stored_goods_raw() as u16)
+                    Some(planet.stored_production_points() as u16)
                 } else {
                     snapshot.and_then(|row| row.known_stored_points)
                 },

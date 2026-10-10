@@ -103,11 +103,10 @@ fn configure_bombard_target_world(
     let target = &mut game_data.planets.records[13];
     target.set_ground_batteries_raw(batteries);
     target.set_army_count_raw(armies);
-    target.set_stored_goods_raw(stored_goods);
-    target.set_factories_word_raw(factories);
+    target.set_stored_production_points(stored_goods);
+    target.set_present_production_points(factories);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
         target.set_stardock_count_raw(slot, 0);
-        target.set_stardock_kind_raw(slot, 0);
     }
 }
 

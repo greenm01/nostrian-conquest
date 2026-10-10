@@ -56,7 +56,7 @@ pub(super) fn process_colonizations(
                 planet.set_ownership_status_raw(2);
                 planet.set_owner_empire_slot_raw(event.owner_empire);
                 planet.set_army_count_raw(1);
-                planet.set_potential_production_high_byte_raw(0x81);
+                planet.set_present_production(1.0);
 
                 let player_idx = (event.owner_empire as usize).saturating_sub(1);
                 if player_idx < game_data.player.records.len() {

@@ -1,6 +1,6 @@
 use nc_data::{
     BaseDat, BaseRecord, ConquestDat, CoreGameData, FleetDat, GameStateBuilder, IpbmDat, PlanetDat,
-    PlanetRecord, PlayerDat, PlayerRecord, SetupDat, encode_real48,
+    PlanetRecord, PlayerDat, PlayerRecord, SetupDat, decode_real48, encode_real48,
 };
 
 pub fn zeroed_setup() -> SetupDat {
@@ -41,9 +41,10 @@ pub fn owned_planet(
 ) -> PlanetRecord {
     let mut record = PlanetRecord::new_zeroed();
     record.set_owner_empire_slot_raw(owner_empire_slot);
-    record.set_potential_production_raw([potential_production, 0]);
-    record.set_factories_raw(factories_real48);
-    record.set_stored_goods_raw(stored_points);
+    record.set_potential_production_points(potential_production);
+    record
+        .set_present_production(decode_real48(factories_real48).expect("production should decode"));
+    record.set_stored_production_points(stored_points);
     record.set_army_count_raw(armies);
     record.set_ground_batteries_raw(batteries);
     record
@@ -82,7 +83,6 @@ pub fn owned_homeworld_seed(
         armies,
         batteries,
     );
-    record.set_potential_production_raw([potential_production, 0x87]);
     record.set_ownership_status_raw(2);
     record.set_planet_name("Not Named Yet");
     record

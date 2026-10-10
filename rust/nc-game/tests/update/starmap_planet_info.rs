@@ -842,7 +842,6 @@ fn build_menu_review_shortcut_opens_owned_planet_info_with_build_queue_and_retur
     planet.set_build_count_raw(0, 5);
     planet.set_build_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 2);
-    planet.set_stardock_kind_raw(0, 1);
 
     assert_eq!(
         apply_action(
@@ -910,19 +909,16 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
         planet.set_build_kind_raw(slot, kind_raw);
     }
 
-    for (slot, (count, kind_raw)) in [
+    for (count, kind_raw) in [
         (1u8, 1u8),
         (2u8, 2u8),
         (3u8, 3u8),
         (4u8, 4u8),
         (5u8, 5u8),
         (6u8, 9u8),
-    ]
-    .into_iter()
-    .enumerate()
-    {
+    ] {
+        let slot = nc_data::stardock_slot_for_kind(kind_raw).expect("stardock kind");
         planet.set_stardock_count_raw(slot, u16::from(count));
-        planet.set_stardock_kind_raw(slot, kind_raw);
     }
 
     assert_eq!(

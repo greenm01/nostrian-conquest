@@ -1319,7 +1319,7 @@ fn configure_target_planet(
     planet.set_ownership_status_raw(if owner_empire_raw == 0 { 0 } else { 2 });
     planet.set_ground_batteries_raw(batteries);
     planet.set_army_count_raw(armies);
-    planet.set_potential_production_raw(120u16.to_le_bytes());
+    planet.set_potential_production_points(120);
     let _ = planet.set_present_production_points(95);
     planet.set_stored_production_points(45);
 }

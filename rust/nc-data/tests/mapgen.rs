@@ -76,7 +76,7 @@ fn seeded_new_game_populates_documented_planet_count_for_player_count() {
         assert_eq!(data.planets.records[idx].planet_name(), "Not Named Yet");
         assert_eq!(data.planets.records[idx].army_count_raw(), 10);
         assert_eq!(data.planets.records[idx].ground_batteries_raw(), 4);
-        assert_eq!(data.planets.records[idx].potential_production_raw()[0], 100);
+        assert_eq!(data.planets.records[idx].potential_production_points(), 100);
     }
 }
 

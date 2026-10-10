@@ -137,9 +137,9 @@ fn runtime_intel_merges_scouted_worlds_without_compat_database() {
     game_data.planets.records[4].set_owner_empire_slot_raw(4);
     game_data.planets.records[4].set_ownership_status_raw(2);
     game_data.planets.records[4].set_planet_name("Helios Prime");
-    game_data.planets.records[4].set_potential_production_raw(136u16.to_le_bytes());
+    game_data.planets.records[4].set_potential_production_points(136);
     game_data.planets.records[4].set_present_production_points(136);
-    game_data.planets.records[4].set_stored_goods_raw(35);
+    game_data.planets.records[4].set_stored_production_points(35);
     game_data.planets.records[4].set_army_count_raw(10);
     game_data.planets.records[4].set_ground_batteries_raw(6);
     game_data
@@ -183,7 +183,7 @@ fn blocked_colonization_intel_reveals_owner_and_potential() {
     game_data.planets.records[4].set_owner_empire_slot_raw(4);
     game_data.planets.records[4].set_ownership_status_raw(2);
     game_data.planets.records[4].set_planet_name("Helios Prime");
-    game_data.planets.records[4].set_potential_production_raw(136u16.to_le_bytes());
+    game_data.planets.records[4].set_potential_production_points(136);
 
     let grants = BTreeMap::from([(
         5usize,
@@ -222,7 +222,7 @@ fn civil_disorder_contact_intel_only_reveals_owner() {
     game_data.planets.records[4].set_owner_empire_slot_raw(2);
     game_data.planets.records[4].set_ownership_status_raw(2);
     game_data.planets.records[4].set_planet_name("Not Named Yet");
-    game_data.planets.records[4].set_potential_production_raw(100u16.to_le_bytes());
+    game_data.planets.records[4].set_potential_production_points(100);
 
     let grants = BTreeMap::from([(
         5usize,

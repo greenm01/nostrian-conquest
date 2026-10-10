@@ -342,32 +342,24 @@ fn classic_text_setters_store_question_marks_for_other_characters() {
 }
 
 #[test]
-fn stardock_slots_round_trip_through_contiguous_classic_offsets() {
+fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
     let mut planet = PlanetRecord::new_zeroed();
 
     planet.set_stardock_count_raw(0, 1);
-    planet.set_stardock_kind_raw(0, 1);
-    planet.set_stardock_count_raw(1, 258);
-    planet.set_stardock_kind_raw(1, 4);
-    planet.set_stardock_count_raw(9, 3);
-    planet.set_stardock_kind_raw(9, 9);
+    planet.set_stardock_count_raw(3, 258);
+    planet.set_stardock_count(6, 70_000);
 
     assert_eq!(planet.stardock_count_raw(0), 1);
-    assert_eq!(planet.stardock_count_raw(1), 258);
-    assert_eq!(planet.stardock_count_raw(9), 3);
+    assert_eq!(planet.stardock_count_raw(3), 258);
+    assert_eq!(planet.stardock_count(6), 70_000);
     assert_eq!(planet.stardock_kind_raw(0), 1);
-    assert_eq!(planet.stardock_kind_raw(1), 4);
-    assert_eq!(planet.stardock_kind_raw(9), 9);
+    assert_eq!(planet.stardock_kind_raw(1), 0);
+    assert_eq!(planet.stardock_kind_raw(3), 4);
+    assert_eq!(planet.stardock_kind_raw(6), 9);
 
-    assert_eq!(planet.raw[0x38], 1);
-    assert_eq!(planet.raw[0x39], 0);
-    assert_eq!(planet.raw[0x3A], 2);
-    assert_eq!(planet.raw[0x3B], 1);
-    assert_eq!(planet.raw[0x4A], 3);
-    assert_eq!(planet.raw[0x4B], 0);
-    assert_eq!(planet.raw[0x4C], 1);
-    assert_eq!(planet.raw[0x4D], 4);
-    assert_eq!(planet.raw[0x55], 9);
+    assert_eq!(planet.raw[0x38..0x3C], [1, 0, 0, 0]);
+    assert_eq!(planet.raw[0x44..0x48], [2, 1, 0, 0]);
+    assert_eq!(planet.raw[0x50..0x54], 70_000u32.to_le_bytes());
 }
 
 #[test]
@@ -378,7 +370,6 @@ fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(1);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 2);
 
     let mut data = CoreGameData {
@@ -424,8 +415,7 @@ fn commission_support_only_fleet_starts_at_roe_zero() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(1);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 4);
-    planet.set_stardock_count_raw(0, 2);
+    planet.set_stardock_count_raw(3, 2);
 
     let mut data = CoreGameData {
         player: PlayerDat {
@@ -441,7 +431,7 @@ fn commission_support_only_fleet_starts_at_roe_zero() {
         conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
     };
 
-    let result = data.commission_planet_stardock_slot(1, 1, 0).unwrap();
+    let result = data.commission_planet_stardock_slot(1, 1, 3).unwrap();
     assert_eq!(
         result,
         CommissionResult::Fleet {
@@ -661,7 +651,6 @@ fn commission_ship_reuses_lowest_available_owned_fleet_number() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(1);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 1);
 
     let mut fleet_a = FleetRecord::new_zeroed();
@@ -717,10 +706,8 @@ fn commission_ship_draft_can_split_selected_stardock_rows() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(1);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 5);
-    planet.set_stardock_kind_raw(1, 3);
-    planet.set_stardock_count_raw(1, 3);
+    planet.set_stardock_count_raw(2, 3);
 
     let mut data = CoreGameData {
         player: PlayerDat {
@@ -740,7 +727,7 @@ fn commission_ship_draft_can_split_selected_stardock_rows() {
         .commission_planet_stardock_slots_with_draft(
             1,
             1,
-            &[0, 1],
+            &[0, 2],
             CommissionFleetDraft {
                 destroyers: 2,
                 battleships: 1,
@@ -755,7 +742,7 @@ fn commission_ship_draft_can_split_selected_stardock_rows() {
         }
     );
     assert_eq!(data.planets.records[0].stardock_count_raw(0), 3);
-    assert_eq!(data.planets.records[0].stardock_count_raw(1), 2);
+    assert_eq!(data.planets.records[0].stardock_count_raw(2), 2);
     let fleet = &data.fleets.records[0];
     assert_eq!(fleet.destroyer_count(), 2);
     assert_eq!(fleet.battleship_count(), 1);
@@ -770,8 +757,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(1);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 9);
-    planet.set_stardock_count_raw(0, 1);
+    planet.set_stardock_count_raw(6, 1);
 
     let mut data = CoreGameData {
         player: PlayerDat {
@@ -787,15 +773,15 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
         conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
     };
 
-    let result = data.commission_planet_stardock_slot(1, 1, 0).unwrap();
+    let result = data.commission_planet_stardock_slot(1, 1, 6).unwrap();
     assert_eq!(
         result,
         CommissionResult::Starbase {
             base_record_index_1_based: 1
         }
     );
-    assert_eq!(data.planets.records[0].stardock_kind_raw(0), 0);
-    assert_eq!(data.planets.records[0].stardock_count_raw(0), 0);
+    assert_eq!(data.planets.records[0].stardock_kind_raw(6), 0);
+    assert_eq!(data.planets.records[0].stardock_count_raw(6), 0);
     assert_eq!(data.player.records[0].starbase_count_raw(), 1);
     assert_eq!(data.bases.records.len(), 1);
     let base = &data.bases.records[0];
@@ -813,9 +799,8 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     );
 
     // A second base takes the next id and joins the end of the chain.
-    data.planets.records[0].set_stardock_kind_raw(0, 9);
-    data.planets.records[0].set_stardock_count_raw(0, 1);
-    data.commission_planet_stardock_slot(1, 1, 0).unwrap();
+    data.planets.records[0].set_stardock_count_raw(6, 1);
+    data.commission_planet_stardock_slot(1, 1, 6).unwrap();
     let [first, second] = &data.bases.records[..] else {
         panic!("expected two bases");
     };
@@ -834,7 +819,6 @@ fn commission_rejects_foreign_owned_planet() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_owner_empire_slot_raw(2);
     planet.set_coords_raw([6, 5]);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 2);
 
     let mut data = CoreGameData {
@@ -870,26 +854,21 @@ fn auto_commission_all_stardock_units_creates_fleets_and_bases() {
     planet_one.set_owner_empire_slot_raw(1);
     planet_one.set_planet_name("Aurora Prime");
     planet_one.set_coords_raw([6, 5]);
-    planet_one.set_stardock_kind_raw(0, 1);
     planet_one.set_stardock_count_raw(0, 2);
-    planet_one.set_stardock_kind_raw(1, 4);
-    planet_one.set_stardock_count_raw(1, 3);
-    planet_one.set_stardock_kind_raw(2, 9);
-    planet_one.set_stardock_count_raw(2, 1);
+    planet_one.set_stardock_count_raw(3, 3);
+    planet_one.set_stardock_count_raw(6, 1);
 
     let mut planet_two = PlanetRecord::new_zeroed();
     planet_two.set_owner_empire_slot_raw(1);
     planet_two.set_planet_name("Bastion Reach");
     planet_two.set_coords_raw([7, 6]);
-    planet_two.set_stardock_kind_raw(0, 2);
-    planet_two.set_stardock_count_raw(0, 1);
+    planet_two.set_stardock_count_raw(1, 1);
 
     let mut planet_three = PlanetRecord::new_zeroed();
     planet_three.set_owner_empire_slot_raw(1);
     planet_three.set_planet_name("Signal Keep");
     planet_three.set_coords_raw([8, 7]);
-    planet_three.set_stardock_kind_raw(0, 9);
-    planet_three.set_stardock_count_raw(0, 1);
+    planet_three.set_stardock_count_raw(6, 1);
 
     let mut data = CoreGameData {
         player: PlayerDat {
@@ -1602,7 +1581,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
 }
 
 #[test]
-fn core_game_data_homeworld_seed_payload_errors_catch_changed_tax_rate() {
+fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
         planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
@@ -1617,7 +1596,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_tax_rate() {
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
-        vec!["PLANET[15].economy_marker_raw expected 12 for homeworld seed, got 11".to_string()]
+        vec!["PLANET[15].stored_goods expected 35 for homeworld seed, got 34.75".to_string()]
     );
 }
 
@@ -1653,11 +1632,11 @@ fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x0A] = 1;
+    data.planets.records[0].raw[0x09] = 0x81;
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
-        vec!["PLANET[1].stored_goods_raw expected 0 for unowned baseline, got 1".to_string()]
+        vec!["PLANET[1].stored_goods expected 0 for unowned baseline, got 1".to_string()]
     );
 }
 
@@ -1802,7 +1781,7 @@ fn core_game_data_sync_current_known_initialized_planet_payloads_repairs_mutated
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
     data.planets.records[0].set_army_count_raw(9);
 
@@ -1839,7 +1818,7 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
     });
     data.fleets.records.clear();
     data.fleets.records.push(FleetRecord::new_zeroed());
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
 
     data.sync_current_known_initialized_post_maint_baseline();
@@ -1929,7 +1908,7 @@ fn core_game_data_current_known_baseline_diff_counts_detect_mutated_files() {
     assert_eq!(clean_setup, 0);
 
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_counts();
     assert!(
@@ -1971,7 +1950,7 @@ fn core_game_data_current_known_baseline_diff_offsets_pinpoint_mutated_bytes() {
         .clone();
 
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
-    data.planets.records[14].set_economy_marker_raw(3);
+    data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_offsets();
     let setup_offsets = &diffs
@@ -2247,12 +2226,11 @@ fn scorch_planet_surface_clears_economy_queue_and_stardock_immediately() {
 
     let planet = &mut data.planets.records[14];
     let _ = planet.set_present_production_points(42);
-    planet.set_potential_production_raw([77, 0]);
+    planet.set_potential_production_points(77);
     planet.set_stored_production_points(1234);
     planet.set_build_count_raw(0, 5);
     planet.set_build_kind_raw(0, 3);
-    planet.set_stardock_count_raw(0, 2);
-    planet.set_stardock_kind_raw(0, 5);
+    planet.set_stardock_count_raw(4, 2);
     planet.set_army_count_raw(9);
     planet.set_ground_batteries_raw(4);
 

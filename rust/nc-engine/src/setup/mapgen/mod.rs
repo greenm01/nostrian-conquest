@@ -156,8 +156,7 @@ fn seed_unowned_world(
 ) {
     *planet = PlanetRecord::new_zeroed();
     planet.set_coords_raw(world.coords);
-    planet.set_potential_production_raw([world.potential_production, 0]);
-    planet.set_economy_marker_raw(0);
+    planet.set_potential_production_points(world.potential_production);
     planet.set_planet_name(&format!("World {:02}", world_index_1_based));
 }
 

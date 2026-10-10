@@ -1556,7 +1556,6 @@ fn maint_rust_scout_system_generates_results_report() {
     // Cruiser speed settles in orbit one sector away within the year.
     scout.recompute_max_speed_from_composition();
     scout.set_current_speed(scout.max_speed());
-    game_data.planets.records[13].set_stardock_kind_raw(0, 1);
     game_data.planets.records[13].set_stardock_count_raw(0, 2);
     game_data
         .save(&target)
@@ -3056,7 +3055,6 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         game_data.planets.records[0].set_build_count_raw(0, 9);
         game_data.planets.records[0].set_build_kind_raw(0, 0xfe);
         game_data.planets.records[0].set_stardock_count_raw(0, 2);
-        game_data.planets.records[0].set_stardock_kind_raw(0, 0xfe);
         game_data.player.records[0].set_tax_rate_raw(255);
         game_data
             .save(&target)
@@ -3117,7 +3115,6 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
             planet.set_build_count_raw(0, 9);
             planet.set_build_kind_raw(0, 0xfe);
             planet.set_stardock_count_raw(0, 2);
-            planet.set_stardock_kind_raw(0, 0xfe);
         }
         if let Some(player) = game_data.player.records.get_mut(0) {
             player.set_tax_rate_raw(255);

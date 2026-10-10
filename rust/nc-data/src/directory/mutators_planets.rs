@@ -113,7 +113,7 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             })?;
 
-        record.set_potential_production_raw([0, 0]);
+        record.set_potential_production_points(0);
         let _ = record.set_present_production_points(0);
         record.set_stored_production_points(0);
 
@@ -123,7 +123,6 @@ impl CoreGameData {
         }
         for slot in 0..crate::STARDOCK_SLOT_COUNT {
             record.set_stardock_count_raw(slot, 0);
-            record.set_stardock_kind_raw(slot, 0);
         }
 
         Ok(())
@@ -190,53 +189,6 @@ impl CoreGameData {
         Ok(removed)
     }
 
-    pub fn planet_free_stardock_slots(
-        &self,
-        record_index_1_based: usize,
-    ) -> Result<usize, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
-            GameStateMutationError::MissingPlanetRecord {
-                index_1_based: record_index_1_based,
-            },
-        )?;
-
-        let occupied_stardock = (0..crate::STARDOCK_SLOT_COUNT)
-            .filter(|&s| record.stardock_kind_raw(s) != 0)
-            .count();
-
-        let pending_ship_slots = (0..10)
-            .filter(|&s| {
-                let count = record.build_count_raw(s);
-                let kind = record.build_kind_raw(s);
-                if count == 0 || kind == 0 {
-                    return false;
-                }
-                !matches!(
-                    ProductionItemKind::from_raw(kind),
-                    ProductionItemKind::Army | ProductionItemKind::GroundBattery
-                )
-            })
-            .count();
-
-        let reserved = occupied_stardock + pending_ship_slots;
-        Ok(crate::STARDOCK_SLOT_COUNT.saturating_sub(reserved))
-    }
-
-    pub fn planet_open_stardock_slots_now(
-        &self,
-        record_index_1_based: usize,
-    ) -> Result<usize, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
-            GameStateMutationError::MissingPlanetRecord {
-                index_1_based: record_index_1_based,
-            },
-        )?;
-
-        Ok((0..crate::STARDOCK_SLOT_COUNT)
-            .filter(|&s| record.stardock_kind_raw(s) == 0)
-            .count())
-    }
-
     pub fn planet_free_army_capacity(
         &self,
         record_index_1_based: usize,
@@ -289,13 +241,7 @@ impl CoreGameData {
         let empty_slots = (0..10)
             .filter(|&slot| record.build_count_raw(slot) == 0 && record.build_kind_raw(slot) == 0)
             .count() as u32;
-        let new_slot_capacity = if kind.requires_stardock() {
-            empty_slots.min(self.planet_free_stardock_slots(record_index_1_based)? as u32)
-        } else {
-            empty_slots
-        };
-
-        Ok(existing_capacity.saturating_add(new_slot_capacity.saturating_mul(slot_capacity)))
+        Ok(existing_capacity.saturating_add(empty_slots.saturating_mul(slot_capacity)))
     }
 
     /// The planet's build budget for this turn: `min(treasury, build_capacity)`.

@@ -25,7 +25,7 @@ fn seed_target_world(game_data: &mut nc_data::CoreGameData, coords: [u8; 2], nam
     planet.set_planet_name(name);
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(2);
-    planet.set_potential_production_raw(100u16.to_le_bytes());
+    planet.set_potential_production_points(100);
     game_data.planets.records[0] = planet;
 }
 

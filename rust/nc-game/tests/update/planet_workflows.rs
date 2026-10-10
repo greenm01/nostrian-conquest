@@ -513,7 +513,6 @@ fn planet_commission_draft_render_does_not_crash_when_picker_rows_disappear() {
     let mut state = latest_runtime_state(&fixture_dir);
     for planet in &mut state.game_data.planets.records {
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
@@ -556,7 +555,6 @@ fn planet_commission_picker_render_returns_to_planet_menu_when_empty() {
     let mut state = latest_runtime_state(&fixture_dir);
     for planet in &mut state.game_data.planets.records {
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
@@ -612,14 +610,11 @@ fn planet_commission_uses_draft_for_ships_and_direct_result_for_starbases() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets.records[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
-    state.game_data.planets.records[owned_planets[0]].set_stardock_kind_raw(0, 1);
     state.game_data.planets.records[owned_planets[0]].set_stardock_count_raw(0, 2);
-    state.game_data.planets.records[owned_planets[1]].set_stardock_kind_raw(0, 9);
-    state.game_data.planets.records[owned_planets[1]].set_stardock_count_raw(0, 1);
+    state.game_data.planets.records[owned_planets[1]].set_stardock_count_raw(6, 1);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -762,15 +757,12 @@ fn planet_commission_draft_keeps_intermediate_success_inline() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets.records[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
     let planet = &mut state.game_data.planets.records[owned_planet];
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 5);
-    planet.set_stardock_kind_raw(1, 3);
-    planet.set_stardock_count_raw(1, 3);
+    planet.set_stardock_count_raw(2, 3);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -859,13 +851,11 @@ fn planet_commission_blank_submit_uses_displayed_default_qty() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets.records[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
     let planet = &mut state.game_data.planets.records[owned_planet];
-    planet.set_stardock_kind_raw(0, 3);
-    planet.set_stardock_count_raw(0, 1);
+    planet.set_stardock_count_raw(2, 1);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -933,15 +923,12 @@ fn planet_commission_blank_row_move_commits_displayed_default_qty() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets.records[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
     let planet = &mut state.game_data.planets.records[owned_planet];
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 2);
-    planet.set_stardock_kind_raw(1, 3);
-    planet.set_stardock_count_raw(1, 1);
+    planet.set_stardock_count_raw(2, 1);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1037,14 +1024,11 @@ fn planet_commission_result_latches_dismiss_key_until_release() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets.records[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_kind_raw(slot, 0);
             planet.set_stardock_count_raw(slot, 0);
         }
     }
-    state.game_data.planets.records[owned_planets[0]].set_stardock_kind_raw(0, 1);
     state.game_data.planets.records[owned_planets[0]].set_stardock_count_raw(0, 2);
-    state.game_data.planets.records[owned_planets[1]].set_stardock_kind_raw(0, 4);
-    state.game_data.planets.records[owned_planets[1]].set_stardock_count_raw(0, 2);
+    state.game_data.planets.records[owned_planets[1]].set_stardock_count_raw(3, 2);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1429,56 +1413,6 @@ fn build_quantity_from_points_uses_remaining_whole_units_for_partial_orders() {
     assert_eq!(
         nc_game::screen::build_quantity_from_points(ProductionItemKind::Destroyer, 12),
         3
-    );
-}
-
-#[test]
-fn starbase_build_quantity_is_capped_by_remaining_stardock_slots() {
-    let fixture_dir = temp_game_copy();
-    let mut state = latest_runtime_state(&fixture_dir);
-    let planet_idx = state
-        .game_data
-        .planet_record_index_at_coords([16, 13])
-        .expect("current build planet should exist");
-    let planet = &mut state.game_data.planets.records[planet_idx];
-    planet.set_stored_production_points(500);
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        if slot < nc_data::STARDOCK_SLOT_COUNT - 1 {
-            planet.set_stardock_kind_raw(slot, 1);
-            planet.set_stardock_count_raw(slot, 1);
-        } else {
-            planet.set_stardock_kind_raw(slot, 0);
-            planet.set_stardock_count_raw(slot, 0);
-        }
-    }
-    save_runtime_state(&fixture_dir, &state);
-
-    let mut app = App::load(AppConfig {
-        game_dir: fixture_dir.clone(),
-        player_record_index_1_based: 1,
-        export_root: None,
-        queue_dir: None,
-        session_timeout_secs: None,
-        game_config: Default::default(),
-    })
-    .expect("app should load");
-
-    advance_to_main_menu(&mut app);
-    assert_eq!(
-        apply_action(&mut app, Action::Planet(PlanetAction::OpenBuildMenu)),
-        AppOutcome::Continue
-    );
-
-    app.open_planet_build_specify();
-    app.append_planet_build_unit_char('7');
-    app.submit_planet_build_unit();
-    app.append_planet_build_quantity_char('2');
-    app.submit_planet_build_quantity()
-        .expect("quantity prompt should stay in app flow");
-
-    assert_eq!(
-        app.planet.build_quantity_status.as_deref(),
-        Some("Enter a quantity from 0 to 1.")
     );
 }
 

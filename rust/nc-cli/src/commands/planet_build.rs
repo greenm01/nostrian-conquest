@@ -106,7 +106,9 @@ pub(crate) fn set_planet_potential(
             .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
-        record.set_potential_production_raw([p1, p2]);
+        // Raw bytes: potential production, then present production's exponent.
+        record.raw[0x02] = p1;
+        record.raw[0x03] = p2;
         Ok(())
     })?;
 
@@ -170,8 +172,8 @@ pub(crate) fn set_planet_stardock_slot(
     kind_raw: u8,
     count: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if slot >= nc_data::STARDOCK_SLOT_COUNT {
-        return Err(format!("stardock slot out of range: {slot}").into());
+    if nc_data::stardock_slot_for_kind(kind_raw) != Some(slot) {
+        return Err(format!("stardock slot {slot} does not hold kind {kind_raw:#04x}").into());
     }
 
     with_runtime_game_mut(dir, |data| {
@@ -180,7 +182,6 @@ pub(crate) fn set_planet_stardock_slot(
             .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
-        record.set_stardock_kind_raw(slot, kind_raw);
         record.set_stardock_count_raw(slot, count);
         Ok(())
     })?;
@@ -238,11 +239,13 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
             } else {
                 record.set_planet_name(name);
             }
-            record.set_potential_production_raw(potential);
-            record.set_factories_word_raw(fact_word);
+            // Raw bytes of the sample file: potential production, present
+            // production (100), and stored goods.
+            record.raw[0x02..0x04].copy_from_slice(&potential);
+            record.raw[0x08..0x0A].copy_from_slice(&u16::to_le_bytes(fact_word));
             record.set_army_count_raw(if idx == 16 { 142 } else { 10 });
             record.set_ground_batteries_raw(if idx == 16 { 15 } else { 4 });
-            record.set_economy_marker_raw(tax);
+            record.raw[0x0E] = tax;
         }
 
         // Unowned planets
@@ -271,8 +274,8 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
             record.set_owner_empire_slot_raw(0);
             record.set_ownership_status_raw(0);
             record.set_status_or_name_prefix_raw("Unowned");
-            record.set_potential_production_raw(potential);
-            record.set_factories_raw([0; 6]);
+            record.raw[0x02..0x04].copy_from_slice(&potential);
+            record.raw[0x04..0x0A].fill(0);
             record.set_army_count_raw(0);
             record.set_ground_batteries_raw(0);
         }

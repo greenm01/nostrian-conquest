@@ -697,7 +697,7 @@ pub fn push_mission_entries(
                                         .present_production_points_current_known()
                                         .unwrap_or_else(|| planet.potential_production_points())
                                 ),
-                                format!("{} points", planet.stored_goods_raw()),
+                                format!("{} points", planet.stored_production_points()),
                                 planet.army_count_raw().to_string(),
                                 planet.ground_batteries_raw().to_string(),
                             ],

@@ -4,7 +4,10 @@ use crate::{
 };
 use std::path::Path;
 
-const HOMEWORLD_PRESENT_PRODUCTION_RAW: [u8; 6] = [0, 0, 0, 0, 72, 135];
+/// Present production 100 (bytes `+0x04..+0x08`) and the stored-goods
+/// exponent (`+0x09`); with `HOMEWORLD_GOODS_HIGH_BYTE` the goods read 35.
+const HOMEWORLD_PRESENT_PRODUCTION_RAW: [u8; 6] = [0, 0, 0, 0, 72, 134];
+const HOMEWORLD_GOODS_HIGH_BYTE: u8 = 12;
 const DEFAULT_EMPIRE_TAX_RATE: u8 = 50;
 
 const CURRENT_KNOWN_ECUTIL_INIT_CONQUEST_CONTROL_HEADER: [u8; 0x55] = [
@@ -240,7 +243,7 @@ impl GameStateBuilder {
                     *coords,
                     [100, 135],                       // potential_production (default)
                     HOMEWORLD_PRESENT_PRODUCTION_RAW, // current production = 100
-                    DEFAULT_EMPIRE_TAX_RATE,          // economy marker (seeded to empire tax)
+                    HOMEWORLD_GOODS_HIGH_BYTE,        // stored goods = 35
                     b"Player 1 HW".len() as u8,
                     Self::name_buffer_for_player(player_idx),
                     [0; 7],                 // name_suffix_raw
@@ -621,7 +624,7 @@ fn seed_unjoined_homeworld_seed(planet: &mut PlanetRecord, coords: [u8; 2], owne
         coords,
         [100, 135],
         HOMEWORLD_PRESENT_PRODUCTION_RAW,
-        DEFAULT_EMPIRE_TAX_RATE,
+        HOMEWORLD_GOODS_HIGH_BYTE,
         13,
         {
             let mut name = [0u8; 13];

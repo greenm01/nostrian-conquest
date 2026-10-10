@@ -190,7 +190,9 @@ fn snapshot_from_runtime(
             known_current_production: planet
                 .present_production_points()
                 .map(|value| value.min(u16::from(u8::MAX)) as u8),
-            known_stored_points: Some(planet.stored_goods_raw().min(u32::from(u16::MAX)) as u16),
+            known_stored_points: Some(
+                planet.stored_production_points().min(u32::from(u16::MAX)) as u16
+            ),
             known_docked_summary: None,
             known_orbit_summary: None,
             compat_word_1e: None,
@@ -274,7 +276,7 @@ fn snapshot_from_runtime_grant(
                 .present_production_points()
                 .map(|value| value.min(u16::from(u8::MAX)) as u8);
             snapshot.known_stored_points =
-                Some(planet.stored_goods_raw().min(u32::from(u16::MAX)) as u16);
+                Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16);
             snapshot.known_docked_summary = Some(crate::format_stardock_summary(
                 planet,
                 crate::CompactUnitSummaryStyle::Words,
@@ -468,7 +470,7 @@ fn refresh_visible_snapshot_from_runtime(
             .present_production_points()
             .map(|value| value.min(u16::from(u8::MAX)) as u8);
         refreshed.known_stored_points =
-            Some(planet.stored_goods_raw().min(u32::from(u16::MAX)) as u16);
+            Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16);
         refreshed.known_docked_summary = Some(crate::format_stardock_summary(
             planet,
             crate::CompactUnitSummaryStyle::Words,

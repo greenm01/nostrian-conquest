@@ -32,8 +32,7 @@ pub(crate) fn init_tax_growth_probe(
 
         {
             let homeworld = &mut data.planets.records[homeworld_idx];
-            homeworld.set_economy_marker_raw(tax_rate);
-            homeworld.set_stored_goods_raw(0);
+            homeworld.set_stored_production_points(0);
             homeworld.set_army_count_raw(10);
             homeworld.set_ground_batteries_raw(4);
             homeworld.set_ownership_status_raw(2);
@@ -64,9 +63,9 @@ pub(crate) fn init_tax_growth_probe(
             let planet = &mut data.planets.records[planet_idx];
             planet.set_as_owned_target_world(
                 coords,
-                [potential.min(u16::from(u8::MAX)) as u8, 0],
-                probe_present_production_raw(present)?,
-                tax_rate,
+                [0; 2],
+                [0; 6],
+                0,
                 probe_name_len(name),
                 probe_name_buffer(name),
                 [0; 7],
@@ -75,16 +74,16 @@ pub(crate) fn init_tax_growth_probe(
                 2,
                 empire_raw,
             );
-            planet.set_population_raw([0; 6]);
+            planet.set_potential_production_points(potential.min(u16::from(u8::MAX)) as u8);
+            planet.set_present_production_points(present);
             for slot in 0..10 {
                 planet.set_build_count_raw(slot, 0);
                 planet.set_build_kind_raw(slot, 0);
             }
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
                 planet.set_stardock_count_raw(slot, 0);
-                planet.set_stardock_kind_raw(slot, 0);
             }
-            planet.set_stored_goods_raw(0);
+            planet.set_stored_production_points(0);
         }
 
         Ok(())
@@ -137,8 +136,7 @@ pub(crate) fn init_starbase_tax_probe(
 
         {
             let homeworld = &mut data.planets.records[homeworld_idx];
-            homeworld.set_economy_marker_raw(tax_rate);
-            homeworld.set_stored_goods_raw(0);
+            homeworld.set_stored_production_points(0);
             homeworld.set_army_count_raw(10);
             homeworld.set_ground_batteries_raw(4);
             homeworld.set_ownership_status_raw(2);
@@ -167,12 +165,12 @@ pub(crate) fn init_starbase_tax_probe(
             unowned_indices.into_iter().zip(STARBASE_PROBE_COLONY_SPECS)
         {
             let planet = &mut data.planets.records[planet_idx];
-            let mut potential = planet.potential_production_raw();
-            potential[0] = STARBASE_PROBE_POTENTIAL_PRODUCTION.min(u16::from(u8::MAX)) as u8;
             planet.set_owner_empire_slot_raw(empire_raw);
             planet.set_ownership_status_raw(2);
             planet.set_planet_name(name);
-            planet.set_potential_production_raw(potential);
+            planet.set_potential_production_points(
+                STARBASE_PROBE_POTENTIAL_PRODUCTION.min(u16::from(u8::MAX)) as u8,
+            );
             if !planet.set_present_production_points(STARBASE_PROBE_PRESENT_PRODUCTION) {
                 return Err(format!(
                     "unsupported probe production value {} for planet {}",
@@ -181,7 +179,6 @@ pub(crate) fn init_starbase_tax_probe(
                 )
                 .into());
             }
-            planet.set_economy_marker_raw(tax_rate);
             planet.set_army_count_raw(STARBASE_PROBE_ARMIES);
             planet.set_ground_batteries_raw(STARBASE_PROBE_BATTERIES);
             for slot in 0..10 {
@@ -190,13 +187,12 @@ pub(crate) fn init_starbase_tax_probe(
             }
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
                 planet.set_stardock_count_raw(slot, 0);
-                planet.set_stardock_kind_raw(slot, 0);
             }
-            planet.set_stored_goods_raw(0);
+            planet.set_stored_production_points(0);
 
             if has_starbase {
-                planet.set_stardock_kind_raw(0, 9);
-                planet.set_stardock_count_raw(0, 1);
+                let slot = nc_data::stardock_slot_for_kind(9).expect("starbase stardock slot");
+                planet.set_stardock_count_raw(slot, 1);
                 starbase_planet_index_1_based = Some(planet_idx + 1);
             }
         }
@@ -205,7 +201,7 @@ pub(crate) fn init_starbase_tax_probe(
             data.commission_planet_stardock_slot(
                 player_record_index_1_based,
                 planet_index_1_based,
-                0,
+                nc_data::stardock_slot_for_kind(9).expect("starbase stardock slot"),
             )?;
         }
 
@@ -300,26 +296,6 @@ pub(crate) fn print_economy_report(
     }
 
     Ok(())
-}
-
-fn probe_present_production_raw(points: u16) -> Result<[u8; 6], Box<dyn std::error::Error>> {
-    if points == 0 {
-        return Ok([0; 6]);
-    }
-    let mut exponent_steps: u8 = 0;
-    let mut reduced = points;
-    while reduced > 25 && reduced % 2 == 0 {
-        reduced /= 2;
-        exponent_steps = exponent_steps.saturating_add(1);
-    }
-    if reduced != 25 {
-        return Err(format!(
-            "unsupported probe production value {}; expected 25 * 2^n",
-            points
-        )
-        .into());
-    }
-    Ok([0x00, 0x00, 0x00, 0x00, 0x48, 0x85 + exponent_steps])
 }
 
 fn probe_name_len(name: &str) -> u8 {

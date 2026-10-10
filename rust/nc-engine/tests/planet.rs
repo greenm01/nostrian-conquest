@@ -30,8 +30,7 @@ fn planet_build_view_counts_queue_and_stardock_units() {
     let planet = &mut game_data.planets.records[0];
     planet.set_build_kind_raw(0, 3);
     planet.set_build_count_raw(0, 90);
-    planet.set_stardock_kind_raw(0, 2);
-    planet.set_stardock_count_raw(0, 5);
+    planet.set_stardock_count_raw(1, 5);
 
     let row = game_data.empire_planet_economy_rows(1).remove(0);
     let view = planet_build_view(&game_data, &row).expect("view");

@@ -205,7 +205,6 @@ fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     // Cruiser speed settles in orbit one sector away within the year.
     scout.recompute_max_speed_from_composition();
     scout.set_current_speed(scout.max_speed());
-    game_data.planets.records[13].set_stardock_kind_raw(0, 1);
     game_data.planets.records[13].set_stardock_count_raw(0, 2);
     seed_runtime_snapshot(&target, &game_data);
 

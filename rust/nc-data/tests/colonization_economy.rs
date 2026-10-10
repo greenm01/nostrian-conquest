@@ -61,5 +61,5 @@ fn newly_colonized_active_planets_skip_same_turn_economics() {
     let colony = &game.planets.records[target_idx];
     assert_eq!(colony.owner_empire_slot_raw(), 1);
     assert_eq!(colony.stored_production_points(), 0);
-    assert_eq!(colony.present_production_points().unwrap_or(0), 0);
+    assert_eq!(colony.present_production_points().unwrap_or(0), 1);
 }

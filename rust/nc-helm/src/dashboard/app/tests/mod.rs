@@ -4352,7 +4352,6 @@ fn clear_stardock(app: &mut DashApp, record: usize) {
         .get_mut(record.saturating_sub(1))
         .expect("planet record");
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_kind_raw(slot, 0);
         planet.set_stardock_count_raw(slot, 0);
     }
 }
@@ -4383,7 +4382,6 @@ fn prepare_selected_planet_for_owned_commands(app: &mut DashApp, record: usize) 
         .get_mut(record.saturating_sub(1))
         .expect("planet record");
     planet.set_army_count_raw(5);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 1);
 
     let fleet = app
@@ -4408,7 +4406,6 @@ fn seed_extra_owned_planet_with_stardock(app: &mut DashApp) -> usize {
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1 && planet.coords_raw() != [0, 0])
         .expect("non-player planet");
     planet.set_owner_empire_slot_raw(1);
-    planet.set_stardock_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 1);
     idx + 1
 }
@@ -4433,7 +4430,7 @@ fn seed_extra_owned_regular_planet(app: &mut DashApp) -> usize {
         .find(|(_, planet)| planet.coords_raw() == [0, 0])
         .expect("unused planet record");
     planet.set_coords_raw(coords);
-    planet.set_potential_production_raw([50, 0]);
+    planet.set_potential_production_points(50);
     planet.set_ownership_status_raw(1);
     planet.set_owner_empire_slot_raw(1);
     planet.set_status_or_name_summary_raw("Outpost");

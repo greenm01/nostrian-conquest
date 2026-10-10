@@ -162,7 +162,6 @@ pub(super) fn sanitize_invalid_player_inputs(
                         )
                 {
                     planet.set_stardock_count_raw(slot, 0);
-                    planet.set_stardock_kind_raw(slot, 0);
                 }
             }
             events.push(InvalidPlayerStateEvent::PlanetInput {

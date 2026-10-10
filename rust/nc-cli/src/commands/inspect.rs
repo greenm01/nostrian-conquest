@@ -52,7 +52,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.string_len(),
             record.status_or_name_summary(),
             &record.raw[0x58..0x61],
-            record.factories_word_raw(),
+            u16::from_le_bytes([record.raw[0x08], record.raw[0x09]]),
             record.derived_summary()
         );
     }

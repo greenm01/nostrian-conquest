@@ -285,7 +285,6 @@ fn parse_planet(node: &kdl::KdlNode) -> Result<PlanetSpec, HarnessError> {
                 spec.potential_production = opt_prop_u16(child, "potential")?;
                 spec.present_production = opt_prop_u16(child, "present")?;
                 spec.stored_production = opt_prop_u32(child, "stored")?;
-                spec.economy_marker = opt_prop_u8(child, "economy_marker")?;
             }
             "defenses" => {
                 spec.armies = opt_prop_u8(child, "armies")?;

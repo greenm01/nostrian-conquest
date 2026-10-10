@@ -231,7 +231,6 @@ fn maintenance_survives_deterministic_invalid_input_matrix() {
         game_data.planets.records[0].set_build_count_raw(0, 9);
         game_data.planets.records[0].set_build_kind_raw(0, 0xfe);
         game_data.planets.records[0].set_stardock_count_raw(0, 2);
-        game_data.planets.records[0].set_stardock_kind_raw(0, 0xfe);
         game_data.player.records[0].set_tax_rate_raw(255);
 
         let result = run_maintenance_turn(&mut game_data);
