@@ -106,3 +106,6 @@ releases/*-release-note.md
 
 # Local bot/LLM turn submissions and notes.
 .tmp/
+
+# Local Claude Code settings and agent worktrees.
+/.claude/
