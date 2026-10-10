@@ -25,15 +25,9 @@ pub(super) fn process_build_completion(
 pub(super) fn process_planet_economics(
     game_data: &mut CoreGameData,
     planets_with_builds: &[usize],
-    newly_colonized_planets: &[usize],
     starbase_planets: &[usize],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    planets::process_planet_economics(
-        game_data,
-        planets_with_builds,
-        newly_colonized_planets,
-        starbase_planets,
-    )
+    planets::process_planet_economics(game_data, planets_with_builds, starbase_planets)
 }
 
 pub(super) fn recompute_player_planet_stats(game_data: &mut CoreGameData) {

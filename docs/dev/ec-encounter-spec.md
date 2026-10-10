@@ -73,8 +73,10 @@ that empire knows about that unit: 0 unknown, 1 contact, 2 identified,
 
 ### Year driver `0824:1004` [C]
 Called once per simulated year (ECMAINT `/R` normally runs one year).
-Before it, per year: `0824:26a5`, `24a3:3cc6` (orders/production per player),
-`1852:0000` (planet economy).
+Before it, per year: `0824:26a5` (CONQUEST previous-year snapshot),
+`24a3:3cc6` (rogue and autopilot orders), `1852:0000` (the planet pass:
+status step, builds, economy); see
+[ec-turn-cycle-spec.md](ec-turn-cycle-spec.md) section 4.0.
 
 ```
 for each unit i: key[i] = Random(0xFFDC)          // TP Random(n) = (Seed>>16) mod n

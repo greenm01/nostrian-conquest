@@ -35,17 +35,27 @@ policy that runs inside the recovered post-loop world update region.
 
 ## Turn-Order Placement
 
-The recovered yearly turn order constrains economy and build behavior:
-- Build completion and economy run in the **post-loop world update region**.
-- This occurs **after** the weekly 52-pass fleet combat loop.
-- This occurs **before** the hostile world-resolution region (Bombard, Invade,
-  Blitz).
+ECMAINT runs its planet pass (`1852:0000`, called at `0824:29d1`) before
+the year's 52 ticks (`0824:1004`, called at `0824:29d6`); see
+[ec-turn-cycle-spec.md](ec-turn-cycle-spec.md) section 4.0. For each owned
+world, in this order: the ownership status steps 0 to 1 to 2, the starbase
+growth bonus is settled, the build queue completes, the economy runs. Rust
+keeps that order: `run_maintenance_turn` completes builds and settles the
+economy right before the tick loop. The rogue and autopilot orders pass,
+which classic runs at the start of the year before the planet pass, Rust
+runs at the end of the previous turn, which is the same point in the cycle.
 
 ### Impact:
-- Ships and starbases enter stardock before a hostile assault hits the planet.
-- Bombardment and invasion see post-build planet state.
-- Armies and batteries completed in this region go straight to the planet surface.
-- Later hostile actions read these units as planet state, not stardock inventory.
+- Ships and starbases enter the stardock before the first tick, so a
+  bombardment or capture in any tick of the year, and any scout's report,
+  sees them.
+- Armies and batteries completed this year defend the planet from the first
+  tick.
+- The economy reads the world as the previous year left it: a world
+  colonized or captured during the ticks takes its first income next year,
+  and Salvage credits land on top of the year's income.
+- The build budget is read before the year's income is credited; income is
+  spent the following year.
 
 ## Source Basis
 
