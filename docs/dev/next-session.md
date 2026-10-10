@@ -15,6 +15,11 @@ are in the
 tracked with todo.txt and zk per [work-tracking.md](work-tracking.md). Start
 with `zk queue`.
 
+**v1.0.0-beta.3 (2026-10-10).** The Linux nc-sysop archive is published. The
+Windows archives (t024) and the Windows console check (t019) are next, on
+Windows after `git pull`; the Windows download links 404 until then. The new
+`nc-fuzz` crate runs Hegel and proptest drivers over engine invariants.
+
 ## Current Goal
 
 - Stabilize the localhost and BBS release surfaces for public beta use.

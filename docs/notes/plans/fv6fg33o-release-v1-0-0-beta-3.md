@@ -36,10 +36,17 @@ suite passes:
 
 On Windows, after `git pull`: build the Windows x64, Windows x86, and
 Windows 7+ x86 `nc-sysop` archives with the MSVC toolchain the release script
-targets, upload them, and regenerate and re-sign `SHA256SUMS.txt`. Then point
-the three Windows links in `website/landing/downloads.html` at beta.3; t023
-moved only the Linux link so every link keeps resolving until then. Do this
-in the same session as the t019 Windows console check.
+targets, upload them, and regenerate and re-sign `SHA256SUMS.txt`. Do this
+in the same session as the t019 Windows console check. Until then the
+Windows download links 404: see the t023 result.
+
+Result of t023 (2026-10-10): the Linux x64 archive (built on stable rustc
+1.98.0 from `ce383f2d`) is uploaded with a signed `SHA256SUMS.txt` that
+covers only it, and main is pushed. `publish_release_packages.py` prunes every
+nc-sysop and nc-connect asset not at the current version, so publishing
+deleted the beta.2 Windows zips. All four links in
+`website/landing/downloads.html` now name beta.3, so the Windows links work
+again once t024 uploads those archives. Deploy the site after t024.
 
 ## Connections
 
