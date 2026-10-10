@@ -226,6 +226,8 @@ with an ADR that supersedes the two-sides clause of the engagement ADR.
 
 ## Decisions for the user
 
+Decision 3 now uses [RT — Recovery Turns](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md): automatic recovery without costs, orders, or a shipyard requirement. Class values are unselected. Paid-repair proposals earlier in this investigation are rejected alternatives.
+
 Decision 1 was approved on 2026-10-10: [EotS effectiveness, battle-local carry, and full-DS finishing](../decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md). Implementation is pending. This approval does not select the remaining decisions below.
 
 The candidates above, grouped for a decision after the sweep (t055) has

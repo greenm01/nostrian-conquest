@@ -8,6 +8,7 @@ import statistics
 from pathlib import Path
 
 from analyze import NC_SOURCE, SEED, classic_step, fractional_step, nc_step
+from repair import repair_batch, repair_installments
 
 
 HOME = (16, 16)
@@ -33,7 +34,8 @@ def tax_at(policy, year):
     return 35 if policy == "35_then_65" and year <= 5 else 65 if policy == "35_then_65" else int(policy)
 
 
-def simulate(seed, worlds=24, model="nc", policy="50", colonizers=2, etac_cost=20, speed=3):
+def simulate(seed, worlds=24, model="nc", policy="50", colonizers=2, etac_cost=20, speed=3,
+             repair_costs=(), repair_first=True, repair_mode='whole'):
     targets = sampled_map(seed, worlds)
     rng = random.Random(seed + 1000000)
     planets = [{"coords": HOME, "p": 100, "k": 100, "goods": 50, "home": True}]
@@ -45,6 +47,12 @@ def simulate(seed, worlds=24, model="nc", policy="50", colonizers=2, etac_cost=2
         "first_colony_can_order_BB45", "first_colony_can_order_BB60",
     )}
     rows = {}
+    damaged = list(repair_costs)
+    repair_rule = repair_batch
+    if repair_mode == 'installments':
+        damaged = [(cost, 0) for cost in repair_costs]
+        repair_rule = repair_installments
+    repair_rows = []
 
     def step(planet, tax):
         if model == "classic":
@@ -57,10 +65,21 @@ def simulate(seed, worlds=24, model="nc", policy="50", colonizers=2, etac_cost=2
         # Only home builds extra ETACs. Pay before income; commission next year.
         home = planets[0]
         budget = int(min(home["goods"], home["p"]))
+        repair_bill = 0
+        if repair_first:
+            damaged, repair_bill = repair_rule(damaged, budget)
+            home["goods"] -= repair_bill
+            budget -= repair_bill
         while len(ships) < colonizers and budget >= etac_cost:
             home["goods"] -= etac_cost
             budget -= etac_cost
             ships.append({"coords": HOME, "ready": year + 1, "target": None, "arrival": None})
+        if not repair_first:
+            damaged, repair_bill = repair_rule(damaged, budget)
+            home["goods"] -= repair_bill
+        if repair_costs:
+            repair_rows.append(dict(year=year, bill=repair_bill, damaged=len(damaged),
+                                    etacs=len(ships)))
 
         # Affordability is an alternative use of unspent local reserves, not purchases.
         for planet in planets[1:]:
@@ -101,7 +120,10 @@ def simulate(seed, worlds=24, model="nc", policy="50", colonizers=2, etac_cost=2
                 "annual_income": sum(incomes),
                 "local_reserves_sum": sum(p["goods"] for p in planets),
             }
-    return {"milestones": metrics, "snapshots": rows}
+    result = {"milestones": metrics, "snapshots": rows}
+    if repair_costs:
+        result['repair'] = repair_rows
+    return result
 
 
 def distribution(values, trials):

@@ -75,3 +75,9 @@ post-colonization income timing, local capacity, and censored milestones.
 Next validate selected cases in the existing KDL harness, then combine real
 map seeds and movement with chosen t055 combat rules. Do not add random
 economic events merely to give Monte Carlo something to sample.
+
+The t062 `repair.py`, `repair_pacing.py`, and `repair_pacing_results.json` preserve
+a **rejected paid-repair alternative**. They are not selected NC mechanics.
+The owner instead approved [automatic RT recovery](../../docs/notes/decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md).
+The optional repair arguments in `campaign.py` support that historical comparison;
+the default peaceful campaign is unchanged.
