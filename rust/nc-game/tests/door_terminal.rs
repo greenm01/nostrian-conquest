@@ -329,6 +329,30 @@ fn timed_out_escape_drops_late_sync_term_suffix_instead_of_leaking_menu_keys() {
 }
 
 #[test]
+fn door_decoder_drops_late_sync_term_suffix_after_timed_out_escape() {
+    let got = stdio_keys(&[(0, b"\x1b"), (600, b"[V")]);
+    assert_eq!(got, vec![plain(KeyCode::Esc)]);
+}
+
+#[test]
+fn door_decoder_keeps_keys_typed_after_a_timed_out_escape() {
+    // A single typed '[' is its own read, never an orphaned suffix.
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (300, b"[")]),
+        vec![plain(KeyCode::Esc), plain(KeyCode::Char('['))]
+    );
+    // Past the orphan window, a read starting with '[' is ordinary input.
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (1600, b"[V")]),
+        vec![
+            plain(KeyCode::Esc),
+            plain(KeyCode::Char('[')),
+            plain(KeyCode::Char('V'))
+        ]
+    );
+}
+
+#[test]
 fn timed_sync_term_page_keys_decode_without_falling_back_to_escape() {
     let got = decode_timed_input_stream_for_test(&[
         (0, b"\x1b"),

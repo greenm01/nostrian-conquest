@@ -19,6 +19,11 @@ use super::door_transport::{DoorIo, build_door_io};
 use super::stdout::resolve_color;
 
 const DOOR_ESCAPE_TIMEOUT_MS: i32 = 100;
+/// How long after a timed-out bare Esc is delivered a late `[`/`O` suffix
+/// burst is still treated as the rest of that key (BBS hosts can split a
+/// SyncTERM key sequence by several hundred milliseconds). A key typed on its
+/// own is a single-byte read and is never dropped.
+const DOOR_ORPHAN_SUFFIX_WINDOW_MS: u64 = 1000;
 const DOOR_DOS_PREFIX_TIMEOUT_MS: i32 = 2000;
 const MAX_ESCAPE_SEQUENCE_BYTES: usize = 16;
 const DEFAULT_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[0 q";
@@ -524,7 +529,7 @@ fn orphaned_suffix_deadline(
         && matches!(pending.front().copied(), Some(0x1b))
         && consumed == 1
         && pending.len() == 1;
-    is_bare_escape.then(|| Instant::now() + Duration::from_millis(DOOR_ESCAPE_TIMEOUT_MS as u64))
+    is_bare_escape.then(|| Instant::now() + Duration::from_millis(DOOR_ORPHAN_SUFFIX_WINDOW_MS))
 }
 
 fn drop_orphaned_escape_suffix(burst: &mut Vec<u8>, orphan_deadline: Option<Instant>) {
@@ -711,11 +716,13 @@ pub fn decode_timed_input_stream_for_test(
     for &(chunk_time_ms, bytes) in chunks {
         if let Some(deadline) = deadline_ms {
             if chunk_time_ms > deadline {
+                // Production finalizes when the sequence wait expires, not
+                // when the late bytes show up.
                 finalize_timed_pending(
                     &mut pending,
                     &mut events,
                     &mut orphan_deadline_ms,
-                    chunk_time_ms,
+                    deadline,
                 );
                 deadline_ms = None;
             }
@@ -905,7 +912,7 @@ fn finalize_timed_pending(
                 && consumed == 1
                 && pending.len() == 1
             {
-                *orphan_deadline_ms = Some(now_ms.saturating_add(DOOR_ESCAPE_TIMEOUT_MS as u64));
+                *orphan_deadline_ms = Some(now_ms.saturating_add(DOOR_ORPHAN_SUFFIX_WINDOW_MS));
             } else {
                 *orphan_deadline_ms = None;
             }
