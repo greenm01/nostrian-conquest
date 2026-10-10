@@ -344,6 +344,23 @@ load average was 65-70 from parallel builds; it passes when run alone. Replace
 the sleeps with waits on observable progress, such as reading stdout until the
 expected prompt appears, with a generous timeout.
 
+Result (2026-10-09): with 128 busy loops competing for 32 cores, the old test
+failed 10 of 10 runs: the `j` keystroke arrived before the first-time menu was
+read, so "EMPIRE NAME" never appeared. The test now collects the child's stdout
+on a reader thread and sends each key only after the screen it answers is
+drawn: `j` after "FIRST TIME COMMAND", Esc after "EMPIRE NAME", and `q` after
+the reserved-seat prompt "Continue with reserved setup?". It then closes stdin,
+which ends the session, as the old writer thread did. One 30 s deadline covers
+the waits and the exit; a missed prompt kills the child and fails with the
+stdout seen so far. Under the same load the new test passed 20 of 20 runs, and
+its assertions are unchanged. The `collect_stdout` and `wait_for_stdout`
+helpers live in `nc-game/tests/basic.rs`. One other test there still sleeps
+before a key: `nc_door_rejects_schema_mismatch_with_dismissible_error_screen`
+(150 ms, then a 5 s exit timeout). It does not use the helpers, so it was left
+as it is; it passed 10 of 10 runs under the same load. The Windows-only
+`windows_nonblocking_socket_door_terminal_handles_would_block` sleeps on
+purpose to provoke a would-block read.
+
 ### t028
 
 Found in t018. When a DOOR.SYS handle binds no seat, binding retries with the

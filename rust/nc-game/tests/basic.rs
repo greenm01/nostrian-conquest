@@ -1,12 +1,11 @@
-#[cfg(windows)]
 use std::io::Read;
 use std::path::PathBuf;
 use std::process::Command;
 use std::process::Stdio;
-use std::sync::Mutex;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use std::time::{SystemTime, UNIX_EPOCH};
 use std::{fs, path::Path};
 use std::{io::Write, process::Child};
@@ -115,6 +114,54 @@ fn wait_for_exit(child: &mut Child, timeout: Duration) -> std::process::ExitStat
             return child.wait().expect("wait after kill");
         }
         thread::sleep(Duration::from_millis(25));
+    }
+}
+
+/// Collect a child's stdout on a background thread, so a test can wait for a
+/// prompt before it sends the next key.
+fn collect_stdout(child: &mut Child) -> (Arc<Mutex<Vec<u8>>>, thread::JoinHandle<()>) {
+    let mut stdout = child.stdout.take().expect("stdout should be piped");
+    let collected = Arc::new(Mutex::new(Vec::new()));
+    let sink = Arc::clone(&collected);
+    let reader = thread::spawn(move || {
+        let mut buf = [0u8; 4096];
+        while let Ok(read @ 1..) = stdout.read(&mut buf) {
+            sink.lock()
+                .expect("stdout lock")
+                .extend_from_slice(&buf[..read]);
+        }
+    });
+    (collected, reader)
+}
+
+/// Wait until `needle` appears in the collected stdout at or after byte
+/// `from`, and return the offset just past it. Kill the child and fail if it
+/// does not appear before `deadline`.
+fn wait_for_stdout(
+    child: &mut Child,
+    stdout: &Mutex<Vec<u8>>,
+    needle: &str,
+    from: usize,
+    deadline: Instant,
+) -> usize {
+    loop {
+        {
+            let bytes = stdout.lock().expect("stdout lock");
+            if let Some(pos) = bytes[from.min(bytes.len())..]
+                .windows(needle.len())
+                .position(|window| window == needle.as_bytes())
+            {
+                return from + pos + needle.len();
+            }
+            if Instant::now() >= deadline {
+                child.kill().ok();
+                panic!(
+                    "timed out waiting for {needle:?} in nc-game stdout: {:?}",
+                    String::from_utf8_lossy(&bytes)
+                );
+            }
+        }
+        thread::sleep(Duration::from_millis(10));
     }
 }
 
@@ -287,27 +334,40 @@ fn piped_dropfile_launch_stays_interactive_without_tty_stdout() {
         .spawn()
         .expect("nc-game should start");
 
+    // Send each key only once the screen it answers has been drawn.
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let (stdout, reader) = collect_stdout(&mut child);
     let mut stdin = child.stdin.take().expect("stdin should be piped");
-    let writer = thread::spawn(move || {
-        thread::sleep(Duration::from_millis(150));
-        stdin.write_all(b"j").expect("write join key");
-        stdin.flush().expect("flush join key");
-        thread::sleep(Duration::from_millis(200));
-        stdin.write_all(&[0x1b]).expect("write escape key");
-        stdin.flush().expect("flush escape key");
-        thread::sleep(Duration::from_millis(200));
-        stdin.write_all(b"q").expect("write quit key");
-        stdin.flush().expect("flush quit key");
-    });
+    let mut seen = wait_for_stdout(&mut child, &stdout, "FIRST TIME COMMAND", 0, deadline);
+    stdin.write_all(b"j").expect("write join key");
+    stdin.flush().expect("flush join key");
+    seen = wait_for_stdout(&mut child, &stdout, "EMPIRE NAME", seen, deadline);
+    stdin.write_all(&[0x1b]).expect("write escape key");
+    stdin.flush().expect("flush escape key");
+    wait_for_stdout(
+        &mut child,
+        &stdout,
+        "Continue with reserved setup?",
+        seen,
+        deadline,
+    );
+    stdin.write_all(b"q").expect("write quit key");
+    stdin.flush().expect("flush quit key");
+    // Closing stdin ends the session.
+    drop(stdin);
 
-    let status = wait_for_exit(&mut child, Duration::from_secs(5));
-    writer.join().expect("writer thread should finish");
+    let status = wait_for_exit(
+        &mut child,
+        deadline.saturating_duration_since(Instant::now()),
+    );
+    reader.join().expect("stdout reader should finish");
     let output = child.wait_with_output().expect("collect child output");
+    let stdout = std::mem::take(&mut *stdout.lock().expect("stdout lock"));
 
     assert!(
         status.success(),
         "nc-game failed: stdout={:?} stderr={:?}",
-        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&stdout),
         String::from_utf8_lossy(&output.stderr)
     );
     assert!(
@@ -316,7 +376,7 @@ fn piped_dropfile_launch_stays_interactive_without_tty_stdout() {
         String::from_utf8_lossy(&output.stderr)
     );
 
-    let stdout = String::from_utf8(output.stdout).expect("stdout should be utf-8");
+    let stdout = String::from_utf8(stdout).expect("stdout should be utf-8");
     assert!(stdout.contains("FIRST TIME MENU:"));
     assert!(stdout.contains("EMPIRE NAME"));
 }
