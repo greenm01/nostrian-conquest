@@ -18,7 +18,7 @@ Scope of this probe set:
 | case | rust arrival | classic arrival | arrival byte match | turn-by-turn match |
 | --- | ---: | ---: | --- | --- |
 | bombard-delayed | 1 | 1 | yes | no |
-| invade-delayed | 1 | 1 | yes | no |
+| invade-delayed | 1 | 1 | yes | yes |
 | blitz-delayed-strong | 1 | 1 | yes | yes |
 
 ## bombard-delayed
@@ -29,7 +29,7 @@ Scope of this probe set:
 - Classic arrival turn: `1`
 - Rust arrival bytes: `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
 - Classic arrival bytes: `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
-- Rust resolution trace: `15,13 order=bombard spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
+- Rust resolution trace: `15,13 order=bombard spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00`
 - Classic resolution trace: `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00`
 - turn-by-turn match: `no`
 
@@ -37,7 +37,7 @@ Scope of this probe set:
 | ---: | --- | --- |
 | 0 | `16,13 order=bombard spd=3 eta=unreachable 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` | `16,13 order=bombard spd=3 eta=unreachable 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
 | 1 | `15,13 order=bombard spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` | `15,13 order=bombard spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` |
-| 2 | `15,13 order=bombard spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` | `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
+| 2 | `15,13 order=bombard spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` | `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
 
 ## invade-delayed
 
@@ -47,15 +47,15 @@ Scope of this probe set:
 - Classic arrival turn: `1`
 - Rust arrival bytes: `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
 - Classic arrival bytes: `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
-- Rust resolution trace: `15,13 order=invade spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`
+- Rust resolution trace: `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00`
 - Classic resolution trace: `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00`
-- turn-by-turn match: `no`
+- turn-by-turn match: `yes`
 
 | turn | Rust | Classic |
 | ---: | --- | --- |
 | 0 | `16,13 order=invade spd=3 eta=unreachable 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` | `16,13 order=invade spd=3 eta=unreachable 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
 | 1 | `15,13 order=invade spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` | `15,13 order=invade spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` |
-| 2 | `15,13 order=invade spd=3 eta=unreachable 19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f` | `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
+| 2 | `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` | `15,13 order=hold spd=0 eta=arrived 19=81 1a=00 1b=00 1c=00 1d=00 1e=00` |
 
 ## blitz-delayed-strong
 
