@@ -178,16 +178,61 @@ Either keep classic's two-sided battles and apply the theaters only at the
 strike gate (the smaller change, no new ADR), or join sides as in step 1
 (supersedes the "exactly two sides" clause of the engagement ADR).
 
+## Consultation with Codex (2026-10-10)
+
+Codex reviewed this note independently
+([rolr9ti0](rolr9ti0-independent-nc-combat-balance-analysis.md), with
+Python models in `tools/combat-model/`). Its four code findings were
+verified against main: strikes resolve at year end, not in their tick
+(contrary to the combat ADR); survivors keep a dead hull's speed; retreat
+targets deep space over the home sector by Manhattan distance; the mixed
+bonus fires on any two hull types. It corrected this note in four places,
+accepted here: destroyers do not dominate at equal cost; "joined vs two
+sides" is a false choice (two empires per battle, each side joined, with a
+willingness test); criticals should focus an existing damage budget, not
+grant a free kill; the flat table should start at EotS's 0.625 mean. Its
+strongest new finding is the ground-combat cliff: against ten defenders,
+ten attackers capture 8% of the time and eleven 83%.
+
+Agreed with Codex:
+
+- Mechanical fixes, classic's domain or plain bugs, to do now (t052-t054):
+  strikes in their eligible tick on top of t048; survivor speed recomputed
+  after losses; retreat to the nearest owned world by the classic
+  travel-distance picker, into orbit, with the climb as the first leg and
+  ROE unchanged; then the deterministic orbital gate for the owner's base.
+- Rule decisions, candidates until the user selects them: per-fleet ROE
+  after one compulsory exchange with a bounded pursuit episode (one
+  exchange per opposing empire, ended by leaving the sector or layer);
+  persistent crippled counts with repair at 25% of build cost at an owned
+  world, at rest in orbit, from a maintenance-start snapshot; a flat
+  effectiveness table with three remainder variants compared in a sweep
+  (discard, residual roll, carry forward); criticals as budget focus;
+  dropping the mixed bonus; a conditional auxiliary screen; batteries
+  before docked assets; a separate ground rule (defender-first with one
+  effectiveness roll per side, or simultaneous per-army fire), compared
+  across scale; chronological assaults instead of class priority and the
+  annual ownership cap; joined sides with a willingness test and
+  proportional loss allocation; surprise as a first-exchange +1 from a
+  persisted alert state; DD 10/8 at cost 5 as the first hull playtest.
+- Tooling: a combat-odds sweep with AS/DS/cost tables as explicit inputs
+  and fresh combat seeds per trial (ScenarioPlay passes seed 0 today), plus
+  exact enumeration for d10 pairs and ground combat; odds tables for the
+  manual's Appendix B (t055).
+
+The sequence: mechanical fixes, then persistence in t039's typed model,
+then the sweep-driven resolution choice, then participation and surprise
+with an ADR that supersedes the two-sides clause of the engagement ADR.
+
 ## Decisions for the user
 
-1. Joined sides (task forces) or classic's two sides.
-2. Flatten the CRT to a flat CER with shifts, or keep ratio columns.
-3. Drop the 3-round lock and withdrawal exchange in favour of per-round ROE
-   and the pursuit chase.
-4. Restrict execution fire to critical hits, or keep it for DD and bases.
-5. Battery lethality: fleet-killer (AS 90, execution) or siege cost.
-6. Conditional auxiliary screen or absolute.
-7. Use surprise: an attacker unsighted at the strike tick fires first.
+The candidates above, grouped for a decision after the sweep (t055) has
+numbers: (1) resolution table and remainder rule; (2) ROE, withdrawal, and
+pursuit; (3) persistence and repair; (4) ground combat rule; (5) assault
+ordering (chronological, no class priority, no annual cap) and the
+batteries-first collateral order; (6) participation (joined sides) and
+surprise; (7) hull values and prices, starting with DD 10/8 at cost 5.
+Execution fire stays for DD and bases; batteries stay dangerous.
 
 ## Connections
 
@@ -196,3 +241,5 @@ strike gate (the smaller change, no new ADR), or join sides as in step 1
 - [Typed game state plan](../plans/7h5r6ne8-typed-game-state-in-rust-and-sqlite.md):
   crippled counts belong in the typed fleet.
 - [ec-movement-spec.md](../../dev/ec-movement-spec.md): the depth axis.
+- [Codex's independent analysis](rolr9ti0-independent-nc-combat-balance-analysis.md)
+  and the models in `tools/combat-model/`.
