@@ -64,8 +64,11 @@ in distribution, not roll for roll.
 
 Encounter resolution moves from year-end co-location into the tick loop, and
 the movement stepper runs inside that loop instead of once per fleet per
-year. The blockade departure strike (t021) was not examined in classic and
-needs a probe before t035 settles it. The player manual's "Who Fights Whom"
+year. Classic has no blockade departure strike: a blockader catches a fleet leaving
+its world only through the normal sighting and intercept rolls while the
+leaver is still in orbit, and only if the blockader's empire has declared the
+leaver an enemy. The Rust departure strike from t021 goes. The full rule and
+its constants are in [ec-encounter-spec.md](../../dev/ec-encounter-spec.md). The player manual's "Who Fights Whom"
 section and the combat spec change with the implementation. That work depends
 on the depth layer from t031.
 
