@@ -1,6 +1,7 @@
 use crate::domains::startup::screens::startup::StartupReviewMode;
 use crate::screen::ScreenId;
 use crate::theme::ThemeEntry;
+use nc_data::SeatBindSource;
 pub use nc_session::onboarding::FirstTimeOnboardingMode;
 
 pub struct StartupState {
@@ -30,6 +31,8 @@ pub struct StartupState {
     pub theme_picker_return_screen: Option<ScreenId>,
     pub prejoin_theme_key: Option<String>,
     pub caller_alias: Option<String>,
+    /// Whether `caller_alias` is the BBS handle or the DOOR.SYS real name.
+    pub caller_alias_source: SeatBindSource,
     pub reserved_seat_alias: Option<String>,
     pub unbound_bbs_caller: bool,
     pub fixed_player_launch: bool,
@@ -70,6 +73,7 @@ impl Default for StartupState {
             theme_picker_return_screen: None,
             prejoin_theme_key: None,
             caller_alias: None,
+            caller_alias_source: SeatBindSource::Handle,
             reserved_seat_alias: None,
             unbound_bbs_caller: false,
             fixed_player_launch: false,

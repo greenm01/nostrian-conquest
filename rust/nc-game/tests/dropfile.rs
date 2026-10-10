@@ -230,6 +230,7 @@ fn door_sys_reads_the_handle_from_line_36() {
     assert_eq!(info.alias.as_deref(), Some("Starlord"));
     // Seats bound before the handle was read used the real name.
     assert_eq!(info.fallback_alias.as_deref(), Some("Tachyon"));
+    assert!(!info.alias_is_real_name);
     assert_eq!(info.timeout_minutes, Some(45));
 }
 
@@ -239,6 +240,7 @@ fn door_sys_uses_the_real_name_when_line_36_is_blank() {
     let info = parse(&path).expect("should parse");
     assert_eq!(info.alias.as_deref(), Some("Tachyon"));
     assert_eq!(info.fallback_alias, None);
+    assert!(info.alias_is_real_name);
 }
 
 #[test]
@@ -247,6 +249,7 @@ fn short_door_sys_uses_the_real_name_from_line_10() {
     let info = parse(&path).expect("should parse");
     assert_eq!(info.alias.as_deref(), Some("Tachyon"));
     assert_eq!(info.fallback_alias, None);
+    assert!(info.alias_is_real_name);
 }
 
 // ---------------------------------------------------------------------------

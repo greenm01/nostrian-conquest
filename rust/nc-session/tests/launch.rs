@@ -15,6 +15,7 @@ fn resolve_launch_binding_prefers_reserved_alias() {
     let binding = resolve_launch_player_binding(LaunchBindingRequest {
         explicit_player_record_index_1_based: None,
         dropfile_alias: Some("sysop"),
+        skip_stored_handle_seats: &[],
         use_door_terminal: true,
         reservations: &[SeatReservation {
             player_record_index_1_based: 2,
@@ -43,6 +44,7 @@ fn resolve_launch_binding_returns_unbound_for_new_door_caller() {
     let binding = resolve_launch_player_binding(LaunchBindingRequest {
         explicit_player_record_index_1_based: None,
         dropfile_alias: Some("newcaller"),
+        skip_stored_handle_seats: &[],
         use_door_terminal: true,
         reservations: &[],
         game_data: &game_data,
@@ -69,6 +71,7 @@ fn resolve_launch_binding_finds_handles_stored_in_classic_form() {
         let binding = resolve_launch_player_binding(LaunchBindingRequest {
             explicit_player_record_index_1_based: None,
             dropfile_alias: Some(alias),
+            skip_stored_handle_seats: &[],
             use_door_terminal: true,
             reservations: &[],
             game_data: &game_data,
@@ -90,6 +93,36 @@ fn resolve_launch_binding_finds_handles_stored_in_classic_form() {
         validate_reserved_seat_runtime(&game_data, &reservations, &reservations[0])
             .unwrap_or_else(|err| panic!("{alias}: {err}"));
     }
+}
+
+#[test]
+fn resolve_launch_binding_skips_listed_stored_handle_seats() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .build_joinable_new_game_baseline()
+        .expect("build game data");
+    game_data.join_player(2, "Empire 2").expect("join player");
+    game_data.player.records[1].set_assigned_player_handle_raw("Tachyon");
+    let request = |skip_stored_handle_seats| LaunchBindingRequest {
+        explicit_player_record_index_1_based: None,
+        dropfile_alias: Some("tachyon"),
+        skip_stored_handle_seats,
+        use_door_terminal: true,
+        reservations: &[],
+        game_data: &game_data,
+    };
+
+    assert_eq!(
+        resolve_launch_player_binding(request(&[])).expect("resolve binding"),
+        LaunchPlayerBinding::Bound {
+            player_record_index_1_based: 2,
+            source: LaunchPlayerBindingSource::StoredHandle,
+        }
+    );
+    assert_eq!(
+        resolve_launch_player_binding(request(&[2])).expect("resolve binding"),
+        LaunchPlayerBinding::UnboundDropfile
+    );
 }
 
 #[test]
