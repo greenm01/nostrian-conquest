@@ -1061,7 +1061,10 @@ impl App {
         )?;
         self.save_game_data()?;
         self.reset_fleet_detach_staging();
-        if self.current_fleet_detach_ship_total(donor_record_index_1_based) > 1 {
+        // The chain sort can move the donor to another record.
+        self.fleet.detach_donor_record_index_1_based =
+            Some(result.donor_fleet_record_index_1_based);
+        if self.current_fleet_detach_ship_total(result.donor_fleet_record_index_1_based) > 1 {
             let new_fleet_number = self
                 .fleet_number_for_record_index(result.new_fleet_record_index_1_based)
                 .unwrap_or(0);

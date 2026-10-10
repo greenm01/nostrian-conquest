@@ -78,7 +78,14 @@ pub(super) fn set_fleet_to_local_hold(record: &mut FleetRecord) {
     record.set_standing_order_kind(Order::HoldPosition);
     record.set_standing_order_target_coords_raw(coords);
     record.set_mission_target(0, 0);
-    normalize_fleet_roe_for_composition(record);
+}
+
+/// ECGAME's donor recompute after a detach or transfer (`0x18333`): a fleet
+/// left without a BB, CA, or DD gets ROE 0. Any other ROE stays.
+pub(super) fn clear_roe_without_warships(record: &mut FleetRecord) {
+    if !record.has_any_combat_ships() {
+        record.set_rules_of_engagement(0);
+    }
 }
 
 pub(super) fn normalize_fleet_roe_for_composition(record: &mut FleetRecord) {
@@ -97,40 +104,63 @@ pub(super) fn normalize_post_composition_fleet_state(
     let invalidated = composition_invalidates_current_mission(record);
     if invalidated.is_some() {
         set_fleet_to_local_hold(record);
-    } else {
-        normalize_fleet_roe_for_composition(record);
     }
     invalidated
 }
 
-pub(super) fn rebuild_owner_fleet_chain(
-    records: &mut [FleetRecord],
+/// ECGAME's new-fleet path (`0xeac1`, then the sort at `0x15d89`), shared by
+/// detach and commission. The new fleet joins the end of its owner's chain:
+/// its previous link names the last fleet, whose next link names it. ECGAME
+/// then sorts the chain by fleet number, moving each record's contents while
+/// the chain words (next, id, previous) stay at their positions. The
+/// PLAYER.DAT head is set only for an empty chain; the tail is left as it
+/// was. Returns the 1-based record index that holds the new fleet.
+pub(super) fn append_fleet_to_owner_chain(
+    records: &mut Vec<FleetRecord>,
     player: &mut PlayerRecord,
-    owner_empire: u8,
-) {
-    let mut owned = records
-        .iter()
-        .enumerate()
-        .filter(|(_, fleet)| fleet.owner_empire_raw() == owner_empire)
-        .map(|(idx, fleet)| (idx, fleet.local_slot_word_raw(), fleet.fleet_id_word_raw()))
-        .collect::<Vec<_>>();
-    owned.sort_unstable_by_key(|(_, local_slot, _)| *local_slot);
-
-    player.set_fleet_chain_head_raw(owned.first().map(|(_, _, fleet_id)| *fleet_id).unwrap_or(0));
-
-    for (position, (idx, _, _)) in owned.iter().enumerate() {
-        let previous_id = position
-            .checked_sub(1)
-            .and_then(|prev| owned.get(prev))
-            .map(|(_, _, fleet_id)| *fleet_id)
-            .unwrap_or(0);
-        let next_id = owned
-            .get(position + 1)
-            .map(|(_, _, fleet_id)| *fleet_id)
-            .unwrap_or(0);
-        records[*idx].set_previous_fleet_id(previous_id);
-        records[*idx].set_next_fleet_link_word_raw(next_id);
+    mut fleet: FleetRecord,
+) -> usize {
+    let owner_empire = fleet.owner_empire_raw();
+    let mut chain = Vec::new();
+    let mut fleet_id = player.fleet_chain_head_raw();
+    while fleet_id != 0 && chain.len() < records.len() {
+        let Some(idx) = records.iter().position(|record| {
+            record.owner_empire_raw() == owner_empire && record.fleet_id_word_raw() == fleet_id
+        }) else {
+            break;
+        };
+        chain.push(idx);
+        fleet_id = records[idx].next_fleet_link_word_raw();
     }
+
+    let new_fleet_id = fleet.fleet_id_word_raw();
+    let new_fleet_number = fleet.local_slot_word_raw();
+    fleet.set_next_fleet_link_word_raw(0);
+    if let Some(&last) = chain.last() {
+        fleet.set_previous_fleet_id(records[last].fleet_id_word_raw());
+        records[last].set_next_fleet_link_word_raw(new_fleet_id);
+    } else {
+        fleet.set_previous_fleet_id(0);
+        player.set_fleet_chain_head_raw(new_fleet_id);
+    }
+    records.push(fleet);
+    chain.push(records.len() - 1);
+
+    let mut contents = chain
+        .iter()
+        .map(|&idx| records[idx].clone())
+        .collect::<Vec<_>>();
+    contents.sort_by_key(FleetRecord::local_slot_word_raw);
+    for (&idx, mut content) in chain.iter().zip(contents) {
+        content.set_next_fleet_link_word_raw(records[idx].next_fleet_link_word_raw());
+        content.set_fleet_id_word_raw(records[idx].fleet_id_word_raw());
+        content.set_previous_fleet_id(records[idx].previous_fleet_id());
+        records[idx] = content;
+    }
+    chain
+        .into_iter()
+        .find(|&idx| records[idx].local_slot_word_raw() == new_fleet_number)
+        .map_or(records.len(), |idx| idx + 1)
 }
 
 /// A base at rest at `coords`, as ECGAME and ECMAINT create one: not moving,

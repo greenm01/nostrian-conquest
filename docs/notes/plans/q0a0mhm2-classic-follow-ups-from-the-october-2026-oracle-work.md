@@ -41,6 +41,30 @@ Small order fixes found by t038:
   with no warships. Rust's recompute does not.
 - Rust's detach does not update the PLAYER.DAT fleet chain tail.
 
+Result (ECGAME 1.51 disassembly and runs; addresses are image offsets in
+`ecgame_640k.bin`):
+
+- `0x18333` runs only on the donor, from `0x18049`, after a detach
+  (`0xf497`), a detach-and-join (`0xda27`), or a transfer (`0xdbb2`). A
+  donor left without a BB, CA, or DD gets ROE 0; any other ROE stays, even 0.
+  The transfer host, load, unload, and ECMAINT's merge (`2895:4a6b`) never
+  write `0x25`; ECMAINT's only ROE write is the retreat at `1b05:2b72`. A new
+  detached or commissioned fleet takes ROE 6 if it has warships, else 0, then
+  the ROE prompt (0-10, default 6).
+- Detach and commission share `0xeac1`. The new fleet's id is the
+  FLEETS.DAT record count plus one; its previous link names the last fleet in
+  the chain, whose next link names it. `0x15d89` then sorts the chain by
+  fleet number, moving record contents and leaving the next, id, and previous
+  words in place, so a fleet number filled into a gap takes an earlier
+  record. Nothing writes the PLAYER.DAT tail (`0x42`) except fleet deletion
+  (`0x194be`), so after a detach it still names the old last fleet, and
+  ECMAINT leaves it there. Rust matches this; whether the stale tail is a
+  classic bug is open.
+
+Rust now matches the ROE rules, the chain links, the sort, and the tail. It
+still gives a new fleet the lowest unused id, which is the record count plus
+one while ids are dense. Tests: `nc-data/tests/fleet_composition.rs`.
+
 ## t043
 
 Decide how nc-game and nc-helm handle ECGAME's "seek the next closest

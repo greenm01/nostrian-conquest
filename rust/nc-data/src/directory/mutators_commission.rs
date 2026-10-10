@@ -497,54 +497,11 @@ fn build_commissioned_fleet(
     let owner_empire = player_index_1_based as u8;
     let fleet_id = next_available_global_fleet_id(&game_data.fleets.records);
     let local_slot = next_available_owned_fleet_local_slot(&game_data.fleets.records, owner_empire);
-    let mut owned_fleets = game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .filter(|(_, fleet)| fleet.owner_empire_raw() == owner_empire)
-        .map(|(idx, fleet)| (idx, fleet.local_slot_word_raw(), fleet.fleet_id_word_raw()))
-        .collect::<Vec<_>>();
-    owned_fleets.sort_unstable_by_key(|(_, slot, _)| *slot);
-
-    let predecessor = owned_fleets
-        .iter()
-        .copied()
-        .rev()
-        .find(|(_, slot, _)| *slot < local_slot);
-    let successor = owned_fleets
-        .iter()
-        .copied()
-        .find(|(_, slot, _)| *slot > local_slot);
-    let previous_fleet_id = predecessor
-        .map(|(_, _, predecessor_fleet_id)| predecessor_fleet_id)
-        .unwrap_or(0);
-    let next_fleet_id = successor
-        .map(|(_, _, successor_fleet_id)| successor_fleet_id)
-        .unwrap_or(0);
-
-    if let Some((idx, _, _)) = predecessor {
-        game_data.fleets.records[idx].set_next_fleet_link_word_raw(fleet_id);
-    } else {
-        let player = game_data
-            .player
-            .records
-            .get_mut(player_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlayerRecord {
-                index_1_based: player_index_1_based,
-            })?;
-        player.set_fleet_chain_head_raw(fleet_id);
-    }
-    if let Some((idx, _, _)) = successor {
-        game_data.fleets.records[idx].set_previous_fleet_id(fleet_id);
-    }
 
     let mut fleet = FleetRecord::new_zeroed();
     fleet.set_local_slot_word_raw(local_slot);
     fleet.set_owner_empire_raw(owner_empire);
-    fleet.set_next_fleet_link_word_raw(next_fleet_id);
     fleet.set_fleet_id_word_raw(fleet_id);
-    fleet.set_previous_fleet_id(previous_fleet_id);
     fleet.set_current_speed(0);
     fleet.set_current_location_coords_raw(coords);
     fleet.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
@@ -563,8 +520,16 @@ fn build_commissioned_fleet(
     fleet.recompute_max_speed_from_composition();
     normalize_fleet_roe_for_composition(&mut fleet);
 
-    game_data.fleets.records.push(fleet);
+    let player = game_data
+        .player
+        .records
+        .get_mut(player_index_1_based - 1)
+        .ok_or(GameStateMutationError::MissingPlayerRecord {
+            index_1_based: player_index_1_based,
+        })?;
+    let fleet_record_index_1_based =
+        append_fleet_to_owner_chain(&mut game_data.fleets.records, player, fleet);
     Ok(CommissionResult::Fleet {
-        fleet_record_index_1_based: game_data.fleets.records.len(),
+        fleet_record_index_1_based,
     })
 }
