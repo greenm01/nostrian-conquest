@@ -249,6 +249,16 @@ Windows Terminal renders them, and the input check works either way.
    the program exits; `echo %ERRORLEVEL%` prints `0`. Before the fix, a
    mouse, focus, or resize event left the session stuck past its limit.
 
+Windows result (2026-10-10, the user on bean, PowerShell 7.6, Windows
+console): `Esc` closes the quit prompt at once, also after arrow keys and
+window events. The check found three more console bugs, fixed and verified
+there: the help screen crashed because Rust's console `Stdout` refuses
+non-UTF-8 bytes (`466344c7`, raw `WriteFile`); arrow keys never reached the
+door (`4bd50a69`, VT input mode); and every frame cleared the screen first,
+which flashed (`739158c9`, rows redrawn in place). The three-minute
+session-limit exit was not reported separately; it waits on the same
+`stdin_ready` path the `Esc` check exercises.
+
 ### t020
 
 Door edge cases: an unterminated telnet `IAC SB` swallows input with no length
