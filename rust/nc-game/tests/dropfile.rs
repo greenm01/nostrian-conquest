@@ -10,6 +10,10 @@ static SEQ: AtomicUsize = AtomicUsize::new(0);
 // ---------------------------------------------------------------------------
 
 fn write_tmp(filename: &str, content: &str) -> std::path::PathBuf {
+    write_tmp_bytes(filename, content.as_bytes())
+}
+
+fn write_tmp_bytes(filename: &str, content: &[u8]) -> std::path::PathBuf {
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let dir = std::env::temp_dir().join(format!(
         "nc-game-dropfile-{}-{}-{}",
@@ -20,7 +24,7 @@ fn write_tmp(filename: &str, content: &str) -> std::path::PathBuf {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join(filename);
     let mut f = std::fs::File::create(&path).unwrap();
-    f.write_all(content.as_bytes()).unwrap();
+    f.write_all(content).unwrap();
     path
 }
 
@@ -69,6 +73,33 @@ fn door32_accepts_trailing_whitespace_on_lines() {
     let path = write_tmp("DOOR32.SYS", &content);
     let info = parse(&path).expect("should parse");
     assert_eq!(info.alias.as_deref(), Some("Starlord"));
+}
+
+#[test]
+fn door32_decodes_cp437_names() {
+    // 0x82 is 'é' and 0x94 is 'ö' in CP437; the file is not valid UTF-8.
+    let content = b"2\r\n4\r\n38400\r\nMystic BBS\r\n3\r\nJos\x82 Smith\r\nSt\x94rlord\r\n\
+                    100\r\n45\r\n1\r\n80\r\n25\r\n";
+    let path = write_tmp_bytes("DOOR32.SYS", content);
+    let info = parse(&path).expect("CP437 dropfile should parse");
+    assert_eq!(info.alias.as_deref(), Some("Störlord"));
+    assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
+fn door32_keeps_utf8_names() {
+    let content = door32_content().replace("Starlord", "Störlord");
+    let path = write_tmp("DOOR32.SYS", &content);
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.alias.as_deref(), Some("Störlord"));
+}
+
+#[test]
+fn door32_trims_leading_whitespace_on_numeric_fields() {
+    let content = door32_content().replace("\r\n45\r\n", "\r\n   45\r\n");
+    let path = write_tmp("DOOR32.SYS", &content);
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.timeout_minutes, Some(45));
 }
 
 #[test]
@@ -156,6 +187,14 @@ fn door_sys_accepts_lf_endings() {
 }
 
 #[test]
+fn door_sys_trims_leading_whitespace_on_numeric_fields() {
+    let content = door_sys_content().replacen("\r\n45\r\n", "\r\n  45\r\n", 1);
+    let path = write_tmp("DOOR.SYS", &content);
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
 fn door_sys_tolerates_short_file_missing_timeout() {
     // Only first 10 lines — alias present but timeout (line 19) is absent.
     let content: String = door_sys_content()
@@ -236,6 +275,20 @@ fn chain_txt_seconds_rounded_down_to_minutes() {
     let path = write_tmp("CHAIN.TXT", &content);
     let info = parse(&path).expect("should parse");
     assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
+fn chain_txt_accepts_wwiv_float_seconds_left() {
+    for (field, minutes) in [("   3600.00", 60), ("3599.99", 59), (" 2700.5 ", 45)] {
+        let content = chain_txt_content().replacen("2700\r\n", &format!("{field}\r\n"), 1);
+        let path = write_tmp("CHAIN.TXT", &content);
+        let info = parse(&path).expect("should parse");
+        assert_eq!(
+            info.timeout_minutes,
+            Some(minutes),
+            "seconds field {field:?}"
+        );
+    }
 }
 
 #[test]

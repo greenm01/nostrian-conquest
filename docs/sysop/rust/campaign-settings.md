@@ -59,8 +59,10 @@ reservation seat=2 alias=NightShade
   not a file path. Current default: `tokyo_night`.
 - `session_max_idle_minutes`
   Hosted sessions use this as the default idle lease timeout in minutes.
-  Range: `0-120`. Direct localhost and manual SSH `nc-game` sessions do not
-  currently get a separate timeout path from this field alone.
+  Range: `0-120`. Door-mode sessions (`nc-door`, or `nc-game --dropfile`) also
+  end after this many minutes without a keypress; `0` disables that. Direct
+  localhost and manual SSH `nc-game` sessions do not currently get a separate
+  timeout path from this field alone.
 - `maintenance_enabled`
   Controls whether hosted `maint-all` treats the game as scheduled.
 - `maintenance_interval_minutes`

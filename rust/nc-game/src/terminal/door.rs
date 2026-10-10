@@ -13,11 +13,17 @@ use crate::terminal::cp437;
 use crate::terminal::{ColorMode, OutputEncoding, Terminal};
 use crate::theme::classic;
 
+use super::door_telnet::TelnetFilter;
 pub use super::door_transport::DoorTransport;
 use super::door_transport::{DoorIo, build_door_io};
 use super::stdout::resolve_color;
 
 const DOOR_ESCAPE_TIMEOUT_MS: i32 = 100;
+/// How long after a timed-out bare Esc is delivered a late `[`/`O` suffix
+/// burst is still treated as the rest of that key (BBS hosts can split a
+/// SyncTERM key sequence by several hundred milliseconds). A key typed on its
+/// own is a single-byte read and is never dropped.
+const DOOR_ORPHAN_SUFFIX_WINDOW_MS: u64 = 1000;
 const DOOR_DOS_PREFIX_TIMEOUT_MS: i32 = 2000;
 const MAX_ESCAPE_SEQUENCE_BYTES: usize = 16;
 const DEFAULT_CURSOR_STYLE_SEQUENCE: &[u8] = b"\x1b[0 q";
@@ -31,7 +37,32 @@ pub struct DoorTerminal {
     frame_seq: u64,
     decoder: DoorInputDecoder,
     io: Box<dyn DoorIo>,
+    session_deadline: Option<Instant>,
+    idle_limit: Option<Duration>,
+    last_key_at: Instant,
 }
+
+/// Why a door read stopped waiting for the caller.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DoorTimeout {
+    /// The session time limit from the dropfile or `--timeout` ran out.
+    SessionLimit,
+    /// No key arrived within the campaign's idle limit.
+    Idle,
+}
+
+impl std::fmt::Display for DoorTimeout {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::SessionLimit => {
+                "Your time limit for this session has expired. Returning to the BBS."
+            }
+            Self::Idle => "No key was pressed for too long. Returning to the BBS.",
+        })
+    }
+}
+
+impl std::error::Error for DoorTimeout {}
 
 impl DoorTerminal {
     pub fn with_transport_and_color_mode(
@@ -50,9 +81,27 @@ impl DoorTerminal {
             geometry,
             trace_dir,
             frame_seq: 0,
-            decoder: DoorInputDecoder::new(),
+            decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
+            session_deadline: None,
+            idle_limit: None,
+            last_key_at: Instant::now(),
         })
+    }
+
+    /// Stop waiting for keys once `session_limit` has passed since this call
+    /// or no key has arrived for `idle_limit`; `read_key` then fails with
+    /// [`DoorTimeout`].
+    pub fn with_input_limits(
+        mut self,
+        session_limit: Option<Duration>,
+        idle_limit: Option<Duration>,
+    ) -> Self {
+        let now = Instant::now();
+        self.session_deadline = session_limit.map(|limit| now + limit);
+        self.idle_limit = idle_limit;
+        self.last_key_at = now;
+        self
     }
 
     pub fn with_encoding_and_color_mode(
@@ -78,8 +127,27 @@ impl Terminal for DoorTerminal {
     }
 
     fn read_key(&mut self) -> Result<KeyEvent, Box<dyn std::error::Error>> {
-        self.decoder
-            .next_key(self.io.as_mut(), self.trace_dir.as_deref())
+        let session = self
+            .session_deadline
+            .map(|deadline| (deadline, DoorTimeout::SessionLimit));
+        let idle = self
+            .idle_limit
+            .map(|limit| (self.last_key_at + limit, DoorTimeout::Idle));
+        let limit = [session, idle]
+            .into_iter()
+            .flatten()
+            .min_by_key(|(deadline, _)| *deadline);
+        let Some(key) = self.decoder.next_key(
+            self.io.as_mut(),
+            self.trace_dir.as_deref(),
+            limit.map(|(deadline, _)| deadline),
+        )?
+        else {
+            let timeout = limit.map_or(DoorTimeout::SessionLimit, |(_, timeout)| timeout);
+            return Err(Box::new(timeout));
+        };
+        self.last_key_at = Instant::now();
+        Ok(key)
     }
 
     fn dump_text_capture(&mut self, text: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -243,6 +311,12 @@ fn ansi_bg_code(color: crossterm::style::Color) -> u8 {
 }
 
 struct DoorInputDecoder {
+    /// Present for socket transports, which carry the caller's raw telnet
+    /// stream. Stdio doors get input the BBS has already de-telnetted.
+    telnet: Option<TelnetFilter>,
+    /// The last input byte was CR, so a following LF or NUL is the rest of a
+    /// telnet end-of-line (CR LF / CR NUL), not a second key.
+    after_cr: bool,
     pending: VecDeque<u8>,
     sequence_deadline: Option<Instant>,
     orphaned_escape_suffix_deadline: Option<Instant>,
@@ -255,26 +329,30 @@ enum ParseResult {
 }
 
 impl DoorInputDecoder {
-    fn new() -> Self {
+    fn new(transport: DoorTransport) -> Self {
         Self {
+            telnet: (transport != DoorTransport::Stdio).then(TelnetFilter::default),
+            after_cr: false,
             pending: VecDeque::new(),
             sequence_deadline: None,
             orphaned_escape_suffix_deadline: None,
         }
     }
 
+    /// Return the next key, or `None` once `deadline` passes with no key.
     fn next_key(
         &mut self,
         input: &mut dyn DoorIo,
         trace_dir: Option<&Path>,
-    ) -> Result<KeyEvent, Box<dyn std::error::Error>> {
+        deadline: Option<Instant>,
+    ) -> Result<Option<KeyEvent>, Box<dyn std::error::Error>> {
         loop {
             match try_decode_complete(&self.pending) {
                 ParseResult::Event(event, consumed) => {
                     drain_pending(&mut self.pending, consumed);
                     self.sequence_deadline = None;
                     self.orphaned_escape_suffix_deadline = None;
-                    return Ok(event);
+                    return Ok(Some(event));
                 }
                 ParseResult::Drop(consumed) => {
                     drain_pending(&mut self.pending, consumed);
@@ -284,7 +362,14 @@ impl DoorInputDecoder {
                 ParseResult::NeedMore => {
                     if self.pending.is_empty() {
                         self.sequence_deadline = None;
-                        self.read_burst(input, trace_dir, None)?;
+                        let wait_ms = match deadline {
+                            Some(deadline) => match millis_until(deadline) {
+                                0 => return Ok(None),
+                                ms => Some(ms),
+                            },
+                            None => None,
+                        };
+                        self.read_burst(input, trace_dir, wait_ms)?;
                         continue;
                     }
                     let timeout_ms = self.remaining_sequence_timeout_ms();
@@ -297,7 +382,7 @@ impl DoorInputDecoder {
                                 orphaned_suffix_deadline(event, &self.pending, consumed);
                             drain_pending(&mut self.pending, consumed);
                             self.sequence_deadline = None;
-                            return Ok(event);
+                            return Ok(Some(event));
                         }
                         ParseResult::Drop(consumed) => {
                             drain_pending(&mut self.pending, consumed);
@@ -317,7 +402,24 @@ impl DoorInputDecoder {
         trace_dir: Option<&Path>,
         timeout_ms: Option<i32>,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut burst = read_burst(input, trace_dir, timeout_ms)?;
+        let raw = read_burst(input, trace_dir, timeout_ms)?;
+        let received = !raw.is_empty();
+        let mut burst = match self.telnet.as_mut() {
+            Some(telnet) => telnet.filter(&raw),
+            None => raw,
+        };
+        let mut after_cr = self.after_cr;
+        burst.retain(|&byte| {
+            let end_of_line_suffix = after_cr && matches!(byte, b'\n' | 0x00);
+            after_cr = byte == b'\r';
+            !end_of_line_suffix
+        });
+        self.after_cr = after_cr;
+        if received && burst.is_empty() {
+            // Only telnet commands or an end-of-line suffix arrived; keep
+            // waiting for keys.
+            return Ok(true);
+        }
         drop_orphaned_escape_suffix(
             &mut burst,
             self.orphaned_escape_suffix_deadline
@@ -340,13 +442,19 @@ impl DoorInputDecoder {
         let deadline = self
             .sequence_deadline
             .get_or_insert_with(|| Instant::now() + Duration::from_millis(timeout as u64));
-        let remaining = deadline.saturating_duration_since(Instant::now());
-        let ms = remaining.as_millis().min(i32::MAX as u128) as i32;
-        if ms == 0 && !remaining.is_zero() {
-            1
-        } else {
-            ms
-        }
+        millis_until(*deadline)
+    }
+}
+
+/// Milliseconds left until `deadline` as a poll timeout: 0 only once it has
+/// passed, rounded up to 1 inside the last millisecond.
+fn millis_until(deadline: Instant) -> i32 {
+    let remaining = deadline.saturating_duration_since(Instant::now());
+    let ms = remaining.as_millis().min(i32::MAX as u128) as i32;
+    if ms == 0 && !remaining.is_zero() {
+        1
+    } else {
+        ms
     }
 }
 
@@ -396,6 +504,9 @@ fn try_decode_escape_complete(pending: &VecDeque<u8>) -> ParseResult {
 }
 
 fn try_decode_csi_complete(pending: &VecDeque<u8>) -> ParseResult {
+    if pending.get(2) == Some(&b'[') {
+        return try_decode_linux_console_function_key(pending);
+    }
     let bytes = pending.iter().copied().collect::<Vec<_>>();
     for (idx, byte) in bytes.iter().copied().enumerate().skip(2) {
         if let Some(event) = map_csi_event(byte, &bytes[2..=idx]) {
@@ -409,6 +520,18 @@ fn try_decode_csi_complete(pending: &VecDeque<u8>) -> ParseResult {
         ParseResult::Drop(pending.len())
     } else {
         ParseResult::NeedMore
+    }
+}
+
+/// Linux console F1-F5 send `ESC [ [ A` through `ESC [ [ E`.
+fn try_decode_linux_console_function_key(pending: &VecDeque<u8>) -> ParseResult {
+    match pending.get(3).copied() {
+        None => ParseResult::NeedMore,
+        Some(byte @ b'A'..=b'E') => ParseResult::Event(
+            KeyEvent::new(KeyCode::F(byte - b'A' + 1), KeyModifiers::NONE),
+            4,
+        ),
+        Some(_) => ParseResult::Drop(4),
     }
 }
 
@@ -498,7 +621,7 @@ fn orphaned_suffix_deadline(
         && matches!(pending.front().copied(), Some(0x1b))
         && consumed == 1
         && pending.len() == 1;
-    is_bare_escape.then(|| Instant::now() + Duration::from_millis(DOOR_ESCAPE_TIMEOUT_MS as u64))
+    is_bare_escape.then(|| Instant::now() + Duration::from_millis(DOOR_ORPHAN_SUFFIX_WINDOW_MS))
 }
 
 fn drop_orphaned_escape_suffix(burst: &mut Vec<u8>, orphan_deadline: Option<Instant>) {
@@ -516,6 +639,10 @@ fn drop_orphaned_escape_suffix(burst: &mut Vec<u8>, orphan_deadline: Option<Inst
 }
 
 fn orphan_csi_suffix_len(bytes: &[u8]) -> Option<usize> {
+    if bytes.first() == Some(&b'[') {
+        // Linux console function key tail: `[` plus one letter.
+        return Some(bytes.len().min(2));
+    }
     for (idx, byte) in bytes.iter().copied().enumerate() {
         if is_csi_final(byte) {
             return Some(idx + 1);
@@ -685,11 +812,13 @@ pub fn decode_timed_input_stream_for_test(
     for &(chunk_time_ms, bytes) in chunks {
         if let Some(deadline) = deadline_ms {
             if chunk_time_ms > deadline {
+                // Production finalizes when the sequence wait expires, not
+                // when the late bytes show up.
                 finalize_timed_pending(
                     &mut pending,
                     &mut events,
                     &mut orphan_deadline_ms,
-                    chunk_time_ms,
+                    deadline,
                 );
                 deadline_ms = None;
             }
@@ -754,6 +883,136 @@ pub fn decode_timed_input_stream_for_test(
     Ok(events)
 }
 
+/// Read keys through the production door decoder from a scripted transport.
+///
+/// Each `(at_ms, bytes)` entry is one separate read from the wire, available
+/// no earlier than `at_ms` after the start. Reading stops when the script is
+/// exhausted.
+#[doc(hidden)]
+pub fn read_scripted_door_keys_for_test(
+    reads: &[(u64, &[u8])],
+    transport: DoorTransport,
+) -> Vec<KeyEvent> {
+    read_scripted_door_session_for_test(reads, transport, None, None).0
+}
+
+/// Like [`read_scripted_door_keys_for_test`], with session and idle limits.
+/// Also returns the timeout that ended the reads, if any.
+#[doc(hidden)]
+pub fn read_scripted_door_session_for_test(
+    reads: &[(u64, &[u8])],
+    transport: DoorTransport,
+    session_limit: Option<Duration>,
+    idle_limit: Option<Duration>,
+) -> (Vec<KeyEvent>, Option<DoorTimeout>) {
+    let mut terminal = DoorTerminal {
+        encoding: OutputEncoding::Cp437,
+        color_mode: ColorMode::Ansi16,
+        geometry: ScreenGeometry::local_default(),
+        trace_dir: None,
+        frame_seq: 0,
+        decoder: DoorInputDecoder::new(transport),
+        io: Box::new(ScriptedDoorIo::new(reads)),
+        session_deadline: None,
+        idle_limit: None,
+        last_key_at: Instant::now(),
+    }
+    .with_input_limits(session_limit, idle_limit);
+    let mut keys = Vec::new();
+    loop {
+        match terminal.read_key() {
+            Ok(key) => keys.push(key),
+            Err(err) => return (keys, err.downcast_ref::<DoorTimeout>().copied()),
+        }
+    }
+}
+
+struct ScriptedDoorIo {
+    start: Instant,
+    reads: VecDeque<(u64, Vec<u8>)>,
+    current: VecDeque<u8>,
+}
+
+impl ScriptedDoorIo {
+    fn new(reads: &[(u64, &[u8])]) -> Self {
+        Self {
+            start: Instant::now(),
+            reads: reads
+                .iter()
+                .map(|(at_ms, bytes)| (*at_ms, bytes.to_vec()))
+                .collect(),
+            current: VecDeque::new(),
+        }
+    }
+
+    /// Move to the next scripted read if it arrives within `timeout_ms`
+    /// (`None` waits for it). Returns whether a read arrived.
+    fn next_read(&mut self, timeout_ms: Option<i32>) -> bool {
+        let wait_limit =
+            timeout_ms.map(|ms| Instant::now() + Duration::from_millis(ms.max(0) as u64));
+        let due = self
+            .reads
+            .front()
+            .map(|(at_ms, _)| self.start + Duration::from_millis(*at_ms));
+        match (due, wait_limit) {
+            (Some(due), Some(limit)) if due > limit => sleep_until(limit),
+            (Some(due), _) => {
+                sleep_until(due);
+                if let Some((_, bytes)) = self.reads.pop_front() {
+                    self.current = bytes.into();
+                }
+                return true;
+            }
+            (None, Some(limit)) => sleep_until(limit),
+            (None, None) => {}
+        }
+        false
+    }
+}
+
+fn sleep_until(deadline: Instant) {
+    std::thread::sleep(deadline.saturating_duration_since(Instant::now()));
+}
+
+impl Read for ScriptedDoorIo {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if self.current.is_empty() && !self.next_read(None) {
+            return Ok(0);
+        }
+        match (buf.first_mut(), self.current.pop_front()) {
+            (Some(slot), Some(byte)) => {
+                *slot = byte;
+                Ok(1)
+            }
+            _ => Ok(0),
+        }
+    }
+}
+
+impl Write for ScriptedDoorIo {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl DoorIo for ScriptedDoorIo {
+    /// Bytes of one scripted read are ready together; the next read is never
+    /// merged into a zero-timeout poll, so every script entry is its own burst.
+    fn wait_ready(&mut self, timeout_ms: i32) -> io::Result<bool> {
+        if !self.current.is_empty() {
+            return Ok(true);
+        }
+        if timeout_ms == 0 {
+            return Ok(false);
+        }
+        Ok(self.next_read(Some(timeout_ms)))
+    }
+}
+
 fn finalize_timed_pending(
     pending: &mut VecDeque<u8>,
     events: &mut Vec<KeyEvent>,
@@ -767,7 +1026,7 @@ fn finalize_timed_pending(
                 && consumed == 1
                 && pending.len() == 1
             {
-                *orphan_deadline_ms = Some(now_ms.saturating_add(DOOR_ESCAPE_TIMEOUT_MS as u64));
+                *orphan_deadline_ms = Some(now_ms.saturating_add(DOOR_ORPHAN_SUFFIX_WINDOW_MS));
             } else {
                 *orphan_deadline_ms = None;
             }

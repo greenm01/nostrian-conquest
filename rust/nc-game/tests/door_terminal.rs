@@ -1,10 +1,13 @@
 use std::path::PathBuf;
+use std::time::{Duration, Instant};
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use nc_game::screen::{FirstTimeMenuScreen, PlayfieldBuffer, ScreenGeometry};
 use nc_game::terminal::door::{
-    decode_fragmented_input_for_test, decode_input_bytes_for_test, decode_input_stream_for_test,
-    decode_timed_input_stream_for_test, serialize_playfield_frame,
+    DoorTimeout, DoorTransport, decode_fragmented_input_for_test, decode_input_bytes_for_test,
+    decode_input_stream_for_test, decode_timed_input_stream_for_test,
+    read_scripted_door_keys_for_test, read_scripted_door_session_for_test,
+    serialize_playfield_frame,
 };
 use nc_game::terminal::{ColorMode, OutputEncoding};
 
@@ -138,6 +141,19 @@ fn door_serializer_trims_blank_rows_and_trailing_fill_spaces() {
     assert!(frame_text.contains("\x1b[1 q"));
     assert_eq!(frame.iter().filter(|byte| **byte == b' ').count(), 1);
     assert!(!frame_text.contains("\x1b[2;1H\x1b[0;37;40m"));
+}
+
+const SOCKET: DoorTransport = DoorTransport::TcpConnect {
+    host: "127.0.0.1",
+    port: 1,
+};
+
+fn plain(code: KeyCode) -> KeyEvent {
+    KeyEvent::new(code, KeyModifiers::NONE)
+}
+
+fn socket_keys(reads: &[(u64, &[u8])]) -> Vec<KeyEvent> {
+    read_scripted_door_keys_for_test(reads, SOCKET)
 }
 
 fn assert_decode(bytes: &[u8], expected: KeyEvent) {
@@ -314,6 +330,59 @@ fn timed_out_escape_drops_late_sync_term_suffix_instead_of_leaking_menu_keys() {
 }
 
 #[test]
+fn linux_console_function_keys_decode_without_leaking_letters() {
+    for (bytes, n) in [
+        (b"\x1b[[A", 1),
+        (b"\x1b[[B", 2),
+        (b"\x1b[[C", 3),
+        (b"\x1b[[D", 4),
+        (b"\x1b[[E", 5),
+    ] {
+        assert_decode(bytes, plain(KeyCode::F(n)));
+    }
+    assert_eq!(
+        decode_input_stream_for_test(b"\x1b[[Aj\x1b[[Zk").expect("decode stream"),
+        vec![
+            plain(KeyCode::F(1)),
+            plain(KeyCode::Char('j')),
+            plain(KeyCode::Char('k')),
+        ]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b[["), (5, b"Cj")]),
+        vec![plain(KeyCode::F(3)), plain(KeyCode::Char('j'))]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (600, b"[[A")]),
+        vec![plain(KeyCode::Esc)]
+    );
+}
+
+#[test]
+fn door_decoder_drops_late_sync_term_suffix_after_timed_out_escape() {
+    let got = stdio_keys(&[(0, b"\x1b"), (600, b"[V")]);
+    assert_eq!(got, vec![plain(KeyCode::Esc)]);
+}
+
+#[test]
+fn door_decoder_keeps_keys_typed_after_a_timed_out_escape() {
+    // A single typed '[' is its own read, never an orphaned suffix.
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (300, b"[")]),
+        vec![plain(KeyCode::Esc), plain(KeyCode::Char('['))]
+    );
+    // Past the orphan window, a read starting with '[' is ordinary input.
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (1600, b"[V")]),
+        vec![
+            plain(KeyCode::Esc),
+            plain(KeyCode::Char('[')),
+            plain(KeyCode::Char('V'))
+        ]
+    );
+}
+
+#[test]
 fn timed_sync_term_page_keys_decode_without_falling_back_to_escape() {
     let got = decode_timed_input_stream_for_test(&[
         (0, b"\x1b"),
@@ -353,4 +422,222 @@ fn door_serializer_uses_bbs_safe_selected_row_cyan_background() {
 
     assert!(frame_text.contains("\x1b[0;97;46m01"));
     assert!(!frame_text.contains("\x1b[0;97;106m"));
+}
+
+#[test]
+fn socket_input_drops_telnet_option_negotiation() {
+    // IAC WILL SGA, IAC WILL TTYPE, IAC DO ECHO, IAC DONT LINEMODE.
+    let got = socket_keys(&[(0, b"\xff\xfb\x03\xff\xfb\x18\xff\xfd\x01\xff\xfe\x22y")]);
+    assert_eq!(got, vec![plain(KeyCode::Char('y'))]);
+}
+
+#[test]
+fn socket_input_drops_naws_subnegotiation_for_any_window_size() {
+    for size in [
+        &b"\xff\xfa\x1f\x00\x50\x00\x18\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x84\x00\x2b\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x48\x00\x4b\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x4d\x00\x53\xff\xf0"[..],
+    ] {
+        let mut read = size.to_vec();
+        read.push(b'q');
+        assert_eq!(
+            socket_keys(&[(0, &read)]),
+            vec![plain(KeyCode::Char('q'))],
+            "NAWS report: {size:02x?}"
+        );
+    }
+}
+
+#[test]
+fn socket_input_drops_other_two_byte_telnet_commands() {
+    // IAC NOP, IAC GA, IAC AYT between keys.
+    let got = socket_keys(&[(0, b"a\xff\xf1b\xff\xf9c\xff\xf6d")]);
+    assert_eq!(
+        got,
+        vec![
+            plain(KeyCode::Char('a')),
+            plain(KeyCode::Char('b')),
+            plain(KeyCode::Char('c')),
+            plain(KeyCode::Char('d')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_strips_telnet_commands_split_across_reads() {
+    let got = socket_keys(&[
+        (0, b"\xff"),
+        (5, b"\xfb"),
+        (10, b"\x03j"),
+        (15, b"\xff\xfa\x1f\x00"),
+        (20, b"\x50\x00\x18\xff"),
+        (25, b"\xf0k"),
+        (30, b"\xff\xfa\x18\x00xterm\xff"),
+        (35, b"\xf0l"),
+    ]);
+    assert_eq!(
+        got,
+        vec![
+            plain(KeyCode::Char('j')),
+            plain(KeyCode::Char('k')),
+            plain(KeyCode::Char('l')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_unescapes_doubled_iac_as_data() {
+    // IAC IAC is a literal 0xFF data byte, which is not a key; the following
+    // bytes must still decode normally instead of being read as a command.
+    let got = socket_keys(&[(0, b"\xff\xff\x03"), (5, b"\xff"), (10, b"\xffz")]);
+    assert_eq!(
+        got,
+        vec![
+            KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL),
+            plain(KeyCode::Char('z')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_drops_negotiation_inside_a_pending_escape_sequence() {
+    let got = socket_keys(&[(0, b"\x1b"), (10, b"\xff\xfb\x03"), (20, b"[A")]);
+    assert_eq!(got, vec![plain(KeyCode::Up)]);
+}
+
+#[test]
+fn stdio_input_is_not_telnet_filtered() {
+    // Stdio hosts hand the door already-processed input; a stray 0xFF must
+    // not swallow the key after it.
+    let got = read_scripted_door_keys_for_test(&[(0, b"\xff\xfbx")], DoorTransport::Stdio);
+    assert_eq!(got, vec![plain(KeyCode::Char('x'))]);
+}
+
+fn stdio_keys(reads: &[(u64, &[u8])]) -> Vec<KeyEvent> {
+    read_scripted_door_keys_for_test(reads, DoorTransport::Stdio)
+}
+
+#[test]
+fn telnet_enter_sequences_decode_as_one_enter() {
+    let enter_then_y = vec![plain(KeyCode::Enter), plain(KeyCode::Char('y'))];
+    assert_eq!(stdio_keys(&[(0, b"\r\ny")]), enter_then_y);
+    assert_eq!(stdio_keys(&[(0, b"\r\0y")]), enter_then_y);
+    assert_eq!(socket_keys(&[(0, b"\r\ny")]), enter_then_y);
+    assert_eq!(socket_keys(&[(0, b"\r\0y")]), enter_then_y);
+    // CR NUL must not turn the next byte into a DOS scan code.
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\0H")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Char('H'))]
+    );
+}
+
+#[test]
+fn telnet_enter_sequences_split_across_reads_decode_as_one_enter() {
+    let enter_then_y = vec![plain(KeyCode::Enter), plain(KeyCode::Char('y'))];
+    assert_eq!(stdio_keys(&[(0, b"\r"), (5, b"\ny")]), enter_then_y);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r"), (5, b"\0"), (10, b"y")]),
+        enter_then_y
+    );
+}
+
+#[test]
+fn bare_cr_and_bare_lf_each_stay_enter() {
+    assert_eq!(stdio_keys(&[(0, b"\r")]), vec![plain(KeyCode::Enter)]);
+    assert_eq!(stdio_keys(&[(0, b"\n")]), vec![plain(KeyCode::Enter)]);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\r\n")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Enter)]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\n\n")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Enter)]
+    );
+}
+
+#[test]
+fn dos_extended_keys_still_decode_when_not_preceded_by_cr() {
+    assert_eq!(stdio_keys(&[(0, b"\0H")]), vec![plain(KeyCode::Up)]);
+    assert_eq!(
+        stdio_keys(&[(0, b"\r"), (5, b"a"), (10, b"\0P")]),
+        vec![
+            plain(KeyCode::Enter),
+            plain(KeyCode::Char('a')),
+            plain(KeyCode::Down)
+        ]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\r\xe0H")]),
+        vec![plain(KeyCode::Enter), plain(KeyCode::Up)]
+    );
+}
+
+fn ms(value: u64) -> Option<Duration> {
+    Some(Duration::from_millis(value))
+}
+
+#[test]
+fn idle_limit_ends_a_silent_door_session() {
+    let started = Instant::now();
+    let got = read_scripted_door_session_for_test(&[], DoorTransport::Stdio, None, ms(150));
+    assert_eq!(got, (vec![], Some(DoorTimeout::Idle)));
+    assert!(started.elapsed() >= Duration::from_millis(150));
+}
+
+#[test]
+fn each_key_restarts_the_idle_limit() {
+    let started = Instant::now();
+    let got = read_scripted_door_session_for_test(
+        &[(100, b"a"), (200, b"b")],
+        DoorTransport::Stdio,
+        None,
+        ms(150),
+    );
+    assert_eq!(
+        got,
+        (
+            vec![plain(KeyCode::Char('a')), plain(KeyCode::Char('b'))],
+            Some(DoorTimeout::Idle)
+        )
+    );
+    assert!(started.elapsed() >= Duration::from_millis(350));
+}
+
+#[test]
+fn telnet_traffic_does_not_restart_the_idle_limit() {
+    let got = read_scripted_door_session_for_test(
+        &[
+            (50, b"\xff\xfa\x1f\x00\x50\x00\x18\xff\xf0"),
+            (100, b"\xff\xf1"),
+            (400, b"a"),
+        ],
+        SOCKET,
+        None,
+        ms(200),
+    );
+    assert_eq!(got, (vec![], Some(DoorTimeout::Idle)));
+}
+
+#[test]
+fn session_limit_ends_the_door_session_even_while_typing() {
+    let got = read_scripted_door_session_for_test(
+        &[(0, b"a"), (100, b"b"), (400, b"c")],
+        DoorTransport::Stdio,
+        ms(250),
+        ms(1000),
+    );
+    assert_eq!(
+        got,
+        (
+            vec![plain(KeyCode::Char('a')), plain(KeyCode::Char('b'))],
+            Some(DoorTimeout::SessionLimit)
+        )
+    );
+}
+
+#[test]
+fn door_session_without_limits_reads_until_input_closes() {
+    let got = read_scripted_door_session_for_test(&[(300, b"a")], DoorTransport::Stdio, None, None);
+    assert_eq!(got, (vec![plain(KeyCode::Char('a'))], None));
 }
