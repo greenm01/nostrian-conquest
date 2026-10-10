@@ -21,8 +21,6 @@ pub enum NarrativePhase {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ReportTarget {
-    /// Goes into RESULTS.DAT and is visible to all occupied empires.
-    ResultsOnly,
     /// Goes into RESULTS.DAT and marks `recipient` as the intended reviewer.
     Both { recipient: u8 },
 }
@@ -87,7 +85,6 @@ pub fn apply_results_reviewable_flags(game_data: &mut CoreGameData, rows: &[Repo
 }
 
 pub(super) struct ResultsReviewPlan {
-    broadcast_entries: Vec<ReportEntry>,
     viewer_entries: BTreeMap<u8, Vec<ReportEntry>>,
     viewers_with_results: BTreeSet<u8>,
 }
@@ -99,11 +96,10 @@ pub(super) fn build_results_rows_with_review(
     let result_entries = generate_report_entries(game_data, events);
     let year = game_data.conquest.game_year();
     let ResultsReviewPlan {
-        broadcast_entries,
         viewer_entries,
         viewers_with_results,
-    } = results_review_plan(game_data, &result_entries);
-    let mut rows = build_rows_for_viewer(0, &broadcast_entries, year);
+    } = results_review_plan(&result_entries);
+    let mut rows = Vec::new();
     for (viewer_empire_id, entries) in viewer_entries {
         rows.extend(build_rows_for_viewer(viewer_empire_id, &entries, year));
     }
@@ -113,13 +109,8 @@ pub(super) fn build_results_rows_with_review(
     rows
 }
 
-pub(super) fn results_review_plan(
-    game_data: &CoreGameData,
-    result_entries: &[ReportEntry],
-) -> ResultsReviewPlan {
-    let occupied_viewers = occupied_result_viewers(game_data);
+pub(super) fn results_review_plan(result_entries: &[ReportEntry]) -> ResultsReviewPlan {
     let mut viewers_with_results = BTreeSet::new();
-    let mut broadcast_entries = Vec::new();
     let mut viewer_entries = BTreeMap::<u8, Vec<ReportEntry>>::new();
 
     for entry in result_entries {
@@ -131,18 +122,11 @@ pub(super) fn results_review_plan(
                     .or_default()
                     .push(clone_report_entry(entry));
             }
-            ReportTarget::ResultsOnly => {
-                if !occupied_viewers.is_empty() {
-                    viewers_with_results.extend(occupied_viewers.iter().copied());
-                    broadcast_entries.push(clone_report_entry(entry));
-                }
-            }
             _ => {}
         }
     }
 
     ResultsReviewPlan {
-        broadcast_entries,
         viewer_entries,
         viewers_with_results,
     }

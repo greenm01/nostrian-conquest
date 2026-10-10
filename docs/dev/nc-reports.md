@@ -190,6 +190,9 @@ Rules:
   distinguish last-planet elimination from destruction of the last recovery
   force
 - winner-declared reports should explicitly say the campaign is over
+- the campaign-outlook notice reaches every joined empire; the sole remaining
+  contender reads it as its own claim (`We now stand ... our claim`), and
+  every other empire sees the contender named
 - winner-side wording should mention survey-only access
 - loser-side game-over wording should mention one final review-only pass
 - already defeated and already blocked empires do not receive repeated
@@ -295,11 +298,13 @@ further orders will be accepted.
 From your 4th Fleet, located in System(6,14):          Stardate: 04/3031
 Scouting mission report: We are in extended orbit around planet "Spyglass"
 and have compiled the following data:
-Owned by:           Empire #2
+Owned by:         Empire #2
 Potential production: 100 points
 Estimated production: 73 points
-Number of armies:   7
+Estimated amount of stored goods: 41 points
+Number of armies: 7
 Number of ground batteries: 2
+The planet's stardock appears to be empty.
 <end of transmission>
 ```
 

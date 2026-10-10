@@ -1028,6 +1028,60 @@ fn scout_system_report_uses_estimated_production_not_present_production() {
 }
 
 #[test]
+fn scout_system_report_aligns_its_fact_rows() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3026)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [6, 14];
+    seed_target_world(&mut game_data, coords, "spyglass");
+    game_data.planets.records[0].set_army_count_raw(7);
+
+    let fleet = &mut game_data.fleets.records[0];
+    fleet.set_owner_empire_raw(1);
+    fleet.set_local_slot_word_raw(4);
+    fleet.set_current_location_coords_raw(coords);
+
+    let mut events = MaintenanceEvents::default();
+    events.planet_intel_events.push(PlanetIntelEvent {
+        planet_idx: 0,
+        viewer_empire_raw: 1,
+        source: PlanetIntelSource::ScoutSolarSystem,
+        source_fleet_idx: Some(0),
+        observed_snapshot: None,
+        stardate_week: Some(4),
+    });
+    events.mission_events.push(MissionEvent {
+        fleet_idx: 0,
+        owner_empire_raw: 1,
+        kind: Mission::ScoutSolarSystem,
+        outcome: MissionOutcome::Succeeded,
+        abort_reason: None,
+        planet_idx: Some(0),
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: Some(4),
+    });
+
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events)).join("\n");
+    let lines: Vec<&str> = text.lines().collect();
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.starts_with("Owned by:         ")),
+        "{text}"
+    );
+    assert!(lines.contains(&"Number of armies: 7"), "{text}");
+    assert!(
+        lines.iter().all(|line| !line.starts_with("  ")
+            && line.len() <= 72
+            && line.bytes().all(|byte| (0x20..0x7f).contains(&byte))),
+        "{text}"
+    );
+}
+
+#[test]
 fn results_reports_named_hostile_fleet_with_empire_local_slot() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)

@@ -1,7 +1,9 @@
 use nc_data::{CoreGameData, MaintenanceEvents, Mission, MissionOutcome};
 
 use crate::maint::results::combat::*;
-use crate::maint::results::entries::{ReportEntry, ReportTarget, narrative_phase_for_report_text};
+use crate::maint::results::entries::{
+    ReportEntry, ReportTarget, narrative_phase_for_report_text, occupied_result_viewers,
+};
 use crate::maint::results::format::*;
 use crate::maint::results::join::build_join_summary_entries;
 use crate::maint::results::mod_constants::*;
@@ -88,23 +90,30 @@ pub fn push_misc_entries(
         });
     }
 
-    // ----- Campaign outlook events (RESULTS only) -----
+    // ----- Campaign outlook events -----
+    // Every joined empire hears it; only the leader reads it as its own claim.
     for event in &events.campaign_outlook_events {
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
-        let body = format!(
-            " {} now stands as the sole remaining serious contender for the imperial throne. Other empires may still persist, but none currently appear capable of challenging our claim.",
-            empire_label(game_data, event.empire_raw),
-        );
-        entries.push(ReportEntry {
-            text: format!("{header}{body}"),
-            kind: 0x06,
-            tail: RESULTS_TAIL_FLEET,
-            target: ReportTarget::ResultsOnly,
-            repeat_next_pointer: false,
-            stardate_week: event.stardate_week,
-            narrative_phase: narrative_phase_for_report_text(&body),
-        });
+        for recipient in occupied_result_viewers(game_data) {
+            let body = if recipient == event.empire_raw {
+                " We now stand as the sole remaining serious contender for the imperial throne. Other empires may still persist, but none currently appear capable of challenging our claim.".to_string()
+            } else {
+                format!(
+                    " {} now stands as the sole remaining serious contender for the imperial throne. No other empire, ours included, currently appears capable of challenging its claim.",
+                    empire_label(game_data, event.empire_raw),
+                )
+            };
+            entries.push(ReportEntry {
+                text: format!("{header}{body}"),
+                kind: 0x06,
+                tail: RESULTS_TAIL_FLEET,
+                target: ReportTarget::Both { recipient },
+                repeat_next_pointer: false,
+                stardate_week: event.stardate_week,
+                narrative_phase: narrative_phase_for_report_text(&body),
+            });
+        }
     }
 
     // Campaign outcome events get no report of their own: the targeted
