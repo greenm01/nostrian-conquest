@@ -182,6 +182,13 @@ fn show_door_startup_error(parsed: &ParsedLaunchArgs, error: &(dyn std::error::E
 
 fn format_door_startup_error(error: &(dyn std::error::Error + 'static)) -> String {
     let mut lines = vec!["NOSTRIAN CONQUEST DOOR ERROR".to_string(), String::new()];
+    if error.downcast_ref::<RealNameMatchesHandleSeat>().is_some() {
+        lines.push("Your login could not be matched to an empire safely.".to_string());
+        lines.push("The sysop has been notified.".to_string());
+        lines.push(String::new());
+        lines.push("(slap a key)".to_string());
+        return lines.join("\r\n");
+    }
     match error.downcast_ref::<CampaignStoreError>() {
         Some(CampaignStoreError::SchemaVersionMismatch { expected, found }) => {
             lines.push("This game directory does not match this build.".to_string());
@@ -840,6 +847,23 @@ fn resolve_launch_player_binding(
         })
     };
     let binding = resolve(parsed.dropfile_alias.as_deref(), &[])?;
+    if parsed.dropfile_alias_is_real_name
+        && binding.source() == Some(LaunchPlayerBindingSource::StoredHandle)
+    {
+        if let (Some(seat), Some(real_name)) = (
+            binding.player_record_index_1_based(),
+            parsed.dropfile_alias.as_deref(),
+        ) {
+            if campaign_store.handle_bound_seats()?.contains(&seat) {
+                let refusal = RealNameMatchesHandleSeat {
+                    real_name: real_name.to_string(),
+                    seat,
+                };
+                tracing::warn!(real_name, seat, "{refusal}");
+                return Err(Box::new(refusal));
+            }
+        }
+    }
     if !binds_by_alias(binding) {
         if let Some(fallback) = parsed.dropfile_fallback_alias.as_deref() {
             let handle_bound_seats = campaign_store.handle_bound_seats()?;
@@ -860,6 +884,30 @@ fn resolve_launch_player_binding(
     };
     Ok((binding, parsed.dropfile_alias.clone(), source))
 }
+
+/// A drop file with no handle gave a real name that matches the handle of a
+/// seat bound by handle. The door refuses the login rather than enter that
+/// seat or join a second seat under the same name.
+#[derive(Debug)]
+struct RealNameMatchesHandleSeat {
+    real_name: String,
+    seat: usize,
+}
+
+impl std::fmt::Display for RealNameMatchesHandleSeat {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "refused door login: the drop file has no handle, and the caller's real name '{}' \
+             matches the handle of seat {}; have the BBS write the handle on DOOR.SYS line 36, \
+             or, if the caller owns seat {}, run \
+             `nc-sysop settings reserve --dir <game dir> --player {} --alias '{}'`",
+            self.real_name, self.seat, self.seat, self.seat, self.real_name
+        )
+    }
+}
+
+impl std::error::Error for RealNameMatchesHandleSeat {}
 
 /// The caller's BBS handle, when the dropfile supplied one.
 fn caller_handle(parsed: &ParsedLaunchArgs) -> Option<&str> {
@@ -934,9 +982,9 @@ fn humanize_slug(slug: &str) -> String {
 mod tests {
     use super::{
         LOOPBACK_DOOR_HOST, LaunchPlayerBinding, LaunchPlayerBindingSource, ParsedLaunchArgs,
-        apply_launch_context, format_door_startup_error, local_exit_lines, prepare_launch,
-        resolve_launch_player_binding, run_interactive, run_interactive_inner,
-        select_door_transport, should_emit_local_exit_attribution,
+        RealNameMatchesHandleSeat, apply_launch_context, format_door_startup_error,
+        local_exit_lines, prepare_launch, resolve_launch_player_binding, run_interactive,
+        run_interactive_inner, select_door_transport, should_emit_local_exit_attribution,
     };
     use crate::app::{App, AppConfig, RuntimeConfig};
     use crate::domains::fleet::state::FleetCommandContext;
@@ -1405,6 +1453,139 @@ mod tests {
 
         assert_eq!(binding, LaunchPlayerBinding::UnboundDropfile);
         assert_eq!(caller_alias.as_deref(), Some("Starlord"));
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    /// A DOOR.SYS caller with no handle on line 36 and real name `Tachyon`
+    /// on line 10.
+    fn short_door_sys_caller(game_dir: &std::path::Path) -> ParsedLaunchArgs {
+        let mut parsed = parsed_args(true);
+        parsed.game_dir = game_dir.to_path_buf();
+        parsed.explicit_player_record_index_1_based = None;
+        parsed.dropfile_alias = Some("Tachyon".to_string());
+        parsed.dropfile_alias_is_real_name = true;
+        parsed
+    }
+
+    #[test]
+    fn short_door_sys_real_name_matching_a_handle_bound_seat_is_refused() {
+        let game_dir = temp_first_time_game_copy();
+        // Another player's handle equals this caller's real name.
+        seed_joined_player_handle(&game_dir, 2, "Tachyon");
+        BbsGameConfig {
+            players: 4,
+            reservations: Vec::new(),
+        }
+        .save_kdl(&game_dir.join("config.kdl"))
+        .expect("write BBS config");
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+        campaign_store
+            .set_seat_bind_source(2, SeatBindSource::Handle)
+            .expect("record handle binding");
+
+        let err = resolve_launch_player_binding(
+            &short_door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect_err("binding should be refused");
+        let refusal = err
+            .downcast_ref::<RealNameMatchesHandleSeat>()
+            .expect("refusal error");
+        assert_eq!(refusal.seat, 2);
+        assert!(err.to_string().contains("nc-sysop settings reserve"));
+
+        let err = prepare_launch(&short_door_sys_caller(&game_dir))
+            .err()
+            .expect("launch should be refused");
+        assert!(err.downcast_ref::<RealNameMatchesHandleSeat>().is_some());
+        let message = format_door_startup_error(err.as_ref());
+        assert!(message.contains("could not be matched to an empire safely"));
+        assert!(message.contains("The sysop has been notified."));
+        assert!(!message.contains("Tachyon"));
+        assert_eq!(
+            campaign_store
+                .handle_bound_seats()
+                .expect("handle-bound seats"),
+            vec![2]
+        );
+
+        // The sysop resolves it by reserving the seat for the caller.
+        let (binding, _, _) = resolve_launch_player_binding(
+            &short_door_sys_caller(&game_dir),
+            &RuntimeConfig {
+                reservations: vec![SeatReservation {
+                    player_record_index_1_based: 2,
+                    alias: "Tachyon".to_string(),
+                }],
+                ..RuntimeConfig::default()
+            },
+            &campaign_store,
+        )
+        .expect("reserved binding should resolve");
+        assert_eq!(
+            binding,
+            LaunchPlayerBinding::Bound {
+                player_record_index_1_based: 2,
+                source: LaunchPlayerBindingSource::ReservedAlias,
+            }
+        );
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn short_door_sys_real_name_still_binds_a_seat_bound_by_real_name() {
+        let game_dir = temp_first_time_game_copy();
+        seed_joined_player_handle(&game_dir, 2, "Tachyon");
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+
+        let (binding, caller_alias, caller_alias_source) = resolve_launch_player_binding(
+            &short_door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(
+            binding,
+            LaunchPlayerBinding::Bound {
+                player_record_index_1_based: 2,
+                source: LaunchPlayerBindingSource::StoredHandle,
+            }
+        );
+        assert_eq!(caller_alias.as_deref(), Some("Tachyon"));
+        assert_eq!(caller_alias_source, SeatBindSource::RealName);
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn full_door_sys_handle_still_binds_a_seat_bound_by_handle() {
+        let game_dir = temp_first_time_game_copy();
+        seed_joined_player_handle(&game_dir, 2, "Starlord");
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+        campaign_store
+            .set_seat_bind_source(2, SeatBindSource::Handle)
+            .expect("record handle binding");
+
+        let (binding, caller_alias, caller_alias_source) = resolve_launch_player_binding(
+            &door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(
+            binding,
+            LaunchPlayerBinding::Bound {
+                player_record_index_1_based: 2,
+                source: LaunchPlayerBindingSource::StoredHandle,
+            }
+        );
+        assert_eq!(caller_alias.as_deref(), Some("Starlord"));
+        assert_eq!(caller_alias_source, SeatBindSource::Handle);
 
         let _ = fs::remove_dir_all(&game_dir);
     }
