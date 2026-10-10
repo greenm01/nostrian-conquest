@@ -1,5 +1,5 @@
 use super::super::{FleetMergeEvent, JoinMissionHostEvent, Mission};
-use super::helpers::merge_one_fleet_into_host;
+use super::helpers::{merge_fits_host, merge_one_fleet_into_host};
 use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
 
 pub(super) fn process_mission_fleet_merging(
@@ -42,7 +42,7 @@ pub(super) fn process_mission_fleet_merging(
         let same_owner = game_data.fleets.records[host_idx].owner_empire_raw() == joiner_owner;
         let same_coords =
             game_data.fleets.records[host_idx].current_location_coords_raw() == joiner_coords;
-        if !same_owner || !same_coords {
+        if !same_owner || !same_coords || !merge_fits_host(game_data, host_idx, joiner_idx) {
             continue;
         }
 
@@ -85,7 +85,7 @@ pub(super) fn process_mission_fleet_merging(
         group.sort_by_key(|idx| game_data.fleets.records[*idx].fleet_id());
         let survivor_idx = group[0];
         for &absorbed_idx in group.iter().skip(1) {
-            if to_remove[absorbed_idx] {
+            if to_remove[absorbed_idx] || !merge_fits_host(game_data, survivor_idx, absorbed_idx) {
                 continue;
             }
             let absorbed_id = game_data.fleets.records[absorbed_idx].fleet_id();

@@ -1,5 +1,5 @@
 use super::super::{FleetMergeEvent, Mission};
-use super::helpers::merge_one_fleet_into_host;
+use super::helpers::{merge_fits_host, merge_one_fleet_into_host};
 use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
 
 /// Merge co-located friendly fleets for players flagged for combat consolidation.
@@ -50,6 +50,9 @@ pub(super) fn process_fleet_merging(
         for &fi in &player_fleet_indices {
             let coords = game_data.fleets.records[fi].current_location_coords_raw();
             if let Some(&survivor_idx) = coord_to_survivor.get(&coords) {
+                if !merge_fits_host(game_data, survivor_idx, fi) {
+                    continue;
+                }
                 to_remove[fi] = true;
 
                 let merging_order = game_data.fleets.records[fi].standing_order_kind();
@@ -101,7 +104,7 @@ pub(super) fn process_fleet_merging(
 
         for (&coords, &fi) in &coord_to_survivor {
             let had_merges = player_fleet_indices.iter().any(|&other| {
-                other != fi
+                to_remove[other]
                     && game_data.fleets.records[other].current_location_coords_raw() == coords
             });
 
