@@ -91,7 +91,9 @@ Find the task by ID, check its current line number, then complete it with the
 CLI: after `zk tasks ls id:t007`, run `zk tasks do N` with the number shown.
 The CLI adds today's completion date and moves the line to the current month's
 `done-YYYY-MM.md`, keeping its ID and link. Re-read the row before any
-number-based change when another agent may be editing the queue. Do not mark a
+number-based change when another agent may be editing the queue. When a script
+reads a line number, use `zk tasks -p`: colored output embeds digits in its
+escape codes. Do not mark a
 task done just because its note exists. Direct edits are fine; run `zk index`
 afterward.
 
