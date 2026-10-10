@@ -40,6 +40,12 @@ unit with a probability set by the observer's order (Hold 1, Guard/Blockade
 rises after contact. An attack then needs an intercept, certain for a faster
 attacker and a roll otherwise.
 
+> Partly superseded on 2026-10-10 by
+> [withdrawal, pursuit, and one strength yardstick](kiswrzos-withdrawal-pursuit-and-one-strength-yardstick.md):
+> classic still decides who may meet whom and when, but whether a fleet
+> agrees to fight now uses effective NC attack strength, not classic's
+> encounter weights.
+
 ## Decision
 
 Rust follows classic exactly: who may engage whom, by sector, depth layer,

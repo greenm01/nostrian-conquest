@@ -255,9 +255,10 @@ window events. The check found three more console bugs, fixed and verified
 there: the help screen crashed because Rust's console `Stdout` refuses
 non-UTF-8 bytes (`466344c7`, raw `WriteFile`); arrow keys never reached the
 door (`4bd50a69`, VT input mode); and every frame cleared the screen first,
-which flashed (`739158c9`, rows redrawn in place). The three-minute
-session-limit exit was not reported separately; it waits on the same
-`stdin_ready` path the `Esc` check exercises.
+which flashed (`739158c9`, rows redrawn in place). The session limit works
+too: the two-minute warning appeared on time, and at three minutes the
+session printed "Your time limit for this session has expired. Returning to
+the BBS." and returned to the prompt.
 
 ### t020
 
