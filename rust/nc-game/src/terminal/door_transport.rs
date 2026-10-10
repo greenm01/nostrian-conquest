@@ -58,6 +58,11 @@ impl Read for StdioDoorIo {
 
 impl Write for StdioDoorIo {
     fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        #[cfg(windows)]
+        if self.output.is_terminal() {
+            self.output.flush()?;
+            return write_console_bytes(buf);
+        }
         self.output.write(buf)
     }
 
@@ -134,6 +139,42 @@ impl Read for RawStdin {
         } else {
             Ok(bytes_read as usize)
         }
+    }
+}
+
+// Rust's console `Stdout` rejects bytes that are not UTF-8, and the door
+// writes CP437. Write the bytes as they are, as `RawStdin` reads them; the
+// console shows them in its output code page.
+#[cfg(windows)]
+fn write_console_bytes(buf: &[u8]) -> io::Result<usize> {
+    use std::os::windows::io::AsRawHandle;
+
+    unsafe extern "system" {
+        fn WriteFile(
+            handle: *mut std::ffi::c_void,
+            buffer: *const u8,
+            count: u32,
+            bytes_written: *mut u32,
+            overlapped: *mut std::ffi::c_void,
+        ) -> i32;
+    }
+
+    let handle = io::stdout().as_raw_handle();
+    let mut bytes_written: u32 = 0;
+    let len = buf.len().min(u32::MAX as usize) as u32;
+    let rc = unsafe {
+        WriteFile(
+            handle as *mut _,
+            buf.as_ptr(),
+            len,
+            &mut bytes_written,
+            std::ptr::null_mut(),
+        )
+    };
+    if rc == 0 {
+        Err(io::Error::last_os_error())
+    } else {
+        Ok(bytes_written as usize)
     }
 }
 
