@@ -63,12 +63,6 @@ pub fn fleet_player_input_validation_reason_text(
         FleetPlayerInputValidationError::InvalidOrder(order_reason) => {
             fleet_order_validation_reason_text(order_reason)
         }
-        FleetPlayerInputValidationError::LoadedArmiesExceedTransportCapacity {
-            loaded_armies,
-            transports,
-        } => format!(
-            "loaded armies ({loaded_armies}) exceeded available troop transports ({transports})"
-        ),
         FleetPlayerInputValidationError::SpeedExceedsMaximum { speed, max } => {
             format!("fleet speed {speed} exceeded the current maximum speed {max}")
         }

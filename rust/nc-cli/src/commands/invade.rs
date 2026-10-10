@@ -13,14 +13,16 @@ use crate::workspace::copy_init_files;
 ///
 /// Fixture-specific constants for this scenario:
 /// - Fleet 3 (empire=1, slot=3, index=2): InvadeWorld order, speed=3/3,
-///   target (15,13), invasion_army_count=100, SC=100, BB=100, CA=50, DD=50, TT=50
+///   target (15,13), invasion_army_count=100, SC=0, BB=100, CA=50, DD=50, TT=50
+///   (the preserved pre-fixture holds 100 in byte 0x24, which classic reads as
+///   the mission id's high byte, not scouts)
 /// - Planet 14 (index=13): set via set_as_owned_target_world (Dust Bowl-type seeded world
 ///   at (15,13), owned by empire 2, armies=142, batteries=15)
 ///
 /// All record indices and constants here are scenario-specific; the general mutators live in
 /// nc-data and accept parameters.
 pub(crate) fn apply_invade_scenario(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    set_invade_onefleet(dir, 0x0f, 0x0d, 100, 100, 50, 50, 50, 100)?;
+    set_invade_onefleet(dir, 0x0f, 0x0d, 0, 100, 50, 50, 50, 100)?;
     println!("Applied scenario: invade");
     Ok(())
 }
@@ -50,7 +52,7 @@ pub(crate) fn set_invade_onefleet(
             f.set_current_speed(3);
             f.set_standing_order_kind(Order::InvadeWorld);
             f.set_standing_order_target_coords_raw([target_x, target_y]);
-            f.set_scout_count(sc);
+            f.set_scout_count(u16::from(sc));
             f.set_battleship_count(bb);
             f.set_cruiser_count(ca);
             f.set_destroyer_count(dd);
@@ -164,7 +166,7 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     let mut errors = Vec::new();
 
     // Fleet 2 (empire=1, slot=3): InvadeWorld, speed=3/3, target (15,13),
-    // army_count=100, SC=100, BB=100, CA=50, DD=50, TT=50
+    // army_count=100, SC=0, BB=100, CA=50, DD=50, TT=50
     match data.fleets.records.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
@@ -198,8 +200,8 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
                     f.standing_order_target_coords_raw()
                 ));
             }
-            if f.scout_count() != 100 {
-                errors.push(format!("FLEET[3].sc expected 100, got {}", f.scout_count()));
+            if f.scout_count() != 0 {
+                errors.push(format!("FLEET[3].sc expected 0, got {}", f.scout_count()));
             }
             if f.battleship_count() != 100 {
                 errors.push(format!(
@@ -268,7 +270,7 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     if errors.is_empty() {
         println!("Valid invade scenario");
         println!(
-            "  FLEET[3]: order=0x07 (InvadeWorld) tgt=(15,13) speed=3/3 army=100 SC=100 BB=100 CA=50 DD=50 TT=50"
+            "  FLEET[3]: order=0x07 (InvadeWorld) tgt=(15,13) speed=3/3 army=100 SC=0 BB=100 CA=50 DD=50 TT=50"
         );
         println!("  PLANET[14]: (15,13) empire=2 armies=142 batteries=15");
         Ok(())

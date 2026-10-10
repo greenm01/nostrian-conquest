@@ -55,8 +55,8 @@ struct MovementEvents {
 
 #[derive(Debug, Default, Clone)]
 pub(super) struct FleetRemovalRemapInfo {
-    destroyed_join_host_fleet_numbers: std::collections::HashMap<u8, u8>,
-    prior_join_host_ids: std::collections::HashMap<u8, u8>,
+    destroyed_join_host_fleet_numbers: std::collections::HashMap<u16, u8>,
+    prior_join_host_ids: std::collections::HashMap<u16, u16>,
     fleet_indices: FleetIndexRemap,
 }
 
@@ -885,19 +885,18 @@ fn apply_fleet_removal_remap(
         remapped.set_previous_fleet_id(remap_id(u16::from(fleet.previous_fleet_id())) as u8);
         if fleet.standing_order_kind() == Order::JoinAnotherFleet {
             let prior_host_id = fleet.join_host_fleet_id_raw();
-            let remapped_host_id = remap_id(u16::from(prior_host_id)) as u8;
+            let remapped_host_id = remap_id(prior_host_id);
             remapped.set_join_host_fleet_id_raw(remapped_host_id);
             if remapped_host_id == 0 && prior_host_id != 0 {
                 remap_info
                     .prior_join_host_ids
-                    .insert(new_fleet_id as u8, prior_host_id);
-                if let Some(host_fleet_number) = removed_fleet_number_by_id
-                    .get(&u16::from(prior_host_id))
-                    .copied()
+                    .insert(new_fleet_id, prior_host_id);
+                if let Some(host_fleet_number) =
+                    removed_fleet_number_by_id.get(&prior_host_id).copied()
                 {
                     remap_info
                         .destroyed_join_host_fleet_numbers
-                        .insert(new_fleet_id as u8, host_fleet_number);
+                        .insert(new_fleet_id, host_fleet_number);
                 }
             }
         }
@@ -937,11 +936,11 @@ fn apply_fleet_removal_remap(
 fn remove_selected_fleets(
     game_data: &mut CoreGameData,
     to_remove: &[bool],
-) -> std::collections::HashMap<u8, u8> {
+) -> std::collections::HashMap<u16, u8> {
     apply_fleet_removal_remap(game_data, to_remove).destroyed_join_host_fleet_numbers
 }
 
-fn cull_empty_fleets(game_data: &mut CoreGameData) -> std::collections::HashMap<u8, u8> {
+fn cull_empty_fleets(game_data: &mut CoreGameData) -> std::collections::HashMap<u16, u8> {
     let to_remove: Vec<bool> = game_data
         .fleets
         .records

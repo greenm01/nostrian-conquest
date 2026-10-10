@@ -223,27 +223,22 @@ impl FleetRecord {
         self.raw[0x0C] = coords[1];
     }
 
+    /// ECGAME's recompute of `0x09`: start at 7 and take the minimum over the
+    /// ship types present (ETAC 3, BB 4, CA 5, transports 5, DD 6, scouts 6).
     pub fn recompute_max_speed_from_composition(&mut self) {
-        let mut speeds = Vec::new();
-        if self.destroyer_count() > 0 {
-            speeds.push(6);
+        let mut max_speed = 7;
+        for (count, speed) in [
+            (self.etac_count(), 3),
+            (self.battleship_count(), 4),
+            (self.cruiser_count(), 5),
+            (self.troop_transport_count(), 5),
+            (self.destroyer_count(), 6),
+            (self.scout_count(), 6),
+        ] {
+            if count > 0 {
+                max_speed = max_speed.min(speed);
+            }
         }
-        if self.cruiser_count() > 0 {
-            speeds.push(5);
-        }
-        if self.battleship_count() > 0 {
-            speeds.push(4);
-        }
-        if self.scout_count() > 0 {
-            speeds.push(6);
-        }
-        if self.troop_transport_count() > 0 {
-            speeds.push(5);
-        }
-        if self.etac_count() > 0 {
-            speeds.push(3);
-        }
-        let max_speed = speeds.into_iter().min().unwrap_or(0);
         self.set_max_speed(max_speed);
         if self.current_speed() > max_speed {
             self.set_current_speed(max_speed);
@@ -288,21 +283,31 @@ impl FleetRecord {
     pub fn world_target_flag_raw(&self) -> u8 {
         self.raw[0x22]
     }
-    pub fn mission_id_raw(&self) -> u8 {
-        self.raw[0x23]
+    /// 0x23..=0x24: mission target id, a word: the Join host fleet id or
+    /// the guarded starbase number.
+    pub fn mission_id_raw(&self) -> u16 {
+        u16::from_le_bytes([self.raw[0x23], self.raw[0x24]])
     }
-    pub fn set_mission_id_raw(&mut self, value: u8) {
-        self.raw[0x23] = value;
+    pub fn set_mission_id_raw(&mut self, value: u16) {
+        self.raw[0x23..0x25].copy_from_slice(&value.to_le_bytes());
     }
-    pub fn join_host_fleet_id_raw(&self) -> u8 {
-        self.raw[0x23]
+    pub fn join_host_fleet_id_raw(&self) -> u16 {
+        self.mission_id_raw()
     }
-    pub fn set_join_host_fleet_id_raw(&mut self, value: u8) {
-        self.raw[0x23] = value;
+    pub fn set_join_host_fleet_id_raw(&mut self, value: u16) {
+        self.set_mission_id_raw(value);
     }
-    pub fn guard_starbase_index_raw(&self) -> u8 {
-        self.raw[0x23]
+    pub fn guard_starbase_index_raw(&self) -> u16 {
+        self.mission_id_raw()
     }
+    /// Writes the world-target flag (0x22) and the mission id word
+    /// (0x23..=0x24) together, as ECGAME does when it sets an order.
+    pub fn set_mission_target(&mut self, world_target_flag: u8, mission_id: u16) {
+        self.raw[0x22] = world_target_flag;
+        self.set_mission_id_raw(mission_id);
+    }
+    /// Raw bytes 0x22 (world-target flag) and 0x23 (mission id low byte);
+    /// 0x24 is left alone.
     pub fn set_mission_aux_bytes(&mut self, value: [u8; 2]) {
         self.raw[0x22] = value[0];
         self.raw[0x23] = value[1];
@@ -388,12 +393,6 @@ impl FleetRecord {
         }
     }
 
-    pub fn scout_count(&self) -> u8 {
-        self.raw[0x24]
-    }
-    pub fn set_scout_count(&mut self, value: u8) {
-        self.raw[0x24] = value;
-    }
     pub fn rules_of_engagement(&self) -> u8 {
         self.raw[0x25]
     }
@@ -418,17 +417,42 @@ impl FleetRecord {
     pub fn set_destroyer_count(&mut self, value: u16) {
         self.raw[0x2A..0x2C].copy_from_slice(&value.to_le_bytes());
     }
-    pub fn troop_transport_count(&self) -> u16 {
+    /// 0x2C: troop transports without an army.
+    pub fn empty_transport_count(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x2C], self.raw[0x2D]])
     }
-    pub fn set_troop_transport_count(&mut self, value: u16) {
+    pub fn set_empty_transport_count(&mut self, value: u16) {
         self.raw[0x2C..0x2E].copy_from_slice(&value.to_le_bytes());
     }
-    pub fn army_count(&self) -> u16 {
+    /// 0x2E: troop transports carrying one army each.
+    pub fn loaded_transport_count(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x2E], self.raw[0x2F]])
     }
-    pub fn set_army_count(&mut self, value: u16) {
+    pub fn set_loaded_transport_count(&mut self, value: u16) {
         self.raw[0x2E..0x30].copy_from_slice(&value.to_le_bytes());
+    }
+    /// All troop transports, empty and loaded.
+    pub fn troop_transport_count(&self) -> u16 {
+        self.empty_transport_count()
+            .saturating_add(self.loaded_transport_count())
+    }
+    /// Sets the transport total, keeping loaded transports (up to the new
+    /// total) and making the rest empty.
+    pub fn set_troop_transport_count(&mut self, total: u16) {
+        let loaded = self.loaded_transport_count().min(total);
+        self.set_loaded_transport_count(loaded);
+        self.set_empty_transport_count(total - loaded);
+    }
+    /// Armies aboard: one per loaded transport.
+    pub fn army_count(&self) -> u16 {
+        self.loaded_transport_count()
+    }
+    /// Loads or unloads armies, moving transports between the empty and
+    /// loaded counts. The transport total grows if it cannot hold `armies`.
+    pub fn set_army_count(&mut self, armies: u16) {
+        let total = self.troop_transport_count();
+        self.set_loaded_transport_count(armies);
+        self.set_empty_transport_count(total.saturating_sub(armies));
     }
     pub fn etac_count(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x30], self.raw[0x31]])
@@ -436,10 +460,25 @@ impl FleetRecord {
     pub fn set_etac_count(&mut self, value: u16) {
         self.raw[0x30..0x32].copy_from_slice(&value.to_le_bytes());
     }
+    pub fn scout_count(&self) -> u16 {
+        u16::from_le_bytes([self.raw[0x32], self.raw[0x33]])
+    }
+    pub fn set_scout_count(&mut self, value: u16) {
+        self.raw[0x32..0x34].copy_from_slice(&value.to_le_bytes());
+    }
+    /// 0x34..=0x35: a word Rust does not interpret. ECMAINT's encounter code
+    /// writes fleet strength here and its Join merge adds it; Rust keeps it
+    /// byte for byte.
+    pub fn strength_cache_raw(&self) -> u16 {
+        u16::from_le_bytes([self.raw[0x34], self.raw[0x35]])
+    }
+    pub fn set_strength_cache_raw(&mut self, value: u16) {
+        self.raw[0x34..0x36].copy_from_slice(&value.to_le_bytes());
+    }
 
     fn counted_ship_composition_parts(&self) -> Vec<String> {
         [
-            ("SC", u16::from(self.scout_count())),
+            ("SC", self.scout_count()),
             ("BB", self.battleship_count()),
             ("CA", self.cruiser_count()),
             ("DD", self.destroyer_count()),
@@ -453,11 +492,6 @@ impl FleetRecord {
     }
 
     fn fleet_list_ship_composition_tokens(&self) -> Vec<String> {
-        assert!(
-            self.army_count() == 0 || self.troop_transport_count() > 0,
-            "fleet armies must be loaded in troop transports"
-        );
-
         fn token(label: &str, count: u16) -> Option<String> {
             match count {
                 0 => None,
@@ -466,18 +500,13 @@ impl FleetRecord {
             }
         }
 
-        let loaded_transports = self.army_count().min(self.troop_transport_count());
-        let empty_transports = self
-            .troop_transport_count()
-            .saturating_sub(loaded_transports);
-
         [
-            token("SC", u16::from(self.scout_count())),
+            token("SC", self.scout_count()),
             token("BB", self.battleship_count()),
             token("CA", self.cruiser_count()),
             token("DD", self.destroyer_count()),
-            token("TT*", loaded_transports),
-            token("TT", empty_transports),
+            token("TT*", self.loaded_transport_count()),
+            token("TT", self.empty_transport_count()),
             token("ET", self.etac_count()),
         ]
         .into_iter()

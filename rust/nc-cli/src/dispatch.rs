@@ -327,7 +327,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
             set_fleet_ships(
                 &dir,
                 parse_usize_1_based(&record_index, "fleet record index")?,
-                parse_u8_arg(&scouts, "scouts")?,
+                parse_u16_arg(&scouts, "scouts")?,
                 parse_u16_arg(&battleships, "battleships")?,
                 parse_u16_arg(&cruisers, "cruisers")?,
                 parse_u16_arg(&destroyers, "destroyers")?,
@@ -414,7 +414,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 parse_u16_arg(&destroyers, "destroyers")?,
                 parse_u16_arg(&full_transports, "full transports")?,
                 parse_u16_arg(&empty_transports, "empty transports")?,
-                parse_u8_arg(&scouts, "scouts")?,
+                parse_u16_arg(&scouts, "scouts")?,
                 parse_u16_arg(&etacs, "etacs")?,
                 donor_speed
                     .as_deref()
@@ -859,7 +859,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 .as_deref()
                 .map(|v| parse_u8_arg(v, "sc"))
                 .transpose()?
-                .unwrap_or(100);
+                .unwrap_or(0);
             let bb = args
                 .next()
                 .as_deref()
@@ -975,7 +975,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 .as_deref()
                 .map(|v| parse_u8_arg(v, "f4_sc"))
                 .transpose()?
-                .unwrap_or(10);
+                .unwrap_or(0);
             let f4_bb = args
                 .next()
                 .as_deref()
@@ -1005,7 +1005,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 .as_deref()
                 .map(|v| parse_u8_arg(v, "f8_sc"))
                 .transpose()?
-                .unwrap_or(10);
+                .unwrap_or(0);
             let f8_bb = args
                 .next()
                 .as_deref()
@@ -1097,12 +1097,12 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
             let f0_dd = parse_u16_arg(&args_slice[5], "f0_dd").unwrap_or(50);
             let f2_ca = parse_u16_arg(&args_slice[6], "f2_ca").unwrap_or(50);
             let f2_dd = parse_u16_arg(&args_slice[7], "f2_dd").unwrap_or(50);
-            let f4_sc = parse_u8_arg(&args_slice[8], "f4_sc").unwrap_or(10);
+            let f4_sc = parse_u8_arg(&args_slice[8], "f4_sc").unwrap_or(0);
             let f4_bb = parse_u16_arg(&args_slice[9], "f4_bb").unwrap_or(100);
             let f4_ca = parse_u16_arg(&args_slice[10], "f4_ca").unwrap_or(0);
             let f8_loc_x = parse_u8_arg(&args_slice[11], "f8_loc_x").unwrap_or(9);
             let f8_loc_y = parse_u8_arg(&args_slice[12], "f8_loc_y").unwrap_or(battle_y);
-            let f8_sc = parse_u8_arg(&args_slice[13], "f8_sc").unwrap_or(10);
+            let f8_sc = parse_u8_arg(&args_slice[13], "f8_sc").unwrap_or(0);
             let f8_bb = parse_u16_arg(&args_slice[14], "f8_bb").unwrap_or(1);
             let f8_ca = parse_u16_arg(&args_slice[15], "f8_ca").unwrap_or(0);
             let p14_x = parse_u8_arg(&args_slice[16], "p14_x").unwrap_or(15);

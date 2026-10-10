@@ -341,7 +341,7 @@ pub fn build_join_chase_trace() -> CoreGameData {
     configure_cruiser_fleet(host);
     arm_new_order(host, Order::MoveOnly, [10, 10], [14, 10], TRACE_SPEED);
 
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner = &mut game_data.fleets.records[1];
     configure_cruiser_fleet(joiner);
     joiner.set_owner_empire_raw(1);
@@ -366,7 +366,7 @@ pub fn build_join_merge_trace() -> CoreGameData {
     configure_cruiser_fleet(host);
     arm_stationary_order(host, Order::HoldPosition, coords);
 
-    let host_id = game_data.fleets.records[0].fleet_id();
+    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner = &mut game_data.fleets.records[1];
     configure_cruiser_fleet(joiner);
     joiner.set_owner_empire_raw(1);
@@ -435,7 +435,7 @@ pub fn configured_delayed_hostile_arrival_state(
     fleet.set_troop_transport_count(ships.3);
     fleet.set_army_count(ships.4);
     fleet.set_etac_count(ships.5);
-    fleet.set_scout_count(ships.6 as u8);
+    fleet.set_scout_count(ships.6 as u16);
     fleet.recompute_max_speed_from_composition();
     fleet.set_current_location_coords_raw([24, 25]);
     fleet.set_current_speed(3);
@@ -566,7 +566,7 @@ pub fn arm_new_order(
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target);
     fleet.set_current_speed(speed);
-    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_mission_target(u8::from(order.targets_world()), fleet.mission_id_raw());
     fleet.set_at_rest_motion();
 }
 
@@ -575,6 +575,6 @@ pub fn arm_stationary_order(fleet: &mut FleetRecord, order: Order, coords: [u8; 
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(0);
-    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_mission_target(u8::from(order.targets_world()), fleet.mission_id_raw());
     fleet.set_at_rest_motion();
 }

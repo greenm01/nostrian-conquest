@@ -30,10 +30,8 @@ impl CoreGameData {
             });
         }
 
-        let available_full_transports = donor.army_count();
-        let available_empty_transports = donor
-            .troop_transport_count()
-            .saturating_sub(donor.army_count());
+        let available_full_transports = donor.loaded_transport_count();
+        let available_empty_transports = donor.empty_transport_count();
         for (ship_kind, requested, available) in [
             (
                 "battleships",
@@ -52,11 +50,7 @@ impl CoreGameData {
                 selection.empty_transports,
                 available_empty_transports,
             ),
-            (
-                "scout ships",
-                u16::from(selection.scouts),
-                u16::from(donor.scout_count()),
-            ),
+            ("scout ships", selection.scouts, donor.scout_count()),
             ("ETAC ships", selection.etacs, donor.etac_count()),
         ] {
             if requested > available {
@@ -96,14 +90,14 @@ impl CoreGameData {
                 .destroyer_count()
                 .saturating_sub(selection.destroyers),
         );
-        donor_after.set_troop_transport_count(
+        donor_after.set_empty_transport_count(
             donor_after
-                .troop_transport_count()
-                .saturating_sub(selection.full_transports + selection.empty_transports),
+                .empty_transport_count()
+                .saturating_sub(selection.empty_transports),
         );
-        donor_after.set_army_count(
+        donor_after.set_loaded_transport_count(
             donor_after
-                .army_count()
+                .loaded_transport_count()
                 .saturating_sub(selection.full_transports),
         );
         donor_after.set_scout_count(donor_after.scout_count().saturating_sub(selection.scouts));
@@ -143,13 +137,13 @@ impl CoreGameData {
         new_fleet.set_tuple_c_payload_raw(donor.tuple_c_payload_raw());
         new_fleet.set_standing_order_kind(Order::HoldPosition);
         new_fleet.set_standing_order_target_coords_raw(donor.current_location_coords_raw());
-        new_fleet.set_mission_aux_bytes([0, 0]);
+        new_fleet.set_mission_target(0, 0);
         new_fleet.set_rules_of_engagement(new_fleet_roe.min(10));
         new_fleet.set_battleship_count(selection.battleships);
         new_fleet.set_cruiser_count(selection.cruisers);
         new_fleet.set_destroyer_count(selection.destroyers);
-        new_fleet.set_troop_transport_count(selection.full_transports + selection.empty_transports);
-        new_fleet.set_army_count(selection.full_transports);
+        new_fleet.set_empty_transport_count(selection.empty_transports);
+        new_fleet.set_loaded_transport_count(selection.full_transports);
         new_fleet.set_scout_count(selection.scouts);
         new_fleet.set_etac_count(selection.etacs);
         new_fleet.recompute_max_speed_from_composition();
@@ -231,10 +225,8 @@ impl CoreGameData {
             });
         }
 
-        let available_full_transports = donor.army_count();
-        let available_empty_transports = donor
-            .troop_transport_count()
-            .saturating_sub(donor.army_count());
+        let available_full_transports = donor.loaded_transport_count();
+        let available_empty_transports = donor.empty_transport_count();
         for (ship_kind, requested, available) in [
             (
                 "battleships",
@@ -253,11 +245,7 @@ impl CoreGameData {
                 selection.empty_transports,
                 available_empty_transports,
             ),
-            (
-                "scout ships",
-                u16::from(selection.scouts),
-                u16::from(donor.scout_count()),
-            ),
+            ("scout ships", selection.scouts, donor.scout_count()),
             ("ETAC ships", selection.etacs, donor.etac_count()),
         ] {
             if requested > available {
@@ -297,14 +285,14 @@ impl CoreGameData {
                 .destroyer_count()
                 .saturating_sub(selection.destroyers),
         );
-        donor_after.set_troop_transport_count(
+        donor_after.set_empty_transport_count(
             donor_after
-                .troop_transport_count()
-                .saturating_sub(selection.full_transports + selection.empty_transports),
+                .empty_transport_count()
+                .saturating_sub(selection.empty_transports),
         );
-        donor_after.set_army_count(
+        donor_after.set_loaded_transport_count(
             donor_after
-                .army_count()
+                .loaded_transport_count()
                 .saturating_sub(selection.full_transports),
         );
         donor_after.set_scout_count(donor_after.scout_count().saturating_sub(selection.scouts));
@@ -330,14 +318,14 @@ impl CoreGameData {
                 .destroyer_count()
                 .saturating_add(selection.destroyers),
         );
-        host_after.set_troop_transport_count(
+        host_after.set_empty_transport_count(
             host_after
-                .troop_transport_count()
-                .saturating_add(selection.full_transports + selection.empty_transports),
+                .empty_transport_count()
+                .saturating_add(selection.empty_transports),
         );
-        host_after.set_army_count(
+        host_after.set_loaded_transport_count(
             host_after
-                .army_count()
+                .loaded_transport_count()
                 .saturating_add(selection.full_transports),
         );
         host_after.set_scout_count(host_after.scout_count().saturating_add(selection.scouts));
@@ -409,9 +397,7 @@ impl CoreGameData {
             });
         }
 
-        let available_transport_capacity = fleet
-            .troop_transport_count()
-            .saturating_sub(fleet.army_count());
+        let available_transport_capacity = fleet.empty_transport_count();
         if qty > available_transport_capacity {
             return Err(GameStateMutationError::TransportCapacityExceeded {
                 fleet_index_1_based: fleet_record_index_1_based,

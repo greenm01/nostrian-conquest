@@ -89,12 +89,12 @@ fn fleet_battle_init_recreates_known_valid_pre_fixture() {
             "50", // f0_bb, f0_ca, f0_dd
             "50",
             "50", // f2_ca, f2_dd
-            "10",
+            "0",
             "100",
             "0", // f4_sc, f4_bb, f4_ca
             "9",
             "10",
-            "10",
+            "0",
             "1",
             "0", // f8_loc_x, f8_loc_y, f8_sc, f8_bb, f8_ca
             "15",

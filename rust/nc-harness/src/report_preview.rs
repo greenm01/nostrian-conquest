@@ -80,7 +80,7 @@ struct ForceSpec {
     battleships: u16,
     cruisers: u16,
     destroyers: u16,
-    scouts: u8,
+    scouts: u16,
     transports: u16,
     loaded_armies: u16,
     etacs: u16,
@@ -1396,7 +1396,7 @@ fn sample_destroyed_fleet_force(rng: &mut GameRng) -> ForceSpec {
 
 fn sample_contact_force(rng: &mut GameRng) -> ForceSpec {
     ForceSpec {
-        scouts: rng.range_u8(0, 1),
+        scouts: u16::from(rng.range_u8(0, 1)),
         cruisers: range_u16(rng, 0, 2),
         destroyers: range_u16(rng, 0, 2),
         transports: range_u16(rng, 0, 2),

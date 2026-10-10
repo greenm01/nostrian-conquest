@@ -68,7 +68,7 @@ pub struct FleetShipsSpec {
     pub battleships: u16,
     pub cruisers: u16,
     pub destroyers: u16,
-    pub scouts: u8,
+    pub scouts: u16,
     pub transports: u16,
     pub loaded_armies: u16,
     pub etacs: u16,

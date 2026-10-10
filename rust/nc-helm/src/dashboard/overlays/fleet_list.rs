@@ -231,7 +231,7 @@ pub(crate) struct FleetOverlayRow {
     pub eta_label: String,
     pub roe: u8,
     pub loaded_armies: u16,
-    pub strength_key: (u16, u16, u16, u16, u8, u16, u16),
+    pub strength_key: (u16, u16, u16, u16, u16, u16, u16),
     pub cells: Vec<String>,
 }
 
@@ -1488,7 +1488,7 @@ fn eta_sort_key(label: &str) -> (u8, u16) {
     }
 }
 
-fn fleet_strength_key(fleet: &nc_data::FleetRecord) -> (u16, u16, u16, u16, u8, u16, u16) {
+fn fleet_strength_key(fleet: &nc_data::FleetRecord) -> (u16, u16, u16, u16, u16, u16, u16) {
     (
         fleet.battleship_count(),
         fleet.cruiser_count(),

@@ -188,7 +188,7 @@ fn draw_armada(choices: &mut dyn ChoiceSource) -> FleetShipsSpec {
         destroyers: count(),
         cruisers: count(),
         battleships: count(),
-        scouts: count() as u8,
+        scouts: count(),
         transports: count(),
         loaded_armies: 0,
         etacs: count(),
@@ -196,7 +196,7 @@ fn draw_armada(choices: &mut dyn ChoiceSource) -> FleetShipsSpec {
     if ships.destroyers
         + ships.cruisers
         + ships.battleships
-        + u16::from(ships.scouts)
+        + ships.scouts
         + ships.transports
         + ships.etacs
         == 0

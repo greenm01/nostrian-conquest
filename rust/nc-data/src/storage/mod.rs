@@ -488,15 +488,17 @@ impl CampaignStore {
                  target_x INTEGER NOT NULL,
                  target_y INTEGER NOT NULL,
                  standing_order_code_raw INTEGER NOT NULL,
-                 mission_aux_raw_hex TEXT NOT NULL,
-                 scout_count INTEGER NOT NULL,
+                 world_target_flag_raw INTEGER NOT NULL,
+                 mission_id_raw INTEGER NOT NULL,
                  rules_of_engagement INTEGER NOT NULL,
                  battleship_count INTEGER NOT NULL,
                  cruiser_count INTEGER NOT NULL,
                  destroyer_count INTEGER NOT NULL,
-                 troop_transport_count INTEGER NOT NULL,
-                 army_count INTEGER NOT NULL,
+                 empty_transport_count INTEGER NOT NULL,
+                 loaded_transport_count INTEGER NOT NULL,
                  etac_count INTEGER NOT NULL,
+                 scout_count INTEGER NOT NULL,
+                 strength_cache_raw INTEGER NOT NULL,
                  PRIMARY KEY(snapshot_id, record_index)
              );
              CREATE TABLE IF NOT EXISTS snapshot_bases (

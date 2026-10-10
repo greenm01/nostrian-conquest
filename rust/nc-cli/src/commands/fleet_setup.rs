@@ -7,7 +7,7 @@ use crate::commands::runtime::with_runtime_game_mut_and_export;
 pub(crate) fn set_fleet_ships(
     dir: &Path,
     fleet_record_index_1_based: usize,
-    scouts: u8,
+    scouts: u16,
     battleships: u16,
     cruisers: u16,
     destroyers: u16,
@@ -93,7 +93,7 @@ pub(crate) fn detach_fleet_to_new_record(
     destroyers: u16,
     full_transports: u16,
     empty_transports: u16,
-    scouts: u8,
+    scouts: u16,
     etacs: u16,
     donor_speed: Option<u8>,
     new_fleet_roe: u8,

@@ -323,7 +323,7 @@ fn parse_fleet(node: &kdl::KdlNode) -> Result<FleetSpec, HarnessError> {
                     battleships: opt_prop_u16(child, "bb")?.unwrap_or(0),
                     cruisers: opt_prop_u16(child, "ca")?.unwrap_or(0),
                     destroyers: opt_prop_u16(child, "dd")?.unwrap_or(0),
-                    scouts: opt_prop_u8(child, "sc")?.unwrap_or(0),
+                    scouts: opt_prop_u16(child, "sc")?.unwrap_or(0),
                     transports: opt_prop_u16(child, "tt")?.unwrap_or(0),
                     loaded_armies: opt_prop_u16(child, "armies")?.unwrap_or(0),
                     etacs: opt_prop_u16(child, "etac")?.unwrap_or(0),

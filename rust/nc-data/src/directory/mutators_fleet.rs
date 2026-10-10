@@ -121,8 +121,9 @@ impl CoreGameData {
         record.set_standing_order_code_raw(order_code);
         record.set_standing_order_target_coords_raw(target);
         // ECGAME writes 0x22 = world-target flag (0 for sector-targeted orders,
-        // 1 otherwise) and 0x23 = mission id (starbase id for Guard Starbase,
-        // host fleet id for Join); explicit aux bytes override byte-for-byte.
+        // 1 otherwise) and the 0x23 word = mission id (starbase id for Guard
+        // Starbase, host fleet id for Join); explicit aux bytes override 0x22
+        // and 0x23 byte for byte, and the high byte 0x24 is zero.
         let mut mission_aux = [u8::from(Order::from_raw(order_code).targets_world()), 0];
         if let Some(value) = aux0 {
             mission_aux[0] = value;
@@ -130,7 +131,7 @@ impl CoreGameData {
         if let Some(value) = aux1 {
             mission_aux[1] = value;
         }
-        record.set_mission_aux_bytes(mission_aux);
+        record.set_mission_target(mission_aux[0], u16::from(mission_aux[1]));
         Ok(record.mission_aux_bytes())
     }
 
@@ -153,8 +154,7 @@ impl CoreGameData {
         let has_combat = fleet.has_any_combat_ships();
         let has_scout = fleet.scout_count() > 0;
         let has_etac = fleet.etac_count() > 0;
-        let has_loaded_troops =
-            fleet.troop_transport_count() > 0 && u16::from(fleet.army_count()) > 0;
+        let has_loaded_troops = fleet.army_count() > 0;
         let planet_owner = self
             .planets
             .records
@@ -168,10 +168,12 @@ impl CoreGameData {
                     return Err(FleetOrderValidationError::MissingCombatShips);
                 }
                 let _ = aux0;
-                let base_id = aux1.unwrap_or_else(|| fleet.guard_starbase_index_raw());
+                let base_id = aux1
+                    .map(u16::from)
+                    .unwrap_or_else(|| fleet.guard_starbase_index_raw());
                 if base_id == 0
                     || !self.bases.records.iter().any(|base| {
-                        base.owner_empire_raw() == owner && base.base_id_raw() == base_id
+                        base.owner_empire_raw() == owner && u16::from(base.base_id_raw()) == base_id
                     })
                 {
                     return Err(FleetOrderValidationError::InvalidGuardStarbase);
@@ -253,14 +255,14 @@ impl CoreGameData {
             }
             Order::JoinAnotherFleet => {
                 let _ = aux0;
-                let host_id = aux1.unwrap_or_else(|| fleet.join_host_fleet_id_raw());
+                let host_id = aux1
+                    .map(u16::from)
+                    .unwrap_or_else(|| fleet.join_host_fleet_id_raw());
                 if host_id == 0
-                    || host_id == fleet.fleet_id()
-                    || !self
-                        .fleets
-                        .records
-                        .iter()
-                        .any(|host| host.fleet_id() == host_id && host.owner_empire_raw() == owner)
+                    || host_id == fleet.fleet_id_word_raw()
+                    || !self.fleets.records.iter().any(|host| {
+                        host.fleet_id_word_raw() == host_id && host.owner_empire_raw() == owner
+                    })
                 {
                     return Err(FleetOrderValidationError::InvalidJoinHost);
                 }
@@ -281,14 +283,6 @@ impl CoreGameData {
         let Some(fleet) = self.fleets.records.get(record_index_1_based - 1) else {
             return Ok(());
         };
-        if fleet.army_count() > fleet.troop_transport_count() {
-            return Err(
-                FleetPlayerInputValidationError::LoadedArmiesExceedTransportCapacity {
-                    loaded_armies: fleet.army_count(),
-                    transports: fleet.troop_transport_count(),
-                },
-            );
-        }
         if fleet.current_speed() > fleet.max_speed() {
             return Err(FleetPlayerInputValidationError::SpeedExceedsMaximum {
                 speed: fleet.current_speed(),
@@ -354,7 +348,7 @@ impl CoreGameData {
         }
 
         let host_coords = host.current_location_coords_raw();
-        let host_fleet_id = host.fleet_id();
+        let host_fleet_id = host.fleet_id_word_raw();
         let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
@@ -363,7 +357,7 @@ impl CoreGameData {
         fleet.set_current_speed(fleet.max_speed());
         fleet.set_standing_order_kind(Order::JoinAnotherFleet);
         fleet.set_standing_order_target_coords_raw(host_coords);
-        fleet.set_mission_aux_bytes([1, host_fleet_id]);
+        fleet.set_mission_target(1, host_fleet_id);
         Ok(())
     }
 

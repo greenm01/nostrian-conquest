@@ -77,7 +77,7 @@ pub(super) fn set_fleet_to_local_hold(record: &mut FleetRecord) {
     record.set_current_speed(0);
     record.set_standing_order_kind(Order::HoldPosition);
     record.set_standing_order_target_coords_raw(coords);
-    record.set_mission_aux_bytes([0, 0]);
+    record.set_mission_target(0, 0);
     normalize_fleet_roe_for_composition(record);
 }
 

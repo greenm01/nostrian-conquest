@@ -1097,7 +1097,7 @@ impl DashApp {
                                 .fleet_overlay
                                 .transfer_selection
                                 .scouts
-                                .saturating_add(qty.min(u16::from(u8::MAX)) as u8)
+                                .saturating_add(qty)
                         }
                         FleetOverlayTransferClass::Etacs => {
                             self.fleet_overlay.transfer_selection.etacs += qty
@@ -1935,11 +1935,9 @@ impl DashApp {
                 .troop_transport_count()
                 .saturating_sub(fleet.army_count())
                 .saturating_sub(self.fleet_overlay.transfer_selection.empty_transports),
-            FleetOverlayTransferClass::Scouts => u16::from(
-                fleet
-                    .scout_count()
-                    .saturating_sub(self.fleet_overlay.transfer_selection.scouts),
-            ),
+            FleetOverlayTransferClass::Scouts => fleet
+                .scout_count()
+                .saturating_sub(self.fleet_overlay.transfer_selection.scouts),
             FleetOverlayTransferClass::Etacs => fleet
                 .etac_count()
                 .saturating_sub(self.fleet_overlay.transfer_selection.etacs),
@@ -1986,7 +1984,7 @@ impl DashApp {
     fn format_transfer_summary_from_selection(&self, selection: FleetDetachSelection) -> String {
         let mut parts = Vec::new();
         for (label, count) in [
-            ("SC", u16::from(selection.scouts)),
+            ("SC", selection.scouts),
             ("BB", selection.battleships),
             ("CA", selection.cruisers),
             ("DD", selection.destroyers),

@@ -280,6 +280,6 @@ pub(super) fn set_view_world_completion_hold(fleet: &mut nc_data::FleetRecord) {
     // out to depth 0.
     fleet.set_current_speed(0);
     fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_mission_aux_bytes([0, 0]);
+    fleet.set_mission_target(0, 0);
     fleet.set_depth(nc_data::Real48::ZERO);
 }

@@ -33,7 +33,7 @@ fn apply_retreat_order(fleet: &mut nc_data::FleetRecord, retreat_target: [u8; 2]
     fleet.set_standing_order_kind(Order::SeekHome);
     fleet.set_standing_order_target_coords_raw(retreat_target);
     fleet.set_current_speed(fleet.max_speed());
-    fleet.set_mission_aux_bytes([0, 0]);
+    fleet.set_mission_target(0, 0);
     fleet.set_rules_of_engagement(0);
 }
 
@@ -45,7 +45,7 @@ pub(crate) fn abort_mission_to_seek_home_or_hold(
         apply_retreat_order(fleet, retreat_target);
     } else {
         set_fleet_to_hold_current_position(fleet);
-        fleet.set_mission_aux_bytes([0, 0]);
+        fleet.set_mission_target(0, 0);
     }
 }
 
