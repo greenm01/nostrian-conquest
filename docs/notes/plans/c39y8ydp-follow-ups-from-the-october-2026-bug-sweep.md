@@ -73,6 +73,17 @@ nc-data's `campaign_contenders` and `empire_campaign_state` in
 display and outlook code can disagree with the engine. Reuse the engine's
 contesting-empire test.
 
+Result (2026-10-09): the engine's contender rule moved to nc-data as
+`is_campaign_contender` (with `is_contesting_empire`) in `player_lifecycle.rs`.
+The engine's sole-contender check and nc-data's `campaign_contenders` both call
+it; nc-data passes no lifecycle states, which count as a fresh empire's.
+`empire_campaign_state` still labels the empire `Rogue` for display. As a side
+effect, nc-data now also follows the engine on ETACs: an empire whose only
+recovery force is ETACs stops contending once no unowned world is left.
+Regression test: `empty_rogue_empire_is_not_a_campaign_contender` in
+`nc-data/tests/campaign.rs`. Workspace with t010: 2626 passed, 1 failed (the
+timing test noted under t010).
+
 ### t012
 
 Fleet ETA counts the year a fleet becomes visible in the target sector, while

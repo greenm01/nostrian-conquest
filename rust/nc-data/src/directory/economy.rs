@@ -454,16 +454,7 @@ impl CoreGameData {
 
     pub fn campaign_contenders(&self) -> Vec<u8> {
         (1..=self.player.records.len() as u8)
-            .filter(|empire_raw| {
-                matches!(
-                    self.empire_campaign_state(*empire_raw),
-                    Some(
-                        CampaignState::Stable
-                            | CampaignState::MarginalExistence
-                            | CampaignState::Rogue
-                    )
-                )
-            })
+            .filter(|&empire_raw| crate::is_campaign_contender(self, empire_raw, &[]))
             .collect()
     }
 

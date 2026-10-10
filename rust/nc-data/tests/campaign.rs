@@ -138,6 +138,37 @@ fn rogue_and_civil_disorder_states_are_preserved() {
 }
 
 #[test]
+fn empty_rogue_empire_is_not_a_campaign_contender() {
+    let mut game_data = baseline_game();
+    for empire_raw in 2..=4u8 {
+        for planet in &mut game_data.planets.records {
+            if planet.owner_empire_slot_raw() == empire_raw {
+                planet.set_owner_empire_slot_raw(0);
+                planet.set_ownership_status_raw(0);
+            }
+        }
+        for fleet in &mut game_data.fleets.records {
+            if fleet.owner_empire_raw() == empire_raw {
+                fleet.set_etac_count(0);
+                fleet.set_troop_transport_count(0);
+                fleet.set_army_count(0);
+            }
+        }
+    }
+    game_data.player.records[1].set_player_mode_raw(0xff);
+
+    assert_eq!(
+        game_data.empire_campaign_state(2),
+        Some(CampaignState::Rogue)
+    );
+    assert_eq!(game_data.campaign_contenders(), vec![1]);
+    assert_eq!(
+        game_data.campaign_outlook(),
+        CampaignOutlook::SoleContender(1)
+    );
+}
+
+#[test]
 fn maintenance_marks_empire_without_recovery_path_defeated() {
     let mut game_data = baseline_game();
     for planet in &mut game_data.planets.records {
