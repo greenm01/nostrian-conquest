@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::PlayerRecord;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,4 +67,28 @@ pub fn delete_report_blocks_for_viewer(
             delete_report_block_for_viewer(rows, players, row_index, viewer_empire_id);
         }
     }
+}
+
+/// The rows a maintenance year saves: every row of `previous` that no
+/// player has deleted, in its order, then `fresh` (the year's own reports).
+/// Reports wait until the player deletes them, as classic's RESULTS.DAT
+/// chains do; nothing purges them by age. Block indexes are renumbered per
+/// viewer so the chain order holds and the store's key stays unique.
+pub fn carry_unread_report_blocks(
+    previous: &[ReportBlockRow],
+    fresh: Vec<ReportBlockRow>,
+) -> Vec<ReportBlockRow> {
+    let mut rows = previous
+        .iter()
+        .filter(|row| !row.recipient_deleted)
+        .cloned()
+        .chain(fresh)
+        .collect::<Vec<_>>();
+    let mut next_index = BTreeMap::<u8, usize>::new();
+    for row in &mut rows {
+        let index = next_index.entry(row.viewer_empire_id).or_default();
+        row.block_index = *index;
+        *index += 1;
+    }
+    rows
 }

@@ -98,6 +98,16 @@ once a probe confirms classic does; keep reports until the player reads
 them. Classic's purge-after setting never purged anything, so Rust adds no
 cap for now.
 
+Done (2026-10-10). The probe confirmed the speed rule: a Hold fleet at speed
+3, in deep space or in a system, has `+0x0a` 0 after a year and has not
+moved; Rust's dispatcher now zeroes it. The starbase sighting carries what
+the base makes of the fleet (`StarbaseAlert`: headed at our planet, enemy
+alert, or scanning), and a failed intercept is a `NoEngagement` with
+`InterceptFailed`, both worded as classic. Maintenance carries unread report
+rows into the new snapshot ahead of the year's own
+(`carry_unread_report_blocks`), so the inbox, the logon review, and the
+RESULTS.DAT export keep them until the player deletes them.
+
 ## t045
 
 Finish a full reference to classic's combat, for the record; Rust keeps its

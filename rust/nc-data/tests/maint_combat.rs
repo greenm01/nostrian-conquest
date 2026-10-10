@@ -486,6 +486,15 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
     );
 }
 
+/// A year in which someone withdrew under ROE; a failed intercept alone
+/// is also a disposition event, but not the one these tests want.
+fn retreated(events: &nc_data::MaintenanceEvents) -> bool {
+    events
+        .encounter_disposition_events
+        .iter()
+        .any(|event| matches!(event, EncounterDispositionEvent::Retreated { .. }))
+}
+
 #[test]
 fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     let game_data = configured_invade_contact_state(10, 0);
@@ -495,7 +504,7 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     // its loaded transports (losing them aborts the mission for another
     // reason).
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, events| {
-        !events.encounter_disposition_events.is_empty()
+        retreated(events)
             && year.fleets.records[0].army_count() == 2
             && year.fleets.records[4].has_any_force()
     });
@@ -548,9 +557,8 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
     let game_data = configured_invade_contact_state(0, 10);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
-        !events.encounter_disposition_events.is_empty()
-    });
+    let (game_data, events) =
+        common::first_year(&game_data, &diplomacy, |_, events| retreated(events));
 
     assert!(events.encounter_disposition_events.iter().any(|event| {
         matches!(

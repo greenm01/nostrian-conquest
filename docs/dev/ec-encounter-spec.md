@@ -222,6 +222,10 @@ v /= 52
 (The real constants are 1.1 and 1.2 as real48: `81 cd cc cc cc 0c` and
 `81 9a 99 99 99 19`.)
 
+A Hold fleet's dispatch zeroes its speed (`+0x0a`), so the speed term is 1
+from its second tick on; its position does not change. [P t044: speed 3 at
+Hold, deep space and in a system, `+0x0a` 0 after the year]
+
 ### vis_base `18ea:0000` [C][P]
 `90 / 52` (= 1.7308) for every starbase (the `+0x1f` test multiplies by 1).
 

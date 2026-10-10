@@ -102,6 +102,11 @@ with a copy for each other active human empire, so their chains keep it, now
 after their own reports. The engine no longer writes broadcast rows; they come
 from older campaign databases and from imported reports no chain reaches.
 
+Reports an empire has not deleted survive maintenance. Each year's rows are
+last year's unread rows, in their chain order, followed by the year's own
+(`nc_data::carry_unread_report_blocks`), so an export's chain holds an
+empire's older unread reports before its new ones, as classic's does.
+
 ## Oracle Evidence
 
 Original ECMAINT runs with two and three joined human empires are preserved

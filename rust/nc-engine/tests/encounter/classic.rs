@@ -2,7 +2,10 @@
 //! numbers in the encounter spec. Rust matches classic's odds, not its
 //! random sequence, so these check rates with binomial tolerances.
 
-use nc_data::Order;
+use nc_data::{
+    ContactReportSource, EncounterDispositionEvent, EncounterDispositionReason, Order,
+    StarbaseAlert,
+};
 
 use super::support::{
     Fleet, NO_SHIPS, Ships, WORLD, add_starbase, assert_rate, attacks, board, board_with_world, ca,
@@ -466,4 +469,128 @@ fn a_starbase_and_its_guard_fight_together() {
         }
     }
     assert!(battles > 150, "{battles} battles in 200 years");
+}
+
+/// What a starbase says about a fleet it identified: inside its own system
+/// the fleet is "headed at our planet", whatever the diplomacy; in deep
+/// space a declared enemy raises the alert and a neutral is only logged.
+#[test]
+fn a_starbase_reports_what_it_makes_of_the_fleet() {
+    let sector = [9, 10];
+    let enemy: &[(u8, u8)] = &[(1, 2)];
+    let neutral: &[(u8, u8)] = &[];
+    for (in_system, enemies, expected) in [
+        (true, enemy, StarbaseAlert::HeadedAtOurWorld),
+        (true, neutral, StarbaseAlert::HeadedAtOurWorld),
+        (false, enemy, StarbaseAlert::Enemy),
+        (false, neutral, StarbaseAlert::Scanning),
+    ] {
+        let mut scenario = board();
+        if in_system {
+            scenario.planets.records[13].set_as_owned_target_world(
+                sector,
+                [0x64, 0x87],
+                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
+                0x04,
+                0x0b,
+                *b"TargetPrimeet",
+                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
+                0,
+                0,
+                2,
+                1,
+            );
+        }
+        add_starbase(&mut scenario, 1, 1, sector, in_system);
+        put(
+            &mut scenario,
+            4,
+            Fleet::on_station(2, sector, in_system, Order::HoldPosition, ca(1)),
+        );
+        let mut alerts = Vec::new();
+        for (_, events) in years(&scenario, &declared(enemies), 0..200) {
+            alerts.extend(
+                events
+                    .scout_contact_events
+                    .iter()
+                    .filter(|event| event.viewer_empire_raw == 1)
+                    .filter_map(|event| match event.source {
+                        ContactReportSource::Starbase { id: 1, alert } => Some(alert),
+                        _ => None,
+                    }),
+            );
+        }
+        assert!(
+            alerts.len() >= 50,
+            "in system {in_system}: only {} starbase sightings",
+            alerts.len()
+        );
+        assert!(
+            alerts.iter().all(|alert| *alert == expected),
+            "in system {in_system}, enemies {enemies:?}: {alerts:?}"
+        );
+    }
+}
+
+/// A willing attacker that is no faster than a moving target may fail the
+/// intercept roll; it reports that it could not intercept, and nothing
+/// else. With ROE 10 it is never the ROE that stops it.
+#[test]
+fn a_fleet_that_cannot_catch_its_target_reports_it() {
+    let sector = [9, 10];
+    let mut scenario = board();
+    put(
+        &mut scenario,
+        0,
+        Fleet::on_station(1, sector, false, Order::PatrolSector, ca(3)).roe(10),
+    );
+    let mut runner = Fleet::on_station(2, sector, false, Order::PatrolSector, ca(1)).max_speed(6);
+    runner.speed = 3;
+    put(&mut scenario, 4, runner);
+    let (mut escapes, mut battles) = (0, 0);
+    for (_, events) in years(&scenario, &declared(&[(1, 2)]), 0..300) {
+        let reasons = events
+            .encounter_disposition_events
+            .iter()
+            .filter_map(|event| match *event {
+                EncounterDispositionEvent::NoEngagement {
+                    owner_empire_raw: 1,
+                    reason,
+                    ..
+                } => Some(reason),
+                _ => None,
+            })
+            .collect::<Vec<_>>();
+        assert!(
+            reasons
+                .iter()
+                .all(|reason| *reason == EncounterDispositionReason::InterceptFailed),
+            "{reasons:?}"
+        );
+        escapes += usize::from(!reasons.is_empty());
+        battles += usize::from(fought(&events, 1, sector));
+    }
+    assert!(
+        escapes >= 20 && battles >= 20,
+        "{escapes} years with a failed intercept, {battles} with a battle"
+    );
+}
+
+/// Classic's Hold action zeroes a holding fleet's speed (probe t044), so
+/// its visibility loses the speed term after its first tick. The fleet
+/// stays where it is.
+#[test]
+fn a_holding_fleets_speed_is_zeroed_by_its_dispatch() {
+    let sector = [9, 10];
+    let mut scenario = board();
+    let mut holder = Fleet::on_station(1, sector, false, Order::HoldPosition, ca(1));
+    holder.speed = 3;
+    put(&mut scenario, 0, holder);
+    let (game_data, _) = years(&scenario, &declared(&[]), 0..1)
+        .next()
+        .expect("one year");
+    let fleet = &game_data.fleets.records[0];
+    assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
+    assert_eq!(fleet.current_speed(), 0);
+    assert_eq!(fleet.current_location_coords_raw(), sector);
 }

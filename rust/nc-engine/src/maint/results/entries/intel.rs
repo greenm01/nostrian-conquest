@@ -1,6 +1,6 @@
 use nc_data::{
     ContactReportSource, CoreGameData, MaintenanceEvents, Mission, MissionOutcome,
-    PlanetIntelEvent, PlanetIntelSnapshot, PlanetIntelSource,
+    PlanetIntelEvent, PlanetIntelSnapshot, PlanetIntelSource, StarbaseAlert,
 };
 
 use crate::maint::results::combat::*;
@@ -111,7 +111,7 @@ pub fn push_intel_entries(
         }
         // Deduplicate fleet-source contacts; starbase contacts always pass through
         // as they carry unique intelligence about the starbase's detection.
-        if !matches!(event.source, ContactReportSource::Starbase(_)) {
+        if !matches!(event.source, ContactReportSource::Starbase { .. }) {
             let contact_key = (
                 event.viewer_empire_raw,
                 event.target_empire_raw,
@@ -192,23 +192,34 @@ pub fn push_intel_entries(
                     narrative_phase: narrative_phase_for_report_text(&body),
                 });
             }
-            ContactReportSource::Starbase(starbase_id) => {
-                let source = format!("From Starbase {starbase_id}, located in System({x},{y}):");
+            ContactReportSource::Starbase { id, alert } => {
+                let source = format!("From Starbase {id}, located in System({x},{y}):");
                 let header = report_header(&source, event.stardate_week, year);
-                let body = if let Some(enemy) = known_hostile_fleet_label(
+                let enemy = known_hostile_fleet_label(
                     game_data,
                     event.target_fleet_number,
                     event.target_empire_raw,
-                ) {
-                    format!(
-                        " We have located and identified an alien fleet in System({x},{y}). It is {enemy}. Their fleet contains {fleet_description}. We are alerting all fleets in the area."
-                    )
-                } else {
-                    format!(
-                        " We have located and identified an alien fleet in System({x},{y}). It is {}. Their fleet contains {fleet_description}. We are alerting all fleets in the area.",
-                        classic_empire_clause(game_data, event.target_empire_raw),
-                    )
+                )
+                .unwrap_or_else(|| classic_empire_clause(game_data, event.target_empire_raw));
+                let outcome = match alert {
+                    StarbaseAlert::HeadedAtOurWorld => {
+                        let planet = game_data
+                            .planets
+                            .records
+                            .iter()
+                            .find(|planet| planet.coords_raw() == event.coords)
+                            .map(|planet| planet.planet_name())
+                            .unwrap_or_default();
+                        format!(
+                            "The aliens appear to be headed at our planet {planet}! We are alerting all fleets in the area."
+                        )
+                    }
+                    StarbaseAlert::Enemy => "We are alerting all fleets in the area.".to_string(),
+                    StarbaseAlert::Scanning => "Continuing with scanning assignment...".to_string(),
                 };
+                let body = format!(
+                    " We have located and identified an alien fleet in System({x},{y}). It is {enemy}. Their fleet contains {fleet_description}. {outcome}"
+                );
                 entries.push(ReportEntry {
                     text: format!("{header}{body}"),
                     kind: 0x06,

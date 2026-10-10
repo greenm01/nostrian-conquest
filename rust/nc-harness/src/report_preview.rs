@@ -1,4 +1,4 @@
-use nc_data::{FleetRecord, PlanetRecord, ReportBlockRow};
+use nc_data::{FleetRecord, PlanetRecord, ReportBlockRow, StarbaseAlert};
 use nc_engine::{
     AssaultReportEvent, BombardEvent, ContactReportSource, EncounterDispositionEvent,
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, GameRng, MaintenanceEvents,
@@ -816,7 +816,10 @@ fn build_scout_contact_preview(
     let source = match sample_index % 3 {
         0 => ContactReportSource::FleetMission(Mission::ScoutSector),
         1 => ContactReportSource::Fleet(ATTACKER_FLEET_NUMBER),
-        _ => ContactReportSource::Starbase(2),
+        _ => ContactReportSource::Starbase {
+            id: 2,
+            alert: StarbaseAlert::Enemy,
+        },
     };
     let small = u32::from(rng.range_u8(1, 4));
     let medium = u32::from(rng.range_u8(0, 3));
@@ -849,7 +852,7 @@ fn build_scout_contact_preview(
         match source {
             ContactReportSource::FleetMission(_) => "fleet-mission-contact".to_string(),
             ContactReportSource::Fleet(_) => "fleet-contact".to_string(),
-            ContactReportSource::Starbase(_) => "starbase-contact".to_string(),
+            ContactReportSource::Starbase { .. } => "starbase-contact".to_string(),
         },
         vec![
             format!("viewer force: {}", describe_force(viewer_force)),
@@ -1168,6 +1171,7 @@ impl EncounterPreviewKind {
         let reason = match reason {
             EncounterDispositionReason::RoeDeclined => "roe-declined",
             EncounterDispositionReason::RoeWithdrawal => "roe-withdrawal",
+            EncounterDispositionReason::InterceptFailed => "intercept-failed",
         };
         match self {
             Self::NoEngagement => format!("no-engagement-{reason}"),

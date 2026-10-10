@@ -288,12 +288,26 @@ pub enum LostWorldResponse {
     Leaving,
 }
 
+/// What a starbase tells its owner about the alien fleet it identified.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StarbaseAlert {
+    /// The fleet is in, or on an assault bound for, the owner's world here:
+    /// "The aliens appear to be headed at our planet X! We are alerting all
+    /// fleets in the area."
+    HeadedAtOurWorld,
+    /// The owner has declared the fleet's empire an enemy: "We are alerting
+    /// all fleets in the area."
+    Enemy,
+    /// Neither: "Continuing with scanning assignment...".
+    Scanning,
+}
+
 /// A scout-style hostile contact report resolved during maintenance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContactReportSource {
     FleetMission(Mission),
     Fleet(u8),
-    Starbase(u16),
+    Starbase { id: u16, alert: StarbaseAlert },
 }
 
 /// A scout-style hostile contact report resolved during maintenance.
@@ -462,10 +476,13 @@ pub struct MissionEvent {
     pub stardate_week: Option<u8>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EncounterDispositionReason {
     RoeDeclined,
     RoeWithdrawal,
+    /// The fleet meant to attack but the intercept roll failed: "We are
+    /// unable to intercept the enemy."
+    InterceptFailed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

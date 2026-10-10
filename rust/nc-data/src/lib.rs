@@ -77,7 +77,7 @@ pub use maintenance_types::{
     JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission, MissionAbortReason,
     MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
     PlanetOwnershipChangeEvent, SalvageFailureReason, SalvageResolvedEvent, ScoutContactEvent,
-    ShipLosses, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
+    ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{
@@ -119,7 +119,8 @@ pub use records::planet::{
 pub use records::player::{DiplomaticRelation, PlayerDat, PlayerRecord};
 pub use records::setup::SetupDat;
 pub use report_blocks::{
-    ReportBlockRow, delete_report_block_for_viewer, delete_report_blocks_for_viewer,
+    ReportBlockRow, carry_unread_report_blocks, delete_report_block_for_viewer,
+    delete_report_blocks_for_viewer,
 };
 pub use rng::{
     GameRng, RNG_TAG_COMBAT, RNG_TAG_ENCOUNTER, RNG_TAG_MAPGEN, derive_campaign_seed_from_runtime,
