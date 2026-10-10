@@ -22,6 +22,12 @@ These are the docs that should drive engine/client behavior.
   - economy/build policy and post-loop world/player updates
 - [ec-movement-spec.md](ec-movement-spec.md)
   - movement, contact, and planner-facing movement rules
+- [ec-encounter-spec.md](ec-encounter-spec.md)
+  - classic's per-tick encounter loop: sighting, decision, intercept
+- [ec-starbase-spec.md](ec-starbase-spec.md)
+  - the BASES.DAT layout and classic starbase movement
+- [ec-file-formats.md](ec-file-formats.md)
+  - every byte of the seven classic data files
 - [order-selection-targeting.md](order-selection-targeting.md)
   - canonical fleet-order target default and validation behavior for the Rust client
 - [ec-setup-spec.md](ec-setup-spec.md)
@@ -65,6 +71,11 @@ behavior by themselves.
 
 - [ecmaint-combat-reference.md](ecmaint-combat-reference.md)
   - historical combat-oriented oracle/reference notes
+- [ec-combat-reference.md](ec-combat-reference.md)
+  - classic's combat in one place, with [ec-battle-spec.md](ec-battle-spec.md)
+    for the decoded battle; NC keeps its own combat system
+- [ec-economy-reference.md](ec-economy-reference.md)
+  - classic's economy, decoded and probed; NC keeps its own economy
 - [planet-report-reference.md](planet-report-reference.md)
   - report-side target-world reference profiles
 - [classic-results-dat-compat.md](classic-results-dat-compat.md)
