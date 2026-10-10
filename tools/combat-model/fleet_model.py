@@ -325,6 +325,12 @@ class Model:
         return [(1.0, (a2, b2))]
 
     # ----- the battle step ------------------------------------------
+    def wants_withdrawal(self, side, enemy_as, roe):
+        strength = self.side_as(side)
+        if strength == 0:
+            return bool(any(side[0]) and self.rules.get('unarmed_escape', False))
+        return not roe_satisfied(roe, strength, enemy_as)
+
     def done(self, a, b):
         """Nobody left to shoot, or nobody able to shoot. A side whose
         combat line is gone is still shot at while it has units."""
@@ -339,8 +345,8 @@ class Model:
         if self.done(a, b) or r > rules['round_cap']:
             return [(1.0, 0, ('terminal', a, b, False, False))]
         as_a, as_b = self.side_as(a), self.side_as(b)
-        fail_a = as_a > 0 and not roe_satisfied(roe[0], as_a, as_b)
-        fail_b = as_b > 0 and not roe_satisfied(roe[1], as_b, as_a)
+        fail_a = self.wants_withdrawal(a, as_b, roe[0])
+        fail_b = self.wants_withdrawal(b, as_a, roe[1])
         if rules['roe'] == 'lock3' and r == 4 and (fail_a or fail_b):
             # First check of the engine's loop: declared before the round;
             # both sides may leave.
@@ -355,8 +361,8 @@ class Model:
         if self.done(a, b):
             return [(1.0, 0, ('terminal', a, b, False, False))]
         as_a, as_b = self.side_as(a), self.side_as(b)
-        fail_a = as_a > 0 and not roe_satisfied(roe[0], as_a, as_b)
-        fail_b = as_b > 0 and not roe_satisfied(roe[1], as_b, as_a)
+        fail_a = self.wants_withdrawal(a, as_b, roe[0])
+        fail_b = self.wants_withdrawal(b, as_a, roe[1])
         if rules['roe'] == 'lock3':
             if r < 4 or not (fail_a or fail_b):
                 return [(1.0, 0, ('state', a, b, r + 1))]

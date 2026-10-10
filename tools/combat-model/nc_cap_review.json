@@ -1,0 +1,159 @@
+{
+  "seed": 20261010,
+  "rules": {
+    "name": "decision1-control",
+    "effect": {
+      "kind": "flat",
+      "rows": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4
+      ],
+      "unit": 4
+    },
+    "mixed_shift": 1,
+    "base_shift": 1,
+    "base_condition": "present",
+    "shift_cap": 2,
+    "execution_classes": [
+      "DD",
+      "SB"
+    ],
+    "crippled_ds": "full",
+    "remainder": "carry",
+    "critical": "free-kill",
+    "screen": "absolute",
+    "roe": "lock3",
+    "withdrawal": "pressed",
+    "round_cap": 64
+  },
+  "rows": [
+    {
+      "case": "10 CA vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "30 CA vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "3 CA vs 1 BB",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "1 DD vs 1 BB",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "10 CA ROE 6 vs 15 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "10 CA ROE 6 vs 10 CA ROE 6",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "5 CA + 10 TT ROE 6 vs 10 CA",
+      "units": "baseline",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "units": "dd-10-8-5",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "units": "dd-10-8-5",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "10 DD vs 1 SB",
+      "units": "dd-10-8-5",
+      "trials": 10000,
+      "cap_exits": 0
+    },
+    {
+      "case": "3 DD vs 1 CA",
+      "units": "dd-10-8-5",
+      "trials": 10000,
+      "cap_exits": 0
+    }
+  ]
+}

@@ -1,0 +1,1489 @@
+{
+  "trials": 1000,
+  "seed": 20261010,
+  "repair_mode": "installments",
+  "campaigns": [
+    {
+      "damaged_build_costs": [],
+      "repair_first": true,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 4.462,
+        "median_when_reached": 4.0,
+        "p10_when_reached": 4,
+        "p90_when_reached": 5
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 7.502,
+        "median_when_reached": 8.0,
+        "p10_when_reached": 7,
+        "p90_when_reached": 8
+      },
+      "colonies_year10": 11.669,
+      "local_budget_years": []
+    },
+    {
+      "damaged_build_costs": [],
+      "repair_first": false,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 4.462,
+        "median_when_reached": 4.0,
+        "p10_when_reached": 4,
+        "p90_when_reached": 5
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 7.502,
+        "median_when_reached": 8.0,
+        "p10_when_reached": 7,
+        "p90_when_reached": 8
+      },
+      "colonies_year10": 11.669,
+      "local_budget_years": []
+    },
+    {
+      "damaged_build_costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "repair_first": true,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 5.29,
+        "median_when_reached": 5.0,
+        "p10_when_reached": 5,
+        "p90_when_reached": 6
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 8.058,
+        "median_when_reached": 8.0,
+        "p10_when_reached": 7,
+        "p90_when_reached": 9
+      },
+      "colonies_year10": 11.088,
+      "local_budget_years": [
+        {
+          "year": 1,
+          "bill": 34,
+          "damaged": 0,
+          "etacs": 2
+        },
+        {
+          "year": 2,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 3,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        }
+      ]
+    },
+    {
+      "damaged_build_costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "repair_first": false,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 4.462,
+        "median_when_reached": 4.0,
+        "p10_when_reached": 4,
+        "p90_when_reached": 5
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 7.502,
+        "median_when_reached": 8.0,
+        "p10_when_reached": 7,
+        "p90_when_reached": 8
+      },
+      "colonies_year10": 11.669,
+      "local_budget_years": [
+        {
+          "year": 1,
+          "bill": 10,
+          "damaged": 7,
+          "etacs": 4
+        },
+        {
+          "year": 2,
+          "bill": 24,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 3,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        }
+      ]
+    },
+    {
+      "damaged_build_costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "repair_first": true,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 5.598,
+        "median_when_reached": 6.0,
+        "p10_when_reached": 5,
+        "p90_when_reached": 7
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 8.663,
+        "median_when_reached": 9.0,
+        "p10_when_reached": 8,
+        "p90_when_reached": 10
+      },
+      "colonies_year10": 9.714,
+      "local_budget_years": [
+        {
+          "year": 1,
+          "bill": 50,
+          "damaged": 8,
+          "etacs": 2
+        },
+        {
+          "year": 2,
+          "bill": 50,
+          "damaged": 4,
+          "etacs": 2
+        },
+        {
+          "year": 3,
+          "bill": 35,
+          "damaged": 0,
+          "etacs": 2
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        }
+      ]
+    },
+    {
+      "damaged_build_costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "repair_first": false,
+      "four_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 4.462,
+        "median_when_reached": 4.0,
+        "p10_when_reached": 4,
+        "p90_when_reached": 5
+      },
+      "eight_colonies": {
+        "reached": 1000,
+        "trials": 1000,
+        "reach_fraction": 1.0,
+        "mean_when_reached": 7.502,
+        "median_when_reached": 8.0,
+        "p10_when_reached": 7,
+        "p90_when_reached": 8
+      },
+      "colonies_year10": 11.669,
+      "local_budget_years": [
+        {
+          "year": 1,
+          "bill": 10,
+          "damaged": 12,
+          "etacs": 4
+        },
+        {
+          "year": 2,
+          "bill": 50,
+          "damaged": 7,
+          "etacs": 4
+        },
+        {
+          "year": 3,
+          "bill": 50,
+          "damaged": 3,
+          "etacs": 4
+        },
+        {
+          "year": 4,
+          "bill": 25,
+          "damaged": 0,
+          "etacs": 4
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 0,
+          "etacs": 4
+        }
+      ]
+    }
+  ],
+  "fixed_yards": [
+    {
+      "capacity": 2,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 2,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 3,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 6,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 7,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 8,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 9,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 10,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 11,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 12,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 13,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 14,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 15,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 16,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 17,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 18,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 19,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 20,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 21,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 22,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 23,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 24,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 25,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 26,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 27,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 28,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 29,
+          "bill": 0,
+          "damaged": 9
+        },
+        {
+          "year": 30,
+          "bill": 0,
+          "damaged": 9
+        }
+      ]
+    },
+    {
+      "capacity": 2,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 2,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 3,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 4,
+          "bill": 2,
+          "damaged": 7
+        },
+        {
+          "year": 5,
+          "bill": 2,
+          "damaged": 7
+        },
+        {
+          "year": 6,
+          "bill": 2,
+          "damaged": 6
+        },
+        {
+          "year": 7,
+          "bill": 2,
+          "damaged": 6
+        },
+        {
+          "year": 8,
+          "bill": 2,
+          "damaged": 5
+        },
+        {
+          "year": 9,
+          "bill": 2,
+          "damaged": 5
+        },
+        {
+          "year": 10,
+          "bill": 2,
+          "damaged": 4
+        },
+        {
+          "year": 11,
+          "bill": 2,
+          "damaged": 4
+        },
+        {
+          "year": 12,
+          "bill": 2,
+          "damaged": 3
+        },
+        {
+          "year": 13,
+          "bill": 2,
+          "damaged": 3
+        },
+        {
+          "year": 14,
+          "bill": 2,
+          "damaged": 2
+        },
+        {
+          "year": 15,
+          "bill": 2,
+          "damaged": 1
+        },
+        {
+          "year": 16,
+          "bill": 2,
+          "damaged": 1
+        },
+        {
+          "year": 17,
+          "bill": 2,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 2,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 2,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 3,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 6,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 7,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 8,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 9,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 10,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 11,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 12,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 13,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 14,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 15,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 16,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 17,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 18,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 19,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 20,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 21,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 22,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 23,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 24,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 25,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 26,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 27,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 28,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 29,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 30,
+          "bill": 0,
+          "damaged": 12
+        }
+      ]
+    },
+    {
+      "capacity": 2,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 2,
+          "damaged": 12
+        },
+        {
+          "year": 2,
+          "bill": 2,
+          "damaged": 12
+        },
+        {
+          "year": 3,
+          "bill": 2,
+          "damaged": 12
+        },
+        {
+          "year": 4,
+          "bill": 2,
+          "damaged": 12
+        },
+        {
+          "year": 5,
+          "bill": 2,
+          "damaged": 12
+        },
+        {
+          "year": 6,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 7,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 8,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 9,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 10,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 11,
+          "bill": 2,
+          "damaged": 11
+        },
+        {
+          "year": 12,
+          "bill": 2,
+          "damaged": 10
+        },
+        {
+          "year": 13,
+          "bill": 2,
+          "damaged": 10
+        },
+        {
+          "year": 14,
+          "bill": 2,
+          "damaged": 10
+        },
+        {
+          "year": 15,
+          "bill": 2,
+          "damaged": 10
+        },
+        {
+          "year": 16,
+          "bill": 2,
+          "damaged": 10
+        },
+        {
+          "year": 17,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 18,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 19,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 20,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 21,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 22,
+          "bill": 2,
+          "damaged": 9
+        },
+        {
+          "year": 23,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 24,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 25,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 26,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 27,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 28,
+          "bill": 2,
+          "damaged": 8
+        },
+        {
+          "year": 29,
+          "bill": 2,
+          "damaged": 7
+        },
+        {
+          "year": 30,
+          "bill": 2,
+          "damaged": 7
+        }
+      ]
+    },
+    {
+      "capacity": 10,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 8,
+          "damaged": 7
+        },
+        {
+          "year": 2,
+          "bill": 8,
+          "damaged": 5
+        },
+        {
+          "year": 3,
+          "bill": 8,
+          "damaged": 3
+        },
+        {
+          "year": 4,
+          "bill": 8,
+          "damaged": 1
+        },
+        {
+          "year": 5,
+          "bill": 4,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 10,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 10,
+          "damaged": 7
+        },
+        {
+          "year": 2,
+          "bill": 10,
+          "damaged": 4
+        },
+        {
+          "year": 3,
+          "bill": 10,
+          "damaged": 1
+        },
+        {
+          "year": 4,
+          "bill": 4,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 10,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 2,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 3,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 4,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 5,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 6,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 7,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 8,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 9,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 10,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 11,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 12,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 13,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 14,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 15,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 16,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 17,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 18,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 19,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 20,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 21,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 22,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 23,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 24,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 25,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 26,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 27,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 28,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 29,
+          "bill": 0,
+          "damaged": 12
+        },
+        {
+          "year": 30,
+          "bill": 0,
+          "damaged": 12
+        }
+      ]
+    },
+    {
+      "capacity": 10,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 10,
+          "damaged": 12
+        },
+        {
+          "year": 2,
+          "bill": 10,
+          "damaged": 11
+        },
+        {
+          "year": 3,
+          "bill": 10,
+          "damaged": 10
+        },
+        {
+          "year": 4,
+          "bill": 10,
+          "damaged": 9
+        },
+        {
+          "year": 5,
+          "bill": 10,
+          "damaged": 8
+        },
+        {
+          "year": 6,
+          "bill": 10,
+          "damaged": 7
+        },
+        {
+          "year": 7,
+          "bill": 10,
+          "damaged": 6
+        },
+        {
+          "year": 8,
+          "bill": 10,
+          "damaged": 5
+        },
+        {
+          "year": 9,
+          "bill": 10,
+          "damaged": 4
+        },
+        {
+          "year": 10,
+          "bill": 10,
+          "damaged": 4
+        },
+        {
+          "year": 11,
+          "bill": 10,
+          "damaged": 3
+        },
+        {
+          "year": 12,
+          "bill": 10,
+          "damaged": 2
+        },
+        {
+          "year": 13,
+          "bill": 10,
+          "damaged": 1
+        },
+        {
+          "year": 14,
+          "bill": 5,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 50,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 34,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 50,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 34,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 50,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 45,
+          "damaged": 8
+        },
+        {
+          "year": 2,
+          "bill": 45,
+          "damaged": 4
+        },
+        {
+          "year": 3,
+          "bill": 45,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 50,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 50,
+          "damaged": 8
+        },
+        {
+          "year": 2,
+          "bill": 50,
+          "damaged": 4
+        },
+        {
+          "year": 3,
+          "bill": 35,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 100,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 34,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 100,
+      "costs": [
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15,
+        15
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 34,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 100,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "whole",
+      "years": [
+        {
+          "year": 1,
+          "bill": 90,
+          "damaged": 4
+        },
+        {
+          "year": 2,
+          "bill": 45,
+          "damaged": 0
+        }
+      ]
+    },
+    {
+      "capacity": 100,
+      "costs": [
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45,
+        45
+      ],
+      "mode": "installments",
+      "years": [
+        {
+          "year": 1,
+          "bill": 100,
+          "damaged": 4
+        },
+        {
+          "year": 2,
+          "bill": 35,
+          "damaged": 0
+        }
+      ]
+    }
+  ]
+}

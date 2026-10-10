@@ -311,3 +311,13 @@ battle when one combat line is gone, where the engine and the sweep keep
 firing at the screened auxiliaries. Their unit tables are module globals,
 so the hull sweep runs serially. Use even AS values in them: odd-value
 cripple rounding has not been checked against Rust.
+
+## Withdrawal and recovery consultation (t062)
+
+`withdrawal_review.py` and `nc_withdrawal_review.json` isolate withdrawal
+controls on the specified decision-1 baseline with current modifiers.
+`cap_review.py` and `nc_cap_review.json` count actual guardrail exits.
+Run each script with `python3 -B`; results write beside the script.
+The [investigation](../../docs/notes/investigations/7y0ypr6b-combat-withdrawal-and-persistent-damage-after-decision-1.md)
+records assumptions, rejected paid repairs, and the approved RT direction.
+These tools do not yet simulate class-specific RT schedules or chase movement.
