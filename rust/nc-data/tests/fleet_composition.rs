@@ -207,11 +207,11 @@ fn commissioning_into_a_number_gap_sorts_the_chain_like_detach() {
         .position(|planet| planet.coords_raw() == [16, 13])
         .expect("home world");
     let planet = &mut game_data.planets.records[planet_idx];
-    planet.set_stardock_kind_raw(0, 1);
-    planet.set_stardock_count_raw(0, 1);
+    let slot = nc_data::stardock_slot_for_kind(1).expect("destroyer slot");
+    planet.set_stardock_count_raw(slot, 1);
 
     game_data
-        .commission_planet_stardock_slot(1, planet_idx + 1, 0)
+        .commission_planet_stardock_slot(1, planet_idx + 1, slot)
         .expect("commission");
 
     assert_eq!(

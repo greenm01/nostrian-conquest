@@ -255,9 +255,10 @@ the same seed always produces the same battle. The battle's random draws are
 keyed by the tick and the attacking unit, so two battles in one sector in one
 year roll independently.
 
-This battle is Rust's, not classic's: classic's battle internals (5 to 24
-rounds, its retreat and scatter rules) are not decoded yet, and replacing them
-is task t036. `fight_encounter` is the seam.
+This battle is NC combat's, not classic's. Classic's battle is decoded in
+[ec-battle-spec.md](ec-battle-spec.md) for reference only; see
+[NC combat stays](../notes/decisions/b5u6lekb-rust-keeps-its-own-combat-system.md).
+`fight_encounter` is the seam.
 
 
 ## Simultaneous Arrival at a Planet
