@@ -1,0 +1,21 @@
+[package]
+name = "nc-fuzz"
+version = "1.0.0-beta.2"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+nc-data = { path = "../nc-data" }
+nc-engine = { path = "../nc-engine" }
+nc-harness = { path = "../nc-harness" }
+
+[dev-dependencies]
+# Hegel is in beta and changes often: keep it pinned to an exact version.
+# Its build script compiles the engine with a nested cargo invocation; the
+# `static-engine` feature cannot be used because its `rand_core` 0.10 clashes
+# with the release candidate russh pins.
+hegeltest = "=0.49.2"
+proptest = "1.11"

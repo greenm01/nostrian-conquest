@@ -58,7 +58,7 @@ pub fn build_scenario(spec: &ScenarioSpec) -> Result<BuiltScenario, HarnessError
     apply_fleet_specs(spec, &mut game_data)?;
 
     let mut queued_mail = Vec::new();
-    apply_turn_files(spec, &mut game_data, &mut queued_mail)?;
+    apply_turn_files(spec, 1, &mut game_data, &mut queued_mail)?;
     apply_queued_mail(spec, &mut queued_mail);
     apply_message_blocks(spec, &mut queued_mail, game_data.conquest.player_count());
 
@@ -142,9 +142,7 @@ fn apply_house_specs(
                     house.record_index_1_based
                 ))
             })?;
-        player.set_owner_empire_raw(house.record_index_1_based as u8);
-        player.set_occupied_flag(house.record_index_1_based as u8);
-        player.set_autopilot_flag(0);
+        player.set_autopilot_flag(u8::from(house.autopilot));
         if let Some(handle) = &house.handle {
             player.set_assigned_player_handle_raw(handle);
         }
@@ -348,12 +346,14 @@ fn apply_fleet_specs(
     Ok(())
 }
 
-fn apply_turn_files(
+/// Submit the scenario's turn files for one 1-based maintenance turn.
+pub(crate) fn apply_turn_files(
     spec: &ScenarioSpec,
+    turn: u16,
     game_data: &mut CoreGameData,
     queued_mail: &mut Vec<QueuedPlayerMail>,
 ) -> Result<(), HarnessError> {
-    for turn_file in &spec.turn_files {
+    for turn_file in spec.turn_files.iter().filter(|file| file.turn == turn) {
         let submission = nc_data::TurnSubmission::load_kdl(&turn_file.path)
             .map_err(|err| HarnessError::Validation(err.to_string()))?;
         submission

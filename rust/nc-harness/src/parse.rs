@@ -252,6 +252,10 @@ fn parse_house(node: &kdl::KdlNode) -> Result<HouseSpec, HarnessError> {
         empire_name: opt_prop_string(node, "empire")?,
         homeworld_name: opt_prop_string(node, "homeworld")?,
         tax_rate: opt_prop_u8(node, "tax")?,
+        autopilot: node
+            .get("autopilot")
+            .and_then(|value| value.as_bool())
+            .unwrap_or(false),
     })
 }
 
@@ -371,8 +375,15 @@ fn parse_stardock_slot(node: &kdl::KdlNode) -> Result<StardockSlotSpec, HarnessE
 }
 
 fn parse_turn_file(node: &kdl::KdlNode, base_dir: &Path) -> Result<TurnFileSpec, HarnessError> {
+    let turn = opt_prop_u16(node, "turn")?.unwrap_or(1);
+    if turn == 0 {
+        return Err(HarnessError::Validation(
+            "turn-file turn must be >= 1".to_string(),
+        ));
+    }
     Ok(TurnFileSpec {
         path: resolve_path(base_dir, &prop_string(node, "path")?),
+        turn,
     })
 }
 
