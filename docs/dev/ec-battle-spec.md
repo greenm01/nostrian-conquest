@@ -787,6 +787,9 @@ Appendix B.
 ---------------------------------------------------------------------------
 
 ## 8. Classic bugs (Rust should not copy them)
+
+Rust fixes all ten, B6 and B10 included (user decision, 2026-10-10; see the
+[battle bugs ADR](../notes/decisions/sb0sfjgt-rust-fixes-classic-battle-bugs.md)).
 - **B1. A destroyed assault fleet is resurrected.** [P]
   - Where: `110a:5169` (orbital battle), `5a9e` (landing), and `6a87` mark the
     unit entry inactive before calling `2895:3d0c(delete)`, which returns at
@@ -822,8 +825,8 @@ Appendix B.
   - `6367` uses a word and is fine. Rust: use the full width.
 - **B6. Cruiser dock value counted twice** (`3·DD + 9·CA + 9·CA + ...`). [C]
   Possibly a typo. It changes how much of the dock goes per damage point. The
-  probes favour 18 (with 9, the dock comparisons drift to z = 1.9-2.8). This
-  is a decision for the user, not a clear bug.
+  probes favour 18 (with 9, the dock comparisons drift to z = 1.9-2.8). Rust counts
+  cruisers once.
 - **B7. Range check against a scattering fleet** (`1b05:7548`). [C] It uses
   `(u.spd − target.spd) × flee_start_round` where elapsed rounds were surely
   meant.
@@ -833,7 +836,8 @@ Appendix B.
   zero when potential is 0 and exactly one army is left (Turbo Pascal runtime
   error 200).
 - **B10. Invade's 4:1 early stop uses the initial loaded-TT count**, not the
-  survivors (`6367`). [C] Minor. It may be intended.
+  survivors (`6367`). [C] Rust uses the
+  surviving count.
 - (Encounter spec) The garbage owner read for worldless sectors is already
   recorded there.
 
