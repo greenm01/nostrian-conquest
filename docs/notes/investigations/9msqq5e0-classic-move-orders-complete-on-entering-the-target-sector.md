@@ -145,6 +145,46 @@ in classic's encoding, and hostile missions strike in the year `Z` reaches
 probability, which line skips the save, and the View World resolve action
 (it sets `Z = 0`).
 
+## Fleet ship and mission bytes, t033 (2026-10-10)
+
+A decompile of ECMAINT and ECGAME plus ECMAINT probes settle the layout of
+FLEETS.DAT bytes `0x23..0x35`:
+
+| Offset | Width | Meaning |
+| --- | --- | --- |
+| `0x23` | u16 | Mission target id: Join host fleet id or guarded starbase number |
+| `0x25` | u8 | ROE |
+| `0x26` | u16 | Battleships |
+| `0x28` | u16 | Cruisers |
+| `0x2a` | u16 | Destroyers |
+| `0x2c` | u16 | Troop transports without an army |
+| `0x2e` | u16 | Loaded troop transports (one army each) |
+| `0x30` | u16 | ETACs |
+| `0x32` | u16 | Scouts |
+| `0x34` | u16 | No known use; ECMAINT's Join merge adds it, nothing else reads it |
+
+Evidence:
+
+- Both binaries access the mission id only as a word (`word [0x3525]` in
+  ECMAINT at `0b5d:0c37`, `0b5d:4646`, `0b5d:471d`; the join merge at
+  `2895:4a6b`; ECGAME's fleet renumbering). A Join with host `0x0003` merges;
+  setting byte `0x24 = 1` (host `0x0103`) stops the merge.
+- Scouts: ECMAINT's "lost all of our scouts" checks (`0b5d:278f`,
+  `0b5d:3814`), the combat unit builder (type 4, `110a:3f8c`), and ECGAME's
+  max-speed recompute all use `word 0x32`. A Scout Sector order survives with
+  `word 0x32 = 1` and is cancelled with `0x24 = 1` alone.
+- `0x2c` and `0x2e` are separate transport counts: the classic display shows
+  their sum as the fleet's transports.
+- ECGAME recomputes max speed (`0x09`) as the minimum over ship types present,
+  starting from 7: ETAC 3, BB 4, CA 5, DD 6, scout 6, transports 5. ECMAINT
+  sets it only when it creates a fleet or merges fleets.
+
+So Rust's `scout_count` (u8 at `0x24`) is wrong, its mission id must be the
+u16 at `0x23`, and a Rust-written scout byte corrupts the host id classic
+sees. Rust's transport model (`0x2c` all transports, `0x2e` armies aboard)
+also differs from classic's (`0x2c` empty, `0x2e` loaded) and needs checking
+under t033. Probe scripts were kept in the session scratchpad only.
+
 ## Connections
 
 - [Bug-sweep follow-ups, t012](../plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t012):
