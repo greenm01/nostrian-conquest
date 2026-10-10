@@ -172,6 +172,15 @@ unchanged for a later task.
   `runtime.rs` (incl. the raw `fs::write` at 95-100), `ipbm.rs`,
   `inspect.rs`, `compare.rs`, `maint.rs`.
 - `current_known_diff.rs` byte diffs move to nc-compat.
+- Hosted maintenance stops writing `.DAT` files beside the database
+  (`nc-host/src/commands/maint.rs` saves both today), and no runtime path
+  reads them back: `game/worker.rs` loads every file just to name empires in
+  a player message.
+- A database that fails to load is an error. Today `commands/maint.rs`
+  falls back to the `.DAT` files and runs maintenance on that copy.
+- The campaign seed (`nc-data/src/rng.rs`
+  `derive_campaign_seed_from_runtime`) hashes the typed state, not the
+  classic encoding. Seeds move once; tests that turn on a roll pin a seed.
 
 ## Phase 5 — remove the shims, crate by crate
 
