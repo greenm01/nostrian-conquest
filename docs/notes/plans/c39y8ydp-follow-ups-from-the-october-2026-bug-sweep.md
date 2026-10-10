@@ -95,6 +95,10 @@ handle. Read line 36 when present and non-empty, else line 10. None of the
 documented BBS setups use DOOR.SYS, so few seats should be orphaned; binding
 could try both lines. Needs a decision before implementation.
 
+Decision (2026-10-09): approved. Read line 36 when present and non-empty, else
+line 10; seat binding tries the handle first, then the real name, so existing
+seats keep working.
+
 ### t019
 
 On a Windows console, `stdin_ready` waits on `WaitForSingleObject`, which wakes
@@ -104,16 +108,25 @@ defeats the Esc timeout and the new session deadlines. Loop with
 Affects only `nc-game --dropfile` from a Windows console; needs a Windows
 host to verify.
 
+Decision (2026-10-09): approved. Verify in a Windows VM booted from the
+physical Windows disk through a copy-on-write overlay.
+
 ### t020
 
 Door edge cases: an unterminated telnet `IAC SB` swallows input with no length
 cap; a carrier drop during a render still exits with code 1; the session clock
 starts at door launch, with no warning before time runs out.
 
+Decision (2026-10-09): approved, all three. The time warning fires 2 minutes
+before the session limit.
+
 ### t021
 
 The engagement rule detects fleets entering a blockaded world but never models
 fleets leaving one, which the 1992 guide also names.
+
+Decision (2026-10-09): approved. Count both a fleet ordered out of a
+blockaded world's orbit and newly built ships launching from its stardock.
 
 ### t022
 
@@ -121,6 +134,9 @@ The campaign-outlook broadcast says "none currently appear capable of
 challenging our claim", written from the contender's point of view, but goes
 to every empire. The scouting report keeps two-space-indented "Owned by" rows
 where nc-reports.md shows aligned labels.
+
+Decision (2026-10-09): approved. The leader sees "our claim"; other empires
+see the leader named. Align scouting report rows with nc-reports.md.
 
 ## Connections
 
