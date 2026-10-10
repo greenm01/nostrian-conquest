@@ -20,6 +20,17 @@ Windows archives (t024) and the Windows console check (t019) are next, on
 Windows after `git pull`; the Windows download links 404 until then. The new
 `nc-fuzz` crate runs Hegel and proptest drivers over engine invariants.
 
+**Classic 2.5D movement (t031, 2026-10-10).** Fleets now move as ECMAINT
+does: 52 ticks a year, a depth axis for orbit, per-order arrival tests, and
+positions stored as Turbo Pascal 6-byte reals with bit-exact arithmetic.
+Mission aux bytes match ECGAME. The model and its evidence are in
+[ec-movement-spec.md](ec-movement-spec.md) and the
+[investigation note](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
+Next on the critical lane: t033 (fleet ship layout), t035 (classic encounter
+loop, [ec-encounter-spec.md](ec-encounter-spec.md)), t036 (classic planetary
+battle), and t037 (starbase layout and movement). The policy is to match the
+classic binaries exactly, except for clear classic bugs approved by the user.
+
 ## Current Goal
 
 - Stabilize the localhost and BBS release surfaces for public beta use.

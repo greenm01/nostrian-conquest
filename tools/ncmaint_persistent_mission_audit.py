@@ -417,6 +417,7 @@ def render_markdown(results: list[ProbeResult]) -> str:
         "- All three standing missions keep their order on arrival and stop the fleet: `current_speed` becomes `0`.",
         "- `PatrolSector` targets the sector, so it settles in deep space at depth `0`. `GuardBlockadeWorld` targets the world and settles in orbit at depth `1.0` (`19=81 1a..1e=00`).",
         "- `GuardStarbase` takes its depth from the starbase: a starbase in deep space makes classic clear `mission_aux[0]` to `00` and settle the guard at depth `0`.",
+        "- Classic does this by moving the starbase: a base in orbit with no friendly world beneath it climbs to deep space, and its guards follow its depth. Rust does not move starbases yet (t037), so the guard-starbase case differs.",
         "",
         "Scope of this probe set:",
         "",

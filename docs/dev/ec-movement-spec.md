@@ -93,6 +93,20 @@ With `TZ = 0` the base test passes on entering the target sector, anywhere in
 it. With `TZ = 1` the fleet must reach the center and then descend fully, so a
 world order usually takes a year longer than a move to the same sector.
 
+When View World resolves, classic writes order Move, refills the speed from
+`0x09`, and sets `0x22 = 0`, so the fleet climbs back to deep space and the
+Move completes when it reaches depth 0. If the climb runs past tick 52, the
+file shows order Move at full speed for a year. Rust does the same.
+
+Guard Starbase takes its target depth from the starbase. Classic moves
+starbases at speed 1: a base in orbit with no world of its owner's beneath it
+climbs to deep space, and every time a base changes sector or depth layer,
+classic rewrites its guards' target sector and sets their `0x22` to the
+base's layer. A guard that arrives takes the base's depth, and a stopped
+guard in the same sector and layer rides along with the base. Rust does not
+move starbases yet (t037), so a guard at a base in deep space settles in
+orbit instead.
+
 Fleet ETA replays the same step from the fleet's current state and reports
 the year the order's arrival test first passes. ECGAME's ETA screen asks
 whether to include time to enter the system, which selects `TZ`.

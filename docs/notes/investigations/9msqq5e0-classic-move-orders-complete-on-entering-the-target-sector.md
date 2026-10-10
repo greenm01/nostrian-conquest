@@ -2,7 +2,7 @@
 id: 9msqq5e0
 date: 2026-10-10
 kind: investigation
-status: investigating
+status: resolved
 tags: [investigation, movement, oracle]
 ---
 # Classic move orders complete on entering the target sector
@@ -198,6 +198,16 @@ batteries and starbases never start a fight, and that fights leave stored
 diplomacy unchanged. The rule and its remaining differences from Rust are in
 [the engagement ADR](../decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md).
 Probe scripts were kept in the session scratchpad only.
+
+## Result (2026-10-10)
+
+t031 is closed. Rust steps fleets with the decompiled 52-tick model in
+bit-exact 6-byte reals and writes ECGAME's mission aux bytes. The every-mission
+sweep matches classic byte for byte in all non-hostile cases, and the movement,
+transit, hostile-arrival, and persistent-mission audits match every arrival
+year. The remaining differences have their own tasks: the planetary battle
+outcome after a strike (t036) and starbase movement under Guard Starbase
+(t037).
 
 ## Connections
 

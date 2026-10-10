@@ -1,50 +1,123 @@
 # ECMAINT Movement Audit
 
-Compact movement-fidelity summary for the current controlled oracle work.
+Controlled `MoveOnly` probes comparing Rust maintenance against classic `ECMAINT`.
 
-Status: solved enough for the current Rust engine. This doc records the
-player-facing conclusions and the accepted compatibility seam; it is not a
-standing requirement to keep chasing every hidden classic movement byte.
+Current takeaways from this probe set:
 
-## What Is Settled
+- Classic moves fleets in 52 ticks a year; each tick a fleet covers `speed / 52` sectors in a straight line. The model is in `docs/dev/ec-movement-spec.md`.
+- A `MoveOnly` order completes in the year the fleet enters the target sector, and the fleet ETA reports that year.
+- On arrival classic sets the order to `hold` and the speed to `0`.
+- A fleet that starts at rest in orbit spends its first sector of movement climbing out, so speed `v` covers `v - 1` sectors in its first year.
 
-- movement is annual and happens before the weekly `1..52` scheduling loop
-- the annual distance budget still follows the recovered `speed * 8 / 9`
-  pattern
-- classic does not simply resample from the rounded visible sector each year
-- the controlled horizontal / diagonal / shallow / steep coordinate traces are
-  now good enough to support the current Rust direct-stepper geometry
-- persistent standing missions now have their own settled follow-up in
-  [persistent-mission-oracle-audit.md](persistent-mission-oracle-audit.md)
-- delayed hostile arrival behavior now has its own settled follow-up in
-  [hostile-arrival-oracle-audit.md](hostile-arrival-oracle-audit.md)
-- for Rust policy, unresolved hidden movement bytes are now treated as
-  implementation detail unless they prove to change player-facing behavior or
-  classic file safety
+| case | speed | start | target | rust ETA | rust arrival | classic arrival | trace match |
+| --- | ---: | --- | --- | ---: | ---: | ---: | --- |
+| speed3-horizontal | 3 | `10,10` | `16,10` | 3 | 3 | 3 | yes |
+| speed3-diagonal | 3 | `10,10` | `16,16` | 3 | 3 | 3 | yes |
+| speed6-diagonal | 6 | `10,10` | `16,16` | 2 | 2 | 2 | yes |
+| speed1-diagonal | 1 | `10,10` | `13,13` | 5 | 5 | 5 | yes |
+| speed3-shallow | 3 | `10,10` | `16,12` | 3 | 3 | 3 | yes |
+| speed3-steep | 3 | `10,10` | `12,16` | 3 | 3 | 3 | yes |
 
-## Completion Timing
+## speed3-horizontal
 
-Classic completes a one-shot move in the year the fleet's rounded position
-first enters the target sector, and ECGAME's fleet ETA shows that year. For
-`MoveOnly`, `speed=3`, `10,10 -> 16,16`, the visible trace is
-`10,10 -> 11,11 -> 14,14 -> 16,16` and the order clears to `hold`, `speed=0`
-in year 3, with the exact path still short of the target point.
+- speed: `3`
+- start: `10,10`
+- target: `16,10`
+- initial Rust ETA: `3`
+- Rust arrival turn: `3`
+- Classic arrival turn: `3`
+- turn-by-turn match: `yes`
 
-ECGAME writes a move order with mission aux bytes `0x22..0x23 = 00 00`. A
-nonzero `0x22` (a join host fleet id, set on every fleet in the ECUTIL
-starting game) makes classic finish a move a year later, so probe orders
-clear both bytes, as `tools/ncmaint_movement_audit.py` does.
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=3 eta=3` | `10,10 order=move spd=3 eta=3` |
+| 1 | `12,10 order=move spd=3 eta=2` | `12,10 order=move spd=3 eta=2` |
+| 2 | `15,10 order=move spd=3 eta=1` | `15,10 order=move spd=3 eta=1` |
+| 3 | `16,10 order=hold spd=0 eta=arrived` | `16,10 order=hold spd=0 eta=arrived` |
 
-Rust completes orders when the rounded position enters the target sector,
-and player orders clear the aux bytes that the order does not use. The full
-case table is in the
-[investigation](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
+## speed3-diagonal
 
-## Accepted Boundary
+- speed: `3`
+- start: `10,10`
+- target: `16,16`
+- initial Rust ETA: `3`
+- Rust arrival turn: `3`
+- Classic arrival turn: `3`
+- turn-by-turn match: `yes`
 
-- preserve the recovered annual movement geometry and completion in the year
-  the fleet enters the target sector
-- keep hazard-detour policy clearly separated from the classic direct-stepper
-  geometry
-- do not treat hidden movement scratch bytes as a fidelity target unless they
-  are later shown to matter for gameplay or compatibility
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=3 eta=3` | `10,10 order=move spd=3 eta=3` |
+| 1 | `11,11 order=move spd=3 eta=2` | `11,11 order=move spd=3 eta=2` |
+| 2 | `14,14 order=move spd=3 eta=1` | `14,14 order=move spd=3 eta=1` |
+| 3 | `16,16 order=hold spd=0 eta=arrived` | `16,16 order=hold spd=0 eta=arrived` |
+
+## speed6-diagonal
+
+- speed: `6`
+- start: `10,10`
+- target: `16,16`
+- initial Rust ETA: `2`
+- Rust arrival turn: `2`
+- Classic arrival turn: `2`
+- turn-by-turn match: `yes`
+
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=6 eta=2` | `10,10 order=move spd=6 eta=2` |
+| 1 | `14,14 order=move spd=6 eta=1` | `14,14 order=move spd=6 eta=1` |
+| 2 | `16,16 order=hold spd=0 eta=arrived` | `16,16 order=hold spd=0 eta=arrived` |
+
+## speed1-diagonal
+
+- speed: `1`
+- start: `10,10`
+- target: `13,13`
+- initial Rust ETA: `5`
+- Rust arrival turn: `5`
+- Classic arrival turn: `5`
+- turn-by-turn match: `yes`
+
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=1 eta=5` | `10,10 order=move spd=1 eta=5` |
+| 1 | `10,10 order=move spd=1 eta=4` | `10,10 order=move spd=1 eta=4` |
+| 2 | `11,11 order=move spd=1 eta=3` | `11,11 order=move spd=1 eta=3` |
+| 3 | `11,11 order=move spd=1 eta=2` | `11,11 order=move spd=1 eta=2` |
+| 4 | `12,12 order=move spd=1 eta=1` | `12,12 order=move spd=1 eta=1` |
+| 5 | `13,13 order=hold spd=0 eta=arrived` | `13,13 order=hold spd=0 eta=arrived` |
+| 6 | `13,13 order=hold spd=0 eta=arrived` | `13,13 order=hold spd=0 eta=arrived` |
+
+## speed3-shallow
+
+- speed: `3`
+- start: `10,10`
+- target: `16,12`
+- initial Rust ETA: `3`
+- Rust arrival turn: `3`
+- Classic arrival turn: `3`
+- turn-by-turn match: `yes`
+
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=3 eta=3` | `10,10 order=move spd=3 eta=3` |
+| 1 | `12,11 order=move spd=3 eta=2` | `12,11 order=move spd=3 eta=2` |
+| 2 | `15,12 order=move spd=3 eta=1` | `15,12 order=move spd=3 eta=1` |
+| 3 | `16,12 order=hold spd=0 eta=arrived` | `16,12 order=hold spd=0 eta=arrived` |
+
+## speed3-steep
+
+- speed: `3`
+- start: `10,10`
+- target: `12,16`
+- initial Rust ETA: `3`
+- Rust arrival turn: `3`
+- Classic arrival turn: `3`
+- turn-by-turn match: `yes`
+
+| turn | Rust | Classic |
+| ---: | --- | --- |
+| 0 | `10,10 order=move spd=3 eta=3` | `10,10 order=move spd=3 eta=3` |
+| 1 | `11,12 order=move spd=3 eta=2` | `11,12 order=move spd=3 eta=2` |
+| 2 | `12,15 order=move spd=3 eta=1` | `12,15 order=move spd=3 eta=1` |
+| 3 | `12,16 order=hold spd=0 eta=arrived` | `12,16 order=hold spd=0 eta=arrived` |
