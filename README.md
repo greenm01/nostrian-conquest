@@ -213,6 +213,13 @@ the system temp directory). Replay it with:
 cargo run -q -p nc-cli -- harness run-combat --file /tmp/nc-fuzz/hegel/scenario.kdl
 ```
 
+Measure engine throughput (maintenance turns per second and games per hour)
+on fixed setups from 2 to 25 players:
+
+```bash
+cargo run --release -p nc-fuzz --example maint_throughput
+```
+
 `nc-cli` remains the internal developer, oracle, and compatibility surface.
 Normal player and sysop workflows should prefer `nc-game`, `nc-door`, and
 `nc-sysop`.

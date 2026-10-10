@@ -17,7 +17,7 @@ pub use choice::{ChoiceSource, ChoiceTape, pick_from, pick_index};
 pub use failure::{SCENARIO_FILE_NAME, failure_dir, write_scenario};
 pub use game::{CaseRun, run_case};
 pub use invariants::{TurnObservation, Violation, check_turn};
-pub use policy::Policy;
+pub use policy::{PlannedTurn, Policy, plan_turn};
 pub use setup::{CaseSetup, FuzzConfig, START_YEAR, case_count_from_env};
 
 /// Play one case and panic on any violation, after writing the case as a
