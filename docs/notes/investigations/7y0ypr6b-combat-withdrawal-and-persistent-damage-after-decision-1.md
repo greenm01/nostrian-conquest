@@ -105,3 +105,110 @@ alternatives if retained.
 - [Decision-1 consultation](qjev5wpq-review-of-the-t055-combat-sweep-semantics.md#t058).
 - [Source synthesis and owner decisions](ebrogywq-nc-combat-design-review-against-its-sources.md#decisions-for-the-user).
 - [Economy investigation](tkce84f0-a-simple-nc-economy-informed-by-classic-ec-vbam-and-ec4x.md).
+
+## RT timing and avoiding micromanagement
+
+The owner asked us to proceed with strategic recovery that uses existing
+fleet orders and preserves BBS layouts. Claude owns the ADR timing contract.
+The [cohort model](../../../tools/combat-model/recovery.py),
+[regression tests](../../../tools/combat-model/test_recovery.py), and
+[timing results](../../../tools/combat-model/nc_recovery_timing.json) check
+that contract independently of the combat odds model. These are counts by
+class and recovery cohort, not individual ship objects.
+
+The separate fresh-damage count is equivalent to an RT+1 sentinel for
+ordinary recovery. With starbase assistance, explicit fresh-damage exclusion
+prevents an RT 1 hull healing during its damage year. The model keeps bonus
+eligibility with the qualifying hull counts through splits and merges;
+a late arrival cannot acquire its host's year of eligibility. Departure or
+loss of the qualifying base clears assistance, not ordinary recovery time.
+The movement layer must establish continuous eligibility; this model does
+not simulate that layer.
+
+| RT candidate | Full recovery years away from a base | With uninterrupted starbase assistance |
+| --- | ---: | ---: |
+| 1 | 1 | 1 |
+| 2 | 2 | 1 |
+| 3 | 3 | 2 |
+| 4 | 4 | 2 |
+
+Every row excludes the damage year. These are timing examples, not selected
+class stats. The base bonus is useful for RT 2 or more but cannot accelerate
+RT 1. Thus a DD 1 / CA 2 / BB 3 experiment also changes the relative value
+of bases for each class. Tune these together, rather than adding the bonus
+after selecting recovery values in isolation.
+
+No player needs to schedule individual repairs. Ordinary orders continue;
+moving leaves the ordinary timer intact. Remaining at a base is an existing
+positioning choice. Split-and-remerge produces exactly the same recovery
+as leaving the fleet intact. Destroyed hulls cannot recover, and the fresh
+cohort is removed first when a crippled casualty must be selected. Equal-age
+assisted/unassisted tie handling in the model is bookkeeping, not an approved
+new player control.
+
+Validation: all 48 combat-model tests pass, including nine new recovery
+probes. They cover damage-year exclusion, base assistance, departure,
+late merges, split/merge conservation, casualty selection and the equivalence
+of fresh flags and RT+1 for ordinary healing. No Rust or BBS UI change was
+made. Continuous base eligibility, store round-trips, export disclosure and
+actual door rendering still require engine implementation checks. Recovery
+class values remain open; the timing model does not establish campaign
+balance or justify any new menu.
+
+## t060 engine comparison at 28814c9d
+
+The [fresh engine output](../../../tools/combat-model/nc_engine_odds_t060.json)
+was supplied by Claude from main `28814c9d`, after the typed-state seed change:
+20,000 trials per case, map seed 1515, campaign seeds starting at 1, and up
+to six maintenance years to obtain a battle. Its SHA256 is
+`15a946e3704ad5f245f82a09f59b2dfb7e725c3f8779b7339fde06e58c85ae32`.
+The copied file is unchanged. Codex ran the Python comparison, not a new
+Rust or classic-oracle run.
+
+Added `engine-t060`: flat mean 0.625, carry, full DS, current mixed and
+present-base die shifts capped at +2, natural-9 free critical, ordinary
+line-first screening, lock3, and an unmodified flat withdrawal exchange.
+Critical order is fixed at DD, SC, TT, ET, CA, BB, SB, crippled first,
+ignoring the screen. The former DS-sorted model order happens to agree at
+the standard values; explicit order keeps future DS tuning from changing it.
+When both sides fail the pre-round-4 ROE check, the engine still exchanges
+fire once. The new preset reproduces this through
+`mutual_withdrawal_exchange=true`; old presets retain their historical
+behavior. Their evidence was not rewritten to hide the difference.
+
+The engine selector `--engine-rules engine-t060` prevents comparison against
+the CRT-era `current` preset. The [README reproduction command](../../../tools/combat-model/README.md#t060-engine-comparison)
+produces [JSON](../../../tools/combat-model/nc_t060_comparison.json) and
+[Markdown](../../../tools/combat-model/nc_t060_comparison.md) results.
+The model uses exact enumeration up to 100,000 state/round pairs, then
+20,000 seeded trials. All nine comparisons pass the existing four-outcome
+checks and the destroyed-build-points tolerance on both sides.
+
+| Matchup | Model left win | Engine left win [95%] | Comparison |
+| --- | ---: | ---: | --- |
+| 10 CA vs 10 CA | 49.4% [48.7, 50.1] | 49.7% [49.0, 50.4] n=19998 | yes |
+| 11 CA vs 10 CA | 65.2% [64.6, 65.9] | 65.8% [65.1, 66.4] n=20000 | yes |
+| 15 CA vs 10 CA | 96.8% [96.6, 97.1] | 96.8% [96.6, 97.1] n=20000 | yes |
+| 20 CA vs 10 CA | 100.0% | 100.0% [100.0, 100.0] n=20000 | yes |
+| 30 DD vs 10 CA | 9.8% | 9.7% [9.3, 10.1] n=20000 | yes |
+| 90 DD vs 10 BB | 5.4% [5.1, 5.7] | 5.5% [5.1, 5.8] n=20000 | yes |
+| 30 CA vs 10 BB | 40.3% [39.6, 41.0] | 40.3% [39.7, 41.0] n=20000 | yes |
+| 29 CA + 3 DD vs 30 CA | 55.0% [54.3, 55.7] | 55.5% [54.8, 56.2] n=20000 | yes |
+| 10 CA ROE 6 vs 15 CA | 2.5% | 2.4% [2.2, 2.7] n=20000 | yes |
+
+These checks detect no mismatch in the tested combat-line fights. They are
+not proof of equivalence. The harness does not cover auxiliaries, bases,
+recovery, a two-sided ROE failure, or the guardrail. The two-sided withdrawal
+and fixed critical order have targeted model regression tests and were
+checked against engine source; they still need dedicated engine cases.
+The 10-versus-10 case has 19,998 battles from 20,000 trials; two trials did
+not obtain a battle within the horizon, and probabilities are conditioned
+on those that fought. No engine stalemates occurred. The t059 retreat-home
+change concerns routing, which this battle model does not validate.
+
+All 52 combat-model tests pass, including four new t060 probes. Generated
+Markdown matches the JSON renderer. CRT-era engine output, old sweep
+JSON/Markdown, before-fix JSON, and review reproduction script are byte
+unchanged from `28814c9d`. No cargo or Rust edits. This completes t062's
+comparison and consultation evidence; RT class tuning and implementation
+of remaining owner choices are separate work.

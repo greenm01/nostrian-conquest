@@ -116,6 +116,11 @@ VBAM_FLAT = variant(
 
 RULESETS = {
     'current': CURRENT,
+    # Implemented fleet rules at 28814c9d. Keep 'current' as CRT-era evidence.
+    'engine-t060': variant(CURRENT, 'engine-t060',
+                           effect=dict(kind='flat', rows=EOTS_X4, unit=4),
+                           remainder='carry', mutual_withdrawal_exchange=True,
+                           critical_order=['DD', 'SC', 'TT', 'ET', 'CA', 'BB', 'SB']),
     'flat-discard': FLAT,
     'flat-residual': variant(FLAT, 'flat-residual', remainder='residual'),
     'flat-carry': variant(FLAT, 'flat-carry', remainder='carry'),

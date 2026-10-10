@@ -251,7 +251,8 @@ def render(results, rulesets, args):
                             'simultaneous .30/.35', 'defender-first'], rows))
         lines.append('')
     if results.get('engine'):
-        lines.append('## Model (current rules) against the engine')
+        label = results.get('engine_rules', 'current')
+        lines.append(f"## Model ({'current rules' if label == 'current' else label}) against the engine")
         lines.append('')
         rows = []
         for row in results['engine']:
@@ -279,7 +280,7 @@ def summarise(value):
     return str(value)
 
 
-def compare_engine(path, battles, cases):
+def compare_engine(path, battles, cases, ruleset='current'):
     """One row per case in the engine file or tagged `engine`. A case
     missing on either side, or with no battle, is reported, not skipped.
     `agree` names every measure that disagrees: each outcome count against
@@ -288,7 +289,7 @@ def compare_engine(path, battles, cases):
     within LOSS_TOLERANCE of its starting build points."""
     with open(path) as handle:
         engine = json.load(handle)
-    current = {r['case']: r for r in battles if r['ruleset'] == 'current' and r['units'] == 'baseline'}
+    current = {r['case']: r for r in battles if r['ruleset'] == ruleset and r['units'] == 'baseline'}
     engine_cases = {case['case']: case for case in engine['cases']}
     names = list(engine_cases) + [case[0] for case in cases
                                   if 'engine' in case[4].split() and case[0] not in engine_cases]
@@ -356,7 +357,9 @@ def main():
     parser.add_argument('--exact-limit', type=int, default=100_000,
                         help='enumerate exactly up to this many (state, round) pairs, else sample')
     parser.add_argument('--no-ground', action='store_true')
-    parser.add_argument('--engine', metavar='JSON', help='combat_odds.rs output to compare the current rules with')
+    parser.add_argument('--engine', metavar='JSON', help='combat_odds.rs output to compare with the model')
+    parser.add_argument('--engine-rules', default='current',
+                        help='selected rule set to compare with the engine (default: CRT-era current)')
     parser.add_argument('--json', metavar='PATH')
     parser.add_argument('--markdown', metavar='PATH')
     args = parser.parse_args()
@@ -392,7 +395,8 @@ def main():
     if not args.no_ground:
         results['ground'] = run_ground()
     if args.engine:
-        results['engine'] = compare_engine(args.engine, battles, cases)
+        results['engine_rules'] = args.engine_rules
+        results['engine'] = compare_engine(args.engine, battles, cases, args.engine_rules)
     markdown = render(results, rulesets, args)
     if args.json:
         with open(args.json, 'w') as handle:

@@ -100,9 +100,9 @@ one battle.
 
 ```sh
 cd rust
-cargo run --release -p nc-fuzz --example combat_odds -- --trials 20000 --json /tmp/engine.json
+cargo-slot nostrian-conquest cargo run --release -p nc-fuzz --example combat_odds -- --trials 20000 --json ../tools/combat-model/nc_engine_odds_new.json
 cd ..
-python3 -I -B tools/combat-model/sweep.py --rules current --units baseline --cases engine --no-ground --engine /tmp/engine.json
+python3 -I -B tools/combat-model/sweep.py --rules engine-t060 --units baseline --cases engine --no-ground --engine tools/combat-model/nc_engine_odds_new.json --engine-rules engine-t060
 ```
 
 The example prints the outcome split with a Wilson interval and the
@@ -123,7 +123,7 @@ equivalence: the check covers the cases and measures it lists, for DD,
 CA, and BB fleets, and says nothing about auxiliaries, loaded transports,
 starbases, or the round cap.
 
-Result of the check (20,000 trials per case, campaign seeds 1 to 20,000,
+Historical CRT-era result, retained in `nc_engine_odds.json` (20,000 trials per case, campaign seeds 1 to 20,000,
 model exact unless an interval is shown):
 
 | case | model left win | engine left win [95%] | model lost L / R | engine lost L / R |
@@ -137,14 +137,15 @@ model exact unless an interval is shown):
 | 29 CA + 3 DD vs 30 CA | 63.5% [62.5, 64.4] | 64.4% [63.8, 65.1] | 244.0 / 351.7 | 238.6 / 354.6 |
 | 10 CA ROE 6 vs 15 CA | 0.0% | 0.0% [0.0, 0.0] | 150.0 / 3.0 | 150.0 / 3.0 |
 
-Every case agrees. The model's `current` rules are the engine's for a
-battle between two combat fleets; the engine's sighting, intercept, and
-retreat geometry are outside it.
+Every historical case agrees under that comparison. `current` retains those
+CRT-era rules; it no longer means the latest engine. Sighting, intercept,
+and retreat geometry are outside the battle model.
 
 ## Rule sets
 
-A rule set is a dict with these fields. `current` is the engine
-(`rust/nc-engine/src/maint/combat/`); the `flat-*` family is the
+A rule set is a dict with these fields. `current` preserves the CRT-era
+engine; `engine-t060` models the implemented fleet rules at `28814c9d`.
+The `flat-*` family is the
 consultation's candidate: `flat-discard`, `flat-residual`, and `flat-carry`
 differ only in the remainder rule, and `flat-half-ds` is `flat-discard`
 with VBAM's damage step, a crippled ship at half DS as well as half AS.
@@ -187,7 +188,7 @@ python3 -I -B tools/combat-model/sweep.py --rules flat-discard,flat-half-ds,vbam
 | `critical` | `free-kill`, `focus`, `none` | a natural 9: destroy one unit for free, crippled first, cheapest first, screened or not; or let the suppression pool buy the highest-DS affordable line steps first, finishing a crippled unit when there is one; or nothing. |
 | `screen` | `absolute`, `conditional` | auxiliaries (SC, TT, ET) are hit only once the line is gone; `conditional` also exposes them, first, to a pursuit exchange (`withdrawal=pursuit`; it changes nothing else). |
 | `roe` | `lock3`, `after1` | when a side compares its AS with the enemy's against its ROE threshold: from round 4, declared before the round and checked after it (the engine); or after every round from the first. |
-| `withdrawal` | `pressed`, `pursuit`, `none` | what a leaving side takes: the engine's withdrawal exchange (both sides fire once at the Pressed column, no shifts); one ordinary exchange that always happens, both sides firing, the pursuer's fire reaching auxiliaries only under `screen=conditional`; or nothing. |
+| `withdrawal` | `pressed`, `pursuit`, `none` | what a leaving side takes: the engine's withdrawal exchange (both sides fire once without shifts, at the Pressed column for CRT rules or the flat table for flat rules); one ordinary exchange that always happens, both sides firing, the pursuer's fire reaching auxiliaries only under `screen=conditional`; or nothing. |
 | `round_cap` | 64 | maximum ordinary battle iterations, exact and sampled alike; a withdrawal/pursuit exchange may follow the last ordinary round. An undecided fight then ends as a stalemate. Total exchanges can reach cap + 1. The engine's `COMBAT_GUARDRAIL_MAX_ROUNDS` uses the same ordinary-round limit. |
 
 Semantics the candidates assume, chosen here and open to change:
@@ -206,8 +207,9 @@ Semantics the candidates assume, chosen here and open to change:
   execution against a nominal ship).
 - **Per-fleet ROE** is one check per side after every exchange from the
   first; with one fleet per side in the model, per fleet and per side are
-  the same. Both sides failing at once leave together and nobody pursues
-  (a stalemate in the tables). A side whose combat AS is zero cannot
+  the same. Candidate rules let both sides failing at once leave together
+  without pursuit (a stalemate in the tables). `engine-t060` instead retains
+  one unmodified exchange when both withdraw at the pre-round-4 check. A side whose combat AS is zero cannot
   leave and is shot while it has units: that is the engine's behaviour,
   which the model reproduces and the engine check tests, not a candidate
   rule.
@@ -321,3 +323,33 @@ Run each script with `python3 -B`; results write beside the script.
 The [investigation](../../docs/notes/investigations/7y0ypr6b-combat-withdrawal-and-persistent-damage-after-decision-1.md)
 records assumptions, rejected paid repairs, and the approved RT direction.
 These tools do not yet simulate class-specific RT schedules or chase movement.
+
+`recovery.py`, `test_recovery.py`, and `nc_recovery_timing.json` check the
+[RT timing contract](../../docs/notes/decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md).
+Run `python3 -B tools/combat-model/recovery.py` to regenerate the timing
+examples. The model accepts starbase eligibility from the caller; it does
+not simulate movement, select RT values, or change the engine. It verifies
+that fresh damage cannot heal in its damage year and fleet reshuffling
+cannot accelerate recovery.
+
+### t060 engine comparison
+
+`engine-t060` keeps current mixed/base modifiers (+1 die each, capped at +2),
+full finishing DS, free natural-9 critical, ordinary line-first screening,
+and the three-round ROE lock. It changes resolution to flat EotS effectiveness
+and carry. The critical order is fixed as DD, SC, TT, ET, CA, BB, SB, crippled
+first, ignoring the screen. `mutual_withdrawal_exchange=true` retains one
+exchange when both sides declare withdrawal; older presets keep their
+historical semantics. These two optional fields appear in the saved rule dict.
+
+`nc_engine_odds_t060.json` is fresh engine output supplied by Claude at
+`28814c9d`, after the typed-state seed change. The CRT-era engine file and
+all earlier results stay unchanged. Reproduce the new comparison:
+
+```sh
+python3 -I -B tools/combat-model/sweep.py --rules engine-t060 --units baseline --cases engine --trials 20000 --exact-limit 100000 --no-ground --engine tools/combat-model/nc_engine_odds_t060.json --engine-rules engine-t060 --json tools/combat-model/nc_t060_comparison.json --markdown tools/combat-model/nc_t060_comparison.md
+```
+
+`--engine-rules` chooses the model records used for comparison; its default
+remains `current` so historical commands retain their meaning. See the
+[results](nc_t060_comparison.md) and the [t062 investigation](../../docs/notes/investigations/7y0ypr6b-combat-withdrawal-and-persistent-damage-after-decision-1.md).
