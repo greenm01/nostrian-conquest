@@ -1,0 +1,10 @@
+turn player=1 year=3000
+fleet record=1 {
+  load_armies planet=1 qty=1
+}
+fleet record=3 {
+  order speed=0 kind="bombard" x=14 y=6
+}
+fleet record=2 {
+  order speed=2 kind="bombard" x=10 y=14
+}

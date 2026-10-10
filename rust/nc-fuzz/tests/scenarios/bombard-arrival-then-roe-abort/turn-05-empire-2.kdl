@@ -1,0 +1,4 @@
+turn player=2 year=3004
+fleet record=4 {
+  detach destroyers=1 new_roe=0
+}

@@ -2,8 +2,11 @@
 //! and shrinks the decisions every fuzz game makes.
 //!
 //! `NC_FUZZ_CASES` sets the number of games (default 30) and `NC_FUZZ_TURNS`
-//! the most turns per game. Failing examples are kept in Hegel's database
-//! under the cargo target directory and replayed first on the next run.
+//! the most turns per game. The cases are the same on every run, so a
+//! failure is the code's, not the draw's: `HEGEL_SEED=<n>` plays another
+//! fixed batch and `HEGEL_DERANDOMIZE=false` explores at random. Failing
+//! examples are kept in Hegel's database under the cargo target directory
+//! and replayed first on the next run.
 
 use hegel::generators as gs;
 use hegel::{HealthCheck, Settings, TestCase};
@@ -30,10 +33,16 @@ impl ChoiceSource for HegelChoices<'_> {
 
 fn settings() -> Settings {
     let database = format!("{}/hegel", env!("CARGO_TARGET_TMPDIR"));
-    Settings::new()
+    let settings = Settings::new()
         .test_cases(u64::from(case_count_from_env(DEFAULT_CASES)))
         .database(Some(database))
-        .suppress_health_check([HealthCheck::TooSlow])
+        .suppress_health_check([HealthCheck::TooSlow]);
+    // A fixed seed from the environment already wins over this.
+    if std::env::var_os("HEGEL_DERANDOMIZE").is_some() {
+        settings
+    } else {
+        settings.derandomize(true)
+    }
 }
 
 #[hegel::test(settings())]

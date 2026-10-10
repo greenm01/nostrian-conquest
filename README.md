@@ -196,13 +196,15 @@ cargo run -q -p nc-game --bin nc-game -- submit-turn --check --dir /tmp/nc-game 
 ```
 
 Fuzz the engine with generated multi-turn games. A short run of each driver
-is part of `cargo test`; `NC_FUZZ_CASES` sets the number of games and
-`NC_FUZZ_TURNS` the most turns per game for longer runs:
+is part of `cargo test` and plays the same games on every run; `NC_FUZZ_CASES`
+sets the number of games and `NC_FUZZ_TURNS` the most turns per game for
+longer runs, and a seed picks another batch (`HEGEL_DERANDOMIZE=false`
+explores at random):
 
 ```bash
 cd rust
-NC_FUZZ_CASES=2000 NC_FUZZ_TURNS=12 cargo test -p nc-fuzz --test hegel_driver
-NC_FUZZ_CASES=2000 cargo test -p nc-fuzz --test proptest_driver
+NC_FUZZ_CASES=2000 NC_FUZZ_TURNS=12 HEGEL_SEED=7 cargo test -p nc-fuzz --test hegel_driver
+NC_FUZZ_CASES=2000 PROPTEST_RNG_SEED=7 cargo test -p nc-fuzz --test proptest_driver
 ```
 
 A failing game is shrunk and written as an `nc-harness` combat scenario with
@@ -212,6 +214,9 @@ the system temp directory). Replay it with:
 ```bash
 cargo run -q -p nc-cli -- harness run-combat --file /tmp/nc-fuzz/hegel/scenario.kdl
 ```
+
+Failures worth keeping live under `nc-fuzz/tests/scenarios/` and replay under
+the invariants in `nc-fuzz/tests/replayed_failures.rs`.
 
 Measure engine throughput (maintenance turns per second and games per hour)
 on fixed setups from 2 to 25 players:

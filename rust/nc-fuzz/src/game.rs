@@ -3,7 +3,7 @@
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
-use nc_data::{CoreGameData, MaintenanceEvents, TurnSubmission};
+use nc_data::{CoreGameData, MaintenanceEvents, ReportBlockRow, TurnSubmission};
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, validate_maintenance_state,
 };
@@ -108,43 +108,65 @@ pub fn run_case(choices: &mut dyn ChoiceSource, config: &FuzzConfig) -> CaseRun 
             break;
         }
 
-        let before = play.clone();
-        let mut twin = play.clone();
-        let events = match maintain(&mut play) {
-            Ok(events) => events,
+        let checked = match maintain_and_check(&mut play) {
+            Ok(checked) => checked,
             Err(violation) => {
                 run.violations.push(violation);
                 break;
             }
         };
-        if let Some(detail) = twin_difference(&play, &events, &mut twin) {
-            run.violations.push(Violation::Nondeterministic(detail));
-        }
-
-        let after = &play.built.game_data;
-        let report_rows = build_results_report_blocks(after, &events);
-        let mut flagged = after.clone();
-        apply_results_reviewable_flags(&mut flagged, &report_rows);
-        run.violations.extend(check_turn(&TurnObservation {
-            before: &before.built.game_data,
-            after,
-            events: &events,
-            report_rows: &report_rows,
-            flagged: &flagged,
-            lifecycle: &play.player_lifecycle_states,
-        }));
-        choices.note(&turn_note(turn, &run, &events));
+        run.violations.extend(checked.violations);
+        choices.note(&turn_note(turn, &run, &checked.events));
 
         if !run.violations.is_empty() {
             break;
         }
         if play.winner_state.winner_empire_raw.is_some() || turn == run.setup.turns {
-            run.violations.extend(check_round_trip(&play, &report_rows));
+            run.violations
+                .extend(check_round_trip(&play, &checked.report_rows));
             break;
         }
     }
     run.final_state = play.built.game_data;
     run
+}
+
+/// One maintenance turn run and checked.
+#[derive(Debug)]
+pub(crate) struct CheckedTurn {
+    pub events: MaintenanceEvents,
+    pub report_rows: Vec<ReportBlockRow>,
+    pub violations: Vec<Violation>,
+}
+
+/// Run one maintenance turn on `play` and check every per-turn invariant
+/// over it; the error is a maintenance failure.
+pub(crate) fn maintain_and_check(play: &mut ScenarioPlay) -> Result<CheckedTurn, Violation> {
+    let before = play.clone();
+    let mut twin = play.clone();
+    let events = maintain(play)?;
+    let mut violations = Vec::new();
+    if let Some(detail) = twin_difference(play, &events, &mut twin) {
+        violations.push(Violation::Nondeterministic(detail));
+    }
+
+    let after = &play.built.game_data;
+    let report_rows = build_results_report_blocks(after, &events);
+    let mut flagged = after.clone();
+    apply_results_reviewable_flags(&mut flagged, &report_rows);
+    violations.extend(check_turn(&TurnObservation {
+        before: &before.built.game_data,
+        after,
+        events: &events,
+        report_rows: &report_rows,
+        flagged: &flagged,
+        lifecycle: &play.player_lifecycle_states,
+    }));
+    Ok(CheckedTurn {
+        events,
+        report_rows,
+        violations,
+    })
 }
 
 fn maintain(play: &mut ScenarioPlay) -> Result<MaintenanceEvents, Violation> {
