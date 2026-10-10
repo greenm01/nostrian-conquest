@@ -36,6 +36,8 @@ The [decoded classic battle](../../dev/ec-battle-spec.md), sections 1.1–1.3, m
 
 The [completed-reference follow-up](o7w8k8uh-what-the-completed-classic-combat-reference-changes-for-nc.md) adds formulas, exact classic ground odds, and sampled comparisons. The owner explicitly rejects classic combat results as a balance target. EotS and VBAM remain the stronger foundations. The follow-up also identifies NC's existing Blitz reward of capturing surviving batteries, distinguishes a coherent VBAM durability experiment from copying its effectiveness table alone, and records corrections needed in the new classic summary.
 
+The later [t055 sweep review](qjev5wpq-review-of-the-t055-combat-sweep-semantics.md) checks the implemented experiments, their solver, and their validation limits. The [economy investigation](tkce84f0-a-simple-nc-economy-informed-by-classic-ec-vbam-and-ec4x.md) extends the balance question to colony growth, prices, travel, and replacement costs.
+
 **Where I disagree with the synthesis**
 
 The [synthesis](ebrogywq-nc-combat-design-review-against-its-sources.md) correctly identifies double use of force ratios, ineffective retreat, free repair, and a leaky orbital gate. Its proposed replacement needs more scrutiny.

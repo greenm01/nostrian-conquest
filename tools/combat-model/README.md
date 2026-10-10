@@ -10,6 +10,13 @@ engine-side harness below checks the model's current rules against it.
 [combat-balance-workflow.md](../../docs/dev/combat-balance-workflow.md)
 says how the pieces fit.
 
+The [classic-reference follow-up](../../docs/notes/investigations/o7w8k8uh-what-the-completed-classic-combat-reference-changes-for-nc.md)
+explains `classic_reference.py` and its diagnostic comparisons. The
+[t055 sweep review](../../docs/notes/investigations/qjev5wpq-review-of-the-t055-combat-sweep-semantics.md)
+records the solver-cap probes, carry and pursuit assumptions, and convoy
+findings. Its `review_t055.py` and `nc_t055_review_before_fix.json` preserve
+the review's reproduction tool and historical evidence.
+
 ## Files
 
 - `rules.py`: the unit table (AS, DS, build cost, fire pool, combat line)

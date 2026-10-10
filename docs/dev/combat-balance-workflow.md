@@ -7,6 +7,10 @@ the candidates come from the
 and the
 [independent analysis](../notes/investigations/rolr9ti0-independent-nc-combat-balance-analysis.md).
 
+The [t055 sweep review](../notes/investigations/qjev5wpq-review-of-the-t055-combat-sweep-semantics.md)
+records checks of the solver, experimental assumptions, and the limits of
+the engine comparison. It links the reproduction probes and retained evidence.
+
 ## Three levels of evidence
 
 1. **Exact enumeration.** A d10 exchange has 100 roll pairs, so a small
