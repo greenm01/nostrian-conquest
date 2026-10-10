@@ -2,7 +2,7 @@
 id: jladc1qu
 date: 2026-10-10
 kind: investigation
-status: investigating
+status: decided
 tags: [investigation, economy, storage, oracle]
 ---
 # Build queue translation between Rust slots and classic counts
@@ -125,6 +125,19 @@ unfinished unit. I1 needs no model change. Refuse import rather than drop.
 3. Slot 8 counts from an edited file: refuse, or drop with a warning?
 4. Negative classic G: keep Rust's clamp, or carry the debt?
 5. File the army and battery slot-capacity bug as its own task?
+
+## Owner decisions (2026-10-10)
+
+1. Export credits the paid part of a part-paid unit to stored goods (E1).
+2. Match classic: the planet's budget is the only limit on the queue. A
+   slot holds any number of points and any number of starbases, so no
+   classic queue needs refusing; this also ends the army and battery
+   overflow (t063).
+3. Refuse an import with a slot-8 order, naming the planet.
+4. Carry a negative classic G into Rust instead of clamping it, once t056
+   confirms Rust's economy pass handles a negative balance; if it does not,
+   t056 reports back before changing anything.
+5. The army and battery overflow is t063, folded into t056 by decision 2.
 
 ## Connections
 
