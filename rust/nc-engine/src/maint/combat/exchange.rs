@@ -1,7 +1,7 @@
 use crate::{GameRng, RNG_TAG_COMBAT};
 
 use super::state::{
-    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
+    CarriedHits, FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
     fleet_class_ds, fleet_combat_line_order, fleet_combat_line_present, fleet_target_order,
 };
 
@@ -27,6 +27,8 @@ pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
 
+/// Planetary combat's ratio CRT, multipliers in quarters: one row per d10
+/// value and one column per force-ratio band.
 const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],
     [1, 2, 3, 4, 5],
@@ -39,6 +41,11 @@ const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
     [4, 5, 6, 7, 8],
     [4, 6, 7, 8, 10],
 ];
+
+/// Fleet battles' effectiveness in quarters of the side's AS, indexed by the
+/// modified d10: 0-2 give 25%, 3-5 give 50%, 6-9 give 100%.
+const FLEET_EFFECTIVENESS_X4: [u8; 10] = [1, 1, 1, 2, 2, 2, 4, 4, 4, 4];
+const FLEET_DIE_MODIFIER_CAP: u8 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum RoundActionKind {
@@ -143,7 +150,9 @@ fn hits_from_multiplier(as_total: u32, multiplier_x4: u8) -> u32 {
     (as_total.saturating_mul(multiplier_x4 as u32)).div_ceil(4)
 }
 
-fn seeded_exchange_resolution(
+/// The d10 for one side's volley. The battle context keys it, so a seed
+/// always replays the same battle.
+pub(super) fn seeded_combat_roll(
     campaign_seed: u64,
     game_year: u16,
     coords: [u8; 2],
@@ -151,9 +160,7 @@ fn seeded_exchange_resolution(
     round: u32,
     acting_empire: u8,
     target_empire: u8,
-    as_total: u32,
-    column: usize,
-) -> ExchangeResolution {
+) -> u8 {
     let mut rng = GameRng::from_context(
         campaign_seed,
         RNG_TAG_COMBAT,
@@ -167,7 +174,29 @@ fn seeded_exchange_resolution(
             target_empire as u64,
         ],
     );
-    let roll = rng.roll_d10();
+    rng.roll_d10()
+}
+
+fn seeded_exchange_resolution(
+    campaign_seed: u64,
+    game_year: u16,
+    coords: [u8; 2],
+    combat_kind: u64,
+    round: u32,
+    acting_empire: u8,
+    target_empire: u8,
+    as_total: u32,
+    column: usize,
+) -> ExchangeResolution {
+    let roll = seeded_combat_roll(
+        campaign_seed,
+        game_year,
+        coords,
+        combat_kind,
+        round,
+        acting_empire,
+        target_empire,
+    );
     let multiplier_x4 = CRT_MULTIPLIER_X4[roll as usize][column];
     ExchangeResolution {
         roll,
@@ -176,7 +205,28 @@ fn seeded_exchange_resolution(
     }
 }
 
-pub(super) fn resolve_space_exchange(
+/// One side's volley in a fleet battle. The die modifier moves the roll
+/// along the effectiveness table, at most to 9; only an unmodified 9 is a
+/// critical.
+pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> ExchangeResolution {
+    let index = usize::from(roll.saturating_add(die_modifier).min(9));
+    ExchangeResolution {
+        roll,
+        critical: roll == 9 && as_total > 0,
+        hits: hits_from_multiplier(as_total, FLEET_EFFECTIVENESS_X4[index]),
+    }
+}
+
+/// A fleet battle side's die modifier: +1 for a mixed fleet and +1 for a
+/// starbase, at most +2. The withdrawal exchange takes none.
+pub(super) fn fleet_die_modifier(state: &FleetCombatState) -> u8 {
+    let modifier = u8::from(state.is_mixed()) + u8::from(state.counts[IDX_SB] > 0);
+    modifier.min(FLEET_DIE_MODIFIER_CAP)
+}
+
+/// Planetary combat's ratio-CRT exchange for orbital fire: bombardment,
+/// invasion suppression and return fire, and blitz landing fire.
+pub(super) fn resolve_orbital_exchange(
     campaign_seed: u64,
     game_year: u16,
     coords: [u8; 2],
@@ -187,13 +237,9 @@ pub(super) fn resolve_space_exchange(
     our_as: u32,
     enemy_as: u32,
     mixed: bool,
-    starbase_bonus: bool,
 ) -> ExchangeResolution {
     let mut shift = 0i32;
     if mixed {
-        shift += 1;
-    }
-    if starbase_bonus {
         shift += 1;
     }
     let column = shifted_combat_column(base_combat_column(our_as, enemy_as), shift);
@@ -207,31 +253,6 @@ pub(super) fn resolve_space_exchange(
         target_empire,
         our_as,
         column,
-    )
-}
-
-/// `battle_key` tells apart battles fought at the same place in one year.
-#[allow(clippy::too_many_arguments)]
-pub(super) fn resolve_withdrawal_exchange(
-    campaign_seed: u64,
-    game_year: u16,
-    coords: [u8; 2],
-    battle_key: u64,
-    round: u32,
-    acting_empire: u8,
-    target_empire: u8,
-    our_as: u32,
-) -> ExchangeResolution {
-    seeded_exchange_resolution(
-        campaign_seed,
-        game_year,
-        coords,
-        COMBAT_KIND_WITHDRAWAL | battle_key << 8,
-        round,
-        acting_empire,
-        target_empire,
-        our_as,
-        COLUMN_PRESSED,
     )
 }
 
@@ -317,12 +338,14 @@ fn apply_focus_fire_hits_to_fleet_classes(
     progress
 }
 
+/// Apply a volley's hits pool by pool and return what each pool could not
+/// spend on a damage step.
 pub(super) fn apply_hits_to_fleet(
     state: &mut FleetCombatState,
     mut suppression_hits: u32,
     mut execution_hits: u32,
     critical_hits: u32,
-) {
+) -> CarriedHits {
     // 1. Apply Suppression hits (Dispersed Fire)
     while suppression_hits > 0 {
         let (combat_line_order, auxiliary_order);
@@ -372,6 +395,11 @@ pub(super) fn apply_hits_to_fleet(
             break;
         }
     }
+
+    CarriedHits {
+        suppression: suppression_hits,
+        execution: execution_hits,
+    }
 }
 
 /// Battery fire on a blitz landing. It is focus fire aimed at the descending
@@ -403,10 +431,6 @@ pub(super) fn apply_landing_fire_to_fleet(
 
 pub(super) fn fleet_state_changed(before: &FleetCombatState, after: &FleetCombatState) -> bool {
     before.counts != after.counts || before.crippled != after.crippled
-}
-
-pub(super) fn has_starbase_column_bonus(state: &FleetCombatState) -> bool {
-    state.counts[IDX_SB] > 0
 }
 
 pub(super) fn scalar_hits_with_critical(resolution: ExchangeResolution) -> u32 {

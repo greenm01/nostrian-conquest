@@ -9,9 +9,9 @@ use crate::{
 
 use super::super::FleetBattlePerspective;
 use super::exchange::{
-    COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_FLEET, RoundAction, RoundActionKind,
-    apply_hits_to_fleet, fleet_state_changed, has_starbase_column_bonus, resolve_space_exchange,
-    resolve_withdrawal_exchange, rule_threshold_satisfied,
+    COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_FLEET, COMBAT_KIND_WITHDRAWAL, RoundAction,
+    RoundActionKind, apply_hits_to_fleet, fleet_die_modifier, fleet_state_changed, fleet_volley,
+    rule_threshold_satisfied, seeded_combat_roll,
 };
 use super::reporting::{
     loaded_armies_for_fleet_indices, mission_kind_for_order, preferred_reporting_fleet_index,
@@ -80,13 +80,17 @@ fn battle_has_live_hostile_targets(task_forces: &[TaskForce]) -> bool {
         .any(|actor| !engaged_opponents(actor, task_forces).is_empty())
 }
 
+/// One side's d10 for an exchange, from the combat kind, the round, and the
+/// acting and target empires. Maintenance rolls seeded dice.
+type CombatRoll<'a> = &'a dyn Fn(u64, u32, u8, u8) -> u8;
+
+/// The withdrawal exchange: both sides fire once on the flat table, without
+/// die modifiers.
 fn apply_withdrawal_exchanges(
     task_forces: &[TaskForce],
     exchange_pairs: &[(u8, u8)],
-    campaign_seed: u64,
-    battle_year: u16,
-    coords: [u8; 2],
-    battle_key: u64,
+    roll: CombatRoll,
+    withdrawal_kind: u64,
     round: u32,
     pending_suppression: &mut HashMap<u8, u32>,
     pending_execution: &mut HashMap<u8, u32>,
@@ -121,14 +125,9 @@ fn apply_withdrawal_exchanges(
             continue;
         }
 
-        let outbound = resolve_withdrawal_exchange(
-            campaign_seed,
-            battle_year,
-            coords,
-            battle_key,
-            round,
-            empire,
-            target_empire,
+        let outbound = fleet_volley(
+            roll(withdrawal_kind, round, empire, target_empire),
+            0,
             our_as,
         );
 
@@ -148,14 +147,9 @@ fn apply_withdrawal_exchanges(
 
         let target_as = target_state.total_combat_as();
         if target_as > 0 {
-            let reply = resolve_withdrawal_exchange(
-                campaign_seed,
-                battle_year,
-                coords,
-                battle_key,
-                round,
-                target_empire,
-                empire,
+            let reply = fleet_volley(
+                roll(withdrawal_kind, round, target_empire, empire),
+                0,
                 target_as,
             );
 
@@ -173,6 +167,28 @@ fn apply_withdrawal_exchanges(
             *pending_execution.entry(empire).or_default() += exe_hits;
             *pending_criticals.entry(empire).or_default() += u32::from(reply.critical);
             reciprocal_withdrawal_replies.insert((target_empire, empire));
+        }
+    }
+}
+
+/// Apply one pass of exchanges to every side. A side's carried hits join the
+/// new hits of the same fire pool, and what a pool cannot spend on a damage
+/// step stays carried in that pool for the side's next exchange in this
+/// battle.
+fn apply_pending_hits(
+    task_forces: &mut [TaskForce],
+    pending_suppression: &HashMap<u8, u32>,
+    pending_execution: &HashMap<u8, u32>,
+    pending_criticals: &HashMap<u8, u32>,
+) {
+    for tf in task_forces {
+        let sup_hits =
+            tf.carried_hits.suppression + pending_suppression.get(&tf.empire).copied().unwrap_or(0);
+        let exe_hits =
+            tf.carried_hits.execution + pending_execution.get(&tf.empire).copied().unwrap_or(0);
+        let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
+        if sup_hits > 0 || exe_hits > 0 || critical_hits > 0 {
+            tf.carried_hits = apply_hits_to_fleet(&mut tf.state, sup_hits, exe_hits, critical_hits);
         }
     }
 }
@@ -452,9 +468,9 @@ pub(crate) struct BattleSide {
 /// the sector joins. `battle_key` tells apart battles fought at the same
 /// place in one year.
 ///
-/// This is Rust's battle (seeded CRT, round-4 withdrawals, post-battle
-/// retreat), not classic's, which is not decoded yet; it is the seam where
-/// classic's battle will go.
+/// This is Rust's battle (seeded flat effectiveness table, carried hits,
+/// round-4 withdrawals, post-battle retreat), not classic's, which is not
+/// decoded yet; it is the seam where classic's battle will go.
 pub(crate) fn fight_encounter(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
@@ -463,8 +479,33 @@ pub(crate) fn fight_encounter(
     attacker: &BattleSide,
     defender: &BattleSide,
 ) -> FleetBattlePhaseEvents {
+    let battle_year = game_data.conquest.game_year();
+    let roll = |combat_kind, round, acting_empire, target_empire| {
+        seeded_combat_roll(
+            campaign_seed,
+            battle_year,
+            coords,
+            combat_kind,
+            round,
+            acting_empire,
+            target_empire,
+        )
+    };
+    fight_encounter_with_rolls(game_data, &roll, battle_key, coords, attacker, defender)
+}
+
+/// `fight_encounter` with the dice supplied by the caller.
+pub(super) fn fight_encounter_with_rolls(
+    game_data: &mut CoreGameData,
+    roll: CombatRoll,
+    battle_key: u64,
+    coords: [u8; 2],
+    attacker: &BattleSide,
+    defender: &BattleSide,
+) -> FleetBattlePhaseEvents {
     let mut events = FleetBattlePhaseEvents::default();
     let combat_kind = COMBAT_KIND_FLEET | battle_key << 8;
+    let withdrawal_kind = COMBAT_KIND_WITHDRAWAL | battle_key << 8;
     let mut sides = [attacker, defender];
     sides.sort_by_key(|side| side.empire);
     let mut task_forces: Vec<TaskForce> = sides
@@ -534,7 +575,6 @@ pub(crate) fn fight_encounter(
         .map(|idx| (idx, u32::from(game_data.fleets.records[idx].army_count())))
         .collect();
 
-    let battle_year = game_data.conquest.game_year();
     let planet_owner = game_data
         .planets
         .records
@@ -643,32 +683,17 @@ pub(crate) fn fight_encounter(
             let Some(actor_tf) = task_forces.iter().find(|tf| tf.empire == action.empire) else {
                 continue;
             };
-            let Some(target_tf) = task_forces
-                .iter()
-                .find(|tf| tf.empire == action.target_empire)
-            else {
-                continue;
-            };
             let our_as = actor_tf.state.total_combat_as();
             if our_as == 0 {
                 continue;
             }
-            let enemy_as = target_tf.state.total_combat_as();
             engaged_empires.insert(action.empire);
             engaged_empires.insert(action.target_empire);
 
-            let result = resolve_space_exchange(
-                campaign_seed,
-                battle_year,
-                coords,
-                combat_kind,
-                round,
-                action.empire,
-                action.target_empire,
+            let result = fleet_volley(
+                roll(combat_kind, round, action.empire, action.target_empire),
+                fleet_die_modifier(&actor_tf.state),
                 our_as,
-                enemy_as,
-                actor_tf.state.is_mixed(),
-                has_starbase_column_bonus(&actor_tf.state),
             );
 
             let sup_hits;
@@ -690,10 +715,8 @@ pub(crate) fn fight_encounter(
         apply_withdrawal_exchanges(
             &task_forces,
             &pre_round_withdrawal_pairs,
-            campaign_seed,
-            battle_year,
-            coords,
-            battle_key,
+            roll,
+            withdrawal_kind,
             round,
             &mut pending_suppression,
             &mut pending_execution,
@@ -706,14 +729,12 @@ pub(crate) fn fight_encounter(
             }
         }
 
-        for tf in &mut task_forces {
-            let sup_hits = pending_suppression.get(&tf.empire).copied().unwrap_or(0);
-            let exe_hits = pending_execution.get(&tf.empire).copied().unwrap_or(0);
-            let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
-            if sup_hits > 0 || exe_hits > 0 || critical_hits > 0 {
-                apply_hits_to_fleet(&mut tf.state, sup_hits, exe_hits, critical_hits);
-            }
-        }
+        apply_pending_hits(
+            &mut task_forces,
+            &pending_suppression,
+            &pending_execution,
+            &pending_criticals,
+        );
 
         // A withdrawn force gets its retreat order after the battle, once
         // its losses are on the records and its speed is known.
@@ -813,30 +834,30 @@ pub(crate) fn fight_encounter(
             }
         }
 
-        let mut pending_suppression: HashMap<u8, u32> = HashMap::new();
-        let mut pending_execution: HashMap<u8, u32> = HashMap::new();
-        let mut pending_criticals: HashMap<u8, u32> = HashMap::new();
+        // Carried hits are spent only in an exchange, so this pass runs only
+        // when someone withdraws.
+        if !post_round_retreats.is_empty() {
+            let mut pending_suppression: HashMap<u8, u32> = HashMap::new();
+            let mut pending_execution: HashMap<u8, u32> = HashMap::new();
+            let mut pending_criticals: HashMap<u8, u32> = HashMap::new();
 
-        apply_withdrawal_exchanges(
-            &task_forces,
-            &post_round_retreats,
-            campaign_seed,
-            battle_year,
-            coords,
-            battle_key,
-            round,
-            &mut pending_suppression,
-            &mut pending_execution,
-            &mut pending_criticals,
-        );
+            apply_withdrawal_exchanges(
+                &task_forces,
+                &post_round_retreats,
+                roll,
+                withdrawal_kind,
+                round,
+                &mut pending_suppression,
+                &mut pending_execution,
+                &mut pending_criticals,
+            );
 
-        for tf in &mut task_forces {
-            let sup_hits = pending_suppression.get(&tf.empire).copied().unwrap_or(0);
-            let exe_hits = pending_execution.get(&tf.empire).copied().unwrap_or(0);
-            let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
-            if sup_hits > 0 || exe_hits > 0 || critical_hits > 0 {
-                apply_hits_to_fleet(&mut tf.state, sup_hits, exe_hits, critical_hits);
-            }
+            apply_pending_hits(
+                &mut task_forces,
+                &pending_suppression,
+                &pending_execution,
+                &pending_criticals,
+            );
         }
 
         combat_occurred |= !post_round_retreats.is_empty();

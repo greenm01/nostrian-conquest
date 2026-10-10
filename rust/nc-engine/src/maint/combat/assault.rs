@@ -9,7 +9,7 @@ use super::exchange::{
     COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND,
     COMBAT_KIND_INVASION_SOFTEN, COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution,
     GROUND_AS_ARMY, GROUND_AS_BATTERY, GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet,
-    apply_landing_fire_to_fleet, resolve_ground_exchange, resolve_space_exchange,
+    apply_landing_fire_to_fleet, resolve_ground_exchange, resolve_orbital_exchange,
     scalar_hits_with_critical,
 };
 use super::reporting::{preferred_reporting_fleet_number, push_planet_intel};
@@ -330,7 +330,7 @@ fn apply_blitz_landing_fire(
         return (0, ShipLosses::default());
     }
     let before = fleet_state_from_records(game_data, fleet_indices, 0);
-    let landing_exchange = resolve_space_exchange(
+    let landing_exchange = resolve_orbital_exchange(
         campaign_seed,
         game_year,
         coords,
@@ -340,7 +340,6 @@ fn apply_blitz_landing_fire(
         attacker_empire,
         u32::from(surviving_batteries) * GROUND_AS_BATTERY,
         bombard_attack_as(&before).max(1),
-        false,
         false,
     );
     let mut after = before.clone();
@@ -529,7 +528,7 @@ pub(crate) fn resolve_strike(
                 }
 
                 let defense_as = batteries_at_round_start as u32 * GROUND_AS_BATTERY;
-                let attacker_exchange = resolve_space_exchange(
+                let attacker_exchange = resolve_orbital_exchange(
                     campaign_seed,
                     battle_year,
                     coords,
@@ -540,12 +539,11 @@ pub(crate) fn resolve_strike(
                     attack_as,
                     defense_as.max(1),
                     fleet_state.is_mixed(),
-                    false,
                 );
 
                 // Batteries fire back each round they exist.
                 if defense_as > 0 {
-                    let defender_exchange = resolve_space_exchange(
+                    let defender_exchange = resolve_orbital_exchange(
                         campaign_seed,
                         battle_year,
                         coords,
@@ -555,7 +553,6 @@ pub(crate) fn resolve_strike(
                         empire,
                         defense_as,
                         attack_as.max(1),
-                        false,
                         false,
                     );
                     let mut next_state = fleet_state.clone();
@@ -648,7 +645,7 @@ pub(crate) fn resolve_strike(
             let pre_batteries = planet.ground_batteries_raw();
             let pre_armies = planet.army_count_raw();
             let battery_as = planet.ground_batteries_raw() as u32 * GROUND_AS_BATTERY;
-            let suppression_exchange = resolve_space_exchange(
+            let suppression_exchange = resolve_orbital_exchange(
                 campaign_seed,
                 battle_year,
                 coords,
@@ -659,9 +656,8 @@ pub(crate) fn resolve_strike(
                 bombard_as,
                 battery_as.max(1),
                 state.is_mixed(),
-                false,
             );
-            let return_exchange = resolve_space_exchange(
+            let return_exchange = resolve_orbital_exchange(
                 campaign_seed,
                 battle_year,
                 coords,
@@ -671,7 +667,6 @@ pub(crate) fn resolve_strike(
                 empire,
                 battery_as,
                 bombard_as.max(1),
-                false,
                 false,
             );
 
