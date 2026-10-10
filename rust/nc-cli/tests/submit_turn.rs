@@ -3,15 +3,16 @@ mod common;
 use std::fs;
 
 use common::{
-    cleanup_dir, copy_fixture_dir, run_nc_cli_failure_in_dir, run_nc_cli_output_in_dir,
-    unique_temp_dir,
+    cleanup_dir, copy_fixture_dir, import_campaign_db, run_nc_cli_failure_in_dir,
+    run_nc_cli_output_in_dir, unique_temp_dir,
 };
 use nc_data::CampaignStore;
 
 #[test]
-fn submit_turn_check_mode_does_not_create_runtime_db() {
+fn submit_turn_check_mode_leaves_runtime_state_unchanged() {
     let target = unique_temp_dir("nc-cli-submit-turn-check");
     copy_fixture_dir("fixtures/ecutil-init/v1.5", &target);
+    import_campaign_db(&target);
     let turn_path = target.join("turn.kdl");
     fs::write(
         &turn_path,
@@ -21,8 +22,8 @@ tax rate=42
 "#,
     )
     .unwrap();
-    let db_path = target.join("ncgame.db");
-    assert!(!db_path.exists());
+    let store = CampaignStore::open_default_in_dir(&target).unwrap();
+    let before = store.load_latest_runtime_state().unwrap().unwrap();
 
     let output = run_nc_cli_output_in_dir(
         &[
@@ -45,7 +46,9 @@ tax rate=42
     assert!(stdout.contains("Validated turn submission"));
     assert!(stdout.contains("mode=check-only"));
     assert!(stderr.contains("deprecated"));
-    assert!(!db_path.exists());
+    let after = store.load_latest_runtime_state().unwrap().unwrap();
+    assert_eq!(after.snapshot_id, before.snapshot_id);
+    assert_eq!(after.game_data, before.game_data);
 
     cleanup_dir(&target);
 }
@@ -54,6 +57,7 @@ tax rate=42
 fn submit_turn_apply_updates_runtime_state_and_queued_mail() {
     let target = unique_temp_dir("nc-cli-submit-turn-apply");
     copy_fixture_dir("fixtures/ecutil-init/v1.5", &target);
+    import_campaign_db(&target);
     let turn_path = target.join("turn.kdl");
     fs::write(
         &turn_path,
@@ -84,7 +88,6 @@ message to=2 subject="Scout" body="Watch the lane."
 
     assert!(stdout.contains("Applied turn submission"));
     assert!(stderr.contains("nc-game submit-turn"));
-    assert!(target.join("ncgame.db").exists());
 
     let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();

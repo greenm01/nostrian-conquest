@@ -1,23 +1,40 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME,
-    PlanetIntelSnapshot, QueuedPlayerMail, derive_campaign_seed_from_runtime, load_mail_queue,
-    merge_player_intel_from_runtime, reset_player_slot_to_baseline,
+    PlanetIntelSnapshot, merge_player_intel_from_runtime, reset_player_slot_to_baseline,
 };
 
-pub fn current_runtime_year(game_dir: &Path) -> Result<u16, Box<dyn std::error::Error>> {
-    let runtime_db_path = game_dir.join(DEFAULT_CAMPAIGN_DB_NAME);
-    if runtime_db_path.exists() {
-        let store = CampaignStore::open(&runtime_db_path)?;
-        if let Some(runtime) = store.load_latest_runtime_state()? {
-            return Ok(runtime.game_year);
-        }
+/// The game's campaign store. New-game creation seeds it, so a game
+/// directory without one is an error.
+pub fn open_existing_campaign_store(
+    game_dir: &Path,
+) -> Result<CampaignStore, Box<dyn std::error::Error>> {
+    let path = game_dir.join(DEFAULT_CAMPAIGN_DB_NAME);
+    if !path.exists() {
+        return Err(format!("campaign store not found at {}", path.display()).into());
     }
+    Ok(CampaignStore::open(path)?)
+}
 
-    let game_data = CoreGameData::load(game_dir)?;
-    Ok(game_data.conquest.game_year())
+/// The latest snapshot in `store`; a store without one is an error.
+pub fn load_latest_runtime_state(
+    store: &CampaignStore,
+) -> Result<CampaignRuntimeState, Box<dyn std::error::Error>> {
+    Ok(store
+        .load_latest_runtime_state()?
+        .ok_or("campaign store has no runtime snapshots")?)
+}
+
+pub fn load_runtime_game_data(game_dir: &Path) -> Result<CoreGameData, Box<dyn std::error::Error>> {
+    let store = open_existing_campaign_store(game_dir)?;
+    Ok(load_latest_runtime_state(&store)?.game_data)
+}
+
+pub fn current_runtime_year(game_dir: &Path) -> Result<u16, Box<dyn std::error::Error>> {
+    let store = open_existing_campaign_store(game_dir)?;
+    Ok(load_latest_runtime_state(&store)?.game_year)
 }
 
 pub fn ensure_hosted_player_initialized(
@@ -27,8 +44,8 @@ pub fn ensure_hosted_player_initialized(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_record_index_1_based =
         usize::try_from(player_seat).map_err(|_| format!("invalid player seat {}", player_seat))?;
-    let store = CampaignStore::open_default_in_dir(game_dir)?;
-    let runtime = load_or_seed_runtime_state(game_dir, &store)?;
+    let store = open_existing_campaign_store(game_dir)?;
+    let runtime = load_latest_runtime_state(&store)?;
 
     if !runtime
         .game_data
@@ -76,8 +93,8 @@ pub fn apply_hosted_first_join_names(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_record_index_1_based =
         usize::try_from(player_seat).map_err(|_| format!("invalid player seat {}", player_seat))?;
-    let store = CampaignStore::open_default_in_dir(game_dir)?;
-    let runtime = load_or_seed_runtime_state(game_dir, &store)?;
+    let store = open_existing_campaign_store(game_dir)?;
+    let runtime = load_latest_runtime_state(&store)?;
     let mut game_data = runtime.game_data.clone();
     let player = game_data
         .player
@@ -115,8 +132,8 @@ pub fn reset_hosted_player_to_baseline(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_record_index_1_based =
         usize::try_from(player_seat).map_err(|_| format!("invalid player seat {}", player_seat))?;
-    let store = CampaignStore::open_default_in_dir(game_dir)?;
-    let runtime = load_or_seed_runtime_state(game_dir, &store)?;
+    let store = open_existing_campaign_store(game_dir)?;
+    let runtime = load_latest_runtime_state(&store)?;
     let mut game_data = runtime.game_data.clone();
     reset_player_slot_to_baseline(&mut game_data, player_record_index_1_based)?;
     save_runtime_state_with_recomputed_intel(&store, runtime, game_data)?;
@@ -163,43 +180,4 @@ fn save_runtime_state_with_recomputed_intel(
     )?;
 
     Ok(())
-}
-
-fn load_or_seed_runtime_state(
-    game_dir: &Path,
-    store: &CampaignStore,
-) -> Result<CampaignRuntimeState, Box<dyn std::error::Error>> {
-    if let Some(runtime) = store.load_latest_runtime_state()? {
-        return Ok(runtime);
-    }
-
-    let game_data = CoreGameData::load(game_dir)?;
-    let queued_mail: Vec<QueuedPlayerMail> = load_mail_queue(game_dir).unwrap_or_default();
-    let report_block_rows = Vec::new();
-    let campaign_seed =
-        derive_campaign_seed_from_runtime(&game_data, &report_block_rows, &queued_mail);
-    let planet_intel_by_viewer = (1..=game_data.conquest.player_count())
-        .map(|viewer_empire_id| {
-            merge_player_intel_from_runtime(
-                &game_data,
-                viewer_empire_id,
-                game_data.conquest.game_year(),
-                None,
-                None,
-            )
-        })
-        .collect::<Vec<_>>();
-
-    store.save_runtime_state_structured_with_intel_and_seed(
-        &game_data,
-        &BTreeSet::new(),
-        &report_block_rows,
-        &queued_mail,
-        &planet_intel_by_viewer,
-        Some(campaign_seed),
-    )?;
-
-    store
-        .load_latest_runtime_state()?
-        .ok_or_else(|| std::io::Error::other("campaign store has no runtime snapshots").into())
 }

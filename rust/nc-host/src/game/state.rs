@@ -2,10 +2,10 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use nc_data::{
-    CampaignSettings, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation,
-    PlanetIntelSnapshot, PlayerRecord, ProductionItemKind, QueuedPlayerMail, ReportBlockRow,
-    STARDOCK_SLOT_COUNT, active_starbase_count_at, build_player_starmap_projection_from_snapshots,
-    load_mail_queue, merge_player_intel_from_runtime,
+    CampaignSettings, CampaignStore, CoreGameData, DiplomaticRelation, PlanetIntelSnapshot,
+    PlayerRecord, ProductionItemKind, QueuedPlayerMail, ReportBlockRow, STARDOCK_SLOT_COUNT,
+    active_starbase_count_at, build_player_starmap_projection_from_snapshots,
+    merge_player_intel_from_runtime,
 };
 use nc_nostr::state_sync::{
     GameState, HostedDiplomacyState, HostedFleetShips, HostedOwnedFleet, HostedOwnedPlanet,
@@ -28,7 +28,6 @@ pub fn initialize_runtime_state(
     seed: u64,
 ) -> Result<CoreGameData, Box<dyn std::error::Error>> {
     let game_data = nc_engine::build_seeded_new_game(player_count, year, seed)?;
-    game_data.save(game_dir)?;
 
     let campaign_store = CampaignStore::open_default_in_dir(game_dir)?;
     let intel_by_viewer = (1..=player_count)
@@ -106,49 +105,30 @@ fn load_player_runtime_snapshot(
     game_dir: &Path,
     viewer_empire_id: u8,
 ) -> Result<PlayerRuntimeSnapshot, Box<dyn std::error::Error>> {
-    let runtime_db_path = game_dir.join(DEFAULT_CAMPAIGN_DB_NAME);
-    if runtime_db_path.exists() {
-        let store = CampaignStore::open(&runtime_db_path)?;
-        if let Some(runtime) = store.load_latest_runtime_state()? {
-            let intel = store
-                .latest_planet_intel_for_viewer(viewer_empire_id)?
-                .into_iter()
-                .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
-                .collect::<BTreeMap<_, _>>();
-            let intel = if intel.is_empty() {
-                merge_player_intel_from_runtime(
-                    &runtime.game_data,
-                    viewer_empire_id,
-                    runtime.game_year,
-                    None,
-                    None,
-                )
-            } else {
-                intel
-            };
-            return Ok(PlayerRuntimeSnapshot {
-                turn: runtime.game_data.conquest.game_year().saturating_sub(3000) as u32,
-                game_year: runtime.game_year,
-                game_data: runtime.game_data,
-                queued_mail: runtime.queued_mail,
-                report_block_rows: runtime.report_block_rows,
-                intel,
-            });
-        }
-    }
-
-    let game_data = CoreGameData::load(game_dir)?;
-    let game_year = game_data.conquest.game_year();
-    let intel =
-        merge_player_intel_from_runtime(&game_data, viewer_empire_id, game_year, None, None);
-    let queued_mail = load_mail_queue(game_dir).unwrap_or_default();
-
+    let store = crate::support::runtime::open_existing_campaign_store(game_dir)?;
+    let runtime = crate::support::runtime::load_latest_runtime_state(&store)?;
+    let intel = store
+        .latest_planet_intel_for_viewer(viewer_empire_id)?
+        .into_iter()
+        .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
+        .collect::<BTreeMap<_, _>>();
+    let intel = if intel.is_empty() {
+        merge_player_intel_from_runtime(
+            &runtime.game_data,
+            viewer_empire_id,
+            runtime.game_year,
+            None,
+            None,
+        )
+    } else {
+        intel
+    };
     Ok(PlayerRuntimeSnapshot {
-        turn: game_year.saturating_sub(3000) as u32,
-        game_year,
-        game_data,
-        queued_mail,
-        report_block_rows: Vec::new(),
+        turn: runtime.game_data.conquest.game_year().saturating_sub(3000) as u32,
+        game_year: runtime.game_year,
+        game_data: runtime.game_data,
+        queued_mail: runtime.queued_mail,
+        report_block_rows: runtime.report_block_rows,
         intel,
     })
 }

@@ -15,7 +15,6 @@ fn seed_runtime_with_activity(
 ) {
     let game_data =
         nc_engine::build_seeded_new_game(4, year, 12345).expect("game state should build");
-    game_data.save(game_dir).expect("game data should save");
 
     let store = CampaignStore::open_default_in_dir(game_dir).expect("campaign store should open");
     let intel_by_viewer = (1..=4)

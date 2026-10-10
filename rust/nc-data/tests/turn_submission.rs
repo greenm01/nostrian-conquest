@@ -573,8 +573,8 @@ message to=2 body="hello"
 }
 
 #[test]
-fn turn_submission_runtime_helper_check_only_does_not_create_runtime_db() {
-    let dir = fixture_copy("nc-data-submit-turn-check");
+fn turn_submission_runtime_helper_check_only_leaves_the_store_unchanged() {
+    let dir = imported_fixture_store("nc-data-submit-turn-check");
     let path = dir.join("turn.kdl");
     fs::write(
         &path,
@@ -584,19 +584,23 @@ tax rate=42
 "#,
     )
     .unwrap();
+    let store = CampaignStore::open_default_in_dir(&dir).unwrap();
+    let before = store.load_latest_runtime_state().unwrap().unwrap();
 
     let report = TurnSubmission::submit_kdl_file_to_campaign_dir(&dir, 1, &path, true).unwrap();
 
     assert_eq!(report.player_record_index_1_based, 1);
     assert!(report.tax_changed);
-    assert!(!dir.join("ncgame.db").exists());
+    let after = store.load_latest_runtime_state().unwrap().unwrap();
+    assert_eq!(after.snapshot_id, before.snapshot_id);
+    assert_eq!(after.game_data, before.game_data);
 
     cleanup_dir(&dir);
 }
 
 #[test]
-fn turn_submission_runtime_helper_apply_creates_runtime_db() {
-    let dir = fixture_copy("nc-data-submit-turn-apply");
+fn turn_submission_runtime_helper_apply_updates_the_store() {
+    let dir = imported_fixture_store("nc-data-submit-turn-apply");
     let path = dir.join("turn.kdl");
     fs::write(
         &path,
@@ -611,12 +615,37 @@ message to=2 subject="Scout" body="Watch the lane."
     let report = TurnSubmission::submit_kdl_file_to_campaign_dir(&dir, 1, &path, false).unwrap();
 
     assert_eq!(report.messages_queued, 1);
-    assert!(dir.join("ncgame.db").exists());
-
     let store = CampaignStore::open_default_in_dir(&dir).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
     assert_eq!(state.game_data.player.records[0].tax_rate(), 37);
     assert_eq!(state.queued_mail.len(), 1);
+
+    cleanup_dir(&dir);
+}
+
+#[test]
+fn turn_submission_runtime_helper_rejects_a_directory_without_a_store() {
+    // Classic files alone are not a campaign: the runtime reads the store.
+    let dir = fixture_copy("nc-data-submit-turn-no-store");
+    let path = dir.join("turn.kdl");
+    fs::write(
+        &path,
+        r#"
+turn player=1 year=3000
+tax rate=37
+"#,
+    )
+    .unwrap();
+
+    for check_only in [true, false] {
+        let err = TurnSubmission::submit_kdl_file_to_campaign_dir(&dir, 1, &path, check_only)
+            .expect_err("a directory without ncgame.db should be rejected");
+        assert!(
+            err.to_string().contains("campaign store not found"),
+            "{err}"
+        );
+    }
+    assert!(!dir.join("ncgame.db").exists());
 
     cleanup_dir(&dir);
 }
@@ -754,6 +783,15 @@ fn fixture_copy(prefix: &str) -> PathBuf {
     let root = unique_temp_dir(prefix);
     copy_dir_files(&repo_root().join("fixtures/ecutil-init/v1.5"), &root);
     root
+}
+
+/// A campaign directory holding only a store seeded from the ECUTIL init
+/// fixture.
+fn imported_fixture_store(prefix: &str) -> PathBuf {
+    let dir = unique_temp_dir(prefix);
+    let store = CampaignStore::open_default_in_dir(&dir).unwrap();
+    import_directory_snapshot(&store, &repo_root().join("fixtures/ecutil-init/v1.5")).unwrap();
+    dir
 }
 
 fn copy_dir_files(source: &Path, target: &Path) {

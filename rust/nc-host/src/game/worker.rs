@@ -1205,7 +1205,7 @@ impl GameWorker {
             );
             return;
         };
-        let game_data = match nc_data::CoreGameData::load(game_dir) {
+        let game_data = match crate::support::runtime::load_runtime_game_data(game_dir) {
             Ok(game_data) => game_data,
             Err(err) => {
                 tracing::error!("Failed to load core game data for player message: {}", err);
