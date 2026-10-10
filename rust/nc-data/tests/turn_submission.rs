@@ -52,6 +52,7 @@ fn turn_submission_applies_mixed_player_actions() {
         let planet = &mut data.planets.records[planet_record_index_1_based - 1];
         planet.set_stardock_kind_raw(0, 1);
         planet.set_stardock_count_raw(0, 2);
+        planet.set_stored_production_points(50);
     }
 
     let kdl = format!(
@@ -307,6 +308,7 @@ fn turn_submission_rejects_non_multiple_ship_build_points() {
         .position(|planet| planet.owner_empire_slot_raw() == 1)
         .map(|idx| idx + 1)
         .unwrap();
+    data.planets.records[planet_record_index_1_based - 1].set_stored_production_points(50);
 
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -339,6 +341,74 @@ planet record={planet_record_index_1_based} {{
         }
         other => panic!("unexpected error: {other:?}"),
     }
+}
+
+#[test]
+fn turn_submission_rejects_build_points_beyond_planet_budget() {
+    let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
+    let planet_record_index_1_based = 2;
+    data.planets.records[planet_record_index_1_based - 1].set_stored_production_points(0);
+
+    let submission = TurnSubmission::parse_kdl_str(&format!(
+        r#"
+turn player=2 year=3000
+planet record={planet_record_index_1_based} {{
+  build points=100 kind="destroyer"
+}}
+"#
+    ))
+    .unwrap();
+
+    let err = submission
+        .apply_to(&mut data, &mut Vec::new())
+        .expect_err("build beyond an empty treasury should fail");
+    assert!(
+        matches!(err, nc_data::TurnSubmissionError::Validation(_)),
+        "unexpected error: {err:?}"
+    );
+    assert_eq!(
+        data.planets.records[planet_record_index_1_based - 1].build_count_raw(0),
+        0
+    );
+}
+
+#[test]
+fn turn_submission_build_budget_counts_points_already_queued() {
+    let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
+    let planet_record_index_1_based = 2;
+    // Production 100 gives capacity 100; a treasury of 60 makes the budget 60.
+    data.planets.records[planet_record_index_1_based - 1].set_stored_production_points(60);
+
+    let within_budget = TurnSubmission::parse_kdl_str(&format!(
+        r#"
+turn player=2 year=3000
+planet record={planet_record_index_1_based} {{
+  build points=40 kind="destroyer"
+  build points=20 kind="ground_battery"
+}}
+"#
+    ))
+    .unwrap();
+    within_budget
+        .apply_to(&mut data, &mut Vec::new())
+        .expect("orders within the budget should apply");
+
+    let over_budget = TurnSubmission::parse_kdl_str(&format!(
+        r#"
+turn player=2 year=3000
+planet record={planet_record_index_1_based} {{
+  build points=2 kind="army"
+}}
+"#
+    ))
+    .unwrap();
+    let err = over_budget
+        .apply_to(&mut data, &mut Vec::new())
+        .expect_err("queued points already use the whole budget");
+    assert!(
+        matches!(err, nc_data::TurnSubmissionError::Validation(_)),
+        "unexpected error: {err:?}"
+    );
 }
 
 #[test]

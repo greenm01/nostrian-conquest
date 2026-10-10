@@ -298,6 +298,37 @@ impl CoreGameData {
         Ok(existing_capacity.saturating_add(new_slot_capacity.saturating_mul(slot_capacity)))
     }
 
+    /// The planet's build budget for this turn: `min(treasury, build_capacity)`.
+    pub fn planet_build_budget(
+        &self,
+        record_index_1_based: usize,
+    ) -> Result<u32, GameStateMutationError> {
+        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
+                index_1_based: record_index_1_based,
+            },
+        )?;
+        let capacity = crate::build_capacity(
+            record.present_production_points().unwrap_or(0),
+            self.planet_has_friendly_starbase(record.owner_empire_slot_raw(), record.coords_raw()),
+        );
+        Ok(u32::from(capacity).min(record.stored_production_points()))
+    }
+
+    /// Budget still free for new orders this turn: the build budget less the
+    /// points already queued (the build screen's BUDGET).
+    pub fn planet_build_points_left(
+        &self,
+        record_index_1_based: usize,
+    ) -> Result<u32, GameStateMutationError> {
+        let budget = self.planet_build_budget(record_index_1_based)?;
+        let record = &self.planets.records[record_index_1_based - 1];
+        let committed = (0..10)
+            .map(|slot| u32::from(record.build_count_raw(slot)))
+            .sum::<u32>();
+        Ok(budget.saturating_sub(committed))
+    }
+
     pub fn append_planet_build_order(
         &mut self,
         record_index_1_based: usize,
@@ -322,7 +353,7 @@ impl CoreGameData {
             });
         }
         if let Some(cost) = kind.build_cost() {
-            if kind.requires_stardock() && points_remaining_raw % cost != 0 {
+            if points_remaining_raw % cost != 0 {
                 return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                     planet_index_1_based: record_index_1_based,
                     reason: PlanetPlayerInputValidationError::InvalidBuildPointsForKind {

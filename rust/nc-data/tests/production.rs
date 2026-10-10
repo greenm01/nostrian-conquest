@@ -390,7 +390,7 @@ fn maintenance_ship_build_stays_queued_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 1);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -415,7 +415,7 @@ fn maintenance_starbase_build_stays_queued_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 9);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -440,7 +440,7 @@ fn maintenance_exact_ship_quantities_arrive_in_stardock() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 10);
     planet.set_build_kind_raw(0, 1);
     planet.set_build_count_raw(1, 40);
@@ -465,7 +465,7 @@ fn maintenance_starbases_arrive_one_per_stardock_slot() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 50);
     planet.set_build_kind_raw(0, 9);
     planet.set_build_count_raw(1, 50);
@@ -490,7 +490,7 @@ fn maintenance_army_build_completes_even_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 8);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -512,7 +512,7 @@ fn maintenance_ground_battery_build_completes_even_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 1, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 7);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -534,7 +534,7 @@ fn maintenance_army_build_waits_at_planet_cap() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, u8::MAX, 0);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, u8::MAX, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 8);
 
@@ -552,7 +552,7 @@ fn maintenance_ground_battery_build_waits_at_planet_cap() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 0, 0, u8::MAX);
+    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 0, u8::MAX);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 7);
 
