@@ -14,3 +14,7 @@
 (B) 2026-10-09 Harden door edge cases: cap telnet subnegotiation length, exit cleanly on carrier drop during a render, warn before the session limit. +parallel +door @development id:t020 order:220 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t020)
 (B) 2026-10-09 Model fleets leaving a blockaded world as hostile intrusions. +parallel +combat @planning id:t021 order:230 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t021)
 (B) 2026-10-09 Scope the campaign-outlook broadcast wording per recipient and align scouting report owner rows. +parallel +reports @development id:t022 order:240 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t022)
+
+(A) 2026-10-09 Release v1.0.0-beta.3: bump the version, rebuild the manuals, and build, sign, and publish the Linux nc-sysop package. +critical +release @development id:t023 order:300 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t023)
+
+(A) 2026-10-09 Build, upload, and re-sign the three Windows nc-sysop beta.3 packages on Windows. +critical +release @playtest id:t024 order:310 depends:t023 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t024)
