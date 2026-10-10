@@ -36,6 +36,29 @@ The current implementation keeps the recovered annual `speed * 8 / 9` movement
 budget, persists exact in-transit position between yearly maintenance passes,
 and rounds only when writing the visible sector coordinates.
 
+Map coordinates are 1-based: an `N x N` map spans sectors `1..=N` on both
+axes, so routes may use the last row and column but never row or column `0`.
+
+### Movement Fraction Byte
+
+Each year the stepper adds `speed * 8` to a sub-unit accumulator, moves
+`accumulator / 9` units, and carries `accumulator % 9` to the next year in the
+classic `FLEETS.DAT` `raw[0x0F]` byte:
+
+- encode: `(carry - 9) * 2 / 3` as a signed byte
+- decode: `9 + raw * 3 / 2`, clamped to `0..=8`
+
+This classic encoding is kept as the compatibility boundary even though it is
+lossy: carries other than `0`, `3`, and `6` decode slightly high, so speeds
+that are not multiples of 3 run a little fast (speed 1 covers 12 sectors in
+13 years instead of 14). The clamp only guards malformed imported bytes.
+
+Fleet ETA estimates replay the same encode/decode round trip each simulated
+year, so the predicted ETA matches the actual arrival year on axis-aligned
+moves. The starbase travel-time estimate keeps the exact accumulator because
+it reproduces the classic ECGAME display (`Travel time is 16 years` for a
+speed-1 starbase from (15,13) to (2,12)).
+
 For unresolved classic movement internals, Rust follows a pragmatic boundary:
 
 - preserve player-facing travel geometry, arrival timing, and mission behavior

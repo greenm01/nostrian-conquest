@@ -131,7 +131,7 @@ fn dominant_cluster_penalty(homeworlds: &[[u8; 2]], neutral_worlds: &[GeneratedW
 }
 
 fn density_balance_bonus(map_size: u8, neutral_worlds: &[GeneratedWorld]) -> f32 {
-    let center = (map_size as f32 - 1.0) / 2.0;
+    let center = (map_size as f32 + 1.0) / 2.0;
     neutral_worlds
         .iter()
         .map(|world| {

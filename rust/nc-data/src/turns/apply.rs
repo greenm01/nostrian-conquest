@@ -2,7 +2,9 @@ use super::{
     FleetTurnAction, PlanetTurnAction, TurnMessage, TurnSubmission, TurnSubmissionError,
     TurnSubmissionReport,
 };
-use crate::{CoreGameData, ProductionItemKind, QueuedPlayerMail, validate_queued_player_message};
+use crate::{
+    CoreGameData, Order, ProductionItemKind, QueuedPlayerMail, validate_queued_player_message,
+};
 
 pub(super) fn apply_turn_submission(
     submission: &TurnSubmission,
@@ -99,6 +101,7 @@ fn preflight_fleet_order_actions(
                 submission.player_record_index_1_based,
                 fleet.fleet_record_index_1_based,
             )?;
+            ensure_order_target_within_map(&preview, *order_code, *target)?;
             preview.set_fleet_order(
                 fleet.fleet_record_index_1_based,
                 *speed,
@@ -356,6 +359,24 @@ fn ensure_player_owns_fleet(
         )));
     }
     Ok(())
+}
+
+/// Submitted orders get the same 1-based map bounds the player UI enforces.
+fn ensure_order_target_within_map(
+    game_data: &CoreGameData,
+    order_code: u8,
+    target: [u8; 2],
+) -> Result<(), TurnSubmissionError> {
+    let map_size = crate::map_size_for_player_count(game_data.conquest.player_count());
+    if Order::from_raw(order_code) == Order::HoldPosition
+        || crate::sector_within_map(target, map_size)
+    {
+        return Ok(());
+    }
+    Err(TurnSubmissionError::Validation(format!(
+        "fleet order target ({},{}) is outside the map (1..={map_size})",
+        target[0], target[1]
+    )))
 }
 
 fn queue_message(

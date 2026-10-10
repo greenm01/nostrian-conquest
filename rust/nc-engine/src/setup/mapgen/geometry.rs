@@ -81,12 +81,17 @@ fn edge_ring_shortfall(candidate: [u8; 2], map_size: u8) -> f32 {
     (NEUTRAL_EDGE_RING_THRESHOLD - edge_clearance(candidate, map_size)).max(0.0)
 }
 
+/// Sectors between `candidate` and the nearest map edge; coordinates are
+/// 1-based, so the edges are sector 1 and sector `map_size`.
 pub(super) fn edge_clearance(candidate: [u8; 2], map_size: u8) -> f32 {
     f32::min(
-        f32::min(candidate[0] as f32, candidate[1] as f32),
         f32::min(
-            (map_size - 1 - candidate[0]) as f32,
-            (map_size - 1 - candidate[1]) as f32,
+            candidate[0].saturating_sub(1) as f32,
+            candidate[1].saturating_sub(1) as f32,
+        ),
+        f32::min(
+            map_size.saturating_sub(candidate[0]) as f32,
+            map_size.saturating_sub(candidate[1]) as f32,
         ),
     )
 }
@@ -125,33 +130,32 @@ pub(super) fn hashed_range(seed: u64, reroll: u32, salt: u32, min: u8, max: u8) 
     min + (value as u8 % span)
 }
 
+/// Round into the 1-based grid, keeping `margin` sectors from each edge.
 pub(super) fn clamp_coord(value: f32, map_size: u8, margin: f32) -> u8 {
-    value
-        .round()
-        .clamp(margin, (map_size as f32 - 1.0) - margin) as u8
+    value.round().clamp(1.0 + margin, map_size as f32 - margin) as u8
 }
 
 pub(super) fn fallback_local_world(home: [u8; 2], map_size: u8, used: &[[u8; 2]]) -> [u8; 2] {
     for dx in -4..=4 {
         for dy in -4..=4 {
-            let x = (home[0] as i16 + dx).clamp(1, map_size as i16 - 2) as u8;
-            let y = (home[1] as i16 + dy).clamp(1, map_size as i16 - 2) as u8;
+            let x = (home[0] as i16 + dx).clamp(2, map_size as i16 - 1) as u8;
+            let y = (home[1] as i16 + dy).clamp(2, map_size as i16 - 1) as u8;
             let candidate = [x, y];
             if candidate != home && candidate_allowed(candidate, used) {
                 return candidate;
             }
         }
     }
-    [1, 1]
+    first_free_sector(map_size, used)
 }
 
 pub(super) fn fallback_frontier_world(map_size: u8, used: &[[u8; 2]]) -> [u8; 2] {
-    let center = map_size / 2;
+    let center = map_center_sector(map_size);
     for ring in 0..map_size {
         for dx in -(ring as i16)..=(ring as i16) {
             for dy in -(ring as i16)..=(ring as i16) {
-                let x = (center as i16 + dx).clamp(1, map_size as i16 - 2) as u8;
-                let y = (center as i16 + dy).clamp(1, map_size as i16 - 2) as u8;
+                let x = (center as i16 + dx).clamp(2, map_size as i16 - 1) as u8;
+                let y = (center as i16 + dy).clamp(2, map_size as i16 - 1) as u8;
                 let candidate = [x, y];
                 if candidate_allowed(candidate, used) {
                     return candidate;
@@ -159,7 +163,20 @@ pub(super) fn fallback_frontier_world(map_size: u8, used: &[[u8; 2]]) -> [u8; 2]
             }
         }
     }
-    [center, center]
+    first_free_sector(map_size, used)
+}
+
+/// Last resort when no spaced candidate exists: any sector not yet used.
+fn first_free_sector(map_size: u8, used: &[[u8; 2]]) -> [u8; 2] {
+    (1..=map_size)
+        .flat_map(|x| (1..=map_size).map(move |y| [x, y]))
+        .find(|candidate| !used.contains(candidate))
+        .expect("maps have more sectors than systems")
+}
+
+/// Middle sector of the 1-based grid (the upper middle on even sizes).
+fn map_center_sector(map_size: u8) -> u8 {
+    map_size / 2 + 1
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -170,9 +187,10 @@ pub(super) struct HomeworldRegion {
 }
 
 pub(super) fn homeworld_regions(player_count: u8, map_size: u8) -> Vec<HomeworldRegion> {
-    let low = HOMEWORLD_EDGE_MARGIN as u8;
-    let high = map_size.saturating_sub(low + 1);
-    let mid = map_size / 2;
+    // Keep HOMEWORLD_EDGE_MARGIN clear sectors beyond both 1-based edges.
+    let low = 1 + HOMEWORLD_EDGE_MARGIN as u8;
+    let high = map_size.saturating_sub(HOMEWORLD_EDGE_MARGIN as u8);
+    let mid = map_center_sector(map_size);
     match player_count {
         1 => vec![HomeworldRegion {
             min: [mid.saturating_sub(2), mid.saturating_sub(2)],

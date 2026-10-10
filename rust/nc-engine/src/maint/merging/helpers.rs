@@ -1,5 +1,13 @@
 use crate::CoreGameData;
 
+/// A merge must not lose ships: refuse it when the one-byte scout count
+/// could not hold both fleets' scouts. The fleets then stay separate.
+pub(super) fn merge_fits_host(game_data: &CoreGameData, host_idx: usize, donor_idx: usize) -> bool {
+    let host_scouts = game_data.fleets.records[host_idx].scout_count();
+    let donor_scouts = game_data.fleets.records[donor_idx].scout_count();
+    host_scouts.checked_add(donor_scouts).is_some()
+}
+
 pub(super) fn merge_one_fleet_into_host(
     game_data: &mut CoreGameData,
     host_idx: usize,

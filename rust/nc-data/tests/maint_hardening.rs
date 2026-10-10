@@ -1,4 +1,4 @@
-use nc_data::{CoreGameData, InvalidPlayerStateEvent, Order};
+use nc_data::{CoreGameData, GameStateBuilder, InvalidPlayerStateEvent, Order};
 use nc_engine::{run_maintenance_turn, validate_maintenance_state};
 use std::path::Path;
 
@@ -280,4 +280,31 @@ fn maintenance_rejects_structurally_invalid_state_before_simulation() {
         "unexpected error: {err}"
     );
     assert_eq!(game_data.conquest.game_year(), start_year);
+}
+
+#[test]
+fn seek_home_picks_nearest_world_across_distant_coordinates() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    // Squared distances past i16 range (dx = 234 to the homeworld at (16,13)).
+    let far_world = [200, 1];
+    let planet = &mut game_data.planets.records[10];
+    planet.set_coords_raw(far_world);
+    planet.set_owner_empire_slot_raw(1);
+    planet.set_ownership_status_raw(2);
+    let fleet = &mut game_data.fleets.records[0];
+    fleet.set_current_location_coords_raw([250, 1]);
+    fleet.set_standing_order_kind(Order::SeekHome);
+    fleet.set_standing_order_target_coords_raw([16, 13]);
+    fleet.set_current_speed(3);
+
+    run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert_eq!(
+        game_data.fleets.records[0].standing_order_target_coords_raw(),
+        far_world
+    );
 }

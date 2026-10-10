@@ -5,10 +5,11 @@ fn edge_ring_world_count(generated: &GeneratedMap) -> usize {
         .neutral_worlds
         .iter()
         .filter(|world| {
+            // Within two sectors of an edge of the 1-based 1..=map_size grid.
             let x = world.coords[0];
             let y = world.coords[1];
-            let max = generated.map_size - 2;
-            x == 1 || y == 1 || x == max || y == max
+            let max = generated.map_size - 1;
+            x <= 2 || y <= 2 || x >= max || y >= max
         })
         .count()
 }
@@ -167,4 +168,20 @@ fn seeded_initialized_game_retains_active_campaign_builder_semantics() {
     assert_eq!(data.planets.records[0].owner_empire_slot_raw(), 1);
     assert_eq!(data.planets.records[0].planet_name(), "Player 1 HW");
     assert!(data.ecmaint_preflight_errors().is_empty());
+}
+
+#[test]
+fn player_count_validator_accepts_only_supported_counts() {
+    assert!(!nc_data::is_valid_player_count(0));
+    assert!(nc_data::is_valid_player_count(1));
+    assert!(nc_data::is_valid_player_count(25));
+    assert!(!nc_data::is_valid_player_count(26));
+}
+
+#[test]
+fn seeded_games_reject_unsupported_player_counts() {
+    for player_count in [0, 26, 255] {
+        assert!(build_seeded_new_game(player_count, 3000, 1).is_err());
+        assert!(build_seeded_initialized_game(player_count, 3000, 1).is_err());
+    }
 }

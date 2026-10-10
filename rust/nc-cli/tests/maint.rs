@@ -3568,7 +3568,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
         "{text}"
     );
     assert!(
-        text.contains("Lost hosts: Fleets 2 and 3 lost their host and are holding position."),
+        text.contains("Lost hosts: Fleets 2, 3, and 4 lost host Fleet 1"),
         "{text}"
     );
     assert!(!text.contains("Lost hosts: Fleets 2, 3 and"), "{text}");

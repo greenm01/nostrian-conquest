@@ -618,6 +618,54 @@ fn test_join_merge_emits_merge_event() {
 }
 
 #[test]
+fn test_merges_that_would_overflow_scout_count_are_refused() {
+    // Scout counts are stored in one byte; merging two 200-scout fleets must
+    // not silently drop 145 scouts. Covers mission joins, rendezvous, and
+    // rogue co-location consolidation.
+    for (consolidation_flag, order) in [
+        (0x00, Order::JoinAnotherFleet),
+        (0x00, Order::RendezvousSector),
+        (0xff, Order::HoldPosition),
+    ] {
+        let mut game_data = load_fixture("ecmaint-post");
+        game_data.player.records[0].raw[0x00] = consolidation_flag;
+        let coords = game_data.fleets.records[0].current_location_coords_raw();
+        let host_id = game_data.fleets.records[0].fleet_id();
+        for idx in [0, 1] {
+            let fleet = &mut game_data.fleets.records[idx];
+            fleet.set_current_location_coords_raw(coords);
+            fleet.set_standing_order_kind(order);
+            fleet.set_standing_order_target_coords_raw(coords);
+            fleet.set_current_speed(0);
+            fleet.set_scout_count(200);
+        }
+        if order == Order::JoinAnotherFleet {
+            game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
+            game_data.fleets.records[1].set_join_host_fleet_id_raw(host_id);
+        }
+        let empire_scouts = |game_data: &CoreGameData| -> u32 {
+            game_data
+                .fleets
+                .records
+                .iter()
+                .filter(|fleet| fleet.owner_empire_raw() == 1)
+                .map(|fleet| u32::from(fleet.scout_count()))
+                .sum()
+        };
+        let scouts_before = empire_scouts(&game_data);
+
+        let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
+
+        assert_eq!(empire_scouts(&game_data), scouts_before, "{order:?}");
+        assert!(
+            events.fleet_merge_events.is_empty(),
+            "{order:?}: {:?}",
+            events.fleet_merge_events
+        );
+    }
+}
+
+#[test]
 fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     let mut game_data = load_fixture("ecmaint-post");
     game_data.player.records[0].raw[0x00] = 0x00;

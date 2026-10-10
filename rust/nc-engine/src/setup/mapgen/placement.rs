@@ -1,11 +1,11 @@
 use super::{
-    CONTESTED_GAP_LIMIT, GeneratedWorld, HOMEWORLD_MIN_DISTANCE_RATIO, LOCAL_WORLD_COUNT_PER_PLAYER,
+    CONTESTED_GAP_LIMIT, GeneratedWorld, HOMEWORLD_MIN_DISTANCE, LOCAL_WORLD_COUNT_PER_PLAYER,
 };
 use crate::setup::mapgen::geometry::{
-    candidate_allowed, clamp_coord, density_noise, distance, distance_sq, edge_clearance,
-    fallback_frontier_world, fallback_local_world, frontier_world_edge_bias, hashed_range,
-    homeworld_regions, local_world_edge_bias, nearest_homeworld, nearest_used_distance,
-    sorted_homeworld_distances,
+    HomeworldRegion, candidate_allowed, clamp_coord, density_noise, distance, distance_sq,
+    edge_clearance, fallback_frontier_world, fallback_local_world, frontier_world_edge_bias,
+    hashed_range, homeworld_regions, local_world_edge_bias, nearest_homeworld,
+    nearest_used_distance, sorted_homeworld_distances,
 };
 use crate::setup::mapgen::scoring::frontier_balance_bonus;
 use nc_data::GameRng;
@@ -15,7 +15,7 @@ pub(super) fn generate_homeworlds(
     map_size: u8,
     rng: &mut GameRng,
 ) -> Vec<[u8; 2]> {
-    let min_distance_sq = (map_size as f32 * HOMEWORLD_MIN_DISTANCE_RATIO).powi(2);
+    let min_distance_sq = HOMEWORLD_MIN_DISTANCE.powi(2);
     let regions = homeworld_regions(player_count, map_size);
     let mut homeworlds = Vec::with_capacity(player_count as usize);
 
@@ -48,10 +48,23 @@ pub(super) fn generate_homeworlds(
             }
         }
 
-        homeworlds.push(best.unwrap_or(region.anchor));
+        let homeworld = best.unwrap_or_else(|| most_isolated_sector(region, &homeworlds));
+        homeworlds.push(homeworld);
     }
 
     homeworlds
+}
+
+/// Fallback when no sampled sector meets the spacing rule: the free sector
+/// of the region farthest from every homeworld placed so far.
+fn most_isolated_sector(region: &HomeworldRegion, homeworlds: &[[u8; 2]]) -> [u8; 2] {
+    (region.min[0]..=region.max[0])
+        .flat_map(|x| (region.min[1]..=region.max[1]).map(move |y| [x, y]))
+        .filter(|candidate| !homeworlds.contains(candidate))
+        .map(|candidate| (candidate, nearest_used_distance(candidate, homeworlds)))
+        .max_by(|(_, left), (_, right)| left.total_cmp(right))
+        .map(|(candidate, _)| candidate)
+        .expect("homeworld regions have a free sector")
 }
 
 pub(super) fn generate_neutral_worlds(
@@ -155,11 +168,12 @@ fn choose_frontier_world(
 ) -> [u8; 2] {
     let mut best = None;
     let mut best_score = f32::MIN;
-    let center = (map_size as f32 - 1.0) / 2.0;
+    // 1-based grid: centre (map_size + 1) / 2, interior sectors 2..=map_size-1.
+    let center = (map_size as f32 + 1.0) / 2.0;
 
     for attempt in 0..192 {
-        let x = rng.range_u8(1, map_size.saturating_sub(2));
-        let y = rng.range_u8(1, map_size.saturating_sub(2));
+        let x = rng.range_u8(2, map_size.saturating_sub(1));
+        let y = rng.range_u8(2, map_size.saturating_sub(1));
         let candidate = [x, y];
         if !candidate_allowed(candidate, used) {
             continue;

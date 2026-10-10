@@ -1,4 +1,3 @@
-use crate::CoreGameData;
 use nc_data::PlanetIntelSource;
 
 use super::super::{
@@ -6,8 +5,8 @@ use super::super::{
     timing::{apply_timing_offset, event_base_week, mission_timing_code},
 };
 
-pub(super) fn assign_event_weeks(events: &mut MaintenanceEvents, game_data: &CoreGameData) {
-    assign_mission_event_weeks(events, game_data);
+pub(super) fn assign_event_weeks(events: &mut MaintenanceEvents, fleet_travel_speeds: &[u8]) {
+    assign_mission_event_weeks(events, fleet_travel_speeds);
     assign_combat_event_weeks(events);
     assign_assault_event_weeks(events);
     assign_bombard_event_weeks(events);
@@ -23,9 +22,13 @@ pub(super) fn assign_event_weeks(events: &mut MaintenanceEvents, game_data: &Cor
     assign_diplomatic_escalation_weeks(events);
 }
 
-fn week_for_mission_event(event: &MissionEvent, game_data: &CoreGameData) -> u8 {
-    let fleet = game_data.fleets.records.get(event.fleet_idx);
-    let fleet_speed = fleet.map(|f| f.current_speed()).unwrap_or(0);
+/// Uses the speed the fleet moved at this turn: by the time events are
+/// stamped, arrival has usually zeroed the fleet's current speed.
+fn week_for_mission_event(event: &MissionEvent, fleet_travel_speeds: &[u8]) -> u8 {
+    let fleet_speed = fleet_travel_speeds
+        .get(event.fleet_idx)
+        .copied()
+        .unwrap_or(0);
     let travel_time_years: u8 = if fleet_speed > 0 { 1 } else { 0 };
 
     let base = event_base_week(event.kind, travel_time_years, fleet_speed);
@@ -33,10 +36,10 @@ fn week_for_mission_event(event: &MissionEvent, game_data: &CoreGameData) -> u8 
     apply_timing_offset(base, code)
 }
 
-fn assign_mission_event_weeks(events: &mut MaintenanceEvents, game_data: &CoreGameData) {
+fn assign_mission_event_weeks(events: &mut MaintenanceEvents, fleet_travel_speeds: &[u8]) {
     for event in &mut events.mission_events {
         if event.stardate_week.is_none() {
-            event.stardate_week = Some(week_for_mission_event(event, game_data));
+            event.stardate_week = Some(week_for_mission_event(event, fleet_travel_speeds));
         }
     }
 }

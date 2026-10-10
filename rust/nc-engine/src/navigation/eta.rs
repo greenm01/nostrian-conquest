@@ -62,12 +62,15 @@ pub(super) fn estimate_direct_eta(
     if current == target || speed == 0 {
         return 0;
     }
+    // Matches the classic ECGAME travel-time display (exact accumulator), e.g.
+    // the preserved starbase move "Travel time is 16 years".
     simulate_eta_years(
         [f64::from(current[0]), f64::from(current[1])],
         target,
         speed,
         0,
         include_system,
+        false,
     )
 }
 
@@ -99,16 +102,27 @@ fn estimate_eta_for_route(
         speed,
         sub_acc_prev,
         include_system,
+        true,
     ))
 }
 
+/// `fleet_fraction_round_trip` replays the fleet stepper, which stores the
+/// accumulator in the lossy classic fraction byte between turns.
 fn simulate_eta_years(
     mut exact_position: [f64; 2],
     target: [u8; 2],
     speed: u8,
     sub_acc_prev: u32,
     include_system: bool,
+    fleet_fraction_round_trip: bool,
 ) -> u16 {
+    let carry = |sub_acc: u32| {
+        if fleet_fraction_round_trip {
+            round_trip_movement_fraction(sub_acc)
+        } else {
+            sub_acc
+        }
+    };
     let mut years = 0u16;
     let mut sub_acc = sub_acc_prev;
 
@@ -116,7 +130,7 @@ fn simulate_eta_years(
         years = years.saturating_add(1);
         let sub_acc_new = sub_acc + u32::from(speed) * 8;
         let int_move = (sub_acc_new / 9) as f64;
-        sub_acc = sub_acc_new % 9;
+        sub_acc = carry(sub_acc_new % 9);
         exact_position = advance_exact_position(exact_position, target, int_move, None, false);
     }
 
@@ -126,7 +140,7 @@ fn simulate_eta_years(
             years = years.saturating_add(1);
             let sub_acc_new = sub_acc + u32::from(speed) * 8;
             let int_move = (sub_acc_new / 9) as f64;
-            sub_acc = sub_acc_new % 9;
+            sub_acc = carry(sub_acc_new % 9);
             remaining_system_distance -= int_move;
         }
     }
@@ -134,10 +148,26 @@ fn simulate_eta_years(
     years
 }
 
+fn round_trip_movement_fraction(sub_acc: u32) -> u32 {
+    decode_movement_fraction(encode_movement_fraction(sub_acc))
+}
+
 fn decode_movement_sub_acc(fleet: &FleetRecord) -> u32 {
     if fleet.current_speed() == 0 || fleet.movement_state_flag_raw() == 0x80 {
         return 0;
     }
-    let i8_val = fleet.movement_fraction_raw() as i8;
-    (9i32 + i8_val as i32 * 3 / 2) as u32
+    decode_movement_fraction(fleet.movement_fraction_raw())
+}
+
+/// Encode the 0..=8 movement sub-unit accumulator as the classic FLEETS.DAT
+/// raw[0x0F] fraction byte: `(sub_acc - 9) * 2 / 3` as i8.
+pub(crate) fn encode_movement_fraction(sub_acc: u32) -> u8 {
+    ((sub_acc as i32 - 9) * 2 / 3) as i8 as u8
+}
+
+/// Decode the classic raw[0x0F] fraction byte (`9 + raw * 3 / 2`). The
+/// classic encoding is lossy, and malformed imported bytes are clamped to
+/// the 0..=8 accumulator range instead of underflowing.
+pub(crate) fn decode_movement_fraction(raw: u8) -> u32 {
+    (9 + i32::from(raw as i8) * 3 / 2).clamp(0, 8) as u32
 }
