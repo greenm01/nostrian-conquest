@@ -329,6 +329,35 @@ fn timed_out_escape_drops_late_sync_term_suffix_instead_of_leaking_menu_keys() {
 }
 
 #[test]
+fn linux_console_function_keys_decode_without_leaking_letters() {
+    for (bytes, n) in [
+        (b"\x1b[[A", 1),
+        (b"\x1b[[B", 2),
+        (b"\x1b[[C", 3),
+        (b"\x1b[[D", 4),
+        (b"\x1b[[E", 5),
+    ] {
+        assert_decode(bytes, plain(KeyCode::F(n)));
+    }
+    assert_eq!(
+        decode_input_stream_for_test(b"\x1b[[Aj\x1b[[Zk").expect("decode stream"),
+        vec![
+            plain(KeyCode::F(1)),
+            plain(KeyCode::Char('j')),
+            plain(KeyCode::Char('k')),
+        ]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b[["), (5, b"Cj")]),
+        vec![plain(KeyCode::F(3)), plain(KeyCode::Char('j'))]
+    );
+    assert_eq!(
+        stdio_keys(&[(0, b"\x1b"), (600, b"[[A")]),
+        vec![plain(KeyCode::Esc)]
+    );
+}
+
+#[test]
 fn door_decoder_drops_late_sync_term_suffix_after_timed_out_escape() {
     let got = stdio_keys(&[(0, b"\x1b"), (600, b"[V")]);
     assert_eq!(got, vec![plain(KeyCode::Esc)]);

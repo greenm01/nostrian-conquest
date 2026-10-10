@@ -427,6 +427,9 @@ fn try_decode_escape_complete(pending: &VecDeque<u8>) -> ParseResult {
 }
 
 fn try_decode_csi_complete(pending: &VecDeque<u8>) -> ParseResult {
+    if pending.get(2) == Some(&b'[') {
+        return try_decode_linux_console_function_key(pending);
+    }
     let bytes = pending.iter().copied().collect::<Vec<_>>();
     for (idx, byte) in bytes.iter().copied().enumerate().skip(2) {
         if let Some(event) = map_csi_event(byte, &bytes[2..=idx]) {
@@ -440,6 +443,18 @@ fn try_decode_csi_complete(pending: &VecDeque<u8>) -> ParseResult {
         ParseResult::Drop(pending.len())
     } else {
         ParseResult::NeedMore
+    }
+}
+
+/// Linux console F1-F5 send `ESC [ [ A` through `ESC [ [ E`.
+fn try_decode_linux_console_function_key(pending: &VecDeque<u8>) -> ParseResult {
+    match pending.get(3).copied() {
+        None => ParseResult::NeedMore,
+        Some(byte @ b'A'..=b'E') => ParseResult::Event(
+            KeyEvent::new(KeyCode::F(byte - b'A' + 1), KeyModifiers::NONE),
+            4,
+        ),
+        Some(_) => ParseResult::Drop(4),
     }
 }
 
@@ -547,6 +562,10 @@ fn drop_orphaned_escape_suffix(burst: &mut Vec<u8>, orphan_deadline: Option<Inst
 }
 
 fn orphan_csi_suffix_len(bytes: &[u8]) -> Option<usize> {
+    if bytes.first() == Some(&b'[') {
+        // Linux console function key tail: `[` plus one letter.
+        return Some(bytes.len().min(2));
+    }
     for (idx, byte) in bytes.iter().copied().enumerate() {
         if is_csi_final(byte) {
             return Some(idx + 1);
