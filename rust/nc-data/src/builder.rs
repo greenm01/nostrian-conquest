@@ -10,15 +10,6 @@ const HOMEWORLD_PRESENT_PRODUCTION_RAW: [u8; 6] = [0, 0, 0, 0, 72, 134];
 const HOMEWORLD_GOODS_HIGH_BYTE: u8 = 12;
 const DEFAULT_EMPIRE_TAX_RATE: u8 = 50;
 
-const CURRENT_KNOWN_ECUTIL_INIT_CONQUEST_CONTROL_HEADER: [u8; 0x55] = [
-    0xb8, 0x0b, 0x04, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01, 0xff,
-];
-
 /// Builder for creating arbitrary ECMAINT-compliant gamestate directories.
 ///
 /// This builder allows constructing gamestates from scratch with configurable
@@ -208,12 +199,8 @@ impl GameStateBuilder {
             fleets: FleetDat { records: vec![] },
             bases: BaseDat { records: vec![] },
             ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat {
-                raw: [0; crate::SETUP_DAT_SIZE],
-            },
-            conquest: ConquestDat {
-                raw: [0; crate::CONQUEST_DAT_SIZE],
-            },
+            setup: SetupDat::new_zeroed(),
+            conquest: ConquestDat::new_zeroed(),
         };
 
         // Configure conquest header
@@ -301,18 +288,17 @@ impl GameStateBuilder {
             fleets: FleetDat { records: vec![] },
             bases: BaseDat { records: vec![] },
             ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat {
-                raw: [0; crate::SETUP_DAT_SIZE],
-            },
-            conquest: ConquestDat {
-                raw: [0; crate::CONQUEST_DAT_SIZE],
-            },
+            setup: SetupDat::new_zeroed(),
+            conquest: ConquestDat::new_zeroed(),
         };
 
-        data.conquest
-            .set_control_header_bytes(&CURRENT_KNOWN_ECUTIL_INIT_CONQUEST_CONTROL_HEADER);
+        // ECUTIL F1 enables every day and writes 100 and 1 to all 25
+        // ranking slots.
         data.conquest.set_game_year(self.game_year);
         data.conquest.set_player_count(self.player_count);
+        data.conquest.set_maintenance_schedule_enabled([true; 7]);
+        data.conquest.conquest.previous_production = [100; 25];
+        data.conquest.conquest.previous_planet_count = [1; 25];
 
         data.setup.set_version_tag(b"EC151");
         data.setup.set_option_prefix(&[4, 3, 4, 3, 1, 1, 1, 1]);

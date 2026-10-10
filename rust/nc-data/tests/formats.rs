@@ -99,7 +99,7 @@ fn round_trip_setup_dat() {
     let parsed = SetupDat::parse(&bytes).unwrap();
     assert_eq!(parsed.to_bytes(), bytes);
     assert_eq!(parsed.version_tag(), b"EC151");
-    assert_eq!(parsed.option_prefix(), &[4, 3, 4, 3, 1, 1, 1, 1]);
+    assert_eq!(parsed.option_prefix(), [4, 3, 4, 3, 1, 1, 1, 1]);
     assert_eq!(parsed.com_irq_raw(0), Some(4));
     assert_eq!(parsed.com_irq_raw(1), Some(3));
     assert_eq!(parsed.com_irq_raw(2), Some(4));
@@ -121,12 +121,16 @@ fn round_trip_setup_dat() {
 fn round_trip_conquest_dat() {
     let bytes = read_fixture("CONQUEST.DAT");
     let parsed = ConquestDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
-    assert_eq!(parsed.control_header().len(), 0x55);
-    assert_eq!(parsed.header_words()[0], 0x0bce);
+    // Ranking slots past the player count hold ECMAINT's garbage; the
+    // model does not carry them.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Conquest, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Conquest, &bytes)
+    );
     assert_eq!(parsed.game_year(), 3022);
     assert_eq!(parsed.player_count(), 4);
-    assert_eq!(parsed.player_config_word(), 0x0104);
+    assert_eq!(parsed.previous_production()[..4], [100; 4]);
+    assert_eq!(parsed.previous_planet_count()[..4], [1; 4]);
 }
 
 #[test]

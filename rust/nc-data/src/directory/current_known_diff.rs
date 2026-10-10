@@ -1,4 +1,5 @@
 use super::*;
+use crate::classic::{ClassicFile, without_ignored_bytes};
 
 impl CoreGameData {
     pub fn current_known_compliance_status(&self) -> CurrentKnownComplianceStatus {
@@ -52,72 +53,74 @@ impl CoreGameData {
         self.diff_offsets_against(&normalized)
     }
 
-    pub fn diff_counts_against(&self, other: &Self) -> Vec<CoreFileDiffCount> {
-        [
+    /// The seven core files of `self` and `other` as classic bytes, with the
+    /// bytes no classic program reads masked: a canonical fixture carries
+    /// ECMAINT's garbage there and the model regenerates zeros.
+    fn core_file_bytes_against(&self, other: &Self) -> [(&'static str, Vec<u8>, Vec<u8>); 7] {
+        let masked = |file: ClassicFile, left: Vec<u8>, right: Vec<u8>| {
             (
-                "PLAYER.DAT",
+                file.file_name(),
+                without_ignored_bytes(file, &left),
+                without_ignored_bytes(file, &right),
+            )
+        };
+        [
+            masked(
+                ClassicFile::Player,
                 self.player.to_bytes(),
                 other.player.to_bytes(),
             ),
-            (
-                "PLANETS.DAT",
+            masked(
+                ClassicFile::Planets,
                 self.planets.to_bytes(),
                 other.planets.to_bytes(),
             ),
-            (
-                "FLEETS.DAT",
+            masked(
+                ClassicFile::Fleets,
                 self.fleets.to_bytes(),
                 other.fleets.to_bytes(),
             ),
-            ("BASES.DAT", self.bases.to_bytes(), other.bases.to_bytes()),
-            ("IPBM.DAT", self.ipbm.to_bytes(), other.ipbm.to_bytes()),
-            ("SETUP.DAT", self.setup.to_bytes(), other.setup.to_bytes()),
-            (
-                "CONQUEST.DAT",
+            masked(
+                ClassicFile::Bases,
+                self.bases.to_bytes(),
+                other.bases.to_bytes(),
+            ),
+            masked(
+                ClassicFile::Ipbm,
+                self.ipbm.to_bytes(),
+                other.ipbm.to_bytes(),
+            ),
+            masked(
+                ClassicFile::Setup,
+                self.setup.to_bytes(),
+                other.setup.to_bytes(),
+            ),
+            masked(
+                ClassicFile::Conquest,
                 self.conquest.to_bytes(),
                 other.conquest.to_bytes(),
             ),
         ]
-        .into_iter()
-        .map(|(name, current, other)| CoreFileDiffCount {
-            name,
-            differing_bytes: byte_diff_count(&current, &other),
-        })
-        .collect()
+    }
+
+    pub fn diff_counts_against(&self, other: &Self) -> Vec<CoreFileDiffCount> {
+        self.core_file_bytes_against(other)
+            .into_iter()
+            .map(|(name, current, other)| CoreFileDiffCount {
+                name,
+                differing_bytes: byte_diff_count(&current, &other),
+            })
+            .collect()
     }
 
     pub fn diff_offsets_against(&self, other: &Self) -> Vec<CoreFileDiffOffsets> {
-        [
-            (
-                "PLAYER.DAT",
-                self.player.to_bytes(),
-                other.player.to_bytes(),
-            ),
-            (
-                "PLANETS.DAT",
-                self.planets.to_bytes(),
-                other.planets.to_bytes(),
-            ),
-            (
-                "FLEETS.DAT",
-                self.fleets.to_bytes(),
-                other.fleets.to_bytes(),
-            ),
-            ("BASES.DAT", self.bases.to_bytes(), other.bases.to_bytes()),
-            ("IPBM.DAT", self.ipbm.to_bytes(), other.ipbm.to_bytes()),
-            ("SETUP.DAT", self.setup.to_bytes(), other.setup.to_bytes()),
-            (
-                "CONQUEST.DAT",
-                self.conquest.to_bytes(),
-                other.conquest.to_bytes(),
-            ),
-        ]
-        .into_iter()
-        .map(|(name, current, other)| CoreFileDiffOffsets {
-            name,
-            differing_offsets: byte_diff_offsets(&current, &other),
-        })
-        .collect()
+        self.core_file_bytes_against(other)
+            .into_iter()
+            .map(|(name, current, other)| CoreFileDiffOffsets {
+                name,
+                differing_offsets: byte_diff_offsets(&current, &other),
+            })
+            .collect()
     }
 
     pub fn exact_match_errors_against(&self, other: &Self, label: &str) -> Vec<String> {

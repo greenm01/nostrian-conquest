@@ -24,7 +24,7 @@ pub use results::{
 use crate::VisibleHazardIntel;
 use fleet_refs::{FleetIndexRemap, TurnFleetRefs};
 use nc_data::{
-    CoreGameData, FleetRecord, Order, PlayerLifecycleState, Real48, WinnerState,
+    CoreGameData, FleetRecord, Order, PlayerLifecycleState, WinnerState,
     default_player_lifecycle_states,
 };
 use std::fmt;
@@ -290,21 +290,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Snapshot pre-turn state needed for post-movement processing.
     // These must be captured BEFORE any mutations so they reflect start-of-turn conditions.
 
-    // CONQUEST.DAT 0x0c/0x3d accumulation: accumulate when raw[0x0c]==0x64 at start of turn
-    // AND at least one fleet is in-transit (raw[0x19]==0x80) or a player is active/rogue.
-    let any_fleet_in_transit = game_data
-        .fleets
-        .records
-        .iter()
-        .any(|f| (Real48::HALF..Real48::ONE).contains(&f.depth()));
-    let any_active_player = game_data
-        .player
-        .records
-        .iter()
-        .any(|p| p.is_active_or_rogue_player());
-    let should_accumulate_conquest = game_data.conquest.inactive_production_slot_raw(0)
-        == Some(0x0064)
-        && (any_fleet_in_transit || any_active_player);
+    // ECMAINT copies every empire's production and planet count into the
+    // CONQUEST.DAT rankings before the pass changes them.
+    game_data
+        .conquest
+        .snapshot_previous_year(&game_data.player.records);
 
     let initial_campaign_outlook = campaign::campaign_outlook(game_data, player_lifecycle_states);
     let initial_campaign_outcome =
@@ -508,9 +498,6 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     defection_remap.remap_fleet_battle_phase_events(&mut fleet_battle_phase_events);
     defection_remap.remap_mission_events(&mut assault_events.mission_events);
     defection_remap.remap_planet_intel_events(&mut assault_events.planet_intel_events);
-
-    // Normalize the in-memory conquest header fields.
-    campaign::process_conquest_header(game_data, should_accumulate_conquest)?;
 
     finalize_pending_observation_events(
         game_data,

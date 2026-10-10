@@ -83,5 +83,5 @@ pub fn check_gate_conquest(raw: &[u8]) -> Result<ConquestDat, &'static str> {
     }
     let mut buf = [0u8; CONQUEST_DAT_SIZE];
     buf.copy_from_slice(&raw[..CONQUEST_DAT_SIZE]);
-    Ok(ConquestDat { raw: buf })
+    Ok(ConquestDat::from_raw(buf))
 }

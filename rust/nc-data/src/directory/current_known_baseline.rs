@@ -253,9 +253,12 @@ impl CoreGameData {
         self.sync_current_known_initialized_conquest_post_maint_header();
     }
 
+    /// CONQUEST.DAT as one pass over the initialized baseline leaves it:
+    /// the year after 3000, and the rankings ECMAINT snapshots at the start
+    /// of the pass.
     pub fn sync_current_known_initialized_conquest_post_maint_header(&mut self) {
-        self.conquest
-            .set_control_header_bytes(&CURRENT_KNOWN_POST_MAINT_CONQUEST_CONTROL_HEADER);
+        self.conquest.set_game_year(3001);
+        self.conquest.snapshot_previous_year(&self.player.records);
     }
 
     pub fn current_known_empty_auxiliary_state_errors(&self) -> Vec<String> {

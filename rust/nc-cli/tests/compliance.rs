@@ -169,10 +169,10 @@ fn core_sync_baseline_repairs_control_and_count_fields() {
     let mut data = CoreGameData::load(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(3);
     data.player.records[0].set_ipbm_chain_head_raw(2);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
-    data.conquest.raw[0..2].copy_from_slice(&2999u16.to_le_bytes());
-    data.conquest.raw[2] = 9;
+    data.conquest.set_game_year(2999);
+    data.conquest.set_player_count(9);
     data.conquest.set_maintenance_schedule_enabled([false; 7]);
     data.save(&target).unwrap();
 
@@ -259,7 +259,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     let mut data = CoreGameData::load(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(7);
     data.player.records[0].set_ipbm_chain_head_raw(4);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.bases.records.push(nc_data::BaseRecord::new_zeroed());
     data.ipbm.records.push(nc_data::IpbmRecord::new_zeroed());
     data.fleets.records.clear();

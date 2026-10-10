@@ -1117,9 +1117,10 @@ fn ipbm_record_setters_round_trip_position_and_target() {
 fn can_set_maintenance_schedule_from_enabled_days() {
     let mut post_maint = ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
     post_maint.set_maintenance_schedule_enabled([true, false, true, false, true, false, true]);
+    // ECUTIL writes 0 or 1; ECMAINT tests only for nonzero.
     assert_eq!(
         post_maint.maintenance_schedule_bytes(),
-        [0x01, 0x00, 0xCA, 0x00, 0x0A, 0x00, 0x26]
+        [0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01]
     );
     assert_eq!(
         post_maint.maintenance_schedule_enabled(),
@@ -1133,7 +1134,7 @@ fn can_toggle_snoop_enabled() {
     assert!(setup.snoop_enabled());
     setup.set_snoop_enabled(false);
     assert!(!setup.snoop_enabled());
-    assert_eq!(setup.raw[512], 0);
+    assert_eq!(setup.to_bytes()[512], 0);
 }
 
 #[test]
@@ -1168,7 +1169,7 @@ fn can_set_purge_after_turns_raw() {
     assert_eq!(setup.purge_after_turns_raw(), 0);
     setup.set_purge_after_turns_raw(1);
     assert_eq!(setup.purge_after_turns_raw(), 1);
-    assert_eq!(setup.raw[518], 1);
+    assert_eq!(setup.to_bytes()[518], 1);
 }
 
 #[test]
@@ -1700,8 +1701,7 @@ fn core_game_data_conquest_baseline_errors_catch_changed_year() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.conquest.raw[0] = 0xB7;
-    data.conquest.raw[1] = 0x0B; // 2999
+    data.conquest.set_game_year(2999);
 
     assert_eq!(
         data.current_known_conquest_baseline_errors(),
@@ -1730,10 +1730,10 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
 
     data.player.records[0].set_first_base_record_raw(9);
     data.player.records[0].set_ipbm_chain_head_raw(9);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.setup.set_remote_timeout_enabled(false);
-    data.conquest.raw[0..2].copy_from_slice(&2999u16.to_le_bytes());
-    data.conquest.raw[2] = 9;
+    data.conquest.set_game_year(2999);
+    data.conquest.set_player_count(9);
     data.conquest.set_maintenance_schedule_enabled([false; 7]);
 
     data.sync_current_known_baseline_controls_and_counts();
@@ -1818,7 +1818,7 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
 
     data.player.records[0].set_first_base_record_raw(7);
     data.player.records[0].set_ipbm_chain_head_raw(4);
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.bases.records.push(BaseRecord::new_zeroed());
     data.ipbm.records.push(IpbmRecord::new_zeroed());
     data.fleets.records.clear();
@@ -1912,7 +1912,7 @@ fn core_game_data_current_known_baseline_diff_counts_detect_mutated_files() {
         .differing_bytes;
     assert_eq!(clean_setup, 0);
 
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_counts();
@@ -1954,7 +1954,7 @@ fn core_game_data_current_known_baseline_diff_offsets_pinpoint_mutated_bytes() {
         .differing_offsets
         .clone();
 
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
 
     let diffs = data.current_known_baseline_diff_offsets();

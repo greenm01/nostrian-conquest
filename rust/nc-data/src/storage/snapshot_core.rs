@@ -279,6 +279,7 @@ fn write_setup_row(
     snapshot_id: i64,
     data: &SetupDat,
 ) -> Result<(), CampaignStoreError> {
+    let bytes = data.to_bytes();
     tx.execute(
         "INSERT INTO snapshot_setup(
              snapshot_id, version_tag_raw_hex, option_prefix_raw_hex,
@@ -288,18 +289,18 @@ fn write_setup_row(
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             snapshot_id,
-            encode_hex(data.version_tag()),
-            encode_hex(data.option_prefix()),
-            i64::from(u8::from(data.snoop_enabled())),
-            i64::from(data.max_time_between_keys_minutes_raw()),
-            i64::from(data.raw[514]),
-            i64::from(u8::from(data.remote_timeout_enabled())),
-            i64::from(u8::from(data.local_timeout_enabled())),
-            i64::from(data.minimum_time_granted_minutes_raw()),
-            i64::from(data.purge_after_turns_raw()),
-            i64::from(data.raw[519]),
-            i64::from(data.autopilot_inactive_turns_raw()),
-            i64::from(data.raw[521]),
+            encode_hex(&bytes[0..5]),
+            encode_hex(&bytes[5..13]),
+            i64::from(bytes[512]),
+            i64::from(bytes[513]),
+            i64::from(bytes[514]),
+            i64::from(bytes[515]),
+            i64::from(bytes[516]),
+            i64::from(bytes[517]),
+            i64::from(bytes[518]),
+            i64::from(bytes[519]),
+            i64::from(bytes[520]),
+            i64::from(bytes[521]),
         ],
     )?;
     Ok(())
@@ -311,18 +312,22 @@ fn write_conquest_row(
     data: &ConquestDat,
 ) -> Result<(), CampaignStoreError> {
     let sql = conquest_insert_sql();
+    let bytes = data.to_bytes();
     let mut values = Vec::with_capacity(
         4 + CONQUEST_CONTROL_WORD_OFFSETS.len() + CONQUEST_CONTROL_BYTE_OFFSETS.len(),
     );
     values.push(Value::from(snapshot_id));
     values.push(Value::from(i64::from(data.game_year())));
     values.push(Value::from(i64::from(data.player_count())));
-    values.push(Value::from(encode_hex(&data.maintenance_schedule_bytes())));
+    values.push(Value::from(encode_hex(&bytes[3..10])));
     for offset in CONQUEST_CONTROL_WORD_OFFSETS {
-        values.push(Value::from(i64::from(data.raw_word(offset))));
+        values.push(Value::from(i64::from(u16::from_le_bytes([
+            bytes[offset],
+            bytes[offset + 1],
+        ]))));
     }
     for offset in CONQUEST_CONTROL_BYTE_OFFSETS {
-        values.push(Value::from(i64::from(data.raw_byte(offset))));
+        values.push(Value::from(i64::from(bytes[offset])));
     }
     tx.execute(&sql, params_from_iter(values))?;
     Ok(())
@@ -718,22 +723,20 @@ fn load_setup_row(conn: &mut Connection, snapshot_id: i64) -> Result<SetupDat, C
         },
     )?;
 
-    let mut setup = SetupDat {
-        raw: [0; SETUP_DAT_SIZE],
-    };
-    setup.raw[..5].copy_from_slice(&decode_hex_exact::<5>(&version_tag_raw_hex)?);
-    setup.raw[5..13].copy_from_slice(&decode_hex_exact::<8>(&option_prefix_raw_hex)?);
-    setup.set_snoop_enabled(snoop_enabled != 0);
-    setup.set_max_time_between_keys_minutes_raw(max_time_between_keys_minutes_raw as u8);
-    setup.raw[514] = byte_514_raw as u8;
-    setup.set_remote_timeout_enabled(remote_timeout_enabled != 0);
-    setup.set_local_timeout_enabled(local_timeout_enabled != 0);
-    setup.set_minimum_time_granted_minutes_raw(minimum_time_granted_minutes_raw as u8);
-    setup.set_purge_after_turns_raw(purge_after_turns_raw as u8);
-    setup.raw[519] = byte_519_raw as u8;
-    setup.set_autopilot_inactive_turns_raw(autopilot_inactive_turns_raw as u8);
-    setup.raw[521] = byte_521_raw as u8;
-    Ok(setup)
+    let mut bytes = [0u8; SETUP_DAT_SIZE];
+    bytes[..5].copy_from_slice(&decode_hex_exact::<5>(&version_tag_raw_hex)?);
+    bytes[5..13].copy_from_slice(&decode_hex_exact::<8>(&option_prefix_raw_hex)?);
+    bytes[512] = snoop_enabled as u8;
+    bytes[513] = max_time_between_keys_minutes_raw as u8;
+    bytes[514] = byte_514_raw as u8;
+    bytes[515] = remote_timeout_enabled as u8;
+    bytes[516] = local_timeout_enabled as u8;
+    bytes[517] = minimum_time_granted_minutes_raw as u8;
+    bytes[518] = purge_after_turns_raw as u8;
+    bytes[519] = byte_519_raw as u8;
+    bytes[520] = autopilot_inactive_turns_raw as u8;
+    bytes[521] = byte_521_raw as u8;
+    Ok(SetupDat::from_raw(bytes))
 }
 
 fn load_conquest_row(
@@ -763,19 +766,17 @@ fn load_conquest_row(
             ))
         })?;
 
-    let mut conquest = ConquestDat {
-        raw: [0; CONQUEST_DAT_SIZE],
-    };
-    conquest.set_game_year(game_year as u16);
-    conquest.set_player_count(player_count as u8);
-    conquest.raw[3..10].copy_from_slice(&decode_hex_exact::<7>(&maintenance_schedule_raw_hex)?);
+    let mut bytes = [0u8; CONQUEST_DAT_SIZE];
+    bytes[0..2].copy_from_slice(&(game_year as u16).to_le_bytes());
+    bytes[2] = player_count as u8;
+    bytes[3..10].copy_from_slice(&decode_hex_exact::<7>(&maintenance_schedule_raw_hex)?);
     for (index, offset) in CONQUEST_CONTROL_WORD_OFFSETS.into_iter().enumerate() {
-        conquest.set_raw_word(offset, control_words[index]);
+        bytes[offset..offset + 2].copy_from_slice(&control_words[index].to_le_bytes());
     }
     for (index, offset) in CONQUEST_CONTROL_BYTE_OFFSETS.into_iter().enumerate() {
-        conquest.set_raw_byte(offset, control_bytes[index]);
+        bytes[offset] = control_bytes[index];
     }
-    Ok(conquest)
+    Ok(ConquestDat::from_raw(bytes))
 }
 
 fn conquest_insert_sql() -> String {
