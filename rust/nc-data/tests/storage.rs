@@ -358,18 +358,65 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             "retired hosted/session table {retired} should be gone: {table_names:?}"
         );
     }
-    for current in [
-        "snapshot_players",
-        "snapshot_planets",
-        "snapshot_fleets",
-        "snapshot_bases",
-        "snapshot_ipbms",
-        "snapshot_setup",
-        "snapshot_conquest",
-    ] {
+    let core_tables = table_names
+        .iter()
+        .filter(|name| name.starts_with("snapshot_"))
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        core_tables,
+        [
+            "snapshot_bases",
+            "snapshot_conquest",
+            "snapshot_conquest_maintenance_days",
+            "snapshot_conquest_previous_rankings",
+            "snapshot_fleets",
+            "snapshot_ipbms",
+            "snapshot_planet_build_slots",
+            "snapshot_planets",
+            "snapshot_player_diplomacy",
+            "snapshot_players",
+            "snapshot_setup",
+            "snapshot_setup_com_ports",
+        ],
+        "core game state tables"
+    );
+    // Core state is typed columns: no classic byte columns, and a Real48
+    // is an INTEGER named for its field.
+    for table in &core_tables {
+        let columns = conn
+            .prepare(&format!("PRAGMA table_info({table})"))
+            .expect("prepare table info")
+            .query_map([], |row| {
+                Ok((row.get::<_, String>(1)?, row.get::<_, String>(2)?))
+            })
+            .expect("query table info")
+            .collect::<Result<Vec<_>, _>>()
+            .expect("collect table info");
+        for (name, sql_type) in columns {
+            for opaque in ["hex", "raw", "bytes", "blob"] {
+                assert!(
+                    !name.contains(opaque),
+                    "{table}.{name} looks like a classic byte column"
+                );
+            }
+            assert!(
+                sql_type == "INTEGER" || sql_type == "TEXT",
+                "{table}.{name} has type {sql_type}"
+            );
+        }
+    }
+    let planet_columns = conn
+        .prepare("SELECT name FROM pragma_table_info('snapshot_planets')")
+        .expect("prepare planet columns")
+        .query_map([], |row| row.get::<_, String>(0))
+        .expect("query planet columns")
+        .collect::<Result<Vec<_>, _>>()
+        .expect("collect planet columns");
+    for column in ["production_real48", "stored_goods_real48", "name", "owner"] {
         assert!(
-            table_names.iter().any(|name| name == current),
-            "normalized snapshot table {current} should exist: {table_names:?}"
+            planet_columns.iter().any(|name| name == column),
+            "snapshot_planets should have {column}: {planet_columns:?}"
         );
     }
 
@@ -389,18 +436,6 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             .iter()
             .any(|sql| sql.contains("known_starbase_count INTEGER")),
         "planet_intel schema should include known_starbase_count"
-    );
-    assert!(
-        schema_rows
-            .iter()
-            .any(|sql| sql.contains("control_word_0a_raw INTEGER NOT NULL")),
-        "snapshot schema should expose explicit conquest control words"
-    );
-    assert!(
-        schema_rows
-            .iter()
-            .any(|sql| sql.contains("control_byte_54_raw INTEGER NOT NULL")),
-        "snapshot schema should expose explicit conquest control bytes"
     );
     for sql in schema_rows {
         assert!(
@@ -498,7 +533,7 @@ fn sqlite_store_rejects_legacy_byte_table_schema() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 13,
+                expected: 14,
                 found: None
             }
         ),
@@ -523,7 +558,7 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
              int_value INTEGER NOT NULL
          );
          INSERT INTO campaign_metadata(key, int_value)
-         VALUES ('runtime_schema_version', 12);",
+         VALUES ('runtime_schema_version', 13);",
     )
     .expect("seed prior runtime schema");
     drop(conn);
@@ -534,8 +569,8 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 13,
-                found: Some(12)
+                expected: 14,
+                found: Some(13)
             }
         ),
         "unexpected error: {err}"
