@@ -8,7 +8,7 @@ use nc_data::{
 
 use super::rules::{
     BASE_STRENGTH, BASE_VISIBILITY, FleetFacts, Mode, Situation, Verdict, base_factor,
-    decide_vs_base, decide_vs_fleet, fleet_posture, fleet_visibility, order, roll,
+    decide_vs_base, decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, roll,
     sighting_percent, strength,
 };
 use super::{Awareness, Unit, UnitKind, layer_of};
@@ -16,10 +16,14 @@ use crate::CoreGameData;
 use crate::maint::combat::{
     AssaultEvents, BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter,
     mission_kind_for_order, nearest_owned_planet, push_fleet_contact, push_no_engagement,
-    resolve_strike,
+    resolve_strike, retreat_fleet,
 };
 use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
+
+/// Set in a battle key's tick byte for the orbital gate's battle, which
+/// may follow the same unit's encounter battle in the same tick.
+const ORBITAL_GATE_BATTLE: u64 = 0x80;
 
 pub(super) struct Year<'a> {
     pub units: Vec<Unit>,
@@ -72,16 +76,109 @@ impl Year<'_> {
         Ok(())
     }
 
-    /// Fleet unit `unit`'s strike test passed: it attacks its target world
-    /// now, as both stand this tick. A fleet the batteries destroy leaves
-    /// play, and a captured world's new owner is what later ticks see.
+    /// Fleet unit `unit`'s strike test passed: once it holds the orbit, it
+    /// attacks its target world now, as both stand this tick. A fleet the
+    /// batteries destroy leaves play, and a captured world's new owner is
+    /// what later ticks see.
     fn strike(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) {
+        if !self.holds_orbit(game_data, unit, tick) {
+            return;
+        }
         let fleet_idx = self.units[unit].index;
         let mut events = resolve_strike(game_data, self.campaign_seed, fleet_idx);
         events.stamp(tick);
         self.assault_events.append(events);
         self.movement.reload(fleet_idx);
         self.units[unit].active = game_data.fleets.records[fleet_idx].has_any_force();
+    }
+
+    /// The orbital gate, classic's starbase gate (`110a:67bd`) extended to
+    /// the owner's fleets: before fleet unit `unit` assaults, everything the
+    /// world's owner has in orbit fights it, sighted or not. That is his
+    /// starbases there and his fleets there with warships, less any fleet
+    /// already leaving on Seek Home (beaten earlier, or recalled). ROE
+    /// decides as for a base blocking the path: a fleet unwilling to fight
+    /// them aborts to Seek Home without a shot. Only the holder of the field
+    /// assaults; a beaten attacker has retreated with its battle.
+    fn holds_orbit(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) -> bool {
+        let Unit {
+            index: fleet_idx,
+            owner,
+            sector,
+            ..
+        } = self.units[unit];
+        let Some(world_owner) = world_owner_at(game_data, sector)
+            .filter(|world_owner| ![0, owner].contains(world_owner))
+        else {
+            return true;
+        };
+        let defenders: Vec<usize> = (0..self.units.len())
+            .filter(|&other| {
+                let u = self.units[other];
+                u.active
+                    && u.owner == world_owner
+                    && u.sector == sector
+                    && u.layer == 1
+                    && match u.kind {
+                        UnitKind::Base => true,
+                        UnitKind::Fleet => {
+                            let fleet = &game_data.fleets.records[u.index];
+                            (fleet.destroyer_count() > 0
+                                || fleet.cruiser_count() > 0
+                                || fleet.battleship_count() > 0)
+                                && !(fleet.standing_order_kind() == Order::SeekHome
+                                    && fleet.current_speed() > 0)
+                        }
+                    }
+            })
+            .collect();
+        if defenders.is_empty() {
+            return true;
+        }
+        let order = game_data.fleets.records[fleet_idx].standing_order_kind();
+        let facts = self.fleet_facts(game_data, fleet_idx);
+        let defence = defenders
+            .iter()
+            .map(|&defender| match self.units[defender].kind {
+                UnitKind::Base => BASE_STRENGTH,
+                UnitKind::Fleet => {
+                    strength(&self.fleet_facts(game_data, self.units[defender].index))
+                }
+            })
+            .fold(0u16, u16::wrapping_add);
+        if !roe_permits(facts.roe, strength(&facts), defence) {
+            retreat_fleet(game_data, fleet_idx);
+            self.movement.reload(fleet_idx);
+            self.push_orbit_blocked_abort(
+                game_data,
+                fleet_idx,
+                mission_kind_for_order(Some(order)),
+                tick,
+            );
+            return false;
+        }
+        let attacker = BattleSide {
+            empire: owner,
+            fleets: vec![fleet_idx],
+            bases: Vec::new(),
+        };
+        let mut defender = BattleSide {
+            empire: world_owner,
+            ..BattleSide::default()
+        };
+        self.awareness.raise(world_owner, unit, 3);
+        for &defending in &defenders {
+            self.awareness.raise(owner, defending, 3);
+            let u = self.units[defending];
+            match u.kind {
+                UnitKind::Fleet => defender.fleets.push(u.index),
+                UnitKind::Base => defender.bases.push(u.index),
+            }
+        }
+        let battle_key = ORBITAL_GATE_BATTLE | u64::from(tick) | (unit as u64) << 8;
+        self.fight(game_data, tick, battle_key, sector, &attacker, &defender);
+        let fleet = &game_data.fleets.records[fleet_idx];
+        fleet.has_any_force() && fleet.standing_order_kind() == order
     }
 
     /// Move fleet unit `unit`'s table entry to where its record now is; a
@@ -484,13 +581,28 @@ impl Year<'_> {
             }
         }
         let battle_key = u64::from(tick) | (observer as u64) << 8;
+        self.fight(game_data, tick, battle_key, o.sector, &attacker, &defender);
+    }
+
+    /// Fight `attacker` against `defender` at `sector` and put the result on
+    /// the books: the events dated to the tick, the fighters' records
+    /// reloaded, and destroyed units out of play.
+    fn fight(
+        &mut self,
+        game_data: &mut CoreGameData,
+        tick: u8,
+        battle_key: u64,
+        sector: [u8; 2],
+        attacker: &BattleSide,
+        defender: &BattleSide,
+    ) {
         let mut events = fight_encounter(
             game_data,
             self.campaign_seed,
             battle_key,
-            o.sector,
-            &attacker,
-            &defender,
+            sector,
+            attacker,
+            defender,
         );
         stamp_battle_events(&mut events, tick);
         self.events.append(events);
@@ -545,26 +657,41 @@ impl Year<'_> {
                 fleet.set_current_speed(0);
             }
         }
-        if let (Some(kind), Some(tick)) = (kind, report) {
-            let planet_idx = game_data
+        if let Some(tick) = report {
+            self.push_orbit_blocked_abort(game_data, fleet_idx, kind, tick);
+        }
+    }
+
+    /// Report, in tick `tick`, that fleet `fleet_idx` aborted its mission
+    /// before the force in its way. Nothing is reported for an order that
+    /// is not a mission.
+    fn push_orbit_blocked_abort(
+        &mut self,
+        game_data: &CoreGameData,
+        fleet_idx: usize,
+        kind: Option<Mission>,
+        tick: u8,
+    ) {
+        let Some(kind) = kind else {
+            return;
+        };
+        let fleet = &game_data.fleets.records[fleet_idx];
+        let coords = fleet.current_location_coords_raw();
+        self.events.mission_events.push(MissionEvent {
+            fleet_idx,
+            owner_empire_raw: fleet.owner_empire_raw(),
+            kind,
+            outcome: MissionOutcome::Aborted,
+            abort_reason: Some(MissionAbortReason::OrbitBlocked),
+            planet_idx: game_data
                 .planets
                 .records
                 .iter()
-                .position(|planet| planet.coords_raw() == coords);
-            self.events.mission_events.push(MissionEvent {
-                fleet_idx,
-                owner_empire_raw: owner,
-                kind,
-                outcome: MissionOutcome::Aborted,
-                abort_reason: Some(MissionAbortReason::OrbitBlocked),
-                planet_idx,
-                location_coords: Some(coords),
-                target_coords: Some(
-                    game_data.fleets.records[fleet_idx].standing_order_target_coords_raw(),
-                ),
-                stardate_week: Some(tick),
-            });
-        }
+                .position(|planet| planet.coords_raw() == coords),
+            location_coords: Some(coords),
+            target_coords: Some(fleet.standing_order_target_coords_raw()),
+            stardate_week: Some(tick),
+        });
     }
 }
 

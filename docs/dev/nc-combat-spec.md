@@ -286,14 +286,29 @@ Nothing is pooled across fleets or ticks. A later attacker meets what the
 earlier one left, including a new owner, so a world can change hands more
 than once in a year.
 
-A fleet without combat ships finds the orbit blocked and aborts to Hold.
-Blitz has one narrow exception: a fleet of loaded `TT*` may still execute a
-Blitz without escorting combat ships. That transport-only force does not
-generate orbital firepower and may proceed only if no starbase of the
-world's owner holds orbit. Enemy non-combat support fleets alone do not
-block the attempt. This check is a comparison, not a battle: the owner's
-starbase and fleets in orbit fight an attacker only through the encounter
-loop.
+Before the strike comes the orbital gate. Whatever the world's owner has in
+orbit fights the attacker in the strike tick, whether or not either has
+sighted the other: his starbases there and his fleets there with warships,
+less any fleet already leaving on Seek Home. It is the ordinary fleet battle
+above, with the attacker as the observer side and the owner's units as the
+target side, so losses, re-rating, retreat, and the awareness both sides
+gain (3, fought) are the battle's. The attacker's ROE decides first, as it
+does for a starbase blocking its path: a fleet unwilling to take on the
+owner's combined strength aborts to Seek Home without a shot. Only the
+holder of the field strikes, in the same tick. A beaten attacker has
+retreated with its battle, or died in it, and its mission report says the
+orbital defence repelled it. A second attacker of the same empire finds the
+orbit the first cleared empty and strikes without refighting anyone; rival
+attackers of different empires strike in the year's unit order, each
+against whatever holds the orbit when its turn comes. A transport-only
+Blitz brings no warships and can fight nobody: it lands only when the owner
+has nothing in orbit, and a fleet of his without warships does not stop it.
+
+Classic runs this gate for the owner's starbase alone (`110a:67bd`),
+sighted or not, and leaves his fleets to the encounter loop. NC extends the
+mandatory fight to the owner's fleets in orbit. That is an NC policy
+choice: a defended orbit cannot be assaulted past by an attacker that never
+rolled a sighting.
 
 Two earlier rules of this spec were NC policy, not classic behaviour, and
 are withdrawn: one assault class per planet per turn, Blitz before Invade

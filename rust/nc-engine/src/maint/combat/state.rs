@@ -197,17 +197,6 @@ fn task_force_role(
     }
 }
 
-pub(super) fn starbase_count_at(game_data: &CoreGameData, coords: [u8; 2], owner: u8) -> u32 {
-    game_data
-        .bases
-        .records
-        .iter()
-        .filter(|b| {
-            b.coords_raw() == coords && b.owner_empire_raw() == owner && b.base_id_raw() != 0
-        })
-        .count() as u32
-}
-
 pub(super) fn new_task_force(
     game_data: &CoreGameData,
     empire: u8,

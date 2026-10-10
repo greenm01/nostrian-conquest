@@ -76,7 +76,7 @@ pub(crate) fn abort_mission_to_seek_home_or_hold(
 
 /// Send one fleet home from the battle: Seek Home to its nearest owned
 /// world, or hold in place when its empire owns none.
-pub(super) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
+pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
     let retreat_target = game_data.nearest_owned_world(fleet_idx + 1, false);
     abort_mission_to_seek_home_or_hold(&mut game_data.fleets.records[fleet_idx], retreat_target);
 }

@@ -914,6 +914,10 @@ pub(crate) fn fight_encounter(
     let tt_only_blitz_followthrough = (dominant_empire.is_none())
         .then(|| tt_only_blitz_followthrough_empire(game_data, &task_forces, &pre_retreat_orders))
         .flatten();
+    // The world's owner held its own orbit: a beaten side was repelled by
+    // the orbital defence.
+    let repelled_from_orbit =
+        dominant_empire.is_some_and(|dominant| dominant != 0 && planet_owner == Some(dominant));
 
     for tf in &task_forces {
         if tt_only_blitz_followthrough.is_some() {
@@ -935,7 +939,8 @@ pub(crate) fn fight_encounter(
                 &tf.fleet_indices,
                 &pre_retreat_orders,
                 coords,
-                blocked_tt_only_blitz.then_some(MissionAbortReason::OrbitBlocked),
+                (blocked_tt_only_blitz || repelled_from_orbit)
+                    .then_some(MissionAbortReason::OrbitBlocked),
             );
         }
     }
