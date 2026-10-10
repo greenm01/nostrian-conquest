@@ -81,11 +81,11 @@ impl Read for RawStdin {
         use std::os::fd::AsRawFd;
 
         unsafe extern "C" {
-            fn read(fd: i32, buf: *mut u8, count: usize) -> isize;
+            fn read(fd: i32, buf: *mut std::ffi::c_void, count: usize) -> isize;
         }
 
         let fd = io::stdin().as_raw_fd();
-        let ret = unsafe { read(fd, buf.as_mut_ptr(), buf.len()) };
+        let ret = unsafe { read(fd, buf.as_mut_ptr().cast(), buf.len()) };
         if ret < 0 {
             Err(io::Error::last_os_error())
         } else {
