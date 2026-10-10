@@ -210,10 +210,8 @@ matches classic's odds, not its random sequence.
   an enemy combat fleet in orbit blocks it. Classic fires no cover fire: the
   transports descend and withdraw under fire from every battery, and only
   the owner's starbase blocks it.
-- Arrival. NC requires orbital supremacy, runs one assault class per planet
-  per turn (Blitz, then Invade, then Bombard), and lets a world change hands
-  at most once a turn. Classic resolves each fleet in its own dispatch slot,
-  and a world can change hands more than once in a tick.
+- Arrival. Both resolve each fleet in its own dispatch slot, in the tick it
+  reaches orbit, so a world can change hands more than once in a year.
 - The orbital gate. Classic makes the attacker beat the owner's starbase in
   the strike tick before it touches the world, and t054 gives NC the same
   requirement: a fight against the owner's starbase and layer-1 defenders

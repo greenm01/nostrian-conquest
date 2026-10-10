@@ -123,10 +123,11 @@ Runtime State + Maintenance Context
 |     then economy             |
 | 4d. the year's ticks:        |
 |     movement, encounters,    |
-|     battles, colonization    |
+|     battles, strikes,        |
+|     colonization             |
 | 4e. autopilot/rogue orders,  |
-|     assaults, player         |
-|     recompute, campaign      |
+|     player recompute,        |
+|     campaign                 |
 | 4f. conquest/header          |
 |     normalization            |
 +------------------------------+
@@ -187,6 +188,8 @@ Determine fleet visit order (sort-by-random-priority; Rust may use slot order)
   +--> per week: process each fleet in visit order
   |    +--> read fleet, timing-window check
   |    +--> resolve fleet-vs-fleet combat and record timed outcomes
+  |    +--> resolve the fleet's planetary strike when its test passes
+  |         (bombard / invade / blitz / aftermath)
   |    +--> update weekly fleet event state
   |    +--> write fleet, remove destroyed/captured
   |
@@ -199,10 +202,7 @@ Post-loop world/player update region:
   +--> player planet-count / production recompute
   |
   v
-Producer/mutator + assault/campaign passes
-  |
-  +--> hostile world-resolution family
-  |    (bombard / invade / blitz / aftermath)
+Producer/mutator + campaign passes
   |
   v
 Derived-state / header updates
@@ -242,12 +242,13 @@ that exists today.
    - apply autopilot fleet recalls
    - run the planet pass: build completion, then planet economy
    - intercept fleets ordered away from blockaded worlds
-   - run the year's ticks: movement, encounters and fleet battles
+   - run the year's ticks: movement, encounters, fleet battles, and
+     planetary strikes
    - merge mission fleets
    - apply colonization
    - run autopilot/rogue orders and player recompute
-   - apply campaign transitions, starbase flags, ready assaults, join-host updates,
-     and conquest-header normalization
+   - apply campaign transitions, starbase flags, join-host updates, and
+     conquest-header normalization
 5. assemble and canonicalize the event pool
 6. build report/output projections and apply delivery-side flags
 7. flush outputs, clean up, and end the tick
@@ -375,8 +376,8 @@ Validated Durable State
     |
     v
 +------------------------------+
-| 4g. Campaign / assault /     |
-|     conquest normalization   |
+| 4g. Campaign / conquest      |
+|     normalization            |
 +------------------------------+
     |
     v
@@ -429,14 +430,14 @@ The current best implementation shape for step `4` is:
     then intercept fleets ordered away from blockaded worlds
 4e. Planet pass: build completion (ships and starbases into the stardock,
     armies and batteries onto the planet), then planet economy; then the
-    year's ticks (movement, encounters, battles)
+    year's ticks (movement, encounters, battles, and planetary strikes:
+    bombard / invade / blitz in the tick the fleet reaches orbit)
 4f. Mission-fleet merging and local fleet battles
 4g. Colonization
 4h. World/player update region:
     - autopilot / rogue orders (tax, commissioning, build commands)
     - per-player planet-count / production recomputation
-4i. Producer/mutator + hostile world-resolution + assault/campaign region
-    - bombard / invade / blitz / target-world aftermath family
+4i. Producer/mutator + campaign region
 4j. Join-host updates and conquest-header normalization
 ```
 
@@ -607,9 +608,9 @@ Replayable bombard/invade probes from the same generated target world show:
 
 Implementation consequence:
 
-- do not route these world effects through the weekly fleet-combat box
-- instead, dispatch them in the later hostile world-resolution region by
-  ready mission kind
+- dispatch these world effects by mission kind in the tick the fleet's
+  strike test passes, inside the year's ticks and not in a later pass,
+  so each reads the fleet and the world as they stand in that tick
 - keep the damage mechanics/report phrasing inside mission-specific helpers,
   but keep the phase boundary itself explicit and shared
 
@@ -633,7 +634,7 @@ run_turn(directory):
   refresh_retargets_and_autopilot_recalls(state, events)
   run_build_completion(state)
   run_planet_economy(state)
-  run_year_ticks(state, events)        # movement, encounters, battles
+  run_year_ticks(state, events)        # movement, encounters, battles, strikes
   merge_mission_fleets(state, events)
   apply_colonization(state, events)
 
@@ -642,7 +643,6 @@ run_turn(directory):
 
   run_campaign_state_updates(state, snapshots, events)
   update_player_starbase_flags(state)
-  resolve_ready_planetary_assaults(state, snapshots, events)
   apply_join_host_updates(state, events)
   normalize_conquest_headers(state)
 
@@ -674,25 +674,25 @@ snapshot drifts from the companion combat, timing, or economics specs.
 7. run the planet pass: settle which worlds take the starbase growth bonus,
    complete builds (ships and starbases into the stardock, armies and
    batteries onto the planet), then run the planet economy
-8. run the year's ticks: movement, encounters and fleet battles
+8. run the year's ticks: movement, encounters, fleet battles, and planetary
+   strikes
    - if hostile action strips the ship class that makes the mission possible,
      abort the mission immediately
    - invalidated mission fleets seek home when possible, otherwise hold in
      place
+   - a Bombard / Invade / Blitz fleet strikes in the tick its strike test
+     passes, with the ships and against the world of that tick
 9. process mission-fleet merging and join-host updates
 10. apply colonization
    - only from current post-combat fleet state; do not execute stale
      pre-combat colonization arrivals after ETAC loss or forced retreat
 11. run autopilot / rogue orders (tax, commissioning, build commands)
 12. update player starbase flags
-13. resolve ready planetary assaults
-   - revalidate assault fleets against current post-combat state before
-     bombard / invade / blitz execution; do not execute stale ready snapshots
-14. recompute per-player planet count / production totals
-15. apply campaign-state transitions and related player/fleet consequences
-16. normalize conquest header fields
-17. finalize pending observations and on-station scout reports
-18. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
+13. recompute per-player planet count / production totals
+14. apply campaign-state transitions and related player/fleet consequences
+15. normalize conquest header fields
+16. finalize pending observations and on-station scout reports
+17. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
 
 That is the ordering the Rust diagrams should describe when they are trying to
 show the current driver, not just the recovered classic outer boundaries.

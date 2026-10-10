@@ -1,14 +1,15 @@
 //! Classic ECMAINT's year: 52 ticks, and in each tick every fleet and
 //! starbase in a random order moves, scans the units sharing its sector and
 //! depth layer, and runs its order's arrival test
-//! (`docs/dev/ec-encounter-spec.md`).
+//! (`docs/dev/ec-encounter-spec.md`). A hostile order whose strike test
+//! passes attacks its world in that tick.
 
 mod handler;
 pub mod rules;
 
 use nc_data::{DiplomacyOverride, GameRng, RNG_TAG_ENCOUNTER, Real48};
 
-use super::combat::FleetBattlePhaseEvents;
+use super::combat::{AssaultEvents, FleetBattlePhaseEvents};
 use super::movement::YearMovement;
 use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::navigation::motion::TICKS_PER_YEAR;
@@ -105,6 +106,8 @@ pub(super) struct YearOutcome {
     pub movement_remap: FleetRemovalRemapInfo,
     /// Sightings, decisions, and battles.
     pub encounter_events: FleetBattlePhaseEvents,
+    /// Planetary strikes, each in its tick.
+    pub assault_events: AssaultEvents,
 }
 
 /// Run the year's 52 ticks (`0824:1004`).
@@ -134,6 +137,7 @@ pub(super) fn run_year(
         diplomacy_overrides,
         movement: YearMovement::new(game_data, visible_hazards_by_empire),
         events: FleetBattlePhaseEvents::default(),
+        assault_events: AssaultEvents::default(),
     };
     for tick in 1..=TICKS_PER_YEAR {
         for &unit in &order {
@@ -145,5 +149,6 @@ pub(super) fn run_year(
         movement_events,
         movement_remap,
         encounter_events: year.events,
+        assault_events: year.assault_events,
     })
 }
