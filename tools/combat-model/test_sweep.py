@@ -112,6 +112,13 @@ class CurrentRulesMatchTheReviewModel(unittest.TestCase):
 
 
 class CandidateSemantics(unittest.TestCase):
+    def test_mid_rate_scales_eots_rolls_without_changing_their_relative_spread(self):
+        for name in ('mid-carry', 'mid-carry-half-ds'):
+            m = model(name, **{'units.CA.AS': 100})
+            hits = [m.volley(force(CA=1), 100, roll)[0] for roll in range(10)]
+            self.assertEqual(hits, [18, 18, 18, 36, 36, 36, 72, 72, 72, 72])
+            self.assertEqual(sum(hits) / 10, 45)
+
     def test_vbam_rate_pair_changes_damage_rate_and_finishing_step_independently(self):
         full = model('vbam-full-ds', **{'units.CA.AS': 100})
         half = model('vbam-half-ds', **{'units.CA.AS': 100})

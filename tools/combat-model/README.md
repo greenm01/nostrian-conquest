@@ -22,7 +22,7 @@ the review's reproduction tool and historical evidence.
 - `rules.py`: the unit table (AS, DS, build cost, fire pool, combat line)
   and the rule sets as plain dicts: `current`, `flat-discard`,
   `flat-residual`, `flat-carry`, `flat-half-ds`, `vbam-full-ds`,
-  `vbam-half-ds`; hull variants; `--set`
+  `vbam-half-ds`, and the decision-1 carry combinations below; hull variants; `--set`
   overrides.
 - `fleet_model.py`: the rule-driven battle. One step function returns
   branches with probabilities, so `solve` enumerates a battle exactly,
@@ -162,6 +162,14 @@ The VBAM-rate pair uses its CER distribution while keeping the other NC
 candidate rules, including DD/base execution and budgeted critical focus.
 This tests damage rate and durability together; it does not reproduce all
 VBAM combat rules. These are experiments, not selected NC rules.
+
+The [decision-1 consultation](../../docs/notes/investigations/qjev5wpq-review-of-the-t055-combat-sweep-semantics.md#t058)
+adds `flat-carry-half-ds`, `mid-carry`, `mid-carry-half-ds`, and
+`vbam-carry-half-ds`. The intermediate table scales every EotS row by 0.72:
+d10 0–2 gives 0.18, 3–5 gives 0.36, and 6–9 gives 0.72, for mean 0.45.
+Its relative spread is unchanged. The VBAM-rate carry/half-DS control
+checks whether earlier low-rate results depended on discarding remainders.
+All four keep the other flat candidate rules and the existing hull tables.
 
 ```sh
 python3 -I -B tools/combat-model/sweep.py --rules flat-discard,flat-half-ds,vbam-full-ds,vbam-half-ds --units baseline --cases ca,convoy --no-ground

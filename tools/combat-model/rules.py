@@ -33,6 +33,8 @@ CRT_X4 = [
 # EotS air-naval table in quarters: 0-2 give 0.25, 3-5 give 0.50, 6-9 give
 # 1.00; mean 0.625 (Codex's P/X experiment).
 EOTS_X4 = [1, 1, 1, 2, 2, 2, 4, 4, 4, 4]
+# Scale every EotS row by 0.72: same relative spread, mean 0.45.
+MID_X50 = [9, 9, 9, 18, 18, 18, 36, 36, 36, 36]
 # VBAM's CER in tenths; mean 0.30 (the synthesis's literal reading).
 VBAM_X10 = [1, 2, 2, 3, 3, 3, 3, 4, 4, 5]
 
@@ -120,6 +122,12 @@ RULESETS = {
     'flat-half-ds': variant(FLAT, 'flat-half-ds', crippled_ds='half'),
     'vbam-full-ds': VBAM_FLAT,
     'vbam-half-ds': variant(VBAM_FLAT, 'vbam-half-ds', crippled_ds='half'),
+    'flat-carry-half-ds': variant(FLAT, 'flat-carry-half-ds', remainder='carry', crippled_ds='half'),
+    'mid-carry': variant(FLAT, 'mid-carry', remainder='carry',
+                         effect=dict(kind='flat', rows=MID_X50, unit=50)),
+    'mid-carry-half-ds': variant(FLAT, 'mid-carry-half-ds', remainder='carry', crippled_ds='half',
+                                 effect=dict(kind='flat', rows=MID_X50, unit=50)),
+    'vbam-carry-half-ds': variant(VBAM_FLAT, 'vbam-carry-half-ds', remainder='carry', crippled_ds='half'),
 }
 
 # Hull variants: unit-table overrides by name.

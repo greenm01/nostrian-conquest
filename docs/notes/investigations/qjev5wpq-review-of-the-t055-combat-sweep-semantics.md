@@ -7,7 +7,7 @@ tags: [investigation, combat, balance, simulation]
 ---
 # Review of the t055 combat sweep semantics
 
-The repaired sweep strengthens the case for flat effectiveness and usable withdrawal. It does not select a final rule set. Independent verification after t055b reproduces the regenerated tables and confirms the original solver-horizon defect is fixed. Treat carry as temporary hit-budget accumulation, not persistent ship damage. Separate the chance of pursuit from whether a screen fails, and give unarmed survivors an explicit disengagement rule. Keep residual damage as a comparison, not the default. Judge combat by surviving transports, damaged ships, repair bills, and escape opportunities as well as who wins the field.
+The repaired sweep strengthens the case for flat effectiveness and usable withdrawal. It does not select a final rule set. The later [t058 consultation](#t058) gives Claude and Codex's joint proposal for decision 1: EotS mean 0.625, temporary carry, and full DS to finish a crippled ship, subject to the owner's approval. Independent verification after t055b reproduces the regenerated tables and confirms the original solver-horizon defect is fixed. Treat carry as temporary hit-budget accumulation, not persistent ship damage. Separate the chance of pursuit from whether a screen fails, and give unarmed survivors an explicit disengagement rule. Keep residual damage as a comparison, not the default. Judge combat by surviving transports, damaged ships, repair bills, and escape opportunities as well as who wins the field.
 
 The practical findings, in brief:
 
@@ -182,3 +182,47 @@ The combined lower-rate/half-DS candidate is substantially better than copying t
 Half finishing DS reduces a nominal ship's two-step damage budget by about 25%, while changing 0.625 to 0.300 cuts mean raw fire by 52%. Slower fights are therefore unsurprising. These are internal combat exchanges, not extra game years or player orders. The lower-rate candidate makes this tested withdrawal much safer and gives a modest cruiser advantage more reliable victory. Whether those tradeoffs improve excitement needs mission and campaign tests, not a judgment based only on round count.
 
 Validation: all 33 Python tests pass. Regenerated 140 fleet records across seven presets and the existing ground cases. The previous 100 fleet records match `0688ee8e` exactly after excluding runtime and renaming the survival fields; the ground records and all nine comparisons against retained engine output are unchanged. Markdown matches the JSON renderer. The original before-fix JSON remains byte-identical to `ae0c7364`. No cargo or new engine/oracle run was performed. These results close the tooling follow-up, not the combat-rule decision.
+
+### t058
+
+The owner requested a joint recommendation on decision 1: resolution table, remainder rule, and crippled finishing cost. The additional controlled experiments compare carry with full or half finishing DS at EotS mean 0.625 and intermediate mean 0.45. A VBAM-rate carry/half-DS control separates its lower rate from the discarded remainders in t057. No engine rules change, and hull values remain a separate decision.
+
+The intermediate table scales each EotS result by 0.72: d10 rolls 0–2 yield 18% effectiveness, 3–5 yield 36%, and 6–9 yield 72%. Its mean is 45%. This preserves relative spread while changing the rate; it is a calibration control, not a published source rule. The VBAM-rate control retains its own CER distribution. Comparing the two source tables therefore changes both rate and spread.
+
+Claude and Codex agree on the following carry contract. Carry is unused incoming hit budget, held separately for each target side and fire pool during one `fight_encounter`, including its withdrawal/pursuit exchange. Debit it when it buys a damage step. Clear the remainder when that encounter ends for any reason, including the cap. A new encounter starts at zero, even against the same empire later in the same tick or year. Carry neither creates nor reverses completed cripple or destruction steps; persistent hull damage belongs to decision 3.
+
+If a future joined side loses one participating fleet to withdrawal, its remaining side keeps the budget. Do not duplicate the bank, send it away with that fleet, or accumulate it across an empire or layer. Today's battle withdraws a side together; partial participation needs its own implementation tests. Fleet splitting into separate encounters cannot combine sub-threshold hits. Withdrawal can forfeit the opponent's unused hits. These are intended consequences, but they must appear in the manual. A simple description is: “Hits too small to damage a ship stay in that fire pool until the next exchange. Unspent hits disappear when the battle ends.” Reports should show carried hits and completed damage separately.
+
+The engine resolves all exchanges synchronously inside one encounter. Longer fights do not consume more movement ticks or years. They change how decisive one encounter is and how often automatic ROE gets a decision point. Claude withdrew the calendar-time objection to the lower rate. We also agree that the earlier discard-based VBAM rows cannot establish how VBAM-rate carry behaves. The convoy bundles ROE, pursuit, exposure and zero-AS withdrawal assumptions; its survival figures are diagnostic, not isolated evidence for decision 1.
+
+The 64-round reset can still stop an extremely weak force before it buys a step. Carry removes per-exchange discard thresholds; it does not guarantee every force can kill every target before defeat or the cap. A displayed 0% win rate alone is not evidence of immunity: mutual destruction and damage short of victory also matter. The existing engine's field-holder selection at the guardrail is a separate issue from clearing the budget. This recommendation does not authorize deleting survivors or selecting a new field-holder rule.
+
+Our joint recommendation is the EotS 25/50/100% effectiveness table (mean 0.625), temporary carry under that contract, and full DS to finish a crippled ship. Claude confirmed all three after reviewing the new controls. This is a proposal for the owner to accept or reject, not an adopted rule or ADR. DD 10/8 remains a separate decision-7 playtest. Decision 1 does not silently select the presets' other critical, pursuit, screening, participation or persistence rules.
+
+The attraction is decisive combat with readable stakes. Each damage step costs the printed DS. Unspent hits can buy a step later in the same battle, without a new residual lottery. The smaller force still has a chance, while prepared superiority remains valuable. Full finishing DS also leaves damaged ships more durable than the half-DS alternative. That supports recovery and later repair choices if the owner accepts lasting damage separately.
+
+The 0.45/half-DS combination is credible, not defective. Its even-fight length and baseline DD odds resemble the recommendation. We prefer the simpler 25/50/100% table and full printed DS because the alternative adds a finishing exception and less memorable percentages without a clear role gain in these tests. Source fidelity alone would not justify rejecting a better result. The 0.45/full-DS combination extends fights and weakens DD further. The VBAM-rate carry/half-DS control improves DD over discard but still leaves baseline DD weak at equal cost. It also makes numerical superiority more reliable. Its roughly 77% result at 11 versus 10 is a strong advantage, not near-certainty; near-certainty appears at 15 versus 10. These are reasons to prefer the selected baseline with current hulls, not proof that VBAM-rate combat cannot work with other unit values.
+
+All rows below use carry. Brackets give 95% intervals from 10,000 trials; win rates without brackets are exact. Equal-fight lengths are sampled except the 0.625/half row. Full tables, other matchups, outcomes and losses are in the [regenerated sweep](../../../tools/combat-model/nc_sweep_results.md).
+
+| Mean / finishing DS | Equal 10-CA exchanges | 11 CA versus 10 | 15 CA versus 10 | 30 DD versus 10 CA | Same, DD DS 8 |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| 0.625 / full | 4.79 | 67.09% [66.16, 68.00] | 97.30% [96.96, 97.60] | 7.12% | 27.84% |
+| 0.625 / half | 3.10 | 64.54% | 94.64% | 11.66% | 35.07% |
+| 0.450 / full | 6.84 | 69.93% [69.02, 70.82] | 98.94% [98.72, 99.12] | 3.34% | 23.14% [22.32, 23.98] |
+| 0.450 / half | 4.43 | 67.22% [66.29, 68.13] | 97.32% [96.98, 97.62] | 7.35% | 33.59% |
+| 0.300 / half | 7.36 | 77.04% [76.21, 77.85] | 99.92% [99.84, 99.96] | 0.94% [0.77, 1.15] | 25.00% [24.16, 25.86] |
+
+The DD DS 8 control matters: at VBAM rate with carry/half DS, its equal-cost cruiser win rate rises to 25.0%. Thus the lower rate can support a useful DD role after tuning. We still prefer selecting the resolution baseline first and evaluating DD durability through decision 7, including mixed fleets and missions. These pure-fleet results do not establish the best hull balance.
+
+| Mean / finishing DS | 3 CA versus 1 BB, win | Convoy TT surviving | Convoy keeps at least half |
+| --- | ---: | ---: | ---: | ---: |
+| 0.625 / full | 19.97% | 3.993 | 43.8% |
+| 0.625 / half | 22.46% | 3.252 | 31.8% |
+| 0.450 / full | 15.46% | 8.042 | 80.2% |
+| 0.450 / half | 21.74% | 7.131 | 74.1% |
+| 0.300 / half | 9.11% | 9.899 | 100.0% |
+
+Convoy columns retain the coupled candidate assumptions described above. Surviving ships are not delivered cargo. Do not treat their improvement at lower rates as a resolution-only recommendation.
+
+Validation: all 34 Python tests pass. Evaluated 80 new fleet rows at seed 20261010, 10,000 trials where enumeration exceeded 100,000 state/round pairs. Retained the 140 prior rows only after checking their rule sets and unit tables were unchanged. The resulting 220 records have unique keys and outcome probabilities summing to one. The original 140 rows, ground cases, saved engine comparisons, `review_t055.py`, and before-fix JSON remain unchanged from `833638c5`. Generated Markdown reproduces the JSON renderer exactly. The edited note has no missing file-link targets; zk still reports the existing non-Markdown-target links. No cargo, Rust changes, or new engine/oracle run.
