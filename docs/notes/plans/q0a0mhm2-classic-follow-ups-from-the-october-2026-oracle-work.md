@@ -211,4 +211,5 @@ player, with the tax rate as the one control; useful mechanisms may run
 under the hood. The user designed ec4x's economy. No investment or research
 budgets and no new economic orders as a first step. Codex's analysis of
 classic EC against VBAM and ec4x on that basis is an input to this task,
-kept as an investigation note.
+kept in the [economy investigation](../investigations/tkce84f0-a-simple-nc-economy-informed-by-classic-ec-vbam-and-ec4x.md),
+which links the model, campaign results, recommendations, and validation limits.
