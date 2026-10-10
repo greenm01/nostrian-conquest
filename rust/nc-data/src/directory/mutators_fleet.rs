@@ -77,6 +77,16 @@ impl CoreGameData {
                 requested: local_slot,
             });
         }
+        // ECGAME's renumbering (`0x15b35`) points the empire's Join orders
+        // that name the old number at the new one.
+        let old_slot = fleet.local_slot_word_raw();
+        for joiner in self.fleets.records.iter_mut().filter(|joiner| {
+            joiner.owner_empire_raw() == owner_empire
+                && joiner.standing_order_kind() == Order::JoinAnotherFleet
+                && joiner.join_host_fleet_id_raw() == old_slot
+        }) {
+            joiner.set_join_host_fleet_id_raw(local_slot);
+        }
         self.fleets.records[fleet_index_1_based - 1].set_local_slot_word_raw(local_slot);
         Ok(())
     }
@@ -136,8 +146,8 @@ impl CoreGameData {
         record.set_standing_order_target_coords_raw(target);
         // ECGAME writes 0x22 = world-target flag (0 for sector-targeted orders,
         // 1 otherwise) and the 0x23 word = mission id (starbase id for Guard
-        // Starbase, host fleet id for Join); explicit aux bytes override 0x22
-        // and 0x23 byte for byte, and the high byte 0x24 is zero.
+        // Starbase, host fleet number for Join); explicit aux bytes override
+        // 0x22 and 0x23 byte for byte, and the high byte 0x24 is zero.
         let mut mission_aux = [u8::from(Order::from_raw(order_code).targets_world()), 0];
         if let Some(value) = aux0 {
             mission_aux[0] = value;
@@ -273,13 +283,14 @@ impl CoreGameData {
             }
             Order::JoinAnotherFleet => {
                 let _ = aux0;
-                let host_id = aux1
+                let host_number = aux1
                     .map(u16::from)
                     .unwrap_or_else(|| fleet.join_host_fleet_id_raw());
-                if host_id == 0
-                    || host_id == fleet.fleet_id_word_raw()
+                if host_number == 0
+                    || host_number == fleet.local_slot_word_raw()
                     || !self.fleets.records.iter().any(|host| {
-                        host.fleet_id_word_raw() == host_id && host.owner_empire_raw() == owner
+                        host.owner_empire_raw() == owner
+                            && host.local_slot_word_raw() == host_number
                     })
                 {
                     return Err(FleetOrderValidationError::InvalidJoinHost);
@@ -366,7 +377,9 @@ impl CoreGameData {
         }
 
         let host_coords = host.current_location_coords_raw();
-        let host_fleet_id = host.fleet_id_word_raw();
+        // ECGAME stores the host's fleet number (its 0x00 word), which is
+        // what ECMAINT's merge matches against; the record id is not stored.
+        let host_fleet_number = host.local_slot_word_raw();
         let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
@@ -375,7 +388,7 @@ impl CoreGameData {
         fleet.set_current_speed(fleet.max_speed());
         fleet.set_standing_order_kind(Order::JoinAnotherFleet);
         fleet.set_standing_order_target_coords_raw(host_coords);
-        fleet.set_mission_target(1, host_fleet_id);
+        fleet.set_mission_target(1, host_fleet_number);
         Ok(())
     }
 

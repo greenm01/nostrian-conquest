@@ -276,14 +276,17 @@ impl FleetRecord {
     pub fn world_target_flag_raw(&self) -> u8 {
         self.raw[0x22]
     }
-    /// 0x23..=0x24: mission target id, a word: the Join host fleet id or
-    /// the guarded starbase number.
+    /// 0x23..=0x24: mission target id, a word: the Join host's fleet number
+    /// or the guarded starbase number.
     pub fn mission_id_raw(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x23], self.raw[0x24]])
     }
     pub fn set_mission_id_raw(&mut self, value: u16) {
         self.raw[0x23..0x25].copy_from_slice(&value.to_le_bytes());
     }
+    /// The Join host's fleet number within the owner's empire (the host's
+    /// 0x00 word), not its record id. ECMAINT's merge and ECGAME's
+    /// renumbering both match 0x23 against 0x00.
     pub fn join_host_fleet_id_raw(&self) -> u16 {
         self.mission_id_raw()
     }
