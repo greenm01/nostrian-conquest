@@ -4,6 +4,7 @@ use crate::{
     CoreGameData, EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent,
     FleetDestroyedEvent, FleetOrderValidationError, MissionAbortReason, MissionEvent,
     MissionOutcome, Order, PlanetIntelEvent, ScoutContactEvent, ShipLosses, StarbaseDestroyedEvent,
+    StarbaseSightingEvent,
 };
 
 use super::super::FleetBattlePerspective;
@@ -17,9 +18,8 @@ use super::reporting::{
     single_named_fleet_number,
 };
 use super::retreat::{
-    abort_mission_to_seek_home_or_hold, apply_roe_retreat_to_task_force,
-    clear_empty_withdrawn_fleets, dominant_empire_after_battle, nearest_owned_planet,
-    retreat_task_force, set_fleet_to_hold_current_position,
+    dominant_empire_after_battle, retreat_fleet, retreat_task_force,
+    set_fleet_to_hold_current_position,
 };
 use super::state::{
     BattleRole, FleetCombatState, IDX_SB, TaskForce, new_task_force, planet_idx_at_coords,
@@ -223,6 +223,14 @@ pub(super) fn distribute_fleet_losses(
         let et_loss = remaining[5].min(fleet.etac_count() as u32) as u16;
         fleet.set_etac_count(fleet.etac_count().saturating_sub(et_loss));
         remaining[5] -= et_loss as u32;
+
+        // A survivor moves at the speed of the ships it has left (classic
+        // recomputes it after the battle too, `24a3:036b`). A fleet with
+        // none left is culled, not re-rated.
+        let lost_ships = dd_loss + ca_loss + bb_loss + sc_loss + tt_loss + et_loss > 0;
+        if lost_ships && fleet.has_any_force() {
+            fleet.recompute_max_speed_from_composition();
+        }
     }
 }
 
@@ -302,11 +310,7 @@ fn abort_invalid_dominant_missions_after_battle(
             }
 
             let owner_empire_raw = game_data.fleets.records[fleet_idx].owner_empire_raw();
-            let retreat_target = nearest_owned_planet(game_data, owner_empire_raw, coords);
-            {
-                let fleet = &mut game_data.fleets.records[fleet_idx];
-                abort_mission_to_seek_home_or_hold(fleet, retreat_target);
-            }
+            retreat_fleet(game_data, fleet_idx);
             events.mission_events.push(MissionEvent {
                 fleet_idx,
                 owner_empire_raw,
@@ -409,6 +413,7 @@ pub(crate) struct FleetBattlePhaseEvents {
     pub fleet_destroyed_events: Vec<FleetDestroyedEvent>,
     pub starbase_destroyed_events: Vec<StarbaseDestroyedEvent>,
     pub scout_contact_events: Vec<ScoutContactEvent>,
+    pub starbase_sighting_events: Vec<StarbaseSightingEvent>,
     pub planet_intel_events: Vec<PlanetIntelEvent>,
     pub encounter_disposition_events: Vec<EncounterDispositionEvent>,
     pub mission_events: Vec<MissionEvent>,
@@ -424,6 +429,8 @@ impl FleetBattlePhaseEvents {
             .append(&mut other.starbase_destroyed_events);
         self.scout_contact_events
             .append(&mut other.scout_contact_events);
+        self.starbase_sighting_events
+            .append(&mut other.starbase_sighting_events);
         self.planet_intel_events
             .append(&mut other.planet_intel_events);
         self.encounter_disposition_events
@@ -708,17 +715,12 @@ pub(crate) fn fight_encounter(
             }
         }
 
+        // A withdrawn force gets its retreat order after the battle, once
+        // its losses are on the records and its speed is known.
         let mut any_withdrawal = false;
         for empire in pre_round_withdrawals {
             if let Some(task_force) = task_forces.iter_mut().find(|tf| tf.empire == empire) {
                 task_force.withdrew_under_roe = true;
-                let retreat_target =
-                    nearest_owned_planet(game_data, empire, coords).unwrap_or(coords);
-                apply_roe_retreat_to_task_force(
-                    game_data,
-                    &task_force.fleet_indices,
-                    retreat_target,
-                );
                 any_withdrawal = true;
             }
         }
@@ -799,12 +801,9 @@ pub(crate) fn fight_encounter(
                 else {
                     continue;
                 };
-                let retreat_target =
-                    nearest_owned_planet(game_data, empire_raw, coords).unwrap_or(coords);
-
                 // Mark as withdrawn immediately for the benefit of subsequent fleets in the evaluation loop.
                 task_forces[tf_idx].withdrew_under_roe = true;
-                post_round_retreats.push((empire_raw, target_empire, retreat_target));
+                post_round_retreats.push((empire_raw, target_empire));
             }
         }
 
@@ -818,13 +817,9 @@ pub(crate) fn fight_encounter(
         let mut pending_execution: HashMap<u8, u32> = HashMap::new();
         let mut pending_criticals: HashMap<u8, u32> = HashMap::new();
 
-        let post_round_withdrawal_pairs = post_round_retreats
-            .iter()
-            .map(|(empire, target_empire, _)| (*empire, *target_empire))
-            .collect::<Vec<_>>();
         apply_withdrawal_exchanges(
             &task_forces,
-            &post_round_withdrawal_pairs,
+            &post_round_retreats,
             campaign_seed,
             battle_year,
             coords,
@@ -844,19 +839,7 @@ pub(crate) fn fight_encounter(
             }
         }
 
-        let mut any_post_round_withdrawal = false;
-        for (empire, _, retreat_target) in post_round_retreats {
-            if let Some(task_force) = task_forces.iter_mut().find(|tf| tf.empire == empire) {
-                task_force.withdrew_under_roe = true;
-                apply_roe_retreat_to_task_force(
-                    game_data,
-                    &task_force.fleet_indices,
-                    retreat_target,
-                );
-                any_post_round_withdrawal = true;
-            }
-        }
-        combat_occurred |= any_post_round_withdrawal;
+        combat_occurred |= !post_round_retreats.is_empty();
 
         if !battle_has_live_hostile_targets(&task_forces) {
             break;
@@ -968,6 +951,7 @@ pub(crate) fn fight_encounter(
         if !tf.withdrew_under_roe {
             continue;
         }
+        retreat_task_force(game_data, tf);
         emit_aborted_mission_events_for_task_force(
             game_data,
             &mut events,
@@ -977,7 +961,6 @@ pub(crate) fn fight_encounter(
             None,
         );
         if !tf_has_any_units(tf) {
-            clear_empty_withdrawn_fleets(game_data, &tf.fleet_indices);
             continue;
         }
         let Some(before) = original_states.get(&tf.empire) else {

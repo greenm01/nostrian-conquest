@@ -9,7 +9,7 @@
 
 use std::collections::HashMap;
 
-use super::combat::FleetBattlePhaseEvents;
+use super::combat::{AssaultEvents, FleetBattlePhaseEvents};
 use super::{
     ColonizationResolvedEvent, EncounterDispositionEvent, FleetMergeEvent, InvalidPlayerStateEvent,
     JoinMissionHostEvent, MissionEvent, MissionRetargetEvent, MovementEvents, PlanetIntelEvent,
@@ -94,10 +94,6 @@ impl FleetIndexRemap {
         *idx = self.index(*idx).unwrap_or(REMOVED_FLEET_IDX);
     }
 
-    pub(super) fn retain_indices(&self, indices: &mut Vec<usize>) {
-        indices.retain_mut(|idx| self.retain_index(idx));
-    }
-
     /// Drop per-fleet entries (indexed by fleet) whose fleet was removed.
     fn compact<T>(&self, per_fleet: &mut Vec<T>) {
         let mut old_idx = 0;
@@ -166,7 +162,6 @@ impl FleetIndexRemap {
         events
             .colonization_events
             .retain_mut(|event| self.retain_index(&mut event.fleet_idx));
-        self.retain_indices(&mut events.hostile_strike_fleet_indices);
         self.remap_planet_intel_events(&mut events.planet_intel_events);
         events.pending_observation_events.retain_mut(|event| {
             if let Some(intel_event) = event.intel_event.as_mut() {
@@ -197,6 +192,8 @@ pub(super) struct TurnFleetRefs {
     pub movement_events: MovementEvents,
     /// Sightings, decisions, and battles from the year's ticks.
     pub encounter_events: FleetBattlePhaseEvents,
+    /// Planetary strikes from the year's ticks.
+    pub assault_events: AssaultEvents,
 }
 
 impl TurnFleetRefs {
@@ -240,5 +237,7 @@ impl TurnFleetRefs {
         }
         remap.remap_movement_events(&mut self.movement_events);
         remap.remap_fleet_battle_phase_events(&mut self.encounter_events);
+        remap.remap_mission_events(&mut self.assault_events.mission_events);
+        remap.remap_planet_intel_events(&mut self.assault_events.planet_intel_events);
     }
 }

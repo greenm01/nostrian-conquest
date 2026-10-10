@@ -70,7 +70,8 @@ Probes (ECUTIL driven headless with DOSBox-X `AUTOTYPE` against
    CONQUEST.DAT with that table. The probe above disabled every day. This
    likely explains the "day codes" 0xCA, 0x0A, and 0x26 in `RE_NOTES.md`:
    they were untoggled days carrying stale memory. ECMAINT tests only for
-   nonzero.
+   nonzero. Rust writes 1 for an enabled day and 0 otherwise, and reads any
+   nonzero byte as enabled.
 
 ## SETUP.DAT
 
@@ -95,7 +96,7 @@ ECGAME DS:A556, and ECUTIL DS:5760.
 | 515 | 1 | bool | `remote_timeout` | Apply the key-gap timeout to remote callers (ECGAME 0x37FFD). ECUTIL F4 E toggles it (phys 0xD234); default 1. | [P] RE_NOTES F4 diff; [C] |
 | 516 | 1 | bool | `local_timeout` | Apply the key-gap timeout to local users (ECGAME 0x37FEF). ECUTIL F4 D toggles it (phys 0xD1F9); default 0. | [P] RE_NOTES F4 diff; [C] |
 | 517 | 1 | u8 | `minimum_time_minutes` | ECGAME raises the session's remaining time to at least this many minutes (0x3949C..0x394AC). ECUTIL F4 G sets it (phys 0xD316); default 0. | [P] RE_NOTES F4 diff; [C] |
-| 518 | 2 | u16 | `purge_after_turns` | "Purge messages & reports after." ECUTIL F4 A stores 0..255 as a word (phys 0xD0EF); default 0. Neither ECGAME nor ECMAINT reads it. | [P] RE_NOTES F4 diff; [C] no reader |
+| 518 | 2 | u16 | `purge_after_turns` | "Purge messages & reports after." ECUTIL F4 A stores 0..255 as a word (phys 0xD0EF); default 0. Neither ECGAME nor ECMAINT reads it. Rust keeps the byte for round-trip fidelity and offers no setting for it. | [P] RE_NOTES F4 diff; [C] no reader |
 | 520 | 2 | u16 | `autopilot_after_turns` | When it is nonzero, ECMAINT sets the autopilot flag (PLAYER +0x6D) on a human empire (PLAYER +0x00 = 1) once `game_year - PLAYER.last_run_year (+0x4E) >= value` (0x20658..0x20693). ECUTIL F4 B stores 0..255 as a word (phys 0xD165); default 0. | [P] RE_NOTES F4 diff; [C] word read |
 
 ECUTIL's numeric input returns a byte, so ECUTIL always writes 0 to the high
@@ -299,7 +300,7 @@ Slots 5..9 of those records are zero.
 | 0x38 | 4 | i32 | `results_first` | 1-based RESULTS.DAT record of the first report header for this empire; 0 for none (0x21E8C, 0x22188..0x221BD, 0x2428D). ECGAME clears it after the player reads the reports (0x2EB0A). | [C]; [P] fixture pairs; a nonzero 0x3B made ECMAINT log "Error reading results database" and rebuild the chain |
 | 0x3C | 4 | i32 | `results_last` | 1-based RESULTS.DAT record of the last report header (0x22494, 0x24437..0x24482; ECGAME 0x2EB23). | [C][P] as above |
 | 0x40 | 2 | u16 | `fleets_first` | FLEETS.DAT record heading this empire's fleet chain; 0 for none. ECMAINT's loader walks from it (0x26085); the pack renumbers it (0x1941); unlink and append maintain it (0x2461D, 0x1DE1A..0x1DFAB). ECGAME maintains it when it adds, deletes, or merges fleets (0x216C6, 0x2C62C). ECUTIL F1 writes the empire's first fleet. | [C]; [F] |
-| 0x42 | 2 | u16 | `fleets_last` | Last fleet in the chain. No program reads it; ECMAINT's append walks the chain from the head (0x1DE34). Writers: ECMAINT pack (0x1A44), append (0x1DFAB), unlink (0x246BC); ECGAME (0x2173E); ECUTIL F1. | [C]; [F] |
+| 0x42 | 2 | u16 | `fleets_last` | Last fleet in the chain. No program reads it; ECMAINT's append walks the chain from the head (0x1DE34). Writers: ECMAINT pack (0x1A44), append (0x1DFAB), unlink (0x246BC); ECGAME (0x2173E); ECUTIL F1. ECGAME's detach does not update it, and neither does Rust's. | [C]; [F] |
 | 0x44 | 2 | u16 | `bases_first` | BASES.DAT record heading the starbase chain; 0 for none. ECMAINT loader (0x26418), pack (0x1BC4), append (0x1E317), unlink (0x24776). ECGAME rewrites it after saving bases (0x2BEDB). | [C]; see [ec-starbase-spec.md](ec-starbase-spec.md) |
 | 0x46 | 2 | u16 | `bases_last` | Last base in the chain. ECMAINT append reads it (0x1E331) and writes it (0x1E3E6, 0x1E4E3); the pack (0x1CC8) and unlink (0x247F4) write it. ECGAME never reads or writes it. | [C] |
 | 0x48 | 2 | u16 | `ipbms_first` | IPBM.DAT record heading this empire's IPBM chain; 0 for none. It is a record number, not a count. ECMAINT's loader reads it (0x2679F..0x26902) and fails the integrity check when it points past the file; the pack renumbers it (0x1E3F..0x1E7D). ECGAME loads the chain from it at sign-on (0x2C707..0x2C74B). ECUTIL F1 writes 0. | [C]; [P] IPBM probes below; [F] 0 everywhere |

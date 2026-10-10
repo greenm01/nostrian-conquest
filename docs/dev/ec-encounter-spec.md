@@ -8,6 +8,8 @@ It was read from the unpacked ECMAINT (seg:off maps to file offset
 `seg*16+off-0x8140` in `tools/unlzexe/ecmaint_640k.bin`) and checked with
 classic probes. "[P]" marks a rule confirmed by a probe, "[C]" one read from
 code only. Movement and depth are in [ec-movement-spec.md](ec-movement-spec.md).
+The battle that follows an attack is in [ec-battle-spec.md](ec-battle-spec.md);
+[ec-combat-reference.md](ec-combat-reference.md) summarises the whole system.
 
 Notation. Fleet record bytes are FLEETS.DAT offsets: `+0x09` max speed,
 `+0x0a` current speed, `+0x0b/+0x0c` sector x,y, `+0x19` Z (real48),
@@ -71,8 +73,10 @@ that empire knows about that unit: 0 unknown, 1 contact, 2 identified,
 
 ### Year driver `0824:1004` [C]
 Called once per simulated year (ECMAINT `/R` normally runs one year).
-Before it, per year: `0824:26a5`, `24a3:3cc6` (orders/production per player),
-`1852:0000` (planet economy).
+Before it, per year: `0824:26a5` (CONQUEST previous-year snapshot),
+`24a3:3cc6` (rogue and autopilot orders), `1852:0000` (the planet pass:
+status step, builds, economy); see
+[ec-turn-cycle-spec.md](ec-turn-cycle-spec.md) section 4.0.
 
 ```
 for each unit i: key[i] = Random(0xFFDC)          // TP Random(n) = (Seed>>16) mod n
@@ -200,7 +204,14 @@ text only; the only state change is awareness 2 for the base owner's empire,
 which every fleet of that empire then shares. [C][P]
 
 ### Starbase observer, starbase target
-Same as above with `vis_base`; awareness 2 and a report only.
+Same as above with `vis_base`; awareness 2 and a report only. The report
+(`18ea:1fea`) reads "We have located and identified an alien starbase in
+Sector(x,y). It is Starbase N of <empire>." ("System" for layer 1), and ends
+with "We are alerting all fleets in the area." when the base owner has
+declared the target's owner an enemy, else "Continuing with scanning
+assignment...". After a fleet's earlier contact (awareness 1) it opens with
+"We have identified previously reported starbase sighting BS-N as " instead.
+There is no "headed at our planet" form for a base. [C]
 
 ---------------------------------------------------------------------------
 
@@ -221,6 +232,10 @@ v /= 52
 10 Scout Sector 1.5, 11 Scout System 2, 12 Colonize 2, 13-15 1.
 (The real constants are 1.1 and 1.2 as real48: `81 cd cc cc cc 0c` and
 `81 9a 99 99 99 19`.)
+
+A Hold fleet's dispatch zeroes its speed (`+0x0a`), so the speed term is 1
+from its second tick on; its position does not change. [P t044: speed 3 at
+Hold, deep space and in a system, `+0x0a` 0 after the year]
 
 ### vis_base `18ea:0000` [C][P]
 `90 / 52` (= 1.7308) for every starbase (the `+0x1f` test multiplies by 1).
@@ -396,13 +411,14 @@ sector with no world belongs to no one and is nobody's system.
      layer; or, for a base target, the base plus `guard_fleet_of(B)`.
    No other fleets in the sector join (not allies, not other fleets of
    either empire). A second target is fought only in a later tick.
-4. Rounds: `5 + Random(20)` (the `Random(5)+5` branch needs a flag that the
-   encounter path always passes as 0). Battle internals (CRT, retreat,
-   scatter) were not decoded; outcomes seen: destroyed, "fled", "scattered".
+4. The battle starts at a separation distance of `5 + Random(20)` (the
+   `Random(5)+5` surprise branch needs a flag that the encounter path always
+   passes as 0). The battle itself, with its retreat, scatter, and loss
+   rules, is decoded in [ec-battle-spec.md](ec-battle-spec.md) §3.
 5. After the battle [C][P]: survivors' max speed recomputed (`24a3:036b`);
    destroyed fleets/bases deleted (entry inactive); each participant in layer
-   1 at a world it does not own triggers `2895:2ddc(planet, owner, 1)`
-   (probably the empire's world database, not checked). An attacker with
+   1 at a world its empire does not own gets a DATABASE.DAT owner-and-year
+   update (`2895:2ddc` mode 1, battle spec §2.11). An attacker with
    order 6/7/8/12 that is driven off aborts to Seek Home ("Since we cannot
    get past them ... aborting our mission"); a holding target that flees
    stays put with its order [P d2, d4].
@@ -417,9 +433,11 @@ sector with no world belongs to no one and is nobody's system.
 8. Report: both sides get battle reports ("We successfully intercepted ...",
    "We were attacked by ...", "We lost all contact with ...").
 
-Rust follows steps 1-3 and 5-7 but resolves the battle itself with its own
-seeded CRT (see [nc-combat-spec.md](nc-combat-spec.md)), which has no round
-count of its own; classic's battle internals are task t036.
+Rust follows steps 1-3 and 5-7 but resolves the battle itself with NC combat
+(see [nc-combat-spec.md](nc-combat-spec.md) and
+[NC combat stays](../notes/decisions/b5u6lekb-rust-keeps-its-own-combat-system.md));
+classic's battle is decoded in [ec-battle-spec.md](ec-battle-spec.md) for
+reference.
 
 ---------------------------------------------------------------------------
 
@@ -472,9 +490,6 @@ intercept up to three (aw roll, sin draw, speed roll); battles draw more.
 
 ## 8. Not settled
 
-- Battle internals (`1b05:7b74..99d5`): round count confirmed from code only;
-  retreat, scatter, and loss rules not decoded.
-- `2895:2ddc` after a battle (probably world-database intel).
 - AI empires (players marked 0xFF) were not probed.
 - ROE > 10 and u16 overflow in vis/strength (more than ~1450 ships of a
   class) are undefined or wrap in classic.

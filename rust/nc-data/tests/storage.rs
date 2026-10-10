@@ -157,7 +157,7 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
 }
 
 #[test]
-fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
+fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
     let source = repo_root().join("fixtures/ecutil-init/v1.5");
     let imported = temp_dir("nc-data-storage-join-aux");
     let exported = temp_dir("nc-data-storage-join-aux-export");
@@ -174,10 +174,10 @@ fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
         .game_data
         .set_join_fleet_order(1, 2, 1)
         .expect("join order");
-    let host_id = state.game_data.fleets.records[0].fleet_id() as u8;
+    let host_number = state.game_data.fleets.records[0].local_slot_word_raw() as u8;
     assert_eq!(
         state.game_data.fleets.records[1].mission_aux_bytes(),
-        [1, host_id]
+        [1, host_number]
     );
     store
         .save_runtime_state_structured(
@@ -192,14 +192,14 @@ fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
         .load_latest_runtime_game_data()
         .expect("load latest runtime game data");
     let joiner = &runtime_game.fleets.records[1];
-    assert_eq!(joiner.mission_aux_bytes(), [1, host_id]);
-    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_id));
+    assert_eq!(joiner.mission_aux_bytes(), [1, host_number]);
+    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_number));
 
     export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
     let exported_game = nc_data::CoreGameData::load(&exported).expect("load exported directory");
     assert_eq!(
         exported_game.fleets.records[1].mission_aux_bytes(),
-        [1, host_id]
+        [1, host_number]
     );
 }
 

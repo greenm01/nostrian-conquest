@@ -1,17 +1,18 @@
 use crate::{
     ContactReportSource, CoreGameData, EncounterDispositionEvent, EncounterDispositionReason,
     Mission, Order, PlanetIntelEvent, PlanetIntelSource, ScoutContactEvent, ShipLosses,
+    StarbaseAlert,
 };
 
 use super::state::{
     FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_ET, IDX_SC, IDX_TT, fleet_state_from_records,
 };
 
-/// Who made a sighting.
+/// Who made a sighting; a base also says what it makes of the fleet.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ContactObserver {
     Fleet(usize),
-    Base(usize),
+    Base(usize, StarbaseAlert),
 }
 
 /// The report of an observer sighting alien fleet `target_fleet_idx` at
@@ -45,11 +46,14 @@ pub(crate) fn push_fleet_contact(
                     u32::from(fleet.army_count()),
                 )
             }
-            ContactObserver::Base(idx) => {
+            ContactObserver::Base(idx, alert) => {
                 let base = &game_data.bases.records[idx];
                 (
                     base.owner_empire_raw(),
-                    ContactReportSource::Starbase(base.base_id_raw()),
+                    ContactReportSource::Starbase {
+                        id: base.base_id_raw(),
+                        alert,
+                    },
                     None,
                     ShipLosses::default(),
                     0,
@@ -81,14 +85,17 @@ pub(crate) fn push_fleet_contact(
 }
 
 /// Observer fleet `fleet_idx` identified alien fleet `target_fleet_idx` and
-/// its ROE forbids the fight: "we are avoiding this enemy fleet".
-pub(crate) fn push_avoidance(
+/// did not fight it: its ROE forbids the fight (`RoeDeclined`, "we are
+/// avoiding this enemy fleet") or the intercept failed (`InterceptFailed`,
+/// "We are unable to intercept the enemy").
+pub(crate) fn push_no_engagement(
     encounter_disposition_events: &mut Vec<EncounterDispositionEvent>,
     game_data: &CoreGameData,
     fleet_idx: usize,
     target_fleet_idx: usize,
     coords: [u8; 2],
     tick: u8,
+    reason: EncounterDispositionReason,
 ) {
     let fleet = &game_data.fleets.records[fleet_idx];
     let (small_vessels, medium_vessels, large_vessels) =
@@ -105,7 +112,7 @@ pub(crate) fn push_avoidance(
         small_vessels,
         medium_vessels,
         large_vessels,
-        reason: EncounterDispositionReason::RoeDeclined,
+        reason,
         stardate_week: Some(tick),
     });
 }
@@ -289,21 +296,4 @@ pub(super) fn push_planet_intel(
         observed_snapshot: None,
         stardate_week: None,
     });
-}
-
-pub(super) fn mission_kind_for_fleet(
-    fleet: usize,
-    bombard_set: &std::collections::HashSet<usize>,
-    invade_set: &std::collections::HashSet<usize>,
-    blitz_set: &std::collections::HashSet<usize>,
-) -> Option<Mission> {
-    if blitz_set.contains(&fleet) {
-        Some(Mission::BlitzWorld)
-    } else if invade_set.contains(&fleet) {
-        Some(Mission::InvadeWorld)
-    } else if bombard_set.contains(&fleet) {
-        Some(Mission::BombardWorld)
-    } else {
-        None
-    }
 }

@@ -1,0 +1,3 @@
+# Only confidence.py needs these. The combat models use the standard library.
+numpy>=2.0
+scipy>=1.13

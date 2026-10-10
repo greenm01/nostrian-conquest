@@ -1,22 +1,24 @@
-//! One unit's turn in a tick: step, encounter check (`18ea:13cf`), and
-//! order dispatch.
+//! One unit's turn in a tick: step, encounter check (`18ea:13cf`), order
+//! dispatch, and the strike a hostile order makes when its test passes.
 
 use nc_data::{
-    DiplomacyOverride, DiplomaticRelation, GameRng, Mission, MissionAbortReason, Order, Real48,
+    DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
+    MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent,
 };
 
 use super::rules::{
     BASE_STRENGTH, BASE_VISIBILITY, FleetFacts, Mode, Situation, Verdict, base_factor,
-    decide_vs_base, decide_vs_fleet, fleet_posture, fleet_visibility, roll, sighting_percent,
-    strength,
+    decide_vs_base, decide_vs_fleet, fleet_posture, fleet_visibility, order, roll,
+    sighting_percent, strength,
 };
 use super::{Awareness, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
-    BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter, mission_kind_for_order,
-    nearest_owned_planet, push_avoidance, push_fleet_contact,
+    AssaultEvents, BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter,
+    mission_kind_for_order, nearest_owned_planet, push_fleet_contact, push_no_engagement,
+    resolve_strike,
 };
-use crate::maint::movement::{BaseStep, YearMovement};
+use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
 
 pub(super) struct Year<'a> {
@@ -27,6 +29,7 @@ pub(super) struct Year<'a> {
     pub diplomacy_overrides: &'a [DiplomacyOverride],
     pub movement: YearMovement<'a>,
     pub events: FleetBattlePhaseEvents,
+    pub assault_events: AssaultEvents,
 }
 
 impl Year<'_> {
@@ -56,7 +59,9 @@ impl Year<'_> {
         }
         match kind {
             UnitKind::Fleet if self.units[unit].active => {
-                self.movement.dispatch(game_data, index, tick)?;
+                if self.movement.dispatch(game_data, index, tick)? == TickEnd::Strike {
+                    self.strike(game_data, unit, tick);
+                }
                 if self.movement.removed(index) {
                     self.units[unit].active = false;
                 }
@@ -65,6 +70,18 @@ impl Year<'_> {
             UnitKind::Base => self.movement.dispatch_base(game_data, index, tick),
         }
         Ok(())
+    }
+
+    /// Fleet unit `unit`'s strike test passed: it attacks its target world
+    /// now, as both stand this tick. A fleet the batteries destroy leaves
+    /// play, and a captured world's new owner is what later ticks see.
+    fn strike(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) {
+        let fleet_idx = self.units[unit].index;
+        let mut events = resolve_strike(game_data, self.campaign_seed, fleet_idx);
+        events.stamp(tick);
+        self.assault_events.append(events);
+        self.movement.reload(fleet_idx);
+        self.units[unit].active = game_data.fleets.records[fleet_idx].has_any_force();
     }
 
     /// Move fleet unit `unit`'s table entry to where its record now is; a
@@ -153,7 +170,10 @@ impl Year<'_> {
     }
 
     /// A starbase scans for alien units. It only reports: the identification
-    /// is shared by its empire's fleets, and it never starts a fight.
+    /// is shared by its empire's fleets, and it never starts a fight. An
+    /// alien starbase is always reported as newly located; classic opens
+    /// with "previously reported starbase sighting BS-n" after a fleet's
+    /// contact, which Rust does not report.
     fn base_scans(&mut self, game_data: &mut CoreGameData, observer: usize, tick: u8) {
         let Unit {
             index: base_idx,
@@ -169,6 +189,7 @@ impl Year<'_> {
         {
             return;
         }
+        let base_id = base.base_id_raw();
         let factor = base_factor(layer);
         for target in 0..self.units.len() {
             if !self.meets(observer, target) {
@@ -187,17 +208,62 @@ impl Year<'_> {
                 continue;
             }
             self.awareness.raise(owner, target, 2);
-            if unit.kind == UnitKind::Fleet {
+            match unit.kind {
+                UnitKind::Fleet => {
+                let alert =
+                    self.base_alert(game_data, owner, &self.fleet_facts(game_data, unit.index));
                 push_fleet_contact(
                     &mut self.events.scout_contact_events,
                     &mut self.events.planet_intel_events,
                     game_data,
-                    ContactObserver::Base(base_idx),
+                    ContactObserver::Base(base_idx, alert),
                     unit.index,
                     sector,
                     tick,
                 );
             }
+                UnitKind::Base => {
+                    let target_base = &game_data.bases.records[unit.index];
+                    let alerting = self.declared_enemy(game_data, owner, unit.owner);
+                    self.events
+                        .starbase_sighting_events
+                        .push(StarbaseSightingEvent {
+                            viewer_empire_raw: owner,
+                            starbase_id: base_id,
+                            coords: sector,
+                            in_system: layer == 1,
+                            target_empire_raw: unit.owner,
+                            target_starbase_id: target_base.base_id_raw(),
+                            alerting,
+                            stardate_week: Some(tick),
+                        });
+                }
+            }
+        }
+    }
+
+    /// What a base of `owner` says about identified fleet `target`: an
+    /// assault bound for the owner's world here, or any fleet inside its
+    /// system, is "headed at our planet"; a declared enemy raises the
+    /// alert; anything else is noted in passing.
+    fn base_alert(
+        &self,
+        game_data: &CoreGameData,
+        owner: u8,
+        target: &FleetFacts,
+    ) -> StarbaseAlert {
+        let assault_here = matches!(target.order, order::BOMBARD | order::INVADE | order::BLITZ)
+            && target.target_layer == 1
+            && target.sector == target.target;
+        if (assault_here || target.layer == 1)
+            && owner != 0
+            && world_owner_at(game_data, target.sector) == Some(owner)
+        {
+            StarbaseAlert::HeadedAtOurWorld
+        } else if self.declared_enemy(game_data, owner, target.owner) {
+            StarbaseAlert::Enemy
+        } else {
+            StarbaseAlert::Scanning
         }
     }
 
@@ -262,14 +328,20 @@ impl Year<'_> {
                     };
                     let verdict =
                         self.decide_vs_fleet(game_data, observer, &facts, &target_facts, mode);
-                    if identify && verdict == Verdict::Avoided {
-                        push_avoidance(
+                    let reason = match verdict {
+                        Verdict::Avoided => Some(EncounterDispositionReason::RoeDeclined),
+                        Verdict::Escaped => Some(EncounterDispositionReason::InterceptFailed),
+                        _ => None,
+                    };
+                    if let (true, Some(reason)) = (identify, reason) {
+                        push_no_engagement(
                             &mut self.events.encounter_disposition_events,
                             game_data,
                             fleet_idx,
                             unit.index,
                             facts.sector,
                             tick,
+                            reason,
                         );
                     }
                     if verdict == Verdict::Aborted {
@@ -330,14 +402,7 @@ impl Year<'_> {
         mode: Mode,
     ) -> Verdict {
         let world_owner = (facts.layer == 1)
-            .then(|| {
-                game_data
-                    .planets
-                    .records
-                    .iter()
-                    .find(|planet| planet.coords_raw() == facts.sector)
-                    .map(|planet| planet.owner_empire_slot_raw())
-            })
+            .then(|| world_owner_at(game_data, facts.sector))
             .flatten();
         let situation = Situation {
             world_owner,
@@ -501,6 +566,17 @@ impl Year<'_> {
             });
         }
     }
+}
+
+/// The owner of the world in `sector` (0 unowned), or `None` where there is
+/// no world.
+fn world_owner_at(game_data: &CoreGameData, sector: [u8; 2]) -> Option<u8> {
+    game_data
+        .planets
+        .records
+        .iter()
+        .find(|planet| planet.coords_raw() == sector)
+        .map(|planet| planet.owner_empire_slot_raw())
 }
 
 /// Where an aborting fleet goes with no friendly world to seek.

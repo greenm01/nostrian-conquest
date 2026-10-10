@@ -29,6 +29,12 @@ The report surface is no longer governed by classic EC prose templates. Classic
 behavior still matters at the file/export boundary, but Rust report wording is
 owned here.
 
+Reports wait for the player. A report stays in its viewer's inbox until that
+player deletes it, in the logon review or the inbox; maintenance carries every
+unread report into the new year's snapshot ahead of the year's own reports
+(`nc_data::carry_unread_report_blocks`). Nothing purges reports by age, as in
+classic, whose purge-after setting never purged anything.
+
 ## Shared Shell
 
 Every player-visible report keeps the same outer shell:

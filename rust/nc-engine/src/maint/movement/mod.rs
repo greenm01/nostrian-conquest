@@ -8,13 +8,14 @@ use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use arrivals::{handle_fleet_arrival, handle_hostile_target_entry};
 pub(super) use starbase::BaseStep;
-use stepper::{FleetTrack, TickEnd, is_hostile_order, step_fleet, test_arrival};
+pub(super) use stepper::TickEnd;
+use stepper::{FleetTrack, is_hostile_order, step_fleet, test_arrival};
 
 /// Every fleet's movement through one maintenance year, advanced a tick at a
 /// time by the encounter loop (`navigation::motion` for the step).
-/// Resolved orders run their arrival handling in the tick they resolve;
-/// hostile orders that pass their strike test are queued for the planetary
-/// assault phase, which runs after the year's ticks.
+/// Resolved orders run their arrival handling in the tick they resolve; a
+/// hostile order that passes its strike test is reported to the encounter
+/// loop, which resolves the strike in that tick.
 ///
 /// Events index the fleet list as it stood at the start of the year;
 /// `finish` removes salvaged fleets and returns the remap for that removal.
@@ -62,12 +63,14 @@ impl<'a> YearMovement<'a> {
     }
 
     /// Run the order's arrival test and, when it passes, the arrival action.
+    /// Returns how the tick ended for the order; a `Strike` is the caller's
+    /// to resolve.
     pub(super) fn dispatch(
         &mut self,
         game_data: &mut CoreGameData,
         fleet_idx: usize,
         tick: u8,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<TickEnd, Box<dyn std::error::Error>> {
         let (target, order_kind, owner_empire, sector) = {
             let fleet = &game_data.fleets.records[fleet_idx];
             (
@@ -77,12 +80,18 @@ impl<'a> YearMovement<'a> {
                 fleet.current_location_coords_raw(),
             )
         };
+        if order_kind == Order::HoldPosition {
+            // Classic's Hold action zeroes the speed, so a holding fleet's
+            // visibility loses its speed term after its first tick.
+            game_data.fleets.records[fleet_idx].set_current_speed(0);
+            return Ok(TickEnd::Underway);
+        }
         let marks = EventMarks::of(&self.events);
         if order_kind == Order::GuardStarbase {
             if self.tracks[fleet_idx].stepped() {
                 self.dispatch_guard(game_data, fleet_idx, tick);
             }
-            return Ok(());
+            return Ok(TickEnd::Underway);
         }
         if is_hostile_order(order_kind)
             && !self.entered_target[fleet_idx]
@@ -92,10 +101,9 @@ impl<'a> YearMovement<'a> {
             self.entered_target[fleet_idx] = true;
             handle_hostile_target_entry(game_data, &mut self.events, fleet_idx, order_kind, target);
         }
-        match test_arrival(game_data, &mut self.tracks[fleet_idx], fleet_idx, tick) {
-            TickEnd::Underway => {}
-            TickEnd::Strike => self.events.hostile_strike_fleet_indices.push(fleet_idx),
-            TickEnd::Resolved => handle_fleet_arrival(
+        let end = test_arrival(game_data, &mut self.tracks[fleet_idx], fleet_idx, tick);
+        if end == TickEnd::Resolved {
+            handle_fleet_arrival(
                 game_data,
                 &mut self.events,
                 &mut self.to_remove,
@@ -103,10 +111,10 @@ impl<'a> YearMovement<'a> {
                 order_kind,
                 owner_empire,
                 target,
-            )?,
+            )?;
         }
         marks.stamp(&mut self.events, tick);
-        Ok(())
+        Ok(end)
     }
 
     /// The fleet left the game this tick (salvaged).

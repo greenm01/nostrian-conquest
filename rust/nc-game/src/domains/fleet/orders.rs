@@ -13,13 +13,14 @@ use crate::screen::{
 };
 use nc_data::map_size_for_player_count;
 use nc_engine::{
-    FleetTargetInputKind, automatic_order_targets, default_host_fleet_target,
-    default_starbase_target, fleet_order_target_rejects_owned_planet,
+    FleetTargetInputKind, SeekNextClosestQuestion, automatic_order_targets,
+    default_host_fleet_target, default_starbase_target, fleet_order_target_rejects_owned_planet,
     fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,
     fleet_order_target_requires_planet_system, fleet_record_supports_mission_code,
     fleet_target_eta_confirmation_message, fleet_target_eta_estimate, fleet_target_input_kind,
     fleet_target_status_line, recommended_coordinate_target,
-    recommended_coordinate_target_y_for_entered_x, target_available_for_mission,
+    recommended_coordinate_target_y_for_entered_x, seek_next_closest_question,
+    target_available_for_mission,
 };
 use std::collections::BTreeSet;
 
@@ -302,7 +303,7 @@ impl App {
                     self.fleet.order_status = None;
                 }
             }
-            FleetSingleOrderMode::ConfirmingTarget => {
+            FleetSingleOrderMode::SeekingNextClosest | FleetSingleOrderMode::ConfirmingTarget => {
                 if self.fleet.order_confirm_input.is_empty() && matches!(ch, 'y' | 'Y' | 'n' | 'N')
                 {
                     self.fleet.order_confirm_input.push(ch.to_ascii_uppercase());
@@ -326,7 +327,7 @@ impl App {
             FleetSingleOrderMode::EnteringTargetY => {
                 self.fleet.order_target_y_input.pop();
             }
-            FleetSingleOrderMode::ConfirmingTarget => {
+            FleetSingleOrderMode::SeekingNextClosest | FleetSingleOrderMode::ConfirmingTarget => {
                 self.fleet.order_confirm_input.pop();
             }
         }
@@ -391,7 +392,7 @@ impl App {
                     self.fleet.group_status = None;
                 }
             }
-            FleetGroupOrderMode::ConfirmingTarget => {
+            FleetGroupOrderMode::SeekingNextClosest | FleetGroupOrderMode::ConfirmingTarget => {
                 if self.fleet.group_confirm_input.is_empty() && matches!(ch, 'y' | 'Y' | 'n' | 'N')
                 {
                     self.fleet.group_confirm_input.push(ch.to_ascii_uppercase());
@@ -431,7 +432,7 @@ impl App {
                 self.fleet.group_target_y_input.pop();
                 self.fleet.group_status = None;
             }
-            FleetGroupOrderMode::ConfirmingTarget => {
+            FleetGroupOrderMode::SeekingNextClosest | FleetGroupOrderMode::ConfirmingTarget => {
                 self.fleet.group_confirm_input.pop();
                 self.fleet.group_status = None;
             }
@@ -454,6 +455,10 @@ impl App {
                 } else {
                     self.fleet.order_mode = FleetSingleOrderMode::EnteringTargetY;
                 }
+            }
+            FleetSingleOrderMode::SeekingNextClosest => {
+                self.fleet.order_confirm_input.clear();
+                self.open_fleet_mission_picker();
             }
             FleetSingleOrderMode::EnteringTarget | FleetSingleOrderMode::EnteringTargetX => {
                 self.open_fleet_mission_picker();
@@ -478,6 +483,10 @@ impl App {
                 } else {
                     self.fleet.group_mode = FleetGroupOrderMode::EnteringTargetY;
                 }
+            }
+            FleetGroupOrderMode::SeekingNextClosest => {
+                self.fleet.group_confirm_input.clear();
+                self.open_fleet_mission_picker();
             }
             FleetGroupOrderMode::EnteringTarget | FleetGroupOrderMode::EnteringTargetX => {
                 self.open_fleet_mission_picker();
@@ -820,6 +829,21 @@ impl App {
                 self.fleet.group_mode = FleetGroupOrderMode::ConfirmingTarget;
                 self.fleet.group_status = None;
             }
+            FleetGroupOrderMode::SeekingNextClosest => {
+                // Yes heads for the next closest world, no stays on this one.
+                if let Some(question) = self.fleet_group_seek_next_closest() {
+                    let target = if resolve_yes_no_input(&self.fleet.group_confirm_input, true) {
+                        question.next
+                    } else {
+                        question.stay
+                    };
+                    self.fleet.group_target_x_input = format!("{:02}", target[0]);
+                    self.fleet.group_target_y_input = format!("{:02}", target[1]);
+                }
+                self.fleet.group_confirm_input.clear();
+                self.fleet.group_mode = FleetGroupOrderMode::ConfirmingTarget;
+                self.fleet.group_status = None;
+            }
             FleetGroupOrderMode::ConfirmingTarget => {
                 if !resolve_yes_no_input(&self.fleet.group_confirm_input, true) {
                     self.fleet.group_mode = FleetGroupOrderMode::SelectingFleets;
@@ -958,6 +982,21 @@ impl App {
                 self.fleet.order_mode = FleetSingleOrderMode::ConfirmingTarget;
                 self.fleet.order_status = None;
             }
+            FleetSingleOrderMode::SeekingNextClosest => {
+                // Yes heads for the next closest world, no stays on this one.
+                if let Some(question) = self.fleet_order_seek_next_closest() {
+                    let target = if resolve_yes_no_input(&self.fleet.order_confirm_input, true) {
+                        question.next
+                    } else {
+                        question.stay
+                    };
+                    self.fleet.order_target_x_input = format!("{:02}", target[0]);
+                    self.fleet.order_target_y_input = format!("{:02}", target[1]);
+                }
+                self.fleet.order_confirm_input.clear();
+                self.fleet.order_mode = FleetSingleOrderMode::ConfirmingTarget;
+                self.fleet.order_status = None;
+            }
             FleetSingleOrderMode::ConfirmingTarget => {
                 if !resolve_yes_no_input(&self.fleet.order_confirm_input, true) {
                     self.fleet.order_mode = FleetSingleOrderMode::EnteringTarget;
@@ -1051,8 +1090,11 @@ impl App {
                         .map(|row| vec![row.fleet_record_index_1_based])
                         .unwrap_or_default();
                     match automatic_order_targets(&self.game_data, mission_code, &records) {
+                        // ECGAME says why and drops the order.
                         Err(err) => {
-                            self.fleet.mission_picker_status = Some(err);
+                            self.fleet.mission_picker_caller = None;
+                            self.fleet.order_mission_code = None;
+                            self.show_fleet_context_notice(err);
                             return;
                         }
                         Ok(Some(targets)) => {
@@ -1060,7 +1102,12 @@ impl App {
                             self.clear_fleet_order_target_inputs();
                             self.fleet.order_target_x_input = format!("{:02}", targets[0][0]);
                             self.fleet.order_target_y_input = format!("{:02}", targets[0][1]);
-                            self.fleet.order_mode = FleetSingleOrderMode::ConfirmingTarget;
+                            self.fleet.order_mode =
+                                if self.fleet_order_seek_next_closest().is_some() {
+                                    FleetSingleOrderMode::SeekingNextClosest
+                                } else {
+                                    FleetSingleOrderMode::ConfirmingTarget
+                                };
                             self.fleet.order_status = None;
                             self.current_screen = ScreenId::FleetOrder;
                             return;
@@ -1136,7 +1183,12 @@ impl App {
                         Ok(Some(targets)) => {
                             self.fleet.group_target_x_input = format!("{:02}", targets[0][0]);
                             self.fleet.group_target_y_input = format!("{:02}", targets[0][1]);
-                            self.fleet.group_mode = FleetGroupOrderMode::ConfirmingTarget;
+                            self.fleet.group_mode =
+                                if self.fleet_group_seek_next_closest().is_some() {
+                                    FleetGroupOrderMode::SeekingNextClosest
+                                } else {
+                                    FleetGroupOrderMode::ConfirmingTarget
+                                };
                             return;
                         }
                         Ok(None) => {}
@@ -1195,17 +1247,21 @@ impl App {
                     _ => crate::app::Action::Noop,
                 }
             }
-            FleetSingleOrderMode::ConfirmingTarget => match key.code {
-                KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitOrder),
-                KeyCode::Backspace => crate::app::Action::Fleet(FleetAction::BackspaceOrderInput),
-                KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
-                    crate::app::Action::Fleet(FleetAction::CancelOrder)
+            FleetSingleOrderMode::SeekingNextClosest | FleetSingleOrderMode::ConfirmingTarget => {
+                match key.code {
+                    KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitOrder),
+                    KeyCode::Backspace => {
+                        crate::app::Action::Fleet(FleetAction::BackspaceOrderInput)
+                    }
+                    KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
+                        crate::app::Action::Fleet(FleetAction::CancelOrder)
+                    }
+                    KeyCode::Char(ch) if matches!(ch, 'y' | 'Y' | 'n' | 'N') => {
+                        crate::app::Action::Fleet(FleetAction::AppendOrderChar(ch))
+                    }
+                    _ => crate::app::Action::Noop,
                 }
-                KeyCode::Char(ch) if matches!(ch, 'y' | 'Y' | 'n' | 'N') => {
-                    crate::app::Action::Fleet(FleetAction::AppendOrderChar(ch))
-                }
-                _ => crate::app::Action::Noop,
-            },
+            }
         }
     }
 
@@ -1262,19 +1318,21 @@ impl App {
                     _ => crate::app::Action::Noop,
                 }
             }
-            FleetGroupOrderMode::ConfirmingTarget => match key.code {
-                KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitGroupOrder),
-                KeyCode::Backspace => {
-                    crate::app::Action::Fleet(FleetAction::BackspaceGroupOrderInput)
+            FleetGroupOrderMode::SeekingNextClosest | FleetGroupOrderMode::ConfirmingTarget => {
+                match key.code {
+                    KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitGroupOrder),
+                    KeyCode::Backspace => {
+                        crate::app::Action::Fleet(FleetAction::BackspaceGroupOrderInput)
+                    }
+                    KeyCode::Char(ch) if matches!(ch, 'y' | 'Y' | 'n' | 'N') => {
+                        crate::app::Action::Fleet(FleetAction::AppendGroupOrderChar(ch))
+                    }
+                    KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
+                        crate::app::Action::Fleet(FleetAction::CancelGroupOrder)
+                    }
+                    _ => crate::app::Action::Noop,
                 }
-                KeyCode::Char(ch) if matches!(ch, 'y' | 'Y' | 'n' | 'N') => {
-                    crate::app::Action::Fleet(FleetAction::AppendGroupOrderChar(ch))
-                }
-                KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
-                    crate::app::Action::Fleet(FleetAction::CancelGroupOrder)
-                }
-                _ => crate::app::Action::Noop,
-            },
+            }
         }
     }
 
@@ -1354,7 +1412,32 @@ impl App {
             .to_string()
     }
 
+    /// ECGAME's Seek Home question for the fleet being ordered, when it asks.
+    pub(crate) fn fleet_order_seek_next_closest(&self) -> Option<SeekNextClosestQuestion> {
+        let row = self.fleet_order_selected_row()?;
+        seek_next_closest_question(
+            &self.game_data,
+            self.fleet.order_mission_code?,
+            &[row.fleet_record_index_1_based],
+        )
+    }
+
+    /// ECGAME's Seek Home question for a group order of one fleet.
+    pub(crate) fn fleet_group_seek_next_closest(&self) -> Option<SeekNextClosestQuestion> {
+        let records = self
+            .fleet_group_selected_rows()
+            .iter()
+            .map(|row| row.fleet_record_index_1_based)
+            .collect::<Vec<_>>();
+        seek_next_closest_question(&self.game_data, self.fleet.group_mission_code?, &records)
+    }
+
     pub(crate) fn fleet_order_target_status_line(&self) -> String {
+        if self.fleet.order_mode == FleetSingleOrderMode::SeekingNextClosest
+            && let Some(question) = self.fleet_order_seek_next_closest()
+        {
+            return question.notice;
+        }
         if self.fleet.order_mode == FleetSingleOrderMode::ConfirmingTarget
             && let (Some(mission_code), Ok(destination)) = (
                 self.fleet.order_mission_code,
@@ -1767,11 +1850,13 @@ impl App {
             .iter()
             .map(|row| row.fleet_record_index_1_based)
             .collect::<Vec<_>>();
-        let seek_home_targets = if mission_code == nc_data::Order::SeekHome.to_raw() {
-            automatic_order_targets(&self.game_data, mission_code, &records)?
-        } else {
-            None
-        };
+        // A lone fleet keeps the target its order screen chose.
+        let seek_home_targets =
+            if mission_code == nc_data::Order::SeekHome.to_raw() && records.len() > 1 {
+                automatic_order_targets(&self.game_data, mission_code, &records)?
+            } else {
+                None
+            };
         for (index, row) in selected_rows.iter().enumerate() {
             let speed = self
                 .game_data

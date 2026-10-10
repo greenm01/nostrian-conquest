@@ -505,7 +505,7 @@ fn build_commissioned_fleet(
     fleet.set_standing_order_kind(Order::HoldPosition);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_mission_target(0, 0);
-    fleet.set_rules_of_engagement(6);
+    fleet.set_rules_of_engagement(crate::NEW_FLEET_DEFAULT_ROE);
     fleet.set_destroyer_count(draft.destroyers);
     fleet.set_cruiser_count(draft.cruisers);
     fleet.set_battleship_count(draft.battleships);

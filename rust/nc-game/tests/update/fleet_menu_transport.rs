@@ -2263,7 +2263,7 @@ fn fleet_merge_auto_swaps_higher_numbered_fleet_into_lower_host() {
         source.standing_order_kind(),
         nc_data::Order::JoinAnotherFleet
     );
-    assert_eq!(source.join_host_fleet_id_raw(), host.fleet_id_word_raw());
+    assert_eq!(source.join_host_fleet_id_raw(), host.local_slot_word_raw());
     assert_eq!(
         source.standing_order_target_coords_raw(),
         host.current_location_coords_raw()

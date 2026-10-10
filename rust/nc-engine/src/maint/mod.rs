@@ -45,8 +45,6 @@ struct ColonizationEvent {
 #[derive(Debug, Default)]
 struct MovementEvents {
     colonization_events: Vec<ColonizationEvent>,
-    /// Bombard/Invade/Blitz fleets whose strike test passed this year.
-    hostile_strike_fleet_indices: Vec<usize>,
     planet_intel_events: Vec<PlanetIntelEvent>,
     pending_observation_events: Vec<PendingObservationEvent>,
     mission_events: Vec<MissionEvent>,
@@ -66,7 +64,9 @@ struct MovementEvents {
 #[derive(Debug, Default, Clone)]
 pub(super) struct FleetRemovalRemapInfo {
     destroyed_join_host_fleet_numbers: std::collections::HashMap<u16, u8>,
-    prior_join_host_ids: std::collections::HashMap<u16, u16>,
+    /// Host fleet number each joiner (by new fleet id) named before its host
+    /// was removed.
+    prior_join_host_numbers: std::collections::HashMap<u16, u16>,
     fleet_indices: FleetIndexRemap,
 }
 
@@ -340,12 +340,19 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // movement so they can start heading home this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
-    // ECMAINT settles the starbase growth bonus before the year's ticks.
+    // ECMAINT's planet pass (`1852:0000`) runs before the year driver
+    // (`0824:1004`): each owned world completes its build queue and then
+    // settles its economy, so the units finished this year sit in the
+    // stardock, or on the surface, through every tick that follows.
     let starbase_planets = economics::starbase_planets(game_data);
+    let planets_with_builds = economics::process_build_completion(game_data)?;
+    economics::process_planet_economics(game_data, &planets_with_builds, &starbase_planets)?;
 
     // The year's 52 ticks: every fleet and starbase, in a random order,
     // moves, meets the units sharing its sector and depth layer, and runs
-    // its order's arrival test.
+    // its order's arrival test. A hostile fleet strikes in the tick it
+    // reaches orbit, or in the first tick when it starts the year in orbit
+    // on a hostile order.
     let year = encounter::run_year(
         game_data,
         campaign_seed,
@@ -354,6 +361,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     )?;
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;
+    refs.assault_events = year.assault_events;
     let guard_merges: Vec<(FleetMergeEvent, bool)> =
         std::mem::take(&mut refs.movement_events.guard_merges);
     refs.merge_events.extend(
@@ -404,6 +412,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     }
 
     let mut fleet_battle_phase_events = std::mem::take(&mut refs.encounter_events);
+    let mut assault_events = std::mem::take(&mut refs.assault_events);
 
     // Apply colonization results to the in-memory game state.
     let mut colonization_events =
@@ -433,39 +442,14 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 .and_then(|arrival| arrival.stardate_week);
         }
     }
-    let newly_colonized_planets = colonization_events
-        .iter()
-        .filter_map(|event| match *event {
-            ColonizationResolvedEvent::Succeeded { planet_idx, .. } => Some(planet_idx),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    // Process build queues and track which planets had activity
-    let planets_with_builds = economics::process_build_completion(game_data)?;
-
-    // Process planet economic updates for planets that had builds
-    economics::process_planet_economics(
-        game_data,
-        &planets_with_builds,
-        &newly_colonized_planets,
-        &starbase_planets,
-    )?;
-
     // Run autopilot / rogue AI planet economics.
     // Updates factories, armies, and raw[0x0E] for rogue and autopilot-on players.
+    // ECMAINT runs this pass at the start of the next year (`24a3:3cc6`),
+    // before that year's planet pass; the end of this year is the same point.
     economics::process_autopilot_ai(game_data)?;
 
     // ECMAINT leaves PLAYER 0x46 naming the last base in each chain.
     game_data.sync_last_base_records();
-
-    // Hostile fleets strike in the tick they reach orbit, or in the first
-    // tick of the year when they start it in orbit on a hostile order.
-    let mut assault_events = combat::process_planetary_assaults(
-        game_data,
-        campaign_seed,
-        &refs.movement_events.hostile_strike_fleet_indices,
-    )?;
 
     // Recompute per-player planet count and production score from the in-memory
     // planet records after hostile action, since assault resolution can change ownership.
@@ -612,6 +596,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         starbase_report_events: movement_events.starbase_reports,
         assault_report_events: assault_events.assault_report_events,
         scout_contact_events: fleet_battle_phase_events.scout_contact_events,
+        starbase_sighting_events: fleet_battle_phase_events.starbase_sighting_events,
         encounter_disposition_events: fleet_battle_phase_events.encounter_disposition_events,
         invalid_player_state_events: refs.invalid_player_state_events,
         fleet_merge_events: refs.merge_events,
@@ -846,16 +831,13 @@ fn apply_fleet_removal_remap(
         .iter()
         .map(|f| f.fleet_id_word_raw())
         .collect();
-    let removed_fleet_number_by_id: std::collections::HashMap<u16, u8> = game_data
+    let removed_fleet_keys: std::collections::HashSet<(u8, u16)> = game_data
         .fleets
         .records
         .iter()
         .enumerate()
         .filter(|(idx, _)| to_remove[*idx])
-        .filter_map(|(_, fleet)| {
-            let fleet_number = fleet.local_slot_word_raw() as u8;
-            (fleet_number != 0).then_some((fleet.fleet_id_word_raw(), fleet_number))
-        })
+        .map(|(_, fleet)| (fleet.owner_empire_raw(), fleet.local_slot_word_raw()))
         .collect();
 
     let removed_before: Vec<u16> = {
@@ -883,7 +865,9 @@ fn apply_fleet_removal_remap(
         }
     };
 
-    // Surviving local fleet numbers stay unchanged. Only global linkage IDs compress.
+    // Surviving local fleet numbers stay unchanged. Only global linkage IDs
+    // compress. A Join order names its host by fleet number, so it needs no
+    // remap; it is zeroed only when the host itself was removed.
     let mut remap_info = FleetRemovalRemapInfo {
         fleet_indices: FleetIndexRemap::from_removed(to_remove),
         ..FleetRemovalRemapInfo::default()
@@ -899,20 +883,17 @@ fn apply_fleet_removal_remap(
         remapped.set_next_fleet_link_word_raw(remap_id(fleet.next_fleet_link_word_raw()));
         remapped.set_previous_fleet_id(remap_id(fleet.previous_fleet_id()));
         if fleet.standing_order_kind() == Order::JoinAnotherFleet {
-            let prior_host_id = fleet.join_host_fleet_id_raw();
-            let remapped_host_id = remap_id(prior_host_id);
-            remapped.set_join_host_fleet_id_raw(remapped_host_id);
-            if remapped_host_id == 0 && prior_host_id != 0 {
+            let prior_host_number = fleet.join_host_fleet_id_raw();
+            if prior_host_number != 0
+                && removed_fleet_keys.contains(&(fleet.owner_empire_raw(), prior_host_number))
+            {
+                remapped.set_join_host_fleet_id_raw(0);
                 remap_info
-                    .prior_join_host_ids
-                    .insert(new_fleet_id, prior_host_id);
-                if let Some(host_fleet_number) =
-                    removed_fleet_number_by_id.get(&prior_host_id).copied()
-                {
-                    remap_info
-                        .destroyed_join_host_fleet_numbers
-                        .insert(new_fleet_id, host_fleet_number);
-                }
+                    .prior_join_host_numbers
+                    .insert(new_fleet_id, prior_host_number);
+                remap_info
+                    .destroyed_join_host_fleet_numbers
+                    .insert(new_fleet_id, prior_host_number as u8);
             }
         }
         remapped_fleets.push(remapped);

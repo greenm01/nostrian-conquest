@@ -14,12 +14,13 @@ pub(super) fn process_mission_fleet_merging(
     let mut to_remove = vec![false; fleet_count];
     let mut merge_events = Vec::new();
 
-    let fleet_lookup: std::collections::HashMap<u16, usize> = game_data
+    // ECMAINT finds the host by owner and fleet number (the 0x00 word).
+    let fleet_lookup: std::collections::HashMap<(u8, u16), usize> = game_data
         .fleets
         .records
         .iter()
         .enumerate()
-        .map(|(idx, fleet)| (fleet.fleet_id_word_raw(), idx))
+        .map(|(idx, fleet)| ((fleet.owner_empire_raw(), fleet.local_slot_word_raw()), idx))
         .collect();
 
     for joiner_idx in 0..fleet_count {
@@ -30,28 +31,23 @@ pub(super) fn process_mission_fleet_merging(
         if joiner.standing_order_kind() != Order::JoinAnotherFleet {
             continue;
         }
-        let host_id = joiner.join_host_fleet_id_raw();
+        let host_number = joiner.join_host_fleet_id_raw();
         let joiner_owner = joiner.owner_empire_raw();
         let joiner_fleet_id = joiner.fleet_id_word_raw();
         let joiner_coords = joiner.current_location_coords_raw();
-        let Some(&host_idx) = fleet_lookup.get(&host_id) else {
+        let Some(&host_idx) = fleet_lookup.get(&(joiner_owner, host_number)) else {
             continue;
         };
         if host_idx == joiner_idx || to_remove[host_idx] {
             continue;
         }
-        let same_owner = game_data.fleets.records[host_idx].owner_empire_raw() == joiner_owner;
         let same_coords =
             game_data.fleets.records[host_idx].current_location_coords_raw() == joiner_coords;
         // The join resolves when the joiner settles at its target depth in
         // the host's sector, as ECMAINT's join arrival test requires.
         let joiner = &game_data.fleets.records[joiner_idx];
         let settled = joiner.depth() == target_depth(joiner.world_target_flag_raw());
-        if !same_owner
-            || !same_coords
-            || !settled
-            || !merge_fits_host(game_data, host_idx, joiner_idx)
-        {
+        if !same_coords || !settled || !merge_fits_host(game_data, host_idx, joiner_idx) {
             continue;
         }
 
@@ -143,32 +139,34 @@ pub(super) fn process_mission_fleet_merging(
 
 /// Retarget or abandon join missions after one fleet-record compaction.
 ///
-/// `merge_events` carry fleet ids from before that compaction, while the
-/// fleets' join-host ids were already remapped by it; `remap_info` bridges
-/// the two id spaces.
+/// Join hosts are named by (owner, fleet number); fleet numbers survive a
+/// compaction, so a joiner whose host was removed has had its host number
+/// zeroed by the remap, and `remap_info` remembers what it was. Merge events
+/// are keyed by the absorbed fleet's number, which ECMAINT's merge
+/// (`2895:4a6b`) uses to point the absorbed fleet's joiners at the host.
 pub(super) fn process_join_host_updates(
     game_data: &mut CoreGameData,
     merge_events: &[FleetMergeEvent],
     destroyed_join_host_fleet_numbers: &std::collections::HashMap<u16, u8>,
     remap_info: &FleetRemovalRemapInfo,
 ) -> Vec<JoinMissionHostEvent> {
-    // Pre-compaction id of each absorbed fleet -> the merge that absorbed it.
+    // (owner, absorbed fleet number) -> the merge that absorbed it.
     let mut absorbed_by = std::collections::HashMap::new();
     for event in merge_events {
         if event.absorbed_fleet_id_raw != 0
             && event.absorbed_fleet_id_raw != event.host_fleet_id_raw
         {
-            absorbed_by.insert(event.absorbed_fleet_id_raw, event);
+            absorbed_by.insert(
+                (
+                    event.owner_empire_raw,
+                    u16::from(event.absorbed_fleet_number),
+                ),
+                event,
+            );
         }
     }
 
-    let current_fleet_ids: std::collections::HashSet<u16> = game_data
-        .fleets
-        .records
-        .iter()
-        .map(|fleet| fleet.fleet_id_word_raw())
-        .collect();
-    let current_host_viability: std::collections::HashMap<u16, bool> = game_data
+    let current_host_viability: std::collections::HashMap<(u8, u16), bool> = game_data
         .fleets
         .records
         .iter()
@@ -179,25 +177,22 @@ pub(super) fn process_join_host_updates(
                 || fleet.scout_count() > 0
                 || fleet.troop_transport_count() > 0
                 || fleet.etac_count() > 0;
-            (fleet.fleet_id_word_raw(), viable)
+            (
+                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
+                viable,
+            )
         })
         .collect();
-    let current_fleet_coords: std::collections::HashMap<u16, [u8; 2]> = game_data
+    let current_fleet_coords: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .fleets
         .records
         .iter()
         .map(|fleet| {
             (
-                fleet.fleet_id_word_raw(),
+                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
                 fleet.current_location_coords_raw(),
             )
         })
-        .collect();
-    let current_fleet_numbers: std::collections::HashMap<u16, u8> = game_data
-        .fleets
-        .records
-        .iter()
-        .map(|fleet| (fleet.fleet_id_word_raw(), fleet.local_slot_word_raw() as u8))
         .collect();
 
     let mut events = Vec::new();
@@ -206,30 +201,28 @@ pub(super) fn process_join_host_updates(
             continue;
         }
 
-        let host_id = fleet.join_host_fleet_id_raw();
-        if host_id == fleet.fleet_id_word_raw() {
+        let owner = fleet.owner_empire_raw();
+        let host_number = fleet.join_host_fleet_id_raw();
+        if host_number == fleet.local_slot_word_raw() {
             continue;
         }
 
-        // host_id == 0 means the host fleet was removed (culled at turn start
-        // or destroyed in a prior step) and the remap zeroed the reference.
-        // Treat it the same as a missing/non-viable host — abandon the mission.
-        if host_id == 0 {
+        // A zero host number means the host fleet was removed (culled at
+        // turn start or destroyed in a prior step) and the remap zeroed the
+        // reference. Follow it into an absorbing host, else abandon.
+        if host_number == 0 {
             let absorbing_merge = remap_info
-                .prior_join_host_ids
+                .prior_join_host_numbers
                 .get(&fleet.fleet_id_word_raw())
-                .and_then(|prior_host_id| absorbed_by.get(prior_host_id));
+                .and_then(|prior_host_number| absorbed_by.get(&(owner, *prior_host_number)));
             if let Some(merge) = absorbing_merge {
-                if let Some(new_host_id) =
-                    remap_info.fleet_indices.fleet_id(merge.host_fleet_id_raw)
-                {
-                    fleet.set_join_host_fleet_id_raw(new_host_id);
-                    if let Some(coords) = current_fleet_coords.get(&new_host_id).copied() {
-                        fleet.set_standing_order_target_coords_raw(coords);
-                    }
+                let new_host_number = u16::from(merge.host_fleet_number);
+                if let Some(coords) = current_fleet_coords.get(&(owner, new_host_number)) {
+                    fleet.set_join_host_fleet_id_raw(new_host_number);
+                    fleet.set_standing_order_target_coords_raw(*coords);
                     events.push(JoinMissionHostEvent::Retargeted {
                         fleet_idx,
-                        owner_empire_raw: fleet.owner_empire_raw(),
+                        owner_empire_raw: owner,
                         previous_host_fleet_number: Some(merge.absorbed_fleet_number),
                         new_host_fleet_number: Some(merge.host_fleet_number),
                         coords: fleet.current_location_coords_raw(),
@@ -244,7 +237,7 @@ pub(super) fn process_join_host_updates(
             // join_host_fleet_id_raw is already 0 — no need to set it again.
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
-                owner_empire_raw: fleet.owner_empire_raw(),
+                owner_empire_raw: owner,
                 destroyed_host_fleet_number: destroyed_join_host_fleet_numbers
                     .get(&fleet.fleet_id_word_raw())
                     .copied(),
@@ -253,13 +246,9 @@ pub(super) fn process_join_host_updates(
             continue;
         }
 
-        // A non-zero host id survived the compaction, so it was not absorbed.
-        let host_exists = current_fleet_ids.contains(&host_id);
-        let host_viable = current_host_viability
-            .get(&host_id)
-            .copied()
-            .unwrap_or(false);
-        if !host_exists || !host_viable {
+        // A non-zero host number survived the compaction, so it was not absorbed.
+        let host_viable = current_host_viability.get(&(owner, host_number)).copied();
+        if host_viable != Some(true) {
             let coords = fleet.current_location_coords_raw();
             fleet.set_standing_order_kind(Order::HoldPosition);
             fleet.set_current_speed(0);
@@ -267,8 +256,8 @@ pub(super) fn process_join_host_updates(
             fleet.set_join_host_fleet_id_raw(0);
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
-                owner_empire_raw: fleet.owner_empire_raw(),
-                destroyed_host_fleet_number: current_fleet_numbers.get(&host_id).copied(),
+                owner_empire_raw: owner,
+                destroyed_host_fleet_number: host_viable.is_some().then_some(host_number as u8),
                 coords,
             });
         }

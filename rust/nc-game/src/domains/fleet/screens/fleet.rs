@@ -173,6 +173,8 @@ pub enum FleetSingleOrderMode {
     EnteringTarget,
     EnteringTargetX,
     EnteringTargetY,
+    /// ECGAME's Seek Home question for a fleet already in its nearest system.
+    SeekingNextClosest,
     ConfirmingTarget,
 }
 
@@ -213,6 +215,9 @@ pub enum FleetGroupOrderMode {
     EnteringTarget,
     EnteringTargetX,
     EnteringTargetY,
+    /// ECGAME's Seek Home question for a lone fleet already in its nearest
+    /// system.
+    SeekingNextClosest,
     ConfirmingTarget,
 }
 
@@ -1134,11 +1139,15 @@ impl FleetSingleOrderScreen {
         current_year: u16,
         status: Option<&str>,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
-        if mode == FleetSingleOrderMode::ConfirmingTarget {
+        if matches!(
+            mode,
+            FleetSingleOrderMode::ConfirmingTarget | FleetSingleOrderMode::SeekingNextClosest
+        ) {
             return self.render_confirm_target(
                 row,
                 new_order_label,
                 header_text,
+                mode == FleetSingleOrderMode::SeekingNextClosest,
                 confirm_input,
                 current_year,
                 status,
@@ -1319,6 +1328,7 @@ impl FleetSingleOrderScreen {
         row: &FleetRow,
         new_order_label: &str,
         header_text: &str,
+        seek_next_closest: bool,
         confirm_input: &str,
         current_year: u16,
         status: Option<&str>,
@@ -1335,7 +1345,7 @@ impl FleetSingleOrderScreen {
         draw_status_line(&mut buffer, 4, "", header_text);
         draw_status_line(&mut buffer, 6, "New Orders: ", new_order_label);
         let command_row = menu_prompt_row(6);
-        draw_confirm_prompt_at(&mut buffer, command_row, COMMAND_LABEL, confirm_input);
+        draw_order_confirm_prompt(&mut buffer, command_row, seek_next_closest, confirm_input);
         if let Some(status) = status {
             draw_prompt_error_after_padded(&mut buffer, command_row, status);
         }
@@ -1475,11 +1485,15 @@ impl FleetGroupScreen {
         }
         let selected_fleet_label =
             format_selected_fleet_numbers(rows, selected_fleet_record_indexes);
-        if mode == FleetGroupOrderMode::ConfirmingTarget {
+        if matches!(
+            mode,
+            FleetGroupOrderMode::ConfirmingTarget | FleetGroupOrderMode::SeekingNextClosest
+        ) {
             return self.render_confirm_target(
                 &selected_fleet_label,
                 target_status_line,
                 new_order_label,
+                mode == FleetGroupOrderMode::SeekingNextClosest,
                 confirm_input,
                 current_year,
                 status,
@@ -1684,9 +1698,9 @@ impl FleetGroupScreen {
                 );
                 command_row + 2
             }
-            FleetGroupOrderMode::SelectingFleets | FleetGroupOrderMode::ConfirmingTarget => {
-                command_row
-            }
+            FleetGroupOrderMode::SelectingFleets
+            | FleetGroupOrderMode::SeekingNextClosest
+            | FleetGroupOrderMode::ConfirmingTarget => command_row,
         };
         if let Some(status) = status {
             draw_prompt_error_after_padded(&mut buffer, active_row, status);
@@ -1699,6 +1713,7 @@ impl FleetGroupScreen {
         selected_fleet_label: &str,
         header_text: &str,
         new_order_label: &str,
+        seek_next_closest: bool,
         confirm_input: &str,
         current_year: u16,
         status: Option<&str>,
@@ -1716,7 +1731,7 @@ impl FleetGroupScreen {
         draw_status_line(&mut buffer, 5, "", header_text);
         draw_status_line(&mut buffer, 7, "New Orders: ", new_order_label);
         let command_row = menu_prompt_row(7);
-        draw_confirm_prompt_at(&mut buffer, command_row, COMMAND_LABEL, confirm_input);
+        draw_order_confirm_prompt(&mut buffer, command_row, seek_next_closest, confirm_input);
         if let Some(status) = status {
             draw_prompt_error_after_padded(&mut buffer, command_row, status);
         }
@@ -2241,6 +2256,28 @@ fn fleet_list_target_label(target_coords: [u8; 2]) -> String {
         String::new()
     } else {
         format_sector_coords_table(target_coords)
+    }
+}
+
+/// The confirm prompt of an order, or ECGAME's Seek Home question in its
+/// place.
+fn draw_order_confirm_prompt(
+    buffer: &mut PlayfieldBuffer,
+    row: usize,
+    seek_next_closest: bool,
+    input: &str,
+) {
+    if seek_next_closest {
+        draw_command_line_default_input_padded(
+            buffer,
+            row,
+            COMMAND_LABEL,
+            &format!("{} ", nc_engine::SEEK_NEXT_CLOSEST_PROMPT),
+            "Y",
+            input,
+        );
+    } else {
+        draw_confirm_prompt_at(buffer, row, COMMAND_LABEL, input);
     }
 }
 

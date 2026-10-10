@@ -27,8 +27,6 @@ session {
 
 // Inactivity thresholds (in turns). Set to 0 to disable.
 inactivity {
-    // Purge a player after this many inactive turns (0–100).
-    purge_after_turns 0
     // Put a player on autopilot after this many inactive turns (0–100).
     autopilot_after_turns 3
 }

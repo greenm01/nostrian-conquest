@@ -103,6 +103,7 @@ impl DashApp {
                 FleetOverlayPromptMode::OrderTarget
                 | FleetOverlayPromptMode::OrderTargetX
                 | FleetOverlayPromptMode::OrderTargetY
+                | FleetOverlayPromptMode::SeekNextClosest
                 | FleetOverlayPromptMode::OrderConfirm => {
                     self.fleet_overlay.order_status.as_deref()
                 }

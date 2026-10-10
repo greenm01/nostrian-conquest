@@ -345,7 +345,54 @@ fn a_base_under_way_does_not_scan() {
             !events
                 .scout_contact_events
                 .iter()
-                .any(|event| matches!(event.source, nc_data::ContactReportSource::Starbase(_)))
+                .any(|event| matches!(event.source, nc_data::ContactReportSource::Starbase { .. }))
         );
     }
+}
+
+fn guard_arrivals(events: &MaintenanceEvents) -> usize {
+    events
+        .mission_events
+        .iter()
+        .filter(|event| {
+            event.kind == Mission::GuardStarbase && event.outcome == MissionOutcome::Arrived
+        })
+        .count()
+}
+
+/// Classic keeps the `0x22 = 1` ECGAME writes, so a guard of a deep-space
+/// base re-arrives every tick. Rust gives the escort its base's layer on
+/// arrival, and it arrives once (t040).
+#[test]
+fn a_guard_arrives_at_its_base_once() {
+    let mut game_data = load("ecmaint-starbase-lift-post");
+    guard(&mut game_data, 1, [15, 13], Real48::ZERO);
+    let fleet = &mut game_data.fleets.records[1];
+    fleet.set_standing_order_target_coords_raw(HOME);
+    fleet.set_mission_target(1, 1);
+    game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
+
+    assert_eq!(guard_arrivals(&year(&mut game_data)), 1);
+    let fleet = &game_data.fleets.records[1];
+    assert_eq!(fleet.world_target_flag_raw(), 0, "the base's layer");
+    assert_eq!(guard_arrivals(&year(&mut game_data)), 0);
+}
+
+/// A guard at rest in orbit under its deep-space base never moves in
+/// classic. Rust climbs it to the base, where it merges into the escort
+/// (t040).
+#[test]
+fn a_guard_in_orbit_climbs_to_its_deep_space_base() {
+    let mut game_data = load("ecmaint-starbase-lift-post");
+    guard(&mut game_data, 1, HOME, Real48::ONE);
+    let ships = game_data.fleets.records[0].total_starships()
+        + game_data.fleets.records[1].total_starships();
+
+    let events = year(&mut game_data);
+
+    assert_eq!(game_data.fleets.records[0].total_starships(), ships);
+    let merges = guard_merges(&events);
+    assert_eq!(merges.len(), 1);
+    assert_eq!(merges[0].absorbed_fleet_number, 2);
+    assert_eq!(merges[0].host_fleet_number, 1);
 }

@@ -288,12 +288,47 @@ pub enum LostWorldResponse {
     Leaving,
 }
 
+/// What a starbase tells its owner about the alien fleet it identified.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StarbaseAlert {
+    /// The fleet is in, or on an assault bound for, the owner's world here:
+    /// "The aliens appear to be headed at our planet X! We are alerting all
+    /// fleets in the area."
+    HeadedAtOurWorld,
+    /// The owner has declared the fleet's empire an enemy: "We are alerting
+    /// all fleets in the area."
+    Enemy,
+    /// Neither: "Continuing with scanning assignment...".
+    Scanning,
+}
+
+/// A starbase identified an alien starbase sharing its sector and depth
+/// layer (ECMAINT `18ea:1fea`). It only reports; a base never attacks.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StarbaseSightingEvent {
+    /// Empire that owns the reporting base and receives the report.
+    pub viewer_empire_raw: u8,
+    pub starbase_id: u16,
+    /// The sector both bases share.
+    pub coords: [u8; 2],
+    /// Whether they are in a world's system (depth layer 1).
+    pub in_system: bool,
+    pub target_empire_raw: u8,
+    pub target_starbase_id: u16,
+    /// The viewer has declared the target's empire an enemy: "We are
+    /// alerting all fleets in the area." Otherwise "Continuing with
+    /// scanning assignment...".
+    pub alerting: bool,
+    /// Week of year (1-52) when this event occurred.
+    pub stardate_week: Option<u8>,
+}
+
 /// A scout-style hostile contact report resolved during maintenance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContactReportSource {
     FleetMission(Mission),
     Fleet(u8),
-    Starbase(u16),
+    Starbase { id: u16, alert: StarbaseAlert },
 }
 
 /// A scout-style hostile contact report resolved during maintenance.
@@ -462,10 +497,13 @@ pub struct MissionEvent {
     pub stardate_week: Option<u8>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EncounterDispositionReason {
     RoeDeclined,
     RoeWithdrawal,
+    /// The fleet meant to attack but the intercept roll failed: "We are
+    /// unable to intercept the enemy."
+    InterceptFailed,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -721,6 +759,8 @@ pub struct MaintenanceEvents {
     pub assault_report_events: Vec<AssaultReportEvent>,
     /// Scout-style hostile contact reports.
     pub scout_contact_events: Vec<ScoutContactEvent>,
+    /// Starbases that identified an alien starbase.
+    pub starbase_sighting_events: Vec<StarbaseSightingEvent>,
     /// Contact/retreat outcomes driven by ROE and hostile encounters.
     pub encounter_disposition_events: Vec<EncounterDispositionEvent>,
     /// Sanitization reports for invalid player-authored state.

@@ -14,23 +14,13 @@ use super::exchange::{
     apply_landing_fire_to_fleet, resolve_ground_exchange, resolve_space_exchange,
     scalar_hits_with_critical,
 };
-use super::reporting::{
-    mission_kind_for_fleet, preferred_reporting_fleet_number, push_planet_intel,
-};
+use super::reporting::{preferred_reporting_fleet_number, push_planet_intel};
 use super::retreat::set_fleet_to_hold_current_position;
 use super::state::{
     FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_ET, IDX_SB, IDX_SC, IDX_TT, fleet_class_ds,
     fleet_state_from_records, planet_idx_at_coords, ship_counts_from_state,
     ship_losses_from_states, starbase_count_at,
 };
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum MissionClass {
-    Bombard,
-    Invade,
-    Blitz,
-    Other,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum AssaultActorSelection {
@@ -46,6 +36,43 @@ pub(crate) struct AssaultEvents {
     pub planet_intel_events: Vec<PlanetIntelEvent>,
     pub ownership_change_events: Vec<PlanetOwnershipChangeEvent>,
     pub mission_events: Vec<MissionEvent>,
+}
+
+impl AssaultEvents {
+    pub(crate) fn append(&mut self, mut other: Self) {
+        self.bombard_events.append(&mut other.bombard_events);
+        self.fleet_destroyed_events
+            .append(&mut other.fleet_destroyed_events);
+        self.assault_report_events
+            .append(&mut other.assault_report_events);
+        self.planet_intel_events
+            .append(&mut other.planet_intel_events);
+        self.ownership_change_events
+            .append(&mut other.ownership_change_events);
+        self.mission_events.append(&mut other.mission_events);
+    }
+
+    /// Date every event to the tick the strike was resolved in.
+    pub(crate) fn stamp(&mut self, tick: u8) {
+        for event in &mut self.bombard_events {
+            event.stardate_week = Some(tick);
+        }
+        for event in &mut self.fleet_destroyed_events {
+            event.stardate_week = Some(tick);
+        }
+        for event in &mut self.assault_report_events {
+            event.stardate_week = Some(tick);
+        }
+        for event in &mut self.planet_intel_events {
+            event.stardate_week = Some(tick);
+        }
+        for event in &mut self.ownership_change_events {
+            event.stardate_week = Some(tick);
+        }
+        for event in &mut self.mission_events {
+            event.stardate_week = Some(tick);
+        }
+    }
 }
 
 fn clear_arrival_and_hold(game_data: &mut CoreGameData, fleet_indices: &[usize]) {
@@ -514,665 +541,305 @@ fn select_orbital_supremacy_empire(
     AssaultActorSelection::Winner(contenders[0].0)
 }
 
-fn mission_priority(class: MissionClass) -> u8 {
-    match class {
-        MissionClass::Blitz => 0,
-        MissionClass::Invade => 1,
-        MissionClass::Bombard => 2,
-        MissionClass::Other => 3,
-    }
-}
-
-/// Resolve the planetary attacks of fleets whose strike test passed this
-/// year (`strikes`), grouped by target world. A striking fleet is in orbit
-/// at depth 1.0 with speed 0. What the attack leaves on its order:
+/// Resolve the planetary attack of fleet `fleet_idx`, whose strike test
+/// passed this tick: one fleet against its target world, both as they stand
+/// now. The fleet is in orbit at depth 1.0 with speed 0. What the attack
+/// leaves on its order:
 /// - Bombard: the order stands, so the fleet bombards again each year until
 ///   the player changes it.
 /// - Invade and Blitz: the assault resolves, win or lose (an invasion whose
 ///   batteries survive suppression aborts with its armies still aboard), and
-///   the surviving fleets hold in orbit. There is no retry.
+///   the surviving fleet holds in orbit. There is no retry.
 ///
-/// An orbit blocked by a stronger or tied force aborts the order to Hold.
-pub(crate) fn process_planetary_assaults(
+/// A force without combat ships finds the orbit blocked, by the owner's
+/// starbase or by anything at all unless it is a loaded Blitz, and aborts to
+/// Hold. A fleet whose order no longer validates (its own empire took the
+/// world earlier this year, or it lost the ships the order needs) does
+/// nothing; the next year's input sanitizer clears the order.
+pub(crate) fn resolve_strike(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
-    strikes: &[usize],
-) -> Result<AssaultEvents, Box<dyn std::error::Error>> {
-    let battle_year = game_data.conquest.game_year();
-    let striking = |order: Order| -> Vec<usize> {
-        strikes
-            .iter()
-            .copied()
-            .filter(|&idx| fleet_still_ready_for_assault(game_data, idx, order))
-            .collect()
+    fleet_idx: usize,
+) -> AssaultEvents {
+    let mut events = AssaultEvents::default();
+    let order = game_data.fleets.records[fleet_idx].standing_order_kind();
+    let kind = match order {
+        Order::BombardWorld => Mission::BombardWorld,
+        Order::InvadeWorld => Mission::InvadeWorld,
+        Order::BlitzWorld => Mission::BlitzWorld,
+        _ => return events,
     };
-    let bombard_ready = striking(Order::BombardWorld);
-    let invade_ready = striking(Order::InvadeWorld);
-    let blitz_ready = striking(Order::BlitzWorld);
-    let mut by_planet: BTreeMap<usize, BTreeMap<u8, Vec<usize>>> = BTreeMap::new();
-    for &idx in bombard_ready
-        .iter()
-        .chain(&invade_ready)
-        .chain(&blitz_ready)
+    if !fleet_still_ready_for_assault(game_data, fleet_idx, order) {
+        return events;
+    }
+    let coords = game_data.fleets.records[fleet_idx].standing_order_target_coords_raw();
+    let Some(planet_idx) = planet_idx_at_coords(game_data, coords) else {
+        return events;
+    };
+    let empire = game_data.fleets.records[fleet_idx].owner_empire_raw();
+    let fleets = [fleet_idx];
+    let mission_event = move |outcome, abort_reason| MissionEvent {
+        fleet_idx,
+        owner_empire_raw: empire,
+        kind,
+        outcome,
+        abort_reason,
+        planet_idx: Some(planet_idx),
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: None,
+    };
+
+    let entrants = BTreeMap::from([(empire, vec![fleet_idx])]);
+    let blitz_set: HashSet<usize> = (kind == Mission::BlitzWorld)
+        .then_some(fleet_idx)
+        .into_iter()
+        .collect();
+    if select_orbital_supremacy_empire(game_data, planet_idx, &entrants, &blitz_set)
+        == AssaultActorSelection::Blocked
     {
-        let coords = game_data.fleets.records[idx].standing_order_target_coords_raw();
-        if let Some(planet_idx) = planet_idx_at_coords(game_data, coords) {
-            by_planet
-                .entry(planet_idx)
-                .or_default()
-                .entry(game_data.fleets.records[idx].owner_empire_raw())
-                .or_default()
-                .push(idx);
-        }
+        clear_arrival_and_hold(game_data, &fleets);
+        events.mission_events.push(mission_event(
+            MissionOutcome::Aborted,
+            Some(MissionAbortReason::OrbitBlocked),
+        ));
+        return events;
     }
 
-    let bombard_set: HashSet<usize> = bombard_ready.iter().copied().collect();
-    let invade_set: HashSet<usize> = invade_ready.iter().copied().collect();
-    let blitz_set: HashSet<usize> = blitz_ready.iter().copied().collect();
+    let battle_year = game_data.conquest.game_year();
+    match kind {
+        Mission::BombardWorld => {
+            let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+            let pre_armies = game_data.planets.records[planet_idx].army_count_raw();
+            let pre_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
+            let pre_stored_goods = game_data.planets.records[planet_idx].stored_production_points();
+            let pre_factories = game_data.planets.records[planet_idx]
+                .present_production_points()
+                .unwrap_or(0);
+            let pre_stardock_items: u32 = (0..STARDOCK_SLOT_COUNT)
+                .map(|s| game_data.planets.records[planet_idx].stardock_count_raw(s) as u32)
+                .sum();
+            let pre_docked_summary = stardock_summary(&game_data.planets.records[planet_idx]);
 
-    let mut events = AssaultEvents::default();
+            let before = fleet_state_from_records(game_data, &fleets, 0);
+            let initial_attacking_armies: u32 = fleets
+                .iter()
+                .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
+                .sum();
+            let mut fleet_state = before.clone();
+            let mut breakthrough = false;
 
-    for (planet_idx, entrants) in by_planet {
-        let AssaultActorSelection::Winner(winner_empire) =
-            select_orbital_supremacy_empire(game_data, planet_idx, &entrants, &blitz_set)
-        else {
-            for (empire, fleets) in &entrants {
-                clear_arrival_and_hold(game_data, fleets);
-                for &fleet_idx in fleets {
-                    if let Some(kind) =
-                        mission_kind_for_fleet(fleet_idx, &bombard_set, &invade_set, &blitz_set)
-                    {
-                        events.mission_events.push(MissionEvent {
-                            fleet_idx,
-                            owner_empire_raw: *empire,
-                            kind,
-                            outcome: MissionOutcome::Aborted,
-                            abort_reason: Some(MissionAbortReason::OrbitBlocked),
-                            planet_idx: Some(planet_idx),
-                            location_coords: Some(
-                                game_data.planets.records[planet_idx].coords_raw(),
-                            ),
-                            target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                            stardate_week: None,
-                        });
-                    }
+            // Three-round bombardment: rounds 1-2 suppression, round 3 breakthrough if batteries cleared.
+            for round in 1..=3u32 {
+                let attack_as = bombard_attack_as(&fleet_state);
+                if attack_as == 0 {
+                    break; // fleet has no bombardment capability left
                 }
-            }
-            continue;
-        };
+                let batteries_at_round_start =
+                    game_data.planets.records[planet_idx].ground_batteries_raw();
+                let is_breakthrough = round == 3 && batteries_at_round_start == 0;
+                if is_breakthrough {
+                    breakthrough = true;
+                }
 
-        let mission_class = |idx: &usize| {
-            if blitz_set.contains(idx) {
-                MissionClass::Blitz
-            } else if invade_set.contains(idx) {
-                MissionClass::Invade
-            } else if bombard_set.contains(idx) {
-                MissionClass::Bombard
-            } else {
-                MissionClass::Other
-            }
-        };
-        let entrant_fleets = entrants.get(&winner_empire).cloned().unwrap_or_default();
-        let winner_class = entrant_fleets
-            .iter()
-            .map(|idx| (mission_class(idx), *idx))
-            .min_by_key(|(class, idx)| (mission_priority(*class), *idx))
-            .map(|(class, _)| class)
-            .unwrap_or(MissionClass::Other);
-        // One assault class executes per planet per turn. Only fleets whose
-        // own order is that class take part; the winner's other assault
-        // fleets keep their orders and arrival state and act on a later turn.
-        let winner_fleets: Vec<usize> = entrant_fleets
-            .into_iter()
-            .filter(|idx| mission_class(idx) == winner_class)
-            .collect();
+                let defense_as = batteries_at_round_start as u32 * GROUND_AS_BATTERY;
+                let attacker_exchange = resolve_space_exchange(
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    COMBAT_KIND_BOMBARD,
+                    round,
+                    empire,
+                    defender_empire,
+                    attack_as,
+                    defense_as.max(1),
+                    fleet_state.is_mixed(),
+                    false,
+                );
 
-        match winner_class {
-            MissionClass::Bombard => {
-                let coords = game_data.planets.records[planet_idx].coords_raw();
-                let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                let pre_armies = game_data.planets.records[planet_idx].army_count_raw();
-                let pre_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
-                let pre_stored_goods =
-                    game_data.planets.records[planet_idx].stored_production_points();
-                let pre_factories = game_data.planets.records[planet_idx]
-                    .present_production_points()
-                    .unwrap_or(0);
-                let pre_stardock_items: u32 = (0..STARDOCK_SLOT_COUNT)
-                    .map(|s| game_data.planets.records[planet_idx].stardock_count_raw(s) as u32)
-                    .sum();
-                let pre_docked_summary = stardock_summary(&game_data.planets.records[planet_idx]);
-
-                let before = fleet_state_from_records(game_data, &winner_fleets, 0);
-                let initial_attacking_armies: u32 = winner_fleets
-                    .iter()
-                    .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
-                    .sum();
-                let mut fleet_state = before.clone();
-                let mut breakthrough = false;
-
-                // Three-round bombardment: rounds 1-2 suppression, round 3 breakthrough if batteries cleared.
-                for round in 1..=3u32 {
-                    let attack_as = bombard_attack_as(&fleet_state);
-                    if attack_as == 0 {
-                        break; // fleet has no bombardment capability left
-                    }
-                    let batteries_at_round_start =
-                        game_data.planets.records[planet_idx].ground_batteries_raw();
-                    let is_breakthrough = round == 3 && batteries_at_round_start == 0;
-                    if is_breakthrough {
-                        breakthrough = true;
-                    }
-
-                    let defense_as = batteries_at_round_start as u32 * GROUND_AS_BATTERY;
-                    let attacker_exchange = resolve_space_exchange(
+                // Batteries fire back each round they exist.
+                if defense_as > 0 {
+                    let defender_exchange = resolve_space_exchange(
                         campaign_seed,
                         battle_year,
                         coords,
                         COMBAT_KIND_BOMBARD,
                         round,
-                        winner_empire,
                         defender_empire,
-                        attack_as,
-                        defense_as.max(1),
-                        fleet_state.is_mixed(),
+                        empire,
+                        defense_as,
+                        attack_as.max(1),
+                        false,
                         false,
                     );
-
-                    // Batteries fire back each round they exist.
-                    if defense_as > 0 {
-                        let defender_exchange = resolve_space_exchange(
-                            campaign_seed,
-                            battle_year,
-                            coords,
-                            COMBAT_KIND_BOMBARD,
-                            round,
-                            defender_empire,
-                            winner_empire,
-                            defense_as,
-                            attack_as.max(1),
-                            false,
-                            false,
-                        );
-                        let mut next_state = fleet_state.clone();
-                        apply_hits_to_fleet(
-                            &mut next_state,
-                            0,
-                            defender_exchange.hits,
-                            u32::from(defender_exchange.critical),
-                        );
-                        super::fleet_battle::distribute_fleet_losses(
-                            game_data,
-                            &winner_fleets,
-                            &fleet_state,
-                            &next_state,
-                        );
-                        fleet_state = fleet_state_from_records(game_data, &winner_fleets, 0);
-                    }
-
-                    // Apply planet damage: suppression or breakthrough.
-                    let hits = scalar_hits_with_critical(attacker_exchange);
-                    if is_breakthrough {
-                        apply_planet_bombardment_damage(
-                            &mut game_data.planets.records[planet_idx],
-                            hits,
-                        );
-                    } else {
-                        apply_planet_suppression_damage(
-                            &mut game_data.planets.records[planet_idx],
-                            hits,
-                        );
-                    }
-                }
-
-                let post_planet = &game_data.planets.records[planet_idx];
-                let post_docked_summary = stardock_summary(post_planet);
-                events.bombard_events.push(BombardEvent {
-                    planet_idx,
-                    attacker_empire_raw: winner_empire,
-                    attacker_fleet_number: preferred_reporting_fleet_number(
-                        game_data,
-                        &winner_fleets,
-                    ),
-                    defender_empire_raw: post_planet.owner_empire_slot_raw(),
-                    attacker_initial: ship_counts_from_state(&before),
-                    attacker_loaded_armies_initial: initial_attacking_armies,
-                    defender_batteries_initial: pre_batteries,
-                    defender_armies_initial: pre_armies,
-                    attacker_losses: ship_losses_from_states(&before, &fleet_state),
-                    defender_battery_losses: pre_batteries
-                        .saturating_sub(post_planet.ground_batteries_raw()),
-                    defender_army_losses: pre_armies.saturating_sub(post_planet.army_count_raw()),
-                    breakthrough,
-                    docked_losses: stardock_summary_diff(pre_docked_summary, post_docked_summary),
-                    stardock_items_destroyed: pre_stardock_items.saturating_sub(
-                        (0..STARDOCK_SLOT_COUNT)
-                            .map(|s| post_planet.stardock_count_raw(s) as u32)
-                            .sum::<u32>(),
-                    ),
-                    stored_goods_destroyed: pre_stored_goods
-                        .saturating_sub(post_planet.stored_production_points()),
-                    factories_destroyed: pre_factories
-                        .saturating_sub(post_planet.present_production_points().unwrap_or(0)),
-                    stardate_week: None,
-                });
-                if assault_force_destroyed(game_data, &winner_fleets) {
-                    push_assault_destroyed_fleet_event(
-                        &mut events,
-                        game_data,
-                        &winner_fleets,
-                        coords,
-                        ship_counts_from_state(&before),
+                    let mut next_state = fleet_state.clone();
+                    apply_hits_to_fleet(
+                        &mut next_state,
                         0,
-                        pre_batteries,
-                        pre_armies,
-                        pre_batteries.saturating_sub(post_planet.ground_batteries_raw()),
-                        pre_armies.saturating_sub(post_planet.army_count_raw()),
-                        defender_empire,
+                        defender_exchange.hits,
+                        u32::from(defender_exchange.critical),
                     );
-                }
-                for &fleet_idx in &winner_fleets {
-                    if bombard_set.contains(&fleet_idx) {
-                        events.mission_events.push(MissionEvent {
-                            fleet_idx,
-                            owner_empire_raw: winner_empire,
-                            kind: Mission::BombardWorld,
-                            outcome: MissionOutcome::Succeeded,
-                            abort_reason: None,
-                            planet_idx: Some(planet_idx),
-                            location_coords: Some(
-                                game_data.planets.records[planet_idx].coords_raw(),
-                            ),
-                            target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                            stardate_week: None,
-                        });
-                    }
-                }
-            }
-            MissionClass::Invade => {
-                let state = fleet_state_from_records(game_data, &winner_fleets, 0);
-                let bombard_as = bombard_attack_as(&state);
-                let initial_attacking_armies: u32 = winner_fleets
-                    .iter()
-                    .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
-                    .sum();
-                let previous_owner = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                let planet = &game_data.planets.records[planet_idx];
-                let coords = planet.coords_raw();
-                let pre_batteries = planet.ground_batteries_raw();
-                let pre_armies = planet.army_count_raw();
-                let battery_as = planet.ground_batteries_raw() as u32 * GROUND_AS_BATTERY;
-                let suppression_exchange = resolve_space_exchange(
-                    campaign_seed,
-                    battle_year,
-                    coords,
-                    COMBAT_KIND_INVASION_SUPPRESSION,
-                    1,
-                    winner_empire,
-                    previous_owner,
-                    bombard_as,
-                    battery_as.max(1),
-                    state.is_mixed(),
-                    false,
-                );
-                let return_exchange = resolve_space_exchange(
-                    campaign_seed,
-                    battle_year,
-                    coords,
-                    COMBAT_KIND_INVASION_SUPPRESSION,
-                    1,
-                    previous_owner,
-                    winner_empire,
-                    battery_as,
-                    bombard_as.max(1),
-                    false,
-                    false,
-                );
-
-                let before = state.clone();
-                let mut after = state.clone();
-                apply_hits_to_fleet(
-                    &mut after,
-                    0,
-                    return_exchange.hits,
-                    u32::from(return_exchange.critical),
-                );
-                super::fleet_battle::distribute_fleet_losses(
-                    game_data,
-                    &winner_fleets,
-                    &before,
-                    &after,
-                );
-
-                apply_battery_hits(
-                    &mut game_data.planets.records[planet_idx],
-                    scalar_hits_with_critical(suppression_exchange),
-                );
-
-                let batteries_cleared =
-                    game_data.planets.records[planet_idx].ground_batteries_raw() == 0;
-                if batteries_cleared {
-                    let soft_exchange = resolve_ground_exchange(
-                        campaign_seed,
-                        battle_year,
-                        coords,
-                        COMBAT_KIND_INVASION_SOFTEN,
-                        1,
-                        winner_empire,
-                        previous_owner,
-                        bombard_attack_as(&after),
-                        game_data.planets.records[planet_idx].army_count_raw() as u32
-                            * GROUND_AS_ARMY,
-                        0,
+                    super::fleet_battle::distribute_fleet_losses(
+                        game_data,
+                        &fleets,
+                        &fleet_state,
+                        &next_state,
                     );
-                    // Soften targets armies only — factories and stored goods are
-                    // preserved so the captured planet retains its production value.
-                    let soften_army_losses = apply_capped_invasion_soften_damage(
+                    fleet_state = fleet_state_from_records(game_data, &fleets, 0);
+                }
+
+                // Apply planet damage: suppression or breakthrough.
+                let hits = scalar_hits_with_critical(attacker_exchange);
+                if is_breakthrough {
+                    apply_planet_bombardment_damage(
                         &mut game_data.planets.records[planet_idx],
-                        scalar_hits_with_critical(soft_exchange),
-                        pre_armies,
+                        hits,
                     );
-
-                    let attacking_armies: u32 = winner_fleets
-                        .iter()
-                        .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
-                        .sum();
-                    let defender_armies =
-                        game_data.planets.records[planet_idx].army_count_raw() as u32;
-                    let (attacker_survivors, defender_survivors) =
-                        resolve_ground_battle_to_destruction(
-                            campaign_seed,
-                            battle_year,
-                            coords,
-                            COMBAT_KIND_GROUND,
-                            winner_empire,
-                            previous_owner,
-                            attacking_armies,
-                            defender_armies,
-                            1,
-                        );
-                    let defender_battery_losses = pre_batteries.saturating_sub(
-                        game_data.planets.records[planet_idx].ground_batteries_raw(),
-                    );
-                    let defender_army_losses =
-                        pre_armies.saturating_sub(defender_survivors.min(255) as u8);
-
-                    for &idx in &winner_fleets {
-                        game_data.fleets.records[idx].set_army_count(0);
-                    }
-                    if attacker_survivors > 0 && defender_survivors == 0 {
-                        let planet = &mut game_data.planets.records[planet_idx];
-                        planet.set_owner_empire_slot_raw(winner_empire);
-                        // Just captured: no income until the yearly pass has
-                        // stepped the status to 2, as ECMAINT does.
-                        planet.set_ownership_status_raw(0);
-                        planet.set_army_count_raw(attacker_survivors.min(255) as u8);
-                        planet.set_ground_batteries_raw(0);
-                        events
-                            .ownership_change_events
-                            .push(PlanetOwnershipChangeEvent {
-                                planet_idx,
-                                reporting_empire_raw: previous_owner,
-                                previous_owner_empire_raw: previous_owner,
-                                new_owner_empire_raw: winner_empire,
-                                stardate_week: None,
-                            });
-                        for &fleet_idx in &winner_fleets {
-                            if invade_set.contains(&fleet_idx) {
-                                events.mission_events.push(MissionEvent {
-                                    fleet_idx,
-                                    owner_empire_raw: winner_empire,
-                                    kind: Mission::InvadeWorld,
-                                    outcome: MissionOutcome::Succeeded,
-                                    abort_reason: None,
-                                    planet_idx: Some(planet_idx),
-                                    location_coords: Some(
-                                        game_data.planets.records[planet_idx].coords_raw(),
-                                    ),
-                                    target_coords: Some(
-                                        game_data.planets.records[planet_idx].coords_raw(),
-                                    ),
-                                    stardate_week: None,
-                                });
-                            }
-                        }
-                        events.assault_report_events.push(AssaultReportEvent {
-                            kind: Mission::InvadeWorld,
-                            attacker_fleet_number: preferred_reporting_fleet_number(
-                                game_data,
-                                &winner_fleets,
-                            ),
-                            planet_idx,
-                            attacker_empire_raw: winner_empire,
-                            defender_empire_raw: previous_owner,
-                            attacker_initial: ship_counts_from_state(&before),
-                            attacker_loaded_armies_initial: initial_attacking_armies,
-                            defender_batteries_initial: pre_batteries,
-                            defender_armies_initial: pre_armies,
-                            attacker_ship_losses: ship_losses_from_states(&before, &after),
-                            attacker_army_losses: attacking_armies
-                                .saturating_sub(attacker_survivors),
-                            transport_army_losses: 0,
-                            defender_battery_losses,
-                            defender_army_losses_softening: soften_army_losses,
-                            defender_army_losses,
-                            outcome: MissionOutcome::Succeeded,
-                            stardate_week: None,
-                        });
-                        if assault_force_destroyed(game_data, &winner_fleets) {
-                            push_assault_destroyed_fleet_event(
-                                &mut events,
-                                game_data,
-                                &winner_fleets,
-                                coords,
-                                ship_counts_from_state(&before),
-                                initial_attacking_armies,
-                                pre_batteries,
-                                pre_armies,
-                                defender_battery_losses,
-                                defender_army_losses,
-                                previous_owner,
-                            );
-                        }
-                    } else {
-                        game_data.planets.records[planet_idx]
-                            .set_army_count_raw(defender_survivors.min(255) as u8);
-                        for &fleet_idx in &winner_fleets {
-                            if invade_set.contains(&fleet_idx) {
-                                events.mission_events.push(MissionEvent {
-                                    fleet_idx,
-                                    owner_empire_raw: winner_empire,
-                                    kind: Mission::InvadeWorld,
-                                    outcome: MissionOutcome::Failed,
-                                    abort_reason: None,
-                                    planet_idx: Some(planet_idx),
-                                    location_coords: Some(
-                                        game_data.planets.records[planet_idx].coords_raw(),
-                                    ),
-                                    target_coords: Some(
-                                        game_data.planets.records[planet_idx].coords_raw(),
-                                    ),
-                                    stardate_week: None,
-                                });
-                            }
-                        }
-                        events.assault_report_events.push(AssaultReportEvent {
-                            kind: Mission::InvadeWorld,
-                            attacker_fleet_number: preferred_reporting_fleet_number(
-                                game_data,
-                                &winner_fleets,
-                            ),
-                            planet_idx,
-                            attacker_empire_raw: winner_empire,
-                            defender_empire_raw: previous_owner,
-                            attacker_initial: ship_counts_from_state(&before),
-                            attacker_loaded_armies_initial: initial_attacking_armies,
-                            defender_batteries_initial: pre_batteries,
-                            defender_armies_initial: pre_armies,
-                            attacker_ship_losses: ship_losses_from_states(&before, &after),
-                            attacker_army_losses: attacking_armies,
-                            transport_army_losses: 0,
-                            defender_battery_losses,
-                            defender_army_losses_softening: soften_army_losses,
-                            defender_army_losses,
-                            outcome: MissionOutcome::Failed,
-                            stardate_week: None,
-                        });
-                        if assault_force_destroyed(game_data, &winner_fleets) {
-                            push_assault_destroyed_fleet_event(
-                                &mut events,
-                                game_data,
-                                &winner_fleets,
-                                coords,
-                                ship_counts_from_state(&before),
-                                initial_attacking_armies,
-                                pre_batteries,
-                                pre_armies,
-                                defender_battery_losses,
-                                defender_army_losses,
-                                previous_owner,
-                            );
-                        }
-                    }
                 } else {
-                    // The batteries held: no troops land and the fleets
-                    // keep their armies.
-                    for &fleet_idx in &winner_fleets {
-                        if invade_set.contains(&fleet_idx) {
-                            events.mission_events.push(MissionEvent {
-                                fleet_idx,
-                                owner_empire_raw: winner_empire,
-                                kind: Mission::InvadeWorld,
-                                outcome: MissionOutcome::Aborted,
-                                abort_reason: None,
-                                planet_idx: Some(planet_idx),
-                                location_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                target_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                stardate_week: None,
-                            });
-                        }
-                    }
-                    events.assault_report_events.push(AssaultReportEvent {
-                        kind: Mission::InvadeWorld,
-                        attacker_fleet_number: preferred_reporting_fleet_number(
-                            game_data,
-                            &winner_fleets,
-                        ),
-                        planet_idx,
-                        attacker_empire_raw: winner_empire,
-                        defender_empire_raw: previous_owner,
-                        attacker_initial: ship_counts_from_state(&before),
-                        attacker_loaded_armies_initial: initial_attacking_armies,
-                        defender_batteries_initial: pre_batteries,
-                        defender_armies_initial: pre_armies,
-                        attacker_ship_losses: ship_losses_from_states(&before, &after),
-                        attacker_army_losses: 0,
-                        transport_army_losses: 0,
-                        defender_battery_losses: pre_batteries.saturating_sub(
-                            game_data.planets.records[planet_idx].ground_batteries_raw(),
-                        ),
-                        defender_army_losses_softening: 0,
-                        defender_army_losses: 0,
-                        outcome: MissionOutcome::Aborted,
-                        stardate_week: None,
-                    });
-                    if assault_force_destroyed(game_data, &winner_fleets) {
-                        push_assault_destroyed_fleet_event(
-                            &mut events,
-                            game_data,
-                            &winner_fleets,
-                            coords,
-                            ship_counts_from_state(&before),
-                            initial_attacking_armies,
-                            pre_batteries,
-                            pre_armies,
-                            pre_batteries.saturating_sub(
-                                game_data.planets.records[planet_idx].ground_batteries_raw(),
-                            ),
-                            0,
-                            previous_owner,
-                        );
-                    }
+                    apply_planet_suppression_damage(
+                        &mut game_data.planets.records[planet_idx],
+                        hits,
+                    );
                 }
+            }
 
-                let intel_source = if game_data.planets.records[planet_idx].owner_empire_slot_raw()
-                    == winner_empire
-                {
-                    PlanetIntelSource::AssaultSuccess
-                } else {
-                    PlanetIntelSource::AssaultFailure
-                };
-
-                clear_arrival_and_hold(game_data, &winner_fleets);
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    winner_empire,
-                    intel_source,
-                );
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    previous_owner,
-                    intel_source,
-                );
-                let owner_after = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    owner_after,
-                    intel_source,
+            let post_planet = &game_data.planets.records[planet_idx];
+            let post_docked_summary = stardock_summary(post_planet);
+            events.bombard_events.push(BombardEvent {
+                planet_idx,
+                attacker_empire_raw: empire,
+                attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
+                defender_empire_raw: post_planet.owner_empire_slot_raw(),
+                attacker_initial: ship_counts_from_state(&before),
+                attacker_loaded_armies_initial: initial_attacking_armies,
+                defender_batteries_initial: pre_batteries,
+                defender_armies_initial: pre_armies,
+                attacker_losses: ship_losses_from_states(&before, &fleet_state),
+                defender_battery_losses: pre_batteries
+                    .saturating_sub(post_planet.ground_batteries_raw()),
+                defender_army_losses: pre_armies.saturating_sub(post_planet.army_count_raw()),
+                breakthrough,
+                docked_losses: stardock_summary_diff(pre_docked_summary, post_docked_summary),
+                stardock_items_destroyed: pre_stardock_items.saturating_sub(
+                    (0..STARDOCK_SLOT_COUNT)
+                        .map(|s| post_planet.stardock_count_raw(s) as u32)
+                        .sum::<u32>(),
+                ),
+                stored_goods_destroyed: pre_stored_goods
+                    .saturating_sub(post_planet.stored_production_points()),
+                factories_destroyed: pre_factories
+                    .saturating_sub(post_planet.present_production_points().unwrap_or(0)),
+                stardate_week: None,
+            });
+            if assault_force_destroyed(game_data, &fleets) {
+                push_assault_destroyed_fleet_event(
+                    &mut events,
+                    game_data,
+                    &fleets,
+                    coords,
+                    ship_counts_from_state(&before),
+                    0,
+                    pre_batteries,
+                    pre_armies,
+                    pre_batteries.saturating_sub(post_planet.ground_batteries_raw()),
+                    pre_armies.saturating_sub(post_planet.army_count_raw()),
+                    defender_empire,
                 );
             }
-            MissionClass::Blitz => {
-                let previous_owner = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                let cover_state = fleet_state_from_records(game_data, &winner_fleets, 0);
-                let coords = game_data.planets.records[planet_idx].coords_raw();
-                let pre_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
-                let pre_armies = game_data.planets.records[planet_idx].army_count_raw();
-                let attacking_armies: u32 = winner_fleets
+            events
+                .mission_events
+                .push(mission_event(MissionOutcome::Succeeded, None));
+        }
+        Mission::InvadeWorld => {
+            let state = fleet_state_from_records(game_data, &fleets, 0);
+            let bombard_as = bombard_attack_as(&state);
+            let initial_attacking_armies: u32 = fleets
+                .iter()
+                .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
+                .sum();
+            let previous_owner = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+            let planet = &game_data.planets.records[planet_idx];
+            let pre_batteries = planet.ground_batteries_raw();
+            let pre_armies = planet.army_count_raw();
+            let battery_as = planet.ground_batteries_raw() as u32 * GROUND_AS_BATTERY;
+            let suppression_exchange = resolve_space_exchange(
+                campaign_seed,
+                battle_year,
+                coords,
+                COMBAT_KIND_INVASION_SUPPRESSION,
+                1,
+                empire,
+                previous_owner,
+                bombard_as,
+                battery_as.max(1),
+                state.is_mixed(),
+                false,
+            );
+            let return_exchange = resolve_space_exchange(
+                campaign_seed,
+                battle_year,
+                coords,
+                COMBAT_KIND_INVASION_SUPPRESSION,
+                1,
+                previous_owner,
+                empire,
+                battery_as,
+                bombard_as.max(1),
+                false,
+                false,
+            );
+
+            let before = state.clone();
+            let mut after = state.clone();
+            apply_hits_to_fleet(
+                &mut after,
+                0,
+                return_exchange.hits,
+                u32::from(return_exchange.critical),
+            );
+            super::fleet_battle::distribute_fleet_losses(game_data, &fleets, &before, &after);
+
+            apply_battery_hits(
+                &mut game_data.planets.records[planet_idx],
+                scalar_hits_with_critical(suppression_exchange),
+            );
+
+            let batteries_cleared =
+                game_data.planets.records[planet_idx].ground_batteries_raw() == 0;
+            if batteries_cleared {
+                let soft_exchange = resolve_ground_exchange(
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    COMBAT_KIND_INVASION_SOFTEN,
+                    1,
+                    empire,
+                    previous_owner,
+                    bombard_attack_as(&after),
+                    game_data.planets.records[planet_idx].army_count_raw() as u32 * GROUND_AS_ARMY,
+                    0,
+                );
+                // Soften targets armies only — factories and stored goods are
+                // preserved so the captured planet retains its production value.
+                let soften_army_losses = apply_capped_invasion_soften_damage(
+                    &mut game_data.planets.records[planet_idx],
+                    scalar_hits_with_critical(soft_exchange),
+                    pre_armies,
+                );
+
+                let attacking_armies: u32 = fleets
                     .iter()
                     .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
                     .sum();
-                let cover_exchange = blitz_cover_exchange(
-                    campaign_seed,
-                    battle_year,
-                    coords,
-                    winner_empire,
-                    previous_owner,
-                    &cover_state,
-                    pre_batteries as u32 * GROUND_AS_BATTERY,
-                );
-                apply_battery_hits(
-                    &mut game_data.planets.records[planet_idx],
-                    scalar_hits_with_critical(cover_exchange),
-                );
-                let surviving_batteries =
-                    game_data.planets.records[planet_idx].ground_batteries_raw();
-                let (landing_army_losses, ship_losses) = apply_blitz_landing_fire(
-                    game_data,
-                    campaign_seed,
-                    battle_year,
-                    coords,
-                    previous_owner,
-                    winner_empire,
-                    &winner_fleets,
-                    surviving_batteries,
-                );
-                let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
                 let defender_armies = game_data.planets.records[planet_idx].army_count_raw() as u32;
                 let (attacker_survivors, defender_survivors) = resolve_ground_battle_to_destruction(
                     campaign_seed,
                     battle_year,
                     coords,
-                    COMBAT_KIND_BLITZ_GROUND,
-                    winner_empire,
+                    COMBAT_KIND_GROUND,
+                    empire,
                     previous_owner,
-                    armies_after_landing,
+                    attacking_armies,
                     defender_armies,
                     1,
                 );
@@ -1181,77 +848,56 @@ pub(crate) fn process_planetary_assaults(
                 let defender_army_losses =
                     pre_armies.saturating_sub(defender_survivors.min(255) as u8);
 
-                for &idx in &winner_fleets {
+                for &idx in &fleets {
                     game_data.fleets.records[idx].set_army_count(0);
                 }
                 if attacker_survivors > 0 && defender_survivors == 0 {
-                    let batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
                     let planet = &mut game_data.planets.records[planet_idx];
-                    planet.set_owner_empire_slot_raw(winner_empire);
+                    planet.set_owner_empire_slot_raw(empire);
                     // Just captured: no income until the yearly pass has
                     // stepped the status to 2, as ECMAINT does.
                     planet.set_ownership_status_raw(0);
                     planet.set_army_count_raw(attacker_survivors.min(255) as u8);
-                    planet.set_ground_batteries_raw(batteries);
+                    planet.set_ground_batteries_raw(0);
                     events
                         .ownership_change_events
                         .push(PlanetOwnershipChangeEvent {
                             planet_idx,
                             reporting_empire_raw: previous_owner,
                             previous_owner_empire_raw: previous_owner,
-                            new_owner_empire_raw: winner_empire,
+                            new_owner_empire_raw: empire,
                             stardate_week: None,
                         });
-                    for &fleet_idx in &winner_fleets {
-                        if blitz_set.contains(&fleet_idx) {
-                            events.mission_events.push(MissionEvent {
-                                fleet_idx,
-                                owner_empire_raw: winner_empire,
-                                kind: Mission::BlitzWorld,
-                                outcome: MissionOutcome::Succeeded,
-                                abort_reason: None,
-                                planet_idx: Some(planet_idx),
-                                location_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                target_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                stardate_week: None,
-                            });
-                        }
-                    }
+                    events
+                        .mission_events
+                        .push(mission_event(MissionOutcome::Succeeded, None));
                     events.assault_report_events.push(AssaultReportEvent {
-                        kind: Mission::BlitzWorld,
-                        attacker_fleet_number: preferred_reporting_fleet_number(
-                            game_data,
-                            &winner_fleets,
-                        ),
+                        kind: Mission::InvadeWorld,
+                        attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                         planet_idx,
-                        attacker_empire_raw: winner_empire,
+                        attacker_empire_raw: empire,
                         defender_empire_raw: previous_owner,
-                        attacker_initial: ship_counts_from_state(&cover_state),
-                        attacker_loaded_armies_initial: attacking_armies,
+                        attacker_initial: ship_counts_from_state(&before),
+                        attacker_loaded_armies_initial: initial_attacking_armies,
                         defender_batteries_initial: pre_batteries,
                         defender_armies_initial: pre_armies,
-                        attacker_ship_losses: ship_losses,
-                        attacker_army_losses: armies_after_landing
-                            .saturating_sub(attacker_survivors),
-                        transport_army_losses: landing_army_losses,
+                        attacker_ship_losses: ship_losses_from_states(&before, &after),
+                        attacker_army_losses: attacking_armies.saturating_sub(attacker_survivors),
+                        transport_army_losses: 0,
                         defender_battery_losses,
-                        defender_army_losses_softening: 0,
+                        defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
                         outcome: MissionOutcome::Succeeded,
                         stardate_week: None,
                     });
-                    if assault_force_destroyed(game_data, &winner_fleets) {
+                    if assault_force_destroyed(game_data, &fleets) {
                         push_assault_destroyed_fleet_event(
                             &mut events,
                             game_data,
-                            &winner_fleets,
+                            &fleets,
                             coords,
-                            ship_counts_from_state(&cover_state),
-                            attacking_armies,
+                            ship_counts_from_state(&before),
+                            initial_attacking_armies,
                             pre_batteries,
                             pre_armies,
                             defender_battery_losses,
@@ -1262,55 +908,36 @@ pub(crate) fn process_planetary_assaults(
                 } else {
                     game_data.planets.records[planet_idx]
                         .set_army_count_raw(defender_survivors.min(255) as u8);
-                    for &fleet_idx in &winner_fleets {
-                        if blitz_set.contains(&fleet_idx) {
-                            events.mission_events.push(MissionEvent {
-                                fleet_idx,
-                                owner_empire_raw: winner_empire,
-                                kind: Mission::BlitzWorld,
-                                outcome: MissionOutcome::Failed,
-                                abort_reason: None,
-                                planet_idx: Some(planet_idx),
-                                location_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                target_coords: Some(
-                                    game_data.planets.records[planet_idx].coords_raw(),
-                                ),
-                                stardate_week: None,
-                            });
-                        }
-                    }
+                    events
+                        .mission_events
+                        .push(mission_event(MissionOutcome::Failed, None));
                     events.assault_report_events.push(AssaultReportEvent {
-                        kind: Mission::BlitzWorld,
-                        attacker_fleet_number: preferred_reporting_fleet_number(
-                            game_data,
-                            &winner_fleets,
-                        ),
+                        kind: Mission::InvadeWorld,
+                        attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                         planet_idx,
-                        attacker_empire_raw: winner_empire,
+                        attacker_empire_raw: empire,
                         defender_empire_raw: previous_owner,
-                        attacker_initial: ship_counts_from_state(&cover_state),
-                        attacker_loaded_armies_initial: attacking_armies,
+                        attacker_initial: ship_counts_from_state(&before),
+                        attacker_loaded_armies_initial: initial_attacking_armies,
                         defender_batteries_initial: pre_batteries,
                         defender_armies_initial: pre_armies,
-                        attacker_ship_losses: ship_losses,
-                        attacker_army_losses: armies_after_landing,
-                        transport_army_losses: landing_army_losses,
+                        attacker_ship_losses: ship_losses_from_states(&before, &after),
+                        attacker_army_losses: attacking_armies,
+                        transport_army_losses: 0,
                         defender_battery_losses,
-                        defender_army_losses_softening: 0,
+                        defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
                         outcome: MissionOutcome::Failed,
                         stardate_week: None,
                     });
-                    if assault_force_destroyed(game_data, &winner_fleets) {
+                    if assault_force_destroyed(game_data, &fleets) {
                         push_assault_destroyed_fleet_event(
                             &mut events,
                             game_data,
-                            &winner_fleets,
+                            &fleets,
                             coords,
-                            ship_counts_from_state(&cover_state),
-                            attacking_armies,
+                            ship_counts_from_state(&before),
+                            initial_attacking_armies,
                             pre_batteries,
                             pre_armies,
                             defender_battery_losses,
@@ -1319,41 +946,262 @@ pub(crate) fn process_planetary_assaults(
                         );
                     }
                 }
+            } else {
+                // The batteries held: no troops land and the fleets
+                // keep their armies.
+                events
+                    .mission_events
+                    .push(mission_event(MissionOutcome::Aborted, None));
+                events.assault_report_events.push(AssaultReportEvent {
+                    kind: Mission::InvadeWorld,
+                    attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
+                    planet_idx,
+                    attacker_empire_raw: empire,
+                    defender_empire_raw: previous_owner,
+                    attacker_initial: ship_counts_from_state(&before),
+                    attacker_loaded_armies_initial: initial_attacking_armies,
+                    defender_batteries_initial: pre_batteries,
+                    defender_armies_initial: pre_armies,
+                    attacker_ship_losses: ship_losses_from_states(&before, &after),
+                    attacker_army_losses: 0,
+                    transport_army_losses: 0,
+                    defender_battery_losses: pre_batteries.saturating_sub(
+                        game_data.planets.records[planet_idx].ground_batteries_raw(),
+                    ),
+                    defender_army_losses_softening: 0,
+                    defender_army_losses: 0,
+                    outcome: MissionOutcome::Aborted,
+                    stardate_week: None,
+                });
+                if assault_force_destroyed(game_data, &fleets) {
+                    push_assault_destroyed_fleet_event(
+                        &mut events,
+                        game_data,
+                        &fleets,
+                        coords,
+                        ship_counts_from_state(&before),
+                        initial_attacking_armies,
+                        pre_batteries,
+                        pre_armies,
+                        pre_batteries.saturating_sub(
+                            game_data.planets.records[planet_idx].ground_batteries_raw(),
+                        ),
+                        0,
+                        previous_owner,
+                    );
+                }
+            }
 
-                let intel_source = if game_data.planets.records[planet_idx].owner_empire_slot_raw()
-                    == winner_empire
-                {
+            let intel_source =
+                if game_data.planets.records[planet_idx].owner_empire_slot_raw() == empire {
                     PlanetIntelSource::AssaultSuccess
                 } else {
                     PlanetIntelSource::AssaultFailure
                 };
 
-                clear_arrival_and_hold(game_data, &winner_fleets);
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    winner_empire,
-                    intel_source,
-                );
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    previous_owner,
-                    intel_source,
-                );
-                let owner_after = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                push_planet_intel(
-                    &mut events.planet_intel_events,
-                    planet_idx,
-                    owner_after,
-                    intel_source,
-                );
-            }
-            _ => {}
+            clear_arrival_and_hold(game_data, &fleets);
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                empire,
+                intel_source,
+            );
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                previous_owner,
+                intel_source,
+            );
+            let owner_after = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                owner_after,
+                intel_source,
+            );
         }
+        Mission::BlitzWorld => {
+            let previous_owner = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+            let cover_state = fleet_state_from_records(game_data, &fleets, 0);
+            let pre_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
+            let pre_armies = game_data.planets.records[planet_idx].army_count_raw();
+            let attacking_armies: u32 = fleets
+                .iter()
+                .map(|idx| game_data.fleets.records[*idx].army_count() as u32)
+                .sum();
+            let cover_exchange = blitz_cover_exchange(
+                campaign_seed,
+                battle_year,
+                coords,
+                empire,
+                previous_owner,
+                &cover_state,
+                pre_batteries as u32 * GROUND_AS_BATTERY,
+            );
+            apply_battery_hits(
+                &mut game_data.planets.records[planet_idx],
+                scalar_hits_with_critical(cover_exchange),
+            );
+            let surviving_batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
+            let (landing_army_losses, ship_losses) = apply_blitz_landing_fire(
+                game_data,
+                campaign_seed,
+                battle_year,
+                coords,
+                previous_owner,
+                empire,
+                &fleets,
+                surviving_batteries,
+            );
+            let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
+            let defender_armies = game_data.planets.records[planet_idx].army_count_raw() as u32;
+            let (attacker_survivors, defender_survivors) = resolve_ground_battle_to_destruction(
+                campaign_seed,
+                battle_year,
+                coords,
+                COMBAT_KIND_BLITZ_GROUND,
+                empire,
+                previous_owner,
+                armies_after_landing,
+                defender_armies,
+                1,
+            );
+            let defender_battery_losses = pre_batteries
+                .saturating_sub(game_data.planets.records[planet_idx].ground_batteries_raw());
+            let defender_army_losses = pre_armies.saturating_sub(defender_survivors.min(255) as u8);
+
+            for &idx in &fleets {
+                game_data.fleets.records[idx].set_army_count(0);
+            }
+            if attacker_survivors > 0 && defender_survivors == 0 {
+                let batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
+                let planet = &mut game_data.planets.records[planet_idx];
+                planet.set_owner_empire_slot_raw(empire);
+                // Just captured: no income until the yearly pass has
+                // stepped the status to 2, as ECMAINT does.
+                planet.set_ownership_status_raw(0);
+                planet.set_army_count_raw(attacker_survivors.min(255) as u8);
+                planet.set_ground_batteries_raw(batteries);
+                events
+                    .ownership_change_events
+                    .push(PlanetOwnershipChangeEvent {
+                        planet_idx,
+                        reporting_empire_raw: previous_owner,
+                        previous_owner_empire_raw: previous_owner,
+                        new_owner_empire_raw: empire,
+                        stardate_week: None,
+                    });
+                events
+                    .mission_events
+                    .push(mission_event(MissionOutcome::Succeeded, None));
+                events.assault_report_events.push(AssaultReportEvent {
+                    kind: Mission::BlitzWorld,
+                    attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
+                    planet_idx,
+                    attacker_empire_raw: empire,
+                    defender_empire_raw: previous_owner,
+                    attacker_initial: ship_counts_from_state(&cover_state),
+                    attacker_loaded_armies_initial: attacking_armies,
+                    defender_batteries_initial: pre_batteries,
+                    defender_armies_initial: pre_armies,
+                    attacker_ship_losses: ship_losses,
+                    attacker_army_losses: armies_after_landing.saturating_sub(attacker_survivors),
+                    transport_army_losses: landing_army_losses,
+                    defender_battery_losses,
+                    defender_army_losses_softening: 0,
+                    defender_army_losses,
+                    outcome: MissionOutcome::Succeeded,
+                    stardate_week: None,
+                });
+                if assault_force_destroyed(game_data, &fleets) {
+                    push_assault_destroyed_fleet_event(
+                        &mut events,
+                        game_data,
+                        &fleets,
+                        coords,
+                        ship_counts_from_state(&cover_state),
+                        attacking_armies,
+                        pre_batteries,
+                        pre_armies,
+                        defender_battery_losses,
+                        defender_army_losses,
+                        previous_owner,
+                    );
+                }
+            } else {
+                game_data.planets.records[planet_idx]
+                    .set_army_count_raw(defender_survivors.min(255) as u8);
+                events
+                    .mission_events
+                    .push(mission_event(MissionOutcome::Failed, None));
+                events.assault_report_events.push(AssaultReportEvent {
+                    kind: Mission::BlitzWorld,
+                    attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
+                    planet_idx,
+                    attacker_empire_raw: empire,
+                    defender_empire_raw: previous_owner,
+                    attacker_initial: ship_counts_from_state(&cover_state),
+                    attacker_loaded_armies_initial: attacking_armies,
+                    defender_batteries_initial: pre_batteries,
+                    defender_armies_initial: pre_armies,
+                    attacker_ship_losses: ship_losses,
+                    attacker_army_losses: armies_after_landing,
+                    transport_army_losses: landing_army_losses,
+                    defender_battery_losses,
+                    defender_army_losses_softening: 0,
+                    defender_army_losses,
+                    outcome: MissionOutcome::Failed,
+                    stardate_week: None,
+                });
+                if assault_force_destroyed(game_data, &fleets) {
+                    push_assault_destroyed_fleet_event(
+                        &mut events,
+                        game_data,
+                        &fleets,
+                        coords,
+                        ship_counts_from_state(&cover_state),
+                        attacking_armies,
+                        pre_batteries,
+                        pre_armies,
+                        defender_battery_losses,
+                        defender_army_losses,
+                        previous_owner,
+                    );
+                }
+            }
+
+            let intel_source =
+                if game_data.planets.records[planet_idx].owner_empire_slot_raw() == empire {
+                    PlanetIntelSource::AssaultSuccess
+                } else {
+                    PlanetIntelSource::AssaultFailure
+                };
+
+            clear_arrival_and_hold(game_data, &fleets);
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                empire,
+                intel_source,
+            );
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                previous_owner,
+                intel_source,
+            );
+            let owner_after = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+            push_planet_intel(
+                &mut events.planet_intel_events,
+                planet_idx,
+                owner_after,
+                intel_source,
+            );
+        }
+        _ => {}
     }
 
-    Ok(events)
+    events
 }
 
 // The 64-round ground-combat cap is not reachable through the public API

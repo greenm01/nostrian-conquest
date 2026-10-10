@@ -75,7 +75,7 @@ pub fn starbase_operation_label(coords: [u8; 2], destination_coords: [u8; 2]) ->
     }
 }
 
-fn ordinal_number(value: usize) -> String {
+pub(super) fn ordinal_number(value: usize) -> String {
     let suffix = match value % 100 {
         11..=13 => "th",
         _ => match value % 10 {

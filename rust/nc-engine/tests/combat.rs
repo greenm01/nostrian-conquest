@@ -5,3 +5,5 @@ mod support;
 mod assault;
 #[path = "combat/resolution.rs"]
 mod resolution;
+#[path = "combat/retreat.rs"]
+mod retreat;

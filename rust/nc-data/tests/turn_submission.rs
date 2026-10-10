@@ -5,7 +5,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::import_directory_snapshot;
 use nc_data::{
-    CampaignStore, DiplomaticRelation, Order, PlanetPlayerInputValidationError, TurnSubmission,
+    CampaignStore, DiplomaticRelation, FleetTurnAction, Order, PlanetPlayerInputValidationError,
+    TurnSubmission,
 };
 use nc_engine::build_seeded_initialized_game;
 
@@ -530,6 +531,21 @@ message to=2 subject="Border" body="Holding lane."
     let reparsed = TurnSubmission::parse_kdl_str(&rendered).expect("reparse rendered kdl");
 
     assert_eq!(reparsed, submission);
+}
+
+#[test]
+fn turn_submission_detach_defaults_the_new_fleet_roe_to_six() {
+    let submission = TurnSubmission::parse_kdl_str(
+        "turn player=1 year=3004\nfleet record=3 {\n  detach destroyers=1\n}\n",
+    )
+    .expect("parse detach without new_roe");
+    assert!(matches!(
+        submission.fleets[0].actions[0],
+        FleetTurnAction::Detach {
+            new_fleet_roe: 6,
+            ..
+        }
+    ));
 }
 
 #[test]

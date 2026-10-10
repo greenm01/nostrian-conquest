@@ -43,12 +43,14 @@ impl ConquestDat {
     pub fn maintenance_schedule_bytes(&self) -> [u8; 7] {
         self.conquest.maintenance_days.0.map(u8::from)
     }
+    /// Sunday through Saturday; ECMAINT runs on a day whose byte is nonzero.
     pub fn maintenance_schedule_enabled(&self) -> [bool; 7] {
         self.conquest.maintenance_days.0
     }
     pub fn set_maintenance_schedule_bytes(&mut self, bytes: [u8; 7]) {
         self.conquest.maintenance_days.0 = bytes.map(|byte| byte != 0);
     }
+    /// Writes 1 for an enabled day and 0 otherwise, as ECUTIL does.
     pub fn set_maintenance_schedule_enabled(&mut self, enabled: [bool; 7]) {
         self.conquest.maintenance_days.0 = enabled;
     }

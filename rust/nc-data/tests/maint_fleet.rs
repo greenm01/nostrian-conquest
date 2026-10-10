@@ -667,7 +667,7 @@ fn test_merges_that_would_overflow_scout_count_are_refused() {
         let mut game_data = load_fixture("ecmaint-post");
         game_data.player.records[0].set_player_mode_raw(consolidation_flag);
         let coords = game_data.fleets.records[0].current_location_coords_raw();
-        let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+        let host_number = game_data.fleets.records[0].local_slot_word_raw();
         for idx in [0, 1] {
             let fleet = &mut game_data.fleets.records[idx];
             fleet.set_current_location_coords_raw(coords);
@@ -678,7 +678,7 @@ fn test_merges_that_would_overflow_scout_count_are_refused() {
         }
         if order == Order::JoinAnotherFleet {
             game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
-            game_data.fleets.records[1].set_join_host_fleet_id_raw(host_id);
+            game_data.fleets.records[1].set_join_host_fleet_id_raw(host_number);
         }
         let empire_scouts = |game_data: &CoreGameData| -> u32 {
             game_data
@@ -715,11 +715,11 @@ fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     host.set_x_fraction(Real48::HALF);
     host.set_depth(Real48::HALF);
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([4, 10]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
     joiner.set_x_fraction(Real48::HALF);
@@ -744,7 +744,7 @@ fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     );
     assert_eq!(
         game_data.fleets.records[1].join_host_fleet_id_raw(),
-        host_id,
+        host_number,
         "host identity should remain unchanged while the host survives"
     );
     assert_eq!(
@@ -766,11 +766,11 @@ fn test_join_order_survives_arrival_at_previous_host_position() {
     host.set_x_fraction(Real48::HALF);
     host.set_depth(Real48::HALF);
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([9, 10]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
     joiner.set_x_fraction(Real48::HALF);
@@ -815,7 +815,7 @@ fn test_join_order_survives_arrival_at_previous_host_position() {
 fn test_join_order_abandons_mission_when_host_is_destroyed() {
     let mut game_data = load_fixture("ecmaint-post");
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
     game_data.fleets.records[0].set_cruiser_count(0);
     game_data.fleets.records[0].set_battleship_count(0);
@@ -827,7 +827,7 @@ fn test_join_order_abandons_mission_when_host_is_destroyed() {
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw(joiner_coords);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
 
@@ -869,8 +869,8 @@ fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
     game_data.player.records[0].set_player_mode_raw(0x00);
 
     let survivor_coords = [10, 10];
-    let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
-    let absorbed_host_id = game_data.fleets.records[1].fleet_id_word_raw();
+    let survivor_number = game_data.fleets.records[0].local_slot_word_raw();
+    let absorbed_host_number = game_data.fleets.records[1].local_slot_word_raw();
 
     {
         let survivor = &mut game_data.fleets.records[0];
@@ -883,7 +883,7 @@ fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
         let host = &mut game_data.fleets.records[1];
         host.set_current_location_coords_raw(survivor_coords);
         host.set_standing_order_kind(Order::JoinAnotherFleet);
-        host.set_join_host_fleet_id_raw(survivor_id);
+        host.set_join_host_fleet_id_raw(survivor_number);
         host.set_standing_order_target_coords_raw(survivor_coords);
         host.set_current_speed(0);
     }
@@ -891,7 +891,7 @@ fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
         let joiner = &mut game_data.fleets.records[2];
         joiner.set_current_location_coords_raw([5, 10]);
         joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-        joiner.set_join_host_fleet_id_raw(absorbed_host_id);
+        joiner.set_join_host_fleet_id_raw(absorbed_host_number);
         joiner.set_standing_order_target_coords_raw(survivor_coords);
         joiner.set_current_speed(3);
     }
@@ -902,7 +902,7 @@ fn test_joiner_retargets_when_host_merges_into_surviving_fleet() {
     assert_eq!(game_data.fleets.records.len(), fleet_count_before - 1);
     let joiner = &game_data.fleets.records[1];
     assert_eq!(joiner.standing_order_kind(), Order::JoinAnotherFleet);
-    assert_eq!(joiner.join_host_fleet_id_raw(), survivor_id);
+    assert_eq!(joiner.join_host_fleet_id_raw(), survivor_number);
     assert_eq!(joiner.standing_order_target_coords_raw(), survivor_coords);
     assert!(events.join_host_events.iter().any(|event| {
         matches!(
@@ -932,8 +932,8 @@ fn test_joiner_merges_same_turn_after_host_merges_into_surviving_fleet() {
     game_data.player.records[0].set_player_mode_raw(0x00);
 
     let coords = [10, 10];
-    let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
-    let absorbed_host_id = game_data.fleets.records[1].fleet_id_word_raw();
+    let survivor_number = game_data.fleets.records[0].local_slot_word_raw();
+    let absorbed_host_number = game_data.fleets.records[1].local_slot_word_raw();
 
     {
         let survivor = &mut game_data.fleets.records[0];
@@ -946,7 +946,7 @@ fn test_joiner_merges_same_turn_after_host_merges_into_surviving_fleet() {
         let host = &mut game_data.fleets.records[1];
         host.set_current_location_coords_raw(coords);
         host.set_standing_order_kind(Order::JoinAnotherFleet);
-        host.set_join_host_fleet_id_raw(survivor_id);
+        host.set_join_host_fleet_id_raw(survivor_number);
         host.set_standing_order_target_coords_raw(coords);
         host.set_current_speed(0);
     }
@@ -954,7 +954,7 @@ fn test_joiner_merges_same_turn_after_host_merges_into_surviving_fleet() {
         let joiner = &mut game_data.fleets.records[2];
         joiner.set_current_location_coords_raw(coords);
         joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-        joiner.set_join_host_fleet_id_raw(absorbed_host_id);
+        joiner.set_join_host_fleet_id_raw(absorbed_host_number);
         joiner.set_standing_order_target_coords_raw(coords);
         joiner.set_current_speed(0);
     }
@@ -1148,9 +1148,9 @@ fn test_guard_starbase_persists_after_arrival() {
         game_data.fleets.records[1].standing_order_target_coords_raw(),
         [11, 8]
     );
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [1, 3]);
     // It arrives on entering the base's sector and layer and takes the
-    // base's depth; it becomes the base's escort.
+    // base's depth and layer (0x22 = 0, t040); it becomes the base's escort.
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
     assert!(game_data.fleets.records[1].depth().is_zero());
     assert_eq!(
         game_data.bases.records[0].escort_fleet_slot_raw(),
@@ -1456,12 +1456,12 @@ fn test_join_merge_occurs_without_combat_merge_flag() {
     let mut game_data = load_fixture("ecmaint-post");
     game_data.player.records[0].set_player_mode_raw(0x00);
     let host_coords = game_data.fleets.records[0].current_location_coords_raw();
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw(host_coords);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw(host_coords);
 
     let fleet_count_before = game_data.fleets.records.len();
@@ -1487,9 +1487,9 @@ fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
     host.set_standing_order_kind(Order::HoldPosition);
     host.set_standing_order_target_coords_raw([10, 10]);
     host.set_current_speed(0);
-    let host_id = game_data.fleets.records[2].fleet_id() as u8;
+    let host_number = game_data.fleets.records[2].local_slot_word_raw() as u8;
     assert_ne!(
-        host_id, 1,
+        host_number, 1,
         "host id must differ from the 0x22 world-target flag"
     );
 
@@ -1497,18 +1497,18 @@ fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
     joiner.set_current_location_coords_raw([7, 10]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
     joiner.set_standing_order_target_coords_raw([10, 10]);
-    joiner.set_mission_aux_bytes([1, host_id]);
+    joiner.set_mission_aux_bytes([1, host_number]);
     joiner.set_current_speed(3);
     joiner.set_x_fraction(Real48::HALF);
     joiner.set_depth(Real48::HALF);
-    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_id));
+    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_number));
 
     let fleet_count_before = game_data.fleets.records.len();
     run_maintenance_turn(&mut game_data).expect("first maintenance turn should succeed");
 
     let joiner = &game_data.fleets.records[1];
     assert_eq!(joiner.standing_order_kind(), Order::JoinAnotherFleet);
-    assert_eq!(joiner.mission_aux_bytes(), [1, host_id]);
+    assert_eq!(joiner.mission_aux_bytes(), [1, host_number]);
     assert_ne!(
         joiner.current_location_coords_raw(),
         [7, 10],
@@ -1536,12 +1536,12 @@ fn test_join_merge_occurs_when_joiner_has_hidden_exact_transit_in_host_sector() 
     let mut game_data = load_fixture("ecmaint-post");
     game_data.player.records[0].set_player_mode_raw(0x00);
     let host_coords = game_data.fleets.records[0].current_location_coords_raw();
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw(host_coords);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw(host_coords);
     joiner.set_current_speed(3);
     set_in_transit_west_of_centre(joiner);
@@ -2659,12 +2659,10 @@ fn test_hostile_orders_strike_in_the_year_they_settle_in_orbit() {
 
 #[test]
 fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
-    // Regression: apply_fleet_removal_remap previously left join_host_fleet_id_raw
-    // stale after a salvage removal shifted fleet IDs.  When fleet 1 (fleet_id=2)
-    // is removed by salvage during movement, fleet 2 compresses from fleet_id=3 to
-    // fleet_id=2.  Without the fix, the joiner's stored host_id=3 no longer
-    // resolves and the join silently fails.  With the fix the remap also updates
-    // join_host_fleet_id_raw and the join succeeds on the same turn.
+    // When fleet 1 (fleet_id=2) is removed by salvage during movement, fleet 2
+    // compresses from fleet_id=3 to fleet_id=2 but keeps fleet number 3. The
+    // joiner names its host by that number, so the join still resolves on the
+    // same turn.
     let mut game_data = load_fixture("ecmaint-post");
     // Disable early consolidation so it cannot merge or remove fleets before
     // the salvage-triggered remap this test is exercising.
@@ -2682,7 +2680,7 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
 
     // Fleet 2 (fleet_id=3) is the host — stationary at a fixed location.
     let host_coords = [10u8, 10u8];
-    let host_id = game_data.fleets.records[2].fleet_id_word_raw(); // invariant: == 3
+    let host_number = game_data.fleets.records[2].local_slot_word_raw(); // invariant: == 3
     {
         let host = &mut game_data.fleets.records[2];
         host.set_current_location_coords_raw(host_coords);
@@ -2698,7 +2696,7 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
         let joiner = &mut game_data.fleets.records[0];
         joiner.set_current_location_coords_raw(host_coords);
         joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-        joiner.set_join_host_fleet_id_raw(host_id);
+        joiner.set_join_host_fleet_id_raw(host_number);
         joiner.set_standing_order_target_coords_raw(host_coords);
         joiner.set_current_speed(0);
     }
@@ -2750,4 +2748,62 @@ fn set_in_transit_west_of_centre(fleet: &mut nc_data::FleetRecord) {
     fleet.set_x_fraction(Real48::from_int(1) / Real48::from_int(10));
     fleet.set_y_fraction(Real48::HALF);
     fleet.set_depth(Real48::ZERO);
+}
+
+#[test]
+fn test_join_host_is_named_by_fleet_number_not_record_id() {
+    // ECMAINT's merge (`2895:4a6b`) matches a joiner's 0x23 word against the
+    // host's fleet number (0x00). Empire 2's fleets are records 5..8 with
+    // numbers 1..4, so record 6 (fleet 2) joining with 0x23 = 1 merges into
+    // record 5 (fleet 1); with 0x23 = 5 (the record id) ECMAINT leaves the
+    // files untouched.
+    let mut game_data = load_fixture("ecmaint-post");
+    for player in &mut game_data.player.records {
+        player.set_player_mode_raw(0x00);
+    }
+    let host = &game_data.fleets.records[4];
+    assert_eq!(
+        (host.owner_empire_raw(), host.local_slot_word_raw()),
+        (2, 1)
+    );
+    assert_eq!(host.fleet_id_word_raw(), 5);
+    let host_cruisers = host.cruiser_count();
+    let empire_1_fleet_1_cruisers = game_data.fleets.records[0].cruiser_count();
+    let joiner = &mut game_data.fleets.records[5];
+    assert_eq!(
+        (joiner.owner_empire_raw(), joiner.local_slot_word_raw()),
+        (2, 2)
+    );
+    let joiner_cruisers = joiner.cruiser_count();
+    joiner.set_standing_order_kind(Order::JoinAnotherFleet);
+    joiner.set_mission_target(1, 1);
+    joiner.set_current_speed(joiner.max_speed());
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert!(events.fleet_merge_events.iter().any(|event| {
+        event.kind == Mission::JoinAnotherFleet
+            && event.owner_empire_raw == 2
+            && event.host_fleet_number == 1
+            && event.absorbed_fleet_number == 2
+    }));
+    let host = game_data
+        .fleets
+        .records
+        .iter()
+        .find(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 1)
+        .expect("empire 2 fleet 1 survives");
+    assert_eq!(host.cruiser_count(), host_cruisers + joiner_cruisers);
+    assert!(
+        !game_data
+            .fleets
+            .records
+            .iter()
+            .any(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 2)
+    );
+    // Empire 1's fleet 1 (record id 1) is untouched.
+    assert_eq!(
+        game_data.fleets.records[0].cruiser_count(),
+        empire_1_fleet_1_cruisers
+    );
 }

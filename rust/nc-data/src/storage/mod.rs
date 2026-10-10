@@ -307,7 +307,6 @@ impl CampaignStore {
                  session_minimum_time_minutes INTEGER NOT NULL,
                  session_local_timeout INTEGER NOT NULL,
                  session_remote_timeout INTEGER NOT NULL,
-                 inactivity_purge_after_turns INTEGER NOT NULL,
                  inactivity_autopilot_after_turns INTEGER NOT NULL,
                  maintenance_enabled INTEGER NOT NULL,
                  maintenance_interval_minutes INTEGER NOT NULL,

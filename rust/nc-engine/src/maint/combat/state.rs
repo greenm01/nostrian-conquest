@@ -42,7 +42,6 @@ pub(super) struct FleetCombatState {
 pub(super) struct TaskForce {
     pub(super) empire: u8,
     pub(super) fleet_indices: Vec<usize>,
-    pub(super) coords: [u8; 2],
     pub(super) state: FleetCombatState,
     pub(super) role: BattleRole,
     pub(super) withdrew_under_roe: bool,
@@ -221,7 +220,6 @@ pub(super) fn new_task_force(
     TaskForce {
         empire,
         fleet_indices,
-        coords,
         state,
         role,
         withdrew_under_roe: false,

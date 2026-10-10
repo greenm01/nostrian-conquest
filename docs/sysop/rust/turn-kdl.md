@@ -147,7 +147,9 @@ Supported child actions:
   (`seek_home` and `salvage` may leave out `x` and `y`; the fleet then heads
   for the owned world nearest it, as ECGAME picks it)
 - `join host=<fleet record>`
-- `detach ... [donor_speed=<u8>] [new_roe=<u8>]`
+- `detach ... [donor_speed=<u8>] [new_roe=<u8>]` (`new_roe` defaults to 6,
+  ECGAME's default for a new fleet; a fleet without a battleship, cruiser, or
+  destroyer gets 0 whatever is given)
 - `transfer to=<fleet record> ...`
 - `load_armies planet=<planet record> qty=<u16>`
 - `unload_armies planet=<planet record> qty=<u16>`

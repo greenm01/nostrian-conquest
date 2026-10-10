@@ -1256,7 +1256,7 @@ fn fleet_order_allows_join_another_fleet_from_fleet_command() {
     assert_ne!(source.join_host_fleet_id_raw(), 0);
     let valid_host = state.game_data.fleets.records.iter().any(|fleet| {
         fleet.owner_empire_raw() == 1
-            && fleet.fleet_id_word_raw() == source.join_host_fleet_id_raw()
+            && fleet.local_slot_word_raw() == source.join_host_fleet_id_raw()
             && fleet.current_location_coords_raw() == source.standing_order_target_coords_raw()
     });
     assert!(valid_host);
@@ -4068,8 +4068,13 @@ fn fleet_order_seek_home_aborts_in_the_only_home_system() {
     open_order_mission_picker_from_fleet_menu(&mut app, Some(2));
     submit_mission_code(&mut app, "2");
 
-    // ECGAME aborts the order; the picker stays open and nothing changes.
-    assert_eq!(app.current_screen(), ScreenId::FleetMissionPicker);
+    // ECGAME says why, aborts the order, and changes nothing.
+    assert_eq!(app.current_screen(), ScreenId::FleetMenu);
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("fleet menu should render");
+    assert!(terminal.lines.iter().any(|line| {
+        line.contains("The 2nd fleet is already in your only controlled star system.")
+    }));
     let state = latest_runtime_state(&fixture_dir);
     let fleet = state
         .game_data
@@ -4079,6 +4084,84 @@ fn fleet_order_seek_home_aborts_in_the_only_home_system() {
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet should still exist");
     assert_ne!(fleet.standing_order_code_raw(), 2);
+}
+
+/// Player 1's worlds in PLANETS.DAT order: the home world, then the second.
+fn player_1_worlds(fixture_dir: &std::path::Path) -> Vec<[u8; 2]> {
+    latest_runtime_state(fixture_dir)
+        .game_data
+        .planets
+        .records
+        .iter()
+        .filter(|planet| planet.owner_empire_slot_raw() == 1)
+        .map(|planet| planet.coords_raw())
+        .collect()
+}
+
+/// Order fleet 2, which sits in player 1's home system, to Seek Home, answer
+/// ECGAME's question, and confirm; returns the fleet's new target.
+fn seek_home_from_the_home_system(fixture_dir: &std::path::Path, answer: Option<char>) -> [u8; 2] {
+    let mut app = load_player_1_app(fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(2));
+    submit_mission_code(&mut app, "2");
+
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("seek home question should render");
+    assert!(
+        terminal
+            .lines
+            .iter()
+            .any(|line| line.contains("The 2nd fleet is already in a star system you control."))
+    );
+    assert!(terminal.lines.iter().any(|line| {
+        line.contains("Do you wish this fleet to seek the next closest system? [Y]")
+    }));
+    if let Some(ch) = answer {
+        assert_eq!(
+            apply_action(&mut app, Action::Fleet(FleetAction::AppendOrderChar(ch))),
+            AppOutcome::Continue
+        );
+    }
+    assert_eq!(
+        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
+        AppOutcome::Continue
+    );
+    confirm_fleet_order(&mut app, true);
+
+    latest_runtime_state(fixture_dir)
+        .game_data
+        .fleets
+        .records
+        .iter()
+        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .map(|fleet| {
+            assert_eq!(fleet.standing_order_code_raw(), 2);
+            fleet.standing_order_target_coords_raw()
+        })
+        .expect("fleet should still exist")
+}
+
+#[test]
+fn fleet_order_seek_home_in_the_home_system_defaults_to_the_next_closest() {
+    let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
+    let worlds = player_1_worlds(&fixture_dir);
+    assert_eq!(
+        seek_home_from_the_home_system(&fixture_dir, None),
+        worlds[1]
+    );
+}
+
+#[test]
+fn fleet_order_seek_home_in_the_home_system_stays_on_no() {
+    let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
+    let worlds = player_1_worlds(&fixture_dir);
+    assert_eq!(
+        seek_home_from_the_home_system(&fixture_dir, Some('n')),
+        worlds[0]
+    );
 }
 
 #[test]
@@ -4739,6 +4822,45 @@ fn fleet_group_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
 }
 
 #[test]
+fn fleet_group_seek_home_of_one_home_fleet_asks_for_the_next_closest() {
+    let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
+    let worlds = player_1_worlds(&fixture_dir);
+    let mut app = load_player_1_app(&fixture_dir);
+    for action in [
+        FleetAction::OpenGroupOrder,
+        FleetAction::ToggleGroupOrderSelection,
+        FleetAction::OpenMissionPicker,
+    ] {
+        assert_eq!(
+            apply_action(&mut app, Action::Fleet(action)),
+            AppOutcome::Continue
+        );
+    }
+    submit_mission_code(&mut app, "2");
+
+    // ECGAME treats a group order of one fleet as a single order.
+    let mut terminal = CaptureTerminal::new();
+    app.render(&mut terminal)
+        .expect("group seek home question should render");
+    assert!(terminal.lines.iter().any(|line| {
+        line.contains("Do you wish this fleet to seek the next closest system? [Y]")
+    }));
+    assert_eq!(
+        apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
+        AppOutcome::Continue
+    );
+    confirm_fleet_group_order(&mut app, true);
+
+    let state = latest_runtime_state(&fixture_dir);
+    assert!(state.game_data.fleets.records.iter().any(|fleet| {
+        fleet.owner_empire_raw() == 1
+            && fleet.standing_order_code_raw() == 2
+            && fleet.standing_order_target_coords_raw() == worlds[1]
+    }));
+}
+
+#[test]
 fn fleet_group_order_applies_move_order_to_selected_fleets() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
@@ -4951,7 +5073,7 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
     assert_ne!(ordered_fleet.join_host_fleet_id_raw(), 0);
     assert_ne!(
         ordered_fleet.join_host_fleet_id_raw(),
-        ordered_fleet.fleet_id_word_raw()
+        ordered_fleet.local_slot_word_raw()
     );
     assert_eq!(ordered_fleet.standing_order_target_coords_raw(), [16, 13]);
 }

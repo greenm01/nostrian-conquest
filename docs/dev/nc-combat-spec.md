@@ -249,6 +249,19 @@ same turn.
    battle still undecided after 64 rounds ends as a stalemate: survivors keep
    their ships and the normal post-battle rules (retreat of forces that did
    not hold the field, mission aborts, reports) apply.
+5. **Retreat**: Once the losses are on the fleet records, each surviving
+   fleet's maximum speed is recomputed from the ships it has left, as
+   classic's `24a3:036b` does. A fleet that did not hold the field, withdrew
+   under its ROE, or lost the ships its mission needs then gets the Seek
+   Home order as the order path writes it: its target is the nearest owned
+   world by classic's travel-distance picker, measured from the fleet's own
+   position and depth; the target is the world (TZ 1), so the fleet's first
+   leg climbs out of the layer it fought in and its last leg descends into
+   the home world's orbit; its speed is its new maximum. ROE is left alone.
+   That is a mechanical matter, not a rule: classic zeroes ROE only on
+   scatter, and ec4x never does, so a retreat is not where ROE changes. A
+   fleet whose empire owns no world holds where it is, position and depth
+   untouched. A fleet with no ships left is culled.
 
 Every collection whose order affects outcomes or event order is ordered, so
 the same seed always produces the same battle. The battle's random draws are
@@ -263,21 +276,30 @@ This battle is NC combat's, not classic's. Classic's battle is decoded in
 
 ## Simultaneous Arrival at a Planet
 
-No empire executes an assault (**Bombard, Invade, Blitz**) until it achieves
-orbital supremacy. If multiple hostile empires arrive at once, they must
-contest the orbit before attacking the world. A planet can change ownership at
-most once per turn.
+A hostile fleet (**Bombard, Invade, Blitz**) strikes in the tick its strike
+test passes ([ec-movement-spec.md](ec-movement-spec.md), Hostile Missions),
+with the ships it has in that tick and against the world as it stands in
+that tick. Each fleet's assault resolves alone, in the year's unit order:
+fleets that reach the same world strike one after another, and two that
+strike in the same tick go in the order the year drew for its units.
+Nothing is pooled across fleets or ticks. A later attacker meets what the
+earlier one left, including a new owner, so a world can change hands more
+than once in a year.
 
-One assault class executes per planet per turn, in priority Blitz > Invade >
-Bombard. Only the orbit holder's fleets whose own order is that class take
-part (fire, land armies, reset orders). Its fleets on other assault orders keep
-their orders, loaded armies, and arrival state, and execute on a later turn.
-
+A fleet without combat ships finds the orbit blocked and aborts to Hold.
 Blitz has one narrow exception: a fleet of loaded `TT*` may still execute a
 Blitz without escorting combat ships. That transport-only force does not
-generate orbital firepower and may proceed only if no enemy combat force or
-defending starbase holds orbit. Enemy non-combat support fleets alone do not
-block the attempt.
+generate orbital firepower and may proceed only if no starbase of the
+world's owner holds orbit. Enemy non-combat support fleets alone do not
+block the attempt. This check is a comparison, not a battle: the owner's
+starbase and fleets in orbit fight an attacker only through the encounter
+loop.
+
+Two earlier rules of this spec were NC policy, not classic behaviour, and
+are withdrawn: one assault class per planet per turn, Blitz before Invade
+before Bombard, and a world changing hands at most once per turn. Both
+belonged to a year-end assault phase that pooled the year's strikes; with
+each strike resolved in its own tick there is nothing to rank or cap.
 
 ## Summary
 

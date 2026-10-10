@@ -3,13 +3,9 @@ use crate::{CoreGameData, yearly_growth_delta, yearly_high_tax_penalty, yearly_t
 pub(super) fn process_planet_economics(
     game_data: &mut CoreGameData,
     _planets_with_builds: &[usize],
-    newly_colonized_planets: &[usize],
     starbase_planets: &[usize],
 ) -> Result<(), Box<dyn std::error::Error>> {
     for planet_idx in 0..game_data.planets.records.len() {
-        if newly_colonized_planets.contains(&planet_idx) {
-            continue;
-        }
         let owner_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
         if owner_empire == 0 {
             continue;

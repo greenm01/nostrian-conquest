@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
-use nc_data::{CampaignStore, CoreGameData, ReportBlockRow};
+use nc_data::{CampaignStore, CoreGameData, ReportBlockRow, carry_unread_report_blocks};
 
 const RECORD: usize = 84;
 
@@ -232,4 +232,53 @@ fn imported_interleaved_oracle_results_keep_every_player_chain_on_export() {
         chains_by_player(&exported_player, &exported_results),
         chains_by_player(&player_dat, &results)
     );
+}
+
+/// A year's export carries each empire's unread reports from earlier years
+/// at the head of its chain, before the year's own, and leaves out what
+/// the player deleted.
+#[test]
+fn unread_reports_from_earlier_years_lead_each_chain_on_export() {
+    let oracle = oracle_post("ecmaint-results-two-human");
+    let player_dat = fs::read(oracle.join("PLAYER.DAT")).unwrap();
+    let results = fs::read(oracle.join("RESULTS.DAT")).unwrap();
+    let original = chains_by_player(&player_dat, &results);
+
+    // Last year's rows: the oracle's, with empire 1's first report deleted.
+    let mut previous = per_viewer_rows(&player_dat, &results);
+    assert_eq!(previous[0].viewer_empire_id, 1);
+    previous[0].recipient_deleted = true;
+    let fresh = [(1, "New for one"), (2, "New for two")]
+        .into_iter()
+        .map(|(viewer_empire_id, text): (u8, &str)| {
+            // One header record: record count, text length, text.
+            let mut raw = vec![0u8; RECORD];
+            raw[0] = 1;
+            raw[1] = text.len() as u8;
+            raw[2..2 + text.len()].copy_from_slice(text.as_bytes());
+            ReportBlockRow {
+                viewer_empire_id,
+                block_index: 0,
+                decoded_text: text.to_string(),
+                raw_bytes: Some(raw),
+                recipient_deleted: false,
+            }
+        })
+        .collect();
+    let rows = carry_unread_report_blocks(&previous, fresh);
+
+    let (exported_player, exported_results) = export_rows("carried", &oracle, &rows);
+    let chains = chains_by_player(&exported_player, &exported_results);
+    let holds = |report: &[Vec<u8>], text: &str| {
+        report
+            .iter()
+            .any(|record| record.windows(text.len()).any(|w| w == text.as_bytes()))
+    };
+
+    assert_eq!(chains[0].len(), original[0].len());
+    assert_eq!(chains[0][..original[0].len() - 1], original[0][1..]);
+    assert!(holds(chains[0].last().unwrap(), "New for one"));
+    assert_eq!(chains[1].len(), original[1].len() + 1);
+    assert_eq!(chains[1][..original[1].len()], original[1][..]);
+    assert!(holds(chains[1].last().unwrap(), "New for two"));
 }

@@ -1,0 +1,7 @@
+turn player=1 year=3001
+fleet record=2 {
+  order speed=2 kind="bombard" x=14 y=6
+}
+fleet record=1 {
+  order speed=3 kind="bombard" x=14 y=6
+}

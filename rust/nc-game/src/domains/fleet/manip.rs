@@ -5,7 +5,7 @@ use crate::screen::layout::PromptFeedback;
 use crate::screen::{
     CommandMenu, FleetDetachClass, FleetDetachMode, FleetRow, FleetTransferMode, ScreenId,
 };
-use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord};
+use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord, NEW_FLEET_DEFAULT_ROE};
 use nc_engine::{
     fleet_eta_label as engine_fleet_eta_label, fleet_list_eta_label as engine_fleet_list_eta_label,
     fleet_record_supports_mission_code, fleet_target_eta_message, resolve_checked_fleet_merge_plan,
@@ -1036,13 +1036,6 @@ impl App {
         donor_record_index_1_based: usize,
         donor_fleet_number: u16,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let donor_roe = self
-            .game_data
-            .fleets
-            .records
-            .get(donor_record_index_1_based - 1)
-            .map(|fleet| fleet.rules_of_engagement())
-            .unwrap_or(0);
         let donor_speed = if self.fleet_detach_requires_speed_prompt() {
             Some(
                 self.fleet
@@ -1057,7 +1050,9 @@ impl App {
             donor_record_index_1_based,
             self.fleet.detach_selection,
             donor_speed,
-            donor_roe,
+            // ECGAME's default for the new fleet; the detach screen has no
+            // ROE prompt, so the player sets another with <C> afterwards.
+            NEW_FLEET_DEFAULT_ROE,
         )?;
         self.save_game_data()?;
         self.reset_fleet_detach_staging();

@@ -12,8 +12,8 @@ Read it together with:
 - [nc-combat-spec.md](nc-combat-spec.md)
   for mission/combat behavior
 - [economics.md](economics.md)
-  for the Rust economy/build policy that lives inside the post-loop
-  world/player update region
+  for the Rust economy/build policy of the planet pass that precedes the
+  tick loop
 - [ec-timing-spec.md](ec-timing-spec.md)
   for weekly scheduler and report `Stardate` behavior
 - [rust-architecture.md](rust-architecture.md)
@@ -28,7 +28,7 @@ Ownership boundary:
 - [ec-timing-spec.md](ec-timing-spec.md)
   owns weekly timing, report-week assignment, and `Stardate` header formatting
 - [economics.md](economics.md) owns
-  the Rust economy/build policy inside the post-loop world/player update region
+  the Rust economy/build policy of the planet pass
 
 Use it when designing or refactoring the Rust maintenance engine.
 
@@ -119,17 +119,16 @@ Runtime State + Maintenance Context
 |                              |
 | 4a. snapshots + year advance |
 | 4b. pre-move prep            |
-| 4c. annual movement update   |
-| 4d. fleet battles +          |
+| 4c. planet pass: builds,     |
+|     then economy             |
+| 4d. the year's ticks:        |
+|     movement, encounters,    |
+|     battles, strikes,        |
 |     colonization             |
-| 4e. world/player update      |
-|     region:                  |
-|     build completion,        |
-|     economy/autopilot,       |
-|     player recompute         |
-| 4f. producer/mutator +       |
-|     assault/campaign passes  |
-| 4g. conquest/header          |
+| 4e. autopilot/rogue orders,  |
+|     player recompute,        |
+|     campaign                 |
+| 4f. conquest/header          |
 |     normalization            |
 +------------------------------+
     |
@@ -189,30 +188,21 @@ Determine fleet visit order (sort-by-random-priority; Rust may use slot order)
   +--> per week: process each fleet in visit order
   |    +--> read fleet, timing-window check
   |    +--> resolve fleet-vs-fleet combat and record timed outcomes
+  |    +--> resolve the fleet's planetary strike when its test passes
+  |         (bombard / invade / blitz / aftermath)
   |    +--> update weekly fleet event state
   |    +--> write fleet, remove destroyed/captured
   |
   v
-Post-loop fleet summary scan (2 sequential reads)
-  |
-  v
 Post-loop world/player update region:
   |
-  +--> build completion
-  |    +--> ships/starbases stage into stardock
-  |    +--> armies/ground batteries apply directly to planet
-  |
-  +--> planet economy
-  |
-  +--> autopilot / rogue economy
+  +--> autopilot / rogue orders (classic runs these at the start of the
+  |    next year, before its planet pass)
   |
   +--> player planet-count / production recompute
   |
   v
-Producer/mutator + assault/campaign passes
-  |
-  +--> hostile world-resolution family
-  |    (bombard / invade / blitz / aftermath)
+Producer/mutator + campaign passes
   |
   v
 Derived-state / header updates
@@ -250,13 +240,15 @@ that exists today.
    - sanitize invalid player inputs
    - refresh retarget / seek-home / join-host / guard-starbase targets
    - apply autopilot fleet recalls
+   - run the planet pass: build completion, then planet economy
    - intercept fleets ordered away from blockaded worlds
-   - run annual fleet movement
-   - merge mission fleets and resolve fleet battles
+   - run the year's ticks: movement, encounters, fleet battles, and
+     planetary strikes
+   - merge mission fleets
    - apply colonization
-   - run build completion, planet economy, autopilot economy, and player recompute
-   - apply campaign transitions, starbase flags, ready assaults, join-host updates,
-     and conquest-header normalization
+   - run autopilot/rogue orders and player recompute
+   - apply campaign transitions, starbase flags, join-host updates, and
+     conquest-header normalization
 5. assemble and canonicalize the event pool
 6. build report/output projections and apply delivery-side flags
 7. flush outputs, clean up, and end the tick
@@ -266,7 +258,8 @@ Combat location summary:
 - fleet-vs-fleet combat happens after annual movement and before colonization
 - departure interceptions at blockaded worlds (a Rust engagement rule) happen
   before annual movement, so the departing fleets are still at the world
-- build completion and economy happen after fleet battles
+- build completion and economy happen before the ticks, so before fleet
+  battles
 - ready hostile world resolution happens later than both fleet battles and
   build/economy work
 
@@ -335,8 +328,8 @@ Step `4` is now substantially recovered. The right Rust posture is:
 - movement is annual, the 52-week loop is event scheduling
 - fleet-vs-fleet combat happens during the simulation core, with player-visible
   reports built later from canonicalized events
-- hostile world resolution happens later, after the post-loop build/economy region
-- economy/producer passes run after the fleet loop
+- hostile world resolution happens after the ticks
+- the planet pass (builds, then economy) runs before the ticks
 
 ### Step 4 Block Diagram
 
@@ -375,20 +368,16 @@ Validated Durable State
     v
 +------------------------------+
 | 4f. World/player update      |
-|     update region:           |
-|     build completion         |
-|     ships/starbases ->       |
-|     stardock                 |
-|     armies/batteries ->      |
-|     planet                   |
-|     then economy/autopilot   |
-|     and player recompute     |
+|     region: autopilot/rogue  |
+|     orders and player        |
+|     recompute (the planet    |
+|     pass ran before 4c)      |
 +------------------------------+
     |
     v
 +------------------------------+
-| 4g. Campaign / assault /     |
-|     conquest normalization   |
+| 4g. Campaign / conquest      |
+|     normalization            |
 +------------------------------+
     |
     v
@@ -413,7 +402,7 @@ Updated Durable State + Durable Event Pool
 | **Fleet destruction is modeled; fleet reassignment is not yet** | destroyed fleets are removed/neutralized by the current engine, but the preserved fleet-battle owner-reassignment behavior is not currently modeled in Rust |
 | **Current Rust pre-move setup is narrower than the recovered classic phase** | Rust performs friendly merges and retarget/input normalization before movement; the recovered capture/reassignment setup from the oracle is still unresolved |
 | **Colonization is atomic on arrival** | ownership, armies (=1), name, status, production all set in one pass; economy starts the following tick |
-| **Economy/autopilot is explicitly after the weekly fleet-combat loop** | this phase runs after the 52-week fleet loop and reads post-fleet-combat state before the later hostile world-resolution region |
+| **The planet pass precedes the ticks** | ECMAINT completes builds and settles the economy (`1852:0000`) before the year driver (`0824:1004`); Rust does the same, right before `encounter::run_year` |
 | **Recovered classic economy/autopilot gate is `player[0] == 0xFF`** | the currently recovered classic pass applies to rogue-mode empires; civil-disorder `0x00` empires are frozen |
 | **Current Rust also does broader post-loop planet/economy recompute work here** | the Rust engine currently places normal planet-economy updates and per-player production/count recomputation in the same post-loop world/player region, even though the oracle-backed classic gate currently only settles the `0xFF` autopilot/rogue pass |
 | **File write ordering is stable** | FLEETS → RESULTS → DATABASE → PLAYER → PLANETS → CONQUEST → RANKINGS |
@@ -439,20 +428,16 @@ The current best implementation shape for step `4` is:
 4c. Merge co-located friendly fleets before movement
 4d. Sanitize invalid player inputs and refresh retarget/autopilot fleet orders,
     then intercept fleets ordered away from blockaded worlds
-4e. Annual movement update (one-time position advance for all fleets;
-    store fractional travel state in tuple_c for multi-year journeys)
+4e. Planet pass: build completion (ships and starbases into the stardock,
+    armies and batteries onto the planet), then planet economy; then the
+    year's ticks (movement, encounters, battles, and planetary strikes:
+    bombard / invade / blitz in the tick the fleet reaches orbit)
 4f. Mission-fleet merging and local fleet battles
 4g. Colonization
 4h. World/player update region:
-    - build completion
-      - ships/starbases stage into stardock awaiting commission
-      - armies/ground batteries apply directly to the planet and do not
-        pass through stardock
-    - normal planet economy updates
-    - autopilot / rogue economy updates
+    - autopilot / rogue orders (tax, commissioning, build commands)
     - per-player planet-count / production recomputation
-4i. Producer/mutator + hostile world-resolution + assault/campaign region
-    - bombard / invade / blitz / target-world aftermath family
+4i. Producer/mutator + campaign region
 4j. Join-host updates and conquest-header normalization
 ```
 
@@ -477,8 +462,8 @@ Key structural evidence:
   - ships and starbases stage into stardock awaiting later commission
   - armies and ground batteries apply directly to the planet and never enter
     stardock
-- in current Rust, economy-facing world updates are therefore **after fleet
-  battles**, not interleaved inside movement/combat resolution
+- in current Rust, economy-facing world updates are therefore **before the
+  ticks**, not interleaved inside movement/combat resolution
 - the remaining hostile world-resolution family is later than the fleet-battle
   step and should not be collapsed into the same “combat” box in
   diagrams
@@ -623,9 +608,9 @@ Replayable bombard/invade probes from the same generated target world show:
 
 Implementation consequence:
 
-- do not route these world effects through the weekly fleet-combat box
-- instead, dispatch them in the later hostile world-resolution region by
-  ready mission kind
+- dispatch these world effects by mission kind in the tick the fleet's
+  strike test passes, inside the year's ticks and not in a later pass,
+  so each reads the fleet and the world as they stand in that tick
 - keep the damage mechanics/report phrasing inside mission-specific helpers,
   but keep the phase boundary itself explicit and shared
 
@@ -647,19 +632,17 @@ run_turn(directory):
   merge_co_located_friendly_fleets(state)
   sanitize_invalid_player_inputs(state, events)
   refresh_retargets_and_autopilot_recalls(state, events)
-  move_all_fleets(state)
-  merge_mission_fleets(state, events)
-  resolve_fleet_battles(state, events)
-  apply_colonization(state, events)
-
   run_build_completion(state)
   run_planet_economy(state)
+  run_year_ticks(state, events)        # movement, encounters, battles, strikes
+  merge_mission_fleets(state, events)
+  apply_colonization(state, events)
+
   run_economy_autopilot(state)
   recompute_player_planet_stats(state)
 
   run_campaign_state_updates(state, snapshots, events)
   update_player_starbase_flags(state)
-  resolve_ready_planetary_assaults(state, snapshots, events)
   apply_join_host_updates(state, events)
   normalize_conquest_headers(state)
 
@@ -682,35 +665,34 @@ spec disagree, the spec wins and the code should move. The same is true if this
 snapshot drifts from the companion combat, timing, or economics specs.
 
 1. validate structural maintenance state
-2. advance the game year
-3. merge co-located friendly fleets before movement
-4. sanitize invalid player inputs
-5. refresh retarget / seek-home / join-host / guard-starbase targets
-6. intercept fleets ordered away from blockaded worlds
-7. process fleet movement
-8. process mission-fleet merging
-9. resolve fleet battles
+2. cull empty fleet records and take the start-of-turn snapshots
+3. advance the game year
+4. merge co-located friendly fleets before movement
+5. sanitize invalid player inputs
+6. refresh retarget / seek-home / join-host / guard-starbase targets and
+   autopilot fleet recalls
+7. run the planet pass: settle which worlds take the starbase growth bonus,
+   complete builds (ships and starbases into the stardock, armies and
+   batteries onto the planet), then run the planet economy
+8. run the year's ticks: movement, encounters, fleet battles, and planetary
+   strikes
    - if hostile action strips the ship class that makes the mission possible,
      abort the mission immediately
    - invalidated mission fleets seek home when possible, otherwise hold in
      place
+   - a Bombard / Invade / Blitz fleet strikes in the tick its strike test
+     passes, with the ships and against the world of that tick
+9. process mission-fleet merging and join-host updates
 10. apply colonization
    - only from current post-combat fleet state; do not execute stale
      pre-combat colonization arrivals after ETAC loss or forced retreat
-11. process build completion
-   - ship/starbase builds stage into stardock
-   - army/ground-battery builds apply directly to the planet
-12. run normal planet economy
-13. run autopilot / rogue planet updates
-14. recompute per-player planet count / production totals
-15. apply campaign-state transitions and related player/fleet consequences
-16. update player starbase flags
-17. resolve ready planetary assaults
-   - revalidate assault fleets against current post-combat state before
-     bombard / invade / blitz execution; do not execute stale ready snapshots
-18. apply join-host updates
-19. normalize conquest header fields
-20. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
+11. run autopilot / rogue orders (tax, commissioning, build commands)
+12. update player starbase flags
+13. recompute per-player planet count / production totals
+14. apply campaign-state transitions and related player/fleet consequences
+15. normalize conquest header fields
+16. finalize pending observations and on-station scout reports
+17. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
 
 That is the ordering the Rust diagrams should describe when they are trying to
 show the current driver, not just the recovered classic outer boundaries.
@@ -823,9 +805,8 @@ It does claim:
 - fleet visit order is sort-by-random-priority, with Rust free to use slot
   order pragmatically
 - mission resolution requires start-of-year position
-- the recovered economy/autopilot phase is after the weekly fleet-combat loop
-  and before the later hostile world-resolution region
-- the currently recovered classic gate for that pass is `player[0] == 0xFF`
+- the recovered planet pass (builds, then economy) is before the ticks; the
+  rogue/autopilot orders pass precedes it
 - colonization is atomic on arrival
 - current Rust builds combat reports from the canonicalized event pool after
   simulation rather than as inline file writes
@@ -848,8 +829,7 @@ It does claim:
 - use [nc-combat-spec.md](nc-combat-spec.md)
   for mission/combat behavior and hostile world-resolution mechanics
 - use [economics.md](economics.md)
-  for the canonical Rust economy/build policy applied in the post-loop
-  world/player update region
+  for the canonical Rust economy/build policy of the planet pass
 - use [ec-timing-spec.md](ec-timing-spec.md)
   for weekly report/timing evidence and `Stardate` report-header shape
 - use [approach.md](approach.md)

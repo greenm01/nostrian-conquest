@@ -13,9 +13,9 @@ mod reporting;
 mod retreat;
 mod state;
 
-pub(crate) use assault::process_planetary_assaults;
+pub(crate) use assault::{AssaultEvents, resolve_strike};
 pub(crate) use fleet_battle::{BattleSide, FleetBattlePhaseEvents, fight_encounter};
 pub(crate) use reporting::{
-    ContactObserver, mission_kind_for_order, push_avoidance, push_fleet_contact,
+    ContactObserver, mission_kind_for_order, push_fleet_contact, push_no_engagement,
 };
 pub(crate) use retreat::{abort_mission_to_seek_home_or_hold, nearest_owned_planet};

@@ -1,0 +1,198 @@
+{
+  "method": "Exact finite-state enumeration using floating-point probabilities; no sampling.",
+  "defender_first_cer_tenths": [
+    1,
+    2,
+    2,
+    3,
+    3,
+    3,
+    3,
+    4,
+    4,
+    5
+  ],
+  "armies": {
+    "AS": 10,
+    "DS": 10
+  },
+  "engine_validated": false,
+  "battles": [
+    {
+      "attackers": 1,
+      "defenders": 1,
+      "current": {
+        "capture": 0.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.35779816513761464,
+        "rounds": 1.8348623853211008
+      },
+      "defender_first": {
+        "capture": 0.3048955749641405,
+        "rounds": 3.36114665684232
+      }
+    },
+    {
+      "attackers": 2,
+      "defenders": 2,
+      "current": {
+        "capture": 0.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.39153760192812853,
+        "rounds": 2.627023991363155
+      },
+      "defender_first": {
+        "capture": 0.22987488964122077,
+        "rounds": 4.076952945901132
+      }
+    },
+    {
+      "attackers": 3,
+      "defenders": 3,
+      "current": {
+        "capture": 0.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.3921417018844228,
+        "rounds": 3.11753546828842
+      },
+      "defender_first": {
+        "capture": 0.23338191794324376,
+        "rounds": 4.431744898371216
+      }
+    },
+    {
+      "attackers": 5,
+      "defenders": 5,
+      "current": {
+        "capture": 0.08,
+        "rounds": 1.02
+      },
+      "simultaneous": {
+        "capture": 0.37952629801308085,
+        "rounds": 3.6814982841396215
+      },
+      "defender_first": {
+        "capture": 0.18005279627982873,
+        "rounds": 4.788580512112822
+      }
+    },
+    {
+      "attackers": 8,
+      "defenders": 10,
+      "current": {
+        "capture": 0.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.07771517346202954,
+        "rounds": 3.430656080327071
+      },
+      "defender_first": {
+        "capture": 0.008669628173244124,
+        "rounds": 3.6436438048140944
+      }
+    },
+    {
+      "attackers": 10,
+      "defenders": 10,
+      "current": {
+        "capture": 0.08,
+        "rounds": 1.02
+      },
+      "simultaneous": {
+        "capture": 0.34462199323075177,
+        "rounds": 4.356466010808997
+      },
+      "defender_first": {
+        "capture": 0.15156890527419153,
+        "rounds": 5.060500124239733
+      }
+    },
+    {
+      "attackers": 11,
+      "defenders": 10,
+      "current": {
+        "capture": 0.83,
+        "rounds": 1.1
+      },
+      "simultaneous": {
+        "capture": 0.5285472857475074,
+        "rounds": 4.4894227643841
+      },
+      "defender_first": {
+        "capture": 0.34215942239615615,
+        "rounds": 5.538799606390712
+      }
+    },
+    {
+      "attackers": 12,
+      "defenders": 10,
+      "current": {
+        "capture": 0.8608,
+        "rounds": 1.1002
+      },
+      "simultaneous": {
+        "capture": 0.699198290110593,
+        "rounds": 4.365342841184016
+      },
+      "defender_first": {
+        "capture": 0.5689342303066578,
+        "rounds": 5.559414283660918
+      }
+    },
+    {
+      "attackers": 15,
+      "defenders": 10,
+      "current": {
+        "capture": 1.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.9618002730019837,
+        "rounds": 3.342407127201337
+      },
+      "defender_first": {
+        "capture": 0.9656971414648202,
+        "rounds": 4.033704211058439
+      }
+    },
+    {
+      "attackers": 20,
+      "defenders": 10,
+      "current": {
+        "capture": 1.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.9998475374972002,
+        "rounds": 2.309775470111387
+      },
+      "defender_first": {
+        "capture": 0.9999729510174052,
+        "rounds": 2.6527778380941514
+      }
+    },
+    {
+      "attackers": 30,
+      "defenders": 10,
+      "current": {
+        "capture": 1.0,
+        "rounds": 1.0
+      },
+      "simultaneous": {
+        "capture": 0.9999999999922741,
+        "rounds": 1.6012752139967852
+      },
+      "defender_first": {
+        "capture": 1.0,
+        "rounds": 1.7718339863000006
+      }
+    }
+  ]
+}

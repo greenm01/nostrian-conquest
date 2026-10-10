@@ -98,6 +98,16 @@ once a probe confirms classic does; keep reports until the player reads
 them. Classic's purge-after setting never purged anything, so Rust adds no
 cap for now.
 
+Done (2026-10-10). The probe confirmed the speed rule: a Hold fleet at speed
+3, in deep space or in a system, has `+0x0a` 0 after a year and has not
+moved; Rust's dispatcher now zeroes it. The starbase sighting carries what
+the base makes of the fleet (`StarbaseAlert`: headed at our planet, enemy
+alert, or scanning), and a failed intercept is a `NoEngagement` with
+`InterceptFailed`, both worded as classic. Maintenance carries unread report
+rows into the new snapshot ahead of the year's own
+(`carry_unread_report_blocks`), so the inbox, the logon review, and the
+RESULTS.DAT export keep them until the player deletes them.
+
 ## t045
 
 Finish a full reference to classic's combat, for the record; Rust keeps its
@@ -116,3 +126,89 @@ planetary assaults, fleet battles, encounters, and reports, checked against
 - Decode the DATABASE.DAT and planet-status updates after a battle.
 - Merge the two specs into one classic combat reference with a short plain
   summary first; keep the Rust comparison in its own section.
+
+## t046
+
+A Join order stores its host as the host's fleet number within the empire
+(FLEETS.DAT `0x00`), not its record id. ECMAINT's merge (`2895:4a6b`)
+compares `0x23` with word `0x00`, and ECGAME's renumbering (`0x15b35`)
+rewrites `0x23` when fleet numbers change. Rust's `set_join_fleet_order`,
+the maintenance id remap, and the join tests treat `0x23` as the record id.
+The two agree only while id equals fleet number, which holds for empire 1 in
+the fixtures and fails for everyone else. Found by t042.
+
+Evidence. ECMAINT's Join host search (`0824:79d6`) compares the joiner's
+`0x23` word with the fleet index entry's number word, and the merge
+(`2895:4a6b`) points the absorbed fleet's joiners at the host's `0x00`
+word. ECGAME's renumbering (`0x15ad5`..`0x15b3f`) rewrites `0x23` on every
+Join order that names the old number. A classic probe on
+`fixtures/ecmaint-post` (empire 2's fleets are records 5..8 with numbers
+1..4) ordered record 6 to join with `0x23 = 1`: ECMAINT merged it into
+record 5 and compacted FLEETS.DAT. With `0x23 = 5` (the record id) ECMAINT
+left every file unchanged and the Join order in place.
+
+Rust now stores and matches the host's fleet number: `set_join_fleet_order`
+writes it, validation and the maintenance merge, retarget, and removal remap
+look hosts up by (owner, number), and `set_fleet_local_slot` renumbers the
+empire's Join orders as ECGAME does. The turn file's `join host=` keeps
+naming the host by record index, like every other fleet reference in it.
+
+## t047
+
+Small classic-match items from the t039 decodes and t042:
+
+- Rust writes maintenance-day codes (`MAINTENANCE_DAY_ENABLED_CODES` in
+  `rust/nc-data/src/lib.rs`) that came from an ECUTIL bug; classic reads
+  the seven bytes as booleans. Write 1 for an enabled day.
+- A new fleet from detach or commission starts at ROE 6 if it has warships,
+  else 0, and ECGAME then prompts. nc-game passes the donor's ROE without
+  asking. Use classic's default.
+- Classic never updates the PLAYER.DAT fleet chain tail on detach either;
+  Rust matches it. No change; recorded here so it is not reopened.
+- "Purge after turns" (SETUP 518) does nothing in classic v1.5. Rust's
+  setting is dead too; say so in the sysop manual or remove the setting.
+
+## t048
+
+Classic runs the planet economy and the build queue (`1852:0000`, called at
+`0824:29d1`) before the 52-tick year driver (`0824:1004`). Rust runs
+economy and builds after the tick loop, so ships commissioned this year
+appear after movement instead of before it. `docs/dev/economics.md`
+"Turn-Order Placement" states the Rust order as if it were classic's. Match
+classic's order and correct the doc. Found by t041.
+
+## t049
+
+The nc-fuzz `engine_invariants_hold_under_hegel` test failed on two agents'
+branches ("event names the wrong fleet" on a BombardWorld mission event)
+and passes on main, three runs in a row. Find out whether it is seed- or
+load-dependent and make it deterministic.
+
+## t050
+
+Document classic's economy in full, as a reference; Rust keeps its own
+economy (user, 2026-10-10). Decode from ECMAINT `1852:0000` and ECGAME:
+tax revenue, growth toward potential (`1852:0457..0560`:
+`ln(1 - sqrt(present/potential))` with a `5 - Random(11)` term), the
+starbase effect (a tax cut of `Random(10)` points at `1852:0526`, with the
+bug that leaks it to later planets), the high-tax penalty, the planet status
+scaling (0x5C: 0, 0.5, 1.0), newly colonized and captured worlds,
+Scorch-Earth, build costs and the build queue, stardock and commissioning,
+treasury, and the rankings. Confirm the formulas with classic probes and
+write `docs/dev/ec-economy-reference.md`, with a "How NC differs" section
+citing `docs/dev/economics.md`. The economy review itself (t051) waits for
+the combat work.
+
+## t051
+
+Review NC's economy (`docs/dev/economics.md`, the manual's Economy chapter
+and Appendix A) against classic's decoded economy (t050), ec4x's economy,
+and the game-balance findings from the combat review; decide what to keep
+and what to change. Starts after the combat mechanics work is settled.
+
+Design constraints (user, 2026-10-10): the economy stays simple for the
+player, with the tax rate as the one control; useful mechanisms may run
+under the hood. The user designed ec4x's economy. No investment or research
+budgets and no new economic orders as a first step. Codex's analysis of
+classic EC against VBAM and ec4x on that basis is an input to this task,
+kept as an investigation note.

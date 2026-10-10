@@ -42,7 +42,7 @@ axes, so routes may use the last row and column but never row or column `0`.
 | `0x19..0x1e` | depth `Z` | Turbo Pascal 6-byte real |
 | `0x20`, `0x21` | target sector | u8 |
 | `0x22` | target depth `TZ`: `0` sector target, `1` world target | u8 |
-| `0x23` | guarded starbase id (order 4) or join host fleet id (order 13) | u8 |
+| `0x23` | guarded starbase id (order 4) or join host fleet number, the host's `0x00` word (order 13) | u16 |
 
 A 6-byte real stores a biased exponent in byte 0 (`0` means `0.0`) and a
 39-bit mantissa in bytes 1 to 5, little-endian, with the sign in the top bit
@@ -114,15 +114,25 @@ whether to include time to enter the system, which selects `TZ`.
 ### Hostile Missions
 
 Bombard, Invade, and Blitz attack on the tick the fleet reaches `Z = 1.0`, in
-that year's maintenance. The fleet stops there, in orbit with speed 0. A fleet
-that starts the year in orbit at its target on a hostile order attacks on the
-first tick. NC combat ([nc-combat-spec.md](nc-combat-spec.md)) decides the
-attack and what it leaves on the order:
+that year's maintenance. The fleet stops there, in orbit with speed 0, and
+the attack resolves in that tick, in the fleet's slot of the year's unit
+order, before the next unit moves. A fleet that starts the year in orbit at
+its target on a hostile order attacks on the first tick. NC combat
+([nc-combat-spec.md](nc-combat-spec.md)) decides the attack and what it
+leaves on the order:
 
 - Bombard keeps its order, and the fleet bombards again each year from orbit
   until the player changes the order.
 - Invade and Blitz resolve, win or lose, and the surviving fleet holds in
   orbit.
+
+Because each strike resolves in its tick, the rest of the year sees its
+result: a fleet the batteries destroy is gone from the encounter loop, a
+captured world has its new owner from the next tick (a starbase of the old
+owner lifts, a later attacker meets the new owner), and fleets reaching the
+same world strike in the order they arrive, whatever their orders. NC
+policy, not classic: there is no class priority among Bombard, Invade, and
+Blitz, and no limit on how often a world changes hands in a year.
 
 Classic does not save the strike tick after a failed attack, so its fleet
 keeps its order and speed one tick short of orbit and attacks again each

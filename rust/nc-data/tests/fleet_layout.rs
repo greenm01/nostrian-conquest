@@ -242,14 +242,16 @@ fn pad_fleets_to(game_data: &mut CoreGameData, count: usize) {
 }
 
 #[test]
-fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
+fn join_merges_into_a_host_whose_number_exceeds_one_byte() {
+    // 0x23 is the host's fleet number (its 0x00 word), stored as a word; the
+    // host's record id (300) differs from its number (299).
     let mut game_data = load_fixture("ecmaint-post");
     game_data.player.records[0].set_player_mode_raw(0x00);
     pad_fleets_to(&mut game_data, 300);
 
     let mut host = game_data.fleets.records[0].clone();
     host.set_fleet_id_word_raw(300);
-    host.set_local_slot_word_raw(5);
+    host.set_local_slot_word_raw(299);
     host.set_previous_fleet_id(0);
     host.set_next_fleet_link_word_raw(0);
     host.set_standing_order_kind(Order::HoldPosition);
@@ -259,8 +261,8 @@ fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
 
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_mission_target(1, 300);
-    assert_eq!(&joiner.to_bytes()[0x23..0x25], &[0x2c, 0x01]);
+    joiner.set_mission_target(1, 299);
+    assert_eq!(&joiner.to_bytes()[0x23..0x25], &[0x2b, 0x01]);
     let joiner_cruisers = joiner.cruiser_count();
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance");
@@ -275,7 +277,7 @@ fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
         .fleets
         .records
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 5)
+        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 299)
         .expect("host survives");
     assert_eq!(host.battleship_count(), 2);
     assert_eq!(host.cruiser_count(), 1 + joiner_cruisers);

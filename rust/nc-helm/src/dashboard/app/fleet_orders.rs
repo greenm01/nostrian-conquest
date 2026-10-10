@@ -2,15 +2,15 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use nc_data::{FleetDetachSelection, Order, PlanetIntelSnapshot, map_size_for_player_count};
 use nc_engine::{
-    FLEET_MISSION_OPTIONS, SelectedFleetRef, automatic_order_targets, default_host_fleet_target,
-    default_starbase_target, fleet_mission_option, fleet_order_target_rejects_owned_planet,
-    fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,
-    fleet_order_target_requires_planet_system, fleet_record_supports_mission_code,
-    fleet_target_input_kind, fleet_target_status_line, format_guard_fleet_clause,
-    guard_fleet_numbers_for_starbase, owned_fleet_targets, owned_starbase_targets,
-    recommended_coordinate_target, recommended_coordinate_target_y_for_entered_x,
-    resolve_checked_fleet_merge_plan, resolve_checked_fleet_transfer_plan,
-    target_available_for_mission,
+    FLEET_MISSION_OPTIONS, SeekNextClosestQuestion, SelectedFleetRef, automatic_order_targets,
+    default_host_fleet_target, default_starbase_target, fleet_mission_option,
+    fleet_order_target_rejects_owned_planet, fleet_order_target_rejects_owned_scout_target,
+    fleet_order_target_requires_owned_planet, fleet_order_target_requires_planet_system,
+    fleet_record_supports_mission_code, fleet_target_input_kind, fleet_target_status_line,
+    format_guard_fleet_clause, guard_fleet_numbers_for_starbase, owned_fleet_targets,
+    owned_starbase_targets, recommended_coordinate_target,
+    recommended_coordinate_target_y_for_entered_x, resolve_checked_fleet_merge_plan,
+    resolve_checked_fleet_transfer_plan, seek_next_closest_question, target_available_for_mission,
 };
 
 use crate::dashboard::overlays::fleet_list;
@@ -362,7 +362,11 @@ impl DashApp {
                 self.fleet_overlay.order_target_x_input = format!("{:02}", targets[0][0]);
                 self.fleet_overlay.order_target_y_input = format!("{:02}", targets[0][1]);
                 self.fleet_overlay
-                    .open_prompt(FleetOverlayPromptMode::OrderConfirm);
+                    .open_prompt(if self.fleet_order_seek_next_closest().is_some() {
+                        FleetOverlayPromptMode::SeekNextClosest
+                    } else {
+                        FleetOverlayPromptMode::OrderConfirm
+                    });
                 self.help_context = HelpContext::FleetOrderInput;
                 return;
             }
@@ -385,6 +389,7 @@ impl DashApp {
             FleetOverlayPromptMode::OrderTarget
             | FleetOverlayPromptMode::OrderTargetX
             | FleetOverlayPromptMode::OrderTargetY
+            | FleetOverlayPromptMode::SeekNextClosest
             | FleetOverlayPromptMode::OrderConfirm => {
                 self.fleet_overlay.close_prompt();
                 if self.fleet_overlay.prompt_mode == FleetOverlayPromptMode::MissionPicker {
@@ -415,6 +420,41 @@ impl DashApp {
         if self.fleet_overlay.prompt_mode == FleetOverlayPromptMode::OrderTargetY {
             self.fleet_overlay.order_confirm_input.clear();
         }
+    }
+
+    /// Answers ECGAME's Seek Home question: yes heads for the next closest
+    /// world, no stays on the world the fleet is at. The order then asks for
+    /// confirmation.
+    pub(crate) fn answer_seek_next_closest(&mut self, yes: bool) {
+        if let Some(question) = self.fleet_order_seek_next_closest() {
+            let target = if yes { question.next } else { question.stay };
+            self.fleet_overlay.order_target_x_input = format!("{:02}", target[0]);
+            self.fleet_overlay.order_target_y_input = format!("{:02}", target[1]);
+        }
+        self.fleet_overlay.order_confirm_input.clear();
+        self.fleet_overlay.order_status = None;
+        self.fleet_overlay
+            .open_prompt(FleetOverlayPromptMode::OrderConfirm);
+    }
+
+    /// ECGAME's Seek Home question for the fleets being ordered, when it asks.
+    fn fleet_order_seek_next_closest(&self) -> Option<SeekNextClosestQuestion> {
+        let records = match self.fleet_overlay.order_scope {
+            FleetOrderScope::Group => self
+                .selected_group_order_rows()
+                .iter()
+                .map(|row| row.fleet_record_index_1_based)
+                .collect::<Vec<_>>(),
+            _ => self
+                .selected_fleet_order_row()
+                .map(|row| vec![row.fleet_record_index_1_based])
+                .unwrap_or_default(),
+        };
+        seek_next_closest_question(
+            &self.game_data,
+            self.fleet_overlay.order_mission_code?,
+            &records,
+        )
     }
 
     pub(crate) fn append_fleet_order_char(&mut self, ch: char) {
@@ -448,6 +488,7 @@ impl DashApp {
             FleetOverlayPromptMode::StarbaseMoveDecision
             | FleetOverlayPromptMode::StarbaseMoveDestination
             | FleetOverlayPromptMode::StarbaseHaltConfirm
+            | FleetOverlayPromptMode::SeekNextClosest
             | FleetOverlayPromptMode::MissionPicker
             | FleetOverlayPromptMode::FilterMenu
             | FleetOverlayPromptMode::FilterValueInput
@@ -1163,6 +1204,11 @@ impl DashApp {
     }
 
     pub(crate) fn fleet_order_target_status_line(&self) -> String {
+        if self.fleet_overlay.prompt_mode == FleetOverlayPromptMode::SeekNextClosest
+            && let Some(question) = self.fleet_order_seek_next_closest()
+        {
+            return question.notice;
+        }
         if self.fleet_overlay.prompt_mode == FleetOverlayPromptMode::OrderConfirm
             && let (Some(mission_code), Ok(destination)) = (
                 self.fleet_overlay.order_mission_code,
@@ -1525,15 +1571,17 @@ impl DashApp {
             self.fleet_overlay.order_status = Some("Select at least one fleet.".to_string());
             return Ok(());
         }
-        let seek_home_targets = if mission_code == Order::SeekHome.to_raw() {
-            let records = selected_rows
-                .iter()
-                .map(|row| row.fleet_record_index_1_based)
-                .collect::<Vec<_>>();
-            automatic_order_targets(&self.game_data, mission_code, &records)?
-        } else {
-            None
-        };
+        // A lone fleet keeps the target its order prompt chose.
+        let seek_home_targets =
+            if mission_code == Order::SeekHome.to_raw() && selected_rows.len() > 1 {
+                let records = selected_rows
+                    .iter()
+                    .map(|row| row.fleet_record_index_1_based)
+                    .collect::<Vec<_>>();
+                automatic_order_targets(&self.game_data, mission_code, &records)?
+            } else {
+                None
+            };
         for (index, row) in selected_rows.iter().enumerate() {
             let target = seek_home_targets
                 .as_ref()

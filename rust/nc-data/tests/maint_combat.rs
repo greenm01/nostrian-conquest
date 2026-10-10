@@ -487,6 +487,15 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
     );
 }
 
+/// A year in which someone withdrew under ROE; a failed intercept alone
+/// is also a disposition event, but not the one these tests want.
+fn retreated(events: &nc_data::MaintenanceEvents) -> bool {
+    events
+        .encounter_disposition_events
+        .iter()
+        .any(|event| matches!(event, EncounterDispositionEvent::Retreated { .. }))
+}
+
 #[test]
 fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     let game_data = configured_invade_contact_state(10, 0);
@@ -496,7 +505,7 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     // its loaded transports (losing them aborts the mission for another
     // reason).
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, events| {
-        !events.encounter_disposition_events.is_empty()
+        retreated(events)
             && year.fleets.records[0].army_count() == 2
             && year.fleets.records[4].has_any_force()
     });
@@ -535,12 +544,17 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     let attacker = &game_data.fleets.records[0];
     assert_eq!(attacker.standing_order_kind(), Order::InvadeWorld);
     assert_eq!(attacker.standing_order_target_coords_raw(), [15, 13]);
-    assert_eq!(attacker.current_location_coords_raw(), [9, 13]);
-    assert_eq!(attacker.current_speed(), 0);
+    // Re-rated by its losses, the invader carries on toward its target at
+    // the full speed of the ships it has left (0 when this stalled contact
+    // lost none), and is still short of it at year end.
+    let [x, y] = attacker.current_location_coords_raw();
+    assert!((9..15).contains(&x) && y == 13, "{:?}", [x, y]);
+    assert_eq!(attacker.current_speed(), attacker.max_speed());
 
     let hostile = &game_data.fleets.records[4];
     assert_eq!(hostile.standing_order_kind(), Order::SeekHome);
-    // The retreat runs at full speed (0 for this stalled contact).
+    // The retreat runs at the full speed of the ships it has left (0 when
+    // this stalled contact lost none).
     assert_eq!(hostile.current_speed(), hostile.max_speed());
 }
 
@@ -549,9 +563,8 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
     let game_data = configured_invade_contact_state(0, 10);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
-    let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
-        !events.encounter_disposition_events.is_empty()
-    });
+    let (game_data, events) =
+        common::first_year(&game_data, &diplomacy, |_, events| retreated(events));
 
     assert!(events.encounter_disposition_events.iter().any(|event| {
         matches!(

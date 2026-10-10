@@ -44,7 +44,10 @@ fn order_fleet(
 /// Order fleet `joiner_idx` to join the co-located fleet `host_idx` this turn.
 fn join_in_place(game_data: &mut CoreGameData, joiner_idx: usize, host_idx: usize) {
     let host = &game_data.fleets.records[host_idx];
-    let (host_id, host_coords) = (host.fleet_id_word_raw(), host.current_location_coords_raw());
+    let (host_number, host_coords) = (
+        host.local_slot_word_raw(),
+        host.current_location_coords_raw(),
+    );
     order_fleet(
         game_data,
         joiner_idx,
@@ -53,7 +56,7 @@ fn join_in_place(game_data: &mut CoreGameData, joiner_idx: usize, host_idx: usiz
         host_coords,
         0,
     );
-    game_data.fleets.records[joiner_idx].set_join_host_fleet_id_raw(host_id);
+    game_data.fleets.records[joiner_idx].set_join_host_fleet_id_raw(host_number);
 }
 
 fn place_world(game_data: &mut CoreGameData, planet_idx: usize, coords: [u8; 2], owner: u8) {
@@ -236,8 +239,8 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
         chased,
         1,
     );
-    let host_id = game_data.fleets.records[2].fleet_id_word_raw();
-    game_data.fleets.records[3].set_join_host_fleet_id_raw(host_id);
+    let host_number = game_data.fleets.records[2].local_slot_word_raw();
+    game_data.fleets.records[3].set_join_host_fleet_id_raw(host_number);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -250,11 +253,66 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
         events.join_host_events
     );
     let chaser = fleet_by_number(&game_data, 1, 4);
-    assert_eq!(
-        chaser.join_host_fleet_id_raw(),
-        fleet_by_number(&game_data, 1, 3).fleet_id_word_raw()
-    );
+    // The host's record id compacted from 3 to 2; its fleet number did not.
+    assert_eq!(fleet_by_number(&game_data, 1, 3).fleet_id_word_raw(), 2);
+    assert_eq!(chaser.join_host_fleet_id_raw(), 3);
     assert_eq!(chaser.standing_order_target_coords_raw(), chased);
+}
+
+#[test]
+fn join_resolves_by_fleet_number_when_host_number_differs_from_record_id() {
+    let mut game_data = baseline();
+    // Empire 2's fleets are records 5..8: fleet numbers 1..4, record ids 5..8.
+    let host_idx = game_data
+        .fleets
+        .records
+        .iter()
+        .position(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 1)
+        .expect("empire 2 fleet 1");
+    let joiner_idx = host_idx + 1;
+    assert_eq!(fleet_identity(&game_data, joiner_idx), (2, 2));
+    assert_ne!(
+        game_data.fleets.records[host_idx].fleet_id_word_raw(),
+        1,
+        "the host's record id must differ from its fleet number"
+    );
+    let host_cruisers = game_data.fleets.records[host_idx].cruiser_count();
+    let joiner_cruisers = game_data.fleets.records[joiner_idx].cruiser_count();
+    let empire_1_fleet_1_cruisers = fleet_by_number(&game_data, 1, 1).cruiser_count();
+    join_in_place(&mut game_data, joiner_idx, host_idx);
+    assert_eq!(
+        game_data.fleets.records[joiner_idx].join_host_fleet_id_raw(),
+        1
+    );
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert!(
+        events.fleet_merge_events.iter().any(|event| {
+            event.kind == Mission::JoinAnotherFleet
+                && event.owner_empire_raw == 2
+                && event.host_fleet_number == 1
+                && event.absorbed_fleet_number == 2
+        }),
+        "{:?}",
+        events.fleet_merge_events
+    );
+    assert_eq!(
+        fleet_by_number(&game_data, 2, 1).cruiser_count(),
+        host_cruisers + joiner_cruisers
+    );
+    assert!(
+        !game_data
+            .fleets
+            .records
+            .iter()
+            .any(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 2)
+    );
+    // Empire 1's fleet 1 (record id 1) was not the host.
+    assert_eq!(
+        fleet_by_number(&game_data, 1, 1).cruiser_count(),
+        empire_1_fleet_1_cruisers
+    );
 }
 
 #[test]
