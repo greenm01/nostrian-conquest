@@ -370,7 +370,7 @@ Tax revenue that a planet does not spend accumulates in its *Treasury* --- the p
 
 == Newly Colonized Planets
 
-A freshly colonized planet starts with Production far below its Potential and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on later turns, and because tax revenue is credited before growth is applied, a new colony can remain at zero budget for multiple turns even at reasonable tax rates. Keep taxes low on new colonies so they develop quickly.
+A freshly colonized planet starts with Production far below its Potential and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on the next maintenance turn. Each year growth is applied first and tax revenue is then credited on the grown Production, so at moderate tax rates most colonies have a small budget after their first full turn. Very small worlds, or colonies under low taxes, can still sit at zero budget for a turn or more because their revenue rounds down to zero. Low taxes still develop new colonies fastest; they just fill the treasury more slowly at first.
 
 == Conquered Planets
 
@@ -673,7 +673,8 @@ This appendix collects the exact economy formulas in one place.
 ]
 
 Your empire's Empire Revenue is the sum of this value across all owned
-planets.
+planets. Maintenance credits revenue after the year's growth and any high-tax
+penalty, so `present_production` here is the updated value.
 
 == Base Growth Toward Potential
 
