@@ -285,6 +285,37 @@ fn join_player_rejects_civil_disorder_seat_that_was_already_used() {
 }
 
 #[test]
+fn join_player_rejects_non_printable_ascii_empire_names() {
+    let mut data = GameStateBuilder::new()
+        .with_player_count(2)
+        .build_joinable_new_game_baseline()
+        .expect("joinable baseline should build");
+
+    for name in ["\u{C6}gir Dominion", "Em\u{2014}pire", "Tab\tEmpire"] {
+        assert_eq!(
+            data.join_player(1, name),
+            Err(GameStateMutationError::InvalidEmpireName {
+                player_index_1_based: 1,
+            })
+        );
+    }
+    assert!(data.player_slot_is_open_for_first_join(1));
+}
+
+#[test]
+fn classic_text_setters_store_question_marks_for_other_characters() {
+    let mut player = PlayerRecord::new_zeroed();
+    player.set_controlled_empire_name_raw("\u{C6}gir Dominion");
+    assert_eq!(player.controlled_empire_name_summary(), "?gir Dominion");
+    player.set_assigned_player_handle_raw("Bj\u{F6}rn\u{1F600}");
+    assert_eq!(player.assigned_player_handle_summary(), "Bj?rn?");
+
+    let mut planet = PlanetRecord::new_zeroed();
+    planet.set_status_or_name_summary_raw("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.planet_name(), "????");
+}
+
+#[test]
 fn stardock_slots_round_trip_through_contiguous_classic_offsets() {
     let mut planet = PlanetRecord::new_zeroed();
 

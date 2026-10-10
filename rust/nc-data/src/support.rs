@@ -61,6 +61,14 @@ pub fn is_classic_text_char(ch: char) -> bool {
     ch == ' ' || ch.is_ascii_graphic()
 }
 
+/// Text as a classic field stores it: any other character becomes `?`.
+pub fn classic_text(value: &str) -> String {
+    value
+        .chars()
+        .map(|ch| if is_classic_text_char(ch) { ch } else { '?' })
+        .collect()
+}
+
 pub fn copy_array<const N: usize>(data: &[u8]) -> [u8; N] {
     let mut out = [0u8; N];
     out.copy_from_slice(data);

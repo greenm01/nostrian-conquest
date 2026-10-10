@@ -1,5 +1,5 @@
 use crate::PLANET_RECORD_SIZE;
-use crate::support::{ParseError, copy_array, decode_real48, encode_real48};
+use crate::support::{ParseError, classic_text, copy_array, decode_real48, encode_real48};
 
 pub const STARDOCK_SLOT_COUNT: usize = 10;
 const STARDOCK_COUNT_BASE_OFFSET: usize = 0x38;
@@ -231,6 +231,7 @@ impl PlanetRecord {
     }
 
     pub fn set_status_or_name_summary_raw(&mut self, value: &str) {
+        let value = classic_text(value);
         let bytes = value.as_bytes();
         let len = bytes.len().min(13);
         self.raw[0x0F] = len as u8;

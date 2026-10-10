@@ -73,6 +73,11 @@ impl CoreGameData {
                 index_1_based: player_record_index_1_based,
             });
         }
+        if !empire_name.chars().all(is_classic_text_char) {
+            return Err(GameStateMutationError::InvalidEmpireName {
+                player_index_1_based: player_record_index_1_based,
+            });
+        }
         let player = self
             .player
             .records

@@ -136,6 +136,22 @@ rule lives in one place. Replace the em dashes in nc-helm's
 `dashboard/app/planet_build.rs` and in the debug message in
 `maint/movement/salvage.rs`.
 
+Result (2026-10-09): `join_player` now rejects an empire name with any
+character outside `is_classic_text_char`, with the new
+`GameStateMutationError::InvalidEmpireName`, as renames already do for planet
+names. The raw record setters that other entry points use
+(`set_controlled_empire_name_raw`, `set_assigned_player_handle_raw`,
+`set_status_or_name_summary_raw`) store `?` for any other character through
+the new `nc_data::support::classic_text`, so BBS handles and sysop or harness
+names never reach a record as raw UTF-8 or get cut mid-character. nc-game's
+name input filter calls `is_classic_text_char` instead of its own copy of the
+rule. The em dashes in nc-helm's two "Stardock is full" strings, the salvage
+debug message, and the contact-report quote in
+[approach.md](../../dev/approach.md) are now `--`. Regression tests in
+`nc-data/tests/mutators.rs`: `join_player_rejects_non_printable_ascii_empire_names`
+and `classic_text_setters_store_question_marks_for_other_characters`. The
+string changes have no test. Workspace: 2631 passed, 0 failed.
+
 ### t018
 
 DOOR.SYS reads the alias from line 10, the real name. The 52-line standard

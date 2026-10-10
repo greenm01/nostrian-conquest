@@ -21,7 +21,7 @@ pub(super) fn queue_salvage_resolution(
     // than panic.
     debug_assert!(
         game_data.fleets.records[fleet_idx].has_any_force(),
-        "salvage dispatched to empty fleet (fleet_idx={fleet_idx}) — should have been culled at turn start"
+        "salvage dispatched to empty fleet (fleet_idx={fleet_idx}) -- should have been culled at turn start"
     );
 
     let salvage_event =
