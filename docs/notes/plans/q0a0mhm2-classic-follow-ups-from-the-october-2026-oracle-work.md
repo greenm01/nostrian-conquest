@@ -58,3 +58,22 @@ Report gaps between classic and Rust:
   it, which changes the speed term in its visibility (t035).
 - Classic keeps old RESULTS.DAT reports until the player reads them; Rust
   clears them each year (t031b). Decide which the runtime store should do.
+
+## t045
+
+Finish a full reference to classic's combat, for the record; Rust keeps its
+own combat system. The decode in [ec-battle-spec.md](../../dev/ec-battle-spec.md)
+and [ec-encounter-spec.md](../../dev/ec-encounter-spec.md) covers units,
+planetary assaults, fleet battles, encounters, and reports, checked against
+1,500+ classic runs. To finish it:
+
+- Probe the paths read only from code: the Rogues conversion, Scorch-Earth,
+  IPBMs in the stardock, the scatter escape and bug B7, and an assault by a
+  fleet with no warships.
+- Explain the two statistical gaps: the blitz case with heavier transport
+  losses, and the fleet case about 2 sigma low on losses.
+- Decode starbase-only fights and IPBM attacks, starting from the IPBM
+  record decoded for t039.
+- Decode the DATABASE.DAT and planet-status updates after a battle.
+- Merge the two specs into one classic combat reference with a short plain
+  summary first; keep the Rust comparison in its own section.
