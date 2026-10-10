@@ -54,15 +54,18 @@ that are not multiples of 3 run a little fast (speed 1 covers 12 sectors in
 13 years instead of 14). A carry of `8` encodes as `0` and decodes as `9`. The clamp only guards
 malformed imported bytes and leaves every value the engine writes unchanged.
 
+A move order completes, and a standing or hostile mission arrives, in the
+year the fleet's rounded position first enters the target sector, even when
+its exact path is still short of the target point. Classic ECMAINT does this
+for orders entered in ECGAME, and ECGAME's fleet ETA counts the same year
+(see the
+[investigation](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md)).
 Fleet ETA estimates replay the stepper each simulated year: the same
-encode/decode round trip, the exact position stored at its 1/256-sector
-precision, and completion at the exact path endpoint rather than the first
-year the fleet shows in the target sector. A fleet that shows in the target
-sector with its exact path unfinished is still under way. The predicted ETA
-therefore matches the actual arrival year on axis-aligned and diagonal moves.
-The starbase travel-time estimate keeps the exact accumulator and stops at the
-first rounded target sector because that reproduces the classic ECGAME display
-(`Travel time is 16 years` for a speed-1 starbase from (15,13) to (2,12)).
+encode/decode round trip and the exact position stored at its 1/256-sector
+precision, stopping when the rounded sector first matches the target. The
+starbase travel-time estimate keeps the exact accumulator and stops at the
+same point, which reproduces the classic ECGAME display (`Travel time is 16
+years` for a speed-1 starbase from (15,13) to (2,12)).
 
 For unresolved classic movement internals, Rust follows a pragmatic boundary:
 

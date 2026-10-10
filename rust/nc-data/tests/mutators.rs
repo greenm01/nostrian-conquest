@@ -2032,6 +2032,29 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
 }
 
 #[test]
+fn set_fleet_order_clears_aux_bytes_the_order_does_not_use() {
+    let mut data = CoreGameData {
+        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+    };
+    // The ECUTIL starting fleets carry a join-host byte of 1; ECGAME clears
+    // it for a move, and classic ECMAINT finishes a move a year late with it.
+    assert_eq!(data.fleets.records[0].mission_aux_bytes()[0], 1);
+
+    let aux = data
+        .set_fleet_order(1, 1, Order::MoveOnly.to_raw(), [0x0F, 0x0D], None, None)
+        .unwrap();
+
+    assert_eq!(aux, [0, 0]);
+    assert_eq!(data.fleets.records[0].mission_aux_bytes(), [0, 0]);
+}
+
+#[test]
 fn set_fleet_order_rejects_speed_above_current_maximum() {
     let mut data = CoreGameData {
         player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),

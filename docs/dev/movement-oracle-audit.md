@@ -22,50 +22,28 @@ standing requirement to keep chasing every hidden classic movement byte.
   implementation detail unless they prove to change player-facing behavior or
   classic file safety
 
-## What Changed In The Follow-Up
+## Completion Timing
 
-The remaining movement question is no longer just "which sector does the fleet
-show up in next year?" The transit follow-up in
-[transit-scratch-oracle-audit.md](transit-scratch-oracle-audit.md) established
-two deeper constraints:
+Classic completes a one-shot move in the year the fleet's rounded position
+first enters the target sector, and ECGAME's fleet ETA shows that year. For
+`MoveOnly`, `speed=3`, `10,10 -> 16,16`, the visible trace is
+`10,10 -> 11,11 -> 14,14 -> 16,16` and the order clears to `hold`, `speed=0`
+in year 3, with the exact path still short of the target point.
 
-- classic leaves `0x19..0x1e` zero in the controlled transit turns checked so
-  far, so Rust's current exact-position encoding there is an internal seam, not
-  a recovered classic byte model
-- one-shot movement completion is not keyed from the first rounded
-  target-sector hit alone
+ECGAME writes a move order with mission aux bytes `0x22..0x23 = 00 00`. A
+nonzero `0x22` (a join host fleet id, set on every fleet in the ECUTIL
+starting game) makes classic finish a move a year later, so probe orders
+clear both bytes, as `tools/ncmaint_movement_audit.py` does.
 
-Confirmed example:
-
-- `MoveOnly`, `speed=3`, `10,10 -> 16,16`
-- classic visible trace: `10,10 -> 11,11 -> 14,14 -> 16,16 -> 16,16`
-- classic keeps `order=move`, `speed=3` on the first visible `16,16` tick
-- classic clears to `hold`, `speed=0` on the following maintenance pass
-
-That means the right current model is:
-
-- the fleet has some hidden between-turn continuity state
-- visible coordinates are rounded from that hidden state
-- one-shot completion waits for the hidden path to be exhausted, not merely for
-  the rounded visible sector to equal the target
-
-## What Rust Now Does
-
-Rust now avoids completing one-shot movement on the first rounded target-sector
-hit. The movement stepper waits for the exact path endpoint before treating the
-mission as complete, which fixes the confirmed `speed=3` diagonal `MoveOnly`
-case.
-
-This is not claimed as a full decode of classic hidden movement state. The
-slower diagonal follow-up in
-[transit-scratch-oracle-audit.md](transit-scratch-oracle-audit.md) is kept as
-background evidence, but it is no longer treated as an active blocker for the
-Rust engine by itself.
+Rust completes orders when the rounded position enters the target sector,
+and player orders clear the aux bytes that the order does not use. The full
+case table is in the
+[investigation](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
 
 ## Accepted Boundary
 
-- preserve the recovered annual movement geometry and the confirmed diagonal
-  completion delay that affect player-facing outcomes
+- preserve the recovered annual movement geometry and completion in the year
+  the fleet enters the target sector
 - keep hazard-detour policy clearly separated from the classic direct-stepper
   geometry
 - do not treat hidden movement scratch bytes as a fidelity target unless they

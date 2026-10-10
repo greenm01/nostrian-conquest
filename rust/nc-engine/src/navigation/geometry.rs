@@ -42,13 +42,6 @@ pub(crate) fn rounded_coords_from_exact(exact: [f64; 2], target: [u8; 2]) -> [u8
     }
 }
 
-/// Movement orders complete at the exact path endpoint, not when the rounded
-/// visible sector first matches the target.
-pub(crate) fn exact_position_reached_target(exact: [f64; 2], target: [u8; 2]) -> bool {
-    (exact[0] - f64::from(target[0])).abs() <= f64::EPSILON
-        && (exact[1] - f64::from(target[1])).abs() <= f64::EPSILON
-}
-
 /// Squared sector distance, wide enough for any pair of map coordinates.
 pub(crate) fn sector_distance_sq(from: [u8; 2], to: [u8; 2]) -> u32 {
     let dx = u32::from(from[0].abs_diff(to[0]));

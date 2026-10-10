@@ -45,8 +45,7 @@ fn move_only_traces_match_current_classic_oracle_cases() {
             speed: 3,
             start: [10, 10],
             target: [16, 16],
-            // Shows in (16,16) after year 3; the order completes in year 4.
-            expected_initial_eta: 4,
+            expected_initial_eta: 3,
             expected_positions: &[[10, 10], [11, 11], [14, 14], [16, 16], [16, 16]],
         },
         MovementCase {
@@ -62,8 +61,7 @@ fn move_only_traces_match_current_classic_oracle_cases() {
             speed: 1,
             start: [10, 10],
             target: [13, 13],
-            // Shows in (13,13) after year 5; the order completes in year 6.
-            expected_initial_eta: 6,
+            expected_initial_eta: 5,
             expected_positions: &[[10, 10], [10, 10], [11, 11], [11, 11], [12, 12], [13, 13]],
         },
         MovementCase {
@@ -108,6 +106,52 @@ fn move_only_traces_match_current_classic_oracle_cases() {
                     .unwrap_or_else(|err| panic!("{} maintenance failed: {err}", case.name));
             }
         }
+    }
+}
+
+/// Classic ECMAINT completes a move order in the year the fleet first shows
+/// in the target sector, with the order entered as ECGAME writes it (mission
+/// aux bytes clear). Years are from the 2026-10-10 oracle probes.
+#[test]
+fn move_orders_complete_in_the_classic_oracle_year() {
+    let cases: [(u8, [u8; 2], u16); 15] = [
+        (1, [13, 13], 5),
+        (1, [12, 12], 4),
+        (1, [14, 14], 6),
+        (1, [13, 11], 4),
+        (1, [13, 10], 4),
+        (2, [13, 13], 3),
+        (2, [16, 16], 5),
+        (2, [14, 12], 3),
+        (2, [14, 10], 3),
+        (3, [13, 13], 2),
+        (3, [16, 16], 3),
+        (3, [16, 10], 3),
+        (4, [16, 16], 3),
+        (5, [16, 16], 2),
+        (6, [16, 16], 2),
+    ];
+    for (speed, target, classic_year) in cases {
+        let mut game_data = build_move_only_probe([10, 10], target, speed);
+        assert_eq!(
+            estimate_fleet_eta(&game_data, 0),
+            FleetEtaEstimate::Years(classic_year),
+            "speed {speed} to {target:?} ETA"
+        );
+        let mut year = 0;
+        while game_data.fleets.records[0].standing_order_kind() == Order::MoveOnly {
+            year += 1;
+            assert!(year <= 10, "speed {speed} to {target:?} never completed");
+            run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+        }
+        assert_eq!(
+            year, classic_year,
+            "speed {speed} to {target:?} completion year"
+        );
+        assert_eq!(
+            game_data.fleets.records[0].current_location_coords_raw(),
+            target
+        );
     }
 }
 

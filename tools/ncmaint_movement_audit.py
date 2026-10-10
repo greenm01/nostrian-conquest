@@ -10,7 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from ecmaint_oracle import DEFAULT_BASELINE, ROOT, ensure_engine, run_ecmaint
+from ncmaint_oracle import DEFAULT_BASELINE, ROOT, ensure_engine, run_ecmaint
 
 
 RUST_WORKSPACE = ROOT / "rust"
@@ -174,6 +174,8 @@ def configure_probe_dir(target_dir: Path, case: MovementProbeCase) -> None:
             str(case.start[1]),
         ]
     )
+    # Clear the mission aux bytes as ECGAME does for a move order; the
+    # fixture's stale join-host byte makes classic finish a year late.
     run_nc_cli(
         [
             "fleet-order",
@@ -183,6 +185,8 @@ def configure_probe_dir(target_dir: Path, case: MovementProbeCase) -> None:
             "1",
             str(case.target[0]),
             str(case.target[1]),
+            "0",
+            "0",
         ]
     )
 

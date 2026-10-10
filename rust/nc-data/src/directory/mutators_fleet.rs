@@ -128,7 +128,13 @@ impl CoreGameData {
         record.set_current_speed(speed);
         record.set_standing_order_code_raw(order_code);
         record.set_standing_order_target_coords_raw(target);
-        let mut mission_aux = record.mission_aux_bytes();
+        // Only these orders read the aux bytes; ECGAME clears them for the
+        // rest, and classic ECMAINT finishes a move a year late with a stale
+        // join host byte.
+        let mut mission_aux = match Order::from_raw(order_code) {
+            Order::GuardStarbase | Order::JoinAnotherFleet => record.mission_aux_bytes(),
+            _ => [0, 0],
+        };
         if let Some(value) = aux0 {
             mission_aux[0] = value;
         }

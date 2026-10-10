@@ -1,7 +1,6 @@
 use crate::navigation::{
     advance_exact_position, decode_movement_fraction, encode_movement_fraction,
-    exact_position_reached_target, plan_route_with_intel, rounded_coords_from_exact,
-    visible_hazard_intel_is_empty,
+    plan_route_with_intel, rounded_coords_from_exact, visible_hazard_intel_is_empty,
 };
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use nc_data::fleet_motion_state::{
@@ -201,7 +200,9 @@ pub(super) fn process_single_fleet_movement(
 
     game_data.fleets.records[fleet_idx].set_current_location_coords_raw([new_x, new_y]);
 
-    if exact_position_reached_target(exact_end, [target_x, target_y]) {
+    // Classic completes the order in the year the fleet enters the target
+    // sector, not when its exact path ends.
+    if [new_x, new_y] == [target_x, target_y] {
         let arrival_order =
             Order::from_raw(game_data.fleets.records[fleet_idx].standing_order_code_raw());
         let preserves_order_on_arrival = order_persists_on_arrival(arrival_order);

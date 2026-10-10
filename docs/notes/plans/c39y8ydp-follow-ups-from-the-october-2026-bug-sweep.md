@@ -137,6 +137,10 @@ another fleet's "waiting" arrival report. Regression tests in
 Workspace: 2628 passed, 1 failed (the timing test noted under t010, which
 passes alone).
 
+Reversed by t031 (2026-10-10): the classic delay this matched was a probe
+artifact, and classic completes a move on entering the target sector; see
+[the investigation](../investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
+
 ### t014
 
 Empire names, handles, and `set_status_or_name_summary_raw` are not validated

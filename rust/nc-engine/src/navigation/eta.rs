@@ -2,8 +2,8 @@ use nc_data::fleet_motion_state::{decode_exact_position, round_trip_exact_positi
 use nc_data::{CoreGameData, FleetRecord};
 
 use super::{
-    FleetEtaEstimate, PlannedRoute, advance_exact_position, exact_position_reached_target,
-    plan_route, plan_route_to_destination, rounded_coords_from_exact,
+    FleetEtaEstimate, PlannedRoute, advance_exact_position, plan_route, plan_route_to_destination,
+    rounded_coords_from_exact,
 };
 
 pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
@@ -83,9 +83,7 @@ fn estimate_eta_for_route(
     exact_position: Option<[f64; 2]>,
     include_system: bool,
 ) -> FleetEtaEstimate {
-    // A fleet can show in the target sector while its exact path is still
-    // unfinished; like the stepper, it has not arrived while in transit.
-    if current == target && exact_position.is_none() {
+    if current == target {
         return FleetEtaEstimate::Arrived;
     }
     if speed == 0 {
@@ -105,11 +103,11 @@ fn estimate_eta_for_route(
     ))
 }
 
-/// `fleet_stepper` replays the fleet stepper: it moves at least once, stores
-/// the accumulator in the lossy classic fraction byte and the exact position
-/// at its stored precision between years, and completes at the exact path
-/// endpoint. Otherwise the count stops when the rounded sector first matches
-/// the target, as the classic travel-time display does.
+/// The count stops in the year the rounded sector first matches the target,
+/// when classic completes a move order and as the classic travel-time display
+/// counts. `fleet_stepper` replays the fleet stepper: it moves at least once
+/// and stores the accumulator in the lossy classic fraction byte and the exact
+/// position at its stored precision between years.
 fn simulate_eta_years(
     mut exact_position: [f64; 2],
     target: [u8; 2],
@@ -135,7 +133,7 @@ fn simulate_eta_years(
         loop {
             exact_position =
                 advance_exact_position(exact_position, target, next_year_move(), None, false);
-            if exact_position_reached_target(exact_position, target) {
+            if rounded_coords_from_exact(exact_position, target) == target {
                 break;
             }
             exact_position = round_trip_exact_position(exact_position);

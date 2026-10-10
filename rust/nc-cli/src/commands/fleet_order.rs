@@ -21,7 +21,8 @@ pub(crate) fn set_fleet_order(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let final_aux = with_runtime_game_mut(dir, |data| {
         ensure_planet_target_for_order(data, order_code, [target_x, target_y])?;
-        data.set_fleet_order(
+        set_raw_fleet_order(
+            data,
             record_index_1_based,
             speed,
             order_code,
@@ -37,6 +38,32 @@ pub(crate) fn set_fleet_order(
         record_index_1_based, speed, order_code, target_x, target_y, final_aux
     );
     Ok(())
+}
+
+/// Set a fleet order as a raw edit, like the preserved fixtures: omitted aux
+/// bytes keep their value, where a player's order clears them as ECGAME does.
+pub(crate) fn set_raw_fleet_order(
+    data: &mut CoreGameData,
+    record_index_1_based: usize,
+    speed: u8,
+    order_code: u8,
+    target: [u8; 2],
+    aux0: Option<u8>,
+    aux1: Option<u8>,
+) -> Result<[u8; 2], nc_data::GameStateMutationError> {
+    let current_aux = record_index_1_based
+        .checked_sub(1)
+        .and_then(|idx| data.fleets.records.get(idx))
+        .map(|fleet| fleet.mission_aux_bytes())
+        .unwrap_or_default();
+    data.set_fleet_order(
+        record_index_1_based,
+        speed,
+        order_code,
+        target,
+        aux0.or(Some(current_aux[0])),
+        aux1.or(Some(current_aux[1])),
+    )
 }
 
 fn fleet_order_requires_planet_target(order_code: u8) -> bool {

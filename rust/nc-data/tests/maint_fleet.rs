@@ -1293,7 +1293,9 @@ fn test_patrol_sector_persists_after_arrival() {
 }
 
 #[test]
-fn test_move_only_diagonal_can_round_into_target_before_completion() {
+/// Classic ECMAINT completes the move the year the fleet rounds into the
+/// target sector, with its exact path still short of the target point.
+fn test_move_only_diagonal_completes_when_it_rounds_into_the_target() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
         .with_year(3000)
@@ -1322,24 +1324,9 @@ fn test_move_only_diagonal_can_round_into_target_before_completion() {
 
     let fleet = &game_data.fleets.records[0];
     assert_eq!(fleet.current_location_coords_raw(), [16, 16]);
-    assert_eq!(fleet.standing_order_kind(), Order::MoveOnly);
-    assert_eq!(fleet.current_speed(), 3);
-    assert!(
-        !turn3_events.mission_events.iter().any(|event| {
-            event.fleet_idx == 0
-                && event.kind == Mission::MoveOnly
-                && event.outcome == MissionOutcome::Succeeded
-        }),
-        "diagonal rounded-target tick should not complete MoveOnly early"
-    );
-
-    let turn4_events = run_maintenance_turn(&mut game_data).expect("turn 4 should succeed");
-
-    let fleet = &game_data.fleets.records[0];
-    assert_eq!(fleet.current_location_coords_raw(), [16, 16]);
     assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
     assert_eq!(fleet.current_speed(), 0);
-    assert!(turn4_events.mission_events.iter().any(|event| {
+    assert!(turn3_events.mission_events.iter().any(|event| {
         event.fleet_idx == 0
             && event.kind == Mission::MoveOnly
             && event.outcome == MissionOutcome::Succeeded

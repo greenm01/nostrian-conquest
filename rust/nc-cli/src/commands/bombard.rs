@@ -3,6 +3,7 @@ use std::path::Path;
 
 use nc_data::{CoreGameData, Order};
 
+use crate::commands::fleet_order::set_raw_fleet_order;
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, with_runtime_game_mut_and_export,
 };
@@ -64,7 +65,8 @@ pub(crate) fn set_bombard_onefleet(
             p14.raw = template;
             p14.set_coords_raw([target_x, target_y]);
         }
-        data.set_fleet_order(
+        set_raw_fleet_order(
+            data,
             3,
             3,
             Order::BombardWorld.to_raw(),
