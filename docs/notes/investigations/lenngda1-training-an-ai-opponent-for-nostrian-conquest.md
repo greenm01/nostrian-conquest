@@ -3,7 +3,7 @@ id: lenngda1
 date: 2026-10-09
 kind: investigation
 status: investigating
-tags: [investigation, ai]
+tags: [investigation, ai, pinned]
 ---
 # Training an AI opponent for Nostrian Conquest
 
@@ -92,7 +92,8 @@ Not started; this is a design direction, not a result.
 
 ## Validation and remaining work
 
-Nothing built yet, and no task exists in [todo.md](../../../todo.md). A useful
+Nothing built yet. Candidate task t025 in [todo.md](../../../todo.md) tracks
+the first step. A useful
 first measurement is maintenance throughput in turns per second for small
 games. A CivBench-style win-probability model would serve as a training
 reward, an evaluation metric, and a strength meter for AI seats.

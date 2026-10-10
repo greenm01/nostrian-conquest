@@ -18,3 +18,5 @@
 (A) 2026-10-09 Release v1.0.0-beta.3: bump the version, rebuild the manuals, and build, sign, and publish the Linux nc-sysop package. +critical +release @development id:t023 order:300 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t023)
 
 (A) 2026-10-09 Build, upload, and re-sign the three Windows nc-sysop beta.3 packages on Windows. +critical +release @playtest id:t024 order:310 depends:t023 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t024)
+
+2026-10-09 Measure maintenance throughput and build an evolution-tuned scripted opponent as the first step toward a stronger AI. +candidate +ai @planning id:t025 order:400 [details](docs/notes/investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md)

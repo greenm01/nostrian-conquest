@@ -9,6 +9,15 @@ Tasks live in [todo.md](../../todo.md) in todo.txt format. The
 [work-tracking contract](../dev/work-tracking.md) defines `zk tasks`, the
 monthly completion files, and which record owns each fact.
 
+## Pinned
+
+Long-running directions that are easy to lose track of. Find them with
+`zk list docs/notes --tag pinned`.
+
+- [Training an AI opponent](investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md)
+  — published game-AI systems that fit this game, and a suggested path from
+  a tuned scripted bot to a learned policy.
+
 ## Choose the right record
 
 | Kind | Use it for | Status |
