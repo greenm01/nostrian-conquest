@@ -11,7 +11,8 @@
 //! A salvaged fleet is identified by its standing Salvage order and target
 //! before maintenance, a defected fleet by its empire and fleet number, and
 //! either carries the ships of fleets merged into it this turn; when a
-//! removed fleet is ambiguous the turn is not checked.
+//! removed fleet is ambiguous, or a defecting empire also took losses, the
+//! turn is not checked.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -139,10 +140,39 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
         add_ships(&mut removed, *merged.get(&fleet_key(fleet))?);
     }
     for event in &observation.events.fleet_defection_events {
+        // Combat runs before defection, so a defecting empire that also took
+        // losses leaves the defected fleet's final composition unknown.
+        if took_losses(observation, event.reporting_empire_raw) {
+            return None;
+        }
         let key = (event.reporting_empire_raw, u16::from(event.fleet_number));
         add_ships(&mut removed, *merged.get(&key)?);
     }
     Some(removed)
+}
+
+fn took_losses(observation: &TurnObservation, empire: u8) -> bool {
+    let events = observation.events;
+    events
+        .fleet_battle_events
+        .iter()
+        .any(|event| event.reporting_empire_raw == empire)
+        || events.encounter_disposition_events.iter().any(|event| {
+            matches!(
+                event,
+                EncounterDispositionEvent::Retreated { owner_empire_raw, .. }
+                    | EncounterDispositionEvent::PursuitFire { owner_empire_raw, .. }
+                    if *owner_empire_raw == empire
+            )
+        })
+        || events
+            .bombard_events
+            .iter()
+            .any(|event| event.attacker_empire_raw == empire)
+        || events
+            .assault_report_events
+            .iter()
+            .any(|event| event.attacker_empire_raw == empire)
 }
 
 fn fleet_key(fleet: &FleetRecord) -> (u8, u16) {

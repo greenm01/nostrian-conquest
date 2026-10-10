@@ -1,5 +1,8 @@
 //! Results reports: every line fits a classic 72-byte printable record, rows
-//! go only to entitled empires, and broadcast rows reach every active empire.
+//! go only to entitled empires, and broadcasts reach every active empire.
+//! A campaign-outlook announcement is a broadcast: while any empire has an
+//! active player it must produce a broadcast row, and every broadcast row
+//! must be flagged for review by every active empire.
 //!
 //! An empire is entitled to results when it has an active player at either
 //! end of the turn, or when it has a terminal outcome (defeat, loss, or win)
@@ -60,9 +63,12 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         }
     }
 
-    if has_broadcast {
+    let announced = !observation.events.campaign_outlook_events.is_empty();
+    if has_broadcast || announced {
         for (idx, player) in observation.flagged.player.records.iter().enumerate() {
-            if player.is_active_human_player() && !player.has_classic_results_review_state() {
+            if player.is_active_human_player()
+                && (!has_broadcast || !player.has_classic_results_review_state())
+            {
                 violations.push(Violation::BroadcastMissed {
                     empire: (idx + 1) as u8,
                 });
