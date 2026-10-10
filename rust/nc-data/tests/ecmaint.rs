@@ -5,16 +5,22 @@ use nc_data::*;
 
 #[test]
 fn ecmaint_build_scenario_consumes_queue_and_changes_planet_state() {
-    let pre = PlanetDat::parse(&read_ecmaint_build_pre_fixture("PLANETS.DAT")).unwrap();
-    let post = PlanetDat::parse(&read_ecmaint_build_post_fixture("PLANETS.DAT")).unwrap();
+    let pre_bytes = read_ecmaint_build_pre_fixture("PLANETS.DAT");
+    let post_bytes = read_ecmaint_build_post_fixture("PLANETS.DAT");
+    let post = PlanetDat::parse(&post_bytes).unwrap();
 
-    let pre_record = &pre.records[14];
     let post_record = &post.records[14];
 
-    assert_eq!(pre_record.planet.build_queue.destroyers, 3);
-    assert_eq!(pre_record.planet.build_queue.etacs, 1);
-
-    assert_eq!(post_record.planet.build_queue.to_words(), [0; 10]);
+    // Classic queues ten u16 counts by kind (destroyers at 0x24, ETACs at
+    // 0x2E). The model holds Rust's build slots until t056 translates, so
+    // read classic's words from the file.
+    let queue_word = |bytes: &[u8], kind: usize| {
+        let at = 14 * PLANET_RECORD_SIZE + 0x22 + 2 * kind;
+        u16::from_le_bytes([bytes[at], bytes[at + 1]])
+    };
+    assert_eq!(queue_word(&pre_bytes, 1), 3);
+    assert_eq!(queue_word(&pre_bytes, 6), 1);
+    assert!((1..=10).all(|kind| queue_word(&post_bytes, kind) == 0));
     assert_eq!(post_record.planet.stardock.destroyers, 3);
     assert_eq!(post_record.planet.stardock.etacs, 1);
 }

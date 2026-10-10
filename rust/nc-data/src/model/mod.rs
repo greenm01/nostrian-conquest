@@ -15,7 +15,7 @@ pub use conquest::{Conquest, MaintenanceDays};
 pub use fleet::{Fleet, Order, ShipCounts};
 pub use ids::{Coords, EmpireId, FleetId, RecordNumber, StarbaseId};
 pub use ipbm::Ipbm;
-pub use planet::{BuildQueue, Planet, Stardock};
+pub use planet::{BuildSlot, Planet, ProductionItemKind, Stardock};
 pub use player::{DiplomaticRelation, Player, PlayerMode};
 pub use setup::Setup;
 pub use starbase::Starbase;

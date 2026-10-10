@@ -122,13 +122,13 @@ fn derive_owned_planet_year_rows(
     owner_empire_id: Option<u8>,
 ) -> Result<BTreeMap<(u8, usize), u16>, CampaignStoreError> {
     let sql = if owner_empire_id.is_some() {
-        "SELECT snapshots.game_year, snapshot_planets.record_index, snapshot_planets.owner_empire_slot_raw
+        "SELECT snapshots.game_year, snapshot_planets.record_index, snapshot_planets.owner
          FROM snapshot_planets
          JOIN snapshots ON snapshots.id = snapshot_planets.snapshot_id
-         WHERE snapshot_planets.snapshot_id <= ?1 AND snapshot_planets.owner_empire_slot_raw IN (0, ?2)
+         WHERE snapshot_planets.snapshot_id <= ?1 AND snapshot_planets.owner IN (0, ?2)
          ORDER BY snapshots.game_year, snapshot_planets.snapshot_id, snapshot_planets.record_index"
     } else {
-        "SELECT snapshots.game_year, snapshot_planets.record_index, snapshot_planets.owner_empire_slot_raw
+        "SELECT snapshots.game_year, snapshot_planets.record_index, snapshot_planets.owner
          FROM snapshot_planets
          JOIN snapshots ON snapshots.id = snapshot_planets.snapshot_id
          WHERE snapshot_planets.snapshot_id <= ?1

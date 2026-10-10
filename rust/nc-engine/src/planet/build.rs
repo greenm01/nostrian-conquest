@@ -62,18 +62,7 @@ pub struct PlanetCommissionDraftState {
 }
 
 pub fn production_item_kind_raw(kind: ProductionItemKind) -> u8 {
-    match kind {
-        ProductionItemKind::Destroyer => 1,
-        ProductionItemKind::Cruiser => 2,
-        ProductionItemKind::Battleship => 3,
-        ProductionItemKind::Scout => 4,
-        ProductionItemKind::Transport => 5,
-        ProductionItemKind::Etac => 6,
-        ProductionItemKind::GroundBattery => 7,
-        ProductionItemKind::Army => 8,
-        ProductionItemKind::Starbase => 9,
-        ProductionItemKind::Unknown(raw) => raw,
-    }
+    kind.to_raw()
 }
 
 pub fn planet_build_committed_points(planet: &PlanetRecord) -> u32 {

@@ -109,7 +109,7 @@ fn derive_player_activity_rows(
     player_count: u8,
 ) -> Result<Vec<PlayerActivityState>, CampaignStoreError> {
     let mut stmt = conn.prepare(
-        "SELECT record_index, last_run_year_raw
+        "SELECT record_index, last_year_on
          FROM snapshot_players
          WHERE snapshot_id = ?1
          ORDER BY record_index",

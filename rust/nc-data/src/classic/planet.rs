@@ -1,5 +1,5 @@
 use crate::PLANET_RECORD_SIZE;
-use crate::model::{BuildQueue, Coords, EmpireId, Planet, Stardock};
+use crate::model::{BuildSlot, Coords, EmpireId, Planet, ProductionItemKind, Stardock};
 use crate::support::ParseError;
 
 use super::{
@@ -7,10 +7,11 @@ use super::{
 };
 
 pub fn decode_planet(bytes: &[u8; PLANET_RECORD_SIZE]) -> Planet {
-    let mut queue = [0u16; 10];
-    for (slot, word) in queue.iter_mut().enumerate() {
-        *word = u16_at(bytes, 0x24 + 2 * slot);
-    }
+    // Rust's slots, not classic's counts by kind; see `Planet::build_queue`.
+    let build_queue = std::array::from_fn(|slot| BuildSlot {
+        points_owed: bytes[0x24 + slot],
+        kind: ProductionItemKind::from_raw(bytes[0x2E + slot]),
+    });
     let mut dock = [0u32; 8];
     for (slot, count) in dock.iter_mut().enumerate() {
         *count = u32_at(bytes, 0x38 + 4 * slot);
@@ -21,7 +22,7 @@ pub fn decode_planet(bytes: &[u8; PLANET_RECORD_SIZE]) -> Planet {
         production: real_at(bytes, 0x03),
         stored_goods: real_at(bytes, 0x09),
         name: pascal_string(bytes, 0x0F, 20),
-        build_queue: BuildQueue::from_words(queue),
+        build_queue,
         stardock: Stardock::from_counts(dock),
         armies: u16_at(bytes, 0x58),
         ground_batteries: u16_at(bytes, 0x5A),
@@ -39,8 +40,9 @@ pub fn encode_planet(planet: &Planet) -> [u8; PLANET_RECORD_SIZE] {
     put_real(&mut bytes, 0x03, planet.production);
     put_real(&mut bytes, 0x09, planet.stored_goods);
     put_pascal_string(&mut bytes, 0x0F, 20, &planet.name);
-    for (slot, word) in planet.build_queue.to_words().into_iter().enumerate() {
-        put_u16(&mut bytes, 0x24 + 2 * slot, word);
+    for (slot, entry) in planet.build_queue.iter().enumerate() {
+        bytes[0x24 + slot] = entry.points_owed;
+        bytes[0x2E + slot] = entry.kind.to_raw();
     }
     for (slot, count) in planet.stardock.to_counts().into_iter().enumerate() {
         put_u32(&mut bytes, 0x38 + 4 * slot, count);
