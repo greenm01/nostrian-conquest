@@ -851,33 +851,20 @@ impl DashApp {
                     FleetOverlayChangeField::Speed => {
                         let speed = raw
                             .parse::<u8>()
-                            .map_err(|_| "Enter a speed from 0 up.".to_string())?;
+                            .map_err(|_| "Enter a speed from 1 up.".to_string())?;
                         let mut successful = Vec::new();
                         let mut failure_detail = None;
+                        let mut applied_speed = speed;
                         for row in &rows {
-                            let Some(fleet) = self
-                                .game_data
-                                .fleets
-                                .records
-                                .get(row.fleet_record_index_1_based - 1)
-                                .cloned()
-                            else {
-                                if failure_detail.is_none() {
-                                    failure_detail =
-                                        Some("Selected fleet is no longer available.".to_string());
-                                }
-                                continue;
-                            };
-                            let aux = fleet.mission_aux_bytes();
-                            match self.game_data.set_fleet_order(
+                            match self.game_data.set_fleet_speed(
+                                self.player_record_index_1_based,
                                 row.fleet_record_index_1_based,
                                 speed,
-                                fleet.standing_order_code_raw(),
-                                fleet.standing_order_target_coords_raw(),
-                                Some(aux[0]),
-                                Some(aux[1]),
                             ) {
-                                Ok(_) => successful.push(row.fleet_record_index_1_based),
+                                Ok(applied) => {
+                                    applied_speed = applied;
+                                    successful.push(row.fleet_record_index_1_based);
+                                }
                                 Err(err) => {
                                     if failure_detail.is_none() {
                                         failure_detail = Some(err.to_string());
@@ -893,19 +880,7 @@ impl DashApp {
                             return Ok(());
                         }
                         for record_index in &successful {
-                            if let Some(fleet) =
-                                self.game_data.fleets.records.get(*record_index - 1)
-                            {
-                                let aux = fleet.mission_aux_bytes();
-                                self.stage_hosted_fleet_order(
-                                    *record_index,
-                                    fleet.current_speed(),
-                                    fleet.standing_order_code_raw(),
-                                    fleet.standing_order_target_coords_raw(),
-                                    Some(aux[0]),
-                                    Some(aux[1]),
-                                );
-                            }
+                            self.stage_hosted_fleet_speed(*record_index, speed);
                         }
                         self.save_and_refresh_runtime()?;
                         for record_index in &successful {
@@ -923,10 +898,15 @@ impl DashApp {
                                     speed,
                                     rows.len()
                                 ))
-                            } else {
+                            } else if applied_speed == speed {
                                 Some(format!(
                                     "Fleet #{} speed set to {}.",
                                     rows[0].fleet_number, speed
+                                ))
+                            } else {
+                                Some(format!(
+                                    "Fleet #{} is at its intended location or has no mission; its speed stays 0.",
+                                    rows[0].fleet_number
                                 ))
                             };
                         } else {

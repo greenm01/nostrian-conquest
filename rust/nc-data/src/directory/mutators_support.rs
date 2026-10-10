@@ -122,7 +122,7 @@ pub(super) fn rebuild_owner_fleet_chain(
         let previous_id = position
             .checked_sub(1)
             .and_then(|prev| owned.get(prev))
-            .map(|(_, _, fleet_id)| *fleet_id as u8)
+            .map(|(_, _, fleet_id)| *fleet_id)
             .unwrap_or(0);
         let next_id = owned
             .get(position + 1)

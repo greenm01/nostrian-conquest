@@ -141,6 +141,8 @@ fleet record=1 {
 Supported child actions:
 
 - `roe value=<0..10>`
+- `speed value=<1..max>` (changes only the speed; a fleet on Hold or at its
+  target keeps speed 0)
 - `order speed=<u8> kind="..." x=<u8> y=<u8> [aux0=<u8>] [aux1=<u8>]`
   (`seek_home` and `salvage` may leave out `x` and `y`; the fleet then heads
   for the owned world nearest it, as ECGAME picks it)

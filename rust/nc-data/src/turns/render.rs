@@ -108,6 +108,9 @@ fn render_fleet_block(out: &mut String, fleet: &FleetTurnBlock) {
             FleetTurnAction::RulesOfEngagement { value } => {
                 out.push_str(&format!("  roe value={value}\n"));
             }
+            FleetTurnAction::Speed { value } => {
+                out.push_str(&format!("  speed value={value}\n"));
+            }
             FleetTurnAction::Join {
                 host_fleet_record_index_1_based,
             } => out.push_str(&format!("  join host={host_fleet_record_index_1_based}\n")),

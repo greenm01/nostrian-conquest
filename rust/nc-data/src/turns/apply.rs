@@ -256,6 +256,13 @@ fn apply_fleet_action(
                 *value,
             )?;
         }
+        FleetTurnAction::Speed { value } => {
+            game_data.set_fleet_speed(
+                player_record_index_1_based,
+                fleet.fleet_record_index_1_based,
+                *value,
+            )?;
+        }
         FleetTurnAction::Join {
             host_fleet_record_index_1_based,
         } => {

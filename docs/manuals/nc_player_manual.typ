@@ -656,7 +656,7 @@ The *Planet List* is the fast row-centric operations screen for owned worlds. On
 
 == Fleet Command
 
-Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves individual ships between fleets.
+Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else; a fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves individual ships between fleets.
 
 The *Fleet List* is also the bulk-fleet work screen. It now includes a *Sel*
 column. Press *Space* on a fleet row to check or uncheck it. When one or more

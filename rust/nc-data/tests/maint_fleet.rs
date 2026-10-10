@@ -1487,7 +1487,7 @@ fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
     host.set_standing_order_kind(Order::HoldPosition);
     host.set_standing_order_target_coords_raw([10, 10]);
     host.set_current_speed(0);
-    let host_id = game_data.fleets.records[2].fleet_id();
+    let host_id = game_data.fleets.records[2].fleet_id() as u8;
     assert_ne!(
         host_id, 1,
         "host id must differ from the 0x22 world-target flag"

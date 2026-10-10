@@ -598,6 +598,9 @@ message to=2 subject="Border" body="Watching the north lane."
 A `seek_home` or `salvage` order may leave out `x` and `y`. The fleet then
 heads for the owned world nearest it, the world the game would pick.
 
+`speed value=N` inside a `fleet` block changes only that fleet's speed, as
+the in-game speed change does.
+
 For the full node reference and schema, see `docs/sysop/rust/turn-kdl.md`.
 
 // ─── 10. Turn Processing and Maintenance ─────────────────────────────────────

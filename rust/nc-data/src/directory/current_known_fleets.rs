@@ -21,7 +21,7 @@ impl CoreGameData {
                 .enumerate()
                 .all(|(block_idx, group)| {
                     group.iter().enumerate().all(|(slot_idx, record)| {
-                        let expected_fleet_id = (block_idx * 4 + slot_idx + 1) as u8;
+                        let expected_fleet_id = (block_idx * 4 + slot_idx + 1) as u16;
                         let expected_local_slot = (slot_idx + 1) as u8;
                         let expected_prev = if slot_idx == 0 {
                             0
@@ -67,7 +67,7 @@ impl CoreGameData {
         for (block_idx, group) in self.fleets.records.chunks_exact(4).enumerate() {
             for (slot_idx, record) in group.iter().enumerate() {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
-                let expected_fleet_id = fleet_record_index_1_based as u8;
+                let expected_fleet_id = fleet_record_index_1_based as u16;
                 let expected_local_slot = (slot_idx + 1) as u8;
                 let expected_prev = if slot_idx == 0 {
                     0

@@ -1406,6 +1406,10 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     let speed_row = speed_app
         .selected_fleet_order_row_from_table()
         .expect("selected fleet row");
+    // A fleet on its way somewhere; one at its target keeps speed 0.
+    let moving = &mut speed_app.game_data.fleets.records[speed_row.fleet_record_index_1_based - 1];
+    moving.set_standing_order_kind(nc_data::Order::MoveOnly);
+    moving.set_standing_order_target_coords_raw([1, 1]);
     speed_app.handle_key(key(KeyCode::Char('c')));
     speed_app.handle_key(key(KeyCode::Char('s')));
     assert_eq!(

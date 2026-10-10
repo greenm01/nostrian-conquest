@@ -139,6 +139,9 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
             "roe" => actions.push(FleetTurnAction::RulesOfEngagement {
                 value: prop_u8(child, "value")?,
             }),
+            "speed" => actions.push(FleetTurnAction::Speed {
+                value: prop_u8(child, "value")?,
+            }),
             "join" => actions.push(FleetTurnAction::Join {
                 host_fleet_record_index_1_based: prop_record_index(child, "host")?,
             }),

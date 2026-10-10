@@ -80,6 +80,9 @@ pub enum FleetTurnAction {
     RulesOfEngagement {
         value: u8,
     },
+    Speed {
+        value: u8,
+    },
     Join {
         host_fleet_record_index_1_based: usize,
     },

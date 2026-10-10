@@ -844,7 +844,7 @@ fn apply_fleet_removal_remap(
         let new_fleet_id = remap_id(fleet.fleet_id_word_raw());
         remapped.set_fleet_id_word_raw(new_fleet_id);
         remapped.set_next_fleet_link_word_raw(remap_id(fleet.next_fleet_link_word_raw()));
-        remapped.set_previous_fleet_id(remap_id(u16::from(fleet.previous_fleet_id())) as u8);
+        remapped.set_previous_fleet_id(remap_id(fleet.previous_fleet_id()));
         if fleet.standing_order_kind() == Order::JoinAnotherFleet {
             let prior_host_id = fleet.join_host_fleet_id_raw();
             let remapped_host_id = remap_id(prior_host_id);
@@ -868,17 +868,17 @@ fn apply_fleet_removal_remap(
 
     for player_idx in 0..game_data.player.records.len() {
         let owner_raw = (player_idx + 1) as u8;
-        let first_id = game_data.player.records[player_idx].fleet_chain_head_raw() as u8;
-        let last_id = game_data.player.records[player_idx].fleet_chain_tail_raw() as u8;
-        let new_first = remap_id(u16::from(first_id)) as u8;
-        let new_last = remap_id(u16::from(last_id)) as u8;
-        game_data.player.records[player_idx].set_fleet_chain_head_raw(u16::from(new_first));
+        let first_id = game_data.player.records[player_idx].fleet_chain_head_raw();
+        let last_id = game_data.player.records[player_idx].fleet_chain_tail_raw();
+        let new_first = remap_id(first_id);
+        let new_last = remap_id(last_id);
+        game_data.player.records[player_idx].set_fleet_chain_head_raw(new_first);
         game_data.player.records[player_idx].set_fleet_chain_tail_raw(
             if new_last == 0 && new_first != 0 {
-                let mut max_new_id: u8 = new_first;
+                let mut max_new_id: u16 = new_first;
                 for orig_idx in 0..fleet_count {
                     if pre_removal_owner[orig_idx] == owner_raw && !to_remove[orig_idx] {
-                        let mapped = remap_id(pre_removal_fleet_id[orig_idx]) as u8;
+                        let mapped = remap_id(pre_removal_fleet_id[orig_idx]);
                         if mapped > max_new_id {
                             max_new_id = mapped;
                         }
@@ -887,8 +887,7 @@ fn apply_fleet_removal_remap(
                 max_new_id
             } else {
                 new_last
-            }
-            .into(),
+            },
         );
     }
 

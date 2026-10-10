@@ -161,7 +161,7 @@ FLEETS.DAT bytes `0x23..0x35`:
 | `0x2e` | u16 | Loaded troop transports (one army each) |
 | `0x30` | u16 | ETACs |
 | `0x32` | u16 | Scouts |
-| `0x34` | u16 | No known use; ECMAINT's Join merge adds it, nothing else reads it |
+| `0x34` | u16 | No known use; every ECMAINT merge adds it, nothing else reads it |
 
 Evidence:
 
@@ -259,6 +259,36 @@ one owned world and defaults to the nearest. A turn file may leave `x` and
 `y` out of `seek_home` and `salvage` orders. The clients take the default
 answer to the next-closest question rather than asking it.
 `nc-data/tests/order_entry.rs` holds the tests.
+
+## Layout follow-ups, t038 (2026-10-10)
+
+- **Fleet ids.** Both binaries treat `0x00`, `0x03`, `0x05`, and `0x07` as
+  words: ECGAME's fleet code moves `word [+3]`, `[+5]`, `[+7]` (e.g.
+  `0x15e59`, `0x1601e`), and ECMAINT's fleet insertion (`24a3:152a`, linear
+  `2000:5f5a..6105`) writes the next, id, and previous words and the PLAYER.DAT
+  chain head and tail (`+0x40`, `+0x42`) as words. Byte `0x08`, which an early
+  tool wrote as "invasion armies" in the invade pre-fixture, is the previous
+  word's high byte (ECMAINT rewrites it to 0 in the post-fixture).
+- **Speed change.** "Set the speed of which fleet?" (`0x15739`) calls
+  `0x11c77`: it recomputes `0x09` from the ships aboard and writes `0x0a`,
+  forcing 0 when the fleet is on Hold or in its target sector with
+  `Round(Z) == 0x22`, and otherwise asking for 1 to the maximum. No other
+  byte changes.
+- **The `0x34` word.** Every ECMAINT merge calls `2895:4a6b`, which adds it:
+  Guard Starbase arrival (`0b5d:0fe7`), co-located guards in the year driver
+  (`0824:0f6d`), Join (`0b5d:475b`), Rendezvous (`0b5d:52fa`, `5347`,
+  `53c8`, `541f`), and rogue consolidation (`24a3:2585`). ECGAME's merge
+  leaves it alone.
+
+Result: `fleet_id`, `next_fleet_id`, and `previous_fleet_id` are words and
+the chain rebuilds, commissioning, maintenance remap, and SQLite snapshot keep
+them whole; the invasion-army accessor is gone and the invade builders write
+the fixture byte as the previous word's high byte. `set_fleet_speed` ports the
+speed change; nc-game and nc-helm use it, and turn files gain a `speed`
+node. Rust's merges already add `0x34` exactly where ECMAINT does. Rust's
+fleet-chain rebuild after a detach does not update the PLAYER.DAT chain tail;
+that is unchanged. Tests are in `nc-data/tests/fleet_layout.rs` and
+`speed_change.rs`.
 
 ## Result (2026-10-10)
 

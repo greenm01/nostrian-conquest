@@ -379,6 +379,48 @@ impl CoreGameData {
         Ok(())
     }
 
+    /// ECGAME's speed change (`0x11c77`): recompute the maximum speed (0x09)
+    /// from the ships aboard, then write the current speed (0x0a). A fleet
+    /// on Hold, or already in its target sector at the target depth layer,
+    /// keeps speed 0. Returns the speed written.
+    pub fn set_fleet_speed(
+        &mut self,
+        player_index_1_based: usize,
+        fleet_index_1_based: usize,
+        speed: u8,
+    ) -> Result<u8, GameStateMutationError> {
+        let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
+                index_1_based: fleet_index_1_based,
+            },
+        )?;
+        if fleet.owner_empire_raw() != player_index_1_based as u8 {
+            return Err(GameStateMutationError::FleetOwnershipMismatch {
+                player_index_1_based,
+                fleet_index_1_based,
+            });
+        }
+        let mut changed = fleet.clone();
+        changed.recompute_max_speed_from_composition();
+        let arrived = changed.standing_order_target_coords_raw()
+            == changed.current_location_coords_raw()
+            && changed.depth().round() == i32::from(changed.world_target_flag_raw());
+        let speed = if arrived || changed.standing_order_kind() == Order::HoldPosition {
+            0
+        } else if (1..=changed.max_speed()).contains(&speed) {
+            speed
+        } else {
+            return Err(GameStateMutationError::InvalidFleetSpeed {
+                fleet_index_1_based,
+                requested: speed,
+                max: changed.max_speed(),
+            });
+        };
+        changed.set_current_speed(speed);
+        *fleet = changed;
+        Ok(speed)
+    }
+
     pub fn set_fleet_rules_of_engagement(
         &mut self,
         player_index_1_based: usize,
