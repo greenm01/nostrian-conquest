@@ -67,6 +67,18 @@ Deliverable: `docs/dev/ec-file-formats.md`, one table per file covering every
 byte (offset, width, type, meaning, [P]/[C] evidence). Any classic bug found
 is reported for the user's decision, not silently copied.
 
+## Bytes classic never reads (decided 2026-10-10)
+
+Some bytes hold stale or garbage values that no classic program reads. The
+typed model leaves them out, the codec writes zeros, and oracle byte
+comparisons skip them. Each case is listed in `docs/dev/ec-file-formats.md`.
+
+- Planet name tails: bytes after the name's length in its `String[20]`.
+- FLEETS.DAT `0x34..0x35`: a dead word that classic only sums on a Join
+  merge. Rust merges stop summing it.
+- CONQUEST.DAT snapshot slots for empires past the player count, which
+  ECMAINT fills from uninitialised memory.
+
 ## Phase 2 — typed model and codecs (additive, behaviour unchanged)
 
 - New `rust/nc-data/src/model/`: `Player`, `Planet`, `Fleet`, `Starbase`,
