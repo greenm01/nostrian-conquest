@@ -7,21 +7,45 @@ tags: [investigation, combat, balance, simulation]
 ---
 # Review of the t055 combat sweep semantics
 
-The sweep strengthens the case for flat effectiveness and usable withdrawal. It does not select a final rule set. Fix the exact solver's round limit before publishing its tables: its compressed round state can answer a different question from the sampler. Treat carry as temporary hit-budget accumulation, not persistent ship damage. Separate the chance of pursuit from whether a screen fails, and give unarmed survivors an explicit disengagement rule. Keep residual damage as a comparison, not the default. Judge combat by surviving transports, damaged ships, repair bills, and escape opportunities as well as who wins the field.
+The repaired sweep strengthens the case for flat effectiveness and usable withdrawal. It does not select a final rule set. Independent verification after t055b reproduces the regenerated tables and confirms the original solver-horizon defect is fixed. Treat carry as temporary hit-budget accumulation, not persistent ship damage. Separate the chance of pursuit from whether a screen fails, and give unarmed survivors an explicit disengagement rule. Keep residual damage as a comparison, not the default. Judge combat by surviving transports, damaged ships, repair bills, and escape opportunities as well as who wins the field.
 
 The practical findings, in brief:
 
-- **Keep combat decisive and reward preparation.** The flat effectiveness candidate reduces the sharp advantage from ratio columns without making unequal forces equal. Initial carry samples give 11 CA against 10 about 67% victory, versus current 85%; 15 against 10 still wins about 97%. These are pre-fix results pending regeneration, not final balance promises.
+- **Keep combat decisive and reward preparation.** The flat effectiveness candidate reduces the sharp advantage from ratio columns without making unequal forces equal. Carry samples give 11 CA against 10 about 67% victory, versus current 85%; 15 against 10 still wins about 97%. The regenerated tables preserve these rounded figures; they are not final balance promises.
 - **Destroyers do not dominate the tested equal-cost fights.** Keep their execution role. Test DD DS 8 at cost 5 as a possible improvement: the carry comparison against equal-cost cruisers rises from about 7% to 28% victory. Escort, raid, and pursuit scenarios must establish whether that improvement is appropriate.
 - **Leftover damage is a major balance decision.** Discard can make smaller forces unable to hurt a target. Residual rolls replace that immunity with extra kill lotteries. Carry is promising, but the reviewed implementation forgets partial damage when a battle ends. Define persistence before selecting it; residual rolls are not the default.
 - **Retreat must remain a usable decision.** Losing the last armed ship currently prevents an ROE withdrawal request. I recommend allowing unarmed survivors to attempt escape. Test pursuit success separately from auxiliary exposure, with speed and encounter state determining whether pursuit happens.
 - **Measure whether the mission survives.** In the convoy probe, certain pursuit loses about 4.33 transports with the screen intact and 6.03 when auxiliaries become the first targets. The latter has a lower destroyed-hull bill because it saves cruisers. Cheaper losses can still mean a failed invasion. Include surviving cargo, landing capacity, repair bills, and travel time.
-- **The evidence has limits that matter.** The reviewed exact solver could ignore the round cap; Claude confirmed the defect. The engine comparison's agreement flag checks victory only. The coherent VBAM half-DS-after-cripple candidate was still missing. Correct and extend the experiments before choosing rules; preserve the before-fix evidence.
+- **The evidence has limits that matter.** t055b fixes the original solver-horizon defect and extends engine agreement to all four outcomes and a loss tolerance. The t057 follow-up below adds the paired VBAM-rate comparison and corrects the survival labels. The before-fix evidence remains intact. No fresh Rust or DOS validation was run for this review.
 - **Keep controls simple and consequences clear.** EotS and VBAM inform the combat design; classic supplies operational facts, not desired combat odds. Reports and manual examples should explain damage, retreat, pursuit, and repair. Internal calculations can stay automatic. Players still need enough information to judge a risk and understand its outcome. Campaign tests should include expansion, travel, and war costs while retaining the simple tax-rate control described in the linked economy investigation.
 
 This is a review of t055, following the [independent balance analysis](rolr9ti0-independent-nc-combat-balance-analysis.md) and the consultation in the [source synthesis](ebrogywq-nc-combat-design-review-against-its-sources.md#consultation-with-codex-2026-10-10). It reads the Python transitions, solver, tests, presets, generated tables, Rust comparison driver, and engine withdrawal rules. The [balance workflow](../../dev/combat-balance-workflow.md) correctly distinguishes model experiments, engine comparisons, and campaign evidence. Keep those distinctions in every conclusion. No engine rule changes are authorized by this note.
 
-The reproducible probes are in [review_t055.py](../../../tools/combat-model/review_t055.py). The [retained results](../../../tools/combat-model/nc_t055_review_before_fix.json) record the source hashes and pre-fix output. The broader comparisons come from the [t055 tables](../../../tools/combat-model/nc_sweep_results.md); their assumptions are in the [tool README](../../../tools/combat-model/README.md). Claude confirmed the solver defect and assigned t055b to fix it and regenerate affected tables. The other findings below remain review findings and candidates, not adopted policy. This review does not claim to validate that fix or the Rust suite.
+The reproducible probes are in [review_t055.py](../../../tools/combat-model/review_t055.py). The [retained results](../../../tools/combat-model/nc_t055_review_before_fix.json) record the source hashes and pre-fix output. The broader comparisons come from the [t055 tables](../../../tools/combat-model/nc_sweep_results.md); their assumptions are in the [tool README](../../../tools/combat-model/README.md). Claude confirmed the solver defect and merged t055b at `0688ee8e`. The verification below records the independent recheck. The original defect descriptions that follow it are historical; rule recommendations remain candidates, not adopted policy.
+
+**Independent verification after t055b (2026-10-10).**
+
+Checked at `fc28eaa6`, which contains `0688ee8e`. All 31 Python tests passed. All six original cap probes and the slow deterministic duel agreed with the independent finite-horizon traversal. The reviewed solver now keys states by the actual round and caches exchanges separately. The ROE-lock test now exercises round-4 withdrawal and compares its exchange count with a clean break.
+
+I recomputed all 100 fleet records using the retained JSON's rules, unit tables, seed 20261010, 10,000 sampled trials, and exact limit 100,000. Every field matched except elapsed runtime. The ground records also reproduced. Rendering the retained JSON produced the committed Markdown exactly. The full reproduction took 105.47 seconds on the development host. Comparison with the pre-merge JSON found no change in the displayed outcome percentages for existing cases. The historical review JSON still matches its bytes at `ae0c7364`.
+
+All nine engine-comparison rows also reproduced against the retained `nc_engine_odds.json`. The agreement flag now checks all four outcomes and each side's mean destroyed build points within 2% of starting value. This is reuse of recorded engine output, not a new Rust run. The loss threshold is an explicit engineering tolerance, not a confidence interval or proof of equivalence.
+
+The convoy comparison independently recomputed through the exact solver is:
+
+| Pursuit | Screen | Mean TT lost | Mean CA lost | Withdrawal recorded | At least five TT survive |
+| --- | --- | ---: | ---: | ---: | ---: |
+| None | Absolute | 4.000 | 2.000 | 60.0% | 60.0% |
+| Certain | Absolute | 4.324 | 3.812 | 60.0% | 58.2% |
+| Certain | Auxiliary first | 6.007 | 2.408 | 60.0% | 43.8% |
+
+Three qualifications were recorded at that verification; t057 below addresses them:
+
+- The table heading says transports **delivered**, but the metric counts survivors at battle end, including retreating and crippled transports. The README explains that proxy. Prefer **transports surviving** in tables; actual delivery needs movement, cargo, and a destination. The percentages above measure survival of half the starting transports, not successful withdrawal or landing.
+- `flat-half-ds` retains EotS's 0.625-mean effectiveness and discards remainders. It isolates the effect of reducing the second damage step. It shortens the equal ten-cruiser fight from 5.56 to 3.18 exchanges, but three CA still cannot damage a BB under that preset. This is a useful experiment. It does not settle the separate 0.30-mean VBAM-effectiveness plus reduced-durability comparison, or reduced durability with carry.
+- `round_cap` bounds ordinary battle iterations; a withdrawal or pursuit exchange can be added inside the final iteration. With flat carry, cap 1, and 10 CA at ROE 6 against 15 CA at ROE 10, both solvers produce two exchanges and certain withdrawal. This does not reproduce the old solver defect: exact and sampled paths agree. The engine likewise allows post-round withdrawal fire inside its capped loop. Document whether a candidate cap includes that fire and distinguish ordinary rounds from total exchanges; do not silently change the current-rule baseline to enforce a different definition.
+
+These checks support the corrected tables under their stated model. They do not establish persistent damage, actual pursuit odds, loaded-transport survival, or campaign balance. No cargo command, engine change, or overwrite of historical results was used.
 
 **The exact solver loses the round limit.**
 
@@ -135,3 +159,26 @@ My order of work is:
 5. Feed chosen candidates into travel, invasion, replacement, and repair scenarios. Publish small odds examples and battle reports that explain the decisive events.
 
 The [classic-reference review](o7w8k8uh-what-the-completed-classic-combat-reference-changes-for-nc.md) and [combat-system decision](../decisions/b5u6lekb-rust-keeps-its-own-combat-system.md) still set the frame: use classic for operational facts and diagnostics; build NC combat from the selected EotS and VBAM ideas. The player should understand the stakes without managing internal accounting. These probes ran in Python; no cargo command or Rust validation was run for this review.
+
+### t057
+
+The owner authorized the post-verification follow-ups: label transports as surviving rather than delivered, document ordinary rounds separately from total exchanges, and run the paired VBAM-effectiveness/full-or-half-DS experiment. These changes are confined to the Python models, their documentation, and regenerated evidence. They do not select engine rules. The original before-fix JSON remains historical evidence.
+
+Completed the wording changes in the tool README and generated tables. The JSON fields are now `surviving_left/right`; `viable_left/right` still mean the probability that at least half the starting transports survive. Crippled and retreating transports count as survivors. The round-cap description now permits the final withdrawal/pursuit exchange, with a regression checking exact and sampled paths at cap 1. No transition rule changed.
+
+Added `vbam-full-ds` and `vbam-half-ds`. Both use the 0.300-mean CER table while retaining the other NC candidate choices: discard, DD/base execution, budgeted critical focus, first-round ROE, certain pursuit, and conditional screening. Together with `flat-discard` and `flat-half-ds`, they isolate effectiveness and finishing durability. They do not reproduce VBAM's full combat system. The [tool guide](../../../tools/combat-model/README.md) gives the comparison command.
+
+| Effectiveness / finishing DS | Equal 10-CA mean exchanges | 11 CA versus 10, left win | 30 DD versus 10 CA, left win | Convoy mean TT surviving |
+| --- | ---: | ---: | ---: | ---: |
+| EotS 0.625 / full | 5.56 | 65.5% | 3.26% | 4.137 |
+| EotS 0.625 / half | 3.18 | 63.8% | 8.79% | 3.390 |
+| VBAM 0.300 / full | 15.72 | 76.5% [75.7, 77.3] | 0.00016% | 9.940 |
+| VBAM 0.300 / half | 8.91 | 73.2% [72.3, 74.1] | 0.093% | 9.909 |
+
+The VBAM-rate cruiser rows are 10,000-trial samples; the displayed intervals are 95% intervals for victory. The DD and convoy figures are exact. The convoy is the same 5 CA + 10 TT at ROE 6 against 10 CA at ROE 10. Both VBAM-rate variants record withdrawal and survival of at least five TT with probability 1 in this model. That does not mean successful arrival or invasion: the attacker gives up the field, cargo and movement are absent, and damaged survivors still need the proposed repair rule.
+
+The combined lower-rate/half-DS candidate is substantially better than copying the lower rate alone. It deserves consideration. But the existing NC hull values and discarded remainders make baseline DD ineffective against equal-cost CA. Even DD DS 8 raises their win chance only to about 4.2% under the VBAM-rate half-DS candidate, versus about 29.7% under EotS-rate half DS. Do not select the lower rate without testing whether changed hull values or remainder handling preserve the intended destroyer role.
+
+Half finishing DS reduces a nominal ship's two-step damage budget by about 25%, while changing 0.625 to 0.300 cuts mean raw fire by 52%. Slower fights are therefore unsurprising. These are internal combat exchanges, not extra game years or player orders. The lower-rate candidate makes this tested withdrawal much safer and gives a modest cruiser advantage more reliable victory. Whether those tradeoffs improve excitement needs mission and campaign tests, not a judgment based only on round count.
+
+Validation: all 33 Python tests pass. Regenerated 140 fleet records across seven presets and the existing ground cases. The previous 100 fleet records match `0688ee8e` exactly after excluding runtime and renaming the survival fields; the ground records and all nine comparisons against retained engine output are unchanged. Markdown matches the JSON renderer. The original before-fix JSON remains byte-identical to `ae0c7364`. No cargo or new engine/oracle run was performed. These results close the tooling follow-up, not the combat-rule decision.

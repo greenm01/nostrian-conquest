@@ -105,8 +105,8 @@ def run_case(model, rules_name, units_name, case, trials, seed, limit):
         lost_right=dict(zip(R.CLASSES, vector[LOST_B])),
         # Mission survival: transports surviving the battle, and the chance
         # that at least half of them do.
-        delivered_left=left.get('TT', 0) - vector[LOST_A][R.CLASSES.index('TT')],
-        delivered_right=right.get('TT', 0) - vector[LOST_B][R.CLASSES.index('TT')],
+        surviving_left=left.get('TT', 0) - vector[LOST_A][R.CLASSES.index('TT')],
+        surviving_right=right.get('TT', 0) - vector[LOST_B][R.CLASSES.index('TT')],
         viable_left=vector[VIABLE_A], viable_right=vector[VIABLE_B],
         seconds=round(time.time() - started, 2),
     )
@@ -147,14 +147,14 @@ def ships(lost):
     return ' '.join(f'{cls} {count:.1f}' for cls, count in lost.items() if count) or '-'
 
 
-def delivered(record):
+def surviving(record):
     """Transports surviving per side that has any: mean of start (chance
     of at least half)."""
     parts = []
     for side in ('left', 'right'):
         start = record[side].get('TT', 0)
         if start:
-            parts.append(f"{record[f'delivered_{side}']:.2f} of {start} ({pct(record[f'viable_{side}'])})")
+            parts.append(f"{record[f'surviving_{side}']:.2f} of {start} ({pct(record[f'viable_{side}'])})")
     return ' / '.join(parts)
 
 
@@ -209,11 +209,11 @@ def render(results, rulesets, args):
                 rows.append(row)
             lines.append(table(['case'] + names, rows))
             lines.append('')
-        convoys = [label for label in labels if any(delivered(r) for r in battles if case_label(r) == label)]
+        convoys = [label for label in labels if any(surviving(r) for r in battles if case_label(r) == label)]
         if convoys:
-            lines.append('## Transports delivered, mean of start (chance of at least half)')
+            lines.append('## Transports surviving the battle, mean of start (chance of at least half)')
             lines.append('')
-            rows = [[label] + [delivered(by_key[(label, name)]) if (label, name) in by_key else '' for name in names]
+            rows = [[label] + [surviving(by_key[(label, name)]) if (label, name) in by_key else '' for name in names]
                     for label in convoys]
             lines.append(table(['case'] + names, rows))
             lines.append('')

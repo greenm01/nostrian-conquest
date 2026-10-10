@@ -112,6 +112,16 @@ class CurrentRulesMatchTheReviewModel(unittest.TestCase):
 
 
 class CandidateSemantics(unittest.TestCase):
+    def test_vbam_rate_pair_changes_damage_rate_and_finishing_step_independently(self):
+        full = model('vbam-full-ds', **{'units.CA.AS': 100})
+        half = model('vbam-half-ds', **{'units.CA.AS': 100})
+        expected = [10, 20, 20, 30, 30, 30, 30, 40, 40, 50]
+        for m in (full, half):
+            self.assertEqual([m.volley(force(CA=1), 100, roll)[0] for roll in range(10)], expected)
+        # Same 45-hit budget: full DS leaves a cripple; half DS destroys it.
+        self.assertEqual(full.apply(force(CA=1), 45, 0, False)[0][1][1][1], 1)
+        self.assertEqual(half.apply(force(CA=1), 45, 0, False)[0][1][0][1], 0)
+
     def test_residual_buys_the_next_step_with_probability_hits_over_cost(self):
         m = model('flat-residual')
         branches = dict((state, p) for p, state in m.apply(force(CA=1), 12, 0, False))
@@ -255,6 +265,17 @@ class RoundCap(unittest.TestCase):
         self.assertAlmostEqual(v[P_STALEMATE], 1.0)
         self.assertAlmostEqual(v[ROUNDS], 1.0)
 
+    def test_last_ordinary_round_can_include_a_pursuit_exchange(self):
+        m = model('flat-carry', round_cap=1)
+        a, b = force(CA=10), force(CA=15)
+        exact, _ = m.solve(a, b, roe=(6, 10))
+        self.assertAlmostEqual(exact[ROUNDS], 2.0)
+        self.assertAlmostEqual(exact[WD_A], 1.0)
+        for seed in range(100):
+            sampled = m.simulate(a, b, random.Random(seed), roe=(6, 10))
+            self.assertEqual(sampled[ROUNDS], 2.0)
+            self.assertEqual(sampled[WD_A], 1.0)
+
     def test_a_slow_duel_stops_at_the_cap_with_crippled_survivors(self):
         # CA with AS 2, DS 100 at constant effectiveness 1 under carry: 50
         # exchanges to cripple, 100 more to destroy. The cap stops it at 64
@@ -303,15 +324,15 @@ class SweepOutput(unittest.TestCase):
         self.assertEqual(first, second)
         self.assertEqual(sum(first['counts'].values()), 200)
 
-    def test_records_carry_transports_delivered(self):
+    def test_records_carry_transports_surviving(self):
         convoy = next(case for case in sweep.CASES if 'convoy' in case[4].split())
         record = sweep.run_case(model('flat-carry'), 'flat-carry', 'baseline', convoy, 10, 1, limit=100_000)
         self.assertEqual(record['method'], 'exact')
-        self.assertAlmostEqual(record['delivered_left'], 10 - record['lost_left']['TT'])
-        self.assertAlmostEqual(record['delivered_left'], 3.993)
+        self.assertAlmostEqual(record['surviving_left'], 10 - record['lost_left']['TT'])
+        self.assertAlmostEqual(record['surviving_left'], 3.993)
         self.assertAlmostEqual(record['viable_left'], 0.438)
-        self.assertEqual(record['delivered_right'], 0)
-        self.assertIn('3.99 of 10 (43.8%)', sweep.delivered(record))
+        self.assertEqual(record['surviving_right'], 0)
+        self.assertIn('3.99 of 10 (43.8%)', sweep.surviving(record))
 
     def test_engine_comparison_checks_every_measure_and_reports_missing_cases(self):
         case = sweep.CASES[0]  # 10 CA vs 10 CA, tagged engine

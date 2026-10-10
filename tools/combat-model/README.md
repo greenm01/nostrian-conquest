@@ -21,7 +21,8 @@ the review's reproduction tool and historical evidence.
 
 - `rules.py`: the unit table (AS, DS, build cost, fire pool, combat line)
   and the rule sets as plain dicts: `current`, `flat-discard`,
-  `flat-residual`, `flat-carry`, `flat-half-ds`; hull variants; `--set`
+  `flat-residual`, `flat-carry`, `flat-half-ds`, `vbam-full-ds`,
+  `vbam-half-ds`; hull variants; `--set`
   overrides.
 - `fleet_model.py`: the rule-driven battle. One step function returns
   branches with probabilities, so `solve` enumerates a battle exactly,
@@ -148,6 +149,24 @@ consultation's candidate: `flat-discard`, `flat-residual`, and `flat-carry`
 differ only in the remainder rule, and `flat-half-ds` is `flat-discard`
 with VBAM's damage step, a crippled ship at half DS as well as half AS.
 
+The controlled effectiveness/durability comparison uses four presets:
+
+| preset | mean effectiveness | finishing DS | remainder |
+| --- | ---: | --- | --- |
+| `flat-discard` | 0.625 | full | discard |
+| `flat-half-ds` | 0.625 | half | discard |
+| `vbam-full-ds` | 0.300 | full | discard |
+| `vbam-half-ds` | 0.300 | half | discard |
+
+The VBAM-rate pair uses its CER distribution while keeping the other NC
+candidate rules, including DD/base execution and budgeted critical focus.
+This tests damage rate and durability together; it does not reproduce all
+VBAM combat rules. These are experiments, not selected NC rules.
+
+```sh
+python3 -I -B tools/combat-model/sweep.py --rules flat-discard,flat-half-ds,vbam-full-ds,vbam-half-ds --units baseline --cases ca,convoy --no-ground
+```
+
 | field | values | meaning |
 | --- | --- | --- |
 | `effect` | `crt` rows x 5 columns, or `flat` rows | `crt` picks a column from the AS ratio (Disadvantaged under 0.5, Pressed, Even, Advantaged from 1.5, Overwhelming from 3) and shifts it; `flat` reads one row per die and adds shifts to the die. `rows` are multipliers in `unit`ths of AS; hits are rounded up. |
@@ -161,7 +180,7 @@ with VBAM's damage step, a crippled ship at half DS as well as half AS.
 | `screen` | `absolute`, `conditional` | auxiliaries (SC, TT, ET) are hit only once the line is gone; `conditional` also exposes them, first, to a pursuit exchange (`withdrawal=pursuit`; it changes nothing else). |
 | `roe` | `lock3`, `after1` | when a side compares its AS with the enemy's against its ROE threshold: from round 4, declared before the round and checked after it (the engine); or after every round from the first. |
 | `withdrawal` | `pressed`, `pursuit`, `none` | what a leaving side takes: the engine's withdrawal exchange (both sides fire once at the Pressed column, no shifts); one ordinary exchange that always happens, both sides firing, the pursuer's fire reaching auxiliaries only under `screen=conditional`; or nothing. |
-| `round_cap` | 64 | an undecided battle ends here as a stalemate, exact and sampled alike; 64 is the engine's `COMBAT_GUARDRAIL_MAX_ROUNDS` (nc-combat-spec.md). |
+| `round_cap` | 64 | maximum ordinary battle iterations, exact and sampled alike; a withdrawal/pursuit exchange may follow the last ordinary round. An undecided fight then ends as a stalemate. Total exchanges can reach cap + 1. The engine's `COMBAT_GUARDRAIL_MAX_ROUNDS` uses the same ordinary-round limit. |
 
 Semantics the candidates assume, chosen here and open to change:
 
@@ -195,7 +214,7 @@ Semantics the candidates assume, chosen here and open to change:
   apart (5 CA + 10 TT at ROE 6 vs 10 CA, `flat-carry`, exact; the
   review's 10,000-seed probe in `review_t055.py` agrees):
 
-  | pursuit | screen in pursuit | TT lost | CA lost | at least 5 TT delivered | build points lost |
+  | pursuit | screen in pursuit | TT lost | CA lost | at least 5 TT survive | build points lost |
   | --- | --- | --- | --- | --- | --- |
   | none | either | 4.00 | 2.00 | 60.0% | 50.0 |
   | certain | absolute | 4.32 | 3.81 | 58.2% | 78.8 |
@@ -205,12 +224,13 @@ Semantics the candidates assume, chosen here and open to change:
   which four full-effectiveness rolls out of ten give the ten CA the 300
   hits that destroy all five escorts outright, after which the unarmed
   transports cannot leave (the zero-AS rule above).
-- **Mission survival.** Transports delivered are the TT a side still has
-  when the battle ends, whether it then lands, presses on, or retreats;
-  the tables give the mean and the chance that at least half survive, as
-  a proxy for a landing force that is still viable. Armies aboard are not
-  modelled, so a lost transport is a lost landing share; the destroyed
-  build points alone hide this, since transports are cheap.
+- **Transport survival.** Surviving transports are the TT a side still has
+  when the battle ends, including crippled and retreating ships. The tables
+  give the mean and the chance that at least half survive. JSON fields
+  `surviving_left/right` hold the means; `viable_left/right` hold those
+  half-survival probabilities (1 for a side with no starting transports).
+  This is a proxy for remaining transport capacity, not successful delivery
+  or landing. Cargo, destination, and later movement are not modelled.
 - **Outcomes.** Left wins when the right side's combat AS is zero and its
   own is not, or when the right side left and it stands; mutual when both
   have no combat AS; stalemate at the round cap (a state that cannot
@@ -234,7 +254,7 @@ hull table and, for the DD cases, DD 10/8 at cost 5:
 - small exact cases: 3 DD vs 1 CA, 3 CA vs 1 BB, 1 DD vs 1 BB (`small`);
 - ROE and pursuit: 10 CA at ROE 6 vs 15 CA, 10 CA vs 10 CA both at ROE 6
   (`roe`), and a convoy, 5 CA + 10 TT at ROE 6 vs 10 CA (`convoy`), where
-  the pursuit and screen switches show in transports delivered.
+  the pursuit and screen switches show in transports surviving.
 
 Add a case by appending to `CASES` in `sweep.py`.
 

@@ -332,7 +332,9 @@ class Model:
 
     def step(self, a, b, r, roe, exchange):
         """Transitions from round `r`: [(p, exchanges fought, next)], where
-        next is ('state', a, b, r + 1) or ('terminal', a, b, wd_a, wd_b)."""
+        next is ('state', a, b, r + 1) or ('terminal', a, b, wd_a, wd_b).
+        The cap bounds ordinary rounds, not total exchanges: a withdrawal
+        or pursuit exchange may follow the last ordinary round."""
         rules = self.rules
         if self.done(a, b) or r > rules['round_cap']:
             return [(1.0, 0, ('terminal', a, b, False, False))]
