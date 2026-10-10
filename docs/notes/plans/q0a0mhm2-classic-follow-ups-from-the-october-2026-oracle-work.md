@@ -257,3 +257,26 @@ tick it sees the loss; autopilot recall ignores production. Open for the
 owner: the picker also raises any candidate world's present production
 below 1.0 to 1.0 in memory, which ECMAINT saves (see the encounter spec,
 "Not settled").
+
+Owner decisions (2026-10-10): the picker's production bump is a classic bug
+and Rust does not copy it (recorded in ec-encounter-spec.md); a fleet beaten
+in orbit of its own world retreats to the nearest other owned world, as in
+classic.
+
+## t064
+
+Three home-picking paths still differ from classic, found by t059:
+
+- **Seek Home retargeting.** `nc-engine/src/maint/retarget.rs` retargets
+  every Seek Home fleet before the year by squared Euclidean distance, even
+  when its target world is still owned, overriding the player's choice.
+  ECMAINT retargets only in the tick the world is lost, through the flag-1
+  picker (`0b5d:033d`).
+- **Salvage.** A Salvage whose world was lost flies on, fails on arrival,
+  and holds. ECMAINT aborts it to Seek Home in the tick it sees the loss
+  (`0b5d:4b2a`).
+- **Autopilot recall.** `economics/ai.rs` picks by squared distance; the
+  classic AI uses the picker's flag 2, which divides distance by the world's
+  present production (`24a3:26c2`, `24a3:29c5`).
+
+Make each match classic, with probes where the disassembly is unclear.

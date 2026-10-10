@@ -509,17 +509,21 @@ intercept up to three (aw roll, sin draw, speed roll); battles draw more.
 
 ---------------------------------------------------------------------------
 
-## 8. Not settled
+## 8. Deviation: the picker's production bump
 
-- The nearest-friendly picker (`24a3:0876`, `09b7..09ef`) has a side
-  effect: when the empire has two or more candidate worlds, it raises the
-  present production (PLANETS `+0x03`) of any candidate below 1.0 to 1.0,
-  in every mode, on the in-memory planet table that ECMAINT writes to
-  PLANETS.DAT at the end of the run (`0824:1398`). It reads as a guard for
-  flag 2's division that leaks into every call. It shows only for a world
-  whose production fell below 1.0 during the year's ticks, since the planet
-  pass raises it to 1.0 first. Rust does not copy it; the owner decides
-  whether it should (t059).
+The nearest-friendly picker (`24a3:0876`, `09b7..09ef`) has a side effect:
+when the empire has two or more candidate worlds, it raises the present
+production (PLANETS `+0x03`) of any candidate below 1.0 to 1.0, in every
+mode, on the in-memory planet table that ECMAINT writes to PLANETS.DAT at
+the end of the run (`0824:1398`). It reads as a guard for flag 2's division
+that leaks into every call, and it shows only for a world whose production
+fell below 1.0 during the year's ticks, since the planet pass raises it to
+1.0 first. The owner ruled it a classic bug (2026-10-10): choosing where a
+fleet goes never changes a world's production in Rust. An oracle run can
+show this one field differing on such a world.
+
+## 9. Not settled
+
 - AI empires (players marked 0xFF) were not probed.
 - ROE > 10 and u16 overflow in vis/strength (more than ~1450 ships of a
   class) are undefined or wrap in classic.
