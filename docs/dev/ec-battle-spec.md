@@ -4,7 +4,7 @@ Classic ECMAINT's battles: planetary assault (bombard, invade, blitz), fleet
 against fleet, and fleet against starbase. Read from the unpacked ECMAINT
 (`tools/unlzexe/ecmaint_640k.bin`, seg:off -> file offset `seg*16+off-0x8140`,
 DS = `0x3529`) and checked against classic probes. This is a reference to
-classic's behaviour only. Rust does not port it; Rust's combat rules are in
+classic's behaviour only. Rust does not port it; NC combat is defined in
 [nc-combat-spec.md](nc-combat-spec.md).
 
 - **[P]**: confirmed by classic probes (statistically, section 6).

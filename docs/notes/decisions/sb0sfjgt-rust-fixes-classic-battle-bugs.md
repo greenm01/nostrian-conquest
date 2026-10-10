@@ -53,4 +53,4 @@ Accepted by the user on 2026-10-10. The normative text is
 [ec-battle-spec.md](../../dev/ec-battle-spec.md). Related:
 [engagement ADR](gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md).
 
-Superseded on 2026-10-10 by [Rust keeps its own combat system](b5u6lekb-rust-keeps-its-own-combat-system.md): Rust does not port classic battles, so these fixes have nothing to apply to.
+Superseded on 2026-10-10 by [NC combat stays](b5u6lekb-rust-keeps-its-own-combat-system.md): Rust does not port classic battles, so these fixes have nothing to apply to.
