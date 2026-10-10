@@ -4,6 +4,7 @@ mod campaign;
 mod canonicalize;
 mod combat;
 mod economics;
+mod fleet_refs;
 pub mod gate;
 mod merging;
 mod movement;
@@ -20,6 +21,7 @@ pub use results::{
 };
 
 use crate::VisibleHazardIntel;
+use fleet_refs::{FleetIndexRemap, TurnFleetRefs};
 use nc_data::{
     CoreGameData, FleetRecord, Order, PlayerLifecycleState, WinnerState,
     default_player_lifecycle_states, fleet_motion_state::decode_exact_position,
@@ -46,12 +48,15 @@ struct MovementEvents {
     mission_events: Vec<MissionEvent>,
     salvage_events: Vec<SalvageResolvedEvent>,
     diplomatic_escalation_events: Vec<DiplomaticEscalationEvent>,
+    /// Speed each fleet moved at this turn (0 when it did not move), indexed by fleet.
+    fleet_travel_speeds: Vec<u8>,
 }
 
 #[derive(Debug, Default, Clone)]
 pub(super) struct FleetRemovalRemapInfo {
     destroyed_join_host_fleet_numbers: std::collections::HashMap<u8, u8>,
     prior_join_host_ids: std::collections::HashMap<u8, u8>,
+    fleet_indices: FleetIndexRemap,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -264,7 +269,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // attrition).  Culling here — before snapshots or event dispatch — means
     // no later code ever sees a ghost fleet, and no event index remapping is
     // required after the fact.
-    let mut destroyed_join_host_fleet_numbers = cull_empty_fleets(game_data);
+    let destroyed_join_host_fleet_numbers = cull_empty_fleets(game_data);
 
     // CONQUEST.DAT 0x0c/0x3d accumulation trigger — snapshot BEFORE processing.
     // ECMAINT increments production total (0x0c += 100) and turn counter (0x3d += 1)
@@ -333,12 +338,6 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         campaign::campaign_outcome(game_data, player_lifecycle_states, *winner_state);
     let empire_turn_start_states =
         campaign::capture_empire_turn_start_states(game_data, player_lifecycle_states);
-    let fleet_number_by_id: std::collections::HashMap<u8, u8> = game_data
-        .fleets
-        .records
-        .iter()
-        .map(|fleet| (fleet.fleet_id(), fleet.local_slot_word_raw() as u8))
-        .collect();
 
     // InvadeWorld execution: a InvadeWorld fleet that had raw[0x19]==0x80 at start of turn
     // executes this turn. Snapshot indices now, before movement mutates raw[0x19].
@@ -385,53 +384,66 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     let new_year = current_year + 1;
     game_data.conquest.set_game_year(new_year);
 
+    // Every fleet-record compaction below must remap these captured references.
+    let mut refs = TurnFleetRefs {
+        bombard_ready,
+        invade_ready,
+        blitz_ready,
+        destroyed_join_host_fleet_numbers,
+        ..TurnFleetRefs::default()
+    };
+
     // Merge co-located friendly fleets BEFORE movement.
     // Confirmed from econ fixture: the Bombard fleet (at 16,13 pre-move) is
     // included in the merge even though it moves to (15,13) this turn.
     // The merge runs before movement resolution, absorbing all same-position
     // fleets for flagged players (PLAYER raw[0x00]==0xff).
-    let (mut merge_events, consolidation_remap) = merging::process_fleet_merging(game_data)?;
-    let mut join_host_events = merging::process_join_host_updates(
+    let (merge_events, consolidation_remap) = merging::process_fleet_merging(game_data)?;
+    refs.merge_events.extend(merge_events.iter().copied());
+    refs.remap(&consolidation_remap.fleet_indices);
+    refs.join_host_events = merging::process_join_host_updates(
         game_data,
         &merge_events,
-        &fleet_number_by_id,
-        &destroyed_join_host_fleet_numbers,
-        &consolidation_remap.prior_join_host_ids,
+        &refs.destroyed_join_host_fleet_numbers,
+        &consolidation_remap,
     );
 
-    let invalid_player_state_events = sanitize_invalid_player_inputs(game_data);
+    refs.invalid_player_state_events = sanitize_invalid_player_inputs(game_data);
 
-    let mut mission_retarget_events = retarget::refresh_seek_home_targets(game_data);
-    mission_retarget_events.extend(retarget::refresh_join_host_targets(game_data));
-    mission_retarget_events.extend(retarget::refresh_guard_starbase_targets(game_data));
+    refs.mission_retarget_events = retarget::refresh_seek_home_targets(game_data);
+    refs.mission_retarget_events
+        .extend(retarget::refresh_join_host_targets(game_data));
+    refs.mission_retarget_events
+        .extend(retarget::refresh_guard_starbase_targets(game_data));
 
     // Autopilot fleet recall: idle fleets in deep space get SeekHome before
     // movement so they can start heading home this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
     // Process fleet orders; collect side-effect events
-    let mut movement_events = movement::process_fleet_movement(
-        game_data,
-        visible_hazards_by_empire,
-        &mut destroyed_join_host_fleet_numbers,
-    )?;
+    let (movement_events, movement_remap) =
+        movement::process_fleet_movement(game_data, visible_hazards_by_empire)?;
+    refs.movement_events = movement_events;
+    refs.remap(&movement_remap.fleet_indices);
+    refs.destroyed_join_host_fleet_numbers
+        .extend(movement_remap.destroyed_join_host_fleet_numbers);
     loop {
         let (new_merge_events, remap_info) = merging::process_mission_fleet_merging(game_data)?;
         if new_merge_events.is_empty() {
             break;
         }
+        refs.merge_events.extend(new_merge_events.iter().copied());
+        refs.remap(&remap_info.fleet_indices);
         let new_join_host_events = merging::process_join_host_updates(
             game_data,
             &new_merge_events,
-            &fleet_number_by_id,
-            &destroyed_join_host_fleet_numbers,
-            &remap_info.prior_join_host_ids,
+            &refs.destroyed_join_host_fleet_numbers,
+            &remap_info,
         );
         let had_retargets = new_join_host_events
             .iter()
             .any(|event| matches!(event, JoinMissionHostEvent::Retargeted { .. }));
-        merge_events.extend(new_merge_events);
-        join_host_events.extend(new_join_host_events);
+        refs.join_host_events.extend(new_join_host_events);
         if !had_retargets {
             break;
         }
@@ -440,12 +452,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Detect and resolve fleet battles: when hostile fleets co-locate after movement,
     // surviving fleets get SeekHome orders (confirmed from fleet-battle oracle).
     // This runs after movement so all fleet positions are final for this turn.
-    let fleet_battle_phase_events =
+    let mut fleet_battle_phase_events =
         combat::process_fleet_battles(game_data, campaign_seed, diplomacy_overrides)?;
 
     // Apply colonization results to the in-memory game state.
-    let colonization_events =
-        merging::process_colonizations(game_data, &movement_events.colonization_events)?;
+    let mut colonization_events =
+        merging::process_colonizations(game_data, &refs.movement_events.colonization_events)?;
     let newly_colonized_planets = colonization_events
         .iter()
         .filter_map(|event| match *event {
@@ -470,13 +482,13 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // Resolve bombardment for fleets that were already-arrived (raw[0x19]==0x80) at turn start.
     // Confirmed: bombardment executes on the tick AFTER transit-arrival, not same tick.
-    let assault_events = combat::process_planetary_assaults(
+    let mut assault_events = combat::process_planetary_assaults(
         game_data,
         campaign_seed,
-        &bombard_ready,
-        &invade_ready,
-        &blitz_ready,
-        &movement_events.hostile_arrived_fleet_indices,
+        &refs.bombard_ready,
+        &refs.invade_ready,
+        &refs.blitz_ready,
+        &refs.movement_events.hostile_arrived_fleet_indices,
     )?;
 
     // Recompute per-player planet count and production score from the in-memory
@@ -496,22 +508,37 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         initial_campaign_outlook,
         initial_campaign_outcome,
     );
+    let fleet_keys_before_defection = fleet_record_keys(game_data);
     let fleet_defection_events = campaign::apply_civil_disorder_fleet_defections(
         game_data,
         &campaign_transition_events.empire_elimination_events,
     )?;
+    let defection_remap = FleetIndexRemap::from_survivors(
+        &fleet_keys_before_defection,
+        &fleet_record_keys(game_data),
+    );
+    refs.remap(&defection_remap);
+    defection_remap.remap_colonization_events(&mut colonization_events);
+    defection_remap.remap_mission_events(&mut fleet_battle_phase_events.mission_events);
+    defection_remap.remap_planet_intel_events(&mut fleet_battle_phase_events.planet_intel_events);
+    defection_remap.remap_encounter_disposition_events(
+        &mut fleet_battle_phase_events.encounter_disposition_events,
+    );
+    defection_remap.remap_mission_events(&mut assault_events.mission_events);
+    defection_remap.remap_planet_intel_events(&mut assault_events.planet_intel_events);
 
     // Normalize the in-memory conquest header fields.
     campaign::process_conquest_header(game_data, should_accumulate_conquest)?;
 
     finalize_pending_observation_events(
         game_data,
-        &mut movement_events,
+        &mut refs.movement_events,
         &fleet_battle_phase_events.mission_events,
     );
 
-    restore_scout_orders_and_generate_on_station_observations(game_data, &mut movement_events);
+    restore_scout_orders_and_generate_on_station_observations(game_data, &mut refs.movement_events);
 
+    let movement_events = refs.movement_events;
     let mut mission_events = movement_events.mission_events;
     mission_events.extend(fleet_battle_phase_events.mission_events);
     mission_events.extend(assault_events.mission_events);
@@ -612,10 +639,10 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         assault_report_events: assault_events.assault_report_events,
         scout_contact_events: fleet_battle_phase_events.scout_contact_events,
         encounter_disposition_events: fleet_battle_phase_events.encounter_disposition_events,
-        invalid_player_state_events,
-        fleet_merge_events: merge_events,
-        join_host_events,
-        mission_retarget_events,
+        invalid_player_state_events: refs.invalid_player_state_events,
+        fleet_merge_events: refs.merge_events,
+        join_host_events: refs.join_host_events,
+        mission_retarget_events: refs.mission_retarget_events,
         colonization_events,
         mission_events,
         salvage_events: movement_events.salvage_events,
@@ -632,9 +659,19 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // Assign stardate week values and sort event vectors chronologically.
     let mut events = events;
-    canonicalize::canonicalize_events(&mut events, game_data);
+    canonicalize::canonicalize_events(&mut events, &movement_events.fleet_travel_speeds);
 
     Ok(events)
+}
+
+/// Per-fleet identity used to detect which records a compaction removed.
+fn fleet_record_keys(game_data: &CoreGameData) -> Vec<(u8, u16)> {
+    game_data
+        .fleets
+        .records
+        .iter()
+        .map(|fleet| (fleet.owner_empire_raw(), fleet.local_slot_word_raw()))
+        .collect()
 }
 
 fn fleet_has_presence(fleet: &FleetRecord) -> bool {
@@ -907,7 +944,10 @@ fn apply_fleet_removal_remap(
     };
 
     // Surviving local fleet numbers stay unchanged. Only global linkage IDs compress.
-    let mut remap_info = FleetRemovalRemapInfo::default();
+    let mut remap_info = FleetRemovalRemapInfo {
+        fleet_indices: FleetIndexRemap::from_removed(to_remove),
+        ..FleetRemovalRemapInfo::default()
+    };
     let mut remapped_fleets = Vec::new();
     for (idx, fleet) in game_data.fleets.records.iter().enumerate() {
         if to_remove[idx] {

@@ -132,19 +132,24 @@ pub(super) fn process_mission_fleet_merging(
     Ok((merge_events, remap_info))
 }
 
+/// Retarget or abandon join missions after one fleet-record compaction.
+///
+/// `merge_events` carry fleet ids from before that compaction, while the
+/// fleets' join-host ids were already remapped by it; `remap_info` bridges
+/// the two id spaces.
 pub(super) fn process_join_host_updates(
     game_data: &mut CoreGameData,
     merge_events: &[FleetMergeEvent],
-    fleet_number_by_id: &std::collections::HashMap<u8, u8>,
     destroyed_join_host_fleet_numbers: &std::collections::HashMap<u8, u8>,
-    prior_join_host_ids: &std::collections::HashMap<u8, u8>,
+    remap_info: &FleetRemovalRemapInfo,
 ) -> Vec<JoinMissionHostEvent> {
-    let mut absorbed_to_host = std::collections::HashMap::new();
+    // Pre-compaction id of each absorbed fleet -> the merge that absorbed it.
+    let mut absorbed_by = std::collections::HashMap::new();
     for event in merge_events {
         if event.absorbed_fleet_id_raw != 0
             && event.absorbed_fleet_id_raw != event.host_fleet_id_raw
         {
-            absorbed_to_host.insert(event.absorbed_fleet_id_raw, event.host_fleet_id_raw);
+            absorbed_by.insert(event.absorbed_fleet_id_raw, event);
         }
     }
 
@@ -174,6 +179,12 @@ pub(super) fn process_join_host_updates(
         .iter()
         .map(|fleet| (fleet.fleet_id(), fleet.current_location_coords_raw()))
         .collect();
+    let current_fleet_numbers: std::collections::HashMap<u8, u8> = game_data
+        .fleets
+        .records
+        .iter()
+        .map(|fleet| (fleet.fleet_id(), fleet.local_slot_word_raw() as u8))
+        .collect();
 
     let mut events = Vec::new();
     for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
@@ -190,8 +201,14 @@ pub(super) fn process_join_host_updates(
         // or destroyed in a prior step) and the remap zeroed the reference.
         // Treat it the same as a missing/non-viable host — abandon the mission.
         if host_id == 0 {
-            if let Some(prior_host_id) = prior_join_host_ids.get(&fleet.fleet_id()).copied() {
-                if let Some(&new_host_id) = absorbed_to_host.get(&prior_host_id) {
+            let absorbing_merge = remap_info
+                .prior_join_host_ids
+                .get(&fleet.fleet_id())
+                .and_then(|prior_host_id| absorbed_by.get(prior_host_id));
+            if let Some(merge) = absorbing_merge {
+                if let Some(new_host_id) =
+                    remap_info.fleet_indices.fleet_id(merge.host_fleet_id_raw)
+                {
                     fleet.set_join_host_fleet_id_raw(new_host_id);
                     if let Some(coords) = current_fleet_coords.get(&new_host_id).copied() {
                         fleet.set_standing_order_target_coords_raw(coords);
@@ -199,8 +216,8 @@ pub(super) fn process_join_host_updates(
                     events.push(JoinMissionHostEvent::Retargeted {
                         fleet_idx,
                         owner_empire_raw: fleet.owner_empire_raw(),
-                        previous_host_fleet_number: fleet_number_by_id.get(&prior_host_id).copied(),
-                        new_host_fleet_number: fleet_number_by_id.get(&new_host_id).copied(),
+                        previous_host_fleet_number: Some(merge.absorbed_fleet_number),
+                        new_host_fleet_number: Some(merge.host_fleet_number),
                         coords: fleet.current_location_coords_raw(),
                     });
                     continue;
@@ -222,21 +239,7 @@ pub(super) fn process_join_host_updates(
             continue;
         }
 
-        if let Some(&new_host_id) = absorbed_to_host.get(&host_id) {
-            fleet.set_join_host_fleet_id_raw(new_host_id);
-            if let Some(coords) = current_fleet_coords.get(&new_host_id).copied() {
-                fleet.set_standing_order_target_coords_raw(coords);
-            }
-            events.push(JoinMissionHostEvent::Retargeted {
-                fleet_idx,
-                owner_empire_raw: fleet.owner_empire_raw(),
-                previous_host_fleet_number: fleet_number_by_id.get(&host_id).copied(),
-                new_host_fleet_number: fleet_number_by_id.get(&new_host_id).copied(),
-                coords: fleet.current_location_coords_raw(),
-            });
-            continue;
-        }
-
+        // A non-zero host id survived the compaction, so it was not absorbed.
         let host_exists = current_fleet_ids.contains(&host_id);
         let host_viable = current_host_viability
             .get(&host_id)
@@ -251,7 +254,7 @@ pub(super) fn process_join_host_updates(
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
                 owner_empire_raw: fleet.owner_empire_raw(),
-                destroyed_host_fleet_number: fleet_number_by_id.get(&host_id).copied(),
+                destroyed_host_fleet_number: current_fleet_numbers.get(&host_id).copied(),
                 coords,
             });
         }

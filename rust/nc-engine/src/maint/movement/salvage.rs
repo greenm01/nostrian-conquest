@@ -113,64 +113,6 @@ fn resolve_salvage_arrival(
     })
 }
 
-pub(super) fn remap_movement_event_fleet_indices_after_removal(
-    movement_events: &mut MovementEvents,
-    to_remove: &[bool],
-) {
-    let removed_before: Vec<usize> = {
-        let mut removed = 0usize;
-        to_remove
-            .iter()
-            .map(|remove| {
-                let current = removed;
-                if *remove {
-                    removed += 1;
-                }
-                current
-            })
-            .collect()
-    };
-
-    let remap = |fleet_idx: usize| -> Option<usize> {
-        if to_remove.get(fleet_idx).copied().unwrap_or(false) {
-            None
-        } else {
-            Some(fleet_idx.saturating_sub(removed_before.get(fleet_idx).copied().unwrap_or(0)))
-        }
-    };
-
-    movement_events
-        .colonization_events
-        .retain_mut(|event| match remap(event.fleet_idx) {
-            Some(new_idx) => {
-                event.fleet_idx = new_idx;
-                true
-            }
-            None => false,
-        });
-    movement_events
-        .mission_events
-        .retain_mut(|event| match remap(event.fleet_idx) {
-            Some(new_idx) => {
-                event.fleet_idx = new_idx;
-                true
-            }
-            None => false,
-        });
-    movement_events
-        .pending_observation_events
-        .retain_mut(|event| match remap(event.fleet_idx) {
-            Some(new_idx) => {
-                event.fleet_idx = new_idx;
-                if let Some(intel_event) = event.intel_event.as_mut() {
-                    intel_event.source_fleet_idx = Some(new_idx);
-                }
-                true
-            }
-            None => false,
-        });
-}
-
 fn fleet_salvage_value(fleet: &nc_data::FleetRecord) -> u32 {
     let total_cost = u32::from(fleet.destroyer_count())
         * purchase_cost(ProductionItemKind::Destroyer)

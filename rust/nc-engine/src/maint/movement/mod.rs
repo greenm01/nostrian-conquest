@@ -2,11 +2,13 @@ mod arrivals;
 mod salvage;
 mod stepper;
 
-use super::{ColonizationEvent, MovementEvents, hostile_order_ready_for_execution};
+use super::{
+    ColonizationEvent, FleetRemovalRemapInfo, MovementEvents, hostile_order_ready_for_execution,
+};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use arrivals::handle_fleet_arrival;
 use nc_data::fleet_motion_state::{decode_exact_position, reset_motion_state_for_new_orders};
-use salvage::{queue_salvage_resolution, remap_movement_event_fleet_indices_after_removal};
+use salvage::queue_salvage_resolution;
 use stepper::{process_single_fleet_movement, set_fleet_to_local_hold};
 
 /// Process fleet movement for all fleets with active movement.
@@ -16,14 +18,17 @@ use stepper::{process_single_fleet_movement, set_fleet_to_local_hold};
 /// - Any order kind with speed > 0 and target ≠ current position triggers movement
 /// - Fleet coordinates live in the classic fleet record layout at offsets 0x0B..0x0C (x, y)
 ///
-/// Returns a list of colonization events for fleets that arrived with ColonizeWorld orders.
+/// Returns the movement side-effect events, indexed against the fleet list
+/// before salvaged fleets are removed, plus the remap for that removal.
 pub(super) fn process_fleet_movement(
     game_data: &mut CoreGameData,
     visible_hazards_by_empire: &[VisibleHazardIntel],
-    destroyed_join_host_fleet_numbers: &mut std::collections::HashMap<u8, u8>,
-) -> Result<MovementEvents, Box<dyn std::error::Error>> {
+) -> Result<(MovementEvents, FleetRemovalRemapInfo), Box<dyn std::error::Error>> {
     let fleet_count = game_data.fleets.records.len();
-    let mut movement_events = MovementEvents::default();
+    let mut movement_events = MovementEvents {
+        fleet_travel_speeds: vec![0; fleet_count],
+        ..MovementEvents::default()
+    };
     let mut to_remove = vec![false; fleet_count];
 
     for i in 0..fleet_count {
@@ -108,6 +113,7 @@ pub(super) fn process_fleet_movement(
             && ((target_x != current_x || target_y != current_y) || has_unresolved_exact_transit);
 
         if should_move {
+            movement_events.fleet_travel_speeds[i] = speed;
             let arrived = process_single_fleet_movement(game_data, i, visible_hazards_by_empire)?;
 
             if arrived {
@@ -124,13 +130,13 @@ pub(super) fn process_fleet_movement(
         }
     }
 
-    if to_remove.iter().any(|remove| *remove) {
-        remap_movement_event_fleet_indices_after_removal(&mut movement_events, &to_remove);
-        destroyed_join_host_fleet_numbers
-            .extend(super::remove_selected_fleets(game_data, &to_remove));
-    }
+    let remap_info = if to_remove.iter().any(|remove| *remove) {
+        super::apply_fleet_removal_remap(game_data, &to_remove)
+    } else {
+        FleetRemovalRemapInfo::default()
+    };
 
-    Ok(movement_events)
+    Ok((movement_events, remap_info))
 }
 
 pub(super) fn set_view_world_completion_hold(fleet: &mut nc_data::FleetRecord) {
