@@ -1345,6 +1345,9 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     game_data
         .save(&target)
         .expect("mutated fixture should save");
+    // A fleet merely in the sector's deep space is attacked only by or
+    // against a declared enemy.
+    set_mutual_enemy_in_player_dat(&target, 1, 2);
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1393,6 +1396,9 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     game_data
         .save(&target)
         .expect("mutated fixture should save");
+    // A fleet merely in the sector's deep space is attacked only by or
+    // against a declared enemy.
+    set_mutual_enemy_in_player_dat(&target, 1, 2);
 
     let stdout = run_maint_rust_with_export(&target, 2);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2291,7 +2297,8 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     attacker.raw[0x19] = 0x80;
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
-    attacker.set_battleship_count(0);
+    // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
+    attacker.set_battleship_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_destroyer_count(1);
     attacker.set_troop_transport_count(10);
@@ -2358,7 +2365,8 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.raw[0x19] = 0x80;
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
-    attacker.set_battleship_count(0);
+    // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
+    attacker.set_battleship_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_destroyer_count(1);
     attacker.set_troop_transport_count(10);
@@ -2400,7 +2408,8 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
         u16::from_le_bytes([viewer_record.raw[0x1e], viewer_record.raw[0x1f]]),
         65
     );
-    assert_eq!(viewer_record.raw[0x23], 9);
+    // Seeded garrison: 10 landed armies less 3 lost in the ground battle.
+    assert_eq!(viewer_record.raw[0x23], 7);
     assert_eq!(viewer_record.raw[0x24], 0x00);
     assert_eq!(viewer_record.raw[0x25], 0);
     assert_eq!(viewer_record.raw[0x26], 0x00);

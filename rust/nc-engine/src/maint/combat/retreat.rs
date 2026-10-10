@@ -123,7 +123,7 @@ pub(super) fn dominant_empire_after_battle(
 
     let mut surviving_empires = task_forces
         .iter()
-        .filter(|tf| tf.state.has_units() && !tf.withdrew_under_roe)
+        .filter(|tf| tf.engaged_in_battle && tf.state.has_units() && !tf.withdrew_under_roe)
         .map(|tf| tf.empire)
         .collect::<Vec<_>>();
     surviving_empires.sort_unstable();

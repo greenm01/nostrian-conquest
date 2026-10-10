@@ -10,16 +10,18 @@ use super::super::hostile_order_ready_for_execution;
 use super::exchange::{
     COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND,
     COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
-    COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_BATTERY, apply_hits_to_fleet,
-    resolve_ground_exchange, resolve_space_exchange, scalar_hits_with_critical,
+    COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
+    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, resolve_ground_exchange,
+    resolve_space_exchange, scalar_hits_with_critical,
 };
 use super::reporting::{
     mission_kind_for_fleet, preferred_reporting_fleet_number, push_planet_intel,
 };
 use super::retreat::set_fleet_to_hold_current_position;
 use super::state::{
-    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, fleet_state_from_records, planet_idx_at_coords,
-    ship_counts_from_state, ship_losses_from_states, starbase_count_at,
+    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_ET, IDX_SB, IDX_SC, IDX_TT, fleet_class_ds,
+    fleet_state_from_records, planet_idx_at_coords, ship_counts_from_state,
+    ship_losses_from_states, starbase_count_at,
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -152,6 +154,24 @@ fn empire_has_tt_only_blitz_presence(
     })
 }
 
+/// Hits needed to destroy one stardock item: its combat defense strength.
+fn stardock_item_ds(kind: ProductionItemKind) -> u32 {
+    match kind {
+        ProductionItemKind::Destroyer => fleet_class_ds(IDX_DD),
+        ProductionItemKind::Cruiser => fleet_class_ds(IDX_CA),
+        ProductionItemKind::Battleship => fleet_class_ds(IDX_BB),
+        ProductionItemKind::Scout => fleet_class_ds(IDX_SC),
+        ProductionItemKind::Transport => fleet_class_ds(IDX_TT),
+        ProductionItemKind::Etac => fleet_class_ds(IDX_ET),
+        ProductionItemKind::Starbase => fleet_class_ds(IDX_SB),
+        ProductionItemKind::GroundBattery => GROUND_DS_BATTERY,
+        ProductionItemKind::Army => GROUND_DS_ARMY,
+        ProductionItemKind::Unknown(_) => 1,
+    }
+}
+
+/// Each docked item costs its own DS in hits. Hits too few to destroy the
+/// next item move on to the following slot; partial hits never carry over.
 fn reduce_stardock(planet: &mut nc_data::PlanetRecord, mut hits: u32) -> u32 {
     for slot in 0..STARDOCK_SLOT_COUNT {
         if hits == 0 {
@@ -161,7 +181,11 @@ fn reduce_stardock(planet: &mut nc_data::PlanetRecord, mut hits: u32) -> u32 {
         if count == 0 {
             continue;
         }
-        let destroyed = hits.min(count) as u16;
+        let ds = stardock_item_ds(ProductionItemKind::from_raw(planet.stardock_kind_raw(slot)));
+        let destroyed = (hits / ds).min(count) as u16;
+        if destroyed == 0 {
+            continue;
+        }
         planet.set_stardock_count_raw(
             slot,
             planet.stardock_count_raw(slot).saturating_sub(destroyed),
@@ -169,9 +193,17 @@ fn reduce_stardock(planet: &mut nc_data::PlanetRecord, mut hits: u32) -> u32 {
         if planet.stardock_count_raw(slot) == 0 {
             planet.set_stardock_kind_raw(slot, 0);
         }
-        hits -= destroyed as u32;
+        hits -= destroyed as u32 * ds;
     }
     hits
+}
+
+/// Each ground battery destroyed costs its DS (20 hits). Returns the hits
+/// left over.
+fn apply_battery_hits(planet: &mut nc_data::PlanetRecord, hits: u32) -> u32 {
+    let battery_loss = (hits / GROUND_DS_BATTERY).min(planet.ground_batteries_raw() as u32);
+    planet.set_ground_batteries_raw(planet.ground_batteries_raw() - battery_loss as u8);
+    hits - battery_loss * GROUND_DS_BATTERY
 }
 
 fn stardock_summary(planet: &nc_data::PlanetRecord) -> nc_data::EmpireUnitSummary {
@@ -218,10 +250,9 @@ fn stardock_summary_diff(
 
 /// Suppression damage: hits only go through stardock and batteries.
 /// Armies, stored goods, and factories are shielded.
-fn apply_planet_suppression_damage(planet: &mut nc_data::PlanetRecord, mut hits: u32) {
-    hits = reduce_stardock(planet, hits);
-    let battery_loss = hits.min(planet.ground_batteries_raw() as u32) as u8;
-    planet.set_ground_batteries_raw(planet.ground_batteries_raw().saturating_sub(battery_loss));
+fn apply_planet_suppression_damage(planet: &mut nc_data::PlanetRecord, hits: u32) {
+    let hits = reduce_stardock(planet, hits);
+    apply_battery_hits(planet, hits);
 }
 
 fn apply_capped_invasion_soften_damage(
@@ -230,7 +261,7 @@ fn apply_capped_invasion_soften_damage(
     initial_armies: u8,
 ) -> u8 {
     let max_soften_losses = u32::from(initial_armies / 2);
-    let army_loss = hits
+    let army_loss = (hits / GROUND_DS_ARMY)
         .min(planet.army_count_raw() as u32)
         .min(max_soften_losses) as u8;
     planet.set_army_count_raw(planet.army_count_raw().saturating_sub(army_loss));
@@ -238,17 +269,17 @@ fn apply_capped_invasion_soften_damage(
 }
 
 /// Full bombardment cascade: stardock -> batteries -> armies -> stored goods -> factories.
-fn apply_planet_bombardment_damage(planet: &mut nc_data::PlanetRecord, mut hits: u32) {
-    hits = reduce_stardock(planet, hits);
+/// Units cost their DS in hits; hits reaching goods and factories are scaled
+/// down from the 10x combat scale before the per-unit conversion.
+fn apply_planet_bombardment_damage(planet: &mut nc_data::PlanetRecord, hits: u32) {
+    let hits = reduce_stardock(planet, hits);
+    let mut hits = apply_battery_hits(planet, hits);
 
-    let battery_loss = hits.min(planet.ground_batteries_raw() as u32) as u8;
-    planet.set_ground_batteries_raw(planet.ground_batteries_raw().saturating_sub(battery_loss));
-    hits -= battery_loss as u32;
+    let army_loss = (hits / GROUND_DS_ARMY).min(planet.army_count_raw() as u32);
+    planet.set_army_count_raw(planet.army_count_raw() - army_loss as u8);
+    hits -= army_loss * GROUND_DS_ARMY;
 
-    let army_loss = hits.min(planet.army_count_raw() as u32) as u8;
-    planet.set_army_count_raw(planet.army_count_raw().saturating_sub(army_loss));
-    hits -= army_loss as u32;
-
+    let hits = hits / 10;
     if hits > 0 {
         let goods_loss = hits.saturating_mul(100);
         planet.set_stored_goods_raw(planet.stored_goods_raw().saturating_sub(goods_loss));
@@ -611,24 +642,31 @@ pub(crate) fn process_planetary_assaults(
             continue;
         };
 
-        let winner_fleets = entrants.get(&winner_empire).cloned().unwrap_or_default();
-        let winner_class = winner_fleets
+        let mission_class = |idx: &usize| {
+            if blitz_set.contains(idx) {
+                MissionClass::Blitz
+            } else if invade_set.contains(idx) {
+                MissionClass::Invade
+            } else if bombard_set.contains(idx) {
+                MissionClass::Bombard
+            } else {
+                MissionClass::Other
+            }
+        };
+        let entrant_fleets = entrants.get(&winner_empire).cloned().unwrap_or_default();
+        let winner_class = entrant_fleets
             .iter()
-            .map(|idx| {
-                let class = if blitz_set.contains(idx) {
-                    MissionClass::Blitz
-                } else if invade_set.contains(idx) {
-                    MissionClass::Invade
-                } else if bombard_set.contains(idx) {
-                    MissionClass::Bombard
-                } else {
-                    MissionClass::Other
-                };
-                (class, *idx)
-            })
+            .map(|idx| (mission_class(idx), *idx))
             .min_by_key(|(class, idx)| (mission_priority(*class), *idx))
             .map(|(class, _)| class)
             .unwrap_or(MissionClass::Other);
+        // One assault class executes per planet per turn. Only fleets whose
+        // own order is that class take part; the winner's other assault
+        // fleets keep their orders and arrival state and act on a later turn.
+        let winner_fleets: Vec<usize> = entrant_fleets
+            .into_iter()
+            .filter(|idx| mission_class(idx) == winner_class)
+            .collect();
 
         match winner_class {
             MissionClass::Bombard => {
@@ -845,15 +883,10 @@ pub(crate) fn process_planetary_assaults(
                     &after,
                 );
 
-                {
-                    let planet = &mut game_data.planets.records[planet_idx];
-                    let battery_loss = scalar_hits_with_critical(suppression_exchange)
-                        .min(planet.ground_batteries_raw() as u32)
-                        as u8;
-                    planet.set_ground_batteries_raw(
-                        planet.ground_batteries_raw().saturating_sub(battery_loss),
-                    );
-                }
+                apply_battery_hits(
+                    &mut game_data.planets.records[planet_idx],
+                    scalar_hits_with_critical(suppression_exchange),
+                );
 
                 let batteries_cleared =
                     game_data.planets.records[planet_idx].ground_batteries_raw() == 0;
@@ -867,7 +900,8 @@ pub(crate) fn process_planetary_assaults(
                         winner_empire,
                         previous_owner,
                         bombard_attack_as(&after),
-                        game_data.planets.records[planet_idx].army_count_raw() as u32,
+                        game_data.planets.records[planet_idx].army_count_raw() as u32
+                            * GROUND_AS_ARMY,
                         0,
                     );
                     // Soften targets armies only — factories and stored goods are
@@ -1152,15 +1186,10 @@ pub(crate) fn process_planetary_assaults(
                     &cover_state,
                     pre_batteries as u32 * GROUND_AS_BATTERY,
                 );
-                {
-                    let planet = &mut game_data.planets.records[planet_idx];
-                    let battery_loss = scalar_hits_with_critical(cover_exchange)
-                        .min(planet.ground_batteries_raw() as u32)
-                        as u8;
-                    planet.set_ground_batteries_raw(
-                        planet.ground_batteries_raw().saturating_sub(battery_loss),
-                    );
-                }
+                apply_battery_hits(
+                    &mut game_data.planets.records[planet_idx],
+                    scalar_hits_with_critical(cover_exchange),
+                );
                 let surviving_batteries =
                     game_data.planets.records[planet_idx].ground_batteries_raw();
                 let (landing_army_losses, ship_losses) =

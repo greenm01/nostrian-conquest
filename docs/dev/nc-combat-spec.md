@@ -67,7 +67,15 @@ engagement and seek home immediately. This "clean retreat" happens before any
 fire is exchanged and avoids the damage of a withdrawal exchange.
 
 *Note: Sensor checks do not trigger for fleets forced into engagement (e.g.,
-defended system entry) or those in a Guard/Incumbent role.*
+defended system entry) or for patrols, which exist to intercept.*
+
+Guards, incumbents (a planet owner's forces at its own world), and starbases
+are anchored to their system. When their ROE threshold is not met against a
+contact that is *not* entering their system, they **hold formation**: they
+neither sortie nor retreat, keep their orders, and fire only if a willing
+enemy attacks them. A guard with a high enough ROE breaks formation and
+intercepts. Against an intruder the engagement is forced and they always
+fight.
 
 #### 3-Round Commitment
 Once combat begins, all participating fleets are committed to the engagement
@@ -122,14 +130,40 @@ Fleets attack declared enemies. They also attack when a player enters one of
 his solar systems or tries to enter/leave a world he is blockading. Initiating
 an attack escalates diplomacy to **Enemy** automatically.
 
-### Interception Matrix
-- **Deep Space**: Neutral fleets report contact but do not fight. Enemies are
-  intercepted if ROE allows.
-- **Defended Systems**: Neutral assault fleets (**Bombard/Invade/Blitz**) are
-  treated as hostile intrusions. Orbit is contested immediately. Forced
-  engagement rules apply (ROE sensor check skipped).
-- **Blockades**: Any fleet attempting to pass a blockade boundary triggers an
-  orbital contest.
+### Engagement Rule
+The 1992 player guide states it directly: "Your fleets may attack if they
+encounter the fleet of a player you've declared to be an enemy... Your fleets
+will also attack if another player's fleets enter one of your solar systems,
+or if they try to enter or leave a planet that your fleet is blockading."
+
+- **Declared enemies** (either direction) are intercepted wherever they meet,
+  in deep space or at a guarded system, gated by ROE as normal (sensor check,
+  hold formation, round-4 withdrawal). A guarded system does not let an enemy
+  pass unchallenged.
+- **System intrusion.** Any other player's fleet whose own order takes it
+  *into* the solar system at its location is hostile: Guard Starbase,
+  Guard/Blockade World, Bombard, Invade, Blitz, and Scout Solar System. This
+  applies against the world's owner, and against any empire blockading that
+  world. Intrusion forces the engagement (no sensor check), whether the
+  intruder is a declared enemy or not.
+- **View World is not an intrusion.** It is a long-range scan from the system
+  edge; the fleet then backs off into deep space.
+- **Deep space is neutral ground.** A non-enemy fleet in the sector's deep
+  space (Move, Patrol, Scout Sector, Hold, Join, Rendezvous, Seek Home, View
+  World, and so on) is never attacked, even in a sector with an owned world,
+  a starbase, or guards. Contact is still reported.
+- Initiating an attack escalates diplomacy to **Enemy** automatically.
+
+### Who Takes Part
+Only forces that actually exchange fire are combatants. Only combatants can
+hold the field, be forced to retreat, lose their mission, or receive a battle
+report, and a report names only the hostile combatants it fought. A neutral
+force that happens to share the sector is a bystander and is untouched.
+
+**Unarmed contact does not abort missions.** If no side can fire (for
+example, an enemy scout and an enemy transport fleet meeting in deep space),
+nobody retreats and every mission continues; contact reports still emit. A
+non-combat fleet attacked by an *armed* enemy still flees as ROE 0.
 
 ## Seeded CRT Resolution
 
@@ -177,6 +211,22 @@ orbital fire and shoot back, protecting armies, production, and industry.
    exchange --- batteries continue to shield everything behind them and fire
    back.
 
+#### Planetary Hit Costs
+Orbital hits are on the same 10x scale as fleet combat, so each target costs
+its defense strength:
+
+| Target | Hits per unit destroyed |
+| ------ | ----------------------- |
+| Ground battery | 20 |
+| Army | 10 |
+| Docked ship (stardock) | Its fleet DS (DD 5, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
+| Stored goods / factories | Remaining hits ÷ 10, then 100 goods and 1 factory per point |
+
+Hits below one unit's cost do not destroy it, and partial hits do not carry
+over between rounds. Hits too few to destroy the next docked item move on to
+the following stardock slot. Invasion suppression and blitz cover fire pay the
+same battery cost.
+
 The attacker must commit enough firepower over enough turns to grind through
 the battery shield before reaching anything valuable. A small raiding fleet
 may take several turns of three-round suppression before breaking through,
@@ -187,7 +237,9 @@ same turn.
 1. **Orbital suppression:** Ships exchange fire with batteries (1 exchange).
 2. **Softening fire:** If batteries cleared, orbital fire targets armies only.
    Factories and stored goods are not damaged during invasion --- the goal is
-   to capture the planet with its production intact. Softening may destroy at
+   to capture the planet with its production intact. The CRT column compares
+   bombardment AS against the garrison's strength on the same scale (armies x
+   army AS 10), and each army destroyed costs 10 hits. Softening may destroy at
    most half of the defender's starting armies.
 3. **Landing battle:** Armies fight in repeated simultaneous rounds until one
    side is destroyed. The defender receives a **+1** column bonus in ground
@@ -197,11 +249,25 @@ same turn.
 
 ## Fleet Combat Sequence
 
-1. **Identify Participants**: Combine all participating fleets into task forces.
-2. **Pre-Combat Sensor Check**: Fleets failing ROE attempt to seek home safely.
+1. **Identify Participants**: Combine all participating fleets into task forces,
+   one per empire, ordered by empire number.
+2. **Pre-Combat Sensor Check**: Fleets failing ROE attempt to seek home safely;
+   anchored defenders hold formation instead. Fleets are evaluated by ROE
+   ascending, equal ROE by empire number.
 3. **Simultaneous Fire**: Both sides generate and apply hits (Rounds 1-3 mandatory).
+   Withdrawals for a round are declared before any volley resolves: a force
+   breaking off takes only the withdrawal exchange from the opponent it
+   leaves, never that opponent's full volley as well.
 4. **Post-Round ROE**: Survivors check if they can break off (Starting Round 4).
-5. **End State**: Combat ends when one side is destroyed or retreats.
+   A withdrawn force is out of the battle: it is no longer targeted and its
+   strength no longer counts in anyone's ROE odds.
+5. **End State**: Combat ends when one side is destroyed or retreats. A
+   battle still undecided after 64 rounds ends as a stalemate: survivors keep
+   their ships and the normal post-battle rules (retreat of forces that did
+   not hold the field, mission aborts, reports) apply.
+
+Every collection whose order affects outcomes or event order is ordered, so
+the same seed always produces the same battle.
 
 
 ## Simultaneous Arrival at a Planet
@@ -210,6 +276,11 @@ No empire executes an assault (**Bombard, Invade, Blitz**) until it achieves
 orbital supremacy. If multiple hostile empires arrive at once, they must
 contest the orbit before attacking the world. A planet can change ownership at
 most once per turn.
+
+One assault class executes per planet per turn, in priority Blitz > Invade >
+Bombard. Only the orbit holder's fleets whose own order is that class take
+part (fire, land armies, reset orders). Its fleets on other assault orders keep
+their orders, loaded armies, and arrival state, and execute on a later turn.
 
 Blitz has one narrow exception: a fleet of loaded `TT*` may still execute a
 Blitz without escorting combat ships. That transport-only force does not
