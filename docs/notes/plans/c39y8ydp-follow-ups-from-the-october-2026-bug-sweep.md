@@ -58,6 +58,14 @@ first-turn treasury. Seed the baselines the same way the join path does.
 which overflows past a distance of about 127. Compute in i32, as the
 targeting and retarget code now does.
 
+Result (2026-10-09): the targeting code's widened `sector_distance_sq` moved to
+`navigation/geometry.rs` as the one shared helper; autopilot recall and the
+retarget fallback both use it. Regression test:
+`autopilot_recall_picks_the_nearest_world_across_the_whole_map` in
+`nc-data/tests/autopilot_economy.rs`. Workspace with t011: 2626 passed,
+1 failed; the failure, `piped_dropfile_launch_stays_interactive_without_tty_stdout`,
+is a timing test that failed once under full-suite load and passes alone.
+
 ### t011
 
 nc-data's `campaign_contenders` and `empire_campaign_state` in

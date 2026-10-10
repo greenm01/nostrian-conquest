@@ -3,7 +3,7 @@ mod common;
 use common::production::{
     owned_planet_with_present_production, player_with_empire_name, single_planet_game,
 };
-use nc_data::{CoreGameData, PlanetRecord, ProductionItemKind};
+use nc_data::{CoreGameData, GameStateBuilder, Order, PlanetRecord, ProductionItemKind};
 use nc_engine::{build_seeded_initialized_game, run_maintenance_turn};
 
 fn autopilot_game(planet: PlanetRecord) -> CoreGameData {
@@ -111,4 +111,28 @@ fn autopilot_homeworld_builds_and_commissions_exactly_one_starbase() {
     assert_eq!(stardock_starbases(homeworld), 0);
     assert_eq!(queued_points(homeworld, ProductionItemKind::Starbase), 0);
     assert_eq!(active_bases_at(&game, 1, coords), 1);
+}
+
+#[test]
+fn autopilot_recall_picks_the_nearest_world_across_the_whole_map() {
+    // Squared distances past about 181 sectors overflow i16.
+    let mut game = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    assert_eq!(game.player.records[0].autopilot_flag(), 1);
+    game.planets.records[0].set_coords_raw([250, 250]);
+    game.planets.records[4] = game.planets.records[0].clone();
+    game.planets.records[4].set_coords_raw([10, 1]);
+    let fleet = &mut game.fleets.records[0];
+    fleet.set_current_location_coords_raw([1, 1]);
+    fleet.set_standing_order_kind(Order::HoldPosition);
+    fleet.set_standing_order_target_coords_raw([1, 1]);
+
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+
+    let fleet = &game.fleets.records[0];
+    assert_eq!(fleet.standing_order_kind(), Order::SeekHome);
+    assert_eq!(fleet.standing_order_target_coords_raw(), [10, 1]);
 }

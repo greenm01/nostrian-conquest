@@ -42,6 +42,13 @@ pub(crate) fn rounded_coords_from_exact(exact: [f64; 2], target: [u8; 2]) -> [u8
     }
 }
 
+/// Squared sector distance, wide enough for any pair of map coordinates.
+pub(crate) fn sector_distance_sq(from: [u8; 2], to: [u8; 2]) -> u32 {
+    let dx = u32::from(from[0].abs_diff(to[0]));
+    let dy = u32::from(from[1].abs_diff(to[1]));
+    dx * dx + dy * dy
+}
+
 fn advance_along_route(
     exact_start: [f64; 2],
     route: &PlannedRoute,
