@@ -1,0 +1,235 @@
+{
+  "source_sha256": {
+    "rules.py": "cdfe1d19929b7a69b96219c9ae80d111173cff5db89b19525fdbeb93d35ea84e",
+    "fleet_model.py": "b8faa3456160d4a0d266c3d3b5e9a71f1671ecda0523b264cffa51aee0f47ca9"
+  },
+  "round_cap_cases": [
+    {
+      "rules": "flat-discard",
+      "cap": 1,
+      "solver": {
+        "left": 0.3750000000000005,
+        "right": 0.3750000000000005,
+        "mutual": 0.0,
+        "stalemate": 0.2500000000000001,
+        "exchanges": 3.687500000000003
+      },
+      "finite": {
+        "left": 0.0,
+        "right": 0.0,
+        "mutual": 0.0,
+        "stalemate": 1.0,
+        "exchanges": 1.0
+      }
+    },
+    {
+      "rules": "flat-residual",
+      "cap": 1,
+      "solver": {
+        "left": 0.44806596559045625,
+        "right": 0.4480659655904563,
+        "mutual": 0.10386806881908855,
+        "stalemate": 0.0,
+        "exchanges": 2.8946852540043584
+      },
+      "finite": {
+        "left": 0.0,
+        "right": 0.0,
+        "mutual": 0.0,
+        "stalemate": 1.0000000000000004,
+        "exchanges": 1.0000000000000004
+      }
+    },
+    {
+      "rules": "flat-carry",
+      "cap": 1,
+      "solver": {
+        "left": 0.44455869910905155,
+        "right": 0.44455869910905155,
+        "mutual": 0.1108826017818976,
+        "stalemate": 0.0,
+        "exchanges": 3.557776917355681
+      },
+      "finite": {
+        "left": 0.0,
+        "right": 0.0,
+        "mutual": 0.0,
+        "stalemate": 1.0,
+        "exchanges": 1.0
+      }
+    },
+    {
+      "rules": "flat-discard",
+      "cap": 64,
+      "solver": {
+        "left": 0.3750000000000005,
+        "right": 0.3750000000000005,
+        "mutual": 0.0,
+        "stalemate": 0.2500000000000001,
+        "exchanges": 19.437500000000007
+      },
+      "finite": {
+        "left": 0.37499999999999417,
+        "right": 0.3749999999999941,
+        "mutual": 0.0,
+        "stalemate": 0.2500000000000197,
+        "exchanges": 19.046875000000195
+      }
+    },
+    {
+      "rules": "flat-residual",
+      "cap": 64,
+      "solver": {
+        "left": 0.44806596559045625,
+        "right": 0.4480659655904563,
+        "mutual": 0.10386806881908855,
+        "stalemate": 0.0,
+        "exchanges": 2.8946852540043584
+      },
+      "finite": {
+        "left": 0.44806596559045625,
+        "right": 0.4480659655904563,
+        "mutual": 0.10386806881908854,
+        "stalemate": 7.367341045238409e-22,
+        "exchanges": 2.894685254004359
+      }
+    },
+    {
+      "rules": "flat-carry",
+      "cap": 64,
+      "solver": {
+        "left": 0.44455869910905155,
+        "right": 0.44455869910905155,
+        "mutual": 0.1108826017818976,
+        "stalemate": 0.0,
+        "exchanges": 3.557776917355681
+      },
+      "finite": {
+        "left": 0.44455869910905155,
+        "right": 0.44455869910905155,
+        "mutual": 0.1108826017818976,
+        "stalemate": 0.0,
+        "exchanges": 3.557776917355681
+      }
+    }
+  ],
+  "slow_case": {
+    "AS": 2,
+    "DS": 100,
+    "cap": 64,
+    "solver": {
+      "left": 0.0,
+      "right": 0.0,
+      "mutual": 0.9999999999999667,
+      "stalemate": 0.0,
+      "exchanges": 149.99999999999756
+    },
+    "finite": {
+      "left": 0.0,
+      "right": 0.0,
+      "mutual": 0.0,
+      "stalemate": 0.9999999999999858,
+      "exchanges": 63.99999999999955
+    }
+  },
+  "carry_budget_probe": {
+    "initial_AS": 90,
+    "after_99_hits_AS": 90,
+    "bank": [
+      99,
+      0
+    ],
+    "after_one_more_hit": [
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "after_battle_reset_then_one_hit": [
+      [
+        0,
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ]
+    ]
+  },
+  "convoy": [
+    {
+      "screen": "absolute",
+      "withdrawal": "none",
+      "trials": 10000,
+      "mean_TT_lost": 3.996,
+      "standard_error_TT_lost": 0.04898406214101056,
+      "mean_CA_lost": 1.998,
+      "withdrew": 0.6004
+    },
+    {
+      "screen": "conditional",
+      "withdrawal": "none",
+      "trials": 10000,
+      "mean_TT_lost": 3.996,
+      "standard_error_TT_lost": 0.04898406214101056,
+      "mean_CA_lost": 1.998,
+      "withdrew": 0.6004
+    },
+    {
+      "screen": "absolute",
+      "withdrawal": "pursuit",
+      "trials": 10000,
+      "mean_TT_lost": 4.3297,
+      "standard_error_TT_lost": 0.04740363384225038,
+      "mean_CA_lost": 3.8148,
+      "withdrew": 0.6004
+    },
+    {
+      "screen": "conditional",
+      "withdrawal": "pursuit",
+      "trials": 10000,
+      "mean_TT_lost": 6.0349,
+      "standard_error_TT_lost": 0.04495186610171599,
+      "mean_CA_lost": 2.4058,
+      "withdrew": 0.6004
+    }
+  ],
+  "limitations": [
+    "No combat seed equivalence with Rust.",
+    "Finite-horizon checker reuses the model transition rules.",
+    "Convoy is 5 CA + 10 empty TT at ROE6 against 10 CA ROE10.",
+    "Pursuit is absent or certain; neither models speed or interception."
+  ]
+}
