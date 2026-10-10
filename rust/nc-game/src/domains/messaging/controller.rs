@@ -7,7 +7,9 @@ use crate::domains::messaging::screens::message_compose::{
 use crate::model::{MainMenuSummary, ReviewSummary};
 use crate::reports::has_visible_runtime_messages;
 use crate::screen::{CommandMenu, ScreenId};
-use nc_data::{CoreGameData, QueuedPlayerMail, validate_queue_message_limit};
+use nc_data::{
+    CoreGameData, QueuedPlayerMail, delete_report_blocks_for_viewer, validate_queue_message_limit,
+};
 
 const COMPOSE_TAB_WIDTH: usize = 4;
 
@@ -604,16 +606,11 @@ impl App {
     }
 
     pub fn delete_reviewables(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        // Soft-delete all report blocks in SQLite.
-        self.planet.campaign_store.mark_all_report_blocks_deleted(
-            self.snapshot_id,
+        delete_report_blocks_for_viewer(
+            &mut self.report_block_rows,
+            &self.game_data.player.records,
             self.player.record_index_1_based as u8,
-        )?;
-        for row in &mut self.report_block_rows {
-            if row.is_visible_to_viewer(self.player.record_index_1_based as u8) {
-                row.recipient_deleted = true;
-            }
-        }
+        );
         for mail in &mut self.queued_mail {
             if mail.is_visible_to_recipient(self.player.record_index_1_based as u8) {
                 mail.mark_deleted_by_recipient();

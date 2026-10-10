@@ -2099,11 +2099,12 @@ fn delete_selected_inbox_item(app: &mut DashApp) {
     };
 
     match item.source {
-        DashInboxItemSource::ReportBlock(idx) => {
-            if let Some(block) = app.report_block_rows.get_mut(idx) {
-                block.recipient_deleted = true;
-            }
-        }
+        DashInboxItemSource::ReportBlock(idx) => nc_data::delete_report_block_for_viewer(
+            &mut app.report_block_rows,
+            &app.game_data.player.records,
+            idx,
+            viewer,
+        ),
         DashInboxItemSource::QueuedMail(idx) => {
             if let Some(mail) = app.queued_mail.get_mut(idx) {
                 mail.mark_deleted_by_recipient();

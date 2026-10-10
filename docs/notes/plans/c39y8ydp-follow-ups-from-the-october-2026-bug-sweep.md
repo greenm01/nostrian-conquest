@@ -317,6 +317,25 @@ campaign outlook is now one report per empire. The bug still affects
 broadcast rows already stored in existing campaign databases, which the
 t008 layout continues to export into every empire's chain.
 
+Result (2026-10-09): every delete path writes the whole in-memory row set back
+as a new snapshot, so the SQL `mark_*` updates in `storage/report_blocks.rs`
+were overwritten and the real fault was in memory: the bulk delete, the
+startup-review delete, the `nc-game` inbox delete, and the `nc-helm` inbox
+delete all set `recipient_deleted` on the shared broadcast row. All four now
+call `nc_data::delete_report_block_for_viewer` or
+`delete_report_blocks_for_viewer`. Deleting a broadcast row for one empire
+marks it deleted and adds a copy for each other active human empire, the set
+`layout_classic_results` already sends broadcasts to, under the next free
+block index. The copy therefore moves after that empire's own reports in its
+chain. No schema change: the copies are ordinary per-empire rows, so existing
+`ncgame.db` files load unchanged. The unused SQL `mark_*` functions were
+removed. Tests: `nc-game/tests/update/broadcast_report_delete.rs` covers bulk,
+inbox, and startup-review deletes with two joined empires and the export
+layout, and failed on all three before the fix;
+`nc-data/tests/report_block_delete.rs` covers the shared helper, including a
+targeted row with the broadcast row's block index and a repeat delete. An
+empire that joins after the delete does not get the copy.
+
 ### t027
 
 `nc-game/tests/basic.rs::piped_dropfile_launch_stays_interactive_without_tty_stdout`
@@ -324,6 +343,23 @@ relies on fixed 150-550 ms sleeps and failed several times while the machine's
 load average was 65-70 from parallel builds; it passes when run alone. Replace
 the sleeps with waits on observable progress, such as reading stdout until the
 expected prompt appears, with a generous timeout.
+
+Result (2026-10-09): with 128 busy loops competing for 32 cores, the old test
+failed 10 of 10 runs: the `j` keystroke arrived before the first-time menu was
+read, so "EMPIRE NAME" never appeared. The test now collects the child's stdout
+on a reader thread and sends each key only after the screen it answers is
+drawn: `j` after "FIRST TIME COMMAND", Esc after "EMPIRE NAME", and `q` after
+the reserved-seat prompt "Continue with reserved setup?". It then closes stdin,
+which ends the session, as the old writer thread did. One 30 s deadline covers
+the waits and the exit; a missed prompt kills the child and fails with the
+stdout seen so far. Under the same load the new test passed 20 of 20 runs, and
+its assertions are unchanged. The `collect_stdout` and `wait_for_stdout`
+helpers live in `nc-game/tests/basic.rs`. One other test there still sleeps
+before a key: `nc_door_rejects_schema_mismatch_with_dismissible_error_screen`
+(150 ms, then a 5 s exit timeout). It does not use the helpers, so it was left
+as it is; it passed 10 of 10 runs under the same load. The Windows-only
+`windows_nonblocking_socket_door_terminal_handles_would_block` sleeps on
+purpose to provoke a would-block read.
 
 ### t028
 

@@ -96,6 +96,12 @@ the player client all set the `PLAYER.DAT` pointers from this layout through
 `nc-compat` import reverses it: it walks each empire's chain from `+0x38` and
 tags the report with that empire, so a re-export keeps every chain.
 
+Deleting a report only removes it from the deleting empire's view.
+`nc_data::delete_report_block_for_viewer` replaces a deleted broadcast row
+with a copy for each other active human empire, so their chains keep it, now
+after their own reports. The engine no longer writes broadcast rows; they come
+from older campaign databases and from imported reports no chain reaches.
+
 ## Oracle Evidence
 
 Original ECMAINT runs with two and three joined human empires are preserved

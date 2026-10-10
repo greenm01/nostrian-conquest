@@ -12,7 +12,9 @@ use crate::screen::{
     StartupReviewMode,
 };
 use crate::startup::{StartupPhase, StartupSummary};
-use nc_data::{PlayerAccessMode, TerminalOutcome, layout_classic_results};
+use nc_data::{
+    PlayerAccessMode, TerminalOutcome, delete_report_block_for_viewer, layout_classic_results,
+};
 use nc_session::onboarding::first_time_onboarding_mode as shared_first_time_onboarding_mode;
 
 impl App {
@@ -143,13 +145,12 @@ impl App {
                 .get(block_idx)
                 .and_then(|block| block.runtime_report_index);
             if let Some(row_idx) = row_idx {
-                let bi = self.report_block_rows[row_idx].block_index;
-                self.planet.campaign_store.mark_report_block_deleted(
-                    self.snapshot_id,
+                delete_report_block_for_viewer(
+                    &mut self.report_block_rows,
+                    &self.game_data.player.records,
+                    row_idx,
                     self.player.record_index_1_based as u8,
-                    bi,
-                )?;
-                self.report_block_rows[row_idx].recipient_deleted = true;
+                );
             }
             self.sync_player_review_flags();
             if matches!(self.player_access_mode, PlayerAccessMode::Normal) {
