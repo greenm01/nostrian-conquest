@@ -41,11 +41,16 @@ the fight aborts to Seek Home. A starbase is attacked only as a declared
 enemy or when it protects an assault's target world; starbases never start a
 fight.
 
-**Intercept.** A faster observer always catches its target. Otherwise the
-target empire's awareness of the observer gives it a chance to slip away
-(`100 - 33 × awareness` percent to even try), and the catch then depends on
-a sine draw scaled by the speed ratio; a target at speed 0 is always caught.
-A target that declines to flee fights if its own ROE allows.
+**Intercept.** An observer whose maximum speed exceeds the target's catches
+it every time. Otherwise the target empire's awareness of the observer
+decides whether the observer gets to try at all, with `100 - 33 × awareness`
+percent: on that roll a target at speed 0 is caught, and a moving target is
+caught on a sine draw scaled by the observer's maximum speed over the
+target's speed. When the roll fails there is no catch, and the fight happens
+only if the target's own ROE accepts the observer's strength. So a
+stationary target is caught only by an observer with the higher maximum
+speed, or on the awareness roll; at awareness 3 that roll passes 1% of the
+time, and a target whose ROE declines is otherwise left alone.
 
 **The battle.** Exactly two sides fight: the attacker, and the target with
 its partner (a guarded starbase, or a base's guard fleet). Each ship,
@@ -74,22 +79,30 @@ survives there is no landing. Otherwise 12 softening passes (weighted
 20/25/25/30), then the landing, then ground combat: the defenders shoot
 first at 40-49%, the attackers at 30%, until one side is gone. Blitz: no
 battle and no softening; the transports descend from 25 to 0 in steps of 5
-under fire from every battery, 40% of it aimed at transports, land, and
-fight the same ground combat while the fleet withdraws under fire. A
-captured world is wrecked: an invasion keeps 20-40% of factories and 10-50%
-of goods and loses its batteries; a blitz keeps most of both, scaled by the
-attackers' survival; a world flagged Scorch-Earth is halved again and its
-dock emptied.
+under fire from every battery, land, and fight the same ground combat while
+the fleet withdraws under fire. A battery picking a fresh target aims at a
+transport 40% of the time and otherwise at any ship up to the last
+transport, so transports draw `40% + 60% × transports / ships` of fresh
+picks, and all of them when no warship escorts them. A captured world is
+wrecked: an invasion keeps 20-40% of factories and 10-50% of goods and loses
+its batteries; a blitz keeps most of both and a share of its batteries,
+scaled by the square root of the surviving attackers over the defending
+armies at the start of the assault, capped at 1; a world flagged
+Scorch-Earth is halved again and its dock emptied.
 
 **Aftermath.** A fleet that survives an assault goes to Hold with the ships
 it has left, win or lose. A fleet destroyed in an assault is never saved
 (bug B1): it comes back next year and attacks again. A fleet wiped out in a
 fleet battle is deleted; a scattered fleet goes Seek Home with ROE 0; a
 retreating assault, colonize, or guard fleet aborts to Seek Home, and any
-other retreating fleet keeps its orders. A dead starbase is deleted. A
-civil-disorder empire whose worlds fall below 75% of their potential after
-an assault becomes the AI "Rogues", at war with the attacker only. Stored
-diplomacy never changes. Every assault and battle updates DATABASE.DAT, the
+other retreating fleet keeps its orders. A dead starbase is deleted. Fights
+leave stored diplomacy unchanged, with one exception that follows assaults
+only: after the capture step, if the world's owner is a civil-disorder
+empire whose worlds stand below 75% of their potential, that empire becomes
+the AI "Rogues", and its diplomacy is rewritten to enemy toward the attacker
+and nothing toward anyone else. The test reads the owner after the capture,
+so a captured world belongs to the attacker by then, and a capture never
+converts the old owner. Every assault and battle updates DATABASE.DAT, the
 per-empire intelligence file, and a per-run status table that later Scout
 and View reports read.
 
@@ -129,14 +142,36 @@ percentages.
 NC combat is defined by [nc-combat-spec.md](nc-combat-spec.md) and the
 player manual's combat chapters. The decision to keep it rather than port
 classic's battles is [NC combat stays](../notes/decisions/b5u6lekb-rust-keeps-its-own-combat-system.md).
-NC takes from classic everything up to the first shot, and nothing after it.
+NC takes from classic the road to the first shot, and these contracts that
+cross it:
+
+- Survivor speed. Classic recomputes a survivor's maximum speed from the
+  hulls it has left. NC leaves the stored maximum speed as it was: nothing
+  in its combat or encounter code calls
+  `recompute_max_speed_from_composition`.
+- Strike timing. Classic strikes in the tick the fleet reaches orbit, right
+  after beating the owner's starbase in that tick. NC collects the strikes
+  during the year and resolves them after the 52 ticks (`maint/mod.rs`
+  calls `process_planetary_assaults` after `encounter::run_year`); t052
+  moves them into the tick.
+- Intelligence. Classic gives each side in layer 1 at a world its empire
+  does not own an owner-and-year update after a fleet battle, and the
+  attacker and the old owner a detailed update after an assault. NC records
+  planet intel events at the same points.
+- Ownership consequences. Classic's capture, Rogues conversion,
+  Scorch-Earth, and planet status table follow the fight. NC applies its
+  own capture rules; Rogues, Scorch-Earth, and DATABASE.DAT are economy and
+  intelligence rules outside this comparison.
+- Aborts and the lost tick. A driven-off attacker goes Seek Home, a holding
+  target stays, destroyed units are deleted, and the observer loses its
+  movement for the tick. NC keeps these (encounter spec §5).
 
 **Same as classic.** The tick loop, sighting, awareness, the decision rules
 and the ROE table, the intercept roll, the two-sided battle, the lost tick of
-movement, unchanged diplomacy, and the tick an assault strikes. One
-difference by choice: a sector with no world is nobody's system, where
-classic reads a garbage owner. Rust matches classic's odds, not its random
-sequence.
+movement, and unchanged diplomacy (classic's one exception, the Rogues
+conversion, is an economy rule, below). One difference by choice: a sector
+with no world is nobody's system, where classic reads a garbage owner. Rust
+matches classic's odds, not its random sequence.
 
 **Different.**
 
@@ -167,14 +202,27 @@ sequence.
   Classic runs the full battle, lands only when every battery is dead,
   softens factories, goods, and the dock as well, and fights the ground
   battle by count.
-- Blitz. NC resolves one exchange of battery fire against the escorts,
-  transports first, and a starbase or an enemy combat fleet in orbit blocks
-  it. Classic descends and withdraws under fire, and only the owner's
-  starbase blocks it.
+- Blitz. NC runs one cover-fire exchange of the escorts' bombardment
+  strength against the batteries and removes the batteries it destroys,
+  then one exchange of the surviving batteries against the fleet,
+  transports first, then destroyers, cruisers, and battleships, then the
+  ground battle; a capture keeps the batteries that survived. A starbase or
+  an enemy combat fleet in orbit blocks it. Classic fires no cover fire: the
+  transports descend and withdraw under fire from every battery, and only
+  the owner's starbase blocks it.
 - Arrival. NC requires orbital supremacy, runs one assault class per planet
   per turn (Blitz, then Invade, then Bombard), and lets a world change hands
   at most once a turn. Classic resolves each fleet in its own dispatch slot,
   and a world can change hands more than once in a tick.
+- The orbital gate. Classic makes the attacker beat the owner's starbase in
+  the strike tick before it touches the world, and t054 gives NC the same
+  requirement: a fight against the owner's starbase and layer-1 defenders
+  at the strike tick. What NC runs today is `select_orbital_supremacy_empire`:
+  it ranks the empires present by total combat strength, counting the
+  owner's starbases for the owner, lets the strongest act, gives a tie to
+  the owner and otherwise blocks everyone, and lets a transport-only blitz
+  through when nobody has combat strength and the owner has no starbase.
+  That comparison fires no shots.
 - Failed attacks. NC resolves invade and blitz, and the fleet holds. Classic
   resurrects a destroyed assault fleet (B1) and attacks again next year.
 - Damage. NC writes only destroyed hulls back. Classic has no damage state

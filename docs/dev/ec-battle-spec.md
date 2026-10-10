@@ -325,6 +325,7 @@ while !done:
           else Random(last transport index) + 1         // never an ETAC
        fleet target pick: Random(batteries)+1
        damage d = Random(dmg)+1-armor, NOT clamped at 0 here (bug B3)
+       if side == fleet: D += d                   // as in §2.4
        units fire only if range >= dist
     removal as in §2.4, with transport index bookkeeping (B4); a dead loaded TT kills its army
     if fleet or batteries all gone: done
@@ -340,8 +341,14 @@ while !done:
 apply collateral (§2.5) with D; return landed
 ```
 Timeline:
-1. Batteries fire at distances 20, 15, 10, 5, and 0 on the way in, with 40% of
-   new targets aimed at transports.
+1. Batteries fire at distances 20, 15, 10, 5, and 0 on the way in. The 40%
+   is one branch of the fresh-target pick, not the share of shots that reach
+   transports: the other 60% picks uniformly from unit 1 through the last
+   transport, which includes the transports. With T transports among those N
+   units a fresh pick lands on a transport with probability
+   `0.4 + 0.6 × T/N`: 88% for 20 transports behind 5 warships, and 100% with
+   no warships at all. Kept targets, the focus rule, deaths, and B4 shift
+   later picks.
 2. The armies land at the end of the round at distance 0.
 3. Batteries keep firing at the withdrawing fleet at 0, 5, 10, 15, and 20.
    The fleet no longer fires back.
@@ -383,7 +390,15 @@ always captured (model 97%).]
      - Batteries = 0.
      - Each dock slot becomes `Round(r * slot * (Random(800)/1000 + 0.2))`,
        with one `r = Random_real` drawn for all slots.
-   - **Blitz:** let `f = min(1, sqrt(L / armies_before_assault))`.
+   - **Blitz:** let `f = min(1, sqrt(L / D0))`, where `D0` is the world's
+     armies when the assault began: the count in the planet snapshot that
+     setup `4672` copies to `ds:0x4b6` before any fire (`[0x50e]`, its
+     `+0x58`), which the owner's report prints as "Our defensive force
+     consisted of". It is not the attackers' starting count, and it is
+     taken before the landing's collateral damage. The division is
+     `[0x626] / [0x50e]` at `110a:6c87`, then `Sqrt`, then the cap at 1.0;
+     with `D0 = 0`, `f = 1`. Ten survivors against ten starting defenders
+     give `f = 1` however many armies landed.
      - `P *= f * (Random(150)/1000 + 0.85)`.
      - `G *= f * (Random(450)/1000 + 0.55)`.
      - Batteries = `Round(batteries_left * f * (Random(650)/1000 + 0.35))`.
@@ -449,8 +464,10 @@ left.
   slot is set to 0). The check runs after every assault, even one that did
   no damage, and it reads the owner after the capture step: a captured world
   belongs to the attacker by then, so a capture never converts the old
-  owner. [P: 1 CA bombarding a civil-disorder world whose P stood at 60%,
-  68%, and 41% of potential after the yearly growth and the raid: converted,
+  owner. This is the one way a fight changes stored diplomacy; fleet
+  battles never do (§3.3). [P: 1 CA bombarding a civil-disorder world whose
+  P stood at 60%, 68%, and 41% of potential after the yearly growth and the
+  raid: converted,
   diplomacy `[1,0,0,0]`. At 98%: not converted. A blitz capture of a 40%
   world: not converted. The threshold is 0.75 (`80 00 00 00 00 40` as real48),
   not 0.5.]
@@ -660,7 +677,8 @@ loop until done:
        holding targets stayed with order 0.]
 8. The return value is 1 (the battle happened), and the caller reloads the
    attacker record from disk. That is the encounter spec's lost tick movement.
-   Stored diplomacy never changes.
+   Stored diplomacy never changes; the one post-fight rewrite, the Rogues
+   conversion, follows assaults only (§2.11).
 
 ### 3.4 Starbase fights [C][P]
 A starbase is attacked only through the encounter: by a declared enemy, or
@@ -888,12 +906,21 @@ inherit them, because it does not port the battle (§7).
   - Effect: a destroyed bombard fleet keeps bombing for all the remaining
     passes.
 - **B3. Signed/unsigned damage in the blitz landing (`53bb`).** [C]
-  - Where: `Random(dmg)+1-armor < 0` is compared unsigned, so it is not
-    clamped.
-  - Effect: the target gains HP, and the damage accumulator gains +65535.
-    That inflates the collateral `k` up to the `90 × batteries-destroyed
-    fraction` cap.
-  - Reachable when a battery rolls 1 against a battleship (armor 2).
+  - Where: `110a:5772`, `cmp [bp-0x1a], 0; jae`: the clamp of
+    `Random(dmg)+1-armor` to 0 compares unsigned, so it never fires, and a
+    result of -1 stays 0xffff.
+  - Effect: the hit-point update subtracts the zero-extended word in 32-bit
+    arithmetic and stores the low word, so the target gains one hit point
+    (a fresh BB goes from 30 to 31). Nothing else changes. The damage
+    accumulator `D` is untouched: `110a:577d` adds to it only when the
+    target side is the planet, so it sums the fleet's fire on the
+    batteries, and a fleet shot against a battery (armor 1) is
+    `Random(dmg)+1-1 >= 0`, never negative. Collateral damage is unaffected.
+  - Reachable only when a battery (damage 36) rolls 1 against a battleship
+    (armor 2): one hit in 36 on a BB. The orbital battle `4ba4` clamps with
+    a signed compare (`jge` at `110a:4e91`) and has no such bug.
+  - `tools/classic-model/sim.py` models it this way: the BB heals by one and
+    `D` is unchanged.
 - **B4. Transport index bookkeeping in the landing.** [C] A dead scout or
   ETAC shrinks the transport count instead of the start or end index, which
   biases the 40% "aim at transports" pick.
