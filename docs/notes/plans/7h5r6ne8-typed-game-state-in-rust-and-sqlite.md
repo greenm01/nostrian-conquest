@@ -150,6 +150,24 @@ along the way: Rust's build queue (production points and a kind per slot)
 does not match classic's ten counts by kind; `BuildQueue` carries the bytes
 unchanged for a later task.
 
+## Build queue at the classic edge (t056)
+
+Rust and classic read PLANETS.DAT 0x24..0x37 differently. Rust's build model
+(`nc-engine/src/maint/economics/build.rs`) treats it as ten slots, each a
+byte of production points still owed (0x24 + slot) and a byte of unit kind
+(0x2E + slot); the yearly pass pays each slot from the planet's budget, so a
+build can span years. Classic stores ten u16 counts of units ordered,
+indexed by kind, and completes them all in the yearly pass (see
+[ec-file-formats.md](../../dev/ec-file-formats.md), PLANETS 0x24). Rust's
+build semantics are part of its economy and stay (decision of 2026-10-10:
+keep Rust's economy). So the typed model and the SQLite schema store Rust's
+slots, and the classic codec translates: on import, classic counts become
+slots owing `count x cost`; on export, slots become counts of units by kind.
+A slot that is part-paid has no classic form; t056 decides how to export it
+and records the choice. Until t056, the codec carries Rust's slot bytes at
+0x24, so ECMAINT misreads a Rust game's pending builds and Rust misreads a
+classic game's.
+
 ## Phase 3 — typed SQLite schema
 
 - Rewrite the seven `snapshot_*` tables as one typed column per field
