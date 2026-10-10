@@ -180,6 +180,58 @@ classic game's.
 - Hosted JSON (`nc-nostr/src/state_sync.rs`, built in
   `nc-host/src/game/state.rs`) reads the typed model.
 
+## Phase 3 result (2026-10-10)
+
+Branch `t039p3`. The store keeps core game state in typed columns, one per
+model field, and loads rows straight into the model structs. No core table
+holds classic record bytes; `storage/hex.rs` serves only `report_blocks`.
+`RUNTIME_SCHEMA_VERSION` is 14, and the store refuses an older database
+without migrating it.
+
+The tables live in `nc-data/src/storage/snapshot_core/`, one module per
+file:
+
+- `snapshot_players`, and `snapshot_player_diplomacy` with one row per
+  empire toward each of empires 1 to 25.
+- `snapshot_planets`, with the stardock as eight `stardock_*` columns, and
+  `snapshot_planet_build_slots` with a row for each occupied build slot
+  (slot 0 to 9, points owed, kind).
+- `snapshot_fleets`, with the ship counts as columns; `snapshot_bases`;
+  `snapshot_ipbms`.
+- `snapshot_setup`, and `snapshot_setup_com_ports` with the IRQ and flow
+  control of COM1 to COM4.
+- `snapshot_conquest`, `snapshot_conquest_maintenance_days` (weekday 0 is
+  Sunday), and `snapshot_conquest_previous_rankings` with each empire's
+  production and planet count.
+
+Every column is INTEGER or TEXT. An enum stores its classic code (`mode`,
+`standing_order`, `relation`, `kind`), so a code no program writes survives
+as `Unknown`. Text stores one character per classic byte, as the codec maps
+it. A Real48 is an INTEGER holding its six bytes little-endian, in a column
+named for its field (`x_fraction_real48`). Motion turns on exact bits, and
+an `f64` cannot carry every bit pattern (a zero exponent with mantissa bits
+set); an INTEGER keeps the schema free of BLOBs. The stardock is a struct of
+eight named counts in the model, like a fleet's ship counts, so it gets
+columns rather than a child table.
+
+The schema pin in `nc-data/tests/storage.rs` lists the core tables and
+rejects any column named like hex, raw, bytes, or blob, or typed other than
+INTEGER or TEXT. `nc-data/tests/storage_core.rs` sends all 47 fixture games
+through the store and compares their classic encodings byte for byte, and
+checks Real48 bit patterns and Rust-only values no fixture holds.
+
+The build queue model is Rust's. `Planet::build_queue` is ten `BuildSlot`s,
+each with the points owed and a `ProductionItemKind`; the kind enum moved
+into the model and gained `to_raw`, and an empty slot is `Unknown(0)`. The
+codec still writes the slots at 0x24 and 0x2E, so ECMAINT misreads them
+until t056. The two fixture tests that pinned classic's queue words read
+them from the file.
+
+Hosted JSON (`nc-host/src/game/state.rs`, `nc-nostr/src/state_sync.rs`)
+reads the record accessors, not bytes, so it did not change. The old
+planet columns kept only the low byte of armies and ground batteries
+(0x58, 0x5A); the typed columns hold the full words.
+
 ## Phase 4 — move `.DAT` I/O to the compat edge
 
 - Move `CoreGameData::load`/`save` (`nc-data/src/directory/io.rs`) into
