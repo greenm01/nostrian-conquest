@@ -171,10 +171,10 @@ sequence.
   transports first, and a starbase or an enemy combat fleet in orbit blocks
   it. Classic descends and withdraws under fire, and only the owner's
   starbase blocks it.
-- Arrival. NC requires orbital supremacy, runs one assault class per planet
-  per turn (Blitz, then Invade, then Bombard), and lets a world change hands
-  at most once a turn. Classic resolves each fleet in its own dispatch slot,
-  and a world can change hands more than once in a tick.
+- Arrival. Both resolve each fleet in its own dispatch slot, in the tick it
+  reaches orbit, so a world can change hands more than once in a year. NC
+  lets the owner's starbase block only a force without warships, and does
+  not fight it; classic fights it first.
 - Failed attacks. NC resolves invade and blitz, and the fleet holds. Classic
   resurrects a destroyed assault fleet (B1) and attacks again next year.
 - Damage. NC writes only destroyed hulls back. Classic has no damage state

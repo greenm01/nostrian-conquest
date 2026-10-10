@@ -42,14 +42,14 @@ pub(super) fn is_hostile_order(order: Order) -> bool {
 
 /// What a fleet's movement step did in one tick.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum TickEnd {
+pub(in crate::maint) enum TickEnd {
     /// Still under way, or not moving.
     Underway,
     /// The order's arrival test passed and the order resolved.
     Resolved,
     /// A hostile order's strike test passed. The fleet stops in orbit
-    /// (depth 1.0, speed 0) on its order; the assault phase decides what the
-    /// order becomes.
+    /// (depth 1.0, speed 0) on its order; the strike it makes now decides
+    /// what the order becomes.
     Strike,
 }
 

@@ -297,20 +297,3 @@ pub(super) fn push_planet_intel(
         stardate_week: None,
     });
 }
-
-pub(super) fn mission_kind_for_fleet(
-    fleet: usize,
-    bombard_set: &std::collections::HashSet<usize>,
-    invade_set: &std::collections::HashSet<usize>,
-    blitz_set: &std::collections::HashSet<usize>,
-) -> Option<Mission> {
-    if blitz_set.contains(&fleet) {
-        Some(Mission::BlitzWorld)
-    } else if invade_set.contains(&fleet) {
-        Some(Mission::InvadeWorld)
-    } else if bombard_set.contains(&fleet) {
-        Some(Mission::BombardWorld)
-    } else {
-        None
-    }
-}

@@ -1,5 +1,5 @@
-//! One unit's turn in a tick: step, encounter check (`18ea:13cf`), and
-//! order dispatch.
+//! One unit's turn in a tick: step, encounter check (`18ea:13cf`), order
+//! dispatch, and the strike a hostile order makes when its test passes.
 
 use nc_data::{
     DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
@@ -14,10 +14,11 @@ use super::rules::{
 use super::{Awareness, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
-    BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter, mission_kind_for_order,
-    nearest_owned_planet, push_fleet_contact, push_no_engagement,
+    AssaultEvents, BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter,
+    mission_kind_for_order, nearest_owned_planet, push_fleet_contact, push_no_engagement,
+    resolve_strike,
 };
-use crate::maint::movement::{BaseStep, YearMovement};
+use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
 
 pub(super) struct Year<'a> {
@@ -28,6 +29,7 @@ pub(super) struct Year<'a> {
     pub diplomacy_overrides: &'a [DiplomacyOverride],
     pub movement: YearMovement<'a>,
     pub events: FleetBattlePhaseEvents,
+    pub assault_events: AssaultEvents,
 }
 
 impl Year<'_> {
@@ -57,7 +59,9 @@ impl Year<'_> {
         }
         match kind {
             UnitKind::Fleet if self.units[unit].active => {
-                self.movement.dispatch(game_data, index, tick)?;
+                if self.movement.dispatch(game_data, index, tick)? == TickEnd::Strike {
+                    self.strike(game_data, unit, tick);
+                }
                 if self.movement.removed(index) {
                     self.units[unit].active = false;
                 }
@@ -66,6 +70,18 @@ impl Year<'_> {
             UnitKind::Base => self.movement.dispatch_base(game_data, index, tick),
         }
         Ok(())
+    }
+
+    /// Fleet unit `unit`'s strike test passed: it attacks its target world
+    /// now, as both stand this tick. A fleet the batteries destroy leaves
+    /// play, and a captured world's new owner is what later ticks see.
+    fn strike(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) {
+        let fleet_idx = self.units[unit].index;
+        let mut events = resolve_strike(game_data, self.campaign_seed, fleet_idx);
+        events.stamp(tick);
+        self.assault_events.append(events);
+        self.movement.reload(fleet_idx);
+        self.units[unit].active = game_data.fleets.records[fleet_idx].has_any_force();
     }
 
     /// Move fleet unit `unit`'s table entry to where its record now is; a

@@ -45,8 +45,6 @@ struct ColonizationEvent {
 #[derive(Debug, Default)]
 struct MovementEvents {
     colonization_events: Vec<ColonizationEvent>,
-    /// Bombard/Invade/Blitz fleets whose strike test passed this year.
-    hostile_strike_fleet_indices: Vec<usize>,
     planet_intel_events: Vec<PlanetIntelEvent>,
     pending_observation_events: Vec<PendingObservationEvent>,
     mission_events: Vec<MissionEvent>,
@@ -362,7 +360,9 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // The year's 52 ticks: every fleet and starbase, in a random order,
     // moves, meets the units sharing its sector and depth layer, and runs
-    // its order's arrival test.
+    // its order's arrival test. A hostile fleet strikes in the tick it
+    // reaches orbit, or in the first tick when it starts the year in orbit
+    // on a hostile order.
     let year = encounter::run_year(
         game_data,
         campaign_seed,
@@ -371,6 +371,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     )?;
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;
+    refs.assault_events = year.assault_events;
     let guard_merges: Vec<(FleetMergeEvent, bool)> =
         std::mem::take(&mut refs.movement_events.guard_merges);
     refs.merge_events.extend(
@@ -421,6 +422,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     }
 
     let mut fleet_battle_phase_events = std::mem::take(&mut refs.encounter_events);
+    let mut assault_events = std::mem::take(&mut refs.assault_events);
 
     // Apply colonization results to the in-memory game state.
     let mut colonization_events =
@@ -458,14 +460,6 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // ECMAINT leaves PLAYER 0x46 naming the last base in each chain.
     game_data.sync_last_base_records();
-
-    // Hostile fleets strike in the tick they reach orbit, or in the first
-    // tick of the year when they start it in orbit on a hostile order.
-    let mut assault_events = combat::process_planetary_assaults(
-        game_data,
-        campaign_seed,
-        &refs.movement_events.hostile_strike_fleet_indices,
-    )?;
 
     // Recompute per-player planet count and production score from the in-memory
     // planet records after hostile action, since assault resolution can change ownership.
