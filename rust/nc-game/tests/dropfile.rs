@@ -91,6 +91,14 @@ fn door32_keeps_utf8_names() {
 }
 
 #[test]
+fn door32_trims_leading_whitespace_on_numeric_fields() {
+    let content = door32_content().replace("\r\n45\r\n", "\r\n   45\r\n");
+    let path = write_tmp("DOOR32.SYS", &content);
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
 fn door32_tolerates_short_file_missing_timeout() {
     // Only 8 lines — alias present on line 7, timeout on line 9 is missing.
     let content = "2\r\n4\r\n38400\r\nMystic BBS\r\n3\r\nJohn Smith\r\nStarlord\r\n100\r\n";
@@ -175,6 +183,14 @@ fn door_sys_accepts_lf_endings() {
 }
 
 #[test]
+fn door_sys_trims_leading_whitespace_on_numeric_fields() {
+    let content = door_sys_content().replacen("\r\n45\r\n", "\r\n  45\r\n", 1);
+    let path = write_tmp("DOOR.SYS", &content);
+    let info = parse(&path).expect("should parse");
+    assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
 fn door_sys_tolerates_short_file_missing_timeout() {
     // Only first 10 lines — alias present but timeout (line 19) is absent.
     let content: String = door_sys_content()
@@ -255,6 +271,20 @@ fn chain_txt_seconds_rounded_down_to_minutes() {
     let path = write_tmp("CHAIN.TXT", &content);
     let info = parse(&path).expect("should parse");
     assert_eq!(info.timeout_minutes, Some(45));
+}
+
+#[test]
+fn chain_txt_accepts_wwiv_float_seconds_left() {
+    for (field, minutes) in [("   3600.00", 60), ("3599.99", 59), (" 2700.5 ", 45)] {
+        let content = chain_txt_content().replacen("2700\r\n", &format!("{field}\r\n"), 1);
+        let path = write_tmp("CHAIN.TXT", &content);
+        let info = parse(&path).expect("should parse");
+        assert_eq!(
+            info.timeout_minutes,
+            Some(minutes),
+            "seconds field {field:?}"
+        );
+    }
 }
 
 #[test]

@@ -9,7 +9,7 @@
 //! All parsers are lenient:
 //! - UTF-8 files are read as-is; anything else is decoded as CP437.
 //! - Both CRLF and LF line endings are accepted.
-//! - Trailing whitespace on lines is stripped.
+//! - Leading and trailing whitespace on lines is stripped.
 //! - Short files are tolerated; missing fields are `None`.
 //! - Filenames are matched case-insensitively.
 //!
@@ -123,14 +123,11 @@ pub fn parse(path: &Path) -> Result<DropfileInfo, DropfileError> {
 }
 
 // ---------------------------------------------------------------------------
-// Line splitting — strips CRLF and trailing whitespace
+// Line splitting — strips CRLF and surrounding whitespace
 // ---------------------------------------------------------------------------
 
 fn split_lines(content: &str) -> Vec<&str> {
-    content
-        .split('\n')
-        .map(|line| line.trim_end_matches('\r').trim_end())
-        .collect()
+    content.split('\n').map(str::trim).collect()
 }
 
 /// Return the trimmed content of line `n` (1-based), or `None` if the file is
@@ -232,11 +229,15 @@ fn parse_door_sys(lines: &[&str]) -> DropfileInfo {
 //  13  Sysop flag
 //  14  ANSI flag
 //  15  Remote flag (0=local, 1=remote)
-//  16  Seconds left                 ← converted to minutes (rounded down)
+//  16  Seconds left                 ← converted to minutes (rounded down);
+//      WWIV writes it as a float, e.g. `   3600.00`
 //  17–32  Various BBS system fields
 
 fn parse_chain_txt(lines: &[&str]) -> DropfileInfo {
-    let timeout_minutes = parse_u32(lines, 16).map(|secs| secs / 60);
+    let timeout_minutes = line(lines, 16)
+        .and_then(|value| value.parse::<f64>().ok())
+        .filter(|secs| secs.is_finite() && *secs >= 0.0)
+        .map(|secs| (secs / 60.0) as u32);
     DropfileInfo {
         alias: line(lines, 2).map(ToOwned::to_owned),
         timeout_minutes,
