@@ -166,8 +166,8 @@ pub(crate) fn encode_movement_fraction(sub_acc: u32) -> u8 {
 }
 
 /// Decode the classic raw[0x0F] fraction byte (`9 + raw * 3 / 2`). The
-/// classic encoding is lossy, and malformed imported bytes are clamped to
-/// the 0..=8 accumulator range instead of underflowing.
+/// classic encoding is lossy (a carry of 8 encodes as 0 and decodes as 9),
+/// and malformed imported bytes are clamped to 0..=9 instead of underflowing.
 pub(crate) fn decode_movement_fraction(raw: u8) -> u32 {
-    (9 + i32::from(raw as i8) * 3 / 2).clamp(0, 8) as u32
+    (9 + i32::from(raw as i8) * 3 / 2).clamp(0, 9) as u32
 }

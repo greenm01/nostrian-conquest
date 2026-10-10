@@ -46,12 +46,13 @@ Each year the stepper adds `speed * 8` to a sub-unit accumulator, moves
 classic `FLEETS.DAT` `raw[0x0F]` byte:
 
 - encode: `(carry - 9) * 2 / 3` as a signed byte
-- decode: `9 + raw * 3 / 2`, clamped to `0..=8`
+- decode: `9 + raw * 3 / 2`, clamped to `0..=9`
 
 This classic encoding is kept as the compatibility boundary even though it is
 lossy: carries other than `0`, `3`, and `6` decode slightly high, so speeds
 that are not multiples of 3 run a little fast (speed 1 covers 12 sectors in
-13 years instead of 14). The clamp only guards malformed imported bytes.
+13 years instead of 14). A carry of `8` encodes as `0` and decodes as `9`. The clamp only guards
+malformed imported bytes and leaves every value the engine writes unchanged.
 
 Fleet ETA estimates replay the same encode/decode round trip each simulated
 year, so the predicted ETA matches the actual arrival year on axis-aligned

@@ -295,6 +295,35 @@ fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
 }
 
 #[test]
+fn speed_one_keeps_classic_fraction_byte() {
+    // The classic raw[0x0F] byte stores a carry of 8 as 0, and 0 decodes back
+    // as 9, so a speed-1 fleet keeps writing 0 every year it is under way.
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    for player in &mut game_data.player.records {
+        player.set_autopilot_flag(0);
+    }
+    let fleet = &mut game_data.fleets.records[0];
+    fleet.set_max_speed(9);
+    fleet.set_current_location_coords_raw([1, 9]);
+    fleet.set_standing_order_kind(Order::MoveOnly);
+    fleet.set_standing_order_target_coords_raw([13, 9]);
+    fleet.set_current_speed(1);
+
+    for year in 1..=3 {
+        run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+        assert_eq!(
+            game_data.fleets.records[0].movement_fraction_raw(),
+            0,
+            "year {year}"
+        );
+    }
+}
+
+#[test]
 fn malformed_movement_fraction_does_not_underflow() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
