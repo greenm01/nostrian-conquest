@@ -2,6 +2,12 @@
 members = ["nc-classic", "nc-data", "nc-engine", "nc-compat", "nc-cli", "nc-game", "nc-helm", "nc-session", "nc-harness", "nc-fuzz", "nc-sysop", "nc-connect", "nc-client", "nc-log", "nc-ui", "nc-nostr", "nc-host", "opaline", "nc-nostr-sysop"]
 resolver = "2"
 
+[profile.dev]
+# Backtraces keep file and line; only debugger variable inspection is given up.
+# Full debuginfo made the target dir grow past 100 GB. The `test` profile
+# inherits this.
+debug = "line-tables-only"
+
 [profile.release]
 lto = "thin"
 codegen-units = 1
