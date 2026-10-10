@@ -1,6 +1,8 @@
-use crate::CoreGameData;
+use crate::{CoreGameData, production_item_kind_raw};
 use nc_data::fleet_motion_state::reset_motion_state_for_new_orders;
-use nc_data::{DiplomaticRelation, Order, ProductionItemKind};
+use nc_data::{
+    DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts,
+};
 
 /// Autopilot fleet recall — runs BEFORE movement so idle fleets get SeekHome
 /// orders that movement can act on this turn. Only applies to human players
@@ -39,7 +41,8 @@ pub fn process_autopilot_ai(
 
         game_data.player.records[player_idx].set_tax_rate_raw(posture.tax_rate);
 
-        autopilot_build_queue(game_data, owner_slot, &posture);
+        commission_stardock_starbases(game_data, owner_slot)?;
+        autopilot_build_queue(game_data, owner_slot, &posture)?;
     }
 
     Ok(())
@@ -155,7 +158,35 @@ fn nearest_owned_planet_coords(from: [u8; 2], candidates: &[[u8; 2]]) -> Option<
 
 // ── Build queue ─────────────────────────────────────────────────────────
 
-fn autopilot_build_queue(game_data: &mut CoreGameData, owner_slot: u8, posture: &EmpirePosture) {
+/// Commission completed starbases so they become active bases (and grant the
+/// 5x build capacity) instead of sitting uncommissioned in stardock.
+fn commission_stardock_starbases(
+    game_data: &mut CoreGameData,
+    owner_slot: u8,
+) -> Result<(), Box<dyn std::error::Error>> {
+    for planet_idx in 0..game_data.planets.records.len() {
+        for slot in 0..STARDOCK_SLOT_COUNT {
+            let planet = &game_data.planets.records[planet_idx];
+            if planet.owner_empire_slot_raw() == owner_slot
+                && planet.stardock_count_raw(slot) > 0
+                && planet.stardock_item_kind_current_known(slot) == ProductionItemKind::Starbase
+            {
+                game_data.commission_planet_stardock_slot(
+                    usize::from(owner_slot),
+                    planet_idx + 1,
+                    slot,
+                )?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn autopilot_build_queue(
+    game_data: &mut CoreGameData,
+    owner_slot: u8,
+    posture: &EmpirePosture,
+) -> Result<(), Box<dyn std::error::Error>> {
     let has_starbase_at: std::collections::HashSet<[u8; 2]> = game_data
         .bases
         .records
@@ -211,60 +242,65 @@ fn autopilot_build_queue(game_data: &mut CoreGameData, owner_slot: u8, posture: 
             (armies, batteries, present >= 30)
         };
 
-        // Clear existing build queue.
-        let record = &mut game_data.planets.records[planet_idx];
-        for slot_i in 0..10 {
-            record.set_build_count_raw(slot_i, 0);
-            record.set_build_kind_raw(slot_i, 0);
-        }
+        // Keep existing orders (partial progress and the player's own orders)
+        // and top up only what they do not already cover.
+        let queued = build_queue_unit_counts(planet);
+        let queued_qty = |kind: ProductionItemKind| {
+            queued
+                .get(&production_item_kind_raw(kind))
+                .copied()
+                .unwrap_or(0)
+        };
+        let has_starbase = has_starbase || queued_qty(ProductionItemKind::Starbase) > 0;
+        let queued_armies = queued_qty(ProductionItemKind::Army);
+        let queued_batteries = queued_qty(ProductionItemKind::GroundBattery);
 
-        // Budget: stored goods + one turn of revenue at the computed tax rate.
-        let stored = record.stored_goods_raw();
-        let revenue = (u32::from(present) * u32::from(posture.tax_rate)) / 100;
-        let budget = stored.saturating_add(revenue);
+        // Budget: min(treasury, build capacity) less points already queued.
+        // Economics has already credited this year's revenue to the treasury.
+        let budget = game_data.planet_build_points_left(planet_idx + 1)?;
         let mut spent = 0u32;
-        let mut slot = 0usize;
 
         // Priority 1: Armies to target.
-        if current_armies < army_target && slot < 10 {
-            let needed = (army_target - current_armies) as u32;
+        if current_armies < army_target {
+            let needed = u32::from(army_target - current_armies).saturating_sub(queued_armies);
             let cost_per = ProductionItemKind::Army.build_cost().unwrap_or(2);
             let affordable = budget.saturating_sub(spent) / cost_per;
             let to_build = needed.min(affordable);
-            if to_build > 0 {
-                let points = (to_build * cost_per).min(255) as u8;
-                record.set_build_count_raw(slot, points);
-                record.set_build_kind_raw(slot, 8); // Army
-                spent += u32::from(points);
-                slot += 1;
+            if to_build > 0
+                && game_data
+                    .append_planet_build_order(planet_idx + 1, to_build * cost_per, 8)
+                    .is_ok()
+            {
+                spent += to_build * cost_per;
             }
         }
 
         // Priority 2: Ground batteries to target.
-        if battery_target > 0 && current_batteries < battery_target && slot < 10 {
-            let needed = (battery_target - current_batteries) as u32;
+        if battery_target > 0 && current_batteries < battery_target {
+            let needed =
+                u32::from(battery_target - current_batteries).saturating_sub(queued_batteries);
             let cost_per = ProductionItemKind::GroundBattery.build_cost().unwrap_or(20);
             let affordable = budget.saturating_sub(spent) / cost_per;
             let to_build = needed.min(affordable);
-            if to_build > 0 {
-                let points = (to_build * cost_per).min(255) as u8;
-                record.set_build_count_raw(slot, points);
-                record.set_build_kind_raw(slot, 7); // GroundBattery
-                spent += u32::from(points);
-                slot += 1;
+            if to_build > 0
+                && game_data
+                    .append_planet_build_order(planet_idx + 1, to_build * cost_per, 7)
+                    .is_ok()
+            {
+                spent += to_build * cost_per;
             }
         }
 
-        // Priority 3: Starbase if planet qualifies and has none.
-        if want_starbase && !has_starbase && slot < 10 {
+        // Priority 3: Starbase if planet qualifies and has none built or queued.
+        if want_starbase && !has_starbase {
             let cost = ProductionItemKind::Starbase.build_cost().unwrap_or(50);
             if budget.saturating_sub(spent) >= cost {
-                record.set_build_count_raw(slot, cost as u8);
-                record.set_build_kind_raw(slot, 9); // Starbase
+                let _ = game_data.append_planet_build_order(planet_idx + 1, cost, 9);
             }
         }
 
         // Economy marker tracks the AI's chosen tax rate.
-        record.set_economy_marker_raw(posture.tax_rate);
+        game_data.planets.records[planet_idx].set_economy_marker_raw(posture.tax_rate);
     }
+    Ok(())
 }
