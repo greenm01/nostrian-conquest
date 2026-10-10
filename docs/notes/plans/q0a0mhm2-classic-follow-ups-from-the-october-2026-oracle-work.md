@@ -213,3 +213,14 @@ budgets and no new economic orders as a first step. Codex's analysis of
 classic EC against VBAM and ec4x on that basis is an input to this task,
 kept in the [economy investigation](../investigations/tkce84f0-a-simple-nc-economy-informed-by-classic-ec-vbam-and-ec4x.md),
 which links the model, campaign results, recommendations, and validation limits.
+
+## t059
+
+A mission abort in the encounter handler (`abort_mission` in
+`nc-engine/src/maint/encounter/handler.rs`) still sends the fleet home to
+the nearest owned world by Manhattan distance (`nearest_owned_planet`),
+with a climb-out or hold fallback. Battle retreats and t054's orbital-gate
+abort use `retreat_fleet`, which picks by classic's travel distance
+(`mutators_nearest_world.rs`, t034/t053). Check which picker ECMAINT uses
+for each abort, then make Rust match: one picker unless classic itself
+differs. Found by the t054 agent.
