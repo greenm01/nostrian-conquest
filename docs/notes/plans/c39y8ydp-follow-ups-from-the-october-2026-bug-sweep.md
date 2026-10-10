@@ -95,6 +95,17 @@ handle. Read line 36 when present and non-empty, else line 10. None of the
 documented BBS setups use DOOR.SYS, so few seats should be orphaned; binding
 could try both lines. Needs a decision before implementation.
 
+Result (2026-10-09): DOOR.SYS now reads the handle from line 36, and the
+real name from line 10 when line 36 is missing or blank. When the handle
+binds no seat, binding retries with the real name (in nc-game's
+`resolve_launch_player_binding`), so seats reserved or joined under the real
+name keep working; the alias that bound becomes the caller alias. A new
+caller joins under the handle. Tests: three DOOR.SYS parser cases in
+`nc-game/tests/dropfile.rs` (52 lines with a handle, blank line 36, short
+file) and four binding cases in `cli.rs` (stored and reserved real-name
+seats, handle first, new caller). The sysop manual's drop file section says
+so.
+
 ### t019
 
 On a Windows console, `stdin_ready` waits on `WaitForSingleObject`, which wakes
@@ -104,11 +115,70 @@ defeats the Esc timeout and the new session deadlines. Loop with
 Affects only `nc-game --dropfile` from a Windows console; needs a Windows
 host to verify.
 
+Result (2026-10-09): the console branch of `stdin_ready` now peeks the input
+queue with `PeekConsoleInputW`, discards records that are not key presses
+carrying a character with `ReadConsoleInputW`, and reports ready only when a
+usable key is first; it waits on the handle only while the queue is empty.
+Pipe and socket waits are unchanged. Unit tests cover the record filter and
+the `INPUT_RECORD` layout; the console calls cannot run on Linux. The
+`x86_64-pc-windows-gnu` release build of `nc-door` and `nc-game` is clean.
+Windows runtime verification is pending the user's check below; there is no
+VM kit.
+
+Windows check, in `cmd.exe` from `rust\` on a checkout of `main`. Build,
+make a test campaign, write a local DOOR32.SYS with a 3-minute limit (line 9,
+so the t020 warning shows too; `2` gives a plain 2-minute limit), and run:
+
+```bat
+cargo build --release -p nc-game --bin nc-door --bin nc-game
+cargo build --release -p nc-sysop
+mkdir %TEMP%\nc-t019
+target\release\nc-sysop.exe new-game %TEMP%\nc-t019\t019 --players 4 --seed 1
+(echo 0&echo 0&echo 38400&echo Local&echo 1&echo Test Caller&echo Tester&echo 100&echo 3&echo 1&echo 80&echo 25) > %TEMP%\nc-t019\DOOR32.SYS
+target\release\nc-game.exe --dir %TEMP%\nc-t019\t019 --dropfile %TEMP%\nc-t019\DOOR32.SYS
+```
+
+Use `nc-game.exe`: `nc-door.exe` is built for the windows subsystem and has
+no console. If raw `←[0;37;40m` codes show, the console lacks VT output;
+Windows Terminal renders them, and the input check works either way.
+
+1. On the first-time menu press `Q` for the quit prompt, then `Esc` alone.
+   The prompt must close at once (within about 100 ms). Before the fix it
+   waited for another key.
+2. Press `Q`, then a few arrow keys, then `Esc`. `Esc` must still act at
+   once. Arrows themselves do nothing in a plain console: raw mode does not
+   enable VT input, so they carry no characters.
+3. Press `Q`, then resize the window, Alt+Tab away and back, and click in
+   it. Turn off QuickEdit Mode in the window's Properties first, or a click
+   starts a text selection instead of reaching the program. `Esc` must still
+   act at once.
+4. Leave the session idle after the clicks and focus changes. About one
+   minute after launch the line "Two minutes remain in your time limit for
+   this session." appears above the command line. At three minutes "Your
+   time limit for this session has expired. Returning to the BBS." shows and
+   the program exits; `echo %ERRORLEVEL%` prints `0`. Before the fix, a
+   mouse, focus, or resize event left the session stuck past its limit.
+
 ### t020
 
 Door edge cases: an unterminated telnet `IAC SB` swallows input with no length
 cap; a carrier drop during a render still exits with code 1; the session clock
 starts at door launch, with no warning before time runs out.
+
+Result (2026-10-09): all three are done. A subnegotiation with no `IAC SE`
+within 1024 payload bytes is dropped, and the bytes after it decode as data
+again. A render whose write fails with broken pipe, connection reset, or pty
+EIO ends the session as a hangup with exit code 0; `is_closed_input_error`
+became `is_hangup_error` since it now covers writes too. A session limit
+longer than two minutes draws "Two minutes remain in your time limit for
+this session." once over the last body row, two minutes before the limit,
+saving and restoring the cursor; the next frame redraws the row. The clock
+still starts at door launch, which the sysop manual now states with the
+warning. Tests: `socket_input_resumes_after_an_unterminated_subnegotiation`,
+`socket_input_drops_a_subnegotiation_at_the_length_cap`,
+`carrier_drop_during_a_render_exits_cleanly`, and three session-warning
+tests in `nc-game/tests/door_terminal.rs` that scale the two-minute lead
+down. Workspace: 2640 passed, 0 failed.
 
 ### t021
 
