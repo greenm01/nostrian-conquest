@@ -13,6 +13,7 @@ use crate::terminal::cp437;
 use crate::terminal::{ColorMode, OutputEncoding, Terminal};
 use crate::theme::classic;
 
+use super::door_telnet::TelnetFilter;
 pub use super::door_transport::DoorTransport;
 use super::door_transport::{DoorIo, build_door_io};
 use super::stdout::resolve_color;
@@ -50,7 +51,7 @@ impl DoorTerminal {
             geometry,
             trace_dir,
             frame_seq: 0,
-            decoder: DoorInputDecoder::new(),
+            decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
         })
     }
@@ -243,6 +244,9 @@ fn ansi_bg_code(color: crossterm::style::Color) -> u8 {
 }
 
 struct DoorInputDecoder {
+    /// Present for socket transports, which carry the caller's raw telnet
+    /// stream. Stdio doors get input the BBS has already de-telnetted.
+    telnet: Option<TelnetFilter>,
     pending: VecDeque<u8>,
     sequence_deadline: Option<Instant>,
     orphaned_escape_suffix_deadline: Option<Instant>,
@@ -255,8 +259,9 @@ enum ParseResult {
 }
 
 impl DoorInputDecoder {
-    fn new() -> Self {
+    fn new(transport: DoorTransport) -> Self {
         Self {
+            telnet: (transport != DoorTransport::Stdio).then(TelnetFilter::default),
             pending: VecDeque::new(),
             sequence_deadline: None,
             orphaned_escape_suffix_deadline: None,
@@ -317,7 +322,16 @@ impl DoorInputDecoder {
         trace_dir: Option<&Path>,
         timeout_ms: Option<i32>,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let mut burst = read_burst(input, trace_dir, timeout_ms)?;
+        let raw = read_burst(input, trace_dir, timeout_ms)?;
+        let received = !raw.is_empty();
+        let mut burst = match self.telnet.as_mut() {
+            Some(telnet) => telnet.filter(&raw),
+            None => raw,
+        };
+        if received && burst.is_empty() {
+            // Only protocol bytes arrived; keep waiting for keys.
+            return Ok(true);
+        }
         drop_orphaned_escape_suffix(
             &mut burst,
             self.orphaned_escape_suffix_deadline
@@ -752,6 +766,118 @@ pub fn decode_timed_input_stream_for_test(
         }
     }
     Ok(events)
+}
+
+/// Read keys through the production door decoder from a scripted transport.
+///
+/// Each `(at_ms, bytes)` entry is one separate read from the wire, available
+/// no earlier than `at_ms` after the start. Reading stops when the script is
+/// exhausted.
+#[doc(hidden)]
+pub fn read_scripted_door_keys_for_test(
+    reads: &[(u64, &[u8])],
+    transport: DoorTransport,
+) -> Vec<KeyEvent> {
+    let mut terminal = DoorTerminal {
+        encoding: OutputEncoding::Cp437,
+        color_mode: ColorMode::Ansi16,
+        geometry: ScreenGeometry::local_default(),
+        trace_dir: None,
+        frame_seq: 0,
+        decoder: DoorInputDecoder::new(transport),
+        io: Box::new(ScriptedDoorIo::new(reads)),
+    };
+    let mut keys = Vec::new();
+    while let Ok(key) = terminal.read_key() {
+        keys.push(key);
+    }
+    keys
+}
+
+struct ScriptedDoorIo {
+    start: Instant,
+    reads: VecDeque<(u64, Vec<u8>)>,
+    current: VecDeque<u8>,
+}
+
+impl ScriptedDoorIo {
+    fn new(reads: &[(u64, &[u8])]) -> Self {
+        Self {
+            start: Instant::now(),
+            reads: reads
+                .iter()
+                .map(|(at_ms, bytes)| (*at_ms, bytes.to_vec()))
+                .collect(),
+            current: VecDeque::new(),
+        }
+    }
+
+    /// Move to the next scripted read if it arrives within `timeout_ms`
+    /// (`None` waits for it). Returns whether a read arrived.
+    fn next_read(&mut self, timeout_ms: Option<i32>) -> bool {
+        let wait_limit =
+            timeout_ms.map(|ms| Instant::now() + Duration::from_millis(ms.max(0) as u64));
+        let due = self
+            .reads
+            .front()
+            .map(|(at_ms, _)| self.start + Duration::from_millis(*at_ms));
+        match (due, wait_limit) {
+            (Some(due), Some(limit)) if due > limit => sleep_until(limit),
+            (Some(due), _) => {
+                sleep_until(due);
+                if let Some((_, bytes)) = self.reads.pop_front() {
+                    self.current = bytes.into();
+                }
+                return true;
+            }
+            (None, Some(limit)) => sleep_until(limit),
+            (None, None) => {}
+        }
+        false
+    }
+}
+
+fn sleep_until(deadline: Instant) {
+    std::thread::sleep(deadline.saturating_duration_since(Instant::now()));
+}
+
+impl Read for ScriptedDoorIo {
+    fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
+        if self.current.is_empty() && !self.next_read(None) {
+            return Ok(0);
+        }
+        match (buf.first_mut(), self.current.pop_front()) {
+            (Some(slot), Some(byte)) => {
+                *slot = byte;
+                Ok(1)
+            }
+            _ => Ok(0),
+        }
+    }
+}
+
+impl Write for ScriptedDoorIo {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
+impl DoorIo for ScriptedDoorIo {
+    /// Bytes of one scripted read are ready together; the next read is never
+    /// merged into a zero-timeout poll, so every script entry is its own burst.
+    fn wait_ready(&mut self, timeout_ms: i32) -> io::Result<bool> {
+        if !self.current.is_empty() {
+            return Ok(true);
+        }
+        if timeout_ms == 0 {
+            return Ok(false);
+        }
+        Ok(self.next_read(Some(timeout_ms)))
+    }
 }
 
 fn finalize_timed_pending(

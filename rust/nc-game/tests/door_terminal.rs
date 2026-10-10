@@ -2,9 +2,11 @@ use std::path::PathBuf;
 
 use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use nc_game::screen::{FirstTimeMenuScreen, PlayfieldBuffer, ScreenGeometry};
+use nc_game::terminal::door::DoorTransport;
 use nc_game::terminal::door::{
     decode_fragmented_input_for_test, decode_input_bytes_for_test, decode_input_stream_for_test,
-    decode_timed_input_stream_for_test, serialize_playfield_frame,
+    decode_timed_input_stream_for_test, read_scripted_door_keys_for_test,
+    serialize_playfield_frame,
 };
 use nc_game::terminal::{ColorMode, OutputEncoding};
 
@@ -138,6 +140,19 @@ fn door_serializer_trims_blank_rows_and_trailing_fill_spaces() {
     assert!(frame_text.contains("\x1b[1 q"));
     assert_eq!(frame.iter().filter(|byte| **byte == b' ').count(), 1);
     assert!(!frame_text.contains("\x1b[2;1H\x1b[0;37;40m"));
+}
+
+const SOCKET: DoorTransport = DoorTransport::TcpConnect {
+    host: "127.0.0.1",
+    port: 1,
+};
+
+fn plain(code: KeyCode) -> KeyEvent {
+    KeyEvent::new(code, KeyModifiers::NONE)
+}
+
+fn socket_keys(reads: &[(u64, &[u8])]) -> Vec<KeyEvent> {
+    read_scripted_door_keys_for_test(reads, SOCKET)
 }
 
 fn assert_decode(bytes: &[u8], expected: KeyEvent) {
@@ -353,4 +368,94 @@ fn door_serializer_uses_bbs_safe_selected_row_cyan_background() {
 
     assert!(frame_text.contains("\x1b[0;97;46m01"));
     assert!(!frame_text.contains("\x1b[0;97;106m"));
+}
+
+#[test]
+fn socket_input_drops_telnet_option_negotiation() {
+    // IAC WILL SGA, IAC WILL TTYPE, IAC DO ECHO, IAC DONT LINEMODE.
+    let got = socket_keys(&[(0, b"\xff\xfb\x03\xff\xfb\x18\xff\xfd\x01\xff\xfe\x22y")]);
+    assert_eq!(got, vec![plain(KeyCode::Char('y'))]);
+}
+
+#[test]
+fn socket_input_drops_naws_subnegotiation_for_any_window_size() {
+    for size in [
+        &b"\xff\xfa\x1f\x00\x50\x00\x18\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x84\x00\x2b\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x48\x00\x4b\xff\xf0"[..],
+        &b"\xff\xfa\x1f\x00\x4d\x00\x53\xff\xf0"[..],
+    ] {
+        let mut read = size.to_vec();
+        read.push(b'q');
+        assert_eq!(
+            socket_keys(&[(0, &read)]),
+            vec![plain(KeyCode::Char('q'))],
+            "NAWS report: {size:02x?}"
+        );
+    }
+}
+
+#[test]
+fn socket_input_drops_other_two_byte_telnet_commands() {
+    // IAC NOP, IAC GA, IAC AYT between keys.
+    let got = socket_keys(&[(0, b"a\xff\xf1b\xff\xf9c\xff\xf6d")]);
+    assert_eq!(
+        got,
+        vec![
+            plain(KeyCode::Char('a')),
+            plain(KeyCode::Char('b')),
+            plain(KeyCode::Char('c')),
+            plain(KeyCode::Char('d')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_strips_telnet_commands_split_across_reads() {
+    let got = socket_keys(&[
+        (0, b"\xff"),
+        (5, b"\xfb"),
+        (10, b"\x03j"),
+        (15, b"\xff\xfa\x1f\x00"),
+        (20, b"\x50\x00\x18\xff"),
+        (25, b"\xf0k"),
+        (30, b"\xff\xfa\x18\x00xterm\xff"),
+        (35, b"\xf0l"),
+    ]);
+    assert_eq!(
+        got,
+        vec![
+            plain(KeyCode::Char('j')),
+            plain(KeyCode::Char('k')),
+            plain(KeyCode::Char('l')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_unescapes_doubled_iac_as_data() {
+    // IAC IAC is a literal 0xFF data byte, which is not a key; the following
+    // bytes must still decode normally instead of being read as a command.
+    let got = socket_keys(&[(0, b"\xff\xff\x03"), (5, b"\xff"), (10, b"\xffz")]);
+    assert_eq!(
+        got,
+        vec![
+            KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL),
+            plain(KeyCode::Char('z')),
+        ]
+    );
+}
+
+#[test]
+fn socket_input_drops_negotiation_inside_a_pending_escape_sequence() {
+    let got = socket_keys(&[(0, b"\x1b"), (10, b"\xff\xfb\x03"), (20, b"[A")]);
+    assert_eq!(got, vec![plain(KeyCode::Up)]);
+}
+
+#[test]
+fn stdio_input_is_not_telnet_filtered() {
+    // Stdio hosts hand the door already-processed input; a stray 0xFF must
+    // not swallow the key after it.
+    let got = read_scripted_door_keys_for_test(&[(0, b"\xff\xfbx")], DoorTransport::Stdio);
+    assert_eq!(got, vec![plain(KeyCode::Char('x'))]);
 }
