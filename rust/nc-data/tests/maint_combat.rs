@@ -669,7 +669,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
 }
 
 #[test]
-fn anchored_guard_does_not_sortie_against_deep_space_transit_contact() {
+fn anchored_guard_intercepts_declared_enemy_transit_contact() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [16, 13];
     add_active_starbase(&mut game_data, 1, coords);
@@ -686,6 +686,7 @@ fn anchored_guard_does_not_sortie_against_deep_space_transit_contact() {
     defender.set_scout_count(0);
     defender.set_etac_count(0);
     defender.set_rules_of_engagement(10);
+    defender.set_mission_aux_bytes([1, 1]);
 
     let transit = &mut game_data.fleets.records[4];
     transit.set_current_location_coords_raw(coords);
@@ -705,8 +706,11 @@ fn anchored_guard_does_not_sortie_against_deep_space_transit_contact() {
         .expect("maintenance should succeed");
 
     assert!(
-        events.fleet_battle_events.is_empty(),
-        "anchored guard should not attack a fleet just transiting through deep space in the same sector"
+        events
+            .fleet_battle_events
+            .iter()
+            .any(|event| event.reporting_empire_raw == 1 && event.enemy_empires_raw == [2]),
+        "declared enemies are intercepted wherever encountered, including a guarded system"
     );
     assert!(events.scout_contact_events.iter().any(|event| {
         event.viewer_empire_raw == 1 && event.target_empire_raw == 2 && event.coords == coords
@@ -963,9 +967,11 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
     defender.set_etac_count(0);
     defender.set_rules_of_engagement(6);
 
+    // Blockading the world enters its solar system: a hostile intrusion.
+    // (A fleet merely holding in the sector's deep space would not be.)
     let attacker = &mut game_data.fleets.records[4];
     attacker.set_current_location_coords_raw([16, 13]);
-    attacker.set_standing_order_kind(Order::HoldPosition);
+    attacker.set_standing_order_kind(Order::GuardBlockadeWorld);
     attacker.set_standing_order_target_coords_raw([16, 13]);
     attacker.set_cruiser_count(1);
     attacker.set_destroyer_count(0);
@@ -1214,8 +1220,8 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
 
 #[test]
 fn guard_blockade_does_not_intercept_transit_fleet() {
-    // Guard fleet does NOT intercept transit fleet (MoveOnly) - clean coexistence
-    // Guards only defend against fleets in assault posture (Invade/Bombard/Blitz)
+    // The ROE-2 transit fleet's sensor check sees the guard and breaks off
+    // cleanly before any fire is exchanged.
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [8, 8]; // Deep space, not at a planet
 
@@ -1229,9 +1235,7 @@ fn guard_blockade_does_not_intercept_transit_fleet() {
     guard.set_battleship_count(0);
     guard.set_rules_of_engagement(10); // Always fight
 
-    // Transit fleet - empire 2 just moving through
-    // Even with low ROE, guard won't engage because transit fleets
-    // are not considered hostile unless in assault posture
+    // Transit fleet - empire 2 just moving through with a cautious ROE
     let transit = &mut game_data.fleets.records[4];
     transit.set_current_location_coords_raw(coords);
     transit.set_standing_order_kind(Order::MoveOnly);
@@ -1245,10 +1249,10 @@ fn guard_blockade_does_not_intercept_transit_fleet() {
     let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
         .expect("maintenance should succeed");
 
-    // Guard should NOT engage transit fleet - clean coexistence
+    // The transit fleet withdrew before contact, so no battle was fought.
     assert!(
         events.fleet_battle_events.is_empty(),
-        "guard should not attack transit fleet with MoveOnly order"
+        "cautious transit fleet should break off before the guard engages"
     );
 
     // No pursuit fire or engagement events
@@ -1262,9 +1266,3 @@ fn guard_blockade_does_not_intercept_transit_fleet() {
         "no pursuit fire for transit fleet"
     );
 }
-
-// NOTE: Pursuit fire requires a guard in SystemEntry + attacker in DeepSpaceTransit with assault posture.
-// But assault orders (Invade/Bombard/Blitz) put fleets in SystemEntry context, forcing engagement.
-// This creates a design tension: we want guards to intercept assault fleets but NOT leave station
-// for innocent transit. The current implementation prioritizes guards staying at station.
-// See docs/dev/nc-combat-spec.md for the full pursuit fire rules.

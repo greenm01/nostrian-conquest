@@ -1343,6 +1343,9 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     game_data
         .save(&target)
         .expect("mutated fixture should save");
+    // A fleet merely in the sector's deep space is attacked only by or
+    // against a declared enemy.
+    set_mutual_enemy_in_player_dat(&target, 1, 2);
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1391,6 +1394,9 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     game_data
         .save(&target)
         .expect("mutated fixture should save");
+    // A fleet merely in the sector's deep space is attacked only by or
+    // against a declared enemy.
+    set_mutual_enemy_in_player_dat(&target, 1, 2);
 
     let stdout = run_maint_rust_with_export(&target, 2);
     assert!(stdout.contains("Rust maintenance complete."));

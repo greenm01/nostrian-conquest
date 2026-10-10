@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{CoreGameData, Order, ShipLosses};
 
@@ -34,13 +34,6 @@ pub(super) enum BattleRole {
     Neutral,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum EncounterContext {
-    DeepSpaceTransit,
-    SectorPatrol,
-    SystemEntry,
-}
-
 #[derive(Clone, Debug, Default)]
 pub(super) struct FleetCombatState {
     pub(super) counts: [u32; 7],
@@ -55,6 +48,10 @@ pub(super) struct TaskForce {
     pub(super) state: FleetCombatState,
     pub(super) role: BattleRole,
     pub(super) withdrew_under_roe: bool,
+    /// An anchored defender whose ROE declined to break formation against a
+    /// contact that is not entering its system. It stays on station and only
+    /// fires back if a willing enemy attacks it.
+    pub(super) holding_formation: bool,
     pub(super) engaged_in_battle: bool,
     /// Guards/blockades get one free hold when ROE threshold fails (per spec).
     /// Set to true once this free hold has been used.
@@ -207,57 +204,43 @@ fn task_force_role(
     }
 }
 
-pub(super) fn has_anchored_guard_order(game_data: &CoreGameData, fleet_indices: &[usize]) -> bool {
-    fleet_indices.iter().any(|&idx| {
-        matches!(
-            game_data.fleets.records[idx].standing_order_kind(),
-            Order::GuardStarbase | Order::GuardBlockadeWorld
-        )
-    })
-}
-
-fn has_patrol_order(game_data: &CoreGameData, fleet_indices: &[usize]) -> bool {
+pub(super) fn has_patrol_order(game_data: &CoreGameData, fleet_indices: &[usize]) -> bool {
     fleet_indices
         .iter()
         .any(|&idx| game_data.fleets.records[idx].standing_order_kind() == Order::PatrolSector)
 }
 
-fn fleet_is_at_system_context(fleet: &nc_data::FleetRecord) -> bool {
-    let coords = fleet.current_location_coords_raw();
-    let target = fleet.standing_order_target_coords_raw();
-    if coords != target {
-        return false;
-    }
-    matches!(
-        fleet.standing_order_kind(),
-        Order::SeekHome
-            | Order::GuardStarbase
-            | Order::GuardBlockadeWorld
-            | Order::BombardWorld
-            | Order::InvadeWorld
-            | Order::BlitzWorld
-            | Order::ViewWorld
-            | Order::ScoutSolarSystem
-            | Order::Salvage
-    )
+/// Orders that take a fleet into the solar system at its current location
+/// instead of leaving it in the sector's deep space. View World is excluded:
+/// it scans from the system edge and backs off into deep space.
+fn fleet_enters_system(fleet: &nc_data::FleetRecord) -> bool {
+    fleet.current_location_coords_raw() == fleet.standing_order_target_coords_raw()
+        && matches!(
+            fleet.standing_order_kind(),
+            Order::GuardStarbase
+                | Order::GuardBlockadeWorld
+                | Order::BombardWorld
+                | Order::InvadeWorld
+                | Order::BlitzWorld
+                | Order::ScoutSolarSystem
+        )
 }
 
-pub(super) fn task_force_encounter_context(
-    game_data: &CoreGameData,
-    task_force: &TaskForce,
-) -> EncounterContext {
-    let has_system_context_fleet = task_force
+pub(super) fn task_force_enters_system(game_data: &CoreGameData, task_force: &TaskForce) -> bool {
+    task_force
         .fleet_indices
         .iter()
-        .any(|&idx| fleet_is_at_system_context(&game_data.fleets.records[idx]));
+        .any(|&idx| fleet_enters_system(&game_data.fleets.records[idx]))
+}
 
-    if has_system_context_fleet || task_force.state.counts[IDX_SB] > 0 {
-        EncounterContext::SystemEntry
-    } else if has_patrol_order(game_data, &task_force.fleet_indices) {
-        EncounterContext::SectorPatrol
-    } else {
-        EncounterContext::DeepSpaceTransit
-    }
+pub(super) fn task_force_blockades_system(
+    game_data: &CoreGameData,
+    task_force: &TaskForce,
+) -> bool {
+    task_force.fleet_indices.iter().any(|&idx| {
+        let fleet = &game_data.fleets.records[idx];
+        fleet.standing_order_kind() == Order::GuardBlockadeWorld && fleet_enters_system(fleet)
+    })
 }
 
 pub(super) fn starbase_count_at(game_data: &CoreGameData, coords: [u8; 2], owner: u8) -> u32 {
@@ -285,7 +268,7 @@ pub(super) fn build_task_forces_at_location(
         }
     }
 
-    let mut empires: HashSet<u8> = by_empire.keys().copied().collect();
+    let mut empires: BTreeSet<u8> = by_empire.keys().copied().collect();
     if let Some(planet) = game_data
         .planets
         .records
@@ -313,6 +296,7 @@ pub(super) fn build_task_forces_at_location(
                 state,
                 role,
                 withdrew_under_roe: false,
+                holding_formation: false,
                 engaged_in_battle: false,
                 free_hold_used: false,
             }
