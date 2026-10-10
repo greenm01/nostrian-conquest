@@ -520,6 +520,12 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         colonizer.set_current_speed(colonizer.max_speed());
     }
 
+    // The home guards of empires 1 and 2 hold fire (ROE 0), so the viewer
+    // and the bomber reach orbit whatever the sighting rolls.
+    for &idx in player1_fleets[1..].iter().chain(player2_fleets[1..].iter()) {
+        game_data.fleets.records[idx].set_rules_of_engagement(0);
+    }
+
     seed_runtime_snapshot(&target, &game_data);
 
     let mut saw_view = false;
