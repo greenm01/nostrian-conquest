@@ -157,3 +157,25 @@ The nc-fuzz `engine_invariants_hold_under_hegel` test failed on two agents'
 branches ("event names the wrong fleet" on a BombardWorld mission event)
 and passes on main, three runs in a row. Find out whether it is seed- or
 load-dependent and make it deterministic.
+
+## t050
+
+Document classic's economy in full, as a reference; Rust keeps its own
+economy (user, 2026-10-10). Decode from ECMAINT `1852:0000` and ECGAME:
+tax revenue, growth toward potential (`1852:0457..0560`:
+`ln(1 - sqrt(present/potential))` with a `5 - Random(11)` term), the
+starbase effect (a tax cut of `Random(10)` points at `1852:0526`, with the
+bug that leaks it to later planets), the high-tax penalty, the planet status
+scaling (0x5C: 0, 0.5, 1.0), newly colonized and captured worlds,
+Scorch-Earth, build costs and the build queue, stardock and commissioning,
+treasury, and the rankings. Confirm the formulas with classic probes and
+write `docs/dev/ec-economy-reference.md`, with a "How NC differs" section
+citing `docs/dev/economics.md`. The economy review itself (t051) waits for
+the combat work.
+
+## t051
+
+Review NC's economy (`docs/dev/economics.md`, the manual's Economy chapter
+and Appendix A) against classic's decoded economy (t050), ec4x's economy,
+and the game-balance findings from the combat review; decide what to keep
+and what to change. Starts after the combat mechanics work is settled.
