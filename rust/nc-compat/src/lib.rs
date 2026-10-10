@@ -2,6 +2,8 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+mod core_diff;
+mod core_files;
 mod database_projection;
 mod intel;
 
@@ -13,6 +15,12 @@ use nc_data::{
     derive_campaign_seed_from_runtime, layout_classic_results, load_mail_queue,
 };
 
+pub use core_diff::{
+    CoreFileDiffCount, CoreFileDiffOffsets, core_file_diff_counts, core_file_diff_offsets,
+    core_file_exact_match_errors, current_known_baseline_diff_counts,
+    current_known_baseline_diff_offsets,
+};
+pub use core_files::{GameDirectoryError, load_classic_core_files, save_classic_core_files};
 pub use intel::{extract_player_intel_from_compat_database, merge_player_intel_from_compat};
 pub use nc_classic::{DATABASE_RECORD_SIZE, DatabaseDat, DatabaseRecord};
 
@@ -46,7 +54,7 @@ pub fn import_directory_snapshot_with_seed(
     dir: &Path,
     campaign_seed: Option<u64>,
 ) -> Result<i64, CampaignStoreError> {
-    let game_data = CoreGameData::load(dir)?;
+    let game_data = load_classic_core_files(dir)?;
     let database = load_database_snapshot_or_default(dir, &game_data)?;
     let results_bytes = read_optional_path(dir.join("RESULTS.DAT"))?;
     let queued_mail = load_mail_queue_file(dir)?;
@@ -101,7 +109,7 @@ pub fn export_snapshot_to_dir(
         &with_classic_record_bytes(&report_rows),
     );
     results.apply_to_players(&mut game_data.player.records);
-    game_data.save(dir)?;
+    save_classic_core_files(dir, &game_data)?;
     let planet_intel_by_viewer = store
         .load_snapshot_planet_intel_by_viewer(snapshot_id, game_data.conquest.player_count())?;
     let template_database = load_optional_database_template(dir, &game_data)?;

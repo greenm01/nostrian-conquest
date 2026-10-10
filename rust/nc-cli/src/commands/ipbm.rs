@@ -1,5 +1,6 @@
 use std::path::Path;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{CoreGameData, IPBM_RECORD_SIZE};
 
 use crate::commands::runtime::{
@@ -82,7 +83,7 @@ pub(crate) fn set_ipbm_record_prefix(
 }
 
 pub(crate) fn validate_ipbm(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let data = CoreGameData::load(dir)?;
+    let data = load_classic_core_files(dir)?;
     let ipbm_bytes = data.ipbm.to_bytes();
 
     let errors = data.ipbm_count_length_errors_current_known();

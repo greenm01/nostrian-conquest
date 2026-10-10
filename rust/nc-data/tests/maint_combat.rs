@@ -1,6 +1,7 @@
 mod common;
 
 use common::order_trace::assert_mission_event;
+use nc_compat::load_classic_core_files;
 use nc_data::Real48;
 use nc_data::{
     ContactReportSource, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, Mission,
@@ -14,7 +15,8 @@ fn load_fixture(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
+    load_classic_core_files(&dir)
+        .unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
 }
 
 fn configured_assault_state(order_code: u8) -> CoreGameData {

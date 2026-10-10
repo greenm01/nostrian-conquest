@@ -3,7 +3,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::{
-    CampaignStoreError, CoreGameData, DiplomaticRelation, FleetDetachSelection, GameDirectoryError,
+    CampaignStoreError, CoreGameData, DiplomaticRelation, FleetDetachSelection,
     GameStateMutationError, QueuedPlayerMail,
 };
 
@@ -132,7 +132,6 @@ pub enum TurnSubmissionError {
     Validation(String),
     Mutation(GameStateMutationError),
     Storage(CampaignStoreError),
-    Directory(GameDirectoryError),
 }
 
 impl fmt::Display for TurnSubmissionError {
@@ -142,7 +141,6 @@ impl fmt::Display for TurnSubmissionError {
             Self::Parse(message) | Self::Validation(message) => write!(f, "{message}"),
             Self::Mutation(source) => write!(f, "{source}"),
             Self::Storage(source) => write!(f, "{source}"),
-            Self::Directory(source) => write!(f, "{source}"),
         }
     }
 }
@@ -153,7 +151,6 @@ impl std::error::Error for TurnSubmissionError {
             Self::Io(source) => Some(source),
             Self::Mutation(source) => Some(source),
             Self::Storage(source) => Some(source),
-            Self::Directory(source) => Some(source),
             Self::Parse(_) | Self::Validation(_) => None,
         }
     }
@@ -174,12 +171,6 @@ impl From<GameStateMutationError> for TurnSubmissionError {
 impl From<CampaignStoreError> for TurnSubmissionError {
     fn from(source: CampaignStoreError) -> Self {
         Self::Storage(source)
-    }
-}
-
-impl From<GameDirectoryError> for TurnSubmissionError {
-    fn from(source: GameDirectoryError) -> Self {
-        Self::Directory(source)
     }
 }
 

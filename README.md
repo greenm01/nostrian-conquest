@@ -185,6 +185,15 @@ cd rust
 cargo run -q -p nc-cli -- inspect-messages /tmp/nc-game
 ```
 
+A game directory holds no classic `.DAT` files. Export the store to get them,
+or import a classic directory to start a store from it:
+
+```bash
+cd rust
+cargo run -q -p nc-cli -- db-export /tmp/nc-game /tmp/nc-game-classic
+cargo run -q -p nc-cli -- db-import /tmp/nc-game-classic
+```
+
 Seed one `nc-helm` stress lab with all four map-size tiers:
 
 ```bash

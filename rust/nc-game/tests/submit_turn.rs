@@ -1,10 +1,12 @@
+use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_data::{CampaignStore, CoreGameData, Order};
+use nc_compat::import_directory_snapshot;
+use nc_data::{CampaignStore, Order};
 
 static TEMP_DIR_SEQ: AtomicU64 = AtomicU64::new(0);
 
@@ -26,21 +28,14 @@ fn unique_temp_dir(prefix: &str) -> PathBuf {
     root
 }
 
-fn fixture_copy(prefix: &str) -> PathBuf {
+/// A campaign directory holding only a store seeded from the ECUTIL init
+/// fixture.
+fn fixture_campaign(prefix: &str) -> PathBuf {
     let root = unique_temp_dir(prefix);
-    copy_dir_files(&repo_root().join("fixtures/ecutil-init/v1.5"), &root);
+    let store = CampaignStore::open_default_in_dir(&root).expect("open store");
+    import_directory_snapshot(&store, &repo_root().join("fixtures/ecutil-init/v1.5"))
+        .expect("seed store from fixture");
     root
-}
-
-fn copy_dir_files(source: &Path, target: &Path) {
-    fs::create_dir_all(target).expect("create target dir");
-    for entry in fs::read_dir(source).expect("read source dir") {
-        let entry = entry.expect("dir entry");
-        if !entry.file_type().expect("file type").is_file() {
-            continue;
-        }
-        fs::copy(entry.path(), target.join(entry.file_name())).expect("copy file");
-    }
 }
 
 fn cleanup_dir(path: &Path) {
@@ -48,8 +43,8 @@ fn cleanup_dir(path: &Path) {
 }
 
 #[test]
-fn submit_turn_check_mode_does_not_create_runtime_db() {
-    let target = fixture_copy("nc-game-submit-turn-check");
+fn submit_turn_check_mode_leaves_runtime_state_unchanged() {
+    let target = fixture_campaign("nc-game-submit-turn-check");
     let turn_path = target.join("turn.kdl");
     fs::write(
         &turn_path,
@@ -59,8 +54,8 @@ tax rate=42
 "#,
     )
     .unwrap();
-    let db_path = target.join("ncgame.db");
-    assert!(!db_path.exists());
+    let store = CampaignStore::open_default_in_dir(&target).unwrap();
+    let before = store.load_latest_runtime_state().unwrap().unwrap();
 
     let output = Command::new(env!("CARGO_BIN_EXE_nc-game"))
         .args([
@@ -86,14 +81,16 @@ tax rate=42
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("Validated turn submission"));
     assert!(stdout.contains("mode=check-only"));
-    assert!(!db_path.exists());
+    let after = store.load_latest_runtime_state().unwrap().unwrap();
+    assert_eq!(after.snapshot_id, before.snapshot_id);
+    assert_eq!(after.game_data, before.game_data);
 
     cleanup_dir(&target);
 }
 
 #[test]
 fn submit_turn_apply_updates_runtime_state_and_queued_mail() {
-    let target = fixture_copy("nc-game-submit-turn-apply");
+    let target = fixture_campaign("nc-game-submit-turn-apply");
     let turn_path = target.join("turn.kdl");
     fs::write(
         &turn_path,
@@ -127,7 +124,6 @@ message to=2 subject="Scout" body="Watch the lane."
 
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("Applied turn submission"));
-    assert!(target.join("ncgame.db").exists());
 
     let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
@@ -143,7 +139,7 @@ message to=2 subject="Scout" body="Watch the lane."
 
 #[test]
 fn submit_turn_rejects_cli_and_kdl_player_mismatch() {
-    let target = fixture_copy("nc-game-submit-turn-mismatch");
+    let target = fixture_campaign("nc-game-submit-turn-mismatch");
     let turn_path = target.join("turn.kdl");
     fs::write(
         &turn_path,
@@ -201,10 +197,11 @@ fn root_help_lists_submit_turn_subcommand() {
 
 #[test]
 fn submit_turn_keeps_motion_for_on_station_hostile_orders() {
-    let target = fixture_copy("nc-game-submit-turn-on-station-hostile-order");
+    let target = fixture_campaign("nc-game-submit-turn-on-station-hostile-order");
     let turn_path = target.join("turn.kdl");
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let store = CampaignStore::open_default_in_dir(&target).unwrap();
+    let mut game_data = store.load_latest_runtime_game_data().unwrap();
     let fleet_record_index_1_based = game_data
         .fleets
         .records
@@ -239,9 +236,9 @@ fn submit_turn_keeps_motion_for_on_station_hostile_orders() {
         fleet.set_current_speed(fleet.max_speed());
     }
     let depth_before = game_data.fleets.records[fleet_record_index_1_based - 1].depth();
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    store
+        .save_runtime_state_structured(&game_data, &BTreeSet::new(), &[], &[])
+        .expect("mutated state should save");
 
     fs::write(
         &turn_path,
@@ -278,7 +275,6 @@ fleet record={fleet_record_index_1_based} {{
         String::from_utf8_lossy(&output.stderr)
     );
 
-    let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
     let fleet = &state.game_data.fleets.records[fleet_record_index_1_based - 1];
 

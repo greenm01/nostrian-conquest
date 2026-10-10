@@ -1,3 +1,4 @@
+use nc_compat::load_classic_core_files;
 use nc_data::{BaseDat, BaseRecord, GameStateBuilder, Order};
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, run_maintenance_turn};
 use std::path::Path;
@@ -306,6 +307,6 @@ fn load_fixture(name: &str) -> nc_data::CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    nc_data::CoreGameData::load(&dir)
+    load_classic_core_files(&dir)
         .unwrap_or_else(|err| panic!("failed to load fixture {name}: {err}"))
 }

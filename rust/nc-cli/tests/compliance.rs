@@ -1,7 +1,7 @@
 mod common;
 
 use common::{cleanup_dir, run_nc_cli, run_nc_cli_in_dir, unique_temp_dir};
-use nc_data::CoreGameData;
+use nc_compat::{load_classic_core_files, save_classic_core_files};
 
 #[test]
 fn compliance_report_summarizes_known_post_fixture_failures() {
@@ -66,7 +66,7 @@ fn core_validate_rejects_invalid_fleet_player_inputs() {
     let target = unique_temp_dir("nc-cli-core-validate-player-inputs");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     let fleet = &mut data.fleets.records[0];
     fleet.set_current_speed(fleet.max_speed().saturating_add(2));
     fleet.set_destroyer_count(0);
@@ -74,7 +74,7 @@ fn core_validate_rejects_invalid_fleet_player_inputs() {
     fleet.set_battleship_count(0);
     fleet.set_scout_count(1);
     fleet.set_rules_of_engagement(6);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(
         &["core-validate", target.to_str().unwrap()],
@@ -91,10 +91,10 @@ fn core_validate_rejects_invalid_diplomacy_bytes() {
     let target = unique_temp_dir("nc-cli-core-validate-diplomacy");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
     data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(
         &["core-validate", target.to_str().unwrap()],
@@ -120,10 +120,10 @@ fn core_sync_counts_repairs_player1_count_words() {
     let target = unique_temp_dir("nc-cli-core-sync");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(3);
     data.player.records[0].set_ipbm_chain_head_raw(2);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(
         &["core-validate", target.to_str().unwrap()],
@@ -166,7 +166,7 @@ fn core_sync_baseline_repairs_control_and_count_fields() {
     let target = unique_temp_dir("nc-cli-core-sync-baseline");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(3);
     data.player.records[0].set_ipbm_chain_head_raw(2);
     data.setup.set_version_tag(b"BAD!!");
@@ -174,7 +174,7 @@ fn core_sync_baseline_repairs_control_and_count_fields() {
     data.conquest.set_game_year(2999);
     data.conquest.set_player_count(9);
     data.conquest.set_maintenance_schedule_enabled([false; 7]);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let sync_stdout = run_nc_cli_in_dir(
         &["core-sync-baseline", target.to_str().unwrap()],
@@ -198,10 +198,10 @@ fn core_sync_initialized_fleets_repairs_fleet_baseline() {
     let target = unique_temp_dir("nc-cli-core-sync-fleets");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.fleets.records.clear();
     data.fleets.records.push(nc_data::FleetRecord::new_zeroed());
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let sync_stdout = run_nc_cli_in_dir(
         &["core-sync-initialized-fleets", target.to_str().unwrap()],
@@ -227,11 +227,11 @@ fn core_sync_initialized_planets_repairs_planet_payload_baseline() {
     let target = unique_temp_dir("nc-cli-core-sync-planets");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
     data.planets.records[0].set_army_count_raw(9);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let sync_stdout = run_nc_cli_in_dir(
         &["core-sync-initialized-planets", target.to_str().unwrap()],
@@ -256,7 +256,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     let target = unique_temp_dir("nc-cli-core-sync-current-known");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.player.records[0].set_first_base_record_raw(7);
     data.player.records[0].set_ipbm_chain_head_raw(4);
     data.setup.set_version_tag(b"BAD!!");
@@ -266,7 +266,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     data.fleets.records.push(nc_data::FleetRecord::new_zeroed());
     data.planets.records[14].set_stored_goods(3.0);
     data.planets.records[0].set_status_or_name_summary_raw("Broken");
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let sync_stdout = run_nc_cli_in_dir(
         &["core-sync-current-known-baseline", target.to_str().unwrap()],

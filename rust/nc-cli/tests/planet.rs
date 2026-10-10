@@ -4,6 +4,7 @@ use common::{
     cleanup_dir, copy_fixture_dir, export_campaign_db, repo_root, run_nc_cli, run_nc_cli_in_dir,
     unique_temp_dir, without_unread_bytes,
 };
+use nc_compat::load_classic_core_files;
 use std::fs;
 
 #[test]
@@ -245,8 +246,8 @@ fn planet_init_original_updates_runtime_store_for_db_export() {
         fs::read(source.join("PLANETS.DAT")).unwrap(),
         fs::read(exported.join("PLANETS.DAT")).unwrap()
     );
-    let exported_data = nc_data::CoreGameData::load(&exported)
-        .expect("exported original-sample topology should load");
+    let exported_data =
+        load_classic_core_files(&exported).expect("exported original-sample topology should load");
     assert_eq!(exported_data.planets.records[0].coords_raw(), [0x06, 0x01]);
     assert_eq!(exported_data.planets.records[0].owner_empire_slot_raw(), 0);
     assert_eq!(exported_data.planets.records[4].coords_raw(), [0x07, 0x04]);

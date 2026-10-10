@@ -1,6 +1,7 @@
 //! Scenarios for the encounter tests: the four-empire `ecmaint-post`
 //! fixture with fleets placed by hand, run over many seeds.
 
+use nc_compat::load_classic_core_files;
 use nc_data::{
     CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents, Order, Real48,
 };
@@ -106,7 +107,7 @@ pub fn board() -> CoreGameData {
         .join("../../fixtures")
         .join("ecmaint-post")
         .join("v1.5");
-    let mut game_data = CoreGameData::load(&dir).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
     game_data.bases.records.clear();
     game_data
 }

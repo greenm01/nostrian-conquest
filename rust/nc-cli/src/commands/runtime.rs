@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
 
-use nc_compat::import_directory_snapshot;
+use nc_compat::{import_directory_snapshot, load_classic_core_files, save_classic_core_files};
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME,
     PlanetIntelSnapshot,
@@ -78,7 +78,7 @@ pub(crate) fn load_runtime_game_data(
         }
     }
 
-    Ok(CoreGameData::load(dir)?)
+    Ok(load_classic_core_files(dir)?)
 }
 
 pub(crate) fn export_runtime_snapshot_in_place(
@@ -88,16 +88,16 @@ pub(crate) fn export_runtime_snapshot_in_place(
     Ok(())
 }
 
+/// Write the store's core files over `dir`, except CONQUEST.DAT: a replayable
+/// scenario keeps the replay context's CONQUEST.DAT as copied.
 pub(crate) fn export_runtime_core_projection_in_place(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let game_data = load_runtime_game_data(dir)?;
-    fs::write(dir.join("PLAYER.DAT"), game_data.player.to_bytes())?;
-    fs::write(dir.join("PLANETS.DAT"), game_data.planets.to_bytes())?;
-    fs::write(dir.join("FLEETS.DAT"), game_data.fleets.to_bytes())?;
-    fs::write(dir.join("BASES.DAT"), game_data.bases.to_bytes())?;
-    fs::write(dir.join("IPBM.DAT"), game_data.ipbm.to_bytes())?;
-    fs::write(dir.join("SETUP.DAT"), game_data.setup.to_bytes())?;
+    let conquest_path = dir.join("CONQUEST.DAT");
+    let replay_conquest = fs::read(&conquest_path)?;
+    save_classic_core_files(dir, &game_data)?;
+    fs::write(conquest_path, replay_conquest)?;
     Ok(())
 }
 

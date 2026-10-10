@@ -3,13 +3,14 @@
 //! neighbours. ECGAME's Starbase Command Move cancels the builds that rely
 //! on the moved base. See docs/dev/ec-starbase-spec.md.
 
+use nc_compat::load_classic_core_files;
 use nc_data::{BaseRecord, CoreGameData, Real48};
 use std::path::Path;
 
 fn starbase_fixture() -> CoreGameData {
     let dir =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-starbase-pre/v1.5");
-    CoreGameData::load(&dir).expect("fixture loads")
+    load_classic_core_files(&dir).expect("fixture loads")
 }
 
 /// A base of empire 1 at rest in orbit at `coords`, not yet chained.

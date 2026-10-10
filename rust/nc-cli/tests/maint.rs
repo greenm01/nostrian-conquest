@@ -6,7 +6,7 @@ use common::{
     run_maint_rust_with_export, run_maint_rust_with_export_and_seed, run_nc_cli_in_dir,
     set_mutual_enemy_in_player_dat, unique_temp_dir, write_mutual_enemy_diplomacy,
 };
-use nc_compat::DatabaseDat;
+use nc_compat::{DatabaseDat, load_classic_core_files, save_classic_core_files};
 use nc_data::CoreGameData;
 use nc_data::Order;
 use nc_data::Real48;
@@ -105,7 +105,7 @@ fn zero_all_fleets(game_data: &mut CoreGameData) {
 }
 
 fn configure_delayed_invade_arrival_directory(target: &std::path::Path) {
-    let mut game_data = CoreGameData::load(target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(target).expect("fixture should load");
     let coords = [15, 13];
 
     zero_all_fleets(&mut game_data);
@@ -140,11 +140,11 @@ fn configure_delayed_invade_arrival_directory(target: &std::path::Path) {
     attacker.set_etac_count(0);
     attacker.set_at_rest_motion();
 
-    game_data.save(target).expect("mutated fixture should save");
+    save_classic_core_files(target, &game_data).expect("mutated fixture should save");
 }
 
 fn configure_dominant_invalidated_invade_directory(target: &std::path::Path) {
-    let mut game_data = CoreGameData::load(target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(target).expect("fixture should load");
     let coords = [15, 13];
 
     game_data.bases.records.clear();
@@ -195,7 +195,7 @@ fn configure_dominant_invalidated_invade_directory(target: &std::path::Path) {
     defender.set_current_speed(0);
     defender.set_destroyer_count(1);
 
-    game_data.save(target).expect("mutated fixture should save");
+    save_classic_core_files(target, &game_data).expect("mutated fixture should save");
 }
 
 #[test]
@@ -207,7 +207,7 @@ fn maint_rust_econ_updates_database_owner_intel_from_post_combat_planet_state() 
     assert!(stdout.contains("Running Rust maintenance on:"));
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
 
@@ -253,21 +253,23 @@ fn maint_rust_requires_explicit_export_to_project_snapshot_into_directory() {
     let target = unique_temp_dir("nc-cli-maint-rust-in-place-classic");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let pre = CoreGameData::load(&target).expect("fixture should load");
+    let pre = load_classic_core_files(&target).expect("fixture should load");
     let stdout = run_nc_cli_in_dir(
         &["maint-rust", target.to_str().unwrap(), "1"],
         common::rust_workspace(),
     );
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let post = CoreGameData::load(&target).expect("maint-rust should leave directory untouched");
+    let post =
+        load_classic_core_files(&target).expect("maint-rust should leave directory untouched");
     assert_eq!(post.conquest.game_year(), pre.conquest.game_year());
     assert!(!target.join("ECGAME.EXE").exists());
     assert!(!target.join("ECMAINT.EXE").exists());
 
     common::export_campaign_db(&target, &target);
 
-    let post = CoreGameData::load(&target).expect("explicit export should project latest snapshot");
+    let post =
+        load_classic_core_files(&target).expect("explicit export should project latest snapshot");
     assert_eq!(post.conquest.game_year(), pre.conquest.game_year() + 1);
     assert!(target.join("DATABASE.DAT").exists());
     assert!(target.join("RESULTS.DAT").exists());
@@ -284,12 +286,10 @@ fn maint_rust_ignores_live_classic_directory_changes_until_explicit_import() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
     common::import_campaign_db(&target);
 
-    let mut classic_side = CoreGameData::load(&target).expect("fixture should load");
+    let mut classic_side = load_classic_core_files(&target).expect("fixture should load");
     classic_side.player.records[1].set_assigned_player_handle_raw("SYSOP");
     classic_side.player.records[1].set_controlled_empire_name_raw("foo");
-    classic_side
-        .save(&target)
-        .expect("classic-side edit should save");
+    save_classic_core_files(&target, &classic_side).expect("classic-side edit should save");
 
     let stdout = run_nc_cli_in_dir(
         &["maint-rust", target.to_str().unwrap(), "1"],
@@ -299,7 +299,7 @@ fn maint_rust_ignores_live_classic_directory_changes_until_explicit_import() {
 
     common::export_campaign_db(&target, &target);
 
-    let post = CoreGameData::load(&target).expect("exported runtime should load");
+    let post = load_classic_core_files(&target).expect("exported runtime should load");
     assert_ne!(
         post.player.records[1].assigned_player_handle_summary(),
         "SYSOP"
@@ -382,7 +382,7 @@ fn maint_rust_fleet_battle_generates_results_report_from_battle_events() {
         !results.is_empty(),
         "RESULTS.DAT should contain battle summaries"
     );
-    let post = CoreGameData::load(&target).expect("maint-rust output should load");
+    let post = load_classic_core_files(&target).expect("maint-rust output should load");
     let text = String::from_utf8_lossy(&results);
     assert!(
         text.contains("ALERT: Enemy fleet contact!")
@@ -737,7 +737,7 @@ fn maint_rust_routed_reports_set_classic_pending_flags() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         game_data.player.records[0].classic_reports_pending_flag_raw(),
         1
@@ -810,7 +810,7 @@ fn maint_rust_absorbs_small_game_sidecar_diplomacy_into_player_dat() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         game_data.player.records[0].diplomatic_relation_toward(2),
         Some(nc_data::DiplomaticRelation::Enemy)
@@ -850,7 +850,7 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar_for_large_games() {
     );
     assert!(stdout.contains("seed=1515"));
 
-    let mut game_data = CoreGameData::load(&target).expect("generated game should load");
+    let mut game_data = load_classic_core_files(&target).expect("generated game should load");
     let fleet_a = &mut game_data.fleets.records[0];
     fleet_a.set_current_location_coords_raw([8, 8]);
     fleet_a.set_standing_order_kind(Order::ScoutSector);
@@ -887,7 +887,7 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar_for_large_games() {
     game_data
         .set_stored_diplomatic_relation(9, 1, nc_data::DiplomaticRelation::Enemy)
         .expect("player 9 -> 1 diplomacy should set");
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -928,7 +928,7 @@ fn maint_rust_updates_large_game_database_from_scout_intel_event() {
     );
     assert!(stdout.contains("seed=1515"));
 
-    let mut game_data = CoreGameData::load(&target).expect("generated game should load");
+    let mut game_data = load_classic_core_files(&target).expect("generated game should load");
     zero_all_fleets(&mut game_data);
     let (planet_idx, coords, owner_empire_raw) = game_data
         .planets
@@ -946,12 +946,12 @@ fn maint_rust_updates_large_game_database_from_scout_intel_event() {
     scout.set_current_speed(3);
     scout.set_depth(Real48::ZERO);
     scout.set_scout_count(1);
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let planet_count = game_data.planets.records.len();
@@ -987,7 +987,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
     );
     assert!(stdout.contains("seed=1515"));
 
-    let mut game_data = CoreGameData::load(&target).expect("generated game should load");
+    let mut game_data = load_classic_core_files(&target).expect("generated game should load");
     let (planet_idx, coords, owner_empire_raw) = game_data
         .planets
         .records
@@ -1017,7 +1017,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
     scout.set_army_count(0);
     scout.set_etac_count(0);
     scout.set_scout_count(1);
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1034,7 +1034,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
         "Rust maint should not reproduce the original ECMAINT lone-scout abort bug"
     );
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let planet_count = game_data.planets.records.len();
@@ -1051,7 +1051,7 @@ fn maint_rust_blockade_arrival_persists_enemy_relation_in_player_dat() {
     let target = unique_temp_dir("nc-cli-maint-rust-blockade-escalation");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let coords = game_data
         .planets
         .records
@@ -1066,14 +1066,12 @@ fn maint_rust_blockade_arrival_persists_enemy_relation_in_player_dat() {
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(3);
     fleet.set_depth(Real48::ZERO);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         game_data.player.records[0].diplomatic_relation_toward(2),
         Some(nc_data::DiplomaticRelation::Enemy)
@@ -1097,7 +1095,7 @@ fn maint_rust_without_enemy_declaration_reports_contact_without_forcing_battle()
     let target = unique_temp_dir("nc-cli-maint-rust-peaceful-contact");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let fleet_a = &mut game_data.fleets.records[0];
     fleet_a.set_current_location_coords_raw([8, 8]);
     fleet_a.set_standing_order_kind(Order::ScoutSector);
@@ -1128,9 +1126,7 @@ fn maint_rust_without_enemy_declaration_reports_contact_without_forcing_battle()
     fleet_b.set_scout_count(0);
     fleet_b.set_etac_count(0);
     fleet_b.set_rules_of_engagement(10);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1184,7 +1180,7 @@ fn maint_rust_persists_sidecar_diplomacy_into_player_dat_for_large_games() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         game_data.player.records[0].diplomatic_relation_toward(9),
         Some(nc_data::DiplomaticRelation::Enemy)
@@ -1211,7 +1207,7 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     zero_all_fleets(&mut game_data);
 
     let battle_coords = [10u8, 10u8];
@@ -1241,9 +1237,7 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
         f.set_destroyer_count(50);
         f.set_rules_of_engagement(0);
     }
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1267,7 +1261,7 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     zero_all_fleets(&mut game_data);
 
     let battle_coords = [11u8, 11u8];
@@ -1291,9 +1285,7 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
         f.set_troop_transport_count(2);
         f.set_army_count(0);
     }
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1333,7 +1325,7 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-lost-starbase");
     copy_fixture_dir("fixtures/ecmaint-starbase-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let starbase_coords = game_data.bases.records[0].coords_raw();
     let attacker = &mut game_data.fleets.records[4];
     attacker.set_current_location_coords_raw(starbase_coords);
@@ -1348,14 +1340,14 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     attacker.set_scout_count(0);
     attacker.set_troop_transport_count(0);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
     // A fleet merely in the sector's deep space is attacked only by or
     // against a declared enemy.
     set_mutual_enemy_in_player_dat(&target, 1, 2);
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    // Whether the attacker finds and destroys the base within one year turns
+    // on the campaign seed's rolls; pin one where it does.
+    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
@@ -1364,7 +1356,7 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     assert!(text.contains("ALERT: Starbase contact lost!"));
     assert!(text.contains("Enemy losses:"));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(game_data.player.records[0].first_base_record_raw(), 0);
     assert!(
         game_data
@@ -1384,7 +1376,7 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     let target = unique_temp_dir("nc-cli-maint-rust-attacker-starbase-report");
     copy_fixture_dir("fixtures/ecmaint-starbase-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let starbase_coords = game_data.bases.records[0].coords_raw();
     let attacker = &mut game_data.fleets.records[4];
     attacker.set_current_location_coords_raw(starbase_coords);
@@ -1399,9 +1391,7 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     attacker.set_scout_count(0);
     attacker.set_troop_transport_count(0);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
     // A fleet merely in the sector's deep space is attacked only by or
     // against a declared enemy.
     set_mutual_enemy_in_player_dat(&target, 1, 2);
@@ -1449,15 +1439,13 @@ fn maint_rust_exports_empty_messages_dat_when_classic_mail_is_not_in_queued_mail
     let target = unique_temp_dir("nc-cli-maint-rust-preserve-classic-mail");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     for fleet in &mut game_data.fleets.records {
         fleet.set_standing_order_kind(Order::HoldPosition);
         fleet.set_current_speed(0);
         fleet.set_depth(Real48::ZERO);
     }
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let classic_mail = b"\x18this is a message to you\x00classic-payload".to_vec();
     fs::write(target.join("MESSAGES.DAT"), &classic_mail).expect("should seed classic mail");
@@ -1482,15 +1470,13 @@ fn maint_rust_colonization_blocked_by_owner_generates_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-colonize-blocked");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let blocked = &mut game_data.planets.records[13];
     blocked.set_owner_empire_slot_raw(2);
     blocked.set_ownership_status_raw(2);
     blocked.set_planet_name("TargetPrime");
     blocked.set_army_count_raw(10);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1514,7 +1500,7 @@ fn maint_rust_scout_sector_generates_results_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-scout-sector");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let scout = &mut game_data.fleets.records[0];
     scout.set_standing_order_kind(Order::ScoutSector);
     scout.set_standing_order_target_coords_raw([15, 13]);
@@ -1522,9 +1508,7 @@ fn maint_rust_scout_sector_generates_results_report() {
     scout.set_etac_count(0);
     // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
     scout.set_mission_aux_bytes([0, 0]);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1548,7 +1532,7 @@ fn maint_rust_scout_system_generates_results_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-scout-system");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let scout = &mut game_data.fleets.records[0];
     scout.set_standing_order_kind(Order::ScoutSolarSystem);
     scout.set_standing_order_target_coords_raw([15, 13]);
@@ -1558,9 +1542,7 @@ fn maint_rust_scout_system_generates_results_report() {
     scout.recompute_max_speed_from_composition();
     scout.set_current_speed(scout.max_speed());
     game_data.planets.records[13].set_stardock_count_raw(0, 2);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1578,7 +1560,7 @@ fn maint_rust_scout_system_generates_results_report() {
     assert!(text.contains("2 destroyers"));
     assert!(text.contains("System(15,13)"));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let viewer_record = database.record(13, 0, game_data.planets.records.len());
@@ -1599,7 +1581,7 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     let target = unique_temp_dir("nc-cli-maint-rust-view-world");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let viewer = &mut game_data.fleets.records[0];
     viewer.set_standing_order_kind(Order::ViewWorld);
     viewer.set_standing_order_target_coords_raw([15, 13]);
@@ -1608,9 +1590,7 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     // Cruiser speed settles in orbit one sector away within the year.
     viewer.recompute_max_speed_from_composition();
     viewer.set_current_speed(viewer.max_speed());
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1621,7 +1601,7 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     // Strings near the 75-byte chunk boundary may be split across records in the new Stardate
     // header format. Check for unambiguous early-body content instead.
     assert!(text.contains("entered System(15,13)") || text.contains("long range"));
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let expected_potential =
         game_data.planets.records[13].potential_production_points_current_known();
     assert!(text.contains(&format!("potential of {expected_potential} points")));
@@ -1679,7 +1659,7 @@ fn maint_rust_refreshes_database_between_turns_for_route_hazards() {
     mover.set_standing_order_target_coords_raw([6, 2]);
     mover.set_current_speed(3);
 
-    game_data.save(&target).expect("baseline should save");
+    save_classic_core_files(&target, &game_data).expect("baseline should save");
 
     let database = DatabaseDat::generate_from_planets_and_year(
         &game_data
@@ -1698,7 +1678,7 @@ fn maint_rust_refreshes_database_between_turns_for_route_hazards() {
     assert!(stdout.contains("Turn 1: year 3001"));
     assert!(stdout.contains("Turn 2: year 3002"));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     let mover_location = game_data.fleets.records[1].current_location_coords_raw();
     assert_ne!(
         mover_location,
@@ -1720,16 +1700,14 @@ fn maint_rust_guard_starbase_generates_arrival_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-guard-starbase");
     copy_fixture_dir("fixtures/ecmaint-starbase-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let coords = game_data.bases.records[0].coords_raw();
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_current_location_coords_raw([coords[0].saturating_sub(1), coords[1]]);
     fleet.set_standing_order_kind(Order::GuardStarbase);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(3);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1747,7 +1725,7 @@ fn maint_rust_guard_blockade_generates_arrival_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-guard-blockade");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let guard = &mut game_data.fleets.records[0];
     guard.set_standing_order_kind(Order::GuardBlockadeWorld);
     guard.set_standing_order_target_coords_raw([15, 13]);
@@ -1757,9 +1735,7 @@ fn maint_rust_guard_blockade_generates_arrival_report() {
     guard.set_destroyer_count(1);
     guard.recompute_max_speed_from_composition();
     guard.set_current_speed(guard.max_speed());
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1778,7 +1754,7 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     let target = unique_temp_dir("nc-cli-maint-rust-salvage");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let (planet_idx, target_coords) = game_data
         .planets
         .records
@@ -1807,9 +1783,7 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     fleet.set_etac_count(0);
     fleet.set_x_fraction(Real48::HALF);
     fleet.set_depth(Real48::ZERO);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
     let db_path = target.join("ncgame.db");
     if db_path.exists() {
         fs::remove_file(&db_path).expect("stale ncgame.db should be removable");
@@ -1823,7 +1797,7 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     assert!(text.contains("Salvage mission report"));
     assert!(text.contains("yield 10 production point(s)"));
 
-    let game_data = CoreGameData::load(&target).expect("maint-rust output should load");
+    let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(game_data.fleets.records.len(), 15);
     assert_eq!(
         game_data.planets.records[planet_idx].stored_production_points(),
@@ -1858,7 +1832,7 @@ fn maint_rust_bombardment_does_not_refresh_database_intel() {
     let target = unique_temp_dir("nc-cli-maint-rust-bombard-database");
     copy_fixture_dir("fixtures/ecmaint-bombard-arrive/v1.5", &target);
 
-    let game_data = CoreGameData::load(&target).expect("fixture should load");
+    let game_data = load_classic_core_files(&target).expect("fixture should load");
     let database = DatabaseDat::generate_from_planets_and_year(
         &game_data
             .planets
@@ -1875,7 +1849,7 @@ fn maint_rust_bombardment_does_not_refresh_database_intel() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let viewer_record = database.record(13, 0, reloaded.planets.records.len());
@@ -1897,7 +1871,7 @@ fn maint_rust_invade_failure_generates_attacker_side_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -1926,9 +1900,7 @@ fn maint_rust_invade_failure_generates_attacker_side_report() {
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -1954,7 +1926,7 @@ fn maint_rust_invade_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-failure-database");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -1983,14 +1955,12 @@ fn maint_rust_invade_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let viewer_record = database.record(13, 0, reloaded.planets.records.len());
@@ -2027,7 +1997,7 @@ fn maint_rust_invade_success_exports_ecgame_accepted_owned_row_shape() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-success-database");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2056,14 +2026,12 @@ fn maint_rust_invade_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.set_troop_transport_count(120);
     attacker.set_army_count(120);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let expected_year = reloaded.conquest.game_year() - 1;
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2104,7 +2072,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-army-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2133,9 +2101,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     attacker.set_troop_transport_count(120);
     attacker.set_army_count(120);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2231,7 +2197,7 @@ fn maint_rust_blitz_success_generates_attacker_side_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2261,9 +2227,7 @@ fn maint_rust_blitz_success_generates_attacker_side_report() {
     attacker.set_troop_transport_count(10);
     attacker.set_army_count(10);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2291,7 +2255,7 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-army-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2321,9 +2285,7 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     attacker.set_troop_transport_count(10);
     attacker.set_army_count(10);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2359,7 +2321,7 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-success-database");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2389,9 +2351,7 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.set_troop_transport_count(10);
     attacker.set_army_count(10);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2404,7 +2364,7 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     );
     assert!(text.contains("Our forces:"), "{text}");
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let expected_year = reloaded.conquest.game_year() - 1;
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2455,9 +2415,9 @@ fn maint_rust_named_homeworld_seed_preserves_oracle_compat_word_family() {
     );
     assert!(prepare_stdout.contains("Prepared classic login for player 1"));
 
-    let mut game_data = CoreGameData::load(&target).expect("prepared fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("prepared fixture should load");
     game_data.planets.records[14].set_planet_name("ssddsf");
-    game_data.save(&target).expect("named fixture should save");
+    save_classic_core_files(&target, &game_data).expect("named fixture should save");
 
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let mut database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2469,7 +2429,7 @@ fn maint_rust_named_homeworld_seed_preserves_oracle_compat_word_family() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let expected_year = reloaded.conquest.game_year() - 1;
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2519,9 +2479,9 @@ fn maint_rust_preserves_loaded_homeworld_seed_orbit_family_for_all_players() {
     );
     assert!(prepare_stdout.contains("Prepared classic login for player 1"));
 
-    let mut game_data = CoreGameData::load(&target).expect("prepared fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("prepared fixture should load");
     game_data.planets.records[14].set_planet_name("ssddsf");
-    game_data.save(&target).expect("named fixture should save");
+    save_classic_core_files(&target, &game_data).expect("named fixture should save");
 
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let mut database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2533,7 +2493,7 @@ fn maint_rust_preserves_loaded_homeworld_seed_orbit_family_for_all_players() {
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let expected_year = reloaded.conquest.game_year() - 1;
     let planet_count = reloaded.planets.records.len();
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
@@ -2590,9 +2550,9 @@ fn maint_rust_loaded_homeworld_seed_orbit_family_reopens_in_classic_ecgame_smoke
     );
     assert!(prepare_stdout.contains("Prepared classic login for player 1"));
 
-    let mut game_data = CoreGameData::load(&target).expect("prepared fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("prepared fixture should load");
     game_data.planets.records[14].set_planet_name("ssddsf");
-    game_data.save(&target).expect("named fixture should save");
+    save_classic_core_files(&target, &game_data).expect("named fixture should save");
 
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let mut database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -2614,7 +2574,7 @@ fn maint_rust_blitz_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-failure-database");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -2643,14 +2603,12 @@ fn maint_rust_blitz_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     attacker.set_troop_transport_count(4);
     attacker.set_army_count(4);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let database_bytes = fs::read(target.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
     let viewer_record = database.record(13, 0, reloaded.planets.records.len());
@@ -2688,16 +2646,14 @@ fn maint_rust_battle_abort_generates_move_abort_report() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::MoveOnly);
     // Give the fleet enough scouts to survive the battle (loses but not destroyed).
     // Max scouts (u8::MAX) to survive against 100 enemy battleships.
     game_data.fleets.records[0].set_scout_count(255);
     // Reduce enemy fleet 4 (empire 2 at same coords) to 1 BB so our fleet survives.
     game_data.fleets.records[4].set_battleship_count(1);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2733,7 +2689,7 @@ fn maint_rust_dominant_invalidated_invade_report_retreats_after_capability_loss(
     let stdout = run_maint_rust_with_export_and_seed(&target, 1, 3);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     // The battle comes mid-year, so the fleet may reach home (16,13) and
     // stop there before the year ends.
     let attacker = &reloaded.fleets.records[0];
@@ -2765,7 +2721,7 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let coords = [9, 13];
 
     let attacker = &mut game_data.fleets.records[0];
@@ -2802,14 +2758,12 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     // Stalled in place (no speed to restore), so the contact happens here.
     hostile.set_max_speed(0);
 
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let attacker = &reloaded.fleets.records[0];
     assert_eq!(attacker.standing_order_kind(), Order::InvadeWorld);
     assert_eq!(attacker.standing_order_target_coords_raw(), [15, 13]);
@@ -2897,7 +2851,7 @@ fn maint_rust_blitz_clears_hostile_empty_transports_in_orbit() {
     target_world.set_ground_batteries_raw(0);
     target_world.set_army_count_raw(2);
 
-    game_data.save(&target).expect("scenario should save");
+    save_classic_core_files(&target, &game_data).expect("scenario should save");
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
     // The attacker must sight the transports before its blitz strikes, a
@@ -2911,7 +2865,7 @@ fn maint_rust_blitz_clears_hostile_empty_transports_in_orbit() {
     let defender_report = joined_report_containing(&results, "ALERT: Fleet contact lost!");
     assert!(defender_report.contains("Fleet lost:"));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+    let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
     let defender = reloaded
         .fleets
         .records
@@ -2928,7 +2882,7 @@ fn maint_rust_invalid_fleet_order_generates_sanitization_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-invalid-fleet-order");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_current_location_coords_raw([15, 13]);
     fleet.set_standing_order_kind(Order::BombardWorld);
@@ -2939,9 +2893,7 @@ fn maint_rust_invalid_fleet_order_generates_sanitization_report() {
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
     fleet.set_scout_count(1);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2959,7 +2911,7 @@ fn maint_rust_invalid_planet_inputs_generate_admin_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-invalid-planet-input");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let planet_idx = game_data
         .planets
         .records
@@ -2969,9 +2921,7 @@ fn maint_rust_invalid_planet_inputs_generate_admin_report() {
     game_data.planets.records[planet_idx].set_build_count_raw(0, 12);
     game_data.planets.records[planet_idx].set_build_kind_raw(0, 0xfe);
     game_data.player.records[0].set_tax_rate_raw(255);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -2989,7 +2939,7 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     let target = unique_temp_dir("nc-cli-maint-rust-mixed-invalid-inputs");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_current_location_coords_raw([15, 13]);
     fleet.set_standing_order_kind(Order::BombardWorld);
@@ -3005,14 +2955,13 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     game_data.planets.records[14].set_build_count_raw(0, 9);
     game_data.planets.records[14].set_build_kind_raw(0, 0xfe);
     game_data.player.records[0].set_tax_rate_raw(255);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should remain loadable");
+    let reloaded =
+        load_classic_core_files(&target).expect("maint-rust output should remain loadable");
     assert_eq!(
         reloaded.fleets.records[0].standing_order_kind(),
         Order::HoldPosition
@@ -3042,7 +2991,7 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         let target = unique_temp_dir(&format!("nc-cli-maint-rust-invalid-matrix-{order_code}"));
         copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-        let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+        let mut game_data = load_classic_core_files(&target).expect("fixture should load");
         let fleet = &mut game_data.fleets.records[0];
         fleet.set_current_location_coords_raw([15, 13]);
         fleet.set_standing_order_code_raw(order_code);
@@ -3060,9 +3009,7 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         game_data.planets.records[0].set_build_kind_raw(0, 0xfe);
         game_data.planets.records[0].set_stardock_count_raw(0, 2);
         game_data.player.records[0].set_tax_rate_raw(255);
-        game_data
-            .save(&target)
-            .expect("mutated fixture should save");
+        save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
         let stdout = run_maint_rust_with_export(&target, 1);
         assert!(
@@ -3071,7 +3018,7 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         );
 
         let reloaded =
-            CoreGameData::load(&target).expect("maint-rust output should remain loadable");
+            load_classic_core_files(&target).expect("maint-rust output should remain loadable");
         assert_eq!(
             reloaded.player.records[0].tax_rate(),
             100,
@@ -3107,7 +3054,7 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
         let target = unique_temp_dir(&format!("nc-cli-maint-rust-sweep-{slug}"));
         copy_fixture_dir(fixture, &target);
 
-        let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+        let mut game_data = load_classic_core_files(&target).expect("fixture should load");
         if let Some(fleet) = game_data.fleets.records.get_mut(0) {
             fleet.set_standing_order_code_raw(0xfe);
             fleet.set_current_speed(99);
@@ -3125,14 +3072,12 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
             player.set_diplomatic_relation_byte_raw(1, 0x01);
             player.set_diplomatic_relation_byte_raw(2, 0xfe);
         }
-        game_data
-            .save(&target)
-            .expect("mutated fixture should save");
+        save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
         let stdout = run_maint_rust_with_export(&target, 1);
         assert!(stdout.contains("Rust maintenance complete."));
 
-        let reloaded = CoreGameData::load(&target).expect("maint-rust output should load");
+        let reloaded = load_classic_core_files(&target).expect("maint-rust output should load");
         assert!(
             reloaded.player.records[0].tax_rate() <= 100,
             "fixture {fixture} left invalid tax rate {}",
@@ -3158,17 +3103,16 @@ fn maint_rust_reports_invalid_diplomacy_input_sanitization() {
     let target = unique_temp_dir("nc-cli-maint-rust-invalid-diplomacy");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
     game_data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let reloaded = CoreGameData::load(&target).expect("maint-rust output should remain loadable");
+    let reloaded =
+        load_classic_core_files(&target).expect("maint-rust output should remain loadable");
     assert_eq!(
         reloaded.player.records[0].diplomatic_relation_byte_raw(1),
         Some(0x00)
@@ -3192,7 +3136,7 @@ fn maint_rust_battle_abort_scout_report_mentions_retreat_destination() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::ScoutSector);
     // Remove big ships so fleet loses the battle (scouts absorb hits and survive).
     game_data.fleets.records[0].set_battleship_count(0);
@@ -3202,9 +3146,7 @@ fn maint_rust_battle_abort_scout_report_mentions_retreat_destination() {
     game_data.fleets.records[0].set_scout_count(255);
     // Reduce enemy fleet 4 (empire 2 at same coords) to 1 BB.
     game_data.fleets.records[4].set_battleship_count(1);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3243,7 +3185,7 @@ fn maint_rust_destroyed_fleet_report_separates_last_contact_from_force_rows() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let fleet = &mut game_data.fleets.records[0];
     let coords = fleet.current_location_coords_raw();
     fleet.set_standing_order_kind(Order::HoldPosition);
@@ -3266,9 +3208,7 @@ fn maint_rust_destroyed_fleet_report_separates_last_contact_from_force_rows() {
     enemy.set_scout_count(0);
     enemy.set_etac_count(0);
 
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3308,15 +3248,13 @@ fn maint_rust_rendezvous_arrival_generates_waiting_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-rendezvous-wait");
     copy_fixture_dir("fixtures/ecmaint-fleet-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_standing_order_kind(Order::RendezvousSector);
     fleet.set_standing_order_target_coords_raw([15, 13]);
     // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
     fleet.set_mission_aux_bytes([0, 0]);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3334,14 +3272,12 @@ fn maint_rust_join_merge_generates_join_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-merge");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[1].set_current_location_coords_raw(coords);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3361,7 +3297,7 @@ fn maint_rust_rendezvous_merge_generates_absorbing_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-rendezvous-absorb");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
@@ -3371,9 +3307,7 @@ fn maint_rust_rendezvous_merge_generates_absorbing_report() {
     game_data.fleets.records[2].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[3].set_current_location_coords_raw(coords);
     game_data.fleets.records[3].set_standing_order_kind(Order::RendezvousSector);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3392,15 +3326,13 @@ fn maint_rust_join_contact_uses_join_report_label() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-contact");
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::JoinAnotherFleet);
     let host_number = game_data.fleets.records[1].local_slot_word_raw();
     game_data.fleets.records[0].set_join_host_fleet_id_raw(host_number);
     // Stalled in place (no speed to restore), so the contact happens here.
     game_data.fleets.records[0].set_max_speed(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3418,7 +3350,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-host-destroyed");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let host_number = game_data.fleets.records[0].local_slot_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
@@ -3433,9 +3365,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
     joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3455,7 +3385,7 @@ fn maint_rust_join_retarget_report_uses_fleet_command_summary_without_sector_noi
     let target = unique_temp_dir("nc-cli-maint-rust-join-retarget");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let host_number = game_data.fleets.records[0].local_slot_word_raw();
     let joiner_fleet_number = game_data.fleets.records[1].local_slot_word_raw() as usize;
@@ -3465,9 +3395,7 @@ fn maint_rust_join_retarget_report_uses_fleet_command_summary_without_sector_noi
     joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([1, 1]);
     joiner.set_current_speed(3);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3492,7 +3420,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-compact-lists");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
@@ -3525,9 +3453,7 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
         game_data.fleets.records[fleet_idx].set_current_speed(3);
     }
 
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3554,7 +3480,7 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-host-absorbed-retarget");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0x00);
 
     let survivor_coords = [10, 10];
@@ -3578,9 +3504,7 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     game_data.fleets.records[2].set_standing_order_target_coords_raw(survivor_coords);
     game_data.fleets.records[2].set_current_speed(3);
 
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3611,7 +3535,7 @@ fn maint_rust_join_summary_emits_single_footer_line() {
     let target = unique_temp_dir("nc-cli-maint-rust-join-single-footer");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.player.records[0].set_player_mode_raw(0xff);
     let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
@@ -3627,9 +3551,7 @@ fn maint_rust_join_summary_emits_single_footer_line() {
     game_data.fleets.records[2].set_standing_order_target_coords_raw([1, 1]);
     game_data.fleets.records[2].set_current_speed(3);
 
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3658,13 +3580,11 @@ fn maint_rust_rendezvous_contact_uses_rendezvous_report_label() {
     let target = unique_temp_dir("nc-cli-maint-rust-rendezvous-contact");
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let coords = game_data.fleets.records[0].current_location_coords_raw();
     game_data.fleets.records[0].set_standing_order_kind(Order::RendezvousSector);
     game_data.fleets.records[0].set_standing_order_target_coords_raw(coords);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3682,11 +3602,9 @@ fn maint_rust_guard_contact_uses_guard_report_label() {
     let target = unique_temp_dir("nc-cli-maint-rust-guard-contact");
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::GuardBlockadeWorld);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -3721,12 +3639,12 @@ fn maint_rust_reports_empire_defeat_without_recovery_path() {
             fleet.set_army_count(0);
         }
     }
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let post = CoreGameData::load(&target).expect("maint-rust output should load");
+    let post = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(post.player.records[0].owner_mode_raw(), 0x00);
     assert_eq!(post.player.records[0].legacy_status_name_summary(), "");
 
@@ -3769,12 +3687,12 @@ fn maint_rust_reports_when_one_serious_contender_remains() {
             }
         }
     }
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let post = CoreGameData::load(&target).expect("maint-rust output should load");
+    let post = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         post.campaign_outlook(),
         nc_data::CampaignOutlook::SoleContender(1)
@@ -3819,12 +3737,12 @@ fn maint_rust_reports_emperor_recognition_when_only_stable_empire_remains() {
             }
         }
     }
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let post = CoreGameData::load(&target).expect("maint-rust output should load");
+    let post = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(
         post.campaign_outcome(),
         nc_data::CampaignOutcome::RecognizedEmperor(1)
@@ -3863,12 +3781,12 @@ fn maint_rust_reports_fleet_defection_after_civil_disorder() {
             fleet.set_army_count(0);
         }
     }
-    game_data.save(&target).expect("mutated game should save");
+    save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
     let stdout = run_maint_rust_with_export(&target, 2);
     assert!(stdout.contains("Rust maintenance complete."));
 
-    let post = CoreGameData::load(&target).expect("maint-rust output should load");
+    let post = load_classic_core_files(&target).expect("maint-rust output should load");
     let remaining_player_fleets = post
         .fleets
         .records
@@ -3917,7 +3835,7 @@ fn maint_rust_seeded_games_survive_five_turns_across_manual_player_tiers() {
         let stdout = run_maint_rust_with_export(&target, 5);
         assert!(stdout.contains("Rust maintenance complete."));
 
-        let post = CoreGameData::load(&target).expect("multi-turn maint output should load");
+        let post = load_classic_core_files(&target).expect("multi-turn maint output should load");
         assert_eq!(post.conquest.game_year(), 3005);
         assert!(
             post.ecmaint_preflight_errors().is_empty(),
@@ -3952,7 +3870,7 @@ fn maint_rust_destroyed_fleet_abort_is_suppressed() {
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
     let battle_coords = [10u8, 10u8];
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
 
     // Fleet 0 (empire 1): minimal force with scout mission — will be destroyed.
     {
@@ -3986,9 +3904,7 @@ fn maint_rust_destroyed_fleet_abort_is_suppressed() {
         f.set_etac_count(0);
         f.set_rules_of_engagement(10);
     }
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -4019,7 +3935,7 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
     let target = unique_temp_dir("nc-cli-maint-rust-bombard-destroyed-telemetry");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -4048,9 +3964,7 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
     attacker.set_troop_transport_count(0);
     attacker.set_army_count(0);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -4083,7 +3997,7 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-destroyed-telemetry");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -4112,9 +4026,7 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
     attacker.set_troop_transport_count(5);
     attacker.set_army_count(5);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -4140,7 +4052,7 @@ fn maint_rust_invasion_failure_generates_defender_side_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-invade-failure-defender-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -4169,9 +4081,7 @@ fn maint_rust_invasion_failure_generates_defender_side_report() {
     attacker.set_troop_transport_count(5);
     attacker.set_army_count(5);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 2);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -4195,7 +4105,7 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-destroyed-telemetry");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -4224,9 +4134,7 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
     attacker.set_troop_transport_count(5);
     attacker.set_army_count(5);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
@@ -4252,7 +4160,7 @@ fn maint_rust_blitz_failure_generates_defender_side_report() {
     let target = unique_temp_dir("nc-cli-maint-rust-blitz-failure-defender-report");
     copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut game_data = CoreGameData::load(&target).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -4281,9 +4189,7 @@ fn maint_rust_blitz_failure_generates_defender_side_report() {
     attacker.set_troop_transport_count(5);
     attacker.set_army_count(5);
     attacker.set_etac_count(0);
-    game_data
-        .save(&target)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
     let stdout = run_maint_rust_with_export(&target, 2);
     assert!(stdout.contains("Rust maintenance complete."));

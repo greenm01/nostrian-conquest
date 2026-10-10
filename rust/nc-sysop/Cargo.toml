@@ -18,4 +18,5 @@ tracing = "0.1"
 winresource = "0.1"
 
 [dev-dependencies]
+nc-compat = { path = "../nc-compat" }
 nc-data = { path = "../nc-data" }

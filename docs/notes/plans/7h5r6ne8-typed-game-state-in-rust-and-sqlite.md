@@ -252,6 +252,68 @@ planet columns kept only the low byte of armies and ground batteries
   `derive_campaign_seed_from_runtime`) hashes the typed state, not the
   classic encoding. Seeds move once; tests that turn on a roll pin a seed.
 
+## Phase 4 result (2026-10-10)
+
+Branch `t039p4`. The runtime keeps game state in the store and nowhere
+else. nc-data reads and writes no classic directory: `CoreGameData::load`
+and `save` are `nc_compat::load_classic_core_files` and
+`save_classic_core_files`, beside `GameDirectoryError`, and
+`CampaignStoreError` and `TurnSubmissionError` have no directory variant.
+`GameStateBuilder::build_and_save` is gone; nc-cli `generate-gamestate`
+builds the baseline and saves it through nc-compat.
+
+- Hosted play uses the store alone. `nc-host new-game` seeds `ncgame.db`
+  and writes no `.DAT` files, so a hosted game directory holds `hosted.db`
+  and `ncgame.db`. `nc-host maint` fails when the store is missing, fails
+  to load, or has no snapshot, and saves only the store. The
+  player-message worker names empires from the store, and the hosted state,
+  year, and first-join paths have no `.DAT` or `RUSTMAIL.QUE` fallback.
+- `submit-turn` needs a store with a snapshot in check and apply mode, and
+  creates no `ncgame.db` where none exists.
+- `nc-sysop new-game` already seeded the store from the typed model; its
+  directory holds `ncgame.db`, plus `config.kdl` for a BBS game.
+- The byte diffs against preserved baselines live in
+  `nc-compat/src/core_diff.rs`: `core_file_diff_counts`,
+  `core_file_diff_offsets`, `core_file_exact_match_errors`, and
+  `current_known_baseline_diff_counts` and `_offsets`.
+- The campaign seed hashes the typed model (`nc-data/src/state_hash.rs`).
+  Each struct is destructured exhaustively and fed to the splitmix hash
+  field by field in declaration order: enums as their classic codes,
+  booleans as 0 or 1, text as UTF-8, a Real48 as its six bytes, and lists
+  after their length. A new model field fails to compile until the hash
+  takes it. `nc-data/tests/campaign_seed.rs` pins the seed of the ECUTIL
+  init fixture. Derived seeds moved once; one nc-cli maintenance test
+  turned on the year's encounter rolls and pins seed 1.
+
+Only nc-cli and nc-harness touch `.DAT` files, and they load and save a
+whole game through nc-compat: `db-import`, `db-export`, `harness ...
+--export-classic`, `sysop new-game` and `sysop generate-gamestate` (oracle
+directories with ECMAINT beside them, which `tools/oracle_sweep.py` and
+`tools/economy_tax_probe.py` run at once), `init`, the `scenario-*` and
+`*-init` initializers, the `core-*` baseline commands, `ipbm-validate`,
+`inspect-fleet-movement --live-dir`, and the read, mutate, and
+`maint-rust` commands when a directory has a classic game and no store
+yet. The read commands then read the classic files without creating
+`ncgame.db`; the others import them first. `compare`, `match`, and
+`validate-preserved` compare the files themselves, byte by byte or record
+by record.
+
+The codecs stay in nc-data: the record shims' `parse` and `to_bytes` call
+them, so they move to nc-classic when the shims go. Outside the codecs and
+shims, nc-data encodes core state as classic bytes in one place, the
+current-known IPBM.DAT size check (`current_known_auxiliary.rs`).
+
+Classic bytes still handled outside import and export, left as they are:
+
+- nc-cli `maint-rust` copies the `.DAT` files in its directory to `.SAV`
+  before movement and restores them when `Move.Tok` is left over, ECMAINT's
+  crash recovery; neither touches the store. Its schedule gate reads
+  CONQUEST.DAT, but no caller turns the gate on.
+- Report blocks keep their RESULTS.DAT record bytes in the store
+  (`report_blocks`, through `storage/hex.rs`).
+- The `RUSTMAIL.QUE` helpers in `player_mail.rs` now serve only the
+  nc-compat import.
+
 ## Phase 5 — remove the shims, crate by crate
 
 Move call sites from accessor methods to fields in order nc-data, nc-engine,

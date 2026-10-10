@@ -129,7 +129,6 @@ pub fn seed_runtime_snapshot(
 ) {
     let game_data = nc_engine::build_seeded_new_game(player_count, 3000, 12345)
         .expect("game state should build");
-    game_data.save(game_dir).expect("game data should save");
 
     let store = CampaignStore::open_default_in_dir(game_dir).expect("campaign store should open");
     let intel_by_viewer = (1..=player_count)

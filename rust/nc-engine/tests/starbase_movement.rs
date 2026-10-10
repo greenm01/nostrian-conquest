@@ -3,6 +3,7 @@
 //! (`docs/dev/ec-starbase-spec.md`). The fixtures and the probe bytes below
 //! come from classic ECMAINT.
 
+use nc_compat::load_classic_core_files;
 use nc_data::{
     CoreGameData, DiplomacyOverride, DiplomaticRelation, FleetMergeEvent, LostWorldResponse,
     MaintenanceEvents, Mission, MissionOutcome, Order, Real48, StarbaseReport,
@@ -17,7 +18,7 @@ fn load(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).expect("fixture loads")
+    load_classic_core_files(&dir).expect("fixture loads")
 }
 
 fn hex(text: &str) -> Vec<u8> {

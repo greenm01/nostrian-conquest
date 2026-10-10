@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{
     CoreGameData, InboxItemType, QueuedPlayerMail, ReportBlockRow, ReportSummaryBucket,
     ReportsPreview, runtime_inbox_items, runtime_inbox_preview_lines,
@@ -10,7 +11,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn fixture_game_data() -> CoreGameData {
-    CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
+    load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
 }
 
 fn visible_mail(

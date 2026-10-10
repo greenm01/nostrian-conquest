@@ -5,9 +5,9 @@ use crate::FleetRecord;
 mod auxiliary;
 #[path = "current_known_baseline.rs"]
 mod baseline;
-#[path = "current_known_diff.rs"]
-mod diff;
 #[path = "current_known_fleets.rs"]
 mod fleets;
 #[path = "current_known_planets.rs"]
 mod planets;
+#[path = "current_known_summary.rs"]
+mod summary;

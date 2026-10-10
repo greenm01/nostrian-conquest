@@ -1,3 +1,4 @@
+use nc_compat::load_classic_core_files;
 use nc_data::{CoreGameData, DiplomacyOverride, DiplomaticRelation, Order};
 use std::path::Path;
 
@@ -26,7 +27,7 @@ pub fn empty_board(armies: u8, batteries: u8) -> CoreGameData {
         .join("../../fixtures")
         .join("ecmaint-post")
         .join("v1.5");
-    let mut game_data = CoreGameData::load(&dir).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
     game_data.bases.records.clear();
     game_data.planets.records[SYSTEM_PLANET_IDX].set_as_owned_target_world(
         SYSTEM,

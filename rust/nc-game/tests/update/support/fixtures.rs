@@ -1,4 +1,5 @@
 use super::*;
+use nc_compat::{load_classic_core_files, save_classic_core_files};
 
 static TEMP_DIR_SEQ: AtomicU64 = AtomicU64::new(0);
 
@@ -54,12 +55,12 @@ pub(crate) fn temp_dir_path(label: &str) -> PathBuf {
 pub(crate) fn temp_game_copy() -> TempGameDir {
     let root = TempGameDir::new("nc-game-update");
     copy_dir_all(&repo_root().join("fixtures/ecutil-init/v1.5"), &root);
-    let mut data = CoreGameData::load(&root).expect("load joinable fixture");
+    let mut data = load_classic_core_files(&root).expect("load joinable fixture");
     data.join_player(1, "Codex Dominion")
         .expect("join player for standard client tests");
     data.rename_player_homeworld(1, "Codex Prime")
         .expect("name homeworld for standard client tests");
-    data.save(&root).expect("save joined fixture");
+    save_classic_core_files(&root, &data).expect("save joined fixture");
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
     import_directory_snapshot(&store, &root).expect("seed sqlite snapshot");
     root
@@ -81,13 +82,13 @@ pub(crate) fn temp_joined_needs_homeworld_copy_for_player(
     player_record_index_1_based: usize,
 ) -> TempGameDir {
     let root = temp_first_time_game_copy();
-    let mut data = CoreGameData::load(&root).expect("load joinable fixture");
+    let mut data = load_classic_core_files(&root).expect("load joinable fixture");
     data.join_player(
         player_record_index_1_based,
         &format!("Empire {player_record_index_1_based}"),
     )
     .expect("join player without naming homeworld");
-    data.save(&root).expect("save partially joined fixture");
+    save_classic_core_files(&root, &data).expect("save partially joined fixture");
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
     import_directory_snapshot(&store, &root).expect("refresh sqlite snapshot");
     root
@@ -105,12 +106,12 @@ pub(crate) fn reserved_game_config(player_record_index_1_based: usize, alias: &s
 
 pub(crate) fn temp_full_game_copy() -> TempGameDir {
     let root = temp_first_time_game_copy();
-    let mut data = CoreGameData::load(&root).expect("load full-game fixture");
+    let mut data = load_classic_core_files(&root).expect("load full-game fixture");
     for player in 1..=4 {
         data.join_player(player, &format!("Empire {player}"))
             .expect("join player for full-game fixture");
     }
-    data.save(&root).expect("save full-game fixture");
+    save_classic_core_files(&root, &data).expect("save full-game fixture");
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
     import_directory_snapshot(&store, &root).expect("refresh sqlite snapshot");
     root

@@ -3,10 +3,9 @@ use nc_data::hosted::{
     record_player_abandoned, set_claimed_year,
 };
 use nc_data::{
-    CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME,
-    DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS, PlanetIntelSnapshot,
-    apply_inactivity_autopilot_policy, default_player_activity_states,
-    merge_player_intel_from_runtime, reset_player_slot_to_baseline,
+    CoreGameData, DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS, PlanetIntelSnapshot,
+    apply_inactivity_autopilot_policy, merge_player_intel_from_runtime,
+    reset_player_slot_to_baseline,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
@@ -78,24 +77,10 @@ fn run_maintenance(
     let pending_turns = nc_data::hosted::list_pending_turns(store.connection(), game_id, 0)?;
     println!("  Pending turns: {}", pending_turns.len());
 
-    // Load game data — prefer CampaignStore snapshot over flat files.
-    let campaign_db_path = game_dir.join(DEFAULT_CAMPAIGN_DB_NAME);
-    let (mut game_data, campaign_store_opt) = if campaign_db_path.exists() {
-        let cs = CampaignStore::open(&campaign_db_path)?;
-        match cs.load_latest_runtime_game_data() {
-            Ok(gd) => (gd, Some(cs)),
-            Err(_) => (CoreGameData::load(game_dir)?, None),
-        }
-    } else {
-        (CoreGameData::load(game_dir)?, None)
-    };
-
-    // Load player activity states from CampaignStore.
-    let mut player_activity_states = if let Some(ref cs) = campaign_store_opt {
-        cs.latest_player_activity_states(game_data.conquest.player_count())?
-    } else {
-        default_player_activity_states(game_data.conquest.player_count())
-    };
+    let campaign_store = crate::support::runtime::open_existing_campaign_store(game_dir)?;
+    let mut game_data = campaign_store.load_latest_runtime_game_data()?;
+    let mut player_activity_states =
+        campaign_store.latest_player_activity_states(game_data.conquest.player_count())?;
 
     let current_turn = (game_data.conquest.game_year() - 3000) as u32;
 
@@ -155,29 +140,21 @@ fn run_maintenance(
         }
     }
 
-    // Save flat files.
-    game_data.save(game_dir)?;
-    println!("Saved game state to {}", game_dir.display());
-
-    // Save CampaignStore snapshot with updated activity states and fresh intel.
-    if let Some(cs) = campaign_store_opt {
-        let player_count = game_data.conquest.player_count();
-        let year = game_data.conquest.game_year();
-        let intel_by_viewer: Vec<BTreeMap<usize, PlanetIntelSnapshot>> = (1..=player_count)
-            .map(|viewer_id| {
-                merge_player_intel_from_runtime(&game_data, viewer_id, year, None, None)
-            })
-            .collect();
-        cs.save_runtime_state_structured_with_intel_and_activity(
-            &game_data,
-            &BTreeSet::new(),
-            &[],
-            &[],
-            &intel_by_viewer,
-            &player_activity_states,
-        )?;
-        println!("Updated campaign store snapshot.");
-    }
+    // Save the snapshot with updated activity states and fresh intel.
+    let player_count = game_data.conquest.player_count();
+    let year = game_data.conquest.game_year();
+    let intel_by_viewer: Vec<BTreeMap<usize, PlanetIntelSnapshot>> = (1..=player_count)
+        .map(|viewer_id| merge_player_intel_from_runtime(&game_data, viewer_id, year, None, None))
+        .collect();
+    campaign_store.save_runtime_state_structured_with_intel_and_activity(
+        &game_data,
+        &BTreeSet::new(),
+        &[],
+        &[],
+        &intel_by_viewer,
+        &player_activity_states,
+    )?;
+    println!("Updated campaign store snapshot.");
 
     println!("Maintenance complete for {} turns", turns);
 

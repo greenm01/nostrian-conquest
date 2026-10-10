@@ -1,7 +1,7 @@
 mod common;
 
 use common::{cleanup_dir, export_campaign_db, run_nc_cli, run_nc_cli_in_dir, unique_temp_dir};
-use nc_data::CoreGameData;
+use nc_compat::{load_classic_core_files, save_classic_core_files};
 use std::fs;
 
 #[test]
@@ -203,7 +203,7 @@ fn planet_stored_sets_stored_production_points() {
     assert!(stdout.contains("treasury set to 50"));
 
     export_campaign_db(&target, &target);
-    let game_data = CoreGameData::load(&target).unwrap();
+    let game_data = load_classic_core_files(&target).unwrap();
     assert_eq!(game_data.planets.records[0].stored_production_points(), 50);
 
     cleanup_dir(&target);
@@ -218,7 +218,7 @@ fn planet_present_sets_present_production_points() {
     assert!(stdout.contains("present production points set to 75"));
 
     export_campaign_db(&target, &target);
-    let game_data = CoreGameData::load(&target).unwrap();
+    let game_data = load_classic_core_files(&target).unwrap();
     assert_eq!(
         game_data.planets.records[0].present_production_points(),
         Some(75)
@@ -236,7 +236,7 @@ fn fleet_location_sets_current_coords() {
     assert!(stdout.contains("current location set to (9,2)"));
 
     export_campaign_db(&target, &target);
-    let game_data = CoreGameData::load(&target).unwrap();
+    let game_data = load_classic_core_files(&target).unwrap();
     assert_eq!(
         game_data.fleets.records[0].current_location_coords_raw(),
         [9, 2]
@@ -261,7 +261,7 @@ fn planet_stardock_sets_a_stardock_slot() {
     assert!(stdout.contains("stardock slot 0 set"));
 
     export_campaign_db(&target, &target);
-    let game_data = CoreGameData::load(&target).unwrap();
+    let game_data = load_classic_core_files(&target).unwrap();
     assert_eq!(game_data.planets.records[0].stardock_kind_raw(0), 1);
     assert_eq!(game_data.planets.records[0].stardock_count_raw(0), 2);
 
@@ -501,10 +501,10 @@ fn core_diff_current_known_baseline_reports_mutated_files() {
     let target = unique_temp_dir("nc-cli-core-diff-current-known");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = nc_data::CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(
         &["core-diff-current-known-baseline", target.to_str().unwrap()],
@@ -522,10 +522,10 @@ fn core_diff_current_known_baseline_offsets_reports_mutated_offsets() {
     let target = unique_temp_dir("nc-cli-core-diff-current-known-offsets");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = nc_data::CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(
         &[
@@ -574,10 +574,10 @@ fn core_diff_canonical_current_known_baseline_offsets_reports_mutated_offsets() 
     let target = unique_temp_dir("nc-cli-core-diff-canonical-current-known-offsets");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
-    let mut data = nc_data::CoreGameData::load(&target).unwrap();
+    let mut data = load_classic_core_files(&target).unwrap();
     data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
-    data.save(&target).unwrap();
+    save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(
         &[

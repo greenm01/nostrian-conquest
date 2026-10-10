@@ -18,3 +18,28 @@ fn new_game_rejects_out_of_range_player_counts_before_creating_anything() {
         );
     }
 }
+
+#[test]
+fn new_game_writes_the_databases_and_no_classic_files() {
+    let root = tempfile::Builder::new()
+        .prefix("nc-host-new-game-files-")
+        .tempdir()
+        .expect("temp dir should create");
+    let dir = root.path().join("files");
+    let dir_arg = dir.to_str().expect("temp path should be UTF-8");
+
+    new_game::run(&[dir_arg, "--players", "4", "--seed", "7"]).expect("new game should create");
+
+    let mut names = std::fs::read_dir(&dir)
+        .expect("game dir should list")
+        .map(|entry| {
+            entry
+                .expect("entry")
+                .file_name()
+                .into_string()
+                .expect("UTF-8")
+        })
+        .collect::<Vec<_>>();
+    names.sort();
+    assert_eq!(names, ["hosted.db", "ncgame.db"]);
+}

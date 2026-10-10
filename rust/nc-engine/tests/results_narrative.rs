@@ -1,3 +1,4 @@
+use nc_compat::load_classic_core_files;
 use nc_data::{
     AssaultReportEvent, BombardEvent, ContactReportSource, EmpireEliminationCause,
     EmpireEliminationEvent, EncounterDispositionEvent, EncounterDispositionReason,
@@ -34,8 +35,7 @@ fn load_fixture(name: &str) -> nc_data::CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    nc_data::CoreGameData::load(&dir)
-        .unwrap_or_else(|e| panic!("Failed to load fixture {name}: {e}"))
+    load_classic_core_files(&dir).unwrap_or_else(|e| panic!("Failed to load fixture {name}: {e}"))
 }
 
 #[test]

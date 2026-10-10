@@ -1,9 +1,10 @@
 use crate::support::*;
+use nc_compat::{load_classic_core_files, save_classic_core_files};
 
 #[test]
 fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let initial_fleet_count = game_data.fleets.records.len();
     let donor = &mut game_data.fleets.records[0];
     donor.set_scout_count(1);
@@ -17,7 +18,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(0);
     donor.set_rules_of_engagement(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -132,7 +133,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
 #[test]
 fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
@@ -144,7 +145,7 @@ fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(0);
     donor.set_rules_of_engagement(3);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -194,7 +195,7 @@ fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
 #[test]
 fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
@@ -206,7 +207,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(0);
     donor.set_rules_of_engagement(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -349,7 +350,7 @@ fn fleet_detach_x_clears_staged_selection_without_leaving_screen() {
 #[test]
 fn fleet_detach_leaves_at_least_one_ship_on_the_donor() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_destroyer_count(2);
     donor.set_battleship_count(0);
@@ -360,7 +361,7 @@ fn fleet_detach_leaves_at_least_one_ship_on_the_donor() {
     donor.set_etac_count(0);
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -399,7 +400,7 @@ fn fleet_detach_leaves_at_least_one_ship_on_the_donor() {
 #[test]
 fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_destroyer_count(2);
     donor.set_battleship_count(0);
@@ -410,7 +411,7 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
     donor.set_etac_count(0);
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -456,7 +457,7 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
 #[test]
 fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
@@ -470,7 +471,7 @@ fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
     donor.set_standing_order_target_coords_raw([15, 13]);
     donor.recompute_max_speed_from_composition();
     donor.set_current_speed(3);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -508,7 +509,7 @@ fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
 #[test]
 fn fleet_detach_prompt_reports_missing_fleet_number() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let fleet_one = game_data
         .fleets
         .records
@@ -535,7 +536,7 @@ fn fleet_detach_prompt_reports_missing_fleet_number() {
     fleet_two.set_army_count(0);
     fleet_two.set_scout_count(0);
     fleet_two.set_etac_count(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -577,7 +578,7 @@ fn fleet_detach_prompt_reports_missing_fleet_number() {
 #[test]
 fn fleet_detach_prompt_reports_single_ship_fleet_as_ineligible() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let donor = &mut game_data.fleets.records[0];
     donor.set_destroyer_count(1);
     donor.set_battleship_count(0);
@@ -601,7 +602,7 @@ fn fleet_detach_prompt_reports_single_ship_fleet_as_ineligible() {
     fallback.set_army_count(0);
     fallback.set_scout_count(0);
     fallback.set_etac_count(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 
@@ -643,7 +644,7 @@ fn fleet_detach_prompt_reports_single_ship_fleet_as_ineligible() {
 #[test]
 fn fleet_detach_prompt_defaults_to_largest_owned_fleet_by_ship_total() {
     let fixture_dir = temp_game_copy();
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let fleet_one = game_data
         .fleets
         .records
@@ -670,7 +671,7 @@ fn fleet_detach_prompt_defaults_to_largest_owned_fleet_by_ship_total() {
     fleet_two.set_army_count(0);
     fleet_two.set_scout_count(0);
     fleet_two.set_etac_count(0);
-    game_data.save(&fixture_dir).expect("save fixture");
+    save_classic_core_files(&fixture_dir, &game_data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
 

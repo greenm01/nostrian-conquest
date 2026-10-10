@@ -40,6 +40,7 @@ mod report_blocks;
 mod rng;
 mod runtime_reports;
 mod starmap;
+mod state_hash;
 mod storage;
 mod support;
 mod turns;
@@ -61,9 +62,8 @@ pub use directory::{
     CurrentKnownGuardStarbaseLinkageSummary, CurrentKnownKeyWordSummary, EmpireEconomySummary,
     EmpirePlanetEconomyRow, EmpireProductionRankingRow, EmpireProductionRankingSort,
     EmpireUnitSummary, FleetDetachResult, FleetDetachSelection, FleetOrderValidationError,
-    FleetPlayerInputValidationError, FleetTransferResult, GameDirectoryError,
-    GameStateMutationError, PlanetPlayerInputValidationError, PlayerDiplomacyValidationError,
-    SeekHomeTarget,
+    FleetPlayerInputValidationError, FleetTransferResult, GameStateMutationError,
+    PlanetPlayerInputValidationError, PlayerDiplomacyValidationError, SeekHomeTarget,
 };
 pub use economy::{
     build_capacity, starbase_growth_bonus_percent, yearly_growth_delta, yearly_high_tax_penalty,

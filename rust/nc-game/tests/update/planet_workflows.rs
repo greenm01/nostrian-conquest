@@ -1,4 +1,5 @@
 use crate::support::*;
+use nc_compat::load_classic_core_files;
 
 #[test]
 fn confirm_auto_commission_opens_paged_report_when_entries_exist() {
@@ -1137,7 +1138,7 @@ fn planet_build_menu_and_subscreens_render_without_crashing_when_no_owned_planet
 #[test]
 fn planet_build_menu_matches_verified_v15_command_layout() {
     let fixture_dir = temp_game_copy();
-    let direct = CoreGameData::load(&fixture_dir).expect("reload direct joined fixture");
+    let direct = load_classic_core_files(&fixture_dir).expect("reload direct joined fixture");
     let direct_homeworld = direct
         .planets
         .records

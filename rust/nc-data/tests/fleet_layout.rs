@@ -6,7 +6,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
+use nc_compat::{
+    export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
+};
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use nc_data::{
     CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, FleetDat, FleetDetachSelection,
@@ -40,7 +42,7 @@ fn copy_dir_files(src: &Path, dst: &Path) {
 }
 
 fn load_fixture(name: &str) -> CoreGameData {
-    CoreGameData::load(&repo_root().join("fixtures").join(name).join("v1.5"))
+    load_classic_core_files(&repo_root().join("fixtures").join(name).join("v1.5"))
         .unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
 }
 

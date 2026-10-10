@@ -1,8 +1,10 @@
 #![allow(dead_code)]
 
-use nc_compat::import_directory_snapshot_with_seed;
+use nc_compat::{
+    import_directory_snapshot_with_seed, load_classic_core_files, save_classic_core_files,
+};
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
-use nc_data::{CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation};
+use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -261,12 +263,12 @@ pub fn write_mutual_enemy_diplomacy(target: &Path, left: u8, right: u8) {
 }
 
 pub fn set_mutual_enemy_in_player_dat(target: &Path, left: u8, right: u8) {
-    let mut game_data = CoreGameData::load(target).unwrap();
+    let mut game_data = load_classic_core_files(target).unwrap();
     game_data
         .set_stored_diplomatic_relation(left, right, DiplomaticRelation::Enemy)
         .unwrap();
     game_data
         .set_stored_diplomatic_relation(right, left, DiplomaticRelation::Enemy)
         .unwrap();
-    game_data.save(target).unwrap();
+    save_classic_core_files(target, &game_data).unwrap();
 }

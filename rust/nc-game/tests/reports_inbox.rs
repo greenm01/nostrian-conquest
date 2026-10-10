@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 use nc_game::domains::messaging::state::{InboxFocus, InboxPromptMode, InboxTypeFilter};
 use nc_game::reports::{InboxDisplayItem, InboxItem, InboxItemType, runtime_inbox_items};
@@ -11,7 +12,7 @@ fn repo_root() -> PathBuf {
 }
 
 fn fixture_game_data() -> CoreGameData {
-    CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
+    load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
 }
 
 fn visible_mail(sender: u8, recipient: u8, year: u16, subject: &str) -> QueuedPlayerMail {

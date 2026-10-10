@@ -9,3 +9,6 @@ path = "src/lib.rs"
 
 [dependencies]
 nc-data = { path = "../nc-data" }
+
+[dev-dependencies]
+nc-compat = { path = "../nc-compat" }

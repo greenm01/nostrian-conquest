@@ -993,8 +993,8 @@ mod tests {
     use crate::terminal::{ColorMode, OutputEncoding, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use nc_compat::import_directory_snapshot;
-    use nc_data::{BbsGameConfig, CampaignStore, CoreGameData, SeatBindSource, SeatReservation};
-    use std::collections::VecDeque;
+    use nc_data::{BbsGameConfig, CampaignStore, SeatBindSource, SeatReservation};
+    use std::collections::{BTreeSet, VecDeque};
     use std::fs;
     use std::io;
     use std::path::PathBuf;
@@ -1085,13 +1085,16 @@ mod tests {
     }
 
     fn seed_joined_player_handle(root: &std::path::Path, player: usize, alias: &str) {
-        let mut data = CoreGameData::load(root).expect("load fixture");
+        let store = CampaignStore::open_default_in_dir(root).expect("open campaign store");
+        let mut data = store
+            .load_latest_runtime_game_data()
+            .expect("load runtime state");
         data.join_player(player, &format!("Empire {player}"))
             .expect("join player");
         data.player.records[player - 1].set_assigned_player_handle_raw(alias);
-        data.save(root).expect("save fixture");
-        let store = CampaignStore::open_default_in_dir(root).expect("open campaign store");
-        import_directory_snapshot(&store, root).expect("refresh sqlite snapshot");
+        store
+            .save_runtime_state_structured(&data, &BTreeSet::new(), &[], &[])
+            .expect("save runtime state");
     }
 
     fn parsed_args(use_door_terminal: bool) -> ParsedLaunchArgs {

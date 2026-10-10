@@ -1,12 +1,10 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use crate::{
-    CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData,
-    DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot, PlayerAccessMode, QueuedPlayerMail,
-    ReportBlockRow, TurnSubmission, TurnSubmissionError, TurnSubmissionReport,
-    derive_campaign_seed_from_runtime, load_mail_queue, merge_player_intel_from_runtime,
-    player_access_mode, record_submitted_turn_participation,
+    CampaignStore, CampaignStoreError, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot,
+    PlayerAccessMode, TurnSubmission, TurnSubmissionError, TurnSubmissionReport,
+    merge_player_intel_from_runtime, player_access_mode, record_submitted_turn_participation,
 };
 
 pub(super) fn submit_turn_kdl_file(
@@ -23,13 +21,14 @@ pub(super) fn submit_turn_kdl_file(
         )));
     }
 
+    let store = open_existing_store(dir)?;
+    let mut state = store
+        .load_latest_runtime_state()?
+        .ok_or_else(|| TurnSubmissionError::Validation(NO_SNAPSHOT.to_string()))?;
     if check_only {
-        let (mut game_data, mut queued_mail) = load_preview_state(dir)?;
-        return submission.apply_to(&mut game_data, &mut queued_mail);
+        return submission.apply_to(&mut state.game_data, &mut state.queued_mail);
     }
 
-    let store = CampaignStore::open_default_in_dir(dir)?;
-    let mut state = load_or_seed_runtime_state(dir, &store)?;
     let player_lifecycle_states =
         store.latest_player_lifecycle_states(state.game_data.conquest.player_count())?;
     let access_mode = player_access_mode(
@@ -72,52 +71,19 @@ pub(super) fn submit_turn_kdl_file(
     Ok(report)
 }
 
-fn load_preview_state(
-    dir: &Path,
-) -> Result<(CoreGameData, Vec<QueuedPlayerMail>), TurnSubmissionError> {
-    let store_path = dir.join(DEFAULT_CAMPAIGN_DB_NAME);
-    if store_path.exists() {
-        let store = CampaignStore::open(store_path)?;
-        if let Some(state) = store.load_latest_runtime_state()? {
-            return Ok((state.game_data, state.queued_mail));
-        }
+const NO_SNAPSHOT: &str =
+    "campaign store has no snapshots; initialize the campaign with nc-sysop first";
+
+/// The campaign store in `dir`, without creating one where none exists.
+fn open_existing_store(dir: &Path) -> Result<CampaignStore, TurnSubmissionError> {
+    let path = dir.join(DEFAULT_CAMPAIGN_DB_NAME);
+    if !path.exists() {
+        return Err(TurnSubmissionError::Validation(format!(
+            "campaign store not found at {}",
+            path.display()
+        )));
     }
-
-    Ok((
-        CoreGameData::load(dir)?,
-        load_mail_queue(dir)
-            .map_err(|source| TurnSubmissionError::Validation(source.to_string()))?,
-    ))
-}
-
-fn load_or_seed_runtime_state(
-    dir: &Path,
-    store: &CampaignStore,
-) -> Result<CampaignRuntimeState, TurnSubmissionError> {
-    if let Some(state) = store.load_latest_runtime_state()? {
-        return Ok(state);
-    }
-
-    let game_data = CoreGameData::load(dir)?;
-    let report_block_rows = Vec::<ReportBlockRow>::new();
-    let queued_mail = load_mail_queue(dir)
-        .map_err(|source| TurnSubmissionError::Validation(source.to_string()))?;
-    let campaign_seed =
-        derive_campaign_seed_from_runtime(&game_data, &report_block_rows, &queued_mail);
-    let planet_intel_by_viewer = load_runtime_intel_by_viewer(store, &game_data)?;
-
-    store.save_runtime_state_structured_with_intel_and_seed(
-        &game_data,
-        &BTreeSet::new(),
-        &report_block_rows,
-        &queued_mail,
-        &planet_intel_by_viewer,
-        Some(campaign_seed),
-    )?;
-
-    store.load_latest_runtime_state()?.ok_or_else(|| {
-        TurnSubmissionError::Validation("campaign store has no snapshots".to_string())
-    })
+    Ok(CampaignStore::open(path)?)
 }
 
 fn load_runtime_intel_by_viewer(

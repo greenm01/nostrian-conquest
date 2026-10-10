@@ -1,8 +1,12 @@
 use std::fs;
 use std::path::Path;
 
-use nc_compat::ensure_classic_auxiliary_files;
-use nc_data::{CoreGameData, FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE};
+use nc_compat::{
+    core_file_diff_counts, core_file_diff_offsets, core_file_exact_match_errors,
+    current_known_baseline_diff_counts, current_known_baseline_diff_offsets,
+    ensure_classic_auxiliary_files, load_classic_core_files, save_classic_core_files,
+};
+use nc_data::{FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE};
 
 use crate::commands::runtime::{
     load_runtime_game_data, with_runtime_game_mut_and_export, with_runtime_game_mut_and_export_core,
@@ -118,7 +122,7 @@ pub(crate) fn print_current_known_baseline_diff(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let diffs = data.current_known_baseline_diff_counts();
+    let diffs = current_known_baseline_diff_counts(&data);
 
     println!("Current-known Baseline Diff");
     println!("  dir={}", dir.display());
@@ -133,8 +137,8 @@ pub(crate) fn print_canonical_current_known_baseline_diff(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let diffs = data.diff_counts_against(&baseline);
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let diffs = core_file_diff_counts(&data, &baseline);
 
     println!("Canonical Current-known Baseline Diff");
     println!("  dir={}", dir.display());
@@ -149,7 +153,7 @@ pub(crate) fn print_current_known_baseline_diff_offsets(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let diffs = data.current_known_baseline_diff_offsets();
+    let diffs = current_known_baseline_diff_offsets(&data);
 
     println!("Current-known Baseline Diff Offsets");
     println!("  dir={}", dir.display());
@@ -167,8 +171,8 @@ pub(crate) fn print_canonical_current_known_baseline_diff_offsets(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let diffs = data.diff_offsets_against(&baseline);
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let diffs = core_file_diff_offsets(&data, &baseline);
 
     println!("Canonical Current-known Baseline Diff Offsets");
     println!("  dir={}", dir.display());
@@ -186,8 +190,8 @@ pub(crate) fn print_canonical_transition_clusters(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let diffs = data.diff_offsets_against(&baseline);
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let diffs = core_file_diff_offsets(&data, &baseline);
 
     println!("Canonical Transition Clusters");
     println!("  dir={}", dir.display());
@@ -216,8 +220,8 @@ pub(crate) fn print_canonical_transition_details(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let diffs = data.diff_offsets_against(&baseline);
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let diffs = core_file_diff_offsets(&data, &baseline);
 
     println!("Canonical Transition Details");
     println!("  dir={}", dir.display());
@@ -426,9 +430,12 @@ pub(crate) fn validate_current_known_baseline_exact(
     dir: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let errors =
-        data.exact_match_errors_against(&baseline, "canonical current-known post-maint baseline");
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let errors = core_file_exact_match_errors(
+        &data,
+        &baseline,
+        "canonical current-known post-maint baseline",
+    );
 
     if errors.is_empty() {
         println!("Exact canonical current-known baseline match");
@@ -720,8 +727,9 @@ pub(crate) fn sync_canonical_current_known_baseline(
     println!("  dir = {}", dir.display());
     println!(
         "  exact_canonical_current_known_baseline = {}",
-        data.exact_match_errors_against(
-            &CoreGameData::load(&baseline_dir)?,
+        core_file_exact_match_errors(
+            &data,
+            &load_classic_core_files(&baseline_dir)?,
             "canonical current-known post-maint baseline",
         )
         .is_empty()
@@ -739,9 +747,9 @@ pub(crate) fn init_current_known_baseline(
     // The canonical transition reports compare the direct projected file shape
     // against the preserved post-maint baseline, and routing this through the
     // runtime bridge changes those drift reports.
-    let mut data = CoreGameData::load(target)?;
+    let mut data = load_classic_core_files(target)?;
     data.sync_current_known_initialized_post_maint_baseline();
-    data.save(target)?;
+    save_classic_core_files(target, &data)?;
 
     println!(
         "Current-known baseline directory initialized at {}",
@@ -802,8 +810,8 @@ pub(crate) fn init_canonical_current_known_baseline(
     // Ensure auxiliary files exist
     ensure_classic_auxiliary_files(target)?;
 
-    let baseline = CoreGameData::load(&post_maint_fixture_dir())?;
-    let data = CoreGameData::load(target)?;
+    let baseline = load_classic_core_files(&post_maint_fixture_dir())?;
+    let data = load_classic_core_files(target)?;
 
     println!(
         "Canonical current-known baseline directory initialized at {}",
@@ -812,8 +820,12 @@ pub(crate) fn init_canonical_current_known_baseline(
     println!("  source snapshot: {}", display_repo_path(source));
     println!(
         "  exact_canonical_current_known_baseline = {}",
-        data.exact_match_errors_against(&baseline, "canonical current-known post-maint baseline",)
-            .is_empty()
+        core_file_exact_match_errors(
+            &data,
+            &baseline,
+            "canonical current-known post-maint baseline",
+        )
+        .is_empty()
     );
 
     Ok(())

@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-use nc_data::{CoreGameData, EmpirePlanetEconomyRow, ProductionItemKind};
+use nc_compat::load_classic_core_files;
+use nc_data::{EmpirePlanetEconomyRow, ProductionItemKind};
 use nc_game::model::{ClassicLoginState, PlayerContext};
 use nc_game::screen::layout::{PLAYFIELD_HEIGHT, PLAYFIELD_WIDTH};
 use nc_game::screen::table::{
@@ -362,7 +363,7 @@ fn split_table_renders_both_halves() {
 #[test]
 fn empire_profile_aligns_armies_and_ground_batteries_with_active_duty_list() {
     let mut screen = EmpireProfileScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -684,7 +685,7 @@ fn fleet_list_sort_and_filter_prompts_use_browse_footer_row() {
 #[test]
 fn planet_brief_list_uses_database_style_stacked_header_and_owned_planet_columns() {
     let mut screen = PlanetListScreen::new();
-    let mut game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let planet = &mut game_data.planets.records[0];
     planet.set_build_count_raw(0, 5);
@@ -792,7 +793,7 @@ fn planet_brief_list_uses_database_style_stacked_header_and_owned_planet_columns
 #[test]
 fn planet_brief_list_shows_zero_build_queue_when_no_orders_are_queued() {
     let mut screen = PlanetListScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -856,7 +857,7 @@ fn planet_brief_list_shows_zero_build_queue_when_no_orders_are_queued() {
 #[test]
 fn planet_brief_list_keeps_table_width_stable_across_footer_modes() {
     let mut screen = PlanetListScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -976,7 +977,7 @@ fn planet_brief_list_keeps_table_width_stable_across_footer_modes() {
 #[test]
 fn planet_brief_list_sort_and_filter_prompts_use_browse_footer_row() {
     let mut screen = PlanetListScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -1126,7 +1127,7 @@ fn filter_prompt_inline_status_stays_on_browse_footer_row_for_all_tables() {
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
     let owned_planet_years = BTreeMap::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let frame = ScreenFrame {
         game_dir: Path::new("."),
@@ -1339,7 +1340,7 @@ fn cursor_table_can_render_at_nonzero_column() {
 #[test]
 fn compose_recipient_picker_centers_block_and_pins_prompt_to_table() {
     let mut screen = MessageComposeScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -1396,7 +1397,7 @@ fn compose_recipient_picker_centers_block_and_pins_prompt_to_table() {
 #[test]
 fn rankings_screen_centers_block_and_pins_dismiss_prompt_to_table() {
     let mut screen = RankingsScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
@@ -1452,7 +1453,7 @@ fn rankings_screen_centers_block_and_pins_dismiss_prompt_to_table() {
 #[test]
 fn enemies_screen_centers_block_and_pins_prompt_to_table() {
     let mut screen = EnemiesScreen::new();
-    let game_data = CoreGameData::load(&repo_root().join("fixtures/ecutil-init/v1.5"))
+    let game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();

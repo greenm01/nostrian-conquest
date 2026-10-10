@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::runtime::load_runtime_game_data;
-use nc_compat::inspect_classic_messages_dat;
+use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
 use nc_data::{ConquestDat, CoreGameData, PlanetRecord, SetupDat};
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, plan_route};
 
@@ -231,7 +231,7 @@ pub(crate) fn inspect_fleet_movement(
     prefer_live_directory: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let data = if prefer_live_directory {
-        CoreGameData::load(dir)?
+        load_classic_core_files(dir)?
     } else {
         load_runtime_game_data(dir)?
     };

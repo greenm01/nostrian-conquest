@@ -1,6 +1,6 @@
 //! Tests for maintenance logic (Milestone 4 Phase 2)
 
-use nc_data::CoreGameData;
+use nc_compat::load_classic_core_files;
 use nc_engine::run_maintenance_turn;
 use std::path::Path;
 
@@ -11,7 +11,7 @@ fn test_year_advancement_single_turn() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-fleet-pre/v1.5");
 
     // Load initial state
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("Failed to load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("Failed to load fixture");
     let initial_year = game_data.conquest.game_year();
 
     // Run one turn of maintenance
@@ -33,7 +33,7 @@ fn test_year_advancement_multiple_turns() {
     let fixture_dir =
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-fleet-pre/v1.5");
 
-    let mut game_data = CoreGameData::load(&fixture_dir).expect("Failed to load fixture");
+    let mut game_data = load_classic_core_files(&fixture_dir).expect("Failed to load fixture");
     let initial_year = game_data.conquest.game_year();
 
     // Run 3 turns
@@ -61,7 +61,7 @@ fn test_fleet_fixture_year_matches_post() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-fleet-post/v1.5");
 
     // Load and verify pre state
-    let mut game_data = CoreGameData::load(&pre_dir).expect("Failed to load pre fixture");
+    let mut game_data = load_classic_core_files(&pre_dir).expect("Failed to load pre fixture");
     assert_eq!(
         game_data.conquest.game_year(),
         3000,
@@ -72,7 +72,7 @@ fn test_fleet_fixture_year_matches_post() {
     run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
     // Load post fixture and compare year
-    let post_data = CoreGameData::load(&post_dir).expect("Failed to load post fixture");
+    let post_data = load_classic_core_files(&post_dir).expect("Failed to load post fixture");
     assert_eq!(
         game_data.conquest.game_year(),
         post_data.conquest.game_year(),

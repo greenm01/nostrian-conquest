@@ -1,5 +1,5 @@
 use nc_compat::{
-    ensure_classic_auxiliary_files, import_directory_snapshot_with_seed,
+    ensure_classic_auxiliary_files, import_directory_snapshot_with_seed, save_classic_core_files,
     write_default_database_dat_for_game_data,
 };
 use nc_data::{CampaignStore, generate_campaign_seed};
@@ -36,7 +36,7 @@ pub(crate) fn init_new_game_with_seed(
     let data = build_seeded_new_game(player_count, year, seed)?;
 
     fs::create_dir_all(target)?;
-    data.save(target)?;
+    save_classic_core_files(target, &data)?;
     write_default_database_dat_for_game_data(target, &data)?;
     ensure_classic_auxiliary_files(target)?;
 
@@ -65,7 +65,7 @@ pub(crate) fn init_new_game_from_config(
     let data = build_seeded_new_game(config.player_count, year, config.seed.unwrap_or(seed))?;
 
     fs::create_dir_all(target)?;
-    data.save(target)?;
+    save_classic_core_files(target, &data)?;
     write_default_database_dat_for_game_data(target, &data)?;
     ensure_classic_auxiliary_files(target)?;
 

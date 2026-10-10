@@ -4,6 +4,7 @@
 
 use std::path::PathBuf;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord, Order};
 use nc_engine::run_maintenance_turn;
 
@@ -12,7 +13,7 @@ fn load_fixture(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
+    load_classic_core_files(&dir).unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
 }
 
 fn set_ships(fleet: &mut FleetRecord, cruisers: u16, destroyers: u16, etacs: u16, roe: u8) {
