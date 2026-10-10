@@ -37,7 +37,7 @@ pub fn print_settings_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings show --dir <game_dir>"
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings set --dir <game_dir> [--game-name <title>] [--theme-key <key>] [--snoop on|off] [--session-max-idle <minutes>] [--session-minimum-time <minutes>] [--session-local-timeout on|off] [--session-remote-timeout on|off] [--inactivity-purge-after <turns>] [--inactivity-autopilot-after <turns>] [--maintenance-enabled on|off] [--maintenance-interval-minutes <minutes>] [--maintenance-next-due <unix-seconds>]"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings set --dir <game_dir> [--game-name <title>] [--theme-key <key>] [--snoop on|off] [--session-max-idle <minutes>] [--session-minimum-time <minutes>] [--session-local-timeout on|off] [--session-remote-timeout on|off] [--inactivity-autopilot-after <turns>] [--maintenance-enabled on|off] [--maintenance-interval-minutes <minutes>] [--maintenance-next-due <unix-seconds>]"
     );
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings reserve --dir <game_dir> --player <N> --alias <alias>"

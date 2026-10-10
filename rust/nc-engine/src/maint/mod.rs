@@ -615,6 +615,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         starbase_report_events: movement_events.starbase_reports,
         assault_report_events: assault_events.assault_report_events,
         scout_contact_events: fleet_battle_phase_events.scout_contact_events,
+        starbase_sighting_events: fleet_battle_phase_events.starbase_sighting_events,
         encounter_disposition_events: fleet_battle_phase_events.encounter_disposition_events,
         invalid_player_state_events: refs.invalid_player_state_events,
         fleet_merge_events: refs.merge_events,

@@ -11,7 +11,10 @@ pub const IPBM_RECORD_SIZE: usize = 32;
 pub const SETUP_DAT_SIZE: usize = 522;
 pub const CONQUEST_DAT_SIZE: usize = 2085;
 pub const DATABASE_RECORD_SIZE: usize = 100;
-pub const MAINTENANCE_DAY_ENABLED_CODES: [u8; 7] = [0x01, 0x01, 0xCA, 0x01, 0x0A, 0x01, 0x26];
+/// ROE of a fleet that detach or commissioning creates while it has a
+/// battleship, cruiser, or destroyer; one without gets 0. ECGAME's default,
+/// which its ROE prompt offers.
+pub const NEW_FLEET_DEFAULT_ROE: u8 = 6;
 
 mod bbs_config;
 mod builder;
@@ -78,6 +81,7 @@ pub use maintenance_types::{
     MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
     PlanetOwnershipChangeEvent, SalvageFailureReason, SalvageResolvedEvent, ScoutContactEvent,
     ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
+    StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{

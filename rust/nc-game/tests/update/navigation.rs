@@ -1516,7 +1516,6 @@ fn app_load_persists_all_setup_backed_config_fields_into_runtime_snapshot() {
             session_minimum_time_minutes: Some(7),
             session_local_timeout: Some(true),
             session_remote_timeout: Some(false),
-            inactivity_purge_after_turns: Some(12),
             inactivity_autopilot_after_turns: Some(5),
         },
         reservations: Vec::new(),
@@ -1552,10 +1551,6 @@ fn app_load_persists_all_setup_backed_config_fields_into_runtime_snapshot() {
         first.game_data.setup.remote_timeout_enabled()
     );
     assert_ne!(
-        before_setup.purge_after_turns_raw(),
-        first.game_data.setup.purge_after_turns_raw()
-    );
-    assert_ne!(
         before_setup.autopilot_inactive_turns_raw(),
         first.game_data.setup.autopilot_inactive_turns_raw()
     );
@@ -1567,7 +1562,6 @@ fn app_load_persists_all_setup_backed_config_fields_into_runtime_snapshot() {
     assert_eq!(setup.minimum_time_granted_minutes_raw(), 7);
     assert!(setup.local_timeout_enabled());
     assert!(!setup.remote_timeout_enabled());
-    assert_eq!(setup.purge_after_turns_raw(), 12);
     assert_eq!(setup.autopilot_inactive_turns_raw(), 5);
 
     let second = App::load(AppConfig {

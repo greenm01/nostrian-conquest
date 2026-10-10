@@ -3,7 +3,7 @@
 
 use nc_data::{
     DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
-    MissionAbortReason, Order, Real48, StarbaseAlert,
+    MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent,
 };
 
 use super::rules::{
@@ -154,7 +154,10 @@ impl Year<'_> {
     }
 
     /// A starbase scans for alien units. It only reports: the identification
-    /// is shared by its empire's fleets, and it never starts a fight.
+    /// is shared by its empire's fleets, and it never starts a fight. An
+    /// alien starbase is always reported as newly located; classic opens
+    /// with "previously reported starbase sighting BS-n" after a fleet's
+    /// contact, which Rust does not report.
     fn base_scans(&mut self, game_data: &mut CoreGameData, observer: usize, tick: u8) {
         let Unit {
             index: base_idx,
@@ -170,6 +173,7 @@ impl Year<'_> {
         {
             return;
         }
+        let base_id = base.base_id_raw();
         let factor = base_factor(layer);
         for target in 0..self.units.len() {
             if !self.meets(observer, target) {
@@ -188,18 +192,36 @@ impl Year<'_> {
                 continue;
             }
             self.awareness.raise(owner, target, 2);
-            if unit.kind == UnitKind::Fleet {
-                let alert =
-                    self.base_alert(game_data, owner, &self.fleet_facts(game_data, unit.index));
-                push_fleet_contact(
-                    &mut self.events.scout_contact_events,
-                    &mut self.events.planet_intel_events,
-                    game_data,
-                    ContactObserver::Base(base_idx, alert),
-                    unit.index,
-                    sector,
-                    tick,
-                );
+            match unit.kind {
+                UnitKind::Fleet => {
+                    let alert =
+                        self.base_alert(game_data, owner, &self.fleet_facts(game_data, unit.index));
+                    push_fleet_contact(
+                        &mut self.events.scout_contact_events,
+                        &mut self.events.planet_intel_events,
+                        game_data,
+                        ContactObserver::Base(base_idx, alert),
+                        unit.index,
+                        sector,
+                        tick,
+                    );
+                }
+                UnitKind::Base => {
+                    let target_base = &game_data.bases.records[unit.index];
+                    let alerting = self.declared_enemy(game_data, owner, unit.owner);
+                    self.events
+                        .starbase_sighting_events
+                        .push(StarbaseSightingEvent {
+                            viewer_empire_raw: owner,
+                            starbase_id: base_id,
+                            coords: sector,
+                            in_system: layer == 1,
+                            target_empire_raw: unit.owner,
+                            target_starbase_id: target_base.base_id_raw(),
+                            alerting,
+                            stardate_week: Some(tick),
+                        });
+                }
             }
         }
     }

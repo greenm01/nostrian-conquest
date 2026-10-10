@@ -532,6 +532,49 @@ fn a_starbase_reports_what_it_makes_of_the_fleet() {
     }
 }
 
+/// A starbase that identifies an alien starbase in its sector and layer
+/// reports it to its owner and does nothing else; a declared enemy turns
+/// the report into an alert.
+#[test]
+fn a_starbase_reports_an_alien_starbase_it_identifies() {
+    let sector = [9, 10];
+    let enemy: &[(u8, u8)] = &[(1, 2)];
+    let neutral: &[(u8, u8)] = &[];
+    for (enemies, alerting) in [(enemy, true), (neutral, false)] {
+        let mut scenario = board();
+        add_starbase(&mut scenario, 1, 1, sector, false);
+        add_starbase(&mut scenario, 2, 2, sector, false);
+        let mut sightings = Vec::new();
+        for (_, events) in years(&scenario, &declared(enemies), 0..200) {
+            assert!(events.fleet_battle_events.is_empty());
+            sightings.extend(
+                events
+                    .starbase_sighting_events
+                    .iter()
+                    .filter(|event| event.viewer_empire_raw == 1)
+                    .copied(),
+            );
+        }
+        assert!(
+            sightings.len() >= 50,
+            "enemies {enemies:?}: only {} sightings",
+            sightings.len()
+        );
+        assert!(
+            sightings.iter().all(|event| {
+                event.starbase_id == 1
+                    && event.coords == sector
+                    && !event.in_system
+                    && event.target_empire_raw == 2
+                    && event.target_starbase_id == 2
+                    && event.alerting == alerting
+                    && event.stardate_week.is_some()
+            }),
+            "enemies {enemies:?}: {sightings:?}"
+        );
+    }
+}
+
 /// A willing attacker that is no faster than a moving target may fail the
 /// intercept roll; it reports that it could not intercept, and nothing
 /// else. With ROE 10 it is never the ROE that stops it.

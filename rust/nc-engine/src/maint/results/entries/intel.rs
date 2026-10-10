@@ -235,6 +235,37 @@ pub fn push_intel_entries(
         }
     }
 
+    for event in &events.starbase_sighting_events {
+        let [x, y] = event.coords;
+        let place = if event.in_system { "System" } else { "Sector" };
+        let source = format!(
+            "From Starbase {}, located in {place}({x},{y}):",
+            event.starbase_id
+        );
+        let header = report_header(&source, event.stardate_week, year);
+        let outcome = if event.alerting {
+            "We are alerting all fleets in the area."
+        } else {
+            "Continuing with scanning assignment..."
+        };
+        let body = format!(
+            " We have located and identified an alien starbase in {place}({x},{y}). It is Starbase {} of {}. {outcome}",
+            event.target_starbase_id,
+            classic_empire_clause(game_data, event.target_empire_raw),
+        );
+        entries.push(ReportEntry {
+            text: format!("{header}{body}"),
+            kind: 0x06,
+            tail: RESULTS_TAIL_SCOUTING,
+            target: ReportTarget::Both {
+                recipient: event.viewer_empire_raw,
+            },
+            repeat_next_pointer: false,
+            stardate_week: event.stardate_week,
+            narrative_phase: narrative_phase_for_report_text(&body),
+        });
+    }
+
     // ----- Ownership change events -----
     for event in &events.ownership_change_events {
         if event.reporting_empire_raw == 0 {

@@ -46,7 +46,6 @@ fn campaign_settings_round_trip_and_update_runtime_policy_bytes() {
         session_minimum_time_minutes: 9,
         session_local_timeout: true,
         session_remote_timeout: false,
-        inactivity_purge_after_turns: 4,
         inactivity_autopilot_after_turns: 3,
         maintenance_enabled: true,
         maintenance_interval_minutes: 30,
@@ -78,7 +77,6 @@ fn campaign_settings_round_trip_and_update_runtime_policy_bytes() {
     );
     assert!(runtime.game_data.setup.local_timeout_enabled());
     assert!(!runtime.game_data.setup.remote_timeout_enabled());
-    assert_eq!(runtime.game_data.setup.purge_after_turns_raw(), 4);
     assert_eq!(runtime.game_data.setup.autopilot_inactive_turns_raw(), 3);
 
     let _ = fs::remove_dir_all(root);
@@ -95,7 +93,6 @@ fn campaign_settings_validate_duplicate_reservations() {
         session_minimum_time_minutes: 0,
         session_local_timeout: false,
         session_remote_timeout: true,
-        inactivity_purge_after_turns: 0,
         inactivity_autopilot_after_turns: 0,
         maintenance_enabled: false,
         maintenance_interval_minutes: 60,

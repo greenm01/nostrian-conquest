@@ -1,5 +1,5 @@
+use crate::CONQUEST_DAT_SIZE;
 use crate::support::{ParseError, copy_array, expect_size};
-use crate::{CONQUEST_DAT_SIZE, MAINTENANCE_DAY_ENABLED_CODES};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConquestDat {
@@ -36,19 +36,17 @@ impl ConquestDat {
             .try_into()
             .expect("maintenance schedule should be 7 bytes")
     }
+    /// Sunday through Saturday; ECMAINT runs on a day whose byte is nonzero.
     pub fn maintenance_schedule_enabled(&self) -> [bool; 7] {
         self.maintenance_schedule_bytes().map(|byte| byte != 0)
     }
     pub fn set_maintenance_schedule_bytes(&mut self, bytes: [u8; 7]) {
         self.raw[3..10].copy_from_slice(&bytes);
     }
+    /// Writes 1 for an enabled day and 0 otherwise, as ECUTIL does.
     pub fn set_maintenance_schedule_enabled(&mut self, enabled: [bool; 7]) {
         for (idx, enabled) in enabled.into_iter().enumerate() {
-            self.raw[3 + idx] = if enabled {
-                MAINTENANCE_DAY_ENABLED_CODES[idx]
-            } else {
-                0
-            };
+            self.raw[3 + idx] = u8::from(enabled);
         }
     }
     pub fn header_words(&self) -> Vec<u16> {

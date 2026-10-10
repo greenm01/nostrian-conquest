@@ -123,10 +123,72 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert_eq!(detached.cruiser_count(), 0);
     assert_eq!(detached.troop_transport_count(), 0);
     assert_eq!(detached.army_count(), 0);
+    assert_eq!(detached.rules_of_engagement(), 6);
+    assert_eq!(updated.fleets.records[0].rules_of_engagement(), 0);
+}
+
+/// A detached fleet starts at ECGAME's default ROE, 6, whatever the donor's
+/// ROE is; one without a warship gets 0.
+#[test]
+fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
+    let fixture_dir = temp_game_copy();
+    let mut game_data = CoreGameData::load(&fixture_dir).expect("load fixture");
+    let donor = &mut game_data.fleets.records[0];
+    donor.set_battleship_count(0);
+    donor.set_cruiser_count(1);
+    donor.set_destroyer_count(2);
+    donor.set_troop_transport_count(0);
+    donor.set_army_count(0);
+    donor.set_scout_count(2);
+    donor.set_etac_count(0);
+    donor.recompute_max_speed_from_composition();
+    donor.set_current_speed(0);
+    donor.set_rules_of_engagement(3);
+    game_data.save(&fixture_dir).expect("save fixture");
+    let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
+    import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");
+
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+
     assert_eq!(
-        detached.rules_of_engagement(),
-        updated.fleets.records[0].rules_of_engagement()
+        apply_action(&mut app, Action::Fleet(FleetAction::OpenMenu)),
+        AppOutcome::Continue
     );
+    open_detach_from_fleet_menu(&mut app, Some(1));
+    for class in ["dd", "sc"] {
+        enter_detach_input(&mut app, class);
+        submit_detach(&mut app);
+        submit_detach(&mut app);
+        enter_detach_input(&mut app, "c");
+        submit_detach(&mut app);
+    }
+
+    let updated = latest_runtime_state(&fixture_dir).game_data;
+    let roe_of = |destroyers: u16, scouts: u16, cruisers: u16| {
+        updated
+            .fleets
+            .records
+            .iter()
+            .find(|fleet| {
+                fleet.owner_empire_raw() == 1
+                    && fleet.destroyer_count() == destroyers
+                    && fleet.scout_count() == scouts
+                    && fleet.cruiser_count() == cruisers
+            })
+            .expect("fleet with that composition")
+            .rules_of_engagement()
+    };
+    assert_eq!(roe_of(1, 0, 0), 6, "the detached destroyer");
+    assert_eq!(roe_of(0, 1, 0), 0, "the detached scout");
+    assert_eq!(roe_of(1, 1, 1), 3, "the donor keeps its own ROE");
 }
 
 #[test]

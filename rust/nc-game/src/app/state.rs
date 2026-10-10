@@ -369,9 +369,6 @@ fn apply_game_config_overrides(
             value
         );
     }
-    if let Some(value) = cfg.setup_overrides.inactivity_purge_after_turns {
-        apply_u8!(purge_after_turns_raw, set_purge_after_turns_raw, value);
-    }
     if let Some(value) = cfg.setup_overrides.inactivity_autopilot_after_turns {
         apply_u8!(
             autopilot_inactive_turns_raw,

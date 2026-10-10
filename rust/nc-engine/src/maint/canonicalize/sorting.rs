@@ -23,6 +23,9 @@ pub(super) fn sort_events(events: &mut MaintenanceEvents) {
         .scout_contact_events
         .sort_by_key(|e| e.stardate_week.unwrap_or(1));
     events
+        .starbase_sighting_events
+        .sort_by_key(|e| e.stardate_week.unwrap_or(1));
+    events
         .planet_intel_events
         .sort_by_key(|e| e.stardate_week.unwrap_or(1));
     events

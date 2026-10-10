@@ -18,7 +18,6 @@ pub struct CampaignSettings {
     pub session_minimum_time_minutes: u8,
     pub session_local_timeout: bool,
     pub session_remote_timeout: bool,
-    pub inactivity_purge_after_turns: u8,
     pub inactivity_autopilot_after_turns: u8,
     pub maintenance_enabled: bool,
     pub maintenance_interval_minutes: u32,
@@ -37,7 +36,6 @@ impl CampaignSettings {
             session_minimum_time_minutes: 0,
             session_local_timeout: false,
             session_remote_timeout: true,
-            inactivity_purge_after_turns: 0,
             inactivity_autopilot_after_turns: DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS,
             maintenance_enabled: false,
             maintenance_interval_minutes: DEFAULT_MAINTENANCE_INTERVAL_MINUTES,
@@ -73,12 +71,6 @@ impl CampaignSettings {
             return Err(CampaignStoreError::InvalidState(format!(
                 "session_minimum_time_minutes must be <= 120, got {}",
                 self.session_minimum_time_minutes
-            )));
-        }
-        if self.inactivity_purge_after_turns > 100 {
-            return Err(CampaignStoreError::InvalidState(format!(
-                "inactivity_purge_after_turns must be <= 100, got {}",
-                self.inactivity_purge_after_turns
             )));
         }
         if self.inactivity_autopilot_after_turns > 100 {
@@ -149,7 +141,6 @@ impl CampaignStore {
                         session_minimum_time_minutes,
                         session_local_timeout,
                         session_remote_timeout,
-                        inactivity_purge_after_turns,
                         inactivity_autopilot_after_turns,
                         maintenance_enabled,
                         maintenance_interval_minutes,
@@ -167,12 +158,11 @@ impl CampaignStore {
                         session_minimum_time_minutes: row.get::<_, i64>(5)? as u8,
                         session_local_timeout: row.get::<_, i64>(6)? != 0,
                         session_remote_timeout: row.get::<_, i64>(7)? != 0,
-                        inactivity_purge_after_turns: row.get::<_, i64>(8)? as u8,
-                        inactivity_autopilot_after_turns: row.get::<_, i64>(9)? as u8,
-                        maintenance_enabled: row.get::<_, i64>(10)? != 0,
-                        maintenance_interval_minutes: row.get::<_, i64>(11)? as u32,
+                        inactivity_autopilot_after_turns: row.get::<_, i64>(8)? as u8,
+                        maintenance_enabled: row.get::<_, i64>(9)? != 0,
+                        maintenance_interval_minutes: row.get::<_, i64>(10)? as u32,
                         maintenance_next_due_unix_seconds: row
-                            .get::<_, Option<i64>>(12)?
+                            .get::<_, Option<i64>>(11)?
                             .map(|value| value as u64),
                         reservations: Vec::new(),
                     })
@@ -212,12 +202,11 @@ impl CampaignStore {
                  session_minimum_time_minutes,
                  session_local_timeout,
                  session_remote_timeout,
-                 inactivity_purge_after_turns,
                  inactivity_autopilot_after_turns,
                  maintenance_enabled,
                  maintenance_interval_minutes,
                  maintenance_next_due_unix_seconds
-             ) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
+             ) VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
              ON CONFLICT(singleton) DO UPDATE SET
                  slug = excluded.slug,
                  game_name = excluded.game_name,
@@ -227,7 +216,6 @@ impl CampaignStore {
                  session_minimum_time_minutes = excluded.session_minimum_time_minutes,
                  session_local_timeout = excluded.session_local_timeout,
                  session_remote_timeout = excluded.session_remote_timeout,
-                 inactivity_purge_after_turns = excluded.inactivity_purge_after_turns,
                  inactivity_autopilot_after_turns = excluded.inactivity_autopilot_after_turns,
                  maintenance_enabled = excluded.maintenance_enabled,
                  maintenance_interval_minutes = excluded.maintenance_interval_minutes,
@@ -241,7 +229,6 @@ impl CampaignStore {
                 i64::from(settings.session_minimum_time_minutes),
                 i64::from(settings.session_local_timeout),
                 i64::from(settings.session_remote_timeout),
-                i64::from(settings.inactivity_purge_after_turns),
                 i64::from(settings.inactivity_autopilot_after_turns),
                 i64::from(settings.maintenance_enabled),
                 i64::from(settings.maintenance_interval_minutes),
@@ -295,10 +282,6 @@ impl CampaignStore {
         }
         if setup.remote_timeout_enabled() != settings.session_remote_timeout {
             setup.set_remote_timeout_enabled(settings.session_remote_timeout);
-            changed = true;
-        }
-        if setup.purge_after_turns_raw() != settings.inactivity_purge_after_turns {
-            setup.set_purge_after_turns_raw(settings.inactivity_purge_after_turns);
             changed = true;
         }
         if setup.autopilot_inactive_turns_raw() != settings.inactivity_autopilot_after_turns {
