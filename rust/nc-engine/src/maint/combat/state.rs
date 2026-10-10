@@ -38,6 +38,14 @@ pub(super) struct FleetCombatState {
     pub(super) crippled: [u32; 7],
 }
 
+/// Hits a side took in a fleet battle but has not yet spent on a damage
+/// step, per fire pool.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) struct CarriedHits {
+    pub(super) suppression: u32,
+    pub(super) execution: u32,
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct TaskForce {
     pub(super) empire: u8,
@@ -49,6 +57,10 @@ pub(super) struct TaskForce {
     /// Guards/blockades get one free hold when ROE threshold fails (per spec).
     /// Set to true once this free hold has been used.
     pub(super) free_hold_used: bool,
+    /// Hits carried against this side from earlier exchanges of this
+    /// battle. They belong to the side, not to its fleets: a fleet that
+    /// leaves takes none with them, and the battle's end drops them.
+    pub(super) carried_hits: CarriedHits,
 }
 
 impl FleetCombatState {
@@ -214,6 +226,7 @@ pub(super) fn new_task_force(
         withdrew_under_roe: false,
         engaged_in_battle: false,
         free_hold_used: false,
+        carried_hits: CarriedHits::default(),
     }
 }
 

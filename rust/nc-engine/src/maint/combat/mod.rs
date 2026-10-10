@@ -9,6 +9,8 @@
 mod assault;
 mod exchange;
 mod fleet_battle;
+#[cfg(test)]
+mod fleet_battle_tests;
 mod reporting;
 mod retreat;
 mod state;

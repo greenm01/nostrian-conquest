@@ -174,9 +174,12 @@ matches classic's odds, not its random sequence.
 - Units. NC gives each hull an attack and a defense strength on a 10x scale
   and a nominal, crippled, destroyed ladder. Classic gives hit points, hit
   chance, damage, armor, range, and speed, and nothing persists.
-- Resolution. NC rolls a d10 on a combat results table by force ratio, with
-  column shifts for combined arms and starbases and a critical on 9. Classic
-  rolls per shooter.
+- Resolution. In a fleet battle each NC side rolls one d10 for 25, 50, or
+  100% of its attack strength, whatever the force ratio, with +1 to the die
+  for combined arms and +1 for a starbase, and a critical on 9. Hits a side
+  cannot spend carry to its next exchange in the same battle. Planetary
+  combat keeps a combat results table by force ratio. Classic rolls per
+  shooter.
 - Fire. NC splits suppression fire (cruisers, battleships) from execution
   fire (destroyers, starbases, batteries) and shoots the combat line first.
   Classic shooters pick one target and keep it; batteries only ever target
