@@ -423,6 +423,17 @@ lookup and the reservation check.
 `resolve_launch_binding_finds_handles_stored_in_classic_form` in
 `nc-session/tests/launch.rs` covers both cases and fails without the fix.
 
+### t032
+
+Found in t028. When DOOR.SYS has no handle on line 36, the caller's real name
+is the primary alias and is still matched against every seat, so a caller
+whose real name equals another player's stored handle binds to that seat,
+the exposure t028 closed for callers with a handle. Skipping handle-bound
+seats there instead would let the caller join under a handle another seat
+already holds and lock that player out with the "matches multiple joined
+empires" error. Decide whether to refuse such a join, ask the sysop to
+reserve the caller, or accept the exposure for BBSes that omit line 36.
+
 ## Connections
 
 The RESULTS.DAT chain-id question is its own
