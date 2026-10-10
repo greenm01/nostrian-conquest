@@ -26,6 +26,7 @@ pub(super) const COMBAT_KIND_GROUND: u64 = 6;
 pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
+pub(super) const COMBAT_KIND_DEPARTURE: u64 = 10;
 
 const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],

@@ -26,23 +26,43 @@ fn has_results(game_data: &nc_data::CoreGameData, empire_raw: u8) -> bool {
 }
 
 #[test]
-fn broadcast_reports_reach_every_joined_empire() {
+fn campaign_outlook_reaches_every_joined_empire() {
     let mut game_data = joined_game_data();
     let rows = build_results_report_blocks(&game_data, &outlook_events());
     assert!(!rows.is_empty());
-    assert!(rows.iter().all(|row| row.viewer_empire_id == 0));
 
     apply_results_reviewable_flags(&mut game_data, &rows);
     for empire_raw in 1..=4 {
         assert!(
             has_results(&game_data, empire_raw),
-            "empire {empire_raw} should have broadcast results"
+            "empire {empire_raw} should have the outlook report"
         );
     }
 }
 
 #[test]
-fn broadcast_reports_survive_when_empire_one_is_unjoined() {
+fn campaign_outlook_claims_the_throne_only_for_the_leader() {
+    let game_data = joined_game_data();
+    let rows = build_results_report_blocks(&game_data, &outlook_events());
+    let text_for = |empire_raw: u8| {
+        rows.iter()
+            .filter(|row| row.is_visible_to_viewer(empire_raw))
+            .map(|row| row.decoded_text.replace('\n', " "))
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+
+    let leader = text_for(2);
+    assert!(leader.contains("our claim"), "{leader}");
+    for empire_raw in [1, 3, 4] {
+        let other = text_for(empire_raw);
+        assert!(other.contains("Empire #2"), "{other}");
+        assert!(!other.contains("our claim"), "{other}");
+    }
+}
+
+#[test]
+fn campaign_outlook_skips_unjoined_empires() {
     let mut game_data = joined_game_data();
     game_data.player.records[0].set_player_mode_raw(0x00);
     game_data.player.records[3].set_player_mode_raw(0xff);

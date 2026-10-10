@@ -45,6 +45,32 @@ pub fn stardock_scan_summary_from_snapshot(snapshot: &PlanetIntelSnapshot) -> St
     }
 }
 
+const SCOUTED_WORLD_LABELS: [&str; 6] = [
+    "Owned by:",
+    "Potential production:",
+    "Estimated production:",
+    "Estimated amount of stored goods:",
+    "Number of armies:",
+    "Number of ground batteries:",
+];
+
+/// Scout Solar System report body: a narrative lead-in, the world's facts as
+/// labeled rows in `SCOUTED_WORLD_LABELS` order, then the stardock scan.
+pub fn scouted_world_report_body(
+    planet_name: &str,
+    facts: [String; 6],
+    stardock_summary: &str,
+) -> String {
+    let mut lines = vec![format!(
+        " Scouting mission report: We are in extended orbit around planet \"{planet_name}\" and have compiled the following data:"
+    )];
+    for (label, value) in SCOUTED_WORLD_LABELS.iter().zip(facts) {
+        lines.extend(wrap_labeled_lines(&format!("{label} "), &value));
+    }
+    lines.push(stardock_summary.to_string());
+    lines.join("\n")
+}
+
 pub fn push_intel_entries(
     entries: &mut Vec<ReportEntry>,
     game_data: &CoreGameData,

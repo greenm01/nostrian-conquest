@@ -9,7 +9,8 @@ use crate::maint::results::compose::{
     mission_event_has_fleet_destroyed,
 };
 use crate::maint::results::entries::intel::{
-    matching_planet_intel_event, owner_clause_from_snapshot, stardock_scan_summary_from_snapshot,
+    matching_planet_intel_event, owner_clause_from_snapshot, scouted_world_report_body,
+    stardock_scan_summary_from_snapshot,
 };
 use crate::maint::results::entries::{
     NarrativePhase, ReportEntry, ReportTarget, narrative_phase_for_report_text,
@@ -654,16 +655,17 @@ pub fn push_mission_entries(
                             Some(owner) => classic_empire_clause(game_data, owner),
                             None => "Unknown".to_string(),
                         };
-                        let body = format!(
-                            " Scouting mission report: We are in extended orbit around planet \"{}\" and have compiled the following data:\n  Owned by: {}\n  Potential production: {} points\n  Estimated production: {} points\n  Estimated amount of stored goods: {} points\n  Number of armies: {}\n  Number of ground batteries: {}\n  {}",
+                        let body = scouted_world_report_body(
                             snapshot.known_name.as_deref().unwrap_or("Unknown"),
-                            owner,
-                            snapshot.known_potential_production.unwrap_or(0),
-                            snapshot.known_current_production.unwrap_or(snapshot.known_potential_production.unwrap_or(0) as u8),
-                            snapshot.known_stored_points.unwrap_or(0),
-                            snapshot.known_armies.unwrap_or(0),
-                            snapshot.known_ground_batteries.unwrap_or(0),
-                            stardock_scan_summary_from_snapshot(snapshot),
+                            [
+                                owner,
+                                format!("{} points", snapshot.known_potential_production.unwrap_or(0)),
+                                format!("{} points", snapshot.known_current_production.unwrap_or(snapshot.known_potential_production.unwrap_or(0) as u8)),
+                                format!("{} points", snapshot.known_stored_points.unwrap_or(0)),
+                                snapshot.known_armies.unwrap_or(0).to_string(),
+                                snapshot.known_ground_batteries.unwrap_or(0).to_string(),
+                            ],
+                            &stardock_scan_summary_from_snapshot(snapshot),
                         );
                         (
                             0x0Bu8,
@@ -683,18 +685,22 @@ pub fn push_mission_entries(
                             classic_empire_clause(game_data, planet.owner_empire_slot_raw())
                         };
                         let stardock_summary = stardock_scan_summary(planet);
-                        let body = format!(
-                            " Scouting mission report: We are in extended orbit around planet \"{}\" and have compiled the following data:\n  Owned by: {}\n  Potential production: {} points\n  Estimated production: {} points\n  Estimated amount of stored goods: {} points\n  Number of armies: {}\n  Number of ground batteries: {}\n  {}",
-                            planet.planet_name(),
-                            owner,
-                            planet.potential_production_points(),
-                            planet
-                                .present_production_points_current_known()
-                                .unwrap_or_else(|| planet.potential_production_points()),
-                            planet.stored_goods_raw(),
-                            planet.army_count_raw(),
-                            planet.ground_batteries_raw(),
-                            stardock_summary,
+                        let body = scouted_world_report_body(
+                            &planet.planet_name(),
+                            [
+                                owner,
+                                format!("{} points", planet.potential_production_points()),
+                                format!(
+                                    "{} points",
+                                    planet
+                                        .present_production_points_current_known()
+                                        .unwrap_or_else(|| planet.potential_production_points())
+                                ),
+                                format!("{} points", planet.stored_goods_raw()),
+                                planet.army_count_raw().to_string(),
+                                planet.ground_batteries_raw().to_string(),
+                            ],
+                            &stardock_summary,
                         );
                         (
                             0x0Bu8,

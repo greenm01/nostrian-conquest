@@ -49,6 +49,10 @@ on 2026-10-09 (task t006). The 1992 player guide supports it: a starbase
 guarding fleet "may leave it if they have a high ROE and an enemy fleet comes
 close to their solar system."
 
+Leaving a blockaded world is now modeled as well (task t021). A fleet ordered
+away from a world under blockade, including ships just launched from its
+stardock, is attacked by the blockade before movement.
+
 ## Acceptance and connections
 
 Accepted by the user on 2026-10-09. The normative text is the "Who Fights

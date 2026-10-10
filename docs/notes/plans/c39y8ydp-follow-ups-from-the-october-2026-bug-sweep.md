@@ -198,6 +198,19 @@ fleets leaving one, which the 1992 guide also names.
 Decision (2026-10-09): approved. Count both a fleet ordered out of a
 blockaded world's orbit and newly built ships launching from its stardock.
 
+Result (2026-10-09): a departure interception now runs before movement. A
+fleet that starts the turn at rest at a world with a Guard/Blockade World
+fleet on station, and whose order moves it elsewhere, fights the blockading
+fleets of every other empire, at war or not. Commissioning happens between
+maintenance runs, so a launch is an ordinary fleet at the world by then and
+the same rule covers it. Ships built during maintenance stay in stardock
+until commissioned. The battle reuses the fleet battle driver with only the
+departing and blockading forces. Starbases and other fleets at the world do
+not join, survivors move on, and diplomacy escalates as for any fight. Tests
+are in `nc-engine/tests/combat/departure.rs`. A fleet holding in the
+sector's deep space also counts as departing when it leaves, because fleet
+records keep no earlier mission context.
+
 ### t022
 
 The campaign-outlook broadcast says "none currently appear capable of
@@ -232,6 +245,14 @@ stored handle would therefore bind to that player's seat. Binding before t018
 had the same exposure, because it always used the real name. Decide whether
 to restrict the retry, for example to seats first bound from a DOOR.SYS real
 name, which would need the seat to record how it was bound.
+
+Result (2026-10-09): the outlook is now one targeted report per joined
+empire. The contender reads "We now stand ... our claim", and the others read
+"<empire> now stands ... No other empire, ours included, currently appears
+capable of challenging its claim." It was the last broadcast report, so the
+unused broadcast routing was removed. Scout Solar System fact rows go through
+the shared labeled-row helper, and the example in
+[nc-reports.md](../../dev/nc-reports.md) shows the real output.
 
 ## Connections
 
