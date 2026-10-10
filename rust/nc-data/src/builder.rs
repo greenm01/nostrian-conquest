@@ -250,6 +250,8 @@ impl GameStateBuilder {
                     (player_idx + 1) as u8, // owner_empire_slot
                 );
             }
+            // Pre-joined empires get the treasury joining would have set.
+            data.seed_first_turn_treasury(player_idx + 1, DEFAULT_EMPIRE_TAX_RATE);
         }
 
         // Build fleet blocks

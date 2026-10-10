@@ -52,6 +52,16 @@ homeworld treasury at 0, so pre-joined test and lab games cannot build on turn
 1 under the new budget cap. Real games are unaffected: joining sets the
 first-turn treasury. Seed the baselines the same way the join path does.
 
+Result (2026-10-09): the join path's treasury step is now
+`CoreGameData::seed_first_turn_treasury`, one year's tax revenue from the
+homeworld. `join_player` and `build_initialized_baseline` both call it, so
+`build_seeded_initialized_game` inherits it; a pre-joined homeworld starts
+with 50 points, as a joined one does. Regression test:
+`pre_joined_baselines_start_with_the_join_path_treasury` in
+`nc-data/tests/builder.rs`. No existing test relied on the zero treasury, so
+none changed. Workspace: 2631 passed, 1 failed (the timing test noted under
+t010, which passes alone; load average was about 50 during the run).
+
 ### t010
 
 `maint/economics/ai.rs` near line 148 still squares sector distances in i16,

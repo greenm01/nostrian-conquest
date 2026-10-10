@@ -144,3 +144,28 @@ fn joining_player_grants_documented_opening_homeworld_production_points() {
     assert_eq!(homeworld.present_production_points(), Some(100));
     assert_eq!(homeworld.stored_production_points(), 50);
 }
+
+#[test]
+fn pre_joined_baselines_start_with_the_join_path_treasury() {
+    let mut joined = GameStateBuilder::new()
+        .with_player_count(4)
+        .build_joinable_new_game_baseline()
+        .expect("joinable baseline should build");
+    joined
+        .join_player(1, "Codex Dominion")
+        .expect("join player should succeed");
+    let join_treasury = joined.planets.records[0].stored_production_points();
+    assert!(join_treasury > 0);
+
+    let initialized = GameStateBuilder::new()
+        .with_player_count(4)
+        .build_initialized_baseline()
+        .expect("initialized baseline should build");
+    let seeded = nc_engine::build_seeded_initialized_game(4, 3000, 1515)
+        .expect("seeded game should build");
+    for data in [&initialized, &seeded] {
+        for homeworld in &data.planets.records[..4] {
+            assert_eq!(homeworld.stored_production_points(), join_treasury);
+        }
+    }
+}
