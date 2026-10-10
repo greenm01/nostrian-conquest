@@ -250,3 +250,50 @@ fn fleet_eta_to_destination_can_use_max_speed_for_stopped_fleets() {
         FleetEtaEstimate::Years(1)
     );
 }
+
+#[test]
+fn pathfinder_reaches_the_last_row_and_column_of_the_map() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+
+    // Map coordinates are 1-based, so an 18x18 map includes sector (18,18).
+    let fleet = &mut game_data.fleets.records[0];
+    fleet.set_current_location_coords_raw([15, 15]);
+    fleet.set_standing_order_kind(Order::MoveOnly);
+    fleet.set_standing_order_target_coords_raw([18, 18]);
+    fleet.set_current_speed(3);
+
+    let route = plan_route(&game_data, 0).expect("corner route should exist");
+    assert_eq!(route.steps.last().map(|step| step.coords), Some([18, 18]));
+}
+
+#[test]
+fn pathfinder_never_detours_through_row_or_column_zero() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3000)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+
+    let fleet = &mut game_data.fleets.records[0];
+    fleet.set_current_location_coords_raw([1, 3]);
+    fleet.set_standing_order_kind(Order::MoveOnly);
+    fleet.set_standing_order_target_coords_raw([1, 7]);
+    fleet.set_current_speed(3);
+
+    let mut intel = VisibleHazardIntel::default();
+    intel.foreign_worlds.insert([1, 5]);
+    intel.foreign_worlds.insert([2, 5]);
+
+    let route = plan_route_with_intel(&game_data, 0, &intel).expect("route should exist");
+    assert!(
+        route
+            .steps
+            .iter()
+            .all(|step| step.coords[0] >= 1 && step.coords[1] >= 1),
+        "{route:?}"
+    );
+}

@@ -132,10 +132,11 @@ fn heuristic_cost(from: [u8; 2], to: [u8; 2]) -> u32 {
     (dx + dy) * BASE_STEP_COST
 }
 
+/// Adjacent sectors inside the 1-based `1..=map_size` sector grid.
 fn neighbors(coords: [u8; 2], map_size: u8) -> impl Iterator<Item = [u8; 2]> {
     let x = coords[0] as i16;
     let y = coords[1] as i16;
-    let max = map_size as i16 - 1;
+    let max = map_size as i16;
     let mut out = Vec::with_capacity(8);
     for dx in -1..=1 {
         for dy in -1..=1 {
@@ -144,7 +145,7 @@ fn neighbors(coords: [u8; 2], map_size: u8) -> impl Iterator<Item = [u8; 2]> {
             }
             let nx = x + dx;
             let ny = y + dy;
-            if nx >= 0 && nx <= max && ny >= 0 && ny <= max {
+            if nx >= 1 && nx <= max && ny >= 1 && ny <= max {
                 out.push([nx as u8, ny as u8]);
             }
         }
