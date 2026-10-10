@@ -765,9 +765,13 @@ fn fleet_missions_route_to_expected_target_prompt_modes() {
 
         app.submit_fleet_mission_picker();
 
+        let question =
+            nc_engine::seek_next_closest_question(&app.game_data, mission_code, &[record]);
+
         // Seek Home and a single-world Salvage skip the coordinates, as ECGAME does.
         let expected_prompt_mode = match (automatic, fleet_target_input_kind(Some(mission_code))) {
             (Err(_), _) => FleetOverlayPromptMode::MissionPicker,
+            (Ok(Some(_)), _) if question.is_some() => FleetOverlayPromptMode::SeekNextClosest,
             (Ok(Some(_)), _) => FleetOverlayPromptMode::OrderConfirm,
             (
                 Ok(None),
@@ -811,6 +815,110 @@ fn seek_home_order_targets_the_nearest_owned_world_without_coordinates() {
     let fleet = &app.game_data.fleets.records[record - 1];
     assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
     assert_eq!(fleet.standing_order_target_coords_raw(), [16, 13]);
+}
+
+/// Order the first fleet, at rest in its home system at (16,13), to Seek
+/// Home; with `second_world` player 1 also owns (8,8).
+fn seek_home_from_the_home_system(second_world: bool) -> (DashApp, usize) {
+    let mut app = audit_ready_dash_app();
+    app.overlay = ActiveOverlay::FleetList;
+    if second_world {
+        app.game_data
+            .planets
+            .records
+            .iter_mut()
+            .find(|planet| planet.coords_raw() == [8, 8])
+            .expect("seeded world")
+            .set_owner_empire_slot_raw(1);
+    }
+    select_first_fleet_row(&mut app);
+    app.open_selected_fleet_order_flow();
+    let record = app
+        .selected_fleet_order_row()
+        .expect("selected fleet row")
+        .fleet_record_index_1_based;
+    let fleet = &mut app.game_data.fleets.records[record - 1];
+    fleet.set_current_location_coords_raw([16, 13]);
+    fleet.set_at_rest_motion();
+    app.fleet_overlay.mission_picker_input = "2".to_string();
+    app.submit_fleet_mission_picker();
+    (app, record)
+}
+
+#[test]
+fn seek_home_in_the_home_system_asks_and_defaults_to_the_next_closest() {
+    let (mut app, record) = seek_home_from_the_home_system(true);
+    assert_eq!(
+        app.fleet_overlay.prompt_mode,
+        FleetOverlayPromptMode::SeekNextClosest
+    );
+    let mut buffer = crate::dashboard::buffer::PlayfieldBuffer::new(
+        app.geometry.width(),
+        app.geometry.height(),
+        crate::dashboard::theme::body_style(),
+    );
+    crate::dashboard::overlays::fleet_list::draw(
+        &mut buffer,
+        &app,
+        dashboard_layout(&app).widgets.center_map,
+    );
+    let lines = (0..buffer.height())
+        .map(|row| buffer.plain_line(row))
+        .collect::<Vec<_>>();
+    assert!(
+        lines
+            .iter()
+            .any(|line| line.contains("fleet is already in a star system you control."))
+    );
+    assert!(lines.iter().any(|line| line.contains(
+        "COMMAND <- Do you wish this fleet to seek the next closest system? [Y]/N <ESC> ->"
+    )));
+    app.handle_key(key(KeyCode::Enter));
+    assert_eq!(
+        app.fleet_overlay.prompt_mode,
+        FleetOverlayPromptMode::OrderConfirm
+    );
+    app.handle_key(key(KeyCode::Enter));
+
+    let fleet = &app.game_data.fleets.records[record - 1];
+    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
+    assert_eq!(fleet.standing_order_target_coords_raw(), [8, 8]);
+}
+
+#[test]
+fn seek_home_in_the_home_system_stays_on_no() {
+    let (mut app, record) = seek_home_from_the_home_system(true);
+    app.handle_key(key(KeyCode::Char('n')));
+    assert_eq!(
+        app.fleet_overlay.prompt_mode,
+        FleetOverlayPromptMode::OrderConfirm
+    );
+    app.handle_key(key(KeyCode::Enter));
+
+    let fleet = &app.game_data.fleets.records[record - 1];
+    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
+    assert_eq!(fleet.standing_order_target_coords_raw(), [16, 13]);
+}
+
+#[test]
+fn seek_home_in_the_only_controlled_system_aborts() {
+    let (app, record) = seek_home_from_the_home_system(false);
+    assert_eq!(
+        app.fleet_overlay.prompt_mode,
+        FleetOverlayPromptMode::MissionPicker
+    );
+    assert!(
+        app.fleet_overlay
+            .mission_picker_status
+            .as_deref()
+            .is_some_and(
+                |status| status.ends_with("fleet is already in your only controlled star system.")
+            )
+    );
+    assert_ne!(
+        app.game_data.fleets.records[record - 1].standing_order_kind(),
+        nc_data::Order::SeekHome
+    );
 }
 
 #[test]

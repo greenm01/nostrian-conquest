@@ -17,11 +17,12 @@ pub use starbase::{
     starbase_operation_label,
 };
 pub use targeting::{
-    OwnedFleetTarget, OwnedStarbaseTarget, automatic_order_targets, default_host_fleet_target,
-    default_starbase_target, fleet_mission_requires_preselected_target,
-    fleet_order_target_rejects_owned_planet, fleet_order_target_rejects_owned_scout_target,
-    fleet_order_target_requires_owned_planet, fleet_order_target_requires_planet_system,
-    fleet_order_target_y_depends_on_entered_x, owned_fleet_targets, owned_starbase_targets,
-    recommended_coordinate_target, recommended_coordinate_target_candidates,
-    recommended_coordinate_target_y_for_entered_x, target_available_for_mission,
+    OwnedFleetTarget, OwnedStarbaseTarget, SEEK_NEXT_CLOSEST_PROMPT, SeekNextClosestQuestion,
+    automatic_order_targets, default_host_fleet_target, default_starbase_target,
+    fleet_mission_requires_preselected_target, fleet_order_target_rejects_owned_planet,
+    fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,
+    fleet_order_target_requires_planet_system, fleet_order_target_y_depends_on_entered_x,
+    owned_fleet_targets, owned_starbase_targets, recommended_coordinate_target,
+    recommended_coordinate_target_candidates, recommended_coordinate_target_y_for_entered_x,
+    seek_next_closest_question, target_available_for_mission,
 };

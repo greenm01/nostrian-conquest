@@ -10,7 +10,7 @@ use crate::dashboard::table::{
 };
 use crate::dashboard::table_filter::{FilterKind, TableFilterClause, TableFilterColumn};
 use crate::dashboard::table_selection;
-use nc_engine::{FLEET_MISSION_OPTIONS, fleet_list_eta_label};
+use nc_engine::{FLEET_MISSION_OPTIONS, SEEK_NEXT_CLOSEST_PROMPT, fleet_list_eta_label};
 
 use crate::dashboard::app::state::{
     ActiveOverlay, DashApp, FleetOverlayFilter, FleetOverlayPromptMode, FleetOverlayRowKey,
@@ -252,6 +252,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, map_frame: MapWidgetFrame)
         FleetOverlayPromptMode::OrderTarget
         | FleetOverlayPromptMode::OrderTargetX
         | FleetOverlayPromptMode::OrderTargetY
+        | FleetOverlayPromptMode::SeekNextClosest
         | FleetOverlayPromptMode::OrderConfirm => {
             if app.fleet_order_is_group_scope() {
                 draw_group_fleet_order_prompt(buf, app, map_frame);
@@ -342,6 +343,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, map_frame: MapWidgetFrame)
         | FleetOverlayPromptMode::OrderTarget
         | FleetOverlayPromptMode::OrderTargetX
         | FleetOverlayPromptMode::OrderTargetY
+        | FleetOverlayPromptMode::SeekNextClosest
         | FleetOverlayPromptMode::OrderConfirm
         | FleetOverlayPromptMode::StarbaseMoveDecision
         | FleetOverlayPromptMode::StarbaseMoveDestination
@@ -425,6 +427,7 @@ pub(crate) fn popup_rect(app: &DashApp, map_frame: MapWidgetFrame) -> Option<Rec
         FleetOverlayPromptMode::OrderTarget
         | FleetOverlayPromptMode::OrderTargetX
         | FleetOverlayPromptMode::OrderTargetY
+        | FleetOverlayPromptMode::SeekNextClosest
         | FleetOverlayPromptMode::OrderConfirm => {
             return Some(order_prompt_popup_rect(app, map_frame));
         }
@@ -509,6 +512,7 @@ pub(crate) fn popup_rect(app: &DashApp, map_frame: MapWidgetFrame) -> Option<Rec
         | FleetOverlayPromptMode::OrderTarget
         | FleetOverlayPromptMode::OrderTargetX
         | FleetOverlayPromptMode::OrderTargetY
+        | FleetOverlayPromptMode::SeekNextClosest
         | FleetOverlayPromptMode::OrderConfirm
         | FleetOverlayPromptMode::StarbaseMoveDecision
         | FleetOverlayPromptMode::StarbaseMoveDestination
@@ -767,6 +771,7 @@ fn draw_fleet_order_prompt(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame:
             input: &target_y_input,
         },
     ];
+    let seek_next_closest_prompt = format!("{} [Y]/N <ESC> -> ", SEEK_NEXT_CLOSEST_PROMPT);
     let footer = match app.fleet_overlay.prompt_mode {
         FleetOverlayPromptMode::OrderTarget => TableFooter::CommandInput {
             label: "COMMAND",
@@ -781,6 +786,11 @@ fn draw_fleet_order_prompt(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame:
         FleetOverlayPromptMode::OrderTargetY => TableFooter::Stacked {
             rows: &coordinate_rows,
             active_row: 1,
+        },
+        FleetOverlayPromptMode::SeekNextClosest => TableFooter::CommandPromptInput {
+            label: "COMMAND",
+            prompt: &seek_next_closest_prompt,
+            input: &app.fleet_overlay.order_confirm_input,
         },
         FleetOverlayPromptMode::OrderConfirm => TableFooter::CommandPromptInput {
             label: "COMMAND",
@@ -861,6 +871,7 @@ fn draw_group_fleet_order_prompt(
             input: &target_y_input,
         },
     ];
+    let seek_next_closest_prompt = format!("{} [Y]/N <ESC> -> ", SEEK_NEXT_CLOSEST_PROMPT);
     let footer = match app.fleet_overlay.prompt_mode {
         FleetOverlayPromptMode::OrderTarget => TableFooter::CommandInput {
             label: "COMMAND",
@@ -875,6 +886,11 @@ fn draw_group_fleet_order_prompt(
         FleetOverlayPromptMode::OrderTargetY => TableFooter::Stacked {
             rows: &coordinate_rows,
             active_row: 1,
+        },
+        FleetOverlayPromptMode::SeekNextClosest => TableFooter::CommandPromptInput {
+            label: "COMMAND",
+            prompt: &seek_next_closest_prompt,
+            input: &app.fleet_overlay.order_confirm_input,
         },
         FleetOverlayPromptMode::OrderConfirm => TableFooter::CommandPromptInput {
             label: "COMMAND",
@@ -1170,6 +1186,7 @@ fn order_prompt_popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
             input: &target_y_input,
         },
     ];
+    let seek_next_closest_prompt = format!("{} [Y]/N <ESC> -> ", SEEK_NEXT_CLOSEST_PROMPT);
     let footer = match app.fleet_overlay.prompt_mode {
         FleetOverlayPromptMode::OrderTarget => TableFooter::CommandInput {
             label: "COMMAND",
@@ -1184,6 +1201,11 @@ fn order_prompt_popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
         FleetOverlayPromptMode::OrderTargetY => TableFooter::Stacked {
             rows: &coordinate_rows,
             active_row: 1,
+        },
+        FleetOverlayPromptMode::SeekNextClosest => TableFooter::CommandPromptInput {
+            label: "COMMAND",
+            prompt: &seek_next_closest_prompt,
+            input: &app.fleet_overlay.order_confirm_input,
         },
         FleetOverlayPromptMode::OrderConfirm => TableFooter::CommandPromptInput {
             label: "COMMAND",

@@ -290,6 +290,28 @@ fleet-chain rebuild after a detach does not update the PLAYER.DAT chain tail;
 that is unchanged. Tests are in `nc-data/tests/fleet_layout.rs` and
 `speed_change.rs`.
 
+## Seek Home question, t043 (2026-10-10)
+
+ECGAME's Seek Home branch (`0x13c79..0x13e4c`) takes the mode-0 target,
+then, when the order covers one fleet (`[bp-0x6f2] == 1`) and its ETA
+(`0x1611e`) is 0, checks the empire's world count (PLAYER.DAT `+0x50`):
+
+- More than one: it prints "The " plus the fleet number as an ordinal
+  (`415e:0461`) and " fleet is already in a star system you control.", then
+  asks "Do you wish this fleet to seek the next closest system?" with yes as
+  the default (`3681:0fc1`). Yes runs the picker in mode 1 and aborts only if
+  that finds nothing. No leaves the mode-0 target, so the order stands on the
+  world the fleet is at.
+- One: it prints "The <n> fleet is already in your only controlled star
+  system." and aborts (`[bp-0x863] = 1`).
+
+Result: nc-game and nc-helm ask the question with ECGAME's wording and
+default, for a single fleet and for a group order of one fleet, and show both
+messages. nc-engine's `seek_next_closest_question` holds the shared check and
+text. On an abort nc-game leaves the mission picker for the fleet menu or
+list and shows the message there. Tests are in
+`nc-game/tests/update/fleet_orders.rs` and nc-helm's `dashboard/app/tests`.
+
 ## Result (2026-10-10)
 
 t031 is closed. Rust steps fleets with the decompiled 52-tick model in

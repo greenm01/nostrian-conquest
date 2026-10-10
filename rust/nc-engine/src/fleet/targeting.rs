@@ -257,11 +257,8 @@ pub fn automatic_order_targets(
         nc_data::Order::SeekHome => match game_data.seek_home_targets(fleet_records) {
             Ok(targets) => Ok(Some(targets)),
             Err(nc_data::SeekHomeTarget::AlreadyInOnlySystem) => Err(format!(
-                "Fleet #{} is already in your only controlled star system. Order aborted.",
-                fleet_records
-                    .first()
-                    .and_then(|record| game_data.fleets.records.get(record - 1))
-                    .map_or(0, |fleet| fleet.local_slot_word_raw())
+                "{} fleet is already in your only controlled star system.",
+                fleet_title(game_data, fleet_records[0])
             )),
             Err(_) => Err(NO_OWNED_WORLD_MESSAGE.to_string()),
         },
@@ -286,6 +283,58 @@ pub fn automatic_order_targets(
         }
         _ => Ok(None),
     }
+}
+
+/// ECGAME's Seek Home question (`0x13d23`), asked with yes as the default.
+pub const SEEK_NEXT_CLOSEST_PROMPT: &str =
+    "Do you wish this fleet to seek the next closest system?";
+
+/// The question ECGAME asks when one fleet ordered to Seek Home already sits
+/// in the system of its nearest owned world and the empire owns another.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SeekNextClosestQuestion {
+    /// The line shown above the question.
+    pub notice: String,
+    /// The target on no: the world the fleet is at.
+    pub stay: [u8; 2],
+    /// The target on yes: the next closest owned world.
+    pub next: [u8; 2],
+}
+
+/// ECGAME's Seek Home question for this order, or `None` when it does not
+/// ask: another mission, a group of fleets, or a fleet away from its nearest
+/// world.
+pub fn seek_next_closest_question(
+    game_data: &CoreGameData,
+    mission_code: u8,
+    fleet_records: &[usize],
+) -> Option<SeekNextClosestQuestion> {
+    let [record] = fleet_records else {
+        return None;
+    };
+    if nc_data::Order::from_raw(mission_code) != nc_data::Order::SeekHome {
+        return None;
+    }
+    let nc_data::SeekHomeTarget::NextClosest(next) = game_data.seek_home_target(*record) else {
+        return None;
+    };
+    Some(SeekNextClosestQuestion {
+        notice: format!(
+            "{} fleet is already in a star system you control.",
+            fleet_title(game_data, *record)
+        ),
+        stay: game_data.nearest_owned_world(*record, false)?,
+        next,
+    })
+}
+
+/// ECGAME's "The 3rd" before "fleet" in its order messages.
+fn fleet_title(game_data: &CoreGameData, record: usize) -> String {
+    let number = game_data.fleets.records[record - 1].local_slot_word_raw();
+    format!(
+        "The {}",
+        super::starbase::ordinal_number(usize::from(number))
+    )
 }
 
 pub fn fleet_mission_requires_preselected_target(order_code: u8) -> bool {

@@ -563,6 +563,15 @@ impl DashApp {
                     _ => {}
                 }
             }
+            FleetOverlayPromptMode::SeekNextClosest => match key.code {
+                KeyCode::Char('?') => self.open_overlay_help(HelpContext::FleetOrderInput),
+                KeyCode::Enter => self.answer_seek_next_closest(true),
+                KeyCode::Esc => self.cancel_fleet_order_input(),
+                KeyCode::Char(ch) if matches!(ch, 'y' | 'Y' | 'n' | 'N') => {
+                    self.answer_seek_next_closest(ch.eq_ignore_ascii_case(&'y'));
+                }
+                _ => {}
+            },
             FleetOverlayPromptMode::OrderConfirm => match key.code {
                 KeyCode::Char('?') => self.open_overlay_help(HelpContext::FleetOrderInput),
                 KeyCode::Enter => {

@@ -621,7 +621,7 @@ answer yes to "Include time to enter system?"
 
 *Mission 1: Move to Sector.* A simple transit order. The fleet travels to the destination sector at the speed of its slowest ship, then stops and reverts to Hold Position. You must issue new orders if you want it to do anything else.
 
-*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. A fleet already in the system of its nearest planet heads for the next closest one, and in a group order each fleet seeks its own nearest planet.
+*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet; no keeps it on the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
 
 *Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
 
