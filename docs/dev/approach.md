@@ -289,7 +289,7 @@ path.
 
 Fleet contact events emit a **single merged report** that combines the sensor
 contact flavor with the fleet identification inline:
-`"Sensor contact — detected and identified an alien fleet in {location}.
+`"Sensor contact -- detected and identified an alien fleet in {location}.
 It is {enemy}. Their fleet contains {size_summary} of unknown type."`
 This replaces the classic two-report prelude+identify pattern.
 `ContactReportSource::Starbase` reports and `EncounterDispositionEvent`

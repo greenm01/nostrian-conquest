@@ -1,4 +1,5 @@
 use super::{Mission, MissionRetargetEvent};
+use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, Order};
 
 pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
@@ -203,10 +204,6 @@ pub(super) fn nearest_owned_planet_target_from_list(
     owned_planets
         .iter()
         .filter(|(owner, _)| *owner == empire_raw)
-        .min_by_key(|(_, coords)| {
-            let dx = i32::from(coords[0]) - i32::from(from[0]);
-            let dy = i32::from(coords[1]) - i32::from(from[1]);
-            dx * dx + dy * dy
-        })
+        .min_by_key(|(_, coords)| sector_distance_sq(from, *coords))
         .map(|(_, coords)| *coords)
 }

@@ -253,8 +253,25 @@ fn fleet_eta_to_destination_can_use_max_speed_for_stopped_fleets() {
 
 #[test]
 fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
+    // Axis-aligned and diagonal moves. On a diagonal the fleet can round
+    // into the visible target sector a year before the order completes at
+    // the exact path endpoint, and the stored exact position is rounded to
+    // 1/256 sector between years.
+    let offsets: [[u8; 2]; 11] = [
+        [1, 0],
+        [2, 0],
+        [5, 0],
+        [9, 0],
+        [12, 0],
+        [16, 0],
+        [1, 1],
+        [3, 2],
+        [6, 8],
+        [7, 3],
+        [10, 9],
+    ];
     for speed in 1..=9u8 {
-        for distance in [1u8, 2, 5, 9, 12, 16] {
+        for offset in offsets {
             let mut game_data = GameStateBuilder::new()
                 .with_player_count(4)
                 .with_year(3000)
@@ -263,9 +280,7 @@ fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
             for player in &mut game_data.player.records {
                 player.set_autopilot_flag(0);
             }
-            // Axis-aligned, so the visible sector and the exact path endpoint
-            // are reached on the same turn.
-            let target = [1 + distance, 9];
+            let target = [1 + offset[0], 9 + offset[1]];
             let fleet = &mut game_data.fleets.records[0];
             fleet.set_max_speed(9);
             fleet.set_current_location_coords_raw([1, 9]);
@@ -273,22 +288,26 @@ fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
             fleet.set_standing_order_target_coords_raw(target);
             fleet.set_current_speed(speed);
 
-            let FleetEtaEstimate::Years(predicted) = estimate_fleet_eta(&game_data, 0) else {
-                panic!("speed {speed} distance {distance}: fleet should be under way");
-            };
             let mut turns = 0u16;
+            let mut predictions = Vec::new();
             while game_data.fleets.records[0].standing_order_kind() == Order::MoveOnly {
+                let FleetEtaEstimate::Years(predicted) = estimate_fleet_eta(&game_data, 0) else {
+                    panic!("speed {speed} target {target:?}: fleet should be under way");
+                };
+                predictions.push(predicted);
                 run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
                 turns += 1;
-                assert!(turns <= 40, "speed {speed} distance {distance}: no arrival");
+                assert!(turns <= 40, "speed {speed} target {target:?}: no arrival");
             }
             assert_eq!(
                 game_data.fleets.records[0].current_location_coords_raw(),
                 target
             );
+            // The estimate before each year matches the years still to go.
+            let remaining: Vec<u16> = (1..=turns).rev().collect();
             assert_eq!(
-                predicted, turns,
-                "speed {speed} distance {distance}: ETA vs actual arrival"
+                predictions, remaining,
+                "speed {speed} target {target:?}: ETA vs actual arrival"
             );
         }
     }

@@ -534,7 +534,7 @@ impl DashApp {
                 .unwrap_or(0)
                 == 0
         {
-            return "Stardock is full — commission ships first to free space.".to_string();
+            return "Stardock is full -- commission ships first to free space.".to_string();
         }
         self.planet_build_unavailable_message(kind)
     }
@@ -571,7 +571,7 @@ impl DashApp {
                 .planet_additional_build_points_capacity(planet_record_index_1_based, kind)?;
             if capacity == 0 {
                 self.planet_overlay.build_quantity_status =
-                    Some("Stardock is full — commission ships first to free space.".to_string());
+                    Some("Stardock is full -- commission ships first to free space.".to_string());
                 return Ok(());
             }
         }

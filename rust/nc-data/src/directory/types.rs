@@ -358,6 +358,9 @@ pub enum GameStateMutationError {
     InvalidPlanetName {
         planet_index_1_based: usize,
     },
+    InvalidEmpireName {
+        player_index_1_based: usize,
+    },
     InvalidPlayerTaxRate {
         player_index_1_based: usize,
         tax_rate: u8,
@@ -709,6 +712,13 @@ impl std::fmt::Display for GameStateMutationError {
                 f,
                 "planet {} name must be printable ASCII",
                 planet_index_1_based
+            ),
+            Self::InvalidEmpireName {
+                player_index_1_based,
+            } => write!(
+                f,
+                "player {} empire name must be printable ASCII",
+                player_index_1_based
             ),
             Self::InvalidPlayerTaxRate {
                 player_index_1_based,

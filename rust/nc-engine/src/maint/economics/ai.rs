@@ -1,3 +1,4 @@
+use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, production_item_kind_raw};
 use nc_data::fleet_motion_state::reset_motion_state_for_new_orders;
 use nc_data::{
@@ -148,11 +149,7 @@ fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
 fn nearest_owned_planet_coords(from: [u8; 2], candidates: &[[u8; 2]]) -> Option<[u8; 2]> {
     candidates
         .iter()
-        .min_by_key(|coords| {
-            let dx = i16::from(coords[0]) - i16::from(from[0]);
-            let dy = i16::from(coords[1]) - i16::from(from[1]);
-            dx * dx + dy * dy
-        })
+        .min_by_key(|coords| sector_distance_sq(from, **coords))
         .copied()
 }
 

@@ -73,6 +73,11 @@ impl CoreGameData {
                 index_1_based: player_record_index_1_based,
             });
         }
+        if !empire_name.chars().all(is_classic_text_char) {
+            return Err(GameStateMutationError::InvalidEmpireName {
+                player_index_1_based: player_record_index_1_based,
+            });
+        }
         let player = self
             .player
             .records
@@ -88,19 +93,28 @@ impl CoreGameData {
         player.set_last_run_year_raw(self.conquest.game_year());
         if homeworld_planet_index_1_based != 0 {
             player.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_1_based as u8);
-            if let Some(planet) = self
-                .planets
-                .records
-                .get_mut(homeworld_planet_index_1_based - 1)
-            {
-                let revenue = crate::yearly_tax_revenue(
-                    planet.present_production_points().unwrap_or(0),
-                    tax_rate,
-                );
-                planet.set_stored_production_points(revenue);
-            }
+            self.seed_first_turn_treasury(homeworld_planet_index_1_based, tax_rate);
         }
         Ok(())
+    }
+
+    /// A new empire starts with one year's tax revenue from its homeworld.
+    pub(crate) fn seed_first_turn_treasury(
+        &mut self,
+        homeworld_planet_index_1_based: usize,
+        tax_rate: u8,
+    ) {
+        if let Some(planet) = self
+            .planets
+            .records
+            .get_mut(homeworld_planet_index_1_based - 1)
+        {
+            let revenue = crate::yearly_tax_revenue(
+                planet.present_production_points().unwrap_or(0),
+                tax_rate,
+            );
+            planet.set_stored_production_points(revenue);
+        }
     }
 
     pub fn rename_player_homeworld(

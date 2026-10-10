@@ -531,6 +531,8 @@ pub enum SalvageFailureReason {
 pub enum SalvageResolvedEvent {
     Succeeded {
         fleet_idx: usize,
+        /// Number of the salvaged fleet, which is removed before reporting.
+        fleet_number: u8,
         owner_empire_raw: u8,
         planet_idx: usize,
         coords: [u8; 2],

@@ -45,7 +45,8 @@ fn move_only_traces_match_current_classic_oracle_cases() {
             speed: 3,
             start: [10, 10],
             target: [16, 16],
-            expected_initial_eta: 3,
+            // Shows in (16,16) after year 3; the order completes in year 4.
+            expected_initial_eta: 4,
             expected_positions: &[[10, 10], [11, 11], [14, 14], [16, 16], [16, 16]],
         },
         MovementCase {
@@ -61,7 +62,8 @@ fn move_only_traces_match_current_classic_oracle_cases() {
             speed: 1,
             start: [10, 10],
             target: [13, 13],
-            expected_initial_eta: 5,
+            // Shows in (13,13) after year 5; the order completes in year 6.
+            expected_initial_eta: 6,
             expected_positions: &[[10, 10], [10, 10], [11, 11], [11, 11], [12, 12], [13, 13]],
         },
         MovementCase {

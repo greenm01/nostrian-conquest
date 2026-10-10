@@ -834,7 +834,7 @@ impl App {
         ) {
             return;
         }
-        if !ch.is_ascii_graphic() && ch != ' ' {
+        if !nc_data::is_classic_text_char(ch) {
             return;
         }
         if self.startup_state.first_time_input.chars().count() >= 20 {

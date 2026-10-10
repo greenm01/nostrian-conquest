@@ -52,11 +52,29 @@ homeworld treasury at 0, so pre-joined test and lab games cannot build on turn
 1 under the new budget cap. Real games are unaffected: joining sets the
 first-turn treasury. Seed the baselines the same way the join path does.
 
+Result (2026-10-09): the join path's treasury step is now
+`CoreGameData::seed_first_turn_treasury`, one year's tax revenue from the
+homeworld. `join_player` and `build_initialized_baseline` both call it, so
+`build_seeded_initialized_game` inherits it; a pre-joined homeworld starts
+with 50 points, as a joined one does. Regression test:
+`pre_joined_baselines_start_with_the_join_path_treasury` in
+`nc-data/tests/builder.rs`. No existing test relied on the zero treasury, so
+none changed. Workspace: 2631 passed, 1 failed (the timing test noted under
+t010, which passes alone; load average was about 50 during the run).
+
 ### t010
 
 `maint/economics/ai.rs` near line 148 still squares sector distances in i16,
 which overflows past a distance of about 127. Compute in i32, as the
 targeting and retarget code now does.
+
+Result (2026-10-09): the targeting code's widened `sector_distance_sq` moved to
+`navigation/geometry.rs` as the one shared helper; autopilot recall and the
+retarget fallback both use it. Regression test:
+`autopilot_recall_picks_the_nearest_world_across_the_whole_map` in
+`nc-data/tests/autopilot_economy.rs`. Workspace with t011: 2626 passed,
+1 failed; the failure, `piped_dropfile_launch_stays_interactive_without_tty_stdout`,
+is a timing test that failed once under full-suite load and passes alone.
 
 ### t011
 
@@ -65,11 +83,41 @@ nc-data's `campaign_contenders` and `empire_campaign_state` in
 display and outlook code can disagree with the engine. Reuse the engine's
 contesting-empire test.
 
+Result (2026-10-09): the engine's contender rule moved to nc-data as
+`is_campaign_contender` (with `is_contesting_empire`) in `player_lifecycle.rs`.
+The engine's sole-contender check and nc-data's `campaign_contenders` both call
+it; nc-data passes no lifecycle states, which count as a fresh empire's.
+`empire_campaign_state` still labels the empire `Rogue` for display. As a side
+effect, nc-data now also follows the engine on ETACs: an empire whose only
+recovery force is ETACs stops contending once no unowned world is left.
+Regression test: `empty_rogue_empire_is_not_a_campaign_contender` in
+`nc-data/tests/campaign.rs`. Workspace with t010: 2626 passed, 1 failed (the
+timing test noted under t010).
+
 ### t012
 
 Fleet ETA counts the year a fleet becomes visible in the target sector, while
 the order completes at the exact path endpoint, so diagonal moves can differ
 by one year. The current regression covers axis-aligned moves only.
+
+Result (2026-10-09): the fleet ETA now replays the stepper exactly. It counts
+years until the exact path endpoint, stores the exact position at its 1/256
+precision between years (new `round_trip_exact_position` in
+`fleet_motion_state.rs`), and treats a fleet that shows in the target sector
+with an unfinished exact path as still under way, not arrived. The stepper and
+the classic fraction byte are unchanged, and the starbase travel-time display
+still stops at the first rounded target sector. The stepper's
+`exact_position_reached_target` moved to `navigation/geometry.rs` so both use
+it. `fleet_eta_matches_actual_arrival_turn_for_every_speed` now covers five
+diagonal offsets and checks the estimate before every year, not just the first.
+A sweep of every offset up to (17,17) at every speed, run while developing,
+found no mismatch. Two expectations in `move_only_traces_match_current_classic_oracle_cases`
+(`nc-data/tests/movement_trace.rs`) changed: speed-3 (10,10) to (16,16) now
+predicts 4 years, not 3, and speed-1 (10,10) to (13,13) predicts 6, not 5. In
+both, the fleet shows in the target sector a year before its order completes.
+The traced positions are unchanged. The ETA paragraph in
+[ec-movement-spec.md](../../dev/ec-movement-spec.md) now says this.
+Workspace: 2628 passed, 1 failed (the timing test noted under t010).
 
 ### t013
 
@@ -77,6 +125,17 @@ Salvage-success reports now say "From your fleet" without a number, because
 the salvaged fleet is gone by report time; carry the fleet number in the
 salvage event. `rendezvous_merged_fleet_indices` in `entries/missions.rs`
 should use only survivor-side merge events.
+
+Result (2026-10-09): `SalvageResolvedEvent::Succeeded` now carries
+`fleet_number`, read before the fleet is removed, and the salvage report uses
+it. The rendezvous arrival filter keeps only survivor-side merge events, whose
+indices follow compaction; an absorbed fleet's stale index no longer hides
+another fleet's "waiting" arrival report. Regression tests in
+`nc-engine/tests/mission_report_fleet_numbers.rs`:
+`salvage_success_report_names_the_salvaged_fleet` and
+`absorbed_side_merge_index_does_not_hide_another_fleets_rendezvous_arrival`.
+Workspace: 2628 passed, 1 failed (the timing test noted under t010, which
+passes alone).
 
 ### t014
 
@@ -86,6 +145,22 @@ at entry; the RESULTS boundary now shows them as `?`. Use the shared
 rule lives in one place. Replace the em dashes in nc-helm's
 `dashboard/app/planet_build.rs` and in the debug message in
 `maint/movement/salvage.rs`.
+
+Result (2026-10-09): `join_player` now rejects an empire name with any
+character outside `is_classic_text_char`, with the new
+`GameStateMutationError::InvalidEmpireName`, as renames already do for planet
+names. The raw record setters that other entry points use
+(`set_controlled_empire_name_raw`, `set_assigned_player_handle_raw`,
+`set_status_or_name_summary_raw`) store `?` for any other character through
+the new `nc_data::support::classic_text`, so BBS handles and sysop or harness
+names never reach a record as raw UTF-8 or get cut mid-character. nc-game's
+name input filter calls `is_classic_text_char` instead of its own copy of the
+rule. The em dashes in nc-helm's two "Stardock is full" strings, the salvage
+debug message, and the contact-report quote in
+[approach.md](../../dev/approach.md) are now `--`. Regression tests in
+`nc-data/tests/mutators.rs`: `join_player_rejects_non_printable_ascii_empire_names`
+and `classic_text_setters_store_question_marks_for_other_characters`. The
+string changes have no test. Workspace: 2631 passed, 0 failed.
 
 ### t018
 

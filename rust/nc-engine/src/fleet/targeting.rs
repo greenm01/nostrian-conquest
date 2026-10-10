@@ -6,6 +6,7 @@ use nc_data::{
     build_player_starmap_projection_from_snapshots,
 };
 
+use crate::navigation::sector_distance_sq;
 use crate::orders::FleetTargetInputKind;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -488,10 +489,4 @@ fn coords_are_owned_system(
 fn sort_unique_coords_by_distance(anchor: [u8; 2], coords: &mut Vec<[u8; 2]>) {
     coords.sort_by_key(|coords| sector_distance_sq(anchor, *coords));
     coords.dedup();
-}
-
-fn sector_distance_sq(from: [u8; 2], to: [u8; 2]) -> u32 {
-    let dx = u32::from(from[0].abs_diff(to[0]));
-    let dy = u32::from(from[1].abs_diff(to[1]));
-    dx * dx + dy * dy
 }

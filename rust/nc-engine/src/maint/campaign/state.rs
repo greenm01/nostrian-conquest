@@ -5,7 +5,7 @@ use super::super::{
 use crate::{CoreGameData, DiplomaticRelation};
 use nc_data::{
     CampaignOutcome, CampaignOutlook, PlayerLifecycleState, TerminalOutcome, WinnerState,
-    empire_has_recovery_path,
+    empire_has_recovery_path, is_campaign_contender, is_contesting_empire,
 };
 
 const RECOVERY_WINDOW_TURNS: u8 = 3;
@@ -392,38 +392,15 @@ fn sole_contender(
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Option<u8> {
     let contenders = (1..=game_data.player.records.len() as u8)
-        .filter(|&empire_raw| is_contender(game_data, empire_raw, player_lifecycle_states))
+        .filter(|&empire_raw| {
+            is_campaign_contender(game_data, empire_raw, player_lifecycle_states)
+        })
         .collect::<Vec<_>>();
     if contenders.len() == 1 {
         contenders.first().copied()
     } else {
         None
     }
-}
-
-fn is_contender(
-    game_data: &CoreGameData,
-    empire_raw: u8,
-    player_lifecycle_states: &[PlayerLifecycleState],
-) -> bool {
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_raw.saturating_sub(1) as usize)
-    else {
-        return false;
-    };
-    let lifecycle = player_lifecycle_states
-        .get(empire_raw.saturating_sub(1) as usize)
-        .copied()
-        .unwrap_or_else(|| PlayerLifecycleState::for_player(empire_raw as usize));
-    if !matches!(lifecycle.terminal_outcome, TerminalOutcome::None) {
-        return false;
-    }
-    is_contesting_empire(player)
-        && (owns_any_planets(game_data, empire_raw)
-            || lifecycle.recovery_window_turns_remaining > 0
-            || empire_has_recovery_path(game_data, empire_raw))
 }
 
 fn owns_any_planets(game_data: &CoreGameData, empire_raw: u8) -> bool {
@@ -441,12 +418,6 @@ fn owned_planet_count(game_data: &CoreGameData, empire_raw: u8) -> usize {
 
 fn is_joined_empire(player: &nc_data::PlayerRecord) -> bool {
     !matches!(player.owner_mode_raw(), 0x00 | 0xff)
-}
-
-/// Joined and rogue empires both contest the campaign and can be eliminated;
-/// only civil disorder (0x00) is out of it.
-fn is_contesting_empire(player: &nc_data::PlayerRecord) -> bool {
-    player.owner_mode_raw() != 0x00
 }
 
 fn is_rogue_empire(game_data: &CoreGameData, empire_raw: u8) -> bool {

@@ -1,4 +1,4 @@
-use crate::support::{ParseError, copy_array, trim_ascii_field};
+use crate::support::{ParseError, classic_text, copy_array, trim_ascii_field};
 use crate::{ClassicResultsChain, PLAYER_RECORD_SIZE};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -89,6 +89,7 @@ impl PlayerRecord {
     }
 
     pub fn set_assigned_player_handle_raw(&mut self, value: &str) {
+        let value = classic_text(value);
         let bytes = value.as_bytes();
         let len = bytes.len().min(25);
         self.raw[1..0x1A].fill(b' ');
@@ -246,6 +247,7 @@ impl PlayerRecord {
     }
 
     pub fn set_controlled_empire_name_raw(&mut self, value: &str) {
+        let value = classic_text(value);
         let bytes = value.as_bytes();
         let len = bytes.len().min(self.empire_name_bytes().len());
         self.raw[26] = self.empire_name_bytes().len() as u8;
