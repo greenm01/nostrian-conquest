@@ -188,7 +188,7 @@ fn render_detach_selection(out: &mut String, selection: &FleetDetachSelection) {
 
 fn relation_name(relation: crate::DiplomaticRelation) -> &'static str {
     match relation {
-        crate::DiplomaticRelation::Neutral => "neutral",
+        crate::DiplomaticRelation::Neutral | crate::DiplomaticRelation::Unknown(_) => "neutral",
         crate::DiplomaticRelation::Enemy => "enemy",
     }
 }

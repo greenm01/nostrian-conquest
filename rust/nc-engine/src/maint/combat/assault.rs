@@ -854,10 +854,11 @@ pub(crate) fn resolve_strike(
                 if attacker_survivors > 0 && defender_survivors == 0 {
                     let planet = &mut game_data.planets.records[planet_idx];
                     planet.set_owner_empire_slot_raw(empire);
-                    planet.set_ownership_status_raw(2);
+                    // Just captured: no income until the yearly pass has
+                    // stepped the status to 2, as ECMAINT does.
+                    planet.set_ownership_status_raw(0);
                     planet.set_army_count_raw(attacker_survivors.min(255) as u8);
                     planet.set_ground_batteries_raw(0);
-                    planet.set_conversion_countdown_raw(2);
                     events
                         .ownership_change_events
                         .push(PlanetOwnershipChangeEvent {
@@ -1076,10 +1077,11 @@ pub(crate) fn resolve_strike(
                 let batteries = game_data.planets.records[planet_idx].ground_batteries_raw();
                 let planet = &mut game_data.planets.records[planet_idx];
                 planet.set_owner_empire_slot_raw(empire);
-                planet.set_ownership_status_raw(2);
+                // Just captured: no income until the yearly pass has
+                // stepped the status to 2, as ECMAINT does.
+                planet.set_ownership_status_raw(0);
                 planet.set_army_count_raw(attacker_survivors.min(255) as u8);
                 planet.set_ground_batteries_raw(batteries);
-                planet.set_conversion_countdown_raw(2);
                 events
                     .ownership_change_events
                     .push(PlanetOwnershipChangeEvent {

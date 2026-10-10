@@ -18,6 +18,7 @@ pub const NEW_FLEET_DEFAULT_ROE: u8 = 6;
 
 mod bbs_config;
 mod builder;
+pub mod classic;
 mod classic_results;
 mod config;
 mod directory;
@@ -27,6 +28,7 @@ mod intel;
 pub mod maintenance_types;
 mod map_dimensions;
 mod map_export;
+pub mod model;
 mod planet_summary;
 mod player_activity;
 mod player_lifecycle;
@@ -144,7 +146,7 @@ pub use storage::{
     IntelTier, PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
     SeatBindSource, TerminalOutcome, WinnerState,
 };
-pub use support::{ParseError, decode_real48, encode_real48, is_classic_text_char};
+pub use support::{ParseError, is_classic_text_char};
 pub use turns::{
     FleetTurnAction, FleetTurnBlock, MAX_MESSAGE_BODY_CHARS, MAX_MESSAGE_SUBJECT_CHARS,
     PlanetTurnAction, PlanetTurnBlock, TurnDiplomacyDirective, TurnMessage, TurnSubmission,

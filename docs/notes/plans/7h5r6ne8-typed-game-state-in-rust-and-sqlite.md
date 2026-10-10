@@ -126,6 +126,30 @@ model must carry, beyond the fleet, base, and planet layouts already fixed:
   codecs. `rng.rs` `derive_campaign_seed_from_runtime` keeps hashing the
   classic encoding (via the codec) so seeds don't change.
 
+## Phase 2 result (2026-10-10)
+
+Branch `t039p2`, five commits. `nc-data/src/model/` holds the typed structs
+and `nc-data/src/classic/` the codecs (nc-data cannot depend on nc-classic;
+phase 4 moves them). Every `.DAT` under `fixtures/` and `original/v1.5`
+round-trips outside `classic::ignored_bytes`. The `records/*` types wrap the
+model with no `raw` field. Accessors that read wrong offsets were fixed with
+their callers: the empire name setter no longer writes the page length,
+civil disorder leaves the record alone, the planet conversion countdown is
+the status byte (a capture writes 0 and the yearly pass steps it to 2), the
+CONQUEST control words are the previous-year rankings snapshotted at the
+start of a pass, `ipbm_count_raw` is `ipbm_chain_head_raw`, and the fleet
+and IPBM five-byte real views are `Real48` fields. The rest are shims marked
+`// t039: remove in phase 5` (the message and results word views, the
+`legacy_status_name_*` readers, the SETUP byte views, the build queue byte
+views, `set_as_owned_target_world`). Storage keeps its column set and cuts
+the hex columns from the codec's encoding. `derive_campaign_seed_from_runtime`
+still hashes the classic encoding, which changed where the model writes
+zeros for ignored bytes and 24 page lines; two nc-cli maintenance tests
+whose outcome turned on a sighting roll now pin their campaign seed. Found
+along the way: Rust's build queue (production points and a kind per slot)
+does not match classic's ten counts by kind; `BuildQueue` carries the bytes
+unchanged for a later task.
+
 ## Phase 3 — typed SQLite schema
 
 - Rewrite the seven `snapshot_*` tables as one typed column per field

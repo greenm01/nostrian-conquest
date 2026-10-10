@@ -1,77 +1,97 @@
 use crate::IPBM_RECORD_SIZE;
-use crate::support::{ParseError, copy_array};
+use crate::classic::{decode_ipbm, encode_ipbm, parse_ipbm_dat};
+use crate::model::{Coords, Ipbm};
+use crate::real48::Real48;
+use crate::support::ParseError;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// An [`Ipbm`] behind the accessor API call sites still use.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct IpbmRecord {
-    pub raw: [u8; IPBM_RECORD_SIZE],
+    pub ipbm: Ipbm,
 }
 
 impl IpbmRecord {
     pub fn new_zeroed() -> Self {
+        Self::default()
+    }
+    pub fn from_raw(raw: [u8; IPBM_RECORD_SIZE]) -> Self {
         Self {
-            raw: [0; IPBM_RECORD_SIZE],
+            ipbm: decode_ipbm(&raw),
         }
     }
-
-    pub fn primary_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x00], self.raw[0x01]])
+    /// The classic IPBM.DAT encoding of this record.
+    pub fn to_bytes(&self) -> [u8; IPBM_RECORD_SIZE] {
+        encode_ipbm(&self.ipbm)
     }
-    pub fn set_primary_word_raw(&mut self, value: u16) {
-        self.raw[0x00..0x02].copy_from_slice(&value.to_le_bytes());
+    /// The missile's number within its empire.
+    pub fn ipbm_number_raw(&self) -> u16 {
+        self.ipbm.ipbm_number
+    }
+    pub fn set_ipbm_number_raw(&mut self, value: u16) {
+        self.ipbm.ipbm_number = value;
     }
     pub fn owner_empire_raw(&self) -> u8 {
-        self.raw[0x02]
+        self.ipbm.owner.0
     }
     pub fn set_owner_empire_raw(&mut self, value: u8) {
-        self.raw[0x02] = value;
+        self.ipbm.owner.0 = value;
     }
-    pub fn gate_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x03], self.raw[0x04]])
+    /// Record number of the next IPBM in the owner's chain; 0 ends it.
+    pub fn next_ipbm_link_raw(&self) -> u16 {
+        self.ipbm.next.0
     }
-    pub fn set_gate_word_raw(&mut self, value: u16) {
-        self.raw[0x03..0x05].copy_from_slice(&value.to_le_bytes());
+    pub fn set_next_ipbm_link_raw(&mut self, value: u16) {
+        self.ipbm.next.0 = value;
     }
-    pub fn follow_on_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x05], self.raw[0x06]])
+    /// This record's own 1-based record number.
+    pub fn record_number_raw(&self) -> u16 {
+        self.ipbm.record.0
     }
-    pub fn set_follow_on_word_raw(&mut self, value: u16) {
-        self.raw[0x05..0x07].copy_from_slice(&value.to_le_bytes());
+    pub fn set_record_number_raw(&mut self, value: u16) {
+        self.ipbm.record.0 = value;
     }
-    pub fn tuple_a_tag_raw(&self) -> u8 {
-        self.raw[0x09]
+    /// Record number of the previous IPBM in the chain; 0 at the head.
+    pub fn previous_ipbm_link_raw(&self) -> u16 {
+        self.ipbm.prev.0
     }
-    pub fn set_tuple_a_tag_raw(&mut self, value: u8) {
-        self.raw[0x09] = value;
+    pub fn set_previous_ipbm_link_raw(&mut self, value: u16) {
+        self.ipbm.prev.0 = value;
     }
-    pub fn tuple_b_tag_raw(&self) -> u8 {
-        self.raw[0x0A]
+    pub fn coords_raw(&self) -> [u8; 2] {
+        self.ipbm.sector.to_array()
     }
-    pub fn set_tuple_b_tag_raw(&mut self, value: u8) {
-        self.raw[0x0A] = value;
+    pub fn set_coords_raw(&mut self, coords: [u8; 2]) {
+        self.ipbm.sector = Coords::from_array(coords);
     }
-    pub fn tuple_a_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x0B..0x10])
+    pub fn x_fraction(&self) -> Real48 {
+        self.ipbm.x_fraction
     }
-    pub fn set_tuple_a_payload_raw(&mut self, value: [u8; 5]) {
-        self.raw[0x0B..0x10].copy_from_slice(&value);
+    pub fn set_x_fraction(&mut self, value: Real48) {
+        self.ipbm.x_fraction = value;
     }
-    pub fn tuple_b_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x11..0x16])
+    pub fn y_fraction(&self) -> Real48 {
+        self.ipbm.y_fraction
     }
-    pub fn set_tuple_b_payload_raw(&mut self, value: [u8; 5]) {
-        self.raw[0x11..0x16].copy_from_slice(&value);
+    pub fn set_y_fraction(&mut self, value: Real48) {
+        self.ipbm.y_fraction = value;
     }
-    pub fn tuple_c_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x17..0x1C])
+    pub fn depth(&self) -> Real48 {
+        self.ipbm.depth
     }
-    pub fn set_tuple_c_payload_raw(&mut self, value: [u8; 5]) {
-        self.raw[0x17..0x1C].copy_from_slice(&value);
+    pub fn set_depth(&mut self, value: Real48) {
+        self.ipbm.depth = value;
     }
-    pub fn trailing_control_raw(&self) -> [u8; 3] {
-        copy_array(&self.raw[0x1D..0x20])
+    pub fn target_coords_raw(&self) -> [u8; 2] {
+        self.ipbm.target.to_array()
     }
-    pub fn set_trailing_control_raw(&mut self, value: [u8; 3]) {
-        self.raw[0x1D..0x20].copy_from_slice(&value);
+    pub fn set_target_coords_raw(&mut self, coords: [u8; 2]) {
+        self.ipbm.target = Coords::from_array(coords);
+    }
+    pub fn target_depth_raw(&self) -> u8 {
+        self.ipbm.target_depth
+    }
+    pub fn set_target_depth_raw(&mut self, value: u8) {
+        self.ipbm.target_depth = value;
     }
 }
 
@@ -82,19 +102,10 @@ pub struct IpbmDat {
 
 impl IpbmDat {
     pub fn parse(data: &[u8]) -> Result<Self, ParseError> {
-        if data.len() % IPBM_RECORD_SIZE != 0 {
-            return Err(ParseError::WrongRecordMultiple {
-                file_type: "IPBM.DAT",
-                record_size: IPBM_RECORD_SIZE,
-                actual: data.len(),
-            });
-        }
         Ok(Self {
-            records: data
-                .chunks_exact(IPBM_RECORD_SIZE)
-                .map(|chunk| IpbmRecord {
-                    raw: copy_array(chunk),
-                })
+            records: parse_ipbm_dat(data)?
+                .into_iter()
+                .map(|ipbm| IpbmRecord { ipbm })
                 .collect(),
         })
     }
@@ -102,7 +113,7 @@ impl IpbmDat {
     pub fn to_bytes(&self) -> Vec<u8> {
         self.records
             .iter()
-            .flat_map(|record| record.raw)
-            .collect::<Vec<_>>()
+            .flat_map(|record| encode_ipbm(&record.ipbm))
+            .collect()
     }
 }

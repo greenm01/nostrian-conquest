@@ -1,3 +1,4 @@
+use nc_data::Real48;
 use nc_data::{CoreGameData, GameStateBuilder, InvalidPlayerStateEvent, Order};
 use nc_engine::{run_maintenance_turn, validate_maintenance_state};
 use std::path::Path;
@@ -27,7 +28,7 @@ fn invalid_bombard_order_is_canceled_before_execution() {
     fleet.set_standing_order_kind(Order::BombardWorld);
     fleet.set_standing_order_target_coords_raw([15, 13]);
     fleet.set_current_speed(3);
-    fleet.raw[0x19] = 0x80;
+    fleet.set_depth(Real48::HALF);
     fleet.set_destroyer_count(0);
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
@@ -200,8 +201,8 @@ fn fleet_speed_is_clamped_to_current_maximum() {
 #[test]
 fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x54] = 0x01;
-    game_data.player.records[0].raw[0x55] = 0xfe;
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
+    game_data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -211,8 +212,14 @@ fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
             InvalidPlayerStateEvent::DiplomacyInput { player_idx: 0, .. }
         )
     }));
-    assert_eq!(game_data.player.records[0].raw[0x54], 0x00);
-    assert_eq!(game_data.player.records[0].raw[0x55], 0x00);
+    assert_eq!(
+        game_data.player.records[0].diplomatic_relation_byte_raw(1),
+        Some(0x00)
+    );
+    assert_eq!(
+        game_data.player.records[0].diplomatic_relation_byte_raw(2),
+        Some(0x00)
+    );
 }
 
 #[test]

@@ -1,4 +1,5 @@
 use super::*;
+use crate::Real48;
 
 impl CoreGameData {
     pub fn player_fleet_chain_heads_current_known(&self) -> Vec<usize> {
@@ -212,25 +213,25 @@ impl CoreGameData {
                         record.etac_count()
                     ));
                 }
-                if record.tuple_a_payload_raw() != [0x80, 0, 0, 0, 0] {
+                if record.x_fraction() != Real48::HALF {
                     errors.push(format!(
-                        "FLEET[{}].tuple_a_payload expected [128, 0, 0, 0, 0], got {:?}",
+                        "FLEET[{}].x_fraction expected 0.5, got {:?}",
                         fleet_record_index_1_based,
-                        record.tuple_a_payload_raw()
+                        record.x_fraction().to_bytes()
                     ));
                 }
-                if record.tuple_b_payload_raw() != [0x80, 0, 0, 0, 0] {
+                if record.y_fraction() != Real48::HALF {
                     errors.push(format!(
-                        "FLEET[{}].tuple_b_payload expected [128, 0, 0, 0, 0], got {:?}",
+                        "FLEET[{}].y_fraction expected 0.5, got {:?}",
                         fleet_record_index_1_based,
-                        record.tuple_b_payload_raw()
+                        record.y_fraction().to_bytes()
                     ));
                 }
-                if record.tuple_c_payload_raw() != [0x81, 0, 0, 0, 0] {
+                if record.depth() != Real48::ONE {
                     errors.push(format!(
-                        "FLEET[{}].tuple_c_payload expected [129, 0, 0, 0, 0], got {:?}",
+                        "FLEET[{}].depth expected 1.0, got {:?}",
                         fleet_record_index_1_based,
-                        record.tuple_c_payload_raw()
+                        record.depth().to_bytes()
                     ));
                 }
             }

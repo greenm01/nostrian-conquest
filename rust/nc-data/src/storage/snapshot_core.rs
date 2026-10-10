@@ -4,8 +4,8 @@ use super::CampaignStoreError;
 use super::hex::{decode_hex, encode_hex};
 use crate::{
     BaseDat, BaseRecord, CONQUEST_DAT_SIZE, ConquestDat, CoreGameData, FleetDat, FleetRecord,
-    IpbmDat, IpbmRecord, PLANET_RECORD_SIZE, PlanetDat, PlanetRecord, PlayerDat, PlayerRecord,
-    Real48, SETUP_DAT_SIZE, SetupDat,
+    IPBM_RECORD_SIZE, IpbmDat, IpbmRecord, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE, PlanetDat,
+    PlanetRecord, PlayerDat, PlayerRecord, Real48, SETUP_DAT_SIZE, SetupDat,
 };
 
 pub(super) fn write_snapshot_core_rows(
@@ -68,27 +68,28 @@ fn write_player_rows(
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
+        let bytes = record.to_bytes();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
             i64::from(record.occupied_flag()),
             i64::from(record.owner_mode_raw()),
-            encode_hex(record.handle_bytes()),
-            i64::from(record.legacy_status_name_max_len_raw()),
-            i64::from(record.legacy_status_name_len_raw()),
-            encode_hex(&record.raw[0x1C..0x30]),
+            encode_hex(&bytes[0x01..0x1A]),
+            i64::from(record.page_lines()),
+            i64::from(bytes[0x1B]),
+            encode_hex(&bytes[0x1C..0x30]),
             i64::from(record.fleet_chain_head_raw()),
             i64::from(record.fleet_chain_tail_raw()),
             i64::from(record.first_base_record_raw()),
             i64::from(record.last_base_record_raw()),
-            i64::from(record.ipbm_count_raw()),
+            i64::from(record.ipbm_chain_head_raw()),
             i64::from(record.homeworld_planet_index_1_based_raw()),
             i64::from(record.last_run_year_raw()),
             i64::from(record.planet_count_raw()),
             i64::from(record.tax_rate()),
             i64::from(record.production_score_raw()),
-            encode_hex(&record.raw[0x30..0x40]),
-            encode_hex(&record.raw[0x54..0x6D]),
+            encode_hex(&bytes[0x30..0x40]),
+            encode_hex(&bytes[0x54..0x6D]),
             i64::from(record.autopilot_flag()),
         ])?;
     }
@@ -114,32 +115,33 @@ fn write_planet_rows(
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
+        let bytes = record.to_bytes();
         let [x, y] = record.coords_raw();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
             i64::from(x),
             i64::from(y),
-            encode_hex(&record.raw[0x02..0x04]),
-            encode_hex(&record.raw[0x04..0x0A]),
+            encode_hex(&bytes[0x02..0x04]),
+            encode_hex(&bytes[0x04..0x0A]),
             i64::from(u32::from_le_bytes([
-                record.raw[0x0A],
-                record.raw[0x0B],
-                record.raw[0x0C],
-                record.raw[0x0D],
+                bytes[0x0A],
+                bytes[0x0B],
+                bytes[0x0C],
+                bytes[0x0D]
             ])),
-            i64::from(record.raw[0x0E]),
-            i64::from(record.string_len()),
-            encode_hex(&record.raw[0x10..0x1D]),
-            encode_hex(&record.raw[0x1D..0x24]),
-            encode_hex(&record.raw[0x24..0x38]),
-            encode_hex(&record.raw[0x38..0x52]),
-            encode_hex(&record.raw[0x52..0x58]),
-            i64::from(record.army_count_raw()),
-            i64::from(record.ground_batteries_raw()),
+            i64::from(bytes[0x0E]),
+            i64::from(bytes[0x0F]),
+            encode_hex(&bytes[0x10..0x1D]),
+            encode_hex(&bytes[0x1D..0x24]),
+            encode_hex(&bytes[0x24..0x38]),
+            encode_hex(&bytes[0x38..0x52]),
+            encode_hex(&bytes[0x52..0x58]),
+            i64::from(bytes[0x58]),
+            i64::from(bytes[0x5A]),
             i64::from(record.ownership_status_raw()),
             i64::from(record.owner_empire_slot_raw()),
-            encode_hex(&record.raw[0x5E..PLANET_RECORD_SIZE]),
+            encode_hex(&bytes[0x5E..PLANET_RECORD_SIZE]),
         ])?;
     }
     Ok(())
@@ -197,7 +199,8 @@ fn write_fleet_rows(
             i64::from(record.loaded_transport_count()),
             i64::from(record.etac_count()),
             i64::from(record.scout_count()),
-            i64::from(record.strength_cache_raw()),
+            // FLEETS 0x34 is a dead word the model does not carry.
+            0i64,
         ])?;
     }
     Ok(())
@@ -257,14 +260,15 @@ fn write_ipbm_rows(
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
+        let bytes = record.to_bytes();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
-            encode_hex(&record.raw[0x00..0x0B]),
-            encode_hex(&record.tuple_a_payload_raw()),
-            encode_hex(&record.tuple_b_payload_raw()),
-            encode_hex(&record.tuple_c_payload_raw()),
-            encode_hex(&record.trailing_control_raw()),
+            encode_hex(&bytes[0x00..0x0B]),
+            encode_hex(&bytes[0x0B..0x10]),
+            encode_hex(&bytes[0x11..0x16]),
+            encode_hex(&bytes[0x17..0x1C]),
+            encode_hex(&bytes[0x1D..0x20]),
         ])?;
     }
     Ok(())
@@ -275,6 +279,7 @@ fn write_setup_row(
     snapshot_id: i64,
     data: &SetupDat,
 ) -> Result<(), CampaignStoreError> {
+    let bytes = data.to_bytes();
     tx.execute(
         "INSERT INTO snapshot_setup(
              snapshot_id, version_tag_raw_hex, option_prefix_raw_hex,
@@ -284,18 +289,18 @@ fn write_setup_row(
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
         params![
             snapshot_id,
-            encode_hex(data.version_tag()),
-            encode_hex(data.option_prefix()),
-            i64::from(u8::from(data.snoop_enabled())),
-            i64::from(data.max_time_between_keys_minutes_raw()),
-            i64::from(data.raw[514]),
-            i64::from(u8::from(data.remote_timeout_enabled())),
-            i64::from(u8::from(data.local_timeout_enabled())),
-            i64::from(data.minimum_time_granted_minutes_raw()),
-            i64::from(data.purge_after_turns_raw()),
-            i64::from(data.raw[519]),
-            i64::from(data.autopilot_inactive_turns_raw()),
-            i64::from(data.raw[521]),
+            encode_hex(&bytes[0..5]),
+            encode_hex(&bytes[5..13]),
+            i64::from(bytes[512]),
+            i64::from(bytes[513]),
+            i64::from(bytes[514]),
+            i64::from(bytes[515]),
+            i64::from(bytes[516]),
+            i64::from(bytes[517]),
+            i64::from(bytes[518]),
+            i64::from(bytes[519]),
+            i64::from(bytes[520]),
+            i64::from(bytes[521]),
         ],
     )?;
     Ok(())
@@ -307,18 +312,22 @@ fn write_conquest_row(
     data: &ConquestDat,
 ) -> Result<(), CampaignStoreError> {
     let sql = conquest_insert_sql();
+    let bytes = data.to_bytes();
     let mut values = Vec::with_capacity(
         4 + CONQUEST_CONTROL_WORD_OFFSETS.len() + CONQUEST_CONTROL_BYTE_OFFSETS.len(),
     );
     values.push(Value::from(snapshot_id));
     values.push(Value::from(i64::from(data.game_year())));
     values.push(Value::from(i64::from(data.player_count())));
-    values.push(Value::from(encode_hex(&data.maintenance_schedule_bytes())));
+    values.push(Value::from(encode_hex(&bytes[3..10])));
     for offset in CONQUEST_CONTROL_WORD_OFFSETS {
-        values.push(Value::from(i64::from(data.raw_word(offset))));
+        values.push(Value::from(i64::from(u16::from_le_bytes([
+            bytes[offset],
+            bytes[offset + 1],
+        ]))));
     }
     for offset in CONQUEST_CONTROL_BYTE_OFFSETS {
-        values.push(Value::from(i64::from(data.raw_byte(offset))));
+        values.push(Value::from(i64::from(bytes[offset])));
     }
     tx.execute(&sql, params_from_iter(values))?;
     Ok(())
@@ -385,26 +394,26 @@ fn load_player_rows(
             autopilot_flag,
         ) = row?;
 
-        let mut record = PlayerRecord::new_zeroed();
-        record.set_owner_empire_raw(owner_mode_raw as u8);
-        record.raw[1..0x1A].copy_from_slice(&decode_hex_exact::<25>(&handle_raw_hex)?);
-        record.raw[0x1A] = legacy_status_name_max_len_raw as u8;
-        record.raw[0x1B] = legacy_status_name_len_raw as u8;
-        record.raw[0x1C..0x30].copy_from_slice(&decode_hex_exact::<20>(&name_block_raw_hex)?);
-        record.set_fleet_chain_head_raw(fleet_chain_head_raw as u16);
-        record.set_fleet_chain_tail_raw(fleet_chain_tail_raw as u16);
-        record.set_first_base_record_raw(starbase_count_raw as u16);
-        record.set_last_base_record_raw(starbase_presence_flag_raw as u16);
-        record.set_ipbm_count_raw(ipbm_count_raw as u16);
-        record.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_raw as u8);
-        record.set_last_run_year_raw(last_run_year_raw as u16);
-        record.set_planet_count_raw(planet_count_raw as u8);
-        record.set_tax_rate_raw(tax_rate as u8);
-        record.set_production_score_raw(production_score_raw as u16);
-        record.raw[0x30..0x40].copy_from_slice(&decode_hex_exact::<16>(&review_state_raw_hex)?);
-        record.raw[0x54..0x6D].copy_from_slice(&decode_hex_exact::<25>(&diplomacy_raw_hex)?);
-        record.set_autopilot_flag(autopilot_flag as u8);
-        records.push(record);
+        let mut bytes = [0u8; PLAYER_RECORD_SIZE];
+        bytes[0x00] = owner_mode_raw as u8;
+        bytes[0x01..0x1A].copy_from_slice(&decode_hex_exact::<25>(&handle_raw_hex)?);
+        bytes[0x1A] = legacy_status_name_max_len_raw as u8;
+        bytes[0x1B] = legacy_status_name_len_raw as u8;
+        bytes[0x1C..0x30].copy_from_slice(&decode_hex_exact::<20>(&name_block_raw_hex)?);
+        bytes[0x30..0x40].copy_from_slice(&decode_hex_exact::<16>(&review_state_raw_hex)?);
+        bytes[0x40..0x42].copy_from_slice(&(fleet_chain_head_raw as u16).to_le_bytes());
+        bytes[0x42..0x44].copy_from_slice(&(fleet_chain_tail_raw as u16).to_le_bytes());
+        bytes[0x44..0x46].copy_from_slice(&(starbase_count_raw as u16).to_le_bytes());
+        bytes[0x46..0x48].copy_from_slice(&(starbase_presence_flag_raw as u16).to_le_bytes());
+        bytes[0x48..0x4A].copy_from_slice(&(ipbm_count_raw as u16).to_le_bytes());
+        bytes[0x4C] = homeworld_planet_index_raw as u8;
+        bytes[0x4E..0x50].copy_from_slice(&(last_run_year_raw as u16).to_le_bytes());
+        bytes[0x50] = planet_count_raw as u8;
+        bytes[0x51] = tax_rate as u8;
+        bytes[0x52..0x54].copy_from_slice(&(production_score_raw as u16).to_le_bytes());
+        bytes[0x54..0x6D].copy_from_slice(&decode_hex_exact::<25>(&diplomacy_raw_hex)?);
+        bytes[0x6D] = autopilot_flag as u8;
+        records.push(PlayerRecord::from_raw(bytes));
     }
     Ok(PlayerDat { records })
 }
@@ -467,26 +476,25 @@ fn load_planet_rows(
             tail_raw_hex,
         ) = row?;
 
-        let mut record = PlanetRecord::new_zeroed();
-        record.set_coords_raw([coords_x as u8, coords_y as u8]);
-        record.raw[0x02..0x04]
-            .copy_from_slice(&decode_hex_exact::<2>(&potential_production_raw_hex)?);
-        record.raw[0x04..0x0A].copy_from_slice(&decode_hex_exact::<6>(&factories_raw_hex)?);
-        record.raw[0x0A..0x0E].copy_from_slice(&(stored_production_points as u32).to_le_bytes());
-        record.raw[0x0E] = economy_marker_raw as u8;
-        record.raw[0x0F] = name_len_raw as u8;
-        record.raw[0x10..0x1D].copy_from_slice(&decode_hex_exact::<13>(&name_buffer_raw_hex)?);
-        record.raw[0x1D..0x24].copy_from_slice(&decode_hex_exact::<7>(&name_suffix_raw_hex)?);
-        record.raw[0x24..0x38].copy_from_slice(&decode_hex_exact::<20>(&build_queue_raw_hex)?);
-        record.raw[0x38..0x52].copy_from_slice(&decode_hex_exact::<26>(&infrastructure_raw_hex)?);
-        record.set_population_raw(decode_hex_exact::<6>(&population_raw_hex)?);
-        record.set_army_count_raw(armies_raw as u8);
-        record.set_ground_batteries_raw(ground_batteries_raw as u8);
-        record.set_ownership_status_raw(ownership_status_raw as u8);
-        record.set_owner_empire_slot_raw(owner_empire_slot_raw as u8);
-        record.raw[0x5E..PLANET_RECORD_SIZE]
-            .copy_from_slice(&decode_hex_exact::<3>(&tail_raw_hex)?);
-        records.push(record);
+        let mut bytes = [0u8; PLANET_RECORD_SIZE];
+        bytes[0x00] = coords_x as u8;
+        bytes[0x01] = coords_y as u8;
+        bytes[0x02..0x04].copy_from_slice(&decode_hex_exact::<2>(&potential_production_raw_hex)?);
+        bytes[0x04..0x0A].copy_from_slice(&decode_hex_exact::<6>(&factories_raw_hex)?);
+        bytes[0x0A..0x0E].copy_from_slice(&(stored_production_points as u32).to_le_bytes());
+        bytes[0x0E] = economy_marker_raw as u8;
+        bytes[0x0F] = name_len_raw as u8;
+        bytes[0x10..0x1D].copy_from_slice(&decode_hex_exact::<13>(&name_buffer_raw_hex)?);
+        bytes[0x1D..0x24].copy_from_slice(&decode_hex_exact::<7>(&name_suffix_raw_hex)?);
+        bytes[0x24..0x38].copy_from_slice(&decode_hex_exact::<20>(&build_queue_raw_hex)?);
+        bytes[0x38..0x52].copy_from_slice(&decode_hex_exact::<26>(&infrastructure_raw_hex)?);
+        bytes[0x52..0x58].copy_from_slice(&decode_hex_exact::<6>(&population_raw_hex)?);
+        bytes[0x58] = armies_raw as u8;
+        bytes[0x5A] = ground_batteries_raw as u8;
+        bytes[0x5C] = ownership_status_raw as u8;
+        bytes[0x5D] = owner_empire_slot_raw as u8;
+        bytes[0x5E..PLANET_RECORD_SIZE].copy_from_slice(&decode_hex_exact::<3>(&tail_raw_hex)?);
+        records.push(PlanetRecord::from_raw(bytes));
     }
     Ok(PlanetDat { records })
 }
@@ -591,7 +599,7 @@ fn load_fleet_rows(
         record.set_loaded_transport_count(loaded_transport_count as u16);
         record.set_etac_count(etac_count as u16);
         record.set_scout_count(scout_count as u16);
-        record.set_strength_cache_raw(strength_cache_raw as u16);
+        let _ = strength_cache_raw;
         records.push(record);
     }
     Ok(FleetDat { records })
@@ -664,13 +672,13 @@ fn load_ipbm_rows(conn: &mut Connection, snapshot_id: i64) -> Result<IpbmDat, Ca
             trailing_control_raw_hex,
         ) = row?;
 
-        let mut record = IpbmRecord::new_zeroed();
-        record.raw[0x00..0x0B].copy_from_slice(&decode_hex_exact::<11>(&prefix_raw_hex)?);
-        record.set_tuple_a_payload_raw(decode_hex_exact::<5>(&tuple_a_raw_hex)?);
-        record.set_tuple_b_payload_raw(decode_hex_exact::<5>(&tuple_b_raw_hex)?);
-        record.set_tuple_c_payload_raw(decode_hex_exact::<5>(&tuple_c_raw_hex)?);
-        record.set_trailing_control_raw(decode_hex_exact::<3>(&trailing_control_raw_hex)?);
-        records.push(record);
+        let mut bytes = [0u8; IPBM_RECORD_SIZE];
+        bytes[0x00..0x0B].copy_from_slice(&decode_hex_exact::<11>(&prefix_raw_hex)?);
+        bytes[0x0B..0x10].copy_from_slice(&decode_hex_exact::<5>(&tuple_a_raw_hex)?);
+        bytes[0x11..0x16].copy_from_slice(&decode_hex_exact::<5>(&tuple_b_raw_hex)?);
+        bytes[0x17..0x1C].copy_from_slice(&decode_hex_exact::<5>(&tuple_c_raw_hex)?);
+        bytes[0x1D..0x20].copy_from_slice(&decode_hex_exact::<3>(&trailing_control_raw_hex)?);
+        records.push(IpbmRecord::from_raw(bytes));
     }
     Ok(IpbmDat { records })
 }
@@ -715,22 +723,20 @@ fn load_setup_row(conn: &mut Connection, snapshot_id: i64) -> Result<SetupDat, C
         },
     )?;
 
-    let mut setup = SetupDat {
-        raw: [0; SETUP_DAT_SIZE],
-    };
-    setup.raw[..5].copy_from_slice(&decode_hex_exact::<5>(&version_tag_raw_hex)?);
-    setup.raw[5..13].copy_from_slice(&decode_hex_exact::<8>(&option_prefix_raw_hex)?);
-    setup.set_snoop_enabled(snoop_enabled != 0);
-    setup.set_max_time_between_keys_minutes_raw(max_time_between_keys_minutes_raw as u8);
-    setup.raw[514] = byte_514_raw as u8;
-    setup.set_remote_timeout_enabled(remote_timeout_enabled != 0);
-    setup.set_local_timeout_enabled(local_timeout_enabled != 0);
-    setup.set_minimum_time_granted_minutes_raw(minimum_time_granted_minutes_raw as u8);
-    setup.set_purge_after_turns_raw(purge_after_turns_raw as u8);
-    setup.raw[519] = byte_519_raw as u8;
-    setup.set_autopilot_inactive_turns_raw(autopilot_inactive_turns_raw as u8);
-    setup.raw[521] = byte_521_raw as u8;
-    Ok(setup)
+    let mut bytes = [0u8; SETUP_DAT_SIZE];
+    bytes[..5].copy_from_slice(&decode_hex_exact::<5>(&version_tag_raw_hex)?);
+    bytes[5..13].copy_from_slice(&decode_hex_exact::<8>(&option_prefix_raw_hex)?);
+    bytes[512] = snoop_enabled as u8;
+    bytes[513] = max_time_between_keys_minutes_raw as u8;
+    bytes[514] = byte_514_raw as u8;
+    bytes[515] = remote_timeout_enabled as u8;
+    bytes[516] = local_timeout_enabled as u8;
+    bytes[517] = minimum_time_granted_minutes_raw as u8;
+    bytes[518] = purge_after_turns_raw as u8;
+    bytes[519] = byte_519_raw as u8;
+    bytes[520] = autopilot_inactive_turns_raw as u8;
+    bytes[521] = byte_521_raw as u8;
+    Ok(SetupDat::from_raw(bytes))
 }
 
 fn load_conquest_row(
@@ -760,19 +766,17 @@ fn load_conquest_row(
             ))
         })?;
 
-    let mut conquest = ConquestDat {
-        raw: [0; CONQUEST_DAT_SIZE],
-    };
-    conquest.set_game_year(game_year as u16);
-    conquest.set_player_count(player_count as u8);
-    conquest.raw[3..10].copy_from_slice(&decode_hex_exact::<7>(&maintenance_schedule_raw_hex)?);
+    let mut bytes = [0u8; CONQUEST_DAT_SIZE];
+    bytes[0..2].copy_from_slice(&(game_year as u16).to_le_bytes());
+    bytes[2] = player_count as u8;
+    bytes[3..10].copy_from_slice(&decode_hex_exact::<7>(&maintenance_schedule_raw_hex)?);
     for (index, offset) in CONQUEST_CONTROL_WORD_OFFSETS.into_iter().enumerate() {
-        conquest.set_raw_word(offset, control_words[index]);
+        bytes[offset..offset + 2].copy_from_slice(&control_words[index].to_le_bytes());
     }
     for (index, offset) in CONQUEST_CONTROL_BYTE_OFFSETS.into_iter().enumerate() {
-        conquest.set_raw_byte(offset, control_bytes[index]);
+        bytes[offset] = control_bytes[index];
     }
-    Ok(conquest)
+    Ok(ConquestDat::from_raw(bytes))
 }
 
 fn conquest_insert_sql() -> String {

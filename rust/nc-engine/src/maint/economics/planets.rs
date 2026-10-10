@@ -6,14 +6,15 @@ pub(super) fn process_planet_economics(
     starbase_planets: &[usize],
 ) -> Result<(), Box<dyn std::error::Error>> {
     for planet_idx in 0..game_data.planets.records.len() {
-        // Conquered planets need ~2 turns before producing for the new owner.
-        let countdown = game_data.planets.records[planet_idx].conversion_countdown_raw();
-        if countdown > 0 {
-            game_data.planets.records[planet_idx].set_conversion_countdown_raw(countdown - 1);
-            continue;
-        }
         let owner_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
         if owner_empire == 0 {
+            continue;
+        }
+        // A captured world's status steps 0 -> 1 -> 2 over two yearly passes
+        // (ECMAINT 0x10436) and produces nothing for its new owner until then.
+        let status = game_data.planets.records[planet_idx].ownership_status_raw();
+        if status < 2 {
+            game_data.planets.records[planet_idx].set_ownership_status_raw(status + 1);
             continue;
         }
         let Some(player) = game_data

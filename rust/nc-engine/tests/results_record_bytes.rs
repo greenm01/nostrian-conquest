@@ -20,9 +20,7 @@ fn seeded_game_data() -> nc_data::CoreGameData {
 fn seed_world_with_raw_name(game_data: &mut nc_data::CoreGameData, name: &[u8]) {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_coords_raw([9, 6]);
-    let mut buffer = [0u8; 13];
-    buffer[..name.len()].copy_from_slice(name);
-    planet.set_planet_name_buffer(name.len() as u8, &buffer);
+    planet.set_planet_name(&String::from_utf8_lossy(name));
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(2);
     game_data.planets.records[0] = planet;

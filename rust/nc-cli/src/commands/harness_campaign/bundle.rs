@@ -247,6 +247,7 @@ fn render_player_bundle_readme(
             .map(|value| match value {
                 nc_data::DiplomaticRelation::Neutral => "neutral",
                 nc_data::DiplomaticRelation::Enemy => "enemy",
+                nc_data::DiplomaticRelation::Unknown(_) => "unknown",
             })
             .unwrap_or("unknown");
         let other_empire =

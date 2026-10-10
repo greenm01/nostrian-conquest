@@ -59,10 +59,9 @@ fn headers_prints_known_setup_and_conquest_values() {
     assert!(stdout.contains("SETUP.autopilot_inactive_turns_raw=0"));
     assert!(stdout.contains("CONQUEST.game_year=3022"));
     assert!(stdout.contains("CONQUEST.player_count=4"));
-    assert!(stdout.contains("CONQUEST.player_config_word=0104"));
     assert!(stdout.contains("CONQUEST.maintenance_schedule=[01, 01, 01, 01, 01, 01, 01]"));
-    assert!(stdout.contains("CONQUEST.header_len=85"));
-    assert!(stdout.contains("0bce"));
+    assert!(stdout.contains("CONQUEST.previous_production=[100, 100, 100, 100]"));
+    assert!(stdout.contains("CONQUEST.previous_planet_count=[1, 1, 1, 1]"));
 }
 
 #[test]
@@ -503,7 +502,7 @@ fn core_diff_current_known_baseline_reports_mutated_files() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = nc_data::CoreGameData::load(&target).unwrap();
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
     data.save(&target).unwrap();
 
@@ -524,7 +523,7 @@ fn core_diff_current_known_baseline_offsets_reports_mutated_offsets() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = nc_data::CoreGameData::load(&target).unwrap();
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
     data.save(&target).unwrap();
 
@@ -576,7 +575,7 @@ fn core_diff_canonical_current_known_baseline_offsets_reports_mutated_offsets() 
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = nc_data::CoreGameData::load(&target).unwrap();
-    data.setup.raw[..5].copy_from_slice(b"BAD!!");
+    data.setup.set_version_tag(b"BAD!!");
     data.planets.records[14].set_stored_goods(3.0);
     data.save(&target).unwrap();
 

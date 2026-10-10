@@ -2,6 +2,7 @@ mod common;
 
 use common::{
     cleanup_dir, export_campaign_db, repo_root, run_nc_cli, run_nc_cli_in_dir, unique_temp_dir,
+    without_unread_bytes,
 };
 use std::fs;
 
@@ -21,8 +22,10 @@ fn scenario_fleet_battle_recreates_known_valid_pre_fixture() {
     for name in ["FLEETS.DAT", "PLANETS.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved fleet-battle pre-fixture"
         );
     }
@@ -62,8 +65,10 @@ fn scenario_init_replayable_fleet_battle_matches_exact_preserved_pre_fixture() {
     for name in ["FLEETS.DAT", "PLANETS.DAT", "SETUP.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved fleet-battle pre-fixture"
         );
     }
@@ -111,8 +116,10 @@ fn fleet_battle_init_recreates_known_valid_pre_fixture() {
     for name in ["FLEETS.DAT", "PLANETS.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved fleet-battle pre-fixture via fleet-battle-init"
         );
     }

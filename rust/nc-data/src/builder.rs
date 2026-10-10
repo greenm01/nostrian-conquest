@@ -10,15 +10,6 @@ const HOMEWORLD_PRESENT_PRODUCTION_RAW: [u8; 6] = [0, 0, 0, 0, 72, 134];
 const HOMEWORLD_GOODS_HIGH_BYTE: u8 = 12;
 const DEFAULT_EMPIRE_TAX_RATE: u8 = 50;
 
-const CURRENT_KNOWN_ECUTIL_INIT_CONQUEST_CONTROL_HEADER: [u8; 0x55] = [
-    0xb8, 0x0b, 0x04, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00, 0x64, 0x00,
-    0x64, 0x00, 0x64, 0x00, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-    0x01, 0x01, 0x01, 0x01, 0xff,
-];
-
 /// Builder for creating arbitrary ECMAINT-compliant gamestate directories.
 ///
 /// This builder allows constructing gamestates from scratch with configurable
@@ -208,12 +199,8 @@ impl GameStateBuilder {
             fleets: FleetDat { records: vec![] },
             bases: BaseDat { records: vec![] },
             ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat {
-                raw: [0; crate::SETUP_DAT_SIZE],
-            },
-            conquest: ConquestDat {
-                raw: [0; crate::CONQUEST_DAT_SIZE],
-            },
+            setup: SetupDat::new_zeroed(),
+            conquest: ConquestDat::new_zeroed(),
         };
 
         // Configure conquest header
@@ -232,7 +219,7 @@ impl GameStateBuilder {
         for (idx, player) in data.player.records.iter_mut().enumerate() {
             player.set_player_mode_raw(0x01);
             player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-            player.set_ipbm_count_raw(self.ipbm_count);
+            player.set_ipbm_chain_head_raw(self.ipbm_count);
             player.set_autopilot_flag(if idx == 0 { 1 } else { 0 });
         }
 
@@ -301,18 +288,17 @@ impl GameStateBuilder {
             fleets: FleetDat { records: vec![] },
             bases: BaseDat { records: vec![] },
             ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat {
-                raw: [0; crate::SETUP_DAT_SIZE],
-            },
-            conquest: ConquestDat {
-                raw: [0; crate::CONQUEST_DAT_SIZE],
-            },
+            setup: SetupDat::new_zeroed(),
+            conquest: ConquestDat::new_zeroed(),
         };
 
-        data.conquest
-            .set_control_header_bytes(&CURRENT_KNOWN_ECUTIL_INIT_CONQUEST_CONTROL_HEADER);
+        // ECUTIL F1 enables every day and writes 100 and 1 to all 25
+        // ranking slots.
         data.conquest.set_game_year(self.game_year);
         data.conquest.set_player_count(self.player_count);
+        data.conquest.set_maintenance_schedule_enabled([true; 7]);
+        data.conquest.conquest.previous_production = [100; 25];
+        data.conquest.conquest.previous_planet_count = [1; 25];
 
         data.setup.set_version_tag(b"EC151");
         data.setup.set_option_prefix(&[4, 3, 4, 3, 1, 1, 1, 1]);
@@ -377,9 +363,7 @@ impl GameStateBuilder {
                 record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
                 record.set_current_speed(0);
                 record.set_current_location_coords_raw(coords);
-                record.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+                record.set_at_rest_motion();
                 record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
                 record.set_standing_order_target_coords_raw(coords);
                 record.set_mission_aux_bytes([1, 0]);
@@ -490,7 +474,7 @@ pub fn reset_player_slot_to_baseline(
         .player
         .records
         .get(player_idx)
-        .map(|p| p.ipbm_count_raw())
+        .map(|p| p.ipbm_chain_head_raw())
         .unwrap_or(0);
     if let Some(player) = data.player.records.get_mut(player_idx) {
         seed_unjoined_player_slot(
@@ -549,9 +533,7 @@ pub fn reset_player_slot_to_baseline(
             record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
             record.set_current_speed(0);
             record.set_current_location_coords_raw(homeworld_coords);
-            record.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-            record.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-            record.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+            record.set_at_rest_motion();
             record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
             record.set_standing_order_target_coords_raw(homeworld_coords);
             record.set_mission_aux_bytes([1, 0]);
@@ -608,14 +590,16 @@ fn seed_unjoined_player_slot(
     *player = PlayerRecord::new_zeroed();
     player.set_player_mode_raw(0x00);
     player.set_assigned_player_handle_raw("");
-    player.set_legacy_status_name_field_raw(0x18, "In Civil Disorder");
+    // ECUTIL F1 writes 24 lines per screen.
+    player.set_page_lines(24);
+    player.set_controlled_empire_name_raw("In Civil Disorder");
     player.set_fleet_chain_head_raw(fleet_start);
     player.set_fleet_chain_tail_raw(fleet_end);
     player.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_1_based);
     player.set_planet_count_raw(0x01);
     player.set_production_score_raw(100);
     player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-    player.set_ipbm_count_raw(ipbm_count);
+    player.set_ipbm_chain_head_raw(ipbm_count);
     player.set_autopilot_flag(1);
 }
 

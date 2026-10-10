@@ -69,7 +69,9 @@ impl EnemiesScreen {
                     name,
                     match relation {
                         DiplomaticRelation::Enemy => "ENEMY".to_string(),
-                        DiplomaticRelation::Neutral => "NEUTRAL".to_string(),
+                        DiplomaticRelation::Neutral | DiplomaticRelation::Unknown(_) => {
+                            "NEUTRAL".to_string()
+                        }
                     },
                 ]
             })

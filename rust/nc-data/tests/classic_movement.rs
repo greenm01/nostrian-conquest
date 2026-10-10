@@ -93,8 +93,7 @@ fn scenario(case: &Case) -> CoreGameData {
         game_data.bases.records = vec![base];
         game_data.player.records[0].set_first_base_record_raw(1);
     }
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.raw.copy_from_slice(&start);
+    let mut fleet = FleetRecord::from_raw(start[..].try_into().expect("a fleet record"));
     if matches!(mission, 10 | 11) {
         // Classic counts the lone scout at 0x32, Rust at 0x24.
         fleet.set_scout_count(1);
@@ -144,7 +143,7 @@ fn run_cases(cases: &[Case]) {
             match expected {
                 Year::State(speed, order, motion) => {
                     assert_eq!(
-                        fleet.raw[0x0b..=0x1e],
+                        fleet.to_bytes()[0x0b..=0x1e],
                         hex(motion)[..],
                         "{} year {year} motion",
                         case.name
@@ -183,7 +182,7 @@ fn run_cases(cases: &[Case]) {
                         target[0], target[1]
                     );
                     assert_eq!(
-                        fleet.raw[0x0b..=0x1e],
+                        fleet.to_bytes()[0x0b..=0x1e],
                         hex(&at_rest)[..],
                         "{} year {year} in orbit",
                         case.name

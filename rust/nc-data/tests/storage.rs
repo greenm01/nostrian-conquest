@@ -1,5 +1,6 @@
 mod common;
 
+use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
@@ -64,9 +65,15 @@ fn sqlite_store_round_trips_directory_export() {
         "MESSAGES.DAT",
         "RESULTS.DAT",
     ] {
+        // The store carries no byte a classic program never reads (name
+        // tails, the dead FLEETS word, ranking slots past the player count).
+        let mask = |bytes: Vec<u8>| match ClassicFile::from_file_name(name) {
+            Some(file) => without_ignored_bytes(file, &bytes),
+            None => bytes,
+        };
         assert_eq!(
-            fs::read(imported.join(name)).expect("source bytes"),
-            fs::read(exported.join(name)).expect("exported bytes"),
+            mask(fs::read(imported.join(name)).expect("source bytes")),
+            mask(fs::read(exported.join(name)).expect("exported bytes")),
             "mismatch for {name}",
         );
     }

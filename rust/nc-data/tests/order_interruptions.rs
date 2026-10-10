@@ -5,6 +5,7 @@ use common::order_trace::{
     TraceRun, arm_new_order, build_trace_baseline, clear_fleet_for_probe, configure_cruiser_fleet,
     configured_delayed_hostile_arrival_state, no_turn_mutation, run_trace_case,
 };
+use nc_data::Real48;
 use nc_data::{
     BaseDat, BaseRecord, CoreGameData, FleetOrderValidationError, InvalidPlayerStateEvent, Mission,
     MissionOutcome, MissionRetargetEvent, Order,
@@ -660,7 +661,9 @@ fn build_stale_off_target_hostile_trace(
     fleet.set_max_speed(TRACE_SPEED);
     fleet.set_current_location_coords_raw(OFF_TARGET_START);
     fleet.set_current_speed(0);
-    fleet.set_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff]);
+    let mut depth = fleet.depth().to_bytes();
+    depth[..5].copy_from_slice(&[0x80, 0xb9, 0xff, 0xff, 0xff]);
+    fleet.set_depth(Real48::from_bytes(depth));
     game_data
 }
 

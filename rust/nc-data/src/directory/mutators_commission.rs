@@ -348,15 +348,11 @@ impl CoreGameData {
 
     pub fn set_ipbm_zero_records(&mut self, count: u16) {
         if let Some(player1) = self.player.records.first_mut() {
-            player1.set_ipbm_count_raw(count);
+            player1.set_ipbm_chain_head_raw(count);
         }
 
         self.ipbm = IpbmDat {
-            records: (0..count)
-                .map(|_| IpbmRecord {
-                    raw: [0u8; IPBM_RECORD_SIZE],
-                })
-                .collect(),
+            records: (0..count).map(|_| IpbmRecord::new_zeroed()).collect(),
         };
     }
 
@@ -373,10 +369,10 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             },
         )?;
-        record.set_primary_word_raw(primary);
+        record.set_ipbm_number_raw(primary);
         record.set_owner_empire_raw(owner);
-        record.set_gate_word_raw(gate);
-        record.set_follow_on_word_raw(follow_on);
+        record.set_next_ipbm_link_raw(gate);
+        record.set_record_number_raw(follow_on);
         Ok(())
     }
 }
@@ -505,9 +501,7 @@ fn build_commissioned_fleet(
     fleet.set_fleet_id_word_raw(fleet_id);
     fleet.set_current_speed(0);
     fleet.set_current_location_coords_raw(coords);
-    fleet.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-    fleet.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-    fleet.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+    fleet.set_at_rest_motion();
     fleet.set_standing_order_kind(Order::HoldPosition);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_mission_target(0, 0);

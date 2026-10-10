@@ -52,7 +52,7 @@ impl CoreGameData {
                         .map(|idx| idx + 1)
                         .unwrap_or(0)
                 };
-            (player.ipbm_count_raw(), homeworld_planet_index_1_based)
+            (player.ipbm_chain_head_raw(), homeworld_planet_index_1_based)
         };
         let tax_rate = DEFAULT_JOIN_TAX_RATE;
         let already_joined = self
@@ -88,7 +88,7 @@ impl CoreGameData {
         player.set_player_mode_raw(0x01);
         player.set_controlled_empire_name_raw(empire_name);
         player.set_tax_rate_raw(tax_rate);
-        player.set_ipbm_count_raw(ipbm_count);
+        player.set_ipbm_chain_head_raw(ipbm_count);
         player.set_autopilot_flag(0);
         player.set_last_run_year_raw(self.conquest.game_year());
         if homeworld_planet_index_1_based != 0 {

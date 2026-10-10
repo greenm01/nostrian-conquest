@@ -1,51 +1,58 @@
-use crate::support::{ParseError, classic_text, copy_array, trim_ascii_field};
+use crate::classic::{decode_player, encode_player, parse_player_dat};
+use crate::model::{Player, PlayerMode};
+use crate::support::{ParseError, classic_text};
 use crate::{ClassicResultsChain, PLAYER_RECORD_SIZE};
 
+pub use crate::model::DiplomaticRelation;
+
 const HANDLE_LEN: usize = 25;
+const EMPIRE_NAME_LEN: usize = 20;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DiplomaticRelation {
-    Neutral,
-    Enemy,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
+/// A [`Player`] behind the accessor API call sites still use.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PlayerRecord {
-    pub raw: [u8; PLAYER_RECORD_SIZE],
+    pub player: Player,
 }
 
 impl PlayerRecord {
     pub fn new_zeroed() -> Self {
+        Self::default()
+    }
+
+    pub fn from_raw(raw: [u8; PLAYER_RECORD_SIZE]) -> Self {
         Self {
-            raw: [0; PLAYER_RECORD_SIZE],
+            player: decode_player(&raw),
         }
     }
 
-    /// Raw player mode byte at offset `0x00`.
-    ///
-    /// Confirmed classic meanings:
-    /// - `0x00` = civil disorder / unjoined
-    /// - `0x01` = active human player
-    /// - `0xff` = rogue empire
+    /// The classic PLAYER.DAT encoding of this record.
+    pub fn to_bytes(&self) -> [u8; PLAYER_RECORD_SIZE] {
+        encode_player(&self.player)
+    }
+
+    /// The player mode byte: 0 civil disorder, 1 human, 0xFF rogue.
     pub fn player_mode_raw(&self) -> u8 {
-        self.raw[0]
+        self.player.mode.to_raw()
     }
 
     pub fn occupied_flag(&self) -> u8 {
-        self.raw[0]
+        self.player_mode_raw()
     }
 
-    /// Compatibility alias for the raw player mode byte.
     pub fn owner_mode_raw(&self) -> u8 {
         self.player_mode_raw()
     }
 
+    pub fn assigned_player_flag_raw(&self) -> u8 {
+        self.player_mode_raw()
+    }
+
     pub fn is_civil_disorder_player(&self) -> bool {
-        self.player_mode_raw() == 0x00
+        self.player.mode == PlayerMode::CivilDisorder
     }
 
     pub fn is_active_human_player(&self) -> bool {
-        self.player_mode_raw() == 0x01
+        self.player.mode == PlayerMode::Human
     }
 
     pub fn is_active_player(&self) -> bool {
@@ -53,41 +60,45 @@ impl PlayerRecord {
     }
 
     pub fn is_rogue_player(&self) -> bool {
-        self.player_mode_raw() == 0xff
+        self.player.mode == PlayerMode::Rogue
     }
 
     pub fn is_active_or_rogue_player(&self) -> bool {
         self.is_active_human_player() || self.is_rogue_player()
     }
 
-    pub fn handle_bytes(&self) -> &[u8] {
-        &self.raw[1..0x1A]
-    }
-
     pub fn empire_name_bytes(&self) -> &[u8] {
-        &self.raw[0x1C..=0x2E]
+        self.player.empire_name.as_bytes()
     }
 
-    pub fn assigned_player_flag_raw(&self) -> u8 {
-        self.raw[0]
+    /// Lines per screen for ECGAME's "More" pause; ECUTIL writes 24.
+    pub fn page_lines(&self) -> u8 {
+        self.player.page_lines
     }
 
+    pub fn set_page_lines(&mut self, value: u8) {
+        self.player.page_lines = value;
+    }
+
+    /// The page length, which older code read as a name length.
+    // t039: remove in phase 5
     pub fn legacy_status_name_max_len_raw(&self) -> u8 {
-        self.raw[26]
+        self.player.page_lines
     }
 
+    // t039: remove in phase 5
     pub fn legacy_status_name_len_raw(&self) -> u8 {
-        self.raw[27]
+        self.controlled_empire_name_len_raw()
     }
 
+    /// The empire name; older code read it as a separate status label.
+    // t039: remove in phase 5
     pub fn legacy_status_name_summary(&self) -> String {
-        let len = self.legacy_status_name_len_raw() as usize;
-        let end = (28 + len).min(self.raw.len());
-        trim_ascii_field(&self.raw[28..end])
+        self.controlled_empire_name_summary()
     }
 
     pub fn assigned_player_handle_summary(&self) -> String {
-        trim_ascii_field(self.handle_bytes())
+        self.player.handle.trim().to_string()
     }
 
     /// Whether `alias` names this handle as `set_assigned_player_handle_raw`
@@ -100,93 +111,127 @@ impl PlayerRecord {
     }
 
     pub fn set_assigned_player_handle_raw(&mut self, value: &str) {
-        let value = classic_text(value);
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(HANDLE_LEN);
-        self.raw[1..0x1A].fill(b' ');
-        self.raw[1..1 + len].copy_from_slice(&bytes[..len]);
+        self.player.handle = classic_text(value).chars().take(HANDLE_LEN).collect();
     }
 
     pub fn controlled_empire_name_len_raw(&self) -> u8 {
-        self.raw[27]
+        self.player.empire_name.chars().count() as u8
     }
 
     pub fn controlled_empire_name_summary(&self) -> String {
-        let len = self.controlled_empire_name_len_raw() as usize;
-        let end = (28 + len).min(self.raw.len());
-        trim_ascii_field(&self.raw[28..end])
+        self.player.empire_name.trim().to_string()
     }
 
-    /// Classic login/review state low word for the message-side family.
-    ///
-    /// Late-output RE shows classic ECGAME/ECMAINT treating `+0x30/+0x32` and
-    /// `+0x34/+0x36` as two review-state families, not standalone booleans.
+    /// MESSAGES.DAT record of the first waiting message; 0 for none.
+    pub fn messages_first(&self) -> i32 {
+        self.player.messages_first
+    }
+
+    pub fn set_messages_first(&mut self, value: i32) {
+        self.player.messages_first = value;
+    }
+
+    /// MESSAGES.DAT record of the last waiting message.
+    pub fn messages_last(&self) -> i32 {
+        self.player.messages_last
+    }
+
+    pub fn set_messages_last(&mut self, value: i32) {
+        self.player.messages_last = value;
+    }
+
+    /// RESULTS.DAT record of the first report header; 0 for none.
+    pub fn results_first(&self) -> i32 {
+        self.player.results_first
+    }
+
+    pub fn set_results_first(&mut self, value: i32) {
+        self.player.results_first = value;
+    }
+
+    /// RESULTS.DAT record of the last report header.
+    pub fn results_last(&self) -> i32 {
+        self.player.results_last
+    }
+
+    pub fn set_results_last(&mut self, value: i32) {
+        self.player.results_last = value;
+    }
+
+    /// The low word of `messages_first`, which older code read as a review
+    /// state.
+    // t039: remove in phase 5
     pub fn classic_message_review_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x30], self.raw[0x31]])
+        self.player.messages_first as u16
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_message_review_word_raw(&mut self, value: u16) {
-        self.raw[0x30..0x32].copy_from_slice(&value.to_le_bytes());
+        self.player.messages_first = with_low_word(self.player.messages_first, value);
     }
 
+    /// The high word of `messages_first`.
+    // t039: remove in phase 5
     pub fn classic_message_review_carry_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x32], self.raw[0x33]])
+        (self.player.messages_first >> 16) as u16
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_message_review_carry_word_raw(&mut self, value: u16) {
-        self.raw[0x32..0x34].copy_from_slice(&value.to_le_bytes());
+        self.player.messages_first = with_high_word(self.player.messages_first, value);
     }
 
-    /// Classic login/review state low word for the results/report-side family.
+    /// The low word of `messages_last`, which older code read as the
+    /// results review state.
+    // t039: remove in phase 5
     pub fn classic_results_review_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x34], self.raw[0x35]])
+        self.player.messages_last as u16
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_results_review_word_raw(&mut self, value: u16) {
-        self.raw[0x34..0x36].copy_from_slice(&value.to_le_bytes());
+        self.player.messages_last = with_low_word(self.player.messages_last, value);
     }
 
+    /// The high word of `messages_last`.
+    // t039: remove in phase 5
     pub fn classic_results_review_carry_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x36], self.raw[0x37]])
+        (self.player.messages_last >> 16) as u16
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_results_review_carry_word_raw(&mut self, value: u16) {
-        self.raw[0x36..0x38].copy_from_slice(&value.to_le_bytes());
+        self.player.messages_last = with_high_word(self.player.messages_last, value);
     }
 
     pub fn has_classic_messages_review_state(&self) -> bool {
-        self.classic_message_review_word_raw() != 0
-            || self.classic_message_review_carry_word_raw() != 0
+        self.player.messages_first != 0
     }
 
     pub fn has_classic_results_review_state(&self) -> bool {
-        self.classic_results_review_word_raw() != 0
-            || self.classic_results_review_carry_word_raw() != 0
+        self.player.messages_last != 0
     }
 
-    /// Classic `RESULTS.DAT` chain pointers at `+0x38..+0x3f`.
-    ///
-    /// Original `ECMAINT` output (two- and three-human oracle runs, see
-    /// `fixtures/ecmaint-results-*`) writes:
-    ///
-    /// - `+0x38..+0x39` = 1-based record index of this empire's first report
-    ///   header in the shared `RESULTS.DAT`, or `0` when it has none
-    /// - `+0x3c..+0x3d` = 1-based record index of its last report header
-    /// - `+0x3a..+0x3b` and `+0x3e..+0x3f` = zero
+    /// The `results_first` record as a word. Original `ECMAINT` output
+    /// (two- and three-human oracle runs, see `fixtures/ecmaint-results-*`)
+    /// writes the 1-based record index of this empire's first report header
+    /// in the shared `RESULTS.DAT`, or 0 when it has none.
     pub fn classic_results_first_header_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x38], self.raw[0x39]])
+        self.player.results_first as u16
     }
 
     pub fn set_classic_results_first_header_raw(&mut self, value: u16) {
-        self.raw[0x38..0x3A].copy_from_slice(&value.to_le_bytes());
+        self.player.results_first = i32::from(value);
     }
 
+    /// The `results_last` record as a word: the 1-based record index of
+    /// this empire's last report header.
     pub fn classic_results_last_header_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x3C], self.raw[0x3D]])
+        self.player.results_last as u16
     }
 
     pub fn set_classic_results_last_header_raw(&mut self, value: u16) {
-        self.raw[0x3C..0x3E].copy_from_slice(&value.to_le_bytes());
+        self.player.results_last = i32::from(value);
     }
 
     pub fn classic_results_chain(&self) -> Option<ClassicResultsChain> {
@@ -198,50 +243,54 @@ impl PlayerRecord {
     }
 
     pub fn has_classic_results_chain_state(&self) -> bool {
-        self.classic_results_first_header_raw() != 0 || self.classic_results_last_header_raw() != 0
+        self.player.results_first != 0 || self.player.results_last != 0
     }
 
     pub fn has_any_classic_review_state(&self) -> bool {
         self.has_classic_messages_review_state() || self.has_classic_results_review_state()
     }
 
+    /// The low byte of `messages_last`, which older code read as a flag.
+    // t039: remove in phase 5
     pub fn classic_reports_pending_flag_raw(&self) -> u8 {
-        self.raw[0x34]
+        self.player.messages_last as u8
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_reports_pending_flag_raw(&mut self, value: u8) {
-        self.raw[0x34] = value;
+        self.player.messages_last = with_low_byte(self.player.messages_last, value);
     }
 
+    /// The low byte of `messages_first`, which older code read as a flag.
+    // t039: remove in phase 5
     pub fn classic_messages_pending_flag_raw(&self) -> u8 {
-        self.raw[0x30]
+        self.player.messages_first as u8
     }
 
+    // t039: remove in phase 5
     pub fn set_classic_messages_pending_flag_raw(&mut self, value: u8) {
-        self.raw[0x30] = value;
+        self.player.messages_first = with_low_byte(self.player.messages_first, value);
     }
 
     pub fn set_classic_results_review_state_present(&mut self, present: bool) {
-        self.set_classic_results_review_word_raw(u16::from(present));
-        self.set_classic_results_review_carry_word_raw(0);
+        self.player.messages_last = i32::from(present);
     }
 
     pub fn set_classic_messages_review_state_present(&mut self, present: bool) {
-        self.set_classic_message_review_word_raw(u16::from(present));
-        self.set_classic_message_review_carry_word_raw(0);
+        self.player.messages_first = i32::from(present);
     }
 
     /// Advertise login-time reviewables to classic ECGAME.
     ///
     /// Current compatibility rule:
-    /// - classic delivery/review probes use both low words together for unread
-    ///   mail
-    /// - results-only startup probing does not become reviewable when only the
-    ///   results-side low byte is set
+    /// - classic delivery/review probes use both message records together
+    ///   for unread mail
+    /// - results-only startup probing does not become reviewable when only
+    ///   the results-side record is set
     ///
-    /// Until a stricter family split is proven in classic login flow, keep the
-    /// mirrored advertisement here and route all startup-review producers
-    /// through this helper.
+    /// Until a stricter family split is proven in classic login flow, keep
+    /// the mirrored advertisement here and route all startup-review
+    /// producers through this helper.
     pub fn set_classic_login_reviewables_present(&mut self, present: bool) {
         self.set_classic_messages_review_state_present(present);
         self.set_classic_results_review_state_present(present);
@@ -250,49 +299,31 @@ impl PlayerRecord {
     /// Point this empire at its chain in the shared `RESULTS.DAT`.  Lay the
     /// file out with [`crate::layout_classic_results`] to get the chain.
     pub fn set_classic_results_chain(&mut self, chain: Option<ClassicResultsChain>) {
-        self.raw[0x38..0x40].fill(0);
-        if let Some(chain) = chain {
-            self.set_classic_results_first_header_raw(chain.first_header);
-            self.set_classic_results_last_header_raw(chain.last_header);
-        }
+        let chain = chain.unwrap_or(ClassicResultsChain {
+            first_header: 0,
+            last_header: 0,
+        });
+        self.player.results_first = i32::from(chain.first_header);
+        self.player.results_last = i32::from(chain.last_header);
     }
 
+    /// Stores `value` as classic text, cut to the 20 characters an empire
+    /// name holds.
     pub fn set_controlled_empire_name_raw(&mut self, value: &str) {
-        let value = classic_text(value);
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(self.empire_name_bytes().len());
-        self.raw[26] = self.empire_name_bytes().len() as u8;
-        self.raw[27] = len as u8;
-        self.raw[0x1C..=0x2E].fill(0);
-        self.raw[0x1C..0x1C + len].copy_from_slice(&bytes[..len]);
+        self.player.empire_name = classic_text(value).chars().take(EMPIRE_NAME_LEN).collect();
     }
 
-    pub fn set_legacy_status_name_raw(&mut self, value: &str) {
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(self.raw.len().saturating_sub(28));
-        self.raw[26] = len as u8;
-        self.raw[27] = len as u8;
-        self.raw[28..].fill(0);
-        self.raw[28..28 + len].copy_from_slice(&bytes[..len]);
-    }
-
-    pub fn set_legacy_status_name_field_raw(&mut self, max_len: u8, value: &str) {
-        let bytes = value.as_bytes();
-        let len = bytes.len().min(self.raw.len().saturating_sub(28));
-        self.raw[26] = max_len;
-        self.raw[27] = len as u8;
-        self.raw[28..].fill(0);
-        self.raw[28..28 + len].copy_from_slice(&bytes[..len]);
-    }
-
+    /// Returns the empire to civil disorder as ECUTIL and ECMAINT do: mode
+    /// 0, a blank handle, and the name "In Civil Disorder". Every other
+    /// field stays.
     pub fn set_civil_disorder_mode(&mut self) {
-        self.set_player_mode_raw(0x00);
-        self.raw[1..0x1A].fill(0);
-        self.set_legacy_status_name_raw("In Civil Disorder");
+        self.player.mode = PlayerMode::CivilDisorder;
+        self.player.handle.clear();
+        self.set_controlled_empire_name_raw("In Civil Disorder");
     }
 
     pub fn ownership_summary(&self) -> String {
-        let legacy = self.legacy_status_name_summary();
+        let legacy = self.controlled_empire_name_summary();
         let handle = self.assigned_player_handle_summary();
         let empire = self.controlled_empire_name_summary();
 
@@ -308,182 +339,133 @@ impl PlayerRecord {
     }
 
     pub fn tax_rate(&self) -> u8 {
-        self.raw[0x51]
+        self.player.tax_rate
     }
 
     pub fn set_tax_rate_raw(&mut self, value: u8) {
-        self.raw[0x51] = value;
+        self.player.tax_rate = value;
     }
 
-    /// 0x44..=0x45: record number of the empire's first starbase in
-    /// BASES.DAT, the head of its chain; 0 for none.
+    /// Record number of the empire's first starbase in BASES.DAT, the head
+    /// of its chain; 0 for none.
     pub fn first_base_record_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x44], self.raw[0x45]])
+        self.player.bases_first.0
     }
 
     pub fn set_first_base_record_raw(&mut self, value: u16) {
-        self.raw[0x44..0x46].copy_from_slice(&value.to_le_bytes());
+        self.player.bases_first.0 = value;
     }
 
-    /// 0x46..=0x47: record number of the empire's last starbase, the tail of
-    /// its chain; 0 for none.
+    /// Record number of the empire's last starbase, the tail of its chain;
+    /// 0 for none.
     pub fn last_base_record_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x46], self.raw[0x47]])
+        self.player.bases_last.0
     }
 
     pub fn set_last_base_record_raw(&mut self, value: u16) {
-        self.raw[0x46..0x48].copy_from_slice(&value.to_le_bytes());
+        self.player.bases_last.0 = value;
     }
 
     pub fn fleet_chain_head_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x40], self.raw[0x41]])
+        self.player.fleets_first.0
     }
 
     pub fn set_fleet_chain_head_raw(&mut self, value: u16) {
-        let [lo, hi] = value.to_le_bytes();
-        self.raw[0x40] = lo;
-        self.raw[0x41] = hi;
+        self.player.fleets_first.0 = value;
     }
 
     pub fn fleet_chain_tail_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x42], self.raw[0x43]])
+        self.player.fleets_last.0
     }
 
     pub fn set_fleet_chain_tail_raw(&mut self, value: u16) {
-        let [lo, hi] = value.to_le_bytes();
-        self.raw[0x42] = lo;
-        self.raw[0x43] = hi;
+        self.player.fleets_last.0 = value;
     }
 
-    pub fn ipbm_count_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x48], self.raw[0x49]])
+    /// Record number heading the empire's IPBM chain; 0 for none.
+    pub fn ipbm_chain_head_raw(&self) -> u16 {
+        self.player.ipbms_first.0
     }
 
-    pub fn set_ipbm_count_raw(&mut self, value: u16) {
-        let [lo, hi] = value.to_le_bytes();
-        self.raw[0x48] = lo;
-        self.raw[0x49] = hi;
+    pub fn set_ipbm_chain_head_raw(&mut self, value: u16) {
+        self.player.ipbms_first.0 = value;
     }
 
     pub fn homeworld_planet_index_1_based_raw(&self) -> u8 {
-        self.raw[0x4C]
+        self.player.homeworld
     }
 
     pub fn set_homeworld_planet_index_1_based_raw(&mut self, value: u8) {
-        self.raw[0x4C] = value;
-        self.raw[0x4D] = value;
+        self.player.homeworld = value;
     }
 
-    /// Last year this empire successfully entered the game.
-    ///
-    /// Classic `ECGAME` displays this as the `Last year on:` status line during
-    /// login/startup handling. Fresh pre-loaded slots keep this at `0`, while
-    /// established returning players carry the current or prior game year.
+    /// Game year of the empire's last sign-on; 0 before the first. Classic
+    /// `ECGAME` shows it as `Last year on:`.
     pub fn last_run_year_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x4E], self.raw[0x4F]])
+        self.player.last_year_on
     }
 
     pub fn set_last_run_year_raw(&mut self, value: u16) {
-        self.raw[0x4E..0x50].copy_from_slice(&value.to_le_bytes());
+        self.player.last_year_on = value;
     }
 
     pub fn planet_count_raw(&self) -> u8 {
-        self.raw[0x50]
+        self.player.planet_count
     }
 
     pub fn set_planet_count_raw(&mut self, value: u8) {
-        self.raw[0x50] = value;
+        self.player.planet_count = value;
     }
 
     pub fn production_score_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x52], self.raw[0x53]])
+        self.player.production
     }
 
     pub fn set_production_score_raw(&mut self, value: u16) {
-        self.raw[0x52..0x54].copy_from_slice(&value.to_le_bytes());
-    }
-
-    /// Unknown u16/u32-adjacent region beginning at 0x52. Current evidence:
-    /// - `0x52..0x53` still appear to be a stable small constant in preserved
-    ///   starts
-    /// - `0x54..0x57` now map to per-empire diplomacy flags
-    /// Do not treat the full 32-bit span as one settled field anymore.
-    pub fn unknown_0x52_raw(&self) -> u32 {
-        u32::from_le_bytes([
-            self.raw[0x52],
-            self.raw[0x53],
-            self.raw[0x54],
-            self.raw[0x55],
-        ])
+        self.player.production = value;
     }
 
     /// Autopilot flag. 1 = autopilot on (computer manages empire, mostly
     /// builds planetary defenses). 0 = human player submitting orders.
-    /// Confirmed by black-box experiment: clearing this byte eliminates
-    /// all autopilot-driven army/battery growth in ECMAINT.
     pub fn autopilot_flag(&self) -> u8 {
-        self.raw[0x6D]
+        u8::from(self.player.autopilot)
     }
 
     pub fn set_autopilot_flag(&mut self, value: u8) {
-        self.raw[0x6D] = value;
+        self.player.autopilot = value != 0;
     }
 
-    /// Set the raw player mode byte at offset `0x00`.
     pub fn set_player_mode_raw(&mut self, value: u8) {
-        self.raw[0] = value;
+        self.player.mode = PlayerMode::from_raw(value);
     }
 
-    /// Set the occupied/present flag at offset `0x00`.
-    /// This is a compatibility alias for the raw player mode byte.
     pub fn set_occupied_flag(&mut self, value: u8) {
         self.set_player_mode_raw(value);
     }
 
-    /// Compatibility alias for the raw player mode byte.
     pub fn set_owner_empire_raw(&mut self, value: u8) {
         self.set_player_mode_raw(value);
     }
 
-    /// Stored diplomatic relation toward another empire.
-    ///
-    /// Black-box confirmation from live `ECGAME` diplomacy menu:
-    /// player 1 declaring empire 2 an enemy flips player-record byte `0x55`
-    /// from `0x00 -> 0x01`, while the surrounding `0x54..0x57` bytes behave
-    /// like one slot per empire.
-    ///
-    /// Current mapping:
-    /// - `raw[0x54 + (other_empire_raw - 1)]`
-    /// - `0x00 = Neutral`
-    /// - `0x01 = Enemy`
-    ///
-    /// The player record is 110 bytes long and the known autopilot flag is at
-    /// `0x6D`, so the contiguous range `0x54..=0x6C` cleanly provides 25
-    /// diplomacy slots for the documented maximum of 25 players.
+    /// Stored diplomatic relation toward another empire, or `None` for a
+    /// byte no classic program writes.
     pub fn diplomatic_relation_toward(&self, other_empire_raw: u8) -> Option<DiplomaticRelation> {
-        if !(1..=25).contains(&other_empire_raw) {
-            return None;
-        }
-        match self.diplomatic_relation_byte_raw(other_empire_raw)? {
-            0x00 => Some(DiplomaticRelation::Neutral),
-            0x01 => Some(DiplomaticRelation::Enemy),
-            _ => None,
+        match self
+            .player
+            .diplomacy
+            .get(diplomacy_slot(other_empire_raw)?)?
+        {
+            DiplomaticRelation::Unknown(_) => None,
+            relation => Some(*relation),
         }
     }
 
     pub fn diplomatic_relation_byte_raw(&self, other_empire_raw: u8) -> Option<u8> {
-        if !(1..=25).contains(&other_empire_raw) {
-            return None;
-        }
-        Some(self.raw[0x54 + other_empire_raw as usize - 1])
+        Some(self.player.diplomacy[diplomacy_slot(other_empire_raw)?].to_raw())
     }
 
     pub fn set_diplomatic_relation_byte_raw(&mut self, other_empire_raw: u8, raw: u8) -> bool {
-        if !(1..=25).contains(&other_empire_raw) {
-            return false;
-        }
-        self.raw[0x54 + other_empire_raw as usize - 1] = raw;
-        true
+        self.set_diplomatic_relation_toward(other_empire_raw, DiplomaticRelation::from_raw(raw))
     }
 
     pub fn set_diplomatic_relation_toward(
@@ -491,18 +473,32 @@ impl PlayerRecord {
         other_empire_raw: u8,
         relation: DiplomaticRelation,
     ) -> bool {
-        if !(1..=25).contains(&other_empire_raw) {
-            return false;
+        match diplomacy_slot(other_empire_raw) {
+            Some(slot) => {
+                self.player.diplomacy[slot] = relation;
+                true
+            }
+            None => false,
         }
-        self.set_diplomatic_relation_byte_raw(
-            other_empire_raw,
-            match relation {
-                DiplomaticRelation::Neutral => 0x00,
-                DiplomaticRelation::Enemy => 0x01,
-            },
-        );
-        true
     }
+}
+
+fn diplomacy_slot(other_empire_raw: u8) -> Option<usize> {
+    (1..=25)
+        .contains(&other_empire_raw)
+        .then(|| usize::from(other_empire_raw) - 1)
+}
+
+fn with_low_word(value: i32, word: u16) -> i32 {
+    ((value as u32 & 0xFFFF_0000) | u32::from(word)) as i32
+}
+
+fn with_high_word(value: i32, word: u16) -> i32 {
+    ((value as u32 & 0x0000_FFFF) | (u32::from(word) << 16)) as i32
+}
+
+fn with_low_byte(value: i32, byte: u8) -> i32 {
+    ((value as u32 & 0xFFFF_FF00) | u32::from(byte)) as i32
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -512,19 +508,10 @@ pub struct PlayerDat {
 
 impl PlayerDat {
     pub fn parse(data: &[u8]) -> Result<Self, ParseError> {
-        if data.len() % PLAYER_RECORD_SIZE != 0 {
-            return Err(ParseError::WrongRecordMultiple {
-                file_type: "PLAYER.DAT",
-                record_size: PLAYER_RECORD_SIZE,
-                actual: data.len(),
-            });
-        }
         Ok(Self {
-            records: data
-                .chunks_exact(PLAYER_RECORD_SIZE)
-                .map(|chunk| PlayerRecord {
-                    raw: copy_array(chunk),
-                })
+            records: parse_player_dat(data)?
+                .into_iter()
+                .map(|player| PlayerRecord { player })
                 .collect(),
         })
     }
@@ -532,7 +519,7 @@ impl PlayerDat {
     pub fn to_bytes(&self) -> Vec<u8> {
         self.records
             .iter()
-            .flat_map(|record| record.raw)
-            .collect::<Vec<_>>()
+            .flat_map(|record| encode_player(&record.player))
+            .collect()
     }
 }
