@@ -32,22 +32,24 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         return Vec::new();
     };
     let events = observation.events;
-    // One task force's losses at one location, reported by its battle event
-    // and again by each of its fleets when it withdrew under ROE.
+    // An empire's battle losses at one location: a departure interception
+    // and the main battle there each report their own, and each fleet that
+    // withdrew under ROE reports its share again.
     let mut fleet_battle_losses = BTreeMap::<(u8, [u8; 2]), Ships>::new();
+    for event in &events.fleet_battle_events {
+        add_ships(
+            fleet_battle_losses
+                .entry((event.reporting_empire_raw, event.coords))
+                .or_default(),
+            losses_as_ships(&event.friendly_losses),
+        );
+    }
     let mut report = |empire: u8, coords: [u8; 2], losses: &ShipLosses| {
         let total = fleet_battle_losses.entry((empire, coords)).or_default();
         for (kind, lost) in losses_as_ships(losses).into_iter().enumerate() {
             total[kind] = total[kind].max(lost);
         }
     };
-    for event in &events.fleet_battle_events {
-        report(
-            event.reporting_empire_raw,
-            event.coords,
-            &event.friendly_losses,
-        );
-    }
     for event in &events.encounter_disposition_events {
         if let EncounterDispositionEvent::Retreated {
             owner_empire_raw,

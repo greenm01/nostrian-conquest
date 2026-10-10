@@ -1,8 +1,8 @@
 //! Results reports: every line fits a classic 72-byte printable record, rows
-//! go only to entitled empires, and broadcasts reach every active empire.
-//! A campaign-outlook announcement is a broadcast: while any empire has an
-//! active player it must produce a broadcast row, and every broadcast row
-//! must be flagged for review by every active empire.
+//! go only to entitled empires, and a campaign-outlook announcement reaches
+//! every active empire. The engine sends the outlook as one targeted row per
+//! active empire, each flagged for review; it sends no broadcast (viewer `0`)
+//! rows, so one counts as an unentitled recipient.
 //!
 //! An empire is entitled to results when it has an active player at either
 //! end of the turn, or when it has a terminal outcome (defeat, loss, or win)
@@ -14,6 +14,8 @@ use super::{TurnObservation, Violation};
 
 const RECORD_SIZE: usize = 84;
 const TEXT_SIZE: usize = 72;
+/// Shared by the leader's and the other empires' outlook text.
+const OUTLOOK_TEXT: &str = "sole remaining serious contender";
 
 pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     let mut violations = Vec::new();
@@ -33,12 +35,9 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
                 .is_some_and(|state| state.terminal_outcome != TerminalOutcome::None)
     };
 
-    let mut has_broadcast = false;
     for row in observation.report_rows {
         let viewer = row.viewer_empire_id;
-        if viewer == 0 {
-            has_broadcast |= !row.recipient_deleted;
-        } else if !entitled(viewer) {
+        if !entitled(viewer) {
             violations.push(Violation::ReportRecipient { viewer });
         }
         for line in row.decoded_text.lines() {
@@ -63,15 +62,18 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         }
     }
 
-    let announced = !observation.events.campaign_outlook_events.is_empty();
-    if has_broadcast || announced {
+    if !observation.events.campaign_outlook_events.is_empty() {
         for (idx, player) in observation.flagged.player.records.iter().enumerate() {
+            let empire = (idx + 1) as u8;
+            let heard = observation.report_rows.iter().any(|row| {
+                row.viewer_empire_id == empire
+                    && !row.recipient_deleted
+                    && row.decoded_text.contains(OUTLOOK_TEXT)
+            });
             if player.is_active_human_player()
-                && (!has_broadcast || !player.has_classic_results_review_state())
+                && (!heard || !player.has_classic_results_review_state())
             {
-                violations.push(Violation::BroadcastMissed {
-                    empire: (idx + 1) as u8,
-                });
+                violations.push(Violation::OutlookMissed { empire });
             }
         }
     }

@@ -61,7 +61,7 @@ nondeterminism, and coordinates within `1..=map_size` with one planet per
 sector. A failure is written as `scenario.kdl` (a `combat-scenario`) plus
 `turn-NN-empire-E.kdl` files under `$NC_FUZZ_OUT/<driver>`, or the system
 temp directory's `nc-fuzz/<driver>`;
-`cargo run -q -p nc-cli -- harness run-combat <dir>/scenario.kdl` replays it,
+`cargo run -q -p nc-cli -- harness run-combat --file <dir>/scenario.kdl` replays it,
 and `tests/core.rs` checks that a written scenario replays to the same state.
 nc-harness gained `turn=` on `turn-file` and `autopilot` on `house`, and its
 houses no longer overwrite the player mode byte with the record number, which
@@ -155,6 +155,17 @@ shrank three of the four to one turn with at most one action, and finished
 shrinking sooner on three of them. Keep the proptest driver as a second
 opinion and for builds without crates.io access, since Hegel's engine is
 compiled by a nested cargo build.
+
+Merge (2026-10-10): the fuzzer was built on a base that predated t021 and
+t022, and three checks needed updating for current main. The outlook is now
+one targeted row per active empire, so the reports check requires that row
+instead of a broadcast, and a broadcast row now counts as an unentitled
+recipient. The departure interception before movement is a second battle at
+the same location, so ship conservation sums an empire's battle events there
+rather than taking the largest. An interception can also abort a mission
+and send the fleet home that turn, so a fleet claim's location may be the
+fleet's starting location. Hegel found both of the last two on its first
+runs; in each the engine's events were consistent.
 
 ## Connections
 

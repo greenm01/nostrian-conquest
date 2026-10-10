@@ -94,7 +94,7 @@ pub enum Violation {
     ReportRecipient {
         viewer: u8,
     },
-    BroadcastMissed {
+    OutlookMissed {
         empire: u8,
     },
     StorageRoundTrip(String),
@@ -178,10 +178,10 @@ impl fmt::Display for Violation {
                 f,
                 "report sent to empire {viewer}, which has neither an active player nor a terminal review"
             ),
-            Self::BroadcastMissed { empire } => {
+            Self::OutlookMissed { empire } => {
                 write!(
                     f,
-                    "broadcast results not flagged for active empire {empire}"
+                    "campaign outlook not reported to and flagged for active empire {empire}"
                 )
             }
             Self::StorageRoundTrip(detail) => write!(f, "SQLite round trip differs: {detail}"),

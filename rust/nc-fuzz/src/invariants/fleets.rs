@@ -5,8 +5,9 @@
 //! An index either names a fleet record after maintenance or is the
 //! engine's removed-fleet marker (`usize::MAX`). A named record must belong
 //! to the event's empire; where the event also captured a fleet number or a
-//! post-movement location, the record must match those too. Fleets do not
-//! move after the movement phase, so post-movement locations are stable.
+//! location, the record must match those too. Fleets do not move after the
+//! movement phase, so a location is the fleet's final one, or its starting
+//! one for an event from the departure interception before movement.
 
 use nc_data::{
     ColonizationResolvedEvent, CoreGameData, EncounterDispositionEvent, FleetRecord,
@@ -42,7 +43,7 @@ impl FleetClaim {
         }
     }
 
-    fn mismatch(&self, fleets: &[FleetRecord]) -> Option<String> {
+    fn mismatch(&self, fleets: &[FleetRecord], before: &[FleetRecord]) -> Option<String> {
         if self.fleet_idx == REMOVED_FLEET_IDX {
             return None;
         }
@@ -72,7 +73,13 @@ impl FleetClaim {
         }
         if let Some(coords) = self.coords {
             let at = fleet.current_location_coords_raw();
-            if at != coords {
+            let started_at = before
+                .iter()
+                .find(|start| {
+                    start.owner_empire_raw() == self.owner && start.local_slot_word_raw() == number
+                })
+                .map(FleetRecord::current_location_coords_raw);
+            if at != coords && started_at != Some(coords) {
                 return Some(format!(
                     "index {} is empire {} fleet {number} at {at:?}, not at {coords:?}",
                     self.fleet_idx, self.owner
@@ -222,7 +229,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         .into_iter()
         .filter_map(|(event, claim)| {
             claim
-                .mismatch(&after.fleets.records)
+                .mismatch(&after.fleets.records, &observation.before.fleets.records)
                 .map(|detail| Violation::FleetIdentity { event, detail })
         })
         .collect()

@@ -210,7 +210,7 @@ its turn files under `$NC_FUZZ_OUT/<driver>` (default `nc-fuzz/<driver>` in
 the system temp directory). Replay it with:
 
 ```bash
-cargo run -q -p nc-cli -- harness run-combat /tmp/nc-fuzz/hegel/scenario.kdl
+cargo run -q -p nc-cli -- harness run-combat --file /tmp/nc-fuzz/hegel/scenario.kdl
 ```
 
 `nc-cli` remains the internal developer, oracle, and compatibility surface.
