@@ -52,7 +52,9 @@ pub(crate) fn set_invade_onefleet(
             // The preserved fixture holds the old "invasion armies" byte at
             // 0x08, which classic reads as the high byte of the previous-fleet
             // word.
-            f.set_previous_fleet_id(u16::from_le_bytes([f.raw[0x07], invasion_armies]));
+            f.set_previous_fleet_id(
+                (f.previous_fleet_id() & 0x00FF) | (u16::from(invasion_armies) << 8),
+            );
             f.set_max_speed(3);
             f.set_current_speed(3);
             f.set_standing_order_kind(Order::InvadeWorld);

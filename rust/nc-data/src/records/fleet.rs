@@ -1,41 +1,53 @@
 use crate::FLEET_RECORD_SIZE;
+use crate::classic::{decode_fleet, encode_fleet, parse_fleets_dat};
+use crate::model::{Coords, Fleet};
 use crate::real48::Real48;
-use crate::support::{ParseError, copy_array};
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FleetRecord {
-    pub raw: [u8; FLEET_RECORD_SIZE],
-}
+use crate::support::ParseError;
 
 pub use crate::model::Order;
 
+/// A [`Fleet`] behind the accessor API call sites still use.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct FleetRecord {
+    pub fleet: Fleet,
+}
+
 impl FleetRecord {
     pub fn new_zeroed() -> Self {
+        Self::default()
+    }
+
+    pub fn from_raw(raw: [u8; FLEET_RECORD_SIZE]) -> Self {
         Self {
-            raw: [0; FLEET_RECORD_SIZE],
+            fleet: decode_fleet(&raw),
         }
     }
 
+    /// The classic FLEETS.DAT encoding of this record.
+    pub fn to_bytes(&self) -> [u8; FLEET_RECORD_SIZE] {
+        encode_fleet(&self.fleet)
+    }
+
     pub fn local_slot_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x00], self.raw[0x01]])
+        self.fleet.fleet_number.0
     }
     pub fn set_local_slot_word_raw(&mut self, value: u16) {
-        self.raw[0x00..0x02].copy_from_slice(&value.to_le_bytes());
+        self.fleet.fleet_number.0 = value;
     }
     pub fn local_slot(&self) -> u8 {
-        self.raw[0x00]
+        self.fleet.fleet_number.0 as u8
     }
     pub fn owner_empire_raw(&self) -> u8 {
-        self.raw[0x02]
+        self.fleet.owner.0
     }
     pub fn set_owner_empire_raw(&mut self, value: u8) {
-        self.raw[0x02] = value;
+        self.fleet.owner.0 = value;
     }
     pub fn next_fleet_link_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x03], self.raw[0x04]])
+        self.fleet.next.0
     }
     pub fn set_next_fleet_link_word_raw(&mut self, value: u16) {
-        self.raw[0x03..0x05].copy_from_slice(&value.to_le_bytes());
+        self.fleet.next.0 = value;
     }
     pub fn next_fleet_id(&self) -> u16 {
         self.next_fleet_link_word_raw()
@@ -58,44 +70,43 @@ impl FleetRecord {
         !self.has_any_combat_ships() && self.total_starships() > 0
     }
     pub fn fleet_id_word_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x05], self.raw[0x06]])
+        self.fleet.record.0
     }
     pub fn set_fleet_id_word_raw(&mut self, value: u16) {
-        self.raw[0x05..0x07].copy_from_slice(&value.to_le_bytes());
+        self.fleet.record.0 = value;
     }
     pub fn fleet_id(&self) -> u16 {
         self.fleet_id_word_raw()
     }
-    /// 0x07..=0x08: the previous fleet id in the owner's chain, a word in
-    /// both ECGAME and ECMAINT.
+    /// The previous fleet in the owner's chain.
     pub fn previous_fleet_id(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x07], self.raw[0x08]])
+        self.fleet.prev.0
     }
     pub fn set_previous_fleet_id(&mut self, value: u16) {
-        self.raw[0x07..0x09].copy_from_slice(&value.to_le_bytes());
+        self.fleet.prev.0 = value;
     }
     pub fn max_speed(&self) -> u8 {
-        self.raw[0x09]
+        self.fleet.max_speed
     }
     pub fn set_max_speed(&mut self, value: u8) {
-        self.raw[0x09] = value;
+        self.fleet.max_speed = value;
     }
     pub fn current_speed(&self) -> u8 {
-        self.raw[0x0A]
+        self.fleet.speed
     }
     pub fn set_current_speed(&mut self, value: u8) {
-        self.raw[0x0A] = value;
+        self.fleet.speed = value;
     }
     pub fn current_location_coords_raw(&self) -> [u8; 2] {
-        [self.raw[0x0B], self.raw[0x0C]]
+        self.fleet.sector.to_array()
     }
     pub fn set_current_location_coords_raw(&mut self, coords: [u8; 2]) {
-        self.raw[0x0B] = coords[0];
-        self.raw[0x0C] = coords[1];
+        self.fleet.sector = Coords::from_array(coords);
     }
 
-    /// ECGAME's recompute of `0x09`: start at 7 and take the minimum over the
-    /// ship types present (ETAC 3, BB 4, CA 5, transports 5, DD 6, scouts 6).
+    /// ECGAME's recompute of the maximum speed: start at 7 and take the
+    /// minimum over the ship types present (ETAC 3, BB 4, CA 5, transports
+    /// 5, DD 6, scouts 6).
     pub fn recompute_max_speed_from_composition(&mut self) {
         let mut max_speed = 7;
         for (count, speed) in [
@@ -126,41 +137,47 @@ impl FleetRecord {
             || self.etac_count() > 0
     }
 
-    pub fn mission_param_bytes(&self) -> &[u8] {
-        &self.raw[0x1F..=0x21]
+    /// The order code and target sector, as FLEETS.DAT 0x1F..0x21 hold them.
+    pub fn mission_param_bytes(&self) -> [u8; 3] {
+        [
+            self.fleet.order.to_raw(),
+            self.fleet.target.x,
+            self.fleet.target.y,
+        ]
     }
     pub fn standing_order_code_raw(&self) -> u8 {
-        self.raw[0x1F]
+        self.fleet.order.to_raw()
     }
     pub fn set_standing_order_code_raw(&mut self, value: u8) {
-        self.raw[0x1F] = value;
+        self.fleet.order = Order::from_raw(value);
     }
     pub fn set_standing_order_kind(&mut self, value: Order) {
-        self.set_standing_order_code_raw(value.to_raw());
+        self.fleet.order = value;
     }
     pub fn standing_order_kind(&self) -> Order {
-        Order::from_raw(self.standing_order_code_raw())
+        self.fleet.order
     }
     pub fn standing_order_target_coords_raw(&self) -> [u8; 2] {
-        [self.raw[0x20], self.raw[0x21]]
+        self.fleet.target.to_array()
     }
     pub fn set_standing_order_target_coords_raw(&mut self, coords: [u8; 2]) {
-        self.raw[0x20] = coords[0];
-        self.raw[0x21] = coords[1];
+        self.fleet.target = Coords::from_array(coords);
     }
+    /// The target depth and the low byte of the mission target, as
+    /// FLEETS.DAT 0x22..0x23 hold them.
     pub fn mission_aux_bytes(&self) -> [u8; 2] {
-        [self.raw[0x22], self.raw[0x23]]
+        [self.fleet.target_depth, self.fleet.mission_target as u8]
     }
     pub fn world_target_flag_raw(&self) -> u8 {
-        self.raw[0x22]
+        self.fleet.target_depth
     }
-    /// 0x23..=0x24: mission target id, a word: the Join host fleet id or
-    /// the guarded starbase number.
+    /// The mission target: the Join host fleet number or the guarded
+    /// starbase id.
     pub fn mission_id_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x23], self.raw[0x24]])
+        self.fleet.mission_target
     }
     pub fn set_mission_id_raw(&mut self, value: u16) {
-        self.raw[0x23..0x25].copy_from_slice(&value.to_le_bytes());
+        self.fleet.mission_target = value;
     }
     pub fn join_host_fleet_id_raw(&self) -> u16 {
         self.mission_id_raw()
@@ -171,70 +188,47 @@ impl FleetRecord {
     pub fn guard_starbase_index_raw(&self) -> u16 {
         self.mission_id_raw()
     }
-    /// Writes the world-target flag (0x22) and the mission id word
-    /// (0x23..=0x24) together, as ECGAME does when it sets an order.
+    /// Writes the target depth and the mission target together, as ECGAME
+    /// does when it sets an order.
     pub fn set_mission_target(&mut self, world_target_flag: u8, mission_id: u16) {
-        self.raw[0x22] = world_target_flag;
-        self.set_mission_id_raw(mission_id);
+        self.fleet.target_depth = world_target_flag;
+        self.fleet.mission_target = mission_id;
     }
-    /// Raw bytes 0x22 (world-target flag) and 0x23 (mission id low byte);
-    /// 0x24 is left alone.
+    /// Writes the target depth and the low byte of the mission target; the
+    /// high byte is left alone.
     pub fn set_mission_aux_bytes(&mut self, value: [u8; 2]) {
-        self.raw[0x22] = value[0];
-        self.raw[0x23] = value[1];
-    }
-    pub fn tuple_a_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x0D..0x12])
-    }
-    pub fn set_tuple_a_payload_raw(&mut self, payload: [u8; 5]) {
-        self.raw[0x0D..0x12].copy_from_slice(&payload);
+        self.fleet.target_depth = value[0];
+        self.fleet.mission_target = (self.fleet.mission_target & 0xFF00) | u16::from(value[1]);
     }
 
-    pub fn tuple_b_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x13..0x18])
-    }
-    pub fn set_tuple_b_payload_raw(&mut self, payload: [u8; 5]) {
-        self.raw[0x13..0x18].copy_from_slice(&payload);
-    }
-    pub fn tuple_c_payload_raw(&self) -> [u8; 5] {
-        copy_array(&self.raw[0x19..0x1E])
-    }
-    pub fn set_tuple_c_payload_raw(&mut self, payload: [u8; 5]) {
-        self.raw[0x19..0x1E].copy_from_slice(&payload);
-    }
-
-    /// 0x0D..=0x12: X offset inside the current sector, a 6-byte real
-    /// (0.5 is the sector centre). Position X = `0x0B + x_fraction`.
+    /// X offset inside the current sector (0.5 is the sector centre).
+    /// Position X = sector x + `x_fraction`.
     pub fn x_fraction(&self) -> Real48 {
-        Real48::from_bytes(copy_array(&self.raw[0x0D..=0x12]))
+        self.fleet.x_fraction
     }
     pub fn set_x_fraction(&mut self, value: Real48) {
-        self.raw[0x0D..=0x12].copy_from_slice(&value.to_bytes());
+        self.fleet.x_fraction = value;
     }
-    /// 0x13..=0x18: Y offset inside the current sector, a 6-byte real.
+    /// Y offset inside the current sector.
     pub fn y_fraction(&self) -> Real48 {
-        Real48::from_bytes(copy_array(&self.raw[0x13..=0x18]))
+        self.fleet.y_fraction
     }
     pub fn set_y_fraction(&mut self, value: Real48) {
-        self.raw[0x13..=0x18].copy_from_slice(&value.to_bytes());
+        self.fleet.y_fraction = value;
     }
-    /// 0x19..=0x1E: depth into the target system, a 6-byte real: 0.0 in
-    /// deep space, 1.0 at rest in orbit.
+    /// Depth into the target system: 0.0 in deep space, 1.0 at rest in
+    /// orbit.
     pub fn depth(&self) -> Real48 {
-        Real48::from_bytes(copy_array(&self.raw[0x19..=0x1E]))
+        self.fleet.depth
     }
     pub fn set_depth(&mut self, value: Real48) {
-        self.raw[0x19..=0x1E].copy_from_slice(&value.to_bytes());
+        self.fleet.depth = value;
     }
     /// At rest in orbit at the sector centre: offsets 0.5, depth 1.0.
     pub fn set_at_rest_motion(&mut self) {
         self.set_x_fraction(Real48::HALF);
         self.set_y_fraction(Real48::HALF);
         self.set_depth(Real48::ONE);
-    }
-    /// The exponent byte of the depth real (0x80 while 0.5 <= depth < 1.0).
-    pub fn transit_ready_flag_raw(&self) -> u8 {
-        self.raw[0x19]
     }
 
     pub fn standing_order_summary(&self) -> String {
@@ -265,42 +259,42 @@ impl FleetRecord {
     }
 
     pub fn rules_of_engagement(&self) -> u8 {
-        self.raw[0x25]
+        self.fleet.rules_of_engagement
     }
     pub fn set_rules_of_engagement(&mut self, value: u8) {
-        self.raw[0x25] = value;
+        self.fleet.rules_of_engagement = value;
     }
     pub fn battleship_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x26], self.raw[0x27]])
+        self.fleet.ships.battleships
     }
     pub fn set_battleship_count(&mut self, value: u16) {
-        self.raw[0x26..0x28].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.battleships = value;
     }
     pub fn cruiser_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x28], self.raw[0x29]])
+        self.fleet.ships.cruisers
     }
     pub fn set_cruiser_count(&mut self, value: u16) {
-        self.raw[0x28..0x2A].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.cruisers = value;
     }
     pub fn destroyer_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x2A], self.raw[0x2B]])
+        self.fleet.ships.destroyers
     }
     pub fn set_destroyer_count(&mut self, value: u16) {
-        self.raw[0x2A..0x2C].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.destroyers = value;
     }
-    /// 0x2C: troop transports without an army.
+    /// Troop transports without an army.
     pub fn empty_transport_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x2C], self.raw[0x2D]])
+        self.fleet.ships.empty_transports
     }
     pub fn set_empty_transport_count(&mut self, value: u16) {
-        self.raw[0x2C..0x2E].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.empty_transports = value;
     }
-    /// 0x2E: troop transports carrying one army each.
+    /// Troop transports carrying one army each.
     pub fn loaded_transport_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x2E], self.raw[0x2F]])
+        self.fleet.ships.loaded_transports
     }
     pub fn set_loaded_transport_count(&mut self, value: u16) {
-        self.raw[0x2E..0x30].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.loaded_transports = value;
     }
     /// All troop transports, empty and loaded.
     pub fn troop_transport_count(&self) -> u16 {
@@ -326,25 +320,16 @@ impl FleetRecord {
         self.set_empty_transport_count(total.saturating_sub(armies));
     }
     pub fn etac_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x30], self.raw[0x31]])
+        self.fleet.ships.etacs
     }
     pub fn set_etac_count(&mut self, value: u16) {
-        self.raw[0x30..0x32].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.etacs = value;
     }
     pub fn scout_count(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x32], self.raw[0x33]])
+        self.fleet.ships.scouts
     }
     pub fn set_scout_count(&mut self, value: u16) {
-        self.raw[0x32..0x34].copy_from_slice(&value.to_le_bytes());
-    }
-    /// 0x34..=0x35: a word Rust does not interpret. ECMAINT's encounter code
-    /// writes fleet strength here and every ECMAINT merge adds it; Rust keeps
-    /// it byte for byte.
-    pub fn strength_cache_raw(&self) -> u16 {
-        u16::from_le_bytes([self.raw[0x34], self.raw[0x35]])
-    }
-    pub fn set_strength_cache_raw(&mut self, value: u16) {
-        self.raw[0x34..0x36].copy_from_slice(&value.to_le_bytes());
+        self.fleet.ships.scouts = value;
     }
 
     fn counted_ship_composition_parts(&self) -> Vec<String> {
@@ -405,19 +390,10 @@ pub struct FleetDat {
 
 impl FleetDat {
     pub fn parse(data: &[u8]) -> Result<Self, ParseError> {
-        if data.len() % FLEET_RECORD_SIZE != 0 {
-            return Err(ParseError::WrongRecordMultiple {
-                file_type: "FLEETS.DAT",
-                record_size: FLEET_RECORD_SIZE,
-                actual: data.len(),
-            });
-        }
         Ok(Self {
-            records: data
-                .chunks_exact(FLEET_RECORD_SIZE)
-                .map(|chunk| FleetRecord {
-                    raw: copy_array(chunk),
-                })
+            records: parse_fleets_dat(data)?
+                .into_iter()
+                .map(|fleet| FleetRecord { fleet })
                 .collect(),
         })
     }
@@ -425,7 +401,7 @@ impl FleetDat {
     pub fn to_bytes(&self) -> Vec<u8> {
         self.records
             .iter()
-            .flat_map(|record| record.raw)
-            .collect::<Vec<_>>()
+            .flat_map(|record| encode_fleet(&record.fleet))
+            .collect()
     }
 }

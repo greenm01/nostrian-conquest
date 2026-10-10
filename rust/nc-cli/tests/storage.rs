@@ -1,5 +1,6 @@
 mod common;
 
+use nc_data::Real48;
 use std::fs;
 use std::path::Path;
 
@@ -921,7 +922,7 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -976,7 +977,7 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -1030,7 +1031,7 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(20);
@@ -1085,7 +1086,7 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(20);

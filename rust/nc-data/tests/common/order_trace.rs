@@ -120,7 +120,7 @@ fn assert_fleet_state(
     );
     if let Some(ready_flag) = expected.ready_flag {
         assert_eq!(
-            fleet.transit_ready_flag_raw(),
+            fleet.depth().to_bytes()[0],
             ready_flag,
             "{name} turn {} ready flag",
             expected.turn

@@ -29,19 +29,17 @@ fn ecmaint_fleet_scenario_consumes_order_and_updates_fleet_and_planet_state() {
     let pre_fleet = &pre_fleets.records[0];
     let post_fleet = &post_fleets.records[0];
 
-    assert_eq!(pre_fleet.raw[0x0a], 0x03);
-    assert_eq!(pre_fleet.raw[0x1f], 0x0c);
-    assert_eq!(pre_fleet.raw[0x20], 0x0f);
+    assert_eq!(pre_fleet.current_speed(), 3);
+    assert_eq!(pre_fleet.standing_order_kind(), Order::ColonizeWorld);
+    assert_eq!(pre_fleet.standing_order_target_coords_raw()[0], 0x0f);
 
-    assert_eq!(post_fleet.raw[0x0b], 0x0f);
-    assert_eq!(post_fleet.raw[0x19], 0x80);
-    assert_eq!(post_fleet.raw[0x1a], 0xb9);
-    assert_eq!(post_fleet.raw[0x1b], 0xff);
-    assert_eq!(post_fleet.raw[0x1c], 0xff);
-    assert_eq!(post_fleet.raw[0x1d], 0xff);
-    assert_eq!(post_fleet.raw[0x1e], 0x7f);
-    assert_eq!(post_fleet.raw[0x1f], 0x00);
-    assert_eq!(post_fleet.raw[0x20], 0x0f);
+    assert_eq!(post_fleet.current_location_coords_raw()[0], 0x0f);
+    assert_eq!(
+        post_fleet.depth().to_bytes(),
+        [0x80, 0xb9, 0xff, 0xff, 0xff, 0x7f]
+    );
+    assert_eq!(post_fleet.standing_order_kind(), Order::HoldPosition);
+    assert_eq!(post_fleet.standing_order_target_coords_raw()[0], 0x0f);
 
     let post_planet = &post_planets.records[13];
     assert_eq!(post_planet.raw[0x58], 0x01);

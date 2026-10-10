@@ -24,7 +24,7 @@ pub use results::{
 use crate::VisibleHazardIntel;
 use fleet_refs::{FleetIndexRemap, TurnFleetRefs};
 use nc_data::{
-    CoreGameData, FleetRecord, Order, PlayerLifecycleState, WinnerState,
+    CoreGameData, FleetRecord, Order, PlayerLifecycleState, Real48, WinnerState,
     default_player_lifecycle_states,
 };
 use std::fmt;
@@ -296,7 +296,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         .fleets
         .records
         .iter()
-        .any(|f| f.transit_ready_flag_raw() == 0x80);
+        .any(|f| (Real48::HALF..Real48::ONE).contains(&f.depth()));
     let any_active_player = game_data
         .player
         .records

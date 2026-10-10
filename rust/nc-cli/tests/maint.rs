@@ -9,6 +9,7 @@ use common::{
 use nc_compat::DatabaseDat;
 use nc_data::CoreGameData;
 use nc_data::Order;
+use nc_data::Real48;
 use nc_engine::GameStateBuilder;
 use std::fs;
 
@@ -182,7 +183,7 @@ fn configure_dominant_invalidated_invade_directory(target: &std::path::Path) {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw(coords);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_destroyer_count(1);
     attacker.set_troop_transport_count(1);
     attacker.set_army_count(1);
@@ -855,7 +856,7 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar_for_large_games() {
     fleet_a.set_standing_order_kind(Order::ScoutSector);
     fleet_a.set_standing_order_target_coords_raw([8, 8]);
     fleet_a.set_current_speed(0);
-    fleet_a.raw[0x19] = 0x81;
+    fleet_a.set_depth(Real48::ONE);
     fleet_a.set_destroyer_count(1);
     fleet_a.set_cruiser_count(0);
     fleet_a.set_battleship_count(0);
@@ -870,7 +871,7 @@ fn maint_rust_uses_stored_player_diplomacy_without_sidecar_for_large_games() {
     fleet_b.set_standing_order_kind(Order::HoldPosition);
     fleet_b.set_standing_order_target_coords_raw([8, 8]);
     fleet_b.set_current_speed(0);
-    fleet_b.raw[0x19] = 0x81;
+    fleet_b.set_depth(Real48::ONE);
     fleet_b.set_destroyer_count(1);
     fleet_b.set_cruiser_count(0);
     fleet_b.set_battleship_count(0);
@@ -943,7 +944,7 @@ fn maint_rust_updates_large_game_database_from_scout_intel_event() {
     scout.set_standing_order_kind(Order::ScoutSolarSystem);
     scout.set_standing_order_target_coords_raw(coords);
     scout.set_current_speed(3);
-    scout.raw[0x19] = 0x00;
+    scout.set_depth(Real48::ZERO);
     scout.set_scout_count(1);
     game_data.save(&target).expect("mutated game should save");
 
@@ -1008,7 +1009,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
     scout.set_standing_order_kind(Order::ScoutSolarSystem);
     scout.set_standing_order_target_coords_raw(coords);
     scout.set_current_speed(3);
-    scout.raw[0x19] = 0x00;
+    scout.set_depth(Real48::ZERO);
     scout.set_destroyer_count(0);
     scout.set_cruiser_count(0);
     scout.set_battleship_count(0);
@@ -1064,7 +1065,7 @@ fn maint_rust_blockade_arrival_persists_enemy_relation_in_player_dat() {
     fleet.set_standing_order_kind(Order::GuardBlockadeWorld);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(3);
-    fleet.raw[0x19] = 0x00;
+    fleet.set_depth(Real48::ZERO);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -1102,7 +1103,7 @@ fn maint_rust_without_enemy_declaration_reports_contact_without_forcing_battle()
     fleet_a.set_standing_order_kind(Order::ScoutSector);
     fleet_a.set_standing_order_target_coords_raw([8, 8]);
     fleet_a.set_current_speed(0);
-    fleet_a.raw[0x19] = 0x81;
+    fleet_a.set_depth(Real48::ONE);
     fleet_a.set_destroyer_count(1);
     fleet_a.set_cruiser_count(0);
     fleet_a.set_battleship_count(0);
@@ -1117,7 +1118,7 @@ fn maint_rust_without_enemy_declaration_reports_contact_without_forcing_battle()
     fleet_b.set_standing_order_kind(Order::HoldPosition);
     fleet_b.set_standing_order_target_coords_raw([8, 8]);
     fleet_b.set_current_speed(0);
-    fleet_b.raw[0x19] = 0x81;
+    fleet_b.set_depth(Real48::ONE);
     fleet_b.set_destroyer_count(1);
     fleet_b.set_cruiser_count(0);
     // Big enough for the scout to sight it within the year.
@@ -1339,7 +1340,7 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     attacker.set_standing_order_kind(Order::MoveOnly);
     attacker.set_standing_order_target_coords_raw(starbase_coords);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x81;
+    attacker.set_depth(Real48::ONE);
     attacker.set_rules_of_engagement(10);
     attacker.set_destroyer_count(20);
     attacker.set_cruiser_count(10);
@@ -1390,7 +1391,7 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
     attacker.set_standing_order_kind(Order::MoveOnly);
     attacker.set_standing_order_target_coords_raw(starbase_coords);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x81;
+    attacker.set_depth(Real48::ONE);
     attacker.set_rules_of_engagement(10);
     attacker.set_destroyer_count(20);
     attacker.set_cruiser_count(10);
@@ -1452,7 +1453,7 @@ fn maint_rust_exports_empty_messages_dat_when_classic_mail_is_not_in_queued_mail
     for fleet in &mut game_data.fleets.records {
         fleet.set_standing_order_kind(Order::HoldPosition);
         fleet.set_current_speed(0);
-        fleet.raw[0x19] = 0x00;
+        fleet.set_depth(Real48::ZERO);
     }
     game_data
         .save(&target)
@@ -1804,9 +1805,8 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     fleet.set_troop_transport_count(0);
     fleet.set_army_count(0);
     fleet.set_etac_count(0);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x00;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -1917,7 +1917,7 @@ fn maint_rust_invade_failure_generates_attacker_side_report() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -1974,7 +1974,7 @@ fn maint_rust_invade_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -2047,7 +2047,7 @@ fn maint_rust_invade_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(20);
@@ -2124,7 +2124,7 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(20);
@@ -2251,7 +2251,7 @@ fn maint_rust_blitz_success_generates_attacker_side_report() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
@@ -2311,7 +2311,7 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
@@ -2379,7 +2379,7 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
@@ -2634,7 +2634,7 @@ fn maint_rust_blitz_failure_exports_ecgame_accepted_enemy_view_row_shape() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -2930,7 +2930,7 @@ fn maint_rust_invalid_fleet_order_generates_sanitization_report() {
     fleet.set_standing_order_kind(Order::BombardWorld);
     fleet.set_standing_order_target_coords_raw([15, 13]);
     fleet.set_current_speed(0);
-    fleet.raw[0x19] = 0x80;
+    fleet.set_depth(Real48::HALF);
     fleet.set_destroyer_count(0);
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
@@ -4029,7 +4029,7 @@ fn maint_rust_bombard_destruction_emits_lost_contact_telemetry() {
     attacker.set_standing_order_kind(Order::BombardWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -4093,7 +4093,7 @@ fn maint_rust_invasion_destruction_emits_lost_contact_telemetry() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -4150,7 +4150,7 @@ fn maint_rust_invasion_failure_generates_defender_side_report() {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -4205,7 +4205,7 @@ fn maint_rust_blitz_destruction_emits_lost_contact_telemetry() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -4262,7 +4262,7 @@ fn maint_rust_blitz_failure_generates_defender_side_report() {
     attacker.set_standing_order_kind(Order::BlitzWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(0);
-    attacker.raw[0x19] = 0x80;
+    attacker.set_depth(Real48::HALF);
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);

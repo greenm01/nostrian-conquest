@@ -261,9 +261,7 @@ fn core_sync_current_known_baseline_repairs_combined_baseline_state() {
     data.player.records[0].set_ipbm_count_raw(4);
     data.setup.raw[..5].copy_from_slice(b"BAD!!");
     data.bases.records.push(nc_data::BaseRecord::new_zeroed());
-    data.ipbm.records.push(nc_data::IpbmRecord {
-        raw: [0u8; nc_data::IPBM_RECORD_SIZE],
-    });
+    data.ipbm.records.push(nc_data::IpbmRecord::new_zeroed());
     data.fleets.records.clear();
     data.fleets.records.push(nc_data::FleetRecord::new_zeroed());
     data.planets.records[14].set_stored_goods(3.0);

@@ -67,7 +67,7 @@ fn ipbm_record_set_updates_known_structural_prefix_fields() {
         common::rust_workspace(),
     );
     assert!(report.contains("record 1: primary=0x1234 owner=2 gate=0x4567 follow_on=0x89ab"));
-    assert!(report.contains("tuple_a=[00, 00, 00, 00, 00]"));
+    assert!(report.contains("x_fraction=[00, 00, 00, 00, 00, 00]"));
 
     cleanup_dir(&target);
 }

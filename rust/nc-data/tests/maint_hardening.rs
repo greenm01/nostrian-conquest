@@ -1,3 +1,4 @@
+use nc_data::Real48;
 use nc_data::{CoreGameData, GameStateBuilder, InvalidPlayerStateEvent, Order};
 use nc_engine::{run_maintenance_turn, validate_maintenance_state};
 use std::path::Path;
@@ -27,7 +28,7 @@ fn invalid_bombard_order_is_canceled_before_execution() {
     fleet.set_standing_order_kind(Order::BombardWorld);
     fleet.set_standing_order_target_coords_raw([15, 13]);
     fleet.set_current_speed(3);
-    fleet.raw[0x19] = 0x80;
+    fleet.set_depth(Real48::HALF);
     fleet.set_destroyer_count(0);
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);

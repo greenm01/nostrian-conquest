@@ -354,7 +354,7 @@ fn test_blockading_foreign_world_escalates_to_enemy() {
     fleet.set_standing_order_kind(Order::GuardBlockadeWorld);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(3);
-    fleet.raw[0x19] = 0x00;
+    fleet.set_depth(Real48::ZERO);
     // The world's own fleets would attack the blockader in their system.
     common::hold_fire(&mut game_data, 2);
 
@@ -459,8 +459,8 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
     );
     assert_eq!(game_data.fleets.records[0].current_speed(), 0);
     assert_eq!(
-        game_data.fleets.records[0].tuple_c_payload_raw(),
-        [0, 0, 0, 0, 0],
+        game_data.fleets.records[0].depth(),
+        Real48::ZERO,
         "ECMAINT's View World action lifts the fleet to depth 0"
     );
     assert!(
@@ -595,9 +595,8 @@ fn test_seek_home_arrival_emits_success_event() {
     fleet.set_standing_order_kind(Order::SeekHome);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(3);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x00;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -713,9 +712,8 @@ fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     host.set_standing_order_kind(Order::MoveOnly);
     host.set_standing_order_target_coords_raw([14, 10]);
     host.set_current_speed(3);
-    host.raw[0x0d] = 0x80;
-    host.raw[0x0f] = 0;
-    host.raw[0x19] = 0x80;
+    host.set_x_fraction(Real48::HALF);
+    host.set_depth(Real48::HALF);
 
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner = &mut game_data.fleets.records[1];
@@ -724,9 +722,8 @@ fn test_join_order_refreshes_target_to_moving_host_each_turn() {
     joiner.set_join_host_fleet_id_raw(host_id);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
-    joiner.raw[0x0d] = 0x80;
-    joiner.raw[0x0f] = 0;
-    joiner.raw[0x19] = 0x80;
+    joiner.set_x_fraction(Real48::HALF);
+    joiner.set_depth(Real48::HALF);
 
     run_maintenance_turn(&mut game_data).expect("first maintenance turn should succeed");
 
@@ -766,9 +763,8 @@ fn test_join_order_survives_arrival_at_previous_host_position() {
     host.set_standing_order_kind(Order::MoveOnly);
     host.set_standing_order_target_coords_raw([14, 10]);
     host.set_current_speed(3);
-    host.raw[0x0d] = 0x80;
-    host.raw[0x0f] = 0;
-    host.raw[0x19] = 0x80;
+    host.set_x_fraction(Real48::HALF);
+    host.set_depth(Real48::HALF);
 
     let host_id = game_data.fleets.records[0].fleet_id_word_raw();
     let joiner = &mut game_data.fleets.records[1];
@@ -777,9 +773,8 @@ fn test_join_order_survives_arrival_at_previous_host_position() {
     joiner.set_join_host_fleet_id_raw(host_id);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
-    joiner.raw[0x0d] = 0x80;
-    joiner.raw[0x0f] = 0;
-    joiner.raw[0x19] = 0x80;
+    joiner.set_x_fraction(Real48::HALF);
+    joiner.set_depth(Real48::HALF);
 
     run_maintenance_turn(&mut game_data).expect("first maintenance turn should succeed");
 
@@ -1135,9 +1130,8 @@ fn test_guard_starbase_persists_after_arrival() {
     fleet.set_standing_order_target_coords_raw([11, 8]);
     fleet.set_current_speed(3);
     fleet.set_mission_aux_bytes([1, 3]);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x80;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::HALF);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1263,9 +1257,8 @@ fn test_guard_blockade_world_persists_after_isolated_arrival() {
     fleet.set_standing_order_kind(Order::GuardBlockadeWorld);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(3);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x80;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::HALF);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1298,9 +1291,8 @@ fn test_patrol_sector_persists_after_arrival() {
     fleet.set_standing_order_kind(Order::PatrolSector);
     fleet.set_standing_order_target_coords_raw([11, 10]);
     fleet.set_current_speed(3);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x80;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::HALF);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1382,7 +1374,7 @@ fn test_move_only_horizontal_clears_to_hold_on_exact_arrival() {
     game_data
         .set_fleet_order(1, 3, Order::MoveOnly.to_raw(), [16, 10], None, None)
         .expect("move-only order should apply");
-    game_data.fleets.records[0].raw[0x19] = 0x81;
+    game_data.fleets.records[0].set_depth(Real48::ONE);
 
     run_maintenance_turn(&mut game_data).expect("turn 1 should succeed");
     run_maintenance_turn(&mut game_data).expect("turn 2 should succeed");
@@ -1444,12 +1436,11 @@ fn test_delayed_hostile_orders_keep_speed_and_order_just_short_of_orbit() {
             target_coords,
             "{name} target"
         );
-        assert_eq!(fleet.raw[0x19], 0x80, "{name} raw[0x19]");
-        assert_eq!(fleet.raw[0x1a], 0xb9, "{name} raw[0x1a]");
-        assert_eq!(fleet.raw[0x1b], 0xff, "{name} raw[0x1b]");
-        assert_eq!(fleet.raw[0x1c], 0xff, "{name} raw[0x1c]");
-        assert_eq!(fleet.raw[0x1d], 0xff, "{name} raw[0x1d]");
-        assert_eq!(fleet.raw[0x1e], 0x7f, "{name} raw[0x1e]");
+        assert_eq!(
+            fleet.depth().to_bytes(),
+            [0x80, 0xb9, 0xff, 0xff, 0xff, 0x7f],
+            "{name} depth"
+        );
         assert!(events.mission_events.iter().any(|event| {
             event.fleet_idx == 0
                 && event.kind == mission
@@ -1508,9 +1499,8 @@ fn test_join_order_written_as_ecgame_writes_it_moves_toward_host_and_merges() {
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_mission_aux_bytes([1, host_id]);
     joiner.set_current_speed(3);
-    joiner.raw[0x0d] = 0x80;
-    joiner.raw[0x0f] = 0;
-    joiner.raw[0x19] = 0x80;
+    joiner.set_x_fraction(Real48::HALF);
+    joiner.set_depth(Real48::HALF);
     assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_id));
 
     let fleet_count_before = game_data.fleets.records.len();
@@ -1659,9 +1649,8 @@ fn test_rendezvous_merge_occurs_same_turn_when_fleet_arrives_at_assigned_sector(
     joiner.set_standing_order_kind(Order::RendezvousSector);
     joiner.set_standing_order_target_coords_raw(coords);
     joiner.set_current_speed(3);
-    joiner.raw[0x0d] = 0x80;
-    joiner.raw[0x0f] = 0;
-    joiner.raw[0x19] = 0x80;
+    joiner.set_x_fraction(Real48::HALF);
+    joiner.set_depth(Real48::HALF);
 
     let fleet_count_before = game_data.fleets.records.len();
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -1760,9 +1749,8 @@ fn test_salvage_converts_fleet_value_into_owned_planet_production_and_removes_fl
     fleet.set_troop_transport_count(0);
     fleet.set_army_count(0);
     fleet.set_etac_count(0);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x00;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1824,9 +1812,8 @@ fn test_empty_fleet_is_culled_at_turn_start() {
     fleet.set_troop_transport_count(0);
     fleet.set_army_count(0);
     fleet.set_etac_count(0);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x00;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -1872,9 +1859,8 @@ fn test_salvage_fails_at_foreign_planet_without_removing_fleet() {
     fleet.set_standing_order_kind(Order::Salvage);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(3);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x00;
+    fleet.set_x_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
     // The world's own fleets would attack the salvager in their system.
     common::hold_fire(&mut game_data, 2);
 
@@ -2056,8 +2042,8 @@ fn test_view_world_on_station_reverts_to_hold_position() {
     );
     assert_eq!(game_data.fleets.records[0].current_speed(), 0);
     assert_eq!(
-        game_data.fleets.records[0].tuple_c_payload_raw(),
-        [0, 0, 0, 0, 0],
+        game_data.fleets.records[0].depth(),
+        Real48::ZERO,
         "ECMAINT's View World action lifts the fleet to depth 0"
     );
 }
@@ -2571,7 +2557,9 @@ fn test_stale_off_target_hostile_orders_resume_travel_instead_of_executing() {
         let fleet = &mut game_data.fleets.records[0];
         fleet.set_current_location_coords_raw([15, 25]);
         fleet.set_current_speed(0);
-        fleet.set_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff]);
+        let mut depth = fleet.depth().to_bytes();
+        depth[..5].copy_from_slice(&[0x80, 0xb9, 0xff, 0xff, 0xff]);
+        fleet.set_depth(Real48::from_bytes(depth));
         let pre_batteries = game_data.planets.records[target_idx].ground_batteries_raw();
         let pre_armies = game_data.planets.records[target_idx].army_count_raw();
 
@@ -2700,9 +2688,8 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
         host.set_current_location_coords_raw(host_coords);
         host.set_standing_order_kind(Order::HoldPosition);
         host.set_current_speed(0);
-        host.raw[0x0d] = 0x00;
-        host.raw[0x0f] = 0;
-        host.raw[0x19] = 0x00;
+        host.set_x_fraction(Real48::ZERO);
+        host.set_depth(Real48::ZERO);
     }
 
     // Fleet 0 (fleet_id=1) is the joiner — co-located with the host, storing
@@ -2736,9 +2723,8 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
         salvager.set_troop_transport_count(0);
         salvager.set_army_count(0);
         salvager.set_etac_count(0);
-        salvager.raw[0x0d] = 0x80;
-        salvager.raw[0x0f] = 0;
-        salvager.raw[0x19] = 0x00;
+        salvager.set_x_fraction(Real48::HALF);
+        salvager.set_depth(Real48::ZERO);
     }
 
     let fleet_count_before = game_data.fleets.records.len();

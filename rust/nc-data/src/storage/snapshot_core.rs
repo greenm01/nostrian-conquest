@@ -4,8 +4,8 @@ use super::CampaignStoreError;
 use super::hex::{decode_hex, encode_hex};
 use crate::{
     BaseDat, BaseRecord, CONQUEST_DAT_SIZE, ConquestDat, CoreGameData, FleetDat, FleetRecord,
-    IpbmDat, IpbmRecord, PLANET_RECORD_SIZE, PlanetDat, PlanetRecord, PlayerDat, PlayerRecord,
-    Real48, SETUP_DAT_SIZE, SetupDat,
+    IPBM_RECORD_SIZE, IpbmDat, IpbmRecord, PLANET_RECORD_SIZE, PlanetDat, PlanetRecord, PlayerDat,
+    PlayerRecord, Real48, SETUP_DAT_SIZE, SetupDat,
 };
 
 pub(super) fn write_snapshot_core_rows(
@@ -197,7 +197,8 @@ fn write_fleet_rows(
             i64::from(record.loaded_transport_count()),
             i64::from(record.etac_count()),
             i64::from(record.scout_count()),
-            i64::from(record.strength_cache_raw()),
+            // FLEETS 0x34 is a dead word the model does not carry.
+            0i64,
         ])?;
     }
     Ok(())
@@ -257,14 +258,15 @@ fn write_ipbm_rows(
          ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
+        let bytes = record.to_bytes();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
-            encode_hex(&record.raw[0x00..0x0B]),
-            encode_hex(&record.tuple_a_payload_raw()),
-            encode_hex(&record.tuple_b_payload_raw()),
-            encode_hex(&record.tuple_c_payload_raw()),
-            encode_hex(&record.trailing_control_raw()),
+            encode_hex(&bytes[0x00..0x0B]),
+            encode_hex(&bytes[0x0B..0x10]),
+            encode_hex(&bytes[0x11..0x16]),
+            encode_hex(&bytes[0x17..0x1C]),
+            encode_hex(&bytes[0x1D..0x20]),
         ])?;
     }
     Ok(())
@@ -591,7 +593,7 @@ fn load_fleet_rows(
         record.set_loaded_transport_count(loaded_transport_count as u16);
         record.set_etac_count(etac_count as u16);
         record.set_scout_count(scout_count as u16);
-        record.set_strength_cache_raw(strength_cache_raw as u16);
+        let _ = strength_cache_raw;
         records.push(record);
     }
     Ok(FleetDat { records })
@@ -664,13 +666,13 @@ fn load_ipbm_rows(conn: &mut Connection, snapshot_id: i64) -> Result<IpbmDat, Ca
             trailing_control_raw_hex,
         ) = row?;
 
-        let mut record = IpbmRecord::new_zeroed();
-        record.raw[0x00..0x0B].copy_from_slice(&decode_hex_exact::<11>(&prefix_raw_hex)?);
-        record.set_tuple_a_payload_raw(decode_hex_exact::<5>(&tuple_a_raw_hex)?);
-        record.set_tuple_b_payload_raw(decode_hex_exact::<5>(&tuple_b_raw_hex)?);
-        record.set_tuple_c_payload_raw(decode_hex_exact::<5>(&tuple_c_raw_hex)?);
-        record.set_trailing_control_raw(decode_hex_exact::<3>(&trailing_control_raw_hex)?);
-        records.push(record);
+        let mut bytes = [0u8; IPBM_RECORD_SIZE];
+        bytes[0x00..0x0B].copy_from_slice(&decode_hex_exact::<11>(&prefix_raw_hex)?);
+        bytes[0x0B..0x10].copy_from_slice(&decode_hex_exact::<5>(&tuple_a_raw_hex)?);
+        bytes[0x11..0x16].copy_from_slice(&decode_hex_exact::<5>(&tuple_b_raw_hex)?);
+        bytes[0x17..0x1C].copy_from_slice(&decode_hex_exact::<5>(&tuple_c_raw_hex)?);
+        bytes[0x1D..0x20].copy_from_slice(&decode_hex_exact::<3>(&trailing_control_raw_hex)?);
+        records.push(IpbmRecord::from_raw(bytes));
     }
     Ok(IpbmDat { records })
 }

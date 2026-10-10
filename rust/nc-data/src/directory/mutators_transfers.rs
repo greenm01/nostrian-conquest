@@ -131,9 +131,9 @@ impl CoreGameData {
         ));
         new_fleet.set_fleet_id_word_raw(next_available_global_fleet_id(&self.fleets.records));
         new_fleet.set_current_location_coords_raw(donor.current_location_coords_raw());
-        new_fleet.set_tuple_a_payload_raw(donor.tuple_a_payload_raw());
-        new_fleet.set_tuple_b_payload_raw(donor.tuple_b_payload_raw());
-        new_fleet.set_tuple_c_payload_raw(donor.tuple_c_payload_raw());
+        new_fleet.set_x_fraction(donor.x_fraction());
+        new_fleet.set_y_fraction(donor.y_fraction());
+        new_fleet.set_depth(donor.depth());
         new_fleet.set_standing_order_kind(Order::HoldPosition);
         new_fleet.set_standing_order_target_coords_raw(donor.current_location_coords_raw());
         new_fleet.set_mission_target(0, 0);

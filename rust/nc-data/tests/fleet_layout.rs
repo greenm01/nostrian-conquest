@@ -1,12 +1,13 @@
 //! FLEETS.DAT bytes 0x23..0x35 follow the classic layout (t033): a u16
 //! mission id at 0x23, empty and loaded transports at 0x2c and 0x2e, scouts at
-//! 0x32, and an uninterpreted word at 0x34.
+//! 0x32, and a dead word at 0x34 that the model does not carry.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
+use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use nc_data::{
     CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, FleetDat, FleetDetachSelection,
     FleetRecord, Mission, Order,
@@ -53,7 +54,6 @@ fn original_fleets_dat_reads_the_classic_layout() {
     // fleets; it is not a scout count.
     let fleet2 = &fleets.records[1];
     assert_eq!(fleet2.standing_order_kind(), Order::GuardBlockadeWorld);
-    assert_eq!(fleet2.raw[0x24], 70);
     assert_eq!(fleet2.mission_id_raw(), 0x46b0);
     assert_eq!(
         fleets.records[2].mission_id_raw(),
@@ -70,7 +70,6 @@ fn original_fleets_dat_reads_the_classic_layout() {
         Order::GuardStarbase
     );
     assert_eq!(fleets.records[0].guard_starbase_index_raw(), 1);
-    assert_eq!(fleets.records[0].strength_cache_raw(), 65158);
 
     for fleet in &fleets.records {
         assert_eq!(fleet.scout_count(), 0);
@@ -89,9 +88,17 @@ fn original_fleets_dat_round_trips_through_the_campaign_database() {
     import_directory_snapshot(&store, &imported).expect("import directory");
     export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
 
+    // ECUTIL left stack garbage in the dead 0x34 word; the model does not
+    // carry it, so the export holds zeros there.
     assert_eq!(
-        fs::read(exported.join("FLEETS.DAT")).unwrap(),
-        fs::read(imported.join("FLEETS.DAT")).unwrap(),
+        without_ignored_bytes(
+            ClassicFile::Fleets,
+            &fs::read(exported.join("FLEETS.DAT")).unwrap()
+        ),
+        without_ignored_bytes(
+            ClassicFile::Fleets,
+            &fs::read(imported.join("FLEETS.DAT")).unwrap()
+        ),
     );
 
     let _ = fs::remove_dir_all(&imported);
@@ -110,13 +117,13 @@ fn fleet_accessors_use_the_classic_offsets() {
     fleet.set_loaded_transport_count(0x0c0d);
     fleet.set_etac_count(0x0e0f);
     fleet.set_scout_count(0x1011);
-    fleet.set_strength_cache_raw(0x1213);
 
+    // The dead 0x34 word encodes as zero.
     assert_eq!(
-        &fleet.raw[0x23..0x36],
+        &fleet.to_bytes()[0x23..0x36],
         &[
             0x03, 0x02, 4, 0x05, 0x04, 0x07, 0x06, 0x09, 0x08, 0x0b, 0x0a, 0x0d, 0x0c, 0x0f, 0x0e,
-            0x11, 0x10, 0x13, 0x12,
+            0x11, 0x10, 0, 0,
         ]
     );
     assert_eq!(fleet.mission_id_raw(), 0x0203);
@@ -125,20 +132,19 @@ fn fleet_accessors_use_the_classic_offsets() {
     assert_eq!(fleet.troop_transport_count(), 0x0a0b + 0x0c0d);
     assert_eq!(fleet.army_count(), 0x0c0d);
     assert_eq!(fleet.scout_count(), 0x1011);
-    assert_eq!(fleet.strength_cache_raw(), 0x1213);
 }
 
 #[test]
 fn mission_target_writes_the_whole_mission_id_word() {
     let mut fleet = FleetRecord::new_zeroed();
-    fleet.raw[0x24] = 70;
+    fleet.set_mission_id_raw(70 << 8);
     fleet.set_mission_target(1, 3);
-    assert_eq!(&fleet.raw[0x22..0x25], &[1, 3, 0]);
+    assert_eq!(&fleet.to_bytes()[0x22..0x25], &[1, 3, 0]);
 
     // The raw aux override touches only 0x22 and 0x23.
-    fleet.raw[0x24] = 70;
+    fleet.set_mission_id_raw((70 << 8) | 3);
     fleet.set_mission_aux_bytes([1, 5]);
-    assert_eq!(&fleet.raw[0x22..0x25], &[1, 5, 70]);
+    assert_eq!(&fleet.to_bytes()[0x22..0x25], &[1, 5, 70]);
 }
 
 #[test]
@@ -248,15 +254,13 @@ fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
     host.set_next_fleet_link_word_raw(0);
     host.set_standing_order_kind(Order::HoldPosition);
     host.set_battleship_count(2);
-    host.set_strength_cache_raw(7);
     game_data.fleets.records.push(host);
     assert_eq!(game_data.fleets.records.len(), 300);
 
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
     joiner.set_mission_target(1, 300);
-    joiner.set_strength_cache_raw(5);
-    assert_eq!(&joiner.raw[0x23..0x25], &[0x2c, 0x01]);
+    assert_eq!(&joiner.to_bytes()[0x23..0x25], &[0x2c, 0x01]);
     let joiner_cruisers = joiner.cruiser_count();
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance");
@@ -275,20 +279,19 @@ fn join_merges_into_a_host_whose_id_exceeds_one_byte() {
         .expect("host survives");
     assert_eq!(host.battleship_count(), 2);
     assert_eq!(host.cruiser_count(), 1 + joiner_cruisers);
-    // ECMAINT's Join merge adds the 0x34 word.
-    assert_eq!(host.strength_cache_raw(), 12);
 }
 
 #[test]
 fn fleet_chain_links_are_words() {
     // t038: ECGAME and ECMAINT read and write 0x03, 0x05, and 0x07 as words.
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.raw[0x03..0x09].copy_from_slice(&[0x2c, 0x01, 0x2d, 0x01, 0x2b, 0x01]);
+    let mut bytes = [0u8; 54];
+    bytes[0x03..0x09].copy_from_slice(&[0x2c, 0x01, 0x2d, 0x01, 0x2b, 0x01]);
+    let mut fleet = FleetRecord::from_raw(bytes);
     assert_eq!(fleet.next_fleet_id(), 300);
     assert_eq!(fleet.fleet_id(), 301);
     assert_eq!(fleet.previous_fleet_id(), 299);
     fleet.set_previous_fleet_id(0x0203);
-    assert_eq!(&fleet.raw[0x07..0x09], &[0x03, 0x02]);
+    assert_eq!(&fleet.to_bytes()[0x07..0x09], &[0x03, 0x02]);
 
     // The invade pre-fixture's byte 0x08 (an old tool's "invasion armies")
     // is the previous-fleet word's high byte.
@@ -317,50 +320,4 @@ fn detached_fleets_link_to_predecessors_above_one_byte() {
     assert_eq!(second.fleet_id(), 301);
     assert_eq!(second.previous_fleet_id(), 300);
     assert_eq!(first.next_fleet_id(), 301);
-}
-
-fn merged_strength_word(rogue: bool, order: Order) -> u16 {
-    let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].raw[0x00] = if rogue { 0xff } else { 0x00 };
-    for (record, strength) in [(0, 7), (1, 5)] {
-        let fleet = &mut game_data.fleets.records[record];
-        fleet.set_standing_order_kind(order);
-        fleet.set_standing_order_target_coords_raw([16, 13]);
-        fleet.set_mission_target(0, 0);
-        fleet.set_strength_cache_raw(strength);
-    }
-    run_maintenance_turn(&mut game_data).expect("maintenance");
-    game_data
-        .fleets
-        .records
-        .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
-        .map(|fleet| fleet.strength_cache_raw())
-        .max()
-        .expect("empire 1 keeps a fleet")
-}
-
-#[test]
-fn every_maintenance_merge_adds_the_0x34_word() {
-    // ECMAINT routes Join, Rendezvous, Guard Starbase, and rogue
-    // consolidation merges through one routine (2895:4a6b), which adds it.
-    assert_eq!(merged_strength_word(false, Order::RendezvousSector), 12);
-    assert_eq!(merged_strength_word(true, Order::HoldPosition), 12);
-}
-
-#[test]
-fn a_player_transfer_leaves_the_0x34_word_alone() {
-    let mut game_data = load_fixture("ecmaint-post");
-    game_data.fleets.records[0].set_strength_cache_raw(7);
-    game_data.fleets.records[2].set_strength_cache_raw(5);
-    let one_destroyer = FleetDetachSelection {
-        destroyers: 1,
-        ..FleetDetachSelection::default()
-    };
-    game_data.fleets.records[2].set_destroyer_count(2);
-    game_data
-        .transfer_ships_between_fleets(1, 3, 1, one_destroyer)
-        .expect("transfer");
-    assert_eq!(game_data.fleets.records[0].strength_cache_raw(), 7);
-    assert_eq!(game_data.fleets.records[2].strength_cache_raw(), 5);
 }

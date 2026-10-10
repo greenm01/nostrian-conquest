@@ -1,6 +1,7 @@
 mod common;
 
 use common::order_trace::assert_mission_event;
+use nc_data::Real48;
 use nc_data::{
     ContactReportSource, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, Mission,
     MissionOutcome, Order, PlanetIntelSource,
@@ -601,7 +602,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
     attacker.set_standing_order_kind(Order::BombardWorld);
     attacker.set_standing_order_target_coords_raw(target);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x00;
+    attacker.set_depth(Real48::ZERO);
     attacker.set_destroyer_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_battleship_count(0);
@@ -961,8 +962,8 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
 
     for idx in [0usize, 4, 8] {
         assert_eq!(
-            first.fleets.records[idx].raw,
-            second.fleets.records[idx].raw,
+            first.fleets.records[idx],
+            second.fleets.records[idx],
             "seeded combat should resolve reproducibly for fleet record {}",
             idx + 1
         );

@@ -187,9 +187,7 @@ impl CoreGameData {
                 record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
                 record.set_current_speed(0);
                 record.set_current_location_coords_raw(coords);
-                record.set_tuple_a_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_b_payload_raw([0x80, 0, 0, 0, 0]);
-                record.set_tuple_c_payload_raw([0x81, 0, 0, 0, 0]);
+                record.set_at_rest_motion();
                 record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
                 record.set_standing_order_target_coords_raw(coords);
                 record.set_mission_aux_bytes([1, 0]);

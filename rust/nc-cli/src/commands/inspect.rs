@@ -170,12 +170,12 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     println!("IPBM:");
     for (idx, record) in data.ipbm.records.iter().enumerate() {
         println!(
-            "  record {:02}: primary={} owner={} gate={} follow_on={}",
+            "  record {:02}: number={} owner={} next={} record_number={}",
             idx + 1,
-            record.primary_word_raw(),
+            record.ipbm_number_raw(),
             record.owner_empire_raw(),
-            record.gate_word_raw(),
-            record.follow_on_word_raw()
+            record.next_ipbm_link_raw(),
+            record.record_number_raw()
         );
     }
 
@@ -278,18 +278,8 @@ pub(crate) fn inspect_fleet_movement(
     println!("max_speed={}", fleet.max_speed());
     println!("roe={}", fleet.rules_of_engagement());
     println!("mission_aux={:02x?}", fleet.mission_aux_bytes());
-    println!("raw_0d={:02x}", fleet.raw[0x0d]);
-    println!("raw_0e={:02x}", fleet.raw[0x0e]);
-    println!("raw_0f={:02x}", fleet.raw[0x0f]);
-    println!("raw_10={:02x}", fleet.raw[0x10]);
-    println!("raw_11={:02x}", fleet.raw[0x11]);
-    println!("raw_12={:02x}", fleet.raw[0x12]);
-    println!("raw_19={:02x}", fleet.raw[0x19]);
-    println!("raw_1a={:02x}", fleet.raw[0x1a]);
-    println!("raw_1b={:02x}", fleet.raw[0x1b]);
-    println!("raw_1c={:02x}", fleet.raw[0x1c]);
-    println!("raw_1d={:02x}", fleet.raw[0x1d]);
-    println!("raw_1e={:02x}", fleet.raw[0x1e]);
+    println!("x_fraction={:02x?}", fleet.x_fraction().to_bytes());
+    println!("depth={:02x?}", fleet.depth().to_bytes());
     println!(
         "route_steps={}",
         route.as_ref().map(|route| route.steps.len()).unwrap_or(0)

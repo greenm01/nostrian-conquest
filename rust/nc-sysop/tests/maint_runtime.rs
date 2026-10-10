@@ -129,7 +129,7 @@ fn assert_runtime_playability_invariants(runtime: &CampaignRuntimeState) {
         ) && fleet.current_location_coords_raw() != fleet.standing_order_target_coords_raw()
         {
             assert_ne!(
-                fleet.transit_ready_flag_raw(),
+                fleet.depth().to_bytes()[0],
                 0x80,
                 "off-target hostile orders must not sit in ready-to-execute state"
             );

@@ -86,7 +86,7 @@ fn the_moving_base_matches_classic_year_by_year() {
         let label = format!("year {}", index + 2);
         assert_eq!(game_data.bases.to_bytes(), hex(base), "{label} BASES.DAT");
         assert_eq!(
-            &game_data.fleets.records[0].raw[..],
+            &game_data.fleets.records[0].to_bytes()[..],
             &hex(escort)[..],
             "{label} fleet 1"
         );
