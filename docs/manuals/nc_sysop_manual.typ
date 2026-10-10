@@ -446,6 +446,18 @@ is bound by handle once its player joins or enters it with a handle, and from
 then on the real name never matches it, so a caller whose real name equals
 another player's handle cannot enter that player's empire.
 
+A `DOOR.SYS` with no handle on line 36 gives only the real name. When that
+name matches the handle of a seat bound by handle, `nc-door` refuses the
+login. The caller sees that the login could not be matched and that the sysop
+has been notified. `nc-door` writes the real name and the seat number to
+standard error, and to the log when `--log-file` is set, then exits with
+status 1. To fix it, set the BBS to write handles on line 36. If the caller
+owns that seat, you can instead reserve it under the real name:
+
+```sh
+nc-sysop settings reserve --dir /path/to/mygame --player 2 --alias "Real Name"
+```
+
 `--timeout <minutes>` sets a session time limit independently of a drop file.
 
 In door mode the time limit is enforced: when it runs out, `nc-door` shows a
