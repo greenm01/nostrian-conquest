@@ -50,9 +50,9 @@ Headline status:
 | 4o. File write ordering | Not applicable | CLI / projection concern |
 | 4p. Position-first, mission-next-year | Compliant | Pre-snapshotted `bombard_ready` etc. |
 | 4q. Colonization atomic on arrival | Compliant | All fields set in one pass |
-| 4r. Economy gated by player mode byte | Compliant | Correct gate in `ai.rs` |
-| 4s. Economy after fleet loop | Compliant | Correct call order in `mod.rs` |
-| 4t. Build before hostile resolution | Compliant | Correct call order in `mod.rs` |
+| 4r. Planet pass gates on ownership, status and Scorch Earth | Divergent | `planets.rs` skips the economy of a civil-disorder empire's worlds; classic's `1852:0000` reads only PLAYER `+0x44` and `+0x51` |
+| 4s. Planet pass before the ticks | Compliant | `mod.rs` completes builds and settles the economy before `encounter::run_year`; the autopilot/rogue orders pass runs at the end of the turn, where classic runs it at the start of the next |
+| 4t. Builds first in the planet pass | Compliant | `process_build_completion` before `process_planet_economics`, both before the ticks |
 | 5. Canonicalization and sort | Compliant | `canonicalize_events` |
 | 6. Late `1..52` report emission loop | Not implemented | Weekly report-emission parity gap; report builders exist, but the recovered weekly emission loop is not yet modeled directly |
 | 6-table. Timing constants | Compliant | `timing.rs` exact match |

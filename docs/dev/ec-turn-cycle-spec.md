@@ -54,9 +54,12 @@ The yearly simulation core (step `4`) is now substantially recovered:
 - fleet destruction and capture are dynamic mid-pass
 - a **pre-loop fleet setup phase** handles captures/reassignments before
   the 52-week loop (non-combat scenarios skip it entirely)
-- economy/autopilot processing is **gated by `player[0] = 0xFF`** (rogue
-  mode), runs **after** the fleet loop, and reads post-weekly fleet-combat
-  state before the later hostile world-resolution region
+- the yearly driver (`0824:29c9..29d9`) runs, in this order, the
+  CONQUEST previous-year snapshot (`0824:26a5`), the orders pass for rogue
+  and autopilot empires (`24a3:3cc6`), the planet pass that completes
+  builds and settles the economy (`1852:0000`), and only then the 52-tick
+  year driver (`0824:1004`); units finished this year are in the stardock,
+  or on the surface, before the first tick
 - colonization is **atomic on arrival** (ownership, armies, name, status,
   production all set in one pass)
 - **timing-window constants** are fully recovered: 8 codes with fixed
@@ -78,7 +81,8 @@ Key points:
 
 - movement is annual (pre-loop), not per-week
 - the 52-week loop is event scheduling, not physics simulation
-- economy/autopilot runs after the fleet loop, gated by `player[0]`
+- builds complete and the economy settles before the ticks (`1852:0000`
+  before `0824:1004`); the rogue and autopilot orders pass precedes both
 - the late tail (`8652 → 1da6 / 0c06 / 2db3 / 56be`) is output/report
   generation, not simulation — do not shape Rust gameplay order around it
 - the durable event pool (`0x2f72 / 0x2f76`) has two layers:
@@ -261,6 +265,57 @@ Settled facts:
   different intra-year weeks for different outcomes
 
 What is currently settled inside this core:
+
+#### 4.0 The run driver and its yearly loop
+
+Confidence: `High`
+
+Source: the main program of the unpacked ECMAINT (`0824:2946..2a53`,
+`tools/unlzexe/ecmaint_640k.bin`), read with capstone (2026-10).
+
+The main program, once past the banner, does the following in order. Each
+line names the call, and what the callee does.
+
+| Call site | Callee | What it does |
+| --- | --- | --- |
+| `0824:294b` | `0824:0049` | Schedule gate: reads the date and refuses to run on a day the schedule excludes ("Today is ... maintenance is not scheduled to run"); 0 ends the run. |
+| `0824:2955` | `2895:7d6f` | Token wait, `Move.Tok` recovery, load and validation of the `.DAT` files (sections 1 to 3); 0 ends the run. |
+| `0824:2961..2970` | | After a `Move.Tok` restore (`[0x169a]`), steps the game year back by one so the interrupted year runs again. |
+| `0824:29a5..29ec` | | The yearly loop, `[0x169e]` times (one for a normal `/R` run). Per year: |
+| `0824:29c9` | `0824:26a5` | Copies PLAYER `+0x52` (production) and `+0x50` (planet count) of empires 1 to 25 into CONQUEST `+0x0A` and `+0x3C`, the "previous year" arrays the rankings print in parentheses. |
+| `0824:29cc` | `24a3:3cc6` | The orders pass. First `24a3:0c2a` turns a civil-disorder empire with no planets into a rogue (and under `/C`, every civil-disorder empire). Then per empire: a rogue gets AI fleet orders and build commands (`24a3:2a29` with planets, `24a3:0dbc` without); a human empire gets its orders processed (`24a3:2e23`, `24a3:39fd`), its autopilot flag `+0x6d` set when it has missed `[0x2f70]` turns, and autopilot orders and build commands when the flag is set (`24a3:2a5a`). Ships commissioned here become fleets and unit-table entries before the year's ticks. |
+| `0824:29d1` | `1852:0000` | The planet pass, one owned world at a time: `+0x5C` status steps 0 to 1 to 2; the starbase growth bonus test (`1852:011b`); build queue slots 1 to 8 move into the stardock, 9 into armies and 10 into batteries, each paid from the treasury (`1852:0206..0449`); unless Scorch Earth is set, growth and tax income (`1852:0457..082e`); the queue is zeroed (`1852:094a`). |
+| `0824:29d6` | `0824:1004` | The year driver: sorts the unit table by `Random(0xffdc)` and runs 52 ticks of step, encounter and dispatch for every fleet and starbase ([ec-encounter-spec.md](ec-encounter-spec.md)). Movement, battles, colonization, hostile missions and their RESULTS reports all happen here. |
+| `0824:29d9` | | Game year `+1`. |
+| `0824:29ee..29fe` | `2895:726e` | When the game has an end year (`[0x42b4]`) and this is it (`[0x192]`): the game-over check ("The game is over and the winner is..."). |
+| `0824:2a03` | `0824:1f8d` | Join fleets (order 13) whose host was destroyed hold position and report "In light of the destruction of the ... Fleet, we are holding our current position". |
+| `0824:2a06` | `0824:2212` | Guard Starbase fleets (order 4) whose base was destroyed hold position and report the same for the starbase. |
+| `0824:2a26..2a30` | `0824:252a`, `0824:25a3` | With the year stepped back to the year just played: "Updating intelligence database": a mode-2 DATABASE.DAT update for every owned world's owner (`2895:2ddc`), then a pass over the unit table that updates each unit's empire on the world in its sector. |
+| `0824:2a34` | `0824:1724` | "Packing IPBM database": compacts IPBM.DAT through IPBM.TMP and removes the run's temporary files, the awareness file among them. |
+| `0824:2a37` | `0824:1271` | Recounts PLAYER `+0x50` from PLANETS `+0x5D` and recomputes `+0x52` as `Trunc` of the summed present production (`2883:0000`); under `/C` converts civil-disorder empires to rogues. |
+| `0824:2a3a` | `0824:1398` | Writes PLAYER.DAT, PLANETS.DAT and CONQUEST.DAT ("Unable to open & save file ..."). FLEETS.DAT and BASES.DAT were written record by record during the ticks. |
+| `0824:2a3d` | `3159:0860` | Deletes `Move.Tok`. |
+| `0824:2a49` | `0aca:07b5` | When rankings are enabled (`[0x16a1]`): writes RANKINGS.TXT ("Creating player-ranking file"). |
+| `0824:2a4e` | `3159:05fd` | Deletes `Database.Tok`, `Planets.Tok`, `Fleets.Tok`, `Player.Tok`, `IPBMs.Tok`, `Conquest.Tok`, `Message.Tok`, `Results.Tok` and `Main.Tok`. |
+
+RESULTS.DAT is written as reports arise: inside the ticks by the encounter
+and dispatch handlers, and after them by the two hold-position passes.
+MESSAGES.DAT is opened, restored from `Messages.Sav` when needed, and
+packed in the loading stage (the strings sit at `2895:0000..01a0`); no call
+after the yearly loop touches it. The driver has no cull step of its own:
+whatever fleet-record checks exist run inside the load and validation
+routine, and the IPBM pack is the only compaction after the loop.
+
+Practical meaning:
+
+- every unit a build finishes this year is in the stardock, or on the
+  surface, before the first tick; a bombardment, capture or scout report
+  in any tick sees it
+- the economy reads the world as the previous year left it: a world
+  colonized or captured during the ticks gets its first income the next
+  year, and Salvage credits land on top of the year's income
+- the rogue and autopilot orders pass reads the state the previous run
+  saved, including its hostile strikes and eliminations
 
 #### 4a. Movement is an annual pre-loop phase
 
@@ -845,115 +900,72 @@ effects happen in the same tick:
 Economy starts on the newly colonized planet in the following tick
 (factories_raw initialized on tick 3).
 
-#### 4r. Economy/autopilot processing gated by player mode byte
+#### 4r. The planet pass gates on ownership, status and Scorch Earth, not on the player mode byte
 
 Confidence: `High`
 
-Source: direct PLAYER.DAT byte-0 mutation probes (Phase C, 2026-03-17).
+Source: static RE of `1852:0000` (2026-10), replacing the 2026-03-17
+PLAYER byte-0 mutation probes.
 
-Planet economy changes (army growth, battery growth, econ_marker updates,
-factories_raw adjustments) only occur for empires whose PLAYER.DAT
-`byte[0]` is `0xFF` (rogue mode). Empires in civil disorder (`byte[0] =
-0x00`) are economically frozen: their owned planets show no growth across
-ECMAINT ticks.
+The planet pass (`1852:0000`) visits every world with an owner
+(`+0x5D != 0`). It reads PLAYER `+0x44` (the base chain, for the
+starbase bonus) and `+0x51` (the tax rate), never `+0x00`: a
+civil-disorder empire's worlds complete their builds and take growth and
+income like anyone else's. The 2026-03-17 probe compared a civil-disorder
+empire with the same empire made rogue; the rogue's new armies and dock
+changes are what the orders pass (`24a3:3cc6`) adds, since it gives build
+commands only to rogue (`0xFF`) and autopilot empires. The gates inside
+the planet pass are:
 
-Verified by direct mutation: patching only `player[0]` from `0x00` to
-`0xFF` in the econ fixture causes planet 14 (empire 1 homeworld) to show
-armies 10→27, econ_marker 12→4, and factories exponent adjustment on
-tick 1 — matching the natural behavior in fleet-battle/invade fixtures
-where player 1 was already `0xFF`.
+- `+0x5C` status: stepped 0 to 1 to 2 at the top of the pass, and the
+  year's income is scaled by 0, 0.5 and 1.0 for the value found
+- `+0x60` Scorch Earth: growth and income are replaced by the decay in
+  [ec-file-formats.md](ec-file-formats.md); the build queue still completes
 
-The `autopilot_flag` at `player[0x6D]` is the companion that drives
-army/battery building within the rogue pass, per existing Rust RE.
-
-#### 4s. Economy/autopilot runs after the fleet loop and reads combat outcomes
+#### 4s. The planet pass runs before the year's ticks
 
 Confidence: `High`
 
-Source: controlled fleet-battle comparison with and without combat
-(Phase C, 2026-03-17).
+Source: the yearly driver (`0824:29c9..29d9`, section 4.0).
 
-Comparing the same fleet-battle fixture with and without hostile fleets at
-(10,10):
+`1852:0000` is called at `0824:29d1`; the year driver `0824:1004` at
+`0824:29d6`. The pass therefore reads the state the previous run saved and
+the orders pass just changed; nothing the ticks do (movement, battles,
+colonization, hostile strikes, Salvage) is visible to it.
 
-- **with combat**: planet 14 (empire 1 homeworld at 16,13) → armies 10→27,
-  econ_marker 12→4
-- **without combat** (fleet 4 and fleet 8 moved away): planet 14 → armies
-  unchanged (10), econ_marker 12→2, stardock fields change instead
+The 2026-03-17 fleet-battle comparison that read "economy after the loop"
+was comparing two fixtures whose starting fleet layout differed, and the
+rogue orders pass, which runs before the ticks too, reads that layout. The
+difference in armies came from the AI's build commands, which the planet
+pass completed in the same run.
 
-The economy/autopilot pass reads post-weekly fleet-combat state to determine
-its behavior. With fleet losses at (10,10), the rogue AI builds armies on
-the homeworld. Without losses, it does not.
+#### 4t. Build completion is the first half of the planet pass
 
-Combined with the file-I/O evidence (PLANETS.DAT is never accessed during
-the 52-pass fleet loop), this confirms:
+Confidence: `High`
 
-- economy/autopilot runs **after** the fleet loop, not before or during
-- it reads post-weekly fleet-combat game state and adjusts planet production
-  accordingly
-- the econ_marker value depends on the full post-fleet-loop game state, not
-  just the planet's own pre-existing economy
+Source: static RE of `1852:0206..0449` (2026-10) and the preserved
+`planet-build` fixture.
 
-#### 4t. Build completion is a late per-player pass, not part of the fleet loop
+For every owned world, after the status step and the starbase bonus test:
 
-Confidence: `Medium`
-
-Source: preserved `planet-build` fixture, hostile build-queue probes, and
-static RE around `1000:e79a -> 1000:dddb` and `2000:05df -> 2000:f319/f34a`
-(2026-03-18).
-
-Build completion is now bounded more tightly than before:
-
-- the preserved `planet-build` fixture shows queue slot `build_raw=03/01`
-  on planet record `15` becoming `stardock_count=03`, `stardock_kind=01`
-  after one maint tick, with `RESULTS.DAT` still empty
-- injecting the same build queue into hostile bombardment still completes
-  the stardock write on tick `1`, while `RESULTS.DAT` remains empty there too
-- a paired immediate-bombard probe now tightens that ordering further:
-  - delayed control: attacker still one sector away, target world queue
-    `03/01` becomes `stardock_count=03`, `stardock_kind=01` on tick `1`
-  - immediate bombard: same queue, but attacker already co-located at the
-    target world on tick `1`, clears the queue and leaves stardock slot `0`
-    empty after the same maint tick while also zeroing local armies and
-    batteries
-- static RE ties the stardock/build write path to `1000:e79a`, which:
-  - calls `1000:dddb`
-  - clears the corresponding queue/stardock fields after processing
-  - consumes a per-player counter at `player[+0x50/+0x52]`
-- that routine is reached from the late per-player selector
-  `2000:05df..06e5` via `2000:f319` / `2000:f34a`, not from the 52-pass
-  fleet-loop body
+- queue slots 1 to 8 (`+0x22 + 2k`) are added to stardock slots
+  (`+0x34 + 4k`), each saturating at 65535
+- slot 9 is added to armies (`+0x58`) and slot 10 to batteries (`+0x5A`),
+  both saturating
+- each addition subtracts the units' cost from the treasury (`+0x09`, a
+  real); the queue slot is zeroed as it is paid
+- the economy then runs on the same world (4s), and the ten queue slots
+  are zeroed again at the end of the world's visit (`1852:094a`)
 
 Practical meaning:
 
-- build completion is real step-4 state mutation, not final flush noise
-- it is not interleaved inside the weekly fleet-processing loop
-- in the recovered immediate-bombard case, build completion lands before
-  hostile world resolution, so newly completed stardock contents are already
-  eligible to be destroyed in that same yearly tick
-- it can complete in the same yearly tick as hostile scenarios, before at
-  least some delayed visible mission consequences appear
-
-Cross-family tightening:
-
-- paired replayable `InvadeWorld` probes with the same injected queue `03/01`
-  now show the same placement:
-  - delayed control: target-world queue becomes `stardock_count=03`,
-    `stardock_kind=01` on tick `1`
-  - ready immediate invade: the same queue is cleared, stardock slot `0`
-    remains empty, and defender armies/batteries mutate in the same tick
-- a replayable `BlitzWorld` spot-check does not contradict this placement:
-  the ready and delayed probes both clear the queue through the same
-  post-build path before any ready-blitz order consumption
-
-Practical meaning:
-
-- build completion lands before ready hostile world resolution, not just
-  before ready bombardment
-- ready hostile mission families therefore read post-build planet state
-- the earlier immediate-bombard-only caveat is now closed at the turn-order
-  level; remaining uncertainty is in per-family combat mechanics, not build
-  placement
+- a unit finished this year is in the stardock, or on the surface, before
+  the first tick; a bombardment or capture in any tick, and a scout's
+  report, see it
+- the `planet-build` fixture (queue `03/01` becoming `stardock_count=03`
+  after one run, RESULTS.DAT empty) and the hostile probes that found the
+  dock already filled when a ready bombard or invade struck on tick 1 are
+  both this placement
 
 ### 5. Late Summary Canonicalization And Sort
 
@@ -1223,43 +1235,35 @@ This is the tightest oracle-backed statement today:
 1. `ECMAINT` first performs schedule/token gating.
 2. If `Move.Tok` exists, it restores `.SAV` backups before validation.
 3. It validates and loads the linked `.DAT` state.
-4. It runs the yearly simulation core:
-   a. Prepare transient workspaces.
-   b. Annual movement update (one-time position advance for all fleets;
-      fractional travel state stored in fleet tuple_c Real48 field for
-      multi-year journeys).
-   c. Pre-loop fleet setup phase (captures/reassignments; skipped when no
-      fleets need reassignment).
-   d. Compute fleet visit order (sort-by-random-priority; see section 4l).
-   e. Run a 52-iteration weekly event scheduling loop (NOT physics sim):
-      - for each week 1..52:
-        - for each fleet in visit order:
-          - read fleet record
-          - timing-window check: events to emit this week?
-          - if co-located hostile: resolve fleet-vs-fleet combat, emit
-            RESULTS.DAT inline
-          - update weekly event state in fleet record
-          - write fleet record
-        - remove destroyed/captured fleets from active set
-   f. Post-loop fleet summary scan (2 sequential reads of all fleet records).
-   g. Post-loop world/player update region:
-      - build completion
-        - ships/starbases -> stardock
-        - armies/ground batteries -> planet
-      - economy/autopilot pass over owned planets (rogue empires only;
-        reads post-weekly fleet-combat state)
-      - player-stat recomputation
-   h. Producer/mutator and hostile world-resolution passes on planet state
-      (`024d` interior; ready hostile mission family lives here, not inside
-      the weekly fleet-combat loop; delayed missions wait until a later yearly
-      tick after arrival, and ready hostile missions read post-build world
-      state).
-   i. DATABASE.DAT planet-specific updates.
-5. It canonicalizes and sorts summary entries from those outcomes.
-6. It performs a late `1..52` weekly report/timing loop over the active
-   summaries, using the recovered timing-window constants (8 codes with
-   offsets +2/+7/+21/+0/+0/+0/+0/+30 and minimum-week floors).
-7. It flushes outputs (`PLAYER.DAT`, `PLANETS.DAT`, `CONQUEST.DAT`,
-   `RANKINGS.TXT`) and performs final cleanup.
+4. It runs the yearly loop (`0824:29a5..29ec`), once per year to run:
+   a. CONQUEST previous-year snapshot: PLAYER `+0x52` and `+0x50` of every
+      empire into CONQUEST `+0x0A` and `+0x3C` (`0824:26a5`).
+   b. Orders pass (`24a3:3cc6`): civil-disorder empires without planets
+      become rogues; rogue and autopilot empires get fleet orders and
+      build commands; human orders are processed. Commissioned ships are
+      fleets before the ticks.
+   c. Planet pass (`1852:0000`), per owned world: `+0x5C` status step,
+      starbase bonus test, build queue into stardock, armies and batteries
+      with the treasury debited, then growth and tax income (Scorch Earth
+      decays instead), then the queue zeroed.
+   d. Year driver (`0824:1004`): the unit table sorted by
+      `Random(0xffdc)`, then 52 ticks of step, encounter and dispatch for
+      every fleet and starbase. Movement, battles, colonization, hostile
+      strikes and their RESULTS reports happen here; a fleet's record is
+      saved by its dispatch each tick.
+   e. Game year `+1`.
+   After the loop: the game-over check at the end year (`2895:726e`); Join
+   fleets whose host died and Guard Starbase fleets whose base died hold
+   position and report it (`0824:1f8d`, `0824:2212`); DATABASE.DAT
+   updates for the year just played (`0824:252a`, `0824:25a3`); IPBM pack
+   and temporary-file cleanup (`0824:1724`); PLAYER `+0x50`/`+0x52`
+   recount (`0824:1271`).
+5. Report weeks come from the tick a report arises in (4d) and the
+   timing-window constants of section 6 (8 codes with offsets
+   +2/+7/+21/+0/+0/+0/+0/+30 and minimum-week floors); the main program
+   has no report loop of its own after the year driver.
+6. It writes PLAYER.DAT, PLANETS.DAT and CONQUEST.DAT (`0824:1398`),
+   deletes `Move.Tok`, writes RANKINGS.TXT when rankings are enabled
+   (`0aca:07b5`), and deletes the remaining tokens (`3159:05fd`).
 
 That is the current oracle-backed canonical turn cycle.

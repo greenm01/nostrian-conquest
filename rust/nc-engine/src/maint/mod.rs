@@ -350,8 +350,13 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // movement so they can start heading home this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
-    // ECMAINT settles the starbase growth bonus before the year's ticks.
+    // ECMAINT's planet pass (`1852:0000`) runs before the year driver
+    // (`0824:1004`): each owned world completes its build queue and then
+    // settles its economy, so the units finished this year sit in the
+    // stardock, or on the surface, through every tick that follows.
     let starbase_planets = economics::starbase_planets(game_data);
+    let planets_with_builds = economics::process_build_completion(game_data)?;
+    economics::process_planet_economics(game_data, &planets_with_builds, &starbase_planets)?;
 
     // The year's 52 ticks: every fleet and starbase, in a random order,
     // moves, meets the units sharing its sector and depth layer, and runs
@@ -443,27 +448,10 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 .and_then(|arrival| arrival.stardate_week);
         }
     }
-    let newly_colonized_planets = colonization_events
-        .iter()
-        .filter_map(|event| match *event {
-            ColonizationResolvedEvent::Succeeded { planet_idx, .. } => Some(planet_idx),
-            _ => None,
-        })
-        .collect::<Vec<_>>();
-
-    // Process build queues and track which planets had activity
-    let planets_with_builds = economics::process_build_completion(game_data)?;
-
-    // Process planet economic updates for planets that had builds
-    economics::process_planet_economics(
-        game_data,
-        &planets_with_builds,
-        &newly_colonized_planets,
-        &starbase_planets,
-    )?;
-
     // Run autopilot / rogue AI planet economics.
     // Updates factories, armies, and raw[0x0E] for rogue and autopilot-on players.
+    // ECMAINT runs this pass at the start of the next year (`24a3:3cc6`),
+    // before that year's planet pass; the end of this year is the same point.
     economics::process_autopilot_ai(game_data)?;
 
     // ECMAINT leaves PLAYER 0x46 naming the last base in each chain.
