@@ -275,7 +275,7 @@ def cmd_prepare(args: argparse.Namespace) -> int:
     print(f"  target={target}")
     print(f"  snapshot={snapshot_path}")
     print("  next step: submit player orders or mutate files, then run:")
-    print(f"    python3 tools/ecmaint_oracle.py run {target}")
+    print(f"    python3 tools/ncmaint_oracle.py run {target}")
     return 0
 
 
@@ -306,8 +306,8 @@ def cmd_prepare_known(args: argparse.Namespace) -> int:
     print(f"  snapshot={snapshot_path}")
     print(f"  expected_post={repo_relative(KNOWN_SCENARIOS[args.scenario]['post'])}")
     print("  next step:")
-    print(f"    python3 tools/ecmaint_oracle.py run {target}")
-    print(f"    python3 tools/ecmaint_oracle.py compare {target} {KNOWN_SCENARIOS[args.scenario]['post']}")
+    print(f"    python3 tools/ncmaint_oracle.py run {target}")
+    print(f"    python3 tools/ncmaint_oracle.py compare {target} {KNOWN_SCENARIOS[args.scenario]['post']}")
     return 0
 
 

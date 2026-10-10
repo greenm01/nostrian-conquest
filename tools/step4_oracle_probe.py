@@ -8,7 +8,7 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from ecmaint_oracle import (
+from ncmaint_oracle import (
     TRACKED_FILES,
     collect_diffs,
     copy_tree,

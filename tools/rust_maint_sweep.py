@@ -86,7 +86,7 @@ def run_rust_maint(target_dir: Path, turns: int) -> tuple[bool, list[str]]:
 
 def run_oracle(target_dir: Path) -> tuple[bool, list[str]]:
     result = run_cmd(
-        ["python3", "tools/ecmaint_oracle.py", "run", str(target_dir)],
+        ["python3", "tools/ncmaint_oracle.py", "run", str(target_dir)],
         REPO_ROOT,
     )
     if result.returncode != 0:

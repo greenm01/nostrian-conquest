@@ -30,7 +30,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from ecmaint_oracle import (
+from ncmaint_oracle import (
     KNOWN_SCENARIOS,
     TRACKED_FILES,
     collect_diffs,

@@ -52,9 +52,9 @@ The rule that fell out of that recovery work is simple:
 
 For new mechanics, the concrete workflow is:
 
-1. `python3 tools/ecmaint_oracle.py prepare <target_dir> [source_dir]`
+1. `python3 tools/ncmaint_oracle.py prepare <target_dir> [source_dir]`
 2. Submit one controlled set of orders or mutate one narrow field family.
-3. `python3 tools/ecmaint_oracle.py run <target_dir>`
+3. `python3 tools/ncmaint_oracle.py run <target_dir>`
 4. Inspect the `.oracle/` snapshots plus the printed diff clusters across
    state files (`PLAYER.DAT`, `PLANETS.DAT`, `FLEETS.DAT`, `BASES.DAT`,
    `IPBM.DAT`, `CONQUEST.DAT`) and report/output files (`RESULTS.DAT`,
@@ -67,7 +67,7 @@ For new mechanics, the concrete workflow is:
 
 ### Known-scenario replay loop
 
-1. `python3 tools/ecmaint_oracle.py replay-known fleet-order /tmp/ecmaint-fleet-oracle`
+1. `python3 tools/ncmaint_oracle.py replay-known fleet-order /tmp/ecmaint-fleet-oracle`
 2. Inspect the `.oracle/` snapshots and the comparison against the preserved
    post-maint fixture.
 3. Use the same pattern for `planet-build` and `guard-starbase` before opening
@@ -75,7 +75,7 @@ For new mechanics, the concrete workflow is:
 
 ### Preserved-fixture replay validation
 
-1. `python3 tools/ecmaint_oracle.py replay-preserved fleet-order /tmp/ecmaint-fleet-pre-direct`
+1. `python3 tools/ncmaint_oracle.py replay-preserved fleet-order /tmp/ecmaint-fleet-pre-direct`
 2. Confirm the preserved pre-maint fixture replays to the preserved post-maint
    fixture exactly.
 3. Use `replay-known` to measure the remaining gap in the Rust-generated

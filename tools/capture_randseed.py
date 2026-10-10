@@ -128,7 +128,7 @@ def capture_for_scenario(scenario: str, fixture_src: Path) -> dict:
 
 
 def main() -> int:
-    from ecmaint_oracle import KNOWN_SCENARIOS
+    from ncmaint_oracle import KNOWN_SCENARIOS
 
     scenarios = sys.argv[1:] if len(sys.argv) > 1 else ["bombard"]
     if scenarios == ["all"]:

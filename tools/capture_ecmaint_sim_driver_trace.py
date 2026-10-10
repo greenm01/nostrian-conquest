@@ -193,7 +193,7 @@ def main() -> int:
         active_breakpoints = list(BREAKPOINTS)
 
     # Resolve scenario fixture
-    from ecmaint_oracle import KNOWN_SCENARIOS
+    from ncmaint_oracle import KNOWN_SCENARIOS
     if scenario not in KNOWN_SCENARIOS:
         print(f"Unknown scenario: {scenario}")
         print(f"Known: {', '.join(sorted(KNOWN_SCENARIOS))}")

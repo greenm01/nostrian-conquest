@@ -42,7 +42,7 @@ def run_nc_cli(args: list[str]) -> str:
 
 
 def run_oracle(target: Path) -> str:
-    return run(["python3", "tools/ecmaint_oracle.py", "run", str(target)], ROOT)
+    return run(["python3", "tools/ncmaint_oracle.py", "run", str(target)], ROOT)
 
 
 def copy_tree(source: Path, target: Path) -> None:

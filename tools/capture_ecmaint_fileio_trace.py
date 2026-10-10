@@ -207,7 +207,7 @@ def summarize_phases(events: list[IOEvent]) -> str:
 def main() -> int:
     scenario = sys.argv[1] if len(sys.argv) > 1 else "fleet-order"
 
-    from ecmaint_oracle import KNOWN_SCENARIOS
+    from ncmaint_oracle import KNOWN_SCENARIOS
     if scenario not in KNOWN_SCENARIOS:
         print(f"Unknown scenario: {scenario}")
         print(f"Known: {', '.join(sorted(KNOWN_SCENARIOS))}")

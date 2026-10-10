@@ -120,9 +120,9 @@ This is the main local-play rule to preserve:
 For most new mechanics, prefer the repo harness first:
 
 ```bash
-python3 tools/ecmaint_oracle.py prepare /tmp/ecmaint-oracle
+python3 tools/ncmaint_oracle.py prepare /tmp/ecmaint-oracle
 # submit one controlled order family or mutate one narrow field family
-python3 tools/ecmaint_oracle.py run /tmp/ecmaint-oracle
+python3 tools/ncmaint_oracle.py run /tmp/ecmaint-oracle
 ```
 
 That captures pre/post snapshots under `/tmp/ecmaint-oracle/.oracle/` and
@@ -131,7 +131,7 @@ prints byte-diff clusters for the core `.DAT` files plus report files.
 For a known preserved scenario family, use the replay form:
 
 ```bash
-python3 tools/ecmaint_oracle.py replay-known fleet-order /tmp/ecmaint-fleet-oracle
+python3 tools/ncmaint_oracle.py replay-known fleet-order /tmp/ecmaint-fleet-oracle
 ```
 
 That materializes the known accepted pre-maint state, runs `ECMAINT`, and then
@@ -140,7 +140,7 @@ compares the result against the preserved post-maint fixture.
 To validate the oracle path itself against preserved fixtures, use:
 
 ```bash
-python3 tools/ecmaint_oracle.py replay-preserved fleet-order /tmp/ecmaint-fleet-pre-direct
+python3 tools/ncmaint_oracle.py replay-preserved fleet-order /tmp/ecmaint-fleet-pre-direct
 ```
 
 That copies the preserved pre-maint fixture directly, runs `ECMAINT`, and

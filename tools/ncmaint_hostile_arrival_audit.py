@@ -10,7 +10,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from ecmaint_oracle import DEFAULT_BASELINE, ROOT, ensure_engine, run_ecmaint
+from ncmaint_oracle import DEFAULT_BASELINE, ROOT, ensure_engine, run_ecmaint
 
 
 RUST_WORKSPACE = ROOT / "rust"

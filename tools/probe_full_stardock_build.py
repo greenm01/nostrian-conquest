@@ -7,7 +7,7 @@ import argparse
 import shutil
 from pathlib import Path
 
-from ecmaint_oracle import ROOT, collect_diffs, print_diff_summary, run_nc_cli, run_ecmaint, snapshot_dir
+from ncmaint_oracle import ROOT, collect_diffs, print_diff_summary, run_nc_cli, run_ecmaint, snapshot_dir
 
 PLANET_RECORD_SIZE = 97
 TARGET_PLANET_RECORD = 15

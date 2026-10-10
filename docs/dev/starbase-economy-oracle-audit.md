@@ -27,7 +27,7 @@ Current reproducible tooling:
   [rust/nc-cli/src/commands/economy.rs](../../rust/nc-cli/src/commands/economy.rs)
   `economy-starbase-probe-init`
 - Oracle runner:
-  [tools/ecmaint_starbase_economy_audit.py](../../tools/ecmaint_starbase_economy_audit.py)
+  [tools/ncmaint_starbase_economy_audit.py](../../tools/ncmaint_starbase_economy_audit.py)
 
 Probe shape:
 
@@ -83,7 +83,7 @@ accepted `ecmaint-econ-pre/v1.5` baseline, using:
 
 Reproducible tooling:
 
-- [tools/ecmaint_starbase_colony_sweep.py](../../tools/ecmaint_starbase_colony_sweep.py)
+- [tools/ncmaint_starbase_colony_sweep.py](../../tools/ncmaint_starbase_colony_sweep.py)
 
 Current two-colony result:
 

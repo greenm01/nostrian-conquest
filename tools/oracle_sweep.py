@@ -106,7 +106,7 @@ def generate_seeded_new_game(target_dir: Path, player_count: int, seed: int) -> 
 def run_oracle(target_dir: Path) -> Tuple[bool, List[str]]:
     """Run ECMAINT oracle on the generated gamestate."""
     cmd = [
-        "python3", "tools/ecmaint_oracle.py", "run", str(target_dir)
+        "python3", "tools/ncmaint_oracle.py", "run", str(target_dir)
     ]
     
     result = subprocess.run(
