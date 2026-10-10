@@ -757,14 +757,27 @@ fn fleet_missions_route_to_expected_target_prompt_modes() {
         select_first_fleet_row(&mut app);
         app.open_selected_fleet_order_flow();
         app.fleet_overlay.mission_picker_input = mission_code.to_string();
+        let record = app
+            .selected_fleet_order_row()
+            .expect("selected fleet row")
+            .fleet_record_index_1_based;
+        let automatic = nc_engine::automatic_order_targets(&app.game_data, mission_code, &[record]);
 
         app.submit_fleet_mission_picker();
 
-        let expected_prompt_mode = match fleet_target_input_kind(Some(mission_code)) {
-            nc_engine::FleetTargetInputKind::StarbaseId
-            | nc_engine::FleetTargetInputKind::FleetId
-            | nc_engine::FleetTargetInputKind::None => FleetOverlayPromptMode::OrderTarget,
-            nc_engine::FleetTargetInputKind::Coordinates => FleetOverlayPromptMode::OrderTargetX,
+        // Seek Home and a single-world Salvage skip the coordinates, as ECGAME does.
+        let expected_prompt_mode = match (automatic, fleet_target_input_kind(Some(mission_code))) {
+            (Err(_), _) => FleetOverlayPromptMode::MissionPicker,
+            (Ok(Some(_)), _) => FleetOverlayPromptMode::OrderConfirm,
+            (
+                Ok(None),
+                nc_engine::FleetTargetInputKind::StarbaseId
+                | nc_engine::FleetTargetInputKind::FleetId
+                | nc_engine::FleetTargetInputKind::None,
+            ) => FleetOverlayPromptMode::OrderTarget,
+            (Ok(None), nc_engine::FleetTargetInputKind::Coordinates) => {
+                FleetOverlayPromptMode::OrderTargetX
+            }
         };
         assert_eq!(
             app.fleet_overlay.prompt_mode, expected_prompt_mode,
@@ -774,11 +787,38 @@ fn fleet_missions_route_to_expected_target_prompt_modes() {
 }
 
 #[test]
+fn seek_home_order_targets_the_nearest_owned_world_without_coordinates() {
+    let mut app = audit_ready_dash_app();
+    app.overlay = ActiveOverlay::FleetList;
+    select_first_fleet_row(&mut app);
+    app.open_selected_fleet_order_flow();
+    let record = app
+        .selected_fleet_order_row()
+        .expect("selected fleet row")
+        .fleet_record_index_1_based;
+    let fleet = &mut app.game_data.fleets.records[record - 1];
+    fleet.set_current_location_coords_raw([1, 1]);
+    fleet.set_at_rest_motion();
+
+    app.fleet_overlay.mission_picker_input = "2".to_string();
+    app.submit_fleet_mission_picker();
+    assert_eq!(
+        app.fleet_overlay.prompt_mode,
+        FleetOverlayPromptMode::OrderConfirm
+    );
+    app.handle_key(key(KeyCode::Enter));
+
+    let fleet = &app.game_data.fleets.records[record - 1];
+    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
+    assert_eq!(fleet.standing_order_target_coords_raw(), [16, 13]);
+}
+
+#[test]
 fn coordinate_fleet_order_defaults_match_engine_recommendations() {
     let mut app = audit_ready_dash_app();
     app.overlay = ActiveOverlay::FleetList;
 
-    for mission_code in [0, 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15] {
+    for mission_code in [0, 1, 3, 5, 6, 7, 8, 9, 10, 11, 12, 14] {
         select_first_fleet_row(&mut app);
         app.open_selected_fleet_order_flow();
         app.fleet_overlay.mission_picker_input = mission_code.to_string();
@@ -1366,6 +1406,10 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     let speed_row = speed_app
         .selected_fleet_order_row_from_table()
         .expect("selected fleet row");
+    // A fleet on its way somewhere; one at its target keeps speed 0.
+    let moving = &mut speed_app.game_data.fleets.records[speed_row.fleet_record_index_1_based - 1];
+    moving.set_standing_order_kind(nc_data::Order::MoveOnly);
+    moving.set_standing_order_target_coords_raw([1, 1]);
     speed_app.handle_key(key(KeyCode::Char('c')));
     speed_app.handle_key(key(KeyCode::Char('s')));
     assert_eq!(

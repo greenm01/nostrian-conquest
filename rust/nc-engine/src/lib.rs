@@ -7,7 +7,7 @@ pub mod setup;
 
 pub use fleet::{
     CheckedFleetMergePlan, CheckedFleetTransferPlan, OwnedFleetTarget, OwnedStarbaseTarget,
-    SelectedFleetRef, default_host_fleet_target, default_starbase_target,
+    SelectedFleetRef, automatic_order_targets, default_host_fleet_target, default_starbase_target,
     fleet_eta_estimate_sort_key, fleet_eta_label, fleet_list_eta_label,
     fleet_mission_requires_preselected_target, fleet_order_target_rejects_owned_planet,
     fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,

@@ -101,12 +101,13 @@ fn preflight_fleet_order_actions(
                 submission.player_record_index_1_based,
                 fleet.fleet_record_index_1_based,
             )?;
-            ensure_order_target_within_map(&preview, *order_code, *target)?;
+            let target = resolve_order_target(&preview, fleet.fleet_record_index_1_based, *target)?;
+            ensure_order_target_within_map(&preview, *order_code, target)?;
             preview.set_fleet_order(
                 fleet.fleet_record_index_1_based,
                 *speed,
                 *order_code,
-                *target,
+                target,
                 *aux0,
                 *aux1,
             )?;
@@ -237,17 +238,26 @@ fn apply_fleet_action(
                 player_record_index_1_based,
                 fleet.fleet_record_index_1_based,
             )?;
+            let target =
+                resolve_order_target(game_data, fleet.fleet_record_index_1_based, *target)?;
             game_data.set_fleet_order(
                 fleet.fleet_record_index_1_based,
                 *speed,
                 *order_code,
-                *target,
+                target,
                 *aux0,
                 *aux1,
             )?;
         }
         FleetTurnAction::RulesOfEngagement { value } => {
             game_data.set_fleet_rules_of_engagement(
+                player_record_index_1_based,
+                fleet.fleet_record_index_1_based,
+                *value,
+            )?;
+        }
+        FleetTurnAction::Speed { value } => {
+            game_data.set_fleet_speed(
                 player_record_index_1_based,
                 fleet.fleet_record_index_1_based,
                 *value,
@@ -362,6 +372,25 @@ fn ensure_player_owns_fleet(
 }
 
 /// Submitted orders get the same 1-based map bounds the player UI enforces.
+/// A Seek Home or Salvage order without a target takes the nearest owned
+/// world, as ECGAME does.
+fn resolve_order_target(
+    game_data: &CoreGameData,
+    fleet_record_index_1_based: usize,
+    target: Option<[u8; 2]>,
+) -> Result<[u8; 2], TurnSubmissionError> {
+    if let Some(target) = target {
+        return Ok(target);
+    }
+    game_data
+        .nearest_owned_world(fleet_record_index_1_based, false)
+        .ok_or_else(|| {
+            TurnSubmissionError::Validation(format!(
+                "fleet record {fleet_record_index_1_based} has no owned world to head for"
+            ))
+        })
+}
+
 fn ensure_order_target_within_map(
     game_data: &CoreGameData,
     order_code: u8,

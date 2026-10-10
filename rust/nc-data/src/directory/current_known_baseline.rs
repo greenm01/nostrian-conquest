@@ -180,7 +180,7 @@ impl CoreGameData {
                 record.set_owner_empire_raw(owner_empire);
                 record.set_next_fleet_link_word_raw(next);
                 record.set_fleet_id_word_raw(fleet_id);
-                record.set_previous_fleet_id(prev as u8);
+                record.set_previous_fleet_id(prev);
                 record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
                 record.set_current_speed(0);
                 record.set_current_location_coords_raw(coords);

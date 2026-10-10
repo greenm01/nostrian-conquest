@@ -508,7 +508,7 @@ Whom). ROE also decides when your fleet breaks off a battle.
 
 The full ROE threshold table is collected in @appendix-combat.
 
-Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically.
+Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0.
 
 == Withdrawal and Retreat
 
@@ -605,13 +605,13 @@ answer yes to "Include time to enter system?"
 
 *Mission 1: Move to Sector.* A simple transit order. The fleet travels to the destination sector at the speed of its slowest ship, then stops and reverts to Hold Position. You must issue new orders if you want it to do anything else.
 
-*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position.
+*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. A fleet already in the system of its nearest planet heads for the next closest one, and in a group order each fleet seeks its own nearest planet.
 
 *Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
 
 *Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster under low taxes. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
 
-*Mission 15: Salvage.* The fleet travels to the specified planet and scraps its ships for approximately *50%* of the original build cost, returned to that planet's treasury. It reverts to Hold Position after scrapping.
+*Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for approximately *50%* of the original build cost, returned to that planet's treasury. It reverts to Hold Position after scrapping. The game offers the planet nearest the fleet as the default target; if you own only one planet, it takes that planet without asking. A group salvages at one planet.
 
 === Persistent Standing Missions
 
@@ -708,7 +708,7 @@ The *Planet List* is the fast row-centric operations screen for owned worlds. On
 
 == Fleet Command
 
-Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves individual ships between fleets.
+Fleet Command controls your ships in space. Mission (*O*) assigns missions 0--15. ROE (*C*) changes a fleet's rules of engagement, ID, or speed. A speed change takes 1 up to the fleet's maximum and touches nothing else; a fleet on Hold, or already at its target, keeps speed 0. Merge (*M*) combines fleets that are in the same sector. Transfer (*T*) moves individual ships between fleets.
 
 The *Fleet List* is also the bulk-fleet work screen. It now includes a *Sel*
 column. Press *Space* on a fleet row to check or uncheck it. When one or more

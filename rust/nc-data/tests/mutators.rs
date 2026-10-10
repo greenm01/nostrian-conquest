@@ -2428,7 +2428,7 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
     };
     data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
     let base = data.bases.records[0].clone();
-    let host_id = data.fleets.records[0].fleet_id();
+    let host_id = data.fleets.records[0].fleet_id() as u8;
     let owner = data.fleets.records[1].owner_empire_raw();
     let planet_coords = |predicate: &dyn Fn(u8) -> bool| {
         data.planets
@@ -2556,7 +2556,7 @@ fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
         Order::JoinAnotherFleet.to_raw(),
         host.current_location_coords_raw(),
         None,
-        Some(host.fleet_id()),
+        Some(host.fleet_id() as u8),
     )
     .unwrap();
 

@@ -64,7 +64,11 @@ pub fn order_fleet(
         .collect::<Vec<_>>();
     // Prefer the strongest mission: the last supported one is the most specific.
     let code = supported[supported.len() - 1 - pick_index(choices, supported.len())?];
-    let target = order_target(state, empire, choices, record, Order::from_raw(code), aim)?;
+    // Seek Home leaves the target to the turn file's nearest-world rule.
+    let target = match Order::from_raw(code) {
+        Order::SeekHome => None,
+        order => Some(order_target(state, empire, choices, record, order, aim)?),
+    };
     let max_speed = u32::from(current.max_speed());
     let speed = (max_speed - choices.pick(0, max_speed)) as u8;
     Some(TurnAction::Fleet(
@@ -98,7 +102,7 @@ fn order_target(
         planet.owner_empire_slot_raw() != empire && planet.owner_empire_slot_raw() != 0
     }));
     let candidates = match order {
-        Order::HoldPosition | Order::SeekHome => vec![here],
+        Order::HoldPosition => vec![here],
         Order::ColonizeWorld => coords_of(planets_where(state, |planet| {
             planet.owner_empire_slot_raw() == 0
         })),

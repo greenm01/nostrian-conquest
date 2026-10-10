@@ -1279,33 +1279,16 @@ impl App {
             FleetChangeField::Speed => {
                 let speed = raw
                     .parse::<u8>()
-                    .map_err(|_| "Enter a speed from 0 up.".to_string())?;
+                    .map_err(|_| "Enter a speed from 1 up.".to_string())?;
                 let checked_rows = self.checked_fleet_rows();
                 if self.fleet_list_has_checked_selection() {
                     let mut successful = Vec::new();
                     let mut failure_detail = None;
                     for row in &checked_rows {
-                        let Some(fleet) = self
-                            .game_data
-                            .fleets
-                            .records
-                            .get(row.fleet_record_index_1_based - 1)
-                            .cloned()
-                        else {
-                            if failure_detail.is_none() {
-                                failure_detail =
-                                    Some("Selected fleet is no longer available.".to_string());
-                            }
-                            continue;
-                        };
-                        let aux = fleet.mission_aux_bytes();
-                        match self.game_data.set_fleet_order(
+                        match self.game_data.set_fleet_speed(
+                            self.player.record_index_1_based,
                             row.fleet_record_index_1_based,
                             speed,
-                            fleet.standing_order_code_raw(),
-                            fleet.standing_order_target_coords_raw(),
-                            Some(aux[0]),
-                            Some(aux[1]),
                         ) {
                             Ok(_) => successful.push(row.fleet_record_index_1_based),
                             Err(err) => {
@@ -1315,7 +1298,7 @@ impl App {
                                             max,
                                             ..
                                         } => {
-                                            format!("Enter a speed from 0 to {max}.")
+                                            format!("Enter a speed from 1 to {max}.")
                                         }
                                         other => other.to_string(),
                                     });
@@ -1362,32 +1345,29 @@ impl App {
                     }
                 } else {
                     let row = self.prompt_context_fleet_row()?;
-                    let fleet = self
+                    let applied = self
                         .game_data
-                        .fleets
-                        .records
-                        .get(row.fleet_record_index_1_based - 1)
-                        .ok_or_else(|| "Selected fleet is no longer available.".to_string())?
-                        .clone();
-                    let aux = fleet.mission_aux_bytes();
-                    self.game_data
-                        .set_fleet_order(
+                        .set_fleet_speed(
+                            self.player.record_index_1_based,
                             row.fleet_record_index_1_based,
                             speed,
-                            fleet.standing_order_code_raw(),
-                            fleet.standing_order_target_coords_raw(),
-                            Some(aux[0]),
-                            Some(aux[1]),
                         )
                         .map_err(|err| match err {
                             nc_data::GameStateMutationError::InvalidFleetSpeed { max, .. } => {
-                                format!("Enter a speed from 0 to {max}.")
+                                format!("Enter a speed from 1 to {max}.")
                             }
                             other => other.to_string(),
                         })?;
                     self.save_game_data().map_err(|err| err.to_string())?;
                     self.show_fleet_context_success(
-                        format!("Fleet #{} speed set to {}.", row.fleet_number, speed),
+                        if applied == speed {
+                            format!("Fleet #{} speed set to {}.", row.fleet_number, speed)
+                        } else {
+                            format!(
+                                "Fleet #{} is at its intended location or has no mission; its speed stays 0.",
+                                row.fleet_number
+                            )
+                        },
                         true,
                     );
                 }

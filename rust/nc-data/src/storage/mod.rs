@@ -477,7 +477,6 @@ impl CampaignStore {
                  next_fleet_link_word_raw INTEGER NOT NULL,
                  fleet_id_word_raw INTEGER NOT NULL,
                  previous_fleet_id_raw INTEGER NOT NULL,
-                 invasion_army_count_raw INTEGER NOT NULL,
                  max_speed INTEGER NOT NULL,
                  current_speed INTEGER NOT NULL,
                  current_x INTEGER NOT NULL,

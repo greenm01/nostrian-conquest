@@ -177,7 +177,7 @@ pub struct HostedStardockSlot {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct HostedOwnedFleet {
-    pub fleet_id: u8,
+    pub fleet_id: u16,
     pub local_slot: u8,
     pub coords: [u8; 2],
     pub target_coords: [u8; 2],

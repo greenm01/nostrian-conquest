@@ -530,7 +530,7 @@ fn build_commissioned_fleet(
         .copied()
         .find(|(_, slot, _)| *slot > local_slot);
     let previous_fleet_id = predecessor
-        .map(|(_, _, predecessor_fleet_id)| predecessor_fleet_id as u8)
+        .map(|(_, _, predecessor_fleet_id)| predecessor_fleet_id)
         .unwrap_or(0);
     let next_fleet_id = successor
         .map(|(_, _, successor_fleet_id)| successor_fleet_id)
@@ -549,7 +549,7 @@ fn build_commissioned_fleet(
         player.set_fleet_chain_head_raw(fleet_id);
     }
     if let Some((idx, _, _)) = successor {
-        game_data.fleets.records[idx].set_previous_fleet_id(fleet_id as u8);
+        game_data.fleets.records[idx].set_previous_fleet_id(fleet_id);
     }
 
     let mut fleet = FleetRecord::new_zeroed();

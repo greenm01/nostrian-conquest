@@ -149,7 +149,7 @@ fn write_fleet_rows(
         "INSERT INTO snapshot_fleets(
              snapshot_id, record_index, local_slot_word_raw, owner_empire_raw,
              next_fleet_link_word_raw, fleet_id_word_raw, previous_fleet_id_raw,
-             invasion_army_count_raw, max_speed, current_speed, current_x, current_y,
+             max_speed, current_speed, current_x, current_y,
              tuple_a_raw_hex, tuple_b_raw_hex, tuple_c_raw_hex,
              standing_order_code_raw, target_x, target_y, world_target_flag_raw,
              mission_id_raw, rules_of_engagement, battleship_count, cruiser_count,
@@ -158,7 +158,7 @@ fn write_fleet_rows(
          ) VALUES (
              ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10,
              ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19, ?20,
-             ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28, ?29
+             ?21, ?22, ?23, ?24, ?25, ?26, ?27, ?28
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
@@ -172,7 +172,6 @@ fn write_fleet_rows(
             i64::from(record.next_fleet_link_word_raw()),
             i64::from(record.fleet_id_word_raw()),
             i64::from(record.previous_fleet_id()),
-            i64::from(record.invasion_army_count_raw()),
             i64::from(record.max_speed()),
             i64::from(record.current_speed()),
             i64::from(current_x),
@@ -492,10 +491,9 @@ fn load_fleet_rows(
 ) -> Result<FleetDat, CampaignStoreError> {
     let mut stmt = conn.prepare(
         "SELECT local_slot_word_raw, owner_empire_raw, next_fleet_link_word_raw,
-                fleet_id_word_raw, previous_fleet_id_raw, invasion_army_count_raw,
-                max_speed, current_speed, current_x, current_y, tuple_a_raw_hex,
-                tuple_b_raw_hex, tuple_c_raw_hex, standing_order_code_raw, target_x,
-                target_y, world_target_flag_raw, mission_id_raw, rules_of_engagement,
+                fleet_id_word_raw, previous_fleet_id_raw, max_speed, current_speed,
+                current_x, current_y, tuple_a_raw_hex, tuple_b_raw_hex, tuple_c_raw_hex,
+                standing_order_code_raw, target_x, target_y, world_target_flag_raw, mission_id_raw, rules_of_engagement,
                 battleship_count, cruiser_count, destroyer_count, empty_transport_count,
                 loaded_transport_count, etac_count, scout_count, strength_cache_raw
          FROM snapshot_fleets
@@ -513,10 +511,10 @@ fn load_fleet_rows(
             row.get::<_, i64>(6)?,
             row.get::<_, i64>(7)?,
             row.get::<_, i64>(8)?,
-            row.get::<_, i64>(9)?,
+            row.get::<_, String>(9)?,
             row.get::<_, String>(10)?,
             row.get::<_, String>(11)?,
-            row.get::<_, String>(12)?,
+            row.get::<_, i64>(12)?,
             row.get::<_, i64>(13)?,
             row.get::<_, i64>(14)?,
             row.get::<_, i64>(15)?,
@@ -530,7 +528,6 @@ fn load_fleet_rows(
             row.get::<_, i64>(23)?,
             row.get::<_, i64>(24)?,
             row.get::<_, i64>(25)?,
-            row.get::<_, i64>(26)?,
         ))
     })?;
 
@@ -542,7 +539,6 @@ fn load_fleet_rows(
             next_fleet_link_word_raw,
             fleet_id_word_raw,
             previous_fleet_id_raw,
-            invasion_army_count_raw,
             max_speed,
             current_speed,
             current_x,
@@ -571,8 +567,7 @@ fn load_fleet_rows(
         record.set_owner_empire_raw(owner_empire_raw as u8);
         record.set_next_fleet_link_word_raw(next_fleet_link_word_raw as u16);
         record.set_fleet_id_word_raw(fleet_id_word_raw as u16);
-        record.set_previous_fleet_id(previous_fleet_id_raw as u8);
-        record.set_invasion_army_count_raw(invasion_army_count_raw as u8);
+        record.set_previous_fleet_id(previous_fleet_id_raw as u16);
         record.set_max_speed(max_speed as u8);
         record.set_current_speed(current_speed as u8);
         record.set_current_location_coords_raw([current_x as u8, current_y as u8]);

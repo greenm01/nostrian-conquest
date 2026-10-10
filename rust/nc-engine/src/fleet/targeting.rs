@@ -188,7 +188,8 @@ pub fn recommended_coordinate_target_candidates(
             .into_iter()
             .map(|row| row.coords)
             .collect(),
-        2 | 5 | 15 => filtered_planet_database_targets_from(
+        2 | 15 => owned_worlds_nearest_first(game_data, viewer_empire_id, selected_records),
+        5 => filtered_planet_database_targets_from(
             game_data,
             snapshots,
             viewer_empire_id,
@@ -239,6 +240,51 @@ pub fn recommended_coordinate_target_candidates(
             rendezvous_target_candidates_from(game_data, viewer_empire_id, anchor, selected_records)
         }
         _ => Vec::new(),
+    }
+}
+
+const NO_OWNED_WORLD_MESSAGE: &str = "You do not own any planets. Order aborted.";
+
+/// Targets ECGAME sets without asking, one per fleet: Seek Home always, and
+/// Salvage when the empire owns a single world. `Ok(None)` means the player
+/// enters coordinates.
+pub fn automatic_order_targets(
+    game_data: &CoreGameData,
+    mission_code: u8,
+    fleet_records: &[usize],
+) -> Result<Option<Vec<[u8; 2]>>, String> {
+    match nc_data::Order::from_raw(mission_code) {
+        nc_data::Order::SeekHome => match game_data.seek_home_targets(fleet_records) {
+            Ok(targets) => Ok(Some(targets)),
+            Err(nc_data::SeekHomeTarget::AlreadyInOnlySystem) => Err(format!(
+                "Fleet #{} is already in your only controlled star system. Order aborted.",
+                fleet_records
+                    .first()
+                    .and_then(|record| game_data.fleets.records.get(record - 1))
+                    .map_or(0, |fleet| fleet.local_slot_word_raw())
+            )),
+            Err(_) => Err(NO_OWNED_WORLD_MESSAGE.to_string()),
+        },
+        nc_data::Order::Salvage => {
+            let Some(&first) = fleet_records.first() else {
+                return Ok(None);
+            };
+            let owner = game_data.fleets.records[first - 1].owner_empire_raw();
+            let owned = game_data
+                .planets
+                .records
+                .iter()
+                .filter(|planet| planet.owner_empire_slot_raw() == owner)
+                .count();
+            match owned {
+                0 => Err(NO_OWNED_WORLD_MESSAGE.to_string()),
+                1 => Ok(game_data
+                    .nearest_owned_world(first, false)
+                    .map(|target| vec![target; fleet_records.len()])),
+                _ => Ok(None),
+            }
+        }
+        _ => Ok(None),
     }
 }
 
@@ -443,6 +489,31 @@ fn rendezvous_target_candidates_from(
     sort_unique_coords_by_distance(anchor, &mut coords);
     if coords.is_empty() {
         coords.push(anchor);
+    }
+    coords
+}
+
+/// ECGAME's Seek Home and Salvage defaults: the world nearest the first
+/// selected fleet, then the other owned worlds in planet order (the default
+/// Y for an entered X is the first owned world in that column).
+fn owned_worlds_nearest_first(
+    game_data: &CoreGameData,
+    viewer_empire_id: u8,
+    selected_records: &BTreeSet<usize>,
+) -> Vec<[u8; 2]> {
+    let mut coords = game_data
+        .planets
+        .records
+        .iter()
+        .filter(|planet| planet.owner_empire_slot_raw() == viewer_empire_id)
+        .map(|planet| planet.coords_raw())
+        .collect::<Vec<_>>();
+    if let Some(nearest) = selected_records
+        .first()
+        .and_then(|&record| game_data.nearest_owned_world(record, false))
+    {
+        coords.retain(|coords| *coords != nearest);
+        coords.insert(0, nearest);
     }
     coords
 }

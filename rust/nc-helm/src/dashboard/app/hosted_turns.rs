@@ -196,6 +196,19 @@ impl DashApp {
         upsert_fleet_action(actions, FleetTurnAction::RulesOfEngagement { value });
     }
 
+    pub(crate) fn stage_hosted_fleet_speed(
+        &mut self,
+        fleet_record_index_1_based: usize,
+        value: u8,
+    ) {
+        let Some(submission) = self.hosted_turn_draft.as_mut() else {
+            return;
+        };
+        let actions = fleet_actions_mut(submission, fleet_record_index_1_based);
+        actions.retain(|action| !matches!(action, FleetTurnAction::Speed { .. }));
+        actions.push(FleetTurnAction::Speed { value });
+    }
+
     pub(crate) fn stage_hosted_fleet_order(
         &mut self,
         fleet_record_index_1_based: usize,
@@ -218,7 +231,7 @@ impl DashApp {
         actions.push(FleetTurnAction::Order {
             speed,
             order_code,
-            target,
+            target: Some(target),
             aux0,
             aux1,
         });

@@ -167,7 +167,7 @@ fn sqlite_store_round_trips_join_host_id_in_mission_aux() {
         .game_data
         .set_join_fleet_order(1, 2, 1)
         .expect("join order");
-    let host_id = state.game_data.fleets.records[0].fleet_id();
+    let host_id = state.game_data.fleets.records[0].fleet_id() as u8;
     assert_eq!(
         state.game_data.fleets.records[1].mission_aux_bytes(),
         [1, host_id]

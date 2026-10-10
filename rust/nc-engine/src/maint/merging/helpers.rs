@@ -34,7 +34,9 @@ pub(super) fn merge_one_fleet_into_host(
     host.set_loaded_transport_count(host.loaded_transport_count().saturating_add(loaded_tt));
     host.set_etac_count(host.etac_count().saturating_add(et));
     host.set_scout_count(host.scout_count().saturating_add(sc));
-    // ECMAINT's Join merge adds the 0x34 word too.
+    // Every ECMAINT merge (Join, Rendezvous, Guard Starbase, rogue
+    // consolidation) runs 2895:4a6b, which adds the 0x34 word; ECGAME's
+    // merges do not.
     host.set_strength_cache_raw(host.strength_cache_raw().wrapping_add(strength_cache));
     host.recompute_max_speed_from_composition();
 

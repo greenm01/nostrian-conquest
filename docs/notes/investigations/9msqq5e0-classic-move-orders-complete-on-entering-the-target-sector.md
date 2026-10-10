@@ -161,7 +161,7 @@ FLEETS.DAT bytes `0x23..0x35`:
 | `0x2e` | u16 | Loaded troop transports (one army each) |
 | `0x30` | u16 | ETACs |
 | `0x32` | u16 | Scouts |
-| `0x34` | u16 | No known use; ECMAINT's Join merge adds it, nothing else reads it |
+| `0x34` | u16 | No known use; every ECMAINT merge adds it, nothing else reads it |
 
 Evidence:
 
@@ -216,6 +216,79 @@ batteries and starbases never start a fight, and that fights leave stored
 diplomacy unchanged. The rule and its remaining differences from Rust are in
 [the engagement ADR](../decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md).
 Probe scripts were kept in the session scratchpad only.
+
+## Order entry, t034 (2026-10-10)
+
+The live ECGAME image (`tools/unlzexe/ecgame_640k.bin`, image address =
+dump offset - `0x8240`; the unpacked `ECGAMEU.EXE` is garbled in places)
+settles the two order details from the sweep:
+
+- **ROE.** The order routine writes `0x1f..0x22` and the ROE
+  (`0x15315`), then sets `0x25 = 0` when `word 0x26 + word 0x28 +
+  word 0x2a == 0` (`0x15331`). The rule covers every order, not only scout
+  and blitz orders. ECGAME's composition recompute (`0x18333`) applies the
+  same rule.
+- **Seek Home and Salvage targets.** `0xf5f0(fleet, mode, &x, &y)` lists
+  the worlds whose owner (`+0x5d`) is the fleet's empire in PLANETS.DAT
+  order. Mode 1 leaves out the world in the fleet's sector when its depth is
+  at least 0.5. One candidate is taken as is; otherwise the routine keeps the
+  smallest travel distance (`0x1d8ac`, target depth 1.0) under a strict `<`,
+  so the first world wins a tie. The travel distance is the movement
+  geometry: per axis `(t - x) - fx`, `(x + fx) - t - 1`, or `|0.5 - fx|`,
+  plus 0.5 per moving axis toward a cell centre; `sqrt(dx^2 + dy^2)` plus
+  `Z + TZ` between sectors or `|Z - TZ|` within one.
+  - Seek Home (`0x13c79`) uses mode 0. For one fleet already in that
+    system (ETA 0: same sector and `Round(Z) = 1`), ECGAME reports "already
+    in your only controlled star system" and aborts when the empire owns one
+    world, or asks "Do you wish this fleet to seek the next closest
+    system?" (default yes, then mode 1). A group order notes "Each fleet will
+    seek it's nearest friendly planet." and runs mode 0 per fleet
+    (`0x15242`).
+  - Salvage (`0x148e5`) uses mode 0 for a default and passes it to the
+    planet picker (`0x1ed63`), which asks for coordinates only when the
+    empire owns more than one world. A group salvages at one world.
+  - Mode 0 also raises a candidate's present production (`+3`) to 0.1 in
+    memory when it is lower; Rust does not copy that side effect.
+
+Result: `set_fleet_order` clears ROE for fleets without BB, CA, or DD and
+accepts a Seek Home target only when it is the nearest owned world or, for a
+fleet in that system, the next closest. `CoreGameData::nearest_owned_world`
+and `seek_home_target` port the routines in 6-byte reals. nc-game and
+nc-helm no longer prompt for Seek Home; Salvage prompts only with more than
+one owned world and defaults to the nearest. A turn file may leave `x` and
+`y` out of `seek_home` and `salvage` orders. The clients take the default
+answer to the next-closest question rather than asking it.
+`nc-data/tests/order_entry.rs` holds the tests.
+
+## Layout follow-ups, t038 (2026-10-10)
+
+- **Fleet ids.** Both binaries treat `0x00`, `0x03`, `0x05`, and `0x07` as
+  words: ECGAME's fleet code moves `word [+3]`, `[+5]`, `[+7]` (e.g.
+  `0x15e59`, `0x1601e`), and ECMAINT's fleet insertion (`24a3:152a`, linear
+  `2000:5f5a..6105`) writes the next, id, and previous words and the PLAYER.DAT
+  chain head and tail (`+0x40`, `+0x42`) as words. Byte `0x08`, which an early
+  tool wrote as "invasion armies" in the invade pre-fixture, is the previous
+  word's high byte (ECMAINT rewrites it to 0 in the post-fixture).
+- **Speed change.** "Set the speed of which fleet?" (`0x15739`) calls
+  `0x11c77`: it recomputes `0x09` from the ships aboard and writes `0x0a`,
+  forcing 0 when the fleet is on Hold or in its target sector with
+  `Round(Z) == 0x22`, and otherwise asking for 1 to the maximum. No other
+  byte changes.
+- **The `0x34` word.** Every ECMAINT merge calls `2895:4a6b`, which adds it:
+  Guard Starbase arrival (`0b5d:0fe7`), co-located guards in the year driver
+  (`0824:0f6d`), Join (`0b5d:475b`), Rendezvous (`0b5d:52fa`, `5347`,
+  `53c8`, `541f`), and rogue consolidation (`24a3:2585`). ECGAME's merge
+  leaves it alone.
+
+Result: `fleet_id`, `next_fleet_id`, and `previous_fleet_id` are words and
+the chain rebuilds, commissioning, maintenance remap, and SQLite snapshot keep
+them whole; the invasion-army accessor is gone and the invade builders write
+the fixture byte as the previous word's high byte. `set_fleet_speed` ports the
+speed change; nc-game and nc-helm use it, and turn files gain a `speed`
+node. Rust's merges already add `0x34` exactly where ECMAINT does. Rust's
+fleet-chain rebuild after a detach does not update the PLAYER.DAT chain tail;
+that is unchanged. Tests are in `nc-data/tests/fleet_layout.rs` and
+`speed_change.rs`.
 
 ## Result (2026-10-10)
 

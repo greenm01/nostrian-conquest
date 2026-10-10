@@ -90,12 +90,13 @@ fn render_fleet_block(out: &mut String, fleet: &FleetTurnBlock) {
                 aux1,
             } => {
                 out.push_str(&format!(
-                    "  order speed={} kind=\"{}\" x={} y={}",
+                    "  order speed={} kind=\"{}\"",
                     speed,
-                    order_name(*order_code),
-                    target[0],
-                    target[1]
+                    order_name(*order_code)
                 ));
+                if let Some([x, y]) = target {
+                    out.push_str(&format!(" x={x} y={y}"));
+                }
                 if let Some(value) = aux0 {
                     out.push_str(&format!(" aux0={value}"));
                 }
@@ -106,6 +107,9 @@ fn render_fleet_block(out: &mut String, fleet: &FleetTurnBlock) {
             }
             FleetTurnAction::RulesOfEngagement { value } => {
                 out.push_str(&format!("  roe value={value}\n"));
+            }
+            FleetTurnAction::Speed { value } => {
+                out.push_str(&format!("  speed value={value}\n"));
             }
             FleetTurnAction::Join {
                 host_fleet_record_index_1_based,

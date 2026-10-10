@@ -126,14 +126,20 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
     let mut actions = Vec::new();
     for child in children.nodes() {
         match child.name().value() {
-            "order" => actions.push(FleetTurnAction::Order {
-                speed: prop_u8(child, "speed")?,
-                order_code: parse_order_code(child)?,
-                target: [prop_u8(child, "x")?, prop_u8(child, "y")?],
-                aux0: opt_prop_u8(child, "aux0")?,
-                aux1: opt_prop_u8(child, "aux1")?,
-            }),
+            "order" => {
+                let order_code = parse_order_code(child)?;
+                actions.push(FleetTurnAction::Order {
+                    speed: prop_u8(child, "speed")?,
+                    order_code,
+                    target: parse_order_target(child, order_code)?,
+                    aux0: opt_prop_u8(child, "aux0")?,
+                    aux1: opt_prop_u8(child, "aux1")?,
+                });
+            }
             "roe" => actions.push(FleetTurnAction::RulesOfEngagement {
+                value: prop_u8(child, "value")?,
+            }),
+            "speed" => actions.push(FleetTurnAction::Speed {
                 value: prop_u8(child, "value")?,
             }),
             "join" => actions.push(FleetTurnAction::Join {
@@ -213,6 +219,28 @@ fn parse_order_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
             "unknown fleet order code: {raw}"
         ))),
         _ => Ok(raw),
+    }
+}
+
+/// `x` and `y` together; Seek Home and Salvage may leave both out to take
+/// the nearest owned world, as ECGAME does.
+fn parse_order_target(
+    node: &::kdl::KdlNode,
+    order_code: u8,
+) -> Result<Option<[u8; 2]>, TurnSubmissionError> {
+    match (opt_prop_u8(node, "x")?, opt_prop_u8(node, "y")?) {
+        (Some(x), Some(y)) => Ok(Some([x, y])),
+        (None, None)
+            if matches!(
+                Order::from_raw(order_code),
+                Order::SeekHome | Order::Salvage
+            ) =>
+        {
+            Ok(None)
+        }
+        _ => Err(TurnSubmissionError::Parse(
+            "order node must set both x and y".to_string(),
+        )),
     }
 }
 

@@ -159,8 +159,8 @@ impl FleetRecord {
     pub fn set_next_fleet_link_word_raw(&mut self, value: u16) {
         self.raw[0x03..0x05].copy_from_slice(&value.to_le_bytes());
     }
-    pub fn next_fleet_id(&self) -> u8 {
-        self.raw[0x03]
+    pub fn next_fleet_id(&self) -> u16 {
+        self.next_fleet_link_word_raw()
     }
 
     pub fn total_starships(&self) -> u32 {
@@ -185,23 +185,16 @@ impl FleetRecord {
     pub fn set_fleet_id_word_raw(&mut self, value: u16) {
         self.raw[0x05..0x07].copy_from_slice(&value.to_le_bytes());
     }
-    pub fn fleet_id(&self) -> u8 {
-        self.raw[0x05]
+    pub fn fleet_id(&self) -> u16 {
+        self.fleet_id_word_raw()
     }
-    pub fn previous_fleet_id(&self) -> u8 {
-        self.raw[0x07]
+    /// 0x07..=0x08: the previous fleet id in the owner's chain, a word in
+    /// both ECGAME and ECMAINT.
+    pub fn previous_fleet_id(&self) -> u16 {
+        u16::from_le_bytes([self.raw[0x07], self.raw[0x08]])
     }
-    pub fn set_previous_fleet_id(&mut self, value: u8) {
-        self.raw[0x07] = value;
-    }
-    /// Armies loaded onto this fleet for an invasion order (raw[0x08]).
-    /// Empirically confirmed from the invade scenario fixture.
-    /// No docs reference yet; keep as raw until further RE confirms semantics.
-    pub fn invasion_army_count_raw(&self) -> u8 {
-        self.raw[0x08]
-    }
-    pub fn set_invasion_army_count_raw(&mut self, value: u8) {
-        self.raw[0x08] = value;
+    pub fn set_previous_fleet_id(&mut self, value: u16) {
+        self.raw[0x07..0x09].copy_from_slice(&value.to_le_bytes());
     }
     pub fn max_speed(&self) -> u8 {
         self.raw[0x09]
@@ -467,8 +460,8 @@ impl FleetRecord {
         self.raw[0x32..0x34].copy_from_slice(&value.to_le_bytes());
     }
     /// 0x34..=0x35: a word Rust does not interpret. ECMAINT's encounter code
-    /// writes fleet strength here and its Join merge adds it; Rust keeps it
-    /// byte for byte.
+    /// writes fleet strength here and every ECMAINT merge adds it; Rust keeps
+    /// it byte for byte.
     pub fn strength_cache_raw(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x34], self.raw[0x35]])
     }

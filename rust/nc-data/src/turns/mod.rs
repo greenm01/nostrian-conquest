@@ -72,11 +72,15 @@ pub enum FleetTurnAction {
     Order {
         speed: u8,
         order_code: u8,
-        target: [u8; 2],
+        /// `None` only for Seek Home and Salvage: the nearest owned world.
+        target: Option<[u8; 2]>,
         aux0: Option<u8>,
         aux1: Option<u8>,
     },
     RulesOfEngagement {
+        value: u8,
+    },
+    Speed {
         value: u8,
     },
     Join {

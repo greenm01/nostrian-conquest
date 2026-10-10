@@ -58,6 +58,7 @@ pub use directory::{
     EmpireUnitSummary, FleetDetachResult, FleetDetachSelection, FleetOrderValidationError,
     FleetPlayerInputValidationError, FleetTransferResult, GameDirectoryError,
     GameStateMutationError, PlanetPlayerInputValidationError, PlayerDiplomacyValidationError,
+    SeekHomeTarget,
 };
 pub use economy::{
     build_capacity, starbase_growth_bonus_percent, yearly_growth_delta, yearly_high_tax_penalty,

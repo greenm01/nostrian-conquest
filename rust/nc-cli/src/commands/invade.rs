@@ -13,7 +13,9 @@ use crate::workspace::copy_init_files;
 ///
 /// Fixture-specific constants for this scenario:
 /// - Fleet 3 (empire=1, slot=3, index=2): InvadeWorld order, speed=3/3,
-///   target (15,13), invasion_army_count=100, SC=0, BB=100, CA=50, DD=50, TT=50
+///   target (15,13), byte 0x08 = 100 (an old tool's "invasion armies", which
+///   classic reads as the previous-fleet word's high byte), SC=0, BB=100,
+///   CA=50, DD=50, TT=50
 ///   (the preserved pre-fixture holds 100 in byte 0x24, which classic reads as
 ///   the mission id's high byte, not scouts)
 /// - Planet 14 (index=13): set via set_as_owned_target_world (Dust Bowl-type seeded world
@@ -47,7 +49,10 @@ pub(crate) fn set_invade_onefleet(
     with_runtime_game_mut_and_export(dir, |data| {
         {
             let f = &mut data.fleets.records[2];
-            f.set_invasion_army_count_raw(invasion_armies);
+            // The preserved fixture holds the old "invasion armies" byte at
+            // 0x08, which classic reads as the high byte of the previous-fleet
+            // word.
+            f.set_previous_fleet_id(u16::from_le_bytes([f.raw[0x07], invasion_armies]));
             f.set_max_speed(3);
             f.set_current_speed(3);
             f.set_standing_order_kind(Order::InvadeWorld);
@@ -170,10 +175,10 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     match data.fleets.records.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
-            if f.invasion_army_count_raw() != 0x64 {
+            if f.previous_fleet_id() != 0x6402 {
                 errors.push(format!(
-                    "FLEET[3].invasion_army_count expected 100 (0x64), got {:#04x}",
-                    f.invasion_army_count_raw()
+                    "FLEET[3].previous_fleet_id expected 0x6402, got {:#06x}",
+                    f.previous_fleet_id()
                 ));
             }
             if f.max_speed() != 3 {

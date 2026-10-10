@@ -13,13 +13,13 @@ use crate::screen::{
 };
 use nc_data::map_size_for_player_count;
 use nc_engine::{
-    FleetTargetInputKind, default_host_fleet_target, default_starbase_target,
-    fleet_order_target_rejects_owned_planet, fleet_order_target_rejects_owned_scout_target,
-    fleet_order_target_requires_owned_planet, fleet_order_target_requires_planet_system,
-    fleet_record_supports_mission_code, fleet_target_eta_confirmation_message,
-    fleet_target_eta_estimate, fleet_target_input_kind, fleet_target_status_line,
-    recommended_coordinate_target, recommended_coordinate_target_y_for_entered_x,
-    target_available_for_mission,
+    FleetTargetInputKind, automatic_order_targets, default_host_fleet_target,
+    default_starbase_target, fleet_order_target_rejects_owned_planet,
+    fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,
+    fleet_order_target_requires_planet_system, fleet_record_supports_mission_code,
+    fleet_target_eta_confirmation_message, fleet_target_eta_estimate, fleet_target_input_kind,
+    fleet_target_status_line, recommended_coordinate_target,
+    recommended_coordinate_target_y_for_entered_x, target_available_for_mission,
 };
 use std::collections::BTreeSet;
 
@@ -449,7 +449,11 @@ impl App {
             }
             FleetSingleOrderMode::ConfirmingTarget => {
                 self.fleet.order_confirm_input.clear();
-                self.fleet.order_mode = FleetSingleOrderMode::EnteringTargetY;
+                if self.fleet_order_target_is_automatic() {
+                    self.open_fleet_mission_picker();
+                } else {
+                    self.fleet.order_mode = FleetSingleOrderMode::EnteringTargetY;
+                }
             }
             FleetSingleOrderMode::EnteringTarget | FleetSingleOrderMode::EnteringTargetX => {
                 self.open_fleet_mission_picker();
@@ -469,7 +473,11 @@ impl App {
             }
             FleetGroupOrderMode::ConfirmingTarget => {
                 self.fleet.group_confirm_input.clear();
-                self.fleet.group_mode = FleetGroupOrderMode::EnteringTargetY;
+                if self.fleet_group_target_is_automatic() {
+                    self.open_fleet_mission_picker();
+                } else {
+                    self.fleet.group_mode = FleetGroupOrderMode::EnteringTargetY;
+                }
             }
             FleetGroupOrderMode::EnteringTarget | FleetGroupOrderMode::EnteringTargetX => {
                 self.open_fleet_mission_picker();
@@ -1038,6 +1046,27 @@ impl App {
                         });
                         return;
                     }
+                    let records = self
+                        .fleet_order_selected_row()
+                        .map(|row| vec![row.fleet_record_index_1_based])
+                        .unwrap_or_default();
+                    match automatic_order_targets(&self.game_data, mission_code, &records) {
+                        Err(err) => {
+                            self.fleet.mission_picker_status = Some(err);
+                            return;
+                        }
+                        Ok(Some(targets)) => {
+                            self.fleet.mission_picker_caller = None;
+                            self.clear_fleet_order_target_inputs();
+                            self.fleet.order_target_x_input = format!("{:02}", targets[0][0]);
+                            self.fleet.order_target_y_input = format!("{:02}", targets[0][1]);
+                            self.fleet.order_mode = FleetSingleOrderMode::ConfirmingTarget;
+                            self.fleet.order_status = None;
+                            self.current_screen = ScreenId::FleetOrder;
+                            return;
+                        }
+                        Ok(None) => {}
+                    }
                     self.fleet.mission_picker_caller = None;
                     self.fleet.order_mode = match fleet_target_input_kind(Some(mission_code)) {
                         FleetTargetInputKind::Coordinates => FleetSingleOrderMode::EnteringTargetX,
@@ -1080,6 +1109,38 @@ impl App {
                         return;
                     }
                     self.clear_fleet_group_target_inputs();
+                    let records = self
+                        .fleet_group_selected_rows()
+                        .iter()
+                        .map(|row| row.fleet_record_index_1_based)
+                        .collect::<Vec<_>>();
+                    match automatic_order_targets(&self.game_data, mission_code, &records) {
+                        Err(err) => {
+                            self.fleet.group_mode = FleetGroupOrderMode::SelectingFleets;
+                            self.fleet.group_status = Some(err);
+                            return;
+                        }
+                        // Each fleet of a group seeks its own nearest world.
+                        Ok(Some(_))
+                            if mission_code == nc_data::Order::SeekHome.to_raw()
+                                && records.len() > 1 =>
+                        {
+                            if let Err(err) =
+                                self.apply_fleet_group_order(mission_code, [0, 0], None, None)
+                            {
+                                self.fleet.group_mode = FleetGroupOrderMode::SelectingFleets;
+                                self.fleet.group_status = Some(err.to_string());
+                            }
+                            return;
+                        }
+                        Ok(Some(targets)) => {
+                            self.fleet.group_target_x_input = format!("{:02}", targets[0][0]);
+                            self.fleet.group_target_y_input = format!("{:02}", targets[0][1]);
+                            self.fleet.group_mode = FleetGroupOrderMode::ConfirmingTarget;
+                            return;
+                        }
+                        Ok(None) => {}
+                    }
                     self.fleet.group_mode = match fleet_target_input_kind(Some(mission_code)) {
                         FleetTargetInputKind::Coordinates => FleetGroupOrderMode::EnteringTargetX,
                         FleetTargetInputKind::StarbaseId
@@ -1400,6 +1461,38 @@ impl App {
         )
     }
 
+    fn fleet_order_target_is_automatic(&self) -> bool {
+        let (Some(mission_code), Some(row)) = (
+            self.fleet.order_mission_code,
+            self.fleet_order_selected_row(),
+        ) else {
+            return false;
+        };
+        matches!(
+            automatic_order_targets(
+                &self.game_data,
+                mission_code,
+                &[row.fleet_record_index_1_based]
+            ),
+            Ok(Some(_))
+        )
+    }
+
+    fn fleet_group_target_is_automatic(&self) -> bool {
+        let Some(mission_code) = self.fleet.group_mission_code else {
+            return false;
+        };
+        let records = self
+            .fleet_group_selected_rows()
+            .iter()
+            .map(|row| row.fleet_record_index_1_based)
+            .collect::<Vec<_>>();
+        matches!(
+            automatic_order_targets(&self.game_data, mission_code, &records),
+            Ok(Some(_))
+        )
+    }
+
     fn fleet_order_has_target_available(&self, mission_code: u8) -> bool {
         let anchor = self
             .fleet_order_selected_row()
@@ -1670,7 +1763,16 @@ impl App {
         if mission_code == nc_data::Order::ColonizeWorld.to_raw() {
             self.validate_friendly_colonize_assignment(target, &selected_records)?;
         }
-        for row in selected_rows {
+        let records = selected_rows
+            .iter()
+            .map(|row| row.fleet_record_index_1_based)
+            .collect::<Vec<_>>();
+        let seek_home_targets = if mission_code == nc_data::Order::SeekHome.to_raw() {
+            automatic_order_targets(&self.game_data, mission_code, &records)?
+        } else {
+            None
+        };
+        for (index, row) in selected_rows.iter().enumerate() {
             let speed = self
                 .game_data
                 .fleets
@@ -1685,10 +1787,10 @@ impl App {
                 row.fleet_record_index_1_based,
                 speed,
                 mission_code,
-                if fleet_group_order_requires_target(mission_code) {
-                    target
-                } else {
-                    [0, 0]
+                match &seek_home_targets {
+                    Some(targets) => targets[index],
+                    None if fleet_group_order_requires_target(mission_code) => target,
+                    None => [0, 0],
                 },
                 aux0,
                 aux1,
