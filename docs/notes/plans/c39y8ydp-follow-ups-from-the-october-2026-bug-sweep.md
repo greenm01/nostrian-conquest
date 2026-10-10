@@ -221,6 +221,14 @@ where nc-reports.md shows aligned labels.
 Decision (2026-10-09): approved. The leader sees "our claim"; other empires
 see the leader named. Align scouting report rows with nc-reports.md.
 
+Result (2026-10-09): the outlook is now one targeted report per joined
+empire. The contender reads "We now stand ... our claim", and the others read
+"<empire> now stands ... No other empire, ours included, currently appears
+capable of challenging its claim." It was the last broadcast report, so the
+unused broadcast routing was removed. Scout Solar System fact rows go through
+the shared labeled-row helper, and the example in
+[nc-reports.md](../../dev/nc-reports.md) shows the real output.
+
 ### t026
 
 Found during t008. In `nc-data/src/storage/report_blocks.rs`, when one empire
@@ -245,14 +253,6 @@ stored handle would therefore bind to that player's seat. Binding before t018
 had the same exposure, because it always used the real name. Decide whether
 to restrict the retry, for example to seats first bound from a DOOR.SYS real
 name, which would need the seat to record how it was bound.
-
-Result (2026-10-09): the outlook is now one targeted report per joined
-empire. The contender reads "We now stand ... our claim", and the others read
-"<empire> now stands ... No other empire, ours included, currently appears
-capable of challenging its claim." It was the last broadcast report, so the
-unused broadcast routing was removed. Scout Solar System fact rows go through
-the shared labeled-row helper, and the example in
-[nc-reports.md](../../dev/nc-reports.md) shows the real output.
 
 ## Connections
 
