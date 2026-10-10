@@ -434,6 +434,9 @@ already holds and lock that player out with the "matches multiple joined
 empires" error. Decide whether to refuse such a join, ask the sysop to
 reserve the caller, or accept the exposure for BBSes that omit line 36.
 
+Decision (2026-10-10): refuse the join with a clear message and tell the
+sysop. The case is rare and the sysop can reserve the seat by hand.
+
 ## Connections
 
 The RESULTS.DAT chain-id question is its own
