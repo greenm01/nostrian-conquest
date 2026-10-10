@@ -3,11 +3,12 @@
 
 use std::path::PathBuf;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{CoreGameData, GameStateMutationError, Order, TurnSubmission};
 
 fn ecmaint_post() -> CoreGameData {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-post/v1.5");
-    CoreGameData::load(&dir).expect("load ecmaint-post fixture")
+    load_classic_core_files(&dir).expect("load ecmaint-post fixture")
 }
 
 /// Fleet record 3 (one destroyer) under way on Move to (10,10).

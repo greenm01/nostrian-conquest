@@ -1,6 +1,4 @@
-use std::path::PathBuf;
-
-use crate::{BaseDat, ConquestDat, FleetDat, IpbmDat, ParseError, PlanetDat, PlayerDat, SetupDat};
+use crate::{BaseDat, ConquestDat, FleetDat, IpbmDat, PlanetDat, PlayerDat, SetupDat};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreGameData {
@@ -244,18 +242,6 @@ impl CampaignOutcome {
     }
 }
 
-#[derive(Debug)]
-pub enum GameDirectoryError {
-    Io {
-        path: PathBuf,
-        source: std::io::Error,
-    },
-    Parse {
-        path: PathBuf,
-        source: ParseError,
-    },
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum GameStateMutationError {
     InvalidPlayerCount {
@@ -479,24 +465,6 @@ pub struct FleetDetachResult {
 pub struct FleetTransferResult {
     pub donor_fleet_record_index_1_based: usize,
     pub host_fleet_record_index_1_based: usize,
-}
-
-impl std::fmt::Display for GameDirectoryError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Io { path, source } => write!(f, "{}: {}", path.display(), source),
-            Self::Parse { path, source } => write!(f, "{}: {}", path.display(), source),
-        }
-    }
-}
-
-impl std::error::Error for GameDirectoryError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match self {
-            Self::Io { source, .. } => Some(source),
-            Self::Parse { source, .. } => Some(source),
-        }
-    }
 }
 
 impl std::fmt::Display for FleetOrderValidationError {

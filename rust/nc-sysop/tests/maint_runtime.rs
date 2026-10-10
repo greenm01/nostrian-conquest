@@ -5,6 +5,7 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use nc_compat::load_classic_core_files;
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, GameStateBuilder, IntelTier, Order,
     ReportBlockRow,
@@ -38,7 +39,7 @@ fn repo_root() -> PathBuf {
 
 fn load_fixture(name: &str) -> CoreGameData {
     let fixture_dir = repo_root().join("fixtures").join(name).join("v1.5");
-    CoreGameData::load(&fixture_dir).expect("fixture should load")
+    load_classic_core_files(&fixture_dir).expect("fixture should load")
 }
 
 fn join_player(

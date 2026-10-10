@@ -1,6 +1,7 @@
 mod common;
 
 use common::*;
+use nc_compat::load_classic_core_files;
 use nc_data::*;
 
 #[test]
@@ -3227,7 +3228,8 @@ fn append_planet_build_order_rejects_non_multiple_surface_points() {
 fn renumbering_a_fleet_retargets_the_join_orders_that_name_it() {
     // ECGAME's renumbering (`0x15b35`) rewrites the 0x23 word of the empire's
     // Join orders that name the old number.
-    let mut data = CoreGameData::load(&repo_root().join("fixtures/ecmaint-post/v1.5")).unwrap();
+    let mut data =
+        load_classic_core_files(&repo_root().join("fixtures/ecmaint-post/v1.5")).unwrap();
     data.set_join_fleet_order(1, 2, 3).expect("join order");
     data.set_join_fleet_order(2, 6, 7)
         .expect("empire 2 join order");

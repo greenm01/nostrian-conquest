@@ -6,6 +6,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use nc_compat::load_classic_core_files;
 use nc_data::model::{BuildSlot, DiplomaticRelation, ProductionItemKind};
 use nc_data::{CampaignStore, CoreGameData, Real48};
 
@@ -90,7 +91,7 @@ fn every_fixture_game_round_trips_through_the_store() {
     );
     let store = temp_store("nc-data-storage-core-fixtures");
     for dir in dirs {
-        let game_data = CoreGameData::load(&dir).expect("load fixture");
+        let game_data = load_classic_core_files(&dir).expect("load fixture");
         assert_round_trips(&store, &game_data, &dir);
     }
 }
@@ -98,7 +99,7 @@ fn every_fixture_game_round_trips_through_the_store() {
 #[test]
 fn store_keeps_real48_bits_and_rust_only_values() {
     let dir = repo_root().join("fixtures/ecmaint-build-pre/v1.5");
-    let mut game_data = CoreGameData::load(&dir).expect("load fixture");
+    let mut game_data = load_classic_core_files(&dir).expect("load fixture");
 
     // A zero exponent with mantissa and sign bits set equals 0.0 as a
     // number but must keep its bits; so must the largest bit pattern.

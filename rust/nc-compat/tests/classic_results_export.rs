@@ -6,8 +6,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
-use nc_data::{CampaignStore, CoreGameData, ReportBlockRow, carry_unread_report_blocks};
+use nc_compat::{
+    export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
+};
+use nc_data::{CampaignStore, ReportBlockRow, carry_unread_report_blocks};
 
 const RECORD: usize = 84;
 
@@ -140,7 +142,7 @@ fn per_viewer_rows(player_dat: &[u8], results: &[u8]) -> Vec<ReportBlockRow> {
 }
 
 fn export_rows(label: &str, oracle: &Path, rows: &[ReportBlockRow]) -> (Vec<u8>, Vec<u8>) {
-    let mut game_data = CoreGameData::load(oracle).expect("oracle game data");
+    let mut game_data = load_classic_core_files(oracle).expect("oracle game data");
     for player in &mut game_data.player.records {
         player.set_classic_results_chain(None);
     }

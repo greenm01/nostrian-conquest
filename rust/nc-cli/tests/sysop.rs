@@ -4,6 +4,7 @@ use common::{
     cleanup_dir, run_classic_ecgame_smoke, run_classic_ecgame_smoke_with_alias, run_nc_cli,
     run_nc_cli_failure_in_dir, run_nc_cli_in_dir, unique_temp_dir,
 };
+use nc_compat::load_classic_core_files;
 
 #[test]
 fn sysop_new_game_default_four_player() {
@@ -12,7 +13,7 @@ fn sysop_new_game_default_four_player() {
     assert!(stdout.contains("Initialized new game"));
     assert!(stdout.contains("players=4"));
     assert!(target.join("DATABASE.DAT").exists());
-    let game_data = nc_data::CoreGameData::load(&target).expect("generated game should load");
+    let game_data = load_classic_core_files(&target).expect("generated game should load");
     assert_eq!(game_data.player.records[0].owner_mode_raw(), 0);
     assert_eq!(game_data.planets.records[0].planet_name(), "Not Named Yet");
     assert_eq!(game_data.player.records[0].tax_rate(), 50);
@@ -181,7 +182,7 @@ fn sysop_new_game_accepts_year_and_applies_it() {
     assert!(stdout.contains("Initialized new game"));
     assert!(stdout.contains("year=3012"));
 
-    let game_data = nc_data::CoreGameData::load(&target).expect("generated game should load");
+    let game_data = load_classic_core_files(&target).expect("generated game should load");
     assert_eq!(game_data.conquest.game_year(), 3012);
     cleanup_dir(&target);
 }

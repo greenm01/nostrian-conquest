@@ -47,7 +47,6 @@ pub enum CampaignStoreError {
     },
     Sql(rusqlite::Error),
     Parse(crate::ParseError),
-    Directory(crate::GameDirectoryError),
     InvalidState(String),
     SchemaVersionMismatch {
         expected: i64,
@@ -154,7 +153,6 @@ impl std::fmt::Display for CampaignStoreError {
             Self::Io { path, source } => write!(f, "{}: {}", path.display(), source),
             Self::Sql(source) => write!(f, "{source}"),
             Self::Parse(source) => write!(f, "{source}"),
-            Self::Directory(source) => write!(f, "{source}"),
             Self::InvalidState(message) => write!(f, "{message}"),
             Self::SchemaVersionMismatch { expected, found } => match found {
                 Some(found) => write!(
@@ -176,7 +174,6 @@ impl std::error::Error for CampaignStoreError {
             Self::Io { source, .. } => Some(source),
             Self::Sql(source) => Some(source),
             Self::Parse(source) => Some(source),
-            Self::Directory(source) => Some(source),
             Self::InvalidState(_) => None,
             Self::SchemaVersionMismatch { .. } => None,
         }
@@ -192,12 +189,6 @@ impl From<rusqlite::Error> for CampaignStoreError {
 impl From<crate::ParseError> for CampaignStoreError {
     fn from(value: crate::ParseError) -> Self {
         Self::Parse(value)
-    }
-}
-
-impl From<crate::GameDirectoryError> for CampaignStoreError {
-    fn from(value: crate::GameDirectoryError) -> Self {
-        Self::Directory(value)
     }
 }
 

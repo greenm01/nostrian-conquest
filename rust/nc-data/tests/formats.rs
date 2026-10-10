@@ -1,5 +1,6 @@
 mod common;
 
+use nc_compat::{load_classic_core_files, save_classic_core_files};
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -386,8 +387,8 @@ fn core_game_data_round_trips_post_maintenance_directory() {
         fs::copy(source_dir.join(name), temp_dir.join(name)).unwrap();
     }
 
-    let parsed = CoreGameData::load(&temp_dir).unwrap();
-    parsed.save(&temp_dir).unwrap();
+    let parsed = load_classic_core_files(&temp_dir).unwrap();
+    save_classic_core_files(&temp_dir, &parsed).unwrap();
 
     for name in [
         "PLAYER.DAT",

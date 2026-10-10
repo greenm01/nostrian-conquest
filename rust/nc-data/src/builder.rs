@@ -2,7 +2,6 @@ use crate::{
     BaseDat, ConquestDat, CoreGameData, FleetDat, FleetRecord, GameStateMutationError, IpbmDat,
     IpbmRecord, PlanetDat, PlanetRecord, PlayerDat, PlayerRecord, SetupDat,
 };
-use std::path::Path;
 
 /// Present production 100 (bytes `+0x04..+0x08`) and the stored-goods
 /// exponent (`+0x09`); with `HOMEWORLD_GOODS_HIGH_BYTE` the goods read 35.
@@ -414,24 +413,6 @@ impl GameStateBuilder {
                 guard.player_index_1_based as u8,
             )?;
         }
-
-        Ok(())
-    }
-
-    /// Build and save a complete gamestate directory.
-    ///
-    /// This writes the core runtime files only. Classic compat artifacts are
-    /// materialized by CLI/compat workflows explicitly.
-    pub fn build_and_save(&self, target: &Path) -> Result<(), Box<dyn std::error::Error>> {
-        use std::fs;
-
-        fs::create_dir_all(target)?;
-
-        // Build the gamestate
-        let data = self.build_initialized_baseline()?;
-
-        // Save core files
-        data.save(target)?;
 
         Ok(())
     }

@@ -1,6 +1,7 @@
 mod common;
 
 use common::{cleanup_dir, export_campaign_db, run_nc_cli, unique_temp_dir};
+use nc_compat::load_classic_core_files;
 
 #[test]
 fn player_name_updates_handle_and_empire() {
@@ -27,7 +28,7 @@ fn player_name_updates_handle_and_empire() {
     assert!(stdout.contains("Player 1 renamed"));
 
     export_campaign_db(&target, &target);
-    let data = nc_data::CoreGameData::load(&target).unwrap();
+    let data = load_classic_core_files(&target).unwrap();
     assert_eq!(
         data.player.records[0].assigned_player_handle_summary(),
         "tester01"
@@ -73,7 +74,7 @@ fn classic_login_prepare_sets_matching_handle_without_renaming_empire_by_default
     assert!(prepare_stdout.contains("Prepared classic login for player 1"));
 
     export_campaign_db(&target, &target);
-    let data = nc_data::CoreGameData::load(&target).unwrap();
+    let data = load_classic_core_files(&target).unwrap();
     assert_eq!(
         data.player.records[0].assigned_player_handle_summary(),
         "SYSOP"
@@ -110,7 +111,7 @@ fn player_join_seeds_last_run_year_for_returning_player_state() {
     assert!(stdout.contains("Joined player 1"));
 
     export_campaign_db(&target, &target);
-    let data = nc_data::CoreGameData::load(&target).unwrap();
+    let data = load_classic_core_files(&target).unwrap();
     assert_eq!(data.player.records[0].last_run_year_raw(), 3000);
     assert_eq!(
         data.player.records[0].assigned_player_handle_summary(),
@@ -142,7 +143,7 @@ fn economy_starbase_probe_init_creates_matched_plain_and_starbase_colonies() {
     assert!(stdout.contains("Initialized economy starbase tax-burden probe"));
 
     export_campaign_db(&target, &target);
-    let data = nc_data::CoreGameData::load(&target).unwrap();
+    let data = load_classic_core_files(&target).unwrap();
     assert_eq!(data.player.records[0].first_base_record_raw(), 1);
 
     let rows = data.empire_planet_economy_rows(1);
@@ -211,7 +212,7 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
     assert!(stdout.contains("Detached fleet 1 -> new fleet 17"));
 
     export_campaign_db(&target, &target);
-    let data = nc_data::CoreGameData::load(&target).unwrap();
+    let data = load_classic_core_files(&target).unwrap();
     assert_eq!(data.fleets.records.len(), 17);
     let donor = &data.fleets.records[0];
     let new_fleet = &data.fleets.records[16];

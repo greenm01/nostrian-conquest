@@ -6,10 +6,10 @@ use crate::commands::setup::{
 use crate::support::paths::resolve_repo_path;
 use crate::usage::print_sysop_usage;
 use nc_compat::{
-    ensure_classic_auxiliary_files, import_directory_snapshot,
+    ensure_classic_auxiliary_files, import_directory_snapshot, save_classic_core_files,
     write_default_database_dat_for_game_data,
 };
-use nc_data::{CampaignStore, CoreGameData};
+use nc_data::CampaignStore;
 use nc_engine::GameStateBuilder;
 
 fn generate_gamestate_from_args(
@@ -72,9 +72,10 @@ fn generate_gamestate_from_args(
         .with_year(year)
         .with_homeworld_coords(homeworld_coords);
 
-    match builder.build_and_save(&target_dir) {
-        Ok(()) => {
-            let built = CoreGameData::load(&target_dir)?;
+    match builder.build_initialized_baseline() {
+        Ok(built) => {
+            std::fs::create_dir_all(&target_dir)?;
+            save_classic_core_files(&target_dir, &built)?;
             write_default_database_dat_for_game_data(&target_dir, &built)?;
             ensure_classic_auxiliary_files(&target_dir)?;
             let store = CampaignStore::open_default_in_dir(&target_dir)?;

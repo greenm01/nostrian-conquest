@@ -5,6 +5,7 @@
 
 mod common;
 
+use nc_compat::load_classic_core_files;
 use nc_data::{
     BaseDat, BaseRecord, ColonizationResolvedEvent, CoreGameData, DiplomacyOverride,
     DiplomaticRelation, FleetOrderValidationError, GameStateBuilder, JoinMissionHostEvent, Mission,
@@ -20,7 +21,8 @@ fn load_fixture(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
+    load_classic_core_files(&dir)
+        .unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
 }
 
 fn configured_delayed_hostile_arrival_state(

@@ -7,7 +7,9 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
+use nc_compat::{
+    export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
+};
 use nc_data::{BaseDat, BaseRecord, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Real48};
 use nc_engine::run_maintenance_turn;
 
@@ -41,7 +43,8 @@ fn fixture_dir(name: &str) -> PathBuf {
 }
 
 fn load_fixture(name: &str) -> CoreGameData {
-    CoreGameData::load(&fixture_dir(name)).unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
+    load_classic_core_files(&fixture_dir(name))
+        .unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
 }
 
 /// Every game directory under fixtures/ and original/ that holds a BASES.DAT.

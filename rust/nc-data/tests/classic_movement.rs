@@ -9,6 +9,7 @@
 //! then Rust's post-strike state: at rest in orbit at the target with
 //! speed 0, still on Bombard, or holding after Invade or Blitz.
 
+use nc_compat::load_classic_core_files;
 use nc_data::{BaseRecord, CoreGameData, FleetRecord, MaintenanceEvents, Mission};
 use nc_engine::run_maintenance_turn;
 use std::path::Path;
@@ -50,7 +51,7 @@ fn load_fixture(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).unwrap_or_else(|err| panic!("fixture {name}: {err}"))
+    load_classic_core_files(&dir).unwrap_or_else(|err| panic!("fixture {name}: {err}"))
 }
 
 /// The sweep's scenario with the traced fleet as fleet record 1.

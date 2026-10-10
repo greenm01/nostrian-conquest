@@ -280,6 +280,7 @@ impl YearMovement<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use nc_compat::load_classic_core_files;
     use std::path::Path;
 
     #[test]
@@ -288,7 +289,7 @@ mod tests {
         // escorted by fleet 1.
         let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../fixtures/ecmaint-starbase-lift-pre/v1.5");
-        let mut game_data = CoreGameData::load(&dir).expect("fixture loads");
+        let mut game_data = load_classic_core_files(&dir).expect("fixture loads");
         let mut movement = YearMovement::new(&game_data, &[]);
 
         movement.dispatch_base(&mut game_data, 0, TICKS_PER_YEAR);

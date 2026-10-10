@@ -3134,6 +3134,7 @@ dependencies = [
 name = "nc-engine"
 version = "1.0.0-beta.3"
 dependencies = [
+ "nc-compat",
  "nc-data",
 ]
 
@@ -3281,6 +3282,7 @@ dependencies = [
 name = "nc-sysop"
 version = "1.0.0-beta.3"
 dependencies = [
+ "nc-compat",
  "nc-data",
  "nc-engine",
  "nc-log",

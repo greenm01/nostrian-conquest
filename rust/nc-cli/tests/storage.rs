@@ -8,8 +8,10 @@ use common::{
     cleanup_dir, ecmaint_oracle_available, run_classic_ecgame_smoke_with_alias, run_ecmaint_oracle,
     run_nc_cli, unique_temp_dir, without_unread_bytes,
 };
-use nc_compat::{DatabaseDat, export_latest_snapshot_to_dir};
-use nc_data::{CampaignStore, CoreGameData, Order};
+use nc_compat::{
+    DatabaseDat, export_latest_snapshot_to_dir, load_classic_core_files, save_classic_core_files,
+};
+use nc_data::{CampaignStore, Order};
 
 fn setup_classic_probe_players(target: &Path) {
     let player_specs = [
@@ -173,7 +175,7 @@ fn assert_database_row_survives_db_import_export(
     planet_idx: usize,
     player_idx: usize,
 ) {
-    let source_data = CoreGameData::load(source).expect("source game should load");
+    let source_data = load_classic_core_files(source).expect("source game should load");
     let source_database_bytes =
         fs::read(source.join("DATABASE.DAT")).expect("source DATABASE.DAT should exist");
     let source_database =
@@ -193,7 +195,7 @@ fn assert_database_row_survives_db_import_export(
     ]);
     assert!(export_stdout.contains("Exported year"));
 
-    let exported_data = CoreGameData::load(exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(exported).expect("exported game should load");
     let exported_database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("exported DATABASE.DAT should exist");
     let exported_database =
@@ -302,7 +304,7 @@ fn db_export_preserves_classic_player_handle_identity() {
     ]);
     assert!(export_stdout.contains("Exported year 3000"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     assert_eq!(
         exported_data.player.records[0].assigned_player_handle_summary(),
         "SYSOP"
@@ -394,7 +396,7 @@ fn db_export_preserves_owned_world_compat_word_family_from_imported_template() {
     ]);
     assert!(export_stdout.contains("Exported year"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -420,7 +422,7 @@ fn db_export_keeps_unknown_rows_at_classic_sentinels() {
     ]);
     assert!(export_stdout.contains("Exported year 3000"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -469,7 +471,7 @@ fn db_export_emits_ecgame_accepted_foreign_full_intel_row_shape() {
     ]);
     assert!(export_stdout.contains("Exported year 3004"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -574,7 +576,7 @@ fn db_export_refreshes_stale_foreign_scout_row_visible_stats() {
     ]);
     assert!(export_stdout.contains("Exported year 3004"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -779,7 +781,7 @@ fn db_export_emits_ecgame_accepted_foreign_view_only_row_shape() {
     ]);
     assert!(export_stdout.contains("Exported year 3004"));
 
-    let exported_data = nc_data::CoreGameData::load(&exported).expect("exported game should load");
+    let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
@@ -911,7 +913,7 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
     let exported = unique_temp_dir("nc-cli-db-import-assault-failure-exported");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
-    let mut game_data = CoreGameData::load(&source).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -940,9 +942,7 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&source)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
     assert!(maint_stdout.contains("Rust maintenance complete."));
@@ -966,7 +966,7 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
     let exported = unique_temp_dir("nc-cli-db-import-assault-failure-ecgame-exported");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
-    let mut game_data = CoreGameData::load(&source).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -995,9 +995,7 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&source)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
     assert!(maint_stdout.contains("Rust maintenance complete."));
@@ -1020,7 +1018,7 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
     let exported = unique_temp_dir("nc-cli-db-import-assault-success-exported");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
-    let mut game_data = CoreGameData::load(&source).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -1049,9 +1047,7 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&source)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
     assert!(maint_stdout.contains("Rust maintenance complete."));
@@ -1075,7 +1071,7 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
     let exported = unique_temp_dir("nc-cli-db-import-assault-success-ecgame-exported");
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
-    let mut game_data = CoreGameData::load(&source).expect("fixture should load");
+    let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets.records[13];
     target_world.set_as_owned_target_world(
         [15, 13],
@@ -1104,9 +1100,7 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
     attacker.set_troop_transport_count(2);
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
-    game_data
-        .save(&source)
-        .expect("mutated fixture should save");
+    save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
     assert!(maint_stdout.contains("Rust maintenance complete."));

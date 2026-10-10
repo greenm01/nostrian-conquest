@@ -8,7 +8,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::{
     DatabaseDat, export_latest_snapshot_to_dir, import_directory_snapshot,
-    import_directory_snapshot_with_seed,
+    import_directory_snapshot_with_seed, load_classic_core_files,
 };
 use nc_data::{CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, SeatBindSource};
 use rusqlite::Connection;
@@ -149,7 +149,7 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
         "Runtime Empire"
     );
 
-    let classic_game = nc_data::CoreGameData::load(&imported).expect("load classic directory");
+    let classic_game = load_classic_core_files(&imported).expect("load classic directory");
     assert_ne!(
         classic_game.player.records[0].controlled_empire_name_summary(),
         "Runtime Empire"
@@ -196,7 +196,7 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
     assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_number));
 
     export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
-    let exported_game = nc_data::CoreGameData::load(&exported).expect("load exported directory");
+    let exported_game = load_classic_core_files(&exported).expect("load exported directory");
     assert_eq!(
         exported_game.fleets.records[1].mission_aux_bytes(),
         [1, host_number]

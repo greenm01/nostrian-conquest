@@ -1,3 +1,4 @@
+use nc_compat::load_classic_core_files;
 use nc_data::Real48;
 use nc_data::{CoreGameData, GameStateBuilder, InvalidPlayerStateEvent, Order};
 use nc_engine::{run_maintenance_turn, validate_maintenance_state};
@@ -8,7 +9,8 @@ fn load_fixture(name: &str) -> CoreGameData {
         .join("../../fixtures")
         .join(name)
         .join("v1.5");
-    CoreGameData::load(&dir).unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
+    load_classic_core_files(&dir)
+        .unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
 }
 
 #[test]
