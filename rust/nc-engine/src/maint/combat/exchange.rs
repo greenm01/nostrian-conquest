@@ -1,8 +1,8 @@
 use crate::{GameRng, RNG_TAG_COMBAT};
 
 use super::state::{
-    FleetCombatState, IDX_SB, fleet_auxiliary_order, fleet_class_ds, fleet_combat_line_order,
-    fleet_combat_line_present, fleet_target_order,
+    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, fleet_auxiliary_order,
+    fleet_class_ds, fleet_combat_line_order, fleet_combat_line_present, fleet_target_order,
 };
 
 pub(super) const GROUND_AS_BATTERY: u32 = 90;
@@ -25,6 +25,7 @@ pub(super) const COMBAT_KIND_INVASION_SOFTEN: u64 = 5;
 pub(super) const COMBAT_KIND_GROUND: u64 = 6;
 pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
+pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
 
 const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],
@@ -367,6 +368,30 @@ pub(super) fn apply_hits_to_fleet(
         if !apply_critical_hit_to_fleet(state) {
             break;
         }
+    }
+}
+
+/// Battery fire on a blitz landing. It is focus fire aimed at the descending
+/// transports first, then their escorts; a critical sinks one more ship.
+pub(super) fn apply_landing_fire_to_fleet(
+    state: &mut FleetCombatState,
+    mut hits: u32,
+    critical: bool,
+) {
+    let target_order = [IDX_TT, IDX_DD, IDX_CA, IDX_BB];
+    while hits > 0 && apply_focus_fire_hits_to_fleet_classes(state, &mut hits, &target_order) {}
+
+    if !critical {
+        return;
+    }
+    if let Some(idx) = target_order.into_iter().find(|&idx| state.crippled[idx] > 0) {
+        state.crippled[idx] -= 1;
+        state.counts[idx] -= 1;
+    } else if let Some(idx) = target_order
+        .into_iter()
+        .find(|&idx| state.nominal_count(idx) > 0)
+    {
+        state.counts[idx] -= 1;
     }
 }
 

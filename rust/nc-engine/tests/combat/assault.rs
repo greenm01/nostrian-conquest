@@ -153,3 +153,27 @@ fn bombard_fleet_is_not_folded_into_a_same_turn_invasion() {
     assert_eq!(bombard_fleet.transit_ready_flag_raw(), 0x80);
     assert_eq!(game_data.fleets.records[0].army_count(), 0);
 }
+
+#[test]
+fn landing_fire_pays_transport_defense_strength_on_the_ten_times_scale() {
+    // Twenty loaded transports blitz a world with one battery and no garrison.
+    // The battery fires 90 AS at the descending transports; on any CRT row
+    // that is 90..=225 hits, and each transport costs 2x its DS of 10.
+    let ships = Ships {
+        tt: 20,
+        armies: 20,
+        ..Ships::default()
+    };
+    let mut game_data = assault_on_system(Order::BlitzWorld, ships, 0, 1);
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    let blitz = &events.assault_report_events[0];
+    assert_eq!(blitz.kind, Mission::BlitzWorld);
+    let transport_losses = blitz.attacker_ship_losses.transports;
+    assert!(
+        (4..=12).contains(&transport_losses),
+        "one battery should sink 4 to 12 transports, not one per battery: {transport_losses}"
+    );
+    assert_eq!(blitz.transport_army_losses, transport_losses);
+}

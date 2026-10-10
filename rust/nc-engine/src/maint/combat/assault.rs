@@ -9,9 +9,10 @@ use crate::{
 use super::super::hostile_order_ready_for_execution;
 use super::exchange::{
     COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND,
-    COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
+    COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
     COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
-    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, resolve_ground_exchange,
+    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, apply_landing_fire_to_fleet,
+    resolve_ground_exchange,
     resolve_space_exchange, scalar_hits_with_critical,
 };
 use super::reporting::{
@@ -332,71 +333,53 @@ fn blitz_cover_exchange(
     )
 }
 
+/// Surviving batteries fire on the descending transports: one CRT exchange of
+/// battery AS against the escorts' bombardment AS, applied as focus fire.
+#[allow(clippy::too_many_arguments)]
 fn apply_blitz_landing_fire(
     game_data: &mut CoreGameData,
+    campaign_seed: u64,
+    game_year: u16,
+    coords: [u8; 2],
+    defender_empire: u8,
+    attacker_empire: u8,
     fleet_indices: &[usize],
     surviving_batteries: u8,
 ) -> (u32, ShipLosses) {
-    let mut transport_hits_remaining = surviving_batteries as u32;
-    let mut landed_army_losses = 0u32;
-    let mut ship_losses = ShipLosses::default();
-
-    for &idx in fleet_indices {
-        if transport_hits_remaining == 0 {
-            break;
-        }
-        let fleet = &mut game_data.fleets.records[idx];
-        let transport_loss =
-            transport_hits_remaining.min(fleet.troop_transport_count() as u32) as u16;
-        if transport_loss == 0 {
-            continue;
-        }
-        fleet.set_troop_transport_count(
-            fleet.troop_transport_count().saturating_sub(transport_loss),
-        );
-        fleet.set_army_count(fleet.army_count().saturating_sub(transport_loss));
-        ship_losses.transports += transport_loss as u32;
-        landed_army_losses += transport_loss as u32;
-        transport_hits_remaining -= transport_loss as u32;
+    if surviving_batteries == 0 {
+        return (0, ShipLosses::default());
     }
+    let before = fleet_state_from_records(game_data, fleet_indices, 0);
+    let landing_exchange = resolve_space_exchange(
+        campaign_seed,
+        game_year,
+        coords,
+        COMBAT_KIND_BLITZ_LANDING,
+        1,
+        defender_empire,
+        attacker_empire,
+        u32::from(surviving_batteries) * GROUND_AS_BATTERY,
+        bombard_attack_as(&before).max(1),
+        false,
+        false,
+    );
+    let mut after = before.clone();
+    apply_landing_fire_to_fleet(&mut after, landing_exchange.hits, landing_exchange.critical);
 
-    if transport_hits_remaining > 0 {
-        for &idx in fleet_indices {
-            if transport_hits_remaining == 0 {
-                break;
-            }
-            let fleet = &mut game_data.fleets.records[idx];
-            let destroyer_loss =
-                transport_hits_remaining.min(fleet.destroyer_count() as u32) as u16;
-            if destroyer_loss > 0 {
-                fleet.set_destroyer_count(fleet.destroyer_count().saturating_sub(destroyer_loss));
-                ship_losses.destroyers += destroyer_loss as u32;
-                transport_hits_remaining -= destroyer_loss as u32;
-            }
+    let loaded_armies = |game_data: &CoreGameData| -> u32 {
+        fleet_indices
+            .iter()
+            .map(|&idx| u32::from(game_data.fleets.records[idx].army_count()))
+            .sum()
+    };
+    let armies_before = loaded_armies(game_data);
+    super::fleet_battle::distribute_fleet_losses(game_data, fleet_indices, &before, &after);
+    let armies_after = loaded_armies(game_data);
 
-            let cruiser_loss = transport_hits_remaining.min(fleet.cruiser_count() as u32) as u16;
-            if cruiser_loss > 0 {
-                fleet.set_cruiser_count(fleet.cruiser_count().saturating_sub(cruiser_loss));
-                ship_losses.cruisers += cruiser_loss as u32;
-                transport_hits_remaining -= cruiser_loss as u32;
-            }
-
-            let battleship_loss =
-                transport_hits_remaining.min(fleet.battleship_count() as u32) as u16;
-            if battleship_loss > 0 {
-                fleet
-                    .set_battleship_count(fleet.battleship_count().saturating_sub(battleship_loss));
-                ship_losses.battleships += battleship_loss as u32;
-                transport_hits_remaining -= battleship_loss as u32;
-            }
-        }
-    }
-
-    if transport_hits_remaining > 0 {
-        landed_army_losses += transport_hits_remaining;
-    }
-
-    (landed_army_losses, ship_losses)
+    (
+        armies_before.saturating_sub(armies_after),
+        ship_losses_from_states(&before, &after),
+    )
 }
 
 fn resolve_ground_battle_to_destruction(
@@ -409,13 +392,13 @@ fn resolve_ground_battle_to_destruction(
     attacker_armies: u32,
     defender_armies: u32,
     defender_bonus_shift: i32,
-) -> Result<(u32, u32), Box<dyn std::error::Error>> {
+) -> (u32, u32) {
     let mut attacker_survivors = attacker_armies;
     let mut defender_survivors = defender_armies;
 
     for round in 1..=COMBAT_GUARDRAIL_MAX_ROUNDS {
         if attacker_survivors == 0 || defender_survivors == 0 {
-            return Ok((attacker_survivors, defender_survivors));
+            return (attacker_survivors, defender_survivors);
         }
 
         let attacker_before_round = attacker_survivors;
@@ -462,15 +445,22 @@ fn resolve_ground_battle_to_destruction(
             } else {
                 defender_survivors = 1;
             }
-            return Ok((attacker_survivors, defender_survivors));
+            return (attacker_survivors, defender_survivors);
         }
     }
 
-    Err(format!(
-        "ground combat at ({},{}) exceeded {} rounds",
-        coords[0], coords[1], COMBAT_GUARDRAIL_MAX_ROUNDS
-    )
-    .into())
+    settle_ground_battle_at_cap(attacker_survivors, defender_survivors)
+}
+
+/// Ground combat cannot end in a draw. If the round cap is reached with both
+/// sides standing, the larger remaining force holds the field and the other is
+/// broken; exact equality favors the defender.
+fn settle_ground_battle_at_cap(attacker_survivors: u32, defender_survivors: u32) -> (u32, u32) {
+    if attacker_survivors > defender_survivors {
+        (attacker_survivors, 0)
+    } else {
+        (0, defender_survivors)
+    }
 }
 
 fn select_orbital_supremacy_empire(
@@ -929,7 +919,7 @@ pub(crate) fn process_planetary_assaults(
                             attacking_armies,
                             defender_armies,
                             1,
-                        )?;
+                        );
                     let defender_battery_losses = pre_batteries.saturating_sub(
                         game_data.planets.records[planet_idx].ground_batteries_raw(),
                     );
@@ -1193,7 +1183,16 @@ pub(crate) fn process_planetary_assaults(
                 let surviving_batteries =
                     game_data.planets.records[planet_idx].ground_batteries_raw();
                 let (landing_army_losses, ship_losses) =
-                    apply_blitz_landing_fire(game_data, &winner_fleets, surviving_batteries);
+                    apply_blitz_landing_fire(
+                        game_data,
+                        campaign_seed,
+                        battle_year,
+                        coords,
+                        previous_owner,
+                        winner_empire,
+                        &winner_fleets,
+                        surviving_batteries,
+                    );
                 let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
                 let defender_armies = game_data.planets.records[planet_idx].army_count_raw() as u32;
                 let (attacker_survivors, defender_survivors) =
@@ -1207,7 +1206,7 @@ pub(crate) fn process_planetary_assaults(
                         armies_after_landing,
                         defender_armies,
                         1,
-                    )?;
+                    );
                 let defender_battery_losses = pre_batteries
                     .saturating_sub(game_data.planets.records[planet_idx].ground_batteries_raw());
                 let defender_army_losses =
@@ -1385,4 +1384,18 @@ pub(crate) fn process_planetary_assaults(
     }
 
     Ok(events)
+}
+
+// The 64-round ground-combat cap is not reachable through the public API
+// with real dice, so its tie-break is pinned here on the private helper.
+#[cfg(test)]
+mod tests {
+    use super::settle_ground_battle_at_cap;
+
+    #[test]
+    fn ground_battle_cap_never_ends_in_a_draw() {
+        assert_eq!(settle_ground_battle_at_cap(7, 3), (7, 0));
+        assert_eq!(settle_ground_battle_at_cap(3, 7), (0, 7));
+        assert_eq!(settle_ground_battle_at_cap(5, 5), (0, 5));
+    }
 }

@@ -1127,8 +1127,8 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
 
     {
         let attacker = &mut game_data.fleets.records[0];
-        attacker.set_troop_transport_count(15);
-        attacker.set_army_count(15);
+        attacker.set_troop_transport_count(40);
+        attacker.set_army_count(40);
     }
     {
         let target = &mut game_data.planets.records[13];
@@ -1146,13 +1146,15 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(target.owner_empire_slot_raw(), 1);
     assert_eq!(target.ownership_status_raw(), 2);
     // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
-    // both batteries survive, fire on the landing, and pass to the victor.
+    // both batteries survive and fire 180 AS on the landing. Each transport
+    // costs 20 hits, so 15 sink; 25 armies land, win, and pass the batteries
+    // to the victor.
     assert_eq!(target.ground_batteries_raw(), 2);
-    assert_eq!(target.army_count_raw(), 10);
+    assert_eq!(target.army_count_raw(), 22);
     assert_eq!(events.ownership_change_events.len(), 1);
     assert_eq!(events.assault_report_events.len(), 1);
     assert_eq!(events.assault_report_events[0].attacker_army_losses, 3);
-    assert_eq!(events.assault_report_events[0].transport_army_losses, 2);
+    assert_eq!(events.assault_report_events[0].transport_army_losses, 15);
     assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 3);
     assert_eq!(events.ownership_change_events[0].planet_idx, 13);
@@ -1207,11 +1209,12 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
     assert_eq!(target.owner_empire_slot_raw(), 2);
     assert_eq!(target.ownership_status_raw(), 2);
     assert_eq!(target.army_count_raw(), 10);
-    // Cover fire from one destroyer cannot pay a battery's 20-hit DS.
+    // Cover fire from one destroyer cannot pay a battery's 20-hit DS, and the
+    // two surviving batteries sink all four transports before they land.
     assert_eq!(target.ground_batteries_raw(), 2);
     assert_eq!(events.assault_report_events.len(), 1);
-    assert_eq!(events.assault_report_events[0].attacker_army_losses, 2);
-    assert_eq!(events.assault_report_events[0].transport_army_losses, 2);
+    assert_eq!(events.assault_report_events[0].attacker_army_losses, 0);
+    assert_eq!(events.assault_report_events[0].transport_army_losses, 4);
     assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 0);
     assert!(

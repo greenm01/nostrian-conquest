@@ -938,6 +938,11 @@ over to the next round. Hits too few for the next docked item pass on to the
 next stardock entry. Invasion suppression and blitz cover fire pay the same
 battery cost.
 
+Blitz landing fire is one exchange of the surviving batteries' AS against the
+escorts' bombardment AS. It is focus fire aimed at the descending transports
+first: each transport destroyed costs `20` hits (2x its DS) and takes its army
+with it, and any hits left over fall on the escorts.
+
 Each bombardment turn runs three rounds:
 - *Rounds 1--2 (Suppression):* Attacker hits target stardock contents, then
   batteries. Batteries fire back each round. Armies, stored goods, and

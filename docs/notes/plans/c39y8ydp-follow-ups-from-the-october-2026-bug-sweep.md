@@ -33,6 +33,15 @@ old scale; move it to the 10x scale used by the
 Ground combat (`resolve_ground_battle_to_destruction` in `assault.rs`) still
 returns an error after 64 rounds; end it like the fleet battle cap instead.
 
+Result (2026-10-09): landing fire is now one CRT exchange of surviving battery
+AS against the escorts' bombardment AS, applied as focus fire on transports
+first at 20 hits each. Ground combat at the cap goes to the larger remaining
+force, ties to the defender. Regression tests: `landing_fire_pays_transport_
+defense_strength_on_the_ten_times_scale` and the inline
+`ground_battle_cap_never_ends_in_a_draw`. Two blitz tests in
+`nc-data/tests/maint_combat.rs` were updated to the new landing losses.
+Workspace: 2625 passed, 0 failed.
+
 ### t009
 
 `build_initialized_baseline` and `build_seeded_initialized_game` start every

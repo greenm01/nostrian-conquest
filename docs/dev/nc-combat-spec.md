@@ -227,6 +227,11 @@ over between rounds. Hits too few to destroy the next docked item move on to
 the following stardock slot. Invasion suppression and blitz cover fire pay the
 same battery cost.
 
+Blitz landing fire is one CRT exchange of surviving battery AS against the
+escorts' bombardment AS. It is focus fire aimed at the descending transports
+first: each transport destroyed costs 20 hits (2x DS) and takes its army with
+it, and leftover hits fall on the escorts.
+
 The attacker must commit enough firepower over enough turns to grind through
 the battery shield before reaching anything valuable. A small raiding fleet
 may take several turns of three-round suppression before breaking through,
@@ -245,7 +250,9 @@ same turn.
    side is destroyed. The defender receives a **+1** column bonus in ground
    combat. Ground combat cannot end in a draw: if a simultaneous exchange
    would annihilate both sides, the larger force entering that exchange holds
-   the field with a remnant army; exact equality favors the defender.
+   the field with a remnant army; exact equality favors the defender. If the
+   64-round cap is reached with both sides standing, the larger remaining force
+   holds the field, again with ties to the defender.
 
 ## Fleet Combat Sequence
 
