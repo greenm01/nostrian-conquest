@@ -1225,6 +1225,9 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
         f.set_army_count(0);
         f.set_scout_count(0);
         f.set_etac_count(0);
+        // Neither side starts a fight, so the aborted fleet withdraws
+        // whatever the encounter rolls are.
+        f.set_rules_of_engagement(0);
     }
     {
         let f = &mut game_data.fleets.records[4];
@@ -1235,6 +1238,7 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
         f.set_battleship_count(50);
         f.set_cruiser_count(50);
         f.set_destroyer_count(50);
+        f.set_rules_of_engagement(0);
     }
     game_data
         .save(&target)
@@ -1247,7 +1251,7 @@ fn maint_rust_invalidated_scout_mission_reports_abort_before_contact_loss() {
     let text = decode_chunked_report(&results);
     assert!(text.contains("Hostile action forced us to abort the scout sector mission because"));
     assert!(text.contains("lacks the required scout ship"));
-    assert!(text.contains("withdrawing toward"));
+    assert!(text.contains("withdrawing toward"), "{text}");
     assert!(!text.contains("flight recorder"));
     assert!(!text.contains("ALERT: Fleet contact lost!"));
     assert!(!text.contains("Scout mission report: We were attacked by"));
@@ -2790,7 +2794,9 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     hostile.set_scout_count(0);
     hostile.set_troop_transport_count(0);
     hostile.set_army_count(0);
-    hostile.set_etac_count(0);
+    // ETACs carry no guns but make the fleet easy to see (14% a tick), so
+    // the invader sights it within the year whatever the encounter rolls.
+    hostile.set_etac_count(500);
     hostile.set_rules_of_engagement(0);
     // Stalled in place (no speed to restore), so the contact happens here.
     hostile.set_max_speed(0);
