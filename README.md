@@ -229,6 +229,7 @@ Read these first:
 - [docs/dev/next-session.md](docs/dev/next-session.md)
 - [docs/dev/approach.md](docs/dev/approach.md)
 - [docs/dev/rust-architecture.md](docs/dev/rust-architecture.md)
+- [docs/dev/work-tracking.md](docs/dev/work-tracking.md)
 
 ## Repository Layout
 

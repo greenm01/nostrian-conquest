@@ -1,0 +1,65 @@
+# This notebook is documentation tooling, not a Nostrian Conquest build or runtime dependency.
+[note]
+language = "en"
+filename = "{{id}}-{{slug title}}"
+extension = "md"
+template = "investigation.md"
+id-charset = "alphanum"
+id-length = 8
+id-case = "lower"
+exclude = [
+  "rust/**", "original/**", "fixtures/**", "tools/**", "website/**",
+  "releases/**", "packaging/**", "artifacts/**", "capture/**", "scripts/**",
+  "EC_UNLOCKED/**", "docs/assets/**", "docs/dev/archive/**",
+]
+
+[group.investigations]
+paths = ["docs/notes/investigations"]
+
+[group.investigations.note]
+template = "investigation.md"
+
+[group.concepts]
+paths = ["docs/notes/concepts"]
+
+[group.concepts.note]
+template = "concept.md"
+
+[group.decisions]
+paths = ["docs/notes/decisions"]
+
+[group.decisions.note]
+template = "adr.md"
+
+[group.milestones]
+paths = ["docs/notes/milestones"]
+
+[group.milestones.note]
+template = "milestone.md"
+
+[group.plans]
+paths = ["docs/notes/plans"]
+
+[group.plans.note]
+template = "plan.md"
+
+[format.markdown]
+link-format = "markdown"
+link-drop-extension = false
+hashtags = false
+colon-tags = false
+
+[tool]
+shell = "/bin/sh"
+pager = ""
+
+[alias]
+investigate = 'zk new "$ZK_NOTEBOOK_DIR/docs/notes/investigations" "$@"'
+concept = 'zk new "$ZK_NOTEBOOK_DIR/docs/notes/concepts" "$@"'
+adr = 'zk new "$ZK_NOTEBOOK_DIR/docs/notes/decisions" "$@"'
+milestone = 'zk new "$ZK_NOTEBOOK_DIR/docs/notes/milestones" "$@"'
+plan = 'zk new "$ZK_NOTEBOOK_DIR/docs/notes/plans" "$@"'
+tasks = '"${NC_TODO_CLI:-$HOME/src/todo.txt-cli/todo.sh}" -d "$ZK_NOTEBOOK_DIR/.todo/config" "$@" && zk index --quiet'
+queue = 'zk tasks ls +critical "$@"'
+completed = 'zk list "$ZK_NOTEBOOK_DIR"/done-*.md --sort path- --format path "$@"'
+recent = 'zk list "$ZK_NOTEBOOK_DIR/docs/notes/investigations" "$ZK_NOTEBOOK_DIR/docs/notes/concepts" "$ZK_NOTEBOOK_DIR/docs/notes/decisions" "$ZK_NOTEBOOK_DIR/docs/notes/milestones" --sort created- --limit 20 "$@"'

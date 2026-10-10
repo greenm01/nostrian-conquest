@@ -1,0 +1,12 @@
+# Repository-local configuration for the unmodified upstream todo.txt CLI.
+# Derive paths from this file so another checkout cannot edit this queue.
+TODO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
+export TODO_DIR
+export TODO_FILE="$TODO_DIR/todo.md"
+export DONE_FILE="$TODO_DIR/done-$(date +%Y-%m).md"
+export REPORT_FILE="$TODO_DIR/.todo/report.txt"
+export TODOTXT_AUTO_ARCHIVE=1
+export TODOTXT_DATE_ON_ADD=1
+export TODOTXT_DEFAULT_ACTION=ls
+# Preserve the reviewed queue order instead of alphabetizing task descriptions.
+export TODOTXT_SORT_COMMAND=cat

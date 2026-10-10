@@ -93,9 +93,20 @@ Read these at the start of a session:
 2. [docs/approach.md](docs/dev/approach.md) — project goal, milestone ladder, acceptance criteria
 3. [docs/rust-architecture.md](docs/dev/rust-architecture.md) — DOD/DRY/module rules
 4. [README.md](README.md) — current user-facing commands/workflows
+5. [todo.md](todo.md) — open tasks, lanes, and order; run `zk queue` for the critical path
 
 Keep `docs/next-session.md` compact. If it accumulates history, archive detail
 into `docs/dev/archive/next-session-archive.md`.
+
+## Work Tracking
+
+Track work with todo.txt and zk as defined in
+[docs/dev/work-tracking.md](docs/dev/work-tracking.md):
+
+- `todo.md` owns open tasks; monthly `done-YYYY-MM.md` files own completions
+- Task detail and evidence live in linked notes under `docs/notes/`
+- Use `zk tasks` to add or complete tasks, and cite task IDs in commits
+- Never reuse a task ID; run `zk index` and `zk list docs/notes --broken-links` before committing tracking changes
 
 ## Doc Authority
 

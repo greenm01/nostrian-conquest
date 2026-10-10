@@ -5,11 +5,15 @@ Keep this file short. Historical detail belongs in
 
 ## Completed This Session
 
-**nc-helm starmap UX overhaul** — zoom removed (unused, no gameplay value);
-center-follow viewport replaced with 2-sector dead-zone margin scrolling;
-middle-click drag-to-pan ("grab the map") with middle-click re-center on
-crosshair; crosshair overlay hidden when outside viewport. All nc-helm tests
-green.
+**Engine and door bug sweep (2026-10-09).** A six-slice review found 41
+confirmed bugs in combat, maintenance, economy, reports, and the door; all are
+fixed with failing-first regression tests. Details, decisions, and validation
+are in the
+[milestone record](../notes/milestones/ym5u2c1x-engine-and-door-bug-sweep-of-october-2026.md).
+
+**Work tracking adopted.** Open work now lives in [todo.md](../../todo.md),
+tracked with todo.txt and zk per [work-tracking.md](work-tracking.md). Start
+with `zk queue`.
 
 ## Current Goal
 

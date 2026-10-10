@@ -1,3 +1,14 @@
+## 2026-05-05
+
+### Completed This Session
+
+**nc-helm starmap UX overhaul** — zoom removed (unused, no gameplay value);
+center-follow viewport replaced with 2-sector dead-zone margin scrolling;
+middle-click drag-to-pan ("grab the map") with middle-click re-center on
+crosshair; crosshair overlay hidden when outside viewport. All nc-helm tests
+green.
+
+
 ## 2026-04-23
 
 ### Completed This Session

@@ -109,3 +109,9 @@ releases/*-release-note.md
 
 # Local Claude Code settings and agent worktrees.
 /.claude/
+
+# Local zk index and todo.txt CLI scratch files.
+/.zk/notebook.db*
+/.zk/*.log
+/.todo/report.txt
+/todo.md.bak

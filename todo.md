@@ -1,0 +1,35 @@
+# One task per line, a blank line between tasks: keep it that way so the file reads as a list. A row is `(priority) date text +lane +project @context id:tNNN order:NNN [details](note)`; closed rows move to done-YYYY-MM.md.
+
+(A) 2026-10-09 Confirm the holding-formation rule: decide whether a lone starbase or low-ROE defenders should attack enemies merely passing through the sector, and record it in the manual. +critical +combat @planning id:t006 order:010 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t006)
+
+(A) 2026-10-09 Put blitz landing fire on the 10x hit-cost scale and end ground combat at its 64-round cap without a maintenance error. +critical +combat @development id:t007 order:020 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t007)
+
+(B) 2026-10-09 Fix classic RESULTS.DAT chain ids and PLAYER.DAT report pointers when several human empires have reports, proven by a two-player oracle run. +parallel +compat @oracle id:t008 order:030 [details](docs/notes/investigations/e752ccc3-classic-results-dat-chain-ids-across-several-players.md)
+
+(B) 2026-10-09 Build the nc-fuzz core (choice source, policies, first three invariants, KDL scenario output) with a pinned Hegel driver. +parallel +fuzz @development id:t015 order:040 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t015)
+
+(B) 2026-10-09 Add the proptest driver over the shared fuzz core and the remaining turn invariants. +parallel +fuzz @development id:t016 order:050 depends:t015 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t016)
+
+(B) 2026-10-09 Check that both fuzz drivers rediscover four reverted sweep fixes, and compare time to find and shrunk size. +parallel +fuzz @development id:t017 order:060 depends:t015,t016 [details](docs/notes/plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md#t017)
+
+(B) 2026-10-09 Seed pre-joined test and lab baselines with the first-turn treasury the join path sets. +parallel +engine @development id:t009 order:070 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t009)
+
+(B) 2026-10-09 Compute autopilot sector distances in i32 instead of i16. +parallel +engine @development id:t010 order:080 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t010)
+
+(B) 2026-10-09 Stop nc-data's campaign contender view from counting empty rogue empires. +parallel +engine @development id:t011 order:090 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t011)
+
+(B) 2026-10-09 Make fleet ETA match actual arrival for diagonal moves. +parallel +engine @development id:t012 order:100 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t012)
+
+(B) 2026-10-09 Carry the fleet number in salvage reports and use only survivor-side events for rendezvous merges. +parallel +reports @development id:t013 order:110 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t013)
+
+(B) 2026-10-09 Validate empire names and handles with the shared classic text check at entry, and remove the remaining em dashes. +parallel +reports @development id:t014 order:120 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t014)
+
+2026-10-09 Read the DOOR.SYS handle from line 36, falling back to line 10. +candidate +door @planning id:t018 order:200 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t018)
+
+2026-10-09 Stop Windows console input from blocking on non-key events in nc-game --dropfile. +candidate +door @development id:t019 order:210 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t019)
+
+2026-10-09 Harden door edge cases: cap telnet subnegotiation length, exit cleanly on carrier drop during a render, warn before the session limit. +candidate +door @development id:t020 order:220 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t020)
+
+2026-10-09 Model fleets leaving a blockaded world as hostile intrusions. +candidate +combat @planning id:t021 order:230 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t021)
+
+2026-10-09 Scope the campaign-outlook broadcast wording per recipient and align scouting report owner rows. +candidate +reports @development id:t022 order:240 [details](docs/notes/plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t022)
