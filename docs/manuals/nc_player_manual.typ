@@ -405,15 +405,20 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 == The Rules of Battle
 
-There is no "first strike" advantage. Each round, the total *Attack Strength (AS)* of each fleet is calculated and inflicted upon the enemy at the same instant. Rounds repeat until one side is destroyed, disengages, or only one hostile force remains.
+There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed, disengages, or only one hostile force remains.
 
 Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed, and surviving crippled ships are repaired automatically after battle. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
-Mixed fleets containing destroyers, cruisers, _and_ battleships receive a
-*combined arms bonus*. Always mix your composition when you can. A defending
-starbase at its own world gives the defender another combat bonus. In a draw,
-the defender wins. See @appendix-combat for the exact ROE thresholds, combat
-values, force-ratio columns, CRT table, and assault formulas.
+Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+
+Two bonuses add to your die roll. A fleet that mixes at least two of
+destroyers, cruisers, and battleships gets a *combined arms bonus* of +1, so
+mix your composition when you can. A starbase fighting on your side adds
+another +1. The bonuses never add more than +2, and a roll pushed past 9
+counts as 9. An unmodified 9 is a critical hit that destroys one more enemy
+ship outright. In a draw, the defender wins. See @appendix-combat for the
+exact ROE thresholds, combat values, effectiveness table, and assault
+formulas.
 
 == Who Fights Whom
 
@@ -507,7 +512,8 @@ Combat is more than just a numbers game. Different ship classes perform specific
 *   *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying the full 2x DS cost to blow ships up one by one.
 
 This creates a deadly pair. Heavy ships soften the line. Destroyers and
-starbases finish it.
+starbases finish it. Each pool carries its own leftover hits: suppression hits
+never pay for an execution kill, and execution hits never pay for a cripple.
 
 #admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*. Fortified worlds do not "soften" an attacker; they destroy him.]
 
@@ -533,11 +539,11 @@ Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automati
 
 If you choose to engage (or are forced to), your fleet is committed to the battle for a minimum of *three rounds*. ROE-based bailing is disabled until Round 4. This ensures that fleets trade meaningful blows before one side loses his nerve.
 
-A fleet that breaks off after Round 3 does not escape cleanly. It suffers a *withdrawal exchange* --- the enemy fires on your retreating fleet, and your fleet fires back at reduced effectiveness. Only after absorbing that exchange does the fleet actually retreat and abort its current mission. After each round of combat from Round 4 onward, surviving fleets re-check their ROE. If the post-loss ratio no longer meets his threshold, the commander attempts to disengage and suffers the withdrawal exchange.
+A fleet that breaks off after Round 3 does not escape cleanly. It suffers a *withdrawal exchange* --- the enemy fires on your retreating fleet, and your fleet fires back, both without die bonuses. Hits carried from earlier rounds still count in this exchange; after it, the battle is over and they are lost. Only after absorbing that exchange does the fleet actually retreat and abort its current mission. After each round of combat from Round 4 onward, surviving fleets re-check their ROE. If the post-loss ratio no longer meets his threshold, the commander attempts to disengage and suffers the withdrawal exchange.
 
 == Planetary Combat
 
-When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
+When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Planetary combat reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
 
@@ -954,7 +960,58 @@ lets crippled light ships keep contributing fire.
   ),
 )
 
-== Force Ratio to CRT Column
+== Fleet Battle Effectiveness
+
+#figure(
+  table(
+    columns: (auto, auto),
+    align: (left, right),
+    inset: 6pt,
+    table.header(
+      [Modified d10], [Effectiveness],
+    ),
+    [`0`--`2`], [25% of AS],
+    [`3`--`5`], [50% of AS],
+    [`6`--`9`], [100% of AS],
+  ),
+)
+
+Fleet battles, including the withdrawal exchange, read the modified `d10` on
+this table. The force ratio plays no part.
+
+== Fleet Battle Die Modifiers and Hit Formula
+
+- Mixed fleet (at least two of destroyers, cruisers, and battleships): `+1`
+- Starbase on your side: `+1`
+- Total modifier: at most `+2`; a modified roll above `9` counts as `9`
+- Withdrawal exchange: no modifiers
+
+#align(left)[
+  #stack(
+    dir: ttb,
+    spacing: 0.45em,
+    [#text(font: "IBM Plex Mono")[hits = ceil(total_AS \* effectiveness)]],
+  )
+]
+
+An unmodified `9` on the `d10` is a critical hit and destroys one more ship
+outright, a crippled ship first.
+
+== Damage Steps and Carried Hits
+
+- Crippling a nominal ship costs its full DS.
+- Finishing a crippled ship costs its full DS again.
+- Execution fire that destroys a nominal ship pays both: `2x DS`.
+- Hits a pool cannot spend carry over, in that pool, to the side's next
+  exchange in the same battle, including the withdrawal exchange.
+- Suppression and execution hits carry separately.
+- Carried hits are lost when the battle ends: by destruction, by withdrawal,
+  or at the 64-round limit. The next battle starts from zero.
+
+== Planetary Force Ratio to CRT Column
+
+Bombardment, invasion, blitz, and ground combat read the `d10` on the ratio
+CRT below.
 
 #figure(
   table(
@@ -972,7 +1029,7 @@ lets crippled light ships keep contributing fire.
   ),
 )
 
-== Space / Orbital CRT
+== Planetary Combat CRT
 
 #figure(
   table(
@@ -995,11 +1052,11 @@ lets crippled light ships keep contributing fire.
   ),
 )
 
-== Column Shifts and Hit Formula
+== Planetary Column Shifts and Hit Formula
 
-- Mixed `DD/CA/BB` fleet: `+1` CRT column
-- Defending starbase in orbital combat: `+1` CRT column
-- Withdrawal exchange: fixed `Pressed` column
+- Mixed `DD/CA/BB` fleet in bombardment or invasion suppression: `+1` CRT
+  column
+- Defender in ground combat: `+1` CRT column
 - Final columns are clamped to the table bounds
 
 #align(left)[

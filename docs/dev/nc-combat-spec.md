@@ -17,8 +17,6 @@ Read this together with:
 
 ## Status
 
-Approved change, implementation pending (2026-10-10): [combat decision 1](../notes/decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md) selects EotS 25/50/100% effectiveness without ratio columns, battle-local carry per side and fire pool, and full DS for finishing crippled ships. The ratio CRT below describes the existing implementation until the engine and player manual are updated together. Other combat decisions remain separate.
-
 This is the source of truth for:
 - Fleet-vs-fleet battle resolution (who fights whom follows classic ECMAINT;
   see Contact and Engagement)
@@ -146,21 +144,67 @@ Only the two sides of an encounter fight. Only they can hold the field, be
 forced to retreat, lose their mission, or receive a battle report. Other
 fleets in the sector are untouched.
 
-## Seeded CRT Resolution
+## Seeded Resolution
 
 Combat derives its results from the `campaign_seed` plus battle context. Each
-exchange rolls a `d10` against the Combat Results Table (CRT).
+side's volley rolls a `d10`. Fleet battles read the roll on a flat
+effectiveness table; planetary combat reads it on the ratio Combat Results
+Table (CRT). [Combat decision 1](../notes/decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md)
+records the fleet rule.
 
-### The CRT
-The model selects a column based on the force ratio and applies modifiers:
+### Fleet Battle Effectiveness
+
+| Modified d10 | Effectiveness |
+| --- | ---: |
+| 0–2 | 25% |
+| 3–5 | 50% |
+| 6–9 | 100% |
+
+A volley deals `hits = ceil(AS × effectiveness)`, where AS is the firing
+side's total attack strength. The force ratio plays no part.
+
+Die modifiers add to the roll:
+- **+1** for a mixed fleet: at least two of destroyers, cruisers, and
+  battleships.
+- **+1** for a side with a starbase.
+
+The total is at most **+2**, and a modified roll above 9 reads as 9. The
+withdrawal exchange takes no modifier. An unmodified **9** is a critical hit:
+it destroys one more unit outright, a crippled one first.
+
+### Carried Hits
+
+Each damage step costs the target's full DS: crippling a nominal ship, and
+finishing a crippled one. Execution fire that destroys a nominal ship pays
+both steps.
+
+A volley's hits rarely buy a whole number of steps. What a fire pool cannot
+spend stays carried against that side and joins the same pool's hits in the
+side's next exchange of the battle, the withdrawal exchange included.
+Suppression and execution hits carry separately. Carried hits buy new steps
+only; they never undo a cripple or a kill.
+
+Carried hits belong to the battle and to the side, not to its fleets. They
+are dropped when the battle ends for any reason: a side destroyed, a
+withdrawal, or the 64-round cap. The next battle starts at zero, even between
+the same fleets in the same tick, so a withdrawal forfeits whatever was
+carried.
+
+### Planetary Combat CRT
+
+Bombardment, invasion suppression and return fire, softening, blitz cover and
+landing fire, and ground combat use the ratio CRT. The column comes from the
+force ratio:
 - **Disadvantaged**: Ratio < 0.5
 - **Pressed**: Ratio 0.5 – 1.0
 - **Even**: Ratio 1.0 – 1.5
 - **Advantaged**: Ratio 1.5 – 3.0
 - **Overwhelming**: Ratio >= 3.0
 
-Modifiers shift the column (e.g., **+1** for mixed fleets or starbases). An
-unmodified **9** is a critical hit, forcing at least one real loss.
+Modifiers shift the column: **+1** for a mixed fleet in bombardment and
+invasion suppression, and **+1** for the defender in ground combat. An
+unmodified **9** is a critical hit, forcing at least one real loss. Planetary
+hits do not carry (see Planetary Hit Costs).
 
 ## Hit Allocation
 

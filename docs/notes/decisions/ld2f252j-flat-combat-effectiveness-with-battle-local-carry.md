@@ -86,3 +86,19 @@ the engine, and compare the chosen implemented rule combination against
 the model. The [source synthesis](../investigations/ebrogywq-nc-combat-design-review-against-its-sources.md#decisions-for-the-user)
 tracks the remaining owner decisions. This refines
 [NC combat stays](b5u6lekb-rust-keeps-its-own-combat-system.md).
+
+## Implementation (t060)
+
+The engine now fights fleet battles on this table: each side's volley reads
+the modified d10 and deals `ceil(AS × effectiveness)` hits. The decision left
+qualitative modifiers to implementation. The former column shifts became die
+modifiers on the same conditions: +1 for a mixed fleet (any two of DD, CA,
+BB) and +1 for a side with a starbase, at most +2, with the modified roll
+capped at 9. The withdrawal exchange, formerly fixed at the Pressed column,
+reads the table unmodified. The unmodified-9 critical still destroys one
+extra unit. Unspent hits carry per side and fire pool on the side's task
+force, so they end with `fight_encounter`. Finishing already cost full DS.
+Planetary combat keeps the ratio CRT, and execution fire, target order,
+screening, ROE timing, and withdrawal rules are unchanged. The engine's
+`combat_odds` example gives 11 CA against 10 a 67.5% victory rate (2,000
+trials, 95% interval 65.4–69.5%).
