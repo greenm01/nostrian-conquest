@@ -70,7 +70,7 @@ They let us:
 
 - `fixtures/ecmaint-starbase-pre/v1.5/` / `fixtures/ecmaint-starbase-post/v1.5/`
   - Guard Starbase (order 0x04) scenario — init state with BASES.DAT added and
-    three required patches: `FLEETS.DAT[0x1F]=0x04`, `FLEETS.DAT[0x23]=0x01`,
+    three required patches: `FLEETS.DAT[0x1F]=0x04`, `FLEETS.DAT[0x23]=0x01` (starbase id 1),
     `PLAYER.DAT[0x44]=0x01`
 
 ### Reports With Several Human Empires

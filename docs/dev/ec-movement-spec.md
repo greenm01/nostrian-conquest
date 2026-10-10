@@ -17,68 +17,95 @@ Primary sources:
 
 ## Classic Movement Semantics
 
-Current-known movement rules in Rust already model:
+Movement is 2.5D. A fleet has a position on the flat sector map and a depth
+that says how far it has descended toward the world at the center of its
+sector, from 0 (deep space) to 1 (orbit). The model below was decompiled from
+ECMAINT and checked against a classic trace matrix; the evidence is in the
+[investigation note](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
 
-- simultaneous yearly movement
-- persistent in-transit progress toward a target location
-- order-driven arrival and mission resolution
-- contact and combat based on post-movement position
-
-The live movement implementation is in:
-
-- [mod.rs](../../rust/nc-engine/src/maint/mod.rs)
-- [movement/mod.rs](../../rust/nc-engine/src/maint/movement/mod.rs)
-- [navigation/mod.rs](../../rust/nc-engine/src/navigation/mod.rs)
-- [geometry.rs](../../rust/nc-engine/src/navigation/geometry.rs)
-- [fleet_motion_state.rs](../../rust/nc-data/src/fleet_motion_state.rs)
-
-The current implementation keeps the recovered annual `speed * 8 / 9` movement
-budget, persists exact in-transit position between yearly maintenance passes,
-and rounds only when writing the visible sector coordinates.
+The live implementation is in
+[movement/](../../rust/nc-engine/src/maint/movement/) and
+[navigation/](../../rust/nc-engine/src/navigation/).
 
 Map coordinates are 1-based: an `N x N` map spans sectors `1..=N` on both
 axes, so routes may use the last row and column but never row or column `0`.
 
-### Movement Fraction Byte
+### Fleet State
 
-Each year the stepper adds `speed * 8` to a sub-unit accumulator, moves
-`accumulator / 9` units, and carries `accumulator % 9` to the next year in the
-classic `FLEETS.DAT` `raw[0x0F]` byte:
+| Bytes | Field | Encoding |
+| --- | --- | --- |
+| `0x0a` | current speed | u8 |
+| `0x09` | maximum speed | u8 |
+| `0x0b`, `0x0c` | sector `x`, `y` | u8 |
+| `0x0d..0x12` | in-sector `x` fraction `fx` | Turbo Pascal 6-byte real |
+| `0x13..0x18` | in-sector `y` fraction `fy` | Turbo Pascal 6-byte real |
+| `0x19..0x1e` | depth `Z` | Turbo Pascal 6-byte real |
+| `0x20`, `0x21` | target sector | u8 |
+| `0x22` | target depth `TZ`: `0` sector target, `1` world target | u8 |
+| `0x23` | guarded starbase id (order 4) or join host fleet id (order 13) | u8 |
 
-- encode: `(carry - 9) * 2 / 3` as a signed byte
-- decode: `9 + raw * 3 / 2`, clamped to `0..=9`
+A 6-byte real stores a biased exponent in byte 0 (`0` means `0.0`) and a
+39-bit mantissa in bytes 1 to 5, little-endian, with the sign in the top bit
+of byte 5. The value is `(1 + m / 2^39) * 2^(e - 129)`. The fleet's
+continuous position is `X = x + fx`, `Y = y + fy`; the sector center is
+`fx = fy = 0.5`.
 
-This classic encoding is kept as the compatibility boundary even though it is
-lossy: carries other than `0`, `3`, and `6` decode slightly high, so speeds
-that are not multiples of 3 run a little fast (speed 1 covers 12 sectors in
-13 years instead of 14). A carry of `8` encodes as `0` and decodes as `9`. The clamp only guards
-malformed imported bytes and leaves every value the engine writes unchanged.
+ECGAME writes `0x22 = 0` for Move, Patrol, Scout Sector, and Rendezvous and
+`0x22 = 1` for every other order.
 
-A move order completes, and a standing or hostile mission arrives, in the
-year the fleet's rounded position first enters the target sector, even when
-its exact path is still short of the target point. Classic ECMAINT does this
-for orders entered in ECGAME, and ECGAME's fleet ETA counts the same year
-(see the
-[investigation](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md)).
-Fleet ETA estimates replay the stepper each simulated year: the same
-encode/decode round trip and the exact position stored at its 1/256-sector
-precision, stopping when the rounded sector first matches the target. The
-starbase travel-time estimate keeps the exact accumulator and stops at the
-same point, which reproduces the classic ECGAME display (`Travel time is 16
-years` for a speed-1 starbase from (15,13) to (2,12)).
+### Yearly Step
 
-For unresolved classic movement internals, Rust follows a pragmatic boundary:
+Classic runs 52 ticks a year. Each tick gives a fleet a budget of
+`speed / 52` and applies one step toward `(tx + 0.5, ty + 0.5, TZ)`:
 
-- preserve player-facing travel geometry, arrival timing, and mission behavior
-  where the oracle evidence is clear enough to matter
-- keep internal continuity state explicit inside Rust when it improves ETA and
-  movement behavior
-- do not treat hidden scratch-byte layouts or every low-level numeric quirk as
-  a required fidelity target by themselves
+1. If the fleet is outside the target sector, or deeper than `TZ`, it climbs:
+   the budget reduces `Z`, and `Z` stops at 0.
+2. Any budget left moves the fleet straight toward the target sector center.
+3. Once at the center, any budget left takes the fleet down toward `TZ`.
 
-So `MoveOnly` is still a one-shot order that eventually falls back to `Hold`,
-but Rust is not obligated to mirror every hidden classic transit byte on the
-way there.
+Arithmetic is in 6-byte reals. Rounding matters: a fleet can finish a climb
+at `Z = 1 - epsilon` rather than `1.0`, and the arrival tests compare against
+`1.0` exactly, so such a fleet arrives a year later. Rust runs each fleet's 52
+ticks with the same rounding but steps fleets independently, a year at a time;
+classic also interleaves fleets tick by tick in a random order, which matters
+only for mid-year encounters.
+
+A fleet at rest in orbit has `Z = 1`, so it spends its first sector of
+movement climbing out: speed `v` covers `v - 1` sectors in its first year and
+`v` a year after that.
+
+The dispatcher refills `speed` from `0x09` when a fleet that has not arrived
+has speed 0.
+
+### Arrival
+
+After each tick's step the order's arrival test runs; the first tick that
+passes resolves the order.
+
+| Orders | Arrival test |
+| --- | --- |
+| Move, Patrol, Guard/Blockade, View, Scout Sector, Scout System, Join, Rendezvous, Salvage | in the target sector and `Z == TZ` |
+| Seek Home, Colonize | the test above, or `Round(Z) == 1` at the end of tick 52 |
+| Guard Starbase | the starbase is in the same sector and depth layer (`Z >= 0.5`) and speed > 0 |
+| Bombard, Invade, Blitz | ownership checks, then in the target sector with `Round(Z) >= 1` and `Z >= 1.0` |
+
+With `TZ = 0` the base test passes on entering the target sector, anywhere in
+it. With `TZ = 1` the fleet must reach the center and then descend fully, so a
+world order usually takes a year longer than a move to the same sector.
+
+Fleet ETA replays the same step from the fleet's current state and reports
+the year the order's arrival test first passes. ECGAME's ETA screen asks
+whether to include time to enter the system, which selects `TZ`.
+
+### Hostile Missions
+
+Bombard, Invade, and Blitz attack on the tick the fleet reaches `Z = 1.0`, in
+that year's maintenance. If the attack fails, classic does not save that
+tick's state, so the fleet keeps its order and speed and holds at the
+previous tick's depth, one tick short of `1.0` (for example `0.988129`). It
+attacks again the next year, on the first tick it reaches `1.0`. Classic's
+battle is random, so a weak fleet can retry for many years. Rust decides each
+attack with its own combat model and applies the same retry rule.
 
 ## Standing Order Model
 
@@ -119,16 +146,12 @@ The main nuance is that fleet orders fall into three categories:
 - examples: `HoldPosition`, `PatrolSector`, `GuardStarbase`,
   `GuardBlockadeWorld`, `JoinAnotherFleet`, `RendezvousSector`
 
-3. **Delayed-resolution hostile orders**
+3. **Hostile orders**
 
-- these orders may require travel first, but arrival is not the end of the
-  mission
-- after the fleet reaches the target, the order remains armed until the ready
-  hostile-world step resolves it or invalidates it
-- current classic coverage shows that the arrival tick preserves both the
-  standing order and the fleet's current travel speed; the fleet does **not**
-  drop to `speed=0` until the later hostile-world step consumes or invalidates
-  the order
+- these orders travel to the target world, go into orbit, and attack in the
+  year they reach orbit
+- a failed attack leaves the order, the speed, and the fleet just short of
+  orbit, and the fleet attacks again each year
 - examples: `BombardWorld`, `InvadeWorld`, `BlitzWorld`
 
 Player-level rule: "new order overrides whatever the fleet was doing" is the
@@ -162,9 +185,9 @@ finishes.
 | `PatrolSector` | Persistent standing | `PATROL A SECTOR` | transit to patrol sector if needed, then intercept/watch posture | order persists on arrival, but fleet stops at the patrol sector | yes |
 | `GuardStarbase` | Persistent standing | `GUARD A STARBASE` | transit to base if needed, then escort/guard posture | order persists on arrival, but fleet stops at the guarded base | yes |
 | `GuardBlockadeWorld` | Persistent standing | `GUARD/BLOCKADE A WORLD` | transit to target world if needed, then guard/blockade posture | order persists on arrival, but fleet stops at the guarded world | yes |
-| `BombardWorld` | Delayed-resolution hostile | `BOMBARD A WORLD` | transit to target world if needed | persists through arrival, keeping the arrival-tick travel speed, until the ready bombardment step resolves or is invalidated | yes |
-| `InvadeWorld` | Delayed-resolution hostile | `INVADE A WORLD` | transit to target world if needed | persists through arrival, keeping the arrival-tick travel speed, until the ready invasion step resolves or is invalidated | yes |
-| `BlitzWorld` | Delayed-resolution hostile | `BLITZ A WORLD` | transit to target world if needed | persists through arrival, keeping the arrival-tick travel speed, until the ready assault step resolves or is invalidated | yes |
+| `BombardWorld` | Hostile | `BOMBARD A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
+| `InvadeWorld` | Hostile | `INVADE A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
+| `BlitzWorld` | Hostile | `BLITZ A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
 | `ViewWorld` | One-shot completion | `VIEW A WORLD` | transit to target world edge, perform long-range scan, then back off | completes and returns to deep-space `Hold` | no |
 | `ScoutSector` | One-shot completion | `SCOUT A SECTOR` | transit to target sector, perform sector reconnaissance | completes on arrival/report, then `Hold` | no |
 | `ScoutSolarSystem` | One-shot completion | `SCOUT A SOLAR SYSTEM` | transit to target world, perform close reconnaissance | completes on arrival/report, then `Hold` | no |

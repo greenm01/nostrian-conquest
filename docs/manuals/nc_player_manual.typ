@@ -222,9 +222,9 @@ The table below lists everything your planets can produce. *AS* is Attack Streng
 
 Fleet missions fall into three classes. _One-shot_ missions travel, act, and
 then fall back to Hold Position. _Persistent_ missions stay in force until you
-replace them or game rules cancel them. _Hostile_ missions go to the target
-world and wait. The assault happens on the _next_ maintenance tick after
-arrival, not at once.
+replace them or game rules cancel them. _Hostile_ missions attack the year they reach
+orbit around the target world, then try again each year until they succeed.
+@movement explains how long a trip takes.
 
 #figure(
   table(
@@ -486,7 +486,7 @@ See @missions for the detailed mechanics of bombardment, invasion, and blitz mis
 
 = Missions and Orders <missions>
 
-A fleet always has exactly one standing order. If you issue a new order before maintenance, it replaces whatever the fleet was doing. Missions fall into three categories. _One-shot_ missions cause the fleet to travel, perform an action, and revert to Hold Position --- you must issue new orders afterward. _Persistent_ missions remain active until you replace them or game rules invalidate them (for example, a Join mission is abandoned if the host fleet is destroyed). _Hostile_ missions send the fleet to a target world where it waits; the assault executes on the _next_ maintenance tick after arrival, not immediately. Plan accordingly.
+A fleet always has exactly one standing order. If you issue a new order before maintenance, it replaces whatever the fleet was doing. Missions fall into three categories. _One-shot_ missions cause the fleet to travel, perform an action, and revert to Hold Position --- you must issue new orders afterward. _Persistent_ missions remain active until you replace them or game rules invalidate them (for example, a Join mission is abandoned if the host fleet is destroyed). _Hostile_ missions send the fleet into orbit around a target world. It attacks the year it arrives and tries again each year until it succeeds.
 
 #figure(
   table(
@@ -514,6 +514,38 @@ A fleet always has exactly one standing order. If you issue a new order before m
     [15], [Salvage],         [One-shot],   [Scrap ships at planet for \~50% of build cost.],
   ),
 )
+
+== Movement and Arrival <movement>
+
+A fleet's speed is the number of sectors it can travel in a year.
+
+Movement is 2.5D. Think of the map as a flat board, with each world sitting
+one step below it at the center of its sector. Fleets travel across the board.
+To reach a world, a fleet steps down into its orbit; to leave one, it steps
+back up. Each step costs one sector of movement, and a fleet can be partway
+down.
+
+A fleet never moves across and down at once. It climbs out of orbit, flies
+straight across the map to the center of its target sector, and only then
+heads down toward the world. A fleet leaving a planet spends its first sector of movement climbing
+out, so it covers one sector less in its first year.
+
+When a fleet arrives depends on its mission.
+
+- *Sector missions* (Move, Patrol, Scout Sector, Rendezvous) arrive the year
+  the fleet enters the target sector.
+- *World missions* (all the others) continue to the world. Guard/Blockade,
+  View, Scout System, Join, Salvage, Bombard, Invade, and Blitz arrive when
+  the fleet reaches orbit. Seek Home and Colonize finish at the end of the
+  first year the fleet is at least halfway in. Guard Starbase takes up station
+  once the fleet is halfway in and its starbase is there.
+
+A world mission often takes a year longer than a move to the same sector.
+Distance is measured in a straight line, so three sectors on a diagonal is
+about 4.2 sectors of travel.
+
+The *ETA* command shows the year a fleet will arrive. For a world mission,
+answer yes to "Include time to enter system?"
 
 == Mission Details
 
@@ -545,7 +577,7 @@ A fleet always has exactly one standing order. If you issue a new order before m
 
 === Hostile (Delayed-Resolution) Missions
 
-#admonition("IMPORTANT")[Hostile missions require the fleet to be *in orbit at the start of maintenance* to execute. A fleet that arrives at the target world this turn will carry out its assault *next turn*. This one-turn delay is a critical tactical consideration --- defend accordingly.]
+#admonition("IMPORTANT")[A hostile fleet attacks during the maintenance in which it reaches orbit (see @movement). If the attack fails, the fleet holds just outside orbit and attacks again each year until it succeeds or you change its orders. A fleet told to attack the world it already orbits attacks at the next maintenance.]
 
 A fleet in orbit on a hostile mission has entered the owner's solar system, so his fleets and starbases engage it on arrival. Only one kind of assault strikes a world each turn, in the order Blitz, Invade, Bombard. If you have fleets on different assault missions at the same world, only those on that turn's assault take part; the others keep their orders and cargo and strike on a later turn.
 

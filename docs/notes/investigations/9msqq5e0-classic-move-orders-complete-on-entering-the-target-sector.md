@@ -149,5 +149,9 @@ probability, which line skips the save, and the View World resolve action
 
 - [Bug-sweep follow-ups, t012](../plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t012):
   the ETA change this reverses.
-- [Hostile arrival audit](../../dev/hostile-arrival-oracle-audit.md): the
-  strike-next-year rule, unaffected.
+- [Hostile arrival audit](../../dev/hostile-arrival-oracle-audit.md): its
+  strike-next-year rule held only for paths ending on a cell center; the
+  decompiled model above replaces it.
+- [Movement spec](../../dev/ec-movement-spec.md): the current 2.5D model.
+- t033 and t034 in [todo.md](../../../todo.md): the scout byte and the
+  smaller order differences from the sweep.
