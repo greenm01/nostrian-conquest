@@ -243,7 +243,8 @@ pub fn push_mission_entries(
     let rendezvous_merged_fleet_indices: std::collections::HashSet<usize> = events
         .fleet_merge_events
         .iter()
-        .filter(|e| e.kind == Mission::RendezvousSector)
+        // Absorbed-side indices are stale once the fleet merges away.
+        .filter(|e| e.kind == Mission::RendezvousSector && e.survivor_side)
         .map(|e| e.fleet_idx)
         .collect();
 

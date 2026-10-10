@@ -229,7 +229,7 @@ pub fn push_misc_entries(
     for event in &events.salvage_events {
         let (owner_empire_raw, event_week, source, body) = match *event {
             nc_data::SalvageResolvedEvent::Succeeded {
-                fleet_idx,
+                fleet_number,
                 owner_empire_raw,
                 planet_idx,
                 coords,
@@ -247,11 +247,7 @@ pub fn push_misc_entries(
                 (
                     owner_empire_raw,
                     stardate_week,
-                    owned_fleet_source_clause_from_idx(
-                        game_data,
-                        fleet_idx,
-                        &format!("System({x},{y})"),
-                    ),
+                    owned_fleet_source_clause(Some(fleet_number), &format!("System({x},{y})")),
                     format!(
                         " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}) and have begun salvaging our fleet. We estimate that our fleet will yield {recovered_points} production point(s)."
                     ),

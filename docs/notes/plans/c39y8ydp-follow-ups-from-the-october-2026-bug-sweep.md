@@ -97,6 +97,17 @@ the salvaged fleet is gone by report time; carry the fleet number in the
 salvage event. `rendezvous_merged_fleet_indices` in `entries/missions.rs`
 should use only survivor-side merge events.
 
+Result (2026-10-09): `SalvageResolvedEvent::Succeeded` now carries
+`fleet_number`, read before the fleet is removed, and the salvage report uses
+it. The rendezvous arrival filter keeps only survivor-side merge events, whose
+indices follow compaction; an absorbed fleet's stale index no longer hides
+another fleet's "waiting" arrival report. Regression tests in
+`nc-engine/tests/mission_report_fleet_numbers.rs`:
+`salvage_success_report_names_the_salvaged_fleet` and
+`absorbed_side_merge_index_does_not_hide_another_fleets_rendezvous_arrival`.
+Workspace: 2628 passed, 1 failed (the timing test noted under t010, which
+passes alone).
+
 ### t014
 
 Empire names, handles, and `set_status_or_name_summary_raw` are not validated

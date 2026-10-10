@@ -105,6 +105,7 @@ fn resolve_salvage_arrival(
 
     Ok(SalvageResolvedEvent::Succeeded {
         fleet_idx,
+        fleet_number: game_data.fleets.records[fleet_idx].local_slot_word_raw() as u8,
         owner_empire_raw,
         planet_idx,
         coords,
