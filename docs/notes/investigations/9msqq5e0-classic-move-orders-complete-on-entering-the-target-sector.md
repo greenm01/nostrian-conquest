@@ -185,6 +185,20 @@ sees. Rust's transport model (`0x2c` all transports, `0x2e` armies aboard)
 also differs from classic's (`0x2c` empty, `0x2e` loaded) and needs checking
 under t033. Probe scripts were kept in the session scratchpad only.
 
+## Engagement by depth layer, t034 (2026-10-10)
+
+The encounter handler (`18ea:13cf`) pairs two units only when they have
+different owners, the same sector, and the same depth layer
+(`Round(Z) == 1`, set at `0824:0b0a`); planets are not units. The decision
+routine (`1b05:1277`) then applies assault-and-blockade rules, declared-enemy
+status, and the neutral-in-my-system rule; a fleet facing a starbase uses
+`1b05:1d11`. Probes with neutral and enemy visitors at the empire-2 world
+(15,13) confirmed that the layer, not the order, decides system entry, that
+batteries and starbases never start a fight, and that fights leave stored
+diplomacy unchanged. The rule and its remaining differences from Rust are in
+[the engagement ADR](../decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md).
+Probe scripts were kept in the session scratchpad only.
+
 ## Connections
 
 - [Bug-sweep follow-ups, t012](../plans/c39y8ydp-follow-ups-from-the-october-2026-bug-sweep.md#t012):

@@ -2,7 +2,7 @@
 id: mnb1phgg
 date: 2026-10-09
 kind: adr
-status: accepted
+status: superseded
 tags: [adr, combat]
 ---
 # Engagement follows the 1992 player guide
@@ -60,3 +60,7 @@ Whom" section of the [player manual](../../manuals/nc_player_manual.typ) and
 the engagement rule in [nc-combat-spec.md](../../dev/nc-combat-spec.md). The
 work is recorded in the
 [October 2026 bug sweep](../milestones/ym5u2c1x-engine-and-door-bug-sweep-of-october-2026.md).
+
+Superseded on 2026-10-10 by
+[Engagement follows the classic ECMAINT encounter rule](gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md),
+after t034 read the rule from ECMAINT itself.
