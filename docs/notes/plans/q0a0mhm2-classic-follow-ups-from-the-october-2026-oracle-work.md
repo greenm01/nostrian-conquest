@@ -224,3 +224,36 @@ abort use `retreat_fleet`, which picks by classic's travel distance
 (`mutators_nearest_world.rs`, t034/t053). Check which picker ECMAINT uses
 for each abort, then make Rust match: one picker unless classic itself
 differs. Found by the t054 agent.
+
+Result (ECMAINT disassembly, seg:off in the unpacked image, and two classic
+probes): every abort goes through one routine, `24a3:0876`, with flag 1.
+It is ECGAME's Seek Home picker: the owned worlds in PLANETS.DAT order, less
+the world in the fleet's sector when the fleet is in that system, by the
+travel distance `24a3:04f2`, first on a tie. Its callers with flag 1 are
+the fleet and base decision aborts (`1b05:1877`, `1b05:1f76`; the starbase
+gate `110a:67bd` runs the base decision), the battle's scatter and retreat
+(`1b05:25c2`, `1b05:2f41`, `1b05:309f`), Seek Home whose world was lost
+(`0b5d:033d`), an aborted Salvage (`0b5d:4b2a`), and a defecting fleet
+(`24a3:380b`); rogue and autopilot orders use flag 2 (`24a3:26c2`,
+`24a3:29c5`), distance over present production. With nowhere to go, the
+fleet decision climbs out, the base decision stops, the battle leaves the
+order alone, and the lost Seek Home holds. The probes: a bombard fleet
+turned back by a starbase at (16,13) went to (10,6), nearer as it flies,
+not (18,3), nearer by the Manhattan count; a Seek Home fleet in orbit of
+its own (16,13) whose target was lost went to (12,12), not (16,13).
+
+Rust now picks with `nearest_friendly_world` (`nearest_owned_world(idx,
+true)`) for both decision aborts, the orbital gate (which now aborts
+through the base decision's code), the capability-loss abort, and battle
+retreats, which until now could pick the world of the system the fleet was
+in.
+Tests: `nc-engine/tests/encounter/aborts.rs` and
+`retreat_from_the_fleets_own_system_seeks_another_world` in
+`nc-engine/tests/combat/retreat.rs`. Still different from classic: Seek
+Home retargets before the year by squared distance, for every Seek Home
+fleet, instead of in the tick its world is lost; a Salvage whose world was
+lost flies on, fails on arrival, and holds, where classic seeks home in the
+tick it sees the loss; autopilot recall ignores production. Open for the
+owner: the picker also raises any candidate world's present production
+below 1.0 to 1.0 in memory, which ECMAINT saves (see the encounter spec,
+"Not settled").

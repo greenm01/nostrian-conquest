@@ -2,39 +2,33 @@
 //!
 //! A fleet that lost the field, withdrew under its ROE, or lost the ships
 //! its mission needs gets the Seek Home order as the order path writes it:
-//! the target is the nearest owned world by ECGAME's travel-distance picker
-//! ([`CoreGameData::nearest_owned_world`], measured from the fleet's own
-//! position and depth), the world-target flag is 1, so the first leg climbs
-//! out of the layer the battle was fought in and the last leg descends into
-//! the home world's orbit, and the speed is the fleet's maximum after its
-//! losses (`distribute_fleet_losses` recomputes it from the ships left).
-//! ROE is left as it is. That is a mechanical matter, not a rule: classic
-//! zeroes ROE only on scatter, and ec4x never does, so a retreat is not
-//! where ROE changes. With no owned world the fleet holds where it is,
-//! position and depth untouched. A fleet with no ships left holds at rest
-//! and is culled when the next maintenance starts.
+//! the target is classic's nearest friendly world
+//! ([`nearest_friendly_world`], measured from the fleet's own position and
+//! depth, leaving out the world of the system the fleet is in), the
+//! world-target flag is 1, so the first leg climbs out of the layer the
+//! battle was fought in and the last leg descends into the home world's
+//! orbit, and the speed is the fleet's maximum after its losses
+//! (`distribute_fleet_losses` recomputes it from the ships left). ROE is
+//! left as it is. That is a mechanical matter, not a rule: classic zeroes
+//! ROE only on scatter, and ec4x never does, so a retreat is not where ROE
+//! changes. With no other owned world the fleet holds where it is, position
+//! and depth untouched. A fleet with no ships left holds at rest and is
+//! culled when the next maintenance starts.
 
 use crate::{CoreGameData, Order};
 
 use super::state::TaskForce;
 
-pub(crate) fn nearest_owned_planet(
+/// Where fleet `fleet_idx` goes when it abandons its mission: ECMAINT's
+/// nearest friendly world (`24a3:0876`, flag 1), which is ECGAME's picker
+/// ([`CoreGameData::nearest_owned_world`]) told to leave out the world of
+/// the system the fleet is in. Every abort and retreat in ECMAINT asks it
+/// this way. `None` when the empire owns no other world.
+pub(crate) fn nearest_friendly_world(
     game_data: &CoreGameData,
-    empire: u8,
-    from: [u8; 2],
+    fleet_idx: usize,
 ) -> Option<[u8; 2]> {
-    game_data
-        .planets
-        .records
-        .iter()
-        .filter(|p| p.owner_empire_slot_raw() == empire)
-        .min_by_key(|p| {
-            let [x, y] = p.coords_raw();
-            let dx = (x as i32 - from[0] as i32).unsigned_abs();
-            let dy = (y as i32 - from[1] as i32).unsigned_abs();
-            dx + dy
-        })
-        .map(|p| p.coords_raw())
+    game_data.nearest_owned_world(fleet_idx + 1, true)
 }
 
 pub(super) fn set_fleet_to_hold_current_position(fleet: &mut nc_data::FleetRecord) {
@@ -74,10 +68,10 @@ pub(crate) fn abort_mission_to_seek_home_or_hold(
     }
 }
 
-/// Send one fleet home from the battle: Seek Home to its nearest owned
-/// world, or hold in place when its empire owns none.
+/// Send one fleet home from the battle: Seek Home to its nearest friendly
+/// world, or hold in place when its empire owns no other.
 pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
-    let retreat_target = game_data.nearest_owned_world(fleet_idx + 1, false);
+    let retreat_target = nearest_friendly_world(game_data, fleet_idx);
     abort_mission_to_seek_home_or_hold(&mut game_data.fleets.records[fleet_idx], retreat_target);
 }
 

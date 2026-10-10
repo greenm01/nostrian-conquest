@@ -347,12 +347,33 @@ same sector and layer. [P bd3, bd5, d4, icpt]
 
 N1 is a subset of N2 in practice (same outcome, different text).
 
-**abort_to_seek_home(O)** (`24a3:0876` nearest friendly system): if found:
-order 2, target = that system, TZ 1, speed = max speed; text "Until ordered
+**abort_to_seek_home(O)**: the destination is the nearest friendly world
+(`24a3:0876`, called with flag 1). If found: order 2, target = that world,
+TZ 1, speed = max speed, mission id untouched; text "Until ordered
 otherwise, we will be seeking the safety of a friendly controlled solar
 system. Our new destination is ...". If none: order 1 (Move) to O's own
 sector with TZ 0 (climb out), speed = max ("and are leaving the solar
 system"). The record is saved immediately.
+
+**Nearest friendly world** `24a3:0876` [C][P]. It lists the worlds O's
+empire owns in PLANETS.DAT order, leaving out the world in O's sector when
+O is in that system (`Z >= 0.5`), and takes the one with the shortest
+travel distance (`24a3:04f2`, to the world's centre at depth 1, the measure
+ECGAME's Seek Home uses), keeping the first on a tie. It finds nothing when
+the empire owns no other world. Every abort in ECMAINT asks it this way,
+with flag 1: both decision aborts above (`1b05:1877` fleet, `1b05:1f76`
+base, which the starbase gate `110a:67bd` also runs), the battle's scatter and
+retreat (`1b05:25c2`, `1b05:2f41`, `1b05:309f`), Seek Home whose world was
+lost (`0b5d:033d`), an aborted Salvage (`0b5d:4b2a`), and a defecting
+fleet (`24a3:380b`). Only rogue and autopilot orders call it with flag 2,
+which divides each distance by the world's present production. [P t059:
+a bombard fleet in orbit of (16,13) that would not fight the starbase
+there went to (10,6), 9.22 sectors across the map and 13 by the Manhattan
+count, not to (18,3), 10.20 and 12; a Seek Home fleet in orbit of
+its own world (16,13) whose target was lost went to its other world
+(12,12), not to (16,13).] Rust uses this picker for both decision aborts,
+the orbital gate's abort, a fleet that lost the ships its mission needs,
+and the battle's retreats.
 
 ### Starbase target `1b05:1d11`
 - If `layer(O.Z)==1`, `O.order in {6,7,8}`, `O.x==O.tx && O.y==O.ty`,
@@ -490,6 +511,15 @@ intercept up to three (aw roll, sin draw, speed roll); battles draw more.
 
 ## 8. Not settled
 
+- The nearest-friendly picker (`24a3:0876`, `09b7..09ef`) has a side
+  effect: when the empire has two or more candidate worlds, it raises the
+  present production (PLANETS `+0x03`) of any candidate below 1.0 to 1.0,
+  in every mode, on the in-memory planet table that ECMAINT writes to
+  PLANETS.DAT at the end of the run (`0824:1398`). It reads as a guard for
+  flag 2's division that leaks into every call. It shows only for a world
+  whose production fell below 1.0 during the year's ticks, since the planet
+  pass raises it to 1.0 first. Rust does not copy it; the owner decides
+  whether it should (t059).
 - AI empires (players marked 0xFF) were not probed.
 - ROE > 10 and u16 overflow in vis/strength (more than ~1450 ships of a
   class) are undefined or wrap in classic.

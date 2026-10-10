@@ -15,8 +15,8 @@ use super::{Awareness, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
     AssaultEvents, BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter,
-    mission_kind_for_order, nearest_owned_planet, push_fleet_contact, push_no_engagement,
-    resolve_strike, retreat_fleet,
+    mission_kind_for_order, nearest_friendly_world, push_fleet_contact, push_no_engagement,
+    resolve_strike,
 };
 use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
@@ -97,9 +97,10 @@ impl Year<'_> {
     /// world's owner has in orbit fights it, sighted or not. That is his
     /// starbases there and his fleets there with warships, less any fleet
     /// already leaving on Seek Home (beaten earlier, or recalled). ROE
-    /// decides as for a base blocking the path: a fleet unwilling to fight
-    /// them aborts to Seek Home without a shot. Only the holder of the field
-    /// assaults; a beaten attacker has retreated with its battle.
+    /// decides as for a base blocking the path, and a fleet unwilling to
+    /// fight them aborts as it does before a base, without a shot: classic's
+    /// gate runs the base decision (`1b05:1277`) itself. Only the holder of
+    /// the field assaults; a beaten attacker has retreated with its battle.
     fn holds_orbit(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) -> bool {
         let Unit {
             index: fleet_idx,
@@ -147,14 +148,8 @@ impl Year<'_> {
             })
             .fold(0u16, u16::wrapping_add);
         if !roe_permits(facts.roe, strength(&facts), defence) {
-            retreat_fleet(game_data, fleet_idx);
+            self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, Some(tick));
             self.movement.reload(fleet_idx);
-            self.push_orbit_blocked_abort(
-                game_data,
-                fleet_idx,
-                mission_kind_for_order(Some(order)),
-                tick,
-            );
             return false;
         }
         let attacker = BattleSide {
@@ -620,8 +615,9 @@ impl Year<'_> {
     }
 
     /// ROE forbids fighting a force that blocks the mission: the fleet heads
-    /// for the nearest friendly world (`24a3:0876`). `report` is the tick to
-    /// report it in, if the decision is reported.
+    /// for the nearest friendly world (`24a3:0876`), or takes `fallback`
+    /// when its empire owns no other world. `report` is the tick to report
+    /// it in, if the decision is reported.
     fn abort_mission(
         &mut self,
         game_data: &mut CoreGameData,
@@ -630,14 +626,13 @@ impl Year<'_> {
         report: Option<u8>,
     ) {
         let fleet = &game_data.fleets.records[fleet_idx];
-        let owner = fleet.owner_empire_raw();
         let coords = fleet.current_location_coords_raw();
         let order = fleet.standing_order_kind();
         let kind = match order {
             Order::ColonizeWorld => Some(Mission::ColonizeWorld),
             other => mission_kind_for_order(Some(other)),
         };
-        let home = nearest_owned_planet(game_data, owner, coords);
+        let home = nearest_friendly_world(game_data, fleet_idx);
         let fleet = &mut game_data.fleets.records[fleet_idx];
         match (home, fallback) {
             (Some(home), _) => {
@@ -711,7 +706,7 @@ fn world_owner_at(game_data: &CoreGameData, sector: [u8; 2]) -> Option<u8> {
 enum AbortFallback {
     /// Move out of the system to deep space (blocked by a fleet).
     ClimbOut,
-    /// Stop where it is (blocked by a starbase).
+    /// Stop where it is (blocked by a starbase, or at the orbital gate).
     Hold,
 }
 
