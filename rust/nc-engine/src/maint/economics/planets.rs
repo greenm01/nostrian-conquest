@@ -4,6 +4,7 @@ pub(super) fn process_planet_economics(
     game_data: &mut CoreGameData,
     _planets_with_builds: &[usize],
     newly_colonized_planets: &[usize],
+    starbase_planets: &[usize],
 ) -> Result<(), Box<dyn std::error::Error>> {
     for planet_idx in 0..game_data.planets.records.len() {
         if newly_colonized_planets.contains(&planet_idx) {
@@ -37,11 +38,7 @@ pub(super) fn process_planet_economics(
             .unwrap_or(0);
         let potential_production =
             game_data.planets.records[planet_idx].potential_production_points();
-        let has_starbase = super::planet_has_friendly_starbase(
-            game_data,
-            owner_empire,
-            game_data.planets.records[planet_idx].coords_raw(),
-        );
+        let has_starbase = starbase_planets.contains(&planet_idx);
 
         let growth = yearly_growth_delta(
             current_production,

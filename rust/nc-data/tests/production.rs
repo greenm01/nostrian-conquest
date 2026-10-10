@@ -1,12 +1,12 @@
 mod common;
 
 use common::production::{
-    configured_conquest, owned_homeworld_seed, owned_planet, player_with_empire_name,
-    single_planet_game, zeroed_conquest, zeroed_setup,
+    commissioned_starbase, configured_conquest, owned_homeworld_seed, owned_planet,
+    player_with_empire_name, single_planet_game, zeroed_conquest, zeroed_setup,
 };
 use nc_data::{
-    BaseDat, BaseRecord, CoreGameData, EmpireProductionRankingSort, FleetDat, IpbmDat, PlanetDat,
-    PlayerDat, decode_real48, encode_real48, starbase_growth_bonus_percent,
+    BaseDat, CoreGameData, EmpireProductionRankingSort, FleetDat, IpbmDat, PlanetDat, PlayerDat,
+    decode_real48, encode_real48, starbase_growth_bonus_percent,
 };
 use nc_engine::{build_seeded_initialized_game, build_seeded_new_game, run_maintenance_turn};
 
@@ -207,13 +207,7 @@ fn maintenance_starbase_growth_bonus_accelerates_planet_development() {
         },
         fleets: FleetDat { records: vec![] },
         bases: BaseDat {
-            records: vec![{
-                let mut base = BaseRecord::new_zeroed();
-                base.set_base_id_raw(1);
-                base.set_owner_empire_raw(1);
-                base.set_coords_raw([0, 0]);
-                base
-            }],
+            records: vec![commissioned_starbase(1, [0, 0])],
         },
         ipbm: IpbmDat { records: vec![] },
         setup: zeroed_setup(),
@@ -300,13 +294,7 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
         },
         fleets: FleetDat { records: vec![] },
         bases: BaseDat {
-            records: vec![{
-                let mut base = BaseRecord::new_zeroed();
-                base.set_base_id_raw(1);
-                base.set_owner_empire_raw(1);
-                base.set_coords_raw([0, 0]);
-                base
-            }],
+            records: vec![commissioned_starbase(1, [0, 0])],
         },
         ipbm: IpbmDat { records: vec![] },
         setup: zeroed_setup(),
@@ -367,13 +355,7 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
         },
         fleets: FleetDat { records: vec![] },
         bases: BaseDat {
-            records: vec![{
-                let mut base = BaseRecord::new_zeroed();
-                base.set_base_id_raw(1);
-                base.set_owner_empire_raw(1);
-                base.set_coords_raw([0, 0]);
-                base
-            }],
+            records: vec![commissioned_starbase(1, [0, 0])],
         },
         ipbm: IpbmDat { records: vec![] },
         setup: zeroed_setup(),
