@@ -9,7 +9,11 @@ static SEQ: AtomicUsize = AtomicUsize::new(0);
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn write_tmp(filename: &str, content: impl AsRef<[u8]>) -> std::path::PathBuf {
+fn write_tmp(filename: &str, content: &str) -> std::path::PathBuf {
+    write_tmp_bytes(filename, content.as_bytes())
+}
+
+fn write_tmp_bytes(filename: &str, content: &[u8]) -> std::path::PathBuf {
     let seq = SEQ.fetch_add(1, Ordering::Relaxed);
     let dir = std::env::temp_dir().join(format!(
         "nc-game-dropfile-{}-{}-{}",
@@ -20,7 +24,7 @@ fn write_tmp(filename: &str, content: impl AsRef<[u8]>) -> std::path::PathBuf {
     std::fs::create_dir_all(&dir).unwrap();
     let path = dir.join(filename);
     let mut f = std::fs::File::create(&path).unwrap();
-    f.write_all(content.as_ref()).unwrap();
+    f.write_all(content).unwrap();
     path
 }
 
@@ -76,7 +80,7 @@ fn door32_decodes_cp437_names() {
     // 0x82 is 'é' and 0x94 is 'ö' in CP437; the file is not valid UTF-8.
     let content = b"2\r\n4\r\n38400\r\nMystic BBS\r\n3\r\nJos\x82 Smith\r\nSt\x94rlord\r\n\
                     100\r\n45\r\n1\r\n80\r\n25\r\n";
-    let path = write_tmp("DOOR32.SYS", content);
+    let path = write_tmp_bytes("DOOR32.SYS", content);
     let info = parse(&path).expect("CP437 dropfile should parse");
     assert_eq!(info.alias.as_deref(), Some("Störlord"));
     assert_eq!(info.timeout_minutes, Some(45));
