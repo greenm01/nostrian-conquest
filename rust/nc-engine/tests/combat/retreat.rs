@@ -193,8 +193,17 @@ fn invasion_loses_its_escort(game_data: &mut CoreGameData, seed: u64) -> Mainten
         },
         10,
     );
-    mark_arrived(game_data, 0);
-    game_data.fleets.records[0].recompute_max_speed_from_composition();
+    // The invader starts its dive from the sector's deep space, so the guard
+    // in orbit has the descent ticks to catch it before it strikes (strikes
+    // resolve in their tick since t052).
+    {
+        let fleet = &mut game_data.fleets.records[0];
+        fleet.set_mission_target(1, fleet.mission_id_raw());
+        fleet.set_at_rest_motion();
+        fleet.set_depth(Real48::ZERO);
+        fleet.recompute_max_speed_from_composition();
+        fleet.set_current_speed(fleet.max_speed());
+    }
     place_fleet(
         game_data,
         4,
@@ -216,12 +225,19 @@ fn invasion_loses_its_escort(game_data: &mut CoreGameData, seed: u64) -> Mainten
 fn retreat_from_an_enemy_orbit_seeks_the_home_world_and_climbs_out_first() {
     const HOME: [u8; 2] = [3, 13];
     let mut retreated = 0;
-    for seed in 0..8u64 {
+    for seed in 0..40u64 {
         let mut game_data = empty_board(0, 0);
         game_data.planets.records[HOME_PLANET_IDX].set_coords_raw(HOME);
         let events = invasion_loses_its_escort(&mut game_data, seed);
         let fleet = &game_data.fleets.records[0];
         if fleet.destroyer_count() > 0 || fleet.troop_transport_count() == 0 {
+            continue;
+        }
+        // Strikes resolve in their tick (t052). When the year's unit order
+        // lets the invader strike before the guard sights it, the invasion
+        // resolves first and there is no mission left to abort; only the
+        // seeds where the guard caught the invader first test the retreat.
+        if !events.assault_report_events.is_empty() {
             continue;
         }
         retreated += 1;
