@@ -1,5 +1,6 @@
 mod common;
 
+use common::order_trace::assert_mission_event;
 use nc_data::{
     ContactReportSource, CoreGameData, DiplomacyOverride, EncounterDispositionEvent, Mission,
     MissionOutcome, Order, PlanetIntelSource,
@@ -217,8 +218,9 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
         attacker.standing_order_code_raw(),
         nc_data::Order::BombardWorld.to_raw()
     );
-    // It keeps its pre-strike speed and depth, as ECMAINT leaves a bombard.
-    assert_eq!(attacker.current_speed(), 3);
+    // It stops in orbit to bombard again next year.
+    assert_eq!(attacker.current_speed(), 0);
+    assert_eq!(attacker.depth(), nc_data::Real48::ONE);
     assert_eq!(attacker.cruiser_count(), 0);
     assert_eq!(attacker.destroyer_count(), 0);
 
@@ -1053,7 +1055,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
 }
 
 #[test]
-fn canonical_invade_against_standing_batteries_retries_next_year() {
+fn canonical_invade_against_standing_batteries_aborts_without_retry() {
     let mut game_data = configured_assault_state(7);
 
     {
@@ -1067,20 +1069,62 @@ fn canonical_invade_against_standing_batteries_retries_next_year() {
         target.set_ground_batteries_raw(4);
     }
 
-    run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
+    assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Aborted);
     let attacker = &game_data.fleets.records[0];
     let target = &game_data.planets.records[13];
-    // The batteries held, so no troops landed: a failed attack keeps the
-    // order and speed to strike again next year (the battery return fire
-    // destroys this small force, which the next turn culls).
-    assert_eq!(attacker.standing_order_code_raw(), 7);
-    assert_eq!(attacker.current_speed(), 3);
+    // The batteries held, so no troops landed, and their return fire
+    // destroys this small force. The invasion is over: the order is Hold.
+    assert!(!attacker.has_any_force());
+    assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
+    assert_eq!(attacker.current_speed(), 0);
     assert_eq!(target.owner_empire_slot_raw(), 2);
     assert_eq!(target.ownership_status_raw(), 2);
     assert_eq!(target.army_count_raw(), 10);
     // A lone destroyer's suppression fire cannot pay a battery's 20-hit DS.
     assert_eq!(target.ground_batteries_raw(), 4);
+
+    // No retry the next year.
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.assault_report_events.is_empty());
+}
+
+#[test]
+fn failed_invasion_holds_in_orbit_without_retry() {
+    let mut game_data = configured_assault_state(7);
+
+    {
+        let attacker = &mut game_data.fleets.records[0];
+        attacker.set_battleship_count(5);
+        attacker.set_troop_transport_count(2);
+        attacker.set_army_count(2);
+    }
+    {
+        let target = &mut game_data.planets.records[13];
+        target.set_army_count_raw(10);
+        target.set_ground_batteries_raw(5);
+    }
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    // The batteries fall, the two armies land and lose, and the surviving
+    // ships hold in orbit.
+    assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Failed);
+    let attacker = &game_data.fleets.records[0];
+    assert!(attacker.battleship_count() > 0);
+    assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
+    assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
+    assert_eq!(attacker.current_speed(), 0);
+    assert_eq!(attacker.depth(), nc_data::Real48::ONE);
+    assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 2);
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.assault_report_events.is_empty());
+    assert_eq!(
+        game_data.fleets.records[0].standing_order_kind(),
+        Order::HoldPosition
+    );
 }
 
 #[test]
@@ -1242,5 +1286,96 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
             .planet_intel_events
             .iter()
             .all(|event| event.source == PlanetIntelSource::AssaultFailure)
+    );
+
+    // The blitz is over; nothing strikes again.
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.assault_report_events.is_empty());
+    assert!(
+        game_data
+            .fleets
+            .records
+            .iter()
+            .all(|fleet| fleet.standing_order_kind() != Order::BlitzWorld)
+    );
+}
+
+#[test]
+fn bombardment_repeats_each_year_until_the_order_changes() {
+    let mut game_data = configured_assault_state(6);
+    {
+        let attacker = &mut game_data.fleets.records[0];
+        attacker.set_battleship_count(20);
+        attacker.set_destroyer_count(0);
+    }
+    game_data.planets.records[13].set_ground_batteries_raw(1);
+
+    for year in 1..=2 {
+        let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+        assert_eq!(events.bombard_events.len(), 1, "year {year} bombards");
+        let attacker = &game_data.fleets.records[0];
+        assert_eq!(attacker.standing_order_kind(), Order::BombardWorld);
+        assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
+        assert_eq!(attacker.current_speed(), 0);
+        assert_eq!(attacker.depth(), nc_data::Real48::ONE);
+    }
+
+    game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.bombard_events.is_empty());
+}
+
+#[test]
+fn hostile_order_given_in_orbit_strikes_at_the_next_maintenance() {
+    let mut game_data = configured_assault_state(0);
+    {
+        let attacker = &mut game_data.fleets.records[0];
+        attacker.set_current_speed(0);
+        attacker.set_battleship_count(20);
+        attacker.set_troop_transport_count(40);
+        attacker.set_army_count(40);
+    }
+    {
+        let target = &mut game_data.planets.records[13];
+        target.set_army_count_raw(3);
+        target.set_ground_batteries_raw(0);
+    }
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.assault_report_events.is_empty());
+
+    game_data.fleets.records[0].set_standing_order_kind(Order::InvadeWorld);
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Succeeded);
+    assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 1);
+    let attacker = &game_data.fleets.records[0];
+    assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
+    assert_eq!(attacker.current_speed(), 0);
+}
+
+#[test]
+fn bombarding_fleet_destroyed_by_batteries_stays_destroyed() {
+    let mut game_data = configured_assault_state(6);
+    game_data.planets.records[13].set_ground_batteries_raw(20);
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert_eq!(events.bombard_events.len(), 1);
+    assert!(!events.fleet_destroyed_events.is_empty());
+    assert!(
+        game_data
+            .fleets
+            .records
+            .first()
+            .is_none_or(|fleet| fleet.owner_empire_raw() != 1 || !fleet.has_any_force())
+    );
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+    assert!(events.bombard_events.is_empty());
+    assert!(
+        game_data
+            .fleets
+            .records
+            .iter()
+            .all(|fleet| fleet.standing_order_kind() != Order::BombardWorld
+                || fleet.owner_empire_raw() != 1)
     );
 }

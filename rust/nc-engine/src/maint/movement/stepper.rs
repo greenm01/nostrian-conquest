@@ -47,9 +47,9 @@ pub(super) enum TickEnd {
     Underway,
     /// The order's arrival test passed and the order resolved.
     Resolved,
-    /// A hostile order's strike test passed. The record keeps the motion and
-    /// speed from one tick before the strike, which is where a failed attack
-    /// leaves it to retry next year.
+    /// A hostile order's strike test passed. The fleet stops in orbit
+    /// (depth 1.0, speed 0) on its order; the assault phase decides what the
+    /// order becomes.
     Strike,
 }
 
@@ -205,9 +205,9 @@ pub(super) fn test_arrival(
     fleet_idx: usize,
     tick: u8,
 ) -> TickEnd {
-    let Some((before_motion, before_speed)) = track.before else {
+    if track.before.is_none() {
         return TickEnd::Underway;
-    };
+    }
     let fleet = &mut game_data.fleets.records[fleet_idx];
     let key = order_key(fleet);
     let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
@@ -247,9 +247,7 @@ pub(super) fn test_arrival(
     }
     track.resolved = Some(key);
     if is_hostile_order(order) {
-        before_motion.write_to(fleet);
-        fleet.set_current_speed(before_speed);
-        track.motion = Some(before_motion);
+        fleet.set_current_speed(0);
         return TickEnd::Strike;
     }
     apply_resolution_state(fleet, order);

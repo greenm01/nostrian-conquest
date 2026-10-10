@@ -114,12 +114,19 @@ whether to include time to enter the system, which selects `TZ`.
 ### Hostile Missions
 
 Bombard, Invade, and Blitz attack on the tick the fleet reaches `Z = 1.0`, in
-that year's maintenance. If the attack fails, classic does not save that
-tick's state, so the fleet keeps its order and speed and holds at the
-previous tick's depth, one tick short of `1.0` (for example `0.988129`). It
-attacks again the next year, on the first tick it reaches `1.0`. Classic's
-battle is random, so a weak fleet can retry for many years. Rust decides each
-attack with its own combat model and applies the same retry rule.
+that year's maintenance. The fleet stops there, in orbit with speed 0. A fleet
+that starts the year in orbit at its target on a hostile order attacks on the
+first tick. NC combat ([nc-combat-spec.md](nc-combat-spec.md)) decides the
+attack and what it leaves on the order:
+
+- Bombard keeps its order, and the fleet bombards again each year from orbit
+  until the player changes the order.
+- Invade and Blitz resolve, win or lose, and the surviving fleet holds in
+  orbit.
+
+Classic does not save the strike tick after a failed attack, so its fleet
+keeps its order and speed one tick short of orbit and attacks again each
+year. That is a classic bug; Rust does not copy it.
 
 ## Standing Order Model
 
@@ -164,8 +171,8 @@ The main nuance is that fleet orders fall into three categories:
 
 - these orders travel to the target world, go into orbit, and attack in the
   year they reach orbit
-- a failed attack leaves the order, the speed, and the fleet just short of
-  orbit, and the fleet attacks again each year
+- Bombard stays armed and bombards each year until replaced; Invade and Blitz
+  resolve, win or lose, and fall back to `Hold` in orbit
 - examples: `BombardWorld`, `InvadeWorld`, `BlitzWorld`
 
 Player-level rule: "new order overrides whatever the fleet was doing" is the
@@ -199,9 +206,9 @@ finishes.
 | `PatrolSector` | Persistent standing | `PATROL A SECTOR` | transit to patrol sector if needed, then intercept/watch posture | order persists on arrival, but fleet stops at the patrol sector | yes |
 | `GuardStarbase` | Persistent standing | `GUARD A STARBASE` | transit to base if needed, then escort/guard posture | order persists on arrival, but fleet stops at the guarded base | yes |
 | `GuardBlockadeWorld` | Persistent standing | `GUARD/BLOCKADE A WORLD` | transit to target world if needed, then guard/blockade posture | order persists on arrival, but fleet stops at the guarded world | yes |
-| `BombardWorld` | Hostile | `BOMBARD A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
-| `InvadeWorld` | Hostile | `INVADE A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
-| `BlitzWorld` | Hostile | `BLITZ A WORLD` | transit to target world if needed | attacks the year it reaches orbit; after a failed attack it keeps its order and speed and attacks again each year | yes |
+| `BombardWorld` | Hostile | `BOMBARD A WORLD` | transit to target world if needed | attacks the year it reaches orbit, stops in orbit, and bombards again each year | yes |
+| `InvadeWorld` | Hostile | `INVADE A WORLD` | transit to target world if needed | attacks the year it reaches orbit; win or lose, then `Hold` in orbit | no |
+| `BlitzWorld` | Hostile | `BLITZ A WORLD` | transit to target world if needed | attacks the year it reaches orbit; win or lose, then `Hold` in orbit | no |
 | `ViewWorld` | One-shot completion | `VIEW A WORLD` | transit to target world edge, perform long-range scan, then back off | completes and returns to deep-space `Hold` | no |
 | `ScoutSector` | One-shot completion | `SCOUT A SECTOR` | transit to target sector, perform sector reconnaissance | completes on arrival/report, then `Hold` | no |
 | `ScoutSolarSystem` | One-shot completion | `SCOUT A SOLAR SYSTEM` | transit to target world, perform close reconnaissance | completes on arrival/report, then `Hold` | no |

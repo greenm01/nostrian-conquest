@@ -4,8 +4,10 @@
 //! (`tools/ncmaint_mission_sweep.py`, missions 1-15) and
 //! checks every classic year the Rust engine must reproduce: the fleet's
 //! speed, order, and FLEETS.DAT bytes 0x0B..=0x1E (sector, X/Y offsets, and
-//! depth, all 6-byte reals). Hostile outcomes are random in classic, so those
-//! cases check the strike year and the retry state instead of the result.
+//! depth, all 6-byte reals). Hostile outcomes are random in classic and Rust
+//! fights with NC combat, so those cases check the classic strike year and
+//! then Rust's post-strike state: at rest in orbit at the target with
+//! speed 0, still on Bombard, or holding after Invade or Blitz.
 
 use nc_data::{BaseRecord, CoreGameData, FleetRecord, MaintenanceEvents, Mission};
 use nc_engine::run_maintenance_turn;
@@ -19,9 +21,8 @@ enum Year {
     State(u8, u8, &'static str),
     /// The fleet merged into its join host or was salvaged.
     Absorbed,
-    /// The hostile strike year, with the retry speed and bytes when the
-    /// attack failed and the order stands.
-    Strike(Option<(u8, &'static str)>),
+    /// The hostile strike year.
+    Strike,
 }
 
 impl Year {
@@ -174,24 +175,26 @@ fn run_cases(cases: &[Case]) {
                     "{} year {year} absorbed",
                     case.name
                 ),
-                Year::Strike(retry) => {
+                Year::Strike => {
                     assert!(struck(&events, mission), "{} year {year} strike", case.name);
-                    if let Some((speed, motion)) = retry
-                        && fleet.standing_order_code_raw() == mission
-                    {
-                        assert_eq!(
-                            fleet.raw[0x0b..=0x1e],
-                            hex(motion)[..],
-                            "{} year {year} retry motion",
-                            case.name
-                        );
-                        assert_eq!(
-                            fleet.current_speed(),
-                            *speed,
-                            "{} year {year} retry speed",
-                            case.name
-                        );
-                    }
+                    let target = fleet.standing_order_target_coords_raw();
+                    let at_rest = format!(
+                        "{:02x}{:02x}800000000000800000000000810000000000",
+                        target[0], target[1]
+                    );
+                    assert_eq!(
+                        fleet.raw[0x0b..=0x1e],
+                        hex(&at_rest)[..],
+                        "{} year {year} in orbit",
+                        case.name
+                    );
+                    assert_eq!(fleet.current_speed(), 0, "{} year {year} speed", case.name);
+                    assert_eq!(
+                        fleet.standing_order_code_raw(),
+                        if mission == 6 { 6 } else { 0 },
+                        "{} year {year} order",
+                        case.name
+                    );
                 }
             }
         }
@@ -1024,7 +1027,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 6, "0d0d80b000000000800000000000000000000000"),
             Year::state(1, 6, "0e0d807001000000800000000000000000000000"),
             Year::state(1, 6, "0f0d80000000000080000000000062000000140b"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000803b3db1137b"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1037,7 +1040,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 6, "0e0c800099d90e1f800099d90e1f000000000000"),
             Year::state(1, 6, "0f0d7f00989927287f0098992728000000000000"),
             Year::state(1, 6, "0f0d800000000000800000000000804cc24ce241"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000805cfdfdf57c"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1054,7 +1057,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 6, "0e0c7f00ca4c45667f40cc4c4566000000000000"),
             Year::state(1, 6, "0f0d7e0062669e207e8064669e20000000000000"),
             Year::state(1, 6, "0f0d800000000000800000000000802e8699c403"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000803ac14ad87e"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1062,7 +1065,7 @@ const HOSTILE_CASES: &[Case] = &[
         start: "01000102000100000005030c0d800000000000800000000000810000000000060f0d0100000600000100000000000000000000000000",
         years: &[
             Year::state(3, 6, "0e0d7fc0feffff7f800000000000000000000000"),
-            Year::Strike(Some((3, "0f0d800000000000800000000000803475622776"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1071,7 +1074,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(3, 6, "0d0b803068e6096a803068e6096a000000000000"),
             Year::state(3, 6, "0f0d80000000000080000000000080d0c84ce241"),
-            Year::Strike(Some((3, "0f0d80000000000080000000000080e403fef57c"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1081,23 +1084,20 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(3, 6, "0a08803068e6096a802068e6096a000000000000"),
             Year::state(3, 6, "0d0b7c0047008c117c0046008c11000000000000"),
             Year::state(3, 6, "0f0d7ec082669e207e8082669e20000000000000"),
-            Year::Strike(Some((3, "0f0d80000000000080000000000080ca42adff74"))),
+            Year::Strike,
         ],
     },
     Case {
         name: "m06-v5-s3",
         start: "01000102000100000005050c0d800000000000800000000000810000000000060f0d0100000600000100000000000000000000000000",
-        years: &[Year::Strike(Some((
-            5,
-            "0f0d80000000000080000000000080a927766267",
-        )))],
+        years: &[Year::Strike],
     },
     Case {
         name: "m06-v5-d3",
         start: "01000102000100000005050c0a800000000000800000000000810000000000060f0d0100000600000100000000000000000000000000",
         years: &[
             Year::state(5, 6, "0f0d7f60a19927287f60a1992728000000000000"),
-            Year::Strike(Some((5, "0f0d80000000000080000000000080bbf0c24469"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1106,7 +1106,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(5, 6, "0c0a7f60a19927287f60a1992728000000000000"),
             Year::state(5, 6, "0f0d80000000000080000000000080739299c403"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1117,7 +1117,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 7, "0d0d80b000000000800000000000000000000000"),
             Year::state(1, 7, "0e0d807001000000800000000000000000000000"),
             Year::state(1, 7, "0f0d80000000000080000000000062000000140b"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1130,7 +1130,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 7, "0e0c800099d90e1f800099d90e1f000000000000"),
             Year::state(1, 7, "0f0d7f00989927287f0098992728000000000000"),
             Year::state(1, 7, "0f0d800000000000800000000000804cc24ce241"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1147,7 +1147,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 7, "0e0c7f00ca4c45667f40cc4c4566000000000000"),
             Year::state(1, 7, "0f0d7e0062669e207e8064669e20000000000000"),
             Year::state(1, 7, "0f0d800000000000800000000000802e8699c403"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1155,7 +1155,7 @@ const HOSTILE_CASES: &[Case] = &[
         start: "01000102000100000005030c0d800000000000800000000000810000000000070f0d0100000600000100000002000200000000000000",
         years: &[
             Year::state(3, 7, "0e0d7fc0feffff7f800000000000000000000000"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1164,7 +1164,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(3, 7, "0d0b803068e6096a803068e6096a000000000000"),
             Year::state(3, 7, "0f0d80000000000080000000000080d0c84ce241"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1174,20 +1174,20 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(3, 7, "0a08803068e6096a802068e6096a000000000000"),
             Year::state(3, 7, "0d0b7c0047008c117c0046008c11000000000000"),
             Year::state(3, 7, "0f0d7ec082669e207e8082669e20000000000000"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
         name: "m07-v5-s3",
         start: "01000102000100000005050c0d800000000000800000000000810000000000070f0d0100000600000100000002000200000000000000",
-        years: &[Year::Strike(None)],
+        years: &[Year::Strike],
     },
     Case {
         name: "m07-v5-d3",
         start: "01000102000100000005050c0a800000000000800000000000810000000000070f0d0100000600000100000002000200000000000000",
         years: &[
             Year::state(5, 7, "0f0d7f60a19927287f60a1992728000000000000"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1196,7 +1196,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(5, 7, "0c0a7f60a19927287f60a1992728000000000000"),
             Year::state(5, 7, "0f0d80000000000080000000000080739299c403"),
-            Year::Strike(None),
+            Year::Strike,
         ],
     },
     Case {
@@ -1207,7 +1207,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 8, "0d0d80b000000000800000000000000000000000"),
             Year::state(1, 8, "0e0d807001000000800000000000000000000000"),
             Year::state(1, 8, "0f0d80000000000080000000000062000000140b"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000803b3db1137b"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1220,7 +1220,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 8, "0e0c800099d90e1f800099d90e1f000000000000"),
             Year::state(1, 8, "0f0d7f00989927287f0098992728000000000000"),
             Year::state(1, 8, "0f0d800000000000800000000000804cc24ce241"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000805cfdfdf57c"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1237,7 +1237,7 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(1, 8, "0e0c7f00ca4c45667f40cc4c4566000000000000"),
             Year::state(1, 8, "0f0d7e0062669e207e8064669e20000000000000"),
             Year::state(1, 8, "0f0d800000000000800000000000802e8699c403"),
-            Year::Strike(Some((1, "0f0d800000000000800000000000803ac14ad87e"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1245,7 +1245,7 @@ const HOSTILE_CASES: &[Case] = &[
         start: "01000102000100000005030c0d800000000000800000000000810000000000080f0d0100000000000000000002000200000000000000",
         years: &[
             Year::state(3, 8, "0e0d7fc0feffff7f800000000000000000000000"),
-            Year::Strike(Some((3, "0f0d800000000000800000000000803475622776"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1254,7 +1254,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(3, 8, "0d0b803068e6096a803068e6096a000000000000"),
             Year::state(3, 8, "0f0d80000000000080000000000080d0c84ce241"),
-            Year::Strike(Some((3, "0f0d80000000000080000000000080e403fef57c"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1264,23 +1264,20 @@ const HOSTILE_CASES: &[Case] = &[
             Year::state(3, 8, "0a08803068e6096a802068e6096a000000000000"),
             Year::state(3, 8, "0d0b7c0047008c117c0046008c11000000000000"),
             Year::state(3, 8, "0f0d7ec082669e207e8082669e20000000000000"),
-            Year::Strike(Some((3, "0f0d80000000000080000000000080ca42adff74"))),
+            Year::Strike,
         ],
     },
     Case {
         name: "m08-v5-s3",
         start: "01000102000100000005050c0d800000000000800000000000810000000000080f0d0100000000000000000002000200000000000000",
-        years: &[Year::Strike(Some((
-            5,
-            "0f0d80000000000080000000000080a927766267",
-        )))],
+        years: &[Year::Strike],
     },
     Case {
         name: "m08-v5-d3",
         start: "01000102000100000005050c0a800000000000800000000000810000000000080f0d0100000000000000000002000200000000000000",
         years: &[
             Year::state(5, 8, "0f0d7f60a19927287f60a1992728000000000000"),
-            Year::Strike(Some((5, "0f0d80000000000080000000000080bbf0c24469"))),
+            Year::Strike,
         ],
     },
     Case {
@@ -1289,7 +1286,7 @@ const HOSTILE_CASES: &[Case] = &[
         years: &[
             Year::state(5, 8, "0c0a7f60a19927287f60a1992728000000000000"),
             Year::state(5, 8, "0f0d80000000000080000000000080739299c403"),
-            Year::Strike(Some((5, "0f0d8000000000008000000000008089cd4ad87e"))),
+            Year::Strike,
         ],
     },
 ];

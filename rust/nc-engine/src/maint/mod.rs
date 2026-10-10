@@ -469,8 +469,8 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // ECMAINT leaves PLAYER 0x46 naming the last base in each chain.
     game_data.sync_last_base_records();
 
-    // Hostile fleets strike in the year their strike test passes; a failed
-    // attack leaves them to retry next year.
+    // Hostile fleets strike in the tick they reach orbit, or in the first
+    // tick of the year when they start it in orbit on a hostile order.
     let mut assault_events = combat::process_planetary_assaults(
         game_data,
         campaign_seed,
