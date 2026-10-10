@@ -9,8 +9,8 @@ use nc_compat::import_directory_snapshot;
 use nc_data::{
     CampaignStore, CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents,
     PlanetIntelSnapshot, apply_inactivity_autopilot_policy,
-    apply_maintenance_events_to_player_war_stats, latest_planet_intel_grants_for_viewer,
-    merge_player_intel_from_runtime,
+    apply_maintenance_events_to_player_war_stats, carry_unread_report_blocks,
+    latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
 };
 use nc_engine::{
     DiplomacyConfig, DiplomacyDirective, VisibleHazardIntel, apply_results_reviewable_flags,
@@ -276,7 +276,10 @@ pub fn run_rust_maintenance_with_options(
         game_data.conquest.game_year()
     );
 
-    let report_block_rows = build_results_report_blocks(&game_data, &all_events);
+    let report_block_rows = carry_unread_report_blocks(
+        &runtime_state.report_block_rows,
+        build_results_report_blocks(&game_data, &all_events),
+    );
     apply_results_reviewable_flags(&mut game_data, &report_block_rows);
     apply_maintenance_events_to_player_war_stats(&mut player_war_stats, &all_events);
     campaign_store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(

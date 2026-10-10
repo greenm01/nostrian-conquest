@@ -345,7 +345,7 @@ fn a_base_under_way_does_not_scan() {
             !events
                 .scout_contact_events
                 .iter()
-                .any(|event| matches!(event.source, nc_data::ContactReportSource::Starbase(_)))
+                .any(|event| matches!(event.source, nc_data::ContactReportSource::Starbase { .. }))
         );
     }
 }

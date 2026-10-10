@@ -603,9 +603,13 @@ pub fn push_roe_entries(
     year: u16,
     consumed_roe_disposition_indices: &std::collections::BTreeSet<usize>,
 ) {
-    // Deduplicate NoEngagement: one avoidance report per enemy per location per turn.
-    let mut seen_avoidance: std::collections::HashSet<(u8, u8, [u8; 2])> =
-        std::collections::HashSet::new();
+    // Deduplicate NoEngagement: one report per outcome per enemy per location per turn.
+    let mut seen_avoidance: std::collections::HashSet<(
+        u8,
+        u8,
+        [u8; 2],
+        nc_data::EncounterDispositionReason,
+    )> = std::collections::HashSet::new();
     for (disposition_idx, event) in events.encounter_disposition_events.iter().enumerate() {
         if consumed_roe_disposition_indices.contains(&disposition_idx) {
             continue;
@@ -623,8 +627,8 @@ pub fn push_roe_entries(
                 small_vessels,
                 medium_vessels,
                 large_vessels,
+                reason,
                 stardate_week,
-                ..
             } => (
                 owner_empire_raw,
                 stardate_week,
@@ -656,8 +660,14 @@ pub fn push_roe_entries(
                         } else {
                             format!("{size_summary} of unknown type")
                         };
+                    let outcome = match reason {
+                        nc_data::EncounterDispositionReason::InterceptFailed => {
+                            "We are unable to intercept the enemy."
+                        }
+                        _ => "In accordance to our ROE, we are avoiding this enemy fleet...",
+                    };
                     format!(
-                        "{prefix} We had {}. We have located and identified the alien fleet in System({},{}) {} Their fleet contains {fleet_desc}. In accordance to our ROE, we are avoiding this enemy fleet...",
+                        "{prefix} We had {}. We have located and identified the alien fleet in System({},{}) {} Their fleet contains {fleet_desc}. {outcome}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         coords[0],
                         coords[1],
@@ -746,10 +756,11 @@ pub fn push_roe_entries(
         if let nc_data::EncounterDispositionEvent::NoEngagement {
             target_empire_raw,
             coords,
+            reason,
             ..
         } = event
         {
-            if !seen_avoidance.insert((owner_empire_raw, *target_empire_raw, *coords)) {
+            if !seen_avoidance.insert((owner_empire_raw, *target_empire_raw, *coords, *reason)) {
                 continue;
             }
         }

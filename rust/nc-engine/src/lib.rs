@@ -49,9 +49,9 @@ pub use nc_data::{
     PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent,
     PlanetPlayerInputValidationError, PlanetRecord, PlayerDiplomacyValidationError,
     ProductionItemKind, RNG_TAG_COMBAT, STARDOCK_SLOT_COUNT, SalvageFailureReason,
-    SalvageResolvedEvent, ScoutContactEvent, SetupConfigError, ShipLosses, StarbaseDestroyedEvent,
-    build_capacity, map_size_for_player_count, yearly_growth_delta, yearly_high_tax_penalty,
-    yearly_tax_revenue,
+    SalvageResolvedEvent, ScoutContactEvent, SetupConfigError, ShipLosses, StarbaseAlert,
+    StarbaseDestroyedEvent, build_capacity, map_size_for_player_count, yearly_growth_delta,
+    yearly_high_tax_penalty, yearly_tax_revenue,
 };
 pub use orders::{
     BUILD_UNITS, BuildUnitSpec, FLEET_MISSION_OPTIONS, FleetMissionOption, FleetMissionRequirement,

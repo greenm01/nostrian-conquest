@@ -77,6 +77,12 @@ impl<'a> YearMovement<'a> {
                 fleet.current_location_coords_raw(),
             )
         };
+        if order_kind == Order::HoldPosition {
+            // Classic's Hold action zeroes the speed, so a holding fleet's
+            // visibility loses its speed term after its first tick.
+            game_data.fleets.records[fleet_idx].set_current_speed(0);
+            return Ok(());
+        }
         let marks = EventMarks::of(&self.events);
         if order_kind == Order::GuardStarbase {
             if self.tracks[fleet_idx].stepped() {

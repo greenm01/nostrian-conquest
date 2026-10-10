@@ -4,7 +4,7 @@ use nc_data::{
     FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError, GameStateBuilder,
     GameVictoryNoticeEvent, InvalidPlayerStateEvent, MaintenanceEvents, Mission, MissionEvent,
     MissionOutcome, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetRecord,
-    ScoutContactEvent, ShipLosses,
+    ScoutContactEvent, ShipLosses, StarbaseAlert,
 };
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, maint::FleetBattlePerspective,
@@ -1748,7 +1748,10 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
         viewer_empire_raw: 1,
-        source: ContactReportSource::Starbase(5),
+        source: ContactReportSource::Starbase {
+            id: 5,
+            alert: StarbaseAlert::Enemy,
+        },
         reporting_fleet_number: None,
         reporting_initial: ShipLosses::default(),
         reporting_loaded_armies_initial: 0,
@@ -1789,6 +1792,101 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
     );
     assert!(texts[0].contains("We have located and identified an alien fleet"));
     assert!(texts[1].contains("ALERT: Starbase contact lost!"));
+}
+
+/// A starbase's sighting report ends with what the base makes of the fleet,
+/// in classic's words.
+#[test]
+fn starbase_sighting_report_ends_with_the_bases_alert() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3024)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [9, 13];
+    seed_target_world(&mut game_data, coords, "Target");
+    for (alert, ending) in [
+        (
+            StarbaseAlert::HeadedAtOurWorld,
+            "The aliens appear to be headed at our planet Target! We are alerting all fleets in the area.",
+        ),
+        (
+            StarbaseAlert::Enemy,
+            "We are alerting all fleets in the area.",
+        ),
+        (
+            StarbaseAlert::Scanning,
+            "Continuing with scanning assignment...",
+        ),
+    ] {
+        let mut events = MaintenanceEvents::default();
+        events.scout_contact_events.push(ScoutContactEvent {
+            viewer_empire_raw: 1,
+            source: ContactReportSource::Starbase { id: 5, alert },
+            reporting_fleet_number: None,
+            reporting_initial: ShipLosses::default(),
+            reporting_loaded_armies_initial: 0,
+            coords,
+            target_empire_raw: 2,
+            target_fleet_number: Some(7),
+            small_vessels: 0,
+            medium_vessels: 1,
+            large_vessels: 0,
+            stardate_week: Some(3),
+        });
+        let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+            .join(" ")
+            .replace('\n', " ");
+        assert!(
+            text.contains("We have located and identified an alien fleet in System(9,13)."),
+            "{alert:?}: {text}"
+        );
+        assert!(text.contains(ending), "{alert:?}: {text}");
+        if alert != StarbaseAlert::HeadedAtOurWorld {
+            assert!(!text.contains("headed at our planet"), "{alert:?}: {text}");
+        }
+    }
+}
+
+/// A fleet that decided to attack but could not catch its target says so,
+/// in classic's words, instead of the ROE avoidance line.
+#[test]
+fn unable_to_intercept_report_uses_classic_wording() {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3024)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let mut events = MaintenanceEvents::default();
+    events
+        .encounter_disposition_events
+        .push(EncounterDispositionEvent::NoEngagement {
+            fleet_idx: 0,
+            owner_empire_raw: 1,
+            mission: Some(Mission::GuardBlockadeWorld),
+            coords: [15, 13],
+            friendly_initial: ShipLosses {
+                cruisers: 3,
+                ..ShipLosses::default()
+            },
+            friendly_loaded_armies_initial: 0,
+            target_empire_raw: 2,
+            target_fleet_number: Some(1),
+            small_vessels: 0,
+            medium_vessels: 2,
+            large_vessels: 0,
+            reason: EncounterDispositionReason::InterceptFailed,
+            stardate_week: Some(24),
+        });
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .join(" ")
+        .replace('\n', " ");
+    assert!(
+        text.contains("We have located and identified the alien fleet in System(15,13)"),
+        "{text}"
+    );
+    assert!(text.contains("Their fleet contains 2 medium vessel(s) of unknown type. We are unable to intercept the enemy."), "{text}");
+    assert!(!text.contains("avoiding"), "{text}");
 }
 
 #[test]

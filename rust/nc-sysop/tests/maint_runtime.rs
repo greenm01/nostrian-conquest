@@ -7,6 +7,7 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, GameStateBuilder, IntelTier, Order,
+    ReportBlockRow,
 };
 use nc_engine::validate_maintenance_state;
 
@@ -189,6 +190,63 @@ fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
     );
     assert_eq!(snapshot.known_armies, None);
     assert_eq!(snapshot.known_ground_batteries, None);
+
+    let _ = fs::remove_dir_all(&target);
+}
+
+/// Reports wait until the player deletes them: a year's maintenance keeps
+/// last year's unread reports ahead of its own and drops the deleted ones.
+#[test]
+fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
+    let target = unique_temp_dir("nc-sysop-maint-unread-reports");
+    let mut game_data = load_fixture("ecmaint-fleet-pre");
+    let viewer = &mut game_data.fleets.records[0];
+    viewer.set_standing_order_kind(Order::ViewWorld);
+    viewer.set_standing_order_target_coords_raw([15, 13]);
+    viewer.set_scout_count(0);
+    viewer.set_etac_count(0);
+    viewer.recompute_max_speed_from_composition();
+    viewer.set_current_speed(viewer.max_speed());
+    let last_year = |block_index, text: &str, deleted| ReportBlockRow {
+        viewer_empire_id: 1,
+        block_index,
+        decoded_text: text.to_string(),
+        raw_bytes: None,
+        recipient_deleted: deleted,
+    };
+    CampaignStore::open_default_in_dir(&target)
+        .expect("open campaign store")
+        .save_runtime_state_structured(
+            &game_data,
+            &BTreeSet::new(),
+            &[
+                last_year(0, "Read last year", true),
+                last_year(1, "Unread last year", false),
+            ],
+            &[],
+        )
+        .expect("seed runtime snapshot");
+
+    run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
+
+    let runtime = load_runtime_state(&target);
+    let viewer_one = runtime
+        .report_block_rows
+        .iter()
+        .filter(|row| row.viewer_empire_id == 1)
+        .map(|row| (row.block_index, row.decoded_text.as_str()))
+        .collect::<Vec<_>>();
+    assert_eq!(viewer_one.first(), Some(&(0, "Unread last year")));
+    assert!(
+        viewer_one.iter().all(|(_, text)| *text != "Read last year"),
+        "{viewer_one:?}"
+    );
+    assert!(
+        viewer_one
+            .iter()
+            .any(|(index, text)| *index > 0 && text.contains("Viewing mission report")),
+        "this year's reports should follow: {viewer_one:?}"
+    );
 
     let _ = fs::remove_dir_all(&target);
 }
