@@ -5,8 +5,8 @@ Controlled delayed hostile-world probes comparing Rust maintenance against class
 Current takeaways from this probe set:
 
 - `BombardWorld`, `InvadeWorld`, and `BlitzWorld` keep their order and travel speed while the fleet descends to orbit.
-- A hostile fleet strikes on the tick its depth reaches `1.0`. If the attack fails, classic keeps the state from the tick before, so the depth stays just under `1.0` (for a one-sector straight path, `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`), and the fleet strikes again the next year.
-- The strike year and the retry bytes match classic. What the battle does to the order afterward depends on the planetary battle, which is random in classic.
+- A hostile fleet strikes on the tick its depth reaches `1.0`. If the attack fails, classic keeps the state from the tick before, so the depth stays just under `1.0` (for a one-sector straight path, `19=80 1a=b9 1b=ff 1c=ff 1d=ff 1e=7f`), and the fleet strikes again the next year. Rust does not copy that retry: its fleet stops in orbit (`19=81`, speed 0), where Bombard stands and Invade and Blitz hold.
+- The strike year matches classic. NC combat decides the battle and the order afterward, so the turns after the strike differ from classic by design.
 
 Scope of this probe set:
 

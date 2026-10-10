@@ -524,19 +524,13 @@ fn mission_priority(class: MissionClass) -> u8 {
 }
 
 /// Resolve the planetary attacks of fleets whose strike test passed this
-/// year (`strikes`), grouped by target world.
-///
-/// A failed attack leaves the fleet with its order, speed, and the motion
-/// state from one tick before the strike, so it strikes again next year
-/// (ECMAINT does not save the record of a failed attack). Rust's combat
-/// results map to that as follows:
-/// - Bombard: every strike leaves the order standing (the fleet keeps
-///   bombarding each year), so every bombarding fleet keeps its retry state.
-/// - Invade: `Aborted` (the batteries survive suppression, so no troops land)
-///   is the failed attack; the armies stay aboard. `Succeeded` (conquest) and
-///   `Failed` (the landed armies lose) resolve the order to Hold in orbit.
-/// - Blitz: troops always land under fire, so every blitz resolves
-///   (`Succeeded` or `Failed`) to Hold in orbit; there is no retry outcome.
+/// year (`strikes`), grouped by target world. A striking fleet is in orbit
+/// at depth 1.0 with speed 0. What the attack leaves on its order:
+/// - Bombard: the order stands, so the fleet bombards again each year until
+///   the player changes it.
+/// - Invade and Blitz: the assault resolves, win or lose (an invasion whose
+///   batteries survive suppression aborts with its armies still aboard), and
+///   the surviving fleets hold in orbit. There is no retry.
 ///
 /// An orbit blocked by a stronger or tied force aborts the order to Hold.
 pub(crate) fn process_planetary_assaults(
@@ -1041,7 +1035,7 @@ pub(crate) fn process_planetary_assaults(
                     }
                 } else {
                     // The batteries held: no troops land and the fleets
-                    // keep their armies and their pre-strike state to retry.
+                    // keep their armies.
                     for &fleet_idx in &winner_fleets {
                         if invade_set.contains(&fleet_idx) {
                             events.mission_events.push(MissionEvent {
@@ -1112,9 +1106,7 @@ pub(crate) fn process_planetary_assaults(
                     PlanetIntelSource::AssaultFailure
                 };
 
-                if batteries_cleared {
-                    clear_arrival_and_hold(game_data, &winner_fleets);
-                }
+                clear_arrival_and_hold(game_data, &winner_fleets);
                 push_planet_intel(
                     &mut events.planet_intel_events,
                     planet_idx,
