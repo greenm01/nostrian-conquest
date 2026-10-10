@@ -1,0 +1,3826 @@
+{
+  "source": "38e703f4bee662abc5278c06edca1b34e61ae465",
+  "seed": 20261010,
+  "trials_per_case": 1000,
+  "horizon_years": 25,
+  "assumptions": [
+    "Synthetic 31x31 square; home center; uniform empty cells and integer potential 10..150.",
+    "Home starts P=K=100, goods=50, matching NC's default joined treasury; shared across models.",
+    "These are sensitivity inputs, not the distribution of NC's generated maps.",
+    "Two starter reusable ETACs. Optional home-built extras cost money and one commissioning cycle.",
+    "All target locations known; nearest unreserved target; no quality optimization or scouting.",
+    "Full-orbit Euclidean travel plus two depth units, rounded to ticks and player-order years.",
+    "No classic real-number rounding, end-year half-depth colonization shortcut, or route avoidance.",
+    "No enemies, battles, capture, repair, upkeep, base growth, or new colony ship purchases off home.",
+    "No military spending; local reserve sums cannot be spent centrally.",
+    "Milestone dates are order affordability, not commissioning or arrival of combat ships.",
+    "Quantiles describe synthetic-map variation; unreached milestones are reported separately.",
+    "Same-density cases share maps. Classic also samples economy rolls; no engine RNG is used."
+  ],
+  "cases": [
+    {
+      "config": {
+        "worlds": 24,
+        "model": "classic",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 10.935,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 9,
+          "p90_when_reached": 13
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.788,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.465,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 9,
+          "p90_when_reached": 14
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 998,
+          "trials": 1000,
+          "reach_fraction": 0.998,
+          "mean_when_reached": 14.986973947895791,
+          "median_when_reached": 15.0,
+          "p10_when_reached": 12,
+          "p90_when_reached": 18
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 975,
+          "trials": 1000,
+          "reach_fraction": 0.975,
+          "mean_when_reached": 18.372307692307693,
+          "median_when_reached": 18,
+          "p10_when_reached": 15,
+          "p90_when_reached": 22
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 120.009244,
+            "median_when_reached": 119.10149999999999,
+            "p10_when_reached": 109.62,
+            "p90_when_reached": 131.716
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 59.573622,
+            "median_when_reached": 59.13825,
+            "p10_when_reached": 54.547,
+            "p90_when_reached": 65.44
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 317.712953,
+            "median_when_reached": 316.11875,
+            "p10_when_reached": 307.0805,
+            "p90_when_reached": 330.3165
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 195.185812,
+            "median_when_reached": 193.7035,
+            "p10_when_reached": 162.311,
+            "p90_when_reached": 227.688
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 97.203406,
+            "median_when_reached": 96.2875,
+            "p10_when_reached": 80.783,
+            "p90_when_reached": 113.49
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 717.8481845,
+            "median_when_reached": 715.04775,
+            "p10_when_reached": 650.3845,
+            "p90_when_reached": 788.8294999999999
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 486.985215,
+            "median_when_reached": 485.3535,
+            "p10_when_reached": 391.616,
+            "p90_when_reached": 578.367
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 243.1871075,
+            "median_when_reached": 242.15025,
+            "p10_when_reached": 195.3975,
+            "p90_when_reached": 288.6835
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 2427.0821175,
+            "median_when_reached": 2414.984,
+            "p10_when_reached": 2058.6785,
+            "p90_when_reached": 2804.855
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 683.542957,
+            "median_when_reached": 681.2515000000001,
+            "p10_when_reached": 551.539,
+            "p90_when_reached": 810.869
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 341.5004785,
+            "median_when_reached": 340.53125,
+            "p10_when_reached": 275.7695,
+            "p90_when_reached": 404.9345
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3933.0280335,
+            "median_when_reached": 3911.2427500000003,
+            "p10_when_reached": 3279.773,
+            "p90_when_reached": 4576.325
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "classic",
+        "policy": "65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 995,
+          "trials": 1000,
+          "reach_fraction": 0.995,
+          "mean_when_reached": 19.66331658291457,
+          "median_when_reached": 19,
+          "p10_when_reached": 17,
+          "p90_when_reached": 22
+        },
+        "first_colony_can_order_CA": {
+          "reached": 988,
+          "trials": 1000,
+          "reach_fraction": 0.988,
+          "mean_when_reached": 16.88259109311741,
+          "median_when_reached": 17.0,
+          "p10_when_reached": 13,
+          "p90_when_reached": 21
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 181,
+          "trials": 1000,
+          "reach_fraction": 0.181,
+          "mean_when_reached": 23.668508287292816,
+          "median_when_reached": 24,
+          "p10_when_reached": 22,
+          "p90_when_reached": 25
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1,
+          "trials": 1000,
+          "reach_fraction": 0.001,
+          "mean_when_reached": 25,
+          "median_when_reached": 25,
+          "p10_when_reached": 25,
+          "p90_when_reached": 25
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 0,
+          "trials": 1000,
+          "reach_fraction": 0.0
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 107.501424,
+            "median_when_reached": 107.207,
+            "p10_when_reached": 104.075,
+            "p90_when_reached": 111.385
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 69.3156256,
+            "median_when_reached": 69.03812500000001,
+            "p10_when_reached": 67.2477,
+            "p90_when_reached": 71.8341
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 383.4636981,
+            "median_when_reached": 382.6713,
+            "p10_when_reached": 378.9676,
+            "p90_when_reached": 389.1674
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 129.330155,
+            "median_when_reached": 129.005,
+            "p10_when_reached": 119.926,
+            "p90_when_reached": 138.535
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 83.55825075,
+            "median_when_reached": 83.309525,
+            "p10_when_reached": 77.53525,
+            "p90_when_reached": 89.4985
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 769.32584425,
+            "median_when_reached": 767.720575,
+            "p10_when_reached": 744.3378,
+            "p90_when_reached": 795.9998
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 210.843568,
+            "median_when_reached": 210.731,
+            "p10_when_reached": 184.653,
+            "p90_when_reached": 237.06
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 136.6511692,
+            "median_when_reached": 136.525025,
+            "p10_when_reached": 119.67215,
+            "p90_when_reached": 153.59435
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1872.85334075,
+            "median_when_reached": 1868.407825,
+            "p10_when_reached": 1738.4673,
+            "p90_when_reached": 2008.6827
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 268.062959,
+            "median_when_reached": 267.6625,
+            "p10_when_reached": 231.792,
+            "p90_when_reached": 304.044
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 173.88862335,
+            "median_when_reached": 173.478175,
+            "p10_when_reached": 150.17535,
+            "p90_when_reached": 197.13135
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 2665.35686295,
+            "median_when_reached": 2658.6736,
+            "p10_when_reached": 2432.09725,
+            "p90_when_reached": 2897.728
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "classic",
+        "policy": "35_then_65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 17.03203203203203,
+          "median_when_reached": 17,
+          "p10_when_reached": 13,
+          "p90_when_reached": 21
+        },
+        "first_colony_can_order_CA": {
+          "reached": 997,
+          "trials": 1000,
+          "reach_fraction": 0.997,
+          "mean_when_reached": 8.748244734202608,
+          "median_when_reached": 7,
+          "p10_when_reached": 6,
+          "p90_when_reached": 16
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 696,
+          "trials": 1000,
+          "reach_fraction": 0.696,
+          "mean_when_reached": 14.574712643678161,
+          "median_when_reached": 14.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 23
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 270,
+          "trials": 1000,
+          "reach_fraction": 0.27,
+          "mean_when_reached": 20.544444444444444,
+          "median_when_reached": 21.0,
+          "p10_when_reached": 16,
+          "p90_when_reached": 25
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 15,
+          "trials": 1000,
+          "reach_fraction": 0.015,
+          "mean_when_reached": 22.733333333333334,
+          "median_when_reached": 24,
+          "p10_when_reached": 20,
+          "p90_when_reached": 25
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 132.410443,
+            "median_when_reached": 131.1105,
+            "p10_when_reached": 114.926,
+            "p90_when_reached": 152.322
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 46.04195505,
+            "median_when_reached": 45.599050000000005,
+            "p10_when_reached": 39.9553,
+            "p90_when_reached": 52.9459
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 245.1901819,
+            "median_when_reached": 243.4247,
+            "p10_when_reached": 232.78155,
+            "p90_when_reached": 260.11235
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 154.081504,
+            "median_when_reached": 153.4075,
+            "p10_when_reached": 131.801,
+            "p90_when_reached": 178.617
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 99.6466276,
+            "median_when_reached": 99.04634999999999,
+            "p10_when_reached": 85.0421,
+            "p90_when_reached": 115.739
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 711.71414955,
+            "median_when_reached": 706.645,
+            "p10_when_reached": 634.11525,
+            "p90_when_reached": 800.6276
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 235.121498,
+            "median_when_reached": 233.641,
+            "p10_when_reached": 198.641,
+            "p90_when_reached": 272.755
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 152.4318237,
+            "median_when_reached": 151.2381,
+            "p10_when_reached": 128.54595,
+            "p90_when_reached": 177.05025
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1974.5363277,
+            "median_when_reached": 1959.8115750000002,
+            "p10_when_reached": 1707.97315,
+            "p90_when_reached": 2263.50245
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 292.024543,
+            "median_when_reached": 289.2825,
+            "p10_when_reached": 246.174,
+            "p90_when_reached": 337.838
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 189.46365295,
+            "median_when_reached": 187.604625,
+            "p10_when_reached": 159.69915,
+            "p90_when_reached": 219.41725
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 2845.342811,
+            "median_when_reached": 2826.44375,
+            "p10_when_reached": 2455.6902,
+            "p90_when_reached": 3256.81095
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.22,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.666,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.954,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.116,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 9.897897897897899,
+          "median_when_reached": 9,
+          "p10_when_reached": 7,
+          "p90_when_reached": 13
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 155.547,
+            "median_when_reached": 153.0,
+            "p10_when_reached": 126,
+            "p90_when_reached": 188
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 76.711,
+            "median_when_reached": 76.0,
+            "p10_when_reached": 62,
+            "p90_when_reached": 93
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 349.316,
+            "median_when_reached": 345.0,
+            "p10_when_reached": 319,
+            "p90_when_reached": 386
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 335.939,
+            "median_when_reached": 333.0,
+            "p10_when_reached": 259,
+            "p90_when_reached": 413
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 165.973,
+            "median_when_reached": 165.0,
+            "p10_when_reached": 128,
+            "p90_when_reached": 204
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 983.647,
+            "median_when_reached": 973.5,
+            "p10_when_reached": 810,
+            "p90_when_reached": 1164
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 828.586,
+            "median_when_reached": 826.0,
+            "p10_when_reached": 658,
+            "p90_when_reached": 996
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 410.647,
+            "median_when_reached": 409.0,
+            "p10_when_reached": 326,
+            "p90_when_reached": 494
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3967.043,
+            "median_when_reached": 3936.5,
+            "p10_when_reached": 3202,
+            "p90_when_reached": 4743
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1076.641,
+            "median_when_reached": 1081.0,
+            "p10_when_reached": 875,
+            "p90_when_reached": 1284
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 534.077,
+            "median_when_reached": 536.5,
+            "p10_when_reached": 434,
+            "p90_when_reached": 638
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 6392.642,
+            "median_when_reached": 6365.0,
+            "p10_when_reached": 5169,
+            "p90_when_reached": 7609
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.135,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.773,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.551,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 9.632632632632633,
+          "median_when_reached": 9,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 12.042042042042041,
+          "median_when_reached": 12,
+          "p10_when_reached": 9,
+          "p90_when_reached": 15
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 141.946,
+            "median_when_reached": 140.0,
+            "p10_when_reached": 120,
+            "p90_when_reached": 167
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 90.571,
+            "median_when_reached": 89.0,
+            "p10_when_reached": 76,
+            "p90_when_reached": 107
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 421.694,
+            "median_when_reached": 418.0,
+            "p10_when_reached": 392,
+            "p90_when_reached": 457
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 285.986,
+            "median_when_reached": 283.0,
+            "p10_when_reached": 226,
+            "p90_when_reached": 347
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 182.329,
+            "median_when_reached": 181.0,
+            "p10_when_reached": 143,
+            "p90_when_reached": 221
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1129.151,
+            "median_when_reached": 1117.5,
+            "p10_when_reached": 958,
+            "p90_when_reached": 1309
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 721.525,
+            "median_when_reached": 719.5,
+            "p10_when_reached": 578,
+            "p90_when_reached": 860
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 462.414,
+            "median_when_reached": 460.5,
+            "p10_when_reached": 370,
+            "p90_when_reached": 552
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4438.01,
+            "median_when_reached": 4404.0,
+            "p10_when_reached": 3625,
+            "p90_when_reached": 5257
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 958.883,
+            "median_when_reached": 961.5,
+            "p10_when_reached": 781,
+            "p90_when_reached": 1136
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 615.436,
+            "median_when_reached": 617.0,
+            "p10_when_reached": 500,
+            "p90_when_reached": 730
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7209.141,
+            "median_when_reached": 7185.5,
+            "p10_when_reached": 5895,
+            "p90_when_reached": 8536
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "35_then_65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.323,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.778,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.002,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 8.402402402402402,
+          "median_when_reached": 7,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 10.457457457457457,
+          "median_when_reached": 10,
+          "p10_when_reached": 7,
+          "p90_when_reached": 15
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 168.767,
+            "median_when_reached": 166.0,
+            "p10_when_reached": 131,
+            "p90_when_reached": 210
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 57.584,
+            "median_when_reached": 57.0,
+            "p10_when_reached": 45,
+            "p90_when_reached": 72
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 266.753,
+            "median_when_reached": 263.0,
+            "p10_when_reached": 240,
+            "p90_when_reached": 298
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 302.982,
+            "median_when_reached": 300.0,
+            "p10_when_reached": 234,
+            "p90_when_reached": 373
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 193.422,
+            "median_when_reached": 191.5,
+            "p10_when_reached": 149,
+            "p90_when_reached": 238
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1041.108,
+            "median_when_reached": 1030.0,
+            "p10_when_reached": 839,
+            "p90_when_reached": 1261
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 728.149,
+            "median_when_reached": 726.0,
+            "p10_when_reached": 583,
+            "p90_when_reached": 870
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 466.714,
+            "median_when_reached": 465.0,
+            "p10_when_reached": 373,
+            "p90_when_reached": 558
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4418.452,
+            "median_when_reached": 4373.5,
+            "p10_when_reached": 3562,
+            "p90_when_reached": 5288
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 962.819,
+            "median_when_reached": 965.5,
+            "p10_when_reached": 784,
+            "p90_when_reached": 1141
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 617.999,
+            "median_when_reached": 619.5,
+            "p10_when_reached": 503,
+            "p90_when_reached": 733
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7205.671,
+            "median_when_reached": 7153.5,
+            "p10_when_reached": 5838,
+            "p90_when_reached": 8609
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "fractional",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.322,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.72,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.045,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.362,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 11
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 10.23023023023023,
+          "median_when_reached": 10,
+          "p10_when_reached": 8,
+          "p90_when_reached": 13
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 153.3089296875,
+            "median_when_reached": 151.119140625,
+            "p10_when_reached": 124.076171875,
+            "p90_when_reached": 185.859375
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 76.22346484375,
+            "median_when_reached": 75.0731201171875,
+            "p10_when_reached": 61.6123046875,
+            "p90_when_reached": 92.4384765625
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 348.70774609375,
+            "median_when_reached": 344.76513671875,
+            "p10_when_reached": 318.2509765625,
+            "p90_when_reached": 384.142578125
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 326.34644669365883,
+            "median_when_reached": 323.09793877601624,
+            "p10_when_reached": 250.2695004940033,
+            "p90_when_reached": 402.30292711406946
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 162.78372334682942,
+            "median_when_reached": 160.98282754421234,
+            "p10_when_reached": 124.80583316087723,
+            "p90_when_reached": 200.67714446783066
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 973.1869365721941,
+            "median_when_reached": 963.6249533593655,
+            "p10_when_reached": 802.5268332958221,
+            "p90_when_reached": 1151.5002101659775
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 799.2553034542459,
+            "median_when_reached": 795.3315392235197,
+            "p10_when_reached": 630.9512381026875,
+            "p90_when_reached": 965.776055979263
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 399.32215172712296,
+            "median_when_reached": 397.4445021371795,
+            "p10_when_reached": 315.1486789226863,
+            "p90_when_reached": 482.8880279896315
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3880.1619379101394,
+            "median_when_reached": 3863.1029685026206,
+            "p10_when_reached": 3123.2749241673314,
+            "p90_when_reached": 4653.401883011609
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1038.8950723008884,
+            "median_when_reached": 1042.301678441161,
+            "p10_when_reached": 840.3633882001161,
+            "p90_when_reached": 1242.536517087183
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 519.1765361504442,
+            "median_when_reached": 521.1508392205805,
+            "p10_when_reached": 420.02982546746927,
+            "p90_when_reached": 620.8714260401644
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 6238.182746946891,
+            "median_when_reached": 6199.026768818332,
+            "p10_when_reached": 5026.381644110221,
+            "p90_when_reached": 7430.646793919212
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "fractional",
+        "policy": "65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.292,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.869,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.832,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 10.06906906906907,
+          "median_when_reached": 10,
+          "p10_when_reached": 8,
+          "p90_when_reached": 13
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 12.53953953953954,
+          "median_when_reached": 12,
+          "p10_when_reached": 10,
+          "p90_when_reached": 16
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 139.381193521875,
+            "median_when_reached": 137.5670859375,
+            "p10_when_reached": 117.89765625000001,
+            "p90_when_reached": 163.56989062500003
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 90.03747578921875,
+            "median_when_reached": 88.93191772460938,
+            "p10_when_reached": 76.19625,
+            "p90_when_reached": 105.4249599609375
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 421.33300962671876,
+            "median_when_reached": 417.6837258300781,
+            "p10_when_reached": 392.597734375,
+            "p90_when_reached": 455.0118431994629
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 274.1527710072933,
+            "median_when_reached": 271.29919038168066,
+            "p10_when_reached": 215.5330507562891,
+            "p90_when_reached": 334.4001109112518
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 177.69295115474065,
+            "median_when_reached": 176.04295507856972,
+            "p10_when_reached": 139.32247226553545,
+            "p90_when_reached": 216.37993925135555
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1115.3797808148477,
+            "median_when_reached": 1106.810899764368,
+            "p10_when_reached": 946.9078086280599,
+            "p90_when_reached": 1293.9982776779152
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 681.6523274538416,
+            "median_when_reached": 678.6941739971767,
+            "p10_when_reached": 540.9060205283565,
+            "p90_when_reached": 817.6417979297141
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 442.67686284499706,
+            "median_when_reached": 440.53635225686315,
+            "p10_when_reached": 351.30276525114846,
+            "p90_when_reached": 530.8171686543142
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4298.222930330745,
+            "median_when_reached": 4272.800739605607,
+            "p10_when_reached": 3501.671888423333,
+            "p90_when_reached": 5107.266296721054
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 904.9173288181497,
+            "median_when_reached": 906.5153609993715,
+            "p10_when_reached": 733.3588757138581,
+            "p90_when_reached": 1078.4465951056736
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 587.8439637317973,
+            "median_when_reached": 589.1444371397718,
+            "p10_when_reached": 476.03326921400776,
+            "p90_when_reached": 700.3402868186879
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 6946.833171082685,
+            "median_when_reached": 6914.142215242553,
+            "p10_when_reached": 5663.855502579772,
+            "p90_when_reached": 8239.456659004434
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "fractional",
+        "policy": "35_then_65",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.597,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 11.122,
+          "median_when_reached": 11.0,
+          "p10_when_reached": 10,
+          "p90_when_reached": 13
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.433,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.801,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.101,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 8.68968968968969,
+          "median_when_reached": 8,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 10.955955955955956,
+          "median_when_reached": 10,
+          "p10_when_reached": 7,
+          "p90_when_reached": 16
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3.323,
+            "median_when_reached": 3.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 4
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 166.370927475,
+            "median_when_reached": 163.49319726562499,
+            "p10_when_reached": 129.87343750000002,
+            "p90_when_reached": 206.660501953125
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 57.92812461625,
+            "median_when_reached": 56.915085937499995,
+            "p10_when_reached": 45.105703125,
+            "p90_when_reached": 72.23327412109376
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 267.83218851625,
+            "median_when_reached": 264.4096544433594,
+            "p10_when_reached": 240.924453125,
+            "p90_when_reached": 299.1719521484375
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7.12,
+            "median_when_reached": 7.0,
+            "p10_when_reached": 6,
+            "p90_when_reached": 8
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 291.22785974046315,
+            "median_when_reached": 288.1485625636272,
+            "p10_when_reached": 224.29591715977395,
+            "p90_when_reached": 359.81904947341167
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 188.79175883130105,
+            "median_when_reached": 186.80941890174807,
+            "p10_when_reached": 145.01178104283693,
+            "p90_when_reached": 233.221441791304
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1029.086090516789,
+            "median_when_reached": 1019.0320553169413,
+            "p10_when_reached": 830.5687169970888,
+            "p90_when_reached": 1244.4569752548282
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 13.539,
+            "median_when_reached": 14.0,
+            "p10_when_reached": 12,
+            "p90_when_reached": 15
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 688.4865906578939,
+            "median_when_reached": 685.6720439789649,
+            "p10_when_reached": 545.6428897197052,
+            "p90_when_reached": 827.4624438367231
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 447.119133927631,
+            "median_when_reached": 445.0421591522827,
+            "p10_when_reached": 354.6678783178084,
+            "p90_when_reached": 537.3430190487861
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4281.347407369348,
+            "median_when_reached": 4244.511925066905,
+            "p10_when_reached": 3441.0450078342283,
+            "p90_when_reached": 5143.6754034012865
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.339,
+            "median_when_reached": 16.0,
+            "p10_when_reached": 14,
+            "p90_when_reached": 18
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 909.2410339290524,
+            "median_when_reached": 911.2693341342999,
+            "p10_when_reached": 737.3013739407518,
+            "p90_when_reached": 1083.887379018771
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 590.6543720538841,
+            "median_when_reached": 592.0874378961375,
+            "p10_when_reached": 479.2458930614887,
+            "p90_when_reached": 703.7495392342788
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 6946.9756454812805,
+            "median_when_reached": 6898.879999642609,
+            "p10_when_reached": 5598.350770555432,
+            "p90_when_reached": 8303.892391114763
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 12,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.619,
+          "median_when_reached": 3.0,
+          "p10_when_reached": 2,
+          "p90_when_reached": 4
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.845,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 15.069,
+          "median_when_reached": 15.0,
+          "p10_when_reached": 12,
+          "p90_when_reached": 19
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.163,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.123,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.486,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.748,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 11
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 10.654,
+          "median_when_reached": 10.0,
+          "p10_when_reached": 8,
+          "p90_when_reached": 14
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 2.505,
+            "median_when_reached": 2.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 3
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 141.634,
+            "median_when_reached": 140.0,
+            "p10_when_reached": 118,
+            "p90_when_reached": 167
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 70.076,
+            "median_when_reached": 69.0,
+            "p10_when_reached": 58,
+            "p90_when_reached": 83
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 334.561,
+            "median_when_reached": 331.0,
+            "p10_when_reached": 309,
+            "p90_when_reached": 365
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 5.553,
+            "median_when_reached": 6.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 7
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 283.239,
+            "median_when_reached": 280.0,
+            "p10_when_reached": 214,
+            "p90_when_reached": 353
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 140.089,
+            "median_when_reached": 138.0,
+            "p10_when_reached": 106,
+            "p90_when_reached": 174
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 879.801,
+            "median_when_reached": 872.0,
+            "p10_when_reached": 733,
+            "p90_when_reached": 1033
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 9.618,
+            "median_when_reached": 10.0,
+            "p10_when_reached": 8,
+            "p90_when_reached": 11
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 635.056,
+            "median_when_reached": 637.5,
+            "p10_when_reached": 484,
+            "p90_when_reached": 780
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 314.973,
+            "median_when_reached": 316.0,
+            "p10_when_reached": 239,
+            "p90_when_reached": 387
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3252.229,
+            "median_when_reached": 3245.5,
+            "p10_when_reached": 2567,
+            "p90_when_reached": 3930
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 11.133,
+            "median_when_reached": 11.0,
+            "p10_when_reached": 10,
+            "p90_when_reached": 12
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 792.729,
+            "median_when_reached": 801.5,
+            "p10_when_reached": 622,
+            "p90_when_reached": 953
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 393.493,
+            "median_when_reached": 398.0,
+            "p10_when_reached": 309,
+            "p90_when_reached": 473
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 5066.12,
+            "median_when_reached": 5094.5,
+            "p10_when_reached": 3987,
+            "p90_when_reached": 6136
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 48,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 1.877,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 2
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 4.624,
+          "median_when_reached": 5.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 5
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.164,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 8,
+          "p90_when_reached": 10
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.495,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.258,
+          "median_when_reached": 5.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 6
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.51,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.616,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.339,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.121,
+            "median_when_reached": 4.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 5
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 172.299,
+            "median_when_reached": 170.0,
+            "p10_when_reached": 140,
+            "p90_when_reached": 207
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 84.9,
+            "median_when_reached": 84.0,
+            "p10_when_reached": 69,
+            "p90_when_reached": 102
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 366.023,
+            "median_when_reached": 363.0,
+            "p10_when_reached": 333,
+            "p90_when_reached": 403
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 8.709,
+            "median_when_reached": 9.0,
+            "p10_when_reached": 8,
+            "p90_when_reached": 10
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 392.705,
+            "median_when_reached": 388.5,
+            "p10_when_reached": 315,
+            "p90_when_reached": 476
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 193.887,
+            "median_when_reached": 192.0,
+            "p10_when_reached": 155,
+            "p90_when_reached": 236
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1096.302,
+            "median_when_reached": 1086.5,
+            "p10_when_reached": 919,
+            "p90_when_reached": 1286
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 17.425,
+            "median_when_reached": 18.0,
+            "p10_when_reached": 16,
+            "p90_when_reached": 19
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1022.744,
+            "median_when_reached": 1018.5,
+            "p10_when_reached": 851,
+            "p90_when_reached": 1199
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 506.687,
+            "median_when_reached": 505.0,
+            "p10_when_reached": 421,
+            "p90_when_reached": 594
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4702.595,
+            "median_when_reached": 4684.0,
+            "p10_when_reached": 3935,
+            "p90_when_reached": 5519
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 21.374,
+            "median_when_reached": 21.0,
+            "p10_when_reached": 19,
+            "p90_when_reached": 23
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1355.58,
+            "median_when_reached": 1350.5,
+            "p10_when_reached": 1136,
+            "p90_when_reached": 1574
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 672.228,
+            "median_when_reached": 670.0,
+            "p10_when_reached": 564,
+            "p90_when_reached": 782
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7734.496,
+            "median_when_reached": 7691.5,
+            "p10_when_reached": 6530,
+            "p90_when_reached": 9028
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 4,
+        "etac_cost": 15,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 4.462,
+          "median_when_reached": 4.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 5
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.502,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 8
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.412,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.641,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.851,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.857,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.46,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.875,
+            "median_when_reached": 5.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 6
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 167.902,
+            "median_when_reached": 166.0,
+            "p10_when_reached": 131,
+            "p90_when_reached": 205
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 82.352,
+            "median_when_reached": 81.5,
+            "p10_when_reached": 64,
+            "p90_when_reached": 101
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 325.503,
+            "median_when_reached": 322.0,
+            "p10_when_reached": 291,
+            "p90_when_reached": 367
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 11.669,
+            "median_when_reached": 12.0,
+            "p10_when_reached": 10,
+            "p90_when_reached": 13
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 462.004,
+            "median_when_reached": 461.0,
+            "p10_when_reached": 367,
+            "p90_when_reached": 560
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 227.736,
+            "median_when_reached": 227.0,
+            "p10_when_reached": 181,
+            "p90_when_reached": 276
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1136.54,
+            "median_when_reached": 1131.0,
+            "p10_when_reached": 931,
+            "p90_when_reached": 1350
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 20.811,
+            "median_when_reached": 21.0,
+            "p10_when_reached": 19,
+            "p90_when_reached": 23
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1267.23,
+            "median_when_reached": 1265.5,
+            "p10_when_reached": 1058,
+            "p90_when_reached": 1476
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 628.149,
+            "median_when_reached": 628.0,
+            "p10_when_reached": 523,
+            "p90_when_reached": 733
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 5635.814,
+            "median_when_reached": 5601.0,
+            "p10_when_reached": 4700,
+            "p90_when_reached": 6603
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 23.118,
+            "median_when_reached": 23.0,
+            "p10_when_reached": 22,
+            "p90_when_reached": 24
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1590.812,
+            "median_when_reached": 1585.5,
+            "p10_when_reached": 1348,
+            "p90_when_reached": 1825
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 789.506,
+            "median_when_reached": 786.0,
+            "p10_when_reached": 668,
+            "p90_when_reached": 907
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 9277.684,
+            "median_when_reached": 9223.0,
+            "p10_when_reached": 7887,
+            "p90_when_reached": 10791
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 4,
+        "etac_cost": 20,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 4.462,
+          "median_when_reached": 4.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 5
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.502,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 8
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.412,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.641,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.851,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.857,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.46,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.875,
+            "median_when_reached": 5.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 6
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 167.902,
+            "median_when_reached": 166.0,
+            "p10_when_reached": 131,
+            "p90_when_reached": 205
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 82.352,
+            "median_when_reached": 81.5,
+            "p10_when_reached": 64,
+            "p90_when_reached": 101
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 315.503,
+            "median_when_reached": 312.0,
+            "p10_when_reached": 281,
+            "p90_when_reached": 357
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 11.669,
+            "median_when_reached": 12.0,
+            "p10_when_reached": 10,
+            "p90_when_reached": 13
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 462.004,
+            "median_when_reached": 461.0,
+            "p10_when_reached": 367,
+            "p90_when_reached": 560
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 227.736,
+            "median_when_reached": 227.0,
+            "p10_when_reached": 181,
+            "p90_when_reached": 276
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1126.54,
+            "median_when_reached": 1121.0,
+            "p10_when_reached": 921,
+            "p90_when_reached": 1340
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 20.811,
+            "median_when_reached": 21.0,
+            "p10_when_reached": 19,
+            "p90_when_reached": 23
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1267.23,
+            "median_when_reached": 1265.5,
+            "p10_when_reached": 1058,
+            "p90_when_reached": 1476
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 628.149,
+            "median_when_reached": 628.0,
+            "p10_when_reached": 523,
+            "p90_when_reached": 733
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 5625.814,
+            "median_when_reached": 5591.0,
+            "p10_when_reached": 4690,
+            "p90_when_reached": 6593
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 23.118,
+            "median_when_reached": 23.0,
+            "p10_when_reached": 22,
+            "p90_when_reached": 24
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1590.812,
+            "median_when_reached": 1585.5,
+            "p10_when_reached": 1348,
+            "p90_when_reached": 1825
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 789.506,
+            "median_when_reached": 786.0,
+            "p10_when_reached": 668,
+            "p90_when_reached": 907
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 9267.684,
+            "median_when_reached": 9213.0,
+            "p10_when_reached": 7877,
+            "p90_when_reached": 10781
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 4,
+        "etac_cost": 30,
+        "speed": 3
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 2.207,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 3
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.046,
+          "median_when_reached": 5.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 6
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.784,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 9
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.6,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.647,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.869,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.925,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.557,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.404,
+            "median_when_reached": 4.0,
+            "p10_when_reached": 3,
+            "p90_when_reached": 6
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 163.036,
+            "median_when_reached": 161.0,
+            "p10_when_reached": 129,
+            "p90_when_reached": 199
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 80.057,
+            "median_when_reached": 79.0,
+            "p10_when_reached": 64,
+            "p90_when_reached": 97
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 293.114,
+            "median_when_reached": 289.0,
+            "p10_when_reached": 261,
+            "p90_when_reached": 332
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 11.401,
+            "median_when_reached": 11.0,
+            "p10_when_reached": 10,
+            "p90_when_reached": 13
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 447.244,
+            "median_when_reached": 445.0,
+            "p10_when_reached": 352,
+            "p90_when_reached": 543
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 220.379,
+            "median_when_reached": 220.0,
+            "p10_when_reached": 173,
+            "p90_when_reached": 268
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1075.499,
+            "median_when_reached": 1066.5,
+            "p10_when_reached": 873,
+            "p90_when_reached": 1287
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 20.712,
+            "median_when_reached": 21.0,
+            "p10_when_reached": 19,
+            "p90_when_reached": 23
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1254.048,
+            "median_when_reached": 1251.0,
+            "p10_when_reached": 1042,
+            "p90_when_reached": 1462
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 621.562,
+            "median_when_reached": 620.0,
+            "p10_when_reached": 516,
+            "p90_when_reached": 725
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 5498.818,
+            "median_when_reached": 5497.0,
+            "p10_when_reached": 4585,
+            "p90_when_reached": 6445
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 23.07,
+            "median_when_reached": 23.0,
+            "p10_when_reached": 22,
+            "p90_when_reached": 24
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1580.477,
+            "median_when_reached": 1573.5,
+            "p10_when_reached": 1334,
+            "p90_when_reached": 1809
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 784.364,
+            "median_when_reached": 781.5,
+            "p10_when_reached": 660,
+            "p90_when_reached": 899
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 9111.534,
+            "median_when_reached": 9067.0,
+            "p10_when_reached": 7689,
+            "p90_when_reached": 10569
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 2
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 3.052,
+          "median_when_reached": 3.0,
+          "p10_when_reached": 2,
+          "p90_when_reached": 4
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.855,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 15.63,
+          "median_when_reached": 15.0,
+          "p10_when_reached": 14,
+          "p90_when_reached": 18
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.904,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 11
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.61,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.971,
+          "median_when_reached": 8.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 10
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 9.263263263263264,
+          "median_when_reached": 9,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 999,
+          "trials": 1000,
+          "reach_fraction": 0.999,
+          "mean_when_reached": 11.22122122122122,
+          "median_when_reached": 11,
+          "p10_when_reached": 8,
+          "p90_when_reached": 15
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 2.111,
+            "median_when_reached": 2.0,
+            "p10_when_reached": 2,
+            "p90_when_reached": 3
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 132.368,
+            "median_when_reached": 130.0,
+            "p10_when_reached": 109,
+            "p90_when_reached": 160
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 65.551,
+            "median_when_reached": 65.0,
+            "p10_when_reached": 54,
+            "p90_when_reached": 79
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 324.391,
+            "median_when_reached": 321.0,
+            "p10_when_reached": 305,
+            "p90_when_reached": 352
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.781,
+            "median_when_reached": 5.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 6
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 254.745,
+            "median_when_reached": 252.5,
+            "p10_when_reached": 192,
+            "p90_when_reached": 320
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 126.024,
+            "median_when_reached": 125.0,
+            "p10_when_reached": 95,
+            "p90_when_reached": 159
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 819.341,
+            "median_when_reached": 811.0,
+            "p10_when_reached": 692,
+            "p90_when_reached": 969
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 9.951,
+            "median_when_reached": 10.0,
+            "p10_when_reached": 9,
+            "p90_when_reached": 11
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 618.163,
+            "median_when_reached": 615.0,
+            "p10_when_reached": 484,
+            "p90_when_reached": 752
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 306.442,
+            "median_when_reached": 305.0,
+            "p10_when_reached": 240,
+            "p90_when_reached": 373
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 3038.479,
+            "median_when_reached": 3013.0,
+            "p10_when_reached": 2415,
+            "p90_when_reached": 3658
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 12.125,
+            "median_when_reached": 12.0,
+            "p10_when_reached": 10,
+            "p90_when_reached": 14
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 809.483,
+            "median_when_reached": 804.0,
+            "p10_when_reached": 640,
+            "p90_when_reached": 974
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 401.542,
+            "median_when_reached": 399.0,
+            "p10_when_reached": 317,
+            "p90_when_reached": 484
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4857.611,
+            "median_when_reached": 4825.0,
+            "p10_when_reached": 3899,
+            "p90_when_reached": 5829
+          }
+        }
+      }
+    },
+    {
+      "config": {
+        "worlds": 24,
+        "model": "nc",
+        "policy": "50",
+        "colonizers": 2,
+        "etac_cost": 20,
+        "speed": 4
+      },
+      "milestones": {
+        "first_colony": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 1.757,
+          "median_when_reached": 2.0,
+          "p10_when_reached": 1,
+          "p90_when_reached": 2
+        },
+        "four_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 4.442,
+          "median_when_reached": 4.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 5
+        },
+        "eight_colonies": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 8.851,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 8,
+          "p90_when_reached": 10
+        },
+        "colony_income_reaches_home": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.302,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 7
+        },
+        "first_colony_can_order_CA": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 5.167,
+          "median_when_reached": 5.0,
+          "p10_when_reached": 4,
+          "p90_when_reached": 6
+        },
+        "first_colony_can_order_BB30": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 6.395,
+          "median_when_reached": 6.0,
+          "p10_when_reached": 5,
+          "p90_when_reached": 8
+        },
+        "first_colony_can_order_BB45": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 7.473,
+          "median_when_reached": 7.0,
+          "p10_when_reached": 6,
+          "p90_when_reached": 9
+        },
+        "first_colony_can_order_BB60": {
+          "reached": 1000,
+          "trials": 1000,
+          "reach_fraction": 1.0,
+          "mean_when_reached": 9.177,
+          "median_when_reached": 9.0,
+          "p10_when_reached": 7,
+          "p90_when_reached": 12
+        }
+      },
+      "snapshots": {
+        "5": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4.342,
+            "median_when_reached": 4.0,
+            "p10_when_reached": 4,
+            "p90_when_reached": 5
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 177.858,
+            "median_when_reached": 176.0,
+            "p10_when_reached": 144,
+            "p90_when_reached": 214
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 87.599,
+            "median_when_reached": 87.0,
+            "p10_when_reached": 71,
+            "p90_when_reached": 105
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 372.286,
+            "median_when_reached": 369.0,
+            "p10_when_reached": 335,
+            "p90_when_reached": 413
+          }
+        },
+        "10": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 8.995,
+            "median_when_reached": 9.0,
+            "p10_when_reached": 8,
+            "p90_when_reached": 10
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 407.365,
+            "median_when_reached": 404.0,
+            "p10_when_reached": 322,
+            "p90_when_reached": 493
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 201.148,
+            "median_when_reached": 200.0,
+            "p10_when_reached": 159,
+            "p90_when_reached": 244
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1129.974,
+            "median_when_reached": 1123.5,
+            "p10_when_reached": 939,
+            "p90_when_reached": 1324
+          }
+        },
+        "20": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 16.612,
+            "median_when_reached": 17.0,
+            "p10_when_reached": 15,
+            "p90_when_reached": 19
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1003.969,
+            "median_when_reached": 1007.0,
+            "p10_when_reached": 823,
+            "p90_when_reached": 1185
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 497.564,
+            "median_when_reached": 500.0,
+            "p10_when_reached": 408,
+            "p90_when_reached": 588
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 4752.177,
+            "median_when_reached": 4719.5,
+            "p10_when_reached": 3908,
+            "p90_when_reached": 5611
+          }
+        },
+        "25": {
+          "colonies": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 19.918,
+            "median_when_reached": 20.0,
+            "p10_when_reached": 18,
+            "p90_when_reached": 22
+          },
+          "production": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 1299.826,
+            "median_when_reached": 1303.0,
+            "p10_when_reached": 1075,
+            "p90_when_reached": 1518
+          },
+          "annual_income": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 644.678,
+            "median_when_reached": 647.0,
+            "p10_when_reached": 533,
+            "p90_when_reached": 754
+          },
+          "local_reserves_sum": {
+            "reached": 1000,
+            "trials": 1000,
+            "reach_fraction": 1.0,
+            "mean_when_reached": 7684.679,
+            "median_when_reached": 7674.0,
+            "p10_when_reached": 6368,
+            "p90_when_reached": 8987
+          }
+        }
+      }
+    }
+  ]
+}

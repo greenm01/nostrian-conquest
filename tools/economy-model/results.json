@@ -1,0 +1,1434 @@
+{
+  "sources": {
+    "nc": "38e703f4bee662abc5278c06edca1b34e61ae465",
+    "ec4x": "9f931281a76ed8f3ffca9c5e816f04d5170c973d"
+  },
+  "seed": 20261010,
+  "classic_trials_per_case": 5000,
+  "assumptions": [
+    "Normal owned K=100 world; no spending, conquest, movement, or loss.",
+    "All three models start P=1, matching the colonization handler.",
+    "Treasury is income accumulated locally; it is not spendable empire cash.",
+    "A turn is one economic pass, starting after the colonization year.",
+    "Classic uses Python floats/RNG, not Pascal reals or the DOS RNG.",
+    "The fractional candidate is not an accepted rule or EC4X's formula."
+  ],
+  "colony": [
+    {
+      "tax": 35,
+      "base_from_first_pass": false,
+      "classic": {
+        "5": {
+          "production": {
+            "mean": 33.073064,
+            "mean_95pct_normal_interval": [
+              33.03865919214147,
+              33.10746880785853
+            ]
+          },
+          "treasury": {
+            "mean": 35.69591438,
+            "mean_95pct_normal_interval": [
+              35.65503223530421,
+              35.736796524695784
+            ]
+          }
+        },
+        "10": {
+          "production": {
+            "mean": 61.6610038,
+            "mean_95pct_normal_interval": [
+              61.619985527323536,
+              61.70202207267647
+            ]
+          },
+          "treasury": {
+            "mean": 124.31636784,
+            "mean_95pct_normal_interval": [
+              124.21623242013804,
+              124.41650325986195
+            ]
+          }
+        },
+        "20": {
+          "production": {
+            "mean": 96.8272326,
+            "mean_95pct_normal_interval": [
+              96.80881630554978,
+              96.84564889445022
+            ]
+          },
+          "treasury": {
+            "mean": 418.07431624000003,
+            "mean_95pct_normal_interval": [
+              417.87974627159593,
+              418.2688862084041
+            ]
+          }
+        }
+      },
+      "nc": {
+        "5": {
+          "production": 62,
+          "income": 21,
+          "treasury": 71
+        },
+        "10": {
+          "production": 87,
+          "income": 30,
+          "treasury": 208
+        },
+        "20": {
+          "production": 100,
+          "income": 35,
+          "treasury": 540
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "production": 59.20947705291748,
+          "income": 20.723316968521118,
+          "treasury": 69.99905870069885
+        },
+        "10": {
+          "production": 83.19326502730843,
+          "income": 29.11764275955795,
+          "treasury": 201.73599500843213
+        },
+        "20": {
+          "production": 97.14680464199704,
+          "income": 34.00138162469896,
+          "treasury": 526.5659562419362
+        }
+      }
+    },
+    {
+      "tax": 50,
+      "base_from_first_pass": false,
+      "classic": {
+        "5": {
+          "production": {
+            "mean": 19.5572774,
+            "mean_95pct_normal_interval": [
+              19.521525830636122,
+              19.59302896936388
+            ]
+          },
+          "treasury": {
+            "mean": 30.4237169,
+            "mean_95pct_normal_interval": [
+              30.364090116526405,
+              30.483343683473592
+            ]
+          }
+        },
+        "10": {
+          "production": {
+            "mean": 37.4629518,
+            "mean_95pct_normal_interval": [
+              37.414637386084856,
+              37.51126621391514
+            ]
+          },
+          "treasury": {
+            "mean": 106.3858054,
+            "mean_95pct_normal_interval": [
+              106.23138595077508,
+              106.54022484922491
+            ]
+          }
+        },
+        "20": {
+          "production": {
+            "mean": 68.7659902,
+            "mean_95pct_normal_interval": [
+              68.71245024724118,
+              68.81953015275883
+            ]
+          },
+          "treasury": {
+            "mean": 382.8774012,
+            "mean_95pct_normal_interval": [
+              382.49455507535106,
+              383.26024732464896
+            ]
+          }
+        }
+      },
+      "nc": {
+        "5": {
+          "production": 51,
+          "income": 25,
+          "treasury": 83
+        },
+        "10": {
+          "production": 77,
+          "income": 38,
+          "treasury": 252
+        },
+        "20": {
+          "production": 96,
+          "income": 48,
+          "treasury": 699
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "production": 49.222015380859375,
+          "income": 24.611007690429688,
+          "treasury": 81.22294616699219
+        },
+        "10": {
+          "production": 73.95551795978099,
+          "income": 36.977758979890496,
+          "treasury": 244.65568714076653
+        },
+        "20": {
+          "production": 93.1483328813809,
+          "income": 46.57416644069045,
+          "treasury": 677.4808349151668
+        }
+      }
+    },
+    {
+      "tax": 65,
+      "base_from_first_pass": false,
+      "classic": {
+        "5": {
+          "production": {
+            "mean": 5.6577032,
+            "mean_95pct_normal_interval": [
+              5.621305719617404,
+              5.694100680382596
+            ]
+          },
+          "treasury": {
+            "mean": 12.35446771,
+            "mean_95pct_normal_interval": [
+              12.276176404465918,
+              12.432759015534081
+            ]
+          }
+        },
+        "10": {
+          "production": {
+            "mean": 10.3369474,
+            "mean_95pct_normal_interval": [
+              10.285112704148807,
+              10.388782095851193
+            ]
+          },
+          "treasury": {
+            "mean": 39.8838882,
+            "mean_95pct_normal_interval": [
+              39.676011878486264,
+              40.09176452151374
+            ]
+          }
+        },
+        "20": {
+          "production": {
+            "mean": 19.6248542,
+            "mean_95pct_normal_interval": [
+              19.552572401574924,
+              19.69713599842508
+            ]
+          },
+          "treasury": {
+            "mean": 140.30783689,
+            "mean_95pct_normal_interval": [
+              139.73960658050822,
+              140.87606719949179
+            ]
+          }
+        }
+      },
+      "nc": {
+        "5": {
+          "production": 39,
+          "income": 25,
+          "treasury": 79
+        },
+        "10": {
+          "production": 63,
+          "income": 40,
+          "treasury": 253
+        },
+        "20": {
+          "production": 89,
+          "income": 57,
+          "treasury": 761
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "production": 37.367526944885256,
+          "income": 24.28889251417542,
+          "treasury": 78.48012092359924
+        },
+        "10": {
+          "production": 60.37548807071036,
+          "income": 39.24406724596173,
+          "treasury": 247.5190130063991
+        },
+        "20": {
+          "production": 84.14038438753113,
+          "income": 54.691249851895236,
+          "treasury": 736.4269658302353
+        }
+      }
+    },
+    {
+      "tax": 70,
+      "base_from_first_pass": false,
+      "classic": {
+        "5": {
+          "production": {
+            "mean": 1.7718824,
+            "mean_95pct_normal_interval": [
+              1.7505125043826906,
+              1.7932522956173094
+            ]
+          },
+          "treasury": {
+            "mean": 5.375021820000001,
+            "mean_95pct_normal_interval": [
+              5.330943736879357,
+              5.419099903120644
+            ]
+          }
+        },
+        "10": {
+          "production": {
+            "mean": 2.2135458,
+            "mean_95pct_normal_interval": [
+              2.182202721299359,
+              2.2448888787006407
+            ]
+          },
+          "treasury": {
+            "mean": 12.556878600000001,
+            "mean_95pct_normal_interval": [
+              12.439301263166575,
+              12.674455936833427
+            ]
+          }
+        },
+        "20": {
+          "production": {
+            "mean": 2.868397,
+            "mean_95pct_normal_interval": [
+              2.8244038047905002,
+              2.9123901952094995
+            ]
+          },
+          "treasury": {
+            "mean": 30.66474446,
+            "mean_95pct_normal_interval": [
+              30.342043446299073,
+              30.98744547370093
+            ]
+          }
+        }
+      },
+      "nc": {
+        "5": {
+          "production": 30,
+          "income": 21,
+          "treasury": 66
+        },
+        "10": {
+          "production": 50,
+          "income": 35,
+          "treasury": 214
+        },
+        "20": {
+          "production": 74,
+          "income": 51,
+          "treasury": 661
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "production": 32.285602133259374,
+          "income": 22.599921493281563,
+          "treasury": 73.07731568996905
+        },
+        "10": {
+          "production": 52.351102233956205,
+          "income": 36.645771563769344,
+          "treasury": 230.70140022530654
+        },
+        "20": {
+          "production": 73.4743508529982,
+          "income": 51.43204559709874,
+          "treasury": 689.1785679841726
+        }
+      }
+    },
+    {
+      "tax": 50,
+      "base_from_first_pass": true,
+      "classic": {
+        "5": {
+          "production": {
+            "mean": 23.6638592,
+            "mean_95pct_normal_interval": [
+              23.615447273534798,
+              23.712271126465204
+            ]
+          },
+          "treasury": {
+            "mean": 36.6316519,
+            "mean_95pct_normal_interval": [
+              36.55009515570311,
+              36.71320864429689
+            ]
+          }
+        },
+        "10": {
+          "production": {
+            "mean": 45.11775,
+            "mean_95pct_normal_interval": [
+              45.05474331836189,
+              45.18075668163811
+            ]
+          },
+          "treasury": {
+            "mean": 128.3472599,
+            "mean_95pct_normal_interval": [
+              128.1397083173675,
+              128.55481148263252
+            ]
+          }
+        },
+        "20": {
+          "production": {
+            "mean": 79.9146312,
+            "mean_95pct_normal_interval": [
+              79.85488552899997,
+              79.97437687100003
+            ]
+          },
+          "treasury": {
+            "mean": 455.2072659,
+            "mean_95pct_normal_interval": [
+              454.7262305770697,
+              455.68830122293025
+            ]
+          }
+        }
+      },
+      "nc": {
+        "5": {
+          "production": 68,
+          "income": 34,
+          "treasury": 115
+        },
+        "10": {
+          "production": 91,
+          "income": 45,
+          "treasury": 323
+        },
+        "20": {
+          "production": 100,
+          "income": 50,
+          "treasury": 817
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "production": 64.94483280181885,
+          "income": 32.472416400909424,
+          "treasury": 111.45286226272583
+        },
+        "10": {
+          "production": 87.58722477482388,
+          "income": 43.79361238741194,
+          "treasury": 312.3943463212149
+        },
+        "20": {
+          "production": 98.44366677989146,
+          "income": 49.22183338994573,
+          "treasury": 788.8720553102352
+        }
+      }
+    }
+  ],
+  "mature_tax_sweep": [
+    {
+      "tax": 50,
+      "nc": {
+        "1": {
+          "production": 100,
+          "income": 50,
+          "treasury": 50
+        },
+        "10": {
+          "production": 100,
+          "income": 50,
+          "treasury": 500
+        },
+        "20": {
+          "production": 100,
+          "income": 50,
+          "treasury": 1000
+        },
+        "300": {
+          "production": 100,
+          "income": 50,
+          "treasury": 15000
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 100,
+          "income": 50.0,
+          "treasury": 50.0
+        },
+        "10": {
+          "production": 100,
+          "income": 50.0,
+          "treasury": 500.0
+        },
+        "20": {
+          "production": 100,
+          "income": 50.0,
+          "treasury": 1000.0
+        },
+        "300": {
+          "production": 100,
+          "income": 50.0,
+          "treasury": 15000.0
+        }
+      }
+    },
+    {
+      "tax": 60,
+      "nc": {
+        "1": {
+          "production": 100,
+          "income": 60,
+          "treasury": 60
+        },
+        "10": {
+          "production": 100,
+          "income": 60,
+          "treasury": 600
+        },
+        "20": {
+          "production": 100,
+          "income": 60,
+          "treasury": 1200
+        },
+        "300": {
+          "production": 100,
+          "income": 60,
+          "treasury": 18000
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 100,
+          "income": 60.0,
+          "treasury": 60.0
+        },
+        "10": {
+          "production": 100,
+          "income": 60.0,
+          "treasury": 600.0
+        },
+        "20": {
+          "production": 100,
+          "income": 60.0,
+          "treasury": 1200.0
+        },
+        "300": {
+          "production": 100,
+          "income": 60.0,
+          "treasury": 18000.0
+        }
+      }
+    },
+    {
+      "tax": 65,
+      "nc": {
+        "1": {
+          "production": 100,
+          "income": 65,
+          "treasury": 65
+        },
+        "10": {
+          "production": 100,
+          "income": 65,
+          "treasury": 650
+        },
+        "20": {
+          "production": 100,
+          "income": 65,
+          "treasury": 1300
+        },
+        "300": {
+          "production": 100,
+          "income": 65,
+          "treasury": 19500
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 100,
+          "income": 65.0,
+          "treasury": 65.0
+        },
+        "10": {
+          "production": 100,
+          "income": 65.0,
+          "treasury": 650.0
+        },
+        "20": {
+          "production": 100,
+          "income": 65.0,
+          "treasury": 1300.0
+        },
+        "300": {
+          "production": 100,
+          "income": 65.0,
+          "treasury": 19500.0
+        }
+      }
+    },
+    {
+      "tax": 66,
+      "nc": {
+        "1": {
+          "production": 99,
+          "income": 65,
+          "treasury": 65
+        },
+        "10": {
+          "production": 99,
+          "income": 65,
+          "treasury": 650
+        },
+        "20": {
+          "production": 99,
+          "income": 65,
+          "treasury": 1300
+        },
+        "300": {
+          "production": 99,
+          "income": 65,
+          "treasury": 19500
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 99.8,
+          "income": 65.868,
+          "treasury": 65.868
+        },
+        "10": {
+          "production": 98.62631298482566,
+          "income": 65.09336656998494,
+          "treasury": 654.3420266851007
+        },
+        "20": {
+          "production": 98.07347793646282,
+          "income": 64.72849543806547,
+          "treasury": 1302.9986628166237
+        },
+        "300": {
+          "production": 97.70114942529055,
+          "income": 64.48275862069177,
+          "treasury": 19360.749900911585
+        }
+      }
+    },
+    {
+      "tax": 67,
+      "nc": {
+        "1": {
+          "production": 99,
+          "income": 66,
+          "treasury": 66
+        },
+        "10": {
+          "production": 99,
+          "income": 66,
+          "treasury": 660
+        },
+        "20": {
+          "production": 99,
+          "income": 66,
+          "treasury": 1320
+        },
+        "300": {
+          "production": 99,
+          "income": 66,
+          "treasury": 19800
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 99.6,
+          "income": 66.732,
+          "treasury": 66.732
+        },
+        "10": {
+          "production": 97.24696214817173,
+          "income": 65.15546463927507,
+          "treasury": 658.4969138962108
+        },
+        "20": {
+          "production": 96.1329300620343,
+          "income": 64.40906314156298,
+          "treasury": 1305.3967724876557
+        },
+        "300": {
+          "production": 95.37572254336017,
+          "income": 63.901734104051314,
+          "treasury": 19203.24006816126
+        }
+      }
+    },
+    {
+      "tax": 68,
+      "nc": {
+        "1": {
+          "production": 99,
+          "income": 67,
+          "treasury": 67
+        },
+        "10": {
+          "production": 99,
+          "income": 67,
+          "treasury": 670
+        },
+        "20": {
+          "production": 99,
+          "income": 67,
+          "treasury": 1340
+        },
+        "300": {
+          "production": 99,
+          "income": 67,
+          "treasury": 20100
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 99.4,
+          "income": 67.59200000000001,
+          "treasury": 67.59200000000001
+        },
+        "10": {
+          "production": 95.8619248234285,
+          "income": 65.18610887993138,
+          "treasury": 662.4639126016596
+        },
+        "20": {
+          "production": 94.1782417974542,
+          "income": 64.04120442226886,
+          "treasury": 1307.1899902098403
+        },
+        "300": {
+          "production": 93.02325581396688,
+          "income": 63.25581395349748,
+          "treasury": 19027.164954029126
+        }
+      }
+    },
+    {
+      "tax": 69,
+      "nc": {
+        "1": {
+          "production": 99,
+          "income": 68,
+          "treasury": 68
+        },
+        "10": {
+          "production": 99,
+          "income": 68,
+          "treasury": 680
+        },
+        "20": {
+          "production": 99,
+          "income": 68,
+          "treasury": 1360
+        },
+        "300": {
+          "production": 99,
+          "income": 68,
+          "treasury": 20400
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 99.2,
+          "income": 68.44800000000001,
+          "treasury": 68.44800000000001
+        },
+        "10": {
+          "production": 94.47117826165014,
+          "income": 65.18511300053859,
+          "treasury": 666.242270888976
+        },
+        "20": {
+          "production": 92.20929760971963,
+          "income": 63.62441535070654,
+          "treasury": 1308.3739434126182
+        },
+        "300": {
+          "production": 90.64327485382235,
+          "income": 62.543859649137424,
+          "treasury": 18832.21216784636
+        }
+      }
+    },
+    {
+      "tax": 70,
+      "nc": {
+        "1": {
+          "production": 99,
+          "income": 69,
+          "treasury": 69
+        },
+        "10": {
+          "production": 99,
+          "income": 69,
+          "treasury": 690
+        },
+        "20": {
+          "production": 99,
+          "income": 69,
+          "treasury": 1380
+        },
+        "300": {
+          "production": 99,
+          "income": 69,
+          "treasury": 20700
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 99.0,
+          "income": 69.3,
+          "treasury": 69.3
+        },
+        "10": {
+          "production": 93.07469963129384,
+          "income": 65.15228974190569,
+          "treasury": 669.8312339547799
+        },
+        "20": {
+          "production": 90.22598100431583,
+          "income": 63.15818670302107,
+          "treasury": 1308.9442254910084
+        },
+        "300": {
+          "production": 88.23529411767845,
+          "income": 61.76470588237491,
+          "treasury": 18618.062283736803
+        }
+      }
+    },
+    {
+      "tax": 71,
+      "nc": {
+        "1": {
+          "production": 98,
+          "income": 69,
+          "treasury": 69
+        },
+        "10": {
+          "production": 89,
+          "income": 63,
+          "treasury": 659
+        },
+        "20": {
+          "production": 86,
+          "income": 61,
+          "treasury": 1270
+        },
+        "300": {
+          "production": 86,
+          "income": 61,
+          "treasury": 18350
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 98.8,
+          "income": 70.148,
+          "treasury": 70.148
+        },
+        "10": {
+          "production": 91.6724660179577,
+          "income": 65.08745087274997,
+          "treasury": 673.2300440946439
+        },
+        "20": {
+          "production": 88.22817451738612,
+          "income": 62.642003907344154,
+          "treasury": 1308.8963955364077
+        },
+        "300": {
+          "production": 85.79881656809196,
+          "income": 60.917159763345296,
+          "treasury": 18384.38864185393
+        }
+      }
+    },
+    {
+      "tax": 75,
+      "nc": {
+        "1": {
+          "production": 98,
+          "income": 73,
+          "treasury": 73
+        },
+        "10": {
+          "production": 89,
+          "income": 66,
+          "treasury": 697
+        },
+        "20": {
+          "production": 83,
+          "income": 62,
+          "treasury": 1328
+        },
+        "300": {
+          "production": 83,
+          "income": 62,
+          "treasury": 18688
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 98.0,
+          "income": 73.5,
+          "treasury": 73.5
+        },
+        "10": {
+          "production": 86.0055205319996,
+          "income": 64.5041403989997,
+          "treasury": 684.9084991990032
+        },
+        "20": {
+          "production": 80.08966610668594,
+          "income": 60.06724958001446,
+          "treasury": 1302.4339213374149
+        },
+        "300": {
+          "production": 75.75757575772248,
+          "income": 56.81818181829186,
+          "treasury": 17247.658402202636
+        }
+      }
+    },
+    {
+      "tax": 80,
+      "nc": {
+        "1": {
+          "production": 97,
+          "income": 77,
+          "treasury": 77
+        },
+        "10": {
+          "production": 79,
+          "income": 63,
+          "treasury": 700
+        },
+        "20": {
+          "production": 69,
+          "income": 55,
+          "treasury": 1284
+        },
+        "300": {
+          "production": 66,
+          "income": 52,
+          "treasury": 15847
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 97.0,
+          "income": 77.6,
+          "treasury": 77.6
+        },
+        "10": {
+          "production": 78.7895670333862,
+          "income": 63.031653626708966,
+          "treasury": 695.1359832928468
+        },
+        "20": {
+          "production": 69.57599984360486,
+          "income": 55.660799874883885,
+          "treasury": 1279.900801438835
+        },
+        "300": {
+          "production": 62.500000000513296,
+          "income": 50.00000000041064,
+          "treasury": 15344.999999995282
+        }
+      }
+    },
+    {
+      "tax": 90,
+      "nc": {
+        "1": {
+          "production": 95,
+          "income": 85,
+          "treasury": 85
+        },
+        "10": {
+          "production": 64,
+          "income": 57,
+          "treasury": 702
+        },
+        "20": {
+          "production": 50,
+          "income": 45,
+          "treasury": 1189
+        },
+        "300": {
+          "production": 40,
+          "income": 36,
+          "treasury": 11305
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 95.0,
+          "income": 85.5,
+          "treasury": 85.5
+        },
+        "10": {
+          "production": 63.90548942831578,
+          "income": 57.5149404854842,
+          "treasury": 700.6490673456946
+        },
+        "20": {
+          "production": 47.35318425777292,
+          "income": 42.61786583199562,
+          "treasury": 1184.3796547387203
+        },
+        "300": {
+          "production": 33.33333333797238,
+          "income": 30.00000000417514,
+          "treasury": 9739.999999948503
+        }
+      }
+    },
+    {
+      "tax": 100,
+      "nc": {
+        "1": {
+          "production": 93,
+          "income": 93,
+          "treasury": 93
+        },
+        "10": {
+          "production": 52,
+          "income": 52,
+          "treasury": 704
+        },
+        "20": {
+          "production": 28,
+          "income": 28,
+          "treasury": 1080
+        },
+        "300": {
+          "production": 19,
+          "income": 19,
+          "treasury": 6436
+        }
+      },
+      "fractional_candidate": {
+        "1": {
+          "production": 93.0,
+          "income": 93.0,
+          "treasury": 93.0
+        },
+        "10": {
+          "production": 51.01932186199861,
+          "income": 51.01932186199861,
+          "treasury": 696.2396629286818
+        },
+        "20": {
+          "production": 30.31383137340083,
+          "income": 30.31383137340083,
+          "treasury": 1078.0249662412693
+        },
+        "300": {
+          "production": 15.151515152028566,
+          "income": 15.151515152028564,
+          "treasury": 5489.072543612286
+        }
+      }
+    }
+  ],
+  "empire_policy_examples": [
+    {
+      "mature_worlds": 1,
+      "new_colonies": 0,
+      "policy": "35",
+      "nc": {
+        "5": {
+          "total_production": 100,
+          "total_income_accumulated": 175
+        },
+        "10": {
+          "total_production": 100,
+          "total_income_accumulated": 350
+        },
+        "20": {
+          "total_production": 100,
+          "total_income_accumulated": 700
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 100.0,
+          "total_income_accumulated": 175.0
+        },
+        "10": {
+          "total_production": 100.0,
+          "total_income_accumulated": 350.0
+        },
+        "20": {
+          "total_production": 100.0,
+          "total_income_accumulated": 700.0
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 0,
+      "policy": "50",
+      "nc": {
+        "5": {
+          "total_production": 100,
+          "total_income_accumulated": 250
+        },
+        "10": {
+          "total_production": 100,
+          "total_income_accumulated": 500
+        },
+        "20": {
+          "total_production": 100,
+          "total_income_accumulated": 1000
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 100.0,
+          "total_income_accumulated": 250.0
+        },
+        "10": {
+          "total_production": 100.0,
+          "total_income_accumulated": 500.0
+        },
+        "20": {
+          "total_production": 100.0,
+          "total_income_accumulated": 1000.0
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 0,
+      "policy": "65",
+      "nc": {
+        "5": {
+          "total_production": 100,
+          "total_income_accumulated": 325
+        },
+        "10": {
+          "total_production": 100,
+          "total_income_accumulated": 650
+        },
+        "20": {
+          "total_production": 100,
+          "total_income_accumulated": 1300
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 100.0,
+          "total_income_accumulated": 325.0
+        },
+        "10": {
+          "total_production": 100.0,
+          "total_income_accumulated": 650.0
+        },
+        "20": {
+          "total_production": 100.0,
+          "total_income_accumulated": 1300.0
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 0,
+      "policy": "70",
+      "nc": {
+        "5": {
+          "total_production": 99,
+          "total_income_accumulated": 345
+        },
+        "10": {
+          "total_production": 99,
+          "total_income_accumulated": 690
+        },
+        "20": {
+          "total_production": 99,
+          "total_income_accumulated": 1380
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 95.78076842437501,
+          "total_income_accumulated": 340.61668028456256
+        },
+        "10": {
+          "total_production": 93.07469963129384,
+          "total_income_accumulated": 669.8312339547799
+        },
+        "20": {
+          "total_production": 90.22598100431583,
+          "total_income_accumulated": 1308.9442254910084
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 0,
+      "policy": "35_for_5_then_65",
+      "nc": {
+        "5": {
+          "total_production": 100,
+          "total_income_accumulated": 175
+        },
+        "10": {
+          "total_production": 100,
+          "total_income_accumulated": 500
+        },
+        "20": {
+          "total_production": 100,
+          "total_income_accumulated": 1150
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 100.0,
+          "total_income_accumulated": 175.0
+        },
+        "10": {
+          "total_production": 100.0,
+          "total_income_accumulated": 500.0
+        },
+        "20": {
+          "total_production": 100.0,
+          "total_income_accumulated": 1150.0
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 4,
+      "policy": "35",
+      "nc": {
+        "5": {
+          "total_production": 348,
+          "total_income_accumulated": 459
+        },
+        "10": {
+          "total_production": 448,
+          "total_income_accumulated": 1182
+        },
+        "20": {
+          "total_production": 500,
+          "total_income_accumulated": 2860
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 336.8379082116699,
+          "total_income_accumulated": 454.9962348027954
+        },
+        "10": {
+          "total_production": 432.7730601092337,
+          "total_income_accumulated": 1156.9439800337286
+        },
+        "20": {
+          "total_production": 488.58721856798815,
+          "total_income_accumulated": 2806.2638249677448
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 4,
+      "policy": "50",
+      "nc": {
+        "5": {
+          "total_production": 304,
+          "total_income_accumulated": 582
+        },
+        "10": {
+          "total_production": 408,
+          "total_income_accumulated": 1508
+        },
+        "20": {
+          "total_production": 484,
+          "total_income_accumulated": 3796
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 296.8880615234375,
+          "total_income_accumulated": 574.8917846679688
+        },
+        "10": {
+          "total_production": 395.82207183912396,
+          "total_income_accumulated": 1478.6227485630661
+        },
+        "20": {
+          "total_production": 472.5933315255236,
+          "total_income_accumulated": 3709.9233396606674
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 4,
+      "policy": "65",
+      "nc": {
+        "5": {
+          "total_production": 256,
+          "total_income_accumulated": 641
+        },
+        "10": {
+          "total_production": 352,
+          "total_income_accumulated": 1662
+        },
+        "20": {
+          "total_production": 456,
+          "total_income_accumulated": 4344
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 249.47010777954102,
+          "total_income_accumulated": 638.920483694397
+        },
+        "10": {
+          "total_production": 341.50195228284144,
+          "total_income_accumulated": 1640.0760520255963
+        },
+        "20": {
+          "total_production": 436.5615375501245,
+          "total_income_accumulated": 4245.707863320941
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 4,
+      "policy": "70",
+      "nc": {
+        "5": {
+          "total_production": 219,
+          "total_income_accumulated": 609
+        },
+        "10": {
+          "total_production": 299,
+          "total_income_accumulated": 1546
+        },
+        "20": {
+          "total_production": 395,
+          "total_income_accumulated": 4024
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 224.92317695741252,
+          "total_income_accumulated": 632.9259430444388
+        },
+        "10": {
+          "total_production": 302.47910856711866,
+          "total_income_accumulated": 1592.636834856006
+        },
+        "20": {
+          "total_production": 384.1233844163086,
+          "total_income_accumulated": 4065.6584974276984
+        }
+      }
+    },
+    {
+      "mature_worlds": 1,
+      "new_colonies": 4,
+      "policy": "35_for_5_then_65",
+      "nc": {
+        "5": {
+          "total_production": 348,
+          "total_income_accumulated": 459
+        },
+        "10": {
+          "total_production": 412,
+          "total_income_accumulated": 1704
+        },
+        "20": {
+          "total_production": 476,
+          "total_income_accumulated": 4626
+        }
+      },
+      "fractional_candidate": {
+        "5": {
+          "total_production": 336.8379082116699,
+          "total_income_accumulated": 454.9962348027954
+        },
+        "10": {
+          "total_production": 396.77529982273995,
+          "total_income_accumulated": 1673.706344524899
+        },
+        "20": {
+          "total_production": 458.6845619841294,
+          "total_income_accumulated": 4504.049988873765
+        }
+      }
+    }
+  ],
+  "automatic_cost_illustration": [
+    {
+      "upkeep_fraction": 0,
+      "income": 100,
+      "fleet_cost_after_20_turns": 2000,
+      "equilibrium_fleet_cost": null
+    },
+    {
+      "upkeep_fraction": 0.02,
+      "income": 100,
+      "fleet_cost_after_20_turns": 1661.9601412245288,
+      "equilibrium_fleet_cost": 5000.0
+    },
+    {
+      "upkeep_fraction": 0.05,
+      "income": 100,
+      "fleet_cost_after_20_turns": 1283.0281551829162,
+      "equilibrium_fleet_cost": 2000.0
+    },
+    {
+      "upkeep_fraction": 0.1,
+      "income": 100,
+      "fleet_cost_after_20_turns": 878.4233454094307,
+      "equilibrium_fleet_cost": 1000.0
+    }
+  ],
+  "source_arithmetic": {
+    "vbam_population_1_to_2_at_raw_4_payback": 5.0,
+    "vbam_population_4_to_5_at_raw_4_payback": 12.5,
+    "ec4x_one_IU_low_tier_EL1_CST1_tax50_payback_ignoring_rounding": 57.14285714285714
+  }
+}
