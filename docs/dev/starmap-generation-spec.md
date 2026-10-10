@@ -65,6 +65,22 @@ Required properties:
 - strong separation between homeworlds
 - roughly balanced territorial spread
 
+Concrete Rust rules:
+
+- map coordinates are 1-based: an `N x N` map spans sectors `1..=N` on both
+  axes, and the map centre is `(N + 1) / 2`
+- every homeworld keeps at least `2` clear sectors to each edge, so homeworld
+  coordinates stay within `3..=N-2`
+- every pair of homeworlds is at least `6` sectors apart (straight-line
+  distance), for every player count `1..=25`; the region grid gives each player
+  roughly `9` sectors of width, so a ratio of the map size cannot be met above
+  `4` players while a fixed `6` holds for every tier
+- if no sampled sector in a player's region meets the spacing rule, the
+  generator picks the free sector of that region farthest from the homeworlds
+  already placed, never the bare region anchor
+- neutral worlds are sampled from the interior `2..=N-1`; if no well-spaced
+  sector is found, the fallback is still an unused sector
+
 Recommended method:
 
 - place homeworld candidates first

@@ -203,6 +203,10 @@ Current behavior:
   player count
 - the generator enforces one planet per system by unique coordinates after
   homeworld placement
+- coordinates are 1-based (`1..=map_size`), homeworlds stay at least `2`
+  sectors from every edge and at least `6` sectors from each other for every
+  player count (see [starmap-generation-spec.md](starmap-generation-spec.md))
+- player counts outside `1..=25` are rejected by every setup entry point
 - homeworlds keep the documented fixed starting production of `100`
 - the default `sysop new-game` path now materializes a joinable pre-player
   baseline for `ECGAME`:

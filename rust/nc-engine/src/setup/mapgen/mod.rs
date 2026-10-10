@@ -11,7 +11,8 @@ use scoring::{all_systems_unique, score_map};
 
 const REROLL_CANDIDATES: usize = 64;
 const HOMEWORLD_EDGE_MARGIN: f32 = 2.0;
-const HOMEWORLD_MIN_DISTANCE_RATIO: f32 = 0.28;
+/// Minimum sector distance between any two homeworlds, for every player count.
+const HOMEWORLD_MIN_DISTANCE: f32 = 6.0;
 const LOCAL_WORLD_COUNT_PER_PLAYER: usize = 2;
 const EARLY_RADIUS: f32 = 5.5;
 const CONTESTED_GAP_LIMIT: f32 = 2.75;
@@ -107,13 +108,7 @@ pub fn generate_map(player_count: u8, seed: u64) -> GeneratedMap {
     let mut best_score = f32::MIN;
 
     for reroll in 0..REROLL_CANDIDATES {
-        let candidate_seed =
-            seed ^ ((player_count as u64) << 32) ^ ((reroll as u64) << 48) ^ 0xEC15_1000_0000_0000;
-        let mut rng = GameRng::from_context(
-            seed,
-            RNG_TAG_MAPGEN,
-            &[player_count as u64, reroll as u64, candidate_seed],
-        );
+        let mut rng = reroll_rng(player_count, seed, reroll);
         let homeworld_coords = generate_homeworlds(player_count, map_size, &mut rng);
         let neutral_worlds = generate_neutral_worlds(
             player_count,
@@ -144,6 +139,16 @@ pub fn generate_map(player_count: u8, seed: u64) -> GeneratedMap {
     generated
 }
 
+fn reroll_rng(player_count: u8, seed: u64, reroll: usize) -> GameRng {
+    let candidate_seed =
+        seed ^ ((player_count as u64) << 32) ^ ((reroll as u64) << 48) ^ 0xEC15_1000_0000_0000;
+    GameRng::from_context(
+        seed,
+        RNG_TAG_MAPGEN,
+        &[player_count as u64, reroll as u64, candidate_seed],
+    )
+}
+
 fn seed_unowned_world(
     planet: &mut PlanetRecord,
     world: GeneratedWorld,
@@ -154,4 +159,87 @@ fn seed_unowned_world(
     planet.set_potential_production_raw([world.potential_production, 0]);
     planet.set_economy_marker_raw(0);
     planet.set_planet_name(&format!("World {:02}", world_index_1_based));
+}
+
+// Inline rather than in tests/: the sweep checks single reroll candidates,
+// because a full generate_map runs 64 rerolls and takes seconds per large map
+// in debug builds. Every candidate must satisfy the hard map rules.
+#[cfg(test)]
+mod tests {
+    use super::geometry::distance;
+    use super::*;
+
+    fn assert_homeworld_rules(player_count: u8, map_size: u8, homeworlds: &[[u8; 2]], ctx: &str) {
+        let margin = HOMEWORLD_EDGE_MARGIN as u8;
+        assert_eq!(homeworlds.len(), usize::from(player_count), "{ctx}");
+        for (idx, &home) in homeworlds.iter().enumerate() {
+            // 1-based grid: `margin` clear sectors before sector 1 and after `map_size`.
+            assert!(
+                home.iter()
+                    .all(|&coord| coord > margin && coord <= map_size - margin),
+                "{ctx}: homeworld {home:?} within {margin} sectors of an edge"
+            );
+            for &other in &homeworlds[idx + 1..] {
+                assert!(
+                    distance(home, other) >= HOMEWORLD_MIN_DISTANCE,
+                    "{ctx}: homeworlds {home:?} and {other:?} closer than {HOMEWORLD_MIN_DISTANCE}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn every_player_count_keeps_homeworld_spacing_and_edge_clearance() {
+        for player_count in 1..=25u8 {
+            let map_size = map_size_for_player_count(player_count);
+            for seed in 0..50u64 {
+                let mut rng = reroll_rng(player_count, seed, 0);
+                let homeworlds = generate_homeworlds(player_count, map_size, &mut rng);
+                let ctx = format!("players {player_count} seed {seed}");
+                assert_homeworld_rules(player_count, map_size, &homeworlds, &ctx);
+            }
+        }
+    }
+
+    #[test]
+    fn every_player_count_places_unique_systems_inside_the_map() {
+        for player_count in 1..=25u8 {
+            let map_size = map_size_for_player_count(player_count);
+            for seed in 0..3u64 {
+                let candidate = || {
+                    let mut rng = reroll_rng(player_count, seed, 0);
+                    let homeworlds = generate_homeworlds(player_count, map_size, &mut rng);
+                    let neutrals = generate_neutral_worlds(
+                        player_count,
+                        map_size,
+                        seed,
+                        0,
+                        &homeworlds,
+                        &mut rng,
+                    );
+                    (homeworlds, neutrals)
+                };
+                let (homeworlds, neutrals) = candidate();
+                let ctx = format!("players {player_count} seed {seed}");
+                assert_eq!((homeworlds.clone(), neutrals.clone()), candidate(), "{ctx}");
+
+                let mut systems = homeworlds;
+                systems.extend(neutrals.iter().map(|world| world.coords));
+                assert_eq!(systems.len(), 5 * usize::from(player_count), "{ctx}");
+                assert!(
+                    systems
+                        .iter()
+                        .all(|&coords| nc_data::sector_within_map(coords, map_size)),
+                    "{ctx}: system outside 1..={map_size}: {systems:?}"
+                );
+                systems.sort_unstable();
+                systems.dedup();
+                assert_eq!(
+                    systems.len(),
+                    5 * usize::from(player_count),
+                    "{ctx}: duplicate sectors"
+                );
+            }
+        }
+    }
 }

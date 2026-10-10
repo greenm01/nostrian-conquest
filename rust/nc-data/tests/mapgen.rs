@@ -5,10 +5,11 @@ fn edge_ring_world_count(generated: &GeneratedMap) -> usize {
         .neutral_worlds
         .iter()
         .filter(|world| {
+            // Within two sectors of an edge of the 1-based 1..=map_size grid.
             let x = world.coords[0];
             let y = world.coords[1];
-            let max = generated.map_size - 2;
-            x == 1 || y == 1 || x == max || y == max
+            let max = generated.map_size - 1;
+            x <= 2 || y <= 2 || x >= max || y >= max
         })
         .count()
 }
