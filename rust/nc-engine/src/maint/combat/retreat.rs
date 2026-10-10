@@ -18,23 +18,16 @@ use crate::{CoreGameData, Order};
 
 use super::state::TaskForce;
 
-pub(crate) fn nearest_owned_planet(
+/// Where fleet `fleet_idx` goes when it abandons its mission: ECMAINT's
+/// nearest friendly world (`24a3:0876`, flag 1), which is ECGAME's picker
+/// ([`CoreGameData::nearest_owned_world`]) told to leave out the world of
+/// the system the fleet is in. Every abort and retreat in ECMAINT asks it
+/// this way. `None` when the empire owns no other world.
+pub(crate) fn nearest_friendly_world(
     game_data: &CoreGameData,
-    empire: u8,
-    from: [u8; 2],
+    fleet_idx: usize,
 ) -> Option<[u8; 2]> {
-    game_data
-        .planets
-        .records
-        .iter()
-        .filter(|p| p.owner_empire_slot_raw() == empire)
-        .min_by_key(|p| {
-            let [x, y] = p.coords_raw();
-            let dx = (x as i32 - from[0] as i32).unsigned_abs();
-            let dy = (y as i32 - from[1] as i32).unsigned_abs();
-            dx + dy
-        })
-        .map(|p| p.coords_raw())
+    game_data.nearest_owned_world(fleet_idx + 1, true)
 }
 
 pub(super) fn set_fleet_to_hold_current_position(fleet: &mut nc_data::FleetRecord) {

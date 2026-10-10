@@ -11,3 +11,6 @@ mod decisions;
 
 #[path = "encounter/odds.rs"]
 mod odds;
+
+#[path = "encounter/aborts.rs"]
+mod aborts;

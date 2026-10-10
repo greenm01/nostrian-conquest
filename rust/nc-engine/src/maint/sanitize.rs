@@ -61,13 +61,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                             break;
                         }
                         let retreat_target = capability_loss_requires_abort_and_seek_home(reason)
-                            .then(|| {
-                                super::combat::nearest_owned_planet(
-                                    game_data,
-                                    owner_empire_raw,
-                                    coords,
-                                )
-                            })
+                            .then(|| super::combat::nearest_friendly_world(game_data, fleet_idx))
                             .flatten();
                         let fleet = &mut game_data.fleets.records[fleet_idx];
                         if capability_loss_requires_abort_and_seek_home(reason) {
