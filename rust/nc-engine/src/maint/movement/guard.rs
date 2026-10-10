@@ -48,10 +48,20 @@ impl YearMovement<'_> {
         };
         let base = &game_data.bases.records[base_idx];
         let fleet_layer = layer(fleet.depth());
-        if sector != base.coords_raw()
-            || fleet_layer != layer(base.depth())
-            || fleet.current_speed() == 0
+        let base_layer = layer(base.depth());
+        if sector == base.coords_raw()
+            && fleet_layer == 1
+            && base_layer == 0
+            && fleet.current_speed() == 0
         {
+            // At rest in orbit under a base in deep space: its target is
+            // the orbit it sits in, so it would never move. It climbs to
+            // the base and arrives there. Classic leaves it in orbit (t040).
+            let fleet = &mut game_data.fleets.records[fleet_idx];
+            fleet.set_mission_target(base_layer, fleet.mission_id_raw());
+            return;
+        }
+        if sector != base.coords_raw() || fleet_layer != base_layer || fleet.current_speed() == 0 {
             return;
         }
         self.tracks[fleet_idx].resolve(fleet);
@@ -92,12 +102,17 @@ impl YearMovement<'_> {
             }
             None => {
                 // It becomes the base's escort and takes the base's depth.
+                // Its target layer becomes the base's too, so it arrives
+                // once. Classic keeps the target layer, and a guard whose
+                // layer differs from the base's arrives again every tick
+                // (t040).
                 let base_depth = game_data.bases.records[base_idx].depth();
                 let fleet = &mut game_data.fleets.records[fleet_idx];
                 fleet.set_depth(base_depth);
+                fleet.set_mission_target(base_layer, fleet.mission_id_raw());
                 let slot = fleet.local_slot_word_raw();
                 game_data.bases.records[base_idx].set_escort_fleet_slot_raw(slot);
-                self.tracks[fleet_idx].reload();
+                self.tracks[fleet_idx].resolve(&game_data.fleets.records[fleet_idx]);
             }
         }
         self.events.mission_events.push(event);

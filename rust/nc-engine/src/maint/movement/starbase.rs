@@ -79,15 +79,7 @@ impl YearMovement<'_> {
             merged: Vec::new(),
         };
         if let Some(escort) = escort {
-            // The escort rides with the base (`0824:0c46`).
-            let fleet = &mut game_data.fleets.records[escort];
-            fleet.set_current_location_coords_raw(sector);
-            fleet.set_x_fraction(base.x_fraction());
-            fleet.set_y_fraction(base.y_fraction());
-            fleet.set_depth(base.depth());
-            fleet.set_standing_order_target_coords_raw(sector);
-            fleet.set_mission_target(base_layer, fleet.mission_id_raw());
-            self.tracks[escort].reload();
+            self.carry_escort(game_data, escort, base_idx);
         }
         if !result.moved_cell {
             return result;
@@ -115,6 +107,20 @@ impl YearMovement<'_> {
             }
         }
         result
+    }
+
+    /// The escort rides with the base (`0824:0c46`): it takes the base's
+    /// position and depth, and aims at the base's sector and layer.
+    fn carry_escort(&mut self, game_data: &mut CoreGameData, escort: usize, base_idx: usize) {
+        let base = &game_data.bases.records[base_idx];
+        let fleet = &mut game_data.fleets.records[escort];
+        fleet.set_current_location_coords_raw(base.coords_raw());
+        fleet.set_x_fraction(base.x_fraction());
+        fleet.set_y_fraction(base.y_fraction());
+        fleet.set_depth(base.depth());
+        fleet.set_standing_order_target_coords_raw(base.coords_raw());
+        fleet.set_mission_target(layer(base.depth()), fleet.mission_id_raw());
+        self.tracks[escort].reload();
     }
 
     /// The fleet that rides with base `base_idx` (`0824:042a`): the first
@@ -182,26 +188,26 @@ impl YearMovement<'_> {
             && (depth == Real48::from_int(i32::from(target_layer))
                 || (last_tick && depth.round() == i32::from(target_layer)));
         let mut moving = base.moving_flag_raw() != 0;
-        let mut report = |game_data: &CoreGameData, report| {
+        let report = |game_data: &CoreGameData, report| {
             let base = &game_data.bases.records[base_idx];
-            self.events.starbase_reports.push(StarbaseReportEvent {
+            StarbaseReportEvent {
                 owner_empire_raw: owner,
                 starbase_id: base.base_id_raw(),
                 coords: base.coords_raw(),
                 in_system: layer(base.depth()) == 1,
                 report,
                 stardate_week: Some(tick),
-            });
+            }
         };
         if at_target {
             if moving {
                 moving = false;
-                report(
+                self.events.starbase_reports.push(report(
                     game_data,
                     StarbaseReport::Arrived {
                         orbit: target_layer == 1,
                     },
-                );
+                ));
             }
         } else {
             moving = true;
@@ -229,8 +235,17 @@ impl YearMovement<'_> {
             return;
         }
         let in_orbit_there = planet_idx.is_some() && sector == world_sector && depth.round() == 1;
+        let holds = moving && !in_orbit_there;
+        // A base that lifts on the last tick drops to deep space at once;
+        // its escort drops with it. Classic leaves the escort behind
+        // (t040).
+        let lifted_escort = if !holds && last_tick {
+            self.find_escort(game_data, base_idx)
+        } else {
+            None
+        };
         let base = &mut game_data.bases.records[base_idx];
-        let response = if moving && !in_orbit_there {
+        let response = if holds {
             let held = depth.round().clamp(0, 1);
             base.set_target_depth_raw(held as u8);
             base.set_depth(Real48::from_int(held));
@@ -245,13 +260,44 @@ impl YearMovement<'_> {
             }
             LostWorldResponse::Leaving
         };
-        report(
+        if let Some(escort) = lifted_escort {
+            self.carry_escort(game_data, escort, base_idx);
+        }
+        self.events.starbase_reports.push(report(
             game_data,
             StarbaseReport::LostWorld {
                 planet_idx,
                 system: target,
                 response,
             },
-        );
+        ));
+    }
+}
+
+// A base lifts on the last tick only when its world changes hands during
+// the year's ticks, which no Rust phase does, so the escort's drop is
+// pinned here on the dispatcher itself (t040).
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::Path;
+
+    #[test]
+    fn an_escort_drops_with_a_base_that_lifts_on_the_last_tick() {
+        // Empire 1's base rests in orbit at a world empire 2 now holds,
+        // escorted by fleet 1.
+        let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../fixtures/ecmaint-starbase-lift-pre/v1.5");
+        let mut game_data = CoreGameData::load(&dir).expect("fixture loads");
+        let mut movement = YearMovement::new(&game_data, &[]);
+
+        movement.dispatch_base(&mut game_data, 0, TICKS_PER_YEAR);
+
+        let base = &game_data.bases.records[0];
+        let escort = &game_data.fleets.records[0];
+        assert_eq!(base.depth(), Real48::ZERO);
+        assert_eq!(base.target_depth_raw(), 0);
+        assert_eq!(escort.depth(), Real48::ZERO);
+        assert_eq!(escort.world_target_flag_raw(), 0);
     }
 }
