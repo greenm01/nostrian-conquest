@@ -1,5 +1,5 @@
 use super::format::empire_label;
-use nc_data::CoreGameData;
+use nc_data::{CoreGameData, is_classic_text_char};
 
 pub const RESULTS_RECORD_SIZE: usize = 84;
 pub const RESULTS_TEXT_SIZE: usize = 72;
@@ -44,7 +44,7 @@ pub fn push_classic_results_chunked(
     let kind = (lines.len() + 1) as u8; // text lines + EOT
 
     for (line_idx, line) in lines.iter().enumerate() {
-        let chunk = line.as_bytes();
+        let chunk = &line.as_bytes()[..line.len().min(RESULTS_TEXT_SIZE)];
         let mut record = [0u8; RESULTS_RECORD_SIZE];
         record[0] = kind;
         record[1] = chunk.len() as u8;
@@ -72,11 +72,27 @@ pub fn classic_results_record_count(text: &str, _kind: u8) -> usize {
     if line_count == 0 { 0 } else { line_count + 1 }
 }
 
+/// Map report text onto the classic single-byte character set: printable
+/// ASCII and line breaks pass through, anything else becomes `?`.  After this
+/// every character is exactly one record byte.
+pub fn classic_results_text(text: &str) -> String {
+    text.chars()
+        .map(|ch| {
+            if ch == '\n' || is_classic_text_char(ch) {
+                ch
+            } else {
+                '?'
+            }
+        })
+        .collect()
+}
+
 pub fn classic_results_lines(text: &str) -> Vec<String> {
     if text.is_empty() {
         return Vec::new();
     }
-    let split = byte_index_for_char_width(text, RESULTS_TEXT_SIZE);
+    let text = classic_results_text(text);
+    let split = text.len().min(RESULTS_TEXT_SIZE);
     let first_line = text[..split].to_string();
     let mut lines = vec![first_line];
     let body = text[split..].trim_start();
@@ -84,12 +100,18 @@ pub fn classic_results_lines(text: &str) -> Vec<String> {
         return lines;
     }
     for paragraph in body.split('\n') {
-        let paragraph = paragraph.trim();
-        if paragraph.is_empty() {
+        let paragraph = paragraph.trim_end();
+        if paragraph.trim_start().is_empty() {
             lines.push(String::new());
             continue;
         }
-        wrap_classic_paragraph(paragraph, RESULTS_TEXT_SIZE, &mut lines);
+        // Lines that already fit were laid out by the report builder (labeled
+        // rows, hanging indents); only free prose needs wrapping here.
+        if paragraph.len() <= RESULTS_TEXT_SIZE {
+            lines.push(paragraph.to_string());
+        } else {
+            wrap_classic_paragraph(paragraph, RESULTS_TEXT_SIZE, &mut lines);
+        }
     }
     while matches!(lines.last(), Some(line) if line.is_empty()) {
         lines.pop();
@@ -100,23 +122,6 @@ pub fn classic_results_lines(text: &str) -> Vec<String> {
 #[allow(dead_code)]
 pub fn classic_message_text(text: &str) -> String {
     classic_results_lines(text).join("\n")
-}
-
-pub fn byte_index_for_char_width(text: &str, width: usize) -> usize {
-    if width == 0 {
-        return 0;
-    }
-    let mut count = 0usize;
-    for (idx, ch) in text.char_indices() {
-        if count == width {
-            return idx;
-        }
-        count += 1;
-        if idx + ch.len_utf8() == text.len() && count <= width {
-            return text.len();
-        }
-    }
-    text.len()
 }
 
 pub fn char_width(text: &str) -> usize {

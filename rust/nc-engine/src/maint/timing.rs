@@ -154,14 +154,17 @@ pub fn format_stardate(week: u8, year: u16) -> String {
 /// `source_clause` should be the full "From …" phrase without a trailing
 /// newline.  The function pads with spaces so the combined length reaches 72
 /// characters (or inserts a single space if the clause is already too long).
+/// Width is counted in characters: the RESULTS boundary encodes each
+/// character as one classic byte.
 pub fn format_report_first_line(source_clause: &str, week: u8, year: u16) -> String {
     const LINE_WIDTH: usize = 72;
     let stardate = format_stardate(week, year);
-    let combined_min = source_clause.len() + 1 + stardate.len(); // at least one space
+    let clause_width = source_clause.chars().count();
+    let combined_min = clause_width + 1 + stardate.len(); // at least one space
     if combined_min >= LINE_WIDTH {
         format!("{source_clause} {stardate}")
     } else {
-        let padding = LINE_WIDTH - source_clause.len() - stardate.len();
+        let padding = LINE_WIDTH - clause_width - stardate.len();
         format!("{source_clause}{}{stardate}", " ".repeat(padding))
     }
 }

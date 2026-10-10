@@ -17,7 +17,7 @@ pub fn build_rankings_text(game_data: &CoreGameData) -> String {
             format!("Empire #{} \"{}\"", row.empire_id, row.empire_name)
         };
         out.push_str(&format!(
-            "  {}. {}  — {} planet(s), {} production\n",
+            "  {}. {}  -- {} planet(s), {} production\n",
             rank + 1,
             name,
             row.planets_owned,

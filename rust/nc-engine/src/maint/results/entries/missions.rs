@@ -492,12 +492,8 @@ pub fn push_mission_entries(
                     bombard.planet_idx == event.planet_idx.unwrap_or(usize::MAX)
                         && bombard.attacker_empire_raw == event.owner_empire_raw
                 });
-                let bombard_force_destroyed = event.location_coords.is_some_and(|coords| {
-                    events.fleet_destroyed_events.iter().any(|destroyed| {
-                        destroyed.reporting_empire_raw == event.owner_empire_raw
-                            && destroyed.coords == coords
-                    })
-                });
+                let bombard_force_destroyed =
+                    mission_event_has_fleet_destroyed(game_data, events, event);
                 let body = if let Some(planet_idx) = event.planet_idx {
                     if let Some(planet) = game_data.planets.records.get(planet_idx) {
                         let context_rows = vec![StructuredBodyItem::Label {

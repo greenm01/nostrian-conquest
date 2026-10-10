@@ -55,6 +55,12 @@ pub fn expect_size(
     }
 }
 
+/// Classic text fields (planet names, `RESULTS.DAT` lines) hold printable
+/// ASCII only: space through `~`.
+pub fn is_classic_text_char(ch: char) -> bool {
+    ch == ' ' || ch.is_ascii_graphic()
+}
+
 pub fn copy_array<const N: usize>(data: &[u8]) -> [u8; N] {
     let mut out = [0u8; N];
     out.copy_from_slice(data);

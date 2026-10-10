@@ -846,8 +846,8 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
         .join(" ")
         .replace('\n', " ");
     assert!(text.contains("ALERT: Orbital bombardment underway!"));
-    assert!(text.contains("Our forces: 10BB, 11CA, 14TT*, 7TT"));
-    assert!(text.contains("World defenses: undefended"));
+    assert!(text.contains("Our forces:       10BB, 11CA, 14TT*, 7TT"));
+    assert!(text.contains("World defenses:   undefended"));
     assert!(text.contains("Bombing damage: 336 points of industry destroyed."));
     assert!(text.contains("Bombing damage: 25 stored production destroyed."));
     assert!(!text.contains("336 factories"));
@@ -858,6 +858,72 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
     );
     assert!(!text.contains("0 ground battery(ies)"));
     assert!(!text.contains("0 armies"));
+}
+
+#[test]
+fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3026)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [1, 9];
+    seed_target_world(&mut game_data, coords, "biggy");
+    game_data.fleets.records[0].set_owner_empire_raw(1);
+    game_data.fleets.records[0].set_local_slot_word_raw(10);
+    game_data.fleets.records[0].set_current_location_coords_raw(coords);
+
+    let mut events = MaintenanceEvents::default();
+    events.mission_events.push(MissionEvent {
+        fleet_idx: 0,
+        owner_empire_raw: 1,
+        kind: Mission::BombardWorld,
+        outcome: MissionOutcome::Succeeded,
+        abort_reason: None,
+        planet_idx: Some(0),
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: Some(3),
+    });
+    let escort_destroyed = FleetDestroyedEvent {
+        reporting_empire_raw: 1,
+        fleet_number: 11,
+        coords,
+        was_intercepting: false,
+        friendly_initial: ShipLosses {
+            destroyers: 1,
+            ..ShipLosses::default()
+        },
+        friendly_loaded_armies_initial: 0,
+        enemy_initial: ShipLosses::default(),
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_ground_batteries_initial: 2,
+        enemy_ground_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        enemy_ground_battery_losses: 0,
+        enemy_ground_army_losses: 0,
+        primary_enemy_empire_raw: Some(2),
+        primary_enemy_fleet_number: None,
+        stardate_week: Some(3),
+    };
+    events.fleet_destroyed_events.push(escort_destroyed.clone());
+
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .join(" ")
+        .replace('\n', " ");
+    assert!(!text.contains("destroyed the bombardment force"), "{text}");
+    assert!(text.contains("We are maintaining bombardment position"));
+
+    events.fleet_destroyed_events.push(FleetDestroyedEvent {
+        fleet_number: 10,
+        ..escort_destroyed
+    });
+    let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
+        .join(" ")
+        .replace('\n', " ");
+    assert!(text.contains("Hostile return fire destroyed the bombardment force."));
 }
 
 #[test]
@@ -1567,9 +1633,9 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
         .next()
         .expect("expected Alien forces section");
     assert!(before_forces.ends_with("\n\n"), "{:?}", texts[0]);
-    assert!(texts[0].contains("Last contact: destroyed by"));
+    assert!(texts[0].contains("Last contact:     destroyed by"));
     assert!(texts[0].contains("ALERT: Starbase contact lost!"));
-    assert!(texts[0].contains("Alien forces: 1BB, 3CA, 11TT*, 3TT"));
+    assert!(texts[0].contains("Alien forces:     1BB, 3CA, 11TT*, 3TT"));
 }
 
 #[test]

@@ -58,16 +58,18 @@ Settled presentation rule:
   source clause, rather than emitted as its own separate header line
 - Rust should preserve that classic first-line shape for fleet, planet,
   starbase, and Fleet Command Center reports
-- the week field is rendered in classic EC notation:
-  - integer `1..52`
-  - no zero padding
+- the week field is an integer `1..52`:
+  - classic EC renders it with no zero padding (`Stardate: 1/3010`)
+  - the Rust engine intentionally zero-pads it to two digits
+    (`Stardate: 02/3031`) so the TUI can align and colorize it; this is a
+    deliberate Rust presentation choice, not a classic-compatibility claim
 - the year field is rendered as a four-digit year
 - this weekly first-line rule applies to player report entries, not to the
   separate rankings banner text
 - preserved rankings headers use a separate year-only form:
   `Stardate: YYYY A.D.`
 
-Examples from the shipped historical logs:
+Examples from the shipped historical logs (classic, unpadded week):
 
 ```text
  -> From your 1st Fleet, located in System(13,15)          Stardate: 32/3001

@@ -1299,7 +1299,7 @@ impl App {
                 .planet_additional_build_points_capacity(planet_record, kind)?;
             if capacity == 0 {
                 self.planet.build_quantity_status =
-                    Some("Stardock is full — commission ships first to free space.".to_string());
+                    Some("Stardock is full -- commission ships first to free space.".to_string());
                 return Ok(());
             }
         }

@@ -211,15 +211,16 @@ pub(super) fn build_rows_for_viewer(
         .collect()
 }
 
+/// Broadcast reports go to every empire with an active human player.  Rogue
+/// (`0xff`) empires run on autopilot and civil-disorder/unjoined (`0x00`)
+/// empires have no commander, so neither has anyone to review results.
 pub(super) fn occupied_result_viewers(game_data: &CoreGameData) -> Vec<u8> {
     game_data
         .player
         .records
         .iter()
         .enumerate()
-        .filter_map(|(idx, player)| {
-            (player.owner_mode_raw() == (idx + 1) as u8).then_some((idx + 1) as u8)
-        })
+        .filter_map(|(idx, player)| player.is_active_human_player().then_some((idx + 1) as u8))
         .collect()
 }
 

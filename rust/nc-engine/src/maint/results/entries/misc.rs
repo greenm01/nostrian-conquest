@@ -107,24 +107,10 @@ pub fn push_misc_entries(
         });
     }
 
-    // ----- Campaign outcome events (RESULTS only) -----
-    for event in &events.campaign_outcome_events {
-        let source = "From your Fleet Command Center:";
-        let header = report_header(source, event.stardate_week, year);
-        let body = format!(
-            " {} has now been recognized as Emperor. No other stable empire remains capable of contesting the throne.",
-            empire_label(game_data, event.emperor_empire_raw),
-        );
-        entries.push(ReportEntry {
-            text: format!("{header}{body}"),
-            kind: 0x06,
-            tail: RESULTS_TAIL_FLEET,
-            target: ReportTarget::ResultsOnly,
-            repeat_next_pointer: false,
-            stardate_week: event.stardate_week,
-            narrative_phase: narrative_phase_for_report_text(&body),
-        });
-    }
+    // Campaign outcome events get no report of their own: the targeted
+    // winner-declaration notices below already reach the emperor and every
+    // empire still in the campaign, and already defeated empires must not
+    // receive a repeated winner notice.
 
     // ----- Empire elimination events -----
     for event in &events.empire_elimination_events {
@@ -399,7 +385,7 @@ pub fn push_misc_entries(
                 reason,
                 ..
             } => (
-                owner_empire_raw.max(1),
+                owner_empire_raw,
                 format!("From planet in System({},{}) :", coords[0], coords[1]),
                 format!(
                     " Invalid planetary input was cleared because {}.",
@@ -433,6 +419,9 @@ pub fn push_misc_entries(
                 ),
             ),
         };
+        if owner_empire_raw == 0 {
+            continue;
+        }
         // Invalid state events don't have stardate_week on the event itself; use year start.
         let header = report_header(&source, None, year);
         entries.push(ReportEntry {

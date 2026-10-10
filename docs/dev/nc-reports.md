@@ -45,6 +45,12 @@ Shell rules:
 - use full ship names, not abbreviations such as `BB`, `CA`, or `DD`
 - wrap on word boundaries
 - preserve explicit blank separator lines in structured reports
+- the week is zero-padded to two digits (`Stardate: 02/3031`); see
+  [ec-timing-spec.md](ec-timing-spec.md)
+- report text is printable ASCII only; write `--` rather than an em dash, and
+  expect any other character (for example in imported names) to render as `?`
+- lines a report builder already laid out (labeled rows, hanging indents)
+  pass through unchanged; only lines longer than 72 columns are re-wrapped
 
 ## Format Choice
 
@@ -286,7 +292,7 @@ further orders will be accepted.
 ### Hybrid Intel Report
 
 ```text
-From your 4th Fleet, located in System(6,14):         Stardate: 04/3031
+From your 4th Fleet, located in System(6,14):          Stardate: 04/3031
 Scouting mission report: We are in extended orbit around planet "Spyglass"
 and have compiled the following data:
 Owned by:           Empire #2

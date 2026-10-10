@@ -1,4 +1,5 @@
 use super::*;
+use crate::is_classic_text_char;
 
 const DEFAULT_JOIN_TAX_RATE: u8 = 50;
 
@@ -135,6 +136,11 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: homeworld_planet_index_1_based,
             })?;
+        if !homeworld_name.chars().all(is_classic_text_char) {
+            return Err(GameStateMutationError::InvalidPlanetName {
+                planet_index_1_based: homeworld_planet_index_1_based,
+            });
+        }
         planet.set_planet_name(homeworld_name);
         Ok(homeworld_planet_index_1_based)
     }
@@ -156,6 +162,11 @@ impl CoreGameData {
         if planet.owner_empire_slot_raw() != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based: player_record_index_1_based,
+                planet_index_1_based: planet_record_index_1_based,
+            });
+        }
+        if !planet_name.chars().all(is_classic_text_char) {
+            return Err(GameStateMutationError::InvalidPlanetName {
                 planet_index_1_based: planet_record_index_1_based,
             });
         }

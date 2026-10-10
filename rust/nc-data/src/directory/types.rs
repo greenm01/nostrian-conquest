@@ -352,6 +352,9 @@ pub enum GameStateMutationError {
         planet_index_1_based: usize,
         reason: PlanetPlayerInputValidationError,
     },
+    InvalidPlanetName {
+        planet_index_1_based: usize,
+    },
     InvalidPlayerTaxRate {
         player_index_1_based: usize,
         tax_rate: u8,
@@ -693,6 +696,13 @@ impl std::fmt::Display for GameStateMutationError {
                 f,
                 "planet {} has invalid player input: {:?}",
                 planet_index_1_based, reason
+            ),
+            Self::InvalidPlanetName {
+                planet_index_1_based,
+            } => write!(
+                f,
+                "planet {} name must be printable ASCII",
+                planet_index_1_based
             ),
             Self::InvalidPlayerTaxRate {
                 player_index_1_based,
