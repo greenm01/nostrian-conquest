@@ -1,5 +1,6 @@
 use super::super::{FleetMergeEvent, JoinMissionHostEvent, Mission};
 use super::helpers::{merge_fits_host, merge_one_fleet_into_host};
+use crate::navigation::motion::target_depth;
 use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
 
 pub(super) fn process_mission_fleet_merging(
@@ -42,7 +43,15 @@ pub(super) fn process_mission_fleet_merging(
         let same_owner = game_data.fleets.records[host_idx].owner_empire_raw() == joiner_owner;
         let same_coords =
             game_data.fleets.records[host_idx].current_location_coords_raw() == joiner_coords;
-        if !same_owner || !same_coords || !merge_fits_host(game_data, host_idx, joiner_idx) {
+        // The join resolves when the joiner settles at its target depth in
+        // the host's sector, as ECMAINT's join arrival test requires.
+        let joiner = &game_data.fleets.records[joiner_idx];
+        let settled = joiner.depth() == target_depth(joiner.world_target_flag_raw());
+        if !same_owner
+            || !same_coords
+            || !settled
+            || !merge_fits_host(game_data, host_idx, joiner_idx)
+        {
             continue;
         }
 

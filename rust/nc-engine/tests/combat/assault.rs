@@ -150,7 +150,8 @@ fn bombard_fleet_is_not_folded_into_a_same_turn_invasion() {
     let bombard_fleet = &game_data.fleets.records[1];
     assert_eq!(bombard_fleet.army_count(), 3);
     assert_eq!(bombard_fleet.standing_order_kind(), Order::BombardWorld);
-    assert_eq!(bombard_fleet.transit_ready_flag_raw(), 0x80);
+    // It keeps its pre-strike state (at rest in orbit) to strike next year.
+    assert_eq!(bombard_fleet.depth(), nc_data::Real48::ONE);
     assert_eq!(game_data.fleets.records[0].army_count(), 0);
 }
 

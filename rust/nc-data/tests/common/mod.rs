@@ -3,6 +3,7 @@
 pub mod order_trace;
 pub mod production;
 
+use nc_data::FleetRecord;
 use std::fs;
 use std::path::PathBuf;
 
@@ -128,4 +129,12 @@ pub fn read_ecmaint_bombard_heavy_pre_fixture(name: &str) -> Vec<u8> {
 
 pub fn read_ecmaint_bombard_heavy_post_fixture(name: &str) -> Vec<u8> {
     read_file("fixtures/ecmaint-bombard-heavy-post/v1.5", name)
+}
+
+/// A contact stalled where it stands: with no speed and no maximum speed the
+/// dispatcher prelude has nothing to restore, so it ends the year in place
+/// whatever its order and target.
+pub fn stall_in_place(fleet: &mut FleetRecord) {
+    fleet.set_current_speed(0);
+    fleet.set_max_speed(0);
 }

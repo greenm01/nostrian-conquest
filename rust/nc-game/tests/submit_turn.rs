@@ -200,7 +200,7 @@ fn root_help_lists_submit_turn_subcommand() {
 }
 
 #[test]
-fn submit_turn_arms_on_station_hostile_orders_for_next_maintenance_tick() {
+fn submit_turn_keeps_motion_for_on_station_hostile_orders() {
     let target = fixture_copy("nc-game-submit-turn-on-station-hostile-order");
     let turn_path = target.join("turn.kdl");
 
@@ -238,6 +238,7 @@ fn submit_turn_arms_on_station_hostile_orders_for_next_maintenance_tick() {
         fleet.recompute_max_speed_from_composition();
         fleet.set_current_speed(fleet.max_speed());
     }
+    let depth_before = game_data.fleets.records[fleet_record_index_1_based - 1].depth();
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -284,9 +285,10 @@ fleet record={fleet_record_index_1_based} {{
     assert_eq!(fleet.standing_order_kind(), Order::InvadeWorld);
     assert_eq!(fleet.current_location_coords_raw(), target_coords);
     assert_eq!(fleet.standing_order_target_coords_raw(), target_coords);
-    assert_eq!(fleet.current_speed(), 0);
-    assert_eq!(fleet.transit_ready_flag_raw(), 0x80);
-    assert_eq!(fleet.tuple_c_payload_raw(), [0x80, 0xb9, 0xff, 0xff, 0xff]);
+    // Like ECGAME, the order keeps the fleet's motion; the strike test
+    // passes once maintenance finds it settled in orbit.
+    assert_eq!(fleet.current_speed(), 4);
+    assert_eq!(fleet.depth(), depth_before);
 
     cleanup_dir(&target);
 }

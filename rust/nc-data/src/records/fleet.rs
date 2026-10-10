@@ -1,4 +1,5 @@
 use crate::FLEET_RECORD_SIZE;
+use crate::real48::Real48;
 use crate::support::{ParseError, copy_array};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -313,13 +314,6 @@ impl FleetRecord {
         self.raw[0x0D..0x12].copy_from_slice(&payload);
     }
 
-    pub fn extended_tuple_a_payload_raw(&self) -> [u8; 6] {
-        copy_array(&self.raw[0x0D..=0x12])
-    }
-
-    pub fn set_extended_tuple_a_payload_raw(&mut self, payload: [u8; 6]) {
-        self.raw[0x0D..=0x12].copy_from_slice(&payload);
-    }
     pub fn tuple_b_payload_raw(&self) -> [u8; 5] {
         copy_array(&self.raw[0x13..0x18])
     }
@@ -333,36 +327,38 @@ impl FleetRecord {
         self.raw[0x19..0x1E].copy_from_slice(&payload);
     }
 
-    pub fn movement_state_flag_raw(&self) -> u8 {
-        self.raw[0x0D]
+    /// 0x0D..=0x12: X offset inside the current sector, a 6-byte real
+    /// (0.5 is the sector centre). Position X = `0x0B + x_fraction`.
+    pub fn x_fraction(&self) -> Real48 {
+        Real48::from_bytes(copy_array(&self.raw[0x0D..=0x12]))
     }
-
-    pub fn set_movement_state_flag_raw(&mut self, value: u8) {
-        self.raw[0x0D] = value;
+    pub fn set_x_fraction(&mut self, value: Real48) {
+        self.raw[0x0D..=0x12].copy_from_slice(&value.to_bytes());
     }
-
-    pub fn movement_fraction_raw(&self) -> u8 {
-        self.raw[0x0F]
+    /// 0x13..=0x18: Y offset inside the current sector, a 6-byte real.
+    pub fn y_fraction(&self) -> Real48 {
+        Real48::from_bytes(copy_array(&self.raw[0x13..=0x18]))
     }
-
-    pub fn set_movement_fraction_raw(&mut self, value: u8) {
-        self.raw[0x0F] = value;
+    pub fn set_y_fraction(&mut self, value: Real48) {
+        self.raw[0x13..=0x18].copy_from_slice(&value.to_bytes());
     }
-
+    /// 0x19..=0x1E: depth into the target system, a 6-byte real: 0.0 in
+    /// deep space, 1.0 at rest in orbit.
+    pub fn depth(&self) -> Real48 {
+        Real48::from_bytes(copy_array(&self.raw[0x19..=0x1E]))
+    }
+    pub fn set_depth(&mut self, value: Real48) {
+        self.raw[0x19..=0x1E].copy_from_slice(&value.to_bytes());
+    }
+    /// At rest in orbit at the sector centre: offsets 0.5, depth 1.0.
+    pub fn set_at_rest_motion(&mut self) {
+        self.set_x_fraction(Real48::HALF);
+        self.set_y_fraction(Real48::HALF);
+        self.set_depth(Real48::ONE);
+    }
+    /// The exponent byte of the depth real (0x80 while 0.5 <= depth < 1.0).
     pub fn transit_ready_flag_raw(&self) -> u8 {
         self.raw[0x19]
-    }
-
-    pub fn set_transit_ready_flag_raw(&mut self, value: u8) {
-        self.raw[0x19] = value;
-    }
-
-    pub fn extended_tuple_c_payload_raw(&self) -> [u8; 6] {
-        copy_array(&self.raw[0x19..=0x1E])
-    }
-
-    pub fn set_extended_tuple_c_payload_raw(&mut self, payload: [u8; 6]) {
-        self.raw[0x19..=0x1E].copy_from_slice(&payload);
     }
 
     pub fn standing_order_summary(&self) -> String {

@@ -43,7 +43,7 @@ fn one_shot_order_traces_monitor_speed_and_resolution() {
                     target: TRACE_TARGET,
                     order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -77,7 +77,7 @@ fn one_shot_order_traces_monitor_speed_and_resolution() {
                     target: TRACE_TARGET,
                     order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -111,7 +111,7 @@ fn one_shot_order_traces_monitor_speed_and_resolution() {
                     target: TRACE_TARGET,
                     order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -145,7 +145,7 @@ fn one_shot_order_traces_monitor_speed_and_resolution() {
                     target: TRACE_TARGET,
                     order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -215,7 +215,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::ScoutSector,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -223,7 +223,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::ScoutSector,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -257,7 +257,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::ScoutSolarSystem,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -265,7 +265,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::ScoutSolarSystem,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -299,7 +299,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::PatrolSector,
                     speed: 0,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -307,7 +307,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::PatrolSector,
                     speed: 0,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -341,7 +341,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::GuardStarbase,
                     speed: 0,
-                    ready_flag: Some(0x00),
+                    ready_flag: Some(0x81),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -349,7 +349,7 @@ fn persistent_order_traces_monitor_speed_on_arrival_and_on_station() {
                     target: TRACE_TARGET,
                     order: Order::GuardStarbase,
                     speed: 0,
-                    ready_flag: Some(0x00),
+                    ready_flag: Some(0x81),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -411,7 +411,7 @@ fn hostile_order_traces_monitor_speed_through_delay_and_execution() {
             name: "bombard-world",
             setup: build_bombard_world_trace,
             fleet_idx: 0,
-            turns_to_run: 3,
+            turns_to_run: 2,
             expectations: &[
                 FleetTurnExpectation {
                     turn: 0,
@@ -434,15 +434,7 @@ fn hostile_order_traces_monitor_speed_through_delay_and_execution() {
                     coords: TRACE_TARGET,
                     target: TRACE_TARGET,
                     order: Order::BombardWorld,
-                    speed: 0,
-                    ready_flag: Some(0x80),
-                },
-                FleetTurnExpectation {
-                    turn: 3,
-                    coords: TRACE_TARGET,
-                    target: TRACE_TARGET,
-                    order: Order::BombardWorld,
-                    speed: 0,
+                    speed: 3,
                     ready_flag: Some(0x80),
                 },
             ],
@@ -475,9 +467,9 @@ fn hostile_order_traces_monitor_speed_through_delay_and_execution() {
                     turn: 2,
                     coords: TRACE_TARGET,
                     target: TRACE_TARGET,
-                    order: Order::InvadeWorld,
+                    order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -517,9 +509,9 @@ fn hostile_order_traces_monitor_speed_through_delay_and_execution() {
                     turn: 2,
                     coords: TRACE_TARGET,
                     target: TRACE_TARGET,
-                    order: Order::BlitzWorld,
+                    order: Order::HoldPosition,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x81),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -588,7 +580,7 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
                 target: [10, 10],
                 order: Order::JoinAnotherFleet,
                 speed: 0,
-                ready_flag: Some(0x80),
+                ready_flag: Some(0x81),
             }],
             before_turn: no_turn_mutation,
             check: check_join_merge_trace,
@@ -621,7 +613,7 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
                     target: TRACE_TARGET,
                     order: Order::RendezvousSector,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
                 FleetTurnExpectation {
                     turn: 3,
@@ -629,7 +621,7 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
                     target: TRACE_TARGET,
                     order: Order::RendezvousSector,
                     speed: 0,
-                    ready_flag: Some(0x80),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -646,7 +638,7 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
                 target: TRACE_TARGET,
                 order: Order::RendezvousSector,
                 speed: 0,
-                ready_flag: Some(0x80),
+                ready_flag: Some(0x81),
             }],
             before_turn: no_turn_mutation,
             check: check_rendezvous_merge_trace,
@@ -780,7 +772,8 @@ fn check_bombard_world_trace(run: &TraceRun) {
         Mission::BombardWorld,
         MissionOutcome::Arrived,
     );
-    assert!(!run.events[2].bombard_events.is_empty());
+    // It strikes in the year it settles in orbit.
+    assert!(!run.events[1].bombard_events.is_empty());
 }
 
 fn check_invade_world_trace(run: &TraceRun) {
@@ -790,15 +783,16 @@ fn check_invade_world_trace(run: &TraceRun) {
         Mission::InvadeWorld,
         MissionOutcome::Arrived,
     );
+    // It strikes in the year it settles in orbit.
     assert_mission_event(
-        &run.events[2],
+        &run.events[1],
         0,
         Mission::InvadeWorld,
         MissionOutcome::Succeeded,
     );
-    assert!(!run.events[2].assault_report_events.is_empty());
+    assert!(!run.events[1].assault_report_events.is_empty());
     assert_eq!(
-        run.states[3].planets.records[TARGET_PLANET_IDX].owner_empire_slot_raw(),
+        run.states[2].planets.records[TARGET_PLANET_IDX].owner_empire_slot_raw(),
         1
     );
 }
@@ -810,15 +804,16 @@ fn check_blitz_world_trace(run: &TraceRun) {
         Mission::BlitzWorld,
         MissionOutcome::Arrived,
     );
+    // It strikes in the year it settles in orbit.
     assert_mission_event(
-        &run.events[2],
+        &run.events[1],
         0,
         Mission::BlitzWorld,
         MissionOutcome::Succeeded,
     );
-    assert!(!run.events[2].assault_report_events.is_empty());
+    assert!(!run.events[1].assault_report_events.is_empty());
     assert_eq!(
-        run.states[3].planets.records[TARGET_PLANET_IDX].owner_empire_slot_raw(),
+        run.states[2].planets.records[TARGET_PLANET_IDX].owner_empire_slot_raw(),
         1
     );
 }

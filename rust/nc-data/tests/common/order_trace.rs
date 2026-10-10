@@ -1,6 +1,6 @@
 use nc_data::{
     BaseDat, BaseRecord, CoreGameData, FleetRecord, GameStateBuilder, MaintenanceEvents, Mission,
-    MissionOutcome, Order, fleet_motion_state::reset_motion_state_for_new_orders,
+    MissionOutcome, Order,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -317,7 +317,9 @@ pub fn build_blitz_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
     {
         let target = &mut game_data.planets.records[TARGET_PLANET_IDX];
-        target.set_ground_batteries_raw(1);
+        // No batteries: the landing is unopposed, so the outcome does not hang
+        // on the year's combat rolls.
+        target.set_ground_batteries_raw(0);
         target.set_army_count_raw(1);
     }
     let fleet = &mut game_data.fleets.records[0];
@@ -439,9 +441,8 @@ pub fn configured_delayed_hostile_arrival_state(
     fleet.set_current_speed(3);
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target_coords);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0x00;
-    fleet.raw[0x19] = 0x81;
+    fleet.set_mission_aux_bytes([1, 0]);
+    fleet.set_at_rest_motion();
 
     (game_data, target_idx, target_coords)
 }
@@ -565,9 +566,8 @@ pub fn arm_new_order(
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target);
     fleet.set_current_speed(speed);
-    reset_motion_state_for_new_orders(fleet);
-    fleet.set_current_speed(speed);
-    fleet.set_tuple_c_payload_raw([0x81, 0x00, 0x00, 0x00, 0x00]);
+    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_at_rest_motion();
 }
 
 pub fn arm_stationary_order(fleet: &mut FleetRecord, order: Order, coords: [u8; 2]) {
@@ -575,7 +575,6 @@ pub fn arm_stationary_order(fleet: &mut FleetRecord, order: Order, coords: [u8; 
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(0);
-    reset_motion_state_for_new_orders(fleet);
-    fleet.set_current_speed(0);
-    fleet.set_transit_ready_flag_raw(0x80);
+    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_at_rest_motion();
 }

@@ -3,10 +3,7 @@
 //! blockading". Fleets ordered out of the world's orbit, including ships just
 //! launched from its stardock, meet the blockade before they move.
 
-use nc_data::{
-    CommissionResult, CoreGameData, DiplomaticRelation, MaintenanceEvents, Order,
-    fleet_motion_state::reset_motion_state_for_new_orders,
-};
+use nc_data::{CommissionResult, CoreGameData, DiplomaticRelation, MaintenanceEvents, Order};
 use nc_engine::run_maintenance_turn_with_context;
 
 use super::support::{
@@ -57,7 +54,7 @@ fn order_leaver_away(game_data: &mut CoreGameData) {
         10,
     );
     let fleet = &mut game_data.fleets.records[LEAVER];
-    reset_motion_state_for_new_orders(fleet);
+    fleet.recompute_max_speed_from_composition();
     fleet.set_current_speed(3);
 }
 

@@ -43,7 +43,8 @@ fn configured_assault_state(order_code: u8) -> CoreGameData {
     attacker.set_standing_order_code_raw(order_code);
     attacker.set_standing_order_target_coords_raw([15, 13]);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    // At rest in orbit: the strike test passes on the first tick.
+    attacker.set_at_rest_motion();
     attacker.set_rules_of_engagement(10);
     attacker.set_scout_count(0);
     attacker.set_battleship_count(0);
@@ -74,6 +75,7 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
     attacker.set_rules_of_engagement(attacker_roe);
+    common::stall_in_place(attacker);
 
     let hostile = &mut game_data.fleets.records[4];
     hostile.set_current_location_coords_raw(coords);
@@ -88,6 +90,7 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     hostile.set_army_count(0);
     hostile.set_etac_count(0);
     hostile.set_rules_of_engagement(hostile_roe);
+    common::stall_in_place(hostile);
 
     game_data
 }
@@ -178,7 +181,8 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw(coords);
     attacker.set_current_speed(3);
-    attacker.raw[0x19] = 0x80;
+    // At rest in orbit: the strike test passes on the first tick.
+    attacker.set_at_rest_motion();
     attacker.set_destroyer_count(1);
     attacker.set_troop_transport_count(1);
     attacker.set_army_count(1);
@@ -216,7 +220,8 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
         attacker.standing_order_code_raw(),
         nc_data::Order::BombardWorld.to_raw()
     );
-    assert_eq!(attacker.current_speed(), 0);
+    // It keeps its pre-strike speed and depth, as ECMAINT leaves a bombard.
+    assert_eq!(attacker.current_speed(), 3);
     assert_eq!(attacker.cruiser_count(), 0);
     assert_eq!(attacker.destroyer_count(), 0);
 
@@ -431,6 +436,7 @@ fn hostile_contact_with_roe_zero_allows_clean_sensor_retreat() {
     patrol.set_troop_transport_count(0);
     patrol.set_etac_count(0);
     patrol.set_rules_of_engagement(0);
+    common::stall_in_place(patrol);
 
     let hostile = &mut game_data.fleets.records[4];
     hostile.set_current_location_coords_raw(coords);
@@ -442,6 +448,7 @@ fn hostile_contact_with_roe_zero_allows_clean_sensor_retreat() {
     hostile.set_troop_transport_count(0);
     hostile.set_etac_count(0);
     hostile.set_rules_of_engagement(0);
+    common::stall_in_place(hostile);
     let diplomacy = mutual_enemy_overrides(1, 2);
     let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
         .expect("maintenance should succeed");
@@ -475,7 +482,11 @@ fn hostile_contact_with_roe_zero_allows_clean_sensor_retreat() {
         game_data.fleets.records[4].standing_order_kind(),
         Order::SeekHome
     );
-    assert!(game_data.fleets.records[4].current_speed() > 0);
+    // The retreat runs at full speed (0 for this stalled contact).
+    assert_eq!(
+        game_data.fleets.records[4].current_speed(),
+        game_data.fleets.records[4].max_speed()
+    );
 }
 
 #[test]
@@ -525,7 +536,8 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
 
     let hostile = &game_data.fleets.records[4];
     assert_eq!(hostile.standing_order_kind(), Order::SeekHome);
-    assert!(hostile.current_speed() > 0);
+    // The retreat runs at full speed (0 for this stalled contact).
+    assert_eq!(hostile.current_speed(), hostile.max_speed());
 }
 
 #[test]
@@ -555,7 +567,8 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
 
     let attacker = &game_data.fleets.records[0];
     assert_eq!(attacker.standing_order_kind(), Order::SeekHome);
-    assert!(attacker.current_speed() > 0);
+    // The retreat runs at full speed (0 for this stalled contact).
+    assert_eq!(attacker.current_speed(), attacker.max_speed());
 }
 
 #[test]
@@ -645,6 +658,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
     left.set_troop_transport_count(0);
     left.set_etac_count(0);
     left.set_rules_of_engagement(10);
+    common::stall_in_place(left);
 
     let right = &mut game_data.fleets.records[4];
     right.set_current_location_coords_raw(coords);
@@ -657,6 +671,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
     right.set_troop_transport_count(0);
     right.set_etac_count(0);
     right.set_rules_of_engagement(10);
+    common::stall_in_place(right);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
     let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
@@ -700,6 +715,7 @@ fn anchored_guard_intercepts_declared_enemy_transit_contact() {
     transit.set_scout_count(0);
     transit.set_etac_count(0);
     transit.set_rules_of_engagement(10);
+    common::stall_in_place(transit);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
     let events = run_maintenance_turn_with_context(&mut game_data, &[], &diplomacy)
@@ -732,6 +748,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     fleet.set_troop_transport_count(0);
     fleet.set_etac_count(0);
     fleet.set_rules_of_engagement(6);
+    common::stall_in_place(fleet);
 
     let hostile = &mut game_data.fleets.records[4];
     hostile.set_current_location_coords_raw(coords);
@@ -743,6 +760,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     hostile.set_troop_transport_count(0);
     hostile.set_etac_count(0);
     hostile.set_rules_of_engagement(10);
+    common::stall_in_place(hostile);
 
     let diplomacy = mutual_enemy_overrides(1, 2);
     let events = run_maintenance_turn_with_context_and_seed(&mut game_data, 5, &[], &diplomacy)
@@ -786,6 +804,7 @@ fn combat_reports_enemy_fleet_by_empire_local_slot() {
     left.set_troop_transport_count(0);
     left.set_etac_count(0);
     left.set_rules_of_engagement(10);
+    common::stall_in_place(left);
 
     let right = &mut game_data.fleets.records[4];
     right.set_current_location_coords_raw(coords);
@@ -799,6 +818,7 @@ fn combat_reports_enemy_fleet_by_empire_local_slot() {
     right.set_troop_transport_count(0);
     right.set_etac_count(0);
     right.set_rules_of_engagement(10);
+    common::stall_in_place(right);
     let hostile_fleet_number = right.local_slot_word_raw() as u8;
 
     let diplomacy = mutual_enemy_overrides(1, 2);
@@ -1035,7 +1055,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
 }
 
 #[test]
-fn canonical_invade_failure_removes_attacker_armies_and_holds_planet() {
+fn canonical_invade_against_standing_batteries_retries_next_year() {
     let mut game_data = configured_assault_state(7);
 
     {
@@ -1053,9 +1073,11 @@ fn canonical_invade_failure_removes_attacker_armies_and_holds_planet() {
 
     let attacker = &game_data.fleets.records[0];
     let target = &game_data.planets.records[13];
-    assert_eq!(attacker.standing_order_code_raw(), 0);
-    assert_eq!(attacker.current_speed(), 0);
-    assert_eq!(attacker.army_count(), 0);
+    // The batteries held, so no troops landed: a failed attack keeps the
+    // order and speed to strike again next year (the battery return fire
+    // destroys this small force, which the next turn culls).
+    assert_eq!(attacker.standing_order_code_raw(), 7);
+    assert_eq!(attacker.current_speed(), 3);
     assert_eq!(target.owner_empire_slot_raw(), 2);
     assert_eq!(target.ownership_status_raw(), 2);
     assert_eq!(target.army_count_raw(), 10);

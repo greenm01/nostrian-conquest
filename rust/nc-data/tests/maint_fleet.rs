@@ -6,9 +6,8 @@
 use nc_data::{
     BaseDat, BaseRecord, ColonizationResolvedEvent, CoreGameData, DiplomacyOverride,
     DiplomaticRelation, FleetOrderValidationError, GameStateBuilder, JoinMissionHostEvent, Mission,
-    MissionAbortReason, MissionOutcome, MissionRetargetEvent, Order, PlanetIntelSource,
+    MissionAbortReason, MissionOutcome, MissionRetargetEvent, Order, PlanetIntelSource, Real48,
     SalvageFailureReason, SalvageResolvedEvent,
-    fleet_motion_state::{reset_motion_state_for_new_orders, store_exact_position},
 };
 use nc_engine::{run_maintenance_turn, run_maintenance_turn_with_context};
 use std::path::Path;
@@ -55,9 +54,8 @@ fn configured_delayed_hostile_arrival_state(
     fleet.set_current_speed(3);
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target_coords);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0x00;
-    fleet.raw[0x19] = 0x81;
+    fleet.set_mission_aux_bytes([1, 0]);
+    fleet.set_at_rest_motion();
 
     (game_data, target_idx, target_coords)
 }
@@ -305,6 +303,8 @@ fn test_scout_sector_arrival_emits_success_event() {
     scout.set_standing_order_kind(Order::ScoutSector);
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
+    // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
+    scout.set_mission_aux_bytes([0, 0]);
     scout.set_etac_count(0);
 
     let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
@@ -375,6 +375,9 @@ fn test_scout_system_arrival_emits_success_event() {
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
     scout.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    scout.recompute_max_speed_from_composition();
+    scout.set_current_speed(scout.max_speed());
 
     let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
@@ -414,6 +417,9 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
     viewer.set_standing_order_target_coords_raw([15, 13]);
     viewer.set_scout_count(0);
     viewer.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    viewer.recompute_max_speed_from_composition();
+    viewer.set_current_speed(viewer.max_speed());
 
     let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
@@ -440,7 +446,8 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
     assert_eq!(game_data.fleets.records[0].current_speed(), 0);
     assert_eq!(
         game_data.fleets.records[0].tuple_c_payload_raw(),
-        [0x80, 0xb9, 0xff, 0xff, 0xff]
+        [0, 0, 0, 0, 0],
+        "ECMAINT's View World action lifts the fleet to depth 0"
     );
 }
 
@@ -498,6 +505,8 @@ fn test_view_world_arrival_with_enemy_fleet_present_aborts_before_intel_is_commi
 fn test_scout_system_arrival_still_emits_intel_with_enemy_fleet_present() {
     let (mut game_data, target_idx, target_coords) =
         configured_delayed_hostile_arrival_state(Order::ScoutSolarSystem, (0, 0, 1, 0, 0, 0, 1));
+    // Fast enough to settle in orbit within the year (1 + 1 + 1 sectors).
+    game_data.fleets.records[0].set_current_speed(6);
     game_data.planets.records[target_idx].set_owner_empire_slot_raw(2);
     game_data.planets.records[target_idx].set_ownership_status_raw(2);
 
@@ -579,6 +588,8 @@ fn test_rendezvous_arrival_emits_waiting_event() {
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_standing_order_kind(Order::RendezvousSector);
     fleet.set_standing_order_target_coords_raw([15, 13]);
+    // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
+    fleet.set_mission_aux_bytes([0, 0]);
 
     let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
@@ -1025,7 +1036,8 @@ fn test_guard_starbase_retargets_to_live_base_coords() {
         [12, 8]
     );
     assert_eq!(game_data.fleets.records[1].current_speed(), 3);
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
+    // ECMAINT keeps the 0x22 world-target flag on guard-starbase fleets.
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [1, 3]);
     assert!(events.mission_retarget_events.iter().any(|event| {
         matches!(
             event,
@@ -1124,13 +1136,12 @@ fn test_guard_starbase_persists_after_arrival() {
         game_data.fleets.records[1].standing_order_target_coords_raw(),
         [11, 8]
     );
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
-    assert_eq!(game_data.fleets.records[1].raw[0x0d], 0x7b);
-    assert_eq!(game_data.fleets.records[1].raw[0x0e], 0x00);
-    assert_eq!(game_data.fleets.records[1].raw[0x0f], 0x84);
-    assert_eq!(game_data.fleets.records[1].raw[0x10], 0xd8);
-    assert_eq!(game_data.fleets.records[1].raw[0x11], 0x89);
-    assert_eq!(game_data.fleets.records[1].raw[0x12], 0x1d);
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [1, 3]);
+    // Settled in orbit at the sector centre, as ECMAINT's guard action leaves it.
+    let fleet = &game_data.fleets.records[1];
+    assert_eq!(fleet.x_fraction(), Real48::HALF);
+    assert_eq!(fleet.y_fraction(), Real48::HALF);
+    assert_eq!(fleet.depth().to_bytes(), [0x81, 0, 0, 0, 0, 0]);
     assert!(events.mission_events.iter().any(|event| {
         event.fleet_idx == 1
             && event.kind == Mission::GuardStarbase
@@ -1314,9 +1325,8 @@ fn test_move_only_diagonal_completes_when_it_rounds_into_the_target() {
     fleet.set_current_speed(3);
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw([16, 16]);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0;
-    fleet.raw[0x19] = 0x81;
+    fleet.set_mission_aux_bytes([0, 0]);
+    fleet.set_at_rest_motion();
 
     run_maintenance_turn(&mut game_data).expect("turn 1 should succeed");
     run_maintenance_turn(&mut game_data).expect("turn 2 should succeed");
@@ -1374,7 +1384,7 @@ fn test_move_only_horizontal_clears_to_hold_on_exact_arrival() {
 }
 
 #[test]
-fn test_delayed_hostile_orders_zero_speed_and_preserve_order_on_arrival() {
+fn test_delayed_hostile_orders_keep_speed_and_order_just_short_of_orbit() {
     let cases = [
         (
             "bombard",
@@ -1409,7 +1419,9 @@ fn test_delayed_hostile_orders_zero_speed_and_preserve_order_on_arrival() {
             "{name} coords"
         );
         assert_eq!(fleet.standing_order_kind(), order, "{name} order");
-        assert_eq!(fleet.current_speed(), 0, "{name} arrival speed");
+        // Speed 3 from rest one sector out ends the year just short of
+        // orbit (depth 1 - epsilon), still under way; it strikes next year.
+        assert_eq!(fleet.current_speed(), 3, "{name} arrival speed");
         assert_eq!(
             fleet.standing_order_target_coords_raw(),
             target_coords,
@@ -1525,12 +1537,7 @@ fn test_join_merge_occurs_when_joiner_has_hidden_exact_transit_in_host_sector() 
     joiner.set_join_host_fleet_id_raw(host_id);
     joiner.set_standing_order_target_coords_raw(host_coords);
     joiner.set_current_speed(3);
-    joiner.set_movement_state_flag_raw(0x7f);
-    joiner.set_movement_fraction_raw(0);
-    store_exact_position(
-        joiner,
-        [f64::from(host_coords[0]) - 0.4, f64::from(host_coords[1])],
-    );
+    set_in_transit_west_of_centre(joiner);
 
     let fleet_count_before = game_data.fleets.records.len();
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -1554,15 +1561,7 @@ fn test_move_only_arrival_completes_when_hidden_exact_transit_reaches_target_sec
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(3);
-    fleet.set_movement_state_flag_raw(0x7f);
-    fleet.set_movement_fraction_raw(0);
-    store_exact_position(
-        fleet,
-        [
-            f64::from(target_coords[0]) - 0.4,
-            f64::from(target_coords[1]),
-        ],
-    );
+    set_in_transit_west_of_centre(fleet);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -1615,9 +1614,7 @@ fn test_rendezvous_merge_occurs_when_arrival_completes_from_hidden_exact_transit
     joiner.set_standing_order_kind(Order::RendezvousSector);
     joiner.set_standing_order_target_coords_raw(coords);
     joiner.set_current_speed(3);
-    joiner.set_movement_state_flag_raw(0x7f);
-    joiner.set_movement_fraction_raw(0);
-    store_exact_position(joiner, [f64::from(coords[0]) - 0.4, f64::from(coords[1])]);
+    set_in_transit_west_of_centre(joiner);
 
     let fleet_count_before = game_data.fleets.records.len();
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -2011,7 +2008,6 @@ fn test_view_world_on_station_reverts_to_hold_position() {
     viewer.set_current_speed(0);
     viewer.set_scout_count(0);
     viewer.set_etac_count(0);
-    reset_motion_state_for_new_orders(viewer);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2042,7 +2038,8 @@ fn test_view_world_on_station_reverts_to_hold_position() {
     assert_eq!(game_data.fleets.records[0].current_speed(), 0);
     assert_eq!(
         game_data.fleets.records[0].tuple_c_payload_raw(),
-        [0x80, 0xb9, 0xff, 0xff, 0xff]
+        [0, 0, 0, 0, 0],
+        "ECMAINT's View World action lifts the fleet to depth 0"
     );
 }
 
@@ -2060,7 +2057,6 @@ fn test_colonize_world_on_station_colonizes_and_resets() {
     colonizer.set_current_speed(3); // speed > 0 to confirm the gate is the blocker
     colonizer.set_etac_count(3);
     colonizer.set_scout_count(0);
-    reset_motion_state_for_new_orders(colonizer);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2127,7 +2123,6 @@ fn test_scout_sector_on_station_fires_report_and_persists() {
     scout.set_standing_order_target_coords_raw(planet_coords);
     scout.set_current_speed(0);
     scout.set_scout_count(1);
-    reset_motion_state_for_new_orders(scout);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2159,7 +2154,6 @@ fn test_scout_system_on_station_fires_intel_and_persists() {
     scout.set_standing_order_target_coords_raw(planet_coords);
     scout.set_current_speed(0);
     scout.set_scout_count(1);
-    reset_motion_state_for_new_orders(scout);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2202,7 +2196,6 @@ fn test_patrol_sector_on_station_persists() {
     fleet.set_standing_order_kind(Order::PatrolSector);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(0);
-    reset_motion_state_for_new_orders(fleet);
 
     run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2225,7 +2218,6 @@ fn test_guard_blockade_world_on_station_persists() {
     fleet.set_standing_order_kind(Order::GuardBlockadeWorld);
     fleet.set_standing_order_target_coords_raw(target_coords);
     fleet.set_current_speed(0);
-    reset_motion_state_for_new_orders(fleet);
 
     run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
@@ -2278,11 +2270,9 @@ fn hostile_on_station_ready(
     fleet.set_current_location_coords_raw(target_coords);
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target_coords);
-    // Hostile fleets stop in orbit on arrival and execute next turn.
+    // At rest in orbit (depth 1.0): the strike test passes on the first tick.
     fleet.set_current_speed(0);
-    // transit_ready_flag_raw == 0x80 means the fleet arrived last turn and is
-    // ready to execute this turn.
-    fleet.set_transit_ready_flag_raw(0x80);
+    fleet.set_at_rest_motion();
 
     (game_data, target_idx, target_coords)
 }
@@ -2296,16 +2286,7 @@ fn hostile_mixed_ready_exact_transit_state(
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_current_location_coords_raw(target_coords);
     fleet.set_current_speed(3);
-    fleet.set_movement_state_flag_raw(0x7f);
-    fleet.set_movement_fraction_raw(0);
-    fleet.set_transit_ready_flag_raw(0x80);
-    store_exact_position(
-        fleet,
-        [
-            f64::from(target_coords[0]) - 0.4,
-            f64::from(target_coords[1]),
-        ],
-    );
+    set_in_transit_west_of_centre(fleet);
     (game_data, target_idx, target_coords)
 }
 
@@ -2509,7 +2490,6 @@ fn test_on_station_hostile_orders_assigned_via_mutator_execute_next_turn() {
             let fleet = &mut game_data.fleets.records[0];
             fleet.set_current_location_coords_raw(target_coords);
             fleet.set_current_speed(fleet.max_speed());
-            reset_motion_state_for_new_orders(fleet);
         }
         game_data
             .set_fleet_order(
@@ -2522,9 +2502,11 @@ fn test_on_station_hostile_orders_assigned_via_mutator_execute_next_turn() {
             )
             .expect("on-station hostile order should arm");
 
+        // The order keeps the fleet's stored motion: at rest in orbit
+        // (depth 1.0), so its strike test passes on the first tick.
         let fleet = &game_data.fleets.records[0];
-        assert_eq!(fleet.current_speed(), 0);
-        assert_eq!(fleet.transit_ready_flag_raw(), 0x80);
+        assert_eq!(fleet.current_speed(), fleet.max_speed());
+        assert_eq!(fleet.depth(), Real48::ONE);
         assert_eq!(fleet.current_location_coords_raw(), target_coords);
         assert_eq!(fleet.standing_order_kind(), order);
 
@@ -2568,9 +2550,8 @@ fn test_stale_off_target_hostile_orders_resume_travel_instead_of_executing() {
             configured_delayed_hostile_arrival_state(order, ships);
 
         let fleet = &mut game_data.fleets.records[0];
-        fleet.set_current_location_coords_raw([20, 25]);
+        fleet.set_current_location_coords_raw([15, 25]);
         fleet.set_current_speed(0);
-        fleet.set_transit_ready_flag_raw(0x80);
         fleet.set_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff]);
         let pre_batteries = game_data.planets.records[target_idx].ground_batteries_raw();
         let pre_armies = game_data.planets.records[target_idx].army_count_raw();
@@ -2594,9 +2575,9 @@ fn test_stale_off_target_hostile_orders_resume_travel_instead_of_executing() {
             "{name} speed should rearm"
         );
         assert_eq!(
-            fleet.transit_ready_flag_raw(),
-            0x81,
-            "{name} should leave stale ready state and resume travel"
+            fleet.depth(),
+            Real48::ZERO,
+            "{name} should climb out and resume travel"
         );
         assert_ne!(
             fleet.current_location_coords_raw(),
@@ -2632,89 +2613,40 @@ fn test_stale_off_target_hostile_orders_resume_travel_instead_of_executing() {
 }
 
 #[test]
-fn test_delayed_hostile_orders_do_not_arrive_and_execute_in_same_turn() {
+fn test_hostile_orders_strike_in_the_year_they_settle_in_orbit() {
+    // ECMAINT runs the attack on the tick the fleet's depth reaches 1.0, in
+    // the same year, not the year after it reaches the target sector.
     let cases = [
-        (
-            "bombard",
-            Order::BombardWorld,
-            Mission::BombardWorld,
-            (0, 3, 5, 0, 0, 0, 0),
-        ),
-        (
-            "invade",
-            Order::InvadeWorld,
-            Mission::InvadeWorld,
-            (0, 1, 0, 10, 10, 0, 0),
-        ),
-        (
-            "blitz",
-            Order::BlitzWorld,
-            Mission::BlitzWorld,
-            (100, 50, 50, 50, 50, 0, 0),
-        ),
+        ("bombard", Order::BombardWorld, (0, 3, 5, 0, 0, 0, 0)),
+        ("invade", Order::InvadeWorld, (0, 1, 0, 10, 10, 0, 0)),
+        ("blitz", Order::BlitzWorld, (100, 50, 50, 50, 50, 0, 0)),
     ];
 
-    for (name, order, mission, ships) in cases {
-        let (mut game_data, target_idx, target_coords) =
+    for (name, order, ships) in cases {
+        // In the target sector, 0.4 from the centre, in deep space: 1.4 of
+        // the year's 3 sectors of travel reach orbit.
+        let (mut game_data, _target_idx, target_coords) =
             hostile_mixed_ready_exact_transit_state(order, ships);
 
         let first_turn =
             run_maintenance_turn(&mut game_data).expect("first maintenance turn should succeed");
 
-        assert!(
-            first_turn.mission_events.iter().any(|event| {
-                event.fleet_idx == 0
-                    && event.kind == mission
-                    && event.outcome == MissionOutcome::Arrived
-                    && event.planet_idx == Some(target_idx)
-            }),
-            "{name} should still report arrival on the first turn"
-        );
-        assert!(
-            !first_turn.mission_events.iter().any(|event| {
-                event.fleet_idx == 0
-                    && event.kind == mission
-                    && event.outcome != MissionOutcome::Arrived
-            }),
-            "{name} should not also execute on the arrival turn"
-        );
-        assert!(
-            first_turn.bombard_events.is_empty(),
-            "{name} should not create a bombard event on the arrival turn"
-        );
-        assert!(
-            first_turn.assault_report_events.is_empty(),
-            "{name} should not create an assault report on the arrival turn"
-        );
-
-        let fleet = &game_data.fleets.records[0];
+        match order {
+            Order::BombardWorld => assert!(
+                !first_turn.bombard_events.is_empty(),
+                "{name} should strike in the year it reaches orbit"
+            ),
+            Order::InvadeWorld | Order::BlitzWorld => assert!(
+                !first_turn.assault_report_events.is_empty(),
+                "{name} should strike in the year it reaches orbit"
+            ),
+            _ => unreachable!(),
+        }
         assert_eq!(
-            fleet.current_location_coords_raw(),
+            game_data.fleets.records[0].current_location_coords_raw(),
             target_coords,
             "{name} coords"
         );
-        assert_eq!(fleet.standing_order_kind(), order, "{name} order");
-        assert_eq!(fleet.current_speed(), 0, "{name} speed");
-        assert_eq!(fleet.raw[0x19], 0x80, "{name} ready flag");
-
-        let second_turn =
-            run_maintenance_turn(&mut game_data).expect("second maintenance turn should succeed");
-
-        match order {
-            Order::BombardWorld => {
-                assert!(
-                    !second_turn.bombard_events.is_empty(),
-                    "{name} should execute on the next turn"
-                );
-            }
-            Order::InvadeWorld | Order::BlitzWorld => {
-                assert!(
-                    !second_turn.assault_report_events.is_empty(),
-                    "{name} should execute on the next turn"
-                );
-            }
-            _ => unreachable!(),
-        }
     }
 }
 
@@ -2806,4 +2738,11 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
             .any(|event| event.kind == Mission::JoinAnotherFleet && !event.survivor_side),
         "JoinAnotherFleet merge event must be emitted — join must not silently fail after remap"
     );
+}
+
+/// In deep space inside its current sector, 0.4 west of the centre.
+fn set_in_transit_west_of_centre(fleet: &mut nc_data::FleetRecord) {
+    fleet.set_x_fraction(Real48::from_int(1) / Real48::from_int(10));
+    fleet.set_y_fraction(Real48::HALF);
+    fleet.set_depth(Real48::ZERO);
 }

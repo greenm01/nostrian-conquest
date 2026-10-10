@@ -1,5 +1,4 @@
 use super::*;
-use crate::fleet_motion_state::reset_motion_state_for_new_orders;
 use crate::{
     BaseDat, BaseRecord, DiplomaticRelation, FleetRecord, IPBM_RECORD_SIZE, IpbmDat, IpbmRecord,
     Order, PlayerRecord, ProductionItemKind,

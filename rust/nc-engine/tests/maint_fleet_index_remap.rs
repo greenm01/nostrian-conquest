@@ -4,7 +4,7 @@
 
 use nc_data::{
     ColonizationResolvedEvent, CoreGameData, FleetRecord, GameStateBuilder, JoinMissionHostEvent,
-    Mission, MissionOutcome, Order, fleet_motion_state::reset_motion_state_for_new_orders,
+    Mission, MissionOutcome, Order,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -36,9 +36,9 @@ fn order_fleet(
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target);
     fleet.set_current_speed(speed);
-    reset_motion_state_for_new_orders(fleet);
-    fleet.raw[0x0f] = 0x00;
-    fleet.raw[0x19] = 0x00;
+    // As ECGAME writes the order, with the fleet in deep space.
+    fleet.set_mission_aux_bytes([u8::from(order.targets_world()), fleet.mission_id_raw()]);
+    fleet.set_depth(nc_data::Real48::ZERO);
 }
 
 /// Order fleet `joiner_idx` to join the co-located fleet `host_idx` this turn.
@@ -175,9 +175,10 @@ fn move_report_names_mover_shifted_by_join_merge() {
     assert_eq!(fleet_identity(&game_data, moves[0].fleet_idx), (1, 4));
 }
 
-/// Fleet 4 (index 3) bombards an enemy world it reached last turn while,
-/// optionally, fleet 1 (index 0) joins fleet 2 and fleet 3 (index 2) arrives
-/// at a second enemy world this turn.
+/// Fleet 4 (index 3) bombards an enemy world it settled over last turn
+/// (bombarding keeps it striking every year) while, optionally, fleet 1
+/// (index 0) joins fleet 2 and fleet 3 (index 2) reaches a second enemy world
+/// this turn.
 fn bombard_after_arrival(with_join: bool) -> usize {
     let mut game_data = baseline();
     let target = [6, 6];
@@ -186,8 +187,13 @@ fn bombard_after_arrival(with_join: bool) -> usize {
     place_world(&mut game_data, 11, second_target, 2);
     order_fleet(&mut game_data, 3, [5, 6], Order::BombardWorld, target, 6);
     game_data.fleets.records[3].set_cruiser_count(5);
-    run_maintenance_turn(&mut game_data).expect("arrival turn should succeed");
-    assert_eq!(game_data.fleets.records[3].raw[0x19], 0x80, "bomber armed");
+    let arrival = run_maintenance_turn(&mut game_data).expect("arrival turn should succeed");
+    assert_eq!(arrival.bombard_events.len(), 1, "bomber strikes on arrival");
+    assert_eq!(
+        game_data.fleets.records[3].standing_order_kind(),
+        Order::BombardWorld,
+        "bomber keeps bombarding"
+    );
 
     order_fleet(
         &mut game_data,

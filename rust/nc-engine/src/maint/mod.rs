@@ -24,7 +24,7 @@ use crate::VisibleHazardIntel;
 use fleet_refs::{FleetIndexRemap, TurnFleetRefs};
 use nc_data::{
     CoreGameData, FleetRecord, Order, PlayerLifecycleState, WinnerState,
-    default_player_lifecycle_states, fleet_motion_state::decode_exact_position,
+    default_player_lifecycle_states,
 };
 use std::fmt;
 
@@ -42,7 +42,8 @@ struct ColonizationEvent {
 #[derive(Debug, Default)]
 struct MovementEvents {
     colonization_events: Vec<ColonizationEvent>,
-    hostile_arrived_fleet_indices: Vec<usize>,
+    /// Bombard/Invade/Blitz fleets whose strike test passed this year.
+    hostile_strike_fleet_indices: Vec<usize>,
     planet_intel_events: Vec<PlanetIntelEvent>,
     pending_observation_events: Vec<PendingObservationEvent>,
     mission_events: Vec<MissionEvent>,
@@ -102,23 +103,6 @@ impl fmt::Display for MaintenancePreflightError {
 }
 
 impl std::error::Error for MaintenancePreflightError {}
-
-fn is_delayed_hostile_order(order: Order) -> bool {
-    matches!(
-        order,
-        Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
-    )
-}
-
-fn hostile_order_ready_for_execution(fleet: &FleetRecord, order: Order) -> bool {
-    if !is_delayed_hostile_order(order) || fleet.standing_order_kind() != order {
-        return false;
-    }
-    let target_coords = fleet.standing_order_target_coords_raw();
-    fleet.transit_ready_flag_raw() == 0x80
-        && fleet.current_location_coords_raw() == target_coords
-        && decode_exact_position(fleet).is_none()
-}
 
 pub fn validate_maintenance_state(
     game_data: &CoreGameData,
@@ -311,73 +295,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         == Some(0x0064)
         && (any_fleet_in_transit || any_active_player);
 
-    // Bombardment execution: a BombardWorld fleet that had raw[0x19]==0x80 at start of turn
-    // (i.e. it arrived last turn) executes this turn. Fleets that arrive this turn
-    // will execute next turn. Snapshot indices now, before movement mutates raw[0x19].
-    let bombard_ready: Vec<usize> = game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .filter_map(|(i, f)| {
-            if hostile_order_ready_for_execution(f, Order::from_raw(f.standing_order_code_raw()))
-                && matches!(
-                    Order::from_raw(f.standing_order_code_raw()),
-                    Order::BombardWorld
-                )
-            {
-                Some(i)
-            } else {
-                None
-            }
-        })
-        .collect();
-
     let initial_campaign_outlook = campaign::campaign_outlook(game_data, player_lifecycle_states);
     let initial_campaign_outcome =
         campaign::campaign_outcome(game_data, player_lifecycle_states, *winner_state);
     let empire_turn_start_states =
         campaign::capture_empire_turn_start_states(game_data, player_lifecycle_states);
-
-    // InvadeWorld execution: a InvadeWorld fleet that had raw[0x19]==0x80 at start of turn
-    // executes this turn. Snapshot indices now, before movement mutates raw[0x19].
-    let invade_ready: Vec<usize> = game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .filter_map(|(i, f)| {
-            if hostile_order_ready_for_execution(f, Order::from_raw(f.standing_order_code_raw()))
-                && matches!(
-                    Order::from_raw(f.standing_order_code_raw()),
-                    Order::InvadeWorld
-                )
-            {
-                Some(i)
-            } else {
-                None
-            }
-        })
-        .collect();
-
-    let blitz_ready: Vec<usize> = game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .filter_map(|(i, f)| {
-            if hostile_order_ready_for_execution(f, Order::from_raw(f.standing_order_code_raw()))
-                && matches!(
-                    Order::from_raw(f.standing_order_code_raw()),
-                    Order::BlitzWorld
-                )
-            {
-                Some(i)
-            } else {
-                None
-            }
-        })
-        .collect();
 
     // Advance game year by 1
     let current_year = game_data.conquest.game_year();
@@ -386,9 +308,6 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // Every fleet-record compaction below must remap these captured references.
     let mut refs = TurnFleetRefs {
-        bombard_ready,
-        invade_ready,
-        blitz_ready,
         destroyed_join_host_fleet_numbers,
         ..TurnFleetRefs::default()
     };
@@ -489,15 +408,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Confirmed from starbase fixture: player 0 (starbase_count=1) gets the flag after maint.
     campaign::update_player_starbase_flag(game_data);
 
-    // Resolve bombardment for fleets that were already-arrived (raw[0x19]==0x80) at turn start.
-    // Confirmed: bombardment executes on the tick AFTER transit-arrival, not same tick.
+    // Hostile fleets strike in the year their strike test passes; a failed
+    // attack leaves them to retry next year.
     let mut assault_events = combat::process_planetary_assaults(
         game_data,
         campaign_seed,
-        &refs.bombard_ready,
-        &refs.invade_ready,
-        &refs.blitz_ready,
-        &refs.movement_events.hostile_arrived_fleet_indices,
+        &refs.movement_events.hostile_strike_fleet_indices,
     )?;
 
     // Recompute per-player planet count and production score from the in-memory
@@ -746,7 +662,11 @@ fn restore_scout_orders_and_generate_on_station_observations(
         let order = fleet.standing_order_kind();
         let coords = fleet.current_location_coords_raw();
         let target = fleet.standing_order_target_coords_raw();
-        if coords != target {
+        // On station means settled at the order's target depth; a fleet
+        // still diving into the system has not arrived yet.
+        let settled =
+            fleet.depth() == crate::navigation::motion::target_depth(fleet.world_target_flag_raw());
+        if coords != target || !settled {
             continue;
         }
         let owner_empire_raw = fleet.owner_empire_raw();

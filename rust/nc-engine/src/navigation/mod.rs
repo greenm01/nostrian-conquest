@@ -1,17 +1,14 @@
 mod eta;
 mod geometry;
 mod intel;
+pub(crate) mod motion;
 mod route;
 
 use std::collections::{BTreeMap, HashSet};
 
 use nc_data::{CoreGameData, Order, PlanetIntelSnapshot};
 
-pub(crate) use eta::{decode_movement_fraction, encode_movement_fraction};
-pub(crate) use geometry::{
-    advance_exact_position, rounded_coords_from_exact, sector_distance_sq,
-    visible_hazard_intel_is_empty,
-};
+pub(crate) use geometry::{sector_distance_sq, visible_hazard_intel_is_empty};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RouteStep {

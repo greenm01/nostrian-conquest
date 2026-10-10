@@ -1,6 +1,5 @@
 use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, production_item_kind_raw};
-use nc_data::fleet_motion_state::reset_motion_state_for_new_orders;
 use nc_data::{
     DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts,
 };
@@ -139,7 +138,6 @@ fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
         let target =
             nearest_owned_planet_coords(fleet.current_location_coords_raw(), &owned_planet_coords)
                 .unwrap_or(fleet.current_location_coords_raw());
-        reset_motion_state_for_new_orders(fleet);
         fleet.set_current_speed(max_speed);
         fleet.set_standing_order_kind(Order::SeekHome);
         fleet.set_standing_order_target_coords_raw(target);

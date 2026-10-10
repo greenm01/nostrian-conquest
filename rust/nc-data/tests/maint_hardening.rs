@@ -74,11 +74,13 @@ fn invalid_colonize_order_without_etac_is_canceled() {
             }
         )
     }));
+    // The fleet already sits in orbit at home, so Seek Home resolves on the
+    // first tick and the fleet holds there.
     assert_eq!(
         game_data.fleets.records[0].standing_order_kind(),
-        Order::SeekHome
+        Order::HoldPosition
     );
-    assert!(game_data.fleets.records[0].current_speed() > 0);
+    assert_eq!(game_data.fleets.records[0].current_speed(), 0);
 }
 
 #[test]

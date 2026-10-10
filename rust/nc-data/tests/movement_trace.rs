@@ -240,7 +240,6 @@ fn build_move_only_probe(start: [u8; 2], target: [u8; 2], speed: u8) -> nc_data:
     game_data
         .set_fleet_order(1, speed, Order::MoveOnly.to_raw(), target, None, None)
         .expect("move-only order should apply");
-    game_data.fleets.records[0].raw[0x19] = 0x81;
 
     game_data
 }
@@ -265,19 +264,19 @@ fn build_persistent_probe(case: PersistentMovementCase) -> nc_data::CoreGameData
     fleet.set_current_speed(3);
     fleet.set_standing_order_kind(case.order);
     fleet.set_standing_order_target_coords_raw(case.target);
-    fleet.raw[0x0d] = 0x80;
-    fleet.raw[0x0f] = 0x00;
-    fleet.raw[0x19] = 0x81;
+    fleet.set_at_rest_motion();
 
     match case.setup {
         PersistentProbeSetup::Patrol => {
             fleet.set_mission_aux_bytes([1, 0]);
         }
         PersistentProbeSetup::GuardStarbase => {
-            fleet.set_mission_aux_bytes([1, 1]);
+            // Base id 2: the baseline homeworld completes a starbase that
+            // takes id 1 during the trace.
+            fleet.set_mission_aux_bytes([1, 2]);
             let mut base = BaseRecord::new_zeroed();
             base.set_active_flag_raw(1);
-            base.set_base_id_raw(1);
+            base.set_base_id_raw(2);
             base.set_owner_empire_raw(1);
             base.set_coords_raw(case.target);
             game_data.bases = BaseDat {

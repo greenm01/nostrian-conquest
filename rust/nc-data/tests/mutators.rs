@@ -2148,7 +2148,7 @@ fn configure_on_station_hostile_order_state() -> (CoreGameData, [u8; 2]) {
 }
 
 #[test]
-fn set_fleet_order_arms_on_station_hostile_orders_for_next_tick() {
+fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
     for order in [Order::BombardWorld, Order::InvadeWorld, Order::BlitzWorld] {
         let (mut data, target) = configure_on_station_hostile_order_state();
 
@@ -2166,11 +2166,13 @@ fn set_fleet_order_arms_on_station_hostile_orders_for_next_tick() {
         assert_eq!(fleet.standing_order_kind(), order);
         assert_eq!(fleet.standing_order_target_coords_raw(), target);
         assert_eq!(fleet.current_location_coords_raw(), target);
-        assert_eq!(fleet.current_speed(), 0, "{order:?} should arm on station");
+        // Like ECGAME, the order keeps the fleet's stored motion: at rest in
+        // orbit, so its strike test passes on the next maintenance's first tick.
+        assert_eq!(fleet.current_speed(), fleet.max_speed());
         assert_eq!(
             fleet.tuple_c_payload_raw(),
-            [0x80, 0xb9, 0xff, 0xff, 0xff],
-            "{order:?} should use hostile-ready on-station tuple-c state"
+            [0x81, 0x00, 0x00, 0x00, 0x00],
+            "{order:?} keeps its at-rest depth"
         );
     }
 }

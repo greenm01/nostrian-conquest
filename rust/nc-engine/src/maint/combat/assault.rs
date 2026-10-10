@@ -6,7 +6,6 @@ use crate::{
     PlanetOwnershipChangeEvent, ProductionItemKind, STARDOCK_SLOT_COUNT, ShipLosses,
 };
 
-use super::super::hostile_order_ready_for_execution;
 use super::exchange::{
     COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND,
     COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND,
@@ -52,17 +51,6 @@ pub(crate) struct AssaultEvents {
 fn clear_arrival_and_hold(game_data: &mut CoreGameData, fleet_indices: &[usize]) {
     for &idx in fleet_indices {
         set_fleet_to_hold_current_position(&mut game_data.fleets.records[idx]);
-    }
-}
-
-/// Keep a bombarding fleet on station with its BombardWorld order so it
-/// re-executes next turn. Speed is zeroed but transit_ready_flag stays 0x80.
-fn hold_bombardment_station(game_data: &mut CoreGameData, fleet_indices: &[usize]) {
-    for &idx in fleet_indices {
-        let fleet = &mut game_data.fleets.records[idx];
-        fleet.set_current_speed(0);
-        fleet.set_transit_ready_flag_raw(0x80);
-        nc_data::fleet_motion_state::clear_exact_position(fleet);
     }
 }
 
@@ -117,10 +105,11 @@ fn fleet_still_ready_for_assault(game_data: &CoreGameData, fleet_idx: usize, ord
     let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
         return false;
     };
-    if !hostile_order_ready_for_execution(fleet, order) {
+    let target_coords = fleet.standing_order_target_coords_raw();
+    if fleet.standing_order_kind() != order || fleet.current_location_coords_raw() != target_coords
+    {
         return false;
     }
-    let target_coords = fleet.standing_order_target_coords_raw();
     game_data
         .validate_fleet_order_payload(fleet_idx + 1, order.to_raw(), target_coords, None, None)
         .is_ok()
@@ -533,59 +522,44 @@ fn mission_priority(class: MissionClass) -> u8 {
     }
 }
 
+/// Resolve the planetary attacks of fleets whose strike test passed this
+/// year (`strikes`), grouped by target world.
+///
+/// A failed attack leaves the fleet with its order, speed, and the motion
+/// state from one tick before the strike, so it strikes again next year
+/// (ECMAINT does not save the record of a failed attack). Rust's combat
+/// results map to that as follows:
+/// - Bombard: every strike leaves the order standing (the fleet keeps
+///   bombarding each year), so every bombarding fleet keeps its retry state.
+/// - Invade: `Aborted` (the batteries survive suppression, so no troops land)
+///   is the failed attack; the armies stay aboard. `Succeeded` (conquest) and
+///   `Failed` (the landed armies lose) resolve the order to Hold in orbit.
+/// - Blitz: troops always land under fire, so every blitz resolves
+///   (`Succeeded` or `Failed`) to Hold in orbit; there is no retry outcome.
+///
+/// An orbit blocked by a stronger or tied force aborts the order to Hold.
 pub(crate) fn process_planetary_assaults(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
-    bombard_ready: &[usize],
-    invade_ready: &[usize],
-    blitz_ready: &[usize],
-    hostile_arrived_this_turn: &[usize],
+    strikes: &[usize],
 ) -> Result<AssaultEvents, Box<dyn std::error::Error>> {
     let battle_year = game_data.conquest.game_year();
-    let hostile_arrived_this_turn: HashSet<usize> =
-        hostile_arrived_this_turn.iter().copied().collect();
+    let striking = |order: Order| -> Vec<usize> {
+        strikes
+            .iter()
+            .copied()
+            .filter(|&idx| fleet_still_ready_for_assault(game_data, idx, order))
+            .collect()
+    };
+    let bombard_ready = striking(Order::BombardWorld);
+    let invade_ready = striking(Order::InvadeWorld);
+    let blitz_ready = striking(Order::BlitzWorld);
     let mut by_planet: BTreeMap<usize, BTreeMap<u8, Vec<usize>>> = BTreeMap::new();
-    for &idx in bombard_ready {
-        if hostile_arrived_this_turn.contains(&idx) {
-            continue;
-        }
-        if !fleet_still_ready_for_assault(game_data, idx, Order::BombardWorld) {
-            continue;
-        }
-        let coords = game_data.fleets.records[idx].standing_order_target_coords_raw();
-        if let Some(planet_idx) = planet_idx_at_coords(game_data, coords) {
-            by_planet
-                .entry(planet_idx)
-                .or_default()
-                .entry(game_data.fleets.records[idx].owner_empire_raw())
-                .or_default()
-                .push(idx);
-        }
-    }
-    for &idx in invade_ready {
-        if hostile_arrived_this_turn.contains(&idx) {
-            continue;
-        }
-        if !fleet_still_ready_for_assault(game_data, idx, Order::InvadeWorld) {
-            continue;
-        }
-        let coords = game_data.fleets.records[idx].standing_order_target_coords_raw();
-        if let Some(planet_idx) = planet_idx_at_coords(game_data, coords) {
-            by_planet
-                .entry(planet_idx)
-                .or_default()
-                .entry(game_data.fleets.records[idx].owner_empire_raw())
-                .or_default()
-                .push(idx);
-        }
-    }
-    for &idx in blitz_ready {
-        if hostile_arrived_this_turn.contains(&idx) {
-            continue;
-        }
-        if !fleet_still_ready_for_assault(game_data, idx, Order::BlitzWorld) {
-            continue;
-        }
+    for &idx in bombard_ready
+        .iter()
+        .chain(&invade_ready)
+        .chain(&blitz_ready)
+    {
         let coords = game_data.fleets.records[idx].standing_order_target_coords_raw();
         if let Some(planet_idx) = planet_idx_at_coords(game_data, coords) {
             by_planet
@@ -753,7 +727,6 @@ pub(crate) fn process_planetary_assaults(
                     }
                 }
 
-                hold_bombardment_station(game_data, &winner_fleets);
                 let post_planet = &game_data.planets.records[planet_idx];
                 let post_docked_summary = stardock_summary(post_planet);
                 events.bombard_events.push(BombardEvent {
@@ -1063,9 +1036,8 @@ pub(crate) fn process_planetary_assaults(
                         }
                     }
                 } else {
-                    for &idx in &winner_fleets {
-                        game_data.fleets.records[idx].set_army_count(0);
-                    }
+                    // The batteries held: no troops land and the fleets
+                    // keep their armies and their pre-strike state to retry.
                     for &fleet_idx in &winner_fleets {
                         if invade_set.contains(&fleet_idx) {
                             events.mission_events.push(MissionEvent {
@@ -1099,7 +1071,7 @@ pub(crate) fn process_planetary_assaults(
                         defender_batteries_initial: pre_batteries,
                         defender_armies_initial: pre_armies,
                         attacker_ship_losses: ship_losses_from_states(&before, &after),
-                        attacker_army_losses: initial_attacking_armies,
+                        attacker_army_losses: 0,
                         transport_army_losses: 0,
                         defender_battery_losses: pre_batteries.saturating_sub(
                             game_data.planets.records[planet_idx].ground_batteries_raw(),
@@ -1136,7 +1108,9 @@ pub(crate) fn process_planetary_assaults(
                     PlanetIntelSource::AssaultFailure
                 };
 
-                clear_arrival_and_hold(game_data, &winner_fleets);
+                if batteries_cleared {
+                    clear_arrival_and_hold(game_data, &winner_fleets);
+                }
                 push_planet_intel(
                     &mut events.planet_intel_events,
                     planet_idx,

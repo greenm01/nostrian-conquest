@@ -261,11 +261,12 @@ fn fleet_blockades_system(fleet: &nc_data::FleetRecord) -> bool {
 }
 
 /// A fleet stopped at its location whose order moves it elsewhere this turn.
-/// Fleets passing through mid-transit are not at rest (0x80) and do not count.
+/// Fleets passing through mid-transit are off the sector centre and do not count.
 fn fleet_departs_location(fleet: &nc_data::FleetRecord) -> bool {
     fleet.standing_order_kind() != Order::HoldPosition
         && fleet.current_speed() > 0
-        && fleet.movement_state_flag_raw() == 0x80
+        && fleet.x_fraction() == nc_data::Real48::HALF
+        && fleet.y_fraction() == nc_data::Real48::HALF
         && fleet.standing_order_target_coords_raw() != fleet.current_location_coords_raw()
 }
 

@@ -5,7 +5,7 @@ use super::hex::{decode_hex, encode_hex};
 use crate::{
     BaseDat, BaseRecord, CONQUEST_DAT_SIZE, ConquestDat, CoreGameData, FleetDat, FleetRecord,
     IpbmDat, IpbmRecord, PLANET_RECORD_SIZE, PlanetDat, PlanetRecord, PlayerDat, PlayerRecord,
-    SETUP_DAT_SIZE, SetupDat,
+    Real48, SETUP_DAT_SIZE, SetupDat,
 };
 
 pub(super) fn write_snapshot_core_rows(
@@ -176,9 +176,9 @@ fn write_fleet_rows(
             i64::from(record.current_speed()),
             i64::from(current_x),
             i64::from(current_y),
-            encode_hex(&record.raw[0x0D..=0x12]),
-            encode_hex(&record.tuple_b_payload_raw()),
-            encode_hex(&record.raw[0x19..=0x1E]),
+            encode_hex(&record.x_fraction().to_bytes()),
+            encode_hex(&record.y_fraction().to_bytes()),
+            encode_hex(&record.depth().to_bytes()),
             i64::from(record.standing_order_code_raw()),
             i64::from(target_x),
             i64::from(target_y),
@@ -561,9 +561,9 @@ fn load_fleet_rows(
         record.set_max_speed(max_speed as u8);
         record.set_current_speed(current_speed as u8);
         record.set_current_location_coords_raw([current_x as u8, current_y as u8]);
-        record.raw[0x0D..=0x12].copy_from_slice(&decode_hex_exact::<6>(&tuple_a_raw_hex)?);
-        record.set_tuple_b_payload_raw(decode_hex_exact::<5>(&tuple_b_raw_hex)?);
-        record.raw[0x19..=0x1E].copy_from_slice(&decode_hex_exact::<6>(&tuple_c_raw_hex)?);
+        record.set_x_fraction(Real48::from_bytes(decode_hex_exact::<6>(&tuple_a_raw_hex)?));
+        record.set_y_fraction(Real48::from_bytes(decode_hex_exact::<6>(&tuple_b_raw_hex)?));
+        record.set_depth(Real48::from_bytes(decode_hex_exact::<6>(&tuple_c_raw_hex)?));
         record.set_standing_order_code_raw(standing_order_code_raw as u8);
         record.set_standing_order_target_coords_raw([target_x as u8, target_y as u8]);
         record.set_mission_aux_bytes(decode_hex_exact::<2>(&mission_aux_raw_hex)?);

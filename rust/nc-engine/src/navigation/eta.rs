@@ -1,23 +1,29 @@
-use nc_data::fleet_motion_state::{decode_exact_position, round_trip_exact_position};
-use nc_data::{CoreGameData, FleetRecord};
+use nc_data::{CoreGameData, Order, Real48};
 
-use super::{
-    FleetEtaEstimate, PlannedRoute, advance_exact_position, plan_route, plan_route_to_destination,
-    rounded_coords_from_exact,
-};
+use super::motion::{ArrivalRule, Course, Motion, run_year, target_depth};
+use super::{FleetEtaEstimate, plan_route, plan_route_to_destination};
+
+/// Years after which a replayed trip counts as never arriving.
+const ETA_YEAR_LIMIT: u16 = 1000;
 
 pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
     let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
-    estimate_eta_for_route(
-        plan_route(game_data, fleet_idx),
-        fleet.current_location_coords_raw(),
-        fleet.standing_order_target_coords_raw(),
+    let order = fleet.standing_order_kind();
+    let max_speed = if order == Order::HoldPosition {
+        0
+    } else {
+        fleet.max_speed()
+    };
+    estimate_eta(
+        plan_route(game_data, fleet_idx).is_some(),
+        Motion::of_fleet(fleet),
         fleet.current_speed(),
-        decode_movement_sub_acc(fleet),
-        decode_exact_position(fleet),
-        false,
+        max_speed,
+        order,
+        fleet.standing_order_target_coords_raw(),
+        target_depth(fleet.world_target_flag_raw()),
     )
 }
 
@@ -31,25 +37,27 @@ pub(super) fn estimate_fleet_eta_to_destination(
     let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
-    let current = fleet.current_location_coords_raw();
+    if fleet.current_location_coords_raw() == destination {
+        return FleetEtaEstimate::Arrived;
+    }
     let speed = if fleet.current_speed() == 0 && use_max_speed_if_stopped {
         fleet.max_speed().max(1)
     } else {
         fleet.current_speed()
     };
-    let sub_acc = if fleet.current_speed() == 0 && use_max_speed_if_stopped {
-        0
+    let max_speed = if use_max_speed_if_stopped {
+        fleet.max_speed()
     } else {
-        decode_movement_sub_acc(fleet)
+        0
     };
-    estimate_eta_for_route(
-        plan_route_to_destination(game_data, fleet_idx, destination),
-        current,
-        destination,
+    estimate_eta(
+        plan_route_to_destination(game_data, fleet_idx, destination).is_some(),
+        Motion::of_fleet(fleet),
         speed,
-        sub_acc,
-        decode_exact_position(fleet),
-        include_system,
+        max_speed,
+        Order::MoveOnly,
+        destination,
+        target_depth(u8::from(include_system)),
     )
 }
 
@@ -62,119 +70,48 @@ pub(super) fn estimate_direct_eta(
     if current == target || speed == 0 {
         return 0;
     }
-    // Matches the classic ECGAME travel-time display (exact accumulator), e.g.
-    // the preserved starbase move "Travel time is 16 years".
-    simulate_eta_years(
-        [f64::from(current[0]), f64::from(current[1])],
-        target,
+    match estimate_eta(
+        true,
+        Motion::at_rest(current),
         speed,
-        0,
-        include_system,
-        false,
-    )
+        speed,
+        Order::MoveOnly,
+        target,
+        target_depth(u8::from(include_system)),
+    ) {
+        FleetEtaEstimate::Years(years) => years,
+        _ => 0,
+    }
 }
 
-fn estimate_eta_for_route(
-    route: Option<PlannedRoute>,
-    current: [u8; 2],
-    target: [u8; 2],
+/// Replays the maintenance integrator year by year until the order's arrival
+/// test passes. A fleet that already passes it has arrived.
+fn estimate_eta(
+    reachable: bool,
+    motion: Motion,
     speed: u8,
-    sub_acc_prev: u32,
-    exact_position: Option<[f64; 2]>,
-    include_system: bool,
+    max_speed: u8,
+    order: Order,
+    target: [u8; 2],
+    depth: Real48,
 ) -> FleetEtaEstimate {
-    if current == target {
+    if ArrivalRule::for_order(order).passes(motion, target, depth, speed, false) {
         return FleetEtaEstimate::Arrived;
     }
-    if speed == 0 {
+    if speed == 0 && max_speed == 0 {
         return FleetEtaEstimate::Stopped;
     }
-    if route.is_none() {
+    if !reachable {
         return FleetEtaEstimate::Unreachable;
     }
-    let exact_current = exact_position.unwrap_or([f64::from(current[0]), f64::from(current[1])]);
-    FleetEtaEstimate::Years(simulate_eta_years(
-        exact_current,
-        target,
-        speed,
-        sub_acc_prev,
-        include_system,
-        true,
-    ))
-}
-
-/// The count stops in the year the rounded sector first matches the target,
-/// when classic completes a move order and as the classic travel-time display
-/// counts. `fleet_stepper` replays the fleet stepper: it moves at least once
-/// and stores the accumulator in the lossy classic fraction byte and the exact
-/// position at its stored precision between years.
-fn simulate_eta_years(
-    mut exact_position: [f64; 2],
-    target: [u8; 2],
-    speed: u8,
-    sub_acc_prev: u32,
-    include_system: bool,
-    fleet_stepper: bool,
-) -> u16 {
-    let mut years = 0u16;
-    let mut sub_acc = sub_acc_prev;
-    let mut next_year_move = || {
-        years = years.saturating_add(1);
-        let sub_acc_new = sub_acc + u32::from(speed) * 8;
-        sub_acc = if fleet_stepper {
-            round_trip_movement_fraction(sub_acc_new % 9)
-        } else {
-            sub_acc_new % 9
-        };
-        (sub_acc_new / 9) as f64
-    };
-
-    if fleet_stepper {
-        loop {
-            exact_position =
-                advance_exact_position(exact_position, target, next_year_move(), None, false);
-            if rounded_coords_from_exact(exact_position, target) == target {
-                break;
-            }
-            exact_position = round_trip_exact_position(exact_position);
+    let mut course = Course::direct(target);
+    let (mut motion, mut speed) = (motion, speed);
+    for years in 1..=ETA_YEAR_LIMIT {
+        let year = run_year(motion, speed, max_speed, order, target, depth, &mut course);
+        if year.resolved_tick.is_some() {
+            return FleetEtaEstimate::Years(years);
         }
-    } else {
-        while rounded_coords_from_exact(exact_position, target) != target {
-            exact_position =
-                advance_exact_position(exact_position, target, next_year_move(), None, false);
-        }
+        (motion, speed) = (year.motion, year.speed);
     }
-
-    if include_system {
-        let mut remaining_system_distance = 1.0;
-        while remaining_system_distance > 0.0 {
-            remaining_system_distance -= next_year_move();
-        }
-    }
-
-    years
-}
-
-fn round_trip_movement_fraction(sub_acc: u32) -> u32 {
-    decode_movement_fraction(encode_movement_fraction(sub_acc))
-}
-
-fn decode_movement_sub_acc(fleet: &FleetRecord) -> u32 {
-    if fleet.current_speed() == 0 || fleet.movement_state_flag_raw() == 0x80 {
-        return 0;
-    }
-    decode_movement_fraction(fleet.movement_fraction_raw())
-}
-
-/// Encode the 0..=8 movement sub-unit accumulator as the classic FLEETS.DAT
-/// raw[0x0F] fraction byte: `(sub_acc - 9) * 2 / 3` as i8.
-pub(crate) fn encode_movement_fraction(sub_acc: u32) -> u8 {
-    ((sub_acc as i32 - 9) * 2 / 3) as i8 as u8
-}
-
-/// Decode the classic raw[0x0F] fraction byte (`9 + raw * 3 / 2`). The
-/// classic encoding is lossy (a carry of 8 encodes as 0 and decodes as 9),
-/// and malformed imported bytes are clamped to 0..=9 instead of underflowing.
-pub(crate) fn decode_movement_fraction(raw: u8) -> u32 {
-    (9 + i32::from(raw as i8) * 3 / 2).clamp(0, 9) as u32
+    FleetEtaEstimate::Unreachable
 }

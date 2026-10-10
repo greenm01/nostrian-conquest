@@ -39,7 +39,8 @@ fn salvage_success_report_names_the_salvaged_fleet() {
     fleet.set_current_location_coords_raw([target[0] + 1, target[1]]);
     fleet.set_standing_order_kind(Order::Salvage);
     fleet.set_standing_order_target_coords_raw(target);
-    fleet.set_current_speed(3);
+    // Fast enough to reach orbit within the year (climb, one sector, dive).
+    fleet.set_current_speed(6);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -87,9 +88,6 @@ fn absorbed_side_merge_index_does_not_hide_another_fleets_rendezvous_arrival() {
     }
 
     let text = viewer_report_text(&game_data, &events, 1);
-    assert!(
-        text.contains("waiting for more fleets to arrive"),
-        "{text}"
-    );
+    assert!(text.contains("waiting for more fleets to arrive"), "{text}");
     assert!(text.contains("absorbing fleet 9"), "{text}");
 }

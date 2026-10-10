@@ -166,7 +166,7 @@ impl FleetIndexRemap {
         events
             .colonization_events
             .retain_mut(|event| self.retain_index(&mut event.fleet_idx));
-        self.retain_indices(&mut events.hostile_arrived_fleet_indices);
+        self.retain_indices(&mut events.hostile_strike_fleet_indices);
         self.remap_planet_intel_events(&mut events.planet_intel_events);
         events.pending_observation_events.retain_mut(|event| {
             if let Some(intel_event) = event.intel_event.as_mut() {
@@ -188,9 +188,6 @@ impl FleetIndexRemap {
 /// Fleet references that stay live across the turn's fleet compactions.
 #[derive(Debug, Default)]
 pub(super) struct TurnFleetRefs {
-    pub bombard_ready: Vec<usize>,
-    pub invade_ready: Vec<usize>,
-    pub blitz_ready: Vec<usize>,
     /// Destroyed join-host fleet numbers keyed by the joining fleet's id.
     pub destroyed_join_host_fleet_numbers: HashMap<u8, u8>,
     pub merge_events: Vec<FleetMergeEvent>,
@@ -204,9 +201,6 @@ pub(super) struct TurnFleetRefs {
 
 impl TurnFleetRefs {
     pub(super) fn remap(&mut self, remap: &FleetIndexRemap) {
-        remap.retain_indices(&mut self.bombard_ready);
-        remap.retain_indices(&mut self.invade_ready);
-        remap.retain_indices(&mut self.blitz_ready);
         remap.rekey_fleet_ids(&mut self.destroyed_join_host_fleet_numbers);
         // The absorbed side keeps the index the merged-away record had when it
         // merged; only the surviving fleet's index follows later compactions.

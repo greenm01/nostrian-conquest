@@ -207,6 +207,7 @@ fn fleet_eta_uses_movement_subgrid_budget_instead_of_simple_div_ceil() {
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw([3, 2]);
     fleet.set_current_speed(1);
+    fleet.set_mission_aux_bytes([0, 0]);
 
     assert_eq!(
         estimate_fleet_eta(&game_data, 0),
@@ -215,7 +216,7 @@ fn fleet_eta_uses_movement_subgrid_budget_instead_of_simple_div_ceil() {
 }
 
 #[test]
-fn fleet_eta_reports_stopped_for_zero_speed_orders() {
+fn fleet_eta_restores_max_speed_unless_holding() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
         .with_year(3000)
@@ -227,7 +228,16 @@ fn fleet_eta_reports_stopped_for_zero_speed_orders() {
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw([6, 2]);
     fleet.set_current_speed(0);
+    fleet.set_mission_aux_bytes([0, 0]);
 
+    // ECMAINT restores maximum speed to a stopped fleet whose order has not
+    // arrived, after the first tick.
+    assert_eq!(
+        estimate_fleet_eta(&game_data, 0),
+        FleetEtaEstimate::Years(2)
+    );
+
+    game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
     assert_eq!(estimate_fleet_eta(&game_data, 0), FleetEtaEstimate::Stopped);
 }
 
@@ -253,10 +263,8 @@ fn fleet_eta_to_destination_can_use_max_speed_for_stopped_fleets() {
 
 #[test]
 fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
-    // Axis-aligned and diagonal moves. On a diagonal the fleet can round
-    // into the visible target sector a year before the order completes at
-    // the exact path endpoint, and the stored exact position is rounded to
-    // 1/256 sector between years.
+    // Axis-aligned and diagonal moves: the ETA replays the same 6-byte-real
+    // integrator and arrival test that maintenance runs.
     let offsets: [[u8; 2]; 11] = [
         [1, 0],
         [2, 0],
@@ -311,60 +319,6 @@ fn fleet_eta_matches_actual_arrival_turn_for_every_speed() {
             );
         }
     }
-}
-
-#[test]
-fn speed_one_keeps_classic_fraction_byte() {
-    // The classic raw[0x0F] byte stores a carry of 8 as 0, and 0 decodes back
-    // as 9, so a speed-1 fleet keeps writing 0 every year it is under way.
-    let mut game_data = GameStateBuilder::new()
-        .with_player_count(4)
-        .with_year(3000)
-        .build_initialized_baseline()
-        .expect("baseline should build");
-    for player in &mut game_data.player.records {
-        player.set_autopilot_flag(0);
-    }
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_max_speed(9);
-    fleet.set_current_location_coords_raw([1, 9]);
-    fleet.set_standing_order_kind(Order::MoveOnly);
-    fleet.set_standing_order_target_coords_raw([13, 9]);
-    fleet.set_current_speed(1);
-
-    for year in 1..=3 {
-        run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
-        assert_eq!(
-            game_data.fleets.records[0].movement_fraction_raw(),
-            0,
-            "year {year}"
-        );
-    }
-}
-
-#[test]
-fn malformed_movement_fraction_does_not_underflow() {
-    let mut game_data = GameStateBuilder::new()
-        .with_player_count(4)
-        .with_year(3000)
-        .build_initialized_baseline()
-        .expect("baseline should build");
-
-    // An imported in-transit fleet whose raw[0x0F] fraction byte decodes
-    // below zero.
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_current_location_coords_raw([2, 2]);
-    fleet.set_standing_order_kind(Order::MoveOnly);
-    fleet.set_standing_order_target_coords_raw([12, 2]);
-    fleet.set_current_speed(3);
-    fleet.set_movement_state_flag_raw(0x7f);
-    fleet.set_movement_fraction_raw(0xf0);
-
-    assert!(matches!(
-        estimate_fleet_eta(&game_data, 0),
-        FleetEtaEstimate::Years(_)
-    ));
-    run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 }
 
 #[test]

@@ -19,8 +19,6 @@ mod classic_results;
 mod config;
 mod directory;
 mod economy;
-#[doc(hidden)]
-pub mod fleet_motion_state;
 pub mod hosted;
 mod intel;
 pub mod maintenance_types;
@@ -31,6 +29,7 @@ mod player_activity;
 mod player_lifecycle;
 mod player_mail;
 mod player_war_stats;
+mod real48;
 mod records;
 mod report_blocks;
 mod rng;
@@ -108,6 +107,7 @@ pub use player_mail::{
 pub use player_war_stats::{
     apply_maintenance_events_to_player_war_stats, default_player_war_stats_states,
 };
+pub use real48::Real48;
 pub use records::base::{BaseDat, BaseRecord};
 pub use records::conquest::ConquestDat;
 pub use records::fleet::{FleetDat, FleetRecord, Order};

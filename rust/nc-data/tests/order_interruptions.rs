@@ -82,7 +82,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -108,7 +108,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -134,7 +134,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -160,7 +160,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -186,7 +186,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -212,7 +212,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -238,7 +238,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -264,7 +264,7 @@ fn capability_invalidation_traces_abort_to_seek_home_or_hold() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: [11, 8],
+                    coords: [10, 8],
                     target: RETREAT_TARGET,
                     order: Order::SeekHome,
                     speed: TRACE_SPEED,
@@ -326,11 +326,11 @@ fn stale_off_target_hostile_traces_rearm_without_executing() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: OFF_TARGET_START,
+                    coords: [22, 25],
                     target: [25, 25],
                     order: Order::BombardWorld,
                     speed: TRACE_SPEED,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -352,11 +352,11 @@ fn stale_off_target_hostile_traces_rearm_without_executing() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: OFF_TARGET_START,
+                    coords: [22, 25],
                     target: [25, 25],
                     order: Order::InvadeWorld,
                     speed: TRACE_SPEED,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -378,11 +378,11 @@ fn stale_off_target_hostile_traces_rearm_without_executing() {
                 },
                 FleetTurnExpectation {
                     turn: 1,
-                    coords: OFF_TARGET_START,
+                    coords: [22, 25],
                     target: [25, 25],
                     order: Order::BlitzWorld,
                     speed: TRACE_SPEED,
-                    ready_flag: Some(0x81),
+                    ready_flag: Some(0x00),
                 },
             ],
             before_turn: no_turn_mutation,
@@ -661,7 +661,6 @@ fn build_stale_off_target_hostile_trace(
     fleet.set_max_speed(TRACE_SPEED);
     fleet.set_current_location_coords_raw(OFF_TARGET_START);
     fleet.set_current_speed(0);
-    fleet.set_transit_ready_flag_raw(0x80);
     fleet.set_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff]);
     game_data
 }

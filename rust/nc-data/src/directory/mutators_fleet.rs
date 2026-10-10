@@ -2,13 +2,6 @@ use std::collections::BTreeSet;
 
 use super::*;
 
-fn arms_on_station_hostile_order(order: Order) -> bool {
-    matches!(
-        order,
-        Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
-    )
-}
-
 impl CoreGameData {
     pub fn conflicting_friendly_colonize_fleet_record(
         &self,
@@ -124,7 +117,6 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: record_index_1_based,
             })?;
-        reset_motion_state_for_new_orders(record);
         record.set_current_speed(speed);
         record.set_standing_order_code_raw(order_code);
         record.set_standing_order_target_coords_raw(target);
@@ -139,12 +131,6 @@ impl CoreGameData {
             mission_aux[1] = value;
         }
         record.set_mission_aux_bytes(mission_aux);
-        if arms_on_station_hostile_order(Order::from_raw(order_code))
-            && record.current_location_coords_raw() == target
-        {
-            record.set_current_speed(0);
-            record.set_extended_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff, 0x7f]);
-        }
         Ok(record.mission_aux_bytes())
     }
 
@@ -374,7 +360,6 @@ impl CoreGameData {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        reset_motion_state_for_new_orders(fleet);
         fleet.set_current_speed(fleet.max_speed());
         fleet.set_standing_order_kind(Order::JoinAnotherFleet);
         fleet.set_standing_order_target_coords_raw(host_coords);

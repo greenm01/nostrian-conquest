@@ -323,7 +323,6 @@ impl CoreGameData {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        reset_motion_state_for_new_orders(fleet);
         fleet.set_standing_order_kind(Order::GuardStarbase);
         fleet.set_standing_order_target_coords_raw(target);
         fleet.set_mission_aux_bytes([0x01, base_id]);

@@ -230,92 +230,56 @@ pub(super) fn handle_fleet_arrival(
                 stardate_week: None,
             });
         }
-        Order::BombardWorld => {
-            movement_events
-                .hostile_arrived_fleet_indices
-                .push(fleet_idx);
-            let planet_idx = game_data
-                .planets
-                .records
-                .iter()
-                .position(|planet| planet.coords_raw() == coords);
-            if let Some(planet_idx) = planet_idx {
-                let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
-            }
-            movement_events.mission_events.push(MissionEvent {
-                fleet_idx,
-                owner_empire_raw: owner_empire,
-                kind: Mission::BombardWorld,
-                outcome: MissionOutcome::Arrived,
-                abort_reason: None,
-                planet_idx,
-                location_coords: Some(coords),
-                target_coords: Some(coords),
-                stardate_week: None,
-            });
-        }
-        Order::InvadeWorld => {
-            movement_events
-                .hostile_arrived_fleet_indices
-                .push(fleet_idx);
-            let planet_idx = game_data
-                .planets
-                .records
-                .iter()
-                .position(|planet| planet.coords_raw() == coords);
-            if let Some(planet_idx) = planet_idx {
-                let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
-            }
-            movement_events.mission_events.push(MissionEvent {
-                fleet_idx,
-                owner_empire_raw: owner_empire,
-                kind: Mission::InvadeWorld,
-                outcome: MissionOutcome::Arrived,
-                abort_reason: None,
-                planet_idx,
-                location_coords: Some(coords),
-                target_coords: Some(coords),
-                stardate_week: None,
-            });
-        }
-        Order::BlitzWorld => {
-            movement_events
-                .hostile_arrived_fleet_indices
-                .push(fleet_idx);
-            let planet_idx = game_data
-                .planets
-                .records
-                .iter()
-                .position(|planet| planet.coords_raw() == coords);
-            if let Some(planet_idx) = planet_idx {
-                let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-                queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
-            }
-            movement_events.mission_events.push(MissionEvent {
-                fleet_idx,
-                owner_empire_raw: owner_empire,
-                kind: Mission::BlitzWorld,
-                outcome: MissionOutcome::Arrived,
-                abort_reason: None,
-                planet_idx,
-                location_coords: Some(coords),
-                target_coords: Some(coords),
-                stardate_week: None,
-            });
-        }
         _ => {}
     }
 
     Ok(())
 }
 
+/// A Bombard/Invade/Blitz fleet entered its target sector this year.
+pub(super) fn handle_hostile_target_entry(
+    game_data: &CoreGameData,
+    movement_events: &mut MovementEvents,
+    fleet_idx: usize,
+    order_kind: Order,
+    coords: [u8; 2],
+) {
+    let kind = match order_kind {
+        Order::BombardWorld => Mission::BombardWorld,
+        Order::InvadeWorld => Mission::InvadeWorld,
+        Order::BlitzWorld => Mission::BlitzWorld,
+        _ => return,
+    };
+    let owner_empire = game_data.fleets.records[fleet_idx].owner_empire_raw();
+    let planet_idx = game_data
+        .planets
+        .records
+        .iter()
+        .position(|planet| planet.coords_raw() == coords);
+    if let Some(planet_idx) = planet_idx {
+        let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+        queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
+    }
+    movement_events.mission_events.push(MissionEvent {
+        fleet_idx,
+        owner_empire_raw: owner_empire,
+        kind,
+        outcome: MissionOutcome::Arrived,
+        abort_reason: None,
+        planet_idx,
+        location_coords: Some(coords),
+        target_coords: Some(coords),
+        stardate_week: None,
+    });
+}
+
 pub(super) fn set_view_world_completion_hold(fleet: &mut nc_data::FleetRecord) {
     // ViewWorld is a one-shot mission: after the observation fires, revert the
-    // fleet to HoldPosition so the player must issue new orders. Match the
-    // payload the stepper writes for any other non-persisting order arrival.
+    // fleet to HoldPosition so the player must issue new orders. ECMAINT's
+    // View World action clears the mission aux bytes and lifts the fleet back
+    // out to depth 0.
     fleet.set_current_speed(0);
     fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_extended_tuple_c_payload_raw([0x80, 0xb9, 0xff, 0xff, 0xff, 0x7f]);
+    fleet.set_mission_aux_bytes([0, 0]);
+    fleet.set_depth(nc_data::Real48::ZERO);
 }

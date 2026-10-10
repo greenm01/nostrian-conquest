@@ -137,9 +137,7 @@ fn configure_delayed_invade_arrival_directory(target: &std::path::Path) {
     attacker.set_troop_transport_count(5);
     attacker.set_army_count(5);
     attacker.set_etac_count(0);
-    attacker.set_movement_state_flag_raw(0x80);
-    attacker.set_movement_fraction_raw(0);
-    attacker.set_transit_ready_flag_raw(0x81);
+    attacker.set_at_rest_motion();
 
     game_data.save(target).expect("mutated fixture should save");
 }
@@ -1515,6 +1513,8 @@ fn maint_rust_scout_sector_generates_results_report() {
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
     scout.set_etac_count(0);
+    // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
+    scout.set_mission_aux_bytes([0, 0]);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -1547,6 +1547,9 @@ fn maint_rust_scout_system_generates_results_report() {
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
     scout.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    scout.recompute_max_speed_from_composition();
+    scout.set_current_speed(scout.max_speed());
     game_data.planets.records[13].set_stardock_kind_raw(0, 1);
     game_data.planets.records[13].set_stardock_count_raw(0, 2);
     game_data
@@ -1596,6 +1599,9 @@ fn maint_rust_view_world_generates_results_and_database_intel() {
     viewer.set_standing_order_target_coords_raw([15, 13]);
     viewer.set_scout_count(0);
     viewer.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    viewer.recompute_max_speed_from_composition();
+    viewer.set_current_speed(viewer.max_speed());
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -1741,6 +1747,10 @@ fn maint_rust_guard_blockade_generates_arrival_report() {
     guard.set_standing_order_target_coords_raw([15, 13]);
     guard.set_scout_count(0);
     guard.set_etac_count(0);
+    // A destroyer reaches orbit one sector away within the year.
+    guard.set_destroyer_count(1);
+    guard.recompute_max_speed_from_composition();
+    guard.set_current_speed(guard.max_speed());
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -2826,6 +2836,8 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     attacker.set_army_count(2);
     attacker.set_etac_count(0);
     attacker.set_rules_of_engagement(10);
+    // Stalled in place (no speed to restore), so the contact happens here.
+    attacker.set_max_speed(0);
 
     let hostile = &mut game_data.fleets.records[4];
     hostile.set_current_location_coords_raw(coords);
@@ -2840,6 +2852,8 @@ fn maint_rust_enemy_roe_withdrawal_does_not_abort_invade_mission() {
     hostile.set_army_count(0);
     hostile.set_etac_count(0);
     hostile.set_rules_of_engagement(0);
+    // Stalled in place (no speed to restore), so the contact happens here.
+    hostile.set_max_speed(0);
 
     game_data
         .save(&target)
@@ -3344,6 +3358,8 @@ fn maint_rust_rendezvous_arrival_generates_waiting_report() {
     let fleet = &mut game_data.fleets.records[0];
     fleet.set_standing_order_kind(Order::RendezvousSector);
     fleet.set_standing_order_target_coords_raw([15, 13]);
+    // ECGAME writes the 0x22 world-target flag as 0 for sector orders.
+    fleet.set_mission_aux_bytes([0, 0]);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -3426,6 +3442,8 @@ fn maint_rust_join_contact_uses_join_report_label() {
     game_data.fleets.records[0].set_standing_order_kind(Order::JoinAnotherFleet);
     let host_id = game_data.fleets.records[1].fleet_id();
     game_data.fleets.records[0].set_join_host_fleet_id_raw(host_id);
+    // Stalled in place (no speed to restore), so the contact happens here.
+    game_data.fleets.records[0].set_max_speed(0);
     game_data
         .save(&target)
         .expect("mutated fixture should save");
@@ -4027,8 +4045,10 @@ fn maint_rust_multi_fleet_abort_prefers_destroyed_fleet_telemetry_over_batching(
         f.set_fleet_id_word_raw(2);
         f.set_current_location_coords_raw(battle_coords);
         f.set_standing_order_kind(Order::MoveOnly);
-        f.set_standing_order_target_coords_raw(battle_coords);
-        f.set_current_speed(3);
+        // Bound elsewhere but stalled here (no speed to restore).
+        f.set_standing_order_target_coords_raw([battle_coords[0] + 1, battle_coords[1]]);
+        f.set_current_speed(0);
+        f.set_max_speed(0);
         f.set_destroyer_count(1);
         f.set_scout_count(40);
         f.set_rules_of_engagement(10);
@@ -4041,8 +4061,10 @@ fn maint_rust_multi_fleet_abort_prefers_destroyed_fleet_telemetry_over_batching(
         f.set_fleet_id_word_raw(1);
         f.set_current_location_coords_raw(battle_coords);
         f.set_standing_order_kind(Order::MoveOnly);
-        f.set_standing_order_target_coords_raw(battle_coords);
-        f.set_current_speed(3);
+        // Bound elsewhere but stalled here (no speed to restore).
+        f.set_standing_order_target_coords_raw([battle_coords[0] + 1, battle_coords[1]]);
+        f.set_current_speed(0);
+        f.set_max_speed(0);
         f.set_battleship_count(3);
         f.set_rules_of_engagement(10);
     }

@@ -70,18 +70,24 @@ pub fn place_fleet(
     fleet.set_army_count(ships.armies);
     fleet.set_etac_count(0);
     fleet.set_rules_of_engagement(roe);
+    if target != coords {
+        // A contact stalled in transit: with no maximum speed the dispatcher
+        // prelude has no speed to restore, so it ends the year here.
+        fleet.set_max_speed(0);
+    }
     if order == Order::GuardStarbase {
         // Escort starbase id 1 (see `add_starbase`).
         fleet.set_mission_aux_bytes([1, 1]);
     }
 }
 
-/// Mark a fleet that already sits at its hostile-mission target as having
-/// arrived on a previous turn, so its assault executes this turn.
+/// Settle a fleet that already sits at its hostile-mission target at rest in
+/// orbit (depth 1.0), so its strike test passes on the first tick.
 pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
     let fleet = &mut game_data.fleets.records[idx];
     fleet.set_current_speed(3);
-    fleet.raw[0x19] = 0x80;
+    fleet.set_mission_aux_bytes([1, fleet.mission_id_raw()]);
+    fleet.set_at_rest_motion();
 }
 
 pub fn add_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {

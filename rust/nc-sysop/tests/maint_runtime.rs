@@ -5,7 +5,6 @@ use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_data::fleet_motion_state::reset_motion_state_for_new_orders;
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, GameStateBuilder, IntelTier, Order,
 };
@@ -147,6 +146,9 @@ fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
     viewer.set_standing_order_target_coords_raw([15, 13]);
     viewer.set_scout_count(0);
     viewer.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    viewer.recompute_max_speed_from_composition();
+    viewer.set_current_speed(viewer.max_speed());
     seed_runtime_snapshot(&target, &game_data);
 
     let stdout = run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
@@ -200,6 +202,9 @@ fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
     scout.set_etac_count(0);
+    // Cruiser speed settles in orbit one sector away within the year.
+    scout.recompute_max_speed_from_composition();
+    scout.set_current_speed(scout.max_speed());
     game_data.planets.records[13].set_stardock_kind_raw(0, 1);
     game_data.planets.records[13].set_stardock_count_raw(0, 2);
     seed_runtime_snapshot(&target, &game_data);
@@ -390,7 +395,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         fleet.set_standing_order_kind(Order::HoldPosition);
         fleet.set_standing_order_target_coords_raw(coords);
         fleet.set_current_speed(0);
-        reset_motion_state_for_new_orders(fleet);
     }
 
     let p1_home = first_owned_planet_coords(&game_data, 1);
@@ -443,7 +447,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         viewer.set_standing_order_kind(Order::ViewWorld);
         viewer.set_standing_order_target_coords_raw(p2_home);
         viewer.set_current_speed(viewer.max_speed());
-        reset_motion_state_for_new_orders(viewer);
         viewer.set_current_speed(viewer.max_speed());
     }
     let host_id = game_data.fleets.records[player4_fleets[0]].fleet_id();
@@ -461,7 +464,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         host.set_standing_order_kind(Order::MoveOnly);
         host.set_standing_order_target_coords_raw([8, 4]);
         host.set_current_speed(host.max_speed());
-        reset_motion_state_for_new_orders(host);
         host.set_current_speed(host.max_speed());
     }
     {
@@ -479,7 +481,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         joiner.set_standing_order_target_coords_raw([4, 4]);
         joiner.set_join_host_fleet_id_raw(host_id);
         joiner.set_current_speed(joiner.max_speed());
-        reset_motion_state_for_new_orders(joiner);
         joiner.set_current_speed(joiner.max_speed());
     }
     {
@@ -496,7 +497,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         bombard.set_standing_order_kind(Order::BombardWorld);
         bombard.set_standing_order_target_coords_raw(p1_home);
         bombard.set_current_speed(bombard.max_speed());
-        reset_motion_state_for_new_orders(bombard);
         bombard.set_current_speed(bombard.max_speed());
     }
     {
@@ -518,7 +518,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         colonizer.set_standing_order_kind(Order::ColonizeWorld);
         colonizer.set_standing_order_target_coords_raw(colonize_target);
         colonizer.set_current_speed(colonizer.max_speed());
-        reset_motion_state_for_new_orders(colonizer);
         colonizer.set_current_speed(colonizer.max_speed());
     }
 
@@ -572,6 +571,12 @@ fn nc_sysop_maint_scopes_runtime_reports_and_intel_per_viewer() {
 
     let player_1_coords = game_data.planets.records[13].coords_raw();
     let player_4_coords = game_data.planets.records[6].coords_raw();
+    // Cruiser speed settles in orbit one sector away within the year.
+    for idx in [0, 12] {
+        let fleet = &mut game_data.fleets.records[idx];
+        fleet.set_etac_count(0);
+        fleet.recompute_max_speed_from_composition();
+    }
     let player_1_speed = game_data.fleets.records[0].max_speed();
     let player_4_speed = game_data.fleets.records[12].max_speed();
     game_data.fleets.records[0].set_standing_order_kind(Order::ViewWorld);
@@ -741,7 +746,6 @@ fn nc_sysop_maint_scout_sector_on_station_persists_report() {
     scout.set_standing_order_target_coords_raw(planet_coords);
     scout.set_current_speed(0);
     scout.set_scout_count(1);
-    reset_motion_state_for_new_orders(scout);
     seed_runtime_snapshot(&target, &game_data);
 
     let stdout = run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
@@ -784,7 +788,6 @@ fn nc_sysop_maint_scout_system_on_station_persists_report_and_intel() {
     scout.set_standing_order_target_coords_raw(planet_coords);
     scout.set_current_speed(0);
     scout.set_scout_count(1);
-    reset_motion_state_for_new_orders(scout);
     seed_runtime_snapshot(&target, &game_data);
 
     let stdout = run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
@@ -824,26 +827,16 @@ fn nc_sysop_maint_scout_system_on_station_persists_report_and_intel() {
 }
 
 #[test]
-fn nc_sysop_maint_view_world_reports_when_integer_coords_match_but_exact_not_arrived() {
-    // Regression test for Bug 2: a ViewWorld fleet whose integer coordinates
-    // round to the target sector on turn 1 but whose sub-grid exact position
-    // hasn't quite reached the target must still generate a report on that
-    // turn via the on-station observation path.
+fn nc_sysop_maint_view_world_reports_when_the_fleet_settles_not_on_sector_entry() {
+    // ECMAINT resolves View World when the fleet has dived fully into the
+    // target system, not when it first enters the target sector.
     //
-    // Geometry: fleet at (5,3), target (7,4), speed=3.
-    // The fixture fleet[0] has a cruiser with max_speed=3.
-    // Single-turn movement = floor(3*8/9) = 2 grid units.
-    // Straight-line distance = sqrt((7-5)²+(4-3)²) = sqrt(5) ≈ 2.236 > 2,
-    // so the exact position does not reach the target on turn 1.
-    // The exact endpoint ≈ (6.789, 3.894) rounds to (7,4) == target, so
-    // integer coords match the target without an exact arrival.
-    let target_dir = unique_temp_dir("nc-sysop-maint-view-world-rounded");
+    // Geometry: fleet at (5,3), target (7,4), speed 3, from rest. Year 1
+    // climbs out (1) and covers 2 of the 2.236 sectors, entering the target
+    // sector short of its centre; year 2 reaches the centre and dives.
+    let target_dir = unique_temp_dir("nc-sysop-maint-view-world-settles");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
 
-    // The fixture fleet[0] has a cruiser (and originally an ETAC). We zero
-    // the ETAC so only the cruiser remains; has_any_force() stays true.
-    // max_speed raw byte stays at 3 (set by the fixture), so speed=3 passes
-    // the SpeedExceedsMaximum check and the fleet moves this turn.
     let viewer = &mut game_data.fleets.records[0];
     viewer.set_current_location_coords_raw([5, 3]);
     viewer.set_standing_order_kind(Order::ViewWorld);
@@ -851,29 +844,37 @@ fn nc_sysop_maint_view_world_reports_when_integer_coords_match_but_exact_not_arr
     viewer.set_current_speed(3);
     viewer.set_scout_count(0);
     viewer.set_etac_count(0);
-    // Reset in-transit motion state from the fixture so the stepper starts
-    // fresh from (5,3) rather than continuing a prior exact-position path.
-    reset_motion_state_for_new_orders(viewer);
     seed_runtime_snapshot(&target_dir, &game_data);
+
+    let viewing_reported = |target_dir: &std::path::Path| {
+        let store = CampaignStore::open_default_in_dir(target_dir).expect("open campaign store");
+        let runtime = store
+            .load_latest_runtime_state()
+            .expect("load runtime state")
+            .expect("runtime snapshot should exist");
+        let in_target_sector =
+            runtime.game_data.fleets.records[0].current_location_coords_raw() == [7, 4];
+        let reported = runtime
+            .report_block_rows
+            .iter()
+            .any(|row| row.decoded_text.contains("Viewing mission report"));
+        (in_target_sector, reported)
+    };
 
     let stdout = run_nc_sysop(&["maint", target_dir.to_str().expect("utf-8 path"), "1"]);
     assert!(stdout.contains("Rust maintenance complete."));
+    assert_eq!(
+        viewing_reported(&target_dir),
+        (true, false),
+        "year 1 enters the target sector without reporting"
+    );
 
-    let store = CampaignStore::open_default_in_dir(&target_dir).expect("open campaign store");
-    let runtime = store
-        .load_latest_runtime_state()
-        .expect("load runtime state")
-        .expect("runtime snapshot should exist");
-
-    // The fleet's integer coords round to (7,4) == target on turn 1.
-    // The on-station path must fire a viewing report even though the
-    // sub-grid exact position has not fully reached the target.
-    assert!(
-        runtime
-            .report_block_rows
-            .iter()
-            .any(|row| row.decoded_text.contains("Viewing mission report")),
-        "ViewWorld fleet rounded to target sector must report on turn 1 via on-station path"
+    let stdout = run_nc_sysop(&["maint", target_dir.to_str().expect("utf-8 path"), "1"]);
+    assert!(stdout.contains("Rust maintenance complete."));
+    assert_eq!(
+        viewing_reported(&target_dir),
+        (true, true),
+        "year 2 settles in the system and reports"
     );
 
     let _ = fs::remove_dir_all(&target_dir);
