@@ -9,8 +9,8 @@ use nc_data::{CoreGameData, Order, PlanetIntelSnapshot};
 
 pub(crate) use eta::{decode_movement_fraction, encode_movement_fraction};
 pub(crate) use geometry::{
-    advance_exact_position, rounded_coords_from_exact, sector_distance_sq,
-    visible_hazard_intel_is_empty,
+    advance_exact_position, exact_position_reached_target, rounded_coords_from_exact,
+    sector_distance_sq, visible_hazard_intel_is_empty,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

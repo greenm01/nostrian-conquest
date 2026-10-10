@@ -27,6 +27,11 @@ pub fn store_exact_position(fleet: &mut FleetRecord, exact: [f64; 2]) {
     fleet.set_extended_tuple_c_payload_raw(payload);
 }
 
+/// The exact position as `store_exact_position` keeps it between turns.
+pub fn round_trip_exact_position(exact: [f64; 2]) -> [f64; 2] {
+    exact.map(|value| f64::from(encode_exact_coord(value)) / EXACT_POSITION_SCALE)
+}
+
 pub fn clear_exact_position(fleet: &mut FleetRecord) {
     let mut payload = fleet.extended_tuple_c_payload_raw();
     payload[1..].fill(0);

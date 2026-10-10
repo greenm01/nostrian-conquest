@@ -90,6 +90,25 @@ Fleet ETA counts the year a fleet becomes visible in the target sector, while
 the order completes at the exact path endpoint, so diagonal moves can differ
 by one year. The current regression covers axis-aligned moves only.
 
+Result (2026-10-09): the fleet ETA now replays the stepper exactly. It counts
+years until the exact path endpoint, stores the exact position at its 1/256
+precision between years (new `round_trip_exact_position` in
+`fleet_motion_state.rs`), and treats a fleet that shows in the target sector
+with an unfinished exact path as still under way, not arrived. The stepper and
+the classic fraction byte are unchanged, and the starbase travel-time display
+still stops at the first rounded target sector. The stepper's
+`exact_position_reached_target` moved to `navigation/geometry.rs` so both use
+it. `fleet_eta_matches_actual_arrival_turn_for_every_speed` now covers five
+diagonal offsets and checks the estimate before every year, not just the first.
+A sweep of every offset up to (17,17) at every speed, run while developing,
+found no mismatch. Two expectations in `move_only_traces_match_current_classic_oracle_cases`
+(`nc-data/tests/movement_trace.rs`) changed: speed-3 (10,10) to (16,16) now
+predicts 4 years, not 3, and speed-1 (10,10) to (13,13) predicts 6, not 5. In
+both, the fleet shows in the target sector a year before its order completes.
+The traced positions are unchanged. The ETA paragraph in
+[ec-movement-spec.md](../../dev/ec-movement-spec.md) now says this.
+Workspace: 2628 passed, 1 failed (the timing test noted under t010).
+
 ### t013
 
 Salvage-success reports now say "From your fleet" without a number, because

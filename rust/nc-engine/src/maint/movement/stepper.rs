@@ -1,6 +1,7 @@
 use crate::navigation::{
     advance_exact_position, decode_movement_fraction, encode_movement_fraction,
-    plan_route_with_intel, rounded_coords_from_exact, visible_hazard_intel_is_empty,
+    exact_position_reached_target, plan_route_with_intel, rounded_coords_from_exact,
+    visible_hazard_intel_is_empty,
 };
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use nc_data::fleet_motion_state::{
@@ -68,11 +69,6 @@ fn apply_standing_arrival_state(fleet: &mut nc_data::FleetRecord, order: Order) 
         }
         _ => {}
     }
-}
-
-fn exact_position_reached_target(exact: [f64; 2], target: [u8; 2]) -> bool {
-    (exact[0] - f64::from(target[0])).abs() <= f64::EPSILON
-        && (exact[1] - f64::from(target[1])).abs() <= f64::EPSILON
 }
 
 /// Process movement for a single fleet using the ECMAINT movement formula.

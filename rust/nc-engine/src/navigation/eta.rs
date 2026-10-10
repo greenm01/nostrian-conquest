@@ -1,9 +1,9 @@
-use nc_data::fleet_motion_state::decode_exact_position;
+use nc_data::fleet_motion_state::{decode_exact_position, round_trip_exact_position};
 use nc_data::{CoreGameData, FleetRecord};
 
 use super::{
-    FleetEtaEstimate, PlannedRoute, advance_exact_position, plan_route, plan_route_to_destination,
-    rounded_coords_from_exact,
+    FleetEtaEstimate, PlannedRoute, advance_exact_position, exact_position_reached_target,
+    plan_route, plan_route_to_destination, rounded_coords_from_exact,
 };
 
 pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
@@ -83,17 +83,16 @@ fn estimate_eta_for_route(
     exact_position: Option<[f64; 2]>,
     include_system: bool,
 ) -> FleetEtaEstimate {
-    if current == target {
+    // A fleet can show in the target sector while its exact path is still
+    // unfinished; like the stepper, it has not arrived while in transit.
+    if current == target && exact_position.is_none() {
         return FleetEtaEstimate::Arrived;
     }
     if speed == 0 {
         return FleetEtaEstimate::Stopped;
     }
-    let Some(route) = route else {
+    if route.is_none() {
         return FleetEtaEstimate::Unreachable;
-    };
-    if route.steps.len() <= 1 {
-        return FleetEtaEstimate::Arrived;
     }
     let exact_current = exact_position.unwrap_or([f64::from(current[0]), f64::from(current[1])]);
     FleetEtaEstimate::Years(simulate_eta_years(
@@ -106,42 +105,52 @@ fn estimate_eta_for_route(
     ))
 }
 
-/// `fleet_fraction_round_trip` replays the fleet stepper, which stores the
-/// accumulator in the lossy classic fraction byte between turns.
+/// `fleet_stepper` replays the fleet stepper: it moves at least once, stores
+/// the accumulator in the lossy classic fraction byte and the exact position
+/// at its stored precision between years, and completes at the exact path
+/// endpoint. Otherwise the count stops when the rounded sector first matches
+/// the target, as the classic travel-time display does.
 fn simulate_eta_years(
     mut exact_position: [f64; 2],
     target: [u8; 2],
     speed: u8,
     sub_acc_prev: u32,
     include_system: bool,
-    fleet_fraction_round_trip: bool,
+    fleet_stepper: bool,
 ) -> u16 {
-    let carry = |sub_acc: u32| {
-        if fleet_fraction_round_trip {
-            round_trip_movement_fraction(sub_acc)
-        } else {
-            sub_acc
-        }
-    };
     let mut years = 0u16;
     let mut sub_acc = sub_acc_prev;
-
-    while rounded_coords_from_exact(exact_position, target) != target {
+    let mut next_year_move = || {
         years = years.saturating_add(1);
         let sub_acc_new = sub_acc + u32::from(speed) * 8;
-        let int_move = (sub_acc_new / 9) as f64;
-        sub_acc = carry(sub_acc_new % 9);
-        exact_position = advance_exact_position(exact_position, target, int_move, None, false);
+        sub_acc = if fleet_stepper {
+            round_trip_movement_fraction(sub_acc_new % 9)
+        } else {
+            sub_acc_new % 9
+        };
+        (sub_acc_new / 9) as f64
+    };
+
+    if fleet_stepper {
+        loop {
+            exact_position =
+                advance_exact_position(exact_position, target, next_year_move(), None, false);
+            if exact_position_reached_target(exact_position, target) {
+                break;
+            }
+            exact_position = round_trip_exact_position(exact_position);
+        }
+    } else {
+        while rounded_coords_from_exact(exact_position, target) != target {
+            exact_position =
+                advance_exact_position(exact_position, target, next_year_move(), None, false);
+        }
     }
 
     if include_system {
         let mut remaining_system_distance = 1.0;
         while remaining_system_distance > 0.0 {
-            years = years.saturating_add(1);
-            let sub_acc_new = sub_acc + u32::from(speed) * 8;
-            let int_move = (sub_acc_new / 9) as f64;
-            sub_acc = carry(sub_acc_new % 9);
-            remaining_system_distance -= int_move;
+            remaining_system_distance -= next_year_move();
         }
     }
 
