@@ -102,7 +102,7 @@ into `docs/dev/archive/next-session-archive.md`.
 Before making gameplay or rules assumptions, check sources in this order:
 
 1. **Rust manuals** (authoritative):
-   [ec_player_manual.typ](docs/manuals/ec_player_manual.typ),
+   [nc_player_manual.typ](docs/manuals/nc_player_manual.typ),
    [nc_sysop_manual.typ](docs/manuals/nc_sysop_manual.typ)
 2. **Original game docs** (ambiguity fallback):
    [ECPLAYER.DOC](original/v1.5/ECPLAYER.DOC),
