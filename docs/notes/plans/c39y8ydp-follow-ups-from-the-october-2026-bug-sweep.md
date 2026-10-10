@@ -312,6 +312,11 @@ deleting one report by `block_index` also deletes the broadcast row with the
 same index. Deletion must only remove the deleting empire's view of a
 broadcast report.
 
+Update (2026-10-09): since t022 the engine emits no broadcast rows; the
+campaign outlook is now one report per empire. The bug still affects
+broadcast rows already stored in existing campaign databases, which the
+t008 layout continues to export into every empire's chain.
+
 ### t027
 
 `nc-game/tests/basic.rs::piped_dropfile_launch_stays_interactive_without_tty_stdout`
