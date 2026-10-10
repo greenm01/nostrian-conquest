@@ -273,13 +273,20 @@ pub(super) fn handle_hostile_target_entry(
     });
 }
 
-pub(super) fn set_view_world_completion_hold(fleet: &mut nc_data::FleetRecord) {
-    // ViewWorld is a one-shot mission: after the observation fires, revert the
-    // fleet to HoldPosition so the player must issue new orders. ECMAINT's
-    // View World action clears the mission aux bytes and lifts the fleet back
-    // out to depth 0.
-    fleet.set_current_speed(0);
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_mission_aux_bytes([0, 0]);
-    fleet.set_depth(nc_data::Real48::ZERO);
+/// ECMAINT's View World action (0b5d:219c) leaves the fleet on a Move out of
+/// the system: 0x22 = 0 at full speed. A fleet that has already climbed back
+/// to depth 0 has also passed that Move's test, which stops it on Hold
+/// (0b5d:00ec). Returns whether the Move resolved.
+pub(super) fn complete_view_world(fleet: &mut nc_data::FleetRecord) -> bool {
+    let [_, mission_id] = fleet.mission_aux_bytes();
+    fleet.set_mission_aux_bytes([0, mission_id]);
+    if fleet.depth().is_zero() {
+        fleet.set_current_speed(0);
+        fleet.set_standing_order_kind(Order::HoldPosition);
+        true
+    } else {
+        fleet.set_current_speed(fleet.max_speed());
+        fleet.set_standing_order_kind(Order::MoveOnly);
+        false
+    }
 }

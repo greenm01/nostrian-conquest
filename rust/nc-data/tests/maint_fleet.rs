@@ -449,6 +449,14 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
         [0, 0, 0, 0, 0],
         "ECMAINT's View World action lifts the fleet to depth 0"
     );
+    assert!(
+        events.mission_events.iter().any(|event| {
+            event.fleet_idx == 0
+                && event.kind == Mission::MoveOnly
+                && event.outcome == MissionOutcome::Succeeded
+        }),
+        "the Move out of the system resolves in the same year and reports"
+    );
 }
 
 #[test]

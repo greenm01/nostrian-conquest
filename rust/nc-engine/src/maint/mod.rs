@@ -648,10 +648,6 @@ fn restore_scout_orders_and_generate_on_station_observations(
     }
 
     // Generate per-turn observations for scouts already on station from previous turns.
-    // ViewWorld fleet indices whose on-station observation fires this turn; collected
-    // here and reset to HoldPosition after the loop (borrow-checker split).
-    let mut view_world_on_station: Vec<usize> = Vec::new();
-
     for (fleet_idx, fleet) in game_data.fleets.records.iter().enumerate() {
         if !fleet.has_any_force() {
             continue;
@@ -718,53 +714,8 @@ fn restore_scout_orders_and_generate_on_station_observations(
                     stardate_week: None,
                 });
             }
-            Order::ViewWorld => {
-                let planet_idx = game_data
-                    .planets
-                    .records
-                    .iter()
-                    .position(|planet| planet.coords_raw() == coords);
-                if let Some(planet_idx) = planet_idx {
-                    movement_events.planet_intel_events.push(PlanetIntelEvent {
-                        planet_idx,
-                        viewer_empire_raw: owner_empire_raw,
-                        source: nc_data::PlanetIntelSource::ViewWorld,
-                        source_fleet_idx: Some(fleet_idx),
-                        observed_snapshot: nc_data::build_runtime_planet_intel_snapshot(
-                            game_data,
-                            owner_empire_raw,
-                            game_data.conquest.game_year(),
-                            planet_idx,
-                            nc_data::PlanetIntelSource::ViewWorld,
-                        ),
-                        stardate_week: None,
-                    });
-                }
-                movement_events.mission_events.push(MissionEvent {
-                    fleet_idx,
-                    owner_empire_raw,
-                    kind: Mission::ViewWorld,
-                    outcome: if planet_idx.is_some() {
-                        MissionOutcome::Succeeded
-                    } else {
-                        MissionOutcome::Failed
-                    },
-                    abort_reason: None,
-                    planet_idx,
-                    location_coords: Some(coords),
-                    target_coords: Some(coords),
-                    stardate_week: None,
-                });
-                // ViewWorld is one-shot: schedule the HoldPosition reset.
-                view_world_on_station.push(fleet_idx);
-            }
             _ => {}
         }
-    }
-
-    // ViewWorld is one-shot: reset to HoldPosition after each on-station observation fires.
-    for fleet_idx in view_world_on_station {
-        movement::set_view_world_completion_hold(&mut game_data.fleets.records[fleet_idx]);
     }
 }
 
@@ -790,9 +741,7 @@ fn finalize_pending_observation_events(
         if mission_aborted {
             continue;
         }
-        if pending.kind == Mission::ViewWorld && pending.outcome == MissionOutcome::Succeeded {
-            movement::set_view_world_completion_hold(fleet);
-        }
+        let moved_out = pending.kind == Mission::ViewWorld && movement::complete_view_world(fleet);
         if let Some(intel_event) = pending.intel_event {
             movement_events.planet_intel_events.push(intel_event);
         }
@@ -807,6 +756,19 @@ fn finalize_pending_observation_events(
             target_coords: Some(pending.target_coords),
             stardate_week: None,
         });
+        if moved_out {
+            movement_events.mission_events.push(MissionEvent {
+                fleet_idx: pending.fleet_idx,
+                owner_empire_raw: pending.owner_empire_raw,
+                kind: Mission::MoveOnly,
+                outcome: MissionOutcome::Succeeded,
+                abort_reason: None,
+                planet_idx: None,
+                location_coords: Some(pending.location_coords),
+                target_coords: Some(pending.target_coords),
+                stardate_week: None,
+            });
+        }
     }
 }
 

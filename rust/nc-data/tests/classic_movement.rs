@@ -17,8 +17,6 @@ const HOME: [u8; 2] = [16, 13];
 enum Year {
     /// Speed, order, and bytes 0x0B..=0x1E.
     State(u8, u8, &'static str),
-    /// The order resolved (View World: the fleet leaves its order).
-    Resolved,
     /// The fleet merged into its join host or was salvaged.
     Absorbed,
     /// The hostile strike year, with the retry speed and bytes when the
@@ -165,12 +163,6 @@ fn run_cases(cases: &[Case]) {
                         );
                     }
                 }
-                Year::Resolved => assert_ne!(
-                    fleet.standing_order_code_raw(),
-                    mission,
-                    "{} year {year} resolution",
-                    case.name
-                ),
                 Year::Absorbed => assert_eq!(
                     empire_one_fleets(&game_data),
                     fleets_before - 1,
@@ -780,7 +772,7 @@ const OBSERVER_CASES: &[Case] = &[
             Year::state(1, 9, "0b0b7f00989927287f0098992728000000000000"),
             Year::state(1, 9, "0c0c7c00f0ff8b117c00f0ff8b11000000000000"),
             Year::state(1, 9, "0c0c8000000000008000000000007fc8b0ccb02f"),
-            Year::Resolved,
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
         ],
     },
     Case {
@@ -791,7 +783,8 @@ const OBSERVER_CASES: &[Case] = &[
             Year::state(1, 9, "0a0c80b000000000800000000000000000000000"),
             Year::state(1, 9, "0b0c807001000000800000000000000000000000"),
             Year::state(1, 9, "0c0c80000000000080000000000062000000140b"),
-            Year::Resolved,
+            Year::state(5, 1, "0c0c800000000000800000000000810000000000"),
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
         ],
     },
     Case {
@@ -800,7 +793,7 @@ const OBSERVER_CASES: &[Case] = &[
         years: &[
             Year::state(3, 9, "0909803068e6096a803068e6096a000000000000"),
             Year::state(3, 9, "0c0c7c0047008c117c0047008c11000000000000"),
-            Year::Resolved,
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
         ],
     },
     Case {
@@ -808,7 +801,7 @@ const OBSERVER_CASES: &[Case] = &[
         start: "0100010200010000000503090c800000000000800000000000810000000000090c0c0100000600000100000000000000000000000000",
         years: &[
             Year::state(3, 9, "0b0c7fc0feffff7f800000000000000000000000"),
-            Year::Resolved,
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
         ],
     },
     Case {
@@ -816,13 +809,24 @@ const OBSERVER_CASES: &[Case] = &[
         start: "01000102000100000005050808800000000000800000000000810000000000090c0c0100000600000100000000000000000000000000",
         years: &[
             Year::state(5, 9, "0b0b7fa0a19927287fa0a1992728000000000000"),
-            Year::Resolved,
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
         ],
     },
     Case {
         name: "m09-v5-s3",
         start: "0100010200010000000505090c800000000000800000000000810000000000090c0c0100000600000100000000000000000000000000",
-        years: &[Year::Resolved],
+        years: &[
+            Year::state(5, 1, "0c0c800000000000800000000000810000000000"),
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
+        ],
+    },
+    Case {
+        name: "m09-v4-d1",
+        start: "01000102000100000005040b0b800000000000800000000000810000000000090c0c0100000600000100000000000000000000000000",
+        years: &[
+            Year::state(5, 1, "0c0c8000000000008000000000007f6827766227"),
+            Year::state(0, 0, "0c0c800000000000800000000000000000000000"),
+        ],
     },
     Case {
         name: "m11-v1-d4",

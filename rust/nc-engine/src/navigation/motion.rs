@@ -221,6 +221,20 @@ pub(crate) struct FleetYear {
 }
 
 pub(crate) fn run_year(
+    motion: Motion,
+    speed: u8,
+    max_speed: u8,
+    order: Order,
+    target: [u8; 2],
+    depth: Real48,
+    course: &mut Course,
+) -> FleetYear {
+    run_ticks(motion, speed, max_speed, order, target, depth, course, 1)
+}
+
+/// The year's ticks from `first_tick` to the last.
+#[allow(clippy::too_many_arguments)]
+pub(crate) fn run_ticks(
     mut motion: Motion,
     mut speed: u8,
     max_speed: u8,
@@ -228,9 +242,10 @@ pub(crate) fn run_year(
     target: [u8; 2],
     depth: Real48,
     course: &mut Course,
+    first_tick: u8,
 ) -> FleetYear {
     let rule = ArrivalRule::for_order(order);
-    for tick in 1..=TICKS_PER_YEAR {
+    for tick in first_tick..=TICKS_PER_YEAR {
         let before = (motion, speed);
         motion = step(motion, speed, course, depth);
         if speed == 0 && !prelude_arrived(order, motion, target, depth) {

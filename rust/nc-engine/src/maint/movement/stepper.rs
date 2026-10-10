@@ -1,4 +1,6 @@
-use crate::navigation::motion::{ArrivalRule, Course, FleetYear, Motion, run_year, target_depth};
+use crate::navigation::motion::{
+    ArrivalRule, Course, FleetYear, Motion, run_ticks, run_year, target_depth,
+};
 use crate::navigation::{plan_route_with_intel, visible_hazard_intel_is_empty};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use nc_data::Real48;
@@ -24,7 +26,6 @@ fn order_persists_on_arrival(order: Order) -> bool {
             | Order::GuardBlockadeWorld
             | Order::JoinAnotherFleet
             | Order::RendezvousSector
-            | Order::ViewWorld
     )
 }
 
@@ -108,6 +109,25 @@ pub(super) fn process_single_fleet_movement(
             year.motion.write_to(fleet);
             fleet.set_current_speed(year.speed);
             YearEnd::Underway
+        }
+        Some(tick) if order == Order::ViewWorld => {
+            // ECMAINT's View World action (0b5d:219c) turns the order into a
+            // Move out of the system at full speed, and the fleet climbs for
+            // the rest of the year. The order stays View until the viewing
+            // report is finalized after combat (`complete_view_world`).
+            let out = run_ticks(
+                year.motion,
+                fleet.max_speed(),
+                fleet.max_speed(),
+                Order::MoveOnly,
+                target,
+                Real48::ZERO,
+                &mut Course::direct(target),
+                tick + 1,
+            );
+            out.motion.write_to(fleet);
+            fleet.set_current_speed(0);
+            YearEnd::Resolved
         }
         Some(_) if is_hostile_order(order) => {
             let (motion, speed) = year.before_resolution;
