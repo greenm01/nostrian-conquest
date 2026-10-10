@@ -158,7 +158,7 @@ fn show_door_startup_error(parsed: &ParsedLaunchArgs, error: &(dyn std::error::E
     if terminal.dump_text_capture(&message).is_ok() {
         match terminal.read_key() {
             Ok(_) => {}
-            Err(err) if is_closed_input_error(err.as_ref()) => {}
+            Err(err) if is_hangup_error(err.as_ref()) => {}
             Err(_) => {}
         }
     }
@@ -269,10 +269,14 @@ fn run_interactive_inner(
     terminal: &mut dyn Terminal,
 ) -> Result<SessionEnd, Box<dyn std::error::Error>> {
     loop {
-        render_with_logging(app, terminal)?;
+        match render_with_logging(app, terminal) {
+            Ok(()) => {}
+            Err(err) if is_hangup_error(err.as_ref()) => return Ok(SessionEnd::InputClosed),
+            Err(err) => return Err(err),
+        }
         let key = match terminal.read_key() {
             Ok(key) => key,
-            Err(err) if is_closed_input_error(err.as_ref()) => return Ok(SessionEnd::InputClosed),
+            Err(err) if is_hangup_error(err.as_ref()) => return Ok(SessionEnd::InputClosed),
             Err(err) => match err.downcast_ref::<DoorTimeout>() {
                 Some(timeout) => {
                     tracing::info!(
@@ -327,7 +331,9 @@ fn run_interactive_inner(
     }
 }
 
-fn is_closed_input_error(err: &(dyn std::error::Error + 'static)) -> bool {
+/// The caller hung up: reads and writes on the door connection fail this way
+/// after a carrier drop.
+fn is_hangup_error(err: &(dyn std::error::Error + 'static)) -> bool {
     err.downcast_ref::<io::Error>().is_some_and(|io_err| {
         matches!(
             io_err.kind(),
@@ -340,7 +346,7 @@ fn is_closed_input_error(err: &(dyn std::error::Error + 'static)) -> bool {
     })
 }
 
-/// Reads from a pty whose other side hung up (carrier drop) fail with EIO.
+/// I/O on a pty whose other side hung up (carrier drop) fails with EIO.
 #[cfg(unix)]
 fn is_pty_hangup(err: &io::Error) -> bool {
     const EIO: i32 = 5;
@@ -1029,6 +1035,7 @@ mod tests {
         captures: Vec<String>,
         timeout_after_keys: Option<DoorTimeout>,
         output_hung_up: bool,
+        render_error: Option<io::ErrorKind>,
     }
 
     impl ScriptedTerminal {
@@ -1039,6 +1046,7 @@ mod tests {
                 captures: Vec::new(),
                 timeout_after_keys: None,
                 output_hung_up: false,
+                render_error: None,
             }
         }
     }
@@ -1048,6 +1056,9 @@ mod tests {
             &mut self,
             playfield: &crate::screen::PlayfieldBuffer,
         ) -> Result<(), Box<dyn std::error::Error>> {
+            if let Some(kind) = self.render_error {
+                return Err(Box::new(io::Error::new(kind, "render to dropped carrier")));
+            }
             self.frames.push(
                 (0..playfield.height())
                     .map(|row| playfield.plain_line(row))
@@ -1363,7 +1374,7 @@ mod tests {
     fn pty_hangup_eio_counts_as_closed_input() {
         const EIO: i32 = 5;
         let err: Box<dyn std::error::Error> = Box::new(io::Error::from_raw_os_error(EIO));
-        assert!(super::is_closed_input_error(err.as_ref()));
+        assert!(super::is_hangup_error(err.as_ref()));
     }
 
     #[test]
@@ -1382,6 +1393,29 @@ mod tests {
         terminal.output_hung_up = true;
 
         run_interactive(&mut app, &mut terminal, false).expect("a hangup is a normal exit");
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn carrier_drop_during_a_render_exits_cleanly() {
+        let game_dir = temp_first_time_game_copy();
+        let config = AppConfig {
+            game_dir: game_dir.clone(),
+            player_record_index_1_based: 1,
+            export_root: None,
+            queue_dir: None,
+            session_timeout_secs: None,
+            game_config: RuntimeConfig::default(),
+        };
+        for kind in [io::ErrorKind::BrokenPipe, io::ErrorKind::ConnectionReset] {
+            let mut app = App::load(config.clone()).expect("app should load");
+            let mut terminal = ScriptedTerminal::new([key(KeyCode::Char('x'))]);
+            terminal.render_error = Some(kind);
+            terminal.output_hung_up = true;
+
+            run_interactive(&mut app, &mut terminal, false).expect("a hangup is a normal exit");
+        }
 
         let _ = fs::remove_dir_all(&game_dir);
     }
@@ -1527,17 +1561,15 @@ mod tests {
 
     #[test]
     fn closed_input_errors_are_treated_as_clean_disconnects() {
-        assert!(super::is_closed_input_error(&std::io::Error::new(
+        assert!(super::is_hangup_error(&std::io::Error::new(
             std::io::ErrorKind::UnexpectedEof,
             "eof"
         )));
-        assert!(super::is_closed_input_error(&std::io::Error::new(
+        assert!(super::is_hangup_error(&std::io::Error::new(
             std::io::ErrorKind::BrokenPipe,
             "pipe ended"
         )));
-        assert!(!super::is_closed_input_error(&std::io::Error::other(
-            "boom"
-        )));
+        assert!(!super::is_hangup_error(&std::io::Error::other("boom")));
     }
 
     #[test]

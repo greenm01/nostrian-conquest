@@ -446,7 +446,10 @@ under the real name still resumes that seat.
 
 In door mode the time limit is enforced: when it runs out, `nc-door` shows a
 short message and exits normally, just as if the caller had quit. Game state
-is saved as each action is applied, so nothing is lost. A non-BBS campaign
+is saved as each action is applied, so nothing is lost. When the limit is
+longer than two minutes, the caller sees a one-line warning two minutes before
+it runs out, on the row above the command line; the next screen redraw clears
+it. The time limit counts from door launch. A non-BBS campaign
 played through door mode also ends the session after
 `session_max_idle_minutes` without a keypress. BBS campaigns have no idle
 setting; the time limit bounds an abandoned session instead.
