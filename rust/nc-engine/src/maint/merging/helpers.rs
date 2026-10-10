@@ -22,10 +22,6 @@ pub(super) fn merge_one_fleet_into_host(
     let sc = game_data.fleets.records[donor_idx].scout_count();
     let strength_cache = game_data.fleets.records[donor_idx].strength_cache_raw();
 
-    let donor_roe = game_data.fleets.records[donor_idx].rules_of_engagement();
-    let donor_is_combat = game_data.fleets.records[donor_idx].has_any_combat_ships();
-    let host_is_combat_before = game_data.fleets.records[host_idx].has_any_combat_ships();
-
     let host = &mut game_data.fleets.records[host_idx];
     host.set_battleship_count(host.battleship_count().saturating_add(bb));
     host.set_cruiser_count(host.cruiser_count().saturating_add(ca));
@@ -38,10 +34,6 @@ pub(super) fn merge_one_fleet_into_host(
     // consolidation) runs 2895:4a6b, which adds the 0x34 word; ECGAME's
     // merges do not.
     host.set_strength_cache_raw(host.strength_cache_raw().wrapping_add(strength_cache));
+    // 2895:4a6b leaves the host's ROE alone.
     host.recompute_max_speed_from_composition();
-
-    if !host_is_combat_before && donor_is_combat {
-        // Support-only host absorbing a combat fleet assumes the combat ROE.
-        host.set_rules_of_engagement(donor_roe);
-    }
 }

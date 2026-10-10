@@ -657,11 +657,11 @@ fn commission_ship_reuses_lowest_available_owned_fleet_number() {
     fleet_a.set_owner_empire_raw(1);
     fleet_a.set_fleet_id_word_raw(1);
     fleet_a.set_local_slot_word_raw(1);
-    fleet_a.set_next_fleet_link_word_raw(3);
+    fleet_a.set_next_fleet_link_word_raw(2);
 
     let mut fleet_b = FleetRecord::new_zeroed();
     fleet_b.set_owner_empire_raw(1);
-    fleet_b.set_fleet_id_word_raw(3);
+    fleet_b.set_fleet_id_word_raw(2);
     fleet_b.set_local_slot_word_raw(3);
     fleet_b.set_previous_fleet_id(1);
 
@@ -681,21 +681,29 @@ fn commission_ship_reuses_lowest_available_owned_fleet_number() {
         conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
     };
 
+    // ECGAME appends fleet #2 as record 3 (id 3), then sorts the chain by
+    // fleet number: #2 moves into record 2, #3 into record 3, and the
+    // next/id/previous words stay with their records.
     let result = data.commission_planet_stardock_slot(1, 1, 0).unwrap();
     assert_eq!(
         result,
         CommissionResult::Fleet {
-            fleet_record_index_1_based: 3
+            fleet_record_index_1_based: 2
         }
     );
     assert_eq!(data.player.records[0].fleet_chain_head_raw(), 1);
     assert_eq!(data.fleets.records[0].next_fleet_link_word_raw(), 2);
-    assert_eq!(data.fleets.records[1].previous_fleet_id(), 2);
-    let fleet = &data.fleets.records[2];
+    let fleet = &data.fleets.records[1];
     assert_eq!(fleet.local_slot_word_raw(), 2);
+    assert_eq!(fleet.destroyer_count(), 1);
     assert_eq!(fleet.fleet_id_word_raw(), 2);
     assert_eq!(fleet.previous_fleet_id(), 1);
     assert_eq!(fleet.next_fleet_link_word_raw(), 3);
+    let moved = &data.fleets.records[2];
+    assert_eq!(moved.local_slot_word_raw(), 3);
+    assert_eq!(moved.fleet_id_word_raw(), 3);
+    assert_eq!(moved.previous_fleet_id(), 2);
+    assert_eq!(moved.next_fleet_link_word_raw(), 0);
 }
 
 #[test]

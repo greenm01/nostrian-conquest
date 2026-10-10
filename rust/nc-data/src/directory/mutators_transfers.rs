@@ -120,9 +120,8 @@ impl CoreGameData {
         }
         if donor_mission_invalidated.is_some() {
             set_fleet_to_local_hold(&mut donor_after);
-        } else {
-            normalize_fleet_roe_for_composition(&mut donor_after);
         }
+        clear_roe_without_warships(&mut donor_after);
 
         let mut new_fleet = FleetRecord::new_zeroed();
         new_fleet.set_owner_empire_raw(owner_empire);
@@ -148,12 +147,10 @@ impl CoreGameData {
         new_fleet.set_etac_count(selection.etacs);
         new_fleet.recompute_max_speed_from_composition();
         new_fleet.set_current_speed(0);
-        normalize_fleet_roe_for_composition(&mut new_fleet);
+        clear_roe_without_warships(&mut new_fleet);
 
+        let donor_fleet_number = donor_after.local_slot_word_raw();
         self.fleets.records[donor_fleet_record_index_1_based - 1] = donor_after;
-        self.fleets.records.push(new_fleet);
-        let new_fleet_record_index_1_based = self.fleets.records.len();
-
         let player = self
             .player
             .records
@@ -161,7 +158,18 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_index_1_based,
             })?;
-        rebuild_owner_fleet_chain(&mut self.fleets.records, player, owner_empire);
+        let new_fleet_record_index_1_based =
+            append_fleet_to_owner_chain(&mut self.fleets.records, player, new_fleet);
+        // The chain sort can move the donor's contents to another record.
+        let donor_fleet_record_index_1_based = self
+            .fleets
+            .records
+            .iter()
+            .position(|fleet| {
+                fleet.owner_empire_raw() == owner_empire
+                    && fleet.local_slot_word_raw() == donor_fleet_number
+            })
+            .map_or(donor_fleet_record_index_1_based, |idx| idx + 1);
 
         Ok(FleetDetachResult {
             donor_fleet_record_index_1_based,
@@ -335,13 +343,9 @@ impl CoreGameData {
             host_after.set_current_speed(host_after.max_speed());
         }
 
-        if !host.has_any_combat_ships() && donor.has_any_combat_ships() {
-            // Transferring combat ships to a support-only host: host assumes donor's ROE.
-            host_after.set_rules_of_engagement(donor.rules_of_engagement());
-        }
-
+        // ECGAME's transfer leaves the host's ROE alone.
         normalize_post_composition_fleet_state(&mut donor_after);
-        normalize_fleet_roe_for_composition(&mut host_after);
+        clear_roe_without_warships(&mut donor_after);
 
         self.fleets.records[donor_fleet_record_index_1_based - 1] = donor_after;
         self.fleets.records[host_fleet_record_index_1_based - 1] = host_after;
