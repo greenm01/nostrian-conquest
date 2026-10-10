@@ -68,7 +68,12 @@ year. Classic has no blockade departure strike: a blockader catches a fleet leav
 its world only through the normal sighting and intercept rolls while the
 leaver is still in orbit, and only if the blockader's empire has declared the
 leaver an enemy. The Rust departure strike from t021 goes. The full rule and
-its constants are in [ec-encounter-spec.md](../../dev/ec-encounter-spec.md). The player manual's "Who Fights Whom"
+its constants are in [ec-encounter-spec.md](../../dev/ec-encounter-spec.md). Rust departs from classic in one place, with the user's approval on
+2026-10-10, because classic has a bug there: in a sector with no world,
+classic reads the world's owner through a garbage pointer. Rust treats such a
+sector as nobody's system. Rust does not copy classic bugs.
+
+The player manual's "Who Fights Whom"
 section and the combat spec change with the implementation. That work depends
 on the depth layer from t031.
 

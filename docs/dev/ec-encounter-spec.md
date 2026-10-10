@@ -372,11 +372,12 @@ repeat against a fleet that has already fought (aw 3 -> 1%). [P bd5, d4]
 - `guarded_base_of(F)` (`1b05:2133`): the base of F's owner with
   `id == F.+0x23`.
 
-### Deep-space note [C]
+### Worldless sectors: a deliberate difference [C]
 The planet lookup (`31f9:0000`) returns 0 when the sector has no world, and
-classic then reads owner byte `+0x5d` through the slot-0 pointer (garbage).
-This only matters for a layer-1 observer in a worldless sector (H1/H2/N1/N2
-tests). Rust should treat "no world" as unowned / not O's system.
+classic then reads owner byte `+0x5d` through the slot-0 pointer, which is
+garbage. This matters only for a layer-1 observer in a worldless sector (the
+H1, H2, N1, and N2 tests). It is a classic bug, so Rust does not copy it: a
+sector with no world belongs to no one and is nobody's system.
 
 ---------------------------------------------------------------------------
 
