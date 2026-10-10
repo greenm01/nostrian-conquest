@@ -1,3 +1,4 @@
+use nc_data::Real48;
 use std::fs;
 use std::path::Path;
 
@@ -106,9 +107,11 @@ pub(crate) fn set_planet_potential(
             .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
-        // Raw bytes: potential production, then present production's exponent.
-        record.raw[0x02] = p1;
-        record.raw[0x03] = p2;
+        // The potential, then the present production real's exponent byte.
+        record.set_potential_production_points(p1);
+        let mut production = record.planet.production.to_bytes();
+        production[0] = p2;
+        record.planet.production = Real48::from_bytes(production);
         Ok(())
     })?;
 
@@ -232,20 +235,16 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
             record.set_coords_raw(coords);
             record.set_owner_empire_slot_raw(owner);
             record.set_ownership_status_raw(2);
-            if idx == 16 {
-                let mut buf = [0u8; 13];
-                buf[..13].copy_from_slice(b"Dust Bowl Yet");
-                record.set_planet_name_buffer(9, &buf);
-            } else {
-                record.set_planet_name(name);
-            }
-            // Raw bytes of the sample file: potential production, present
-            // production (100), and stored goods.
-            record.raw[0x02..0x04].copy_from_slice(&potential);
-            record.raw[0x08..0x0A].copy_from_slice(&u16::to_le_bytes(fact_word));
+            record.set_planet_name(name);
+            // The sample file's bytes: the potential and the production
+            // real's exponent, the production mantissa's top byte and the
+            // goods exponent, and the goods mantissa's top byte.
+            let [fact_high, goods_exponent] = u16::to_le_bytes(fact_word);
+            record.set_potential_production_points(potential[0]);
+            record.planet.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, fact_high]);
+            record.planet.stored_goods = Real48::from_bytes([goods_exponent, 0, 0, 0, 0, tax]);
             record.set_army_count_raw(if idx == 16 { 142 } else { 10 });
             record.set_ground_batteries_raw(if idx == 16 { 15 } else { 4 });
-            record.raw[0x0E] = tax;
         }
 
         // Unowned planets
@@ -274,8 +273,9 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
             record.set_owner_empire_slot_raw(0);
             record.set_ownership_status_raw(0);
             record.set_status_or_name_prefix_raw("Unowned");
-            record.raw[0x02..0x04].copy_from_slice(&potential);
-            record.raw[0x04..0x0A].fill(0);
+            record.set_potential_production_points(potential[0]);
+            record.planet.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, 0]);
+            record.planet.stored_goods = Real48::ZERO;
             record.set_army_count_raw(0);
             record.set_ground_batteries_raw(0);
         }

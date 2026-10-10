@@ -47,6 +47,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!("Planets:");
     for (idx, record) in data.planets.records.iter().enumerate().take(5) {
+        let bytes = record.to_bytes();
         println!(
             "  planet {:02}: coords={:?} hdr={:02x?} len={} text='{}' tail58={:02x?} fact_word={:04x} summary='{}'",
             idx + 1,
@@ -54,8 +55,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.header_bytes(),
             record.string_len(),
             record.status_or_name_summary(),
-            &record.raw[0x58..0x61],
-            u16::from_le_bytes([record.raw[0x08], record.raw[0x09]]),
+            &bytes[0x58..0x61],
+            u16::from_le_bytes([bytes[0x08], bytes[0x09]]),
             record.derived_summary()
         );
     }
@@ -73,10 +74,10 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!("Planet Seeds:");
         for (idx, record) in homeworld_like {
             println!(
-                "  planet {:02}: summary='{}' header_value_raw={:02x}",
+                "  planet {:02}: summary='{}' potential={}",
                 idx + 1,
                 record.derived_summary(),
-                record.header_value_raw()
+                record.potential_production_points()
             );
         }
     }

@@ -2,6 +2,7 @@ mod common;
 
 use common::{
     cleanup_dir, export_campaign_db, repo_root, run_nc_cli, run_nc_cli_in_dir, unique_temp_dir,
+    without_unread_bytes,
 };
 use std::fs;
 
@@ -21,8 +22,10 @@ fn scenario_bombard_recreates_known_valid_bombard_pre_fixture() {
     for name in ["FLEETS.DAT", "PLANETS.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved bombard pre-fixture"
         );
     }
@@ -64,8 +67,10 @@ fn scenario_init_replayable_bombard_matches_exact_preserved_pre_fixture() {
     ] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved bombard pre-fixture"
         );
     }
@@ -140,8 +145,10 @@ fn bombard_init_with_fixture_coords_matches_exact_preserved_pre_fixture() {
     for name in ["FLEETS.DAT", "PLANETS.DAT"] {
         let expected = fs::read(fixture_pre.join(name)).unwrap();
         let actual = fs::read(target.join(name)).unwrap();
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            actual, expected,
+            without_unread_bytes(name, &actual),
+            without_unread_bytes(name, &expected),
             "{name} does not match preserved bombard pre-fixture when initialized via bombard-init"
         );
     }

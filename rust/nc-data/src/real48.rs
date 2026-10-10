@@ -69,6 +69,38 @@ impl Real48 {
         })
     }
 
+    /// The nearest real to `value`, rounding the mantissa to nearest. A
+    /// value the real cannot hold (not finite, or outside its exponent
+    /// range) becomes 0.
+    pub fn from_f64(value: f64) -> Self {
+        if !value.is_finite() || value == 0.0 {
+            return Self::ZERO;
+        }
+        let abs = value.abs();
+        let exponent_unbiased = abs.log2().floor() as i32;
+        let normalized = abs / 2f64.powi(exponent_unbiased);
+        if !(1.0..2.0).contains(&normalized) {
+            return Self::ZERO;
+        }
+        let mut exp = exponent_unbiased + 129;
+        if !(1..=255).contains(&exp) {
+            return Self::ZERO;
+        }
+        let mut mantissa = ((normalized - 1.0) * (HIDDEN as f64)).round() as u64;
+        if mantissa == HIDDEN {
+            mantissa = 0;
+            exp += 1;
+            if exp > 255 {
+                return Self::ZERO;
+            }
+        }
+        Self::pack(Parts {
+            exp,
+            negative: value.is_sign_negative(),
+            mantissa: mantissa | HIDDEN,
+        })
+    }
+
     /// Exact conversion; a 40-bit significand always fits an `f64`.
     pub fn to_f64(self) -> f64 {
         if self.is_zero() {

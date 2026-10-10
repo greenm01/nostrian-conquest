@@ -114,11 +114,11 @@ impl CoreGameData {
                 continue;
             }
             let planet_index_1_based = idx + 1;
-            if record.header_value_raw() != 100 {
+            if record.potential_production_points() != 100 {
                 errors.push(format!(
-                    "PLANET[{}].header_value expected 100 for homeworld seed, got {}",
+                    "PLANET[{}].potential_production expected 100 for homeworld seed, got {}",
                     planet_index_1_based,
-                    record.header_value_raw()
+                    record.potential_production_points()
                 ));
             }
             if record.present_production() != 100.0 {
@@ -154,13 +154,6 @@ impl CoreGameData {
                     "PLANET[{}].stored_goods expected 35 for homeworld seed, got {}",
                     planet_index_1_based,
                     record.stored_goods()
-                ));
-            }
-            if record.population_raw() != [0; 6] {
-                errors.push(format!(
-                    "PLANET[{}].population_raw expected all zeroes for homeworld seed, got {:?}",
-                    planet_index_1_based,
-                    record.population_raw()
                 ));
             }
             if (0..10)
@@ -239,13 +232,6 @@ impl CoreGameData {
                     "PLANET[{}].stored_goods expected 0 for unowned baseline, got {}",
                     planet_index_1_based,
                     record.stored_goods()
-                ));
-            }
-            if record.population_raw() != [0; 6] {
-                errors.push(format!(
-                    "PLANET[{}].population_raw expected all zeroes for unowned baseline, got {:?}",
-                    planet_index_1_based,
-                    record.population_raw()
                 ));
             }
             if (0..10)

@@ -1,5 +1,6 @@
 mod common;
 
+use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
@@ -17,7 +18,11 @@ fn round_trip_player_dat() {
 fn round_trip_planets_dat() {
     let bytes = read_fixture("PLANETS.DAT");
     let parsed = PlanetDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
+    // The stale name tails are not carried; everything classic reads is.
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Planets, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Planets, &bytes)
+    );
 }
 
 #[test]
@@ -29,7 +34,13 @@ fn initialized_planets_expose_named_homeworld_seeds() {
         .iter()
         .enumerate()
         .filter(|(_, record)| record.is_named_homeworld_seed())
-        .map(|(idx, record)| (idx + 1, record.coords_raw(), record.header_value_raw()))
+        .map(|(idx, record)| {
+            (
+                idx + 1,
+                record.coords_raw(),
+                record.potential_production_points(),
+            )
+        })
         .collect::<Vec<_>>();
 
     assert_eq!(
@@ -72,9 +83,10 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
     assert_eq!(planet.stardock_count_raw(1), 1);
     assert_eq!(planet.stardock_kind_raw(1), 2);
     assert_eq!(planet.stardock_count_raw(7), 300);
-    assert_eq!(planet.raw[0x3C], 1);
-    assert_eq!(planet.raw[0x54], 44);
-    assert_eq!(planet.raw[0x55], 1);
+    let bytes = planet.to_bytes();
+    assert_eq!(bytes[0x3C], 1);
+    assert_eq!(bytes[0x54], 44);
+    assert_eq!(bytes[0x55], 1);
 }
 
 #[test]
@@ -378,9 +390,11 @@ fn core_game_data_round_trips_post_maintenance_directory() {
         "SETUP.DAT",
         "CONQUEST.DAT",
     ] {
+        let file = ClassicFile::from_file_name(name).expect("a core classic file");
+        // Bytes no classic program reads are not carried.
         assert_eq!(
-            fs::read(temp_dir.join(name)).unwrap(),
-            fs::read(source_dir.join(name)).unwrap(),
+            without_ignored_bytes(file, &fs::read(temp_dir.join(name)).unwrap()),
+            without_ignored_bytes(file, &fs::read(source_dir.join(name)).unwrap()),
             "{name} should round-trip through CoreGameData unchanged"
         );
     }

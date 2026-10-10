@@ -249,13 +249,16 @@ fn rename_owned_planet_rejects_non_printable_ascii_names() {
 }
 
 #[test]
-fn set_planet_name_truncates_on_a_char_boundary() {
+fn set_planet_name_stores_classic_text_up_to_twenty_chars() {
     let mut planet = PlanetRecord::new_zeroed();
     planet.set_planet_name("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
-    assert_eq!(planet.planet_name(), "\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.planet_name(), "????");
 
     planet.set_planet_name("Fourteen Chars");
-    assert_eq!(planet.planet_name(), "Fourteen Char");
+    assert_eq!(planet.planet_name(), "Fourteen Chars");
+
+    planet.set_planet_name("Twenty-one characters");
+    assert_eq!(planet.planet_name(), "Twenty-one character");
 }
 
 #[test]
@@ -357,9 +360,10 @@ fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
     assert_eq!(planet.stardock_kind_raw(3), 4);
     assert_eq!(planet.stardock_kind_raw(6), 9);
 
-    assert_eq!(planet.raw[0x38..0x3C], [1, 0, 0, 0]);
-    assert_eq!(planet.raw[0x44..0x48], [2, 1, 0, 0]);
-    assert_eq!(planet.raw[0x50..0x54], 70_000u32.to_le_bytes());
+    let bytes = planet.to_bytes();
+    assert_eq!(bytes[0x38..0x3C], [1, 0, 0, 0]);
+    assert_eq!(bytes[0x44..0x48], [2, 1, 0, 0]);
+    assert_eq!(bytes[0x50..0x54], 70_000u32.to_le_bytes());
 }
 
 #[test]
@@ -1168,17 +1172,13 @@ fn can_set_purge_after_turns_raw() {
 }
 
 #[test]
-fn planet_status_prefix_setter_preserves_hidden_tail_bytes() {
-    let mut record = PlanetRecord {
-        raw: [0u8; PLANET_RECORD_SIZE],
-    };
-    record.raw[0x17..0x1D].copy_from_slice(&[1, 2, 3, 4, 5, 6]);
-
+fn planet_status_prefix_setter_stores_the_name() {
+    let mut record = PlanetRecord::new_zeroed();
     record.set_status_or_name_prefix_raw("Unowned");
 
     assert_eq!(record.string_len(), 7);
     assert_eq!(record.status_or_name_summary(), "Unowned");
-    assert_eq!(&record.raw[0x17..0x1D], &[1, 2, 3, 4, 5, 6]);
+    assert_eq!(&record.to_bytes()[0x0F..0x17], b"\x07Unowned");
 }
 
 #[test]
@@ -1507,7 +1507,7 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5D] = 9;
+    data.planets.records[0].set_owner_empire_slot_raw(9);
     data.bases.records[0].set_base_id_raw(1);
     data.bases.records[0].set_owner_empire_raw(0);
 
@@ -1557,7 +1557,7 @@ fn core_game_data_initialized_planet_ownership_errors_catch_non_homeworld_owner(
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5D] = 2;
+    data.planets.records[0].set_owner_empire_slot_raw(2);
 
     assert_eq!(
         data.current_known_initialized_planet_ownership_errors(),
@@ -1580,7 +1580,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].raw[0x5A] = 1;
+    data.planets.records[14].set_ground_batteries_raw(1);
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1600,7 +1600,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].raw[0x0E] = 11;
+    data.planets.records[14].set_stored_goods(34.75);
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1620,7 +1620,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_owned_marker() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x5A] = 1;
+    data.planets.records[0].set_ground_batteries_raw(1);
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
@@ -1640,7 +1640,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
         conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].raw[0x09] = 0x81;
+    data.planets.records[0].set_stored_goods(1.0);
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),

@@ -1209,7 +1209,8 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(attacker.current_speed(), 0);
     assert_eq!(attacker.army_count(), 0);
     assert_eq!(target.owner_empire_slot_raw(), 1);
-    assert_eq!(target.ownership_status_raw(), 2);
+    // Just captured (ECMAINT 0xFA41 writes 0); the next pass steps it.
+    assert_eq!(target.ownership_status_raw(), 0);
     // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
     // both batteries survive and fire 180 AS on the landing. Each transport
     // costs 20 hits, so 15 sink; 25 armies land, win, and pass the batteries

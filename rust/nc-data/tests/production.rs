@@ -6,31 +6,23 @@ use common::production::{
 };
 use nc_data::{
     BaseDat, CoreGameData, EmpireProductionRankingSort, FleetDat, IpbmDat, PlanetDat, PlayerDat,
-    decode_real48, encode_real48, starbase_growth_bonus_percent,
+    Real48, starbase_growth_bonus_percent,
 };
 use nc_engine::{build_seeded_initialized_game, build_seeded_new_game, run_maintenance_turn};
 
 #[test]
-fn decode_real48_matches_current_known_homeworld_values() {
-    let fifty = decode_real48([0x00, 0x00, 0x00, 0x00, 0x48, 0x86]).expect("real should decode");
-    let hundred = decode_real48([0x00, 0x00, 0x00, 0x00, 0x48, 0x87]).expect("real should decode");
+fn real48_reads_current_known_homeworld_values() {
+    let fifty = Real48::from_bytes([0x86, 0x00, 0x00, 0x00, 0x00, 0x48]).to_f64();
+    let hundred = Real48::from_bytes([0x87, 0x00, 0x00, 0x00, 0x00, 0x48]).to_f64();
 
-    assert!((fifty - 50.0).abs() < 0.001, "expected 50.0, got {fifty}");
-    assert!(
-        (hundred - 100.0).abs() < 0.001,
-        "expected 100.0, got {hundred}"
-    );
+    assert_eq!(fifty, 50.0);
+    assert_eq!(hundred, 100.0);
 }
 
 #[test]
-fn encode_real48_round_trips_common_production_values() {
+fn real48_round_trips_common_production_values() {
     for points in [0.0, 1.0, 25.0, 50.0, 75.0, 100.0] {
-        let encoded = encode_real48(points).expect("real should encode");
-        let decoded = decode_real48(encoded).expect("real should decode");
-        assert!(
-            (decoded - points).abs() < 0.001,
-            "expected {points}, got {decoded}"
-        );
+        assert_eq!(Real48::from_f64(points).to_f64(), points);
     }
 }
 
@@ -47,9 +39,9 @@ fn empire_economy_helpers_use_classic_production_terms() {
         },
         planets: PlanetDat {
             records: vec![
-                owned_planet(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 20, 10, 4),
-                owned_planet(1, 50, [0x00, 0x00, 0x00, 0x00, 0x48, 0x85], 15, 5, 1),
-                owned_planet(2, 200, [0x00, 0x00, 0x00, 0x00, 0x48, 0x88], 25, 8, 2),
+                owned_planet(1, 100, 100.0, 20, 10, 4),
+                owned_planet(1, 50, 25.0, 15, 5, 1),
+                owned_planet(2, 200, 200.0, 25, 8, 2),
             ],
         },
         fleets: FleetDat { records: vec![] },
@@ -85,13 +77,7 @@ fn total_available_points_matches_first_turn_tax_budget() {
             records: vec![player],
         },
         planets: PlanetDat {
-            records: vec![owned_homeworld_seed(
-                1,
-                100,
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-                10,
-                4,
-            )],
+            records: vec![owned_homeworld_seed(1, 100, 100.0, 10, 4)],
         },
         fleets: FleetDat { records: vec![] },
         bases: BaseDat { records: vec![] },
@@ -106,7 +92,7 @@ fn total_available_points_matches_first_turn_tax_budget() {
 
 #[test]
 fn named_homeworld_present_production_reads_its_stored_value() {
-    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 10, 4);
+    let mut planet = owned_homeworld_seed(1, 100, 100.0, 10, 4);
     planet.set_planet_name("Dust Bowl");
     planet.set_present_production(50.0);
     assert_eq!(planet.present_production_points(), Some(50));
@@ -114,7 +100,7 @@ fn named_homeworld_present_production_reads_its_stored_value() {
 
 #[test]
 fn naming_a_homeworld_seed_keeps_its_full_production() {
-    let mut planet = owned_homeworld_seed(1, 100, [0x00, 0x00, 0x00, 0x00, 0x48, 0x87], 10, 4);
+    let mut planet = owned_homeworld_seed(1, 100, 100.0, 10, 4);
     planet.set_planet_name("Codex Prime");
     assert_eq!(planet.present_production_points(), Some(100));
 }
@@ -150,7 +136,7 @@ fn maintenance_adds_tax_revenue_and_grows_planets_faster_under_lower_tax() {
     let mut high_tax = low_tax.clone();
     high_tax.set_tax_rate_raw(80);
 
-    let colony = owned_planet(1, 100, encode_real48(25.0).unwrap(), 0, 1, 0);
+    let colony = owned_planet(1, 100, 25.0, 0, 1, 0);
 
     let mut low_game = CoreGameData {
         player: PlayerDat {
@@ -197,7 +183,7 @@ fn maintenance_starbase_growth_bonus_accelerates_planet_development() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let colony = owned_planet(1, 100, encode_real48(50.0).unwrap(), 0, 3, 1);
+    let colony = owned_planet(1, 100, 50.0, 0, 3, 1);
     let mut with_base = CoreGameData {
         player: PlayerDat {
             records: vec![player.clone()],
@@ -247,7 +233,7 @@ fn maintenance_high_tax_above_65_can_reduce_present_production() {
     let mut player = player_with_empire_name("Alpha", 80, 0);
     player.set_owner_empire_raw(1);
 
-    let colony = owned_planet(1, 100, encode_real48(25.0).unwrap(), 0, 1, 0);
+    let colony = owned_planet(1, 100, 25.0, 0, 1, 0);
     let mut game = CoreGameData {
         player: PlayerDat {
             records: vec![player],
@@ -284,7 +270,7 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
     let mut player = player_with_empire_name("Alpha", 70, 0);
     player.set_owner_empire_raw(1);
 
-    let colony = owned_planet(1, 100, encode_real48(50.0).unwrap(), 0, 3, 1);
+    let colony = owned_planet(1, 100, 50.0, 0, 3, 1);
     let mut with_base = CoreGameData {
         player: PlayerDat {
             records: vec![player.clone()],
@@ -345,7 +331,7 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let colony = owned_planet(1, 100, encode_real48(50.0).unwrap(), 0, 3, 1);
+    let colony = owned_planet(1, 100, 50.0, 0, 3, 1);
     let mut with_base = CoreGameData {
         player: PlayerDat {
             records: vec![player.clone()],
@@ -404,7 +390,7 @@ fn maintenance_exact_ship_quantities_arrive_in_stardock() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
+    let mut planet = owned_planet(1, 100, 100.0, 100, 1, 0);
     planet.set_build_count_raw(0, 10);
     planet.set_build_kind_raw(0, 1);
     planet.set_build_count_raw(1, 40);
@@ -429,7 +415,7 @@ fn maintenance_starbases_arrive_in_the_starbase_stardock_slot() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
+    let mut planet = owned_planet(1, 100, 100.0, 100, 1, 0);
     planet.set_build_count_raw(0, 50);
     planet.set_build_kind_raw(0, 9);
     planet.set_build_count_raw(1, 50);
@@ -452,7 +438,7 @@ fn maintenance_army_build_completes_even_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
+    let mut planet = owned_planet(1, 100, 100.0, 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 8);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -473,7 +459,7 @@ fn maintenance_ground_battery_build_completes_even_when_stardock_is_full() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 1, 0);
+    let mut planet = owned_planet(1, 100, 100.0, 100, 1, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 7);
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
@@ -494,7 +480,7 @@ fn maintenance_army_build_waits_at_planet_cap() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, u8::MAX, 0);
+    let mut planet = owned_planet(1, 100, 100.0, 100, u8::MAX, 0);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 8);
 
@@ -512,7 +498,7 @@ fn maintenance_ground_battery_build_waits_at_planet_cap() {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_owner_empire_raw(1);
 
-    let mut planet = owned_planet(1, 100, encode_real48(100.0).unwrap(), 100, 0, u8::MAX);
+    let mut planet = owned_planet(1, 100, 100.0, 100, 0, u8::MAX);
     planet.set_build_count_raw(0, 100);
     planet.set_build_kind_raw(0, 7);
 

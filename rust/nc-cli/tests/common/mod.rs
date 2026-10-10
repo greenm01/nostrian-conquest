@@ -1,10 +1,22 @@
 #![allow(dead_code)]
 
+use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use nc_data::{CoreGameData, DiplomaticRelation};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::{SystemTime, UNIX_EPOCH};
+
+/// `bytes` with the bytes no classic program reads zeroed (planet and
+/// empire name tails, the dead FLEETS word, ranking slots past the player
+/// count, and so on), so a file the typed model wrote compares equal to
+/// the preserved fixture it reproduces.
+pub fn without_unread_bytes(file_name: &str, bytes: &[u8]) -> Vec<u8> {
+    match ClassicFile::from_file_name(file_name) {
+        Some(file) => without_ignored_bytes(file, bytes),
+        None => bytes.to_vec(),
+    }
+}
 
 pub fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

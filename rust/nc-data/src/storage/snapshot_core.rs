@@ -114,32 +114,33 @@ fn write_planet_rows(
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
+        let bytes = record.to_bytes();
         let [x, y] = record.coords_raw();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
             i64::from(x),
             i64::from(y),
-            encode_hex(&record.raw[0x02..0x04]),
-            encode_hex(&record.raw[0x04..0x0A]),
+            encode_hex(&bytes[0x02..0x04]),
+            encode_hex(&bytes[0x04..0x0A]),
             i64::from(u32::from_le_bytes([
-                record.raw[0x0A],
-                record.raw[0x0B],
-                record.raw[0x0C],
-                record.raw[0x0D],
+                bytes[0x0A],
+                bytes[0x0B],
+                bytes[0x0C],
+                bytes[0x0D]
             ])),
-            i64::from(record.raw[0x0E]),
-            i64::from(record.string_len()),
-            encode_hex(&record.raw[0x10..0x1D]),
-            encode_hex(&record.raw[0x1D..0x24]),
-            encode_hex(&record.raw[0x24..0x38]),
-            encode_hex(&record.raw[0x38..0x52]),
-            encode_hex(&record.raw[0x52..0x58]),
-            i64::from(record.army_count_raw()),
-            i64::from(record.ground_batteries_raw()),
+            i64::from(bytes[0x0E]),
+            i64::from(bytes[0x0F]),
+            encode_hex(&bytes[0x10..0x1D]),
+            encode_hex(&bytes[0x1D..0x24]),
+            encode_hex(&bytes[0x24..0x38]),
+            encode_hex(&bytes[0x38..0x52]),
+            encode_hex(&bytes[0x52..0x58]),
+            i64::from(bytes[0x58]),
+            i64::from(bytes[0x5A]),
             i64::from(record.ownership_status_raw()),
             i64::from(record.owner_empire_slot_raw()),
-            encode_hex(&record.raw[0x5E..PLANET_RECORD_SIZE]),
+            encode_hex(&bytes[0x5E..PLANET_RECORD_SIZE]),
         ])?;
     }
     Ok(())
@@ -469,26 +470,25 @@ fn load_planet_rows(
             tail_raw_hex,
         ) = row?;
 
-        let mut record = PlanetRecord::new_zeroed();
-        record.set_coords_raw([coords_x as u8, coords_y as u8]);
-        record.raw[0x02..0x04]
-            .copy_from_slice(&decode_hex_exact::<2>(&potential_production_raw_hex)?);
-        record.raw[0x04..0x0A].copy_from_slice(&decode_hex_exact::<6>(&factories_raw_hex)?);
-        record.raw[0x0A..0x0E].copy_from_slice(&(stored_production_points as u32).to_le_bytes());
-        record.raw[0x0E] = economy_marker_raw as u8;
-        record.raw[0x0F] = name_len_raw as u8;
-        record.raw[0x10..0x1D].copy_from_slice(&decode_hex_exact::<13>(&name_buffer_raw_hex)?);
-        record.raw[0x1D..0x24].copy_from_slice(&decode_hex_exact::<7>(&name_suffix_raw_hex)?);
-        record.raw[0x24..0x38].copy_from_slice(&decode_hex_exact::<20>(&build_queue_raw_hex)?);
-        record.raw[0x38..0x52].copy_from_slice(&decode_hex_exact::<26>(&infrastructure_raw_hex)?);
-        record.set_population_raw(decode_hex_exact::<6>(&population_raw_hex)?);
-        record.set_army_count_raw(armies_raw as u8);
-        record.set_ground_batteries_raw(ground_batteries_raw as u8);
-        record.set_ownership_status_raw(ownership_status_raw as u8);
-        record.set_owner_empire_slot_raw(owner_empire_slot_raw as u8);
-        record.raw[0x5E..PLANET_RECORD_SIZE]
-            .copy_from_slice(&decode_hex_exact::<3>(&tail_raw_hex)?);
-        records.push(record);
+        let mut bytes = [0u8; PLANET_RECORD_SIZE];
+        bytes[0x00] = coords_x as u8;
+        bytes[0x01] = coords_y as u8;
+        bytes[0x02..0x04].copy_from_slice(&decode_hex_exact::<2>(&potential_production_raw_hex)?);
+        bytes[0x04..0x0A].copy_from_slice(&decode_hex_exact::<6>(&factories_raw_hex)?);
+        bytes[0x0A..0x0E].copy_from_slice(&(stored_production_points as u32).to_le_bytes());
+        bytes[0x0E] = economy_marker_raw as u8;
+        bytes[0x0F] = name_len_raw as u8;
+        bytes[0x10..0x1D].copy_from_slice(&decode_hex_exact::<13>(&name_buffer_raw_hex)?);
+        bytes[0x1D..0x24].copy_from_slice(&decode_hex_exact::<7>(&name_suffix_raw_hex)?);
+        bytes[0x24..0x38].copy_from_slice(&decode_hex_exact::<20>(&build_queue_raw_hex)?);
+        bytes[0x38..0x52].copy_from_slice(&decode_hex_exact::<26>(&infrastructure_raw_hex)?);
+        bytes[0x52..0x58].copy_from_slice(&decode_hex_exact::<6>(&population_raw_hex)?);
+        bytes[0x58] = armies_raw as u8;
+        bytes[0x5A] = ground_batteries_raw as u8;
+        bytes[0x5C] = ownership_status_raw as u8;
+        bytes[0x5D] = owner_empire_slot_raw as u8;
+        bytes[0x5E..PLANET_RECORD_SIZE].copy_from_slice(&decode_hex_exact::<3>(&tail_raw_hex)?);
+        records.push(PlanetRecord::from_raw(bytes));
     }
     Ok(PlanetDat { records })
 }

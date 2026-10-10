@@ -6,7 +6,7 @@ use std::path::Path;
 
 use common::{
     cleanup_dir, ecmaint_oracle_available, run_classic_ecgame_smoke_with_alias, run_ecmaint_oracle,
-    run_nc_cli, unique_temp_dir,
+    run_nc_cli, unique_temp_dir, without_unread_bytes,
 };
 use nc_compat::{DatabaseDat, export_latest_snapshot_to_dir};
 use nc_data::{CampaignStore, CoreGameData, Order};
@@ -222,12 +222,21 @@ fn db_import_and_export_round_trip_fixture() {
     ]);
     assert!(export_stdout.contains("Exported year 3000"));
     assert_eq!(
-        fs::read(source.join("PLAYER.DAT")).unwrap(),
-        fs::read(exported.join("PLAYER.DAT")).unwrap()
+        without_unread_bytes("PLAYER.DAT", &fs::read(source.join("PLAYER.DAT")).unwrap()),
+        without_unread_bytes(
+            "PLAYER.DAT",
+            &fs::read(exported.join("PLAYER.DAT")).unwrap()
+        )
     );
     assert_eq!(
-        fs::read(source.join("DATABASE.DAT")).unwrap(),
-        fs::read(exported.join("DATABASE.DAT")).unwrap()
+        without_unread_bytes(
+            "DATABASE.DAT",
+            &fs::read(source.join("DATABASE.DAT")).unwrap()
+        ),
+        without_unread_bytes(
+            "DATABASE.DAT",
+            &fs::read(exported.join("DATABASE.DAT")).unwrap()
+        )
     );
     assert!(exported.join("ECGAME.EXE").exists());
     assert!(exported.join("ECMAINT.EXE").exists());

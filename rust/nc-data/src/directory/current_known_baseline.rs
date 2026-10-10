@@ -224,7 +224,6 @@ impl CoreGameData {
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
                 }
-                record.set_population_raw([0; 6]);
                 record.set_army_count_raw(10);
                 record.set_ground_batteries_raw(4);
                 record.set_ownership_status_raw(2);
@@ -239,7 +238,6 @@ impl CoreGameData {
                 for slot in 0..crate::STARDOCK_SLOT_COUNT {
                     record.set_stardock_count_raw(slot, 0);
                 }
-                record.set_population_raw([0; 6]);
                 record.set_army_count_raw(0);
                 record.set_ground_batteries_raw(0);
                 record.set_ownership_status_raw(0);

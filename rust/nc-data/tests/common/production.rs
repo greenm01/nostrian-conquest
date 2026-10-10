@@ -1,6 +1,6 @@
 use nc_data::{
     BaseDat, BaseRecord, ConquestDat, CoreGameData, FleetDat, GameStateBuilder, IpbmDat, PlanetDat,
-    PlanetRecord, PlayerDat, PlayerRecord, SetupDat, decode_real48, encode_real48,
+    PlanetRecord, PlayerDat, PlayerRecord, SetupDat,
 };
 
 pub fn zeroed_setup() -> SetupDat {
@@ -34,16 +34,17 @@ pub fn player_with_empire_name(name: &str, tax_rate: u8, stored_points: u16) -> 
 pub fn owned_planet(
     owner_empire_slot: u8,
     potential_production: u8,
-    factories_real48: [u8; 6],
+    present_production: f64,
     stored_points: u32,
     armies: u8,
     batteries: u8,
 ) -> PlanetRecord {
     let mut record = PlanetRecord::new_zeroed();
     record.set_owner_empire_slot_raw(owner_empire_slot);
+    // A regular world, not one just captured.
+    record.set_ownership_status_raw(2);
     record.set_potential_production_points(potential_production);
-    record
-        .set_present_production(decode_real48(factories_real48).expect("production should decode"));
+    record.set_present_production(present_production);
     record.set_stored_production_points(stored_points);
     record.set_army_count_raw(armies);
     record.set_ground_batteries_raw(batteries);
@@ -61,7 +62,7 @@ pub fn owned_planet_with_present_production(
     owned_planet(
         owner_empire_slot,
         potential_production,
-        encode_real48(f64::from(present_production)).expect("present production should encode"),
+        f64::from(present_production),
         stored_points,
         armies,
         batteries,
@@ -71,14 +72,14 @@ pub fn owned_planet_with_present_production(
 pub fn owned_homeworld_seed(
     owner_empire_slot: u8,
     potential_production: u8,
-    factories_real48: [u8; 6],
+    present_production: f64,
     armies: u8,
     batteries: u8,
 ) -> PlanetRecord {
     let mut record = owned_planet(
         owner_empire_slot,
         potential_production,
-        factories_real48,
+        present_production,
         0,
         armies,
         batteries,

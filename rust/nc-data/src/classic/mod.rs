@@ -48,6 +48,12 @@ impl ClassicFile {
         Self::Conquest,
     ];
 
+    pub fn from_file_name(name: &str) -> Option<Self> {
+        Self::ALL
+            .into_iter()
+            .find(|file| file.file_name().eq_ignore_ascii_case(name))
+    }
+
     pub const fn file_name(self) -> &'static str {
         match self {
             Self::Player => "PLAYER.DAT",

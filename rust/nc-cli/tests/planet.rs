@@ -2,7 +2,7 @@ mod common;
 
 use common::{
     cleanup_dir, copy_fixture_dir, export_campaign_db, repo_root, run_nc_cli, run_nc_cli_in_dir,
-    unique_temp_dir,
+    unique_temp_dir, without_unread_bytes,
 };
 use std::fs;
 
@@ -26,7 +26,10 @@ fn planet_build_recreates_known_valid_build_pre_fixture() {
     export_campaign_db(&target, &target);
     let expected = repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT");
     let actual = fs::read(target.join("PLANETS.DAT")).unwrap();
-    assert_eq!(actual, fs::read(expected).unwrap());
+    assert_eq!(
+        without_unread_bytes("PLANETS.DAT", &actual),
+        without_unread_bytes("PLANETS.DAT", &fs::read(expected).unwrap())
+    );
 
     cleanup_dir(&target);
 }
@@ -117,7 +120,10 @@ fn scenario_planet_build_recreates_known_valid_build_pre_fixture() {
     export_campaign_db(&target, &target);
     let expected = repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT");
     let actual = fs::read(target.join("PLANETS.DAT")).unwrap();
-    assert_eq!(actual, fs::read(expected).unwrap());
+    assert_eq!(
+        without_unread_bytes("PLANETS.DAT", &actual),
+        without_unread_bytes("PLANETS.DAT", &fs::read(expected).unwrap())
+    );
 
     cleanup_dir(&target);
 }
@@ -164,12 +170,15 @@ fn scenario_init_planet_build_materializes_runnable_directory() {
     let expected_fleets = repo_root().join("fixtures/ecmaint-post/v1.5/FLEETS.DAT");
 
     assert_eq!(
-        fs::read(target.join("PLANETS.DAT")).unwrap(),
-        fs::read(expected_planets).unwrap()
+        without_unread_bytes(
+            "PLANETS.DAT",
+            &fs::read(target.join("PLANETS.DAT")).unwrap()
+        ),
+        without_unread_bytes("PLANETS.DAT", &fs::read(expected_planets).unwrap())
     );
     assert_eq!(
-        fs::read(target.join("FLEETS.DAT")).unwrap(),
-        fs::read(expected_fleets).unwrap()
+        without_unread_bytes("FLEETS.DAT", &fs::read(target.join("FLEETS.DAT")).unwrap()),
+        without_unread_bytes("FLEETS.DAT", &fs::read(expected_fleets).unwrap())
     );
 
     cleanup_dir(&target);
@@ -201,9 +210,10 @@ fn scenario_init_replayable_planet_build_matches_exact_preserved_pre_fixture() {
         let expected = repo_root()
             .join("fixtures/ecmaint-build-pre/v1.5")
             .join(name);
+        // The typed model does not carry the bytes no classic program reads.
         assert_eq!(
-            fs::read(target.join(name)).unwrap(),
-            fs::read(expected).unwrap()
+            without_unread_bytes(name, &fs::read(target.join(name)).unwrap()),
+            without_unread_bytes(name, &fs::read(expected).unwrap())
         );
     }
 
