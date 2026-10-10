@@ -398,7 +398,7 @@ fn nc_sysop_maint_persists_join_host_destroyed_report_and_runtime_state() {
     let target = unique_temp_dir("nc-sysop-maint-join-host-destroyed");
     let mut game_data = load_fixture("ecmaint-post");
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
     game_data.fleets.records[0].set_cruiser_count(0);
     game_data.fleets.records[0].set_battleship_count(0);
@@ -409,7 +409,7 @@ fn nc_sysop_maint_persists_join_host_destroyed_report_and_runtime_state() {
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([7, 9]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
 
@@ -506,7 +506,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         viewer.set_current_speed(viewer.max_speed());
         viewer.set_current_speed(viewer.max_speed());
     }
-    let host_id = game_data.fleets.records[player4_fleets[0]].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[player4_fleets[0]].local_slot_word_raw();
     {
         let host = &mut game_data.fleets.records[player4_fleets[0]];
         host.set_cruiser_count(1);
@@ -536,7 +536,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         joiner.set_current_location_coords_raw([1, 4]);
         joiner.set_standing_order_kind(Order::JoinAnotherFleet);
         joiner.set_standing_order_target_coords_raw([4, 4]);
-        joiner.set_join_host_fleet_id_raw(host_id);
+        joiner.set_join_host_fleet_id_raw(host_number);
         joiner.set_current_speed(joiner.max_speed());
         joiner.set_current_speed(joiner.max_speed());
     }

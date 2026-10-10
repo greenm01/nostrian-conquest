@@ -3384,8 +3384,8 @@ fn maint_rust_join_contact_uses_join_report_label() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.fleets.records[0].set_standing_order_kind(Order::JoinAnotherFleet);
-    let host_id = game_data.fleets.records[1].fleet_id_word_raw();
-    game_data.fleets.records[0].set_join_host_fleet_id_raw(host_id);
+    let host_number = game_data.fleets.records[1].local_slot_word_raw();
+    game_data.fleets.records[0].set_join_host_fleet_id_raw(host_number);
     // Stalled in place (no speed to restore), so the contact happens here.
     game_data.fleets.records[0].set_max_speed(0);
     game_data
@@ -3410,7 +3410,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     game_data.fleets.records[0].set_destroyer_count(0);
     game_data.fleets.records[0].set_cruiser_count(0);
     game_data.fleets.records[0].set_battleship_count(0);
@@ -3420,7 +3420,7 @@ fn maint_rust_join_host_destroyed_report_never_shows_zero_fleet_number() {
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([7, 9]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([10, 10]);
     joiner.set_current_speed(3);
     game_data
@@ -3447,12 +3447,12 @@ fn maint_rust_join_retarget_report_uses_fleet_command_summary_without_sector_noi
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
     let joiner_fleet_number = game_data.fleets.records[1].local_slot_word_raw() as usize;
     let joiner = &mut game_data.fleets.records[1];
     joiner.set_current_location_coords_raw([3, 9]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_join_host_fleet_id_raw(host_id);
+    joiner.set_join_host_fleet_id_raw(host_number);
     joiner.set_standing_order_target_coords_raw([1, 1]);
     joiner.set_current_speed(3);
     game_data
@@ -3484,17 +3484,17 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
     for fleet_idx in [1usize, 2, 3] {
         game_data.fleets.records[fleet_idx].set_current_location_coords_raw([3, 9]);
         game_data.fleets.records[fleet_idx].set_standing_order_kind(Order::JoinAnotherFleet);
-        game_data.fleets.records[fleet_idx].set_join_host_fleet_id_raw(host_id);
+        game_data.fleets.records[fleet_idx].set_join_host_fleet_id_raw(host_number);
         game_data.fleets.records[fleet_idx].set_standing_order_target_coords_raw([1, 1]);
         game_data.fleets.records[fleet_idx].set_current_speed(3);
     }
 
-    let lost_host = game_data.fleets.records[4].fleet_id_word_raw();
+    let lost_host = game_data.fleets.records[4].local_slot_word_raw();
     game_data.fleets.records[4].set_current_location_coords_raw([7, 9]);
     game_data.fleets.records[4].set_standing_order_kind(Order::HoldPosition);
     game_data.fleets.records[4].set_standing_order_target_coords_raw([7, 9]);
@@ -3548,8 +3548,8 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
     game_data.player.records[0].raw[0x00] = 0x00;
 
     let survivor_coords = [10, 10];
-    let survivor_id = game_data.fleets.records[0].fleet_id_word_raw();
-    let absorbed_host_id = game_data.fleets.records[1].fleet_id_word_raw();
+    let survivor_number = game_data.fleets.records[0].local_slot_word_raw();
+    let absorbed_host_number = game_data.fleets.records[1].local_slot_word_raw();
 
     game_data.fleets.records[0].set_current_location_coords_raw(survivor_coords);
     game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
@@ -3558,13 +3558,13 @@ fn maint_rust_join_host_absorbed_into_other_fleet_retargets_joiners() {
 
     game_data.fleets.records[1].set_current_location_coords_raw(survivor_coords);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);
-    game_data.fleets.records[1].set_join_host_fleet_id_raw(survivor_id);
+    game_data.fleets.records[1].set_join_host_fleet_id_raw(survivor_number);
     game_data.fleets.records[1].set_standing_order_target_coords_raw(survivor_coords);
     game_data.fleets.records[1].set_current_speed(0);
 
     game_data.fleets.records[2].set_current_location_coords_raw([5, 10]);
     game_data.fleets.records[2].set_standing_order_kind(Order::JoinAnotherFleet);
-    game_data.fleets.records[2].set_join_host_fleet_id_raw(absorbed_host_id);
+    game_data.fleets.records[2].set_join_host_fleet_id_raw(absorbed_host_number);
     game_data.fleets.records[2].set_standing_order_target_coords_raw(survivor_coords);
     game_data.fleets.records[2].set_current_speed(3);
 
@@ -3603,17 +3603,17 @@ fn maint_rust_join_summary_emits_single_footer_line() {
 
     let mut game_data = CoreGameData::load(&target).expect("fixture should load");
     game_data.player.records[0].raw[0x00] = 0xff;
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
+    let host_number = game_data.fleets.records[0].local_slot_word_raw();
 
     game_data.fleets.records[1].set_current_location_coords_raw([3, 9]);
     game_data.fleets.records[1].set_standing_order_kind(Order::JoinAnotherFleet);
-    game_data.fleets.records[1].set_join_host_fleet_id_raw(host_id);
+    game_data.fleets.records[1].set_join_host_fleet_id_raw(host_number);
     game_data.fleets.records[1].set_standing_order_target_coords_raw([1, 1]);
     game_data.fleets.records[1].set_current_speed(3);
 
     game_data.fleets.records[2].set_current_location_coords_raw([3, 9]);
     game_data.fleets.records[2].set_standing_order_kind(Order::JoinAnotherFleet);
-    game_data.fleets.records[2].set_join_host_fleet_id_raw(host_id);
+    game_data.fleets.records[2].set_join_host_fleet_id_raw(host_number);
     game_data.fleets.records[2].set_standing_order_target_coords_raw([1, 1]);
     game_data.fleets.records[2].set_current_speed(3);
 

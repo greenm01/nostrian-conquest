@@ -42,7 +42,7 @@ axes, so routes may use the last row and column but never row or column `0`.
 | `0x19..0x1e` | depth `Z` | Turbo Pascal 6-byte real |
 | `0x20`, `0x21` | target sector | u8 |
 | `0x22` | target depth `TZ`: `0` sector target, `1` world target | u8 |
-| `0x23` | guarded starbase id (order 4) or join host fleet id (order 13) | u8 |
+| `0x23` | guarded starbase id (order 4) or join host fleet number, the host's `0x00` word (order 13) | u16 |
 
 A 6-byte real stores a biased exponent in byte 0 (`0` means `0.0`) and a
 39-bit mantissa in bytes 1 to 5, little-endian, with the sign in the top bit

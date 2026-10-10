@@ -66,7 +66,9 @@ struct MovementEvents {
 #[derive(Debug, Default, Clone)]
 pub(super) struct FleetRemovalRemapInfo {
     destroyed_join_host_fleet_numbers: std::collections::HashMap<u16, u8>,
-    prior_join_host_ids: std::collections::HashMap<u16, u16>,
+    /// Host fleet number each joiner (by new fleet id) named before its host
+    /// was removed.
+    prior_join_host_numbers: std::collections::HashMap<u16, u16>,
     fleet_indices: FleetIndexRemap,
 }
 
@@ -859,16 +861,13 @@ fn apply_fleet_removal_remap(
         .iter()
         .map(|f| f.fleet_id_word_raw())
         .collect();
-    let removed_fleet_number_by_id: std::collections::HashMap<u16, u8> = game_data
+    let removed_fleet_keys: std::collections::HashSet<(u8, u16)> = game_data
         .fleets
         .records
         .iter()
         .enumerate()
         .filter(|(idx, _)| to_remove[*idx])
-        .filter_map(|(_, fleet)| {
-            let fleet_number = fleet.local_slot_word_raw() as u8;
-            (fleet_number != 0).then_some((fleet.fleet_id_word_raw(), fleet_number))
-        })
+        .map(|(_, fleet)| (fleet.owner_empire_raw(), fleet.local_slot_word_raw()))
         .collect();
 
     let removed_before: Vec<u16> = {
@@ -896,7 +895,9 @@ fn apply_fleet_removal_remap(
         }
     };
 
-    // Surviving local fleet numbers stay unchanged. Only global linkage IDs compress.
+    // Surviving local fleet numbers stay unchanged. Only global linkage IDs
+    // compress. A Join order names its host by fleet number, so it needs no
+    // remap; it is zeroed only when the host itself was removed.
     let mut remap_info = FleetRemovalRemapInfo {
         fleet_indices: FleetIndexRemap::from_removed(to_remove),
         ..FleetRemovalRemapInfo::default()
@@ -912,20 +913,17 @@ fn apply_fleet_removal_remap(
         remapped.set_next_fleet_link_word_raw(remap_id(fleet.next_fleet_link_word_raw()));
         remapped.set_previous_fleet_id(remap_id(fleet.previous_fleet_id()));
         if fleet.standing_order_kind() == Order::JoinAnotherFleet {
-            let prior_host_id = fleet.join_host_fleet_id_raw();
-            let remapped_host_id = remap_id(prior_host_id);
-            remapped.set_join_host_fleet_id_raw(remapped_host_id);
-            if remapped_host_id == 0 && prior_host_id != 0 {
+            let prior_host_number = fleet.join_host_fleet_id_raw();
+            if prior_host_number != 0
+                && removed_fleet_keys.contains(&(fleet.owner_empire_raw(), prior_host_number))
+            {
+                remapped.set_join_host_fleet_id_raw(0);
                 remap_info
-                    .prior_join_host_ids
-                    .insert(new_fleet_id, prior_host_id);
-                if let Some(host_fleet_number) =
-                    removed_fleet_number_by_id.get(&prior_host_id).copied()
-                {
-                    remap_info
-                        .destroyed_join_host_fleet_numbers
-                        .insert(new_fleet_id, host_fleet_number);
-                }
+                    .prior_join_host_numbers
+                    .insert(new_fleet_id, prior_host_number);
+                remap_info
+                    .destroyed_join_host_fleet_numbers
+                    .insert(new_fleet_id, prior_host_number as u8);
             }
         }
         remapped_fleets.push(remapped);

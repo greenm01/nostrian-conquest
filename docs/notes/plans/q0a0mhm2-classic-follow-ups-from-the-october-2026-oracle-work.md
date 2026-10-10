@@ -137,6 +137,22 @@ the maintenance id remap, and the join tests treat `0x23` as the record id.
 The two agree only while id equals fleet number, which holds for empire 1 in
 the fixtures and fails for everyone else. Found by t042.
 
+Evidence. ECMAINT's Join host search (`0824:79d6`) compares the joiner's
+`0x23` word with the fleet index entry's number word, and the merge
+(`2895:4a6b`) points the absorbed fleet's joiners at the host's `0x00`
+word. ECGAME's renumbering (`0x15ad5`..`0x15b3f`) rewrites `0x23` on every
+Join order that names the old number. A classic probe on
+`fixtures/ecmaint-post` (empire 2's fleets are records 5..8 with numbers
+1..4) ordered record 6 to join with `0x23 = 1`: ECMAINT merged it into
+record 5 and compacted FLEETS.DAT. With `0x23 = 5` (the record id) ECMAINT
+left every file unchanged and the Join order in place.
+
+Rust now stores and matches the host's fleet number: `set_join_fleet_order`
+writes it, validation and the maintenance merge, retarget, and removal remap
+look hosts up by (owner, number), and `set_fleet_local_slot` renumbers the
+empire's Join orders as ECGAME does. The turn file's `join host=` keeps
+naming the host by record index, like every other fleet reference in it.
+
 ## t047
 
 Small classic-match items from the t039 decodes and t042:

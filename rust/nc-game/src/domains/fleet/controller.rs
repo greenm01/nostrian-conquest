@@ -1770,18 +1770,17 @@ impl App {
     }
 
     pub(crate) fn fleet_rows(&self) -> Vec<FleetRow> {
-        let fleet_number_by_id: std::collections::HashMap<u16, u16> = self
+        let fleet_numbers: std::collections::HashSet<u16> = self
             .active_owned_fleet_records()
-            .map(|(_, fleet)| (fleet.fleet_id_word_raw(), fleet.local_slot_word_raw()))
+            .map(|(_, fleet)| fleet.local_slot_word_raw())
             .collect();
         let mut rows = self
             .active_owned_fleet_records()
             .map(|(idx, fleet)| {
                 let join_host_fleet_number =
                     if fleet.standing_order_kind() == nc_data::Order::JoinAnotherFleet {
-                        fleet_number_by_id
-                            .get(&fleet.join_host_fleet_id_raw())
-                            .copied()
+                        Some(fleet.join_host_fleet_id_raw())
+                            .filter(|number| fleet_numbers.contains(number))
                     } else {
                         None
                     };

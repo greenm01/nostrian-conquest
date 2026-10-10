@@ -3234,3 +3234,23 @@ fn append_planet_build_order_rejects_non_multiple_surface_points() {
     data.append_planet_build_order(1, 40, 7).unwrap();
     data.append_planet_build_order(1, 4, 8).unwrap();
 }
+
+#[test]
+fn renumbering_a_fleet_retargets_the_join_orders_that_name_it() {
+    // ECGAME's renumbering (`0x15b35`) rewrites the 0x23 word of the empire's
+    // Join orders that name the old number.
+    let mut data = CoreGameData::load(&repo_root().join("fixtures/ecmaint-post/v1.5")).unwrap();
+    data.set_join_fleet_order(1, 2, 3).expect("join order");
+    data.set_join_fleet_order(2, 6, 7)
+        .expect("empire 2 join order");
+    assert_eq!(data.fleets.records[1].join_host_fleet_id_raw(), 3);
+    assert_eq!(data.fleets.records[5].join_host_fleet_id_raw(), 3);
+
+    data.set_fleet_local_slot(1, 3, 12)
+        .expect("renumber fleet 3");
+
+    assert_eq!(data.fleets.records[2].local_slot_word_raw(), 12);
+    assert_eq!(data.fleets.records[1].join_host_fleet_id_raw(), 12);
+    // Empire 2's join names its own fleet 3, which kept its number.
+    assert_eq!(data.fleets.records[5].join_host_fleet_id_raw(), 3);
+}

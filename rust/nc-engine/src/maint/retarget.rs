@@ -50,8 +50,9 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
     events
 }
 
+/// Join hosts are named by (owner, fleet number), the host's 0x00 word.
 pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
-    let current_host_viability: std::collections::HashMap<u16, bool> = game_data
+    let current_host_viability: std::collections::HashMap<(u8, u16), bool> = game_data
         .fleets
         .records
         .iter()
@@ -62,16 +63,19 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
                 || fleet.scout_count() > 0
                 || fleet.troop_transport_count() > 0
                 || fleet.etac_count() > 0;
-            (fleet.fleet_id_word_raw(), viable)
+            (
+                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
+                viable,
+            )
         })
         .collect();
-    let current_fleet_coords: std::collections::HashMap<u16, [u8; 2]> = game_data
+    let current_fleet_coords: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .fleets
         .records
         .iter()
         .map(|fleet| {
             (
-                fleet.fleet_id_word_raw(),
+                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
                 fleet.current_location_coords_raw(),
             )
         })
@@ -83,20 +87,21 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
             continue;
         }
 
-        let host_id = fleet.join_host_fleet_id_raw();
-        if host_id == 0 || host_id == fleet.fleet_id_word_raw() {
+        let host_number = fleet.join_host_fleet_id_raw();
+        if host_number == 0 || host_number == fleet.local_slot_word_raw() {
             continue;
         }
+        let host_key = (fleet.owner_empire_raw(), host_number);
 
         if !current_host_viability
-            .get(&host_id)
+            .get(&host_key)
             .copied()
             .unwrap_or(false)
         {
             continue;
         }
 
-        if let Some(coords) = current_fleet_coords.get(&host_id).copied() {
+        if let Some(coords) = current_fleet_coords.get(&host_key).copied() {
             let previous_target_coords = fleet.standing_order_target_coords_raw();
             if coords != previous_target_coords {
                 let current_coords = fleet.current_location_coords_raw();
