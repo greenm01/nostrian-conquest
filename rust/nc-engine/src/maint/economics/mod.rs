@@ -42,6 +42,6 @@ fn planet_has_friendly_starbase(
     game_data.bases.records.iter().any(|base| {
         base.owner_empire_raw() == owner_empire_raw
             && base.coords_raw() == coords
-            && base.active_flag_raw() != 0
+            && base.base_id_raw() != 0
     })
 }

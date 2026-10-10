@@ -1,7 +1,7 @@
 use super::*;
 use crate::{
     BaseDat, BaseRecord, DiplomaticRelation, FleetRecord, IPBM_RECORD_SIZE, IpbmDat, IpbmRecord,
-    Order, PlayerRecord, ProductionItemKind,
+    Order, PlayerRecord, ProductionItemKind, Real48,
 };
 
 #[path = "mutators_commission.rs"]

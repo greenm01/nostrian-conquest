@@ -50,17 +50,17 @@ pub(crate) fn validate_guard_starbase_scenario(
             player1.starbase_count_raw(),
             fleet.local_slot_word_raw(),
             fleet.fleet_id_word_raw(),
-            base.chain_word_raw()
+            base.record_number_raw()
         );
         println!(
             "  one-base guard-starbase linkage holds at coords {:?}",
             base.coords_raw()
         );
         println!(
-            "  selected_base: present={} id={:?} summary={:?} owner={:?}",
+            "  selected_base: present={} id={:?} escort={:?} owner={:?}",
             linkage.selected_base_present,
             linkage.selected_base_id,
-            linkage.selected_base_summary_word,
+            linkage.selected_base_escort_fleet_slot,
             linkage.selected_base_owner_empire
         );
         Ok(())
@@ -112,11 +112,11 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
     );
     if let Ok(linkage) = data.guard_starbase_linkage_summary_current_known(1, 1) {
         println!(
-            "  selected_base.present={} selected_base.id={:?} selected_base.summary={:?} selected_base.chain={:?} selected_base.owner={:?}",
+            "  selected_base.present={} selected_base.id={:?} selected_base.escort={:?} selected_base.record={:?} selected_base.owner={:?}",
             linkage.selected_base_present,
             linkage.selected_base_id,
-            linkage.selected_base_summary_word,
-            linkage.selected_base_chain_word,
+            linkage.selected_base_escort_fleet_slot,
+            linkage.selected_base_record_number,
             linkage.selected_base_owner_empire
         );
     }
@@ -124,15 +124,17 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
     if let Some(base1) = data.bases.records.first() {
         println!("  base_count={}", data.bases.records.len());
         println!(
-            "  base[1].slot={} summary_word={} id={} link={:#06x} chain={:#06x} coords={:?} trailing={:?} owner={}",
-            base1.local_slot_raw(),
-            base1.summary_word_raw(),
+            "  base[1].escort={} id={} owner={} next={:#06x} record={:#06x} prev={:#06x} coords={:?} moving={} target={:?} target_depth={}",
+            base1.escort_fleet_slot_raw(),
             base1.base_id_raw(),
-            base1.link_word_raw(),
-            base1.chain_word_raw(),
+            base1.owner_empire_raw(),
+            base1.next_base_link_raw(),
+            base1.record_number_raw(),
+            base1.previous_base_link_raw(),
             base1.coords_raw(),
-            base1.trailing_coords_raw(),
-            base1.owner_empire_raw()
+            base1.moving_flag_raw(),
+            base1.target_coords_raw(),
+            base1.target_depth_raw()
         );
     } else {
         println!("  base_count=0");

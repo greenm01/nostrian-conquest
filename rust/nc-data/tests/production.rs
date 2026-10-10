@@ -215,7 +215,7 @@ fn maintenance_starbase_growth_bonus_accelerates_planet_development() {
         bases: BaseDat {
             records: vec![{
                 let mut base = BaseRecord::new_zeroed();
-                base.set_active_flag_raw(1);
+                base.set_base_id_raw(1);
                 base.set_owner_empire_raw(1);
                 base.set_coords_raw([0, 0]);
                 base
@@ -308,7 +308,7 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
         bases: BaseDat {
             records: vec![{
                 let mut base = BaseRecord::new_zeroed();
-                base.set_active_flag_raw(1);
+                base.set_base_id_raw(1);
                 base.set_owner_empire_raw(1);
                 base.set_coords_raw([0, 0]);
                 base
@@ -372,7 +372,7 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
         bases: BaseDat {
             records: vec![{
                 let mut base = BaseRecord::new_zeroed();
-                base.set_active_flag_raw(1);
+                base.set_base_id_raw(1);
                 base.set_owner_empire_raw(1);
                 base.set_coords_raw([0, 0]);
                 base

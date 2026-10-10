@@ -332,7 +332,7 @@ pub fn push_mission_entries(
                     .find(|base| {
                         base.coords_raw() == coords
                             && base.owner_empire_raw() == event.owner_empire_raw
-                            && base.active_flag_raw() != 0
+                            && base.base_id_raw() != 0
                     })
                     .map(|base| format!("Starbase {}", base.base_id_raw()))
                     .unwrap_or_else(|| "the assigned starbase".to_string());

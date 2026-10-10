@@ -23,7 +23,7 @@ pub struct OwnedFleetTarget {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct OwnedStarbaseTarget {
     pub base_record_index_1_based: usize,
-    pub base_id: u8,
+    pub base_id: u16,
     pub coords: [u8; 2],
     pub destination_coords: [u8; 2],
 }
@@ -58,14 +58,12 @@ pub fn owned_starbase_targets(
         .records
         .iter()
         .enumerate()
-        .filter(|(_, base)| {
-            base.owner_empire_raw() == owner_empire_id && base.active_flag_raw() != 0
-        })
+        .filter(|(_, base)| base.owner_empire_raw() == owner_empire_id && base.base_id_raw() != 0)
         .map(|(idx, base)| OwnedStarbaseTarget {
             base_record_index_1_based: idx + 1,
             base_id: base.base_id_raw(),
             coords: base.coords_raw(),
-            destination_coords: base.trailing_coords_raw(),
+            destination_coords: base.target_coords_raw(),
         })
         .collect::<Vec<_>>();
     rows.sort_by_key(|row| row.base_id);

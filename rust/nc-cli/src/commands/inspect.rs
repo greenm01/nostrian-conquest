@@ -148,14 +148,18 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     println!("Bases:");
     for (idx, record) in data.bases.records.iter().enumerate() {
         println!(
-            "  base {:02}: slot={} active={} id={} link={} owner={} coords={:02x?}",
+            "  base {:02}: escort={} id={} owner={} next={} record={} prev={} coords={:02x?} moving={} target={:02x?} target_depth={}",
             idx + 1,
-            record.local_slot_raw(),
-            record.active_flag_raw(),
+            record.escort_fleet_slot_raw(),
             record.base_id_raw(),
-            record.link_word_raw(),
             record.owner_empire_raw(),
-            record.coords_raw()
+            record.next_base_link_raw(),
+            record.record_number_raw(),
+            record.previous_base_link_raw(),
+            record.coords_raw(),
+            record.moving_flag_raw(),
+            record.target_coords_raw(),
+            record.target_depth_raw()
         );
     }
 

@@ -78,12 +78,10 @@ fn scenario(case: &Case) -> CoreGameData {
     };
     if mission == 4 {
         let mut base = BaseRecord::new_zeroed();
-        base.set_local_slot_raw(1);
-        base.set_active_flag_raw(1);
         base.set_base_id_raw(1);
-        base.set_chain_word_raw(1);
+        base.set_record_number_raw(1);
         base.set_coords_raw(HOME);
-        base.set_trailing_coords_raw(HOME);
+        base.set_target_coords_raw(HOME);
         base.set_owner_empire_raw(1);
         game_data.bases.records = vec![base];
     }

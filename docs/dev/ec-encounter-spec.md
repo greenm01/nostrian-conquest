@@ -15,8 +15,8 @@ Notation. Fleet record bytes are FLEETS.DAT offsets: `+0x09` max speed,
 `+0x25` ROE, `+0x26` BB, `+0x28` CA, `+0x2a` DD, `+0x2c` TT empty,
 `+0x2e` TT loaded, `+0x30` ETAC, `+0x32` scouts, `+0x34` strength cache.
 Starbase record (BASES.DAT, 35 bytes): `+0x02` base id (u16), `+0x04` owner,
-`+0x0b/+0x0c` x,y, `+0x19` Z, `+0x1f` (unused flag), `+0x20/+0x21` target,
-`+0x22` TZ. Orders: 0 Hold, 1 Move, 2 Seek Home, 3 Patrol, 4 Guard Starbase,
+`+0x0b/+0x0c` x,y, `+0x19` Z, `+0x1f` moving flag, `+0x20/+0x21` target,
+`+0x22` TZ; the full layout is in [ec-starbase-spec.md](ec-starbase-spec.md). Orders: 0 Hold, 1 Move, 2 Seek Home, 3 Patrol, 4 Guard Starbase,
 5 Guard/Blockade, 6 Bombard, 7 Invade, 8 Blitz, 9 View, 10 Scout Sector,
 11 Scout System, 12 Colonize, 13 Join, 14 Rendezvous, 15 Salvage.
 `layer(Z) = 1 if Z >= 0.5 else 0` (Turbo Pascal `Round(Z) == 1` for Z in [0,1]).
@@ -479,7 +479,7 @@ intercept up to three (aw roll, sin draw, speed roll); battles draw more.
   retreat, scatter, and loss rules not decoded.
 - `2895:2ddc` after a battle (probably world-database intel).
 - Moving starbases: they don't scan while away from their target; base
-  movement itself was not examined.
+  movement is in [ec-starbase-spec.md](ec-starbase-spec.md).
 - AI empires (players marked 0xFF) were not probed.
 - ROE > 10 and u16 overflow in vis/strength (more than ~1450 ships of a
   class) are undefined or wrap in classic.

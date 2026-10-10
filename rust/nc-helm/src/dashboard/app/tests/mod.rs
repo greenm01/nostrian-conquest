@@ -902,7 +902,7 @@ fn guard_starbase_empty_submission_uses_default_target() {
 
     let expected_base_id = app
         .fleet_order_target_default_value()
-        .parse::<u8>()
+        .parse::<u16>()
         .expect("default starbase id");
     app.submit_fleet_order().expect("submit guard target");
 

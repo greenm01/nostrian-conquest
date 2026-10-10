@@ -206,28 +206,36 @@ fn write_base_rows(
 ) -> Result<(), CampaignStoreError> {
     let mut stmt = tx.prepare(
         "INSERT INTO snapshot_bases(
-             snapshot_id, record_index, header_raw_hex, coords_x, coords_y,
-             tuple_a_raw_hex, tuple_b_raw_hex, tuple_c_raw_hex,
-             trailing_x, trailing_y, owner_empire_raw
+             snapshot_id, record_index, escort_fleet_slot_raw, base_id_raw,
+             owner_empire_raw, next_base_link_raw, record_number_raw,
+             previous_base_link_raw, current_x, current_y, x_fraction_raw_hex,
+             y_fraction_raw_hex, depth_raw_hex, moving_flag_raw, target_x, target_y,
+             target_depth_raw
          ) VALUES (
-             ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11
+             ?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17
          )",
     )?;
     for (idx, record) in data.records.iter().enumerate() {
-        let [x, y] = record.coords_raw();
-        let [trailing_x, trailing_y] = record.trailing_coords_raw();
+        let [current_x, current_y] = record.coords_raw();
+        let [target_x, target_y] = record.target_coords_raw();
         stmt.execute(params![
             snapshot_id,
             (idx + 1) as i64,
-            encode_hex(&record.raw[0x00..0x0B]),
-            i64::from(x),
-            i64::from(y),
-            encode_hex(&record.tuple_a_payload_raw()),
-            encode_hex(&record.tuple_b_payload_raw()),
-            encode_hex(&record.tuple_c_payload_raw()),
-            i64::from(trailing_x),
-            i64::from(trailing_y),
+            i64::from(record.escort_fleet_slot_raw()),
+            i64::from(record.base_id_raw()),
             i64::from(record.owner_empire_raw()),
+            i64::from(record.next_base_link_raw()),
+            i64::from(record.record_number_raw()),
+            i64::from(record.previous_base_link_raw()),
+            i64::from(current_x),
+            i64::from(current_y),
+            encode_hex(&record.x_fraction().to_bytes()),
+            encode_hex(&record.y_fraction().to_bytes()),
+            encode_hex(&record.depth().to_bytes()),
+            i64::from(record.moving_flag_raw()),
+            i64::from(target_x),
+            i64::from(target_y),
+            i64::from(record.target_depth_raw()),
         ])?;
     }
     Ok(())
@@ -590,48 +598,38 @@ fn load_fleet_rows(
 
 fn load_base_rows(conn: &mut Connection, snapshot_id: i64) -> Result<BaseDat, CampaignStoreError> {
     let mut stmt = conn.prepare(
-        "SELECT header_raw_hex, coords_x, coords_y, tuple_a_raw_hex, tuple_b_raw_hex,
-                tuple_c_raw_hex, trailing_x, trailing_y, owner_empire_raw
+        "SELECT escort_fleet_slot_raw, base_id_raw, owner_empire_raw, next_base_link_raw,
+                record_number_raw, previous_base_link_raw, current_x, current_y,
+                x_fraction_raw_hex, y_fraction_raw_hex, depth_raw_hex, moving_flag_raw,
+                target_x, target_y, target_depth_raw
          FROM snapshot_bases
          WHERE snapshot_id = ?1
          ORDER BY record_index",
     )?;
-    let rows = stmt.query_map(params![snapshot_id], |row| {
-        Ok((
-            row.get::<_, String>(0)?,
-            row.get::<_, i64>(1)?,
-            row.get::<_, i64>(2)?,
-            row.get::<_, String>(3)?,
-            row.get::<_, String>(4)?,
-            row.get::<_, String>(5)?,
-            row.get::<_, i64>(6)?,
-            row.get::<_, i64>(7)?,
-            row.get::<_, i64>(8)?,
-        ))
-    })?;
+    let mut rows = stmt.query(params![snapshot_id])?;
 
     let mut records = Vec::new();
-    for row in rows {
-        let (
-            header_raw_hex,
-            coords_x,
-            coords_y,
-            tuple_a_raw_hex,
-            tuple_b_raw_hex,
-            tuple_c_raw_hex,
-            trailing_x,
-            trailing_y,
-            owner_empire_raw,
-        ) = row?;
-
+    while let Some(row) = rows.next()? {
         let mut record = BaseRecord::new_zeroed();
-        record.raw[0x00..0x0B].copy_from_slice(&decode_hex_exact::<11>(&header_raw_hex)?);
-        record.set_coords_raw([coords_x as u8, coords_y as u8]);
-        record.set_tuple_a_payload_raw(decode_hex_exact::<5>(&tuple_a_raw_hex)?);
-        record.set_tuple_b_payload_raw(decode_hex_exact::<5>(&tuple_b_raw_hex)?);
-        record.set_tuple_c_payload_raw(decode_hex_exact::<5>(&tuple_c_raw_hex)?);
-        record.set_trailing_coords_raw([trailing_x as u8, trailing_y as u8]);
-        record.set_owner_empire_raw(owner_empire_raw as u8);
+        record.set_escort_fleet_slot_raw(row.get::<_, i64>(0)? as u16);
+        record.set_base_id_raw(row.get::<_, i64>(1)? as u16);
+        record.set_owner_empire_raw(row.get::<_, i64>(2)? as u8);
+        record.set_next_base_link_raw(row.get::<_, i64>(3)? as u16);
+        record.set_record_number_raw(row.get::<_, i64>(4)? as u16);
+        record.set_previous_base_link_raw(row.get::<_, i64>(5)? as u16);
+        record.set_coords_raw([row.get::<_, i64>(6)? as u8, row.get::<_, i64>(7)? as u8]);
+        record.set_x_fraction(Real48::from_bytes(decode_hex_exact::<6>(
+            &row.get::<_, String>(8)?,
+        )?));
+        record.set_y_fraction(Real48::from_bytes(decode_hex_exact::<6>(
+            &row.get::<_, String>(9)?,
+        )?));
+        record.set_depth(Real48::from_bytes(decode_hex_exact::<6>(
+            &row.get::<_, String>(10)?,
+        )?));
+        record.set_moving_flag_raw(row.get::<_, i64>(11)? as u8);
+        record.set_target_coords_raw([row.get::<_, i64>(12)? as u8, row.get::<_, i64>(13)? as u8]);
+        record.set_target_depth_raw(row.get::<_, i64>(14)? as u8);
         records.push(record);
     }
     Ok(BaseDat { records })

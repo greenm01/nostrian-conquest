@@ -65,16 +65,28 @@ impl CoreGameData {
                 })?;
             let next_base_id = player.starbase_count_raw().saturating_add(1);
             player.set_starbase_count_raw(next_base_id);
-            self.bases.records.push(build_guard_starbase_base_record(
+            let record_number = (self.bases.records.len() + 1) as u16;
+            let mut base = build_guard_starbase_base_record(
                 coords,
-                next_base_id as u8,
                 next_base_id,
-                next_base_id,
+                0,
+                record_number,
                 owner_empire,
-                [0x80, 0, 0, 0, 0],
-                [0x80, 0, 0, 0, 0],
-                [0x81, 0, 0, 0, 0],
-            ));
+                Real48::HALF,
+                Real48::HALF,
+                Real48::ONE,
+            );
+            // Append to the end of the owner's chain, as ECMAINT 2000:6493
+            // does when the new id is the next one up.
+            if let Some(tail) = self.bases.records.iter_mut().find(|other| {
+                other.base_id_raw() != 0
+                    && other.owner_empire_raw() == owner_empire
+                    && other.next_base_link_raw() == 0
+            }) {
+                tail.set_next_base_link_raw(record_number);
+                base.set_previous_base_link_raw(tail.record_number_raw());
+            }
+            self.bases.records.push(base);
             let planet = self
                 .planets
                 .records
@@ -282,7 +294,7 @@ impl CoreGameData {
                             .ok_or(GameStateMutationError::MissingBaseRecord {
                                 index_1_based: base_record_index_1_based,
                             })?
-                            .local_slot_raw();
+                            .base_id_raw();
                         report.starbases_commissioned += 1;
                         report.entries.push(AutoCommissionEntry::Starbase(
                             AutoCommissionStarbaseEntry {
@@ -306,7 +318,7 @@ impl CoreGameData {
         player_index_1_based: usize,
         fleet_index_1_based: usize,
         target: [u8; 2],
-        base_id: u8,
+        base_id: u16,
         owner_empire: u8,
     ) -> Result<(), GameStateMutationError> {
         let player = self
@@ -325,24 +337,18 @@ impl CoreGameData {
         )?;
         fleet.set_standing_order_kind(Order::GuardStarbase);
         fleet.set_standing_order_target_coords_raw(target);
-        fleet.set_mission_target(1, u16::from(base_id));
-
-        let base_summary_word = fleet.local_slot_word_raw();
-        let base_chain_word = fleet.fleet_id_word_raw();
-        let tuple_a = fleet.tuple_a_payload_raw();
-        let tuple_b = fleet.tuple_b_payload_raw();
-        let tuple_c = fleet.tuple_c_payload_raw();
+        fleet.set_mission_target(1, base_id);
 
         self.bases = BaseDat {
             records: vec![build_guard_starbase_base_record(
                 target,
                 base_id,
-                base_summary_word,
-                base_chain_word,
+                fleet.local_slot_word_raw(),
+                fleet.fleet_id_word_raw(),
                 owner_empire,
-                tuple_a,
-                tuple_b,
-                tuple_c,
+                fleet.x_fraction(),
+                fleet.y_fraction(),
+                fleet.depth(),
             )],
         };
 

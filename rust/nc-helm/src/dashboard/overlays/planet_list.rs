@@ -773,7 +773,7 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<PlanetOverlayRow> {
         .iter()
         .filter(|base| {
             base.owner_empire_raw() == app.player_record_index_1_based as u8
-                && base.active_flag_raw() != 0
+                && base.base_id_raw() != 0
         })
         .map(|base| base.coords_raw())
         .collect::<std::collections::BTreeSet<_>>();

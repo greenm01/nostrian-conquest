@@ -175,7 +175,7 @@ impl CoreGameData {
         let mut errors = Vec::new();
 
         for (base_idx, base) in self.bases.records.iter().enumerate() {
-            let link_word = base.link_word_raw();
+            let link_word = base.next_base_link_raw();
 
             // Dangerous patterns that trigger ECMAINT abort
             if link_word == 0x0001 || link_word == 0x0101 {

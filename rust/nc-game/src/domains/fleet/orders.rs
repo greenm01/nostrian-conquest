@@ -735,7 +735,7 @@ impl App {
                             );
                             return;
                         };
-                        (base.coords, Some(1), Some(base.base_id))
+                        (base.coords, Some(1), Some(base.base_id as u8))
                     }
                     FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_fleet_group_host_fleet_for_current_mission()
@@ -878,7 +878,7 @@ impl App {
                             );
                             return Ok(());
                         };
-                        (base.coords, Some(1), Some(base.base_id))
+                        (base.coords, Some(1), Some(base.base_id as u8))
                     }
                     FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_fleet_order_host_fleet_for_current_mission()
@@ -1526,7 +1526,7 @@ impl App {
 
     fn resolve_fleet_order_starbase_target_for_current_mission(&self) -> Option<StarbaseRow> {
         let default_base_id = self.fleet_order_default_starbase()?.base_id;
-        let base_id = resolve_default_u8_input(&self.fleet.order_input, default_base_id)?;
+        let base_id = resolve_default_u16_input(&self.fleet.order_input, default_base_id)?;
         self.starbase_rows()
             .into_iter()
             .find(|row| row.base_id == base_id)
@@ -1534,7 +1534,7 @@ impl App {
 
     fn resolve_fleet_group_starbase_target_for_current_mission(&self) -> Option<StarbaseRow> {
         let default_base_id = self.fleet_group_default_starbase()?.base_id;
-        let base_id = resolve_default_u8_input(&self.fleet.group_input, default_base_id)?;
+        let base_id = resolve_default_u16_input(&self.fleet.group_input, default_base_id)?;
         self.starbase_rows()
             .into_iter()
             .find(|row| row.base_id == base_id)
@@ -1864,14 +1864,6 @@ fn fleet_group_order_label(order_code: u8) -> &'static str {
         nc_data::Order::JoinAnotherFleet => "join-fleet",
         nc_data::Order::Unknown(_) => "unknown",
     }
-}
-
-fn resolve_default_u8_input(input: &str, default: u8) -> Option<u8> {
-    let raw = input.trim();
-    if raw.is_empty() {
-        return Some(default);
-    }
-    raw.parse::<u8>().ok()
 }
 
 fn resolve_default_u16_input(input: &str, default: u16) -> Option<u16> {

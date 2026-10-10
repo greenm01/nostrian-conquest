@@ -508,7 +508,7 @@ fn orbit_presence(game_data: &CoreGameData, coords: [u8; 2]) -> OrbitPresence {
         .bases
         .records
         .iter()
-        .filter(|base| base.coords_raw() == coords && base.active_flag_raw() != 0)
+        .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
         .count()
         .min(usize::from(u8::MAX)) as u8;
 

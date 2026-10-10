@@ -275,7 +275,6 @@ fn build_persistent_probe(case: PersistentMovementCase) -> nc_data::CoreGameData
             // takes id 1 during the trace.
             fleet.set_mission_aux_bytes([1, 2]);
             let mut base = BaseRecord::new_zeroed();
-            base.set_active_flag_raw(1);
             base.set_base_id_raw(2);
             base.set_owner_empire_raw(1);
             base.set_coords_raw(case.target);

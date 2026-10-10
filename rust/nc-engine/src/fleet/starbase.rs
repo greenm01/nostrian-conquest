@@ -3,7 +3,7 @@ use nc_data::{CoreGameData, Order};
 pub fn guard_fleet_numbers_for_starbase(
     game_data: &CoreGameData,
     player_record_index_1_based: usize,
-    base_id: u8,
+    base_id: u16,
 ) -> Vec<u16> {
     let mut fleets = game_data
         .fleets
@@ -12,7 +12,7 @@ pub fn guard_fleet_numbers_for_starbase(
         .filter(|fleet| {
             fleet.owner_empire_raw() as usize == player_record_index_1_based
                 && fleet.standing_order_kind() == Order::GuardStarbase
-                && fleet.guard_starbase_index_raw() == u16::from(base_id)
+                && fleet.guard_starbase_index_raw() == base_id
         })
         .map(|fleet| fleet.local_slot_word_raw())
         .collect::<Vec<_>>();

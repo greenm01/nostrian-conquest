@@ -36,7 +36,7 @@ fn active_bases_at(game: &CoreGameData, owner: u8, coords: [u8; 2]) -> usize {
         .filter(|base| {
             base.owner_empire_raw() == owner
                 && base.coords_raw() == coords
-                && base.active_flag_raw() != 0
+                && base.base_id_raw() != 0
         })
         .count()
 }

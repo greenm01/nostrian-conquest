@@ -77,13 +77,10 @@ fn mutual_enemy_overrides(left: u8, right: u8) -> [DiplomacyOverride; 2] {
 
 fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
     let mut base = BaseRecord::new_zeroed();
-    base.set_local_slot_raw(1);
-    base.set_active_flag_raw(1);
     base.set_base_id_raw(1);
-    base.set_link_word_raw(0);
-    base.set_chain_word_raw(1);
+    base.set_record_number_raw(1);
     base.set_coords_raw(coords);
-    base.set_trailing_coords_raw(coords);
+    base.set_target_coords_raw(coords);
     base.set_owner_empire_raw(owner);
     game_data.bases.records.push(base);
 }
@@ -1111,7 +1108,6 @@ fn test_guard_starbase_abandons_when_linked_base_is_missing() {
 fn test_guard_starbase_persists_after_arrival() {
     let mut game_data = load_fixture("ecmaint-post");
     let mut base = BaseRecord::new_zeroed();
-    base.set_active_flag_raw(1);
     base.set_base_id_raw(3);
     base.set_owner_empire_raw(1);
     base.set_coords_raw([11, 8]);
@@ -1162,7 +1158,6 @@ fn test_guard_starbase_persists_after_arrival() {
 fn test_guard_starbase_with_zero_index_stays_armed_when_target_base_exists() {
     let mut game_data = load_fixture("ecmaint-post");
     let mut base = BaseRecord::new_zeroed();
-    base.set_active_flag_raw(1);
     base.set_base_id_raw(3);
     base.set_owner_empire_raw(1);
     base.set_coords_raw([11, 8]);

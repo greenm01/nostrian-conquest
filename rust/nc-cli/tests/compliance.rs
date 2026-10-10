@@ -337,7 +337,7 @@ fn compliance_report_summarizes_valid_parameterized_guard_starbase_directory() {
     assert!(stdout.contains("guarding_fleet_count=1"));
     assert!(stdout.contains("guarding_fleet[1]: guard_index=1 target=[12, 9]"));
     assert!(stdout.contains("fleet1.local_slot=1 fleet1.id=1"));
-    assert!(stdout.contains("base1.summary=1 base1.id=1 base1.chain=1 coords=[12, 9]"));
+    assert!(stdout.contains("base1.escort=1 base1.id=1 base1.record=1 coords=[12, 9]"));
 
     cleanup_dir(&target);
 }

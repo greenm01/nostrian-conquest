@@ -614,7 +614,6 @@ fn build_capability_invalidated_trace(
     }
     if order == Order::GuardStarbase {
         let mut base = BaseRecord::new_zeroed();
-        base.set_active_flag_raw(1);
         base.set_base_id_raw(1);
         base.set_owner_empire_raw(1);
         base.set_coords_raw(TRACE_TARGET);

@@ -45,7 +45,7 @@ impl StarbaseState {
                     player_record_index_1_based,
                     base.base_id_raw(),
                 );
-                let destination_coords = base.trailing_coords_raw();
+                let destination_coords = base.target_coords_raw();
                 let operation_label =
                     starbase_operation_label(base.coords_raw(), destination_coords);
                 let eta_label = starbase_eta_label(base.coords_raw(), destination_coords);

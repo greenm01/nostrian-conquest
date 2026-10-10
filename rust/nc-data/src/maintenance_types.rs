@@ -234,7 +234,7 @@ pub struct StarbaseDestroyedEvent {
     /// Empire that receives the destruction report.
     pub reporting_empire_raw: u8,
     /// Starbase ID that was lost.
-    pub starbase_id: u8,
+    pub starbase_id: u16,
     /// Coordinates of the loss.
     pub coords: [u8; 2],
     /// Initial observed hostile composition.
@@ -256,7 +256,7 @@ pub struct StarbaseDestroyedEvent {
 pub enum ContactReportSource {
     FleetMission(Mission),
     Fleet(u8),
-    Starbase(u8),
+    Starbase(u16),
 }
 
 /// A scout-style hostile contact report resolved during maintenance.

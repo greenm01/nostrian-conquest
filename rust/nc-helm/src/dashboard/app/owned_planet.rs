@@ -663,7 +663,7 @@ impl DashApp {
                     .bases
                     .records
                     .get(base_record_index_1_based.saturating_sub(1))
-                    .map(|base| base.local_slot_raw())
+                    .map(|base| base.base_id_raw())
                     .unwrap_or_default();
                 format!("Commissioned Starbase #{base_number:02}.")
             }

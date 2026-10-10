@@ -66,7 +66,7 @@ pub struct GuardStarbaseSpec {
     pub player_index_1_based: usize,
     pub fleet_index_1_based: usize,
     pub target: [u8; 2],
-    pub base_id: u8,
+    pub base_id: u16,
 }
 
 impl Default for GameStateBuilder {
@@ -163,7 +163,7 @@ impl GameStateBuilder {
         player_index_1_based: usize,
         fleet_index_1_based: usize,
         target: [u8; 2],
-        base_id: u8,
+        base_id: u16,
     ) -> Self {
         self.guard_starbase_orders.push(GuardStarbaseSpec {
             player_index_1_based,

@@ -48,13 +48,13 @@ pub(crate) fn print_compliance_report(dir: &Path) -> Result<(), Box<dyn std::err
     );
     for linkage in data.guard_starbase_linkage_summaries_for_guarding_fleets_current_known(1) {
         println!(
-            "  guarding_fleet[{}]: guard_index={} target={:?} selected_base.present={} selected_base.id={:?} selected_base.summary={:?} selected_base.owner={:?}",
+            "  guarding_fleet[{}]: guard_index={} target={:?} selected_base.present={} selected_base.id={:?} selected_base.escort={:?} selected_base.owner={:?}",
             linkage.fleet_record_index_1_based,
             linkage.guard_index,
             linkage.target_coords,
             linkage.selected_base_present,
             linkage.selected_base_id,
-            linkage.selected_base_summary_word,
+            linkage.selected_base_escort_fleet_slot,
             linkage.selected_base_owner_empire
         );
     }
@@ -69,15 +69,15 @@ pub(crate) fn print_compliance_report(dir: &Path) -> Result<(), Box<dyn std::err
             local_slot, fleet_id, guard_index, target
         );
     }
-    if let (Some(summary_word), Some(base_id), Some(chain), Some(coords)) = (
-        summary.base1_summary,
+    if let (Some(escort), Some(base_id), Some(record_number), Some(coords)) = (
+        summary.base1_escort_fleet_slot,
         summary.base1_id,
-        summary.base1_chain,
+        summary.base1_record_number,
         summary.base1_coords,
     ) {
         println!(
-            "  base1.summary={} base1.id={} base1.chain={} coords={:?}",
-            summary_word, base_id, chain, coords
+            "  base1.escort={} base1.id={} base1.record={} coords={:?}",
+            escort, base_id, record_number, coords
         );
     } else {
         println!("  base1=<none>");

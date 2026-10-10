@@ -141,7 +141,7 @@ impl App {
             return;
         };
         if !self.starbase.review_input.trim().is_empty() {
-            let target_base_id = match self.starbase.review_input.trim().parse::<u8>() {
+            let target_base_id = match self.starbase.review_input.trim().parse::<u16>() {
                 Ok(value) => value,
                 Err(_) => {
                     self.starbase.review_status =
@@ -304,7 +304,7 @@ impl App {
             StarbaseMovePromptMode::Base => {
                 let raw = self.starbase_move_prompt_value();
                 let base_id = raw
-                    .parse::<u8>()
+                    .parse::<u16>()
                     .map_err(|_| "Enter one of your starbase numbers.".to_string())?;
                 let row = self.resolve_starbase_move_base_row(base_id)?;
                 self.starbase.move_prompt_base_record_index_1_based =
@@ -386,7 +386,7 @@ impl App {
         self.starbase.move_prompt_base_record_index_1_based = None;
     }
 
-    fn default_starbase_move_base_id(&self) -> Option<u8> {
+    fn default_starbase_move_base_id(&self) -> Option<u16> {
         let rows = self.starbase_rows();
         if rows.is_empty() {
             return None;
@@ -404,7 +404,7 @@ impl App {
         }
     }
 
-    fn resolve_starbase_move_base_row(&mut self, base_id: u8) -> Result<StarbaseRow, String> {
+    fn resolve_starbase_move_base_row(&mut self, base_id: u16) -> Result<StarbaseRow, String> {
         let rows = self.starbase_rows();
         let Some(index) = rows.iter().position(|row| row.base_id == base_id) else {
             return Err(format!("Starbase #{base_id} is not in your list."));

@@ -2324,7 +2324,7 @@ fn starbase_list_wraps_selection_from_top_to_bottom_and_bottom_to_top() {
         base.set_base_id_raw(2);
         base.set_owner_empire_raw(1);
         base.set_coords_raw([9, 9]);
-        base.set_trailing_coords_raw([9, 9]);
+        base.set_target_coords_raw([9, 9]);
         runtime.game_data.bases.records.push(base);
     }
     save_runtime_state(&fixture_dir, &runtime);
@@ -2367,7 +2367,7 @@ fn starbase_list_and_review_show_numeric_transit_eta() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     runtime.game_data.bases.records[0].set_coords_raw([15, 13]);
-    runtime.game_data.bases.records[0].set_trailing_coords_raw([2, 12]);
+    runtime.game_data.bases.records[0].set_target_coords_raw([2, 12]);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -2491,7 +2491,7 @@ fn starbase_move_prompt_accepts_non_planet_sector_and_persists_report() {
         "live base location should stay unchanged until movement execution exists"
     );
     assert_eq!(
-        persisted.game_data.bases.records[0].trailing_coords_raw(),
+        persisted.game_data.bases.records[0].target_coords_raw(),
         destination
     );
     let latest_report = persisted
@@ -3279,7 +3279,7 @@ fn starbase_move_prompt_errors_hang_directly_under_command_line() {
 fn starbase_halt_prompt_resets_destination_to_live_location() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.bases.records[0].set_trailing_coords_raw([2, 12]);
+    runtime.game_data.bases.records[0].set_target_coords_raw([2, 12]);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -3313,7 +3313,7 @@ fn starbase_halt_prompt_resets_destination_to_live_location() {
     apply_action(&mut app, Action::Starbase(StarbaseAction::SubmitMovePrompt));
     let persisted = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        persisted.game_data.bases.records[0].trailing_coords_raw(),
+        persisted.game_data.bases.records[0].target_coords_raw(),
         [6, 5]
     );
 

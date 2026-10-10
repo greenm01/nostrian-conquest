@@ -725,7 +725,7 @@ impl App {
                     .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
-                format!("Commissioned Starbase {:02}.", base.local_slot_raw())
+                format!("Commissioned Starbase {:02}.", base.base_id_raw())
             }
         };
         self.planet.commission_status = None;
@@ -785,7 +785,7 @@ impl App {
                     .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
-                format!("Commissioned Starbase {:02}.", base.local_slot_raw())
+                format!("Commissioned Starbase {:02}.", base.base_id_raw())
             }
         };
 

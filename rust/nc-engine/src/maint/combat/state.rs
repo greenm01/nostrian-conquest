@@ -276,7 +276,7 @@ pub(super) fn starbase_count_at(game_data: &CoreGameData, coords: [u8; 2], owner
         .records
         .iter()
         .filter(|b| {
-            b.coords_raw() == coords && b.owner_empire_raw() == owner && b.active_flag_raw() != 0
+            b.coords_raw() == coords && b.owner_empire_raw() == owner && b.base_id_raw() != 0
         })
         .count() as u32
 }

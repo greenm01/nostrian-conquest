@@ -72,6 +72,14 @@ They let us:
   - Guard Starbase (order 0x04) scenario — init state with BASES.DAT added and
     three required patches: `FLEETS.DAT[0x1F]=0x04`, `FLEETS.DAT[0x23]=0x01` (starbase id 1),
     `PLAYER.DAT[0x44]=0x01`
+- `fixtures/ecmaint-starbase-move-pre/v1.5/` / `fixtures/ecmaint-starbase-move-post/v1.5/`
+  - `ecmaint-starbase-pre` with the base ordered to (18,13) in deep space
+    (`BASES.DAT[0x1F]=1`, `[0x20..0x22]=12 0d 00`); after one year the base
+    and its escort have climbed to depth 0 and are still under way
+- `fixtures/ecmaint-starbase-lift-pre/v1.5/` / `fixtures/ecmaint-starbase-lift-post/v1.5/`
+  - `ecmaint-starbase-pre` with the planet under the base given to empire 2
+    (`PLANETS.DAT` record 15 `[0x5D]=2`); classic lifts the base out of orbit
+    (`TZ = 0`, depth 1/52) and carries its escort along
 
 ### Reports With Several Human Empires
 

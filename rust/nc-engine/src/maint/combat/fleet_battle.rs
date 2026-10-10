@@ -371,7 +371,7 @@ fn remove_destroyed_starbases(
     coords: [u8; 2],
     owner: u8,
     destroyed: u32,
-) -> Vec<u8> {
+) -> Vec<u16> {
     let mut remaining = destroyed;
     let mut destroyed_ids = Vec::new();
     for base in &mut game_data.bases.records {
@@ -380,7 +380,7 @@ fn remove_destroyed_starbases(
         }
         if base.coords_raw() == coords
             && base.owner_empire_raw() == owner
-            && base.active_flag_raw() != 0
+            && base.base_id_raw() != 0
         {
             destroyed_ids.push(base.base_id_raw());
             *base = nc_data::BaseRecord::new_zeroed();
@@ -1258,7 +1258,7 @@ fn resolve_fleet_battles(
             .map(|tf| tf.empire)
             .or_else(|| dominant_empire_after_battle(&task_forces, winner_empire));
 
-        let mut destroyed_starbases_by_empire: HashMap<u8, Vec<u8>> = HashMap::new();
+        let mut destroyed_starbases_by_empire: HashMap<u8, Vec<u16>> = HashMap::new();
         for tf in &task_forces {
             if let Some(before) = original_states.get(&tf.empire) {
                 distribute_fleet_losses(game_data, &tf.fleet_indices, before, &tf.state);

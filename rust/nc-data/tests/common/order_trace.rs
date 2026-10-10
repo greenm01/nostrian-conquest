@@ -243,7 +243,6 @@ pub fn build_patrol_sector_trace() -> CoreGameData {
 pub fn build_guard_starbase_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
     let mut base = BaseRecord::new_zeroed();
-    base.set_active_flag_raw(1);
     base.set_base_id_raw(1);
     base.set_owner_empire_raw(1);
     base.set_coords_raw(TRACE_TARGET);

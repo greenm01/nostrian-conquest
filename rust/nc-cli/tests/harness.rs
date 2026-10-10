@@ -236,7 +236,7 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
             .bases
             .records
             .iter()
-            .any(|base| base.owner_empire_raw() == 1 && base.active_flag_raw() != 0)
+            .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0)
     );
 
     let viewer1 = store.latest_planet_intel_for_viewer(1).unwrap();
@@ -345,7 +345,7 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
             .bases
             .records
             .iter()
-            .any(|base| base.owner_empire_raw() == 1 && base.active_flag_raw() != 0);
+            .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0);
     }
 
     let manifest = fs::read_to_string(root.join("README.txt")).unwrap();

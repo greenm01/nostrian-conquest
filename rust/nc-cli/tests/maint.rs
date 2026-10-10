@@ -1366,7 +1366,7 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
             .iter()
             .all(|base| !(base.coords_raw() == starbase_coords
                 && base.owner_empire_raw() == 1
-                && base.active_flag_raw() != 0))
+                && base.base_id_raw() != 0))
     );
 
     cleanup_dir(&target);

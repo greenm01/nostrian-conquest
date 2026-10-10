@@ -33,7 +33,7 @@ pub fn starbase_visible_rows(geometry: ScreenGeometry) -> usize {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StarbaseRow {
     pub base_record_index_1_based: usize,
-    pub base_id: u8,
+    pub base_id: u16,
     pub escort_list_label: String,
     pub escort_review_label: String,
     pub coords: [u8; 2],

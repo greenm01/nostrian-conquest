@@ -173,7 +173,7 @@ impl CoreGameData {
                     .unwrap_or_else(|| fleet.guard_starbase_index_raw());
                 if base_id == 0
                     || !self.bases.records.iter().any(|base| {
-                        base.owner_empire_raw() == owner && u16::from(base.base_id_raw()) == base_id
+                        base.owner_empire_raw() == owner && base.base_id_raw() == base_id
                     })
                 {
                     return Err(FleetOrderValidationError::InvalidGuardStarbase);

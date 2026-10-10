@@ -6,29 +6,31 @@ use nc_data::*;
 #[test]
 fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
     let mut record = BaseRecord::new_zeroed();
-    record.set_local_slot_raw(0x01);
-    record.set_active_flag_raw(0x01);
-    record.set_base_id_raw(0x01);
-    record.set_link_word_raw(0x0000);
-    record.set_chain_word_raw(0x0001);
-    record.set_coords_raw([0x10, 0x0D]);
-    record.set_tuple_a_payload_raw([0x80, 0x00, 0x00, 0x00, 0x00]);
-    record.set_tuple_b_payload_raw([0x80, 0x00, 0x00, 0x00, 0x00]);
-    record.set_tuple_c_payload_raw([0x81, 0x00, 0x00, 0x00, 0x00]);
-    record.set_trailing_coords_raw([0x10, 0x0D]);
+    record.set_escort_fleet_slot_raw(0x0001);
+    record.set_base_id_raw(0x0001);
     record.set_owner_empire_raw(0x01);
+    record.set_next_base_link_raw(0x0000);
+    record.set_record_number_raw(0x0001);
+    record.set_previous_base_link_raw(0x0000);
+    record.set_coords_raw([0x10, 0x0D]);
+    record.set_at_rest_motion();
+    record.set_moving_flag_raw(0);
+    record.set_target_coords_raw([0x10, 0x0D]);
+    record.set_target_depth_raw(1);
 
-    assert_eq!(record.local_slot_raw(), 0x01);
-    assert_eq!(record.active_flag_raw(), 0x01);
-    assert_eq!(record.base_id_raw(), 0x01);
-    assert_eq!(record.link_word_raw(), 0x0000);
-    assert_eq!(record.chain_word_raw(), 0x0001);
-    assert_eq!(record.coords_raw(), [0x10, 0x0D]);
-    assert_eq!(record.tuple_a_payload_raw(), [0x80, 0x00, 0x00, 0x00, 0x00]);
-    assert_eq!(record.tuple_b_payload_raw(), [0x80, 0x00, 0x00, 0x00, 0x00]);
-    assert_eq!(record.tuple_c_payload_raw(), [0x81, 0x00, 0x00, 0x00, 0x00]);
-    assert_eq!(record.trailing_coords_raw(), [0x10, 0x0D]);
+    assert_eq!(record.escort_fleet_slot_raw(), 0x0001);
+    assert_eq!(record.base_id_raw(), 0x0001);
     assert_eq!(record.owner_empire_raw(), 0x01);
+    assert_eq!(record.next_base_link_raw(), 0x0000);
+    assert_eq!(record.record_number_raw(), 0x0001);
+    assert_eq!(record.previous_base_link_raw(), 0x0000);
+    assert_eq!(record.coords_raw(), [0x10, 0x0D]);
+    assert_eq!(record.x_fraction(), Real48::HALF);
+    assert_eq!(record.y_fraction(), Real48::HALF);
+    assert_eq!(record.depth(), Real48::ONE);
+    assert_eq!(record.moving_flag_raw(), 0);
+    assert_eq!(record.target_coords_raw(), [0x10, 0x0D]);
+    assert_eq!(record.target_depth_raw(), 1);
 
     assert_eq!(
         record.raw,
@@ -58,12 +60,13 @@ fn guard_starbase_related_accessors_expose_linkage_words() {
     let base_bytes = read_ecmaint_starbase_pre_fixture("BASES.DAT");
     let bases = BaseDat::parse(&base_bytes).unwrap();
     let base = &bases.records[0];
-    assert_eq!(base.summary_word_raw(), 1);
-    assert_eq!(base.chain_word_raw(), 1);
+    assert_eq!(base.escort_fleet_slot_raw(), fleet.local_slot_word_raw());
+    assert_eq!(base.base_id_raw(), fleet.guard_starbase_index_raw());
+    assert_eq!(base.record_number_raw(), 1);
 }
 
 #[test]
-fn set_starbase_destination_updates_trailing_coords_for_owned_active_base() {
+fn set_starbase_destination_writes_what_ecgame_move_writes() {
     let mut data = GameStateBuilder::new()
         .with_player_count(4)
         .with_guard_starbase(1, 1, [16, 13], 1)
@@ -73,24 +76,47 @@ fn set_starbase_destination_updates_trailing_coords_for_owned_active_base() {
     data.set_starbase_destination(1, 1, [2, 12])
         .expect("owned starbase destination should update");
 
-    assert_eq!(data.bases.records[0].coords_raw(), [16, 13]);
-    assert_eq!(data.bases.records[0].trailing_coords_raw(), [2, 12]);
+    let base = &data.bases.records[0];
+    assert_eq!(base.coords_raw(), [16, 13]);
+    assert_eq!(base.target_coords_raw(), [2, 12]);
+    assert_eq!(base.moving_flag_raw(), 1);
+    assert_eq!(base.target_depth_raw(), 0, "no world of empire 1 at (2,12)");
+
+    let home = data.planets.records[0].coords_raw();
+    assert_eq!(data.planets.records[0].owner_empire_slot_raw(), 1);
+    data.set_starbase_destination(1, 1, home)
+        .expect("owned starbase destination should update");
+    assert_eq!(data.bases.records[0].target_coords_raw(), home);
+    assert_eq!(
+        data.bases.records[0].target_depth_raw(),
+        1,
+        "own world: orbit"
+    );
 }
 
 #[test]
-fn halt_starbase_resets_trailing_coords_to_live_location() {
+fn halt_starbase_writes_what_ecgame_halt_writes() {
     let mut data = GameStateBuilder::new()
         .with_player_count(4)
         .with_guard_starbase(1, 1, [16, 13], 1)
         .build_initialized_baseline()
         .expect("baseline should build");
-    data.bases.records[0].set_trailing_coords_raw([2, 12]);
+    data.set_starbase_destination(1, 1, [2, 12]).unwrap();
+    // Part way through the climb out of orbit.
+    data.bases.records[0].set_depth(Real48::from_bytes([0x80, 0x00, 0x00, 0x00, 0x00, 0x40]));
 
     data.halt_starbase(1, 1)
         .expect("owned starbase halt should succeed");
 
-    assert_eq!(data.bases.records[0].coords_raw(), [16, 13]);
-    assert_eq!(data.bases.records[0].trailing_coords_raw(), [16, 13]);
+    let base = &data.bases.records[0];
+    assert_eq!(base.coords_raw(), [16, 13]);
+    assert_eq!(base.target_coords_raw(), [16, 13]);
+    assert_eq!(base.moving_flag_raw(), 0);
+    assert_eq!(base.target_depth_raw(), 1, "Round(0.75) = 1");
+    assert_eq!(
+        base.depth().to_bytes(),
+        [0x80, 0x00, 0x00, 0x00, 0x00, 0x40]
+    );
 }
 
 #[test]
@@ -776,6 +802,28 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     assert_eq!(base.base_id_raw(), 1);
     assert_eq!(base.coords_raw(), [6, 5]);
     assert_eq!(base.owner_empire_raw(), 1);
+    // A new base as ECMAINT 2000:6642 creates one: no escort, at rest in
+    // orbit, target = its own sector.
+    assert_eq!(
+        base.raw,
+        [
+            0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 6, 5, 0x80, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0x81,
+            0, 0, 0, 0, 0, 0, 6, 5, 1,
+        ]
+    );
+
+    // A second base takes the next id and joins the end of the chain.
+    data.planets.records[0].set_stardock_kind_raw(0, 9);
+    data.planets.records[0].set_stardock_count_raw(0, 1);
+    data.commission_planet_stardock_slot(1, 1, 0).unwrap();
+    let [first, second] = &data.bases.records[..] else {
+        panic!("expected two bases");
+    };
+    assert_eq!(first.next_base_link_raw(), 2);
+    assert_eq!(second.base_id_raw(), 2);
+    assert_eq!(second.record_number_raw(), 2);
+    assert_eq!(second.previous_base_link_raw(), 1);
+    assert_eq!(second.next_base_link_raw(), 0);
 }
 
 #[test]
@@ -1474,7 +1522,7 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
     };
 
     data.planets.records[0].raw[0x5D] = 9;
-    data.bases.records[0].set_active_flag_raw(1);
+    data.bases.records[0].set_base_id_raw(1);
     data.bases.records[0].set_owner_empire_raw(0);
 
     assert_eq!(
@@ -1486,7 +1534,7 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
         vec!["BASES[1].owner_empire expected 1..=4, got 0".to_string()]
     );
 
-    data.bases.records[0].set_active_flag_raw(0);
+    data.bases.records[0].set_base_id_raw(0);
     assert!(data.current_known_base_owner_empire_errors().is_empty());
 }
 
@@ -2016,11 +2064,11 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
     assert_eq!(data.fleets.records[0].mission_aux_bytes(), [0x01, 0x01]);
     assert_eq!(data.bases.records.len(), 1);
     assert_eq!(
-        data.bases.records[0].summary_word_raw(),
+        data.bases.records[0].escort_fleet_slot_raw(),
         data.fleets.records[0].local_slot_word_raw()
     );
     assert_eq!(
-        data.bases.records[0].chain_word_raw(),
+        data.bases.records[0].record_number_raw(),
         data.fleets.records[0].fleet_id_word_raw()
     );
     assert_eq!(data.bases.records[0].coords_raw(), [0x10, 0x0D]);
@@ -2410,8 +2458,8 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
         (
             Order::GuardStarbase,
             base.coords_raw(),
-            Some(base.base_id_raw()),
-            [1, base.base_id_raw()],
+            Some(base.base_id_raw() as u8),
+            [1, base.base_id_raw() as u8],
         ),
         (Order::GuardBlockadeWorld, owned, None, [1, 0]),
         (Order::BombardWorld, foreign, None, [1, 0]),
@@ -2466,7 +2514,7 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
         Order::GuardStarbase.to_raw(),
         base.coords_raw(),
         Some(1),
-        Some(base.base_id_raw()),
+        Some(base.base_id_raw() as u8),
     )
     .unwrap();
 
@@ -2480,7 +2528,7 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
     );
     assert_eq!(
         data.fleets.records[1].mission_aux_bytes(),
-        [1, base.base_id_raw()]
+        [1, base.base_id_raw() as u8]
     );
 }
 
@@ -2590,9 +2638,9 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
             fleet1_id: Some(1),
             fleet1_guard_index: Some(1),
             fleet1_target: Some([0x10, 0x0D]),
-            base1_summary: Some(1),
+            base1_escort_fleet_slot: Some(1),
             base1_id: Some(1),
-            base1_chain: Some(1),
+            base1_record_number: Some(1),
             base1_coords: Some([0x10, 0x0D]),
             ipbm_record_count: 0,
         }
@@ -2611,11 +2659,11 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
             guard_index: 1,
             target_coords: [0x10, 0x0D],
             selected_base_present: true,
-            selected_base_summary_word: Some(1),
+            selected_base_escort_fleet_slot: Some(1),
             selected_base_id: Some(1),
-            selected_base_chain_word: Some(1),
+            selected_base_record_number: Some(1),
             selected_base_coords: Some([0x10, 0x0D]),
-            selected_base_trailing_coords: Some([0x10, 0x0D]),
+            selected_base_target_coords: Some([0x10, 0x0D]),
             selected_base_owner_empire: Some(1),
         }
     );

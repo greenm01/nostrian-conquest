@@ -92,13 +92,10 @@ pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
 
 pub fn add_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
     let mut base = nc_data::BaseRecord::new_zeroed();
-    base.set_local_slot_raw(1);
-    base.set_active_flag_raw(1);
     base.set_base_id_raw(1);
-    base.set_link_word_raw(0);
-    base.set_chain_word_raw(1);
+    base.set_record_number_raw(1);
     base.set_coords_raw(coords);
-    base.set_trailing_coords_raw(coords);
+    base.set_target_coords_raw(coords);
     base.set_owner_empire_raw(owner);
     game_data.bases.records.push(base);
 }

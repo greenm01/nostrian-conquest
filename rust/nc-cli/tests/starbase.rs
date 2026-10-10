@@ -165,7 +165,7 @@ fn guard_starbase_batch_init_materializes_multiple_parameterized_directories() {
         common::rust_workspace(),
     );
     assert!(report.contains("OK   guard-starbase-linkage"));
-    assert!(report.contains("base1.summary=1 base1.id=1 base1.chain=1 coords=[12, 9]"));
+    assert!(report.contains("base1.escort=1 base1.id=1 base1.record=1 coords=[12, 9]"));
 
     cleanup_dir(&target);
 }

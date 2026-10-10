@@ -186,7 +186,7 @@ fn autopilot_build_queue(
         .bases
         .records
         .iter()
-        .filter(|b| b.owner_empire_raw() == owner_slot && b.active_flag_raw() != 0)
+        .filter(|b| b.owner_empire_raw() == owner_slot && b.base_id_raw() != 0)
         .map(|b| b.coords_raw())
         .collect();
 

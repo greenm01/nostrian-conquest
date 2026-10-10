@@ -393,20 +393,25 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
 }
 
 fn set_bases(game_data: &mut CoreGameData, snapshot: &GameState) {
-    let mut next_base_id = 1u8;
-    let mut records = Vec::new();
+    let mut next_base_id = 1u16;
+    let mut records: Vec<BaseRecord> = Vec::new();
     for planet in &snapshot.state.owned_planets {
         for slot in 0..planet.starbase_count.max(1) {
             if slot >= planet.starbase_count {
                 break;
             }
             let mut base = BaseRecord::new_zeroed();
-            base.set_local_slot_raw(next_base_id);
-            base.set_active_flag_raw(1);
             base.set_base_id_raw(next_base_id);
-            base.set_coords_raw(planet.coords);
             base.set_owner_empire_raw(snapshot.player_seat as u8);
-            base.set_chain_word_raw(u16::from(next_base_id));
+            base.set_record_number_raw(next_base_id);
+            if let Some(previous) = records.last_mut() {
+                previous.set_next_base_link_raw(next_base_id);
+                base.set_previous_base_link_raw(previous.record_number_raw());
+            }
+            base.set_coords_raw(planet.coords);
+            base.set_at_rest_motion();
+            base.set_target_coords_raw(planet.coords);
+            base.set_target_depth_raw(1);
             records.push(base);
             next_base_id = next_base_id.saturating_add(1);
         }

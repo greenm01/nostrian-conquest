@@ -151,7 +151,7 @@ pub fn owned_orbit_presence(
             .filter(|base| {
                 base.coords_raw() == coords
                     && base.owner_empire_raw() == owner_empire_id
-                    && base.active_flag_raw() != 0
+                    && base.base_id_raw() != 0
             })
             .count(),
     }

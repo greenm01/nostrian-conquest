@@ -47,7 +47,7 @@ fn orbit_presence_summary_counts_fleets_and_starbases() {
     let mut base = BaseRecord::new_zeroed();
     base.set_coords_raw(coords);
     base.set_owner_empire_raw(1);
-    base.set_active_flag_raw(1);
+    base.set_base_id_raw(1);
     game_data.bases.records.push(base);
 
     let summary = owned_orbit_presence(&game_data, 1, coords);

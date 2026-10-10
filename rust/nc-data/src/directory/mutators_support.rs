@@ -133,27 +133,29 @@ pub(super) fn rebuild_owner_fleet_chain(
     }
 }
 
+/// A base at rest at `coords`, as ECGAME and ECMAINT create one: not moving,
+/// target sector = current sector, target depth 1 (orbit). Chain links are
+/// left at 0.
 pub(super) fn build_guard_starbase_base_record(
     coords: [u8; 2],
-    base_id: u8,
-    summary_word: u16,
-    chain_word: u16,
+    base_id: u16,
+    escort_fleet_slot: u16,
+    record_number: u16,
     owner_empire: u8,
-    tuple_a: [u8; 5],
-    tuple_b: [u8; 5],
-    tuple_c: [u8; 5],
+    x_fraction: Real48,
+    y_fraction: Real48,
+    depth: Real48,
 ) -> BaseRecord {
     let mut record = BaseRecord::new_zeroed();
-    record.set_local_slot_raw(base_id);
-    record.set_summary_word_raw(summary_word);
+    record.set_escort_fleet_slot_raw(escort_fleet_slot);
     record.set_base_id_raw(base_id);
-    record.set_link_word_raw(0x0000);
-    record.set_chain_word_raw(chain_word);
-    record.set_coords_raw(coords);
-    record.set_tuple_a_payload_raw(tuple_a);
-    record.set_tuple_b_payload_raw(tuple_b);
-    record.set_tuple_c_payload_raw(tuple_c);
-    record.set_trailing_coords_raw(coords);
     record.set_owner_empire_raw(owner_empire);
+    record.set_record_number_raw(record_number);
+    record.set_coords_raw(coords);
+    record.set_x_fraction(x_fraction);
+    record.set_y_fraction(y_fraction);
+    record.set_depth(depth);
+    record.set_target_coords_raw(coords);
+    record.set_target_depth_raw(1);
     record
 }

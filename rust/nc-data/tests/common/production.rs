@@ -106,7 +106,7 @@ pub fn single_planet_game(player: PlayerRecord, planet: PlanetRecord) -> CoreGam
 
 pub fn commissioned_starbase(owner_empire_raw: u8, coords: [u8; 2]) -> BaseRecord {
     let mut base = BaseRecord::new_zeroed();
-    base.set_active_flag_raw(1);
+    base.set_base_id_raw(1);
     base.set_owner_empire_raw(owner_empire_raw);
     base.set_coords_raw(coords);
     base

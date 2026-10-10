@@ -29,9 +29,9 @@ pub struct CurrentKnownKeyWordSummary {
     pub fleet1_id: Option<u16>,
     pub fleet1_guard_index: Option<u16>,
     pub fleet1_target: Option<[u8; 2]>,
-    pub base1_summary: Option<u16>,
-    pub base1_id: Option<u8>,
-    pub base1_chain: Option<u16>,
+    pub base1_escort_fleet_slot: Option<u16>,
+    pub base1_id: Option<u16>,
+    pub base1_record_number: Option<u16>,
     pub base1_coords: Option<[u8; 2]>,
     pub ipbm_record_count: usize,
 }
@@ -47,11 +47,11 @@ pub struct CurrentKnownGuardStarbaseLinkageSummary {
     pub guard_index: u16,
     pub target_coords: [u8; 2],
     pub selected_base_present: bool,
-    pub selected_base_summary_word: Option<u16>,
-    pub selected_base_id: Option<u8>,
-    pub selected_base_chain_word: Option<u16>,
+    pub selected_base_escort_fleet_slot: Option<u16>,
+    pub selected_base_id: Option<u16>,
+    pub selected_base_record_number: Option<u16>,
     pub selected_base_coords: Option<[u8; 2]>,
-    pub selected_base_trailing_coords: Option<[u8; 2]>,
+    pub selected_base_target_coords: Option<[u8; 2]>,
     pub selected_base_owner_empire: Option<u8>,
 }
 
@@ -425,7 +425,7 @@ pub struct AutoCommissionFleetEntry {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AutoCommissionStarbaseEntry {
-    pub starbase_number: u8,
+    pub starbase_number: u16,
     pub planet_name: String,
     pub coords: [u8; 2],
 }

@@ -34,7 +34,7 @@ pub(crate) struct OrderFleetRow {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct OrderStarbaseRow {
     pub base_record_index_1_based: usize,
-    pub base_id: u8,
+    pub base_id: u16,
     pub coords: [u8; 2],
     pub destination_coords: [u8; 2],
 }
@@ -473,7 +473,7 @@ impl DashApp {
                             );
                             return Ok(());
                         };
-                        (base.coords, Some(1), Some(base.base_id))
+                        (base.coords, Some(1), Some(base.base_id as u8))
                     }
                     nc_engine::FleetTargetInputKind::FleetId => {
                         let Some(host) = self.resolve_host_fleet_for_current_mission() else {
@@ -1607,7 +1607,7 @@ impl DashApp {
 
     fn resolve_fleet_order_starbase_target_for_current_mission(&self) -> Option<OrderStarbaseRow> {
         let default_base_id = self.fleet_order_default_starbase()?.base_id;
-        let base_id = resolve_default_u8_input(&self.fleet_overlay.order_input, default_base_id)?;
+        let base_id = resolve_default_u16_input(&self.fleet_overlay.order_input, default_base_id)?;
         self.owned_starbase_rows_for_orders()
             .into_iter()
             .find(|row| row.base_id == base_id)
@@ -2156,7 +2156,7 @@ impl DashApp {
 
     fn resolve_fleet_group_starbase_target_for_current_mission(&self) -> Option<OrderStarbaseRow> {
         let default_base_id = self.fleet_group_default_starbase()?.base_id;
-        let base_id = resolve_default_u8_input(&self.fleet_overlay.order_input, default_base_id)?;
+        let base_id = resolve_default_u16_input(&self.fleet_overlay.order_input, default_base_id)?;
         self.owned_starbase_rows_for_orders()
             .into_iter()
             .find(|row| row.base_id == base_id)
@@ -2359,15 +2359,6 @@ impl DashApp {
             Some(subject) => format!("{subject} - {summary}"),
             None => summary,
         }
-    }
-}
-
-fn resolve_default_u8_input(input: &str, default: u8) -> Option<u8> {
-    let raw = input.trim();
-    if raw.is_empty() {
-        Some(default)
-    } else {
-        raw.parse::<u8>().ok()
     }
 }
 

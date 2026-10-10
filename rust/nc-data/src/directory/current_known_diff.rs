@@ -30,9 +30,9 @@ impl CoreGameData {
             fleet1_id: fleet1.map(|record| record.fleet_id_word_raw()),
             fleet1_guard_index: fleet1.map(|record| record.guard_starbase_index_raw()),
             fleet1_target: fleet1.map(|record| record.standing_order_target_coords_raw()),
-            base1_summary: base1.map(|record| record.summary_word_raw()),
+            base1_escort_fleet_slot: base1.map(|record| record.escort_fleet_slot_raw()),
             base1_id: base1.map(|record| record.base_id_raw()),
-            base1_chain: base1.map(|record| record.chain_word_raw()),
+            base1_record_number: base1.map(|record| record.record_number_raw()),
             base1_coords: base1.map(|record| record.coords_raw()),
             ipbm_record_count: self.ipbm.records.len(),
         }

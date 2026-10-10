@@ -73,17 +73,17 @@ impl CoreGameData {
             ));
         } else {
             let base = &self.bases.records[0];
-            if base.local_slot_raw() == 0 {
-                errors.push("BASES[1].local_slot expected non-zero".to_string());
+            if base.escort_fleet_slot_raw() == 0 {
+                errors.push("BASES[1].escort_fleet_slot expected non-zero".to_string());
             }
-            if base.summary_word_raw() != fleet.local_slot_word_raw() {
+            if base.escort_fleet_slot_raw() != fleet.local_slot_word_raw() {
                 errors.push(format!(
-                    "BASES[1].summary_word expected FLEET[1].local_slot_word {}, got {}",
+                    "BASES[1].escort_fleet_slot expected FLEET[1].local_slot_word {}, got {}",
                     fleet.local_slot_word_raw(),
-                    base.summary_word_raw()
+                    base.escort_fleet_slot_raw()
                 ));
             }
-            if u16::from(base.base_id_raw()) != fleet.guard_starbase_index_raw() {
+            if base.base_id_raw() != fleet.guard_starbase_index_raw() {
                 errors.push(format!(
                     "BASES[1].base_id expected FLEET[1].guard index {}, got {}",
                     fleet.guard_starbase_index_raw(),
@@ -97,18 +97,18 @@ impl CoreGameData {
                     base.coords_raw()
                 ));
             }
-            if base.trailing_coords_raw() != base.coords_raw() {
+            if base.target_coords_raw() != base.coords_raw() {
                 errors.push(format!(
-                    "BASES[1].trailing coords expected {:?}, got {:?}",
+                    "BASES[1].target coords expected {:?}, got {:?}",
                     base.coords_raw(),
-                    base.trailing_coords_raw()
+                    base.target_coords_raw()
                 ));
             }
-            if base.chain_word_raw() != player1.starbase_count_raw() {
+            if base.record_number_raw() != player1.starbase_count_raw() {
                 errors.push(format!(
-                    "BASES[1].chain_word expected PLAYER[1].starbase_count_raw {}, got {}",
+                    "BASES[1].record_number expected PLAYER[1].starbase_count_raw {}, got {}",
                     player1.starbase_count_raw(),
-                    base.chain_word_raw()
+                    base.record_number_raw()
                 ));
             }
             if fleet.local_slot_word_raw() != player1.starbase_count_raw() {
@@ -118,32 +118,32 @@ impl CoreGameData {
                     fleet.local_slot_word_raw()
                 ));
             }
-            if fleet.fleet_id_word_raw() != base.chain_word_raw() {
+            if fleet.fleet_id_word_raw() != base.record_number_raw() {
                 errors.push(format!(
-                    "FLEET[1].fleet ID word expected BASES[1].chain_word {}, got {}",
-                    base.chain_word_raw(),
+                    "FLEET[1].fleet ID word expected BASES[1].record_number {}, got {}",
+                    base.record_number_raw(),
                     fleet.fleet_id_word_raw()
                 ));
             }
-            if base.tuple_a_payload_raw() != fleet.tuple_a_payload_raw() {
+            if base.x_fraction() != fleet.x_fraction() {
                 errors.push(format!(
-                    "BASES[1].tuple_a_payload expected FLEET[1].tuple_a_payload {:?}, got {:?}",
-                    fleet.tuple_a_payload_raw(),
-                    base.tuple_a_payload_raw()
+                    "BASES[1].x_fraction expected FLEET[1].x_fraction {:?}, got {:?}",
+                    fleet.x_fraction().to_bytes(),
+                    base.x_fraction().to_bytes()
                 ));
             }
-            if base.tuple_b_payload_raw() != fleet.tuple_b_payload_raw() {
+            if base.y_fraction() != fleet.y_fraction() {
                 errors.push(format!(
-                    "BASES[1].tuple_b_payload expected FLEET[1].tuple_b_payload {:?}, got {:?}",
-                    fleet.tuple_b_payload_raw(),
-                    base.tuple_b_payload_raw()
+                    "BASES[1].y_fraction expected FLEET[1].y_fraction {:?}, got {:?}",
+                    fleet.y_fraction().to_bytes(),
+                    base.y_fraction().to_bytes()
                 ));
             }
-            if base.tuple_c_payload_raw() != fleet.tuple_c_payload_raw() {
+            if base.depth() != fleet.depth() {
                 errors.push(format!(
-                    "BASES[1].tuple_c_payload expected FLEET[1].tuple_c_payload {:?}, got {:?}",
-                    fleet.tuple_c_payload_raw(),
-                    base.tuple_c_payload_raw()
+                    "BASES[1].depth expected FLEET[1].depth {:?}, got {:?}",
+                    fleet.depth().to_bytes(),
+                    base.depth().to_bytes()
                 ));
             }
         }
@@ -186,11 +186,11 @@ impl CoreGameData {
             guard_index: fleet.guard_starbase_index_raw(),
             target_coords: fleet.standing_order_target_coords_raw(),
             selected_base_present: selected_base.is_some(),
-            selected_base_summary_word: selected_base.map(|base| base.summary_word_raw()),
+            selected_base_escort_fleet_slot: selected_base.map(|base| base.escort_fleet_slot_raw()),
             selected_base_id: selected_base.map(|base| base.base_id_raw()),
-            selected_base_chain_word: selected_base.map(|base| base.chain_word_raw()),
+            selected_base_record_number: selected_base.map(|base| base.record_number_raw()),
             selected_base_coords: selected_base.map(|base| base.coords_raw()),
-            selected_base_trailing_coords: selected_base.map(|base| base.trailing_coords_raw()),
+            selected_base_target_coords: selected_base.map(|base| base.target_coords_raw()),
             selected_base_owner_empire: selected_base.map(|base| base.owner_empire_raw()),
         })
     }
@@ -257,7 +257,7 @@ impl CoreGameData {
             return errors;
         }
 
-        if summary.selected_base_id.map(u16::from) != Some(summary.guard_index) {
+        if summary.selected_base_id != Some(summary.guard_index) {
             errors.push(format!(
                 "BASES[{}].base_id expected FLEET[{}].guard index {}, got {:?}",
                 summary.guard_index,
@@ -266,13 +266,13 @@ impl CoreGameData {
                 summary.selected_base_id
             ));
         }
-        if summary.selected_base_summary_word != Some(summary.fleet_local_slot) {
+        if summary.selected_base_escort_fleet_slot != Some(summary.fleet_local_slot) {
             errors.push(format!(
-                "BASES[{}].summary_word expected FLEET[{}].local_slot_word {}, got {:?}",
+                "BASES[{}].escort_fleet_slot expected FLEET[{}].local_slot_word {}, got {:?}",
                 summary.guard_index,
                 fleet_record_index_1_based,
                 summary.fleet_local_slot,
-                summary.selected_base_summary_word
+                summary.selected_base_escort_fleet_slot
             ));
         }
         if summary.selected_base_coords != Some(summary.target_coords) {
@@ -284,12 +284,12 @@ impl CoreGameData {
                 summary.selected_base_coords
             ));
         }
-        if summary.selected_base_trailing_coords != summary.selected_base_coords {
+        if summary.selected_base_target_coords != summary.selected_base_coords {
             errors.push(format!(
-                "BASES[{}].trailing coords expected {:?}, got {:?}",
+                "BASES[{}].target coords expected {:?}, got {:?}",
                 summary.guard_index,
                 summary.selected_base_coords.unwrap_or([0, 0]),
-                summary.selected_base_trailing_coords
+                summary.selected_base_target_coords
             ));
         }
         let expected_owner_empire = player_record_index_1_based as u8;

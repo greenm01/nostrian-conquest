@@ -53,7 +53,7 @@ pub(super) fn push_contact_event_for_task_force(
     for base in game_data.bases.records.iter().filter(|base| {
         base.coords_raw() == coords
             && base.owner_empire_raw() == task_force.empire
-            && base.active_flag_raw() != 0
+            && base.base_id_raw() != 0
     }) {
         scout_contact_events.push(ScoutContactEvent {
             viewer_empire_raw: task_force.empire,

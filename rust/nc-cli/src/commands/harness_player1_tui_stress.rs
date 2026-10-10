@@ -887,7 +887,7 @@ fn format_orbit_summary(game_data: &CoreGameData, coords: [u8; 2]) -> String {
         .bases
         .records
         .iter()
-        .filter(|base| base.coords_raw() == coords && base.active_flag_raw() != 0)
+        .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
         .count();
     let mut parts = Vec::new();
     if fleet_count > 0 {

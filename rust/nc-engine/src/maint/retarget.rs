@@ -127,7 +127,7 @@ pub(super) fn refresh_guard_starbase_targets(
         .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
         .map(|base| {
             (
-                (base.owner_empire_raw(), u16::from(base.base_id_raw())),
+                (base.owner_empire_raw(), base.base_id_raw()),
                 base.coords_raw(),
             )
         })

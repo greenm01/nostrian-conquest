@@ -396,7 +396,7 @@ fn validate_guard_starbase_data(data: &CoreGameData) -> Result<(), Box<dyn std::
             player1.starbase_count_raw(),
             fleet.local_slot_word_raw(),
             fleet.fleet_id_word_raw(),
-            base.chain_word_raw()
+            base.record_number_raw()
         );
         println!(
             "  one-base guard-starbase linkage holds at coords {:?}",
