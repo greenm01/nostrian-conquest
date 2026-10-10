@@ -1,4 +1,5 @@
 use crate::support::*;
+use nc_data::SeatBindSource;
 
 #[test]
 fn first_time_menu_branch_opens_help_intro_and_empire_list() {
@@ -1587,6 +1588,70 @@ fn unbound_bbs_first_time_join_claims_lowest_open_unreserved_seat() {
     assert_eq!(
         game_data.player.records[1].controlled_empire_name_summary(),
         "Codex Dominion"
+    );
+}
+
+fn join_unbound_bbs_caller(
+    fixture_dir: &Path,
+    caller_alias: &str,
+    caller_alias_source: SeatBindSource,
+) -> App {
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.to_path_buf(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    app.door_mode = true;
+    app.startup_state.caller_alias = Some(caller_alias.to_string());
+    app.startup_state.caller_alias_source = caller_alias_source;
+    app.enter_unbound_bbs_first_time_mode();
+    apply_action(
+        &mut app,
+        Action::Startup(StartupAction::OpenFirstTimeJoinName),
+    );
+    for ch in "Codex Dominion".chars() {
+        apply_action(
+            &mut app,
+            Action::Startup(StartupAction::AppendFirstTimeInputChar(ch)),
+        );
+    }
+    apply_action(
+        &mut app,
+        Action::Startup(StartupAction::SubmitFirstTimeInput),
+    );
+    apply_action(
+        &mut app,
+        Action::Startup(StartupAction::AcceptFirstTimePrompt),
+    );
+    assert_eq!(app.current_screen(), ScreenId::FirstTimeJoinSummary);
+    app
+}
+
+#[test]
+fn unbound_bbs_join_under_the_handle_records_the_seat_as_bound_by_handle() {
+    let fixture_dir = temp_first_time_game_copy();
+    let app = join_unbound_bbs_caller(&fixture_dir, "Starlord", SeatBindSource::Handle);
+
+    let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
+    assert_eq!(
+        store.handle_bound_seats().expect("load handle-bound seats"),
+        vec![app.player.record_index_1_based]
+    );
+}
+
+#[test]
+fn unbound_bbs_join_under_the_real_name_leaves_the_seat_bound_by_real_name() {
+    let fixture_dir = temp_first_time_game_copy();
+    join_unbound_bbs_caller(&fixture_dir, "Tachyon", SeatBindSource::RealName);
+
+    let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
+    assert_eq!(
+        store.handle_bound_seats().expect("load handle-bound seats"),
+        Vec::<usize>::new()
     );
 }
 

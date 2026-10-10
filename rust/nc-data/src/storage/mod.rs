@@ -15,12 +15,14 @@ mod player_lifecycle;
 mod player_war_stats;
 mod report_blocks;
 mod runtime;
+mod seat_bind_source;
 mod settings;
 mod snapshot_core;
 
 pub use player_activity::PlayerActivityState;
 pub use player_lifecycle::{PlayerLifecycleState, TerminalOutcome, WinnerState};
 pub use player_war_stats::PlayerWarStatsState;
+pub use seat_bind_source::SeatBindSource;
 pub use settings::{
     CampaignSettings, DEFAULT_CAMPAIGN_THEME_KEY, DEFAULT_MAINTENANCE_INTERVAL_MINUTES,
 };
@@ -314,6 +316,10 @@ impl CampaignStore {
              CREATE TABLE IF NOT EXISTS seat_reservations (
                  player_record_index INTEGER PRIMARY KEY,
                  alias TEXT NOT NULL UNIQUE
+             );
+             CREATE TABLE IF NOT EXISTS seat_bind_sources (
+                 player_record_index INTEGER PRIMARY KEY,
+                 bind_source TEXT NOT NULL
              );
              CREATE TABLE IF NOT EXISTS planet_intel (
                  snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,

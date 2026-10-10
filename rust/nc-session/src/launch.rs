@@ -41,6 +41,9 @@ impl LaunchPlayerBinding {
 pub struct LaunchBindingRequest<'a> {
     pub explicit_player_record_index_1_based: Option<usize>,
     pub dropfile_alias: Option<&'a str>,
+    /// Seats whose stored handle the alias may not match. The DOOR.SYS
+    /// real-name retry passes the seats bound by handle.
+    pub skip_stored_handle_seats: &'a [usize],
     pub use_door_terminal: bool,
     pub reservations: &'a [SeatReservation],
     pub game_data: &'a CoreGameData,
@@ -93,6 +96,7 @@ pub fn resolve_launch_player_binding(
             .records
             .iter()
             .enumerate()
+            .filter(|(idx, _)| !request.skip_stored_handle_seats.contains(&(idx + 1)))
             .filter_map(|(idx, player)| {
                 let handle = player.assigned_player_handle_summary();
                 (!handle.is_empty() && player.assigned_player_handle_matches(alias))

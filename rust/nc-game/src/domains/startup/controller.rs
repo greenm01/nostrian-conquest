@@ -13,7 +13,8 @@ use crate::screen::{
 };
 use crate::startup::{StartupPhase, StartupSummary};
 use nc_data::{
-    PlayerAccessMode, TerminalOutcome, delete_report_block_for_viewer, layout_classic_results,
+    PlayerAccessMode, SeatBindSource, TerminalOutcome, delete_report_block_for_viewer,
+    layout_classic_results,
 };
 use nc_session::onboarding::first_time_onboarding_mode as shared_first_time_onboarding_mode;
 
@@ -1366,6 +1367,12 @@ impl App {
         }
         self.startup_state.unbound_bbs_caller = false;
         self.save_game_data()?;
+        if self.startup_state.caller_alias.is_some() {
+            self.planet.campaign_store.set_seat_bind_source(
+                self.player.record_index_1_based,
+                self.startup_state.caller_alias_source,
+            )?;
+        }
         self.refresh_player_context()?;
         if self.player.is_joined {
             if let Some(theme_key) = self.startup_state.prejoin_theme_key.take() {
@@ -1375,6 +1382,34 @@ impl App {
             }
         }
         Ok(())
+    }
+
+    /// Record the bound seat as bound by the caller's BBS handle. A seat
+    /// matched by the DOOR.SYS real name first takes the handle as its player
+    /// handle; that needs normal access, and returns false without it.
+    pub(crate) fn bind_seat_to_caller_handle(
+        &mut self,
+        handle: &str,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let seat = self.player.record_index_1_based;
+        let player = self
+            .game_data
+            .player
+            .records
+            .get_mut(seat - 1)
+            .ok_or("player record missing for handle binding")?;
+        if !player.assigned_player_handle_matches(handle) {
+            if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
+                return Ok(false);
+            }
+            player.set_assigned_player_handle_raw(handle);
+            self.save_game_data()?;
+            self.refresh_player_context()?;
+        }
+        self.planet
+            .campaign_store
+            .set_seat_bind_source(seat, SeatBindSource::Handle)?;
+        Ok(true)
     }
 
     fn complete_first_time_homeworld_name(&mut self) -> Result<(), Box<dyn std::error::Error>> {

@@ -9,7 +9,7 @@ use nc_compat::{
     DatabaseDat, export_latest_snapshot_to_dir, import_directory_snapshot,
     import_directory_snapshot_with_seed,
 };
-use nc_data::{CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME};
+use nc_data::{CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, SeatBindSource};
 use rusqlite::Connection;
 
 fn repo_root() -> PathBuf {
@@ -366,6 +366,49 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             "sqlite schema should not use BLOB columns: {sql}"
         );
     }
+}
+
+#[test]
+fn sqlite_store_seat_bind_sources_default_to_real_name_on_existing_databases() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-seat-bind-sources");
+    copy_dir_all(&source, &imported);
+    let store_path = imported.join(DEFAULT_CAMPAIGN_DB_NAME);
+    let store = CampaignStore::open(&store_path).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+    // A database written before seat bind sources were stored has no table.
+    Connection::open(&store_path)
+        .expect("open sqlite db")
+        .execute_batch("DROP TABLE seat_bind_sources;")
+        .expect("drop seat bind sources");
+
+    let store = CampaignStore::open(&store_path).expect("reopen existing store");
+    assert_eq!(
+        store.handle_bound_seats().expect("handle-bound seats"),
+        Vec::<usize>::new()
+    );
+
+    store
+        .set_seat_bind_source(3, SeatBindSource::Handle)
+        .expect("record handle binding");
+    store
+        .set_seat_bind_source(2, SeatBindSource::Handle)
+        .expect("record handle binding");
+    store
+        .set_seat_bind_source(4, SeatBindSource::RealName)
+        .expect("record real-name binding");
+    assert_eq!(
+        store.handle_bound_seats().expect("handle-bound seats"),
+        vec![2, 3]
+    );
+
+    store
+        .set_seat_bind_source(3, SeatBindSource::RealName)
+        .expect("rebind seat by real name");
+    assert_eq!(
+        store.handle_bound_seats().expect("handle-bound seats"),
+        vec![2]
+    );
 }
 
 #[test]

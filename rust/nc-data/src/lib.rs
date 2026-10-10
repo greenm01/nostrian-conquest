@@ -134,7 +134,7 @@ pub use storage::{
     CampaignRuntimeState, CampaignSettings, CampaignStore, CampaignStoreError,
     DEFAULT_CAMPAIGN_DB_NAME, DEFAULT_CAMPAIGN_THEME_KEY, DEFAULT_MAINTENANCE_INTERVAL_MINUTES,
     IntelTier, PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
-    TerminalOutcome, WinnerState,
+    SeatBindSource, TerminalOutcome, WinnerState,
 };
 pub use support::{ParseError, decode_real48, encode_real48, is_classic_text_char};
 pub use turns::{

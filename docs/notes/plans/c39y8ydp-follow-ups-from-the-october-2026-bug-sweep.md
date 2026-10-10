@@ -384,6 +384,29 @@ seats. A seat with no record counts as bound by real name. A real-name seat
 that matches is rebound to the caller's handle, so every seat moves to
 handle binding at its player's next login.
 
+Result (2026-10-10): ncgame.db has a new `seat_bind_sources` table
+(`handle` or `real_name` per seat), created with `CREATE TABLE IF NOT EXISTS`
+like the other per-seat runtime tables, so beta.3 databases open without a
+schema version bump and every existing seat counts as bound by real name;
+PLAYER.DAT is untouched. nc-data's `SeatBindSource` and
+`CampaignStore::handle_bound_seats` / `set_seat_bind_source` own it. The
+shared resolver in nc-session takes `skip_stored_handle_seats`, and nc-game's
+`resolve_launch_player_binding` passes the handle-bound seats on the
+real-name retry only. When a caller with a handle binds through a stored
+handle, `bind_seat_to_caller_handle` stores the handle on the seat if it
+differs (normal access only) and records the seat as handle-bound, so seats
+converge to handle binding at their player's next login. A join records the
+seat by the caller alias's source; a DOOR.SYS with no line 36 handle
+(`alias_is_real_name`) records real name, so a later 52-line DOOR.SYS can
+still rebind it. Tests: `door_sys_real_name_does_not_bind_a_seat_bound_by_handle`
+and `door_sys_seat_bound_under_the_real_name_is_rebound_to_the_handle` in
+nc-game's `cli.rs`, the two `unbound_bbs_join_*` cases in
+`nc-game/tests/update/startup_join.rs`,
+`resolve_launch_binding_skips_listed_stored_handle_seats` in
+`nc-session/tests/launch.rs`, and
+`sqlite_store_seat_bind_sources_default_to_real_name_on_existing_databases`
+in `nc-data/tests/storage.rs`. The sysop manual's drop file section says so.
+
 ### t030
 
 Handles are stored in classic form (`?` for characters outside classic text,
