@@ -168,7 +168,7 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
     ))
 }
 
-/// Own fleets, a foreign fleet, and records just past the end.
+/// Own fleets, a foreign fleet, record 0, and records just past the end.
 fn fleet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<usize> {
     let count = state.fleets.records.len();
     let mut records = owned_fleets(state, empire);
@@ -177,23 +177,15 @@ fn fleet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<us
     {
         records.push(foreign);
     }
-    records.extend([count, count + 1, u16::MAX as usize]);
-    pick_from(choices, &without_record_zero(records))
+    records.extend([0, count, count + 1, u16::MAX as usize]);
+    pick_from(choices, &records)
 }
 
 fn planet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<usize> {
     let count = state.planets.records.len();
     let mut records = owned_planets(state, empire);
-    records.extend([1, count, count + 1, u16::MAX as usize]);
-    pick_from(choices, &without_record_zero(records))
-}
-
-/// Record 0 is left out while turn files accept it and the submission path
-/// underflows on it (docs/notes/investigations, "Turn files accept record
-/// index 0"); restore it once that is fixed.
-fn without_record_zero(mut records: Vec<usize>) -> Vec<usize> {
-    records.retain(|&record| record != 0);
-    records
+    records.extend([0, 1, count, count + 1, u16::MAX as usize]);
+    pick_from(choices, &records)
 }
 
 /// Nothing, everything, or one more than the donor carries.

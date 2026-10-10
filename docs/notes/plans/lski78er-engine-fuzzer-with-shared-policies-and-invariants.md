@@ -79,7 +79,8 @@ seconds in debug.
 
 Fuzzing current behavior found one real bug, recorded in
 [Turn files accept record index 0](../investigations/u040gnr1-turn-files-accept-record-index-0.md);
-the adversarial policy leaves record 0 out until it is fixed.
+t029 fixed it at the parser, and the adversarial policy offers record 0
+again.
 
 ### t016
 

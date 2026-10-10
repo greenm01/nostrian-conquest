@@ -299,6 +299,38 @@ fn turn_submission_rejects_fleet_targets_outside_the_map() {
 }
 
 #[test]
+fn turn_submission_rejects_record_index_zero_at_parse_time() {
+    for (block, expected) in [
+        (
+            "planet record=0 {\n  rename name=\"Zero\"\n}",
+            "planet.record",
+        ),
+        ("fleet record=0 {\n  roe value=3\n}", "fleet.record"),
+        ("fleet record=1 {\n  join host=0\n}", "join.host"),
+        (
+            "fleet record=1 {\n  transfer to=0 destroyers=1\n}",
+            "transfer.to",
+        ),
+        (
+            "fleet record=1 {\n  load_armies planet=0 qty=1\n}",
+            "load_armies.planet",
+        ),
+        (
+            "fleet record=1 {\n  unload_armies planet=0 qty=1\n}",
+            "unload_armies.planet",
+        ),
+    ] {
+        let kdl = format!("turn player=1 year=3000\n{block}\n");
+        let err = TurnSubmission::parse_kdl_str(&kdl).expect_err(block);
+        assert!(
+            err.to_string()
+                .contains(&format!("{expected} must be 1-based")),
+            "{block}: {err}"
+        );
+    }
+}
+
+#[test]
 fn turn_submission_rejects_duplicate_friendly_colonize_targets_without_mutation() {
     let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
     let fleet_indexes = data

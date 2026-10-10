@@ -2,7 +2,7 @@
 id: u040gnr1
 date: 2026-10-10
 kind: investigation
-status: investigating
+status: resolved
 tags: [investigation, fuzz, turns]
 ---
 # Turn files accept record index 0
@@ -38,17 +38,17 @@ fleet record=0 {
 
 ## Finding and resolution
 
-Open. The parser is the responsible boundary: every 1-based record index in
-a turn file should be rejected at parse time when it is 0, matching
-`turn.player`. The fuzzer's adversarial policy leaves record 0 out of its
-edge values until this is fixed (`without_record_zero` in
-`rust/nc-fuzz/src/policy/adversarial.rs`); restore it with the fix.
+Fixed by t029 (2026-10-10) at the parser, the responsible boundary. A fleet
+or planet `record`, `join host`, `transfer to`, or `load_armies` /
+`unload_armies` `planet` of 0 is now a parse error ("<node>.<property> must
+be 1-based"), matching `turn.player` and `commission.slot`, so no 0 index
+reaches `apply_to`.
 
 ## Validation and remaining work
 
-A fix needs a parser regression test in `rust/nc-data/tests/turn_submission.rs`
-for each record-bearing node, then the record-0 edge value back in the
-adversarial policy.
+`turn_submission_rejects_record_index_zero_at_parse_time` in
+`rust/nc-data/tests/turn_submission.rs` covers each record-bearing property.
+The adversarial fuzz policy offers record 0 as an edge value again.
 
 ## Connections
 

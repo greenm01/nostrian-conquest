@@ -114,7 +114,7 @@ fn parse_planet_block(node: &::kdl::KdlNode) -> Result<PlanetTurnBlock, TurnSubm
     }
 
     Ok(PlanetTurnBlock {
-        planet_record_index_1_based: prop_usize(node, "record")?,
+        planet_record_index_1_based: prop_record_index(node, "record")?,
         actions,
     })
 }
@@ -137,7 +137,7 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
                 value: prop_u8(child, "value")?,
             }),
             "join" => actions.push(FleetTurnAction::Join {
-                host_fleet_record_index_1_based: prop_usize(child, "host")?,
+                host_fleet_record_index_1_based: prop_record_index(child, "host")?,
             }),
             "detach" => actions.push(FleetTurnAction::Detach {
                 selection: parse_fleet_detach_selection(child)?,
@@ -145,15 +145,15 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
                 new_fleet_roe: opt_prop_u8(child, "new_roe")?.unwrap_or(5),
             }),
             "transfer" => actions.push(FleetTurnAction::Transfer {
-                host_fleet_record_index_1_based: prop_usize(child, "to")?,
+                host_fleet_record_index_1_based: prop_record_index(child, "to")?,
                 selection: parse_fleet_detach_selection(child)?,
             }),
             "load_armies" => actions.push(FleetTurnAction::LoadArmies {
-                planet_record_index_1_based: prop_usize(child, "planet")?,
+                planet_record_index_1_based: prop_record_index(child, "planet")?,
                 qty: prop_u16(child, "qty")?,
             }),
             "unload_armies" => actions.push(FleetTurnAction::UnloadArmies {
-                planet_record_index_1_based: prop_usize(child, "planet")?,
+                planet_record_index_1_based: prop_record_index(child, "planet")?,
                 qty: prop_u16(child, "qty")?,
             }),
             other => {
@@ -171,7 +171,7 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
     }
 
     Ok(FleetTurnBlock {
-        fleet_record_index_1_based: prop_usize(node, "record")?,
+        fleet_record_index_1_based: prop_record_index(node, "record")?,
         actions,
     })
 }
@@ -311,6 +311,17 @@ fn prop_usize(node: &::kdl::KdlNode, name: &str) -> Result<usize, TurnSubmission
     usize::try_from(value).map_err(|_| {
         TurnSubmissionError::Parse(format!("property {name} out of usize range: {value}"))
     })
+}
+
+/// A 1-based record index; 0 names no record.
+fn prop_record_index(node: &::kdl::KdlNode, name: &str) -> Result<usize, TurnSubmissionError> {
+    match prop_usize(node, name)? {
+        0 => Err(TurnSubmissionError::Parse(format!(
+            "{}.{name} must be 1-based",
+            node.name().value()
+        ))),
+        index => Ok(index),
+    }
 }
 
 fn opt_prop_u8(node: &::kdl::KdlNode, name: &str) -> Result<Option<u8>, TurnSubmissionError> {
