@@ -216,6 +216,23 @@ deleting one report by `block_index` also deletes the broadcast row with the
 same index. Deletion must only remove the deleting empire's view of a
 broadcast report.
 
+### t027
+
+`nc-game/tests/basic.rs::piped_dropfile_launch_stays_interactive_without_tty_stdout`
+relies on fixed 150-550 ms sleeps and failed several times while the machine's
+load average was 65-70 from parallel builds; it passes when run alone. Replace
+the sleeps with waits on observable progress, such as reading stdout until the
+expected prompt appears, with a generous timeout.
+
+### t028
+
+Found in t018. When a DOOR.SYS handle binds no seat, binding retries with the
+real name from line 10. A caller whose real name equals another player's
+stored handle would therefore bind to that player's seat. Binding before t018
+had the same exposure, because it always used the real name. Decide whether
+to restrict the retry, for example to seats first bound from a DOOR.SYS real
+name, which would need the seat to record how it was bound.
+
 ## Connections
 
 The RESULTS.DAT chain-id question is its own
