@@ -92,8 +92,9 @@ Not started; this is a design direction, not a result.
 
 ## Validation and remaining work
 
-Nothing built yet. Candidate task t025 in [todo.md](../../../todo.md) tracks
-the first step. A useful
+Nothing built yet. t025 in [todo.md](../../../todo.md) tracks the first step;
+on 2026-10-10 the user approved the throughput measurement only, with the
+scripted opponent left for after beta.3 playtest feedback. A useful
 first measurement is maintenance throughput in turns per second for small
 games. A CivBench-style win-probability model would serve as a training
 reward, an evaluation metric, and a strength meter for AI seats.

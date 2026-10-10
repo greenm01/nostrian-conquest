@@ -1,6 +1,8 @@
 use crate::support::{ParseError, classic_text, copy_array, trim_ascii_field};
 use crate::{ClassicResultsChain, PLAYER_RECORD_SIZE};
 
+const HANDLE_LEN: usize = 25;
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiplomaticRelation {
     Neutral,
@@ -88,10 +90,19 @@ impl PlayerRecord {
         trim_ascii_field(self.handle_bytes())
     }
 
+    /// Whether `alias` names this handle as `set_assigned_player_handle_raw`
+    /// stores it: `?` for each character outside classic text, cut to 25.
+    pub fn assigned_player_handle_matches(&self, alias: &str) -> bool {
+        let stored = classic_text(alias);
+        let stored = &stored[..stored.len().min(HANDLE_LEN)];
+        self.assigned_player_handle_summary()
+            .eq_ignore_ascii_case(stored.trim())
+    }
+
     pub fn set_assigned_player_handle_raw(&mut self, value: &str) {
         let value = classic_text(value);
         let bytes = value.as_bytes();
-        let len = bytes.len().min(25);
+        let len = bytes.len().min(HANDLE_LEN);
         self.raw[1..0x1A].fill(b' ');
         self.raw[1..1 + len].copy_from_slice(&bytes[..len]);
     }

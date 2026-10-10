@@ -95,7 +95,8 @@ pub fn resolve_launch_player_binding(
             .enumerate()
             .filter_map(|(idx, player)| {
                 let handle = player.assigned_player_handle_summary();
-                (!handle.is_empty() && handle.eq_ignore_ascii_case(alias)).then_some(idx + 1)
+                (!handle.is_empty() && player.assigned_player_handle_matches(alias))
+                    .then_some(idx + 1)
             })
             .collect::<Vec<_>>();
 
@@ -181,7 +182,7 @@ pub fn validate_reserved_seat_runtime(
             )
         })?;
     let handle = player.assigned_player_handle_summary();
-    if !handle.is_empty() && !handle.eq_ignore_ascii_case(&reservation.alias) {
+    if !handle.is_empty() && !player.assigned_player_handle_matches(&reservation.alias) {
         return Err(format!(
             "reserved alias '{}' conflicts with stored player handle '{}' for seat {}; reconcile ncgame.db settings or the campaign state",
             reservation.alias, handle, reservation.player_record_index_1_based

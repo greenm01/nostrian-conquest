@@ -166,6 +166,10 @@ debug message, and the contact-report quote in
 and `classic_text_setters_store_question_marks_for_other_characters`. The
 string changes have no test. Workspace: 2631 passed, 0 failed.
 
+Decision (2026-10-10): the user confirmed the split. Typed empire names are
+rejected so the player can retype; BBS handles and other names with no one to
+ask store `?`.
+
 ### t018
 
 DOOR.SYS reads the alias from line 10, the real name. The 52-line standard
@@ -373,6 +377,28 @@ stored handle would therefore bind to that player's seat. Binding before t018
 had the same exposure, because it always used the real name. Decide whether
 to restrict the retry, for example to seats first bound from a DOOR.SYS real
 name, which would need the seat to record how it was bound.
+
+Decision (2026-10-10): option (b). Each seat records whether it was bound by
+handle or by real name, and the real-name retry matches only real-name
+seats. A seat with no record counts as bound by real name. A real-name seat
+that matches is rebound to the caller's handle, so every seat moves to
+handle binding at its player's next login.
+
+### t030
+
+Handles are stored in classic form (`?` for characters outside classic text,
+cut to 25 characters), but seat lookup and the reservation check compared
+the stored handle with the caller's full DOOR.SYS handle. A caller whose
+handle had an accented letter or more than 25 characters found no seat and
+landed in the join flow again.
+
+Decision (2026-10-10): approved.
+
+Result (2026-10-10): `PlayerRecord::assigned_player_handle_matches` compares
+an alias in its stored form, and `nc-session/src/launch.rs` uses it for seat
+lookup and the reservation check.
+`resolve_launch_binding_finds_handles_stored_in_classic_form` in
+`nc-session/tests/launch.rs` covers both cases and fails without the fix.
 
 ## Connections
 
