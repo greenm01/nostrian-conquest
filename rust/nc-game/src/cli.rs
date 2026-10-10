@@ -235,7 +235,13 @@ fn run_interactive(
     let result = run_interactive_inner(app, terminal);
     drop(_guard);
     match result {
-        Ok(SessionEnd::Quit | SessionEnd::InputClosed) => terminal.clear_and_restore(),
+        Ok(SessionEnd::Quit) => terminal.clear_and_restore(),
+        // The caller hung up, so the screen reset usually fails too (EIO on
+        // a hung-up pty); that must not turn the hangup into an error exit.
+        Ok(SessionEnd::InputClosed) => {
+            let _ = terminal.clear_and_restore();
+            Ok(())
+        }
         // The caller may be gone (half-open socket); the message is best
         // effort and must not turn a normal exit into an error.
         Ok(SessionEnd::TimedOut(timeout)) => {
@@ -328,8 +334,20 @@ fn is_closed_input_error(err: &(dyn std::error::Error + 'static)) -> bool {
                 | ErrorKind::ConnectionReset
                 | ErrorKind::ConnectionAborted
                 | ErrorKind::NotConnected
-        )
+        ) || is_pty_hangup(io_err)
     })
+}
+
+/// Reads from a pty whose other side hung up (carrier drop) fail with EIO.
+#[cfg(unix)]
+fn is_pty_hangup(err: &io::Error) -> bool {
+    const EIO: i32 = 5;
+    err.raw_os_error() == Some(EIO)
+}
+
+#[cfg(not(unix))]
+fn is_pty_hangup(_err: &io::Error) -> bool {
+    false
 }
 
 fn render_with_logging(
@@ -981,6 +999,7 @@ mod tests {
         frames: Vec<Vec<String>>,
         captures: Vec<String>,
         timeout_after_keys: Option<DoorTimeout>,
+        output_hung_up: bool,
     }
 
     impl ScriptedTerminal {
@@ -990,6 +1009,7 @@ mod tests {
                 frames: Vec::new(),
                 captures: Vec::new(),
                 timeout_after_keys: None,
+                output_hung_up: false,
             }
         }
     }
@@ -1025,6 +1045,9 @@ mod tests {
         }
 
         fn clear_and_restore(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+            if self.output_hung_up {
+                return Err(Box::new(io::Error::other("write to hung-up terminal")));
+            }
             Ok(())
         }
     }
@@ -1198,6 +1221,34 @@ mod tests {
             terminal.frames
         );
         assert_eq!(app.current_screen, ScreenId::FleetList);
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn pty_hangup_eio_counts_as_closed_input() {
+        const EIO: i32 = 5;
+        let err: Box<dyn std::error::Error> = Box::new(io::Error::from_raw_os_error(EIO));
+        assert!(super::is_closed_input_error(err.as_ref()));
+    }
+
+    #[test]
+    fn hangup_exits_cleanly_even_when_the_screen_reset_fails() {
+        let game_dir = temp_first_time_game_copy();
+        let config = AppConfig {
+            game_dir: game_dir.clone(),
+            player_record_index_1_based: 1,
+            export_root: None,
+            queue_dir: None,
+            session_timeout_secs: None,
+            game_config: RuntimeConfig::default(),
+        };
+        let mut app = App::load(config).expect("app should load");
+        let mut terminal = ScriptedTerminal::new([]);
+        terminal.output_hung_up = true;
+
+        run_interactive(&mut app, &mut terminal, false).expect("a hangup is a normal exit");
 
         let _ = fs::remove_dir_all(&game_dir);
     }
