@@ -17,16 +17,38 @@ Until recovery completes, the ship retains its crippled combat strength.
 Recovery continues while moving. It requires no payment, repair order,
 shipyard, owned planet, or local production capacity. Destroyed ships do
 not recover. Splitting, transferring, or merging fleets preserves remaining
-recovery time. It must never reset or accelerate recovery.
+recovery time. Those operations must never reset or accelerate recovery.
 
 The maintenance year in which a ship is crippled does not count as a full
 recovery turn. Count subsequent complete maintenance years. For RT 2, a
 ship crippled during year N remains crippled through N+1 and recovers after
 N+2 completes. Encounter count does not advance recovery.
 
-Show the class's RT alongside its other stats. Fleet status and reports
-show crippled counts grouped by remaining turns, and announce completed
-recoveries. No new repair-management menu is needed.
+The owner also approved automatic starbase-assisted recovery. Ordinary
+recovery still works away from bases. The proposed bonus is one extra
+recovery turn after a full year stationary at an owned starbase, with no
+recovery during the damage year. The exact eligibility and bonus accounting
+need to be finalized before implementation; arrival or merging at year-end
+must not create a full year's eligibility.
+
+## Player display and BBS compatibility
+
+The owner requires minimal changes to existing tables, reports, and menus.
+Preserve BBS door widths, row heights, navigation, and key bindings. Do not
+add a repair menu, widen fleet tables, or expand every fleet into per-class
+recovery rows.
+
+Use a compact aggregate such as “4 damaged” in the fleet summary only where
+it fits the existing layout. Put class counts and remaining recovery times
+in the existing fleet detail view, on demand. Keep RT documented in the
+ship reference; do not force an RT column into every game table. Reports
+normally summarize “4 ships recovered”, adding starbase assistance only
+when relevant. Avoid routine per-class recovery chatter.
+
+Recovery remains visible and understandable without exposing internal
+counters. Verify the changes in the existing BBS door layout, including
+mixed fleets and large counts, before shipping. If space is insufficient,
+use the existing detail view rather than changing the table geometry.
 
 ## Scope
 
@@ -45,12 +67,58 @@ still applies: crippled finishing costs full DS, and unused hit banks end
 with the encounter. Recovery tracks completed crippling, not unused hits.
 Withdrawal and pursuit remain a separate owner decision.
 
+## Timing in the turn cycle
+
+The owner agreed this timing on 2026-10-10 after review by Claude and
+Codex. A turn is one maintenance pass plus the order-writing time between
+passes. A pass culls empty fleets, merges co-located fleets, recalls
+autopilot fleets, and runs the planet pass (builds, then economy); then the
+52 ticks of movement, encounters, battles, and strikes; then post-year
+merges and colonization, the AI, player statistics, lifecycle, and reports.
+
+1. **No recovery inside a pass.** A ship crippled at tick 10 is still
+   crippled at tick 30 and in every later battle until it recovers. The
+   engine's restoration of crippled ships after each battle goes.
+2. **Recovery runs once per pass,** after the 52 ticks, the post-year
+   merges, and colonization, and before the AI and reports. No battle
+   happens between the end of one pass and the start of the next, so for
+   combat this is the same moment as the next pass's start; running it here
+   lets reports and the AI show the state orders will be written against.
+3. **Counters.** Each fleet and starbase keeps, per class, its crippled
+   hulls counted by turns remaining (1 to the class's RT), plus a separate
+   count of hulls crippled during the current pass. At the recovery step,
+   every turns-remaining count drops by one, hulls that reach zero recover,
+   and the hulls crippled this pass enter at RT. RT 2 crippled in pass N is
+   crippled through N+1, recovers at the end of N+2, and fights whole from
+   N+3. Merges add counts, the current pass's count included.
+4. **Starbase assistance** (direction approved, eligibility still to be
+   finalized). The extra turn can apply only to hulls that were crippled
+   before the pass began, belonged to the fleet when it began, and stayed at
+   rest in orbit of the owned world with the starbase for the whole pass.
+   Hulls crippled this pass, and hulls that arrived or merged in during the
+   pass, never receive it. The engine decides this from a snapshot taken at
+   the start of the pass and kept only for that pass, so it needs no new
+   stored state.
+5. **Finishing and detaching.** Fire that finishes a crippled hull takes the
+   hull with the most turns remaining first, newly crippled hulls before
+   all others; detaching crippled hulls follows the same order. A fleet's
+   survivors stay closest to recovery.
+6. **Strength tests see damage.** The ROE engagement test and the orbital
+   gate keep classic's weights (BB 21, CA 7, DD 2, and the starbase
+   constant) but count a crippled hull at half its weight. Bombardment and
+   assault fire use a crippled hull's crippled AS. Replacing the classic
+   weights with NC AS is the separate yardstick question in decision 2.
+7. **Other events.** Destroyed and captured hulls leave their counts. A
+   fleet that defects in civil disorder keeps its counts. Colonization does
+   not consume the ETAC. A classic export between passes writes whole hulls,
+   says that recovery state is lost, and leaves the store unchanged.
+
 ## Implementation proposals and remaining choices
 
 Use counts by ship class and remaining recovery turns, rather than per-hull
 objects. Merge adds matching counts. Bound the bucket range by the supported
-RT values. Use a maintenance-start eligibility snapshot so newly crippled
-ships cannot recover in their damage year.
+RT values. The counters, including the separate count for hulls crippled
+in the current pass, are defined under Timing in the turn cycle.
 
 For detaching crippled hulls, Claude proposes taking the longest remaining
 recovery times first, leaving the retained fleet closest to full strength.
@@ -58,8 +126,8 @@ Codex agrees this is deterministic and explainable. This is an implementation
 proposal, not an extra player choice. Document the default selection between
 nominal and crippled ships as well; no operation may lose recovery metadata.
 
-Reports should state, for example, “CA: 4 crippled, recover in 1 turn” and
-“3 CA recovered to nominal.” Export behavior for recovery metadata still
+The detail view may state “CA: 4 crippled, recover in 1 turn”; routine
+reports use the compact aggregate described above. Export behavior for recovery metadata still
 needs an explicit compatibility contract: classic has no such field. The
 consultation recommends exporting whole surviving hulls without changing
 the SQLite state and disclosing that classic loses recovery state; this
