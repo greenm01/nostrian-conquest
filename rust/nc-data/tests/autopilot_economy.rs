@@ -49,7 +49,9 @@ fn autopilot_queues_no_more_than_the_planet_budget() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     let planet = &game.planets.records[0];
-    let queued: u32 = (0..10).map(|slot| u32::from(planet.build_count_raw(slot))).sum();
+    let queued: u32 = (0..10)
+        .map(|slot| u32::from(planet.build_count_raw(slot)))
+        .sum();
     assert_eq!(planet.stored_production_points(), 50);
     assert!(queued > 0, "autopilot should queue defenses");
     assert!(

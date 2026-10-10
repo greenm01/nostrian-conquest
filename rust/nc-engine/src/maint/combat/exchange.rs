@@ -384,7 +384,10 @@ pub(super) fn apply_landing_fire_to_fleet(
     if !critical {
         return;
     }
-    if let Some(idx) = target_order.into_iter().find(|&idx| state.crippled[idx] > 0) {
+    if let Some(idx) = target_order
+        .into_iter()
+        .find(|&idx| state.crippled[idx] > 0)
+    {
         state.crippled[idx] -= 1;
         state.counts[idx] -= 1;
     } else if let Some(idx) = target_order

@@ -9,11 +9,11 @@ use crate::{
 use super::super::hostile_order_ready_for_execution;
 use super::exchange::{
     COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND,
-    COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
-    COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
-    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, apply_landing_fire_to_fleet,
-    resolve_ground_exchange,
-    resolve_space_exchange, scalar_hits_with_critical,
+    COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND,
+    COMBAT_KIND_INVASION_SOFTEN, COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution,
+    GROUND_AS_ARMY, GROUND_AS_BATTERY, GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet,
+    apply_landing_fire_to_fleet, resolve_ground_exchange, resolve_space_exchange,
+    scalar_hits_with_critical,
 };
 use super::reporting::{
     mission_kind_for_fleet, preferred_reporting_fleet_number, push_planet_intel,
@@ -1182,31 +1182,29 @@ pub(crate) fn process_planetary_assaults(
                 );
                 let surviving_batteries =
                     game_data.planets.records[planet_idx].ground_batteries_raw();
-                let (landing_army_losses, ship_losses) =
-                    apply_blitz_landing_fire(
-                        game_data,
-                        campaign_seed,
-                        battle_year,
-                        coords,
-                        previous_owner,
-                        winner_empire,
-                        &winner_fleets,
-                        surviving_batteries,
-                    );
+                let (landing_army_losses, ship_losses) = apply_blitz_landing_fire(
+                    game_data,
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    previous_owner,
+                    winner_empire,
+                    &winner_fleets,
+                    surviving_batteries,
+                );
                 let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
                 let defender_armies = game_data.planets.records[planet_idx].army_count_raw() as u32;
-                let (attacker_survivors, defender_survivors) =
-                    resolve_ground_battle_to_destruction(
-                        campaign_seed,
-                        battle_year,
-                        coords,
-                        COMBAT_KIND_BLITZ_GROUND,
-                        winner_empire,
-                        previous_owner,
-                        armies_after_landing,
-                        defender_armies,
-                        1,
-                    );
+                let (attacker_survivors, defender_survivors) = resolve_ground_battle_to_destruction(
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    COMBAT_KIND_BLITZ_GROUND,
+                    winner_empire,
+                    previous_owner,
+                    armies_after_landing,
+                    defender_armies,
+                    1,
+                );
                 let defender_battery_losses = pre_batteries
                     .saturating_sub(game_data.planets.records[planet_idx].ground_batteries_raw());
                 let defender_army_losses =

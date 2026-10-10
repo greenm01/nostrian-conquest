@@ -131,9 +131,15 @@ fn joined_homeworld_high_tax_penalty_compounds_each_turn() {
     game.player.records[1].set_tax_rate_raw(100);
 
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    assert_eq!(game.planets.records[1].present_production_points(), Some(93));
+    assert_eq!(
+        game.planets.records[1].present_production_points(),
+        Some(93)
+    );
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    assert_eq!(game.planets.records[1].present_production_points(), Some(87));
+    assert_eq!(
+        game.planets.records[1].present_production_points(),
+        Some(87)
+    );
 }
 
 #[test]
