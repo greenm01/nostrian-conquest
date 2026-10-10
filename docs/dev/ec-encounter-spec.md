@@ -372,8 +372,8 @@ there went to (10,6), 9.22 sectors across the map and 13 by the Manhattan
 count, not to (18,3), 10.20 and 12; a Seek Home fleet in orbit of
 its own world (16,13) whose target was lost went to its other world
 (12,12), not to (16,13).] Rust uses this picker for both decision aborts,
-the orbital gate's abort, and a fleet that lost the ships its mission
-needs.
+the orbital gate's abort, a fleet that lost the ships its mission needs,
+and the battle's retreats.
 
 ### Starbase target `1b05:1d11`
 - If `layer(O.Z)==1`, `O.order in {6,7,8}`, `O.x==O.tx && O.y==O.ty`,

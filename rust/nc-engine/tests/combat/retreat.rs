@@ -362,3 +362,73 @@ fn retreat_picks_home_by_travel_distance_not_manhattan_distance() {
     }
     assert!(retreated > 0);
 }
+
+#[test]
+fn retreat_from_the_fleets_own_system_seeks_another_world() {
+    // Classic's nearest friendly world (`24a3:0876`) leaves out the world of
+    // the system the fleet is in, so a fleet beaten in orbit of its own
+    // world heads for the nearest other one, not for the orbit it is in.
+    const HOME: [u8; 2] = [16, 13];
+    const OTHER: [u8; 2] = [12, 12];
+    let mut retreated = 0;
+    for seed in 0..8u64 {
+        let mut game_data = empty_board(0, 0);
+        assert_eq!(game_data.planets.records[11].coords_raw(), OTHER);
+        game_data.planets.records[11].set_owner_empire_slot_raw(1);
+        // Empire 1's fleets hold at home on ROE 0, so an enemy blockader
+        // starts every fight; record 0 has the battleships.
+        for idx in 0..4 {
+            let ships = if idx == 0 {
+                Ships {
+                    bb: 6,
+                    ..Ships::default()
+                }
+            } else {
+                Ships {
+                    ca: 1,
+                    ..Ships::default()
+                }
+            };
+            place_fleet(
+                &mut game_data,
+                idx,
+                1,
+                HOME,
+                Order::HoldPosition,
+                HOME,
+                ships,
+                0,
+            );
+            game_data.fleets.records[idx].recompute_max_speed_from_composition();
+        }
+        place_fleet(
+            &mut game_data,
+            4,
+            2,
+            HOME,
+            Order::GuardBlockadeWorld,
+            HOME,
+            toothless(),
+            10,
+        );
+        let events = run(&mut game_data, seed);
+        for event in &events.encounter_disposition_events {
+            if let EncounterDispositionEvent::Retreated {
+                owner_empire_raw: 1,
+                coords: HOME,
+                retreat_target_coords,
+                ..
+            } = event
+            {
+                retreated += 1;
+                assert_eq!(*retreat_target_coords, OTHER, "seed {seed}");
+            }
+        }
+        if withdrew(&events, HOME) {
+            let fleet = &game_data.fleets.records[0];
+            assert_eq!(fleet.standing_order_kind(), Order::SeekHome, "seed {seed}");
+            assert_eq!(fleet.standing_order_target_coords_raw(), OTHER);
+        }
+    }
+    assert!(retreated > 0);
+}

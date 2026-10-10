@@ -255,15 +255,18 @@ same turn.
    fleet's maximum speed is recomputed from the ships it has left, as
    classic's `24a3:036b` does. A fleet that did not hold the field, withdrew
    under its ROE, or lost the ships its mission needs then gets the Seek
-   Home order as the order path writes it: its target is the nearest owned
-   world by classic's travel-distance picker, measured from the fleet's own
-   position and depth; the target is the world (TZ 1), so the fleet's first
-   leg climbs out of the layer it fought in and its last leg descends into
-   the home world's orbit; its speed is its new maximum. ROE is left alone.
-   That is a mechanical matter, not a rule: classic zeroes ROE only on
-   scatter, and ec4x never does, so a retreat is not where ROE changes. A
-   fleet whose empire owns no world holds where it is, position and depth
-   untouched. A fleet with no ships left is culled.
+   Home order as the order path writes it: its target is classic's nearest
+   friendly world (`24a3:0876`, as every classic abort and retreat picks
+   it), the owned world nearest by travel distance from the fleet's own
+   position and depth, leaving out the world of the system the fleet is in
+   ([ec-encounter-spec.md](ec-encounter-spec.md), section 4); the target is
+   the world (TZ 1), so the fleet's first leg climbs out of the layer it
+   fought in and its last leg descends into the home world's orbit; its
+   speed is its new maximum. ROE is left alone. That is a mechanical
+   matter, not a rule: classic zeroes ROE only on scatter, and ec4x never
+   does, so a retreat is not where ROE changes. A fleet whose empire owns
+   no other world holds where it is, position and depth untouched. A fleet
+   with no ships left is culled.
 
 Every collection whose order affects outcomes or event order is ordered, so
 the same seed always produces the same battle. The battle's random draws are

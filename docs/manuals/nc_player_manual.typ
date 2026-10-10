@@ -535,6 +535,8 @@ If you choose to engage (or are forced to), your fleet is committed to the battl
 
 A fleet that breaks off after Round 3 does not escape cleanly. It suffers a *withdrawal exchange* --- the enemy fires on your retreating fleet, and your fleet fires back at reduced effectiveness. Only after absorbing that exchange does the fleet actually retreat and abort its current mission. After each round of combat from Round 4 onward, surviving fleets re-check their ROE. If the post-loss ratio no longer meets his threshold, the commander attempts to disengage and suffers the withdrawal exchange.
 
+A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector.
+
 == Planetary Combat
 
 When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
