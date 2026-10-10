@@ -66,7 +66,8 @@ preserved fixtures are the acceptance oracle.
 
 ## Architecture Rules
 
-- Data-oriented design: explicit record layouts, focused free functions, no deep object hierarchies
+- Data-oriented design: plain typed Rust structs, focused free functions, no deep object hierarchies
+- Classic byte layouts live only in the `.DAT` codecs (`nc-classic`, `nc-compat`); the engine and SQLite store use typed fields
 - Keep logic DRY; reuse pure validators rather than duplicating checks
 - Keep binary layout explicit
 - Keep files focused — if a file is getting crowded, split or reorganize before extending it further

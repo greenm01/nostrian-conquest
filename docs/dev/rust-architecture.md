@@ -27,16 +27,21 @@ Authority boundary:
 
 The Rust workspace should follow pragmatic data-oriented design:
 
-- keep binary layout explicit
-- prefer plain records plus focused free functions or small impl blocks
+- model game state as plain, typed Rust structs with named fields, and keep
+  rules in focused free functions that operate on them
+- store that state in SQLite as typed columns, one column per field
+- keep classic byte layouts and `.DAT` codecs in `nc-classic` and
+  `nc-compat` only; the engine, store, and clients never read or write
+  classic record bytes
+- keep binary layout explicit inside those codecs
 - keep logic DRY by centralizing shared validation, normalization, and report
   helpers
 - keep source files lean; when a file starts feeling crowded, split it before
   growing it further
 - avoid deep object hierarchies, framework-style indirection, and giant
   monolithic modules
-- keep unknown classic fields raw until the semantics are supported by docs,
-  oracle diffs, or repeated observation
+- carry a classic field whose meaning is unknown as raw bytes only inside the
+  codecs, until docs, oracle diffs, or repeated observation explain it
 - treat preserved fixtures, 1992 manuals, and the 1992 binaries as the
   acceptance oracle
 
