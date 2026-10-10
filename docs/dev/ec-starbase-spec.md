@@ -204,19 +204,22 @@ show ECGAME's warning first.
 
 ## Rust Differences
 
-Rust follows the rules above, including these classic oddities:
+Rust follows the rules above except in four places. The first three fix
+classic guard bugs, by decision of 2026-10-10
+([t040](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t040)):
 
-- A base that lifts on tick 52 gets `Z = 0`, but its escort keeps the depth
-  the last step left it.
-- A guard in orbit in the sector of a base in deep space, with the
-  `0x22 = 1` that ECGAME writes for the order, counts as arrived in the
-  dispatcher's prelude and never takes up station.
-
-It departs from classic in two places:
-
-- When a guard's `0x22` differs from its base's layer, classic refills its
-  speed and passes the arrival test again every tick, reporting each time.
-  Rust resolves the arrival once a year. The year's end state is the same.
+- A guard that becomes its base's escort takes the base's layer as its
+  `0x22` as well as the base's `Z`, so it reports its arrival once. Classic
+  keeps the `0x22 = 1` that ECGAME writes for the order; when the base is in
+  deep space, the guard gets its speed back and arrives again every tick,
+  reporting each time.
+- A guard at rest in orbit in the sector of a base in deep space takes
+  `0x22 = 0`, climbs out, and arrives at the base as a guard from elsewhere
+  would, becoming the escort or merging into it. In classic the dispatcher's
+  prelude counts the guard as arrived in orbit, so it never moves.
+- When a base lifts on tick 52 and drops to `Z = 0`, its escort follows it,
+  as it does after every step: the escort takes the base's position and
+  `Z`, and `TZ = 0`. Classic leaves the escort at its old depth.
 - Classic reads a garbage owner when the world it checks is missing (a
   worldless target sector or orbit). Rust treats a sector with no world as
   nobody's, so the check fails.

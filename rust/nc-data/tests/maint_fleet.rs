@@ -1154,9 +1154,9 @@ fn test_guard_starbase_persists_after_arrival() {
         game_data.fleets.records[1].standing_order_target_coords_raw(),
         [11, 8]
     );
-    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [1, 3]);
     // It arrives on entering the base's sector and layer and takes the
-    // base's depth; it becomes the base's escort.
+    // base's depth and layer (0x22 = 0, t040); it becomes the base's escort.
+    assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 3]);
     assert!(game_data.fleets.records[1].depth().is_zero());
     assert_eq!(
         game_data.bases.records[0].escort_fleet_slot_raw(),
