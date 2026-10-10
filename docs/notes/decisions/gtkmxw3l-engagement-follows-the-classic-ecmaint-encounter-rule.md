@@ -42,34 +42,32 @@ attacker and a roll otherwise.
 
 ## Decision
 
-Rust follows the classic rule above: who may engage whom, by sector, depth
-layer, diplomacy, mission, and ROE. It keeps its yearly encounter model,
-resolving encounters from positions and depths at the end of movement, with
-no per-tick sighting or intercept rolls.
+Rust follows classic exactly: who may engage whom, by sector, depth layer,
+diplomacy, mission, and ROE, and also how encounters happen. Each year runs
+the 52-tick loop: fleets in a random order, and for each fleet each tick, the
+movement step, the encounter check with its sighting and intercept rolls, and
+the order's arrival test. Rust matches classic's rules and odds; it does not
+reproduce Turbo Pascal's random number sequence, so individual results match
+in distribution, not roll for roll.
 
 ## Alternatives
 
-- Port the per-tick sighting and intercept rolls as well. That closes the
-  remaining gaps but needs a tick-level encounter loop and a large combat
-  rewrite. It stays open as possible follow-up work.
+- Follow the classic rule but keep a yearly encounter model, with no sighting
+  or intercept rolls. Rejected: it would engage every allowed encounter in
+  the year it arises and miss fleets caught mid-year, such as one climbing
+  out of orbit.
 - Keep the 1992-guide rule as a deliberate Rust design. Rejected: the binary
   is the acceptance oracle, and the guide's wording was a summary, not the
   rule.
 
 ## Consequences
 
-Remaining differences from classic:
-
-- Rust engages every allowed encounter in the year it arises; classic may
-  take years to sight a fleet, or fail to intercept it.
-- Rust checks positions at year end; classic checks every tick, so it can
-  catch a fleet passing through a layer mid-year, such as one climbing out of
-  orbit.
-- The blockade departure strike (t021) was not examined in classic and stays
-  as is until probed.
-
-The player manual's "Who Fights Whom" section and the combat spec change with
-the implementation. That work depends on the depth layer from t031.
+Encounter resolution moves from year-end co-location into the tick loop, and
+the movement stepper runs inside that loop instead of once per fleet per
+year. The blockade departure strike (t021) was not examined in classic and
+needs a probe before t035 settles it. The player manual's "Who Fights Whom"
+section and the combat spec change with the implementation. That work depends
+on the depth layer from t031.
 
 ## Acceptance and connections
 
