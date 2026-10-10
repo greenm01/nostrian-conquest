@@ -1,28 +1,35 @@
 /// Translate a Unicode character to its CP437 byte equivalent.
 ///
-/// Printable ASCII (U+0020..=U+007E) passes through unchanged.
-/// Box-drawing characters used by the table renderer are mapped to their
-/// standard CP437 single-byte codes.  Everything else maps to `b'?'`.
+/// Printable ASCII (U+0020..=U+007E) passes through unchanged, and every
+/// glyph of CP437 bytes 0x80..=0xFE (box drawing, shading, accented letters,
+/// ...) maps to its CP437 byte. Common punctuation with no CP437 glyph maps to the
+/// nearest ASCII character. Everything else maps to `b'?'`.
+///
+/// Each character is one screen cell, so it always becomes exactly one byte.
 pub fn unicode_char_to_cp437(ch: char) -> u8 {
     match ch {
         // Printable ASCII passes through.
         '\x20'..='\x7E' => ch as u8,
 
-        // Box-drawing characters used by screen/table.rs:
-        '─' => 0xC4, // U+2500  horizontal line
-        '│' => 0xB3, // U+2502  vertical line
-        '┌' => 0xDA, // U+250C  top-left corner
-        '┐' => 0xBF, // U+2510  top-right corner
-        '└' => 0xC0, // U+2514  bottom-left corner
-        '┘' => 0xD9, // U+2518  bottom-right corner
-        '├' => 0xC3, // U+251C  left tee
-        '┤' => 0xB4, // U+2524  right tee
-        '┬' => 0xC2, // U+252C  top tee
-        '┴' => 0xC1, // U+2534  bottom tee
-        '┼' => 0xC5, // U+253C  cross / plus
+        // Punctuation without a CP437 glyph.
+        '—' | '–' | '‐' | '‑' | '−' => b'-',
+        '‘' | '’' | '‚' | '′' => b'\'',
+        '“' | '”' | '„' | '″' => b'"',
+        '…' => b'.',
+        '×' => b'x',
+        // CP437 has arrow glyphs only at control codes (0x18..=0x1B).
+        '←' => b'<',
+        '→' => b'>',
+        '↑' => b'^',
+        '↓' => b'v',
+        // CP437 0xFF is the non-breaking space, but on a telnet socket it is
+        // IAC.
+        '\u{a0}' => b' ',
 
-        // Fallback.
-        _ => b'?',
+        _ => CP437_HIGH
+            .iter()
+            .position(|&glyph| glyph == ch)
+            .map_or(b'?', |idx| 0x80 + idx as u8),
     }
 }
 
@@ -103,6 +110,28 @@ mod tests {
     fn unknown_maps_to_question_mark() {
         assert_eq!(unicode_char_to_cp437('€'), b'?');
         assert_eq!(unicode_char_to_cp437('你'), b'?');
+    }
+
+    #[test]
+    fn every_cp437_glyph_round_trips() {
+        for byte in 0x80u8..=0xFE {
+            let ch = cp437_to_string(&[byte]).chars().next().expect("one char");
+            assert_eq!(unicode_char_to_cp437(ch), byte, "U+{:04X}", ch as u32);
+        }
+    }
+
+    #[test]
+    fn punctuation_without_a_glyph_maps_to_ascii() {
+        assert_eq!(
+            str_to_cp437("full — commission – “ok” ‘x’ … 3×4"),
+            b"full - commission - \"ok\" 'x' . 3x4"
+        );
+        assert_eq!(str_to_cp437("←→↑↓"), b"<>^v");
+    }
+
+    #[test]
+    fn non_breaking_space_never_emits_telnet_iac() {
+        assert_eq!(unicode_char_to_cp437('\u{a0}'), b' ');
     }
 
     #[test]
