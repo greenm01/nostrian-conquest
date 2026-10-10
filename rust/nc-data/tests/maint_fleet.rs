@@ -2447,6 +2447,15 @@ fn test_tt_only_blitz_blocked_by_starbase_clears_order() {
     game_data.planets.records[target_idx].set_ground_batteries_raw(0);
     game_data.planets.records[target_idx].set_army_count_raw(3);
     add_active_starbase(&mut game_data, 2, target_coords);
+    // The orbital gate (t054) is a layer-1 matter: the base blocks from
+    // orbit, not from the deep space the helper leaves it in.
+    let base = game_data
+        .bases
+        .records
+        .last_mut()
+        .expect("the base was added");
+    base.set_at_rest_motion();
+    base.set_target_depth_raw(1);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
     let abort = events
@@ -2455,21 +2464,25 @@ fn test_tt_only_blitz_blocked_by_starbase_clears_order() {
         .find(|event| event.kind == Mission::BlitzWorld && event.outcome == MissionOutcome::Aborted)
         .expect("blocked TT*-only blitz should emit an aborted mission event");
 
+    assert_eq!(
+        abort.abort_reason,
+        Some(MissionAbortReason::OrbitBlocked),
+        "transports alone cannot fight the base: the orbit is blocked"
+    );
     assert!(
-        matches!(
-            abort.abort_reason,
-            None | Some(MissionAbortReason::OrbitBlocked)
-        ),
-        "blocked TT*-only blitz should abort cleanly whether the block happens in fleet combat or assault resolution"
+        events.fleet_battle_events.is_empty(),
+        "nothing to fight the base with: no shot is fired"
     );
     assert!(
         events.assault_report_events.is_empty(),
         "blocked TT*-only blitz should not resolve a ground assault"
     );
+    // A fleet that cannot get past the orbit seeks home (t054), as it does
+    // when a sighted base turns it back.
     assert_eq!(
         game_data.fleets.records[0].standing_order_kind(),
-        Order::HoldPosition,
-        "blocked blitz should clear the hostile order"
+        Order::SeekHome,
+        "blocked blitz should abort to Seek Home"
     );
 }
 

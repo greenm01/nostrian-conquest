@@ -146,14 +146,10 @@ NC takes from classic the road to the first shot, and these contracts that
 cross it:
 
 - Survivor speed. Classic recomputes a survivor's maximum speed from the
-  hulls it has left. NC leaves the stored maximum speed as it was: nothing
-  in its combat or encounter code calls
-  `recompute_max_speed_from_composition`.
-- Strike timing. Classic strikes in the tick the fleet reaches orbit, right
-  after beating the owner's starbase in that tick. NC collects the strikes
-  during the year and resolves them after the 52 ticks (`maint/mod.rs`
-  calls `process_planetary_assaults` after `encounter::run_year`); t052
-  moves them into the tick.
+  hulls it has left. NC does the same after every battle and strike
+  (`distribute_fleet_losses`).
+- Strike timing. Both strike in the tick the fleet reaches orbit, right
+  after the orbital gate (below) in that tick.
 - Intelligence. Classic gives each side in layer 1 at a world its empire
   does not own an owner-and-year update after a fleet battle, and the
   attacker and the old owner a detailed update after an assault. NC records
@@ -206,21 +202,20 @@ matches classic's odds, not its random sequence.
   strength against the batteries and removes the batteries it destroys,
   then one exchange of the surviving batteries against the fleet,
   transports first, then destroyers, cruisers, and battleships, then the
-  ground battle; a capture keeps the batteries that survived. A starbase or
-  an enemy combat fleet in orbit blocks it. Classic fires no cover fire: the
-  transports descend and withdraw under fire from every battery, and only
-  the owner's starbase blocks it.
+  ground battle; a capture keeps the batteries that survived. The owner's
+  starbase or a fleet of his with warships in orbit blocks it. Classic fires
+  no cover fire: the transports descend and withdraw under fire from every
+  battery, and only the owner's starbase blocks it.
 - Arrival. Both resolve each fleet in its own dispatch slot, in the tick it
   reaches orbit, so a world can change hands more than once in a year.
 - The orbital gate. Classic makes the attacker beat the owner's starbase in
-  the strike tick before it touches the world, and t054 gives NC the same
-  requirement: a fight against the owner's starbase and layer-1 defenders
-  at the strike tick. What NC runs today is `select_orbital_supremacy_empire`:
-  it ranks the empires present by total combat strength, counting the
-  owner's starbases for the owner, lets the strongest act, gives a tie to
-  the owner and otherwise blocks everyone, and lets a transport-only blitz
-  through when nobody has combat strength and the owner has no starbase.
-  That comparison fires no shots.
+  the strike tick before it touches the world, sighted or not, and leaves
+  the owner's fleets to the encounter loop. NC runs the same gate
+  (`holds_orbit` in `encounter/handler.rs`) and extends it, by choice, to
+  the owner's fleets with warships in orbit: all of them fight the attacker
+  at the strike tick in one battle, an attacker whose ROE refuses the fight
+  seeks home without a shot, and only the holder of the field strikes. A
+  transport-only blitz passes only an empty orbit.
 - Failed attacks. NC resolves invade and blitz, and the fleet holds. Classic
   resurrects a destroyed assault fleet (B1) and attacks again next year.
 - Damage. NC writes only destroyed hulls back. Classic has no damage state

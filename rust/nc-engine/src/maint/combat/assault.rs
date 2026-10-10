@@ -1,9 +1,7 @@
-use std::collections::{BTreeMap, HashSet};
-
 use crate::{
-    AssaultReportEvent, BombardEvent, CoreGameData, FleetDestroyedEvent, Mission,
-    MissionAbortReason, MissionEvent, MissionOutcome, Order, PlanetIntelEvent, PlanetIntelSource,
-    PlanetOwnershipChangeEvent, ProductionItemKind, STARDOCK_SLOT_COUNT, ShipLosses,
+    AssaultReportEvent, BombardEvent, CoreGameData, FleetDestroyedEvent, Mission, MissionEvent,
+    MissionOutcome, Order, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent,
+    ProductionItemKind, STARDOCK_SLOT_COUNT, ShipLosses,
 };
 
 use super::exchange::{
@@ -19,14 +17,8 @@ use super::retreat::set_fleet_to_hold_current_position;
 use super::state::{
     FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_ET, IDX_SB, IDX_SC, IDX_TT, fleet_class_ds,
     fleet_state_from_records, planet_idx_at_coords, ship_counts_from_state,
-    ship_losses_from_states, starbase_count_at,
+    ship_losses_from_states,
 };
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum AssaultActorSelection {
-    Winner(u8),
-    Blocked,
-}
 
 #[derive(Debug, Default)]
 pub(crate) struct AssaultEvents {
@@ -140,35 +132,6 @@ fn fleet_still_ready_for_assault(game_data: &CoreGameData, fleet_idx: usize, ord
     game_data
         .validate_fleet_order_payload(fleet_idx + 1, order.to_raw(), target_coords, None, None)
         .is_ok()
-}
-
-fn fleet_group_is_retreating(game_data: &CoreGameData, fleet_indices: &[usize]) -> bool {
-    fleet_indices.iter().all(|&idx| {
-        game_data.fleets.records[idx].standing_order_kind() == Order::SeekHome
-            && game_data.fleets.records[idx].current_speed() > 0
-    })
-}
-
-fn empire_has_tt_only_blitz_presence(
-    game_data: &CoreGameData,
-    fleet_indices: &[usize],
-    blitz_set: &HashSet<usize>,
-) -> bool {
-    if fleet_group_is_retreating(game_data, fleet_indices) {
-        return false;
-    }
-
-    let state = fleet_state_from_records(game_data, fleet_indices, 0);
-    if state.total_combat_as() > 0 {
-        return false;
-    }
-
-    fleet_indices.iter().any(|&idx| {
-        blitz_set.contains(&idx) && {
-            let fleet = &game_data.fleets.records[idx];
-            fleet.troop_transport_count() > 0 && fleet.army_count() > 0
-        }
-    })
 }
 
 /// Hits needed to destroy one stardock item: its combat defense strength.
@@ -480,67 +443,6 @@ fn settle_ground_battle_at_cap(attacker_survivors: u32, defender_survivors: u32)
     }
 }
 
-fn select_orbital_supremacy_empire(
-    game_data: &CoreGameData,
-    planet_idx: usize,
-    entrants: &BTreeMap<u8, Vec<usize>>,
-    blitz_set: &HashSet<usize>,
-) -> AssaultActorSelection {
-    let coords = game_data.planets.records[planet_idx].coords_raw();
-    let owner = game_data.planets.records[planet_idx].owner_empire_slot_raw();
-
-    let mut contenders: Vec<(u8, u32, bool)> = entrants
-        .iter()
-        .map(|(&empire, fleet_indices)| {
-            let starbases = if owner == empire {
-                starbase_count_at(game_data, coords, empire)
-            } else {
-                0
-            };
-            let state = fleet_state_from_records(game_data, fleet_indices, starbases);
-            let retreating = fleet_group_is_retreating(game_data, fleet_indices);
-            (empire, state.total_combat_as(), retreating)
-        })
-        .filter(|(_, as_total, retreating)| *as_total > 0 && !*retreating)
-        .collect();
-
-    if contenders.is_empty() {
-        if starbase_count_at(game_data, coords, owner) > 0 {
-            return AssaultActorSelection::Blocked;
-        }
-
-        let tt_blitz_candidates: Vec<u8> = entrants
-            .iter()
-            .filter_map(|(&empire, fleet_indices)| {
-                empire_has_tt_only_blitz_presence(game_data, fleet_indices, blitz_set)
-                    .then_some(empire)
-            })
-            .collect();
-
-        return match tt_blitz_candidates.as_slice() {
-            [empire] => AssaultActorSelection::Winner(*empire),
-            _ => AssaultActorSelection::Blocked,
-        };
-    }
-    contenders.sort_by_key(|(empire, as_total, _)| {
-        (
-            std::cmp::Reverse(*as_total),
-            if *empire == owner { 0u8 } else { 1u8 },
-            *empire,
-        )
-    });
-    if contenders.len() > 1 && contenders[0].1 == contenders[1].1 {
-        if contenders
-            .iter()
-            .any(|(emp, as_total, _)| *emp == owner && *as_total == contenders[0].1)
-        {
-            return AssaultActorSelection::Winner(owner);
-        }
-        return AssaultActorSelection::Blocked;
-    }
-    AssaultActorSelection::Winner(contenders[0].0)
-}
-
 /// Resolve the planetary attack of fleet `fleet_idx`, whose strike test
 /// passed this tick: one fleet against its target world, both as they stand
 /// now. The fleet is in orbit at depth 1.0 with speed 0. What the attack
@@ -551,11 +453,11 @@ fn select_orbital_supremacy_empire(
 ///   batteries survive suppression aborts with its armies still aboard), and
 ///   the surviving fleet holds in orbit. There is no retry.
 ///
-/// A force without combat ships finds the orbit blocked, by the owner's
-/// starbase or by anything at all unless it is a loaded Blitz, and aborts to
-/// Hold. A fleet whose order no longer validates (its own empire took the
-/// world earlier this year, or it lost the ships the order needs) does
-/// nothing; the next year's input sanitizer clears the order.
+/// The orbital gate is the encounter handler's: by the time the strike
+/// reaches here the fleet has beaten, or found empty, the owner's orbit. A
+/// fleet whose order no longer validates (its own empire took the world
+/// earlier this year, or it lost the ships the order needs) does nothing;
+/// the next year's input sanitizer clears the order.
 pub(crate) fn resolve_strike(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
@@ -589,22 +491,6 @@ pub(crate) fn resolve_strike(
         target_coords: Some(coords),
         stardate_week: None,
     };
-
-    let entrants = BTreeMap::from([(empire, vec![fleet_idx])]);
-    let blitz_set: HashSet<usize> = (kind == Mission::BlitzWorld)
-        .then_some(fleet_idx)
-        .into_iter()
-        .collect();
-    if select_orbital_supremacy_empire(game_data, planet_idx, &entrants, &blitz_set)
-        == AssaultActorSelection::Blocked
-    {
-        clear_arrival_and_hold(game_data, &fleets);
-        events.mission_events.push(mission_event(
-            MissionOutcome::Aborted,
-            Some(MissionAbortReason::OrbitBlocked),
-        ));
-        return events;
-    }
 
     let battle_year = game_data.conquest.game_year();
     match kind {

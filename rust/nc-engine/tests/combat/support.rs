@@ -77,6 +77,19 @@ pub fn place_fleet(
     }
 }
 
+/// A starbase of `owner` at rest in orbit (depth 1.0) over `coords`.
+pub fn place_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
+    let mut base = nc_data::BaseRecord::new_zeroed();
+    base.set_base_id_raw(1);
+    base.set_record_number_raw(1);
+    base.set_coords_raw(coords);
+    base.set_target_coords_raw(coords);
+    base.set_owner_empire_raw(owner);
+    base.set_at_rest_motion();
+    base.set_target_depth_raw(1);
+    game_data.bases.records.push(base);
+}
+
 /// Settle a fleet that already sits at its hostile-mission target at rest in
 /// orbit (depth 1.0), so its strike test passes on the first tick.
 pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
