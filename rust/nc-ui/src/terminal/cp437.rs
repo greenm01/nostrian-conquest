@@ -31,6 +31,38 @@ pub fn str_to_cp437(s: &str) -> Vec<u8> {
     s.chars().map(unicode_char_to_cp437).collect()
 }
 
+/// Unicode characters for CP437 bytes `0x80..=0xFF`.
+const CP437_HIGH: [char; 128] = [
+    // 0x80
+    'Ç', 'ü', 'é', 'â', 'ä', 'à', 'å', 'ç', 'ê', 'ë', 'è', 'ï', 'î', 'ì', 'Ä', 'Å',
+    // 0x90
+    'É', 'æ', 'Æ', 'ô', 'ö', 'ò', 'û', 'ù', 'ÿ', 'Ö', 'Ü', '¢', '£', '¥', '₧', 'ƒ',
+    // 0xA0
+    'á', 'í', 'ó', 'ú', 'ñ', 'Ñ', 'ª', 'º', '¿', '⌐', '¬', '½', '¼', '¡', '«', '»',
+    // 0xB0
+    '░', '▒', '▓', '│', '┤', '╡', '╢', '╖', '╕', '╣', '║', '╗', '╝', '╜', '╛', '┐',
+    // 0xC0
+    '└', '┴', '┬', '├', '─', '┼', '╞', '╟', '╚', '╔', '╩', '╦', '╠', '═', '╬', '╧',
+    // 0xD0
+    '╨', '╤', '╥', '╙', '╘', '╒', '╓', '╫', '╪', '┘', '┌', '█', '▄', '▌', '▐', '▀',
+    // 0xE0
+    'α', 'ß', 'Γ', 'π', 'Σ', 'σ', 'µ', 'τ', 'Φ', 'Θ', 'Ω', 'δ', '∞', 'φ', 'ε', '∩',
+    // 0xF0
+    '≡', '±', '≥', '≤', '⌠', '⌡', '÷', '≈', '°', '∙', '·', '√', 'ⁿ', '²', '■', '\u{a0}',
+];
+
+/// Decode CP437 text (for example a BBS dropfile). Bytes below `0x80` are
+/// ASCII.
+pub fn cp437_to_string(bytes: &[u8]) -> String {
+    bytes
+        .iter()
+        .map(|&byte| match byte {
+            0x00..=0x7F => byte as char,
+            _ => CP437_HIGH[usize::from(byte - 0x80)],
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -71,6 +103,13 @@ mod tests {
     fn unknown_maps_to_question_mark() {
         assert_eq!(unicode_char_to_cp437('€'), b'?');
         assert_eq!(unicode_char_to_cp437('你'), b'?');
+    }
+
+    #[test]
+    fn decodes_cp437_text() {
+        assert_eq!(cp437_to_string(b"Jos\x82 St\x94rlord"), "José Störlord");
+        assert_eq!(cp437_to_string(b"\xc9\xcd\xbb\xb0\xdb"), "╔═╗░█");
+        assert_eq!(cp437_to_string(b"plain"), "plain");
     }
 
     #[test]

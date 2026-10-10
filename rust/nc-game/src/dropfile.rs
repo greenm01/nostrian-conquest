@@ -7,6 +7,7 @@
 //! - **CHAIN.TXT**  — WWIV format
 //!
 //! All parsers are lenient:
+//! - UTF-8 files are read as-is; anything else is decoded as CP437.
 //! - Both CRLF and LF line endings are accepted.
 //! - Trailing whitespace on lines is stripped.
 //! - Short files are tolerated; missing fields are `None`.
@@ -17,6 +18,8 @@
 //! - `timeout_minutes` — session time limit sourced from the dropfile
 
 use std::path::Path;
+
+use crate::terminal::cp437::cp437_to_string;
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -104,7 +107,11 @@ pub fn parse(path: &Path) -> Result<DropfileInfo, DropfileError> {
         .unwrap_or("")
         .to_ascii_uppercase();
 
-    let content = std::fs::read_to_string(path)?;
+    // BBS software usually writes names in CP437; accept UTF-8 files as-is.
+    let content = match String::from_utf8(std::fs::read(path)?) {
+        Ok(text) => text,
+        Err(err) => cp437_to_string(err.as_bytes()),
+    };
     let lines = split_lines(&content);
 
     match filename.as_str() {
