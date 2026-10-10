@@ -142,19 +142,6 @@ pub(super) fn handle_fleet_arrival(
                 coords,
             )?;
         }
-        Order::GuardStarbase => {
-            movement_events.mission_events.push(MissionEvent {
-                fleet_idx,
-                owner_empire_raw: owner_empire,
-                kind: Mission::GuardStarbase,
-                outcome: MissionOutcome::Arrived,
-                abort_reason: None,
-                planet_idx: None,
-                location_coords: Some(coords),
-                target_coords: Some(coords),
-                stardate_week: None,
-            });
-        }
         Order::GuardBlockadeWorld => {
             let planet_idx = game_data
                 .planets

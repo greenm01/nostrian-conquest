@@ -77,6 +77,19 @@ fn mutual_enemy_overrides(left: u8, right: u8) -> [DiplomacyOverride; 2] {
     ]
 }
 
+/// A base at rest in deep space at the centre of `coords`: it neither moves
+/// nor needs a friendly world.
+fn deep_space_base(base_id: u16, owner: u8, coords: [u8; 2]) -> BaseRecord {
+    let mut base = BaseRecord::new_zeroed();
+    base.set_base_id_raw(base_id);
+    base.set_owner_empire_raw(owner);
+    base.set_coords_raw(coords);
+    base.set_x_fraction(Real48::HALF);
+    base.set_y_fraction(Real48::HALF);
+    base.set_target_coords_raw(coords);
+    base
+}
+
 fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
     let mut base = BaseRecord::new_zeroed();
     base.set_base_id_raw(1);
@@ -1028,12 +1041,8 @@ fn test_seek_home_retargets_to_next_owned_planet_when_target_is_lost() {
 #[test]
 fn test_guard_starbase_retargets_to_live_base_coords() {
     let mut game_data = load_fixture("ecmaint-post");
-    let mut base = BaseRecord::new_zeroed();
-    base.set_base_id_raw(3);
-    base.set_owner_empire_raw(1);
-    base.set_coords_raw([12, 8]);
     game_data.bases = BaseDat {
-        records: vec![base],
+        records: vec![deep_space_base(3, 1, [12, 8])],
     };
 
     let fleet = &mut game_data.fleets.records[1];
@@ -1116,12 +1125,8 @@ fn test_guard_starbase_abandons_when_linked_base_is_missing() {
 #[test]
 fn test_guard_starbase_persists_after_arrival() {
     let mut game_data = load_fixture("ecmaint-post");
-    let mut base = BaseRecord::new_zeroed();
-    base.set_base_id_raw(3);
-    base.set_owner_empire_raw(1);
-    base.set_coords_raw([11, 8]);
     game_data.bases = BaseDat {
-        records: vec![base],
+        records: vec![deep_space_base(3, 1, [11, 8])],
     };
 
     let fleet = &mut game_data.fleets.records[1];
@@ -1150,11 +1155,13 @@ fn test_guard_starbase_persists_after_arrival() {
         [11, 8]
     );
     assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [1, 3]);
-    // Settled in orbit at the sector centre, as ECMAINT's guard action leaves it.
-    let fleet = &game_data.fleets.records[1];
-    assert_eq!(fleet.x_fraction(), Real48::HALF);
-    assert_eq!(fleet.y_fraction(), Real48::HALF);
-    assert_eq!(fleet.depth().to_bytes(), [0x81, 0, 0, 0, 0, 0]);
+    // It arrives on entering the base's sector and layer and takes the
+    // base's depth; it becomes the base's escort.
+    assert!(game_data.fleets.records[1].depth().is_zero());
+    assert_eq!(
+        game_data.bases.records[0].escort_fleet_slot_raw(),
+        game_data.fleets.records[1].local_slot_word_raw()
+    );
     assert!(events.mission_events.iter().any(|event| {
         event.fleet_idx == 1
             && event.kind == Mission::GuardStarbase
@@ -1164,14 +1171,10 @@ fn test_guard_starbase_persists_after_arrival() {
 }
 
 #[test]
-fn test_guard_starbase_with_zero_index_stays_armed_when_target_base_exists() {
+fn test_guard_starbase_with_zero_index_holds_as_classic() {
     let mut game_data = load_fixture("ecmaint-post");
-    let mut base = BaseRecord::new_zeroed();
-    base.set_base_id_raw(3);
-    base.set_owner_empire_raw(1);
-    base.set_coords_raw([11, 8]);
     game_data.bases = BaseDat {
-        records: vec![base],
+        records: vec![deep_space_base(3, 1, [11, 8])],
     };
 
     let fleet = &mut game_data.fleets.records[1];
@@ -1183,13 +1186,15 @@ fn test_guard_starbase_with_zero_index_stays_armed_when_target_base_exists() {
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
+    // ECMAINT finds no Starbase 0 and holds the fleet (`0b5d:0cf6`), even
+    // with a base at its target.
     assert_eq!(
         game_data.fleets.records[1].standing_order_kind(),
-        Order::GuardStarbase
+        Order::HoldPosition
     );
     assert_eq!(game_data.fleets.records[1].current_speed(), 0);
     assert_eq!(game_data.fleets.records[1].mission_aux_bytes(), [0, 0]);
-    assert!(!events.mission_retarget_events.iter().any(|event| {
+    assert!(events.mission_retarget_events.iter().any(|event| {
         matches!(
             event,
             MissionRetargetEvent::Abandoned {

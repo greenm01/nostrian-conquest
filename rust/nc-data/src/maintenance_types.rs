@@ -251,6 +251,43 @@ pub struct StarbaseDestroyedEvent {
     pub stardate_week: Option<u8>,
 }
 
+/// A starbase's own report from the year's ticks (ECMAINT `0b5d:5793`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct StarbaseReportEvent {
+    /// Empire that owns the base and receives the report.
+    pub owner_empire_raw: u8,
+    pub starbase_id: u16,
+    /// The base's sector when it reported.
+    pub coords: [u8; 2],
+    /// Whether the base was in a world's system (depth layer 1).
+    pub in_system: bool,
+    pub report: StarbaseReport,
+    /// Week of year (1-52) when this event occurred.
+    pub stardate_week: Option<u8>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StarbaseReport {
+    /// The base reached its destination: in orbit (`orbit`) or in deep
+    /// space.
+    Arrived { orbit: bool },
+    /// The world the base relies on is no longer its owner's. `system` is
+    /// the base's target sector; `planet_idx` names the world, if any.
+    LostWorld {
+        planet_idx: Option<usize>,
+        system: [u8; 2],
+        response: LostWorldResponse,
+    },
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LostWorldResponse {
+    /// It stopped where it is and awaits orders.
+    Holding,
+    /// It is leaving the system for deep space in its own sector.
+    Leaving,
+}
+
 /// A scout-style hostile contact report resolved during maintenance.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContactReportSource {
@@ -678,6 +715,8 @@ pub struct MaintenanceEvents {
     pub fleet_destroyed_events: Vec<FleetDestroyedEvent>,
     /// Command-center reports for starbases that were totally destroyed.
     pub starbase_destroyed_events: Vec<StarbaseDestroyedEvent>,
+    /// Starbase arrival and lost-world reports.
+    pub starbase_report_events: Vec<StarbaseReportEvent>,
     /// Attacker-side invade/blitz reports with bilateral ground losses.
     pub assault_report_events: Vec<AssaultReportEvent>,
     /// Scout-style hostile contact reports.

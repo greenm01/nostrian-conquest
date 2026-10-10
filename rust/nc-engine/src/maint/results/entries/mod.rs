@@ -196,6 +196,7 @@ pub mod combat;
 pub mod intel;
 pub mod misc;
 pub mod missions;
+pub mod starbase;
 
 /// The year a report's stardate names: the year maintenance just ran. The
 /// game year has already moved on when reports are built, so classic's
@@ -217,6 +218,7 @@ pub fn generate_report_entries(
     let consumed_roe_disposition_indices =
         missions::push_mission_entries(&mut entries, game_data, events, year);
     misc::push_misc_entries(&mut entries, game_data, events, year);
+    starbase::push_starbase_entries(&mut entries, game_data, events, year);
     misc::push_roe_entries(
         &mut entries,
         game_data,

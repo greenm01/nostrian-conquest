@@ -53,10 +53,6 @@ pub(super) fn apply_stored_diplomatic_escalations(
     state::apply_stored_diplomatic_escalations(game_data, events)
 }
 
-pub(super) fn update_player_starbase_flag(game_data: &mut CoreGameData) {
-    state::update_player_starbase_flag(game_data)
-}
-
 pub(super) fn apply_player_lifecycle_transitions(
     game_data: &mut CoreGameData,
     start_states: &[EmpireTurnStartState],

@@ -263,6 +263,22 @@ fn starbases_sight_at_classic_odds_and_never_attack() {
     let sector = [9, 10];
     for (in_system, factor, classic) in [(true, 25.0, 13.14), (false, 30.0, 3.21)] {
         let mut scenario = board();
+        if in_system {
+            // A base stays in orbit only over a world of its owner's.
+            scenario.planets.records[13].set_as_owned_target_world(
+                sector,
+                [0x64, 0x87],
+                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
+                0x04,
+                0x0b,
+                *b"TargetPrimeet",
+                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
+                0,
+                0,
+                2,
+                1,
+            );
+        }
         add_starbase(&mut scenario, 1, 1, sector, in_system);
         put(
             &mut scenario,

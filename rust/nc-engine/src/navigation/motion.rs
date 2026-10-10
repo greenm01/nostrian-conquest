@@ -7,7 +7,7 @@
 //! (`step`, ECMAINT 0824:01c0). After each tick the order's arrival test runs
 //! (dispatcher 0b5d:5581); the first tick that passes resolves the order.
 
-use nc_data::{FleetRecord, Order, Real48};
+use nc_data::{BaseRecord, FleetRecord, Order, Real48};
 
 pub(crate) const TICKS_PER_YEAR: u8 = 52;
 
@@ -25,6 +25,15 @@ impl Motion {
             x: Real48::from_int(i32::from(x)) + fleet.x_fraction(),
             y: Real48::from_int(i32::from(y)) + fleet.y_fraction(),
             z: fleet.depth(),
+        }
+    }
+
+    pub(crate) fn of_base(base: &BaseRecord) -> Self {
+        let [x, y] = base.coords_raw();
+        Self {
+            x: Real48::from_int(i32::from(x)) + base.x_fraction(),
+            y: Real48::from_int(i32::from(y)) + base.y_fraction(),
+            z: base.depth(),
         }
     }
 
@@ -48,6 +57,27 @@ impl Motion {
         fleet.set_y_fraction(self.y - Real48::from_int(i32::from(y)));
         fleet.set_depth(self.z);
     }
+
+    pub(crate) fn write_to_base(self, base: &mut BaseRecord) {
+        let [x, y] = self.sector();
+        base.set_coords_raw([x, y]);
+        base.set_x_fraction(self.x - Real48::from_int(i32::from(x)));
+        base.set_y_fraction(self.y - Real48::from_int(i32::from(y)));
+        base.set_depth(self.z);
+    }
+
+    /// The sector and depth layer (1 at depth 0.5 or more), which the unit
+    /// table records.
+    pub(crate) fn cell(self) -> ([u8; 2], u8) {
+        (self.sector(), u8::from(self.z.round() == 1))
+    }
+}
+
+/// The centre of the target sector at the target depth.
+pub(crate) fn is_at(motion: Motion, target: [u8; 2], depth: Real48) -> bool {
+    motion.x == sector_centre(target[0])
+        && motion.y == sector_centre(target[1])
+        && motion.z == depth
 }
 
 fn sector_centre(coord: u8) -> Real48 {

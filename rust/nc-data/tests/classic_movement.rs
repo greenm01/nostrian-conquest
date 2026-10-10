@@ -77,13 +77,20 @@ fn scenario(case: &Case) -> CoreGameData {
         load_fixture("ecmaint-move-pre")
     };
     if mission == 4 {
+        // `nc-cli guard-starbase-onebase`: Starbase 1 at rest in orbit at
+        // the guard's target, escorted by fleet 1.
+        let base_at = [start[0x20], start[0x21]];
         let mut base = BaseRecord::new_zeroed();
+        base.set_escort_fleet_slot_raw(1);
         base.set_base_id_raw(1);
         base.set_record_number_raw(1);
-        base.set_coords_raw(HOME);
-        base.set_target_coords_raw(HOME);
+        base.set_coords_raw(base_at);
+        base.set_at_rest_motion();
+        base.set_target_coords_raw(base_at);
+        base.set_target_depth_raw(1);
         base.set_owner_empire_raw(1);
         game_data.bases.records = vec![base];
+        game_data.player.records[0].set_first_base_record_raw(1);
     }
     let mut fleet = FleetRecord::new_zeroed();
     fleet.raw.copy_from_slice(&start);
@@ -204,6 +211,14 @@ fn guard_world_settles_in_the_classic_year_with_classic_bytes() {
 #[test]
 fn seek_home_guard_starbase_and_colonize_resolve_as_classic() {
     run_cases(SETTLING_CASES);
+}
+
+/// Mission 4 with the base over an unowned world (`--deep-base`): the base
+/// climbs to deep space in the first year, its guards' world-target flag
+/// drops to 0, and a guard arrives on entering the base's sector.
+#[test]
+fn guard_starbase_follows_a_base_that_left_orbit_as_classic() {
+    run_cases(DEEP_BASE_CASES);
 }
 
 #[test]
@@ -1631,5 +1646,58 @@ const SECTOR_ORDER_CASES: &[Case] = &[
             14,
             "0d0d7c00f0c44e6c800000000000000000000000",
         )],
+    },
+];
+
+/// From the 2026-10-10 deep-base sweep: the base sits over the unowned
+/// world at (12,12).
+const DEEP_BASE_CASES: &[Case] = &[
+    Case {
+        name: "m04-v1-d3-deep",
+        start: "01000102000100000005010909800000000000800000000000810000000000040c0c0101000600000100000000000000000000000000",
+        years: &[
+            Year::state(1, 4, "09098000000000008000000000005b0000000040"),
+            Year::state(1, 4, "0a0a7e00cccc13547e00cccc1354000000000000"),
+            Year::state(1, 4, "0a0a800066e6096a800066e6096a000000000000"),
+            Year::state(1, 4, "0b0b800099d90e1f800099d90e1f000000000000"),
+            Year::state(0, 4, "0c0c78000052ab0778000052ab07000000000000"),
+            Year::state(0, 4, "0c0c78000052ab0778000052ab07000000000000"),
+        ],
+    },
+    Case {
+        name: "m04-v1-d6-deep",
+        start: "01000102000100000005010606800000000000800000000000810000000000040c0c0101000600000100000000000000000000000000",
+        years: &[
+            Year::state(1, 4, "06068000000000008000000000005b0000000040"),
+            Year::state(1, 4, "07077e60d2cc13547e60d2cc1354000000000000"),
+            Year::state(1, 4, "0707803869e6096a803869e6096a000000000000"),
+            Year::state(1, 4, "080880709cd90e1f80709cd90e1f000000000000"),
+            Year::state(1, 4, "09097fe09e9927287fe09e992728000000000000"),
+            Year::state(1, 4, "0a0a7c0027008c117c0027008c11000000000000"),
+        ],
+    },
+    Case {
+        name: "m04-v3-d3-deep",
+        start: "01000102000100000005030909800000000000800000000000810000000000040c0c0101000600000100000000000000000000000000",
+        years: &[
+            Year::state(3, 4, "0a0a803068e6096a803068e6096a000000000000"),
+            Year::state(0, 4, "0c0c7b00b4ec5a007b00b4ec5a00000000000000"),
+            Year::state(0, 4, "0c0c7b00b4ec5a007b00b4ec5a00000000000000"),
+            Year::state(0, 4, "0c0c7b00b4ec5a007b00b4ec5a00000000000000"),
+            Year::state(0, 4, "0c0c7b00b4ec5a007b00b4ec5a00000000000000"),
+            Year::state(0, 4, "0c0c7b00b4ec5a007b00b4ec5a00000000000000"),
+        ],
+    },
+    Case {
+        name: "m04-v3-d6-deep",
+        start: "01000102000100000005030606800000000000800000000000810000000000040c0c0101000600000100000000000000000000000000",
+        years: &[
+            Year::state(3, 4, "0707802868e6096a802868e6096a000000000000"),
+            Year::state(3, 4, "0a0a7c0046008c117c0046008c11000000000000"),
+            Year::state(0, 4, "0c0c7c002bd1300d7c002bd1300d000000000000"),
+            Year::state(0, 4, "0c0c7c002bd1300d7c002bd1300d000000000000"),
+            Year::state(0, 4, "0c0c7c002bd1300d7c002bd1300d000000000000"),
+            Year::state(0, 4, "0c0c7c002bd1300d7c002bd1300d000000000000"),
+        ],
     },
 ];

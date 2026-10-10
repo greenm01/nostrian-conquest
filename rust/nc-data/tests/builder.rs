@@ -65,7 +65,7 @@ fn builder_with_guard_starbase() {
     assert_eq!(data.bases.records.len(), 1);
 
     // Player should have starbase_count = 1
-    assert_eq!(data.player.records[0].starbase_count_raw(), 1);
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
 
     // Fleet should have guard order
     let fleet = &data.fleets.records[0];

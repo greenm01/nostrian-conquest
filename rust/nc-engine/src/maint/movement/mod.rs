@@ -1,10 +1,13 @@
 mod arrivals;
+mod guard;
 mod salvage;
+mod starbase;
 mod stepper;
 
 use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use arrivals::{handle_fleet_arrival, handle_hostile_target_entry};
+pub(super) use starbase::BaseStep;
 use stepper::{FleetTrack, TickEnd, is_hostile_order, step_fleet, test_arrival};
 
 /// Every fleet's movement through one maintenance year, advanced a tick at a
@@ -75,6 +78,12 @@ impl<'a> YearMovement<'a> {
             )
         };
         let marks = EventMarks::of(&self.events);
+        if order_kind == Order::GuardStarbase {
+            if self.tracks[fleet_idx].stepped() {
+                self.dispatch_guard(game_data, fleet_idx, tick);
+            }
+            return Ok(());
+        }
         if is_hostile_order(order_kind)
             && !self.entered_target[fleet_idx]
             && self.start[fleet_idx] != target

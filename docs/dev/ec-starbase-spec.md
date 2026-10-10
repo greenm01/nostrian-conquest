@@ -11,8 +11,12 @@ from code only. Fleet movement, which starbases share, is in
 [ec-encounter-spec.md](ec-encounter-spec.md).
 
 Rust reads and writes every field below
-([base.rs](../../rust/nc-data/src/records/base.rs)). Rust maintenance does
-not move starbases yet; the movement rules here are the target for that work.
+([base.rs](../../rust/nc-data/src/records/base.rs)) and moves starbases by
+the rules below
+([starbase.rs](../../rust/nc-engine/src/maint/movement/starbase.rs),
+[guard.rs](../../rust/nc-engine/src/maint/movement/guard.rs)). Where
+classic misbehaves, [Rust Differences](#rust-differences) says what Rust
+does instead.
 
 ## Record Layout
 
@@ -76,8 +80,12 @@ Evidence by field:
 
 The starbase chain hangs off PLAYER.DAT: `0x44..0x45` is the record number of
 the owner's first base and `0x46..0x47` of the last, 0 for none. ECMAINT
-normalises `0x46` from 0 to 1 for the one-base fixture. [C][P] Rust still names
-these words `starbase_count_raw` and `starbase_presence_flag_raw`.
+normalises `0x46` from 0 to 1 for the one-base fixture. [C][P] Rust names
+them `first_base_record_raw` and `last_base_record_raw`, walks the chain from
+`0x44` ([base_chain.rs](../../rust/nc-data/src/directory/base_chain.rs)),
+rejects a chain that runs past the file, loops, or reaches another empire's
+record, and sets `0x46` to the tail after maintenance. A destroyed base is
+unlinked from its chain before its record is zeroed.
 
 ### Chain And Creation
 
@@ -85,7 +93,7 @@ Each empire's bases form a doubly linked list sorted by id. A new base
 (`2000:6493`) takes the lowest id not in use: walking from the head with a
 counter starting at 1, it inserts before the first base whose id exceeds the
 counter, or appends at the tail. It fixes the neighbours' `0x05` and `0x09`
-and PLAYER `0x44` or `0x46` as needed. [C]
+and PLAYER `0x44` or `0x46` as needed. [C] Rust's commission does the same.
 
 The new record is set to escort 0, `tx, ty = x, y`, `TZ = 1`, moving flag 0,
 `fx = fy = 0.5`; the caller supplies the depth. [C]
@@ -174,17 +182,44 @@ Move/Halt (image offset `0x1a37c`) offers Move only for a base at its
 target (`Round(Z) == TZ`, `x == tx`, `y == ty`), first clearing its moving
 flag, and Halt only for a base under way. [C]
 
+- Move first checks a base fully in orbit (`Z >= 1.0`). If the world beneath
+  it is the player's and its builds rely on the base (the dearest queued unit,
+  or the whole queue, costs more than the world's production) and no other
+  base rests in orbit there, ECGAME warns that moving the base cancels all of
+  the world's builds and asks whether to continue. "Yes" clears the whole
+  build queue with no refund. [C]
 - Move asks for the destination. When the player owns the world there,
   ECGAME asks whether to move the base to it; "yes" gives `TZ = 1` and "no"
   aborts. Any other destination gives `TZ = 0`. A destination equal to the
   base's own sector and layer aborts. After the ETA and confirmation,
   ECGAME cancels any planet build that relies on the base, then writes
   moving flag 1, `tx, ty`, and `TZ`. [C]
-- Halt writes moving flag 0, `tx, ty = x, y`, and `TZ = Round(Z)`. `Z` is
+- Halt never touches builds. It writes moving flag 0, `tx, ty = x, y`, and `TZ = Round(Z)`. `Z` is
   left alone; the base finishes its climb or descent to that layer. [C]
 
 Rust's Starbase Command writes the same fields: Move sets `TZ = 1` exactly
-when the player owns a world at the destination. It does not cancel builds.
+when the player owns a world at the destination, and it cancels the builds
+that rely on the base as ECGAME's "yes" does. The Rust interface does not
+show ECGAME's warning first.
+
+## Rust Differences
+
+Rust follows the rules above, including these classic oddities:
+
+- A base that lifts on tick 52 gets `Z = 0`, but its escort keeps the depth
+  the last step left it.
+- A guard in orbit in the sector of a base in deep space, with the
+  `0x22 = 1` that ECGAME writes for the order, counts as arrived in the
+  dispatcher's prelude and never takes up station.
+
+It departs from classic in two places:
+
+- When a guard's `0x22` differs from its base's layer, classic refills its
+  speed and passes the arrival test again every tick, reporting each time.
+  Rust resolves the arrival once a year. The year's end state is the same.
+- Classic reads a garbage owner when the world it checks is missing (a
+  worldless target sector or orbit). Rust treats a sector with no world as
+  nobody's, so the check fails.
 
 ## Probes
 

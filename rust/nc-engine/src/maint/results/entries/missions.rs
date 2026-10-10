@@ -345,6 +345,36 @@ pub fn push_mission_entries(
                     ),
                 )
             }
+            (Mission::GuardStarbase, MissionOutcome::Failed) => {
+                // A guard already at the base would pass the ship limit if
+                // this one merged into it.
+                let guard_label = fleet.guard_starbase_index_raw();
+                let partner = game_data
+                    .fleets
+                    .records
+                    .iter()
+                    .enumerate()
+                    .find(|(idx, other)| {
+                        *idx != event.fleet_idx
+                            && other.owner_empire_raw() == event.owner_empire_raw
+                            && other.current_location_coords_raw() == coords
+                            && other.standing_order_kind() == nc_data::Order::GuardStarbase
+                            && other.guard_starbase_index_raw() == guard_label
+                    })
+                    .map_or_else(
+                        || "a fleet".to_string(),
+                        |(_, other)| format!("the {}", fleet_label(other.local_slot_word_raw() as u8)),
+                    );
+                (
+                    0x05,
+                    RESULTS_TAIL_FLEET,
+                    source_clause.clone(),
+                    MissionReportBody::Narrative(format!(
+                        " Guard Starbase mission report: We have arrived at {} and have found {partner} already guarding it. However, since a fleet cannot have more than 3000 ships, we cannot merge with them. We are therefore aborting our mission and are awaiting new orders.",
+                        super::starbase::starbase_at(game_data, event.owner_empire_raw, coords)
+                    )),
+                )
+            }
             (Mission::GuardBlockadeWorld, MissionOutcome::Arrived) => {
                 let body = if let Some(planet_idx) = event.planet_idx {
                     if let Some(planet) = game_data.planets.records.get(planet_idx) {

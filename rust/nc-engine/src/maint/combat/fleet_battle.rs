@@ -226,33 +226,19 @@ pub(super) fn distribute_fleet_losses(
     }
 }
 
-/// Zero the first `destroyed` of a side's starbase records and return
-/// their ids.
+/// Unlink and zero the first `destroyed` of a side's starbase records and
+/// return their ids.
 fn remove_destroyed_starbases(
     game_data: &mut CoreGameData,
     bases: &[usize],
-    owner: u8,
     destroyed: u32,
 ) -> Vec<u16> {
     let mut destroyed_ids = Vec::new();
     for &idx in bases.iter().take(destroyed as usize) {
-        let base = &mut game_data.bases.records[idx];
-        destroyed_ids.push(base.base_id_raw());
-        *base = nc_data::BaseRecord::new_zeroed();
+        destroyed_ids.push(game_data.bases.records[idx].base_id_raw());
+        game_data.unlink_base(idx);
+        game_data.bases.records[idx] = nc_data::BaseRecord::new_zeroed();
     }
-
-    if let Some(player) = game_data
-        .player
-        .records
-        .get_mut(owner.saturating_sub(1) as usize)
-    {
-        player.set_starbase_count_raw(
-            player
-                .starbase_count_raw()
-                .saturating_sub(destroyed_ids.len() as u16),
-        );
-    }
-
     destroyed_ids
 }
 
@@ -930,7 +916,6 @@ pub(crate) fn fight_encounter(
                     remove_destroyed_starbases(
                         game_data,
                         &bases_by_empire[&tf.empire],
-                        tf.empire,
                         destroyed_starbases,
                     ),
                 );

@@ -178,7 +178,13 @@ fn player_state(
         mode: player_mode_label(player).to_string(),
         tax_rate: player.tax_rate(),
         planet_count: player.planet_count_raw(),
-        starbase_count: player.starbase_count_raw().min(u16::from(u8::MAX)) as u8,
+        starbase_count: game_data
+            .bases
+            .records
+            .iter()
+            .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() == viewer_empire_id)
+            .count()
+            .min(usize::from(u8::MAX)) as u8,
         homeworld_planet_index: u16::from(player.homeworld_planet_index_1_based_raw()),
         last_run_year: player.last_run_year_raw(),
         diplomacy,

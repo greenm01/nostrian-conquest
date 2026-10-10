@@ -39,8 +39,8 @@ pub(crate) fn print_compliance_report(dir: &Path) -> Result<(), Box<dyn std::err
     );
     println!();
     println!(
-        "Key words: player.starbase_count={} player.ipbm_count={}",
-        summary.player_starbase_count, summary.player_ipbm_count
+        "Key words: player.first_base_record={} player.ipbm_count={}",
+        summary.player_first_base_record, summary.player_ipbm_count
     );
     println!(
         "  guarding_fleet_count={}",

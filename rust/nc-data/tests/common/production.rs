@@ -109,6 +109,10 @@ pub fn commissioned_starbase(owner_empire_raw: u8, coords: [u8; 2]) -> BaseRecor
     base.set_base_id_raw(1);
     base.set_owner_empire_raw(owner_empire_raw);
     base.set_coords_raw(coords);
+    // At rest in orbit, as a commissioned base starts.
+    base.set_at_rest_motion();
+    base.set_target_coords_raw(coords);
+    base.set_target_depth_raw(1);
     base
 }
 

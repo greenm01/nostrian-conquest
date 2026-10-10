@@ -296,7 +296,7 @@ fn set_player_records(game_data: &mut CoreGameData, snapshot: &GameState, player
             player.set_controlled_empire_name_raw(&format!("Empire {seat}"));
             player.set_tax_rate_raw(50);
             player.set_last_run_year_raw(snapshot.year as u16);
-            player.set_starbase_count_raw(0);
+            player.set_first_base_record_raw(0);
         }
     }
 
@@ -321,7 +321,6 @@ fn set_player_records(game_data: &mut CoreGameData, snapshot: &GameState, player
             player.set_assigned_player_handle_raw(handle);
         }
         player.set_tax_rate_raw(snapshot.state.player.tax_rate);
-        player.set_starbase_count_raw(u16::from(snapshot.state.player.starbase_count));
         player.set_homeworld_planet_index_1_based_raw(
             snapshot
                 .state
@@ -417,6 +416,8 @@ fn set_bases(game_data: &mut CoreGameData, snapshot: &GameState) {
         }
     }
     game_data.bases.records = records;
+    game_data.relink_base_chain(snapshot.player_seat as u8);
+    game_data.sync_last_base_records();
 }
 
 fn set_fleets(game_data: &mut CoreGameData, snapshot: &GameState) {

@@ -52,7 +52,7 @@ fn guard_starbase_onebase_recreates_known_valid_starbase_pre_fixture() {
         ],
         common::rust_workspace(),
     );
-    assert!(stdout.contains("PLAYER[1].starbase_count_raw = 1"));
+    assert!(stdout.contains("PLAYER[1].first_base_record = 1"));
     assert!(stdout.contains("structured single-base record at (16, 13)"));
 
     export_campaign_db(&target, &target);
@@ -109,7 +109,7 @@ fn guard_starbase_report_prints_linkage_fields_for_known_fixture() {
         "fixtures/ecmaint-starbase-pre/v1.5",
     ]);
     assert!(stdout.contains("Guard Starbase Report"));
-    assert!(stdout.contains("player[1].starbase_count_raw=1"));
+    assert!(stdout.contains("player[1].first_base_record=1"));
     assert!(stdout.contains("fleet[1].local_slot_word_raw=1"));
     assert!(stdout.contains("fleet[1].fleet_id_word_raw=1"));
     assert!(stdout.contains("base_count=1"));
@@ -199,7 +199,7 @@ fn validate_guard_starbase_rejects_post_maint_fixture() {
         &["validate", "fixtures/ecmaint-post/v1.5", "guard-starbase"],
         common::rust_workspace(),
     );
-    assert!(stderr.contains("PLAYER[1].starbase_count_raw expected 1, got 0"));
+    assert!(stderr.contains("PLAYER[1].first_base_record expected 1, got 0"));
     assert!(stderr.contains("FLEET[1].order expected 0x04, got 0x05"));
     assert!(stderr.contains("BASES.DAT expected 1 record, got 0"));
 }

@@ -1,7 +1,9 @@
 //! One unit's turn in a tick: step, encounter check (`18ea:13cf`), and
 //! order dispatch.
 
-use nc_data::{DiplomacyOverride, DiplomaticRelation, GameRng, Mission, MissionAbortReason, Order};
+use nc_data::{
+    DiplomacyOverride, DiplomaticRelation, GameRng, Mission, MissionAbortReason, Order, Real48,
+};
 
 use super::rules::{
     BASE_STRENGTH, BASE_VISIBILITY, FleetFacts, Mode, Situation, Verdict, base_factor,
@@ -14,7 +16,7 @@ use crate::maint::combat::{
     BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter, mission_kind_for_order,
     nearest_owned_planet, push_avoidance, push_fleet_contact,
 };
-use crate::maint::movement::YearMovement;
+use crate::maint::movement::{BaseStep, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
 
 pub(super) struct Year<'a> {
@@ -38,28 +40,77 @@ impl Year<'_> {
             return Ok(());
         }
         let Unit { kind, index, .. } = self.units[unit];
-        if kind == UnitKind::Fleet {
-            self.movement.step(game_data, index);
-            let fleet = &game_data.fleets.records[index];
-            let (sector, layer) = (fleet.current_location_coords_raw(), layer_of(fleet.depth()));
-            let entry = &mut self.units[unit];
-            if (entry.sector, entry.layer) != (sector, layer) {
-                entry.sector = sector;
-                entry.layer = layer;
-                self.awareness.forget(unit);
+        match kind {
+            UnitKind::Fleet => {
+                self.movement.step(game_data, index);
+                self.follow_fleet(game_data, unit);
+            }
+            UnitKind::Base => {
+                let step = self.movement.step_base(game_data, index, tick);
+                self.follow_base_step(game_data, unit, &step);
             }
         }
         match kind {
             UnitKind::Fleet => self.fleet_scans(game_data, unit, tick),
             UnitKind::Base => self.base_scans(game_data, unit, tick),
         }
-        if kind == UnitKind::Fleet && self.units[unit].active {
-            self.movement.dispatch(game_data, index, tick)?;
-            if self.movement.removed(index) {
-                self.units[unit].active = false;
+        match kind {
+            UnitKind::Fleet if self.units[unit].active => {
+                self.movement.dispatch(game_data, index, tick)?;
+                if self.movement.removed(index) {
+                    self.units[unit].active = false;
+                }
             }
+            UnitKind::Fleet => {}
+            UnitKind::Base => self.movement.dispatch_base(game_data, index, tick),
         }
         Ok(())
+    }
+
+    /// Move fleet unit `unit`'s table entry to where its record now is; a
+    /// unit that changes sector or layer is forgotten by every empire.
+    fn follow_fleet(&mut self, game_data: &CoreGameData, unit: usize) {
+        let fleet = &game_data.fleets.records[self.units[unit].index];
+        let (sector, layer) = (fleet.current_location_coords_raw(), layer_of(fleet.depth()));
+        let entry = &mut self.units[unit];
+        if (entry.sector, entry.layer) != (sector, layer) {
+            entry.sector = sector;
+            entry.layer = layer;
+            self.awareness.forget(unit);
+        }
+    }
+
+    /// The table after a starbase's step: the base and the escort it
+    /// carried move, both are forgotten when the base changed sector or
+    /// layer, and guards merged into the escort leave play.
+    fn follow_base_step(&mut self, game_data: &CoreGameData, unit: usize, step: &BaseStep) {
+        let base = &game_data.bases.records[self.units[unit].index];
+        let entry = &mut self.units[unit];
+        entry.sector = base.coords_raw();
+        entry.layer = layer_of(base.depth());
+        if step.moved_cell {
+            self.awareness.forget(unit);
+        }
+        if let Some(escort) = step.escort.and_then(|fleet_idx| self.fleet_unit(fleet_idx)) {
+            let fleet = &game_data.fleets.records[self.units[escort].index];
+            let entry = &mut self.units[escort];
+            entry.sector = fleet.current_location_coords_raw();
+            entry.layer = layer_of(fleet.depth());
+            if step.moved_cell {
+                self.awareness.forget(escort);
+            }
+        }
+        for &fleet_idx in &step.merged {
+            if let Some(merged) = self.fleet_unit(fleet_idx) {
+                self.units[merged].active = false;
+            }
+        }
+    }
+
+    fn fleet_unit(&self, fleet_idx: usize) -> Option<usize> {
+        self.units
+            .iter()
+            .position(|unit| unit.kind == UnitKind::Fleet && unit.index == fleet_idx)
     }
 
     /// Units `observer` can meet: another empire's, in play, in the same
@@ -111,6 +162,13 @@ impl Year<'_> {
             sector,
             ..
         } = self.units[observer];
+        // A base under way does not scan.
+        let base = &game_data.bases.records[base_idx];
+        if base.coords_raw() != base.target_coords_raw()
+            || base.depth() != Real48::from_int(i32::from(base.target_depth_raw()))
+        {
+            return;
+        }
         let factor = base_factor(layer);
         for target in 0..self.units.len() {
             if !self.meets(observer, target) {

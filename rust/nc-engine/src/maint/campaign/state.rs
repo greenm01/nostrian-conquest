@@ -313,13 +313,6 @@ pub(super) fn apply_stored_diplomatic_escalations(
     Ok(())
 }
 
-pub(super) fn update_player_starbase_flag(game_data: &mut CoreGameData) {
-    for player in game_data.player.records.iter_mut() {
-        let sc = player.starbase_count_raw();
-        player.set_starbase_presence_flag_raw(if sc > 0 { 0x01 } else { 0x00 });
-    }
-}
-
 fn defeat_empire(
     game_data: &mut CoreGameData,
     lifecycle: &mut PlayerLifecycleState,

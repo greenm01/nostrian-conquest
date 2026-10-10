@@ -143,7 +143,7 @@ fn economy_starbase_probe_init_creates_matched_plain_and_starbase_colonies() {
 
     export_campaign_db(&target, &target);
     let data = nc_data::CoreGameData::load(&target).unwrap();
-    assert_eq!(data.player.records[0].starbase_count_raw(), 1);
+    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
 
     let rows = data.empire_planet_economy_rows(1);
     let plain = rows

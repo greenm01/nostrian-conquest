@@ -52,6 +52,13 @@ struct MovementEvents {
     mission_events: Vec<MissionEvent>,
     salvage_events: Vec<SalvageResolvedEvent>,
     diplomatic_escalation_events: Vec<DiplomaticEscalationEvent>,
+    /// Starbase arrival and lost-world reports.
+    starbase_reports: Vec<nc_data::StarbaseReportEvent>,
+    /// Guards merged into another guard of their base; the flag marks an
+    /// arriving guard's merge, which it reports.
+    guard_merges: Vec<(FleetMergeEvent, bool)>,
+    /// Guards whose base was destroyed during the year.
+    guard_retargets: Vec<MissionRetargetEvent>,
     /// Speed each fleet moved at this turn (0 when it did not move), indexed by fleet.
     fleet_travel_speeds: Vec<u8>,
 }
@@ -354,9 +361,33 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     )?;
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;
+    let guard_merges: Vec<(FleetMergeEvent, bool)> =
+        std::mem::take(&mut refs.movement_events.guard_merges);
+    refs.merge_events.extend(
+        guard_merges
+            .iter()
+            .filter(|(_, reported)| *reported)
+            .map(|(event, _)| *event),
+    );
+    refs.mission_retarget_events
+        .append(&mut refs.movement_events.guard_retargets);
     refs.remap(&year.movement_remap.fleet_indices);
-    refs.destroyed_join_host_fleet_numbers
-        .extend(year.movement_remap.destroyed_join_host_fleet_numbers);
+    refs.destroyed_join_host_fleet_numbers.extend(
+        year.movement_remap
+            .destroyed_join_host_fleet_numbers
+            .clone(),
+    );
+    if !guard_merges.is_empty() {
+        // Join missions follow a host that merged into another guard.
+        let merges: Vec<FleetMergeEvent> = guard_merges.iter().map(|(event, _)| *event).collect();
+        let join_host_events = merging::process_join_host_updates(
+            game_data,
+            &merges,
+            &refs.destroyed_join_host_fleet_numbers,
+            &year.movement_remap,
+        );
+        refs.join_host_events.extend(join_host_events);
+    }
     loop {
         let (new_merge_events, remap_info) = merging::process_mission_fleet_merging(game_data)?;
         if new_merge_events.is_empty() {
@@ -427,9 +458,8 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Updates factories, armies, and raw[0x0E] for rogue and autopilot-on players.
     economics::process_autopilot_ai(game_data)?;
 
-    // Update the in-memory player starbase-presence flag (legacy PLAYER offset 0x46).
-    // Confirmed from starbase fixture: player 0 (starbase_count=1) gets the flag after maint.
-    campaign::update_player_starbase_flag(game_data);
+    // ECMAINT leaves PLAYER 0x46 naming the last base in each chain.
+    game_data.sync_last_base_records();
 
     // Hostile fleets strike in the year their strike test passes; a failed
     // attack leaves them to retry next year.
@@ -584,6 +614,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             events
         },
         starbase_destroyed_events: fleet_battle_phase_events.starbase_destroyed_events,
+        starbase_report_events: movement_events.starbase_reports,
         assault_report_events: assault_events.assault_report_events,
         scout_contact_events: fleet_battle_phase_events.scout_contact_events,
         encounter_disposition_events: fleet_battle_phase_events.encounter_disposition_events,

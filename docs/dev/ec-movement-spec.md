@@ -104,8 +104,8 @@ climbs to deep space, and every time a base changes sector or depth layer,
 classic rewrites its guards' target sector and sets their `0x22` to the
 base's layer. A guard that arrives takes the base's depth, and a stopped
 guard in the same sector and layer rides along with the base; the rules are
-in [ec-starbase-spec.md](ec-starbase-spec.md). Rust does not move starbases
-yet (t037), so a guard at a base in deep space settles in orbit instead.
+in [ec-starbase-spec.md](ec-starbase-spec.md). Rust moves starbases the same
+way, so a guard at a base in deep space settles in deep space.
 
 Fleet ETA replays the same step from the fleet's current state and reports
 the year the order's arrival test first passes. ECGAME's ETA screen asks

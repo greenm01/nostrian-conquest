@@ -56,37 +56,24 @@ impl CoreGameData {
         }
 
         if starbase_count == 1 {
-            let player = self
-                .player
-                .records
-                .get_mut(player_index_1_based - 1)
-                .ok_or(GameStateMutationError::MissingPlayerRecord {
+            if self.player.records.get(player_index_1_based - 1).is_none() {
+                return Err(GameStateMutationError::MissingPlayerRecord {
                     index_1_based: player_index_1_based,
-                })?;
-            let next_base_id = player.starbase_count_raw().saturating_add(1);
-            player.set_starbase_count_raw(next_base_id);
-            let record_number = (self.bases.records.len() + 1) as u16;
-            let mut base = build_guard_starbase_base_record(
+                });
+            }
+            let record_idx = self.bases.records.len();
+            self.bases.records.push(build_guard_starbase_base_record(
                 coords,
-                next_base_id,
                 0,
-                record_number,
+                0,
+                (record_idx + 1) as u16,
                 owner_empire,
                 Real48::HALF,
                 Real48::HALF,
                 Real48::ONE,
-            );
-            // Append to the end of the owner's chain, as ECMAINT 2000:6493
-            // does when the new id is the next one up.
-            if let Some(tail) = self.bases.records.iter_mut().find(|other| {
-                other.base_id_raw() != 0
-                    && other.owner_empire_raw() == owner_empire
-                    && other.next_base_link_raw() == 0
-            }) {
-                tail.set_next_base_link_raw(record_number);
-                base.set_previous_base_link_raw(tail.record_number_raw());
-            }
-            self.bases.records.push(base);
+            ));
+            // The new base takes the lowest free id in its owner's chain.
+            self.link_new_base(record_idx);
             let planet = self
                 .planets
                 .records
@@ -328,7 +315,7 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_index_1_based,
             })?;
-        player.set_starbase_count_raw(1);
+        player.set_first_base_record_raw(1);
 
         let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {

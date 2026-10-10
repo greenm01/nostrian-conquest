@@ -315,22 +315,24 @@ impl PlayerRecord {
         self.raw[0x51] = value;
     }
 
-    pub fn starbase_count_raw(&self) -> u16 {
+    /// 0x44..=0x45: record number of the empire's first starbase in
+    /// BASES.DAT, the head of its chain; 0 for none.
+    pub fn first_base_record_raw(&self) -> u16 {
         u16::from_le_bytes([self.raw[0x44], self.raw[0x45]])
     }
 
-    pub fn set_starbase_count_raw(&mut self, value: u16) {
-        let [lo, hi] = value.to_le_bytes();
-        self.raw[0x44] = lo;
-        self.raw[0x45] = hi;
+    pub fn set_first_base_record_raw(&mut self, value: u16) {
+        self.raw[0x44..0x46].copy_from_slice(&value.to_le_bytes());
     }
 
-    pub fn starbase_presence_flag_raw(&self) -> u8 {
-        self.raw[0x46]
+    /// 0x46..=0x47: record number of the empire's last starbase, the tail of
+    /// its chain; 0 for none.
+    pub fn last_base_record_raw(&self) -> u16 {
+        u16::from_le_bytes([self.raw[0x46], self.raw[0x47]])
     }
 
-    pub fn set_starbase_presence_flag_raw(&mut self, value: u8) {
-        self.raw[0x46] = value;
+    pub fn set_last_base_record_raw(&mut self, value: u16) {
+        self.raw[0x46..0x48].copy_from_slice(&value.to_le_bytes());
     }
 
     pub fn fleet_chain_head_raw(&self) -> u16 {

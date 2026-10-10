@@ -80,6 +80,9 @@ impl CoreGameData {
 
     pub fn current_known_player1_starbase_count_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
+        if let Err(error) = self.base_chain(1) {
+            errors.push(error);
+        }
         let expected_bases = self.player1_starbase_count_current_known();
         let owned_bases = self.player1_owned_base_record_count_current_known();
         if owned_bases != expected_bases {
@@ -127,12 +130,12 @@ impl CoreGameData {
     }
 
     pub fn sync_player1_current_known_counts(&mut self) {
-        let starbase_count = self.player1_owned_base_record_count_current_known() as u16;
         let ipbm_count = self.ipbm.records.len() as u16;
-        if let Some(player1) = self.player.records.first_mut() {
-            player1.set_starbase_count_raw(starbase_count);
-            player1.set_ipbm_count_raw(ipbm_count);
+        if self.player.records.is_empty() {
+            return;
         }
+        self.relink_base_chain(1);
+        self.player.records[0].set_ipbm_count_raw(ipbm_count);
     }
 
     pub fn sync_current_known_baseline_controls_and_counts(&mut self) {

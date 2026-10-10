@@ -390,10 +390,10 @@ fn validate_guard_starbase_data(data: &CoreGameData) -> Result<(), Box<dyn std::
         let fleet = &data.fleets.records[0];
         let player1 = &data.player.records[0];
         let base = &data.bases.records[0];
-        println!("  PLAYER[1].starbase_count_raw = 1");
+        println!("  PLAYER[1].first_base_record = 1");
         println!(
             "  linkage keys: player[44]={} fleet[00]={} fleet[05]={} base[07]={}",
-            player1.starbase_count_raw(),
+            player1.first_base_record_raw(),
             fleet.local_slot_word_raw(),
             fleet.fleet_id_word_raw(),
             base.record_number_raw()
