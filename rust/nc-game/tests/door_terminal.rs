@@ -407,6 +407,24 @@ fn incomplete_known_escape_prefix_does_not_fall_back_to_escape() {
 }
 
 #[test]
+fn door_serializer_redraws_rows_in_place_without_clearing_the_screen() {
+    apply_mag16_theme();
+    let mut buffer = PlayfieldBuffer::new(80, 25, nc_game::theme::classic::body_style());
+    buffer.write_text(0, 0, "ABC", nc_game::theme::classic::title_style());
+
+    let geometry = ScreenGeometry::local_default();
+    let frame =
+        serialize_playfield_frame(&buffer, geometry, OutputEncoding::Cp437, ColorMode::Ansi16);
+    let frame_text = String::from_utf8_lossy(&frame);
+
+    // A full clear before drawing flashes a blank screen when the terminal
+    // paints mid-frame; every row, blank ones included, is erased to its end.
+    assert!(!frame_text.contains("\x1b[2J"));
+    assert_eq!(frame_text.matches("\x1b[K").count(), geometry.height() as usize);
+    assert!(frame_text.contains("ABC\x1b[0;37;40m\x1b[K"));
+}
+
+#[test]
 fn door_serializer_uses_bbs_safe_selected_row_cyan_background() {
     apply_mag16_theme();
     let mut buffer = PlayfieldBuffer::new(80, 25, nc_game::theme::classic::body_style());

@@ -40,6 +40,8 @@ pub struct DoorTerminal {
     geometry: ScreenGeometry,
     trace_dir: Option<PathBuf>,
     frame_seq: u64,
+    /// Whether the first frame has cleared what the BBS left on screen.
+    screen_cleared: bool,
     decoder: DoorInputDecoder,
     io: Box<dyn DoorIo>,
     session_deadline: Option<Instant>,
@@ -88,6 +90,7 @@ impl DoorTerminal {
             geometry,
             trace_dir,
             frame_seq: 0,
+            screen_cleared: false,
             decoder: DoorInputDecoder::new(transport),
             io: build_door_io(transport)?,
             session_deadline: None,
@@ -175,6 +178,10 @@ impl Terminal for DoorTerminal {
             trace_output_frame(trace_dir, self.frame_seq, &frame)?;
             self.frame_seq = self.frame_seq.saturating_add(1);
         }
+        if !self.screen_cleared {
+            self.io.write_all(b"\x1b[2J")?;
+            self.screen_cleared = true;
+        }
         self.io.write_all(&frame)?;
         self.io.flush()?;
         Ok(())
@@ -242,23 +249,30 @@ pub fn serialize_playfield_frame(
         ColorMode::Ansi16 => ColorMode::Ansi16,
         ColorMode::Color256 | ColorMode::TrueColor => ColorMode::Ansi16,
     };
-    let mut bytes = Vec::new();
-    bytes.extend_from_slice(&style_sgr(
+    let base_style = style_sgr(
         classic::terminal_foreground(),
         classic::app_background(),
         false,
         color_mode,
-    ));
-    bytes.extend_from_slice(b"\x1b[2J\x1b[H");
+    );
+    let mut bytes = base_style.clone();
 
+    // Each row is drawn over the last frame and its tail erased with `ESC[K`
+    // in the base colours. Clearing the whole screen first would show a
+    // blank screen whenever the terminal paints mid-frame.
     let visible_height = playfield.height().min(geometry.height());
-    for row_idx in 0..visible_height {
-        let row = playfield.row(row_idx);
-        let Some(last_visible_idx) = row.iter().rposition(|cell| cell.ch != ' ') else {
+    for row_idx in 0..geometry.height() {
+        bytes.extend_from_slice(cursor_to(row_idx as u16, 0).as_bytes());
+        let row = (row_idx < visible_height).then(|| playfield.row(row_idx));
+        let Some((row, last_visible_idx)) = row.and_then(|row| {
+            row.iter()
+                .rposition(|cell| cell.ch != ' ')
+                .map(|last| (row, last))
+        }) else {
+            bytes.extend_from_slice(b"\x1b[K");
             continue;
         };
 
-        bytes.extend_from_slice(cursor_to(row_idx as u16, 0).as_bytes());
         let mut current_style = None;
         let mut run = String::new();
         for cell in &row[..=last_visible_idx] {
@@ -280,14 +294,11 @@ pub fn serialize_playfield_frame(
         if !run.is_empty() {
             push_text(&mut bytes, &run, encoding);
         }
+        bytes.extend_from_slice(&base_style);
+        bytes.extend_from_slice(b"\x1b[K");
     }
 
-    bytes.extend_from_slice(&style_sgr(
-        classic::terminal_foreground(),
-        classic::app_background(),
-        false,
-        color_mode,
-    ));
+    bytes.extend_from_slice(&base_style);
     match playfield.cursor() {
         Some((cursor_col, cursor_row)) => {
             let default_cursor_row = visible_height.saturating_sub(1) as u16;
@@ -1000,6 +1011,7 @@ fn read_scripted_door_session(
         geometry: ScreenGeometry::local_default(),
         trace_dir: None,
         frame_seq: 0,
+        screen_cleared: false,
         decoder: DoorInputDecoder::new(transport),
         io: Box::new(ScriptedDoorIo::new(reads, Rc::clone(&output))),
         session_deadline: None,
