@@ -1,6 +1,8 @@
 #[path = "update/support/mod.rs"]
 mod support;
 
+#[path = "update/broadcast_report_delete.rs"]
+mod broadcast_report_delete;
 #[path = "update/chrome_theme.rs"]
 mod chrome_theme;
 #[path = "update/fleet_active_filter.rs"]

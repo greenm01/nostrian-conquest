@@ -13,39 +13,6 @@ impl CampaignStore {
         load_report_block_rows_filtered(&mut conn, snapshot_id, include_deleted)
     }
 
-    /// Soft-delete a single report block by index.
-    pub fn mark_report_block_deleted(
-        &self,
-        snapshot_id: i64,
-        viewer_empire_id: u8,
-        block_index: usize,
-    ) -> Result<(), CampaignStoreError> {
-        let conn = self.connection()?;
-        conn.execute(
-            "UPDATE report_blocks SET recipient_deleted = 1
-             WHERE snapshot_id = ?1 AND block_index = ?2
-               AND (viewer_empire_id = ?3 OR viewer_empire_id = 0)",
-            params![snapshot_id, block_index as i64, i64::from(viewer_empire_id)],
-        )?;
-        Ok(())
-    }
-
-    /// Soft-delete all report blocks for a snapshot.
-    pub fn mark_all_report_blocks_deleted(
-        &self,
-        snapshot_id: i64,
-        viewer_empire_id: u8,
-    ) -> Result<(), CampaignStoreError> {
-        let conn = self.connection()?;
-        conn.execute(
-            "UPDATE report_blocks SET recipient_deleted = 1
-             WHERE snapshot_id = ?1
-               AND (viewer_empire_id = ?2 OR viewer_empire_id = 0)",
-            params![snapshot_id, i64::from(viewer_empire_id)],
-        )?;
-        Ok(())
-    }
-
     /// Check whether any active (non-deleted) report blocks exist.
     pub fn has_active_report_blocks(&self, snapshot_id: i64) -> Result<bool, CampaignStoreError> {
         let conn = self.connection()?;

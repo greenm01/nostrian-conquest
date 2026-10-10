@@ -12,6 +12,7 @@ use crate::reports::{
 };
 use crate::screen::ScreenId;
 use crate::screen::layout::{PromptFeedback, command_line_row_for};
+use nc_data::delete_report_block_for_viewer;
 
 const INBOX_PREVIEW_PAGE_DELTA: i8 = INBOX_VISIBLE_ROWS as i8;
 
@@ -351,11 +352,12 @@ impl App {
                     mail.mark_deleted_by_recipient();
                 }
             }
-            InboxItemSource::ReportBlock(index) => {
-                if let Some(row) = self.report_block_rows.get_mut(index) {
-                    row.recipient_deleted = true;
-                }
-            }
+            InboxItemSource::ReportBlock(index) => delete_report_block_for_viewer(
+                &mut self.report_block_rows,
+                &self.game_data.player.records,
+                index,
+                self.player.record_index_1_based as u8,
+            ),
         }
         self.save_game_data()?;
         self.messaging.inbox_prompt_mode = InboxPromptMode::Normal;

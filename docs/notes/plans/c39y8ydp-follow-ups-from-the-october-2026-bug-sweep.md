@@ -317,6 +317,25 @@ campaign outlook is now one report per empire. The bug still affects
 broadcast rows already stored in existing campaign databases, which the
 t008 layout continues to export into every empire's chain.
 
+Result (2026-10-09): every delete path writes the whole in-memory row set back
+as a new snapshot, so the SQL `mark_*` updates in `storage/report_blocks.rs`
+were overwritten and the real fault was in memory: the bulk delete, the
+startup-review delete, the `nc-game` inbox delete, and the `nc-helm` inbox
+delete all set `recipient_deleted` on the shared broadcast row. All four now
+call `nc_data::delete_report_block_for_viewer` or
+`delete_report_blocks_for_viewer`. Deleting a broadcast row for one empire
+marks it deleted and adds a copy for each other active human empire, the set
+`layout_classic_results` already sends broadcasts to, under the next free
+block index. The copy therefore moves after that empire's own reports in its
+chain. No schema change: the copies are ordinary per-empire rows, so existing
+`ncgame.db` files load unchanged. The unused SQL `mark_*` functions were
+removed. Tests: `nc-game/tests/update/broadcast_report_delete.rs` covers bulk,
+inbox, and startup-review deletes with two joined empires and the export
+layout, and failed on all three before the fix;
+`nc-data/tests/report_block_delete.rs` covers the shared helper, including a
+targeted row with the broadcast row's block index and a repeat delete. An
+empire that joins after the delete does not get the copy.
+
 ### t027
 
 `nc-game/tests/basic.rs::piped_dropfile_launch_stays_interactive_without_tty_stdout`

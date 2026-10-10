@@ -115,7 +115,9 @@ pub use records::ipbm::{IpbmDat, IpbmRecord};
 pub use records::planet::{PlanetDat, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT};
 pub use records::player::{DiplomaticRelation, PlayerDat, PlayerRecord};
 pub use records::setup::SetupDat;
-pub use report_blocks::ReportBlockRow;
+pub use report_blocks::{
+    ReportBlockRow, delete_report_block_for_viewer, delete_report_blocks_for_viewer,
+};
 pub use rng::{
     GameRng, RNG_TAG_COMBAT, RNG_TAG_MAPGEN, derive_campaign_seed_from_runtime,
     generate_campaign_seed, mix_seed,
