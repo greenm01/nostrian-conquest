@@ -43,8 +43,11 @@ next authority, and spying becomes a hostile act that escalates diplomacy.
 
 Guards, starbases, and fleets at their own world now hold formation when an
 enemy is only passing through and their ROE declines the fight. A lone
-starbase therefore no longer attacks passing enemies. That consequence is open
-for confirmation as task t006 in [todo.md](../../../todo.md).
+starbase therefore no longer attacks passing enemies. The user confirmed this
+on 2026-10-09 (task t006). The 1992 player guide supports it: a starbase
+"cannot attack since it moves very slowly ... but it can defend itself," and a
+guarding fleet "may leave it if they have a high ROE and an enemy fleet comes
+close to their solar system."
 
 ## Acceptance and connections
 

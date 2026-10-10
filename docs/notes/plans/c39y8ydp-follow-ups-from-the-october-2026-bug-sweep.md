@@ -25,6 +25,9 @@ longer attack enemies merely passing through the sector. Decide whether a
 starbase should engage passing enemies on its own; if so, record the rule in
 the manual and add a test. Exit: a recorded decision.
 
+Result (2026-10-09): confirmed as built, on the 1992 guide's starbase and guard
+text. Recorded in the engagement decision; no code change.
+
 ### t007
 
 Blitz landing fire still costs one transport per surviving battery, on the
