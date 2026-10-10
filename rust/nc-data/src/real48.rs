@@ -281,6 +281,12 @@ impl Real48 {
     }
 }
 
+impl Default for Real48 {
+    fn default() -> Self {
+        Self::ZERO
+    }
+}
+
 impl PartialEq for Real48 {
     fn eq(&self, other: &Self) -> bool {
         self.to_f64() == other.to_f64()

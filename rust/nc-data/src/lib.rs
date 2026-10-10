@@ -15,6 +15,7 @@ pub const MAINTENANCE_DAY_ENABLED_CODES: [u8; 7] = [0x01, 0x01, 0xCA, 0x01, 0x0A
 
 mod bbs_config;
 mod builder;
+pub mod classic;
 mod classic_results;
 mod config;
 mod directory;
@@ -24,6 +25,7 @@ mod intel;
 pub mod maintenance_types;
 mod map_dimensions;
 mod map_export;
+pub mod model;
 mod planet_summary;
 mod player_activity;
 mod player_lifecycle;
