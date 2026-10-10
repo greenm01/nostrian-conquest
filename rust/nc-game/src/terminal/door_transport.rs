@@ -39,6 +39,9 @@ pub(crate) fn build_door_io(transport: DoorTransport) -> io::Result<Box<dyn Door
 struct StdioDoorIo {
     input: RawStdin,
     output: io::Stdout,
+    /// The console input mode to restore on exit, when VT input was turned on.
+    #[cfg(windows)]
+    restore_console_mode: Option<u32>,
 }
 
 impl StdioDoorIo {
@@ -46,8 +49,58 @@ impl StdioDoorIo {
         Self {
             input: RawStdin,
             output: io::stdout(),
+            #[cfg(windows)]
+            restore_console_mode: enable_console_vt_input(),
         }
     }
+}
+
+#[cfg(windows)]
+impl Drop for StdioDoorIo {
+    fn drop(&mut self) {
+        if let Some(mode) = self.restore_console_mode {
+            let _ = set_console_input_mode(mode);
+        }
+    }
+}
+
+#[cfg(windows)]
+unsafe extern "system" {
+    fn GetConsoleMode(handle: *mut std::ffi::c_void, mode: *mut u32) -> i32;
+    fn SetConsoleMode(handle: *mut std::ffi::c_void, mode: u32) -> i32;
+}
+
+// A console reports arrow, Home, End, and page keys as key events without a
+// character, which `stdin_ready` discards. VT input mode turns them into the
+// sequences a BBS caller's terminal sends (`ESC [ A`). Consoles older than
+// Windows 10 refuse the mode, and those keys stay dead there. Returns the
+// mode to restore.
+#[cfg(windows)]
+fn enable_console_vt_input() -> Option<u32> {
+    use std::os::windows::io::AsRawHandle;
+
+    const ENABLE_VIRTUAL_TERMINAL_INPUT: u32 = 0x0200;
+
+    let stdin = io::stdin();
+    if !stdin.is_terminal() {
+        return None;
+    }
+    let mut mode = 0u32;
+    if unsafe { GetConsoleMode(stdin.as_raw_handle() as *mut _, &mut mode) } == 0 {
+        return None;
+    }
+    set_console_input_mode(mode | ENABLE_VIRTUAL_TERMINAL_INPUT).ok()?;
+    Some(mode)
+}
+
+#[cfg(windows)]
+fn set_console_input_mode(mode: u32) -> io::Result<()> {
+    use std::os::windows::io::AsRawHandle;
+
+    if unsafe { SetConsoleMode(io::stdin().as_raw_handle() as *mut _, mode) } == 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
 }
 
 impl Read for StdioDoorIo {
