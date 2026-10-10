@@ -443,3 +443,15 @@ The RESULTS.DAT chain-id question is its own
 [investigation](../investigations/e752ccc3-classic-results-dat-chain-ids-across-several-players.md),
 tracked as t008. The fuzzer has its own
 [plan](lski78er-engine-fuzzer-with-shared-policies-and-invariants.md).
+
+### t061
+
+`nc-host maint` (`nc-host/src/commands/maint.rs`), the hosted Nostr path's
+maintenance command, lists each turn's pending submissions but never
+applies them, discards the events `run_maintenance_turn` returns, and
+saves the snapshot with empty report blocks, queued mail, and scorch
+orders. The hosted scheduler computes due times, but nothing runs
+maintenance on them. The shipped BBS and localhost paths (`nc-sysop maint`)
+are not affected. Finish the hosted maintenance path (apply submissions,
+compose reports, keep mail and scorch orders) or gate the command until it
+is finished. Found by the t039 phase 4 agent on 2026-10-10.
