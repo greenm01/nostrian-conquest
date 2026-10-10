@@ -14,18 +14,26 @@ says how the pieces fit.
 
 - `rules.py`: the unit table (AS, DS, build cost, fire pool, combat line)
   and the rule sets as plain dicts: `current`, `flat-discard`,
-  `flat-residual`, `flat-carry`; hull variants; `--set` overrides.
+  `flat-residual`, `flat-carry`, `flat-half-ds`; hull variants; `--set`
+  overrides.
 - `fleet_model.py`: the rule-driven battle. One step function returns
-  branches with probabilities, so `solve` enumerates a battle exactly and
-  `simulate` samples it with the same code.
+  branches with probabilities, so `solve` enumerates a battle exactly,
+  round by round up to the round cap, and `simulate` samples it with the
+  same code.
 - `sweep.py`: the sweep: fleet matchups per rule set, the ground
   candidates, the engine comparison, Markdown and JSON output.
 - `test_sweep.py`: checks that `current` matches the review's mode C
   exchange for exchange, that exact and sampled runs agree, that each
-  candidate's semantics hold on hand-built states, and that runs reproduce.
+  candidate's semantics hold on hand-built states, that `solve` stops at
+  the round cap, and that runs reproduce.
 - `nc_sweep_results.md`, `nc_sweep_results.json`: the sweep's output for
-  the default run; `nc_engine_odds.json`: the engine run it is compared
-  with.
+  the default run with `--engine`; `nc_engine_odds.json`: the engine run
+  it is compared with.
+- `review_t055.py`: Codex's probes of the solver's round cap and the
+  carry and convoy semantics; `nc_t055_review_before_fix.json` is their
+  output before the cap fix, kept as evidence, so run the script without
+  `--output` to check the fixed solver against its finite-horizon
+  traversal.
 - The review's own scripts, kept as written: `nc_combat_analysis.py`
   (modes C, S, R, X), `nc_ship_sweep.py`, `ground.py` (exact ground
   candidates), `confidence.py` (intervals), `test_models.py`, and their
@@ -39,7 +47,7 @@ keeps the interpreter isolated (the scripts add their own directory to the
 path), `-B` keeps bytecode out of the directory.
 
 ```sh
-python3 -I -B tools/combat-model/sweep.py --markdown tools/combat-model/nc_sweep_results.md --json tools/combat-model/nc_sweep_results.json
+python3 -I -B tools/combat-model/sweep.py --engine tools/combat-model/nc_engine_odds.json --markdown tools/combat-model/nc_sweep_results.md --json tools/combat-model/nc_sweep_results.json
 python3 -I -B tools/combat-model/sweep.py --rules current --set remainder=carry --cases ca --no-ground
 python3 -I -B tools/combat-model/sweep.py --rules flat-discard --set units.DD.DS=8 --cases dd
 python3 -I -B -m unittest discover -s tools/combat-model -p 'test_*.py'
@@ -58,9 +66,18 @@ every preset), `--set KEY=VALUE` (repeatable; a rule field such as
 (`baseline`, `dd-10-8-5`, or `all`: baseline everywhere and the DD variant
 on the DD cases), `--cases` (names or tags: `ca`, `dd`, `mixed`, `small`,
 `roe`, `convoy`, `engine`), `--trials` (default 10,000), `--seed` (default
-20261010), `--exact-limit` (states, default 60,000), `--no-ground`,
-`--engine FILE`, `--json`, `--markdown`. The default run takes about a
-minute.
+20261010), `--exact-limit` (default 100,000), `--no-ground`,
+`--engine FILE`, `--json`, `--markdown`.
+
+Limits: `solve` enumerates (state, round) pairs, since the round cap is
+part of a state's future, and gives up past `--exact-limit` of them, after
+which the case is sampled. The round-keyed solver visits several pairs per
+state (about 60,000 for 30 CA vs 10 BB under `flat-discard`, 73,000 under
+`flat-residual`, 74,000 for 30 DD 10/8 vs 10 CA under `flat-carry`), so
+the default limit is 100,000, which keeps every case exact that was exact
+before the cap fix and adds the convoy. The larger `flat-carry` battles
+stay sampled: 10 CA vs 10 CA needs about 310,000 pairs and 30 CA vs 10 BB
+about 1.6 million. The default run takes about two minutes.
 
 ### The engine check
 
@@ -84,9 +101,19 @@ The example prints the outcome split with a Wilson interval and the
 destroyed build points per side; `--case NAME` selects cases, `--seed` the
 first campaign seed, `--years` how long a trial waits for a battle. Rounds
 fought and crippled survivors are not in the maintenance events, so the
-comparison covers outcomes and destroyed build points. An exact model value
-agrees when the engine's count passes a two-sided exact binomial test
-against it at 5%; a sampled one when the intervals overlap.
+comparison covers outcomes and destroyed build points. The `agree` column
+checks every one of them and names what disagrees: each outcome count
+(left win, right win, mutual, stalemate) against an exact model value by
+a two-sided exact binomial test at 5%, or against a sampled one by
+overlapping 95% intervals; and each side's mean destroyed build points
+within 2% of that side's starting build points, a stated tolerance rather
+than a test, since the engine file carries no loss dispersion. A case in
+the engine file without a model record, a model case tagged `engine`
+missing from the file, or a case without a battle is listed with the
+reason instead of skipped. Failing to reject a difference is not proof of
+equivalence: the check covers the cases and measures it lists, for DD,
+CA, and BB fleets, and says nothing about auxiliaries, loaded transports,
+starbases, or the round cap.
 
 Result of the check (20,000 trials per case, campaign seeds 1 to 20,000,
 model exact unless an interval is shown):
@@ -110,7 +137,9 @@ retreat geometry are outside it.
 
 A rule set is a dict with these fields. `current` is the engine
 (`rust/nc-engine/src/maint/combat/`); the `flat-*` family is the
-consultation's candidate, differing only in the remainder rule.
+consultation's candidate: `flat-discard`, `flat-residual`, and `flat-carry`
+differ only in the remainder rule, and `flat-half-ds` is `flat-discard`
+with VBAM's damage step, a crippled ship at half DS as well as half AS.
 
 | field | values | meaning |
 | --- | --- | --- |
@@ -118,23 +147,26 @@ consultation's candidate, differing only in the remainder rule.
 | `mixed_shift` | 0, 1 | shift for two or more of DD, CA, BB present (the engine's test). |
 | `base_shift`, `base_condition` | `present`, `undamaged`, `none` | shift for a starbase: any, only a nominal one, or never. |
 | `shift_cap` | 2 | bound on the total shift. |
-| `execution_classes` | class names | classes firing into the execution pool (finish crippled at 1xDS, destroy nominal at 2xDS); every other armed class suppresses (cripple in line order, destroy crippled once no nominal remain). Hits split by AS share, rounded half up. |
-| `remainder` | `discard`, `residual`, `carry` | what hits too few for the next step do: nothing; buy that step with probability hits/cost; or stay on the books against the same side, per pool, and join the next round's hits of that pool. |
+| `execution_classes` | class names | classes firing into the execution pool (finish crippled at the finishing cost, destroy nominal at DS plus it); every other armed class suppresses (cripple in line order, destroy crippled once no nominal remain). Hits split by AS share, rounded half up. |
+| `crippled_ds` | `full`, `half` | the finishing cost of a crippled unit: its DS again (2xDS to destroy a nominal one, the engine), or half its DS rounded down like crippled AS (1.5xDS to destroy; VBAM). |
+| `remainder` | `discard`, `residual`, `carry` | what hits too few for the next step do: nothing; buy that step with probability hits/cost; or stay on the books as a temporary budget against the same side, per pool, for the rest of this battle, and join the next round's hits of that pool. |
 | `critical` | `free-kill`, `focus`, `none` | a natural 9: destroy one unit for free, crippled first, cheapest first, screened or not; or let the suppression pool buy the highest-DS affordable line steps first, finishing a crippled unit when there is one; or nothing. |
-| `screen` | `absolute`, `conditional` | auxiliaries (SC, TT, ET) are hit only once the line is gone; `conditional` also exposes them, first, to a pursuit exchange. |
+| `screen` | `absolute`, `conditional` | auxiliaries (SC, TT, ET) are hit only once the line is gone; `conditional` also exposes them, first, to a pursuit exchange (`withdrawal=pursuit`; it changes nothing else). |
 | `roe` | `lock3`, `after1` | when a side compares its AS with the enemy's against its ROE threshold: from round 4, declared before the round and checked after it (the engine); or after every round from the first. |
-| `withdrawal` | `pressed`, `pursuit`, `none` | what a leaving side takes: the engine's withdrawal exchange (both sides fire once at the Pressed column, no shifts); one ordinary exchange, both sides firing, the pursuer's fire reaching auxiliaries under the conditional screen; or nothing. |
-| `round_cap` | 64 | sampled battles stop here as a stalemate. |
+| `withdrawal` | `pressed`, `pursuit`, `none` | what a leaving side takes: the engine's withdrawal exchange (both sides fire once at the Pressed column, no shifts); one ordinary exchange that always happens, both sides firing, the pursuer's fire reaching auxiliaries only under `screen=conditional`; or nothing. |
+| `round_cap` | 64 | an undecided battle ends here as a stalemate, exact and sampled alike; 64 is the engine's `COMBAT_GUARDRAIL_MAX_ROUNDS` (nc-combat-spec.md). |
 
 Semantics the candidates assume, chosen here and open to change:
 
-- **Carry-forward** is a property of the battle, not of a ship: the
-  unspent suppression and execution hits against a side are kept per
-  pool and spent first in the next round against that side, under that
-  round's target order. They are dropped when the battle ends or that
-  side leaves. A side is one aggregate force, so nothing follows a fleet
-  that splits off; a rule that persists sub-step damage across battles
-  would be a different candidate with per-fleet state.
+- **Carry-forward** is a temporary per-side, per-pool budget within one
+  battle, not persistent damage to a class or a step: the unspent
+  suppression and execution hits against a side are kept per pool and
+  spent first in the next round against that side, under that round's
+  target order. They are dropped when the battle ends or that side
+  leaves, and an undamaged ship with a budget against it is still at full
+  AS. A side is one aggregate force, so nothing follows a fleet that
+  splits off; a rule that persists sub-step damage across battles would
+  be a different candidate with per-fleet state.
 - **Residual** rolls once per pool per round for the first step in
   target order the leftover cannot afford, at that step's cost (2xDS for
   execution against a nominal ship).
@@ -142,15 +174,42 @@ Semantics the candidates assume, chosen here and open to change:
   first; with one fleet per side in the model, per fleet and per side are
   the same. Both sides failing at once leave together and nobody pursues
   (a stalemate in the tables). A side whose combat AS is zero cannot
-  leave and is shot while it has units, as in the engine.
-- **Pursuit** is a single exchange; the sighting and intercept tests that
-  would gate it in the engine are not modelled, so it always happens. The
-  pursued side fires back with what it has.
+  leave and is shot while it has units: that is the engine's behaviour,
+  which the model reproduces and the engine check tests, not a candidate
+  rule.
+- **Pursuit** (`withdrawal=pursuit`) is a single exchange that always
+  succeeds: the sighting and intercept tests that would gate it in the
+  engine are not modelled. The pursued side fires back with what it has.
+  Whether that exchange reaches the pursued side's auxiliaries first is
+  the separate `screen` switch, so each can be turned off alone:
+  `--set withdrawal=none` keeps the conditional screen without a pursuit
+  (where it then has no effect), `--set screen=absolute` keeps the pursuit
+  firing in the ordinary target order. The convoy case shows the two
+  apart (5 CA + 10 TT at ROE 6 vs 10 CA, `flat-carry`, exact; the
+  review's 10,000-seed probe in `review_t055.py` agrees):
+
+  | pursuit | screen in pursuit | TT lost | CA lost | at least 5 TT delivered | build points lost |
+  | --- | --- | --- | --- | --- | --- |
+  | none | either | 4.00 | 2.00 | 60.0% | 50.0 |
+  | certain | absolute | 4.32 | 3.81 | 58.2% | 78.8 |
+  | certain | conditional, auxiliaries first | 6.01 | 2.41 | 43.8% | 66.2 |
+
+  The four lost transports without a pursuit are the 40% of battles in
+  which four full-effectiveness rolls out of ten give the ten CA the 300
+  hits that destroy all five escorts outright, after which the unarmed
+  transports cannot leave (the zero-AS rule above).
+- **Mission survival.** Transports delivered are the TT a side still has
+  when the battle ends, whether it then lands, presses on, or retreats;
+  the tables give the mean and the chance that at least half survive, as
+  a proxy for a landing force that is still viable. Armies aboard are not
+  modelled, so a lost transport is a lost landing share; the destroyed
+  build points alone hide this, since transports are cheap.
 - **Outcomes.** Left wins when the right side's combat AS is zero and its
   own is not, or when the right side left and it stands; mutual when both
-  have no combat AS; stalemate at the round cap, in a state that cannot
-  change (two crippled ships that cannot finish each other), or when both
-  leave. Exchanges count every volley, withdrawal and pursuit included.
+  have no combat AS; stalemate at the round cap (a state that cannot
+  change, two crippled ships that cannot finish each other, sits there
+  until the cap and counts those exchanges) or when both leave. Exchanges
+  count every volley, withdrawal and pursuit included.
   Losses are build points destroyed; crippled is the build points of the
   survivors a repair rule would charge for.
 - Not modelled: surprise, joined sides, loaded transports, bases as
@@ -168,7 +227,7 @@ hull table and, for the DD cases, DD 10/8 at cost 5:
 - small exact cases: 3 DD vs 1 CA, 3 CA vs 1 BB, 1 DD vs 1 BB (`small`);
 - ROE and pursuit: 10 CA at ROE 6 vs 15 CA, 10 CA vs 10 CA both at ROE 6
   (`roe`), and a convoy, 5 CA + 10 TT at ROE 6 vs 10 CA (`convoy`), where
-  the screen rule shows in transports lost.
+  the pursuit and screen switches show in transports delivered.
 
 Add a case by appending to `CASES` in `sweep.py`.
 
