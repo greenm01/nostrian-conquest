@@ -43,6 +43,9 @@ pub fn fleet_order_validation_reason_text(reason: FleetOrderValidationError) -> 
         FleetOrderValidationError::InvalidGuardStarbase => {
             "the selected starbase linkage is invalid".to_string()
         }
+        FleetOrderValidationError::NotNearestOwnedWorld => {
+            "the target world is not our nearest world".to_string()
+        }
     }
 }
 

@@ -217,6 +217,49 @@ diplomacy unchanged. The rule and its remaining differences from Rust are in
 [the engagement ADR](../decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md).
 Probe scripts were kept in the session scratchpad only.
 
+## Order entry, t034 (2026-10-10)
+
+The live ECGAME image (`tools/unlzexe/ecgame_640k.bin`, image address =
+dump offset - `0x8240`; the unpacked `ECGAMEU.EXE` is garbled in places)
+settles the two order details from the sweep:
+
+- **ROE.** The order routine writes `0x1f..0x22` and the ROE
+  (`0x15315`), then sets `0x25 = 0` when `word 0x26 + word 0x28 +
+  word 0x2a == 0` (`0x15331`). The rule covers every order, not only scout
+  and blitz orders. ECGAME's composition recompute (`0x18333`) applies the
+  same rule.
+- **Seek Home and Salvage targets.** `0xf5f0(fleet, mode, &x, &y)` lists
+  the worlds whose owner (`+0x5d`) is the fleet's empire in PLANETS.DAT
+  order. Mode 1 leaves out the world in the fleet's sector when its depth is
+  at least 0.5. One candidate is taken as is; otherwise the routine keeps the
+  smallest travel distance (`0x1d8ac`, target depth 1.0) under a strict `<`,
+  so the first world wins a tie. The travel distance is the movement
+  geometry: per axis `(t - x) - fx`, `(x + fx) - t - 1`, or `|0.5 - fx|`,
+  plus 0.5 per moving axis toward a cell centre; `sqrt(dx^2 + dy^2)` plus
+  `Z + TZ` between sectors or `|Z - TZ|` within one.
+  - Seek Home (`0x13c79`) uses mode 0. For one fleet already in that
+    system (ETA 0: same sector and `Round(Z) = 1`), ECGAME reports "already
+    in your only controlled star system" and aborts when the empire owns one
+    world, or asks "Do you wish this fleet to seek the next closest
+    system?" (default yes, then mode 1). A group order notes "Each fleet will
+    seek it's nearest friendly planet." and runs mode 0 per fleet
+    (`0x15242`).
+  - Salvage (`0x148e5`) uses mode 0 for a default and passes it to the
+    planet picker (`0x1ed63`), which asks for coordinates only when the
+    empire owns more than one world. A group salvages at one world.
+  - Mode 0 also raises a candidate's present production (`+3`) to 0.1 in
+    memory when it is lower; Rust does not copy that side effect.
+
+Result: `set_fleet_order` clears ROE for fleets without BB, CA, or DD and
+accepts a Seek Home target only when it is the nearest owned world or, for a
+fleet in that system, the next closest. `CoreGameData::nearest_owned_world`
+and `seek_home_target` port the routines in 6-byte reals. nc-game and
+nc-helm no longer prompt for Seek Home; Salvage prompts only with more than
+one owned world and defaults to the nearest. A turn file may leave `x` and
+`y` out of `seek_home` and `salvage` orders. The clients take the default
+answer to the next-closest question rather than asking it.
+`nc-data/tests/order_entry.rs` holds the tests.
+
 ## Result (2026-10-10)
 
 t031 is closed. Rust steps fleets with the decompiled 52-tick model in

@@ -161,7 +161,7 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
         FleetTurnAction::Order {
             speed,
             order_code,
-            target,
+            target: Some(target),
             aux0: pick_from(choices, &aux)?,
             aux1: pick_from(choices, &aux)?,
         },

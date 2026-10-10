@@ -131,6 +131,22 @@ pub enum FleetOrderValidationError {
     },
     InvalidJoinHost,
     InvalidGuardStarbase,
+    NotNearestOwnedWorld,
+}
+
+/// What ECGAME does when the player gives one fleet a Seek Home order,
+/// answering yes to "seek the next closest system?".
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SeekHomeTarget {
+    /// The empire owns no world; ECGAME aborts the order.
+    NoOwnedWorld,
+    /// The fleet already sits in the system of its only world; ECGAME aborts.
+    AlreadyInOnlySystem,
+    /// Head for this world.
+    World([u8; 2]),
+    /// The fleet already sits in the system of its nearest world; head for
+    /// the next closest.
+    NextClosest([u8; 2]),
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -513,6 +529,9 @@ impl std::fmt::Display for FleetOrderValidationError {
             ),
             Self::InvalidJoinHost => write!(f, "join mission host fleet is invalid"),
             Self::InvalidGuardStarbase => write!(f, "guard starbase target is invalid"),
+            Self::NotNearestOwnedWorld => {
+                write!(f, "seek home target is not the nearest owned world")
+            }
         }
     }
 }

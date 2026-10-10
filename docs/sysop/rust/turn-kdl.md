@@ -142,6 +142,8 @@ Supported child actions:
 
 - `roe value=<0..10>`
 - `order speed=<u8> kind="..." x=<u8> y=<u8> [aux0=<u8>] [aux1=<u8>]`
+  (`seek_home` and `salvage` may leave out `x` and `y`; the fleet then heads
+  for the owned world nearest it, as ECGAME picks it)
 - `join host=<fleet record>`
 - `detach ... [donor_speed=<u8>] [new_roe=<u8>]`
 - `transfer to=<fleet record> ...`

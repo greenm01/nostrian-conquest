@@ -8,6 +8,8 @@ use crate::{
 mod commission;
 #[path = "mutators_fleet.rs"]
 mod fleet;
+#[path = "mutators_nearest_world.rs"]
+mod nearest_world;
 #[path = "mutators_planets.rs"]
 mod planets;
 #[path = "mutators_player.rs"]

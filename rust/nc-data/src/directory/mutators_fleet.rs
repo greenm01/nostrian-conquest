@@ -103,6 +103,20 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             })?
             .max_speed();
+        if Order::from_raw(order_code) == Order::SeekHome
+            && ![
+                self.nearest_owned_world(record_index_1_based, false),
+                self.nearest_owned_world(record_index_1_based, true),
+            ]
+            .contains(&Some(target))
+        {
+            // ECGAME picks the Seek Home target itself: the nearest owned
+            // world, or the next closest when the fleet is already there.
+            return Err(GameStateMutationError::InvalidFleetOrder {
+                fleet_index_1_based: record_index_1_based,
+                reason: FleetOrderValidationError::NotNearestOwnedWorld,
+            });
+        }
         if speed > max_speed {
             return Err(GameStateMutationError::InvalidFleetSpeed {
                 fleet_index_1_based: record_index_1_based,
@@ -132,6 +146,10 @@ impl CoreGameData {
             mission_aux[1] = value;
         }
         record.set_mission_target(mission_aux[0], u16::from(mission_aux[1]));
+        // ECGAME clears ROE on any order given to a fleet with no BB, CA, or DD.
+        if !record.has_any_combat_ships() {
+            record.set_rules_of_engagement(0);
+        }
         Ok(record.mission_aux_bytes())
     }
 

@@ -595,6 +595,9 @@ fleet record=1 {
 message to=2 subject="Border" body="Watching the north lane."
 ```
 
+A `seek_home` or `salvage` order may leave out `x` and `y`. The fleet then
+heads for the owned world nearest it, the world the game would pick.
+
 For the full node reference and schema, see `docs/sysop/rust/turn-kdl.md`.
 
 // ─── 10. Turn Processing and Maintenance ─────────────────────────────────────

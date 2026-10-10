@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use nc_data::{FleetDetachSelection, Order, PlanetIntelSnapshot, map_size_for_player_count};
 use nc_engine::{
-    FLEET_MISSION_OPTIONS, SelectedFleetRef, default_host_fleet_target, default_starbase_target,
-    fleet_mission_option, fleet_order_target_rejects_owned_planet,
+    FLEET_MISSION_OPTIONS, SelectedFleetRef, automatic_order_targets, default_host_fleet_target,
+    default_starbase_target, fleet_mission_option, fleet_order_target_rejects_owned_planet,
     fleet_order_target_rejects_owned_scout_target, fleet_order_target_requires_owned_planet,
     fleet_order_target_requires_planet_system, fleet_record_supports_mission_code,
     fleet_target_input_kind, fleet_target_status_line, format_guard_fleet_clause,
@@ -334,6 +334,40 @@ impl DashApp {
         self.fleet_overlay.order_target_x_input.clear();
         self.fleet_overlay.order_target_y_input.clear();
         self.fleet_overlay.order_confirm_input.clear();
+        let records = match self.fleet_overlay.order_scope {
+            FleetOrderScope::Group => self
+                .selected_group_order_rows()
+                .iter()
+                .map(|row| row.fleet_record_index_1_based)
+                .collect::<Vec<_>>(),
+            _ => self
+                .selected_fleet_order_row()
+                .map(|row| vec![row.fleet_record_index_1_based])
+                .unwrap_or_default(),
+        };
+        match automatic_order_targets(&self.game_data, mission_code, &records) {
+            Err(err) => {
+                self.fleet_overlay.order_mission_code = None;
+                self.fleet_overlay.mission_picker_status = Some(err);
+                return;
+            }
+            // Each fleet of a group seeks its own nearest world.
+            Ok(Some(_)) if mission_code == Order::SeekHome.to_raw() && records.len() > 1 => {
+                if let Err(err) = self.apply_fleet_group_order(mission_code, [0, 0], None, None) {
+                    self.fleet_overlay.mission_picker_status = Some(err.to_string());
+                }
+                return;
+            }
+            Ok(Some(targets)) => {
+                self.fleet_overlay.order_target_x_input = format!("{:02}", targets[0][0]);
+                self.fleet_overlay.order_target_y_input = format!("{:02}", targets[0][1]);
+                self.fleet_overlay
+                    .open_prompt(FleetOverlayPromptMode::OrderConfirm);
+                self.help_context = HelpContext::FleetOrderInput;
+                return;
+            }
+            Ok(None) => {}
+        }
         let next_prompt = match fleet_target_input_kind(Some(mission_code)) {
             nc_engine::FleetTargetInputKind::Coordinates => FleetOverlayPromptMode::OrderTargetX,
             nc_engine::FleetTargetInputKind::StarbaseId
@@ -1511,7 +1545,19 @@ impl DashApp {
             self.fleet_overlay.order_status = Some("Select at least one fleet.".to_string());
             return Ok(());
         }
-        for row in &selected_rows {
+        let seek_home_targets = if mission_code == Order::SeekHome.to_raw() {
+            let records = selected_rows
+                .iter()
+                .map(|row| row.fleet_record_index_1_based)
+                .collect::<Vec<_>>();
+            automatic_order_targets(&self.game_data, mission_code, &records)?
+        } else {
+            None
+        };
+        for (index, row) in selected_rows.iter().enumerate() {
+            let target = seek_home_targets
+                .as_ref()
+                .map_or(target, |targets| targets[index]);
             let speed = self
                 .game_data
                 .fleets

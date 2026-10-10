@@ -4029,84 +4029,23 @@ fn fleet_list_eta_is_zero_when_non_hold_target_matches_current_location() {
 }
 
 #[test]
-fn fleet_order_seek_home_defaults_to_nearest_owned_planet_and_persists_target() {
+fn fleet_order_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
     let fixture_dir = temp_game_copy();
-    let state = latest_runtime_state(&fixture_dir);
-    let seek_fleet = state
-        .game_data
-        .fleets
-        .records
-        .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
-        .expect("fleet #2 should exist");
-    let anchor = seek_fleet.current_location_coords_raw();
-    let fleet_number = seek_fleet.local_slot_word_raw();
-    let mut owned_targets = state
-        .game_data
-        .planets
-        .records
-        .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == 1)
-        .map(|planet| planet.coords_raw())
-        .collect::<Vec<_>>();
-    owned_targets.sort_by_key(|coords| {
-        let dx = i32::from(anchor[0]) - i32::from(coords[0]);
-        let dy = i32::from(anchor[1]) - i32::from(coords[1]);
-        dx * dx + dy * dy
-    });
-    owned_targets.dedup();
-    let nearest_owned = owned_targets[0];
-
-    let mut app = App::load(AppConfig {
-        game_dir: fixture_dir.clone(),
-        player_record_index_1_based: 1,
-        export_root: None,
-        queue_dir: None,
-        session_timeout_secs: None,
-        game_config: Default::default(),
-    })
-    .expect("app should load");
-    advance_to_main_menu(&mut app);
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::OpenMenu)),
-        AppOutcome::Continue
-    );
+    let (fleet_number, home) = park_player_1_fleet_away(&fixture_dir, 2);
+    let mut app = load_player_1_app(&fixture_dir);
     open_order_mission_picker_from_fleet_menu(&mut app, Some(fleet_number));
-    assert_eq!(
-        apply_action(
-            &mut app,
-            Action::Fleet(FleetAction::AppendMissionPickerChar('2'))
-        ),
-        AppOutcome::Continue
-    );
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitMissionPicker)),
-        AppOutcome::Continue
-    );
+    submit_mission_code(&mut app, "2");
 
+    // ECGAME asks for no coordinates; the order goes straight to the
+    // confirmation.
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
-        .expect("seek home target x prompt should render");
+        .expect("seek home confirmation should render");
     assert!(
-        line_containing(&terminal, "Target XX [")
-            .contains(&format!("Target XX [{:02}] <Q> ->", nearest_owned[0]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
-        AppOutcome::Continue
-    );
-    let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("seek home target y prompt should render");
-    assert!(
-        line_containing(&terminal, "Target YY [")
-            .contains(&format!("Target YY [{:02}] <Q> ->", nearest_owned[1]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitOrder)),
-        AppOutcome::Continue
+        !terminal
+            .lines
+            .iter()
+            .any(|line| line.contains("Target XX ["))
     );
     confirm_fleet_order(&mut app, true);
 
@@ -4119,15 +4058,125 @@ fn fleet_order_seek_home_defaults_to_nearest_owned_planet_and_persists_target() 
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .expect("fleet should still exist");
     assert_eq!(ordered_fleet.standing_order_code_raw(), 2);
+    assert_eq!(ordered_fleet.standing_order_target_coords_raw(), home);
+}
+
+#[test]
+fn fleet_order_seek_home_aborts_in_the_only_home_system() {
+    let fixture_dir = temp_game_copy();
+    let mut app = load_player_1_app(&fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(2));
+    submit_mission_code(&mut app, "2");
+
+    // ECGAME aborts the order; the picker stays open and nothing changes.
+    assert_eq!(app.current_screen(), ScreenId::FleetMissionPicker);
+    let state = latest_runtime_state(&fixture_dir);
+    let fleet = state
+        .game_data
+        .fleets
+        .records
+        .iter()
+        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .expect("fleet should still exist");
+    assert_ne!(fleet.standing_order_code_raw(), 2);
+}
+
+#[test]
+fn fleet_order_salvage_with_one_owned_world_needs_no_target() {
+    let fixture_dir = temp_game_copy();
+    let (fleet_number, home) = park_player_1_fleet_away(&fixture_dir, 1);
+    let mut app = load_player_1_app(&fixture_dir);
+    open_order_mission_picker_from_fleet_menu(&mut app, Some(fleet_number));
+    submit_mission_code(&mut app, "15");
+    confirm_fleet_order(&mut app, true);
+
+    let state = latest_runtime_state(&fixture_dir);
+    let ordered_fleet = state
+        .game_data
+        .fleets
+        .records
+        .iter()
+        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
+        .expect("fleet should still exist");
+    assert_eq!(ordered_fleet.standing_order_code_raw(), 15);
+    assert_eq!(ordered_fleet.standing_order_target_coords_raw(), home);
+}
+
+/// Move player 1's fleet `fleet_number` to rest at (1,1); returns its number
+/// and the player's only world.
+fn park_player_1_fleet_away(fixture_dir: &std::path::Path, fleet_number: u16) -> (u16, [u8; 2]) {
+    let mut state = latest_runtime_state(fixture_dir);
+    let home = state
+        .game_data
+        .planets
+        .records
+        .iter()
+        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .map(|planet| planet.coords_raw())
+        .expect("player 1 owns a world");
+    let fleet = state
+        .game_data
+        .fleets
+        .records
+        .iter_mut()
+        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
+        .expect("fleet should exist");
+    fleet.set_current_location_coords_raw([1, 1]);
+    fleet.set_at_rest_motion();
+    save_runtime_state(fixture_dir, &state);
+    (fleet_number, home)
+}
+
+/// Give player 1 a second world so Salvage asks for coordinates.
+fn give_player_1_a_second_world(fixture_dir: &std::path::Path) {
+    let mut state = latest_runtime_state(fixture_dir);
+    let planet = state
+        .game_data
+        .planets
+        .records
+        .iter_mut()
+        .rev()
+        .find(|planet| planet.owner_empire_slot_raw() == 0)
+        .expect("fixture should have an unowned planet");
+    planet.set_owner_empire_slot_raw(1);
+    save_runtime_state(fixture_dir, &state);
+}
+
+fn load_player_1_app(fixture_dir: &std::path::Path) -> App {
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.to_path_buf(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    advance_to_main_menu(&mut app);
     assert_eq!(
-        ordered_fleet.standing_order_target_coords_raw(),
-        nearest_owned
+        apply_action(&mut app, Action::Fleet(FleetAction::OpenMenu)),
+        AppOutcome::Continue
+    );
+    app
+}
+
+fn submit_mission_code(app: &mut App, code: &str) {
+    for ch in code.chars() {
+        assert_eq!(
+            apply_action(app, Action::Fleet(FleetAction::AppendMissionPickerChar(ch))),
+            AppOutcome::Continue
+        );
+    }
+    assert_eq!(
+        apply_action(app, Action::Fleet(FleetAction::SubmitMissionPicker)),
+        AppOutcome::Continue
     );
 }
 
 #[test]
 fn fleet_order_salvage_rejects_empty_sector_target() {
     let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
         player_record_index_1_based: 1,
@@ -4208,6 +4257,7 @@ fn fleet_order_salvage_rejects_foreign_planet_target() {
     );
     let foreign_target = state.game_data.planets.records[foreign_idx].coords_raw();
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
+    give_player_1_a_second_world(&fixture_dir);
 
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -4259,6 +4309,7 @@ fn fleet_order_salvage_rejects_foreign_planet_target() {
 #[test]
 fn fleet_order_salvage_rejects_unowned_planet_target() {
     let fixture_dir = temp_game_copy();
+    give_player_1_a_second_world(&fixture_dir);
     let state = latest_runtime_state(&fixture_dir);
     let unowned_target = state
         .game_data
@@ -4627,47 +4678,13 @@ fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
 }
 
 #[test]
-fn fleet_group_seek_home_defaults_to_nearest_owned_planet_and_persists_target() {
+fn fleet_group_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
     let fixture_dir = temp_game_copy();
-    let state = latest_runtime_state(&fixture_dir);
-    let seek_fleet = state
-        .game_data
-        .fleets
-        .records
-        .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1)
-        .expect("fixture should have a player fleet");
-    let anchor = seek_fleet.current_location_coords_raw();
-    let mut owned_targets = state
-        .game_data
-        .planets
-        .records
-        .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == 1)
-        .map(|planet| planet.coords_raw())
-        .collect::<Vec<_>>();
-    owned_targets.sort_by_key(|coords| {
-        let dx = i32::from(anchor[0]) - i32::from(coords[0]);
-        let dy = i32::from(anchor[1]) - i32::from(coords[1]);
-        dx * dx + dy * dy
-    });
-    owned_targets.dedup();
-    let nearest_owned = owned_targets[0];
-
-    let mut app = App::load(AppConfig {
-        game_dir: fixture_dir.clone(),
-        player_record_index_1_based: 1,
-        export_root: None,
-        queue_dir: None,
-        session_timeout_secs: None,
-        game_config: Default::default(),
-    })
-    .expect("app should load");
-    advance_to_main_menu(&mut app);
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::OpenMenu)),
-        AppOutcome::Continue
-    );
+    let mut home = [0, 0];
+    for fleet_number in 1..=4 {
+        home = park_player_1_fleet_away(&fixture_dir, fleet_number).1;
+    }
+    let mut app = load_player_1_app(&fixture_dir);
     assert_eq!(
         apply_action(&mut app, Action::Fleet(FleetAction::OpenGroupOrder)),
         AppOutcome::Continue
@@ -4683,58 +4700,41 @@ fn fleet_group_seek_home_defaults_to_nearest_owned_planet_and_persists_target() 
         apply_action(&mut app, Action::Fleet(FleetAction::OpenMissionPicker)),
         AppOutcome::Continue
     );
-    assert_eq!(
-        apply_action(
-            &mut app,
-            Action::Fleet(FleetAction::AppendMissionPickerChar('2'))
-        ),
-        AppOutcome::Continue
-    );
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitMissionPicker)),
-        AppOutcome::Continue
-    );
+    submit_mission_code(&mut app, "2");
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
-        .expect("group seek home target x prompt should render");
+        .expect("group seek home confirmation should render");
     assert!(
-        line_containing(&terminal, "Target XX [")
-            .contains(&format!("Target XX [{:02}] <Q> ->", nearest_owned[0]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
-        AppOutcome::Continue
-    );
-    let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("group seek home target y prompt should render");
-    assert!(
-        line_containing(&terminal, "Target YY [")
-            .contains(&format!("Target YY [{:02}] <Q> ->", nearest_owned[1]))
-    );
-
-    assert_eq!(
-        apply_action(&mut app, Action::Fleet(FleetAction::SubmitGroupOrder)),
-        AppOutcome::Continue
+        !terminal
+            .lines
+            .iter()
+            .any(|line| line.contains("Target XX ["))
     );
     confirm_fleet_group_order(&mut app, true);
 
     let state = latest_runtime_state(&fixture_dir);
+    let ordered = state
+        .game_data
+        .fleets
+        .records
+        .iter()
+        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .map(|fleet| {
+            (
+                fleet.local_slot_word_raw(),
+                fleet.standing_order_code_raw(),
+                fleet.standing_order_target_coords_raw(),
+            )
+        })
+        .collect::<Vec<_>>();
     assert_eq!(
-        state
-            .game_data
-            .fleets
-            .records
+        ordered
             .iter()
-            .filter(|fleet| {
-                fleet.owner_empire_raw() == 1
-                    && fleet.standing_order_code_raw() == 2
-                    && fleet.standing_order_target_coords_raw() == nearest_owned
-            })
+            .filter(|(_, order, target)| *order == 2 && *target == home)
             .count(),
-        1
+        1,
+        "{ordered:?}"
     );
 }
 

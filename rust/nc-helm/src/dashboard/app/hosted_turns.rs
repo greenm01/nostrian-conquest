@@ -218,7 +218,7 @@ impl DashApp {
         actions.push(FleetTurnAction::Order {
             speed,
             order_code,
-            target,
+            target: Some(target),
             aux0,
             aux1,
         });
