@@ -6,6 +6,7 @@ const STREAM_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
 
 pub const RNG_TAG_MAPGEN: u64 = 0xEC15_4D41_5047_454E;
 pub const RNG_TAG_COMBAT: u64 = 0xEC15_434F_4D42_4154;
+pub const RNG_TAG_ENCOUNTER: u64 = 0xEC15_454E_434F_554E;
 
 #[derive(Debug, Clone)]
 pub struct GameRng {
@@ -42,6 +43,16 @@ impl GameRng {
 
     pub fn next_usize(&mut self) -> usize {
         (self.next_u64() >> 32) as usize
+    }
+
+    /// A real in [0, 1), like Turbo Pascal's `Random`.
+    pub fn next_real(&mut self) -> f64 {
+        (self.next_u64() >> 11) as f64 / (1u64 << 53) as f64
+    }
+
+    /// An integer in [0, n), like Turbo Pascal's `Random(n)`.
+    pub fn below(&mut self, n: u64) -> u64 {
+        if n == 0 { 0 } else { self.next_u64() % n }
     }
 
     pub fn next_f32(&mut self) -> f32 {

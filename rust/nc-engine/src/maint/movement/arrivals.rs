@@ -38,6 +38,7 @@ pub(super) fn handle_fleet_arrival(
                 fleet_idx,
                 coords,
                 owner_empire,
+                stardate_week: None,
             });
         }
         Order::ScoutSector => {
@@ -84,6 +85,7 @@ pub(super) fn handle_fleet_arrival(
                     location_coords: coords,
                     target_coords: coords,
                     intel_event,
+                    stardate_week: None,
                 });
         }
         Order::ViewWorld => {
@@ -121,6 +123,7 @@ pub(super) fn handle_fleet_arrival(
                     location_coords: coords,
                     target_coords: coords,
                     intel_event,
+                    stardate_week: None,
                 });
         }
         Order::Salvage => {

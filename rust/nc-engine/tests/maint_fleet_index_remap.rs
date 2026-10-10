@@ -300,7 +300,7 @@ fn move_report_names_mover_shifted_by_civil_disorder_defection() {
 }
 
 #[test]
-fn arrival_report_week_uses_speed_at_movement_time() {
+fn arrival_report_week_is_the_tick_the_order_resolves() {
     let mut game_data = baseline();
     order_fleet(&mut game_data, 3, HOME, Order::MoveOnly, [6, 4], 3);
 
@@ -311,7 +311,7 @@ fn arrival_report_week_uses_speed_at_movement_time() {
         .iter()
         .find(|event| event.kind == Mission::MoveOnly)
         .expect("move report");
-    // One year of travel at speed 3 lands at base week 30 plus the +2
-    // fleet-mission offset (ec-timing-spec: colonization at Stardate 32).
-    assert_eq!(arrival.stardate_week, Some(32));
+    // The report carries the tick the Move resolved, as classic's do: the
+    // fleet enters (6,4) on tick 26.
+    assert_eq!(arrival.stardate_week, Some(26));
 }

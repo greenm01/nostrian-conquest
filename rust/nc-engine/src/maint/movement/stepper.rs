@@ -1,5 +1,5 @@
 use crate::navigation::motion::{
-    ArrivalRule, Course, FleetYear, Motion, run_ticks, run_year, target_depth,
+    ArrivalRule, Course, Motion, TICKS_PER_YEAR, advance, target_depth,
 };
 use crate::navigation::{plan_route_with_intel, visible_hazard_intel_is_empty};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
@@ -40,10 +40,10 @@ pub(super) fn is_hostile_order(order: Order) -> bool {
     )
 }
 
-/// How a fleet's year of movement ended.
+/// What a fleet's movement step did in one tick.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(super) enum YearEnd {
-    /// Still under way (or idle) at year end.
+pub(super) enum TickEnd {
+    /// Still under way, or not moving.
     Underway,
     /// The order's arrival test passed and the order resolved.
     Resolved,
@@ -53,99 +53,195 @@ pub(super) enum YearEnd {
     Strike,
 }
 
-pub(super) struct FleetMovement {
-    pub end: YearEnd,
-    /// The fleet entered its target sector from outside this year.
-    pub entered_target: bool,
-    /// Speed the fleet travelled at, 0 when it did not move.
-    pub travel_speed: u8,
+/// A fleet's order as its movement sees it: the order, target, and target
+/// depth flag. A change of any of them (an aborted mission, a retreat)
+/// starts a new course.
+type OrderKey = (u8, [u8; 2], u8);
+
+fn order_key(fleet: &nc_data::FleetRecord) -> OrderKey {
+    (
+        fleet.standing_order_code_raw(),
+        fleet.standing_order_target_coords_raw(),
+        fleet.world_target_flag_raw(),
+    )
 }
 
-/// Run one year (52 ticks) of a fleet's movement and arrival test.
-pub(super) fn process_single_fleet_movement(
+/// One fleet's movement through the year, a tick at a time (ECMAINT
+/// `0824:01c0` for the step, `0b5d:5581` for the arrival test).
+#[derive(Debug, Clone, Default)]
+pub(super) struct FleetTrack {
+    /// The fleet's position in full precision; `None` reads it from the
+    /// record (after something else moved the fleet).
+    motion: Option<Motion>,
+    /// Motion and speed at the start of this tick, if the fleet stepped.
+    before: Option<(Motion, u8)>,
+    course: Option<(OrderKey, Course)>,
+    /// The order resolved this year; the fleet stops until it changes.
+    resolved: Option<OrderKey>,
+    /// A resolved View World climbing back out of the system (ECMAINT turns
+    /// the order into a Move out at full speed, `0b5d:219c`).
+    viewing_out: Option<OrderKey>,
+    pub(super) travel_speed: u8,
+}
+
+impl FleetTrack {
+    /// The order classic would see: a View fleet climbing out is on a Move
+    /// to depth 0.
+    pub(super) fn effective_order(&self, fleet: &nc_data::FleetRecord) -> (Order, u8) {
+        if self.viewing_out == Some(order_key(fleet)) {
+            (Order::MoveOnly, 0)
+        } else {
+            (fleet.standing_order_kind(), fleet.world_target_flag_raw())
+        }
+    }
+
+    /// Forget the cached position; the record was changed elsewhere.
+    pub(super) fn reload(&mut self) {
+        self.motion = None;
+    }
+
+    /// Undo this tick's step (an attacker loses the tick's movement).
+    pub(super) fn undo_step(&mut self, fleet: &mut nc_data::FleetRecord) {
+        if let Some((motion, _)) = self.before {
+            motion.write_to(fleet);
+            self.motion = Some(motion);
+        }
+    }
+
+    /// The year is over: a View fleet still climbing out stops; its viewing
+    /// report turns the order into the Move out (`complete_view_world`).
+    pub(super) fn finish(&self, fleet: &mut nc_data::FleetRecord) {
+        if self.viewing_out == Some(order_key(fleet)) {
+            fleet.set_current_speed(0);
+        }
+    }
+}
+
+/// Step fleet `fleet_idx` one tick, before the encounter check. Returns
+/// whether it moved.
+pub(super) fn step_fleet(
     game_data: &mut CoreGameData,
+    track: &mut FleetTrack,
     fleet_idx: usize,
     visible_hazards_by_empire: &[VisibleHazardIntel],
-) -> FleetMovement {
+) -> bool {
+    track.before = None;
     let fleet = &game_data.fleets.records[fleet_idx];
+    let key = order_key(fleet);
+    if track.resolved == Some(key) {
+        return false;
+    }
+    let viewing_out = track.viewing_out == Some(key);
     let order = fleet.standing_order_kind();
-    let start = fleet.current_location_coords_raw();
     let target = fleet.standing_order_target_coords_raw();
-    let depth = target_depth(fleet.world_target_flag_raw());
+    let depth = if viewing_out {
+        Real48::ZERO
+    } else {
+        target_depth(fleet.world_target_flag_raw())
+    };
     // A standing order already settled on station stays put; it resolved in
     // an earlier year (scouts report from station in the observation phase).
-    let on_station = (order_persists_on_arrival(order)
-        || matches!(order, Order::ScoutSector | Order::ScoutSolarSystem))
+    let on_station = !viewing_out
+        && (order_persists_on_arrival(order)
+            || matches!(order, Order::ScoutSector | Order::ScoutSolarSystem))
         && ArrivalRule::for_order(order).passes(
-            Motion::of_fleet(fleet),
+            track.motion.unwrap_or_else(|| Motion::of_fleet(fleet)),
             target,
             depth,
             fleet.current_speed(),
             false,
         );
-    if on_station || matches!(order, Order::HoldPosition | Order::Unknown(_)) {
-        return FleetMovement {
-            end: YearEnd::Underway,
-            entered_target: false,
-            travel_speed: 0,
-        };
+    if on_station || (!viewing_out && matches!(order, Order::HoldPosition | Order::Unknown(_))) {
+        return false;
     }
-    let mut course = fleet_course(game_data, fleet_idx, visible_hazards_by_empire, target);
-    let fleet = &game_data.fleets.records[fleet_idx];
-    let year = run_year(
-        Motion::of_fleet(fleet),
-        fleet.current_speed(),
+    if track.course.as_ref().map(|(k, _)| *k) != Some(key) {
+        let course = if viewing_out {
+            Course::direct(target)
+        } else {
+            fleet_course(game_data, fleet_idx, visible_hazards_by_empire, target)
+        };
+        track.course = Some((key, course));
+    }
+    let fleet = &mut game_data.fleets.records[fleet_idx];
+    let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
+    let speed = fleet.current_speed();
+    let order = if viewing_out { Order::MoveOnly } else { order };
+    let course = &mut track.course.as_mut().expect("course set above").1;
+    let (motion_after, speed_after) = advance(
+        motion,
+        speed,
         fleet.max_speed(),
         order,
         target,
         depth,
-        &mut course,
+        course,
     );
-    let travel_speed = year.speed.max(fleet.current_speed());
-    let entered_target = start != target && year.motion.sector() == target;
-    let fleet = &mut game_data.fleets.records[fleet_idx];
-    let end = match year.resolved_tick {
-        None => {
-            year.motion.write_to(fleet);
-            fleet.set_current_speed(year.speed);
-            YearEnd::Underway
-        }
-        Some(tick) if order == Order::ViewWorld => {
-            // ECMAINT's View World action (0b5d:219c) turns the order into a
-            // Move out of the system at full speed, and the fleet climbs for
-            // the rest of the year. The order stays View until the viewing
-            // report is finalized after combat (`complete_view_world`).
-            let out = run_ticks(
-                year.motion,
-                fleet.max_speed(),
-                fleet.max_speed(),
-                Order::MoveOnly,
-                target,
-                Real48::ZERO,
-                &mut Course::direct(target),
-                tick + 1,
-            );
-            out.motion.write_to(fleet);
-            fleet.set_current_speed(0);
-            YearEnd::Resolved
-        }
-        Some(_) if is_hostile_order(order) => {
-            let (motion, speed) = year.before_resolution;
-            motion.write_to(fleet);
-            fleet.set_current_speed(speed);
-            YearEnd::Strike
-        }
-        Some(_) => {
-            year.motion.write_to(fleet);
-            apply_resolution_state(fleet, order, &year);
-            YearEnd::Resolved
-        }
+    track.before = Some((motion, speed));
+    track.motion = Some(motion_after);
+    track.travel_speed = track.travel_speed.max(speed).max(speed_after);
+    motion_after.write_to(fleet);
+    fleet.set_current_speed(speed_after);
+    true
+}
+
+/// The arrival test after the encounter check, for a fleet that stepped
+/// this tick.
+pub(super) fn test_arrival(
+    game_data: &mut CoreGameData,
+    track: &mut FleetTrack,
+    fleet_idx: usize,
+    tick: u8,
+) -> TickEnd {
+    let Some((before_motion, before_speed)) = track.before else {
+        return TickEnd::Underway;
     };
-    FleetMovement {
-        end,
-        entered_target,
-        travel_speed,
+    let fleet = &mut game_data.fleets.records[fleet_idx];
+    let key = order_key(fleet);
+    let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
+    let order = fleet.standing_order_kind();
+    let target = fleet.standing_order_target_coords_raw();
+    let last_tick = tick == TICKS_PER_YEAR;
+    if track.viewing_out == Some(key) {
+        if ArrivalRule::for_order(Order::MoveOnly).passes(
+            motion,
+            target,
+            Real48::ZERO,
+            fleet.current_speed(),
+            last_tick,
+        ) {
+            track.resolved = Some(key);
+        }
+        return TickEnd::Underway;
     }
+    let depth = target_depth(fleet.world_target_flag_raw());
+    if !ArrivalRule::for_order(order).passes(
+        motion,
+        target,
+        depth,
+        fleet.current_speed(),
+        last_tick,
+    ) {
+        return TickEnd::Underway;
+    }
+    if order == Order::ViewWorld {
+        // ECMAINT's View World action (0b5d:219c) turns the order into a
+        // Move out of the system at full speed, and the fleet climbs for the
+        // rest of the year. The order stays View until the viewing report
+        // is finalized after the year (`complete_view_world`).
+        track.viewing_out = Some(key);
+        fleet.set_current_speed(fleet.max_speed());
+        return TickEnd::Resolved;
+    }
+    track.resolved = Some(key);
+    if is_hostile_order(order) {
+        before_motion.write_to(fleet);
+        fleet.set_current_speed(before_speed);
+        track.motion = Some(before_motion);
+        return TickEnd::Strike;
+    }
+    apply_resolution_state(fleet, order);
+    track.motion = None;
+    TickEnd::Resolved
 }
 
 fn fleet_course(
@@ -171,8 +267,7 @@ fn fleet_course(
 }
 
 /// What a resolved order leaves on the fleet besides its arrival position.
-fn apply_resolution_state(fleet: &mut nc_data::FleetRecord, order: Order, year: &FleetYear) {
-    fleet.set_current_speed(year.speed);
+fn apply_resolution_state(fleet: &mut nc_data::FleetRecord, order: Order) {
     if !order_persists_on_arrival(order) {
         fleet.set_current_speed(0);
         fleet.set_standing_order_kind(Order::HoldPosition);

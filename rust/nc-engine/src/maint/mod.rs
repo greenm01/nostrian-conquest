@@ -4,6 +4,7 @@ mod campaign;
 mod canonicalize;
 mod combat;
 mod economics;
+pub mod encounter;
 mod fleet_refs;
 pub mod gate;
 mod merging;
@@ -37,6 +38,8 @@ struct ColonizationEvent {
     coords: [u8; 2],
     /// Empire that colonized (owner_empire_raw from fleet record).
     owner_empire: u8,
+    /// The tick the fleet arrived.
+    stardate_week: Option<u8>,
 }
 
 #[derive(Debug, Default)]
@@ -70,6 +73,7 @@ struct PendingObservationEvent {
     location_coords: [u8; 2],
     target_coords: [u8; 2],
     intel_event: Option<PlanetIntelEvent>,
+    stardate_week: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -339,18 +343,20 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // movement so they can start heading home this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
-    // Fleets ordered away from a blockaded world, and ships launched from its
-    // stardock, meet the blockade before they move.
-    refs.departure_battle_events =
-        combat::process_departure_interceptions(game_data, campaign_seed, diplomacy_overrides)?;
-
-    // Process fleet orders; collect side-effect events
-    let (movement_events, movement_remap) =
-        movement::process_fleet_movement(game_data, visible_hazards_by_empire)?;
-    refs.movement_events = movement_events;
-    refs.remap(&movement_remap.fleet_indices);
+    // The year's 52 ticks: every fleet and starbase, in a random order,
+    // moves, meets the units sharing its sector and depth layer, and runs
+    // its order's arrival test.
+    let year = encounter::run_year(
+        game_data,
+        campaign_seed,
+        visible_hazards_by_empire,
+        diplomacy_overrides,
+    )?;
+    refs.movement_events = year.movement_events;
+    refs.encounter_events = year.encounter_events;
+    refs.remap(&year.movement_remap.fleet_indices);
     refs.destroyed_join_host_fleet_numbers
-        .extend(movement_remap.destroyed_join_host_fleet_numbers);
+        .extend(year.movement_remap.destroyed_join_host_fleet_numbers);
     loop {
         let (new_merge_events, remap_info) = merging::process_mission_fleet_merging(game_data)?;
         if new_merge_events.is_empty() {
@@ -373,19 +379,36 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         }
     }
 
-    // Detect and resolve fleet battles: when hostile fleets co-locate after movement,
-    // surviving fleets get SeekHome orders (confirmed from fleet-battle oracle).
-    // This runs after movement so all fleet positions are final for this turn.
-    let mut fleet_battle_phase_events = std::mem::take(&mut refs.departure_battle_events);
-    fleet_battle_phase_events.append(combat::process_fleet_battles(
-        game_data,
-        campaign_seed,
-        diplomacy_overrides,
-    )?);
+    let mut fleet_battle_phase_events = std::mem::take(&mut refs.encounter_events);
 
     // Apply colonization results to the in-memory game state.
     let mut colonization_events =
         merging::process_colonizations(game_data, &refs.movement_events.colonization_events)?;
+    for event in &mut colonization_events {
+        let (ColonizationResolvedEvent::Succeeded {
+            fleet_idx,
+            stardate_week,
+            ..
+        }
+        | ColonizationResolvedEvent::BlockedByOwner {
+            fleet_idx,
+            stardate_week,
+            ..
+        }
+        | ColonizationResolvedEvent::Aborted {
+            fleet_idx,
+            stardate_week,
+            ..
+        }) = event;
+        if stardate_week.is_none() {
+            *stardate_week = refs
+                .movement_events
+                .colonization_events
+                .iter()
+                .find(|arrival| arrival.fleet_idx == *fleet_idx)
+                .and_then(|arrival| arrival.stardate_week);
+        }
+    }
     let newly_colonized_planets = colonization_events
         .iter()
         .filter_map(|event| match *event {
@@ -469,6 +492,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 fleet_idx,
                 planet_idx,
                 colonizer_empire_raw,
+                stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
@@ -479,12 +503,13 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 planet_idx: Some(planet_idx),
                 location_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
                 target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                stardate_week: None,
+                stardate_week,
             }),
             ColonizationResolvedEvent::BlockedByOwner {
                 fleet_idx,
                 planet_idx,
                 colonizer_empire_raw,
+                stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
@@ -495,12 +520,13 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 planet_idx: Some(planet_idx),
                 location_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
                 target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                stardate_week: None,
+                stardate_week,
             }),
             ColonizationResolvedEvent::Aborted {
                 fleet_idx,
                 colonizer_empire_raw,
                 coords,
+                stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
@@ -515,7 +541,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                     .position(|planet| planet.coords_raw() == coords),
                 location_coords: Some(coords),
                 target_coords: Some(coords),
-                stardate_week: None,
+                stardate_week,
             }),
         }
     }
@@ -527,6 +553,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 fleet_idx,
                 planet_idx,
                 colonizer_empire_raw,
+                stardate_week,
                 ..
             } => Some(PlanetIntelEvent {
                 planet_idx,
@@ -534,7 +561,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 source: nc_data::PlanetIntelSource::ColonizeBlockedByOwner,
                 source_fleet_idx: Some(fleet_idx),
                 observed_snapshot: None,
-                stardate_week: None,
+                stardate_week,
             }),
             _ => None,
         })
@@ -754,7 +781,7 @@ fn finalize_pending_observation_events(
             planet_idx: pending.planet_idx,
             location_coords: Some(pending.location_coords),
             target_coords: Some(pending.target_coords),
-            stardate_week: None,
+            stardate_week: pending.stardate_week,
         });
         if moved_out {
             movement_events.mission_events.push(MissionEvent {
@@ -766,7 +793,7 @@ fn finalize_pending_observation_events(
                 planet_idx: None,
                 location_coords: Some(pending.location_coords),
                 target_coords: Some(pending.target_coords),
-                stardate_week: None,
+                stardate_week: pending.stardate_week,
             });
         }
     }

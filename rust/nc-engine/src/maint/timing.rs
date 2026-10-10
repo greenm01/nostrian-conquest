@@ -9,7 +9,10 @@
 //!    binary.  The offset shifts the base week forward to produce the
 //!    player-visible `Stardate: <week>/<year>` header.
 //!
-//! Both helpers are used by [`super::canonicalize`] after event assembly.
+//! Both helpers are used by [`super::canonicalize`] after event assembly, for
+//! events that do not already carry a week. Events from the year's ticks
+//! (arrivals, sightings, battles) carry the tick they happened in, which is
+//! the week classic prints.
 
 use super::Mission;
 

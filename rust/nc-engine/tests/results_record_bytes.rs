@@ -7,10 +7,12 @@ use nc_engine::{build_results_dat, build_results_report_blocks};
 const RECORD_SIZE: usize = 84;
 const TEXT_SIZE: usize = 72;
 
+/// A game just past the maintenance that ran year 3031: its reports are
+/// stamped 3031, as classic stamps them.
 fn seeded_game_data() -> nc_data::CoreGameData {
     GameStateBuilder::new()
         .with_player_count(4)
-        .with_year(3031)
+        .with_year(3032)
         .build_initialized_baseline()
         .expect("baseline should build")
 }

@@ -10,6 +10,7 @@ adopting a clean simultaneous-resolution structure inspired by *Empire of the
 Sun*. Forces meet, strike at the same instant, and survivors move forward.
 
 Read this together with:
+- [ec-encounter-spec.md](ec-encounter-spec.md) (who meets and attacks whom)
 - [rust-turn-cycle-implementation.md](rust-turn-cycle-implementation.md)
 - [ec-turn-cycle-spec.md](ec-turn-cycle-spec.md)
 - [ec-timing-spec.md](ec-timing-spec.md)
@@ -17,7 +18,8 @@ Read this together with:
 ## Status
 
 This is the source of truth for:
-- Fleet-vs-fleet combat
+- Fleet-vs-fleet battle resolution (who fights whom follows classic ECMAINT;
+  see Contact and Engagement)
 - Bombardment, Invasion, and Blitz
 - Retreat and ROE interaction
 
@@ -48,7 +50,6 @@ The canonical EC combat model:
 - Preserves manual concepts: ROE, Bombard, Invade, Blitz, and Starbase defense.
 - Uses a seeded campaign RNG for reproducibility.
 - Produces plausible mutual attrition, not just one-sided wipeouts.
-- Handles multi-empire battles without arbitrary pairwise ordering.
 - Resolves simultaneous arrivals deterministically.
 
 ## Core Principles
@@ -57,25 +58,9 @@ The canonical EC combat model:
 Fleet combat, orbital fire, and ground battles resolve at the same instant.
 
 ### 2. ROE Thresholds
-Rules of Engagement gate his willingness to engage, his decision to break off,
-and his guard posture. ROE does not inject randomness.
-
-#### Pre-Combat Sensor Check
-Before combat rounds begin, each task force performs a sensor sweep. If a fleet's
-ROE threshold is not met against the detected enemy force, it will abort the
-engagement and seek home immediately. This "clean retreat" happens before any
-fire is exchanged and avoids the damage of a withdrawal exchange.
-
-*Note: Sensor checks do not trigger for fleets forced into engagement (e.g.,
-defended system entry) or for patrols, which exist to intercept.*
-
-Guards, incumbents (a planet owner's forces at its own world), and starbases
-are anchored to their system. When their ROE threshold is not met against a
-contact that is *not* entering their system, they **hold formation**: they
-neither sortie nor retreat, keep their orders, and fire only if a willing
-enemy attacks them. A guard with a high enough ROE breaks formation and
-intercepts. Against an intruder the engagement is forced and they always
-fight.
+Rules of Engagement decide whether a fleet attacks (following classic
+ECMAINT; see Contact and Engagement) and, once a battle starts, when it breaks
+off. Inside the battle ROE does not inject randomness.
 
 #### 3-Round Commitment
 Once combat begins, all participating fleets are committed to the engagement
@@ -118,62 +103,46 @@ The Rust engine uses a **10x internal scale** for combat values to ensure high-p
 | Ground Battery | 90 | 20 | Anti-orbital cannon (Execution) |
 | Army | 10 | 10 | Surface combatant |
 
-## Contact and Hostility
+## Contact and Engagement
 
-The model treats contact as a single contested event from a shared board state.
+Who meets and who attacks follows classic ECMAINT's encounter loop exactly,
+rules and odds; [ec-encounter-spec.md](ec-encounter-spec.md) has the full
+rule and its constants, and the
+[engagement ADR](../notes/decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md)
+the decision. In short:
 
-### Enemy vs. Hostile
-- **Enemy**: A stored diplomatic stance set in the client.
-- **Hostile**: A tactical state triggered by ROE, intrusions, or attacks.
+- The year is 52 ticks. Each tick every fleet and starbase, in a random order
+  drawn once a year, moves one step, scans the alien units in its sector and
+  depth layer, and runs its order's arrival test. Units in different layers
+  (deep space, the solar system) never meet.
+- Each scan rolls a sighting chance per unit: `10 * awareness + visibility *
+  sensor factor`. Awareness (0 unknown, 1 contact, 2 identified, 3 fought) is
+  shared by the observer's whole empire and forgotten when the target changes
+  sector or layer.
+- An identified fleet is attacked when the observer's empire declared its
+  owner an enemy, when it is in one of the observer's systems, when a
+  blockade meets an assault or a colonizer of an unowned world, when two
+  fleets race to colonize, or when it guards an assault's target world (the
+  assault aborts if its ROE forbids the fight). First identification commits
+  any ROE above 0; later re-checks use classic's strength test. Then an
+  intercept roll decides whether the target gets away.
+- Starbases scan and report but never start a fight. A fleet attacks a
+  starbase only as a declared enemy or when the base protects its assault
+  target.
+- A battle has exactly two sides: the attacking fleet, and the target with
+  its guard partner (a guarded starbase, or a starbase's guard fleet). The
+  attacker loses that tick's movement. Battles leave stored diplomacy alone.
+- There is no departure strike: a blockade catches a fleet leaving its world
+  only through the rules above, while the fleet is still in orbit.
 
-Fleets attack declared enemies. They also attack when a player enters one of
-his solar systems or tries to enter/leave a world he is blockading. Initiating
-an attack escalates diplomacy to **Enemy** automatically.
-
-### Engagement Rule
-The 1992 player guide states it directly: "Your fleets may attack if they
-encounter the fleet of a player you've declared to be an enemy... Your fleets
-will also attack if another player's fleets enter one of your solar systems,
-or if they try to enter or leave a planet that your fleet is blockading."
-
-- **Declared enemies** (either direction) are intercepted wherever they meet,
-  in deep space or at a guarded system, gated by ROE as normal (sensor check,
-  hold formation, round-4 withdrawal). A guarded system does not let an enemy
-  pass unchallenged.
-- **System intrusion.** Any other player's fleet whose own order takes it
-  *into* the solar system at its location is hostile: Guard Starbase,
-  Guard/Blockade World, Bombard, Invade, Blitz, and Scout Solar System. This
-  applies against the world's owner, and against any empire blockading that
-  world. Intrusion forces the engagement (no sensor check), whether the
-  intruder is a declared enemy or not.
-- **Leaving a blockaded world.** Any other player's fleet that starts the
-  turn at rest at a world where a Guard/Blockade World fleet is on station,
-  and whose order moves it elsewhere, is hostile to the blockade, at war or
-  not. This includes ships just commissioned from that world's stardock.
-  Commissioning happens between maintenance runs, so launched ships are
-  ordinary fleets at the world when the turn starts. The interception is
-  fought before movement, between the departing fleets and the blockading
-  fleets only (no starbases, no other fleets at the world). Survivors that
-  are not driven off move on their orders. A fleet passing through the
-  sector mid-transit is not departing.
-- **View World is not an intrusion.** It is a long-range scan from the system
-  edge; the fleet then backs off into deep space.
-- **Deep space is neutral ground.** A non-enemy fleet in the sector's deep
-  space (Move, Patrol, Scout Sector, Hold, Join, Rendezvous, Seek Home, View
-  World, and so on) is never attacked, even in a sector with an owned world,
-  a starbase, or guards. Contact is still reported.
-- Initiating an attack escalates diplomacy to **Enemy** automatically.
+Rust departs from classic in one place: a sector with no world is nobody's
+system (classic reads a garbage owner there). Rust matches classic's odds, not
+its random sequence.
 
 ### Who Takes Part
-Only forces that actually exchange fire are combatants. Only combatants can
-hold the field, be forced to retreat, lose their mission, or receive a battle
-report, and a report names only the hostile combatants it fought. A neutral
-force that happens to share the sector is a bystander and is untouched.
-
-**Unarmed contact does not abort missions.** If no side can fire (for
-example, an enemy scout and an enemy transport fleet meeting in deep space),
-nobody retreats and every mission continues; contact reports still emit. A
-non-combat fleet attacked by an *armed* enemy still flees as ROE 0.
+Only the two sides of an encounter fight. Only they can hold the field, be
+forced to retreat, lose their mission, or receive a battle report. Other
+fleets in the sector are untouched.
 
 ## Seeded CRT Resolution
 
@@ -266,25 +235,29 @@ same turn.
 
 ## Fleet Combat Sequence
 
-1. **Identify Participants**: Combine all participating fleets into task forces,
-   one per empire, ordered by empire number.
-2. **Pre-Combat Sensor Check**: Fleets failing ROE attempt to seek home safely;
-   anchored defenders hold formation instead. Fleets are evaluated by ROE
-   ascending, equal ROE by empire number.
-3. **Simultaneous Fire**: Both sides generate and apply hits (Rounds 1-3 mandatory).
+1. **Identify Participants**: The two sides of the encounter, each a task
+   force, ordered by empire number. The attacker side reports that it
+   intercepted the enemy; the other side reports that it was attacked.
+2. **Simultaneous Fire**: Both sides generate and apply hits (Rounds 1-3 mandatory).
    Withdrawals for a round are declared before any volley resolves: a force
    breaking off takes only the withdrawal exchange from the opponent it
    leaves, never that opponent's full volley as well.
-4. **Post-Round ROE**: Survivors check if they can break off (Starting Round 4).
+3. **Post-Round ROE**: Survivors check if they can break off (Starting Round 4).
    A withdrawn force is out of the battle: it is no longer targeted and its
    strength no longer counts in anyone's ROE odds.
-5. **End State**: Combat ends when one side is destroyed or retreats. A
+4. **End State**: Combat ends when one side is destroyed or retreats. A
    battle still undecided after 64 rounds ends as a stalemate: survivors keep
    their ships and the normal post-battle rules (retreat of forces that did
    not hold the field, mission aborts, reports) apply.
 
 Every collection whose order affects outcomes or event order is ordered, so
-the same seed always produces the same battle.
+the same seed always produces the same battle. The battle's random draws are
+keyed by the tick and the attacking unit, so two battles in one sector in one
+year roll independently.
+
+This battle is Rust's, not classic's: classic's battle internals (5 to 24
+rounds, its retreat and scatter rules) are not decoded yet, and replacing them
+is task t036. `fight_encounter` is the seam.
 
 
 ## Simultaneous Arrival at a Planet

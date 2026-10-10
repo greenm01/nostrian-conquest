@@ -138,3 +138,38 @@ pub fn stall_in_place(fleet: &mut FleetRecord) {
     fleet.set_current_speed(0);
     fleet.set_max_speed(0);
 }
+
+/// The first seeded year of `game_data` whose events satisfy `wanted`.
+/// Encounters are random (sighting and intercept rolls each tick), so tests
+/// of what happens in a battle search the seeds for a year that has one.
+pub fn first_year(
+    game_data: &nc_data::CoreGameData,
+    diplomacy: &[nc_data::DiplomacyOverride],
+    wanted: impl Fn(&nc_data::CoreGameData, &nc_data::MaintenanceEvents) -> bool,
+) -> (nc_data::CoreGameData, nc_data::MaintenanceEvents) {
+    for seed in 0..500 {
+        let mut year = game_data.clone();
+        let events =
+            nc_engine::run_maintenance_turn_with_context_and_seed(&mut year, seed, &[], diplomacy)
+                .expect("maintenance should succeed");
+        if wanted(&year, &events) {
+            return (year, events);
+        }
+    }
+    panic!("no seed in 0..500 gave the wanted year");
+}
+
+/// A year with a fleet battle.
+pub fn battle(_: &nc_data::CoreGameData, events: &nc_data::MaintenanceEvents) -> bool {
+    !events.fleet_battle_events.is_empty()
+}
+
+/// Set every fleet of `empire` to ROE 0, so its fleets never start a fight
+/// (they still defend themselves if attacked).
+pub fn hold_fire(game_data: &mut nc_data::CoreGameData, empire: u8) {
+    for fleet in &mut game_data.fleets.records {
+        if fleet.owner_empire_raw() == empire {
+            fleet.set_rules_of_engagement(0);
+        }
+    }
+}

@@ -283,13 +283,8 @@ pub(super) fn apply_stored_diplomatic_escalations(
     game_data: &mut CoreGameData,
     events: &MaintenanceEvents,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    // Fleet battles leave stored diplomacy alone, as in classic.
     let mut pairs = Vec::new();
-
-    for event in &events.fleet_battle_events {
-        for &enemy_empire_raw in &event.enemy_empires_raw {
-            pairs.push((event.reporting_empire_raw, enemy_empire_raw));
-        }
-    }
 
     for event in &events.bombard_events {
         if event.defender_empire_raw != 0 {
@@ -392,9 +387,7 @@ fn sole_contender(
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Option<u8> {
     let contenders = (1..=game_data.player.records.len() as u8)
-        .filter(|&empire_raw| {
-            is_campaign_contender(game_data, empire_raw, player_lifecycle_states)
-        })
+        .filter(|&empire_raw| is_campaign_contender(game_data, empire_raw, player_lifecycle_states))
         .collect::<Vec<_>>();
     if contenders.len() == 1 {
         contenders.first().copied()

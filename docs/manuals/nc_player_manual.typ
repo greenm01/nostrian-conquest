@@ -243,7 +243,7 @@ orbit around the target world, then try again each year until they succeed.
     [06], [Bombard world],         [Hostile],    [Combat ships],                [Bombards when in orbit at tick start],
     [07], [Invade world],          [Hostile],    [Combat + loaded transports],  [Invades when in orbit at tick start],
     [08], [Blitz world],           [Hostile],    [Loaded transports (combat recommended)], [Blitzes when in orbit at tick start],
-    [09], [View],                  [One-shot],   [Any],                         [Scans from system edge, reverts to Hold],
+    [09], [View],                  [One-shot],   [Any],                         [Dives in, scans, climbs back out; reverts to Hold],
     [10], [Scout sector],          [Persistent], [At least one scout],          [Reports each turn while on station],
     [11], [Scout system],          [Persistent], [At least one scout],          [Reports each turn while on station],
     [12], [Colonize world],        [One-shot],   [At least one ETAC],           [Colonizes if unowned; ETAC survives for reuse],
@@ -400,31 +400,87 @@ values, force-ratio columns, CRT table, and assault formulas.
 
 == Who Fights Whom
 
-Your fleets attack the fleets of any player you have declared to be an
-enemy, wherever they meet them --- in deep space or at one of your guarded
-systems --- as far as their ROE allows. They also attack any other player's
-fleet that *enters one of your solar systems*, or that enters or leaves a
-world your fleet is blockading, whether or not you are at war with him.
-Starting such a fight makes the two empires enemies.
+Fleets meet only when they share a sector *and* a depth. Each sector has two
+layers: deep space, and the solar system around its world (see @movement). A
+fleet at least halfway down to a world is in its system. A fleet in orbit
+cannot see a fleet passing overhead in deep space, and neither can fight the
+other.
 
-A fleet enters a solar system when its mission takes it in to the planet:
-Guard Starbase, Guard/Blockade World, Bombard, Invade, Blitz, and Scout
-Solar System. Every other mission --- Move, Patrol, Scout Sector, Hold,
-Join, Rendezvous, Seek Home --- keeps the fleet in the sector's deep space,
-and View World scans from the system's edge before backing off. A foreign
-fleet in deep space is reported, but it is not attacked unless you have
-declared its owner an enemy.
+A year is 52 weeks. Each week, every fleet and starbase takes a turn, in an
+order drawn at random once a year. In its turn a fleet moves one week's
+distance, scans the alien fleets and starbases sharing its sector and layer,
+and then carries out its order. Battles therefore happen in the middle of the
+year, wherever fleets happen to be that week, and the report carries that
+week's stardate.
 
-A fleet leaves a blockaded world when it starts the turn stopped there and
-its orders take it somewhere else. That includes ships just commissioned from
-the world's stardock and sent on their way. The blockade attacks these fleets
-before they move. Survivors that are not driven off continue on their orders.
-Starbases do not intercept departures.
+*Sighting.* Each week a fleet has a chance of spotting each alien unit near
+it. Big fleets are easier to see than small ones: battleships and ETACs show
+most, then cruisers and transports, then destroyers; scouts add a little. A
+fleet in a solar system is five times easier to see than one in deep space,
+and a fast-moving fleet is easier to see than a slow one. A fleet at its
+target on a bombard, invade, or blitz mission is twenty times easier to see,
+and patrols, colonizers, and system scouts twice as easy. Starbases are fairly
+conspicuous.
 
-Only fleets that actually trade fire take part in a battle. A neutral fleet
-that happens to share the sector is not involved, and if neither side can
-fire --- say, an enemy scout meets an enemy transport fleet --- both report
-the contact and carry on with their missions.
+How hard a fleet looks depends on its order. A patrol that has reached its
+sector looks ten times as hard as an ordinary fleet; a scout or a blockade on
+station, five times. Starbases look hardest of all. Spotting a unit once makes
+it easier to spot again. What one of your fleets or starbases learns about an
+alien unit, all of them know, until that unit moves to another sector or
+layer.
+
+*Identification.* A fleet with ROE above 0 closes to identify what it spots,
+and so do patrols, scouts, and blockades on station. Any other fleet only
+reports a sensor contact. A fleet guarding a starbase stays with its base and
+does not close.
+
+*The decision.* A fleet that identifies an alien fleet attacks it when:
+
+- your empire has declared the fleet's owner an enemy (his declaration
+  against you does not count);
+- the alien fleet is in one of your solar systems, whatever its order, and
+  even if its owner is neutral;
+- your fleet is blockading a world and the alien fleet has come to bombard,
+  invade, or blitz it, or to colonize it while it is unowned (this holds at
+  any world, yours or not);
+- both fleets are colonizing the same unowned world; or
+- your fleet is on a bombard, invade, blitz, or colonize mission and the
+  alien fleet guards the target world. If your ROE forbids that fight, your
+  fleet aborts its mission and seeks home instead.
+
+Any other alien fleet is ignored. A sector with no world is nobody's system.
+
+The first time your fleet identifies a target, any ROE above 0 commits it to
+the attack. Each later week it re-checks a target it already knows, and then
+it attacks only if the ROE odds favor the fight (see @appendix-combat). For
+these odds a battleship counts 21, a cruiser 7, and a destroyer 2; a guard
+fleet at rest with its starbase adds 30. Scouts, transports, and ETACs count
+nothing.
+
+*Intercept.* A fleet with a higher maximum speed always catches its target.
+Otherwise the target may notice the attack and run. A stopped target cannot
+run; a moving one escapes more often the faster it moves and the slower its
+pursuer. A target that already knows the attacker rarely notices it coming,
+and then it stays to fight only if its own ROE accepts the odds.
+
+*Battle.* Every battle has exactly two sides: the attacking fleet alone,
+against the target and its partner --- a guard fleet's starbase, or a
+starbase's guard fleet. Nobody else in the sector joins, not even allies. An
+attacking fleet spends the week fighting instead of moving. A fight does not
+change the empires' diplomacy.
+
+*Starbases* scan, and what they identify every fleet of their empire knows,
+but they never start a fight. A fleet attacks a starbase only if its empire
+has declared the base's owner an enemy, or if the base protects the world the
+fleet has come to bombard, invade, or blitz. In that case the fleet weighs the
+base and its guard together against its ROE, and if the odds are against it,
+it aborts its mission.
+
+*Blockades.* A blockade does not stop a neutral fleet leaving the world or
+arriving at it, unless the arrival comes to attack or colonize it. A blockade
+catches a departing fleet only if your empire has declared that fleet's owner
+an enemy, and only if it spots and intercepts the fleet in the few weeks the
+fleet takes to climb out of orbit.
 
 == Tactical Roles and Split Fire
 
@@ -444,15 +500,11 @@ A fleet can contain as few as one ship and as many as *3,000 ships* of mixed typ
 
 == Rules of Engagement (ROE)
 
-You assign an ROE level (0--10) to control when your fleet voluntarily engages
-hostile forces. ROE is a fixed commitment rule based on force ratios, not
-chance.
-
-Before any fire is exchanged, your fleet performs a *pre-combat sensor check*. If the enemy force is overwhelming and violates his ROE, the commander will abort the engagement and "seek home" immediately. This clean retreat happens before the battle begins, allowing him to scout safely without being forced into a suicidal withdrawal exchange.
-
-*Note: Sensor checks do not trigger if you are forced into engagement (such as entering a defended system) or if your fleet is on patrol.*
-
-Guards, starbases, and fleets at their own world are anchored to their system. If an enemy is only passing through the sector and their ROE does not favor a fight, they hold formation: they stay on station, keep their orders, and fire only if the enemy attacks them. Against a fleet that enters the system, they always fight.
+You assign an ROE level (0--10) to control when your fleet attacks. ROE 0
+never attacks. Any higher ROE attacks a hostile fleet the first time it
+identifies it, whatever the odds; after that, your fleet attacks a known
+target only when the force ratio meets the ROE threshold (see Who Fights
+Whom). ROE also decides when your fleet breaks off a battle.
 
 The full ROE threshold table is collected in @appendix-combat.
 
@@ -501,12 +553,12 @@ A fleet always has exactly one standing order. If you issue a new order before m
     [02], [Seek Home],       [One-shot],   [Return to nearest owned planet; retargets if that planet is captured en route.],
     [03], [Patrol],          [Persistent], [Move within sector deep space to intercept enemies.],
     [04], [Guard Starbase],  [Persistent], [Escort a starbase; fight alongside it.],
-    [05], [Blockade],        [Persistent], [Prevent access to a planet. Stops enemy launches and landings.],
+    [05], [Blockade],        [Persistent], [Watch a world. Attacks assaults, colonizers of an unowned world, and declared enemies.],
     [06], [Bombard],         [Hostile],    [Damage factories, batteries, armies, stardock contents, and production.],
     [07], [Invade],          [Hostile],    [Suppress batteries, bombard, then land armies. Requires loaded transports.],
     [08], [Blitz],           [Hostile],    [Drop armies immediately, dodging batteries. High army risk.],
-    [09], [View],            [One-shot],   [Long-range scan of owner and production from system edge.],
-    [10], [Scout Sector],    [Persistent], [Passive stealth surveillance of sector deep space (requires Scout).],
+    [09], [View],            [One-shot],   [Quick scan of owner and production; the fleet dives in and climbs back out.],
+    [10], [Scout Sector],    [Persistent], [Watch a sector closely and identify traffic (requires Scout).],
     [11], [Scout System],    [Persistent], [Active spy mission into a solar system (requires Scout).],
     [12], [Colonize],        [One-shot],   [Terraform and claim unowned planet (requires ETAC). ETAC survives for reuse.],
     [13], [Join Fleet],      [Persistent], [Chase and merge with target fleet. Abandons if host is destroyed.],
@@ -555,7 +607,7 @@ answer yes to "Include time to enter system?"
 
 *Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position.
 
-*Mission 9: View a World.* A safe, long-range scan. The fleet approaches the edge of the target system, scans for owner and production data, and immediately backs off into deep space. Because it never enters the system, it does not provoke the owner's defenses unless he has declared you an enemy. It reverts to Hold Position after reporting.
+*Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
 
 *Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster under low taxes. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
 
@@ -565,13 +617,13 @@ answer yes to "Include time to enter system?"
 
 *Mission 0: Hold Position.* The default idle state. The fleet stays at its current location and takes defensive action based on ROE if hostile fleets approach.
 
-*Mission 3: Patrol a Sector.* The fleet moves within deep space to intercept enemies passing through. If the patrol spots anything, it sends a report, and it engages based on your ROE settings. The mission remains active until you assign a new one.
+*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom allow, as far as your ROE permits. The mission remains active until you assign a new one.
 
-*Mission 4: Guard Starbase.* The fleet escorts a starbase and fights alongside it. Be aware that if your fleet has a high ROE, it may break formation to chase enemy fleets passing through the sector, leaving the starbase temporarily vulnerable. A guard whose ROE does not favor the chase holds formation and lets passing enemies go, but any fleet that enters the system is engaged.
+*Mission 4: Guard Starbase.* The fleet escorts a starbase and fights alongside it: an attack on either one is a battle against both. A guard stays with its base and does not close on the contacts it spots, but it attacks any alien fleet its empire has already identified when the ROE odds favor the fight.
 
-*Mission 5: Guard/Blockade a World.* A strategy of denial. The blockade stops enemy fleets from using the planet, intercepts ships launching from stardock, and paralyzes the enemy's ability to deploy forces from that world. Any fleet that tries to enter a world you are blockading is attacked. Blockading another player's world takes your fleet into his solar system, so his defenses will fight it. It remains active until you assign a new mission.
+*Mission 5: Guard/Blockade a World.* A strategy of denial. The blockade watches the world five times as hard as an ordinary fleet. It attacks any fleet that comes to bombard, invade, or blitz the world, or to colonize it while it is unowned, and any fleet of an empire you have declared an enemy, including ships leaving the world. Neutral fleets come and go. Blockading another player's world takes your fleet into his solar system, so his fleets there will attack it. It remains active until you assign a new mission.
 
-*Missions 10 and 11: Scout Sector / Scout System.* Both require at least one Scout ship, and a fleet consisting of a single Scout is the least likely to be detected. Scout Sector is a passive, stealthy patrol --- unlike Mission 3, the fleet will not engage enemies but instead relies on stealth to observe traffic without being seen. Scout System is an active spy run where the Scout penetrates the system to report on ground batteries, armies, current production, stardock contents, and orbiting fleets; entering the system means the owner's defenses will attack it. Both are persistent missions: the fleet remains on station and generates a new report each maintenance turn for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before a full scout/view report is earned.
+*Missions 10 and 11: Scout Sector / Scout System.* Both require at least one Scout ship, and a fleet consisting of a single Scout is the least likely to be detected. Scout Sector is a stealthy watch over the sector: a scout on station looks five times as hard as an ordinary fleet and identifies what it spots, and with ROE 0 it never attacks. Scout System is an active spy run where the Scout penetrates the system to report on ground batteries, armies, current production, stardock contents, and orbiting fleets; entering the system means the owner's fleets there may attack it. Both are persistent missions: the fleet remains on station and generates a new report each maintenance turn for as long as it stays at its assigned sector. If you identify an *In Civil Disorder* fleet in a system that still belongs to that disorder state, the Total Planet Database marks that world's owner as `ICD` even before a full scout/view report is earned.
 
 *Missions 13 and 14: Fleet Coordination.* Mission 13 (Join Fleet) causes the fleet to chase a specific host fleet and merge with it when they meet. If the host is destroyed before they rendezvous, the joining fleet abandons the mission. Mission 14 (Rendezvous) sends multiple fleets to a sector where the fleet with the lowest Fleet ID becomes the host of the combined force. The rendezvous point remains active so additional fleets can keep merging there.
 
@@ -579,7 +631,7 @@ answer yes to "Include time to enter system?"
 
 #admonition("IMPORTANT")[A hostile fleet attacks during the maintenance in which it reaches orbit (see @movement). If the attack fails, the fleet holds just outside orbit and attacks again each year until it succeeds or you change its orders. A fleet told to attack the world it already orbits attacks at the next maintenance.]
 
-A fleet in orbit on a hostile mission has entered the owner's solar system, so his fleets and starbases engage it on arrival. Only one kind of assault strikes a world each turn, in the order Blitz, Invade, Bombard. If you have fleets on different assault missions at the same world, only those on that turn's assault take part; the others keep their orders and cargo and strike on a later turn.
+A fleet in orbit on a hostile mission has entered the owner's solar system, and it is twenty times easier to see there, so his fleets in orbit are likely to attack it. A starbase protecting the world must be fought first if the fleet spots it. Only one kind of assault strikes a world each turn, in the order Blitz, Invade, Bombard. If you have fleets on different assault missions at the same world, only those on that turn's assault take part; the others keep their orders and cargo and strike on a later turn.
 
 *Mission 6: Bombard a World.* Only destroyers, cruisers, and battleships contribute bombardment firepower --- scouts, transports, and ETACs do not. Each turn your fleet bombards, the engine runs three rounds of fire. In rounds 1 and 2, your ships exchange fire with ground batteries --- hits destroy stardock contents first, then batteries, but armies, stored goods, and industry are shielded behind the battery wall. Each battery takes 20 hits to destroy, each army 10, and each docked ship its own DS. In round 3, if batteries have been eliminated, your firepower breaks through to armies, stored goods, and finally industry. If batteries still stand after round 2, round 3 is another suppression exchange and the planet's production survives. Bombardment persists each turn until you issue new orders. Use it to grind down a world's defenses before invasion, or to deny resources to an enemy over time.
 

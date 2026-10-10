@@ -66,7 +66,7 @@ pub(super) fn build_results_rows_with_review(
     events: &MaintenanceEvents,
 ) -> Vec<ReportBlockRow> {
     let result_entries = generate_report_entries(game_data, events);
-    let year = game_data.conquest.game_year();
+    let year = report_year(game_data);
     let ResultsReviewPlan {
         viewer_entries,
         viewers_with_results,
@@ -197,11 +197,19 @@ pub mod intel;
 pub mod misc;
 pub mod missions;
 
+/// The year a report's stardate names: the year maintenance just ran. The
+/// game year has already moved on when reports are built, so classic's
+/// `Stardate: 52/3001` reports come out of the run that turns 3001 into
+/// 3002.
+fn report_year(game_data: &CoreGameData) -> u16 {
+    game_data.conquest.game_year().saturating_sub(1)
+}
+
 pub fn generate_report_entries(
     game_data: &CoreGameData,
     events: &MaintenanceEvents,
 ) -> Vec<ReportEntry> {
-    let year = game_data.conquest.game_year();
+    let year = report_year(game_data);
     let mut entries: Vec<ReportEntry> = Vec::new();
 
     combat::push_combat_entries(&mut entries, game_data, events, year);

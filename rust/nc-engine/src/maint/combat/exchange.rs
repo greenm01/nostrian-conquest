@@ -26,7 +26,6 @@ pub(super) const COMBAT_KIND_GROUND: u64 = 6;
 pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
-pub(super) const COMBAT_KIND_DEPARTURE: u64 = 10;
 
 const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],
@@ -211,10 +210,13 @@ pub(super) fn resolve_space_exchange(
     )
 }
 
+/// `battle_key` tells apart battles fought at the same place in one year.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn resolve_withdrawal_exchange(
     campaign_seed: u64,
     game_year: u16,
     coords: [u8; 2],
+    battle_key: u64,
     round: u32,
     acting_empire: u8,
     target_empire: u8,
@@ -224,7 +226,7 @@ pub(super) fn resolve_withdrawal_exchange(
         campaign_seed,
         game_year,
         coords,
-        COMBAT_KIND_WITHDRAWAL,
+        COMBAT_KIND_WITHDRAWAL | battle_key << 8,
         round,
         acting_empire,
         target_empire,

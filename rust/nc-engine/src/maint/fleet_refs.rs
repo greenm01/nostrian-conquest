@@ -195,8 +195,8 @@ pub(super) struct TurnFleetRefs {
     pub mission_retarget_events: Vec<MissionRetargetEvent>,
     pub invalid_player_state_events: Vec<InvalidPlayerStateEvent>,
     pub movement_events: MovementEvents,
-    /// Departure interceptions fought before movement.
-    pub departure_battle_events: FleetBattlePhaseEvents,
+    /// Sightings, decisions, and battles from the year's ticks.
+    pub encounter_events: FleetBattlePhaseEvents,
 }
 
 impl TurnFleetRefs {
@@ -239,6 +239,6 @@ impl TurnFleetRefs {
             }
         }
         remap.remap_movement_events(&mut self.movement_events);
-        remap.remap_fleet_battle_phase_events(&mut self.departure_battle_events);
+        remap.remap_fleet_battle_phase_events(&mut self.encounter_events);
     }
 }

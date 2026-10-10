@@ -3,13 +3,15 @@
 //! Validates that the Rust maintenance implementation matches the original ECMAINT
 //! behavior on the fleet-scenario fixture pair.
 
+mod common;
+
 use nc_data::{
     BaseDat, BaseRecord, ColonizationResolvedEvent, CoreGameData, DiplomacyOverride,
     DiplomaticRelation, FleetOrderValidationError, GameStateBuilder, JoinMissionHostEvent, Mission,
     MissionAbortReason, MissionOutcome, MissionRetargetEvent, Order, PlanetIntelSource, Real48,
     SalvageFailureReason, SalvageResolvedEvent,
 };
-use nc_engine::{run_maintenance_turn, run_maintenance_turn_with_context};
+use nc_engine::run_maintenance_turn;
 use std::path::Path;
 
 /// Helper to load a fixture directory.
@@ -340,6 +342,8 @@ fn test_blockading_foreign_world_escalates_to_enemy() {
     fleet.set_standing_order_target_coords_raw(coords);
     fleet.set_current_speed(3);
     fleet.raw[0x19] = 0x00;
+    // The world's own fleets would attack the blockader in their system.
+    common::hold_fire(&mut game_data, 2);
 
     let events = run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
@@ -457,7 +461,7 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
 }
 
 #[test]
-fn test_view_world_arrival_with_enemy_fleet_present_aborts_before_intel_is_committed() {
+fn test_view_world_fleet_caught_by_an_enemy_commits_no_intel() {
     let (mut game_data, target_idx, target_coords) =
         configured_delayed_hostile_arrival_state(Order::ViewWorld, (0, 0, 1, 0, 0, 0, 0));
     game_data.planets.records[target_idx].set_owner_empire_slot_raw(2);
@@ -479,9 +483,13 @@ fn test_view_world_arrival_with_enemy_fleet_present_aborts_before_intel_is_commi
     enemy.set_etac_count(0);
     enemy.set_rules_of_engagement(10);
 
-    let events =
-        run_maintenance_turn_with_context(&mut game_data, &[], &mutual_enemy_overrides(1, 2))
-            .expect("maintenance should succeed");
+    // A year where the enemy caught the viewer in the system.
+    let (_, events) = common::first_year(&game_data, &mutual_enemy_overrides(1, 2), |_, events| {
+        events
+            .fleet_battle_events
+            .iter()
+            .any(|event| event.reporting_empire_raw == 1)
+    });
 
     assert!(
         !events.planet_intel_events.iter().any(|event| {
@@ -495,14 +503,7 @@ fn test_view_world_arrival_with_enemy_fleet_present_aborts_before_intel_is_commi
                 && event.kind == Mission::ViewWorld
                 && event.outcome == MissionOutcome::Aborted
         }),
-        "hostile contact should abort the ViewWorld mission on arrival"
-    );
-    assert!(
-        events
-            .fleet_destroyed_events
-            .iter()
-            .all(|event| event.reporting_empire_raw != 1),
-        "the arrival viewer should abort cleanly without being destroyed on the same tick"
+        "the battle aborts the ViewWorld mission"
     );
 }
 
@@ -531,9 +532,17 @@ fn test_scout_system_arrival_still_emits_intel_with_enemy_fleet_present() {
     enemy.set_etac_count(0);
     enemy.set_rules_of_engagement(10);
 
-    let events =
-        run_maintenance_turn_with_context(&mut game_data, &[], &mutual_enemy_overrides(1, 2))
-            .expect("maintenance should succeed");
+    // A year where the scout reached orbit before the enemy caught it.
+    let (_, events) = common::first_year(&game_data, &mutual_enemy_overrides(1, 2), |_, events| {
+        events
+            .fleet_destroyed_events
+            .iter()
+            .all(|event| event.reporting_empire_raw != 1)
+            && events
+                .mission_events
+                .iter()
+                .any(|event| event.fleet_idx == 0 && event.kind == Mission::ScoutSolarSystem)
+    });
 
     assert!(
         events.planet_intel_events.iter().any(|event| {
@@ -1861,6 +1870,8 @@ fn test_salvage_fails_at_foreign_planet_without_removing_fleet() {
     fleet.raw[0x0d] = 0x80;
     fleet.raw[0x0f] = 0;
     fleet.raw[0x19] = 0x00;
+    // The world's own fleets would attack the salvager in their system.
+    common::hold_fire(&mut game_data, 2);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
