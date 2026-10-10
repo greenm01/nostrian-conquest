@@ -543,12 +543,17 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     let attacker = &game_data.fleets.records[0];
     assert_eq!(attacker.standing_order_kind(), Order::InvadeWorld);
     assert_eq!(attacker.standing_order_target_coords_raw(), [15, 13]);
-    assert_eq!(attacker.current_location_coords_raw(), [9, 13]);
-    assert_eq!(attacker.current_speed(), 0);
+    // Re-rated by its losses, the invader carries on toward its target at
+    // the full speed of the ships it has left (0 when this stalled contact
+    // lost none), and is still short of it at year end.
+    let [x, y] = attacker.current_location_coords_raw();
+    assert!((9..15).contains(&x) && y == 13, "{:?}", [x, y]);
+    assert_eq!(attacker.current_speed(), attacker.max_speed());
 
     let hostile = &game_data.fleets.records[4];
     assert_eq!(hostile.standing_order_kind(), Order::SeekHome);
-    // The retreat runs at full speed (0 for this stalled contact).
+    // The retreat runs at the full speed of the ships it has left (0 when
+    // this stalled contact lost none).
     assert_eq!(hostile.current_speed(), hostile.max_speed());
 }
 
