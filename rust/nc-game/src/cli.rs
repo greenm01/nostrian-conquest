@@ -30,6 +30,7 @@ struct ParsedLaunchArgs {
     color_mode: ColorMode,
     screen_geometry: ScreenGeometry,
     dropfile_alias: Option<String>,
+    dropfile_fallback_alias: Option<String>,
     session_timeout_secs: Option<u32>,
     use_door_terminal: bool,
     door_transport: DoorTransport,
@@ -89,7 +90,8 @@ fn prepare_launch(parsed: &ParsedLaunchArgs) -> Result<App, Box<dyn std::error::
     let campaign_store = CampaignStore::open_default_in_dir(&parsed.game_dir)?;
     let game_config = load_runtime_game_config(&parsed.game_dir, &campaign_store)?;
     validate_runtime_game_config(&campaign_store, &game_config)?;
-    let launch_binding = resolve_launch_player_binding(parsed, &game_config, &campaign_store)?;
+    let (launch_binding, caller_alias) =
+        resolve_launch_player_binding(parsed, &game_config, &campaign_store)?;
     let player_record_index_1_based = launch_binding.player_record_index_1_based().unwrap_or(1);
     let config = AppConfig {
         game_dir: parsed.game_dir.clone(),
@@ -105,10 +107,10 @@ fn prepare_launch(parsed: &ParsedLaunchArgs) -> Result<App, Box<dyn std::error::
         game_dir = %parsed.game_dir.display(),
         player = player_record_index_1_based,
         door_mode = parsed.use_door_terminal,
-        dropfile_alias = parsed.dropfile_alias.as_deref().unwrap_or(""),
+        dropfile_alias = caller_alias.as_deref().unwrap_or(""),
         "loaded nc-game app"
     );
-    apply_launch_context(&mut app, parsed, launch_binding)?;
+    apply_launch_context(&mut app, parsed, launch_binding, caller_alias)?;
     if app.door_mode {
         crate::theme::apply_door_theme();
     }
@@ -370,6 +372,7 @@ fn apply_launch_context(
     app: &mut App,
     parsed: &ParsedLaunchArgs,
     launch_binding: LaunchPlayerBinding,
+    caller_alias: Option<String>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     app.screen_geometry = parsed.screen_geometry;
     app.door_mode = parsed.use_door_terminal;
@@ -377,7 +380,7 @@ fn apply_launch_context(
         launch_binding.source(),
         Some(LaunchPlayerBindingSource::ExplicitPlayer)
     );
-    app.startup_state.caller_alias = parsed.dropfile_alias.clone();
+    app.startup_state.caller_alias = caller_alias;
     if launch_binding == LaunchPlayerBinding::UnboundDropfile {
         app.enter_unbound_bbs_first_time_mode();
     }
@@ -546,6 +549,7 @@ fn parse_args(args: &[String]) -> Result<ParsedLaunchArgs, Box<dyn std::error::E
 
     // Parse dropfile and apply any fields not already set by explicit flags.
     let mut dropfile_alias: Option<String> = None;
+    let mut dropfile_fallback_alias: Option<String> = None;
     let mut dropfile_timeout_minutes: Option<u32> = None;
     let mut screen_geometry = ScreenGeometry::local_default();
     let mut use_door_terminal = false;
@@ -559,6 +563,7 @@ fn parse_args(args: &[String]) -> Result<ParsedLaunchArgs, Box<dyn std::error::E
             .alias
             .map(|alias| alias.trim().to_string())
             .filter(|alias| !alias.is_empty());
+        dropfile_fallback_alias = info.fallback_alias;
         dropfile_timeout_minutes = info.timeout_minutes;
         screen_geometry = ScreenGeometry::for_door(info.screen_rows);
         use_door_terminal = true;
@@ -605,6 +610,7 @@ fn parse_args(args: &[String]) -> Result<ParsedLaunchArgs, Box<dyn std::error::E
         color_mode,
         screen_geometry,
         dropfile_alias,
+        dropfile_fallback_alias,
         session_timeout_secs,
         use_door_terminal,
         door_transport,
@@ -783,22 +789,44 @@ fn load_runtime_game_config(
     })
 }
 
+/// Bind the caller to a seat, returning the binding and the caller alias it
+/// used. The dropfile alias is tried first; when it binds no seat, the
+/// fallback alias (the DOOR.SYS real name) is tried, so seats bound under the
+/// real name before the handle was read keep working.
 fn resolve_launch_player_binding(
     parsed: &ParsedLaunchArgs,
     game_config: &RuntimeConfig,
     campaign_store: &CampaignStore,
-) -> Result<LaunchPlayerBinding, Box<dyn std::error::Error>> {
+) -> Result<(LaunchPlayerBinding, Option<String>), Box<dyn std::error::Error>> {
     let runtime_state = campaign_store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    shared_resolve_launch_player_binding(LaunchBindingRequest {
-        explicit_player_record_index_1_based: parsed.explicit_player_record_index_1_based,
-        dropfile_alias: parsed.dropfile_alias.as_deref(),
-        use_door_terminal: parsed.use_door_terminal,
-        reservations: &game_config.reservations,
-        game_data: &runtime_state.game_data,
-    })
-    .map_err(Into::into)
+    let resolve = |dropfile_alias: Option<&str>| {
+        shared_resolve_launch_player_binding(LaunchBindingRequest {
+            explicit_player_record_index_1_based: parsed.explicit_player_record_index_1_based,
+            dropfile_alias,
+            use_door_terminal: parsed.use_door_terminal,
+            reservations: &game_config.reservations,
+            game_data: &runtime_state.game_data,
+        })
+    };
+    let binding = resolve(parsed.dropfile_alias.as_deref())?;
+    if !binds_by_alias(binding) {
+        if let Some(fallback) = parsed.dropfile_fallback_alias.as_deref() {
+            let fallback_binding = resolve(Some(fallback))?;
+            if binds_by_alias(fallback_binding) {
+                return Ok((fallback_binding, Some(fallback.to_string())));
+            }
+        }
+    }
+    Ok((binding, parsed.dropfile_alias.clone()))
+}
+
+fn binds_by_alias(binding: LaunchPlayerBinding) -> bool {
+    matches!(
+        binding.source(),
+        Some(LaunchPlayerBindingSource::ReservedAlias | LaunchPlayerBindingSource::StoredHandle)
+    )
 }
 
 fn validate_runtime_game_config(
@@ -984,6 +1012,7 @@ mod tests {
             color_mode: ColorMode::TrueColor,
             screen_geometry: ScreenGeometry::local_default(),
             dropfile_alias: None,
+            dropfile_fallback_alias: None,
             session_timeout_secs: None,
             use_door_terminal,
             door_transport: DoorTransport::Stdio,
@@ -1081,7 +1110,7 @@ mod tests {
         parsed.explicit_player_record_index_1_based = None;
         parsed.dropfile_alias = Some("rival".to_string());
 
-        let binding =
+        let (binding, _) =
             resolve_launch_player_binding(&parsed, &RuntimeConfig::default(), &campaign_store)
                 .expect("binding should resolve");
 
@@ -1105,7 +1134,7 @@ mod tests {
         parsed.explicit_player_record_index_1_based = None;
         parsed.dropfile_alias = Some("RIVAL".to_string());
 
-        let binding =
+        let (binding, _) =
             resolve_launch_player_binding(&parsed, &RuntimeConfig::default(), &campaign_store)
                 .expect("binding should resolve");
 
@@ -1142,6 +1171,110 @@ mod tests {
             err.to_string()
                 .contains("conflicts with reserved alias 'SYSOP' for seat 2")
         );
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    /// A DOOR.SYS caller with handle `Starlord` on line 36 and real name
+    /// `Tachyon` on line 10.
+    fn door_sys_caller(game_dir: &std::path::Path) -> ParsedLaunchArgs {
+        let mut parsed = parsed_args(true);
+        parsed.game_dir = game_dir.to_path_buf();
+        parsed.explicit_player_record_index_1_based = None;
+        parsed.dropfile_alias = Some("Starlord".to_string());
+        parsed.dropfile_fallback_alias = Some("Tachyon".to_string());
+        parsed
+    }
+
+    #[test]
+    fn door_sys_seat_bound_under_the_real_name_still_resolves() {
+        let game_dir = temp_first_time_game_copy();
+        seed_joined_player_handle(&game_dir, 2, "Tachyon");
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+
+        let (binding, caller_alias) = resolve_launch_player_binding(
+            &door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(
+            binding,
+            LaunchPlayerBinding::Bound {
+                player_record_index_1_based: 2,
+                source: LaunchPlayerBindingSource::StoredHandle,
+            }
+        );
+        assert_eq!(caller_alias.as_deref(), Some("Tachyon"));
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn door_sys_seat_reserved_under_the_real_name_still_resolves() {
+        let game_dir = temp_first_time_game_copy();
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+
+        let (binding, caller_alias) = resolve_launch_player_binding(
+            &door_sys_caller(&game_dir),
+            &RuntimeConfig {
+                reservations: vec![SeatReservation {
+                    player_record_index_1_based: 3,
+                    alias: "TACHYON".to_string(),
+                }],
+                ..RuntimeConfig::default()
+            },
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(
+            binding,
+            LaunchPlayerBinding::Bound {
+                player_record_index_1_based: 3,
+                source: LaunchPlayerBindingSource::ReservedAlias,
+            }
+        );
+        assert_eq!(caller_alias.as_deref(), Some("Tachyon"));
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn door_sys_handle_binds_before_the_real_name() {
+        let game_dir = temp_first_time_game_copy();
+        seed_joined_player_handle(&game_dir, 2, "Tachyon");
+        seed_joined_player_handle(&game_dir, 3, "Starlord");
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+
+        let (binding, caller_alias) = resolve_launch_player_binding(
+            &door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(binding.player_record_index_1_based(), Some(3));
+        assert_eq!(caller_alias.as_deref(), Some("Starlord"));
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn new_door_sys_caller_joins_under_the_handle() {
+        let game_dir = temp_first_time_game_copy();
+        let campaign_store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+
+        let (binding, caller_alias) = resolve_launch_player_binding(
+            &door_sys_caller(&game_dir),
+            &RuntimeConfig::default(),
+            &campaign_store,
+        )
+        .expect("binding should resolve");
+
+        assert_eq!(binding, LaunchPlayerBinding::UnboundDropfile);
+        assert_eq!(caller_alias.as_deref(), Some("Starlord"));
 
         let _ = fs::remove_dir_all(&game_dir);
     }
@@ -1419,11 +1552,15 @@ mod tests {
             game_config: RuntimeConfig::default(),
         };
         let mut app = App::load(config).expect("app should load");
-        let mut parsed = parsed_args(true);
-        parsed.dropfile_alias = Some("RIVAL".to_string());
+        let parsed = parsed_args(true);
 
-        apply_launch_context(&mut app, &parsed, LaunchPlayerBinding::UnboundDropfile)
-            .expect("launch context should apply");
+        apply_launch_context(
+            &mut app,
+            &parsed,
+            LaunchPlayerBinding::UnboundDropfile,
+            Some("RIVAL".to_string()),
+        )
+        .expect("launch context should apply");
 
         assert_eq!(app.current_screen(), ScreenId::FirstTimeMenu);
         assert!(app.startup_state.unbound_bbs_caller);
