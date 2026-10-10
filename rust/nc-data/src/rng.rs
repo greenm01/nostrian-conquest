@@ -1,5 +1,6 @@
 use rand::random;
 
+use crate::state_hash::StateHash;
 use crate::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 
 const STREAM_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
@@ -82,39 +83,36 @@ pub fn generate_campaign_seed() -> u64 {
     }
 }
 
+/// A campaign seed from the game state, its reports, and its queued mail.
+/// The game state is hashed field by field from the typed model, not from a
+/// file encoding (see `state_hash.rs`).
 pub fn derive_campaign_seed_from_runtime(
     game_data: &CoreGameData,
     report_block_rows: &[ReportBlockRow],
     queued_mail: &[QueuedPlayerMail],
 ) -> u64 {
-    let mut hash = 0xEC15_0000_0000_0001u64;
-    hash = hash_bytes(hash, &game_data.player.to_bytes());
-    hash = hash_bytes(hash, &game_data.planets.to_bytes());
-    hash = hash_bytes(hash, &game_data.fleets.to_bytes());
-    hash = hash_bytes(hash, &game_data.bases.to_bytes());
-    hash = hash_bytes(hash, &game_data.ipbm.to_bytes());
-    hash = hash_bytes(hash, &game_data.setup.to_bytes());
-    hash = hash_bytes(hash, &game_data.conquest.to_bytes());
+    let mut hash = StateHash::new(0xEC15_0000_0000_0001);
+    hash.game_data(game_data);
 
     for row in report_block_rows {
-        hash = hash_u64(hash, row.block_index as u64);
-        hash = hash_bytes(hash, row.decoded_text.as_bytes());
-        hash = hash_u64(hash, u64::from(row.recipient_deleted));
+        hash.u64(row.block_index as u64);
+        hash.bytes(row.decoded_text.as_bytes());
+        hash.u64(u64::from(row.recipient_deleted));
         if let Some(raw) = row.raw_bytes.as_ref() {
-            hash = hash_bytes(hash, raw);
+            hash.bytes(raw);
         }
     }
 
     for mail in queued_mail {
-        hash = hash_u64(hash, u64::from(mail.sender_empire_id));
-        hash = hash_u64(hash, u64::from(mail.recipient_empire_id));
-        hash = hash_u64(hash, u64::from(mail.year));
-        hash = hash_bytes(hash, mail.subject.as_bytes());
-        hash = hash_bytes(hash, mail.body.as_bytes());
-        hash = hash_u64(hash, u64::from(mail.recipient_deleted));
+        hash.u64(u64::from(mail.sender_empire_id));
+        hash.u64(u64::from(mail.recipient_empire_id));
+        hash.u64(u64::from(mail.year));
+        hash.bytes(mail.subject.as_bytes());
+        hash.bytes(mail.body.as_bytes());
+        hash.u64(u64::from(mail.recipient_deleted));
     }
 
-    mix_seed(hash)
+    mix_seed(hash.finish())
 }
 
 pub fn mix_seed(seed: u64) -> u64 {
@@ -126,19 +124,7 @@ pub fn mix_seed(seed: u64) -> u64 {
     }
 }
 
-fn hash_bytes(mut hash: u64, bytes: &[u8]) -> u64 {
-    hash = hash_u64(hash, bytes.len() as u64);
-    for &byte in bytes {
-        hash = hash_u64(hash, u64::from(byte));
-    }
-    hash
-}
-
-fn hash_u64(hash: u64, value: u64) -> u64 {
-    splitmix64(hash ^ value.wrapping_mul(0x1000_0000_01B3))
-}
-
-fn splitmix64(mut value: u64) -> u64 {
+pub(crate) fn splitmix64(mut value: u64) -> u64 {
     value = value.wrapping_add(0x9E37_79B9_7F4A_7C15);
     value = (value ^ (value >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
     value = (value ^ (value >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);

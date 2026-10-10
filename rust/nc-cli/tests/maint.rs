@@ -1345,7 +1345,9 @@ fn maint_rust_destroyed_starbase_generates_lost_contact_report() {
     // against a declared enemy.
     set_mutual_enemy_in_player_dat(&target, 1, 2);
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    // Whether the attacker finds and destroys the base within one year turns
+    // on the campaign seed's rolls; pin one where it does.
+    let stdout = run_maint_rust_with_export_and_seed(&target, 1, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");

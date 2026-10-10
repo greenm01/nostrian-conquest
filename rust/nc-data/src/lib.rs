@@ -40,6 +40,7 @@ mod report_blocks;
 mod rng;
 mod runtime_reports;
 mod starmap;
+mod state_hash;
 mod storage;
 mod support;
 mod turns;
