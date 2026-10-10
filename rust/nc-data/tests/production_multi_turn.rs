@@ -297,3 +297,17 @@ fn build_spending_is_capped_by_planet_treasury() {
     assert_eq!(short.stardock_count_raw(0), 6);
     assert_eq!(short.stored_production_points(), 50);
 }
+
+#[test]
+fn rogue_empire_planets_collect_revenue_and_grow() {
+    let mut player = player_with_empire_name("Rogue", 50, 0);
+    player.set_player_mode_raw(0xff);
+
+    let planet = owned_planet_with_present_production(1, 100, 50, 0, 200, 200);
+    let mut game = multi_planet_game(player, vec![planet], vec![]);
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+
+    let planet = &game.planets.records[0];
+    assert_eq!(planet.present_production_points(), Some(57));
+    assert_eq!(planet.stored_production_points(), 28);
+}

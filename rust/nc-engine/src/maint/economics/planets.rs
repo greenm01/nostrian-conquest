@@ -26,7 +26,8 @@ pub(super) fn process_planet_economics(
         else {
             continue;
         };
-        if matches!(player.owner_mode_raw(), 0x00 | 0xff) {
+        // Civil disorder (0x00) freezes the economy; rogue empires (0xff) keep it.
+        if player.owner_mode_raw() == 0x00 {
             continue;
         }
 
