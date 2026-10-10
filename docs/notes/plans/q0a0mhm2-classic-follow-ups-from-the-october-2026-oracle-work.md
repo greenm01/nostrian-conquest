@@ -116,3 +116,44 @@ planetary assaults, fleet battles, encounters, and reports, checked against
 - Decode the DATABASE.DAT and planet-status updates after a battle.
 - Merge the two specs into one classic combat reference with a short plain
   summary first; keep the Rust comparison in its own section.
+
+## t046
+
+A Join order stores its host as the host's fleet number within the empire
+(FLEETS.DAT `0x00`), not its record id. ECMAINT's merge (`2895:4a6b`)
+compares `0x23` with word `0x00`, and ECGAME's renumbering (`0x15b35`)
+rewrites `0x23` when fleet numbers change. Rust's `set_join_fleet_order`,
+the maintenance id remap, and the join tests treat `0x23` as the record id.
+The two agree only while id equals fleet number, which holds for empire 1 in
+the fixtures and fails for everyone else. Found by t042.
+
+## t047
+
+Small classic-match items from the t039 decodes and t042:
+
+- Rust writes maintenance-day codes (`MAINTENANCE_DAY_ENABLED_CODES` in
+  `rust/nc-data/src/lib.rs`) that came from an ECUTIL bug; classic reads
+  the seven bytes as booleans. Write 1 for an enabled day.
+- A new fleet from detach or commission starts at ROE 6 if it has warships,
+  else 0, and ECGAME then prompts. nc-game passes the donor's ROE without
+  asking. Use classic's default.
+- Classic never updates the PLAYER.DAT fleet chain tail on detach either;
+  Rust matches it. No change; recorded here so it is not reopened.
+- "Purge after turns" (SETUP 518) does nothing in classic v1.5. Rust's
+  setting is dead too; say so in the sysop manual or remove the setting.
+
+## t048
+
+Classic runs the planet economy and the build queue (`1852:0000`, called at
+`0824:29d1`) before the 52-tick year driver (`0824:1004`). Rust runs
+economy and builds after the tick loop, so ships commissioned this year
+appear after movement instead of before it. `docs/dev/economics.md`
+"Turn-Order Placement" states the Rust order as if it were classic's. Match
+classic's order and correct the doc. Found by t041.
+
+## t049
+
+The nc-fuzz `engine_invariants_hold_under_hegel` test failed on two agents'
+branches ("event names the wrong fleet" on a BombardWorld mission event)
+and passes on main, three runs in a row. Find out whether it is seed- or
+load-dependent and make it deterministic.
