@@ -4,14 +4,17 @@
 //!
 //! An index either names a fleet record after maintenance or is the
 //! engine's removed-fleet marker (`usize::MAX`). A named record must belong
-//! to the event's empire; where the event also captured a fleet number or a
-//! location, the record must match those too. Fleets do not move after the
-//! movement phase, so a location is the fleet's final one, or its starting
-//! one for an event from the departure interception before movement.
+//! to the event's empire and carry the fleet number the event captured, if
+//! any. A location an event captured is where the fleet was in the event's
+//! tick, and the fleet may move on before the year ends: an aborted mission
+//! heads home, a beaten force retreats, a fleet that declined an encounter
+//! sails on. So a location is checked only against a fleet that held its
+//! sector on the same order all year; that fleet was never anywhere else.
 
 use nc_data::{
     ColonizationResolvedEvent, CoreGameData, EncounterDispositionEvent, FleetRecord,
-    InvalidPlayerStateEvent, JoinMissionHostEvent, MissionRetargetEvent, SalvageResolvedEvent,
+    InvalidPlayerStateEvent, JoinMissionHostEvent, MissionRetargetEvent, Order,
+    SalvageResolvedEvent,
 };
 
 use super::{TurnObservation, Violation};
@@ -73,21 +76,31 @@ impl FleetClaim {
         }
         if let Some(coords) = self.coords {
             let at = fleet.current_location_coords_raw();
-            let started_at = before
+            let held_all_year = before
                 .iter()
                 .find(|start| {
                     start.owner_empire_raw() == self.owner && start.local_slot_word_raw() == number
                 })
-                .map(FleetRecord::current_location_coords_raw);
-            if at != coords && started_at != Some(coords) {
+                .is_some_and(|start| {
+                    start.current_location_coords_raw() == at
+                        && standing_order(start) == standing_order(fleet)
+                });
+            if at != coords && held_all_year {
                 return Some(format!(
-                    "index {} is empire {} fleet {number} at {at:?}, not at {coords:?}",
+                    "index {} is empire {} fleet {number}, which held {at:?} all year, not at {coords:?}",
                     self.fleet_idx, self.owner
                 ));
             }
         }
         None
     }
+}
+
+fn standing_order(fleet: &FleetRecord) -> (Order, [u8; 2]) {
+    (
+        fleet.standing_order_kind(),
+        fleet.standing_order_target_coords_raw(),
+    )
 }
 
 pub fn check(observation: &TurnObservation) -> Vec<Violation> {

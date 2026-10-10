@@ -1,0 +1,24 @@
+// t049: empire 1 fleet 2 (one cruiser, one ETAC) enters its Bombard target
+// (14,6) in week 16 of turn 6 and reports the arrival there; a later re-check
+// of the guard force aborts the mission without a report, and the fleet heads
+// home for the rest of the year. Hegel-shrunk from map seed 623, then cut to
+// the turn files and actions the path still needs.
+combat-scenario player_count=3 year=3000 seed=623 baseline="builder-compatible" turns=6 label="nc-fuzz"
+
+house record=1
+house record=2
+house record=3
+fleet record=1 {
+  ships bb=0 ca=3 dd=3 sc=0 tt=3 armies=0 etac=1
+}
+fleet record=5 {
+  ships bb=0 ca=3 dd=12 sc=0 tt=0 armies=0 etac=0
+}
+fleet record=9 {
+  ships bb=0 ca=0 dd=0 sc=0 tt=0 armies=0 etac=200
+}
+
+turn-file path="turn-01-empire-1.kdl" turn=1
+turn-file path="turn-02-empire-1.kdl" turn=2
+turn-file path="turn-05-empire-1.kdl" turn=5
+turn-file path="turn-05-empire-2.kdl" turn=5

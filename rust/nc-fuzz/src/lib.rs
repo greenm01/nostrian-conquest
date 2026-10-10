@@ -9,6 +9,7 @@ mod failure;
 mod game;
 mod invariants;
 mod policy;
+mod replay;
 mod setup;
 mod storage;
 mod turn;
@@ -18,6 +19,7 @@ pub use failure::{SCENARIO_FILE_NAME, failure_dir, write_scenario};
 pub use game::{CaseRun, run_case};
 pub use invariants::{TurnObservation, Violation, check_turn};
 pub use policy::{PlannedTurn, Policy, plan_turn};
+pub use replay::replay_scenario;
 pub use setup::{CaseSetup, FuzzConfig, START_YEAR, case_count_from_env};
 
 /// Play one case and panic on any violation, after writing the case as a
