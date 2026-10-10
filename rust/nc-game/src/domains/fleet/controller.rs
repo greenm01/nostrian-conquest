@@ -2529,6 +2529,11 @@ impl App {
     }
 
     pub(crate) fn fleet_group_target_status_line(&self) -> String {
+        if self.fleet.group_mode == crate::screen::FleetGroupOrderMode::SeekingNextClosest
+            && let Some(question) = self.fleet_group_seek_next_closest()
+        {
+            return question.notice;
+        }
         if self.fleet.group_mode == crate::screen::FleetGroupOrderMode::ConfirmingTarget
             && let (Some(mission_code), Ok(destination)) = (
                 self.fleet.group_mission_code,

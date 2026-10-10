@@ -569,6 +569,8 @@ pub enum FleetOverlayPromptMode {
     OrderTarget,
     OrderTargetX,
     OrderTargetY,
+    /// ECGAME's Seek Home question for a fleet already in its nearest system.
+    SeekNextClosest,
     OrderConfirm,
     StarbaseMoveDecision,
     StarbaseMoveDestination,
