@@ -9,6 +9,8 @@ tags: [investigation, economy, balance, simulation]
 
 Keep one empire tax rate as the player's economic control. Borrow EC4X's automatic development, diminishing returns, and connection between economic strength and military reach. Borrow VBAM's lasting costs of war and economic objectives for fleets. Express these through NC's existing production, potential, treasury, ships, and missions. The numbers show that NC already develops colonies far faster than classic. Geography and ETAC travel strongly affect when those colonies matter. Improve forecasts and rounding before changing that pace. Use campaign simulations to tune meaningful opportunities for expansion, defense, and conquest. Do not add investment menus, research budgets, hidden handicaps, or arbitrary eras.
 
+Update after combat approvals: paid repairs and yards below are rejected alternatives; the selected rule is automatic RT recovery. The [t082 scope for the active t051 economy review](0t08owtu-economy-review-decisions-and-campaign-pacing-scope.md) carries forward this evidence with DD DS 8, the approved build contract and the new evidence requirements. Earlier numbers retain their original model assumptions.
+
 The practical findings, in brief:
 
 - **NC's frontier becomes useful much sooner.** At 50% tax, a production-1, potential-100 colony reaches production 77 after ten economic passes in the NC model, versus about 37.5 in the classic model. Cumulative income is 252 versus about 106.4. Keep expansion rewarding; do not restore classic's stagnation merely for fidelity.
