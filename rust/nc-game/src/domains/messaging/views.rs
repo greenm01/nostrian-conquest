@@ -48,6 +48,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 (OutboxMode::Read, Some(mail)) => app.message_compose.render_outbox_message(
                     frame.geometry,
                     &runtime_outgoing_message_lines(&app.game_data, mail),
+                    app.messaging.compose_outbox_read_scroll,
                 ),
                 (mode, _) => app.message_compose.render_outbox(
                     frame.geometry,

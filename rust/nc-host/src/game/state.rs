@@ -74,7 +74,8 @@ pub fn build_game_state_payload(
         owned_planets: owned_planets_state(&snapshot.game_data, viewer_empire_id),
         owned_fleets: owned_fleets_state(&snapshot.game_data, viewer_empire_id),
     };
-    let queued_mail = visible_queued_mail(&snapshot.queued_mail, viewer_empire_id);
+    let queued_mail =
+        visible_queued_mail(&snapshot.queued_mail, viewer_empire_id, snapshot.game_year);
     let report_blocks = visible_report_blocks(&snapshot.report_block_rows, viewer_empire_id);
 
     let mut result = GameState {
@@ -293,10 +294,11 @@ fn owned_fleets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<Hos
 fn visible_queued_mail(
     queued_mail: &[QueuedPlayerMail],
     viewer_empire_id: u8,
+    current_year: u16,
 ) -> Vec<HostedQueuedMail> {
     queued_mail
         .iter()
-        .filter(|mail| mail.is_visible_to_recipient(viewer_empire_id))
+        .filter(|mail| mail.is_visible_to_recipient(viewer_empire_id, current_year))
         .map(|mail| HostedQueuedMail {
             sender_empire_id: mail.sender_empire_id,
             recipient_empire_id: mail.recipient_empire_id,

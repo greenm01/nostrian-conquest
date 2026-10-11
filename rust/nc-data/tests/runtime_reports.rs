@@ -3,16 +3,20 @@ use std::path::PathBuf;
 use nc_compat::load_classic_core_files;
 use nc_data::{
     CoreGameData, InboxItemSource, InboxItemType, QueuedPlayerMail, ReportBlockRow,
-    ReportSummaryBucket, ReportsPreview, runtime_inbox_items, runtime_inbox_preview_lines,
-    runtime_outgoing_inbox_items,
+    ReportSummaryBucket, ReportsPreview, has_visible_runtime_messages, runtime_inbox_items,
+    runtime_inbox_preview_lines, runtime_outgoing_inbox_items,
 };
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The fixture in 3004, so the 3003 mail below has been delivered.
 fn fixture_game_data() -> CoreGameData {
-    load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
+    let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
+        .expect("load fixture");
+    game_data.conquest.set_game_year(3004);
+    game_data
 }
 
 fn visible_mail(
@@ -172,7 +176,7 @@ fn runtime_outgoing_inbox_items_list_this_turns_own_mail_newest_first() {
     let year = game_data.conquest.game_year();
     let queue = [
         visible_mail(1, 2, year, "First", "Hello"),
-        visible_mail(2, 1, year, "Incoming", "Hi"),
+        visible_mail(2, 1, year - 1, "Incoming", "Hi"),
         visible_mail(1, 3, year, "Second", "Line one\nLine two"),
         visible_mail(1, 2, year - 1, "Delivered", "Old"),
     ];
@@ -203,4 +207,29 @@ fn runtime_outgoing_inbox_items_list_this_turns_own_mail_newest_first() {
             .iter()
             .all(|item| item.item_type == InboxItemType::Message && item.subject == "Incoming")
     );
+}
+
+#[test]
+fn recipient_sees_mail_only_after_the_maintenance_that_delivers_it() {
+    let mut game_data = fixture_game_data();
+    let year = game_data.conquest.game_year();
+    let queue = [visible_mail(2, 1, year, "Truce", "Hold fire")];
+
+    // Queued this year: the sender lists it, the recipient has nothing yet.
+    assert_eq!(runtime_outgoing_inbox_items(&game_data, 2, &queue).len(), 1);
+    assert!(runtime_inbox_items(&game_data, 1, &[], &queue).is_empty());
+    assert!(!has_visible_runtime_messages(1, &queue, year));
+    let preview = ReportsPreview::from_block_rows(&game_data, 1, &[], &queue);
+    assert!(preview.message_blocks.is_empty());
+
+    // Maintenance advances the year and so delivers it.
+    game_data.conquest.set_game_year(year + 1);
+    assert!(runtime_outgoing_inbox_items(&game_data, 2, &queue).is_empty());
+    let items = runtime_inbox_items(&game_data, 1, &[], &queue);
+    assert_eq!(items.len(), 1);
+    assert_eq!(items[0].item_type, InboxItemType::Message);
+    assert_eq!(items[0].subject, "Truce");
+    assert!(has_visible_runtime_messages(1, &queue, year + 1));
+    let preview = ReportsPreview::from_block_rows(&game_data, 1, &[], &queue);
+    assert_eq!(preview.message_blocks.len(), 1);
 }

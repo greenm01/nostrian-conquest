@@ -3,7 +3,9 @@ use nc_data::QueuedPlayerMail;
 
 use crate::app::Action;
 use crate::domains::messaging::state::{InboxFocus, OutboxMode};
-use crate::domains::messaging::{MessagingAction, delete_item_prompt, delete_prompt_choice};
+use crate::domains::messaging::{
+    MessagingAction, delete_item_prompt, delete_prompt_choice, preview_scroll_lines,
+};
 use crate::domains::startup::screens::reports::draw_preview_border;
 use crate::reports::runtime_inbox_preview_lines;
 use crate::screen::layout::{
@@ -46,6 +48,9 @@ const OUTBOX_SUBJECT_ROOM: usize = PLAYFIELD_WIDTH
     - (OUTBOX_COLUMNS.len() + 1)
     - OUTBOX_COLUMNS[0].width
     - OUTBOX_RECIPIENT_ROOM;
+/// The read view's box starts under the title bar and ends above the command
+/// line.
+const OUTBOX_MESSAGE_BOX_TOP_ROW: usize = 1;
 
 impl MessageComposeScreen {
     pub fn new() -> Self {
@@ -392,17 +397,19 @@ impl MessageComposeScreen {
         Ok(buffer)
     }
 
-    /// One queued message, drawn in the inbox's preview box; any key returns
-    /// to the outbox list.
+    /// One queued message, drawn in the inbox's preview box from line
+    /// `scroll`. The inbox preview's scroll keys move through it; any other
+    /// key returns to the outbox list.
     pub fn render_outbox_message(
         &mut self,
         geometry: ScreenGeometry,
         message_lines: &[String],
+        scroll: usize,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let mut buffer = new_playfield_for(geometry);
         draw_title_bar_padded(&mut buffer, 0, "COMMUNICATE (SEND MESSAGE):");
         let command_row = command_line_row_for(geometry);
-        let box_top_row = 1;
+        let box_top_row = OUTBOX_MESSAGE_BOX_TOP_ROW;
         let box_bottom_row = command_row.saturating_sub(1);
         draw_preview_border(
             &mut buffer,
@@ -410,9 +417,13 @@ impl MessageComposeScreen {
             box_bottom_row,
             InboxFocus::Preview,
         );
-        let body_rows = box_bottom_row.saturating_sub(box_top_row + 1);
-        let lines = runtime_inbox_preview_lines(message_lines, PLAYFIELD_WIDTH.saturating_sub(2));
-        for (idx, line) in lines.iter().take(body_rows).enumerate() {
+        let lines = outbox_message_view_lines(message_lines);
+        for (idx, line) in lines
+            .iter()
+            .skip(scroll)
+            .take(outbox_message_body_rows(geometry))
+            .enumerate()
+        {
             buffer.write_text(box_top_row + 1 + idx, 1, line, classic::body_style());
         }
         draw_dismiss_prompt_padded(&mut buffer, command_row);
@@ -522,7 +533,10 @@ impl MessageComposeScreen {
         match mode {
             OutboxMode::List => {}
             OutboxMode::Read => {
-                return Action::Messaging(MessagingAction::ReturnToComposeOutboxList);
+                return Action::Messaging(match preview_scroll_lines(key) {
+                    Some(delta) => MessagingAction::ScrollComposeOutboxMessage(delta),
+                    None => MessagingAction::ReturnToComposeOutboxList,
+                });
             }
             OutboxMode::DeleteConfirm => {
                 return match delete_prompt_choice(key) {
@@ -567,6 +581,19 @@ pub fn recipient_visible_rows(geometry: ScreenGeometry) -> usize {
 
 pub fn outbox_visible_rows(geometry: ScreenGeometry) -> usize {
     standard_table_visible_rows_for(geometry, 4)
+}
+
+/// Rows inside the read view's box, between its borders.
+pub fn outbox_message_body_rows(geometry: ScreenGeometry) -> usize {
+    command_line_row_for(geometry)
+        .saturating_sub(1)
+        .saturating_sub(OUTBOX_MESSAGE_BOX_TOP_ROW + 1)
+}
+
+/// A queued message's lines wrapped to the read view's box, as the inbox
+/// preview wraps them.
+pub fn outbox_message_view_lines(message_lines: &[String]) -> Vec<String> {
+    runtime_inbox_preview_lines(message_lines, PLAYFIELD_WIDTH.saturating_sub(2))
 }
 
 #[derive(Debug, Clone)]

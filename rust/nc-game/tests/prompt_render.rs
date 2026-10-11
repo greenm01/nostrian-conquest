@@ -498,7 +498,7 @@ fn compose_outbox_message_view_fits_80x25_in_the_inbox_preview_box() {
     ];
     lines.extend((1..=40).map(|idx| format!("line {idx:02} {}", "w".repeat(70))));
     let buffer = screen
-        .render_outbox_message(ScreenGeometry::local_default(), &lines)
+        .render_outbox_message(ScreenGeometry::local_default(), &lines, 0)
         .expect("outbox message view renders");
 
     assert_eq!(buffer.height(), PLAYFIELD_HEIGHT);

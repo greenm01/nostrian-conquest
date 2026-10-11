@@ -498,3 +498,9 @@ outbox shows only this turn's queued messages; a recipient sees a message
 only after the maintenance that delivers it (shared local and BBS games
 delivered at once before); the outbox read view scrolls like the inbox
 preview. Those three land as a follow-up commit under t067.
+
+Follow-up (2026-10-10): the outbox lists only this turn's queued messages;
+mail reaches its recipient only after the maintenance that delivers it (its
+year is before the current one) in the inbox, login review, counts, bulk
+delete, nc-helm, and the hosted payload; the outbox read view scrolls with
+the inbox preview's keys.
