@@ -52,10 +52,20 @@ use the existing detail view rather than changing the table geometry.
 
 ## Scope
 
-The automatic recovery concept and the RT name are approved. Numerical
-RT values remain unselected. Uniform RT 2 and DD 1 / CA 2 / BB 3 are
-experiments to compare, not accepted values. Set explicit values for the
-other ship classes and consider starbase recovery separately when tuning.
+The automatic recovery concept and the RT name are approved. The owner set
+the values on 2026-10-10 after Claude and Codex's joint recommendation:
+**RT 2 for every class, starbases included.** A ship damaged this year
+fights damaged next year and the year after, and returns to full strength
+after that; a full qualifying year at a friendly starbase speeds that up.
+RT stays a per-class stat, so classes can differ later: DD 1 is a
+candidate playtest, and BB 3 is not used. RT 2 is the shortest value that
+lets the starbase bonus matter; with RT 1 every eligible hull recovers in
+the same pass anyway. Codex's campaign controls (t068, in
+[4lasivnr](../investigations/4lasivnr-ground-combat-and-recovery-turns-campaign-calibration.md)):
+fleets that fight every second year lose 184 build points under RT 2
+against 105 under RT 1, and are always damaged at the next fight; under
+DD 1 / CA 2 / BB 3 a battleship fleet fighting every third year is wiped
+out 38.8% of the time against 13.8% under RT 2.
 
 The owner rejected paid repairs and shipyard management. The earlier
 25%-cost and installment proposals are historical alternatives, not future
