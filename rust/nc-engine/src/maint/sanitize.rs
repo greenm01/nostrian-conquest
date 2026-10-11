@@ -4,8 +4,8 @@ use crate::{
     PlayerDiplomacyValidationError, ProductionItemKind,
 };
 use nc_data::{
-    Coords, DiplomaticRelation, set_diplomatic_relation_toward, set_mission_target,
-    stardock_slot_kind, stored_diplomatic_relation,
+    DiplomaticRelation, set_diplomatic_relation_toward, stardock_slot_kind,
+    stored_diplomatic_relation,
 };
 
 /// ECMAINT checks no order of the empires it plays. A rogue or autopilot
@@ -95,11 +95,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                                 retreat_target,
                             );
                         } else {
-                            let fleet = &mut game_data.fleets[fleet_idx];
-                            fleet.order = Order::HoldPosition;
-                            fleet.speed = 0;
-                            fleet.target = Coords::from_array(coords);
-                            set_mission_target(fleet, 0, 0);
+                            super::combat::hold_in_place(&mut game_data.fleets[fleet_idx]);
                         }
                         events.push(InvalidPlayerStateEvent::FleetMission {
                             fleet_idx,

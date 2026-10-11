@@ -3,6 +3,9 @@
 //! Provides data structures and parsers for both modern `DOOR.KDL` files and
 //! legacy BBS dropfiles (`DOOR32.SYS`, `DOOR.SYS`, `CHAIN.TXT`).
 
+pub mod cp437;
+pub mod legacy;
+
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 use thiserror::Error;
@@ -21,6 +24,129 @@ pub enum DropfileError {
 
     #[error("missing required field: '{0}'")]
     MissingField(&'static str),
+}
+
+/// The dropfile format specification variant.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum DropfileFormat {
+    #[default]
+    DoorKdl,
+    Door32,
+    DoorSys,
+    ChainTxt,
+}
+
+/// Transport connection type reported by the BBS dropfile.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub enum DoorConnectionType {
+    #[default]
+    Local,
+    Serial,
+    TelnetSocket,
+    Unknown(u32),
+}
+
+/// Normalized dropfile data structure across both modern KDL and legacy formats.
+#[derive(Debug, Clone, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct Dropfile {
+    /// Source format of the dropfile.
+    pub format: DropfileFormat,
+    /// Player handle / alias used to bind a game seat.
+    pub alias: Option<String>,
+    /// Fallback alias (e.g. DOOR.SYS real name when handle is absent or binds no seat).
+    pub fallback_alias: Option<String>,
+    /// True if the alias is the user's real name rather than a handle.
+    pub alias_is_real_name: bool,
+    /// Session time limit in minutes.
+    pub timeout_minutes: Option<u32>,
+    /// Terminal width in columns.
+    pub screen_columns: Option<usize>,
+    /// Terminal height in rows.
+    pub screen_rows: Option<usize>,
+    /// Connection transport type.
+    pub connection_type: Option<DoorConnectionType>,
+    /// Socket descriptor or port if passed.
+    pub socket_descriptor: Option<u64>,
+    /// In-game event callback webhook URL (from DOOR.KDL).
+    pub event_webhook: Option<String>,
+    /// In-game event callback bearer token secret (from DOOR.KDL).
+    pub callback_secret: Option<String>,
+    /// Input device hint (keyboard, touchscreen, hybrid).
+    pub input_device: InputDevice,
+    /// Encoding hint (cp437, utf-8).
+    pub encoding: String,
+    /// Caller platform ID (e.g. Discord snowflake, Matrix MXID).
+    pub platform_id: Option<String>,
+}
+
+impl From<DoorKdl> for Dropfile {
+    fn from(kdl: DoorKdl) -> Self {
+        let connection_type = match &kdl.transport.mode {
+            TransportMode::LoopbackTcp { .. } => Some(DoorConnectionType::TelnetSocket),
+            TransportMode::UnixSocket { .. } => Some(DoorConnectionType::TelnetSocket),
+            TransportMode::Stdio => Some(DoorConnectionType::Local),
+        };
+
+        let socket_descriptor = match &kdl.transport.mode {
+            TransportMode::LoopbackTcp { port, .. } => Some(*port as u64),
+            _ => None,
+        };
+
+        let event_webhook = kdl.callbacks.as_ref().and_then(|c| c.event_webhook.clone());
+        let callback_secret = kdl.callbacks.as_ref().and_then(|c| c.secret.clone());
+
+        Dropfile {
+            format: DropfileFormat::DoorKdl,
+            alias: Some(kdl.caller.handle.clone()),
+            fallback_alias: kdl.caller.display_name,
+            alias_is_real_name: false,
+            timeout_minutes: kdl.session.time_limit_seconds.map(|s| s / 60),
+            screen_columns: Some(kdl.terminal.cols as usize),
+            screen_rows: Some(kdl.terminal.rows as usize),
+            connection_type,
+            socket_descriptor,
+            event_webhook,
+            callback_secret,
+            input_device: kdl.terminal.input_device,
+            encoding: kdl.terminal.encoding,
+            platform_id: Some(kdl.caller.platform_id),
+        }
+    }
+}
+
+impl Dropfile {
+    /// Auto-detect the dropfile format from the filename/extension and parse it.
+    ///
+    /// - `.kdl` or `door.kdl` -> modern [`DoorKdl`] parser
+    /// - `DOOR32.SYS` -> legacy DOOR32 parser
+    /// - `DOOR.SYS` -> legacy DOOR.SYS parser
+    /// - `CHAIN.TXT` -> legacy WWIV CHAIN.TXT parser
+    pub fn load_autodetect(path: &Path) -> Result<Self, DropfileError> {
+        let filename = path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("")
+            .to_ascii_uppercase();
+
+        if filename.ends_with(".KDL") || filename == "DOOR.KDL" {
+            let kdl = DoorKdl::load_from_file(path)?;
+            return Ok(Dropfile::from(kdl));
+        }
+
+        let bytes = std::fs::read(path)?;
+        let content = match String::from_utf8(bytes.clone()) {
+            Ok(text) => text,
+            Err(_) => cp437::cp437_to_string(&bytes),
+        };
+        let lines = legacy::split_lines(&content);
+
+        match filename.as_str() {
+            "DOOR32.SYS" => Ok(legacy::parse_door32(&lines)),
+            "DOOR.SYS" => Ok(legacy::parse_door_sys(&lines)),
+            "CHAIN.TXT" => Ok(legacy::parse_chain_txt(&lines)),
+            other => Err(DropfileError::UnknownFormat(other.to_string())),
+        }
+    }
 }
 
 /// Authorization role of the caller.
@@ -490,5 +616,78 @@ mod tests {
         assert_eq!(original.session.node, parsed.session.node);
         assert_eq!(original.session.time_limit_seconds, parsed.session.time_limit_seconds);
         assert_eq!(original.caller.role, parsed.caller.role);
+
+        let unified = Dropfile::from(parsed);
+        assert_eq!(unified.alias.as_deref(), Some("starmaster"));
+        assert_eq!(unified.timeout_minutes, Some(30));
+        assert_eq!(unified.connection_type, Some(DoorConnectionType::TelnetSocket));
+        assert_eq!(unified.socket_descriptor, Some(5042));
+    }
+
+    #[test]
+    fn parse_door32_sample() {
+        let text = "\
+2\r\n\
+1234\r\n\
+38400\r\n\
+Mystic BBS\r\n\
+1\r\n\
+John Doe\r\n\
+StarMaster\r\n\
+30\r\n\
+45\r\n\
+1\r\n\
+80\r\n\
+25\r\n";
+        let lines = legacy::split_lines(text);
+        let dropfile = legacy::parse_door32(&lines);
+        assert_eq!(dropfile.format, DropfileFormat::Door32);
+        assert_eq!(dropfile.alias.as_deref(), Some("StarMaster"));
+        assert_eq!(dropfile.fallback_alias.as_deref(), Some("John Doe"));
+        assert_eq!(dropfile.timeout_minutes, Some(45));
+        assert_eq!(dropfile.screen_columns, Some(80));
+        assert_eq!(dropfile.screen_rows, Some(25));
+        assert_eq!(dropfile.connection_type, Some(DoorConnectionType::TelnetSocket));
+        assert_eq!(dropfile.socket_descriptor, Some(1234));
+    }
+
+    #[test]
+    fn parse_door_sys_sample() {
+        let mut lines_vec = vec!["COM1:", "2400", "8", "1", "19200", "Y", "Y", "Y", "Y", "Jane Doe"];
+        while lines_vec.len() < 18 {
+            lines_vec.push("");
+        }
+        lines_vec.push("30"); // Line 19 = timeout minutes
+        lines_vec.push("Y");  // Line 20 = ANSI
+        lines_vec.push("25"); // Line 21 = rows
+        while lines_vec.len() < 35 {
+            lines_vec.push("");
+        }
+        lines_vec.push("GalacticAce"); // Line 36 = handle
+
+        let text = lines_vec.join("\r\n");
+        let lines = legacy::split_lines(&text);
+        let dropfile = legacy::parse_door_sys(&lines);
+        assert_eq!(dropfile.format, DropfileFormat::DoorSys);
+        assert_eq!(dropfile.alias.as_deref(), Some("GalacticAce"));
+        assert_eq!(dropfile.fallback_alias.as_deref(), Some("Jane Doe"));
+        assert_eq!(dropfile.timeout_minutes, Some(30));
+        assert_eq!(dropfile.screen_rows, Some(25));
+    }
+
+    #[test]
+    fn autodetect_file_loading() {
+        let dir = std::env::temp_dir().join(format!("nc_dropfile_test_{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        let door32_path = dir.join("DOOR32.SYS");
+        std::fs::write(&door32_path, "2\n5555\n38400\nBBS\n1\nReal\nHandle\n30\n20\n1\n80\n25\n").unwrap();
+
+        let loaded = Dropfile::load_autodetect(&door32_path).expect("autodetect DOOR32");
+        assert_eq!(loaded.format, DropfileFormat::Door32);
+        assert_eq!(loaded.alias.as_deref(), Some("Handle"));
+        assert_eq!(loaded.socket_descriptor, Some(5555));
+
+        let _ = std::fs::remove_dir_all(&dir);
     }
 }

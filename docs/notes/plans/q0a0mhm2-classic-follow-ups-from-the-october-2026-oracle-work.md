@@ -672,3 +672,67 @@ Owner rulings after t094 (2026-10-11): a planetless rogue empire is not a
 contender for the throne (t094's rule stands, over counting it while any
 fleet survives); a planetless civil-disorder empire becomes a rogue, as in
 classic (t099 item 3).
+
+Owner ruling (2026-10-11, t099): do not copy the merge pass's stale
+starbase-rest flag. A Guard Starbase host must name an existing base that
+rests at its target. A missing base declines the merge as host; an earlier
+fleet cannot lend it eligibility. This is a deliberate correction of a
+classic bug, not a change to ordinary host or donor eligibility.
+
+Result (t099, 2026-10-11): the AI merge pass now visits only its owned
+worlds' orbital layers, in planet and fleet order. Rogue fleets may host
+or donate regardless of order; autopilot hosts must be stationary on
+Hold, Guard/Blockade or Guard Starbase, and autopilot donors must be
+stationary on Hold or Guard/Blockade. A guard can host only when its own
+base rests at its target. The 3000-ship pair limit is shared with guard
+arrival merging. The host keeps its ROE, combines recovery cohorts and
+keeps pursuit history. The owner-approved missing-base correction above
+replaces classic's stale local.
+
+The saved planet count gates conversion at the start of the orders pass
+(`24a3:0c2a`). Planetless civil-disorder empires become rogues, keep their
+existing stances and any non-default name, then receive patrol orders in
+the same year. Classic clears the handle; NC retains an eliminated
+player's handle and terminal lifecycle so their final review and later
+lockout still work. The hosted diplomacy display shows Defeated for that
+player even though the remaining force is a rogue. Civil disorder with a
+world remains unchanged. The pre-maintenance Hold fallback keeps its
+current layer as its target depth.
+
+The new merge order also exposed a fleet-chain defect: deleting the head
+set PLAYER's first-fleet record to zero instead of following the surviving
+chain. `apply_fleet_removal_remap` now follows deleted neighbours before
+remapping head, tail, next and previous links. A failing-first regression
+covers a later fleet absorbing the head.
+
+Validation: re-ran the Rust half of all eight t099 probe groups against
+the inherited classic captures. `mergeplace`, `mergeauto`, `mergeguard`
+and `mergecap` agree on the dumped records. `civil` agrees on conversion,
+names, handles, stances and removals; fleet positions differ with NC's
+seeded patrol targets, as expected. `mergenobase` deliberately differs by
+the owner's ruling. `holdlost` confirms the corrected single-world Hold
+depth. It also exposes older destination-policy differences: classic
+holds several invalid orders in place, while NC sometimes seeks another
+world, accepts an unarmed patrol or cancels a missing-host Join. These
+broader rules are not changed by t099. `holdnorm` has no classic capture
+in the inherited evidence, so it is a Rust-only control.
+
+Tests cover own-world and layer eligibility, host/donor order and speed,
+base presence/rest, the 3000-ship limit, conversion and no-world removals,
+final-review preservation, both Hold layers and chain-head removal.
+Existing test setup changes keep their original subject: Join/Rendezvous
+traces now put rogue merging at an owned world; defection tests use the
+year before the saved planet count reaches zero; the civil-disorder intel
+fixture sets its saved count to match its owned world; three guard-motion
+tests use a human empire so the new rogue pass does not remove the tested
+base. No expected combat outcome was weakened.
+
+The full workspace suite passes: 3212 tests, 0 failures, 11 ignored.
+Both manuals and PDFs were rebuilt. The final missing-base probe also
+confirms that the later surviving host remains the player's fleet-chain
+head. Fuzzing found that the conservation checker omitted the deliberate
+disbanding of unarmed planetless rogues. Its accounting now subtracts
+those hulls; the generated five-year case is retained as
+[an executable regression](../../../rust/nc-fuzz/tests/scenarios/planetless-rogue-disbands-unarmed/scenario.kdl).
+The regression failed before that accounting correction. Other losses
+still require their ordinary events.

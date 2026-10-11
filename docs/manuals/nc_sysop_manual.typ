@@ -647,6 +647,14 @@ timer. They are not BBS `config.kdl` fields. If you run a direct localhost
 game, you can ignore them and schedule `nc-sysop maint /path/to/mygame`
 yourself.
 
+Hosted games on the `nc-host` path, which is not part of the live workflow
+yet, keep their own schedule in `hosted.db`. `nc-host serve` runs a game's
+maintenance when that schedule is due, and `nc-host maint /path/to/game
+[turns]` runs it by hand. Both apply the turns players submitted over the
+relay, run the same yearly pass as `nc-sysop maint`, and send each claimed
+seat its new state. A game that has never been scheduled is armed one
+interval from the moment the daemon first sees it.
+
 // ─── 11. Player Management ────────────────────────────────────────────────────
 
 = Player Management
@@ -660,6 +668,13 @@ For direct DB-only campaigns, the default inactivity autopilot threshold is
 `3` turns. Set `inactivity_autopilot_after_turns=0` if you want it disabled. A
 player counts as active for the year by either reaching the live `nc-game`
 menus or successfully applying a `submit-turn` file.
+
+
+A defeated player retains one final review-only login. If the empire has
+no planets, the next maintenance turns it into a computer-controlled rogue
+empire. The former player's identity and final-review state remain in the
+store; this does not reopen the seat or restore orders. A planetless rogue
+patrols with its warships and does not contend for the throne.
 
 == Reserving Seats
 

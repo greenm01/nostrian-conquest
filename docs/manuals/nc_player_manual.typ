@@ -830,8 +830,11 @@ computer mind your defenses if you miss turns. By default, autopilot turns on
 after three missed turns. Your first real return that year --- logging into
 `nc-game`, entering through `nc-door`, or submitting a valid turn file ---
 turns that inactivity autopilot back off. Manual autopilot stays on until you
-change it yourself. While autopilot runs, each year it sends every fleet on
-Hold Position to the planet of yours that is best for its distance and
+change it yourself. Before giving orders, autopilot combines stationary
+Hold and Guard/Blockade fleets in orbit of your own worlds, up to 3000
+ships per fleet. A stationary Guard Starbase fleet can take those fleets
+in when its base is at rest; it is never absorbed by this automatic merge.
+While autopilot runs, each year it sends every fleet on Hold Position to the planet of yours that is best for its distance and
 production. Warships already in orbit there take Guard/Blockade, raising an
 ROE of 0 to 6. Any fleet of yours on Guard/Blockade that sits still in orbit
 with a starbase of yours that has no escort escorts that starbase, whether or
@@ -862,7 +865,10 @@ If your last recovery force is destroyed while you are planetless, or if the
 three-turn recovery window expires first, your empire becomes *Defeated*.
 Fleet Command sends you a final defeat report, and you receive one last
 review-only login so you can read the closing reports and messages. After that
-final review, you may no longer enter the campaign.
+final review, you may no longer enter the campaign. At the next maintenance,
+your planetless empire becomes a computer-controlled rogue empire. Its
+remaining warships patrol; this does not restore your ability to play or
+take away your final review.
 
 The computer's rogue empires are never eliminated. A rogue empire that loses
 its last planet sends its warships on patrol, marks every player's empire an

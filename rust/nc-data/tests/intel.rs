@@ -219,6 +219,8 @@ fn civil_disorder_contact_intel_only_reveals_owner() {
         .build_initialized_baseline()
         .expect("baseline should build");
     set_civil_disorder(&mut game_data.players[1]);
+    // The orders pass reads last year's count; this empire still owns a world.
+    game_data.players[1].planet_count = 1;
     game_data.planets[4].sector = Coords::new(9, 2);
     game_data.planets[4].owner.0 = 2;
     game_data.planets[4].years_under_owner = 2;
@@ -271,6 +273,8 @@ fn identified_civil_disorder_contact_emits_owner_only_intel() {
     }
 
     set_civil_disorder(&mut game_data.players[1]);
+    // The orders pass reads last year's count; this empire still owns a world.
+    game_data.players[1].planet_count = 1;
     game_data.planets[4].sector = Coords::new(9, 2);
     game_data.planets[4].owner.0 = 2;
     game_data.planets[4].years_under_owner = 2;

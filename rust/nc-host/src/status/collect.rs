@@ -120,7 +120,7 @@ fn build_game_status_row(
     let due_seconds = settings.maintenance_next_due_unix_seconds;
     let now = chrono::Utc::now().timestamp();
     let maintenance_due_now =
-        settings.maintenance_enabled && due_seconds.map(|due| now >= due).unwrap_or(true);
+        settings.maintenance_enabled && due_seconds.is_some_and(|due| now >= due);
 
     Ok(GameStatusRow {
         game_id,

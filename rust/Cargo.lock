@@ -3220,9 +3220,11 @@ name = "nc-bridge"
 version = "1.0.0-beta.3"
 dependencies = [
  "axum",
+ "clap",
  "futures",
  "nc-dropfile",
  "nc-log",
+ "reqwest",
  "serde",
  "serde_json",
  "tokio",
@@ -3406,6 +3408,7 @@ dependencies = [
 name = "nc-herald"
 version = "1.0.0-beta.3"
 dependencies = [
+ "axum",
  "clap",
  "nc-dropfile",
  "nc-log",

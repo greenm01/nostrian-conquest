@@ -7,8 +7,8 @@
 use super::super::{FleetRemovalRemapInfo, apply_fleet_removal_remap};
 use crate::CoreGameData;
 use nc_data::{
-    Coords, DiplomaticRelation, GameRng, Order, PlayerMode, RNG_TAG_ORDERS, Real48,
-    recompute_max_speed, set_diplomatic_relation_toward,
+    Coords, DiplomaticRelation, GameRng, Order, PlayerLifecycleState, PlayerMode, RNG_TAG_ORDERS,
+    Real48, TerminalOutcome, recompute_max_speed, set_diplomatic_relation_toward, set_rogue,
 };
 
 /// Who the pass is playing for. An autopilot empire's fleets are re-ordered
@@ -19,14 +19,17 @@ enum Governor {
     Autopilot,
 }
 
-/// Give every empire ECMAINT plays its orders for the year. Fleets removed
-/// on the way (a planetless rogue disbands its unarmed ones) are compacted
-/// out of the fleet table; the returned remap, present only when some were,
-/// names where the others went.
+/// Give every empire ECMAINT plays its orders for the year. A civil-disorder
+/// empire with no world becomes a rogue first. Fleets removed on the way (a
+/// planetless rogue disbands its unarmed ones) are compacted out of the
+/// fleet table; the returned remap, present only when some were, names where
+/// the others went.
 pub(super) fn process_home_orders(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
+    player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Result<Option<FleetRemovalRemapInfo>, Box<dyn std::error::Error>> {
+    convert_planetless_civil_disorder(game_data, player_lifecycle_states);
     let mut disbanded = vec![false; game_data.fleets.len()];
     for player_idx in 0..game_data.players.len() {
         let owner = (player_idx + 1) as u8;
@@ -50,6 +53,25 @@ pub(super) fn process_home_orders(
     Ok(disbanded
         .contains(&true)
         .then(|| apply_fleet_removal_remap(game_data, &disbanded)))
+}
+
+/// `24a3:0c2a`. At the start of the pass, before any empire is played, every
+/// civil-disorder empire with no world becomes a rogue ([`set_rogue`]); its
+/// stances stay. An empire whose player is owed a final review keeps the
+/// handle that review finds it by.
+fn convert_planetless_civil_disorder(
+    game_data: &mut CoreGameData,
+    player_lifecycle_states: &[PlayerLifecycleState],
+) {
+    for (player_idx, player) in game_data.players.iter_mut().enumerate() {
+        if player.mode != PlayerMode::CivilDisorder || player.planet_count != 0 {
+            continue;
+        }
+        let review_owed = player_lifecycle_states
+            .get(player_idx)
+            .is_some_and(|lifecycle| lifecycle.terminal_outcome == TerminalOutcome::Defeated);
+        set_rogue(player, review_owed);
+    }
 }
 
 /// `24a3:25f7`. Each fleet the governor orders gets the empire's best world

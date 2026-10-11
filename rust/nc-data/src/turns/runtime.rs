@@ -3,8 +3,9 @@ use std::path::Path;
 
 use crate::{
     CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData,
-    DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot, PlayerAccessMode, TurnSubmission,
-    TurnSubmissionError, TurnSubmissionReport, merge_player_intel_from_runtime, player_access_mode,
+    DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot, PlayerAccessMode, PlayerActivityState,
+    PlayerLifecycleState, QueuedPlayerMail, TurnSubmission, TurnSubmissionError,
+    TurnSubmissionReport, WinnerState, merge_player_intel_from_runtime, player_access_mode,
     record_submitted_turn_participation,
 };
 
@@ -32,21 +33,22 @@ pub(super) fn submit_turn_kdl_file(
     submit_to_runtime_state(&store, state, &submission)
 }
 
-/// Apply `submission` to `state` and save it, refusing the save with
-/// [`CampaignStoreError::StaleSnapshot`] if a newer year has been written
-/// since `state` was loaded.
-pub(super) fn submit_to_runtime_state(
-    store: &CampaignStore,
-    mut state: CampaignRuntimeState,
+/// Apply `submission` to loaded runtime state without saving: an empire
+/// without normal access is refused, the orders and mail go in, and the
+/// player's participation for the year is recorded.
+pub(super) fn apply_to_runtime_state(
     submission: &TurnSubmission,
+    game_data: &mut CoreGameData,
+    queued_mail: &mut Vec<QueuedPlayerMail>,
+    player_lifecycle_states: &[PlayerLifecycleState],
+    winner_state: WinnerState,
+    player_activity_states: &mut [PlayerActivityState],
 ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
     let player_record_index_1_based = submission.player_record_index_1_based;
-    let player_lifecycle_states =
-        store.latest_player_lifecycle_states(state.game_data.conquest.player_count)?;
     let access_mode = player_access_mode(
         player_record_index_1_based,
-        &player_lifecycle_states,
-        state.winner_state,
+        player_lifecycle_states,
+        winner_state,
     );
     if !matches!(access_mode, PlayerAccessMode::Normal) {
         return Err(TurnSubmissionError::Validation(match access_mode {
@@ -62,16 +64,36 @@ pub(super) fn submit_to_runtime_state(
             PlayerAccessMode::Normal => unreachable!(),
         }));
     }
-    let report = submission.apply_to(&mut state.game_data, &mut state.queued_mail)?;
-    let planet_intel_by_viewer = load_runtime_intel_by_viewer(store, &state.game_data)?;
-    let mut player_activity_states =
-        store.latest_player_activity_states(state.game_data.conquest.player_count)?;
+    let report = submission.apply_to(game_data, queued_mail)?;
     record_submitted_turn_participation(
-        &mut state.game_data,
+        game_data,
         player_record_index_1_based,
         submission.year,
-        &mut player_activity_states,
+        player_activity_states,
     );
+    Ok(report)
+}
+
+/// Apply `submission` to `state` and save it, refusing the save with
+/// [`CampaignStoreError::StaleSnapshot`] if a newer year has been written
+/// since `state` was loaded.
+pub(super) fn submit_to_runtime_state(
+    store: &CampaignStore,
+    mut state: CampaignRuntimeState,
+    submission: &TurnSubmission,
+) -> Result<TurnSubmissionReport, TurnSubmissionError> {
+    let player_count = state.game_data.conquest.player_count;
+    let player_lifecycle_states = store.latest_player_lifecycle_states(player_count)?;
+    let mut player_activity_states = store.latest_player_activity_states(player_count)?;
+    let report = apply_to_runtime_state(
+        submission,
+        &mut state.game_data,
+        &mut state.queued_mail,
+        &player_lifecycle_states,
+        state.winner_state,
+        &mut player_activity_states,
+    )?;
+    let planet_intel_by_viewer = load_runtime_intel_by_viewer(store, &state.game_data)?;
     store.save_runtime_state_structured_with_intel_and_activity(
         state.game_year,
         &state.game_data,

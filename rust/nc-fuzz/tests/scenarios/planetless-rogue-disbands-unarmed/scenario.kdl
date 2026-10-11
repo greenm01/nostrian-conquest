@@ -1,0 +1,15 @@
+// violation: ships [dd ca bb sc tt et] not conserved: before [8, 7, 0, 0, 0, 207], after [8, 7, 0, 0, 0, 7], events explain [8, 7, 0, 0, 0, 207]
+// setup: 4 empires, map seed 0, policies [random, random, random, random], collapsed Some(1), rally false, war false, armadas 1, 5 turns
+combat-scenario player_count=4 year=3000 seed=0 baseline="builder-compatible" turns=5 label="nc-fuzz"
+
+house record=1
+house record=2
+house record=3
+house record=4
+planet record=1 {
+  owner record=0
+}
+fleet record=1 {
+  ships bb=0 ca=0 dd=0 sc=0 tt=0 armies=0 etac=200
+}
+

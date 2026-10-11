@@ -9,11 +9,8 @@ use crate::maint::merging::merge_fleet_into_host;
 use crate::navigation::motion::{Course, Motion, TICKS_PER_YEAR, is_at, step, target_depth};
 use nc_data::{
     Coords, FleetMergeEvent, LostWorldResponse, Mission, Order, Real48, StarbaseReport,
-    StarbaseReportEvent, has_any_force, starship_count,
+    StarbaseReportEvent, has_any_force,
 };
-
-/// A fleet cannot grow past this many ships by merging (`2895:3057`).
-const MAX_MERGED_SHIPS: u32 = 3000;
 
 /// What a starbase's step changed, for the unit table.
 #[derive(Debug, Default)]
@@ -34,12 +31,6 @@ fn guards(fleet: &nc_data::Fleet, owner: u8, base_id: u16) -> bool {
 /// 1 inside a world's system (depth 0.5 or more), else 0.
 fn layer(depth: Real48) -> u8 {
     u8::from(depth.round() == 1)
-}
-
-/// Whether two fleets merged would stay within the ship limit.
-pub(super) fn merge_fits(game_data: &CoreGameData, host: usize, donor: usize) -> bool {
-    let fleets = &game_data.fleets;
-    starship_count(&fleets[host]) + starship_count(&fleets[donor]) <= MAX_MERGED_SHIPS
 }
 
 impl YearMovement<'_> {

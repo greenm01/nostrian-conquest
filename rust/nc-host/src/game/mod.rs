@@ -4,6 +4,7 @@ pub mod msg;
 pub mod outbox;
 pub mod seats;
 pub mod state;
+pub mod sync;
 pub mod turns;
 pub mod update;
 pub mod worker;

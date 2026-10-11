@@ -30,6 +30,23 @@ Groups:
   unescorted base: rogue, autopilot, and human, three years.
 - `worldless`: a rogue empire with no world and warships patrols; with no
   fleet it is left alone (`24a3:0c2a`, `24a3:0dbc`), three years.
+
+Groups for t099 (merge pass, hold depth, planetless civil disorder):
+
+- `mergeplace`: a rogue empire's fleets meet at its home world, at another
+  world of its own, over an unowned world, in deep space, and in the deep
+  layer of its home sector; the merge pass (`24a3:216f`) joins only the
+  ones in orbit of its worlds.
+- `mergeauto`: a human empire on autopilot with five worlds: Hold and
+  Guard/Blockade fleets merge, Guard Starbase hosts need a base at rest,
+  Guard Starbase fleets are never absorbed, moving and Move fleets are left.
+- `mergecap`: two fleets of 3000 ships merge, two of 3001 do not
+  (`2895:3057`).
+- `holdlost`: a human empire's fleet whose order needs ships it lacks holds
+  (`0b5d:07f1` and the other order tests); the target depth, target, and
+  mission word it keeps.
+- `civil`: a civil-disorder empire with no planet becomes a rogue when the
+  orders pass starts (`24a3:0c2a`); one with a planet does not.
 """
 
 from __future__ import annotations
@@ -138,6 +155,8 @@ class Scenario:
     owners: dict[tuple[int, int], int] = field(default_factory=dict)
     fleets: list[Fleet] = field(default_factory=list)
     bases: list[Base] = field(default_factory=list)
+    names: dict[int, str] = field(default_factory=dict)
+    handles: dict[int, str] = field(default_factory=dict)
 
     def write(self, target: Path) -> None:
         if target.exists():
@@ -161,6 +180,12 @@ class Scenario:
             player[0] = self.modes[empire]
             player[0x6D] = 1 if empire in self.autopilot else 0
             player[0x50] = sum(1 for owner in self.owners.values() if owner == empire)
+            if empire in self.names:
+                name = self.names[empire].encode()
+                player[0x1B] = len(name)
+                player[0x1C : 0x1C + len(name)] = name
+            if empire in self.handles:
+                player[0x01:0x1A] = self.handles[empire].ljust(25).encode()
             for other in range(1, 5):
                 player[0x53 + other] = 1 if (empire, other) in self.enemies else 0
             own = [f for f in self.fleets if f.owner == empire]
@@ -199,8 +224,11 @@ def dump(directory: Path) -> list[str]:
     for empire in range(1, len(players) // PLAYER + 1):
         p = players[(empire - 1) * PLAYER : empire * PLAYER]
         enemies = [k for k in range(1, 5) if p[0x53 + k]]
+        name = p[0x1C : 0x1C + p[0x1B]].decode(errors="replace")
+        handle = p[0x01:0x1A].decode(errors="replace").rstrip()
         lines.append(
             f"  P{empire} mode={p[0]:02x} worlds={p[0x50]} autopilot={p[0x6D]} enemies={enemies}"
+            f" name={name!r} handle={handle!r}"
             f" fleets={struct.unpack('<HH', p[0x40:0x44])} bases={struct.unpack('<HH', p[0x44:0x48])}"
         )
     data = (directory / "FLEETS.DAT").read_bytes()
@@ -334,6 +362,233 @@ def group_worldless(_: int) -> list[tuple[str, Scenario]]:
     return out
 
 
+OTHER_WORLDS = [(12, 12), (12, 11), (18, 15), (2, 16)]
+
+
+def quiet_neighbours(scenario: Scenario, empires: tuple[int, ...]) -> None:
+    """Each listed empire owns its home world and keeps one idle cruiser there."""
+    for empire in empires:
+        scenario.owners[HOME[empire]] = empire
+        scenario.fleets.append(Fleet(empire, 1, HOME[empire], order=0, ships=(0, 1, 0, 0, 0, 0, 0)))
+
+
+def numbered(fleets: list[Fleet]) -> list[Fleet]:
+    """Give one empire's fleets the numbers 1.. in list order."""
+    for number, fleet in enumerate(fleets, start=1):
+        fleet.number = number
+    return fleets
+
+
+def group_mergeplace(_: int) -> list[tuple[str, Scenario]]:
+    """Rogue empire 2 owns (4,13) and (12,12); its fleets sit at five kinds of place."""
+    scenario = Scenario(modes={1: 1, 2: 0xFF, 3: 0, 4: 0})
+    scenario.owners[HOME[2]] = 2
+    scenario.owners[WORLD] = 2
+    quiet_neighbours(scenario, (1, 3, 4))
+    cruiser, destroyer, etac = (0, 1, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0), (0, 0, 0, 0, 0, 1, 0)
+    rogue = [
+        # home world, orbit: a Move fleet under way, a Hold fleet, a Guard/Blockade fleet
+        Fleet(2, 0, HOME[2], order=1, target=(8, 13), speed=3, roe=3, ships=cruiser),
+        Fleet(2, 0, HOME[2], order=0, ships=destroyer),
+        Fleet(2, 0, HOME[2], order=5, target=HOME[2], ships=etac),
+        # another world of its own, orbit: Patrol and Seek Home; deep layer: one more
+        Fleet(2, 0, WORLD, order=3, target=WORLD, ships=destroyer),
+        Fleet(2, 0, WORLD, order=2, target=HOME[2], speed=3, ships=cruiser),
+        Fleet(2, 0, WORLD, z=0.0, order=0, ships=destroyer),
+        # an unowned world, orbit
+        Fleet(2, 0, WORLD2, order=0, ships=destroyer),
+        Fleet(2, 0, WORLD2, order=0, ships=cruiser),
+        # deep space
+        Fleet(2, 0, (8, 13), z=0.0, order=0, ships=destroyer),
+        Fleet(2, 0, (8, 13), z=0.0, order=0, ships=cruiser),
+        # home sector, deep layer
+        Fleet(2, 0, HOME[2], z=0.0, order=0, ships=destroyer),
+        Fleet(2, 0, HOME[2], z=0.0, order=0, ships=cruiser),
+    ]
+    scenario.fleets += numbered(rogue)
+    return [("mergeplace", scenario)]
+
+
+def group_mergeauto(_: int) -> list[tuple[str, Scenario]]:
+    """Human empire 1 on autopilot owns five worlds; its fleets sit at one each."""
+    scenario = Scenario(modes={1: 1, 2: 0, 3: 0, 4: 0})
+    scenario.autopilot.add(1)
+    sites = [HOME[1], *OTHER_WORLDS]
+    for site in sites:
+        scenario.owners[site] = 1
+    for empire in (2, 3, 4):
+        scenario.owners[HOME[empire]] = empire
+        scenario.fleets.append(Fleet(empire, 1, HOME[empire], order=0, ships=(0, 1, 0, 0, 0, 0, 0)))
+    cruiser, destroyer = (0, 1, 0, 0, 0, 0, 0), (0, 0, 1, 0, 0, 0, 0)
+    a, b, c, d, e = sites
+    mine = [
+        # a: Hold, Hold, Guard/Blockade
+        Fleet(1, 0, a, order=0, ships=cruiser),
+        Fleet(1, 0, a, order=0, ships=destroyer),
+        Fleet(1, 0, a, order=5, target=a, roe=6, ships=cruiser),
+        # b: a Guard Starbase host over a base at rest, then a Hold fleet
+        Fleet(1, 0, b, order=4, target=b, mission=1, roe=6, ships=destroyer),
+        Fleet(1, 0, b, order=0, ships=cruiser),
+        # c: a Hold fleet, then a Guard Starbase host over a base at rest
+        Fleet(1, 0, c, order=0, ships=cruiser),
+        Fleet(1, 0, c, order=4, target=c, mission=2, roe=6, ships=destroyer),
+        # d: a Guard Starbase host whose base is lifting, a Hold fleet, a Move fleet
+        Fleet(1, 0, d, order=4, target=d, mission=3, roe=6, ships=destroyer),
+        Fleet(1, 0, d, order=0, ships=cruiser),
+        Fleet(1, 0, d, order=1, target=d, ships=destroyer),
+        # e: Guard/Blockade at rest, Guard/Blockade setting out for another world
+        Fleet(1, 0, e, order=5, target=e, roe=6, ships=cruiser),
+        Fleet(1, 0, e, order=5, target=b, speed=2, roe=6, ships=destroyer),
+    ]
+    scenario.fleets += [f for f in numbered(mine)]
+    scenario.bases += [
+        Base(1, 1, b, escort=4),
+        Base(1, 2, c, escort=7),
+        Base(1, 3, d, escort=8, tz=0),
+    ]
+    return [("mergeauto", scenario)]
+
+
+def group_mergeguard(_: int) -> list[tuple[str, Scenario]]:
+    """Rogue empire 2: Guard Starbase fleets over a base at rest, a lifting base, and no base."""
+    scenario = Scenario(modes={1: 1, 2: 0xFF, 3: 0, 4: 0})
+    sites = [HOME[2], WORLD, WORLD2, OTHER_WORLDS[2]]
+    for site in sites:
+        scenario.owners[site] = 2
+    quiet_neighbours(scenario, (1, 3, 4))
+    destroyer = (0, 0, 1, 0, 0, 0, 0)
+    a, b, c, d = sites
+    scenario.fleets += numbered(
+        [
+            # a: base at rest; the guard hosts, the Hold fleet is taken in
+            Fleet(2, 0, a, order=4, target=a, mission=1, roe=10, ships=destroyer),
+            Fleet(2, 0, a, order=0, ships=destroyer),
+            # b: base lifting (TZ 0); the guard cannot host but the Hold fleet takes it in
+            Fleet(2, 0, b, order=4, target=b, mission=2, roe=10, ships=destroyer),
+            Fleet(2, 0, b, order=0, ships=destroyer),
+            # c: the guard names a base that does not exist, after a Hold host
+            Fleet(2, 0, c, order=0, ships=destroyer),
+            Fleet(2, 0, c, order=4, target=c, mission=9, roe=10, ships=destroyer),
+            # d: a guard over a lifting base, then a guard that names no base (it
+            # goes by the lifting guard's flag), then a Hold fleet that hosts
+            Fleet(2, 0, d, order=4, target=d, mission=3, roe=10, ships=destroyer),
+            Fleet(2, 0, d, order=4, target=d, mission=9, roe=10, ships=destroyer),
+            Fleet(2, 0, d, order=0, ships=destroyer),
+        ]
+    )
+    scenario.bases += [Base(2, 1, a, escort=1), Base(2, 2, b, escort=3, tz=0), Base(2, 3, d, escort=7, tz=0)]
+    return [("mergeguard", scenario)]
+
+
+def group_mergenobase(_: int) -> list[tuple[str, Scenario]]:
+    """A Guard Starbase fleet that names no base, first in the pass, for each kind of empire."""
+    destroyer = (0, 0, 1, 0, 0, 0, 0)
+    out = []
+    for label, empire, mode, autopilot in (("rogue", 2, 0xFF, False), ("autopilot", 1, 1, True)):
+        modes = {1: 1, 2: 0, 3: 0, 4: 0}
+        modes[empire] = mode
+        scenario = home_scenario(modes)
+        if autopilot:
+            scenario.autopilot.add(empire)
+        scenario.fleets += numbered(
+            [
+                Fleet(empire, 0, HOME[empire], order=4, target=HOME[empire], mission=9, roe=6, ships=destroyer),
+                Fleet(empire, 0, HOME[empire], order=0, ships=destroyer),
+            ]
+        )
+        for other in range(1, 5):
+            if other != empire:
+                scenario.fleets.append(Fleet(other, 1, HOME[other], order=0, ships=(0, 1, 0, 0, 0, 0, 0)))
+        out.append((f"mergenobase-{label}", scenario))
+    return out
+
+
+def group_mergecap(_: int) -> list[tuple[str, Scenario]]:
+    scenario = Scenario(modes={1: 1, 2: 0xFF, 3: 0, 4: 0})
+    scenario.owners[HOME[2]] = 2
+    scenario.owners[WORLD] = 2
+    quiet_neighbours(scenario, (1, 3, 4))
+    scenario.fleets += numbered(
+        [
+            Fleet(2, 0, HOME[2], order=0, ships=(0, 0, 1500, 0, 0, 0, 0)),
+            Fleet(2, 0, HOME[2], order=0, ships=(0, 0, 1500, 0, 0, 0, 0)),
+            Fleet(2, 0, WORLD, order=0, ships=(0, 0, 1500, 0, 0, 0, 0)),
+            Fleet(2, 0, WORLD, order=0, ships=(0, 0, 1501, 0, 0, 0, 0)),
+        ]
+    )
+    return [("mergecap", scenario)]
+
+
+def group_holdlost(_: int) -> list[tuple[str, Scenario]]:
+    """A human empire's fleet whose order needs ships it does not have."""
+    etac, cruiser = (0, 0, 0, 0, 0, 1, 0), (0, 1, 0, 0, 0, 0, 0)
+    out = []
+    for label, worlds, fleet in (
+        ("guard-onworld", 1, Fleet(1, 1, HOME[1], order=5, target=HOME[1], ships=etac)),
+        ("guard-twoworlds", 2, Fleet(1, 1, HOME[1], order=5, target=HOME[1], ships=etac)),
+        ("guard-underway", 2, Fleet(1, 1, (14, 13), z=0.0, order=5, target=WORLD, tz=1, speed=3, ships=etac)),
+        ("patrol-underway", 2, Fleet(1, 1, (14, 13), z=0.0, order=3, target=(12, 13), tz=0, speed=3, ships=etac)),
+        ("scout-twoworlds", 2, Fleet(1, 1, HOME[1], order=10, target=(16, 11), tz=0, ships=etac)),
+        ("colonize-twoworlds", 2, Fleet(1, 1, HOME[1], order=12, target=WORLD2, tz=1, ships=cruiser)),
+        ("join-nohost", 1, Fleet(1, 1, HOME[1], order=13, mission=9, target=HOME[1], tz=1, ships=cruiser)),
+        ("bombard-own", 1, Fleet(1, 1, HOME[1], order=6, target=HOME[1], tz=1, ships=cruiser)),
+    ):
+        scenario = Scenario(modes={1: 1, 2: 0, 3: 0, 4: 0})
+        scenario.owners[HOME[1]] = 1
+        if worlds == 2:
+            scenario.owners[(18, 15)] = 1
+        for empire in (2, 3, 4):
+            scenario.owners[HOME[empire]] = empire
+            scenario.fleets.append(Fleet(empire, 1, HOME[empire], order=0, ships=cruiser))
+        scenario.fleets.append(fleet)
+        out.append((f"holdlost-{label}", scenario))
+    return out
+
+
+def group_holdnorm(_: int) -> list[tuple[str, Scenario]]:
+    """Fleets already on Hold with a stale target, and a fleet that finishes a Move."""
+    cruiser = (0, 1, 0, 0, 0, 0, 0)
+    scenario = Scenario(modes={1: 1, 2: 0, 3: 0, 4: 0})
+    scenario.owners[HOME[1]] = 1
+    for empire in (2, 3, 4):
+        scenario.owners[HOME[empire]] = empire
+        scenario.fleets.append(Fleet(empire, 1, HOME[empire], order=0, ships=cruiser))
+    scenario.fleets += numbered(
+        [
+            Fleet(1, 0, HOME[1], order=0, target=(8, 8), tz=0, speed=0, ships=cruiser),
+            Fleet(1, 0, (14, 13), z=0.0, order=0, target=(8, 8), tz=1, speed=0, ships=cruiser),
+            Fleet(1, 0, (14, 12), z=0.0, order=0, target=(8, 8), tz=1, speed=3, mission=5, ships=cruiser),
+        ]
+    )
+    return [("holdnorm", scenario)]
+
+
+def group_civil(_: int) -> list[tuple[str, Scenario]]:
+    """Planetless civil-disorder empires, with and without fleets and a base."""
+    cruiser, etac, scout = (0, 1, 0, 0, 0, 0, 0), (0, 0, 0, 0, 0, 1, 0), (0, 0, 0, 0, 0, 0, 1)
+    out = []
+    for label, fleets in (("fleets", True), ("nofleets", False)):
+        scenario = Scenario(modes={1: 1, 2: 0, 3: 0, 4: 0})
+        scenario.owners[HOME[1]] = 1
+        scenario.owners[HOME[2]] = 2  # civil disorder with a world: stays as it is
+        scenario.fleets.append(Fleet(1, 1, HOME[1], order=0, ships=cruiser))
+        scenario.fleets.append(Fleet(2, 1, HOME[2], order=0, ships=cruiser))
+        # empires 3 and 4 own nothing; 4 was a player and keeps a handle and a name
+        scenario.names[4] = "Fallen Empire"
+        scenario.handles[4] = "OLDPLAYER"
+        scenario.enemies.update({(3, 4), (4, 2)})
+        if fleets:
+            for empire in (3, 4):
+                scenario.fleets.append(Fleet(empire, 1, (8, 8 + empire), z=0.0, order=0, roe=3, ships=cruiser))
+                scenario.fleets.append(Fleet(empire, 2, (9, 8 + empire), z=0.0, order=0, ships=etac))
+                scenario.fleets.append(Fleet(empire, 3, (10, 8 + empire), z=0.0, order=0, ships=scout))
+        for empire in (3, 4):
+            scenario.owners[HOME[empire]] = 0
+            scenario.bases.append(Base(empire, 1, HOME[empire]))
+        out.append((f"civil-{label}", scenario))
+    return out
+
+
 GROUPS = {
     "scatter": (group_scatter, 1),
     "destroy": (group_destroy, 1),
@@ -341,6 +596,14 @@ GROUPS = {
     "abort": (group_abort, 1),
     "etac": (group_etac, 3),
     "worldless": (group_worldless, 3),
+    "mergeplace": (group_mergeplace, 1),
+    "mergeauto": (group_mergeauto, 1),
+    "mergeguard": (group_mergeguard, 1),
+    "mergenobase": (group_mergenobase, 1),
+    "mergecap": (group_mergecap, 1),
+    "holdlost": (group_holdlost, 1),
+    "holdnorm": (group_holdnorm, 1),
+    "civil": (group_civil, 3),
 }
 
 

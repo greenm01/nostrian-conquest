@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use nc_herald::{Herald, HeraldConfig, InGameEvent, PlatformTarget, TurnAnnouncement};
+use std::sync::Arc;
 use tracing::info;
 
 #[derive(Parser)]
@@ -20,6 +21,17 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
+    /// Run as an HTTP listener daemon receiving events from nc-bridge
+    Listen {
+        /// Host interface to bind to
+        #[arg(long, default_value = "127.0.0.1", env = "NC_HERALD_HOST")]
+        host: String,
+
+        /// Port to listen on
+        #[arg(short, long, default_value_t = 8081, env = "NC_HERALD_PORT")]
+        port: u16,
+    },
+
     /// Send a sample test announcement
     Test,
 
@@ -64,6 +76,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let herald = Herald::new(config);
 
     match cli.command {
+        Commands::Listen { host, port } => {
+            let bind_addr = format!("{host}:{port}");
+            let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
+            let herald_arc = Arc::new(herald);
+            let app = nc_herald::create_listener_router(herald_arc);
+
+            info!(addr = %bind_addr, "nc-herald daemon listening for incoming events");
+            println!("nc-herald: listening on http://{bind_addr} (POST /events, POST /broadcast)");
+
+            axum::serve(listener, app).await?;
+        }
         Commands::Test => {
             info!("Broadcasting test turn announcement");
             let announcement = TurnAnnouncement {

@@ -242,3 +242,49 @@ fn planetless_rogue_without_recovery_forces_does_not_block_victory() {
     );
     assert_eq!(game_data.players[3].mode, PlayerMode::Rogue);
 }
+
+#[test]
+fn a_defeated_player_keeps_final_review_when_the_empire_becomes_rogue() {
+    let mut game_data = baseline_game();
+    let mut lifecycle = default_player_lifecycle_states(game_data.conquest.player_count);
+    let mut winner = WinnerState::default();
+    game_data.players[0].mode = PlayerMode::Human;
+    game_data.players[0].handle = "Former player".into();
+    strip_empire_planets(&mut game_data, 1);
+    strip_empire_ships(&mut game_data, 1);
+
+    let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
+    assert!(
+        events
+            .empire_elimination_events
+            .iter()
+            .any(|e| e.defeated_empire == 1)
+    );
+    assert_eq!(game_data.players[0].mode, PlayerMode::CivilDisorder);
+
+    let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
+    assert!(
+        events
+            .empire_elimination_events
+            .iter()
+            .all(|e| e.defeated_empire != 1)
+    );
+    assert_eq!(game_data.players[0].mode, PlayerMode::Rogue);
+    assert_eq!(game_data.players[0].handle, "Former player");
+    assert_eq!(lifecycle[0].terminal_outcome, TerminalOutcome::Defeated);
+    assert_eq!(
+        player_access_mode(1, &lifecycle, winner),
+        PlayerAccessMode::ReviewOnly
+    );
+    assert_eq!(
+        player_public_status(&game_data, 1, &default_activity_states(4), &lifecycle),
+        PublicEmpireStatus::Defeated
+    );
+
+    lifecycle[0].terminal_review_consumed = true;
+    run_turn(&mut game_data, &mut lifecycle, &mut winner);
+    assert_eq!(
+        player_access_mode(1, &lifecycle, winner),
+        PlayerAccessMode::LockedOut
+    );
+}

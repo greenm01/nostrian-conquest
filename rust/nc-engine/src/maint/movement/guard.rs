@@ -3,8 +3,8 @@
 //! it shares its base's sector and depth layer while under way.
 
 use super::YearMovement;
-use super::starbase::merge_fits;
 use crate::CoreGameData;
+use crate::maint::merging::merge_fits;
 use nc_data::{Mission, MissionEvent, MissionOutcome, MissionRetargetEvent, Order, Real48};
 
 /// 1 inside a world's system (depth 0.5 or more), else 0.

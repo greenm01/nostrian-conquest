@@ -126,7 +126,7 @@ fn load_player_runtime_snapshot(
         intel
     };
     Ok(PlayerRuntimeSnapshot {
-        turn: runtime.game_data.conquest.game_year.saturating_sub(3000) as u32,
+        turn: crate::game::turns::turn_for_year(runtime.game_data.conquest.game_year),
         game_year: runtime.game_year,
         game_data: runtime.game_data,
         queued_mail: runtime.queued_mail,

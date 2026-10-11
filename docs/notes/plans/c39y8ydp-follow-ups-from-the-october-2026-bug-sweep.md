@@ -470,6 +470,47 @@ The t067 follow-up confirmed the mail side: hosted maintenance saves queued
 mail as empty and `ProcessTurnSubmission` is a stub, so no mail reaches a
 hosted game, and maintenance would wipe it if it did.
 
+Result (t061, 2026-10-11): the load, run-turn and save sequence
+`nc-sysop maint` ran inline is now `nc_engine::CampaignMaintenance`
+(`nc-engine/src/maint/campaign_run.rs`), and `nc-sysop maint`, `nc-host
+maint` and the hosted scheduler all run it. Hosted intake validates a
+`30522` submission against the live snapshot (seat, turn, typed KDL, a dry
+run of the orders) and answers `accepted`, `rejected`, `wrong_turn`,
+`not_claimed` or `superseded`; maintenance applies the staged submissions
+through `TurnSubmission::apply_to_runtime_state`, the path `nc-game
+submit-turn` uses, records the game clock, and sends every claimed seat a
+`30520` snapshot or a `30521` delta. `nc-host serve` polls the schedule
+once a minute; an unscheduled game is armed one interval out, and a run
+moves the next due time one interval past now. Tests:
+`nc-host/tests/hosted_maint.rs` (the hosted and local paths produce the
+same snapshot, reports and mail for the same orders), `turn_intake.rs` and
+`maint_schedule.rs`. The shared `MaintenanceEvents::extend` also carries the
+starbase, Scorch-Earth and ship-recovery events that the hand-copied merge
+in `nc-sysop` dropped, so those reports now reach local players too.
+
+
+Result (t101, 2026-10-11): `nc-cli maint-rust` now uses
+`CampaignMaintenance` to load, advance and save a campaign. Its shared
+`MaintenanceEvents::extend` carries starbase reports, Scorch-Earth events
+and ship-recovery events that the CLI's hand-written merge dropped. No
+other hand-written merge remains in the workspace. The CLI retains its
+schedule/token gate, `.SAV` handling, initial classic import, rankings file
+and diplomacy sidecar. `run_turn_with_diplomacy_overrides` passes the
+sidecar directives to the same yearly engine call; `run_turn` still passes
+an empty slice for sysop and hosted runs. Collected battle participants
+feed the CLI's existing diplomacy escalation between years.
+
+The three regressions in `nc-cli/tests/maint_events.rs` all failed on the
+old loop and pass on the shared one: a starbase's lost-world and arrival
+reports, two consecutive Scorch-Earth reports, and a ship-recovery report.
+The existing maintenance tests pass without changed expectations (82
+passed, 2 ignored). The mission sweep and escort probe compare fleet and
+planet state, not report text, so these added report lines do not alter
+their comparisons. `ncmaint_oracle.py compare` also compares RESULTS.DAT
+when the preserved fixture includes it; a Rust export can now differ there
+because the previously omitted reports are present. Classic fixtures are
+unchanged. Full workspace suite: 3198 passed, 0 failed, 11 ignored.
+
 ### t067
 
 Reported by the user on 2026-10-10: after sending a message there seemed to
@@ -558,3 +599,15 @@ Found by the t067 follow-up.
 Result (2026-10-11): `nc-helm`'s "current year only" inbox filter now keeps delivered mail and reports of the year before the current one (the latest delivered year), and an outgoing row (the sender's own queued message, not yet delivered) of the current year.
 
 Result for t092 (2026-10-11): `nc-helm`'s inbox lists the player's own queued messages first, newest first, as `OUT` rows (from `runtime_outgoing_inbox_items`) under the all and messages filters; the preview shows recipient, subject and body, `D` cancels one after the inbox's confirmation through the helper the outbox also uses (local queue and hosted draft), and the comms panel counts reports of the latest delivered year.
+
+Result for t095 (2026-10-11): every Y/N confirmation in `nc-helm` now acts on the default its brackets show, Enter takes the bracketed answer, and Esc declines. Where the door has the same prompt, `nc-helm` takes the door's default: the inbox delete prompt (`Delete item NN? [Y]/N`) and mass commission (`[Y]/N`) default to yes, and send, quit, and scorch default to no. Three prompts disagreed with their label or the door:
+
+- The inbox's `Delete this item?` read `Y/[N]` but Enter deleted. The label now reads `[Y]/N` (three copies in `overlays/inbox/list.rs`); the key handling was already right.
+- `Mass commission?` read `Y/[N]` and Enter declined, where the door's prompt is `[Y]/N` and Enter commissions. Both the planet list and the owned-planet popup now read `[Y]/N` and Enter commissions.
+- The footer-line `Send message? Y/[N]` (`InboxPromptMode::ComposeConfirm`) sent on Enter; the door's prompt declines on Enter. Enter now returns to the body. No key opens this prompt any more, since Alt-S opens the popup, so only a test reaches it.
+
+Already consistent and now covered by tests: the sandbox join and delete confirmations (no brackets; they say "Any other key cancels"), `Quit NC?` and `Quit to Lobby?`, `Send Message?` and `Discard Message?` (popups), the four scorch prompts, and the `[Y]/N` fleet prompts (merge checked fleets, order confirm, seek next closest, halt this starbase). Nothing lists starbase rows in the fleet list, so the halt prompt is unreachable in the client; its test sets up the state a starbase row would. The outbox's `D` cancels a queued message without asking; that is not a Y/N prompt and stays as it is.
+
+Tests: `dashboard/app/tests/confirm_defaults.rs` has one test per prompt family (inbox delete, both mass commissions, scorch, quit to lobby, send and discard popups, the legacy compose confirm, merge, order confirm, seek next closest, starbase halt), each showing the label, Enter's answer, and Esc declining; `tests/lobby_flow.rs` adds Esc for the lobby quit prompt and Enter and Esc for the sandbox confirmations. The player manual already says the inbox delete prompt defaults to yes, so it needed no change.
+
+Result for t100 (2026-10-11): `nc-helm`'s outbox now asks before it cancels a queued message. `D` in the outbox (`O` from the inbox) sets the inbox's own `delete_confirm` flag, so the prompt, its wording, and its keys are the inbox's: the outbox title line reads `Delete this item? [Y]/N`, `Enter` or `Y` cancels the highlighted message (local queue and hosted draft), and `Esc` or `N` keeps it and stays in the outbox. The inbox key handler now checks `delete_confirm` before the prompt mode, so the outbox needs no handler of its own, and the label comes from one helper (`delete_prompt` in `overlays/inbox/list.rs`) that the inbox's three title lines and the outbox's two now share. `D` on an empty outbox still reports "No outbox message selected." without a prompt. The outbox footer already listed `D`, and the inbox help (which the outbox shares) already says `D` deletes the selected item, so neither changed. The player manual says only that `D` cancels a queued message and never says it does so without asking, so it needed no change. The test is `outbox_cancel_asks_first_and_defaults_to_yes` in `dashboard/app/tests/inbox_outgoing.rs`: `D` shows the prompt and cancels nothing, `Esc` and `N` keep both queued messages, `Enter` and `Y` each cancel one. `inbox_quick_compose_stages_and_removes_hosted_message` in `tests/mod.rs`, which cancelled from the outbox with a bare `D`, now answers the prompt with `Enter`.

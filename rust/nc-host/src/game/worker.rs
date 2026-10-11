@@ -1,6 +1,8 @@
 use crate::game::effects::GameEffects;
 use crate::game::msg::GameMsg;
 use crate::game::outbox::enqueue_encrypted_event;
+use crate::game::sync::enqueue_state_sync;
+use crate::game::turns::{enqueue_turn_receipt, turn_receipt, validate_turn_submission};
 use crate::support::pubkeys::short_pubkey;
 use crate::support::runtime::{
     apply_hosted_first_join_names, current_runtime_year, ensure_hosted_player_initialized,
@@ -17,9 +19,7 @@ use nc_nostr::invite_request::{
 use nc_nostr::sandbox_release::{
     SandboxReleaseRequest, SandboxReleaseResult, SandboxReleaseStatus,
 };
-use nc_nostr::state_sync::{
-    StateErrorCode, StateErrorPayload, StateRequest, build_delta_response_tags, build_state_delta,
-};
+use nc_nostr::state_sync::{StateErrorCode, StateErrorPayload, StateRequest};
 use nc_nostr::turn_commands::{TurnCommands, TurnReceipt, TurnReceiptError, TurnReceiptStatus};
 use std::fmt;
 use std::path::PathBuf;
@@ -65,7 +65,9 @@ impl GameWorker {
             GameEffects::QueueEvent { .. } => {}
             GameEffects::UpdateLobbyCatalog { .. } => {}
             GameEffects::NotifySysop { .. } => {}
-            GameEffects::RunMaintenance { .. } => {}
+            GameEffects::RunMaintenance { .. } => {
+                self.run_scheduled_maintenance();
+            }
             GameEffects::InvalidEvent { reason } => {
                 tracing::warn!("Invalid event for game {}: {}", self.game_id, reason);
             }
@@ -163,29 +165,6 @@ impl GameWorker {
             return;
         }
 
-        let state_payload = match crate::game::state::build_game_state_payload(
-            game_dir,
-            &self.game_id,
-            seat.seat_number,
-        ) {
-            Ok(payload) => payload,
-            Err(e) => {
-                tracing::error!(
-                    "Failed to build game state payload for {}: {}",
-                    self.game_id,
-                    e
-                );
-                let _ = self.enqueue_state_error(
-                    store.connection(),
-                    &request.player_pubkey,
-                    Some(&request.request_id),
-                    StateErrorCode::StateUnavailable,
-                    "Failed to build hosted game state.",
-                );
-                return;
-            }
-        };
-
         let prior_snapshot = request.last_hash.as_deref().and_then(|state_hash| {
             hosted::get_state_snapshot_by_hash(
                 store.connection(),
@@ -197,58 +176,33 @@ impl GameWorker {
             .flatten()
         });
 
-        let (kind, content, tags) = if let Some(previous) = prior_snapshot.as_ref() {
-            let delta = build_state_delta(previous, &state_payload);
-            let content = match serde_json::to_string(&delta) {
-                Ok(content) => content,
-                Err(e) => {
-                    tracing::error!("Failed to serialize state delta: {}", e);
-                    return;
-                }
-            };
-            let mut tags = build_delta_response_tags(&delta)
-                .into_iter()
-                .map(|(key, value)| vec![key.to_string(), value])
-                .collect::<Vec<_>>();
-            tags.push(vec!["request-id".to_string(), request.request_id.clone()]);
-            (30521, content, tags)
-        } else {
-            let content = match serde_json::to_string(&state_payload) {
-                Ok(content) => content,
-                Err(e) => {
-                    tracing::error!("Failed to serialize state payload: {}", e);
-                    return;
-                }
-            };
-            let mut tags = nc_nostr::state_sync::build_state_response_tags(&state_payload)
-                .into_iter()
-                .map(|(key, value)| vec![key.to_string(), value])
-                .collect::<Vec<_>>();
-            tags.push(vec!["request-id".to_string(), request.request_id.clone()]);
-            (30520, content, tags)
-        };
-
-        if let Err(e) = enqueue_encrypted_event(
-            store.connection(),
-            &self.game_id,
-            &request.player_pubkey,
-            kind,
-            &content,
-            tags,
-        ) {
-            tracing::error!("Failed to enqueue state response: {}", e);
-        } else if let Err(e) = hosted::save_state_snapshot(
-            store.connection(),
+        match enqueue_state_sync(
+            &store,
+            game_dir,
             &self.game_id,
             seat.seat_number,
-            &state_payload,
+            &request.player_pubkey,
+            prior_snapshot.as_ref(),
+            Some(&request.request_id),
         ) {
-            tracing::error!("Failed to persist hosted state snapshot: {}", e);
-        } else {
-            tracing::info!(
+            Ok(_) => tracing::info!(
                 "Queued encrypted hosted state sync for {}",
                 short_pubkey(&request.player_pubkey)
-            );
+            ),
+            Err(e) => {
+                tracing::error!(
+                    "Failed to queue hosted state sync for {}: {}",
+                    self.game_id,
+                    e
+                );
+                let _ = self.enqueue_state_error(
+                    store.connection(),
+                    &request.player_pubkey,
+                    Some(&request.request_id),
+                    StateErrorCode::StateUnavailable,
+                    "Failed to build hosted game state.",
+                );
+            }
         }
     }
 
@@ -1019,8 +973,7 @@ impl GameWorker {
                         message: "unclaimed_seat".to_string(),
                     }],
                 };
-                self.publish_turn_receipt(&commands.player_pubkey, &receipt)
-                    .await;
+                self.publish_turn_receipt(store.connection(), &commands.player_pubkey, &receipt);
                 return;
             }
             Err(e) => {
@@ -1043,11 +996,43 @@ impl GameWorker {
                     message: "handle_taken".to_string(),
                 }],
             };
-            self.publish_turn_receipt(&commands.player_pubkey, &receipt)
-                .await;
+            self.publish_turn_receipt(store.connection(), &commands.player_pubkey, &receipt);
             return;
         }
         self.refresh_player_seen(&commands.player_pubkey, commands.handle.as_deref());
+
+        // A newer submission for the same turn replaces the one staged before it.
+        match hosted::get_pending_turn(
+            store.connection(),
+            &self.game_id,
+            commands.turn,
+            &commands.player_pubkey,
+        ) {
+            Ok(Some(previous)) => {
+                if let Err(e) = hosted::mark_superseded(
+                    store.connection(),
+                    &self.game_id,
+                    commands.turn,
+                    &commands.player_pubkey,
+                ) {
+                    tracing::error!("Failed to supersede turn {}: {}", previous.id, e);
+                } else {
+                    let receipt = turn_receipt(
+                        &previous,
+                        TurnReceiptStatus::Superseded,
+                        "Replaced by a newer submission for this turn.",
+                        vec![],
+                    );
+                    self.publish_turn_receipt(
+                        store.connection(),
+                        &previous.player_pubkey,
+                        &receipt,
+                    );
+                }
+            }
+            Ok(None) => {}
+            Err(e) => tracing::error!("Failed to check for an earlier submission: {}", e),
+        }
 
         if let Err(e) = hosted::enqueue_turn(
             store.connection(),
@@ -1069,22 +1054,91 @@ impl GameWorker {
                     message: e.to_string(),
                 }],
             };
-            self.publish_turn_receipt(&commands.player_pubkey, &receipt)
-                .await;
+            self.publish_turn_receipt(store.connection(), &commands.player_pubkey, &receipt);
             return;
         }
 
-        let receipt = TurnReceipt {
-            submit_id: commands.submit_id.clone(),
-            game_id: self.game_id.clone(),
-            turn: commands.turn,
-            status: TurnReceiptStatus::Accepted,
-            message: Some("Orders staged for the next maintenance run.".to_string()),
-            errors: vec![],
+        self.process_turn_submission(&commands.submit_id);
+    }
+
+    /// Validate a staged submission against the live snapshot and answer
+    /// it: accepted ones stay pending for maintenance, the rest are settled
+    /// in the queue with the reason the receipt carries.
+    pub fn process_turn_submission(&self, submit_id: &str) {
+        let store = match HostedStore::open(&self.db_path) {
+            Ok(s) => s,
+            Err(e) => {
+                tracing::error!("Failed to open store: {}", e);
+                return;
+            }
+        };
+        let queued = match hosted::get_turn_submission(store.connection(), submit_id) {
+            Ok(Some(queued)) if queued.status == hosted::TurnSubmissionStatus::Pending => queued,
+            Ok(Some(queued)) => {
+                tracing::debug!(
+                    "Turn submission {} for {} is already {}",
+                    submit_id,
+                    self.game_id,
+                    queued.status.as_str()
+                );
+                return;
+            }
+            Ok(None) => {
+                tracing::warn!("Unknown turn submission {} for {}", submit_id, self.game_id);
+                return;
+            }
+            Err(e) => {
+                tracing::error!("Failed to load turn submission {}: {}", submit_id, e);
+                return;
+            }
+        };
+        let Some(game_dir) = self.db_path.parent() else {
+            tracing::error!(
+                "Hosted db path has no parent for {}",
+                self.db_path.display()
+            );
+            return;
         };
 
-        self.publish_turn_receipt(&commands.player_pubkey, &receipt)
-            .await;
+        let receipt = match validate_turn_submission(&store, game_dir, &self.game_id, &queued) {
+            Ok(()) => turn_receipt(
+                &queued,
+                TurnReceiptStatus::Accepted,
+                "Orders staged for the next maintenance run.",
+                vec![],
+            ),
+            Err(rejection) => {
+                if let Err(e) =
+                    hosted::reject_turn(store.connection(), &queued.id, &rejection.message)
+                {
+                    tracing::error!("Failed to record rejected turn {}: {}", queued.id, e);
+                }
+                rejection.into_receipt(&queued)
+            }
+        };
+        self.publish_turn_receipt(store.connection(), &queued.player_pubkey, &receipt);
+    }
+
+    fn run_scheduled_maintenance(&self) {
+        let Some(game_dir) = self.db_path.parent() else {
+            tracing::error!(
+                "Hosted db path has no parent for {}",
+                self.db_path.display()
+            );
+            return;
+        };
+        match crate::game::maint::run_scheduled_maintenance(game_dir, &self.game_id) {
+            Ok(report) => tracing::info!(
+                "Maintenance for {} advanced {} -> {}: {} submissions applied, {} rejected, {} seats sent their state",
+                self.game_id,
+                report.start_year,
+                report.end_year,
+                report.applied_submissions,
+                report.rejected_submissions,
+                report.published_seats
+            ),
+            Err(e) => tracing::error!("Maintenance for {} failed: {}", self.game_id, e),
+        }
     }
 
     async fn handle_thread_message(&self, message: nc_nostr::thread_message::SysopThreadMessage) {
@@ -1277,42 +1331,18 @@ impl GameWorker {
         );
     }
 
-    async fn publish_turn_receipt(&self, player_pubkey: &str, receipt: &TurnReceipt) {
-        let content = match serde_json::to_string(receipt) {
-            Ok(content) => content,
-            Err(e) => {
-                tracing::error!("Failed to serialize turn receipt: {}", e);
-                return;
-            }
-        };
-
-        let tags = vec![
-            vec!["d".to_string(), receipt.submit_id.clone()],
-            vec!["game-id".to_string(), receipt.game_id.clone()],
-            vec!["turn".to_string(), receipt.turn.to_string()],
-            vec!["status".to_string(), receipt.status.as_str().to_string()],
-        ];
-
-        let store = match HostedStore::open(&self.db_path) {
-            Ok(store) => store,
-            Err(err) => {
-                tracing::error!("Failed to open store for turn receipt: {}", err);
-                return;
-            }
-        };
-
-        if let Err(e) = enqueue_encrypted_event(
-            store.connection(),
-            &self.game_id,
-            player_pubkey,
-            30524,
-            &content,
-            tags,
-        ) {
+    fn publish_turn_receipt(
+        &self,
+        conn: &rusqlite::Connection,
+        player_pubkey: &str,
+        receipt: &TurnReceipt,
+    ) {
+        if let Err(e) = enqueue_turn_receipt(conn, &self.game_id, player_pubkey, receipt) {
             tracing::error!("Failed to enqueue turn receipt: {}", e);
         } else {
             tracing::info!(
-                "Queued encrypted turn receipt for {}",
+                "Queued encrypted turn receipt ({}) for {}",
+                receipt.status.as_str(),
                 short_pubkey(player_pubkey)
             );
         }
@@ -1457,11 +1487,7 @@ pub fn spawn_worker(game_id: String, db_path: PathBuf) -> GameWorkerHandle {
                     );
                 }
                 GameMsg::ProcessTurnSubmission { submit_id } => {
-                    tracing::debug!(
-                        "Processing turn submission {} for {}",
-                        submit_id,
-                        game_id_clone
-                    );
+                    worker.process_turn_submission(&submit_id);
                 }
                 GameMsg::HandleEffect(effect) => {
                     worker.handle_effect(effect).await;

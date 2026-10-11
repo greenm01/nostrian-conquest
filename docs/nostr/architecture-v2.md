@@ -230,9 +230,20 @@ Per-game settings include:
 - `maintenance_interval_minutes`
 - `maintenance_next_due_unix_seconds`
 
-The supervisor schedules due games and sends maintenance work to the owning
-game worker. The first spec does not auto-run turns merely because all players
-submitted.
+`nc-host serve` polls each game's schedule once a minute and sends a due
+game's maintenance to its worker, so it runs in turn with that game's other
+work. A game whose `maintenance_next_due_unix_seconds` is unset is armed one
+interval from now rather than run at once. After a run the next due time
+moves one interval past now, whether or not the run succeeded, so a host
+that was down past a due time runs one year when it comes back, not one per
+missed interval. Turns do not run early because all players submitted.
+
+Maintenance applies the pending turn submissions for the current turn, in
+the order they arrived, through the same typed `TurnSubmission` path
+`nc-game submit-turn` uses; runs the campaign pipeline `nc-sysop maint`
+runs (`nc_engine::CampaignMaintenance`); and then queues every claimed seat
+a `30521` delta against the last snapshot it was sent, or a `30520`
+snapshot if it has none.
 
 Sandbox maintenance has two extra hosted rules:
 
