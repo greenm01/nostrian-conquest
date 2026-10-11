@@ -165,6 +165,7 @@ fn save_runtime_state_with_recomputed_intel(
     let player_war_stats = store.latest_player_war_stats(player_count)?;
 
     store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
+        runtime.game_year,
         &game_data,
         &runtime.planet_scorch_orders,
         &runtime.report_block_rows,

@@ -44,6 +44,7 @@ where
         );
     }
     store.save_runtime_state_structured_with_intel(
+        state.game_year,
         &state.game_data,
         &state.planet_scorch_orders,
         &state.report_block_rows,

@@ -38,6 +38,7 @@ pub fn initialize_runtime_state(
         })
         .collect::<Vec<_>>();
     campaign_store.save_runtime_state_structured_with_intel(
+        year,
         &game_data,
         &BTreeSet::new(),
         &[],

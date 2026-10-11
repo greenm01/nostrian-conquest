@@ -288,6 +288,7 @@ pub fn run_rust_maintenance_with_options(
     apply_results_reviewable_flags(&mut game_data, &report_block_rows);
     apply_maintenance_events_to_player_war_stats(&mut player_war_stats, &all_events);
     campaign_store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
+        start_year,
         &game_data,
         &planet_scorch_orders,
         &report_block_rows,

@@ -676,6 +676,7 @@ fn turn_submission_runtime_helper_clears_inactivity_auto_enabled_autopilot() {
     player_activity_states[0].inactivity_autopilot_pending_clear = true;
     store
         .save_runtime_state_structured_with_intel_and_activity(
+            state.game_data.conquest.game_year,
             &state.game_data,
             &state.planet_scorch_orders,
             &state.report_block_rows,

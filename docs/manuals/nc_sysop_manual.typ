@@ -470,6 +470,14 @@ played through door mode also ends the session after
 `session_max_idle_minutes` without a keypress. BBS campaigns have no idle
 setting; the time limit bounds an abandoned session instead.
 
+A session that stays open across a maintenance run cannot save into the
+finished year. Its next save is refused, and the caller is told "Maintenance
+has run; your last change was not saved. Log in again." In door mode `nc-door`
+shows that line and exits normally, as it does at the time limit. A local
+`nc-game` or `nc-helm` session shows the line and stays open without saving.
+`nc-game submit-turn` fails with the same message if maintenance runs between
+its load and its save.
+
 Reserve seats in the BBS campaign's `config.kdl` when you want the caller
 alias to determine the empire automatically. You can either edit the file
 directly or use:

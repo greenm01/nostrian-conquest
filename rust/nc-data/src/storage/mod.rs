@@ -28,6 +28,11 @@ pub use settings::{
 };
 
 pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
+/// What a player is told when a save is refused because maintenance has
+/// written a newer year since the session loaded its state. Short enough for
+/// one line of the 80-column menu notice area.
+pub const STALE_SESSION_MESSAGE: &str =
+    "Maintenance has run; your last change was not saved. Log in again.";
 const RUNTIME_SCHEMA_VERSION: i64 = 14;
 const LEGACY_RECORD_TABLES: [&str; 7] = [
     "player_record_fields",
@@ -51,6 +56,12 @@ pub enum CampaignStoreError {
     SchemaVersionMismatch {
         expected: i64,
         found: Option<i64>,
+    },
+    /// A save was refused because a snapshot newer than the year the caller
+    /// loaded exists, so the write would land in a year nobody reads anymore.
+    StaleSnapshot {
+        loaded_year: u16,
+        latest_year: u16,
     },
 }
 
@@ -164,6 +175,7 @@ impl std::fmt::Display for CampaignStoreError {
                     "runtime sqlite schema is missing or legacy; expected version {expected}. recreate or refresh ncgame.db"
                 ),
             },
+            Self::StaleSnapshot { .. } => f.write_str(STALE_SESSION_MESSAGE),
         }
     }
 }
@@ -175,7 +187,7 @@ impl std::error::Error for CampaignStoreError {
             Self::Sql(source) => Some(source),
             Self::Parse(source) => Some(source),
             Self::InvalidState(_) => None,
-            Self::SchemaVersionMismatch { .. } => None,
+            Self::SchemaVersionMismatch { .. } | Self::StaleSnapshot { .. } => None,
         }
     }
 }

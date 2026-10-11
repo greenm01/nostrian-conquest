@@ -67,7 +67,13 @@ fn hold_all_fleets_in_place(game_data: &mut CoreGameData) {
 fn seed_runtime_snapshot(dir: &Path, game_data: &CoreGameData) {
     let store = CampaignStore::open_default_in_dir(dir).expect("open campaign store");
     store
-        .save_runtime_state_structured(game_data, &BTreeSet::new(), &[], &[])
+        .save_runtime_state_structured(
+            game_data.conquest.game_year,
+            game_data,
+            &BTreeSet::new(),
+            &[],
+            &[],
+        )
         .expect("seed runtime snapshot");
 }
 
@@ -214,6 +220,7 @@ fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
     CampaignStore::open_default_in_dir(&target)
         .expect("open campaign store")
         .save_runtime_state_structured(
+            game_data.conquest.game_year,
             &game_data,
             &BTreeSet::new(),
             &[

@@ -8,6 +8,12 @@ pub enum AppOutcome {
 }
 
 pub fn apply_action(app: &mut App, action: Action) -> AppOutcome {
+    let outcome = dispatch_action(app, action);
+    app.show_stale_session_notice_if_due();
+    outcome
+}
+
+fn dispatch_action(app: &mut App, action: Action) -> AppOutcome {
     match action {
         // Domain dispatch
         Action::Startup(act) => {
