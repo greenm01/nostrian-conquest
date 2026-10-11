@@ -1,5 +1,7 @@
 use crate::{CoreGameData, EncounterDispositionReason, Order, ShipLosses};
-use nc_data::{ShipCounts, slowest_speed, troop_transports};
+use nc_data::{
+    CrippledHulls, CrippledShips, HullClass, ShipCounts, Starbase, slowest_speed, troop_transports,
+};
 
 pub(super) const IDX_DD: usize = 0;
 pub(super) const IDX_CA: usize = 1;
@@ -37,10 +39,14 @@ pub(super) enum BattleRole {
     Neutral,
 }
 
+/// A side's hulls by class (the `IDX_` constants) and, among them, the
+/// crippled ones by recovery state. The state is loaded from the records at
+/// the start of a battle or strike and written back at its end, so damage
+/// carries into every later battle.
 #[derive(Clone, Debug, Default)]
 pub(super) struct FleetCombatState {
     pub(super) counts: [u32; 7],
-    pub(super) crippled: [u32; 7],
+    pub(super) crippled: [CrippledHulls; 7],
 }
 
 /// Hits a side took in a fleet battle but has not yet spent on a damage
@@ -85,7 +91,7 @@ impl FleetCombatState {
             .into_iter()
             .map(|idx| {
                 let as_value = fleet_class_as(idx);
-                self.nominal_count(idx) * as_value + self.crippled[idx] * crippled_as(as_value)
+                hull_attack_strength(as_value, self.counts[idx], self.crippled_count(idx))
             })
             .sum()
     }
@@ -95,7 +101,7 @@ impl FleetCombatState {
             .into_iter()
             .map(|idx| {
                 let as_value = fleet_class_as(idx);
-                self.nominal_count(idx) * as_value + self.crippled[idx] * crippled_as(as_value)
+                hull_attack_strength(as_value, self.counts[idx], self.crippled_count(idx))
             })
             .sum()
     }
@@ -118,8 +124,24 @@ impl FleetCombatState {
         self.counts.iter().any(|&c| c > 0)
     }
 
+    pub(super) fn crippled_count(&self, idx: usize) -> u32 {
+        self.crippled[idx].total()
+    }
+
     pub(super) fn nominal_count(&self, idx: usize) -> u32 {
-        self.counts[idx].saturating_sub(self.crippled[idx])
+        self.counts[idx].saturating_sub(self.crippled_count(idx))
+    }
+
+    /// `count` nominal hulls of class `idx` are crippled.
+    pub(super) fn cripple(&mut self, idx: usize, count: u32) {
+        self.crippled[idx].cripple(count);
+    }
+
+    /// `count` crippled hulls of class `idx` are destroyed, those crippled
+    /// this pass first and then the ones with the most turns left.
+    pub(super) fn finish_crippled(&mut self, idx: usize, count: u32) {
+        self.crippled[idx].take(count);
+        self.counts[idx] -= count;
     }
 
     /// The side has ships, as opposed to starbases only.
@@ -147,20 +169,52 @@ impl FleetCombatState {
     }
 }
 
-/// The attack strength of a fleet's warships at full strength: the
-/// yardstick the decision to fight shares with the battle.
-pub(crate) fn warship_attack_strength(destroyers: u16, cruisers: u16, battleships: u16) -> u32 {
-    u32::from(destroyers) * AS_DD + u32::from(cruisers) * AS_CA + u32::from(battleships) * AS_BB
+/// The attack strength of a fleet's warships: the yardstick the decision to
+/// fight shares with the battle. A crippled hull counts at its crippled AS.
+pub(crate) fn warship_attack_strength(
+    destroyers: u16,
+    cruisers: u16,
+    battleships: u16,
+    crippled: &CrippledShips,
+) -> u32 {
+    hull_attack_strength(AS_DD, destroyers.into(), crippled.destroyers.total())
+        + hull_attack_strength(AS_CA, cruisers.into(), crippled.cruisers.total())
+        + hull_attack_strength(AS_BB, battleships.into(), crippled.battleships.total())
+}
+
+/// A starbase's attack strength: 100, or 50 while it is crippled.
+pub(crate) fn base_attack_strength(base: &Starbase) -> u32 {
+    hull_attack_strength(AS_SB, 1, base.crippled.total().min(1))
+}
+
+/// `hulls` of one class, `crippled` of them crippled, each hull at its
+/// current AS.
+fn hull_attack_strength(as_value: u32, hulls: u32, crippled: u32) -> u32 {
+    hulls.saturating_sub(crippled) * as_value + crippled * crippled_as(as_value)
 }
 
 fn crippled_as(as_value: u32) -> u32 {
     as_value / 2
 }
 
+/// The combat-state index of a ship class.
+pub(super) fn class_index(class: HullClass) -> usize {
+    match class {
+        HullClass::Destroyer => IDX_DD,
+        HullClass::Cruiser => IDX_CA,
+        HullClass::Battleship => IDX_BB,
+        HullClass::Scout => IDX_SC,
+        HullClass::Transport => IDX_TT,
+        HullClass::Etac => IDX_ET,
+    }
+}
+
+/// The state of the fleets and starbase records named: their hulls, and
+/// the damage they carry in from earlier battles.
 pub(super) fn fleet_state_from_records(
     game_data: &CoreGameData,
     fleet_indices: &[usize],
-    starbases: u32,
+    bases: &[usize],
 ) -> FleetCombatState {
     let mut state = FleetCombatState::default();
     for &idx in fleet_indices {
@@ -171,8 +225,14 @@ pub(super) fn fleet_state_from_records(
         state.counts[IDX_SC] += fleet.ships.scouts as u32;
         state.counts[IDX_TT] += troop_transports(fleet) as u32;
         state.counts[IDX_ET] += fleet.ships.etacs as u32;
+        for class in HullClass::ALL {
+            state.crippled[class_index(class)].add(fleet.crippled.get(class));
+        }
     }
-    state.counts[IDX_SB] = starbases;
+    state.counts[IDX_SB] = bases.len() as u32;
+    for &idx in bases {
+        state.crippled[IDX_SB].add(&game_data.bases[idx].crippled);
+    }
     state
 }
 
@@ -255,10 +315,10 @@ pub(super) fn new_task_force(
     empire: u8,
     coords: [u8; 2],
     fleet_indices: Vec<usize>,
-    starbases: u32,
+    bases: &[usize],
 ) -> TaskForce {
     let role = task_force_role(game_data, empire, coords, &fleet_indices);
-    let state = fleet_state_from_records(game_data, &fleet_indices, starbases);
+    let state = fleet_state_from_records(game_data, &fleet_indices, bases);
     TaskForce {
         empire,
         fleet_indices,

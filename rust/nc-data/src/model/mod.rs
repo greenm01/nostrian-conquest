@@ -3,6 +3,7 @@
 //! the `nc-compat` codecs.
 
 mod conquest;
+mod crippled;
 mod fleet;
 mod ids;
 mod ipbm;
@@ -12,6 +13,7 @@ mod setup;
 mod starbase;
 
 pub use conquest::{Conquest, MaintenanceDays};
+pub use crippled::{CrippledHulls, CrippledShips, HullClass, RECOVERY_TURNS, Recovered};
 pub use fleet::{EscapeEpisode, Fleet, Order, ShipCounts};
 pub use ids::{Coords, EmpireId, FleetId, RecordNumber, StarbaseId};
 pub use ipbm::Ipbm;

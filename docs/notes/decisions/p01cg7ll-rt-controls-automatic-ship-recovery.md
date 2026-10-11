@@ -157,16 +157,93 @@ consultation recommends exporting whole surviving hulls without changing
 the SQLite state and disclosing that classic loses recovery state; this
 compatibility recommendation has not been separately approved by the owner.
 
-Engine implementation and manual updates are pending. Test recovery timing,
-split/merge conservation, repeated encounters, and automatic recovery in
-motion. Compare class RT values in campaigns before fixing them. This
+The engine, the display, and the manual are done (see Implementation). This
 approval does not authorize a crippled speed penalty or partial AS recovery.
+
+## Implementation (t066)
+
+Done in t066. The model, the engine, the display, and the tests follow the
+sections above; what they leave open, and what the code settled, is here.
+
+**Model and store.** `CrippledHulls` (`nc-data/src/model/crippled.rs`) holds,
+for one class, `turns[i]` hulls with `i + 1` turns left and `fresh`, the
+hulls crippled during the current pass. `RECOVERY_TURNS` is the one
+constant, 2; there is no per-class value, stat, or column. `Fleet::crippled`
+holds one `CrippledHulls` per class (destroyer, cruiser, battleship, scout,
+transport, ETAC; loaded and empty transports share one), and
+`Starbase::crippled` holds the base's one hull. The campaign store keeps
+them in two child tables, `snapshot_fleet_crippled` and
+`snapshot_base_crippled`, one row per non-empty class and turns-left value
+(`turns_left` 0 is this pass's count). No migration: the tables are created
+beside the old ones and an old store reads as nothing crippled. The state
+hash feeds a class in only when it has crippled hulls, so the pinned
+campaign seeds stand. A classic export writes whole hulls, and `db-export`
+prints how many crippled hulls it wrote whole and that the recovery state is
+lost; the store is unchanged. A classic import starts with nothing crippled.
+
+**Battles.** A battle, bombardment, or strike loads its sides from the
+records with their crippled counts and writes the result back
+(`combat/damage.rs`). Finishing fire leaves the cohorts in the order of
+item 5 of the timing list; the hulls it removes leave the first fleets or bases that hold
+that cohort, and the hulls a battle cripples are taken from the first
+nominal hulls left. A hull crippled and finished within one battle shows as
+a nominal hull destroyed. The old restoration was never an explicit step:
+battle state was rebuilt from the counts each time, so persisting the
+counts is what removes it.
+
+**Recovery and assistance.** `maint/ship_recovery.rs` runs the recovery step
+after colonization and before the AI. The assistance snapshot (`AssistWatch`)
+is taken when the 52 ticks begin, after the planet pass and the pre-pass
+merges, so hulls merged at the pass start count as the fleet's own. It lists
+each fleet that has crippled hulls and rests in orbit (depth 0.5 or more) of
+a world its owner holds, with the owner's bases at rest there (the growth
+bonus's test). After every unit's turn it strikes off a fleet whose owner,
+sector, fractions, or depth changed, whose world changed hands, or whose
+snapshot bases are all gone, moving, or no longer at rest. It keeps the
+bases that qualified at the start and requires that one of those same bases
+stay; losing one of two does not strike a fleet off. The assisted hulls are
+the fleet's turns-left counts at the start, narrowed after every unit's turn
+to what the fleet still holds, which makes losses take the unassisted hulls
+first and keeps merged-in hulls out. Only hulls with two turns left gain
+from the extra turn. A starbase's own recovery has no extra turn.
+
+**Detaching.** A player picks ships by class, not by condition, so the
+default is: a detachment or transfer takes the donor's crippled hulls of
+each class first, this pass's before the rest and the most turns left
+first, then nominal hulls. This leaves the fleet that stays closest to full
+strength, as proposed above. Merging adds the counts.
+
+**Strength.** `warship_attack_strength` takes the fleet's crippled counts;
+`FleetFacts` carries them. The attack decision, the intercept's fallback,
+the orbital gate, and the in-battle check count a crippled hull at half its
+AS and a crippled base at 50 (`base_attack_strength`); `decide_vs_base`
+takes the base's own strength. Bombardment keeps its 5/30/135 weights and
+its 2/15/67 crippled values. The +1 die for a side with a starbase does not
+depend on the base's condition.
+
+**Display.** The BBS fleet list adds `N damaged` after the composition in the
+Ships cell when the whole composition and the note fit, and otherwise draws
+exactly the cell it drew before; the review screen adds a `Damaged:` row
+(crippled ships by class, `BB 2DD`) in the blank row under Composition, only
+when the fleet has damage. The prompt row, the columns, and the widths do not
+move, and no RT column exists. The helm's fleet popup gains a `Damaged`
+line in the same way. Reports say `N ships recovered to full strength`, with
+`, M of them a year early with the help of the starbase` only when the
+extra turn brought hulls back early; a base reports `We have recovered to
+full strength.` No report names a turns-remaining count.
+
+**Owner changes.** The engine has no path that moves a fleet or a base
+between empires. A captured world passes on its docked ships, which carry no
+damage state, and a civil-disorder defection removes the fleet outright. The
+rule that an owner change keeps the counts therefore holds because nothing
+touches them; the defection test checks that the fleets that stay keep
+theirs. Any future path that changes a fleet's owner must carry `crippled`
+with it.
 
 ## Evidence and acceptance
 
 Approved by the owner on 2026-10-10 following the discussion of automatic
 recovery and the name RT. See the [decision-2/3 investigation](../investigations/7y0ypr6b-combat-withdrawal-and-persistent-damage-after-decision-1.md)
 for the earlier experiments and their limits. The
-[combat spec](../../dev/nc-combat-spec.md) and player manual need updating
-with implementation; this ADR does not claim the engine already recovers
-ships over time.
+[combat spec](../../dev/nc-combat-spec.md) and the player manual state the
+rule as implemented.

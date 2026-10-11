@@ -250,6 +250,49 @@ fn db_import_and_export_round_trip_fixture() {
     cleanup_dir(&exported);
 }
 
+/// A classic export writes crippled hulls whole and says the recovery state
+/// is lost; with nothing crippled it says nothing.
+#[test]
+fn db_export_says_the_recovery_state_of_crippled_hulls_is_lost() {
+    let source = unique_temp_dir("nc-cli-db-export-damage");
+    let exported = unique_temp_dir("nc-cli-db-export-damage-target");
+    common::copy_fixture_dir("fixtures/ecutil-init/v1.5", &source);
+    run_nc_cli(&["db-import", source.to_str().unwrap()]);
+    let export = || {
+        run_nc_cli(&[
+            "db-export",
+            source.to_str().unwrap(),
+            exported.to_str().unwrap(),
+        ])
+    };
+    assert!(!export().contains("crippled"));
+
+    let store = CampaignStore::open_default_in_dir(&source).expect("open store");
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    state.game_data.fleets[0].crippled.destroyers.fresh = 2;
+    state.game_data.fleets[1].crippled.cruisers.turns[0] = 1;
+    store
+        .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+    let stdout = export();
+    assert!(
+        stdout.contains("3 crippled hull(s) were written as whole hulls")
+            && stdout.contains("recovery state"),
+        "{stdout}"
+    );
+
+    cleanup_dir(&source);
+    cleanup_dir(&exported);
+}
+
 #[test]
 fn sqlite_maint_exported_directory_is_accepted_by_ecmaint_oracle() {
     if !ecmaint_oracle_available() {

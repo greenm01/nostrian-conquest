@@ -7,11 +7,14 @@
 //! `Real48` as its six bytes. Lists feed their length first.
 
 use crate::model::{
-    BuildSlot, Conquest, Coords, Fleet, Ipbm, MaintenanceDays, Planet, Player, Setup, ShipCounts,
-    Starbase, Stardock,
+    BuildSlot, Conquest, Coords, CrippledHulls, Fleet, HullClass, Ipbm, MaintenanceDays, Planet,
+    Player, Setup, ShipCounts, Starbase, Stardock,
 };
 use crate::rng::splitmix64;
 use crate::{CoreGameData, Real48};
+
+/// The tag a starbase's crippled hull hashes under, after the fleet classes'.
+const STARBASE_TAG: u8 = 6;
 
 pub(crate) struct StateHash(u64);
 
@@ -211,6 +214,7 @@ impl StateHash {
             mission_target,
             rules_of_engagement,
             ships,
+            crippled,
             escape,
         } = fleet;
         self.u64(u64::from(fleet_number.0));
@@ -249,13 +253,29 @@ impl StateHash {
         ] {
             self.u64(u64::from(*count));
         }
-        // A fleet in no escape adds nothing, so the pinned seeds of the
-        // classic fixtures stand.
+        // A fleet with no crippled hulls and in no escape adds nothing, so
+        // the pinned seeds of the classic fixtures stand.
+        for class in HullClass::ALL {
+            self.crippled(class.code(), crippled.get(class));
+        }
         if let Some(escape) = escape {
             self.coords(escape.sector);
             self.u64(u64::from(escape.layer));
             self.u64(u64::from(escape.pursuers));
         }
+    }
+
+    /// A class's crippled hulls, tagged with the class so that equal counts
+    /// in two classes hash differently; nothing when none are crippled.
+    fn crippled(&mut self, tag: u8, hulls: &CrippledHulls) {
+        if hulls.is_empty() {
+            return;
+        }
+        self.u64(u64::from(tag));
+        for count in hulls.turns {
+            self.u64(u64::from(count));
+        }
+        self.u64(u64::from(hulls.fresh));
     }
 
     fn starbase(&mut self, base: &Starbase) {
@@ -273,6 +293,7 @@ impl StateHash {
             moving,
             target,
             target_depth,
+            crippled,
         } = base;
         self.u64(u64::from(escort.0));
         self.u64(u64::from(base_id.0));
@@ -287,6 +308,7 @@ impl StateHash {
         self.bool(*moving);
         self.coords(*target);
         self.u64(u64::from(*target_depth));
+        self.crippled(STARBASE_TAG, crippled);
     }
 
     fn ipbm(&mut self, ipbm: &Ipbm) {

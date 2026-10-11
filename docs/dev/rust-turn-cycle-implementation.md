@@ -246,6 +246,8 @@ that exists today.
      planetary strikes
    - merge mission fleets
    - apply colonization
+   - recover ships: every crippled count drops one turn, and this pass's
+     newly crippled hulls enter at RT ([combat spec](nc-combat-spec.md))
    - run autopilot/rogue orders and player recompute
    - apply campaign transitions, starbase flags, join-host updates, and
      conquest-header normalization
@@ -686,13 +688,15 @@ snapshot drifts from the companion combat, timing, or economics specs.
 10. apply colonization
    - only from current post-combat fleet state; do not execute stale
      pre-combat colonization arrivals after ETAC loss or forced retreat
-11. run autopilot / rogue orders (tax, commissioning, build commands)
-12. update player starbase flags
-13. recompute per-player planet count / production totals
-14. apply campaign-state transitions and related player/fleet consequences
-15. normalize conquest header fields
-16. finalize pending observations and on-station scout reports
-17. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
+11. recover ships (RT): once per pass, after the ticks, the merges, and
+    colonization, and before the AI and the reports
+12. run autopilot / rogue orders (tax, commissioning, build commands)
+13. update player starbase flags
+14. recompute per-player planet count / production totals
+15. apply campaign-state transitions and related player/fleet consequences
+16. normalize conquest header fields
+17. finalize pending observations and on-station scout reports
+18. assemble maintenance events, apply stored diplomatic escalations, and canonicalize
 
 That is the ordering the Rust diagrams should describe when they are trying to
 show the current driver, not just the recovered classic outer boundaries.

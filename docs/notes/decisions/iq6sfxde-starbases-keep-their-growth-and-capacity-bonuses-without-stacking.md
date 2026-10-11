@@ -72,11 +72,12 @@ uses `starbase_planets` (the owner's base, depth 0.5 or more, not moving,
 taken before the ticks); capacity, the build screen, and the Revenue forecast
 use `planet_has_friendly_starbase` (the owner's base in orbit or descending
 to its own world's orbit). Each test is a yes or no for the world, so a second
-base adds nothing. A base has no persistent damage state, so a crippled base
-that survives keeps both bonuses. `economy_model.rs` checks the fade rows at
-taxes 40 to 66 against `starbase_review.py`, and the two tested tax cycles
-(75, 64, 64 and 70, 64) over 20 cycles from production 50 and 100, with a
-base present, against the model; `starbase_economy.rs` keeps the eligibility
+base adds nothing. Neither test reads a base's crippled state (t066 gave a
+base one, for recovery), so a crippled base that survives keeps both
+bonuses. `economy_model.rs` checks the fade rows at taxes 40 to 66 against
+`starbase_review.py`, and the two tested tax cycles (75, 64, 64 and 70, 64)
+over 20 cycles from production 50 and 100, with a base present, against the
+model; `starbase_economy.rs` keeps the eligibility
 cases.
 
 ## Acceptance and connections

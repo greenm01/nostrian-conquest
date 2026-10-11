@@ -1,6 +1,6 @@
 use super::BASE_RECORD_SIZE;
 use nc_classic::ParseError;
-use nc_data::{Coords, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
+use nc_data::{Coords, CrippledHulls, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
 
 use super::{put_real, put_u16, real_at, u16_at};
 
@@ -19,6 +19,7 @@ pub fn decode_base(bytes: &[u8; BASE_RECORD_SIZE]) -> Starbase {
         moving: bytes[0x1F] != 0,
         target: Coords::new(bytes[0x20], bytes[0x21]),
         target_depth: bytes[0x22],
+        crippled: CrippledHulls::default(),
     }
 }
 

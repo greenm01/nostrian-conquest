@@ -7,6 +7,8 @@ mod broadcast_report_delete;
 mod chrome_theme;
 #[path = "update/fleet_active_filter.rs"]
 mod fleet_active_filter;
+#[path = "update/fleet_damage_display.rs"]
+mod fleet_damage_display;
 #[path = "update/fleet_detach.rs"]
 mod fleet_detach;
 #[path = "update/fleet_menu_transport.rs"]

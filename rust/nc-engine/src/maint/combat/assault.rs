@@ -336,13 +336,13 @@ fn capture_planet(
     }
 }
 
-fn bombard_attack_as(state: &FleetCombatState) -> u32 {
+pub(super) fn bombard_attack_as(state: &FleetCombatState) -> u32 {
     let mut as_total = 0;
     // Healthy ships (AS_DD: 10, AS_CA: 30, AS_BB: 90)
     // Bombard modifiers (0.5x, 1.0x, 1.5x)
-    as_total += state.nominal_count(IDX_DD) * 5 + state.crippled[IDX_DD] * 2;
-    as_total += state.nominal_count(IDX_CA) * 30 + state.crippled[IDX_CA] * 15;
-    as_total += state.nominal_count(IDX_BB) * 135 + state.crippled[IDX_BB] * 67;
+    as_total += state.nominal_count(IDX_DD) * 5 + state.crippled_count(IDX_DD) * 2;
+    as_total += state.nominal_count(IDX_CA) * 30 + state.crippled_count(IDX_CA) * 15;
+    as_total += state.nominal_count(IDX_BB) * 135 + state.crippled_count(IDX_BB) * 67;
     as_total
 }
 
@@ -393,7 +393,7 @@ fn apply_blitz_landing_fire(
     if surviving_batteries == 0 {
         return (0, ShipLosses::default());
     }
-    let before = fleet_state_from_records(game_data, fleet_indices, 0);
+    let before = fleet_state_from_records(game_data, fleet_indices, &[]);
     let landing_exchange = resolve_orbital_exchange(
         campaign_seed,
         game_year,
@@ -416,7 +416,7 @@ fn apply_blitz_landing_fire(
             .sum()
     };
     let armies_before = loaded_armies(game_data);
-    super::fleet_battle::distribute_fleet_losses(game_data, fleet_indices, &before, &after);
+    super::damage::distribute_fleet_losses(game_data, fleet_indices, &before, &after);
     let armies_after = loaded_armies(game_data);
 
     (
@@ -564,7 +564,7 @@ pub(crate) fn resolve_strike(
                 .sum();
             let pre_docked_summary = stardock_summary(&game_data.planets[planet_idx]);
 
-            let before = fleet_state_from_records(game_data, &fleets, 0);
+            let before = fleet_state_from_records(game_data, &fleets, &[]);
             let initial_attacking_armies: u32 = fleets
                 .iter()
                 .map(|idx| game_data.fleets[*idx].ships.loaded_transports as u32)
@@ -620,13 +620,13 @@ pub(crate) fn resolve_strike(
                         defender_exchange.hits,
                         u32::from(defender_exchange.critical),
                     );
-                    super::fleet_battle::distribute_fleet_losses(
+                    super::damage::distribute_fleet_losses(
                         game_data,
                         &fleets,
                         &fleet_state,
                         &next_state,
                     );
-                    fleet_state = fleet_state_from_records(game_data, &fleets, 0);
+                    fleet_state = fleet_state_from_records(game_data, &fleets, &[]);
                 }
 
                 // Apply planet damage: suppression or breakthrough.
@@ -689,7 +689,7 @@ pub(crate) fn resolve_strike(
                 .push(mission_event(MissionOutcome::Succeeded, None));
         }
         Mission::InvadeWorld => {
-            let state = fleet_state_from_records(game_data, &fleets, 0);
+            let state = fleet_state_from_records(game_data, &fleets, &[]);
             let bombard_as = bombard_attack_as(&state);
             let initial_attacking_armies: u32 = fleets
                 .iter()
@@ -734,7 +734,7 @@ pub(crate) fn resolve_strike(
                 return_exchange.hits,
                 u32::from(return_exchange.critical),
             );
-            super::fleet_battle::distribute_fleet_losses(game_data, &fleets, &before, &after);
+            super::damage::distribute_fleet_losses(game_data, &fleets, &before, &after);
 
             apply_battery_hits(
                 &mut game_data.planets[planet_idx],
@@ -962,7 +962,7 @@ pub(crate) fn resolve_strike(
         }
         Mission::BlitzWorld => {
             let previous_owner = game_data.planets[planet_idx].owner.0;
-            let cover_state = fleet_state_from_records(game_data, &fleets, 0);
+            let cover_state = fleet_state_from_records(game_data, &fleets, &[]);
             let pre_batteries =
                 u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
             let pre_armies = u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX);

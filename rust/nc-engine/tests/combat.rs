@@ -7,6 +7,8 @@ mod assault;
 mod planetary;
 #[path = "combat/pursuit.rs"]
 mod pursuit;
+#[path = "combat/recovery.rs"]
+mod recovery;
 #[path = "combat/resolution.rs"]
 mod resolution;
 #[path = "combat/retreat.rs"]

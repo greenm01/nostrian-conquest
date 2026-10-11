@@ -1,6 +1,6 @@
 use crate::Real48;
 
-use super::{Coords, EmpireId, FleetId, RecordNumber, StarbaseId};
+use super::{Coords, CrippledHulls, EmpireId, FleetId, RecordNumber, StarbaseId};
 
 /// One BASES.DAT record. Records form one doubly linked chain per empire,
 /// headed by the player's `bases_first` and `bases_last`.
@@ -32,4 +32,7 @@ pub struct Starbase {
     pub target: Coords,
     /// 0x22: target depth, 1 orbit or 0 deep space.
     pub target_depth: u8,
+    /// Whether battle has crippled the base (at most one hull), and how long
+    /// it needs to recover. Not a classic field: an export writes it whole.
+    pub crippled: CrippledHulls,
 }

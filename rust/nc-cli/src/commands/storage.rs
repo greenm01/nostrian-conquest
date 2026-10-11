@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
-use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME};
+use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, crippled_hull_count};
 
 use crate::workspace::{overlay_classic_runtime_files, seed_classic_runtime_files};
 
@@ -34,6 +34,13 @@ pub fn export_latest_db_snapshot(
             store.path().display(),
             target_dir.display()
         );
+        let crippled = crippled_hull_count(&store.load_latest_runtime_game_data()?);
+        if crippled > 0 {
+            println!(
+                "{crippled} crippled hull(s) were written as whole hulls: classic files have no \
+                 recovery state, so it is lost in the export (the campaign store keeps it)."
+            );
+        }
     }
     Ok(())
 }

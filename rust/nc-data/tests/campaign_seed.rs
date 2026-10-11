@@ -30,3 +30,30 @@ fn derived_seed_changes_with_a_single_field() {
         derive_campaign_seed_from_runtime(&changed, &[], &[])
     );
 }
+
+// Crippled hulls are part of the state, but a fleet with none adds nothing
+// (the pinned seed above), and equal counts in two classes hash apart.
+#[test]
+fn derived_seed_sees_crippled_hulls_by_class() {
+    let game_data = init_fixture();
+    let seed = |game_data: &CoreGameData| derive_campaign_seed_from_runtime(game_data, &[], &[]);
+    let mut destroyers = game_data.clone();
+    destroyers.fleets[0].crippled.destroyers.fresh = 1;
+    let mut cruisers = game_data.clone();
+    cruisers.fleets[0].crippled.cruisers.fresh = 1;
+    let mut later = destroyers.clone();
+    later.fleets[0].crippled.destroyers.fresh = 0;
+    later.fleets[0].crippled.destroyers.turns[1] = 1;
+
+    let seeds = [
+        seed(&game_data),
+        seed(&destroyers),
+        seed(&cruisers),
+        seed(&later),
+    ];
+    for (i, a) in seeds.iter().enumerate() {
+        for b in &seeds[i + 1..] {
+            assert_ne!(a, b);
+        }
+    }
+}

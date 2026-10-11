@@ -101,7 +101,7 @@ fn detail_lines(app: &DashApp, fleet_record_index_1_based: usize) -> Option<Vec<
     let row = fleet_list::table_rows(app)
         .into_iter()
         .find(|row| row.key == FleetOverlayRowKey::Fleet(fleet_record_index_1_based))?;
-    Some(vec![
+    let mut lines = vec![
         DetailLine {
             label: "Location",
             value: format_sector_coords_table(row.coords),
@@ -134,7 +134,18 @@ fn detail_lines(app: &DashApp, fleet_record_index_1_based: usize) -> Option<Vec<
             label: "Armies",
             value: row.loaded_armies.to_string(),
         },
-    ])
+    ];
+    if !fleet.crippled.is_empty() {
+        // Crippled ships by class, after the composition they are part of.
+        lines.insert(
+            7,
+            DetailLine {
+                label: "Damaged",
+                value: nc_data::damaged_ships_table_summary(&fleet),
+            },
+        );
+    }
+    Some(lines)
 }
 
 fn popup_title(app: &DashApp, fleet_record_index_1_based: usize) -> String {

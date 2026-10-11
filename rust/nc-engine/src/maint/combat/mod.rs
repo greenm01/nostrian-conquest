@@ -11,10 +11,13 @@ mod assault;
 mod assault_tests;
 #[cfg(test)]
 mod capture_tests;
+mod damage;
 mod exchange;
 mod fleet_battle;
 #[cfg(test)]
 mod fleet_battle_tests;
+#[cfg(test)]
+mod damage_tests;
 mod reporting;
 mod retreat;
 mod state;
@@ -25,4 +28,4 @@ pub(crate) use reporting::{
     ContactObserver, mission_kind_for_order, push_fleet_contact, push_no_engagement,
 };
 pub(crate) use retreat::{abort_mission_to_seek_home_or_hold, nearest_friendly_world};
-pub(crate) use state::{STARBASE_ATTACK_STRENGTH, warship_attack_strength};
+pub(crate) use state::{STARBASE_ATTACK_STRENGTH, base_attack_strength, warship_attack_strength};

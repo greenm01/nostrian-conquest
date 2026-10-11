@@ -3,7 +3,7 @@
 //! one yardstick (combat decision 2): attack strength, not classic's
 //! 21/7/2 weights.
 
-use nc_data::GameRng;
+use nc_data::{CrippledHulls, GameRng};
 use nc_engine::maint::encounter::rules::{
     BASE_STRENGTH, FleetFacts, Mode, Situation, Verdict, base_factor, decide_vs_base,
     decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, strength,
@@ -261,24 +261,36 @@ fn starbases_are_attacked_only_as_an_assault_target_or_a_declared_enemy() {
     let mut bomber = at_world(1, order::BOMBARD).roe_set(6);
     bomber.battleships = 2;
     assert_eq!(
-        decide_vs_base(&bomber, BASE_STRENGTH, false),
+        decide_vs_base(&bomber, BASE_STRENGTH, BASE_STRENGTH, false),
         Verdict::Engaged
     );
     // The base protects the target world: its guard counts too.
     let guarded = BASE_STRENGTH + strength(&at_world(2, order::GUARD_STARBASE)) + 100;
-    assert_eq!(decide_vs_base(&bomber, guarded, false), Verdict::Aborted);
+    assert_eq!(
+        decide_vs_base(&bomber, guarded, BASE_STRENGTH, false),
+        Verdict::Aborted
+    );
     let hold = at_world(1, order::HOLD).roe_set(10);
     assert_eq!(
-        decide_vs_base(&hold, BASE_STRENGTH, false),
+        decide_vs_base(&hold, BASE_STRENGTH, BASE_STRENGTH, false),
         Verdict::Ignored
     );
-    assert_eq!(decide_vs_base(&hold, BASE_STRENGTH, true), Verdict::Engaged);
+    assert_eq!(
+        decide_vs_base(&hold, BASE_STRENGTH, BASE_STRENGTH, true),
+        Verdict::Engaged
+    );
     // A declared enemy weighs the base alone (100), not its guard.
     let cautious = at_world(1, order::HOLD).roe_set(6);
-    assert_eq!(decide_vs_base(&cautious, 1000, true), Verdict::Avoided);
+    assert_eq!(
+        decide_vs_base(&cautious, 1000, BASE_STRENGTH, true),
+        Verdict::Avoided
+    );
     let mut strong = cautious;
     strong.battleships = 2;
-    assert_eq!(decide_vs_base(&strong, 1000, true), Verdict::Engaged);
+    assert_eq!(
+        decide_vs_base(&strong, 1000, BASE_STRENGTH, true),
+        Verdict::Engaged
+    );
 }
 
 /// Decision 2's yardstick: each warship at its attack strength, nothing for
@@ -296,6 +308,46 @@ fn strength_is_attack_strength() {
     fleet.order = order::GUARD_STARBASE;
     assert_eq!(strength(&fleet), 180);
     assert_eq!(BASE_STRENGTH, 100);
+}
+
+/// Decision 3 meets decision 2: a crippled warship counts at its crippled
+/// attack strength (half), in the decision to fight as in the battle.
+#[test]
+fn a_crippled_warship_counts_at_half_its_attack_strength() {
+    let mut fleet = at_world(1, order::HOLD);
+    fleet.battleships = 2;
+    fleet.cruisers = 2;
+    fleet.destroyers = 3;
+    assert_eq!(strength(&fleet), 180 + 60 + 30);
+    let hurt = |turns_2: u32| CrippledHulls {
+        turns: [0, turns_2],
+        fresh: 0,
+    };
+    fleet.crippled.battleships = hurt(1);
+    fleet.crippled.cruisers = hurt(2);
+    fleet.crippled.destroyers = CrippledHulls {
+        turns: [1, 0],
+        fresh: 1,
+    };
+    // Battleships 90 + 45, cruisers 2 x 15, destroyers 10 + 2 x 5.
+    assert_eq!(strength(&fleet), 135 + 30 + 20);
+}
+
+/// Three cruisers (90) take on three cruisers at ROE 6; with two of the
+/// observer's crippled (60) they decline.
+#[test]
+fn a_crippled_fleet_declines_the_fight_its_whole_strength_would_take() {
+    let mut observer = at_world(1, order::HOLD).roe_set(6);
+    observer.layer = 0;
+    observer.cruisers = 3;
+    let mut target = at_world(2, order::HOLD);
+    target.layer = 0;
+    target.cruisers = 3;
+    let rechecks =
+        |observer: FleetFacts| verdict(observer, target, situation(None, true), Mode::Recheck);
+    assert_eq!(rechecks(observer), Verdict::Engaged);
+    observer.crippled.cruisers.turns[0] = 2;
+    assert_eq!(rechecks(observer), Verdict::Avoided);
 }
 
 /// Where the yardstick changes who agrees to fight: three destroyers meet
@@ -318,11 +370,11 @@ fn the_yardstick_lets_three_destroyers_fight_a_cruiser_and_four_cruisers_a_base(
     let mut cruisers = at_world(1, order::BOMBARD).roe_set(6);
     cruisers.cruisers = 4;
     assert_eq!(
-        decide_vs_base(&cruisers, BASE_STRENGTH, false),
+        decide_vs_base(&cruisers, BASE_STRENGTH, BASE_STRENGTH, false),
         Verdict::Engaged
     );
     assert_eq!(
-        decide_vs_base(&cruisers, BASE_STRENGTH, true),
+        decide_vs_base(&cruisers, BASE_STRENGTH, BASE_STRENGTH, true),
         Verdict::Engaged
     );
 }

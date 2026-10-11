@@ -2,7 +2,7 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
 use crate::model::{
-    Coords, EmpireId, EscapeEpisode, Fleet, FleetId, Order, RecordNumber, ShipCounts,
+    Coords, CrippledShips, EmpireId, EscapeEpisode, Fleet, FleetId, Order, RecordNumber, ShipCounts,
 };
 
 /// One row per FLEETS.DAT record, plus the escape episode the fleet is in
@@ -139,6 +139,7 @@ fn fleet_from_row(row: &Row<'_>) -> rusqlite::Result<Fleet> {
             etacs: row.get("etacs")?,
             scouts: row.get("scouts")?,
         },
+        crippled: CrippledShips::default(),
         escape,
     })
 }

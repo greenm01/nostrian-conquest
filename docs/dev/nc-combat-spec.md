@@ -73,9 +73,10 @@ fleet that has just lost its last armed ship. A side that breaks off may be
 pursued (see Fleet Combat Sequence).
 
 ### 3. Aggregate Combat
-EC uses ship counts, not per-hull damage state. The Rust engine uses a
-**Nominal -> Crippled -> Destroyed** step-loss model during a battle. Only
-destroyed hulls are written back to the save file.
+EC uses ship counts, not per-hull records. The Rust engine uses a
+**Nominal -> Crippled -> Destroyed** step-loss model. Crippled hulls stay
+crippled after the battle, counted by class and by how long each still needs
+to recover (see Damage That Lasts); destroyed hulls are gone.
 
 ### 4. Defenders Fire First on the Ground
 In the landing battle the defenders fire before the attackers. That is the
@@ -139,9 +140,9 @@ the decision. In short:
   (destroyer 10, cruiser 30, battleship 90), a participating starbase once at
   100, and scouts, transports, and ETACs at 0. Die bonuses do not inflate it.
   Classic's 21/7/2 weights and its +30 for a guard at rest with its base are
-  not used; the ROE thresholds, sighting, and intercept are classic's. Once
-  hull damage persists (decision 3), a crippled hull counts at its crippled
-  AS and a crippled starbase at 50.
+  not used; the ROE thresholds, sighting, and intercept are classic's. A
+  crippled hull counts at its crippled AS (half) and a crippled starbase at
+  50, on every one of these paths.
 - Starbases scan and report but never start a fight. A fleet attacks a
   starbase only as a declared enemy or when the base protects its assault
   target.
@@ -214,6 +215,75 @@ breaking off, or the 64-round cap. The next battle starts at zero, even
 between the same fleets in the same tick: a pursuit on a later tick is a new
 encounter, and a fleet that breaks off forfeits whatever was carried against
 its enemy.
+
+### Damage That Lasts
+
+Combat decision 3 ([RT controls automatic ship recovery](../notes/decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md)).
+A hull that a battle cripples stays crippled until it recovers on its own.
+Recovery needs no order, payment, shipyard, or owned world, and it goes on
+while the fleet moves. A crippled hull fights at its crippled AS (half) and
+changes nothing else: speed, DS, and mission ability are as before.
+
+**RT, Recovery Turns, is 2 for every class**, starbases included. It is one
+game-wide rule, not a stat of a ship class. A hull crippled in pass N stays
+crippled through passes N+1 and N+2, recovers when pass N+2 ends, and fights
+whole from N+3. The pass that cripples a hull does not count toward its
+recovery. An encounter does not advance it.
+
+**The counters.** Each fleet keeps, for every ship class, its crippled
+hulls counted by turns remaining (1 to RT), and a separate count of the
+hulls crippled during the current pass. A starbase keeps the same for its
+one hull. The classic files have no field for them: a classic export writes
+whole hulls and says the recovery state is lost, a classic import starts
+with nothing crippled, and the campaign store keeps them
+(`snapshot_fleet_crippled`, `snapshot_base_crippled`).
+
+**No recovery inside a pass.** A hull crippled at tick 10 is still crippled
+at tick 30 and in every later battle until it recovers. A battle's result is
+written back to the fleets and starbases of each side with its damage: the
+next battle, bombardment, or strike starts from it.
+
+**The recovery step runs once per pass,** after the 52 ticks, the post-year
+merges, and colonization, and before the AI and the reports. Every
+turns-remaining count drops by one, hulls that reach zero are whole, and the
+hulls crippled this pass enter at RT. No battle happens between the end of
+one pass and the start of the next, so for combat this is also the start of
+the next pass. Reports say how many ships recovered, and how many of them
+came back a pass early with a starbase's help when any did. Players see only
+nominal or crippled; no table shows a recovery time.
+
+**Starbase assistance.** A hull recovers one extra turn early when it was
+crippled before the pass began, belonged to the fleet when the ticks began,
+and the fleet stayed at rest in orbit of the same owned world, beside one of
+the owner's starbases that stayed there, through all 52 ticks. The engine
+decides this from a snapshot taken when the ticks begin and dropped when the
+pass ends, so it stores nothing. After every unit's turn it strikes off
+a fleet that moved (even if it came back), lost its world, lost every base
+of the snapshot, or changed hands, and it narrows the assisted hulls to
+those the fleet still has. Hulls a loss removes are the unassisted ones
+first; hulls that merge in or arrive during the pass never receive the
+turn, and neither do hulls crippled this pass. A starbase does not assist
+its own recovery. Assistance matters only for hulls with two turns left:
+those with one recover at the end of the pass either way.
+
+**Finishing and splitting.** Hit allocation still picks the class and
+whether fire lands on nominal or crippled hulls. Within that choice, fire
+that finishes a crippled hull takes the one with the most turns remaining,
+and the hulls crippled this pass before any other, so a fleet's survivors
+are the closest to recovery. A surviving crippled hull keeps its count.
+Merging fleets adds the counts, this pass's included. Detaching or
+transferring ships takes the donor's crippled hulls of each class first,
+in the same order, and moves their counts with them; nothing is reset or
+sped up. A fleet that changes owner would keep its counts; the engine has
+no path that moves a fleet between empires (a civil-disorder defection
+removes the fleet).
+
+**Strength sees damage.** The attack decision, the intercept's fallback, the
+orbital gate, and the in-battle ROE check weigh a crippled warship at half
+its AS and a crippled starbase at 50. Bombardment and assault fire keep
+their own weights (5, 30, 135 per hull) and their rounding for crippled
+hulls: 2, 15, and 67. A crippled starbase keeps the growth and capacity
+bonuses of its world and the +1 a starbase adds to the die.
 
 ### Landing Battle
 
@@ -412,9 +482,9 @@ Planet), with no extra battery volley.
    sides break off, nobody pursues. The battle then ends.
 5. **End State**: Combat ends when one side is destroyed or breaks off. A
    battle still undecided after 64 exchanges ends unresolved: survivors keep
-   their ships and their orders, nobody holds the field, nobody retreats, no
-   mission aborts, and an attacker at the orbital gate gains no permission
-   to strike. The next tick's ordinary encounter rules decide whether they
+   their ships, their damage, and their orders, nobody holds the field,
+   nobody retreats, no mission aborts, and an attacker at the orbital gate
+   gains no permission to strike. The next tick's ordinary encounter rules decide whether they
    fight again; nothing remembers the capped battle.
 6. **Retreat**: Once the losses are on the fleet records, each surviving
    fleet's maximum speed is recomputed from the ships it has left, as

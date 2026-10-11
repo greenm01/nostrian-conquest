@@ -11,6 +11,7 @@ use nc_data::{DiplomacyOverride, GameRng, RNG_TAG_ENCOUNTER, Real48, has_any_for
 
 use super::combat::{AssaultEvents, FleetBattlePhaseEvents};
 use super::movement::YearMovement;
+use super::ship_recovery::AssistWatch;
 use super::{FleetRemovalRemapInfo, MovementEvents};
 use crate::navigation::motion::TICKS_PER_YEAR;
 use crate::{CoreGameData, VisibleHazardIntel};
@@ -106,6 +107,9 @@ pub(super) struct YearOutcome {
     pub encounter_events: FleetBattlePhaseEvents,
     /// Planetary strikes, each in its tick.
     pub assault_events: AssaultEvents,
+    /// Which resting fleets' crippled hulls kept their starbase through
+    /// every tick, for the recovery step.
+    pub assist_watch: AssistWatch,
 }
 
 /// Run the year's 52 ticks (`0824:1004`).
@@ -137,9 +141,13 @@ pub(super) fn run_year(
         events: FleetBattlePhaseEvents::default(),
         assault_events: AssaultEvents::default(),
     };
+    // The starbase's extra recovery turn is decided from what rests where
+    // when the ticks begin, and each unit's turn can only strike entries off.
+    let mut assist_watch = AssistWatch::begin(game_data);
     for tick in 1..=TICKS_PER_YEAR {
         for &unit in &order {
             year.run_unit(game_data, unit, tick)?;
+            assist_watch.observe(game_data);
         }
     }
     let (movement_events, movement_remap) = year.movement.finish(game_data);
@@ -148,5 +156,6 @@ pub(super) fn run_year(
         movement_remap,
         encounter_events: year.events,
         assault_events: year.assault_events,
+        assist_watch,
     })
 }

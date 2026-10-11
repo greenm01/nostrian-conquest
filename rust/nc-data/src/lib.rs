@@ -70,9 +70,10 @@ pub use economy::{
 };
 pub use fleet_orders::{order_summary, set_mission_target};
 pub use fleet_ships::{
-    has_any_force, has_combat_ships, is_support_only, recompute_max_speed, set_armies_aboard,
-    set_troop_transports, ship_composition_summary, ship_composition_table_summary, slowest_speed,
-    starship_count, troop_transports,
+    crippled_hull_count, damaged_ships_table_summary, has_any_force, has_combat_ships, hull_count,
+    is_support_only, recompute_max_speed, set_armies_aboard, set_troop_transports,
+    ship_composition_summary, ship_composition_table_summary, slowest_speed, starship_count,
+    troop_transports,
 };
 pub use homeworld_seed::{
     has_homeworld_seed_production, is_homeworld_seed_ignoring_name, is_named_homeworld_seed,
@@ -89,9 +90,9 @@ pub use maintenance_types::{
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,
     InvalidPlayerStateEvent, JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission,
     MissionAbortReason, MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent,
-    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, SalvageResolvedEvent,
-    ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport,
-    StarbaseReportEvent, StarbaseSightingEvent,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, RecoveredUnit,
+    SalvageResolvedEvent, ScoutContactEvent, ShipLosses, ShipsRecoveredEvent, StarbaseAlert,
+    StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{
@@ -99,9 +100,10 @@ pub use map_export::{
     STARMAP_TEXT_FILE_NAME, build_player_map_export_data,
 };
 pub use model::{
-    BuildSlot, Conquest, Coords, DiplomaticRelation, EmpireId, EscapeEpisode, Fleet, FleetId, Ipbm,
-    MaintenanceDays, Order, Planet, Player, PlayerMode, ProductionItemKind, RecordNumber, Setup,
-    ShipCounts, Starbase, StarbaseId, Stardock,
+    BuildSlot, Conquest, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
+    EscapeEpisode, Fleet, FleetId, HullClass, Ipbm, MaintenanceDays, Order, Planet, Player,
+    PlayerMode, ProductionItemKind, RECOVERY_TURNS, RecordNumber, Recovered, Setup, ShipCounts,
+    Starbase, StarbaseId, Stardock,
 };
 pub use motion::{set_fleet_at_rest, set_starbase_at_rest};
 pub use names::{

@@ -103,6 +103,50 @@ pub fn push_misc_entries(
         });
     }
 
+    // ----- Ship recovery -----
+    // The recovery step runs after the year's last tick. Reports say how
+    // many ships came back, and mention a starbase's help only when it
+    // brought some back early.
+    for event in &events.ship_recovery_events {
+        let [x, y] = event.coords;
+        let place = format!(
+            "{}({x},{y})",
+            if event.in_system { "System" } else { "Sector" }
+        );
+        let (source, body) = match event.unit {
+            nc_data::RecoveredUnit::Fleet { fleet_number } => {
+                let ships = match event.hulls {
+                    1 => "1 ship".to_string(),
+                    n => format!("{n} ships"),
+                };
+                let help = match event.early {
+                    0 => String::new(),
+                    n => format!(", {n} of them a year early with the help of the starbase"),
+                };
+                (
+                    owned_fleet_source_clause(Some(fleet_number as u8), &place),
+                    format!(" {ships} recovered to full strength{help}."),
+                )
+            }
+            nc_data::RecoveredUnit::Starbase { base_id } => (
+                format!("From Starbase {base_id}, located in {place}:"),
+                " We have recovered to full strength.".to_string(),
+            ),
+        };
+        let header = report_header(&source, Some(52), year);
+        entries.push(ReportEntry {
+            text: format!("{header}{body}"),
+            kind: 0x05,
+            tail: RESULTS_TAIL_FLEET,
+            target: ReportTarget::Both {
+                recipient: event.owner_empire,
+            },
+            repeat_next_pointer: false,
+            stardate_week: Some(52),
+            narrative_phase: narrative_phase_for_report_text(&body),
+        });
+    }
+
     // ----- Civil disorder events -----
     for event in &events.civil_disorder_events {
         let source = "From your Fleet Command Center:";

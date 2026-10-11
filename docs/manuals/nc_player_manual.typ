@@ -427,7 +427,7 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed, and surviving crippled ships are repaired automatically after battle. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength in every later battle until it recovers on its own: a ship crippled this year fights crippled next year and the year after, and is whole from then on, with no order, payment, or shipyard. A fleet that rests in orbit of your world beside your starbase for a whole year gets its older cripples back a year sooner. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
@@ -808,6 +808,10 @@ Fleet ID as the host, and *T* opens ship transfer for a checked pair. Row-based
 commands such as *Review*, *ETA*, *Detach*, *Load*, and *Unload* still use the
 highlighted fleet.
 
+Crippled ships show in two places. The Fleet List adds the number of damaged
+ships to a fleet's Ships cell when it fits, and *Review* lists them by class.
+Your maintenance report says when ships have recovered.
+
 == Building and Commissioning
 
 Each planet keeps a build queue, and your *budget* is the only limit on it: you may order any number of units of any kind, so long as the budget covers them. During maintenance, a planet processes as many queued build points as its current per-turn build capacity allows. Small orders may finish in one maintenance turn, while larger ones can stay queued across multiple years until the remaining cost reaches zero. As enough points are applied to complete individual units, ships and starbases move to *Stardock* --- a holding area on the planet where they sit idle and vulnerable until commissioned --- even if other units from the same order remain queued. Ships are commissioned into numbered fleets, while starbases are commissioned individually and managed through their own Starbase Command submenu. Armies and ground batteries, by contrast, deploy directly to the planet surface and do not pass through stardock.
@@ -1121,6 +1125,14 @@ outright, a crippled ship first.
 - Carried hits are lost when the battle ends: by destruction, by a side
   breaking off, or at the 64-round limit. The next battle starts from zero,
   a pursuit on a later week included.
+- A crippled hull stays crippled after the battle and fights at half its AS (a
+  crippled starbase at 50) in every later battle, the attack decision and the
+  ROE checks included. It recovers on its own at the end of the second year
+  after the year that crippled it, and fights whole from the third, for every
+  class. A starbase brings it back a year early when the hull was crippled
+  before the year began and its fleet rested in orbit of your own world beside
+  that starbase for the whole year. Finishing fire takes the newest damage
+  first, then the hulls with the most time left.
 
 == Planetary Force Ratio to CRT Column
 

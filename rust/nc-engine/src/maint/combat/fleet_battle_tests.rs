@@ -23,17 +23,17 @@ use super::fleet_battle::{BattleSide, FleetBattle, apply_pending_hits, fight_enc
 use super::state::{FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, new_task_force};
 
 /// Empty deep-space sector.
-const DEEP_SPACE: [u8; 2] = [8, 8];
+pub(super) const DEEP_SPACE: [u8; 2] = [8, 8];
 
 #[derive(Clone, Copy)]
-struct Ships {
-    dd: u16,
-    ca: u16,
-    bb: u16,
-    tt: u16,
+pub(super) struct Ships {
+    pub(super) dd: u16,
+    pub(super) ca: u16,
+    pub(super) bb: u16,
+    pub(super) tt: u16,
 }
 
-const NONE: Ships = Ships {
+pub(super) const NONE: Ships = Ships {
     dd: 0,
     ca: 0,
     bb: 0,
@@ -42,9 +42,9 @@ const NONE: Ships = Ships {
 
 /// Scripted dice: `d10` by combat kind (its low byte), round, and the acting
 /// and target empires; `pursuit` by round, pursuer, and fleeing empire.
-struct Scripted<'a> {
-    d10: &'a dyn Fn(u64, u32, u8, u8) -> u8,
-    pursuit: &'a dyn Fn(u32, u8, u8) -> (f64, f64),
+pub(super) struct Scripted<'a> {
+    pub(super) d10: &'a dyn Fn(u64, u32, u8, u8) -> u8,
+    pub(super) pursuit: &'a dyn Fn(u32, u8, u8) -> (f64, f64),
 }
 
 impl BattleDice for Scripted<'_> {
@@ -59,12 +59,12 @@ impl BattleDice for Scripted<'_> {
 
 /// Draws that catch whatever the speeds: the arc's sine is 1 and the roll
 /// is 0.
-const CAUGHT: (f64, f64) = (0.5, 0.0);
+pub(super) const CAUGHT: (f64, f64) = (0.5, 0.0);
 /// Draws that never catch a side the pursuer is not faster than: the arc's
 /// sine is 0.
 const ESCAPED: (f64, f64) = (0.0, 0.5);
 
-fn board() -> CoreGameData {
+pub(super) fn board() -> CoreGameData {
     let dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("../../fixtures")
         .join("ecmaint-post")
@@ -73,7 +73,7 @@ fn board() -> CoreGameData {
 }
 
 /// Make fleet record `idx` a fleet of `owner` holding in `DEEP_SPACE`.
-fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe: u8) {
+pub(super) fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe: u8) {
     let fleet = &mut game_data.fleets[idx];
     fleet.owner.0 = owner;
     fleet.sector = Coords::from_array(DEEP_SPACE);
@@ -93,7 +93,7 @@ fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe:
 
 /// Fight one battle in `DEEP_SPACE` between two fleet records, each a side
 /// of its owner, under `round_cap` rounds.
-fn fight_capped(
+pub(super) fn fight_capped(
     game_data: &mut CoreGameData,
     dice: &dyn BattleDice,
     round_cap: u32,
@@ -175,11 +175,15 @@ fn a_destroyer_costs_eight_hits_a_step() {
     let mut state = FleetCombatState::default();
     state.counts[IDX_DD] = 2;
     let carried = apply_hits_to_fleet(&mut state, 15, 0, 0);
-    assert_eq!(state.crippled[IDX_DD], 1, "15 suppression hits cripple one");
+    assert_eq!(
+        state.crippled_count(IDX_DD),
+        1,
+        "15 suppression hits cripple one"
+    );
     assert_eq!(carried.suppression, 7);
     let carried = apply_hits_to_fleet(&mut state, 0, 16, 0);
     assert_eq!(
-        (state.counts[IDX_DD], state.crippled[IDX_DD]),
+        (state.counts[IDX_DD], state.crippled_count(IDX_DD)),
         (1, 0),
         "execution fire finishes the crippled one for 8 and cannot afford the nominal one"
     );
@@ -235,7 +239,7 @@ fn suppression_and_execution_carry_separately() {
         game_data
     };
     let pools = |carried_suppression: u32, suppression: u32, execution: u32| {
-        let mut forces = vec![new_task_force(&game_data, 2, DEEP_SPACE, vec![4], 0)];
+        let mut forces = vec![new_task_force(&game_data, 2, DEEP_SPACE, vec![4], &[])];
         forces[0].carried_hits.suppression = carried_suppression;
         apply_pending_hits(
             &mut forces,
@@ -243,7 +247,10 @@ fn suppression_and_execution_carry_separately() {
             &HashMap::from([(2, execution)]),
             &HashMap::new(),
         );
-        (forces[0].state.crippled[IDX_TT], forces[0].carried_hits)
+        (
+            forces[0].state.crippled_count(IDX_TT),
+            forces[0].carried_hits,
+        )
     };
     // Seven carried suppression hits and three new ones cripple a transport
     // of DS 10; three new execution hits buy nothing with them, and each
