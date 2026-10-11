@@ -1,28 +1,37 @@
 use super::*;
+use crate::ProductionItemKind;
 
 impl CoreGameData {
+    /// Errors unless the planet queues exactly `expected` units, by kind.
     pub fn planet_build_errors_current_known(
         &self,
         record_index_1_based: usize,
-        slot: u8,
-        kind: u8,
+        expected: &[(ProductionItemKind, u32)],
     ) -> Vec<String> {
         let mut errors = Vec::new();
         match self.planets.get(record_index_1_based - 1) {
             Some(record) => {
-                if record.build_queue[0].points_owed != slot {
-                    errors.push(format!(
-                        "PLANET[{}].build_slot expected {:#04x}, got {:#04x}",
-                        record_index_1_based, slot, record.build_queue[0].points_owed
-                    ));
-                }
-                if record.build_queue[0].kind.code() != kind {
-                    errors.push(format!(
-                        "PLANET[{}].build_kind expected {:#04x}, got {:#04x}",
-                        record_index_1_based,
-                        kind,
-                        record.build_queue[0].kind.code()
-                    ));
+                let queued = crate::build_queue_unit_counts(record);
+                let mut kinds = queued.keys().copied().collect::<Vec<_>>();
+                kinds.extend(expected.iter().map(|(kind, _)| kind.code()));
+                kinds.sort_unstable();
+                kinds.dedup();
+                for code in kinds {
+                    let want = expected
+                        .iter()
+                        .filter(|(kind, _)| kind.code() == code)
+                        .map(|(_, quantity)| quantity)
+                        .sum::<u32>();
+                    let got = queued.get(&code).copied().unwrap_or(0);
+                    if want != got {
+                        errors.push(format!(
+                            "PLANET[{}] queued {:?} expected {}, got {}",
+                            record_index_1_based,
+                            ProductionItemKind::from_code(code),
+                            want,
+                            got
+                        ));
+                    }
                 }
             }
             None => errors.push(format!("PLANETS.DAT missing record {record_index_1_based}")),

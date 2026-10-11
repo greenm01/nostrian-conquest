@@ -19,7 +19,7 @@ fn autopilot_game(planet: Planet) -> CoreGameData {
 fn queued_points(planet: &Planet, kind: ProductionItemKind) -> u32 {
     (0..10)
         .filter(|&slot| planet.build_queue[slot].kind == kind)
-        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
+        .map(|slot| planet.build_queue[slot].points_owed)
         .sum()
 }
 
@@ -48,7 +48,7 @@ fn autopilot_queues_no_more_than_the_planet_budget() {
 
     let planet = &game.planets[0];
     let queued: u32 = (0..10)
-        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
+        .map(|slot| planet.build_queue[slot].points_owed)
         .sum();
     assert_eq!(stored_production_points(planet), 50);
     assert!(queued > 0, "autopilot should queue defenses");

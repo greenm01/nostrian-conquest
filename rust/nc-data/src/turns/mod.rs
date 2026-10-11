@@ -43,7 +43,7 @@ pub enum PlanetTurnAction {
     ClearBuildQueue,
     ClearBuildKind { kind: u8 },
     RemoveBuild { qty: u16, kind: u8 },
-    Build { points_remaining: u8, kind: u8 },
+    Build { points_remaining: u32, kind: u8 },
     Commission { slot_0_based: usize },
     AutoCommission,
     Scorch,

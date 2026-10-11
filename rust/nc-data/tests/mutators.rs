@@ -505,7 +505,7 @@ fn append_planet_build_order_merges_into_matching_kind_before_using_empty_slot()
 }
 
 #[test]
-fn append_planet_build_order_spills_same_kind_across_records_without_truncation() {
+fn append_planet_build_order_keeps_one_slot_per_kind_with_no_point_cap() {
     let player = Player {
         mode: PlayerMode::Human,
         ..Player::default()
@@ -527,15 +527,28 @@ fn append_planet_build_order_spills_same_kind_across_records_without_truncation(
     };
 
     data.append_planet_build_order(1, 20, 1).unwrap();
-
-    assert_eq!(data.planets[0].build_queue[0].points_owed, u8::MAX);
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 270);
     assert_eq!(data.planets[0].build_queue[0].kind.code(), 1);
-    assert_eq!(data.planets[0].build_queue[1].points_owed, 15);
-    assert_eq!(data.planets[0].build_queue[1].kind.code(), 1);
+    assert!((1..10).all(|slot| data.planets[0].build_queue[slot] == BuildSlot::EMPTY));
+
+    // The budget is the only limit: 128 armies are 256 points in one slot,
+    // and 60,000 more points of destroyer still share slot 0.
+    data.append_planet_build_units(1, ProductionItemKind::Army, 128)
+        .unwrap();
+    data.append_planet_build_order(1, 60_000, 1).unwrap();
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 60_270);
+    assert_eq!(
+        data.planets[0].build_queue[1],
+        BuildSlot {
+            points_owed: 256,
+            kind: ProductionItemKind::Army
+        }
+    );
+    assert!((2..10).all(|slot| data.planets[0].build_queue[slot] == BuildSlot::EMPTY));
 }
 
 #[test]
-fn append_planet_build_order_does_not_partially_write_when_capacity_is_exhausted() {
+fn append_planet_build_order_does_not_write_when_no_slot_is_free() {
     let player = Player {
         mode: PlayerMode::Human,
         ..Player::default()
@@ -544,7 +557,7 @@ fn append_planet_build_order_does_not_partially_write_when_capacity_is_exhausted
     let mut planet = Planet::default();
     planet.owner.0 = 1;
     for slot in 0..10 {
-        planet.build_queue[slot].points_owed = u8::MAX;
+        planet.build_queue[slot].points_owed = 255;
         planet.build_queue[slot].kind = ProductionItemKind::Destroyer;
     }
 
@@ -602,7 +615,7 @@ fn append_planet_build_order_rejects_non_multiple_ship_points() {
 }
 
 #[test]
-fn append_planet_build_order_spills_starbases_one_per_queue_slot() {
+fn append_planet_build_order_holds_any_number_of_starbases_in_one_slot() {
     let player = Player {
         mode: PlayerMode::Human,
         ..Player::default()
@@ -621,15 +634,13 @@ fn append_planet_build_order_spills_starbases_one_per_queue_slot() {
         conquest: Conquest::default(),
     };
 
-    data.append_planet_build_order(1, 150, 9).unwrap();
+    // ECGAME allows 15 starbases a year; Rust's ten slots used to hold three.
+    data.append_planet_build_units(1, ProductionItemKind::Starbase, 15)
+        .unwrap();
 
-    assert_eq!(data.planets[0].build_queue[0].points_owed, 50);
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 750);
     assert_eq!(data.planets[0].build_queue[0].kind.code(), 9);
-    assert_eq!(data.planets[0].build_queue[1].points_owed, 50);
-    assert_eq!(data.planets[0].build_queue[1].kind.code(), 9);
-    assert_eq!(data.planets[0].build_queue[2].points_owed, 50);
-    assert_eq!(data.planets[0].build_queue[2].kind.code(), 9);
-    assert!((3..10).all(|slot| data.planets[0].build_queue[slot].points_owed == 0));
+    assert!((1..10).all(|slot| data.planets[0].build_queue[slot] == BuildSlot::EMPTY));
 }
 
 #[test]
@@ -1766,17 +1777,18 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
         ]
     );
 
-    data.set_planet_build(15, 0x03, 0x01).unwrap();
-    assert_eq!(data.planets[14].build_queue[0].points_owed, 0x03);
+    data.append_planet_build_units(15, ProductionItemKind::Destroyer, 3)
+        .unwrap();
+    assert_eq!(data.planets[14].build_queue[0].points_owed, 15);
     assert_eq!(data.planets[14].build_queue[0].kind.code(), 0x01);
 
     data.clear_planet_build_queue(15).unwrap();
     assert!((0..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
     assert!((0..10).all(|slot| data.planets[14].build_queue[slot].kind.code() == 0));
 
-    data.replace_planet_build_queue_with_single_order(15, 0x05, 0x08)
+    data.append_planet_build_units(15, ProductionItemKind::Army, 3)
         .unwrap();
-    assert_eq!(data.planets[14].build_queue[0].points_owed, 0x05);
+    assert_eq!(data.planets[14].build_queue[0].points_owed, 6);
     assert_eq!(data.planets[14].build_queue[0].kind.code(), 0x08);
     assert!((1..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
     assert!((1..10).all(|slot| data.planets[14].build_queue[slot].kind.code() == 0));
@@ -2305,7 +2317,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     };
     assert!(
         build_data
-            .planet_build_errors_current_known(15, 0x03, 0x01)
+            .planet_build_errors_current_known(15, &PLANET_BUILD_CURRENT_KNOWN_ORDERS)
             .is_empty()
     );
 

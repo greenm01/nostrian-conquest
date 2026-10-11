@@ -56,7 +56,7 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
         }
         4 => {
             let world = planet_record(state, empire, choices)?;
-            let points_remaining = pick_from(choices, &[1, 4, 5, 45, 50, u8::MAX])?;
+            let points_remaining = pick_from(choices, &[1, 4, 5, 45, 50, 255])?;
             let kind = choices.pick(0, 11) as u8;
             Some(TurnAction::Planet(
                 world,

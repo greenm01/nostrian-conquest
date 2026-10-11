@@ -112,11 +112,15 @@ fn store_keeps_real48_bits_and_rust_only_values() {
     fleet.y_fraction = Real48::from_bytes([0xFF; 6]);
     fleet.depth = Real48::from_bytes([0x80, 0xB9, 0xFF, 0xFF, 0xFF, 0x7F]);
 
+    // Orders by kind and quantity, past what a byte or a word of points held.
+    game_data
+        .append_planet_build_units(1, ProductionItemKind::Starbase, 4)
+        .expect("order starbases");
+    game_data
+        .append_planet_build_units(1, ProductionItemKind::Army, 40_000)
+        .expect("order armies");
+    // Slots only Rust can hold: a kind with nothing owed, and an unknown kind.
     let planet = &mut game_data.planets[0];
-    planet.build_queue[0] = BuildSlot {
-        points_owed: 200,
-        kind: ProductionItemKind::Starbase,
-    };
     planet.build_queue[3] = BuildSlot {
         points_owed: 0,
         kind: ProductionItemKind::Cruiser,

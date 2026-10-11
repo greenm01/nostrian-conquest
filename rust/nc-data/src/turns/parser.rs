@@ -91,7 +91,7 @@ fn parse_planet_block(node: &::kdl::KdlNode) -> Result<PlanetTurnBlock, TurnSubm
                 kind: parse_production_kind_code(child)?,
             }),
             "build" => actions.push(PlanetTurnAction::Build {
-                points_remaining: prop_u8(child, "points")?,
+                points_remaining: prop_u32(child, "points")?,
                 kind: parse_production_kind_code(child)?,
             }),
             "commission" => actions.push(PlanetTurnAction::Commission {
@@ -287,23 +287,14 @@ fn parse_production_kind_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissio
 }
 
 fn production_kind_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
-    let raw = match value.to_ascii_lowercase().as_str() {
-        "destroyer" | "destroyers" => 1,
-        "cruiser" | "cruisers" => 2,
-        "battleship" | "battleships" => 3,
-        "scout" | "scouts" => 4,
-        "transport" | "transports" | "troop_transport" | "troop_transports" => 5,
-        "etac" | "etacs" => 6,
-        "ground_battery" | "ground_batteries" | "battery" | "batteries" => 7,
-        "army" | "armies" => 8,
-        "starbase" | "starbases" | "base" | "bases" => 9,
-        other => {
-            return Err(TurnSubmissionError::Parse(format!(
-                "unknown production kind: {other}"
-            )));
-        }
-    };
-    Ok(raw)
+    ProductionItemKind::from_name(value)
+        .map(ProductionItemKind::code)
+        .ok_or_else(|| {
+            TurnSubmissionError::Parse(format!(
+                "unknown production kind: {}",
+                value.to_ascii_lowercase()
+            ))
+        })
 }
 
 fn parse_fleet_detach_selection(
@@ -333,6 +324,13 @@ fn prop_u16(node: &::kdl::KdlNode, name: &str) -> Result<u16, TurnSubmissionErro
     let value = integer_prop(node, name)?;
     u16::try_from(value).map_err(|_| {
         TurnSubmissionError::Parse(format!("property {name} out of u16 range: {value}"))
+    })
+}
+
+fn prop_u32(node: &::kdl::KdlNode, name: &str) -> Result<u32, TurnSubmissionError> {
+    let value = integer_prop(node, name)?;
+    u32::try_from(value).map_err(|_| {
+        TurnSubmissionError::Parse(format!("property {name} out of u32 range: {value}"))
     })
 }
 

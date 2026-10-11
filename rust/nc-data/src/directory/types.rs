@@ -1,4 +1,10 @@
-use crate::model::{Conquest, Fleet, Ipbm, Planet, Player, Setup, Starbase};
+use crate::model::{Conquest, Fleet, Ipbm, Planet, Player, ProductionItemKind, Setup, Starbase};
+
+/// The orders the accepted `ecmaint-build-pre` fixture queues on planet 15.
+pub const PLANET_BUILD_CURRENT_KNOWN_ORDERS: [(ProductionItemKind, u32); 2] = [
+    (ProductionItemKind::Destroyer, 3),
+    (ProductionItemKind::Etac, 1),
+];
 
 /// One game's state: every empire, world, fleet, starbase, and IPBM in
 /// record order, with the installation settings and the game clock.

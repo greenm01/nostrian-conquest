@@ -85,7 +85,7 @@ pub fn print_usage() {
     println!(
         "  nc-cli fleet-order-batch-init <target_root> <fleet_record:speed:order:target_x:target_y[:aux0[:aux1]]>..."
     );
-    println!("  nc-cli planet-build <dir> <planet_record> <build_slot_raw> <build_kind_raw>");
+    println!("  nc-cli planet-build <dir> <planet_record> <quantity> <unit>");
     println!("  nc-cli player-name <dir> <player_record> <handle> <empire_name>");
     println!(
         "  nc-cli player-join <dir> <player_record> <caller_alias> <empire_name> [homeworld_name]"
@@ -100,12 +100,8 @@ pub fn print_usage() {
     println!("  nc-cli planet-stardock <dir> <planet_record> <slot> <kind_raw> <count>");
     println!("  nc-cli planet-init-original <dir>");
     println!("  nc-cli planet-build-report [dir] [planet_record]");
-    println!(
-        "  nc-cli planet-build-init <target_dir> <planet_record> <build_slot_raw> <build_kind_raw>"
-    );
-    println!(
-        "  nc-cli planet-build-batch-init <target_root> <planet_record:build_slot_raw:build_kind_raw>..."
-    );
+    println!("  nc-cli planet-build-init <target_dir> <planet_record> <quantity> <unit>");
+    println!("  nc-cli planet-build-batch-init <target_root> <planet_record:quantity:unit>...");
     println!("  nc-cli guard-starbase-onebase <dir> <target_x> <target_y>");
     println!("  nc-cli guard-starbase-report <dir>");
     println!("  nc-cli guard-starbase-init [source_dir] <target_dir> <target_x> <target_y>");

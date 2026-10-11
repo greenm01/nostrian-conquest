@@ -20,7 +20,7 @@ pub struct PlanetBuildViewStats {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlanetBuildOrderLine {
     pub kind: ProductionItemKind,
-    pub points_remaining: u8,
+    pub points_remaining: u32,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -67,14 +67,14 @@ pub fn production_item_kind_code(kind: ProductionItemKind) -> u8 {
 
 pub fn planet_build_committed_points(planet: &Planet) -> u32 {
     (0..10)
-        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
+        .map(|slot| planet.build_queue[slot].points_owed)
         .sum::<u32>()
 }
 
 pub fn planet_building_unit_count(planet: &Planet) -> u32 {
     (0..10)
         .map(|slot| {
-            let points = u32::from(planet.build_queue[slot].points_owed);
+            let points = planet.build_queue[slot].points_owed;
             let kind = planet.build_queue[slot].kind;
             build_quantity_from_points(kind, points)
         })
@@ -137,9 +137,7 @@ pub fn planet_build_max_quantity(
     let Some(unit) = build_unit_spec_by_kind(kind) else {
         return Ok(0);
     };
-    let queue_capacity =
-        game_data.planet_additional_build_points_capacity(row.planet_record_index_1_based, kind)?;
-    let mut max_qty = max_quantity(view.points_left.min(queue_capacity), unit.cost);
+    let mut max_qty = max_quantity(view.points_left, unit.cost);
     match kind {
         ProductionItemKind::Army => {
             let free = game_data.planet_free_army_capacity(row.planet_record_index_1_based)?;
@@ -215,7 +213,7 @@ pub fn planet_build_specify_entries(
                 orders
                     .iter()
                     .filter(|order| order.kind == unit.kind)
-                    .map(|order| u32::from(order.points_remaining) / unit.cost)
+                    .map(|order| order.points_remaining / unit.cost)
                     .sum()
             };
             PlanetBuildSpecifyEntry {

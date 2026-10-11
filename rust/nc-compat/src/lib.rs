@@ -299,6 +299,15 @@ pub(crate) fn classic_parse_error(err: nc_classic::ParseError) -> CampaignStoreE
             record_size,
             actual,
         },
+        nc_classic::ParseError::ReservedBuildSlot {
+            planet,
+            sector,
+            units,
+        } => nc_data::ParseError::ReservedBuildSlot {
+            planet,
+            sector,
+            units,
+        },
     };
     CampaignStoreError::Parse(parse)
 }

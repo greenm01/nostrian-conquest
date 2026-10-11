@@ -59,13 +59,15 @@ impl CoreGameData {
             return;
         };
         let planet = &self.planets[planet_idx];
-        let costs = (0..10).filter_map(|slot| {
-            let count = u32::from(planet.build_queue[slot].points_owed);
-            let cost = planet.build_queue[slot].kind.build_cost()?;
-            (count > 0).then_some((count, cost))
-        });
-        let total: u32 = costs.clone().map(|(count, cost)| count * cost).sum();
-        let dearest = costs.map(|(_, cost)| cost).max().unwrap_or(0);
+        let queued = planet
+            .build_queue
+            .iter()
+            .filter(|slot| slot.points_owed > 0);
+        let total: u32 = queued.clone().map(|slot| slot.points_owed).sum();
+        let dearest = queued
+            .filter_map(|slot| slot.kind.build_cost())
+            .max()
+            .unwrap_or(0);
         let production = planet.production.to_f64();
         if f64::from(dearest) <= production && f64::from(total) <= production {
             return;

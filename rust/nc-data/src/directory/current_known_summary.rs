@@ -7,7 +7,7 @@ impl CoreGameData {
                 .fleet_order_errors_current_known(1, 0x03, 0x0C, [0x0F, 0x0D], None, None)
                 .is_empty(),
             planet_build: self
-                .planet_build_errors_current_known(15, 0x03, 0x01)
+                .planet_build_errors_current_known(15, &PLANET_BUILD_CURRENT_KNOWN_ORDERS)
                 .is_empty(),
             guard_starbase: self
                 .guard_starbase_linkage_errors_for_guarding_fleets_current_known(1)

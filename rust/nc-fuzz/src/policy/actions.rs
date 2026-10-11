@@ -302,10 +302,7 @@ pub fn build(
     let world = pick_from(choices, &owned_planets(state, empire))?;
     let number = pick_from(choices, kinds)?;
     let unit = BUILD_UNITS.iter().find(|unit| unit.number == number)?;
-    let points_left = state
-        .planet_build_points_left(world)
-        .ok()?
-        .min(u32::from(u8::MAX));
+    let points_left = state.planet_build_points_left(world).ok()?;
     let most = points_left / unit.cost;
     if most == 0 {
         return None;
@@ -314,7 +311,7 @@ pub fn build(
     Some(TurnAction::Planet(
         world,
         PlanetTurnAction::Build {
-            points_remaining: (qty * unit.cost) as u8,
+            points_remaining: qty * unit.cost,
             kind: nc_engine::production_item_kind_code(unit.kind),
         },
     ))
