@@ -481,3 +481,10 @@ Decision (2026-10-10, owner): within the existing screens and table layout,
 "Delete? [Y]/N" prompt that defaults to yes, as the inbox does; the outbox
 footer shows `D`; and the send confirmation says that `D` on the recipient
 list reviews or cancels queued messages.
+
+The owner then clarified the real problem: after sending, Review Inbox said
+"Notice: Inbox is empty.", so the message seemed gone. Added to t067: Review
+Inbox lists the player's own messages queued this turn, first and marked
+outgoing, with the recipient in the sender's place; `Enter` reads one and
+`D` cancels it with the inbox's default-yes prompt. They leave the list when
+maintenance delivers them.
