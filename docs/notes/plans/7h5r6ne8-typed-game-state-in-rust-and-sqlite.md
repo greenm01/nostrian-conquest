@@ -358,6 +358,14 @@ workspace suite pass.
 `rust-architecture.md` (current state), `ec-file-formats.md` linked from the
 specs, `fixtures.md`, next-session note; close t039.
 
+Result (2026-10-10): rust-architecture.md describes the current layout;
+the movement, encounter, starbase, battle, turn-cycle, and economy specs
+link to ec-file-formats.md; the three docs that still named `PlayerRecord`
+or `PlanetRecord` point at the model, the codecs, and
+`classic_results::set_results_chain`; fixtures.md needed no change (its
+`.DAT` offsets describe classic fixture directories, which stay classic);
+next-session.md is current. t039 is closed.
+
 ## Execution
 
 Phase 1 agents can start as soon as this plan is approved (they edit no

@@ -92,7 +92,7 @@ rows into a classic file:
 
 The `nc-compat` export, the maintenance commands, the scenario harness, and
 the player client all set the `PLAYER.DAT` pointers from this layout through
-`ClassicResultsLayout::apply_to_players` or `PlayerRecord::set_classic_results_chain`. The
+`ClassicResultsLayout::apply_to_players` or `classic_results::set_results_chain`. The
 `nc-compat` import reverses it: it walks each empire's chain from `+0x38` and
 tags the report with that empire, so a re-export keeps every chain.
 

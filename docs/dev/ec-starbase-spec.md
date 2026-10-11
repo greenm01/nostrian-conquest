@@ -8,7 +8,8 @@ ECMAINT (seg:off maps to file offset `seg*16+off-0x8140` in
 with classic probes. "[P]" marks a rule confirmed by a probe, "[C]" one read
 from code only. Fleet movement, which starbases share, is in
 [ec-movement-spec.md](ec-movement-spec.md); sighting and combat are in
-[ec-encounter-spec.md](ec-encounter-spec.md).
+[ec-encounter-spec.md](ec-encounter-spec.md). The BASES.DAT layout is in
+[ec-file-formats.md](ec-file-formats.md).
 
 Rust reads and writes every field below
 ([starbase.rs](../../rust/nc-data/src/model/starbase.rs),

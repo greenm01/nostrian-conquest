@@ -5,31 +5,29 @@ Keep this file short. Historical detail belongs in
 
 ## Completed This Session
 
-**Engine and door bug sweep (2026-10-09).** A six-slice review found 41
-confirmed bugs in combat, maintenance, economy, reports, and the door; all are
-fixed with failing-first regression tests. Details, decisions, and validation
-are in the
-[milestone record](../notes/milestones/ym5u2c1x-engine-and-door-bug-sweep-of-october-2026.md).
+**Typed game state (t039, 2026-10-10).** Game state is plain typed Rust
+structs (`nc-data/src/model/`); SQLite stores them in typed columns; the
+runtime reads and writes only the store; the classic `.DAT` codecs live in
+`nc-compat/src/classic/`, guarded by `nc-data/tests/classic_boundary.rs`.
+`.DAT` files appear only through `nc-cli db-export`/`db-import` and the
+oracle tools. See the [plan](../notes/plans/7h5r6ne8-typed-game-state-in-rust-and-sqlite.md).
 
-**Work tracking adopted.** Open work now lives in [todo.md](../../todo.md),
-tracked with todo.txt and zk per [work-tracking.md](work-tracking.md). Start
-with `zk queue`.
+**Classic fidelity (t031-t064).** 2.5D movement, the per-tick encounter loop,
+starbase movement, the orbital gate, and the classic home pickers match
+ECMAINT; deviations are owner-approved classic bugs, listed in the specs.
 
-**v1.0.0-beta.3 (2026-10-10).** The Linux nc-sysop archive is published. The
-Windows archives (t024) and the Windows console check (t019) are next, on
-Windows after `git pull`; the Windows download links 404 until then. The new
-`nc-fuzz` crate runs Hegel and proptest drivers over engine invariants.
+**NC combat redesign.** The owner approved all seven combat decisions with
+Claude and Codex's joint recommendations (ADRs in `docs/notes/decisions/`).
+Decision 1 (the flat 25/50/100 table with carried hits) is in the engine;
+the rest are tasks t065, t066, t071, t074, t078, t079, t080.
 
-**Classic 2.5D movement (t031, 2026-10-10).** Fleets now move as ECMAINT
-does: 52 ticks a year, a depth axis for orbit, per-order arrival tests, and
-positions stored as Turbo Pascal 6-byte reals with bit-exact arithmetic.
-Mission aux bytes match ECGAME. The model and its evidence are in
-[ec-movement-spec.md](ec-movement-spec.md) and the
-[investigation note](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
-Next on the critical lane: t033 (fleet ship layout), t035 (classic encounter
-loop, [ec-encounter-spec.md](ec-encounter-spec.md)), t036 (classic planetary
-battle), and t037 (starbase layout and movement). The policy is to match the
-classic binaries exactly, except for clear classic bugs approved by the user.
+**Door and mail fixes.** Windows console input, output, arrow keys, and
+flicker (t019); `?` types text in editors, Ctrl+G opens help; queued mail is
+readable and cancellable and is delivered at maintenance (t067).
+
+**Next:** the `*_raw` identifier cleanup, then the implementation waves in
+[x8arlb3c](../notes/plans/x8arlb3c-implementation-waves-after-t039.md);
+`zk queue` for the order.
 
 ## Current Goal
 
@@ -47,8 +45,8 @@ classic binaries exactly, except for clear classic bugs approved by the user.
 - The hosted client now stages and replays build, fleet, tax, diplomacy, and
   quick message drafts. Remaining gaps are narrower unsupported actions such as
   starbase moves and fleet renumbering.
-- The BBS door renderer still repaints full frames instead of using the
-  retained-frame diffing already in local `nc-game`.
+- The BBS door renderer redraws every row each frame (no flash since t019)
+  instead of using the retained-frame diffing already in local `nc-game`.
 
 ## Immediate Next Steps
 

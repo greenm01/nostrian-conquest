@@ -9,7 +9,8 @@ It was read from the unpacked ECMAINT (seg:off maps to file offset
 classic probes. "[P]" marks a rule confirmed by a probe, "[C]" one read from
 code only. Movement and depth are in [ec-movement-spec.md](ec-movement-spec.md).
 The battle that follows an attack is in [ec-battle-spec.md](ec-battle-spec.md);
-[ec-combat-reference.md](ec-combat-reference.md) summarises the whole system.
+[ec-combat-reference.md](ec-combat-reference.md) summarises the whole system;
+record layouts are in [ec-file-formats.md](ec-file-formats.md).
 
 Notation. Fleet record bytes are FLEETS.DAT offsets: `+0x09` max speed,
 `+0x0a` current speed, `+0x0b/+0x0c` sector x,y, `+0x19` Z (real48),

@@ -37,8 +37,8 @@ Notation:
 The dock slot order comes from the bombard report (`110a:0438`). P and G come
 from the report's "% of the factories" and "% of the stored goods" lines [P].
 The preserved fixtures agree: the homeworld seeds read P = 100 and G = 35, and
-ECMAINT's builds land in the typed dock slots. Rust's `PlanetRecord` uses this
-layout.
+ECMAINT's builds land in the typed dock slots. The PLANETS.DAT codec in
+`nc-compat/src/classic/planet.rs` reads and writes this layout.
 
 - `Random(n)` is Turbo Pascal `(RandSeed>>16) mod n`, and `Random(0) = 0`.
 - `Roll(p)` is `Random_real*100 <= p` (`24a3:0000`).

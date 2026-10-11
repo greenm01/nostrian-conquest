@@ -1,3 +1,33 @@
+## 2026-10-10
+
+### Completed This Session
+
+**Engine and door bug sweep (2026-10-09).** A six-slice review found 41
+confirmed bugs in combat, maintenance, economy, reports, and the door; all are
+fixed with failing-first regression tests. Details, decisions, and validation
+are in the
+[milestone record](../notes/milestones/ym5u2c1x-engine-and-door-bug-sweep-of-october-2026.md).
+
+**Work tracking adopted.** Open work now lives in [todo.md](../../todo.md),
+tracked with todo.txt and zk per [work-tracking.md](work-tracking.md). Start
+with `zk queue`.
+
+**v1.0.0-beta.3 (2026-10-10).** The Linux nc-sysop archive is published. The
+Windows archives (t024) and the Windows console check (t019) are next, on
+Windows after `git pull`; the Windows download links 404 until then. The new
+`nc-fuzz` crate runs Hegel and proptest drivers over engine invariants.
+
+**Classic 2.5D movement (t031, 2026-10-10).** Fleets now move as ECMAINT
+does: 52 ticks a year, a depth axis for orbit, per-order arrival tests, and
+positions stored as Turbo Pascal 6-byte reals with bit-exact arithmetic.
+Mission aux bytes match ECGAME. The model and its evidence are in
+[ec-movement-spec.md](ec-movement-spec.md) and the
+[investigation note](../notes/investigations/9msqq5e0-classic-move-orders-complete-on-entering-the-target-sector.md).
+Next on the critical lane: t033 (fleet ship layout), t035 (classic encounter
+loop, [ec-encounter-spec.md](ec-encounter-spec.md)), t036 (classic planetary
+battle), and t037 (starbase layout and movement). The policy is to match the
+classic binaries exactly, except for clear classic bugs approved by the user.
+
 ## 2026-05-05
 
 ### Completed This Session

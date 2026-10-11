@@ -5,7 +5,8 @@ This document separates two concerns:
 - classic EC movement semantics from the manuals and observed maintenance rules
 - canonical Rust pathfinding policy for choosing safer routes
 
-The first is a fidelity target. The second is an explicit extension.
+The first is a fidelity target. The second is an explicit extension. The
+fleet, base, and planet record layouts are in [ec-file-formats.md](ec-file-formats.md).
 
 ## Source Authority
 

@@ -125,9 +125,9 @@ It is responsible for:
 - keeping classic file handling out of normal engine/client code
 
 This is the only layer that should need to think in terms of classic
-directories as a workflow boundary. Phase 5 moved the core codecs from
-`nc-data/src/classic/` to `nc-compat/src/classic/` after removing their last
-transitional accessor callers; the boundary test passes.
+directories as a workflow boundary. The seven core-file codecs live in
+`nc-compat/src/classic/`, and the boundary test in
+`nc-data/tests/classic_boundary.rs` keeps them out of the runtime crates.
 
 ### `nc-sysop`
 
