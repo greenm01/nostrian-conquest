@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 10),
+  date: datetime(year: 2026, month: 10, day: 11),
 )
 
 #set page(
@@ -74,7 +74,7 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 10, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 11, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
 ]
