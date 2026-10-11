@@ -267,6 +267,12 @@ cargo run --release -p nc-fuzz --example combat_odds -- --trials 20000 --json /t
 python3 -I -B tools/combat-model/sweep.py --rules current --units baseline --cases engine --engine /tmp/engine.json
 ```
 
+Hostile-map economy and price controls live in
+[tools/price-campaigns](tools/price-campaigns/README.md). They run scripted
+campaigns through the real engine and record expansion, purchases, losses
+and captures; their policy assumptions and limits are documented with the
+results.
+
 ## Local Dependencies
 
 - Rust toolchain
