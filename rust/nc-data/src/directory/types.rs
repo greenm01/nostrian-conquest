@@ -1,3 +1,4 @@
+use crate::ShipCategory;
 use crate::model::{Conquest, Fleet, Ipbm, Planet, Player, ProductionItemKind, Setup, Starbase};
 
 /// The orders the accepted `ecmaint-build-pre` fixture queues on planet 15.
@@ -319,6 +320,12 @@ pub enum GameStateMutationError {
         requested: u16,
         available: u16,
     },
+    FleetDetachCrippledExceedsAvailable {
+        fleet_index_1_based: usize,
+        ship_kind: &'static str,
+        requested: u16,
+        available: u32,
+    },
     FleetDetachLeavesFleetEmpty {
         fleet_index_1_based: usize,
     },
@@ -425,6 +432,11 @@ pub struct AutoCommissionStarbaseEntry {
     pub coords: [u8; 2],
 }
 
+/// The ships a detach or transfer moves, by category. Each count is a number
+/// of ships; `required_crippled` says how many of them the player asked to be
+/// crippled (the door's `3!`). A selection never names hulls: which crippled
+/// hulls move is decided by [`resolve_selection`](crate::resolve_selection),
+/// the one rule the mutators and the previews share.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct FleetDetachSelection {
     pub battleships: u16,
@@ -434,6 +446,10 @@ pub struct FleetDetachSelection {
     pub empty_transports: u16,
     pub scouts: u16,
     pub etacs: u16,
+    /// Of each category's selected ships, how many must be crippled. Zero
+    /// everywhere is the plain selection: healthy ships first, then crippled
+    /// ones if the category has too few healthy ships.
+    pub required_crippled: [u16; ShipCategory::COUNT],
 }
 
 impl FleetDetachSelection {
@@ -445,6 +461,38 @@ impl FleetDetachSelection {
             + u32::from(self.empty_transports)
             + u32::from(self.scouts)
             + u32::from(self.etacs)
+    }
+
+    /// The selected ships of one category.
+    pub fn count(self, category: ShipCategory) -> u16 {
+        match category {
+            ShipCategory::Scouts => self.scouts,
+            ShipCategory::Battleships => self.battleships,
+            ShipCategory::Cruisers => self.cruisers,
+            ShipCategory::Destroyers => self.destroyers,
+            ShipCategory::FullTransports => self.full_transports,
+            ShipCategory::EmptyTransports => self.empty_transports,
+            ShipCategory::Etacs => self.etacs,
+        }
+    }
+
+    /// Adds `count` ships of `category` to the selection; with `crippled`,
+    /// they are ships that must be crippled.
+    pub fn stage(&mut self, category: ShipCategory, count: u16, crippled: bool) {
+        let slot = match category {
+            ShipCategory::Scouts => &mut self.scouts,
+            ShipCategory::Battleships => &mut self.battleships,
+            ShipCategory::Cruisers => &mut self.cruisers,
+            ShipCategory::Destroyers => &mut self.destroyers,
+            ShipCategory::FullTransports => &mut self.full_transports,
+            ShipCategory::EmptyTransports => &mut self.empty_transports,
+            ShipCategory::Etacs => &mut self.etacs,
+        };
+        *slot = slot.saturating_add(count);
+        if crippled {
+            let required = &mut self.required_crippled[category.index()];
+            *required = required.saturating_add(count);
+        }
     }
 }
 
@@ -625,6 +673,16 @@ impl std::fmt::Display for GameStateMutationError {
             } => write!(
                 f,
                 "fleet {} has only {} {} available, requested {}",
+                fleet_index_1_based, available, ship_kind, requested
+            ),
+            Self::FleetDetachCrippledExceedsAvailable {
+                fleet_index_1_based,
+                ship_kind,
+                requested,
+                available,
+            } => write!(
+                f,
+                "fleet {} has only {} crippled {} available, requested {}",
                 fleet_index_1_based, available, ship_kind, requested
             ),
             Self::FleetDetachLeavesFleetEmpty {

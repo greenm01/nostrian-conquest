@@ -11,6 +11,7 @@ mod diplomacy;
 mod directory;
 mod economy;
 mod fleet_orders;
+mod fleet_pick;
 mod fleet_ships;
 mod homeworld_seed;
 pub mod hosted;
@@ -31,6 +32,7 @@ mod real48;
 mod report_blocks;
 mod rng;
 mod runtime_reports;
+mod ship_notation;
 mod stardock;
 mod starmap;
 mod state_hash;
@@ -69,11 +71,13 @@ pub use economy::{
     yearly_high_tax_penalty,
 };
 pub use fleet_orders::{order_summary, set_mission_target};
+pub use fleet_pick::{
+    CrippledShortage, ResolvedSelection, crippled_left_to_stage, resolve_selection,
+};
 pub use fleet_ships::{
-    crippled_hull_count, damaged_ships_table_summary, has_any_force, has_combat_ships, hull_count,
-    is_support_only, recompute_max_speed, set_armies_aboard, set_troop_transports,
-    ship_composition_summary, ship_composition_table_summary, slowest_speed, starship_count,
-    troop_transports,
+    crippled_hull_count, has_any_force, has_combat_ships, hull_count, is_support_only,
+    recompute_max_speed, set_armies_aboard, set_troop_transports, ship_composition_table_summary,
+    slowest_speed, starship_count, troop_transports,
 };
 pub use homeworld_seed::{
     has_homeworld_seed_production, is_homeworld_seed_ignoring_name, is_named_homeworld_seed,
@@ -148,6 +152,10 @@ pub use runtime_reports::{
     has_visible_runtime_messages, has_visible_runtime_reports, runtime_inbox_items,
     runtime_inbox_preview_lines, runtime_outgoing_inbox_items, runtime_outgoing_message_lines,
     wrap_review_text_preserving_spacing,
+};
+pub use ship_notation::{
+    NOTATION_LEGEND, ShipCategory, auto_commission_notation, crippled_by_category, fit_notation,
+    fleet_notation, join_tokens, ship_token, starbase_token,
 };
 pub use stardock::{STARDOCK_SLOT_COUNT, stardock_slot_for_kind, stardock_slot_kind};
 pub use starmap::{

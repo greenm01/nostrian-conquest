@@ -267,7 +267,7 @@ fn fleet_list_action_clamps_stale_cursor_before_using_visible_hold_row() {
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("Hold") && line.contains("4BB"))
+            .any(|line| line.contains("Hold") && line.contains("BB4"))
     );
 
     assert_eq!(

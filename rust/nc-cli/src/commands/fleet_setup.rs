@@ -110,6 +110,7 @@ pub(crate) fn detach_fleet_to_new_record(
                 empty_transports,
                 scouts,
                 etacs,
+                ..FleetDetachSelection::default()
             },
             donor_speed,
             new_fleet_roe,

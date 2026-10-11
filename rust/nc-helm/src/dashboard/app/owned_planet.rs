@@ -738,20 +738,13 @@ fn format_auto_commission_fleet_entry(
     max_fleet_number: u16,
 ) -> String {
     let width = max_fleet_number.max(1).to_string().len().max(2);
-    let mut composition = Vec::new();
-    push_auto_commission_ship_code(&mut composition, "DD", entry.destroyers);
-    push_auto_commission_ship_code(&mut composition, "CA", entry.cruisers);
-    push_auto_commission_ship_code(&mut composition, "BB", entry.battleships);
-    push_auto_commission_ship_code(&mut composition, "SC", entry.scouts);
-    push_auto_commission_ship_code(&mut composition, "TT", entry.transports);
-    push_auto_commission_ship_code(&mut composition, "ET", entry.etacs);
     format!(
         "Fleet {:0width$} commissioned from \"{}\" in sector ({:02},{:02}) with {}.",
         entry.fleet_number,
         entry.planet_name,
         entry.coords[0],
         entry.coords[1],
-        composition.join(", "),
+        nc_data::auto_commission_notation(entry),
         width = width,
     )
 }
@@ -761,13 +754,6 @@ fn format_auto_commission_starbase_entry(entry: &AutoCommissionStarbaseEntry) ->
         "Starbase {:02} commissioned to \"{}\" in sector ({:02},{:02}).",
         entry.starbase_number, entry.planet_name, entry.coords[0], entry.coords[1]
     )
-}
-
-fn push_auto_commission_ship_code(parts: &mut Vec<String>, code: &str, qty: u32) {
-    if qty == 0 {
-        return;
-    }
-    parts.push(format!("{code} {qty:02}"));
 }
 
 fn prompt_raw_value<'a>(input: &'a str, default: &'a str) -> &'a str {
