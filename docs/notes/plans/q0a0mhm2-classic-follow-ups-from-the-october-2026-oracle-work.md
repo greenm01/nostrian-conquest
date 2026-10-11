@@ -280,3 +280,105 @@ Three home-picking paths still differ from classic, found by t059:
   present production (`24a3:26c2`, `24a3:29c5`).
 
 Make each match classic, with probes where the disassembly is unclear.
+
+Research (2026-10-10; ECMAINT disassembly and six classic probe groups under
+DOSBox-X). The classic rules are now in
+[ec-movement-spec.md](../../dev/ec-movement-spec.md) ("Seek Home And Salvage
+Check Their World", "Rogue And Autopilot Orders") and, for the picker's flag
+2, [ec-encounter-spec.md](../../dev/ec-encounter-spec.md). One correction to
+the bullets above and to t059: an aborted Salvage does not switch to Seek
+Home; it keeps the Salvage order. Per path, the Rust change and the scenarios
+that tell old from new:
+
+- **Seek Home.** Classic tests the owner of the target world every tick in
+  the dispatch, after the step (`0b5d:01f9`), and retargets only when the
+  world is not the empire's (lost, never owned, or no world in the sector),
+  with flag 1 from the post-step position; the order, `TZ`, and speed stay,
+  and that tick reports no arrival. With no world it holds: order 0, speed 0,
+  target its own sector, `TZ = Round(Z)`, depth unchanged. Rust: delete
+  `refresh_seek_home_targets` (`maint/retarget.rs`) and its call in
+  `maint/mod.rs`, with `nearest_owned_planet_target_from_list` and the
+  `sector_distance_sq` import that only it uses; in `Movement::dispatch`
+  (`maint/movement/mod.rs`), for `Order::SeekHome`, before `test_arrival`
+  and every tick whether or not the fleet stepped, look up the world at the
+  target sector and, when it is missing or not the fleet's empire's, call
+  `nearest_friendly_world` (flag 1) and apply the above; return
+  `TickEnd::Underway`. Replace the invented retarget and abandon texts in
+  `results/entries/misc.rs` with classic's, stamped with the tick. Scenarios
+  (move fixture, empire 1 made human): a fleet at (13,13) depth 0 seeking
+  owned (16,13) with (12,12) also owned keeps (16,13) (old Rust: (12,12)); a
+  fleet at (13,14) seeking empire 2's (18,15) retargets to (12,12) at
+  stardate 1 and ends the year over (12,12) at depth 0.67036, Hold by the
+  tick-52 rule (0.76393 without the first tick toward the old target); a
+  fleet seeking the empty sector (13,13) retargets the same way; with
+  (16,13) given to empire 2 and nothing else owned, a fleet at (13,13) depth
+  0.75 holds at stardate 1 with depth 0.69231 and `TZ` 1.
+- **Salvage.** Classic runs the same check in its test (`0b5d:4a44`, arrival
+  `x,y` at target and `Z >= 1.0`): with a friendly world it changes only the
+  target, refills a zero speed, and keeps order 15, so the fleet salvages at
+  the new world; with none it holds as Seek Home does but also sets
+  `Z = Round(Z)`. Rust: the same hook in `Movement::dispatch` for
+  `Order::Salvage`; the `PlanetNotOwned` and `NoPlanetAtTarget` failures in
+  `movement/salvage.rs` can no longer happen and go, with their report texts;
+  `test_salvage_fails_at_foreign_planet_without_removing_fleet`
+  (`nc-data/tests/maint_fleet.rs`) must be rewritten. Scenarios: (16,13) to
+  empire 2, (12,12) owned: a Salvage fleet (CA, ETAC) at (13,13) seeking
+  (16,13) reports the abort at stardate 1 and salvages at (12,12) in tick
+  44, 18 points (old Rust: flies to (16,13), fails, holds); with nothing
+  owned, Salvage fleets at depth 0.75 (speed 3) and 0.25 (speed 6) hold
+  with depth 1.0 and 0.0. A related gap outside the three paths: classic's
+  arrival (`0b5d:4d65`) credits 23/8/3/3/10/8 per battleship, cruiser,
+  destroyer, transport, ETAC, and scout and lands each loaded transport's
+  army; Rust's `fleet_salvage_value` credits half the summed cost with
+  armies at 2 and lands none (probe: one of each plus two loaded transports
+  gave 61 points and 2 armies, Rust 59 and none; the existing test locks 10
+  for a destroyer and a cruiser, classic 11).
+- **Autopilot and rogue recall.** Classic's orders pass (`24a3:3cc6`, before
+  the planet pass) runs `24a3:25f7` for rogue empires (every fleet) and
+  autopilot empires (Hold fleets only), picks with flag 2 (all owned worlds,
+  the fleet's own system included, travel distance over present production
+  floored at 1.0, earlier world on ties, a lone world unmeasured), then sets
+  target and `TZ` 1: in that world's sector at layer 1 with warships,
+  Guard/Blockade, speed 0, max speed recomputed, ROE 10 (rogue) or 6 when 0
+  (autopilot); without warships the order stays; otherwise Seek Home at max
+  speed, a rogue's ROE 0. A Guard/Blockade fleet at speed 0 then takes the
+  first unescorted starbase at rest in its system as Guard Starbase and
+  writes the base's escort word; a rogue Guard Starbase fleet clears its
+  base's escort word first (`2895:30f4`). Rogue starbases get the same pick
+  (`24a3:28fe`). Rust: rewrite `autopilot_fleet_orders`
+  (`economics/ai.rs`) for both empire kinds (rogue mode 0xFF with worlds;
+  autopilot mode 1 with `0x6D` nonzero), drop its "outside an owned world's
+  sector" filter, and add a flag-2 variant beside
+  `CoreGameData::nearest_owned_world`
+  (`nc-data/src/directory/mutators_nearest_world.rs`) that divides
+  `travel_distance` by `max(P, 1.0)` in Real48 and writes nothing back. Rogue
+  fleet and starbase orders are new behaviour in Rust, not a picker swap;
+  the planetless rogue's random patrols (`24a3:0dbc`) stay out of scope.
+  Scenarios (empire 1 on autopilot; (16,13) at production 5, (12,11) and
+  (12,12) at 2, (2,16) at 0): a Hold fleet at (13,12) seeks (16,13) (old
+  Rust: (12,12)); a Hold fleet with a cruiser in orbit of (12,12), ROE 0,
+  takes Guard/Blockade with ROE 6 (old Rust: untouched); a Hold fleet at
+  (12,12) with `fy = 0`, depth 0, ties (12,11) and (12,12) at 0.75 and seeks
+  (12,11); a Hold fleet in (2,16)'s sector at depth 0 seeks (2,16). With an
+  unescorted Starbase 1 over (12,12), the cruiser fleet takes Guard
+  Starbase, `0x23 = 1`, escort word 1; an ETAC-only fleet in orbit stays on
+  Hold; Move and Seek Home fleets are untouched. Rogue empire 2: a Move
+  fleet at (8,13) goes home with ROE 0; its Guard/Blockade fleet at home
+  keeps order 5 with ROE 10.
+
+For the owner (classic behaviour that reads like a bug):
+
+1. An aborted Salvage reports that it will "seek to safety of a friendly
+   controlled world" but keeps the Salvage order, so it scraps itself at
+   that world. Every other abort writes Seek Home; this one leaves out the
+   order write. Copy it, or set Seek Home as the report says?
+2. A Salvage that has nowhere to go snaps its depth to the nearer layer, a
+   jump of up to half a layer; Seek Home in the same case leaves the depth.
+   Copy the snap, or leave the depth?
+
+A target sector with no world reads a garbage owner and a blank name in
+classic (planet slot 0); the probe behaved as "not owned", which is what the
+existing worldless-sector ruling gives Rust. The production floor in flag 2
+is the bump already ruled on: Rust divides by `max(P, 1.0)` and never writes
+it. Probe note for later work: a world whose present production exceeds its
+potential makes ECMAINT stop without output, leaving its `.TOK` files.
