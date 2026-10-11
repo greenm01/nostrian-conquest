@@ -32,16 +32,16 @@ impl YearMovement<'_> {
             let previous_target_coords = fleet.target.to_array();
             fleet.order = Order::HoldPosition;
             fleet.speed = 0;
-            self.events
-                .guard_retargets
-                .push(MissionRetargetEvent::Abandoned {
-                    fleet_idx,
-                    reporting_fleet_number: Some(fleet.fleet_number.0 as u8),
-                    owner_empire: owner,
-                    mission: Mission::GuardStarbase,
-                    previous_target_coords,
-                    coords: sector,
-                });
+            self.events.retargets.push(MissionRetargetEvent::Abandoned {
+                fleet_idx,
+                reporting_fleet_number: Some(fleet.fleet_number.0 as u8),
+                owner_empire: owner,
+                mission: Mission::GuardStarbase,
+                previous_target_coords,
+                coords: sector,
+                in_system: fleet.depth.round() == 1,
+                stardate_week: None,
+            });
             return;
         };
         let base = &game_data.bases[base_idx];

@@ -125,16 +125,15 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
     for event in &observation.events.salvage_events {
         let SalvageResolvedEvent::Succeeded {
             owner_empire,
-            coords,
+            fleet_number,
             ..
-        } = *event
-        else {
-            continue;
-        };
+        } = *event;
+        // The fleet's target may have changed during the year, when its
+        // world was lost, so it is found by its number.
         let mut candidates = observation.before.fleets.iter().filter(|fleet| {
             fleet.owner.0 == owner_empire
                 && fleet.order == Order::Salvage
-                && fleet.target.to_array() == coords
+                && fleet.fleet_number.0 == u16::from(fleet_number)
         });
         let fleet = candidates.next()?;
         if candidates.next().is_some() {

@@ -1,5 +1,6 @@
 mod arrivals;
 mod guard;
+mod home;
 mod salvage;
 mod starbase;
 mod stepper;
@@ -92,6 +93,10 @@ impl<'a> YearMovement<'a> {
             }
             return Ok(TickEnd::Underway);
         }
+        if self.check_home_world(game_data, fleet_idx) {
+            marks.stamp(&mut self.events, tick);
+            return Ok(TickEnd::Underway);
+        }
         if is_hostile_order(order_kind)
             && !self.entered_target[fleet_idx]
             && self.start[fleet_idx] != target
@@ -165,6 +170,7 @@ struct EventMarks {
     intel: usize,
     observations: usize,
     salvage: usize,
+    retargets: usize,
     escalations: usize,
 }
 
@@ -176,6 +182,7 @@ impl EventMarks {
             intel: events.planet_intel_events.len(),
             observations: events.pending_observation_events.len(),
             salvage: events.salvage_events.len(),
+            retargets: events.retargets.len(),
             escalations: events.diplomatic_escalation_events.len(),
         }
     }
@@ -197,12 +204,13 @@ impl EventMarks {
             }
         }
         for event in &mut events.salvage_events[self.salvage..] {
-            match event {
-                nc_data::SalvageResolvedEvent::Succeeded { stardate_week, .. }
-                | nc_data::SalvageResolvedEvent::Failed { stardate_week, .. } => {
-                    *stardate_week = Some(tick)
-                }
-            }
+            let nc_data::SalvageResolvedEvent::Succeeded { stardate_week, .. } = event;
+            *stardate_week = Some(tick);
+        }
+        for event in &mut events.retargets[self.retargets..] {
+            let (nc_data::MissionRetargetEvent::Retargeted { stardate_week, .. }
+            | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }) = event;
+            *stardate_week = Some(tick);
         }
         for event in &mut events.diplomatic_escalation_events[self.escalations..] {
             event.stardate_week = Some(tick);

@@ -1,54 +1,6 @@
 use super::{Mission, MissionRetargetEvent};
-use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, Order};
 use nc_data::{Coords, troop_transports};
-
-pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
-    let owned_planets: Vec<(u8, [u8; 2])> = game_data
-        .planets
-        .iter()
-        .map(|planet| (planet.owner.0, planet.sector.to_array()))
-        .collect();
-    let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
-        if fleet.order != Order::SeekHome {
-            continue;
-        }
-        let previous_target_coords = fleet.target.to_array();
-        let current_coords = fleet.sector.to_array();
-        let owner_empire = fleet.owner.0;
-        let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
-        let Some(new_target_coords) =
-            nearest_owned_planet_target_from_list(&owned_planets, owner_empire, current_coords)
-        else {
-            fleet.order = Order::HoldPosition;
-            fleet.speed = 0;
-            fleet.target = Coords::from_array(current_coords);
-            events.push(MissionRetargetEvent::Abandoned {
-                fleet_idx,
-                reporting_fleet_number,
-                owner_empire,
-                mission: Mission::SeekHome,
-                previous_target_coords,
-                coords: current_coords,
-            });
-            continue;
-        };
-        if new_target_coords != previous_target_coords {
-            fleet.target = Coords::from_array(new_target_coords);
-            events.push(MissionRetargetEvent::Retargeted {
-                fleet_idx,
-                reporting_fleet_number,
-                owner_empire,
-                mission: Mission::SeekHome,
-                current_coords,
-                previous_target_coords,
-                new_target_coords,
-            });
-        }
-    }
-    events
-}
 
 /// Join hosts are named by (owner, fleet number), the host's 0x00 word.
 pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
@@ -108,8 +60,10 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
                     owner_empire: fleet.owner.0,
                     mission: Mission::JoinAnotherFleet,
                     current_coords,
+                    in_system: fleet.depth.round() == 1,
                     previous_target_coords,
                     new_target_coords: coords,
+                    stardate_week: None,
                 });
             }
         }
@@ -161,6 +115,8 @@ pub(super) fn refresh_guard_starbase_targets(
                 mission: Mission::GuardStarbase,
                 previous_target_coords,
                 coords: current_coords,
+                in_system: fleet.depth.round() == 1,
+                stardate_week: None,
             });
             continue;
         };
@@ -172,22 +128,12 @@ pub(super) fn refresh_guard_starbase_targets(
                 owner_empire,
                 mission: Mission::GuardStarbase,
                 current_coords,
+                in_system: fleet.depth.round() == 1,
                 previous_target_coords,
                 new_target_coords,
+                stardate_week: None,
             });
         }
     }
     events
-}
-
-pub(super) fn nearest_owned_planet_target_from_list(
-    owned_planets: &[(u8, [u8; 2])],
-    empire: u8,
-    from: [u8; 2],
-) -> Option<[u8; 2]> {
-    owned_planets
-        .iter()
-        .filter(|(owner, _)| *owner == empire)
-        .min_by_key(|(_, coords)| sector_distance_sq(from, *coords))
-        .map(|(_, coords)| *coords)
 }

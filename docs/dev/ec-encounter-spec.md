@@ -378,7 +378,8 @@ are in the movement spec). Flag 2 keeps every owned world, the one in O's
 own system included, and ranks them by travel distance divided by present
 production (PLANETS `+0x03`), a production below 1.0 counting as 1.0; ties
 still go to the earlier world, and a lone candidate is taken without
-measuring.
+measuring. Rust uses flag 2 for the autopilot recall
+(`CoreGameData::nearest_productive_world`) and flag 1 everywhere else.
 [P t064: an autopilot fleet at (13,12) chose (16,13), 4.16 away at
 production 5, over (12,12), 2.0 away at production 2; a fleet in orbit of
 its own (12,12) chose (12,12); a fleet 1.5 from both (12,11) and (12,12) at

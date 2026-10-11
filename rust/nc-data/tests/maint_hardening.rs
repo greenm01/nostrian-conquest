@@ -281,12 +281,22 @@ fn seek_home_picks_nearest_world_across_distant_coordinates() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    // Squared distances past i16 range (dx = 234 to the homeworld at (16,13)).
+    // Squared distances past i16 range (dx = 234 to the world at (16,13)). The
+    // fleet's target world is lost, so it picks the nearer of two others.
     let far_world = [200, 1];
-    let planet = &mut game_data.planets[10];
-    planet.sector = Coords::from_array(far_world);
-    planet.owner.0 = 1;
-    planet.years_under_owner = 2;
+    let farther_world = [10, 1];
+    let homeworld = game_data
+        .planets
+        .iter_mut()
+        .find(|planet| planet.sector.to_array() == [16, 13])
+        .expect("baseline has a homeworld at (16,13)");
+    homeworld.owner.0 = 2;
+    for (idx, sector) in [(10, far_world), (11, farther_world)] {
+        let planet = &mut game_data.planets[idx];
+        planet.sector = Coords::from_array(sector);
+        planet.owner.0 = 1;
+        planet.years_under_owner = 2;
+    }
     let fleet = &mut game_data.fleets[0];
     fleet.sector = Coords::new(250, 1);
     fleet.order = Order::SeekHome;

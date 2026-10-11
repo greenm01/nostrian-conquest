@@ -273,7 +273,6 @@ fn assign_salvage_weeks(events: &mut MaintenanceEvents) {
     for e in &mut events.salvage_events {
         let fleet_idx = match *e {
             super::super::SalvageResolvedEvent::Succeeded { fleet_idx, .. } => fleet_idx,
-            super::super::SalvageResolvedEvent::Failed { fleet_idx, .. } => fleet_idx,
         };
         let week = salvage_weeks
             .iter()
@@ -282,11 +281,6 @@ fn assign_salvage_weeks(events: &mut MaintenanceEvents) {
             .unwrap_or(1);
         match e {
             super::super::SalvageResolvedEvent::Succeeded { stardate_week, .. } => {
-                if stardate_week.is_none() {
-                    *stardate_week = Some(week);
-                }
-            }
-            super::super::SalvageResolvedEvent::Failed { stardate_week, .. } => {
                 if stardate_week.is_none() {
                     *stardate_week = Some(week);
                 }

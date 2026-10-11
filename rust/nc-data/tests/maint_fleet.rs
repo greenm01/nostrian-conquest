@@ -11,8 +11,8 @@ use nc_data::{
     ColonizationResolvedEvent, Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation,
     FleetOrderValidationError, GameStateBuilder, JoinMissionHostEvent, Mission, MissionAbortReason,
     MissionOutcome, MissionRetargetEvent, Order, PlanetIntelSource, PlayerMode, Real48,
-    SalvageFailureReason, SalvageResolvedEvent, Starbase, diplomatic_relation_toward,
-    recompute_max_speed, set_armies_aboard, set_fleet_at_rest, set_mission_target, set_planet_name,
+    SalvageResolvedEvent, Starbase, diplomatic_relation_toward, recompute_max_speed,
+    set_armies_aboard, set_fleet_at_rest, set_mission_target, set_planet_name,
     set_starbase_at_rest, set_troop_transports, stored_production_points,
 };
 use nc_engine::run_maintenance_turn;
@@ -1762,49 +1762,85 @@ fn test_empty_fleet_is_culled_at_turn_start() {
 }
 
 #[test]
-fn test_salvage_fails_at_foreign_planet_without_removing_fleet() {
+fn test_salvage_whose_world_is_not_ours_salvages_at_a_friendly_world() {
+    // ECMAINT checks a Salvage fleet's target world every tick; one that is
+    // not the empire's turns for the nearest friendly world and keeps the
+    // Salvage order (`0b5d:4a44`).
     let mut game_data = load_fixture("ecmaint-post");
-    let (planet_idx, target_coords) = game_data
+    let (planet_idx, home_coords) = game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner.0 == 2)
+        .find(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, planet)| (idx, planet.sector.to_array()))
+        .expect("fixture should contain an owned planet");
+    let foreign_coords = game_data
+        .planets
+        .iter()
+        .find(|planet| planet.owner.0 == 2)
+        .map(|planet| planet.sector.to_array())
         .expect("fixture should contain a foreign planet");
-    let start_coords = if target_coords[0] > 1 {
-        [target_coords[0] - 1, target_coords[1]]
+    let start_coords = if home_coords[0] > 1 {
+        [home_coords[0] - 1, home_coords[1]]
     } else {
-        [target_coords[0] + 1, target_coords[1]]
+        [home_coords[0] + 1, home_coords[1]]
     };
+    let stored_before = stored_production_points(&game_data.planets[planet_idx]);
     let fleet_count_before = game_data.fleets.len();
 
     let fleet = &mut game_data.fleets[0];
     fleet.sector = Coords::from_array(start_coords);
     fleet.order = Order::Salvage;
-    fleet.target = Coords::from_array(target_coords);
+    fleet.target = Coords::from_array(foreign_coords);
     fleet.speed = 3;
+    fleet.ships.destroyers = 1;
+    fleet.ships.cruisers = 0;
+    fleet.ships.battleships = 0;
+    fleet.ships.scouts = 0;
+    set_troop_transports(fleet, 0);
+    set_armies_aboard(fleet, 0);
+    fleet.ships.etacs = 0;
     fleet.x_fraction = Real48::HALF;
     fleet.depth = Real48::ZERO;
-    // The world's own fleets would attack the salvager in their system.
-    common::hold_fire(&mut game_data, 2);
+    let fleet_number = fleet.fleet_number.0 as u8;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
-    assert_eq!(game_data.fleets.len(), fleet_count_before);
-    assert_eq!(game_data.fleets[0].order, Order::HoldPosition);
+    assert_eq!(game_data.fleets.len(), fleet_count_before - 1);
+    assert_eq!(
+        stored_production_points(&game_data.planets[planet_idx]),
+        stored_before + 3,
+    );
+    assert!(events.mission_retarget_events.iter().any(|event| {
+        matches!(
+            event,
+            MissionRetargetEvent::Retargeted {
+                reporting_fleet_number,
+                mission,
+                previous_target_coords,
+                new_target_coords,
+                stardate_week,
+                ..
+            } if *reporting_fleet_number == Some(fleet_number)
+                && *mission == Mission::Salvage
+                && *previous_target_coords == foreign_coords
+                && *new_target_coords == home_coords
+                && *stardate_week == Some(1)
+        )
+    }));
     assert!(events.salvage_events.iter().any(|event| {
         matches!(
             event,
-            SalvageResolvedEvent::Failed {
+            SalvageResolvedEvent::Succeeded {
                 owner_empire,
-                planet_idx: Some(idx),
+                planet_idx: event_planet_idx,
                 coords,
-                reason,
+                recovered_points,
                 ..
             } if *owner_empire == 1
-                && *idx == planet_idx
-                && *coords == target_coords
-                && *reason == SalvageFailureReason::PlanetNotOwned
+                && *event_planet_idx == planet_idx
+                && *coords == home_coords
+                && *recovered_points == 3
         )
     }));
 }

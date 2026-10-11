@@ -1,14 +1,13 @@
-use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, production_item_kind_code};
 use nc_data::{
     Coords, DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT,
-    build_queue_unit_counts, diplomatic_relation_toward, has_any_force, present_production_points,
-    stardock_slot_kind,
+    build_queue_unit_counts, diplomatic_relation_toward, present_production_points,
+    recompute_max_speed, stardock_slot_kind,
 };
 
-/// Autopilot fleet recall — runs BEFORE movement so idle fleets get SeekHome
-/// orders that movement can act on this turn. Only applies to human players
-/// with autopilot enabled (not rogue empires).
+/// Autopilot orders for fleets, once a year before the planet pass and the
+/// year's ticks, so movement acts on them this turn. Only human players with
+/// autopilot enabled; rogue empires' fleet and starbase orders are t070.
 pub fn process_autopilot_fleet_orders(
     game_data: &mut CoreGameData,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -110,44 +109,65 @@ fn assess_empire_posture(
 
 // ── Fleet orders ────────────────────────────────────────────────────────
 
+/// ECMAINT's orders pass for an autopilot empire (`24a3:3cc6`, `24a3:25f7`).
+/// Each fleet on Hold gets the empire's best world as its target, picked by
+/// travel distance per point of present production
+/// ([`CoreGameData::nearest_productive_world`]), with target depth 1. A fleet
+/// not yet in orbit there takes Seek Home at its maximum speed. One in orbit
+/// with warships takes Guard/Blockade at rest, ROE 6 when it was 0, and then
+/// guards an unescorted starbase at rest in the same orbit; one in orbit
+/// without warships stays on Hold. Other orders are left alone.
 fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
-    let owned_planet_coords: Vec<[u8; 2]> = game_data
-        .planets
-        .iter()
-        .filter(|p| p.owner.0 == owner_slot)
-        .map(|p| p.sector.to_array())
-        .collect();
-
     for fleet_idx in 0..game_data.fleets.len() {
         let fleet = &game_data.fleets[fleet_idx];
-        if fleet.owner.0 != owner_slot || !has_any_force(fleet) {
+        if fleet.owner.0 != owner_slot || fleet.order != Order::HoldPosition {
             continue;
         }
-
-        // Only recall truly idle fleets in deep space.
-        if fleet.order != Order::HoldPosition {
+        let Some(world) = game_data.nearest_productive_world(fleet_idx + 1) else {
             continue;
-        }
-        let coords = fleet.sector.to_array();
-        if owned_planet_coords.iter().any(|pc| *pc == coords) {
-            continue;
-        }
+        };
 
         let fleet = &mut game_data.fleets[fleet_idx];
-        let max_speed = fleet.max_speed;
-        let target = nearest_owned_planet_coords(fleet.sector.to_array(), &owned_planet_coords)
-            .unwrap_or(fleet.sector.to_array());
-        fleet.speed = max_speed;
-        fleet.order = Order::SeekHome;
-        fleet.target = Coords::from_array(target);
+        fleet.target = Coords::from_array(world);
+        fleet.target_depth = 1;
+        if fleet.sector.to_array() != world || fleet.depth.round() != 1 {
+            fleet.order = Order::SeekHome;
+            fleet.speed = fleet.max_speed;
+            continue;
+        }
+        let ships = &fleet.ships;
+        if ships.battleships + ships.cruisers + ships.destroyers == 0 {
+            continue;
+        }
+        fleet.order = Order::GuardBlockadeWorld;
+        fleet.speed = 0;
+        recompute_max_speed(fleet);
+        if fleet.rules_of_engagement == 0 {
+            fleet.rules_of_engagement = 6;
+        }
+        guard_unescorted_starbase(game_data, fleet_idx);
     }
 }
 
-fn nearest_owned_planet_coords(from: [u8; 2], candidates: &[[u8; 2]]) -> Option<[u8; 2]> {
-    candidates
-        .iter()
-        .min_by_key(|coords| sector_distance_sq(from, **coords))
-        .copied()
+/// A fleet on Guard/Blockade takes the first starbase of its empire that
+/// rests in orbit in its sector with no escort: the fleet's order becomes
+/// Guard Starbase and the base's escort word the fleet's number.
+fn guard_unescorted_starbase(game_data: &mut CoreGameData, fleet_idx: usize) {
+    let fleet = &mut game_data.fleets[fleet_idx];
+    let Some(base) = game_data.bases.iter_mut().find(|base| {
+        base.owner == fleet.owner
+            && base.base_id.0 != 0
+            && base.escort.0 == 0
+            && base.sector == fleet.sector
+            && base.depth.round() == 1
+            && !base.moving
+            && base.target == base.sector
+    }) else {
+        return;
+    };
+    base.escort = fleet.fleet_number;
+    fleet.order = Order::GuardStarbase;
+    fleet.mission_target = base.base_id.0;
 }
 
 // ── Build queue ─────────────────────────────────────────────────────────
