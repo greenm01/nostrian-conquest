@@ -13,6 +13,8 @@ mod fleet_detach;
 mod fleet_menu_transport;
 #[path = "update/fleet_orders.rs"]
 mod fleet_orders;
+#[path = "update/message_delivery.rs"]
+mod message_delivery;
 #[path = "update/message_outbox.rs"]
 mod message_outbox;
 #[path = "update/messaging.rs"]

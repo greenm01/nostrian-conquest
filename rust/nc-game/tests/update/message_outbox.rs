@@ -166,6 +166,88 @@ fn outbox_d_prompt_defaults_to_yes_and_n_keeps_the_message() {
 }
 
 #[test]
+fn outbox_lists_only_this_turns_messages_so_delivered_ones_cannot_be_deleted() {
+    let fixture_dir = temp_game_copy();
+    let mut runtime = latest_runtime_state(&fixture_dir);
+    let year = runtime.game_data.conquest.game_year();
+    runtime.queued_mail.push(own_mail(2, year - 1, "Delivered"));
+    runtime.queued_mail.push(own_mail(3, year, "Queued"));
+    save_runtime_state(&fixture_dir, &runtime);
+    let mut app = load_player_one(&fixture_dir);
+    open_outbox(&mut app);
+
+    let list = render(&mut app);
+    assert!(line_containing(&list, "│01│").contains("Queued"));
+    assert!(!list.lines.iter().any(|line| line.contains("Delivered")));
+    assert!(!list.lines.iter().any(|line| line.contains("│02│")));
+
+    // The delivered message has no number to type.
+    press(&mut app, KeyCode::Char('2'));
+    press(&mut app, KeyCode::Char('D'));
+    assert_eq!(app.messaging.compose_outbox_mode, OutboxMode::List);
+    assert_eq!(
+        app.messaging.compose_outbox_status.as_deref(),
+        Some("Enter a queued message number in 1..=1.")
+    );
+    press(&mut app, KeyCode::Backspace);
+
+    press(&mut app, KeyCode::Char('D'));
+    press(&mut app, KeyCode::Char('Y'));
+    assert_eq!(saved_subjects(&fixture_dir), vec!["Delivered"]);
+    let list = render(&mut app);
+    assert!(!list.lines.iter().any(|line| line.contains("Delivered")));
+}
+
+#[test]
+fn outbox_read_view_scrolls_a_long_message_with_the_inbox_preview_keys() {
+    let fixture_dir = temp_game_copy();
+    let mut runtime = latest_runtime_state(&fixture_dir);
+    let year = runtime.game_data.conquest.game_year();
+    let body = (1..=40)
+        .map(|line| format!("Line {line:02}"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    runtime
+        .queued_mail
+        .push(incoming_mail(1, 2, year, "Long", &body));
+    save_runtime_state(&fixture_dir, &runtime);
+    let mut app = load_player_one(&fixture_dir);
+    open_outbox(&mut app);
+
+    // The box holds 21 of the 43 lines: recipient, subject, and lines 01-19.
+    press(&mut app, KeyCode::Enter);
+    let read = render(&mut app);
+    assert!(read.line(2).starts_with("│To "), "{:?}", read.lines);
+    assert!(read.line(22).starts_with("│Line 19"), "{:?}", read.lines);
+
+    press(&mut app, KeyCode::Down);
+    assert_eq!(app.messaging.compose_outbox_mode, OutboxMode::Read);
+    let read = render(&mut app);
+    assert!(read.line(2).starts_with("│Subject: Long"));
+    assert!(read.line(22).starts_with("│Line 20"));
+
+    // PgDn stops at the end of the message.
+    for _ in 0..5 {
+        press(&mut app, KeyCode::PageDown);
+    }
+    let read = render(&mut app);
+    assert!(read.line(22).starts_with("│<end of message>"));
+    press(&mut app, KeyCode::Char('k'));
+    assert!(render(&mut app).line(22).starts_with("│Line 40"));
+    for _ in 0..5 {
+        press(&mut app, KeyCode::PageUp);
+    }
+    assert!(render(&mut app).line(2).starts_with("│To "));
+
+    // Any other key returns to the list; reading again starts at the top.
+    press(&mut app, KeyCode::Char('j'));
+    press(&mut app, KeyCode::Esc);
+    assert_eq!(app.messaging.compose_outbox_mode, OutboxMode::List);
+    press(&mut app, KeyCode::Enter);
+    assert!(render(&mut app).line(2).starts_with("│To "));
+}
+
+#[test]
 fn outbox_footer_and_help_list_read_and_delete_keys() {
     let fixture_dir = temp_game_copy();
     queue_own_messages(&fixture_dir, &["Alpha"]);
@@ -342,7 +424,7 @@ fn review_inbox_lists_this_turns_outgoing_first_and_keeps_ids_after_cancel() {
     runtime.queued_mail.push(own_mail(2, year, "First"));
     runtime
         .queued_mail
-        .push(incoming_mail(2, 1, year, "Incoming", "Incoming body"));
+        .push(incoming_mail(2, 1, year - 1, "Incoming", "Incoming body"));
     runtime.queued_mail.push(own_mail(3, year, "Second"));
     runtime.queued_mail.push(own_mail(2, year - 1, "Last year"));
     save_runtime_state(&fixture_dir, &runtime);

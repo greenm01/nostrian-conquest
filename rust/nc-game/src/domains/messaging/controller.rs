@@ -3,10 +3,12 @@ use crate::app::state::App;
 use crate::domains::messaging::screens::message_compose::{
     COMPOSE_BODY_WRAP_WIDTH, ComposeCursor, compose_cursor_for_index,
     compose_existing_index_for_cursor, compose_row_end_col, materialize_compose_cursor,
+    outbox_message_body_rows, outbox_message_view_lines,
 };
+use crate::domains::messaging::scrolled_preview_offset;
 use crate::domains::messaging::state::OutboxMode;
 use crate::model::{MainMenuSummary, ReviewSummary};
-use crate::reports::has_visible_runtime_messages;
+use crate::reports::{has_visible_runtime_messages, runtime_outgoing_message_lines};
 use crate::screen::{CommandMenu, ScreenId};
 use nc_data::{
     CoreGameData, QueuedPlayerMail, delete_report_blocks_for_viewer, validate_queue_message_limit,
@@ -32,7 +34,11 @@ impl App {
             &self.game_data,
             self.player.record_index_1_based,
             self.has_active_report_blocks(),
-            has_visible_runtime_messages(self.player.record_index_1_based as u8, &self.queued_mail),
+            has_visible_runtime_messages(
+                self.player.record_index_1_based as u8,
+                &self.queued_mail,
+                self.game_data.conquest.game_year(),
+            ),
         );
         let review_summary = ReviewSummary::from_main_menu(&summary);
         if !review_summary.reviewable_results && !review_summary.reviewable_messages {
@@ -461,7 +467,35 @@ impl App {
     pub fn open_compose_outbox_message(&mut self) {
         if self.select_compose_outbox_message().is_some() {
             self.messaging.compose_outbox_mode = OutboxMode::Read;
+            self.messaging.compose_outbox_read_scroll = 0;
         }
+    }
+
+    /// Scrolls the message open in the outbox read view, as the inbox preview
+    /// scrolls.
+    pub fn scroll_compose_outbox_message(&mut self, delta: i8) {
+        if self.current_screen != ScreenId::ComposeMessageOutbox
+            || self.messaging.compose_outbox_mode != OutboxMode::Read
+        {
+            return;
+        }
+        let total_lines = self
+            .compose_outbox_queue_indexes()
+            .get(self.messaging.compose_outbox_cursor)
+            .map(|&idx| {
+                outbox_message_view_lines(&runtime_outgoing_message_lines(
+                    &self.game_data,
+                    &self.queued_mail[idx],
+                ))
+                .len()
+            })
+            .unwrap_or(0);
+        self.messaging.compose_outbox_read_scroll = scrolled_preview_offset(
+            self.messaging.compose_outbox_read_scroll,
+            delta,
+            total_lines,
+            outbox_message_body_rows(self.screen_geometry),
+        );
     }
 
     pub fn open_compose_outbox_delete_confirm(&mut self) {
@@ -481,13 +515,7 @@ impl App {
             return Ok(());
         }
         self.messaging.compose_outbox_mode = OutboxMode::List;
-        let sender_empire_id = self.player.record_index_1_based as u8;
-        let own_indexes = self
-            .queued_mail
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, mail)| (mail.sender_empire_id == sender_empire_id).then_some(idx))
-            .collect::<Vec<_>>();
+        let own_indexes = self.compose_outbox_queue_indexes();
         let Some(queue_index) = own_indexes
             .get(self.messaging.compose_outbox_cursor)
             .copied()
@@ -661,8 +689,9 @@ impl App {
             &self.game_data.player.records,
             self.player.record_index_1_based as u8,
         );
+        let current_year = self.game_data.conquest.game_year();
         for mail in &mut self.queued_mail {
-            if mail.is_visible_to_recipient(self.player.record_index_1_based as u8) {
+            if mail.is_visible_to_recipient(self.player.record_index_1_based as u8, current_year) {
                 mail.mark_deleted_by_recipient();
             }
         }
@@ -716,13 +745,24 @@ impl App {
     pub(crate) fn compose_outbox_queue(
         &self,
     ) -> Result<Vec<QueuedPlayerMail>, Box<dyn std::error::Error>> {
-        let sender_empire_id = self.player.record_index_1_based as u8;
         Ok(self
-            .queued_mail
-            .clone()
+            .compose_outbox_queue_indexes()
             .into_iter()
-            .filter(|mail| mail.sender_empire_id == sender_empire_id)
+            .map(|idx| self.queued_mail[idx].clone())
             .collect())
+    }
+
+    /// Positions in `queued_mail` of the player's messages queued this turn,
+    /// in queue order: the outbox rows. Delivered messages are not listed.
+    fn compose_outbox_queue_indexes(&self) -> Vec<usize> {
+        let sender_empire_id = self.player.record_index_1_based as u8;
+        let current_year = self.game_data.conquest.game_year();
+        self.queued_mail
+            .iter()
+            .enumerate()
+            .filter(|(_, mail)| mail.is_queued_by(sender_empire_id, current_year))
+            .map(|(idx, _)| idx)
+            .collect()
     }
 }
 

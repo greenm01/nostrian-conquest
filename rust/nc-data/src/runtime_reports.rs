@@ -92,13 +92,15 @@ pub fn has_visible_runtime_reports(viewer_empire_id: u8, report_blocks: &[Report
         .any(|row| !row.recipient_deleted && row.is_visible_to_viewer(viewer_empire_id))
 }
 
+/// Whether maintenance has delivered mail the viewer has not deleted.
 pub fn has_visible_runtime_messages(
     viewer_empire_id: u8,
     queued_mail: &[QueuedPlayerMail],
+    current_year: u16,
 ) -> bool {
     queued_mail
         .iter()
-        .any(|mail| mail.is_visible_to_recipient(viewer_empire_id))
+        .any(|mail| mail.is_visible_to_recipient(viewer_empire_id, current_year))
 }
 
 pub fn runtime_inbox_items(
@@ -117,7 +119,7 @@ pub fn runtime_inbox_items(
             queued_mail
                 .iter()
                 .enumerate()
-                .filter(|(_, mail)| mail.is_visible_to_recipient(viewer_empire_id))
+                .filter(|(_, mail)| mail.is_visible_to_recipient(viewer_empire_id, current_year))
                 .map(|(idx, mail)| inbox_item_from_mail(game_data, idx, mail)),
         )
         .collect::<Vec<_>>();
@@ -125,8 +127,8 @@ pub fn runtime_inbox_items(
     items
 }
 
-/// The viewer's own messages queued this turn, newest first. Maintenance
-/// advances the year, so a message leaves this list once it is delivered.
+/// The viewer's own messages queued this turn, newest first. A message leaves
+/// this list when maintenance delivers it.
 pub fn runtime_outgoing_inbox_items(
     game_data: &CoreGameData,
     sender_empire_id: u8,
@@ -137,7 +139,7 @@ pub fn runtime_outgoing_inbox_items(
         .iter()
         .enumerate()
         .rev()
-        .filter(|(_, mail)| mail.sender_empire_id == sender_empire_id && mail.year == current_year)
+        .filter(|(_, mail)| mail.is_queued_by(sender_empire_id, current_year))
         .map(|(idx, mail)| InboxItem {
             source: InboxItemSource::QueuedMail(idx),
             item_type: InboxItemType::Outgoing,
@@ -235,10 +237,11 @@ fn runtime_message_blocks(
     viewer_empire_id: u8,
     queued_mail: &[QueuedPlayerMail],
 ) -> Vec<ReviewBlock> {
+    let current_year = game_data.conquest.game_year();
     queued_mail
         .iter()
         .enumerate()
-        .filter(|(_, mail)| mail.is_visible_to_recipient(viewer_empire_id))
+        .filter(|(_, mail)| mail.is_visible_to_recipient(viewer_empire_id, current_year))
         .map(|(idx, mail)| ReviewBlock {
             lines: runtime_message_lines(game_data, mail),
             raw_chunked_bytes: None,

@@ -310,7 +310,8 @@ fn apply_action_deletes_queued_message_from_outbox() {
 fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    // Maintenance delivers mail, so received mail carries an earlier year.
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     set_runtime_report_blocks(
         &mut runtime,
         classic_chunked_report_blocks(&[
@@ -321,14 +322,14 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
     runtime.queued_mail.push(incoming_mail(
         2,
         1,
-        current_year,
+        mail_year,
         "Current message",
         "Newest body",
     ));
     runtime.queued_mail.push(incoming_mail(
         3,
         1,
-        current_year - 1,
+        mail_year - 1,
         "Older message",
         "Older body",
     ));
@@ -363,7 +364,7 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
         ),
         AppOutcome::Continue
     );
-    for ch in current_year.to_string().chars() {
+    for ch in mail_year.to_string().chars() {
         assert_eq!(
             apply_action(
                 &mut app,
@@ -393,7 +394,7 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
         filtered
             .lines
             .iter()
-            .any(|line| line.contains(&format!("Year: {current_year}")))
+            .any(|line| line.contains(&format!("Year: {mail_year}")))
     );
     assert!(
         filtered
@@ -437,12 +438,12 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
 fn reports_inbox_rejects_no_match_year_filter_without_blanking_the_table() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     runtime
         .queued_mail
-        .push(incoming_mail(2, 1, current_year, "Visible", "Visible body"));
+        .push(incoming_mail(2, 1, mail_year, "Visible", "Visible body"));
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -479,7 +480,7 @@ fn reports_inbox_rejects_no_match_year_filter_without_blanking_the_table() {
         ),
         AppOutcome::Continue
     );
-    for ch in (current_year + 10).to_string().chars() {
+    for ch in (mail_year + 10).to_string().chars() {
         assert_eq!(
             apply_action(
                 &mut app,
@@ -573,12 +574,12 @@ fn reports_inbox_question_mark_opens_popup_help_with_inbox_commands() {
 fn reports_inbox_enter_moves_focus_to_preview_when_id_input_is_empty() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     runtime
         .queued_mail
-        .push(incoming_mail(2, 1, current_year, "Visible", "Visible body"));
+        .push(incoming_mail(2, 1, mail_year, "Visible", "Visible body"));
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -620,16 +621,16 @@ fn reports_inbox_enter_moves_focus_to_preview_when_id_input_is_empty() {
 fn reports_inbox_typed_id_jump_moves_selection_immediately() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     runtime
         .queued_mail
-        .push(incoming_mail(2, 1, current_year, "Alpha", "Body Alpha"));
+        .push(incoming_mail(2, 1, mail_year, "Alpha", "Body Alpha"));
     runtime
         .queued_mail
-        .push(incoming_mail(3, 1, current_year, "Beta", "Body Beta"));
+        .push(incoming_mail(3, 1, mail_year, "Beta", "Body Beta"));
     runtime
         .queued_mail
-        .push(incoming_mail(4, 1, current_year, "Gamma", "Body Gamma"));
+        .push(incoming_mail(4, 1, mail_year, "Gamma", "Body Gamma"));
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -679,13 +680,13 @@ fn reports_inbox_typed_id_jump_moves_selection_immediately() {
 fn reports_inbox_delete_keeps_sparse_session_ids_without_empty_rows() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     for subject in ["Alpha", "Beta", "Gamma", "Delta"] {
         runtime
             .queued_mail
-            .push(incoming_mail(2, 1, current_year, subject, subject));
+            .push(incoming_mail(2, 1, mail_year, subject, subject));
     }
     save_runtime_state(&fixture_dir, &runtime);
 
@@ -782,12 +783,12 @@ fn reports_inbox_delete_keeps_sparse_session_ids_without_empty_rows() {
 fn reports_inbox_leaves_scrollbar_gutter_when_many_items_exist() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     for idx in 0..12 {
         runtime.queued_mail.push(incoming_mail(
             2,
             1,
-            current_year,
+            mail_year,
             &format!("Message {}", idx + 1),
             "Body",
         ));
@@ -827,17 +828,17 @@ fn reports_inbox_leaves_scrollbar_gutter_when_many_items_exist() {
 fn reports_inbox_long_preview_scrolls_and_clamps_without_panicking() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let mail_year = runtime.game_data.conquest.game_year() - 1;
     runtime
         .queued_mail
-        .push(incoming_mail(2, 1, current_year, "Older", "Short body"));
+        .push(incoming_mail(2, 1, mail_year, "Older", "Short body"));
     let long_body = (0..40)
         .map(|idx| format!("Line {idx:02} {}", "x".repeat(90)))
         .collect::<Vec<_>>()
         .join("\n");
     runtime
         .queued_mail
-        .push(incoming_mail(3, 1, current_year, "Long", &long_body));
+        .push(incoming_mail(3, 1, mail_year, "Long", &long_body));
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {

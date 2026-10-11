@@ -52,85 +52,64 @@ impl App {
                 Some(false) => Action::Messaging(MessagingAction::CancelInboxPrompt),
                 None => Action::Noop,
             },
-            InboxPromptMode::Normal => match key.code {
-                KeyCode::Char('m') | KeyCode::Char('M') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterMessages)
-                }
-                KeyCode::Char('r') | KeyCode::Char('R') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterReports)
-                }
-                KeyCode::Char('a') | KeyCode::Char('A') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterAll)
-                }
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    if self.messaging.inbox_year_filter.is_some() {
-                        Action::Messaging(MessagingAction::ClearInboxYearFilter)
-                    } else {
-                        Action::Messaging(MessagingAction::OpenInboxYearPrompt)
-                    }
-                }
-                KeyCode::Char('d') | KeyCode::Char('D') => {
-                    Action::Messaging(MessagingAction::OpenInboxDeleteConfirm)
-                }
-                KeyCode::Tab => Action::Messaging(MessagingAction::ToggleInboxFocus),
-                KeyCode::Backspace => Action::Messaging(MessagingAction::BackspaceInboxIdInput),
-                KeyCode::Enter => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox if self.messaging.inbox_id_input.trim().is_empty() => {
-                        Action::Messaging(MessagingAction::ToggleInboxFocus)
-                    }
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::SubmitInboxIdInput),
-                    InboxFocus::Preview => Action::Noop,
-                },
-                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
-                    Action::ReturnToCommandMenu
-                }
-                KeyCode::PageUp => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::PageInboxCursor(-1)),
-                    InboxFocus::Preview => Action::Messaging(MessagingAction::PageInboxPreview(-1)),
-                },
-                KeyCode::PageDown => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::PageInboxCursor(1)),
-                    InboxFocus::Preview => Action::Messaging(MessagingAction::PageInboxPreview(1)),
-                },
-                KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => match self
-                    .messaging
-                    .inbox_focus
+            InboxPromptMode::Normal => {
+                if self.messaging.inbox_focus == InboxFocus::Preview
+                    && let Some(delta) = preview_scroll_lines(key)
                 {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
-                    InboxFocus::Preview => {
-                        Action::Messaging(MessagingAction::ScrollInboxPreview(-1))
+                    return Action::Messaging(MessagingAction::ScrollInboxPreview(delta));
+                }
+                match key.code {
+                    KeyCode::Char('m') | KeyCode::Char('M') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterMessages)
                     }
-                },
-                KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('J') => {
-                    match self.messaging.inbox_focus {
-                        InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
-                        InboxFocus::Preview => {
-                            Action::Messaging(MessagingAction::ScrollInboxPreview(1))
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterReports)
+                    }
+                    KeyCode::Char('a') | KeyCode::Char('A') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterAll)
+                    }
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        if self.messaging.inbox_year_filter.is_some() {
+                            Action::Messaging(MessagingAction::ClearInboxYearFilter)
+                        } else {
+                            Action::Messaging(MessagingAction::OpenInboxYearPrompt)
                         }
                     }
-                }
-                KeyCode::Left | KeyCode::Char('h') | KeyCode::Char('H') => match self
-                    .messaging
-                    .inbox_focus
-                {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
-                    InboxFocus::Preview => {
-                        Action::Messaging(MessagingAction::ScrollInboxPreview(-1))
+                    KeyCode::Char('d') | KeyCode::Char('D') => {
+                        Action::Messaging(MessagingAction::OpenInboxDeleteConfirm)
                     }
-                },
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Char('L') => {
-                    match self.messaging.inbox_focus {
-                        InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
-                        InboxFocus::Preview => {
-                            Action::Messaging(MessagingAction::ScrollInboxPreview(1))
+                    KeyCode::Tab => Action::Messaging(MessagingAction::ToggleInboxFocus),
+                    KeyCode::Backspace => Action::Messaging(MessagingAction::BackspaceInboxIdInput),
+                    KeyCode::Enter => match self.messaging.inbox_focus {
+                        InboxFocus::Inbox if self.messaging.inbox_id_input.trim().is_empty() => {
+                            Action::Messaging(MessagingAction::ToggleInboxFocus)
                         }
+                        InboxFocus::Inbox => Action::Messaging(MessagingAction::SubmitInboxIdInput),
+                        InboxFocus::Preview => Action::Noop,
+                    },
+                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        Action::ReturnToCommandMenu
                     }
+                    KeyCode::PageUp => Action::Messaging(MessagingAction::PageInboxCursor(-1)),
+                    KeyCode::PageDown => Action::Messaging(MessagingAction::PageInboxCursor(1)),
+                    KeyCode::Up
+                    | KeyCode::Char('k')
+                    | KeyCode::Char('K')
+                    | KeyCode::Left
+                    | KeyCode::Char('h')
+                    | KeyCode::Char('H') => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
+                    KeyCode::Down
+                    | KeyCode::Char('j')
+                    | KeyCode::Char('J')
+                    | KeyCode::Right
+                    | KeyCode::Char('l')
+                    | KeyCode::Char('L') => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
+                    KeyCode::Char(ch) if ch.is_ascii_digit() => {
+                        Action::Messaging(MessagingAction::AppendInboxIdChar(ch))
+                    }
+                    _ => Action::Noop,
                 }
-                KeyCode::Char(ch) if ch.is_ascii_digit() => {
-                    Action::Messaging(MessagingAction::AppendInboxIdChar(ch))
-                }
-                _ => Action::Noop,
-            },
+            }
         }
     }
 
@@ -237,19 +216,13 @@ impl App {
     }
 
     pub fn scroll_inbox_preview(&mut self, delta: i8) {
-        let visible_rows = self.inbox_preview_visible_rows();
-        let total = self.current_inbox_preview_lines().len();
-        let max_scroll = total.saturating_sub(visible_rows);
-        self.messaging.inbox_preview_scroll = self
-            .messaging
-            .inbox_preview_scroll
-            .saturating_add_signed(delta as isize)
-            .min(max_scroll);
+        self.messaging.inbox_preview_scroll = scrolled_preview_offset(
+            self.messaging.inbox_preview_scroll,
+            delta,
+            self.current_inbox_preview_lines().len(),
+            self.inbox_preview_visible_rows(),
+        );
         self.messaging.inbox_feedback = None;
-    }
-
-    pub fn page_inbox_preview(&mut self, delta: i8) {
-        self.scroll_inbox_preview(delta.saturating_mul(INBOX_PREVIEW_PAGE_DELTA));
     }
 
     pub fn toggle_inbox_focus(&mut self) {
@@ -546,6 +519,41 @@ impl App {
     pub fn inbox_preview_scroll_offset(&self) -> usize {
         self.messaging.inbox_preview_scroll
     }
+}
+
+/// The inbox preview's scroll keys, as a line delta: arrows and h/j/k/l move
+/// one line, PgUp and PgDn a page. The outbox read view shares them.
+pub(crate) fn preview_scroll_lines(key: KeyEvent) -> Option<i8> {
+    match key.code {
+        KeyCode::Up
+        | KeyCode::Char('k')
+        | KeyCode::Char('K')
+        | KeyCode::Left
+        | KeyCode::Char('h')
+        | KeyCode::Char('H') => Some(-1),
+        KeyCode::Down
+        | KeyCode::Char('j')
+        | KeyCode::Char('J')
+        | KeyCode::Right
+        | KeyCode::Char('l')
+        | KeyCode::Char('L') => Some(1),
+        KeyCode::PageUp => Some(-INBOX_PREVIEW_PAGE_DELTA),
+        KeyCode::PageDown => Some(INBOX_PREVIEW_PAGE_DELTA),
+        _ => None,
+    }
+}
+
+/// Moves a preview's scroll offset by `delta` lines, stopping where the last
+/// line reaches the bottom of the visible rows.
+pub(crate) fn scrolled_preview_offset(
+    offset: usize,
+    delta: i8,
+    total_lines: usize,
+    visible_rows: usize,
+) -> usize {
+    offset
+        .saturating_add_signed(delta as isize)
+        .min(total_lines.saturating_sub(visible_rows))
 }
 
 /// The inbox's "Delete item NN? [Y]/N" prompt, which the outbox shares.

@@ -51,6 +51,8 @@ pub struct MessagingState {
     pub compose_outbox_scroll_offset: usize,
     pub compose_outbox_cursor: usize,
     pub compose_outbox_mode: OutboxMode,
+    /// First visible line of the message open in the outbox read view.
+    pub compose_outbox_read_scroll: usize,
     pub compose_sent_status: Option<String>,
     pub delete_reviewables_prompt_active: bool,
     pub inbox_type_filter: InboxTypeFilter,
@@ -86,6 +88,7 @@ impl Default for MessagingState {
             compose_outbox_scroll_offset: 0,
             compose_outbox_cursor: 0,
             compose_outbox_mode: OutboxMode::List,
+            compose_outbox_read_scroll: 0,
             compose_sent_status: None,
             delete_reviewables_prompt_active: false,
             inbox_type_filter: InboxTypeFilter::All,
