@@ -123,6 +123,28 @@ fn a_fleet_turned_back_by_a_base_with_no_world_to_seek_stops_where_it_is() {
 }
 
 #[test]
+fn an_aborting_mission_fleet_leaves_a_base_that_holds_its_number() {
+    // ECMAINT lets a Guard Starbase fleet go of its base before each abort
+    // (`1b05:185e`, `1b05:1f5d`), but the fleets that abort are on mission
+    // orders and have none to let go. Classic probe, 2026-10-11: a bomber
+    // turned back by a guard left a base of its own holding its number.
+    let mut game_data = base_blocks(true);
+    add_starbase(&mut game_data, 1, 2, WORLD, true);
+    let number = game_data.fleets[0].fleet_number;
+    game_data.bases[1].escort = number;
+    let mut turned_back = 0;
+    for (game_data, events) in years(&game_data, &declared(&[]), 0..32) {
+        if !reported_abort(&events).is_some_and(|tick| tick < 52) {
+            continue;
+        }
+        turned_back += 1;
+        assert_eq!(game_data.fleets[0].order, Order::SeekHome);
+        assert_eq!(game_data.bases[1].escort, number);
+    }
+    assert!(turned_back > 0);
+}
+
+#[test]
 fn a_fleet_turned_back_by_a_guard_heads_home_by_travel_distance() {
     let mut rechecked = 0;
     for (game_data, events) in years(&guard_blocks(true), &declared(&[]), 0..32) {

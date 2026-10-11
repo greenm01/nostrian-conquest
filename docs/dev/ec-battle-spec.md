@@ -648,16 +648,22 @@ loop until done:
 ### 3.3 After the battle `7b74` tail [C][P]
 1. Each side's ships = survivors + escaped.
 2. A surviving fleet's max speed is recomputed (`24a3:036b`).
-3. The attacker record is saved, or deleted if nothing is left.
+3. The attacker record is saved, or deleted if nothing is left
+   (`1b05:9927`).
 4. The target fleet is saved if `total2 > 1`, or `total2 == 1` with no base or
-   with the base killed. Otherwise it is deleted. Here the delete works,
-   because the entry is still active.
+   with the base killed. Otherwise it is deleted (`1b05:9966`). Here the
+   delete works, because the entry is still active. Each delete lets go of
+   the fleet's starbase if the fleet is on Guard Starbase (`2895:3d46`,
+   [ec-starbase-spec.md](ec-starbase-spec.md)).
 5. A killed base is deleted (`2895:3ebd`).
 6. Each side in layer 1 at a world its empire does not own gets the
    DATABASE.DAT owner-and-year update (§2.11, mode 1).
 7. Order changes:
    - **Scatter** (`1b05:2562`): if the owner still has a planet and the order
-     is not 2 or 15, the fleet goes Seek Home to the nearest friendly system
+     is not 2 or 15, the fleet first lets go of its starbase (`2895:30f4`,
+     [ec-starbase-spec.md](ec-starbase-spec.md); it does so even when the pick
+     below finds no world, and the fleet then keeps its order), then goes
+     Seek Home to the nearest friendly system
      (`24a3:0876`) with TZ 1, **ROE 0**, order 2, and speed = max. The report
      reads "After reassembling our fleet, we've decided to abort our mission
      ... and to seek the safety of a friendly controlled solar system at
@@ -665,7 +671,9 @@ loop until done:
      with alien crafts." [P: F6 targets ended at their home world (15,13)
      after Seek Home.]
    - **Retreat** (`1b05:2e1b`): this applies only to a fleet at its target
-     sector with `Round(Z) == 1` and an order other than 2 or 15.
+     sector with `Round(Z) == 1` and an order other than 2 or 15. The fleets
+     it re-orders are on orders 5 to 8 and 12, so its escort release
+     (`1b05:3151`) finds nothing.
      - An assault or colonize fleet (order 6/7/8/12) aborts to Seek Home
        ("Since we cannot get past them/the alien starbase, we cannot <x> the
        target world ...") when the enemy is a guard (order 4/5 on station, or

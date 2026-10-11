@@ -1,5 +1,6 @@
 //! The yearly orders pass for rogue empires against classic ECMAINT
-//! (`24a3:25f7`, `24a3:28fe`, `24a3:0dbc`; t070).
+//! (`24a3:25f7`, `24a3:28fe`, `24a3:0dbc`; t070, and t094 for the escort
+//! release at a fleet delete, unarmed guards, and the worldless rogue).
 //!
 //! Each case names the sector, depth, speed, and ownership it was probed
 //! with on the move fixture and the orders classic gave (2026-10-11, DOSBox-X;
@@ -60,6 +61,14 @@ fn set_fleet(
     fleet.speed = speed;
     fleet.rules_of_engagement = roe;
     fleet.mission_target = 0;
+}
+
+/// Empty every rogue fleet but `keep`; maintenance culls the empty ones
+/// before anything moves, so they cannot fly home and join the others.
+fn keep_only(game_data: &mut CoreGameData, keep: &[usize]) {
+    for n in (0..4).filter(|n| !keep.contains(n)) {
+        set_ships(rogue(game_data, n), 0, 0, 0, 0, 0);
+    }
 }
 
 /// Empire 2 is rogue and owns (4,13) and (12,12), with its fleets parked.
@@ -357,6 +366,40 @@ fn releasing_an_escort_clears_only_the_words_of_the_fleet_that_guards() {
     game_data.bases[here].escort.0 = number;
     game_data.release_starbase_escort(4);
     assert_eq!(game_data.bases[here].escort.0, number);
+}
+
+#[test]
+fn a_rogue_guard_starbase_fleet_merged_away_lets_go_of_its_base() {
+    // Classic merge probe: fleet 1 on Guard/Blockade and fleet 2, the escort
+    // of the home base, share the home world. Fleet 2 merges into fleet 1
+    // (`2895:4a6b`) and its delete frees the base (`2895:3d0c`); the merged
+    // fleet, at rest on Guard/Blockade, then takes the base. After the year:
+    // one fleet of two destroyers on Guard Starbase, the base its escort.
+    let mut game_data = rogue_scenario();
+    for (n, order) in [(0, Order::GuardBlockadeWorld), (1, Order::GuardStarbase)] {
+        let fleet = rogue(&mut game_data, n);
+        set_ships(fleet, 0, 0, 1, 0, 0);
+        set_fleet(fleet, ROGUE_HOME, Real48::ONE, order, ROGUE_HOME, 1, 0, 10);
+    }
+    keep_only(&mut game_data, &[0, 1]);
+    rogue(&mut game_data, 1).mission_target = 1;
+    let escort = rogue(&mut game_data, 1).fleet_number.0;
+    let base = add_base(&mut game_data, 2, ROGUE_HOME, Real48::ONE, 1, escort);
+
+    run(&mut game_data);
+
+    let fleets: Vec<&Fleet> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 2)
+        .collect();
+    assert_eq!(fleets.len(), 1);
+    let fleet = fleets[0];
+    assert_ne!(fleet.fleet_number.0, escort);
+    assert_eq!(fleet.ships.destroyers, 2);
+    assert_eq!(fleet.order, Order::GuardStarbase);
+    assert_eq!(fleet.mission_target, 1);
+    assert_eq!(game_data.bases[base].escort, fleet.fleet_number);
 }
 
 // ── Starbases ───────────────────────────────────────────────────────────

@@ -816,7 +816,9 @@ impl Year<'_> {
     /// ROE forbids fighting a force that blocks the mission: the fleet heads
     /// for the nearest friendly world (`24a3:0876`), or takes `fallback`
     /// when its empire owns no other world. `report` is the tick to report
-    /// it in, if the decision is reported.
+    /// it in, if the decision is reported. A Guard Starbase fleet would let
+    /// go of its base first, as in ECMAINT (`1b05:185e`, `1b05:1f5d`); the
+    /// fleets that abort here are on mission orders and have none.
     fn abort_mission(
         &mut self,
         game_data: &mut CoreGameData,
@@ -824,6 +826,7 @@ impl Year<'_> {
         fallback: AbortFallback,
         report: Option<u8>,
     ) {
+        game_data.release_starbase_escort(fleet_idx);
         let fleet = &game_data.fleets[fleet_idx];
         let coords = fleet.sector.to_array();
         let order = fleet.order;

@@ -518,3 +518,27 @@ fn autopilot_leaves_unarmed_fleets_in_orbit_and_other_orders_alone() {
     assert_eq!(game_data.fleets[2].order, Order::SeekHome);
     assert_eq!(game_data.fleets[2].target.to_array(), OTHER_NEAR_WORLD);
 }
+
+#[test]
+fn a_human_guard_starbase_fleet_that_lost_its_warships_holds_and_lets_go_of_its_base() {
+    // The pre-maintenance check takes the fleet off its order (it has no
+    // other world to seek, so it holds), and the base lets go of it.
+    let mut game_data = scenario();
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 1, 0);
+    place_fleet(
+        &mut game_data,
+        HOME,
+        Real48::ONE,
+        Order::GuardStarbase,
+        HOME,
+        0,
+    );
+    game_data.fleets[0].mission_target = 1;
+    let escort = game_data.fleets[0].fleet_number.0;
+    add_base(&mut game_data, 1, HOME, Real48::ONE, 1, escort);
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.fleets[0].order, Order::HoldPosition);
+    assert_eq!(game_data.bases[0].escort.0, 0);
+}

@@ -65,10 +65,17 @@ fn hold_in_place(fleet: &mut nc_data::Fleet) {
     set_mission_target(fleet, 0, 0);
 }
 
+/// Take fleet `fleet_idx` off its order for `retreat_target`: Seek Home
+/// there, or hold in place. A Guard Starbase fleet lets go of its base
+/// first, as before each of ECMAINT's aborts and retreats (`1b05:25ab`
+/// scatter, `1b05:3151` retreat; [`CoreGameData::release_starbase_escort`]).
 pub(crate) fn abort_mission_to_seek_home_or_hold(
-    fleet: &mut nc_data::Fleet,
+    game_data: &mut CoreGameData,
+    fleet_idx: usize,
     retreat_target: Option<[u8; 2]>,
 ) {
+    game_data.release_starbase_escort(fleet_idx);
+    let fleet = &mut game_data.fleets[fleet_idx];
     if let Some(retreat_target) = retreat_target {
         apply_retreat_order(fleet, retreat_target);
     } else {
@@ -80,7 +87,7 @@ pub(crate) fn abort_mission_to_seek_home_or_hold(
 /// world, or hold in place when its empire owns no other.
 pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
     let retreat_target = nearest_friendly_world(game_data, fleet_idx);
-    abort_mission_to_seek_home_or_hold(&mut game_data.fleets[fleet_idx], retreat_target);
+    abort_mission_to_seek_home_or_hold(game_data, fleet_idx, retreat_target);
 }
 
 /// Send the fleets still on a side at the end home after their losses are
@@ -120,8 +127,8 @@ pub(super) fn escape_fleet(
         return;
     }
     let home = nearest_friendly_world(game_data, idx);
+    abort_mission_to_seek_home_or_hold(game_data, idx, home);
     let fleet = &mut game_data.fleets[idx];
-    abort_mission_to_seek_home_or_hold(fleet, home);
     fleet.escape = home.map(|_| {
         let mut episode = fleet.escape.unwrap_or(EscapeEpisode {
             sector: Coords::from_array(coords),

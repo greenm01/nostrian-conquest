@@ -27,7 +27,7 @@ use super::state::{
     tf_has_any_units,
 };
 use crate::maint::encounter::rules::roe_permits;
-use nc_data::{GameRng, troop_transports};
+use nc_data::{GameRng, has_any_force, troop_transports};
 
 fn hostile_target_priority(
     our_empire: u8,
@@ -768,7 +768,12 @@ pub(super) fn fight_encounter_with_dice(
         for member in &tf.members {
             match member.record {
                 Record::Fleet(idx) => {
-                    write_back_fleet(game_data, idx, &member.state, member.loaded)
+                    write_back_fleet(game_data, idx, &member.state, member.loaded);
+                    // ECMAINT deletes a fleet where it dies, and its base
+                    // lets go of it first (`2895:3d46`).
+                    if !has_any_force(&game_data.fleets[idx]) {
+                        game_data.release_starbase_escort(idx);
+                    }
                 }
                 Record::Base(idx) => {
                     if let Some(destroyed) = write_back_base(game_data, idx, &member.state) {

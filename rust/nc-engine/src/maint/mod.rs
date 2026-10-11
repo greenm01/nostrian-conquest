@@ -840,6 +840,12 @@ fn apply_fleet_removal_remap(
         return FleetRemovalRemapInfo::default();
     }
 
+    // ECMAINT's fleet delete (`2895:3d0c`) first lets the fleet go of its
+    // base (`2895:30f4`).
+    for fleet_idx in (0..fleet_count).filter(|&idx| to_remove[idx]) {
+        game_data.release_starbase_escort(fleet_idx);
+    }
+
     let pre_removal_owner: Vec<u8> = game_data.fleets.iter().map(|f| f.owner.0).collect();
     let pre_removal_fleet_id: Vec<u16> = game_data.fleets.iter().map(|f| f.record.0).collect();
     let removed_fleet_keys: std::collections::HashSet<(u8, u16)> = game_data

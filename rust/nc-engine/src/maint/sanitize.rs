@@ -66,13 +66,14 @@ pub(super) fn sanitize_invalid_player_inputs(
                         let retreat_target = capability_loss_requires_abort_and_seek_home(reason)
                             .then(|| super::combat::nearest_friendly_world(game_data, fleet_idx))
                             .flatten();
-                        let fleet = &mut game_data.fleets[fleet_idx];
                         if capability_loss_requires_abort_and_seek_home(reason) {
                             super::combat::abort_mission_to_seek_home_or_hold(
-                                fleet,
+                                game_data,
+                                fleet_idx,
                                 retreat_target,
                             );
                         } else {
+                            let fleet = &mut game_data.fleets[fleet_idx];
                             fleet.order = Order::HoldPosition;
                             fleet.speed = 0;
                             fleet.target = Coords::from_array(coords);
