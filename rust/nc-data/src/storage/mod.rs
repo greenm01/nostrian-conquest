@@ -32,7 +32,7 @@ pub const DEFAULT_CAMPAIGN_DB_NAME: &str = "ncgame.db";
 /// one line of the 80-column menu notice area.
 pub const STALE_SESSION_MESSAGE: &str =
     "Maintenance has run; your last change was not saved. Log in again.";
-const RUNTIME_SCHEMA_VERSION: i64 = 15;
+const RUNTIME_SCHEMA_VERSION: i64 = 16;
 const LEGACY_RECORD_TABLES: [&str; 7] = [
     "player_record_fields",
     "planet_record_fields",

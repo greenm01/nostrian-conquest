@@ -197,6 +197,7 @@ impl GameStateBuilder {
             ipbms: vec![],
             setup: Setup::default(),
             conquest: Conquest::default(),
+            sightings: Default::default(),
         };
 
         // Configure conquest header
@@ -271,6 +272,7 @@ impl GameStateBuilder {
             ipbms: vec![],
             setup: Setup::default(),
             conquest: Conquest::default(),
+            sightings: Default::default(),
         };
 
         // ECUTIL F1 enables every day and writes 100 and 1 to all 25

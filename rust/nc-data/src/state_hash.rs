@@ -65,6 +65,7 @@ impl StateHash {
             ipbms,
             setup,
             conquest,
+            sightings,
         } = game_data;
         self.u64(players.len() as u64);
         for player in players {
@@ -88,6 +89,17 @@ impl StateHash {
         }
         self.setup(setup);
         self.conquest(conquest);
+        // No sighting memory adds nothing, so the pinned seeds of the
+        // classic fixtures stand.
+        if !sightings.is_empty() {
+            self.u64(sightings.len() as u64);
+            for sighting in sightings.iter() {
+                self.u64(u64::from(sighting.viewer));
+                self.coords(sighting.sector);
+                self.u64(u64::from(sighting.layer));
+                self.u64(u64::from(sighting.opponents));
+            }
+        }
     }
 
     fn player(&mut self, player: &Player) {

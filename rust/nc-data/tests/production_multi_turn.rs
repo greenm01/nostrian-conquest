@@ -23,6 +23,7 @@ fn multi_planet_game(
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     }
 }
 

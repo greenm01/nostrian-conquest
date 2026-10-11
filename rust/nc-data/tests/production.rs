@@ -46,6 +46,7 @@ fn empire_economy_helpers_use_classic_production_terms() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: zeroed_conquest(),
+        sightings: Default::default(),
     };
 
     let economy = game.empire_economy_summary(1);
@@ -79,6 +80,7 @@ fn total_available_points_matches_first_turn_tax_budget() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: zeroed_conquest(),
+        sightings: Default::default(),
     };
 
     assert_eq!(game.empire_present_production(1), 100);
@@ -135,6 +137,7 @@ fn maintenance_adds_tax_revenue_and_grows_planets_faster_under_lower_tax() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
     let mut high_game = CoreGameData {
         players: vec![high_tax],
@@ -144,6 +147,7 @@ fn maintenance_adds_tax_revenue_and_grows_planets_faster_under_lower_tax() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
 
     run_maintenance_turn(&mut low_game).expect("maintenance should succeed");
@@ -172,6 +176,7 @@ fn maintenance_starbase_growth_bonus_accelerates_planet_development() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
     with_base.planets[0].sector = Coords::new(0, 0);
 
@@ -183,6 +188,7 @@ fn maintenance_starbase_growth_bonus_accelerates_planet_development() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
 
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");
@@ -208,6 +214,7 @@ fn maintenance_high_tax_above_65_can_reduce_present_production() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
 
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
@@ -241,6 +248,7 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
     with_base.planets[0].sector = Coords::new(0, 0);
 
@@ -252,6 +260,7 @@ fn maintenance_starbases_do_not_shift_the_high_tax_penalty_threshold() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
 
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");
@@ -280,6 +289,7 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
     with_base.planets[0].sector = Coords::new(0, 0);
 
@@ -291,6 +301,7 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     };
 
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");

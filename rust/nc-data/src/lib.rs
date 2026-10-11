@@ -103,7 +103,7 @@ pub use model::{
     BuildSlot, Conquest, Coords, CrippledHulls, CrippledShips, DiplomaticRelation, EmpireId,
     EscapeEpisode, Fleet, FleetId, HullClass, Ipbm, MaintenanceDays, Order, Planet, Player,
     PlayerMode, ProductionItemKind, RECOVERY_TURNS, RecordNumber, Recovered, Setup, ShipCounts,
-    Starbase, StarbaseId, Stardock,
+    Sighting, SightingMemory, Starbase, StarbaseId, Stardock,
 };
 pub use motion::{set_fleet_at_rest, set_starbase_at_rest};
 pub use names::{

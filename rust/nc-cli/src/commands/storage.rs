@@ -47,11 +47,20 @@ pub fn export_latest_db_snapshot(
             store.path().display(),
             target_dir.display()
         );
-        let crippled = crippled_hull_count(&store.load_latest_runtime_game_data()?);
+        let game_data = store.load_latest_runtime_game_data()?;
+        let crippled = crippled_hull_count(&game_data);
         if crippled > 0 {
             println!(
                 "{crippled} crippled hull(s) were written as whole hulls: classic files have no \
                  recovery state, so it is lost in the export (the campaign store keeps it)."
+            );
+        }
+        let remembered = game_data.sightings.len();
+        if remembered > 0 {
+            println!(
+                "Sighting memory at {remembered} place(s) was not written: classic files have no \
+                 sighting memory, so surprise starts fresh from the export (the campaign store \
+                 keeps it)."
             );
         }
     }

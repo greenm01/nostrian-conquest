@@ -524,6 +524,7 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
             "snapshot_players",
             "snapshot_setup",
             "snapshot_setup_com_ports",
+            "snapshot_sightings",
         ],
         "core game state tables"
     );
@@ -679,7 +680,7 @@ fn sqlite_store_rejects_legacy_byte_table_schema() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 15,
+                expected: 16,
                 found: None
             }
         ),
@@ -704,7 +705,7 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
              int_value INTEGER NOT NULL
          );
          INSERT INTO campaign_metadata(key, int_value)
-         VALUES ('runtime_schema_version', 14);",
+         VALUES ('runtime_schema_version', 15);",
     )
     .expect("seed prior runtime schema");
     drop(conn);
@@ -715,8 +716,8 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 15,
-                found: Some(14)
+                expected: 16,
+                found: Some(15)
             }
         ),
         "unexpected error: {err}"

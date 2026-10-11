@@ -100,6 +100,7 @@ pub fn single_planet_game(player: Player, planet: Planet) -> CoreGameData {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     }
 }
 
