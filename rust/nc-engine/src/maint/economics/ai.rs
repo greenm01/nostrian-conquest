@@ -1,27 +1,8 @@
 use crate::{CoreGameData, production_item_kind_code};
 use nc_data::{
-    Coords, DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT,
-    build_queue_unit_counts, diplomatic_relation_toward, present_production_points,
-    recompute_max_speed, stardock_slot_kind,
+    DiplomaticRelation, ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts,
+    diplomatic_relation_toward, present_production_points, stardock_slot_kind,
 };
-
-/// Autopilot orders for fleets, once a year before the planet pass and the
-/// year's ticks, so movement acts on them this turn. Only human players with
-/// autopilot enabled; rogue empires' fleet and starbase orders are t070.
-pub fn process_autopilot_fleet_orders(
-    game_data: &mut CoreGameData,
-) -> Result<(), Box<dyn std::error::Error>> {
-    for player_idx in 0..game_data.players.len() {
-        let mode = game_data.players[player_idx].mode.code();
-        let autopilot = u8::from(game_data.players[player_idx].autopilot);
-        if !(mode == 0x01 && autopilot == 0x01) {
-            continue;
-        }
-        let owner_slot = (player_idx + 1) as u8;
-        autopilot_fleet_orders(game_data, owner_slot);
-    }
-    Ok(())
-}
 
 /// Autopilot economic AI — runs AFTER economics for build queue and tax
 /// management. Applies to rogue empires and human autopilot players.
@@ -105,69 +86,6 @@ fn assess_empire_posture(
         enemy_count,
         dev_ratio,
     }
-}
-
-// ── Fleet orders ────────────────────────────────────────────────────────
-
-/// ECMAINT's orders pass for an autopilot empire (`24a3:3cc6`, `24a3:25f7`).
-/// Each fleet on Hold gets the empire's best world as its target, picked by
-/// travel distance per point of present production
-/// ([`CoreGameData::nearest_productive_world`]), with target depth 1. A fleet
-/// not yet in orbit there takes Seek Home at its maximum speed. One in orbit
-/// with warships takes Guard/Blockade at rest, ROE 6 when it was 0, and then
-/// guards an unescorted starbase at rest in the same orbit; one in orbit
-/// without warships stays on Hold. Other orders are left alone.
-fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
-    for fleet_idx in 0..game_data.fleets.len() {
-        let fleet = &game_data.fleets[fleet_idx];
-        if fleet.owner.0 != owner_slot || fleet.order != Order::HoldPosition {
-            continue;
-        }
-        let Some(world) = game_data.nearest_productive_world(fleet_idx + 1) else {
-            continue;
-        };
-
-        let fleet = &mut game_data.fleets[fleet_idx];
-        fleet.target = Coords::from_array(world);
-        fleet.target_depth = 1;
-        if fleet.sector.to_array() != world || fleet.depth.round() != 1 {
-            fleet.order = Order::SeekHome;
-            fleet.speed = fleet.max_speed;
-            continue;
-        }
-        let ships = &fleet.ships;
-        if ships.battleships + ships.cruisers + ships.destroyers == 0 {
-            continue;
-        }
-        fleet.order = Order::GuardBlockadeWorld;
-        fleet.speed = 0;
-        recompute_max_speed(fleet);
-        if fleet.rules_of_engagement == 0 {
-            fleet.rules_of_engagement = 6;
-        }
-        guard_unescorted_starbase(game_data, fleet_idx);
-    }
-}
-
-/// A fleet on Guard/Blockade takes the first starbase of its empire that
-/// rests in orbit in its sector with no escort: the fleet's order becomes
-/// Guard Starbase and the base's escort word the fleet's number.
-fn guard_unescorted_starbase(game_data: &mut CoreGameData, fleet_idx: usize) {
-    let fleet = &mut game_data.fleets[fleet_idx];
-    let Some(base) = game_data.bases.iter_mut().find(|base| {
-        base.owner == fleet.owner
-            && base.base_id.0 != 0
-            && base.escort.0 == 0
-            && base.sector == fleet.sector
-            && base.depth.round() == 1
-            && !base.moving
-            && base.target == base.sector
-    }) else {
-        return;
-    };
-    base.escort = fleet.fleet_number;
-    fleet.order = Order::GuardStarbase;
-    fleet.mission_target = base.base_id.0;
 }
 
 // ── Build queue ─────────────────────────────────────────────────────────

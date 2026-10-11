@@ -52,10 +52,12 @@ Evidence by field:
 - Escort. The guard arrival action (`0b5d:10a7`) writes the arriving fleet's
   `0x00` word here when no escort is present. The escort carry
   (`0824:04c8`) matches the word against each fleet unit's record word 0.
-  ECMAINT's robot guard assignment (`2000:72d7`) picks a base only when the
-  word is 0, and a new base starts at 0 (`2000:6674`). Nothing in ECMAINT
-  clears it when the escort leaves. In the shipped game it is 1, and fleet 1
-  of empire 1 guards Starbase 1. [C][P]
+  ECMAINT's robot guard assignment (`2000:72d7`, in the orders pass's
+  `24a3:25f7`) picks a base only when the word is 0, and a new base starts
+  at 0 (`2000:6674`). ECMAINT clears it when it re-orders a Guard Starbase
+  fleet ([Escort Release](#escort-release)); it does not clear it when the
+  escort is merely moved by the player. In the shipped game it is 1, and
+  fleet 1 of empire 1 guards Starbase 1. [C][P]
 - Id. The guard lookup (`1b05:2133`) scans the owner's base units and
   matches this word against FLEETS `0x23`; the unit loader (`2895:5cdb`)
   copies it to the unit entry's `+10`. A Guard Starbase fleet with
@@ -178,6 +180,32 @@ id, speed 0), the newcomer merges into it, or holds when the merge would pass
 fleet's `0x00` word, and the fleet's `Z` takes the base's `Z` (`0b5d:10a7`).
 [C]
 
+### Escort Release
+
+`2895:30f4` takes a fleet record. When the fleet's order is Guard Starbase
+(4), it zeroes the escort word of every active base of the fleet's empire in
+the fleet's sector and layer (`Round(Z) = 1` against the unit's layer flag)
+whose word equals the fleet's `0x00` word. It does not read the fleet's
+`0x23`. For any other order it does nothing. ECMAINT calls it each time it
+re-orders a fleet: [C]
+
+- the orders pass, for a rogue or autopilot fleet it gives a world to
+  (`24a3:26d1`), and a planetless rogue's fleets (`24a3:0e73`)
+  ([ec-movement-spec.md](ec-movement-spec.md));
+- every fleet-record deletion (`2895:3d0c`, at `2895:3d46`): a fleet
+  destroyed, merged away, salvaged, or disbanded;
+- the encounter's mission aborts, before each flag-1 pick: the two decision
+  aborts (`1b05:185e` fleet, `1b05:1f5d` base), the battle's scatter and
+  retreat (`1b05:25ab`, `1b05:3151`) ([ec-encounter-spec.md](ec-encounter-spec.md));
+- the wrap-up of a planet assault (`0b5d:c53a`, `0b5d:cb7b`), which holds the
+  attacking fleet; an attacker is not on Guard Starbase, so the call finds
+  nothing to release.
+
+[P: a rogue Guard Starbase fleet over a base in a world its empire did not
+own was sent home and its base's escort word, which was the fleet's number,
+read 0 after the year.] The release is why a base whose guard left is
+available to the next fleet that goes on Guard/Blockade at rest in its orbit.
+
 ## ECGAME Starbase Command
 
 Move/Halt (image offset `0x1a37c`) offers Move only for a base at its
@@ -206,8 +234,8 @@ show ECGAME's warning first.
 
 ## Rust Differences
 
-Rust follows the rules above except in four places. The first three fix
-classic guard bugs, by decision of 2026-10-10
+Rust follows the rules above except in four places and one gap. The first
+three fix classic guard bugs, by decision of 2026-10-10
 ([t040](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t040)):
 
 - A guard that becomes its base's escort takes the base's layer as its
@@ -225,6 +253,14 @@ classic guard bugs, by decision of 2026-10-10
 - Classic reads a garbage owner when the world it checks is missing (a
   worldless target sector or orbit). Rust treats a sector with no world as
   nobody's, so the check fails.
+
+The gap is the escort release. Rust releases a base's escort word where its
+orders pass re-orders a Guard Starbase fleet, which covers the rogue and
+autopilot empires and a planetless rogue's patrol
+(`CoreGameData::release_starbase_escort`). It does not yet release it when an
+encounter decision or a battle retreat re-orders such a fleet, or when a
+fleet record is removed, so the word of a guard that left or died stays on
+its base until another guard arrives there.
 
 ## Probes
 

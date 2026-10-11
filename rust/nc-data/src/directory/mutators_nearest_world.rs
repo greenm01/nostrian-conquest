@@ -14,6 +14,44 @@
 use super::*;
 use crate::{Planet, Real48};
 
+/// Where the picker measures from: a fleet's or a starbase's position.
+struct Origin {
+    owner: u8,
+    sector: [u8; 2],
+    x_fraction: Real48,
+    y_fraction: Real48,
+    depth: Real48,
+}
+
+impl Origin {
+    fn of_fleet(fleet: &Fleet) -> Self {
+        Self {
+            owner: fleet.owner.0,
+            sector: fleet.sector.to_array(),
+            x_fraction: fleet.x_fraction,
+            y_fraction: fleet.y_fraction,
+            depth: fleet.depth,
+        }
+    }
+
+    /// ECMAINT measures a base from a scratch record in which it sets the
+    /// owner, sector, and depth and leaves the in-sector offsets as they
+    /// were on the stack. In practice that is zero: the bytes are the tail
+    /// of the empire's last fleet record, whose offsets read as zero while
+    /// it sits at a sector centre. (Probe: a base in deep space at (13,12)
+    /// ties (12,11) and (12,12) from offsets (0, 0) and picks the earlier
+    /// world, where its own offsets of 0.5 would pick (12,12).)
+    fn of_base(base: &Starbase) -> Self {
+        Self {
+            owner: base.owner.0,
+            sector: base.sector.to_array(),
+            x_fraction: Real48::ZERO,
+            y_fraction: Real48::ZERO,
+            depth: base.depth,
+        }
+    }
+}
+
 impl CoreGameData {
     /// The owned world ECGAME picks for this fleet's Seek Home or Salvage
     /// order, or `None` when its empire owns no world.
@@ -22,7 +60,8 @@ impl CoreGameData {
         fleet_record_index_1_based: usize,
         skip_current_system: bool,
     ) -> Option<[u8; 2]> {
-        self.pick_owned_world(fleet_record_index_1_based, skip_current_system, false)
+        let fleet = self.fleets.get(fleet_record_index_1_based - 1)?;
+        self.pick_owned_world(&Origin::of_fleet(fleet), skip_current_system, false)
     }
 
     /// ECMAINT's picker with flag 2, which the rogue and autopilot orders
@@ -33,28 +72,38 @@ impl CoreGameData {
     /// ECMAINT also raises the stored production of each candidate below 1.0
     /// to 1.0; that is a classic bug and nothing is written here.
     pub fn nearest_productive_world(&self, fleet_record_index_1_based: usize) -> Option<[u8; 2]> {
-        self.pick_owned_world(fleet_record_index_1_based, false, true)
+        let fleet = self.fleets.get(fleet_record_index_1_based - 1)?;
+        self.pick_owned_world(&Origin::of_fleet(fleet), false, true)
+    }
+
+    /// The same pick for a rogue empire's starbase (`24a3:29c5`), measured
+    /// from the base's sector and depth with ECMAINT's zero offsets.
+    pub fn nearest_productive_world_for_base(
+        &self,
+        base_record_index_1_based: usize,
+    ) -> Option<[u8; 2]> {
+        let base = self.bases.get(base_record_index_1_based - 1)?;
+        self.pick_owned_world(&Origin::of_base(base), false, true)
     }
 
     fn pick_owned_world(
         &self,
-        fleet_record_index_1_based: usize,
+        origin: &Origin,
         skip_current_system: bool,
         per_production: bool,
     ) -> Option<[u8; 2]> {
-        let fleet = self.fleets.get(fleet_record_index_1_based - 1)?;
-        let here = fleet.sector.to_array();
-        let in_system = fleet.depth >= Real48::HALF;
+        let here = origin.sector;
+        let in_system = origin.depth >= Real48::HALF;
         let mut candidates = self
             .planets
             .iter()
-            .filter(|planet| planet.owner.0 == fleet.owner.0)
+            .filter(|planet| planet.owner.0 == origin.owner)
             .filter(|planet| {
                 !(skip_current_system && in_system && planet.sector.to_array() == here)
             });
         let first = candidates.next()?;
         let measure = |planet: &Planet| {
-            let distance = travel_distance(fleet, planet.sector.to_array(), Real48::ONE);
+            let distance = travel_distance(origin, planet.sector.to_array(), Real48::ONE);
             if per_production {
                 distance / planet.production.max(Real48::ONE)
             } else {
@@ -126,15 +175,15 @@ fn fleet_is_in_system(fleet: &Fleet, coords: [u8; 2]) -> bool {
 
 /// ECGAME's travel distance from the fleet to the target cell at depth
 /// `target_depth` (`0x1d8ac`), in 6-byte reals.
-fn travel_distance(fleet: &Fleet, target: [u8; 2], target_depth: Real48) -> Real48 {
-    let here = fleet.sector.to_array();
-    let depth = fleet.depth;
+fn travel_distance(from: &Origin, target: [u8; 2], target_depth: Real48) -> Real48 {
+    let here = from.sector;
+    let depth = from.depth;
     if here == target && depth.round() == target_depth.round() {
         return Real48::ZERO;
     }
     let to_centre = target_depth == Real48::ONE;
-    let dx = axis_distance(here[0], fleet.x_fraction, target[0], to_centre);
-    let dy = axis_distance(here[1], fleet.y_fraction, target[1], to_centre);
+    let dx = axis_distance(here[0], from.x_fraction, target[0], to_centre);
+    let dy = axis_distance(here[1], from.y_fraction, target[1], to_centre);
     let flat = (dx * dx + dy * dy).sqrt();
     if here == target {
         (depth - target_depth).abs() + flat

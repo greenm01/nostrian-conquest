@@ -187,47 +187,94 @@ first, a Salvage fleet only ever arrives at a world of its empire.
 ### Rogue And Autopilot Orders
 
 Once a year, before the planet pass and the ticks, ECMAINT's orders pass
-(`24a3:3cc6`) gives fleets new orders in `24a3:25f7` for rogue empires that
-own a world (PLAYER `0x00 = 0xFF`, planet count `0x50` as the last run saved
-it, nonzero) and for human empires on autopilot (PLAYER `0x6D` nonzero, which
-ECMAINT also sets once a human empire has not signed on for SETUP's
-`autopilot_after_turns` years). [C][P]
+(`24a3:3cc6`) gives fleets new orders for two kinds of empire: rogue empires
+(PLAYER `0x00 = 0xFF`) and human empires on autopilot (PLAYER `0x6D`
+nonzero, which ECMAINT also sets once a human empire has not signed on for
+SETUP's `autopilot_after_turns` years). A rogue empire whose planet count
+(PLAYER `0x50`, as the last run saved it) is nonzero gets the world orders
+below for its fleets (`24a3:25f7`) and its starbases (`24a3:28fe`); one
+whose count is zero gets the patrol orders (`24a3:0dbc`), even when it still
+owns a world. An autopilot empire gets the fleet orders only. [C][P: a rogue
+empire that owned its home world but had a saved count of 0 disbanded its
+unarmed fleet and put the others on patrol.]
+
+**Fleet orders.** Fleets go in unit-table order, each empire's fleet chain.
 
 - A rogue empire's fleets all get new orders, whatever their order; an
   autopilot empire's only when they are on Hold. [P: autopilot left a Move
-  fleet and a Seek Home fleet alone.] Fleets go in unit-table order, each
-  empire's fleet chain.
+  fleet and a Seek Home fleet alone.]
 - The destination is the picker with flag 2: every owned world, the one in
   the fleet's own system included, by travel distance divided by present
   production of at least 1.0 ([ec-encounter-spec.md](ec-encounter-spec.md)).
-  When the empire owns no world, the fleet is left as it is.
-- The fleet's target becomes that world with `TZ = 1`; a Guard Starbase
-  fleet first clears its base's escort word (`2895:30f4`). A fleet in that
+  A fleet in orbit of an owned world therefore stays there. When the empire
+  owns no world, the fleet is left as it is.
+- A Guard Starbase fleet first lets go of its base: every base of the empire
+  in the fleet's sector and layer whose escort word is the fleet's number
+  loses it (`2895:30f4`, [ec-starbase-spec.md](ec-starbase-spec.md)). Then
+  the fleet's target becomes the world with `TZ = 1`. A fleet in that
   world's sector with `Round(Z) = 1` and any battleship, cruiser, or
   destroyer takes Guard/Blockade (5) with speed 0 and its maximum speed
   recomputed (`24a3:036b`), and its ROE becomes 10 for a rogue, or 6 on
-  autopilot when it was 0; without warships its order stays. Any other fleet
-  takes Seek Home (2) at its maximum speed, and a rogue's ROE becomes 0.
-  [P: an autopilot Hold fleet in orbit with a cruiser and ROE 0 took
-  Guard/Blockade with ROE 6; one with only an ETAC stayed on Hold; a rogue
-  fleet on a Move order went home within the year with ROE 0, and the rogue's
-  Guard/Blockade fleet at home kept its order with ROE 10.]
-- A fleet that is now on Guard/Blockade at speed 0 then takes the first
-  starbase of its empire in its sector, in the system layer, at rest at its
-  target, with no escort (BASES `0x00 = 0`): order Guard Starbase (4),
-  `0x23` the base id, and the base's escort word the fleet's `0x00` word.
-  [P: an autopilot Hold fleet in orbit under an unescorted Starbase 1 took
-  order 4 with `0x23 = 1`, and the base's escort word became 1.]
-- A rogue's starbases (`24a3:28fe`) take the same pick from their own
-  position: target the world with `TZ = 1`, moving flag 0 if the base is
-  already in orbit there, else 1. A rogue with no world sends its fleets on
-  random patrols instead (`24a3:0dbc`). [C]
+  autopilot when it was 0; without warships its order stays, and so does its
+  ROE. Any other fleet takes Seek Home (2) at its maximum speed, and a
+  rogue's ROE becomes 0. [P: an autopilot Hold fleet in orbit with a cruiser
+  and ROE 0 took Guard/Blockade with ROE 6; one with only an ETAC stayed on
+  Hold; rogue fleets on Move and on Patrol in orbit of an owned world, and a
+  rogue Guard/Blockade fleet there with ROE 3, ended on Guard/Blockade at
+  rest with ROE 10; a rogue cruiser on Move at (8,13), a destroyer on Hold in
+  deep space, and a destroyer on Guard/Blockade over an unowned world took
+  Seek Home to the home world at ROE 0, the last although (12,12) was 3.0
+  away at production 2 and the home world 10.2 away at production 100.]
+- Every fleet that is now on Guard/Blockade at speed 0 then takes the first
+  starbase of its empire (lowest id) in its sector, in the system layer, at
+  rest, with an escort word of 0: order Guard Starbase (4), `0x23` the base
+  id, and the base's escort word the fleet's `0x00` word. This step does not
+  ask who gave the order: an autopilot fleet that was already on
+  Guard/Blockade takes the base too, with its ROE unchanged, and so does a
+  fleet without warships. A base is at rest when it sits at its target
+  sector and `TZ = Round(Z)`; its moving flag is not read. [P: an autopilot
+  Hold fleet in orbit under an unescorted Starbase 1 took order 4 with
+  `0x23 = 1`, and the base's escort word became 1; an autopilot cruiser
+  already on Guard/Blockade did the same; a rogue base with a moving flag of
+  1 at rest was taken, one with `TZ = 0` over its world (about to lift) and
+  one with an escort word of 3 were not; an ETAC-only fleet on Guard/Blockade
+  took a base too.]
 
-Rust's autopilot recall (`economics/ai.rs`) follows this for autopilot
-empires: Hold fleets only, the flag-2 picker
-(`CoreGameData::nearest_productive_world`, which writes no production
-floor), the Guard/Blockade and Guard Starbase steps. Rogue empires' fleet and
-starbase orders are not implemented (t070).
+**Starbase orders.** A rogue's starbases (`24a3:28fe`) take the same pick
+from their own position: target the world with `TZ = 1`, moving flag 0 if the
+base is already in orbit there, else 1. A base in orbit of an owned world
+stays; one over a world the empire lost, or in deep space, sets out for the
+best world. ECMAINT measures the distances from a scratch record in which it
+sets the owner, sector, and depth and never the in-sector offsets, which read
+as zero when the empire's last fleet sits at a sector centre. [P: a rogue base
+in deep space at (13,12), 1.707 from both (12,11) and (12,12) with offsets
+(0, 0) and nearer (12,12) with its own 0.5, took (12,11).] [C]
+
+**Patrol orders.** A rogue empire with no world (count 0) and at least one
+fleet has nowhere to go home to (`24a3:0dbc`). Its fleets with a battleship,
+cruiser, or destroyer take Patrol Sector (3) at ROE 10, target depth 0, and
+their maximum speed; the target is a random sector, `x` and `y` each
+`Random(9 * Trunc(Sqrt(players))) + 1`, drawn again while it is the fleet's
+own sector. A fleet already bound elsewhere keeps its target. Its other
+fleets and all its starbases are deleted; an empire without a fleet keeps its
+starbases. A Guard Starbase fleet lets go of its base first, as above. [P:
+ten runs on the four-player map gave targets from 1 to 18 on both axes
+(x reached 18, y reached 1); an ETAC fleet, a scout fleet, and the base were
+gone; a fleet whose target was another sector kept it; an empire with no
+fleet kept its base.]
+
+Rust follows this in `economics/orders.rs`, once a year before the planet
+pass: the flag-2 picker (`CoreGameData::nearest_productive_world`, which
+writes no production floor, and `nearest_productive_world_for_base`, which
+measures a base from offsets of zero), the escort release
+(`CoreGameData::release_starbase_escort`), the Guard/Blockade and Guard
+Starbase steps for both kinds of empire, the rogue starbase pick, and the
+patrol. The patrol targets come from the campaign seed (`RNG_TAG_ORDERS`,
+the year, and the empire), and the deleted fleets leave the fleet table with
+the usual Join host bookkeeping. Rust's input check (`sanitize.rs`) runs
+first and sends a fleet without warships on Guard/Blockade home or to Hold,
+for the empires ECMAINT plays as for any other; classic left such fleets of a
+rogue and of an autopilot empire on Guard/Blockade, and they took a base.
 
 ### Hostile Missions
 

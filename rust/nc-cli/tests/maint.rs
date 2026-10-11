@@ -1263,6 +1263,9 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     zero_all_fleets(&mut game_data);
 
     let battle_coords = [11u8, 11u8];
@@ -2630,6 +2633,9 @@ fn maint_rust_battle_abort_generates_move_abort_report() {
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     game_data.fleets[0].order = Order::MoveOnly;
     // Give the fleet enough scouts to survive the battle (loses but not destroyed).
     // Max scouts (u8::MAX) to survive against 100 enemy battleships.
@@ -3175,6 +3181,9 @@ fn maint_rust_destroyed_fleet_report_separates_last_contact_from_force_rows() {
     write_mutual_enemy_diplomacy(&target, 1, 2);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     let fleet = &mut game_data.fleets[0];
     let coords = fleet.sector.to_array();
     fleet.order = Order::HoldPosition;
@@ -3316,6 +3325,9 @@ fn maint_rust_join_contact_uses_join_report_label() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     game_data.fleets[0].order = Order::JoinAnotherFleet;
     let host_number = game_data.fleets[1].fleet_number.0;
     game_data.fleets[0].mission_target = host_number;
@@ -3570,6 +3582,9 @@ fn maint_rust_rendezvous_contact_uses_rendezvous_report_label() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     let coords = game_data.fleets[0].sector.to_array();
     game_data.fleets[0].order = Order::RendezvousSector;
     game_data.fleets[0].target = Coords::from_array(coords);
@@ -3592,6 +3607,9 @@ fn maint_rust_guard_contact_uses_guard_report_label() {
     copy_fixture_dir("fixtures/ecmaint-fleet-battle-pre/v1.5", &target);
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
     game_data.fleets[0].order = Order::GuardBlockadeWorld;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
@@ -3859,6 +3877,9 @@ fn maint_rust_destroyed_fleet_abort_is_suppressed() {
 
     let battle_coords = [10u8, 10u8];
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
+    // The fixture's empire 1 is rogue and would send its fleets home; this
+    // case is about the fleet where it stands.
+    game_data.players[0].mode = PlayerMode::Human;
 
     // Fleet 0 (empire 1): minimal force with scout mission — will be destroyed.
     {

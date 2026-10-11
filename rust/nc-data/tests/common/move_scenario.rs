@@ -5,8 +5,8 @@
 
 use nc_compat::load_classic_core_files;
 use nc_data::{
-    Coords, CoreGameData, MaintenanceEvents, Order, PlayerMode, Real48, recompute_max_speed,
-    set_armies_aboard, set_planet_name, set_troop_transports,
+    Coords, CoreGameData, MaintenanceEvents, Order, PlayerMode, Real48, Starbase,
+    recompute_max_speed, set_armies_aboard, set_planet_name, set_troop_transports,
 };
 use nc_engine::{build_results_report_blocks, run_maintenance_turn};
 use std::path::Path;
@@ -107,4 +107,38 @@ pub fn name_world(game_data: &mut CoreGameData, sector: [u8; 2], name: &str) {
 
 pub fn depth(game_data: &CoreGameData) -> f64 {
     game_data.fleets[0].depth.to_f64()
+}
+
+/// A starbase of `empire` at the centre of `sector` at `depth`, resting there
+/// with target depth `target_depth` and `escort` as its escort word. Its
+/// base id is the lowest one the empire has not used; the returned index is
+/// its record's.
+pub fn add_base(
+    game_data: &mut CoreGameData,
+    empire: u8,
+    sector: [u8; 2],
+    depth: Real48,
+    target_depth: u8,
+    escort: u16,
+) -> usize {
+    let mut base = Starbase::default();
+    base.base_id.0 = 1 + game_data
+        .bases
+        .iter()
+        .filter(|other| other.owner.0 == empire)
+        .count() as u16;
+    base.owner.0 = empire;
+    base.sector = Coords::from_array(sector);
+    base.x_fraction = Real48::HALF;
+    base.y_fraction = Real48::HALF;
+    base.depth = depth;
+    base.target = base.sector;
+    base.target_depth = target_depth;
+    base.escort.0 = escort;
+    game_data.bases.push(base);
+    let index = game_data.bases.len() - 1;
+    game_data.bases[index].record.0 = (index + 1) as u16;
+    game_data.relink_base_chain(empire);
+    game_data.sync_last_base_records();
+    index
 }

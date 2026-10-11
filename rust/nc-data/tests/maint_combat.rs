@@ -4,9 +4,10 @@ use common::order_trace::assert_mission_event;
 use nc_compat::load_classic_core_files;
 use nc_data::{
     ContactReportSource, Coords, CoreGameData, DiplomacyOverride, EmpireId,
-    EncounterDispositionEvent, Mission, MissionOutcome, Order, Planet, PlanetIntelSource, Real48,
-    diplomatic_relation_toward, has_any_force, set_armies_aboard, set_fleet_at_rest,
-    set_mission_target, set_starbase_at_rest, set_troop_transports, troop_transports,
+    EncounterDispositionEvent, Mission, MissionOutcome, Order, Planet, PlanetIntelSource,
+    PlayerMode, Real48, diplomatic_relation_toward, has_any_force, set_armies_aboard,
+    set_fleet_at_rest, set_mission_target, set_starbase_at_rest, set_troop_transports,
+    troop_transports,
 };
 use nc_engine::{run_maintenance_turn, run_maintenance_turn_with_context};
 use std::path::Path;
@@ -310,6 +311,9 @@ fn bombardment_batteries_still_inflict_orbital_losses() {
 #[test]
 fn foreign_contact_without_enemy_declaration_reports_but_does_not_force_battle() {
     let mut game_data = load_fixture("ecmaint-fleet-battle-pre");
+    // The fixture's empire 1 is rogue and would send its fleet home; this case
+    // is about the fleet at (10,10).
+    game_data.players[0].mode = PlayerMode::Human;
     game_data.fleets[0].order = Order::ScoutSector;
     game_data.fleets[0].ships.scouts = 1;
 
@@ -331,6 +335,9 @@ fn foreign_contact_without_enemy_declaration_reports_but_does_not_force_battle()
 #[test]
 fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_counts() {
     let mut game_data = load_fixture("ecmaint-fleet-battle-pre");
+    // The fixture's empire 1 is rogue and would send its fleet home; this case
+    // is about the fleet at (10,10).
+    game_data.players[0].mode = PlayerMode::Human;
     game_data.fleets[0].order = Order::ScoutSector;
     game_data.fleets[0].ships.scouts = 1;
     let diplomacy = mutual_enemy_overrides(1, 2);
@@ -366,8 +373,11 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
             .any(|event| { event.coords == [10, 10] && matches!(event.viewer_empire, 1 | 2) })
     );
 
-    let survivor = &game_data.fleets[6];
-    assert_eq!(survivor.sector.to_array(), [10, 10]);
+    let survivor = game_data
+        .fleets
+        .iter()
+        .find(|fleet| fleet.owner.0 == 3 && fleet.sector.to_array() == [10, 10])
+        .expect("empire 3's fleet should survive at (10,10)");
     assert_eq!(survivor.ships.battleships, 1);
     // The fixture's byte 0x24 = 10 is the mission id's high byte; the fleet
     // has no scouts.

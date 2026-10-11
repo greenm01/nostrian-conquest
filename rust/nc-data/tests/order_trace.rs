@@ -825,7 +825,9 @@ fn check_join_merge_trace(run: &TraceRun) {
             .iter()
             .any(|event| { event.kind == Mission::JoinAnotherFleet && !event.survivor_side })
     );
-    assert_eq!(run.states[1].fleets[0].order, Order::HoldPosition);
+    // The merged fleet belongs to a rogue empire, whose orders pass then
+    // sends it home from deep space.
+    assert_eq!(run.states[1].fleets[0].order, Order::SeekHome);
 }
 
 fn check_rendezvous_travel_trace(run: &TraceRun) {
@@ -844,8 +846,9 @@ fn check_rendezvous_merge_trace(run: &TraceRun) {
             .iter()
             .any(|event| { event.kind == Mission::RendezvousSector && !event.survivor_side })
     );
+    // The rogue empire's orders pass then sends the merged fleet home.
     let survivor = &run.states[1].fleets[0];
-    assert_eq!(survivor.order, Order::RendezvousSector);
-    assert_eq!(survivor.target.to_array(), TRACE_TARGET);
+    assert_eq!(survivor.order, Order::SeekHome);
+    assert_ne!(survivor.target.to_array(), TRACE_TARGET);
     assert_eq!(survivor.max_speed, 3);
 }

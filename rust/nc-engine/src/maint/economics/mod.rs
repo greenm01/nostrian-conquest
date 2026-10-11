@@ -1,13 +1,16 @@
 mod ai;
 mod build;
+mod orders;
 mod planets;
 
+use super::FleetRemovalRemapInfo;
 use crate::CoreGameData;
 
-pub fn process_autopilot_fleet_orders(
+pub(super) fn process_home_orders(
     game_data: &mut CoreGameData,
-) -> Result<(), Box<dyn std::error::Error>> {
-    ai::process_autopilot_fleet_orders(game_data)
+    campaign_seed: u64,
+) -> Result<Option<FleetRemovalRemapInfo>, Box<dyn std::error::Error>> {
+    orders::process_home_orders(game_data, campaign_seed)
 }
 
 pub fn process_autopilot_ai(
