@@ -22,6 +22,7 @@ pub(super) fn merge_one_fleet_into_host(
     let et = game_data.fleets[donor_idx].ships.etacs;
     let sc = game_data.fleets[donor_idx].ships.scouts;
     let donor_escape = game_data.fleets[donor_idx].escape;
+    let donor_crippled = game_data.fleets[donor_idx].crippled;
 
     let host = &mut game_data.fleets[host_idx];
     host.ships.battleships = host.ships.battleships.saturating_add(bb);
@@ -31,6 +32,9 @@ pub(super) fn merge_one_fleet_into_host(
     host.ships.loaded_transports = host.ships.loaded_transports.saturating_add(loaded_tt);
     host.ships.etacs = host.ships.etacs.saturating_add(et);
     host.ships.scouts = host.ships.scouts.saturating_add(sc);
+    // Merging adds the crippled counts, this pass's included, and never
+    // resets or speeds up a recovery.
+    host.crippled.add(&donor_crippled);
     // 2895:4a6b leaves the host's ROE alone.
     recompute_max_speed(host);
     // A merge gives nobody a second pursuit: the host keeps every pursuer

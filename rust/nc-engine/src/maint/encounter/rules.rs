@@ -5,7 +5,7 @@
 //! place NC departs: a fleet weighs itself and its enemy by NC attack
 //! strength, the yardstick its battle uses, not by classic's 21/7/2.
 
-use nc_data::GameRng;
+use nc_data::{CrippledShips, GameRng};
 
 use crate::maint::combat::{STARBASE_ATTACK_STRENGTH, warship_attack_strength};
 
@@ -46,6 +46,8 @@ pub struct FleetFacts {
     pub transports: u16,
     pub etacs: u16,
     pub scouts: u16,
+    /// The fleet's crippled ships, which count at their crippled AS.
+    pub crippled: CrippledShips,
     /// The fleet is escaping from a battle: it does not volunteer for a
     /// fight through first identification.
     pub escaping: bool,
@@ -148,16 +150,22 @@ pub fn roll(rng: &mut GameRng, percent: f64) -> bool {
 }
 
 /// A fleet's strength for the decision to fight: its NC attack strength,
-/// each warship at its AS (destroyer 10, cruiser 30, battleship 90), the
-/// yardstick the battle itself uses (combat decision 2). Scouts, transports,
-/// and ETACs count 0. Classic weighed `21 BB + 7 CA + 2 DD` plus 30 for a
+/// each warship at its current AS (destroyer 10, cruiser 30, battleship 90,
+/// a crippled one at half), the yardstick the battle itself uses (combat
+/// decisions 2 and 3). Scouts, transports, and ETACs count 0. Classic weighed `21 BB + 7 CA + 2 DD` plus 30 for a
 /// guard at rest with its base (`24a3:02b4`); NC does not.
 pub fn strength(fleet: &FleetFacts) -> u32 {
-    warship_attack_strength(fleet.destroyers, fleet.cruisers, fleet.battleships)
+    warship_attack_strength(
+        fleet.destroyers,
+        fleet.cruisers,
+        fleet.battleships,
+        &fleet.crippled,
+    )
 }
 
-/// A starbase counts its attack strength, 100, once; its guard fleet adds
-/// its own.
+/// A starbase counts its attack strength, 100 (50 while crippled), once;
+/// its guard fleet adds its own. This is the full-strength value; a base's
+/// own is `base_attack_strength`.
 pub const BASE_STRENGTH: u32 = STARBASE_ATTACK_STRENGTH;
 
 /// The ROE test (`1b05:0706`): would a force of strength `own` take on one of
@@ -331,8 +339,9 @@ pub fn decide_vs_fleet(
 }
 
 /// Should observer `o` attack a starbase (`1b05:1d11`)? `defense` is the
-/// base's strength with its guard fleet. There is no intercept roll.
-pub fn decide_vs_base(o: &FleetFacts, defense: u32, declared_enemy: bool) -> Verdict {
+/// base's strength with its guard fleet, and `base` its strength alone. There
+/// is no intercept roll.
+pub fn decide_vs_base(o: &FleetFacts, defense: u32, base: u32, declared_enemy: bool) -> Verdict {
     let own = strength(o);
     if o.layer == 1
         && matches!(o.order, order::BOMBARD | order::INVADE | order::BLITZ)
@@ -346,7 +355,7 @@ pub fn decide_vs_base(o: &FleetFacts, defense: u32, declared_enemy: bool) -> Ver
             Verdict::Aborted
         }
     } else if declared_enemy {
-        if roe_permits(o.roe, own, BASE_STRENGTH) {
+        if roe_permits(o.roe, own, base) {
             Verdict::Engaged
         } else {
             Verdict::Avoided

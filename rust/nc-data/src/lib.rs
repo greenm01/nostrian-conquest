@@ -90,9 +90,9 @@ pub use maintenance_types::{
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,
     InvalidPlayerStateEvent, JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission,
     MissionAbortReason, MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent,
-    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, SalvageResolvedEvent,
-    ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport,
-    StarbaseReportEvent, StarbaseSightingEvent,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, RecoveredUnit,
+    SalvageResolvedEvent, ScoutContactEvent, ShipLosses, ShipsRecoveredEvent, StarbaseAlert,
+    StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{

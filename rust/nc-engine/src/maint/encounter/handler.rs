@@ -8,16 +8,16 @@ use nc_data::{
 };
 
 use super::rules::{
-    BASE_STRENGTH, BASE_VISIBILITY, FleetFacts, Mode, Situation, Verdict, base_factor,
-    decide_vs_base, decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, roll,
-    sighting_percent, strength,
+    BASE_VISIBILITY, FleetFacts, Mode, Situation, Verdict, base_factor, decide_vs_base,
+    decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, roll, sighting_percent,
+    strength,
 };
 use super::{Awareness, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
     AssaultEvents, BattleSide, ContactObserver, FleetBattle, FleetBattlePhaseEvents,
-    fight_encounter, mission_kind_for_order, nearest_friendly_world, push_fleet_contact,
-    push_no_engagement, resolve_strike,
+    base_attack_strength, fight_encounter, mission_kind_for_order, nearest_friendly_world,
+    push_fleet_contact, push_no_engagement, resolve_strike,
 };
 use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
@@ -144,7 +144,9 @@ impl Year<'_> {
         let defence = defenders
             .iter()
             .map(|&defender| match self.units[defender].kind {
-                UnitKind::Base => BASE_STRENGTH,
+                UnitKind::Base => {
+                    base_attack_strength(&game_data.bases[self.units[defender].index])
+                }
                 UnitKind::Fleet => {
                     strength(&self.fleet_facts(game_data, self.units[defender].index))
                 }
@@ -254,6 +256,7 @@ impl Year<'_> {
             transports: troop_transports(fleet),
             etacs: fleet.ships.etacs,
             scouts: fleet.ships.scouts,
+            crippled: fleet.crippled,
             escaping: fleet.escape.is_some(),
         }
     }
@@ -475,11 +478,12 @@ impl Year<'_> {
                     }
                     let base = &game_data.bases[unit.index];
                     let guard = self.guard_fleet_of(game_data, target);
-                    let defense = BASE_STRENGTH.wrapping_add(guard.map_or(0, |g| {
+                    let base_strength = base_attack_strength(base);
+                    let defense = base_strength.wrapping_add(guard.map_or(0, |g| {
                         strength(&self.fleet_facts(game_data, self.units[g].index))
                     }));
                     let declared = self.declared_enemy(game_data, owner, base.owner.0);
-                    let verdict = decide_vs_base(&facts, defense, declared);
+                    let verdict = decide_vs_base(&facts, defense, base_strength, declared);
                     if verdict == Verdict::Aborted {
                         let report = (aware <= 1).then_some(tick);
                         self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, report);

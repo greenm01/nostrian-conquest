@@ -71,7 +71,7 @@ fn apply_nominal_hits_to_fleet_classes(
         if reducible == 0 {
             continue;
         }
-        state.crippled[idx] += reducible;
+        state.cripple(idx, reducible);
         *hits -= reducible * ds;
         progress = true;
     }
@@ -89,12 +89,11 @@ fn apply_destroyed_hits_to_fleet_classes(
         if ds == 0 || *hits < ds {
             break;
         }
-        let destroyed = state.crippled[idx].min(*hits / ds);
+        let destroyed = state.crippled_count(idx).min(*hits / ds);
         if destroyed == 0 {
             continue;
         }
-        state.crippled[idx] -= destroyed;
-        state.counts[idx] -= destroyed;
+        state.finish_crippled(idx, destroyed);
         *hits -= destroyed * ds;
         progress = true;
     }
@@ -326,9 +325,8 @@ pub(super) fn resolve_ground_exchange(
 
 fn apply_critical_hit_to_fleet(state: &mut FleetCombatState) -> bool {
     for idx in fleet_target_order() {
-        if state.crippled[idx] > 0 {
-            state.crippled[idx] -= 1;
-            state.counts[idx] -= 1;
+        if state.crippled_count(idx) > 0 {
+            state.finish_crippled(idx, 1);
             return true;
         }
     }
@@ -354,11 +352,10 @@ fn apply_focus_fire_hits_to_fleet_classes(
         }
 
         // First, finish off any already crippled ships (cost 1x DS)
-        if state.crippled[idx] > 0 {
-            let finished = state.crippled[idx].min(*hits / ds);
+        if state.crippled_count(idx) > 0 {
+            let finished = state.crippled_count(idx).min(*hits / ds);
             if finished > 0 {
-                state.crippled[idx] -= finished;
-                state.counts[idx] -= finished;
+                state.finish_crippled(idx, finished);
                 *hits -= finished * ds;
                 progress = true;
             }
@@ -459,10 +456,9 @@ pub(super) fn apply_landing_fire_to_fleet(
     }
     if let Some(idx) = target_order
         .into_iter()
-        .find(|&idx| state.crippled[idx] > 0)
+        .find(|&idx| state.crippled_count(idx) > 0)
     {
-        state.crippled[idx] -= 1;
-        state.counts[idx] -= 1;
+        state.finish_crippled(idx, 1);
     } else if let Some(idx) = target_order
         .into_iter()
         .find(|&idx| state.nominal_count(idx) > 0)

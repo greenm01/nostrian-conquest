@@ -29,8 +29,9 @@ pub(crate) fn push_fleet_contact(
 ) {
     let target = &game_data.fleets[target_fleet_idx];
     let target_empire = target.owner.0;
-    let (small_vessels, medium_vessels, large_vessels) =
-        vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
+    let (small_vessels, medium_vessels, large_vessels) = vessel_size_summary(
+        &fleet_state_from_records(game_data, &[target_fleet_idx], &[]),
+    );
     let target_fleet_number = single_named_fleet_number(game_data, &[target_fleet_idx]);
     let (viewer_empire, source, reporting_fleet_number, reporting_initial, armies) = match observer
     {
@@ -99,8 +100,9 @@ pub(crate) fn push_no_engagement(
     reason: EncounterDispositionReason,
 ) {
     let fleet = &game_data.fleets[fleet_idx];
-    let (small_vessels, medium_vessels, large_vessels) =
-        vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
+    let (small_vessels, medium_vessels, large_vessels) = vessel_size_summary(
+        &fleet_state_from_records(game_data, &[target_fleet_idx], &[]),
+    );
     encounter_disposition_events.push(EncounterDispositionEvent::NoEngagement {
         fleet_idx,
         owner_empire: fleet.owner.0,

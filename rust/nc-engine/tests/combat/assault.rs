@@ -552,6 +552,41 @@ fn an_attacker_whose_roe_forbids_the_fight_seeks_home_without_a_shot() {
 }
 
 #[test]
+fn the_gate_weighs_a_crippled_base_at_half_and_a_crippled_attacker_at_half() {
+    // ROE 6 wants even odds. Three cruisers (90) fall short of a base (100)
+    // but not of a crippled one (50); four (120) pass the whole base, but
+    // with two of them crippled (90) they do not.
+    let gate = |cruisers: u16, attacker_cripples: u32, base_crippled: bool| {
+        let mut game_data = assault_on_system(
+            Order::BombardWorld,
+            Ships {
+                ca: cruisers,
+                ..Ships::default()
+            },
+            0,
+            0,
+        );
+        game_data.fleets[0].rules_of_engagement = 6;
+        game_data.fleets[0].crippled.cruisers.turns[1] = attacker_cripples;
+        place_starbase(&mut game_data, 2, SYSTEM);
+        if base_crippled {
+            game_data.bases[0].crippled.turns[1] = 1;
+        }
+        far_home(&mut game_data);
+        let events = run_neutral(&mut game_data, 0);
+        let refused =
+            repelled(&events, Mission::BombardWorld) && events.fleet_battle_events.is_empty();
+        let fought = !events.fleet_battle_events.is_empty();
+        assert_ne!(refused, fought, "the attacker either fights or turns back");
+        fought
+    };
+    assert!(!gate(3, 0, false), "90 against 100");
+    assert!(gate(3, 0, true), "90 against 50");
+    assert!(gate(4, 0, false), "120 against 100");
+    assert!(!gate(4, 2, false), "90 against 100");
+}
+
+#[test]
 fn a_beaten_attacker_retreats_repelled_by_the_orbital_defence() {
     // The base and the destroyer beside it kill the bomber's only warship in
     // round 1 and spend the battle's 64 rounds on its scouts. NC's battle

@@ -769,6 +769,28 @@ pub struct PlanetScorchEvent {
     pub goods_after: u32,
 }
 
+/// What a recovery step gave back: a fleet's or a starbase's crippled hulls.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RecoveredUnit {
+    Fleet { fleet_number: u16 },
+    Starbase { base_id: u16 },
+}
+
+/// Crippled hulls that recovered to full strength at the end of the pass.
+/// The report says how many ships came back, and how many of them a
+/// starbase's help brought back a pass early.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ShipsRecoveredEvent {
+    pub owner_empire: u8,
+    pub unit: RecoveredUnit,
+    pub coords: [u8; 2],
+    /// Inside the world's system rather than in deep space.
+    pub in_system: bool,
+    pub hulls: u32,
+    /// Of `hulls`, those a starbase's help brought back a pass early.
+    pub early: u32,
+}
+
 /// Events produced by a single maintenance turn, for use by callers
 /// (e.g. DATABASE.DAT regeneration in the CLI layer).
 #[derive(Debug, Default)]
@@ -825,4 +847,6 @@ pub struct MaintenanceEvents {
     pub fleet_defection_events: Vec<FleetDefectionEvent>,
     /// Worlds the yearly pass decayed under Scorch-Earth.
     pub planet_scorch_events: Vec<PlanetScorchEvent>,
+    /// Crippled hulls that recovered when the pass ended.
+    pub ship_recovery_events: Vec<ShipsRecoveredEvent>,
 }

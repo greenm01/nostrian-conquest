@@ -8,6 +8,7 @@ use crate::{
 };
 
 use super::super::FleetBattlePerspective;
+use super::damage::{distribute_fleet_losses, write_back_bases};
 use super::exchange::{
     BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_FLEET, COMBAT_KIND_PURSUIT,
     COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_to_fleet, fleet_die_modifier, fleet_volley,
@@ -25,7 +26,7 @@ use super::state::{
     planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states, tf_has_any_units,
 };
 use crate::maint::encounter::rules::roe_permits;
-use nc_data::{has_any_force, recompute_max_speed, troop_transports};
+use nc_data::troop_transports;
 
 fn hostile_target_priority(
     our_empire: u8,
@@ -214,79 +215,6 @@ fn may_pursue(game_data: &CoreGameData, pursuer: &TaskForce, fleeing: &TaskForce
                 .escape
                 .is_some_and(|escape| escape.pursued_by(pursuer.empire))
         })
-}
-
-pub(super) fn distribute_fleet_losses(
-    game_data: &mut CoreGameData,
-    fleet_indices: &[usize],
-    before: &FleetCombatState,
-    after: &FleetCombatState,
-) {
-    let losses = [
-        before.counts[super::state::IDX_DD].saturating_sub(after.counts[super::state::IDX_DD]),
-        before.counts[super::state::IDX_CA].saturating_sub(after.counts[super::state::IDX_CA]),
-        before.counts[super::state::IDX_BB].saturating_sub(after.counts[super::state::IDX_BB]),
-        before.counts[super::state::IDX_SC].saturating_sub(after.counts[super::state::IDX_SC]),
-        before.counts[super::state::IDX_TT].saturating_sub(after.counts[super::state::IDX_TT]),
-        before.counts[super::state::IDX_ET].saturating_sub(after.counts[super::state::IDX_ET]),
-    ];
-
-    let mut remaining = losses;
-    for &idx in fleet_indices {
-        let fleet = &mut game_data.fleets[idx];
-
-        let dd_loss = remaining[0].min(fleet.ships.destroyers as u32) as u16;
-        fleet.ships.destroyers = fleet.ships.destroyers.saturating_sub(dd_loss);
-        remaining[0] -= dd_loss as u32;
-
-        let ca_loss = remaining[1].min(fleet.ships.cruisers as u32) as u16;
-        fleet.ships.cruisers = fleet.ships.cruisers.saturating_sub(ca_loss);
-        remaining[1] -= ca_loss as u32;
-
-        let bb_loss = remaining[2].min(fleet.ships.battleships as u32) as u16;
-        fleet.ships.battleships = fleet.ships.battleships.saturating_sub(bb_loss);
-        remaining[2] -= bb_loss as u32;
-
-        let sc_loss = remaining[3].min(fleet.ships.scouts as u32) as u16;
-        fleet.ships.scouts = fleet.ships.scouts.saturating_sub(sc_loss);
-        remaining[3] -= sc_loss as u32;
-
-        // Transport losses fall on loaded transports first, each taking its
-        // army with it, then on empty ones.
-        let tt_loss = remaining[4].min(troop_transports(fleet) as u32) as u16;
-        let loaded_loss = tt_loss.min(fleet.ships.loaded_transports);
-        fleet.ships.loaded_transports -= loaded_loss;
-        fleet.ships.empty_transports -= tt_loss - loaded_loss;
-        remaining[4] -= tt_loss as u32;
-
-        let et_loss = remaining[5].min(fleet.ships.etacs as u32) as u16;
-        fleet.ships.etacs = fleet.ships.etacs.saturating_sub(et_loss);
-        remaining[5] -= et_loss as u32;
-
-        // A survivor moves at the speed of the ships it has left (classic
-        // recomputes it after the battle too, `24a3:036b`). A fleet with
-        // none left is culled, not re-rated.
-        let lost_ships = dd_loss + ca_loss + bb_loss + sc_loss + tt_loss + et_loss > 0;
-        if lost_ships && has_any_force(fleet) {
-            recompute_max_speed(fleet);
-        }
-    }
-}
-
-/// Unlink and zero the first `destroyed` of a side's starbase records and
-/// return their ids.
-fn remove_destroyed_starbases(
-    game_data: &mut CoreGameData,
-    bases: &[usize],
-    destroyed: u32,
-) -> Vec<u16> {
-    let mut destroyed_ids = Vec::new();
-    for &idx in bases.iter().take(destroyed as usize) {
-        destroyed_ids.push(game_data.bases[idx].base_id.0);
-        game_data.unlink_base(idx);
-        game_data.bases[idx] = nc_data::Starbase::default();
-    }
-    destroyed_ids
 }
 
 fn is_ship_loss_abort_reason(order: Order, reason: FleetOrderValidationError) -> bool {
@@ -533,7 +461,7 @@ pub(super) fn fight_encounter_with_dice(
                 side.empire,
                 coords,
                 side.fleets.clone(),
-                side.bases.len() as u32,
+                &side.bases,
             )
         })
         .collect();
@@ -716,16 +644,10 @@ pub(super) fn fight_encounter_with_dice(
     for tf in &task_forces {
         if let Some(before) = original_states.get(&tf.empire) {
             distribute_fleet_losses(game_data, &tf.fleet_indices, before, &tf.state);
-            let destroyed_starbases = before.counts[IDX_SB].saturating_sub(tf.state.counts[IDX_SB]);
-            if destroyed_starbases > 0 {
-                destroyed_starbases_by_empire.insert(
-                    tf.empire,
-                    remove_destroyed_starbases(
-                        game_data,
-                        &bases_by_empire[&tf.empire],
-                        destroyed_starbases,
-                    ),
-                );
+            let destroyed_starbases =
+                write_back_bases(game_data, &bases_by_empire[&tf.empire], before, &tf.state);
+            if !destroyed_starbases.is_empty() {
+                destroyed_starbases_by_empire.insert(tf.empire, destroyed_starbases);
             }
         }
     }

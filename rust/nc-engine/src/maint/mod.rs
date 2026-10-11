@@ -13,6 +13,7 @@ pub mod recovery;
 mod results;
 mod retarget;
 mod sanitize;
+mod ship_recovery;
 pub mod timing;
 
 pub use nc_data::maintenance_types::*;
@@ -361,6 +362,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         visible_hazards_by_empire,
         diplomacy_overrides,
     )?;
+    let assist_watch = year.assist_watch;
     refs.movement_events = year.movement_events;
     refs.encounter_events = year.encounter_events;
     refs.assault_events = year.assault_events;
@@ -444,6 +446,10 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 .and_then(|arrival| arrival.stardate_week);
         }
     }
+    // Recovery (combat decision 3): once per pass, after the ticks, the
+    // post-year merges, and colonization, and before the AI and the reports.
+    let ship_recovery_events = ship_recovery::recover_ships(game_data, &assist_watch);
+
     // Run autopilot / rogue AI planet economics.
     // Updates factories, armies, and raw[0x0E] for rogue and autopilot-on players.
     // ECMAINT runs this pass at the start of the next year (`24a3:3cc6`),
@@ -614,6 +620,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         empire_elimination_events: campaign_transition_events.empire_elimination_events,
         fleet_defection_events,
         planet_scorch_events,
+        ship_recovery_events,
     };
 
     campaign::apply_stored_diplomatic_escalations(game_data, &events)?;

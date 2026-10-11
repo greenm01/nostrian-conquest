@@ -2144,3 +2144,55 @@ fn victory_declared_report_uses_first_person_for_winner() {
     assert!(text.contains("ALERT: Victory declared! We have been recognized as Emperor."));
     assert!(!text.contains("\"Player1\", (Empire #1) has been recognized as Emperor."));
 }
+
+/// Recovery reports say how many ships came back, name a starbase's help
+/// only when it brought some back early, and never mention the counters.
+#[test]
+fn recovery_reports_say_how_many_ships_recovered() {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3001)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let recovered = |unit, hulls, early| nc_data::ShipsRecoveredEvent {
+        owner_empire: 1,
+        unit,
+        coords: [12, 9],
+        in_system: true,
+        hulls,
+        early,
+    };
+    let fleet = |fleet_number| nc_data::RecoveredUnit::Fleet { fleet_number };
+    let mut events = MaintenanceEvents::default();
+    events.ship_recovery_events = vec![
+        recovered(fleet(3), 4, 0),
+        recovered(fleet(5), 1, 0),
+        recovered(fleet(7), 6, 2),
+        recovered(nc_data::RecoveredUnit::Starbase { base_id: 2 }, 1, 0),
+    ];
+
+    let rows = build_results_report_blocks(&game_data, &events);
+    let texts = viewer_report_texts(1, &rows);
+    // The report wraps its lines; compare it as running text.
+    let joined = texts
+        .join(" ")
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ");
+
+    for expected in [
+        "3rd Fleet, located in System(12,9)",
+        "4 ships recovered to full strength.",
+        "1 ship recovered to full strength.",
+        "6 ships recovered to full strength, 2 of them a year early with the help of the starbase.",
+        "From Starbase 2, located in System(12,9)",
+        "We have recovered to full strength.",
+    ] {
+        assert!(
+            joined.contains(expected),
+            "missing {expected:?} in {joined}"
+        );
+    }
+    assert!(!joined.to_lowercase().contains("turns left"));
+    assert!(!joined.to_lowercase().contains("crippled"));
+}
