@@ -54,8 +54,7 @@ pub fn dashboard_layout(app: &DashApp) -> DashboardLayout {
         [3, 2, 0, 1],
     );
 
-    let map_size =
-        nc_data::map_size_for_player_count(app.game_data.conquest.player_count()) as usize;
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count) as usize;
     let widgets = build_widget_frames(
         app.geometry,
         frame,
@@ -162,8 +161,7 @@ struct DashboardMeasurements {
 }
 
 fn measure_dashboard(app: &DashApp) -> DashboardMeasurements {
-    let map_size =
-        nc_data::map_size_for_player_count(app.game_data.conquest.player_count()) as usize;
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count) as usize;
 
     let economy_rows = economy::body_rows(app);
     let planet_rows = planets::body_rows(app);

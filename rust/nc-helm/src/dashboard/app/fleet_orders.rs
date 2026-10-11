@@ -717,7 +717,7 @@ impl DashApp {
                     row.destination_coords,
                 )
                 .ok_or_else(|| "Enter coordinates like 10,13".to_string())?;
-                let map_size = map_size_for_player_count(self.game_data.conquest.player_count());
+                let map_size = map_size_for_player_count(self.game_data.conquest.player_count);
                 if destination[0] == 0
                     || destination[1] == 0
                     || destination[0] > map_size
@@ -1401,7 +1401,7 @@ impl DashApp {
         default: Option<u8>,
         axis_label: &str,
     ) -> Result<u8, String> {
-        let max = map_size_for_player_count(self.game_data.conquest.player_count());
+        let max = map_size_for_player_count(self.game_data.conquest.player_count);
         let raw = input.trim();
         let value = if raw.is_empty() {
             default.ok_or_else(|| format!("Enter {axis_label} from 1 to {max}."))?
@@ -1447,33 +1447,27 @@ impl DashApp {
             .game_data
             .planets
             .iter()
-            .find(|planet| planet.coords_raw() == destination);
+            .find(|planet| planet.sector.to_array() == destination);
         if fleet_order_target_requires_planet_system(mission_code) && target_planet.is_none() {
             return Err("That mission needs a system with a planet at the target.".to_string());
         }
         if fleet_order_target_rejects_owned_planet(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize == self.player_record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize == self.player_record_index_1_based)
                 .unwrap_or(false)
         {
             return Err("You cannot send that mission to your own world.".to_string());
         }
         if fleet_order_target_rejects_owned_scout_target(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize == self.player_record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize == self.player_record_index_1_based)
                 .unwrap_or(false)
         {
             return Err("You cannot scout your own planet or system.".to_string());
         }
         if fleet_order_target_requires_owned_planet(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize != self.player_record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize != self.player_record_index_1_based)
                 .unwrap_or(true)
         {
             return Err("That mission requires one of your owned planets.".to_string());
@@ -1528,8 +1522,8 @@ impl DashApp {
             .fleets
             .get(selected_row.fleet_record_index_1_based.saturating_sub(1))
             .map(|fleet| {
-                let speed = fleet.current_speed();
-                if speed == 0 { fleet.max_speed() } else { speed }
+                let speed = fleet.speed;
+                if speed == 0 { fleet.max_speed } else { speed }
             })
             .unwrap_or(selected_row.current_speed);
         self.game_data.set_fleet_order(
@@ -1588,8 +1582,8 @@ impl DashApp {
                 .fleets
                 .get(row.fleet_record_index_1_based.saturating_sub(1))
                 .map(|fleet| {
-                    let speed = fleet.current_speed();
-                    if speed == 0 { fleet.max_speed() } else { speed }
+                    let speed = fleet.speed;
+                    if speed == 0 { fleet.max_speed } else { speed }
                 })
                 .unwrap_or(row.current_speed);
             self.game_data.set_fleet_order(
@@ -1926,7 +1920,7 @@ impl DashApp {
                     self.game_data
                         .fleets
                         .get(row.fleet_record_index_1_based - 1)
-                        .map(|fleet| fleet.rules_of_engagement())
+                        .map(|fleet| fleet.rules_of_engagement)
                         .unwrap_or(0)
                 })
                 .filter(|roe| {
@@ -1934,7 +1928,7 @@ impl DashApp {
                         self.game_data
                             .fleets
                             .get(row.fleet_record_index_1_based - 1)
-                            .map(|fleet| fleet.rules_of_engagement() == *roe)
+                            .map(|fleet| fleet.rules_of_engagement == *roe)
                             .unwrap_or(false)
                     })
                 })
@@ -1988,26 +1982,31 @@ impl DashApp {
         };
         match class {
             FleetOverlayTransferClass::Battleships => fleet
-                .battleship_count()
+                .ships
+                .battleships
                 .saturating_sub(self.fleet_overlay.transfer_selection.battleships),
             FleetOverlayTransferClass::Cruisers => fleet
-                .cruiser_count()
+                .ships
+                .cruisers
                 .saturating_sub(self.fleet_overlay.transfer_selection.cruisers),
             FleetOverlayTransferClass::Destroyers => fleet
-                .destroyer_count()
+                .ships
+                .destroyers
                 .saturating_sub(self.fleet_overlay.transfer_selection.destroyers),
             FleetOverlayTransferClass::FullTransports => fleet
-                .army_count()
+                .ships
+                .loaded_transports
                 .saturating_sub(self.fleet_overlay.transfer_selection.full_transports),
-            FleetOverlayTransferClass::EmptyTransports => fleet
-                .troop_transport_count()
-                .saturating_sub(fleet.army_count())
+            FleetOverlayTransferClass::EmptyTransports => nc_data::troop_transports(&fleet)
+                .saturating_sub(fleet.ships.loaded_transports)
                 .saturating_sub(self.fleet_overlay.transfer_selection.empty_transports),
             FleetOverlayTransferClass::Scouts => fleet
-                .scout_count()
+                .ships
+                .scouts
                 .saturating_sub(self.fleet_overlay.transfer_selection.scouts),
             FleetOverlayTransferClass::Etacs => fleet
-                .etac_count()
+                .ships
+                .etacs
                 .saturating_sub(self.fleet_overlay.transfer_selection.etacs),
         }
     }
@@ -2391,11 +2390,11 @@ impl DashApp {
         match estimate {
             nc_engine::FleetEtaEstimate::Arrived => format!(
                 "{subject} reaches {target} in 0 year(s), arriving in {}.",
-                self.game_data.conquest.game_year()
+                self.game_data.conquest.game_year
             ),
             nc_engine::FleetEtaEstimate::Years(years) => format!(
                 "{subject} reaches {target} in {years} year(s), arriving in {}.",
-                self.game_data.conquest.game_year() + years
+                self.game_data.conquest.game_year + years
             ),
             nc_engine::FleetEtaEstimate::Stopped => {
                 format!("{subject} is stopped and cannot reach {target}.")
@@ -2413,11 +2412,11 @@ impl DashApp {
     ) -> String {
         let summary = match estimate {
             nc_engine::FleetEtaEstimate::Arrived => {
-                format!("0 year(s), arrive {}", self.game_data.conquest.game_year())
+                format!("0 year(s), arrive {}", self.game_data.conquest.game_year)
             }
             nc_engine::FleetEtaEstimate::Years(years) => format!(
                 "{years} year(s), arrive {}",
-                self.game_data.conquest.game_year() + years
+                self.game_data.conquest.game_year + years
             ),
             nc_engine::FleetEtaEstimate::Stopped => "Stopped".to_string(),
             nc_engine::FleetEtaEstimate::Unreachable => "No route".to_string(),

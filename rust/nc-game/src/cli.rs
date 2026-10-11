@@ -1090,7 +1090,7 @@ mod tests {
             .expect("load runtime state");
         data.join_player(player, &format!("Empire {player}"))
             .expect("join player");
-        data.players[player - 1].set_assigned_player_handle_raw(alias);
+        nc_data::set_player_handle(&mut data.players[player - 1], alias);
         store
             .save_runtime_state_structured(&data, &BTreeSet::new(), &[], &[])
             .expect("save runtime state");
@@ -1337,7 +1337,7 @@ mod tests {
             .expect("load runtime state")
             .expect("runtime state");
         assert_eq!(
-            runtime_state.game_data.players[1].assigned_player_handle_summary(),
+            runtime_state.game_data.players[1].handle.trim().to_string(),
             "Starlord"
         );
         assert_eq!(
@@ -1614,35 +1614,35 @@ mod tests {
             .game_data
             .fleets
             .iter_mut()
-            .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+            .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
             .expect("fleet #4 should exist");
-        donor.set_current_location_coords_raw([16, 13]);
-        donor.set_standing_order_target_coords_raw([16, 13]);
-        donor.set_battleship_count(0);
-        donor.set_cruiser_count(0);
-        donor.set_destroyer_count(0);
-        donor.set_troop_transport_count(2);
-        donor.set_army_count(0);
-        donor.set_scout_count(0);
-        donor.set_etac_count(0);
-        donor.recompute_max_speed_from_composition();
+        donor.sector = nc_data::Coords::from_array([16, 13]);
+        donor.target = nc_data::Coords::from_array([16, 13]);
+        donor.ships.battleships = 0;
+        donor.ships.cruisers = 0;
+        donor.ships.destroyers = 0;
+        nc_data::set_troop_transports(donor, 2);
+        nc_data::set_armies_aboard(donor, 0);
+        donor.ships.scouts = 0;
+        donor.ships.etacs = 0;
+        nc_data::recompute_max_speed(donor);
 
         let host = app
             .game_data
             .fleets
             .iter_mut()
-            .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+            .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
             .expect("fleet #3 should exist");
-        host.set_current_location_coords_raw([16, 13]);
-        host.set_standing_order_target_coords_raw([16, 13]);
-        host.set_battleship_count(0);
-        host.set_cruiser_count(0);
-        host.set_destroyer_count(1);
-        host.set_troop_transport_count(0);
-        host.set_army_count(0);
-        host.set_scout_count(0);
-        host.set_etac_count(0);
-        host.recompute_max_speed_from_composition();
+        host.sector = nc_data::Coords::from_array([16, 13]);
+        host.target = nc_data::Coords::from_array([16, 13]);
+        host.ships.battleships = 0;
+        host.ships.cruisers = 0;
+        host.ships.destroyers = 1;
+        nc_data::set_troop_transports(host, 0);
+        nc_data::set_armies_aboard(host, 0);
+        host.ships.scouts = 0;
+        host.ships.etacs = 0;
+        nc_data::recompute_max_speed(host);
 
         app.open_fleet_menu();
         app.open_fleet_list();

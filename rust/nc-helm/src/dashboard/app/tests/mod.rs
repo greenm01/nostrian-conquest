@@ -355,7 +355,7 @@ fn empty_intel_filter_reverts_to_all_rows() {
 fn closing_planet_build_modal_returns_to_planet_list_overlay() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(50);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(50));
     app.open_planet_build_specify();
     assert_eq!(
         app.planet_overlay.prompt_mode,
@@ -375,7 +375,7 @@ fn closing_planet_build_modal_returns_to_planet_list_overlay() {
 fn opening_build_specify_with_no_budget_keeps_build_table_open() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(1);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(1));
 
     app.open_planet_build_specify();
 
@@ -394,7 +394,7 @@ fn opening_build_specify_with_no_budget_keeps_build_table_open() {
 fn successful_build_that_exhausts_budget_stays_in_build_table() {
     let mut app = dash_app_with_store();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(2);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(2));
 
     app.open_planet_build_specify();
     assert_eq!(
@@ -420,7 +420,7 @@ fn successful_build_that_exhausts_budget_stays_in_build_table() {
 fn equals_key_queues_selected_build_unit() {
     let mut app = dash_app_with_store();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(80);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
     app.open_planet_build_specify();
 
     app.handle_key(key(KeyCode::Char('=')));
@@ -442,7 +442,8 @@ fn build_command_refreshes_cached_planet_status_without_store() {
     let expected_record = owned_planet_record_index(&app, owned_coords);
     app.crosshair_x = owned_coords[0];
     app.crosshair_y = owned_coords[1];
-    app.game_data.planets[expected_record - 1].set_stored_production_points(80);
+    app.game_data.planets[expected_record - 1].stored_goods =
+        nc_data::Real48::from_f64(f64::from(80));
 
     let before = planet_view::selected_planet_detail(&app).expect("selected planet");
     assert_eq!(
@@ -463,7 +464,7 @@ fn build_command_refreshes_cached_planet_status_without_store() {
 fn empty_build_browse_enter_opens_quantity_for_highlighted_unit() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(80);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
     app.open_planet_build_specify();
 
     app.handle_key(key(KeyCode::Enter));
@@ -495,7 +496,7 @@ fn zero_build_browse_enter_exits_overlay() {
 fn numeric_build_browse_enter_selects_unit_and_opens_quantity() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(80);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
     app.open_planet_build_specify();
 
     app.handle_key(key(KeyCode::Char('2')));
@@ -515,7 +516,7 @@ fn numeric_build_browse_enter_selects_unit_and_opens_quantity() {
 fn numeric_build_browse_input_highlights_matching_unit_before_enter() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
-    app.game_data.planets[0].set_stored_production_points(80);
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
     app.open_planet_build_specify();
 
     app.handle_key(key(KeyCode::Char('2')));
@@ -801,8 +802,8 @@ fn seek_home_order_targets_the_nearest_owned_world_without_coordinates() {
         .expect("selected fleet row")
         .fleet_record_index_1_based;
     let fleet = &mut app.game_data.fleets[record - 1];
-    fleet.set_current_location_coords_raw([1, 1]);
-    fleet.set_at_rest_motion();
+    fleet.sector = nc_data::Coords::from_array([1, 1]);
+    nc_data::set_fleet_at_rest(fleet);
 
     app.fleet_overlay.mission_picker_input = "2".to_string();
     app.submit_fleet_mission_picker();
@@ -813,8 +814,8 @@ fn seek_home_order_targets_the_nearest_owned_world_without_coordinates() {
     app.handle_key(key(KeyCode::Enter));
 
     let fleet = &app.game_data.fleets[record - 1];
-    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
-    assert_eq!(fleet.standing_order_target_coords_raw(), [16, 13]);
+    assert_eq!(fleet.order, nc_data::Order::SeekHome);
+    assert_eq!(fleet.target.to_array(), [16, 13]);
 }
 
 /// Order the first fleet, at rest in its home system at (16,13), to Seek
@@ -826,9 +827,10 @@ fn seek_home_from_the_home_system(second_world: bool) -> (DashApp, usize) {
         app.game_data
             .planets
             .iter_mut()
-            .find(|planet| planet.coords_raw() == [8, 8])
+            .find(|planet| planet.sector.to_array() == [8, 8])
             .expect("seeded world")
-            .set_owner_empire_slot_raw(1);
+            .owner
+            .0 = 1;
     }
     select_first_fleet_row(&mut app);
     app.open_selected_fleet_order_flow();
@@ -837,8 +839,8 @@ fn seek_home_from_the_home_system(second_world: bool) -> (DashApp, usize) {
         .expect("selected fleet row")
         .fleet_record_index_1_based;
     let fleet = &mut app.game_data.fleets[record - 1];
-    fleet.set_current_location_coords_raw([16, 13]);
-    fleet.set_at_rest_motion();
+    fleet.sector = nc_data::Coords::from_array([16, 13]);
+    nc_data::set_fleet_at_rest(fleet);
     app.fleet_overlay.mission_picker_input = "2".to_string();
     app.submit_fleet_mission_picker();
     (app, record)
@@ -880,8 +882,8 @@ fn seek_home_in_the_home_system_asks_and_defaults_to_the_next_closest() {
     app.handle_key(key(KeyCode::Enter));
 
     let fleet = &app.game_data.fleets[record - 1];
-    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
-    assert_eq!(fleet.standing_order_target_coords_raw(), [8, 8]);
+    assert_eq!(fleet.order, nc_data::Order::SeekHome);
+    assert_eq!(fleet.target.to_array(), [8, 8]);
 }
 
 #[test]
@@ -895,8 +897,8 @@ fn seek_home_in_the_home_system_stays_on_no() {
     app.handle_key(key(KeyCode::Enter));
 
     let fleet = &app.game_data.fleets[record - 1];
-    assert_eq!(fleet.standing_order_kind(), nc_data::Order::SeekHome);
-    assert_eq!(fleet.standing_order_target_coords_raw(), [16, 13]);
+    assert_eq!(fleet.order, nc_data::Order::SeekHome);
+    assert_eq!(fleet.target.to_array(), [16, 13]);
 }
 
 #[test]
@@ -915,7 +917,7 @@ fn seek_home_in_the_only_controlled_system_aborts() {
             )
     );
     assert_ne!(
-        app.game_data.fleets[record - 1].standing_order_kind(),
+        app.game_data.fleets[record - 1].order,
         nc_data::Order::SeekHome
     );
 }
@@ -1017,18 +1019,12 @@ fn join_fleet_empty_submission_uses_default_target() {
         .game_data
         .fleets
         .iter()
-        .find(|fleet| {
-            fleet.owner_empire_raw() == 1
-                && fleet.local_slot_word_raw() == expected_host_fleet_number
-        })
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == expected_host_fleet_number)
         .expect("default host fleet");
+    assert_eq!(selected_fleet.order, Order::JoinAnotherFleet);
     assert_eq!(
-        selected_fleet.standing_order_kind(),
-        Order::JoinAnotherFleet
-    );
-    assert_eq!(
-        selected_fleet.standing_order_target_coords_raw(),
-        expected_host.current_location_coords_raw()
+        selected_fleet.target.to_array(),
+        expected_host.sector.to_array()
     );
 }
 
@@ -1057,12 +1053,12 @@ fn guard_starbase_empty_submission_uses_default_target() {
         .game_data
         .bases
         .iter()
-        .find(|base| base.base_id_raw() == expected_base_id)
+        .find(|base| base.base_id.0 == expected_base_id)
         .expect("default starbase");
-    assert_eq!(selected_fleet.standing_order_kind(), Order::GuardStarbase);
+    assert_eq!(selected_fleet.order, Order::GuardStarbase);
     assert_eq!(
-        selected_fleet.standing_order_target_coords_raw(),
-        expected_base.coords_raw()
+        selected_fleet.target.to_array(),
+        expected_base.sector.to_array()
     );
 }
 
@@ -1312,8 +1308,8 @@ fn group_order_success_clears_checked_selection_and_unwinds_prompts() {
     assert_eq!(app.fleet_overlay.order_scope, FleetOrderScope::None);
     for record_index in selected_records {
         let fleet = &app.game_data.fleets[record_index - 1];
-        assert_eq!(fleet.standing_order_kind(), Order::MoveOnly);
-        assert_eq!(fleet.standing_order_target_coords_raw(), [10, 10]);
+        assert_eq!(fleet.order, Order::MoveOnly);
+        assert_eq!(fleet.target.to_array(), [10, 10]);
     }
 }
 
@@ -1338,8 +1334,8 @@ fn fleet_order_confirm_y_submits_without_enter() {
 
     assert_eq!(app.fleet_overlay.prompt_mode, FleetOverlayPromptMode::None);
     let fleet = &app.game_data.fleets[selected_record_index - 1];
-    assert_eq!(fleet.standing_order_kind(), Order::MoveOnly);
-    assert_eq!(fleet.standing_order_target_coords_raw(), [10, 10]);
+    assert_eq!(fleet.order, Order::MoveOnly);
+    assert_eq!(fleet.target.to_array(), [10, 10]);
 }
 
 #[test]
@@ -1392,7 +1388,7 @@ fn checked_change_applies_roe_to_all_checked_fleets() {
     );
     for record_index in selected_records {
         let fleet = &app.game_data.fleets[record_index - 1];
-        assert_eq!(fleet.rules_of_engagement(), 4);
+        assert_eq!(fleet.rules_of_engagement, 4);
     }
 }
 
@@ -1447,15 +1443,15 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
         .expect("selected fleet row");
     {
         let fleet = &mut roe_app.game_data.fleets[roe_row.fleet_record_index_1_based - 1];
-        fleet.set_destroyer_count(1);
-        fleet.set_cruiser_count(0);
-        fleet.set_battleship_count(0);
-        fleet.set_scout_count(0);
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.set_etac_count(0);
-        fleet.recompute_max_speed_from_composition();
-        fleet.set_rules_of_engagement(0);
+        fleet.ships.destroyers = 1;
+        fleet.ships.cruisers = 0;
+        fleet.ships.battleships = 0;
+        fleet.ships.scouts = 0;
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        fleet.ships.etacs = 0;
+        nc_data::recompute_max_speed(fleet);
+        fleet.rules_of_engagement = 0;
     }
     roe_app.handle_key(key(KeyCode::Char('c')));
     roe_app.handle_key(key(KeyCode::Char('r')));
@@ -1466,7 +1462,7 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     roe_app.handle_key(key(KeyCode::Char('3')));
     roe_app.handle_key(key(KeyCode::Enter));
     assert_eq!(
-        roe_app.game_data.fleets[roe_row.fleet_record_index_1_based - 1].rules_of_engagement(),
+        roe_app.game_data.fleets[roe_row.fleet_record_index_1_based - 1].rules_of_engagement,
         3
     );
     let roe_notice = format!("Fleet #{} ROE set to 3.", roe_row.fleet_number);
@@ -1492,7 +1488,9 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     }
     id_app.handle_key(key(KeyCode::Enter));
     assert_eq!(
-        id_app.game_data.fleets[id_row.fleet_record_index_1_based - 1].local_slot_word_raw(),
+        id_app.game_data.fleets[id_row.fleet_record_index_1_based - 1]
+            .fleet_number
+            .0,
         new_id
     );
     let id_notice = format!(
@@ -1511,8 +1509,8 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
         .expect("selected fleet row");
     // A fleet on its way somewhere; one at its target keeps speed 0.
     let moving = &mut speed_app.game_data.fleets[speed_row.fleet_record_index_1_based - 1];
-    moving.set_standing_order_kind(nc_data::Order::MoveOnly);
-    moving.set_standing_order_target_coords_raw([1, 1]);
+    moving.order = nc_data::Order::MoveOnly;
+    moving.target = nc_data::Coords::from_array([1, 1]);
     speed_app.handle_key(key(KeyCode::Char('c')));
     speed_app.handle_key(key(KeyCode::Char('s')));
     assert_eq!(
@@ -1522,7 +1520,7 @@ fn selected_fleet_change_accepts_roe_id_and_speed() {
     speed_app.handle_key(key(KeyCode::Char('1')));
     speed_app.handle_key(key(KeyCode::Enter));
     assert_eq!(
-        speed_app.game_data.fleets[speed_row.fleet_record_index_1_based - 1].current_speed(),
+        speed_app.game_data.fleets[speed_row.fleet_record_index_1_based - 1].speed,
         1
     );
     let speed_notice = format!("Fleet #{} speed set to 1.", speed_row.fleet_number);
@@ -1542,26 +1540,26 @@ fn checked_change_clears_only_successful_fleets_on_partial_roe_update() {
 
     {
         let combat = &mut app.game_data.fleets[combat_record - 1];
-        combat.set_destroyer_count(1);
-        combat.set_cruiser_count(0);
-        combat.set_battleship_count(0);
-        combat.set_scout_count(0);
-        combat.set_troop_transport_count(0);
-        combat.set_army_count(0);
-        combat.set_etac_count(0);
-        combat.recompute_max_speed_from_composition();
-        combat.set_rules_of_engagement(0);
+        combat.ships.destroyers = 1;
+        combat.ships.cruisers = 0;
+        combat.ships.battleships = 0;
+        combat.ships.scouts = 0;
+        nc_data::set_troop_transports(combat, 0);
+        nc_data::set_armies_aboard(combat, 0);
+        combat.ships.etacs = 0;
+        nc_data::recompute_max_speed(combat);
+        combat.rules_of_engagement = 0;
 
         let support = &mut app.game_data.fleets[support_record - 1];
-        support.set_destroyer_count(0);
-        support.set_cruiser_count(0);
-        support.set_battleship_count(0);
-        support.set_scout_count(0);
-        support.set_troop_transport_count(1);
-        support.set_army_count(1);
-        support.set_etac_count(0);
-        support.recompute_max_speed_from_composition();
-        support.set_rules_of_engagement(0);
+        support.ships.destroyers = 0;
+        support.ships.cruisers = 0;
+        support.ships.battleships = 0;
+        support.ships.scouts = 0;
+        nc_data::set_troop_transports(support, 1);
+        nc_data::set_armies_aboard(support, 1);
+        support.ships.etacs = 0;
+        nc_data::recompute_max_speed(support);
+        support.rules_of_engagement = 0;
     }
 
     app.handle_key(key(KeyCode::Char('c')));
@@ -1578,11 +1576,11 @@ fn checked_change_clears_only_successful_fleets_on_partial_roe_update() {
         [support_record].into_iter().collect()
     );
     assert_eq!(
-        app.game_data.fleets[combat_record - 1].rules_of_engagement(),
+        app.game_data.fleets[combat_record - 1].rules_of_engagement,
         6
     );
     assert_eq!(
-        app.game_data.fleets[support_record - 1].rules_of_engagement(),
+        app.game_data.fleets[support_record - 1].rules_of_engagement,
         0
     );
     assert!(app.fleet_overlay.aux_status.is_some());
@@ -1597,11 +1595,7 @@ fn checked_merge_uses_lowest_numbered_host() {
         .iter()
         .map(|record_index| {
             let fleet = &app.game_data.fleets[*record_index - 1];
-            (
-                *record_index,
-                fleet.local_slot_word_raw(),
-                fleet.current_location_coords_raw(),
-            )
+            (*record_index, fleet.fleet_number.0, fleet.sector.to_array())
         })
         .collect::<Vec<_>>();
     selected_fleets.sort_by_key(|(_, fleet_number, _)| *fleet_number);
@@ -1621,11 +1615,11 @@ fn checked_merge_uses_lowest_numbered_host() {
     assert!(app.fleet_overlay.selected_fleet_record_indexes.is_empty());
     for (record_index, _, _) in selected_fleets.into_iter().skip(1) {
         let fleet = &app.game_data.fleets[record_index - 1];
-        assert_eq!(fleet.standing_order_kind(), Order::JoinAnotherFleet);
-        assert_eq!(fleet.standing_order_target_coords_raw(), host_coords);
+        assert_eq!(fleet.order, Order::JoinAnotherFleet);
+        assert_eq!(fleet.target.to_array(), host_coords);
     }
     let host = &app.game_data.fleets[host_record_index - 1];
-    assert_ne!(host.standing_order_kind(), Order::JoinAnotherFleet);
+    assert_ne!(host.order, Order::JoinAnotherFleet);
 }
 
 #[test]
@@ -1701,8 +1695,8 @@ fn fleet_order_default_target_ignores_existing_target_coords_shortcut() {
             FleetOverlayRowKey::Fleet(record_index) => record_index,
             FleetOverlayRowKey::Starbase(_) => panic!("expected fleet row"),
         };
-    stale_target.game_data.fleets[selected_record - 1]
-        .set_standing_order_target_coords_raw([18, 18]);
+    stale_target.game_data.fleets[selected_record - 1].target =
+        nc_data::Coords::from_array([18, 18]);
     stale_target.overlay = ActiveOverlay::FleetList;
     stale_target.open_selected_fleet_order_flow();
     stale_target.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
@@ -1802,15 +1796,15 @@ fn fleet_list_enter_on_fleet_opens_review_and_escape_returns_to_list() {
     };
     {
         let fleet = &mut app.game_data.fleets[record - 1];
-        fleet.set_troop_transport_count(3);
-        fleet.set_army_count(2);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 3);
+        nc_data::set_armies_aboard(fleet, 2);
+        nc_data::recompute_max_speed(fleet);
     }
 
     app.handle_key(key(KeyCode::Enter));
 
     assert_eq!(app.overlay, ActiveOverlay::FleetList);
-    let fleet_number = app.game_data.fleets[record - 1].local_slot_word_raw();
+    let fleet_number = app.game_data.fleets[record - 1].fleet_number.0;
     assert_eq!(
         app.popup,
         ActivePopup::FleetDetail {
@@ -2007,13 +2001,13 @@ fn stale_fleet_filter_clause_resets_to_all_after_rows_change() {
         .fleets
         .iter()
         .enumerate()
-        .filter_map(|(idx, fleet)| (fleet.owner_empire_raw() == 1).then_some(idx))
+        .filter_map(|(idx, fleet)| (fleet.owner.0 == 1).then_some(idx))
         .collect::<Vec<_>>();
     assert!(
         !owned_fleet_indexes.is_empty(),
         "fixture should have owned fleets"
     );
-    let target_fleet_number = app.game_data.fleets[owned_fleet_indexes[0]].local_slot_word_raw();
+    let target_fleet_number = app.game_data.fleets[owned_fleet_indexes[0]].fleet_number.0;
 
     app.handle_key(key(KeyCode::Char('f')));
     for ch in ['i', 'd'] {
@@ -2026,7 +2020,7 @@ fn stale_fleet_filter_clause_resets_to_all_after_rows_change() {
     app.handle_key(key(KeyCode::Enter));
     assert!(app.fleet_overlay.filter_clause.is_some());
 
-    app.game_data.fleets[owned_fleet_indexes[0]].set_owner_empire_raw(0);
+    app.game_data.fleets[owned_fleet_indexes[0]].owner.0 = 0;
     app.handle_key(key(KeyCode::Down));
 
     assert!(app.fleet_overlay.filter_clause.is_none());
@@ -2044,13 +2038,13 @@ fn stale_planet_filter_clause_resets_to_all_after_rows_change() {
         .planets
         .iter()
         .enumerate()
-        .filter_map(|(idx, planet)| (planet.owner_empire_slot_raw() == 1).then_some(idx))
+        .filter_map(|(idx, planet)| (planet.owner.0 == 1).then_some(idx))
         .collect::<Vec<_>>();
     let target_planet_idx = *owned_planet_indexes.first().expect("owned planet exists");
     for &idx in &owned_planet_indexes {
-        app.game_data.planets[idx].set_army_count_raw(0);
+        app.game_data.planets[idx].armies = 0;
     }
-    app.game_data.planets[target_planet_idx].set_army_count_raw(5);
+    app.game_data.planets[target_planet_idx].armies = 5;
 
     app.handle_key(key(KeyCode::Char('f')));
     for ch in ['a', 'r', 's'] {
@@ -2063,7 +2057,7 @@ fn stale_planet_filter_clause_resets_to_all_after_rows_change() {
     app.handle_key(key(KeyCode::Enter));
     assert!(app.planet_overlay.filter_clause.is_some());
 
-    app.game_data.planets[target_planet_idx].set_army_count_raw(0);
+    app.game_data.planets[target_planet_idx].armies = 0;
     app.handle_key(key(KeyCode::Down));
 
     assert!(app.planet_overlay.filter_clause.is_none());
@@ -2079,15 +2073,15 @@ fn stale_intel_filter_clause_resets_to_all_after_rows_change() {
     app.overlay = ActiveOverlay::IntelDatabase;
 
     for planet in &mut app.game_data.planets {
-        planet.set_army_count_raw(0);
+        planet.armies = 0;
     }
     let target_planet_idx = app
         .game_data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    app.game_data.planets[target_planet_idx].set_army_count_raw(7);
+    app.game_data.planets[target_planet_idx].armies = 7;
 
     app.handle_key(key(KeyCode::Char('f')));
     for ch in ['a', 'r', 's'] {
@@ -2100,7 +2094,7 @@ fn stale_intel_filter_clause_resets_to_all_after_rows_change() {
     app.handle_key(key(KeyCode::Enter));
     assert!(app.intel_overlay.filter_clause.is_some());
 
-    app.game_data.planets[target_planet_idx].set_army_count_raw(0);
+    app.game_data.planets[target_planet_idx].armies = 0;
     app.handle_key(key(KeyCode::Down));
 
     assert!(app.intel_overlay.filter_clause.is_none());
@@ -3012,9 +3006,9 @@ fn left_click_on_empty_sector_fleet_glyph_opens_filtered_fleet_list() {
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+        .find(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
         .expect("owned fleet");
-    fleet.set_current_location_coords_raw(empty_coords);
+    fleet.sector = nc_data::Coords::from_array(empty_coords);
     let (column, row) = screen_point_for_sector(&app, empty_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Left), column, row));
@@ -3050,9 +3044,7 @@ fn right_click_on_owned_planet_opens_owned_planet_popup() {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() == 1 && planet.coords_raw() == owned_coords
-        })
+        .find(|(_, planet)| planet.owner.0 == 1 && planet.sector.to_array() == owned_coords)
         .map(|(idx, _)| idx + 1)
         .expect("owned planet");
     let (column, row) = screen_point_for_sector(&app, owned_coords);
@@ -3215,7 +3207,10 @@ fn planet_list_commission_runs_inline_from_footer() {
         app.planet_overlay.prompt_mode,
         PlanetOverlayPromptMode::None
     );
-    assert_eq!(app.game_data.planets[record - 1].stardock_count_raw(0), 0);
+    assert_eq!(
+        (app.game_data.planets[record - 1].stardock[0].min(u32::from(u16::MAX)) as u16),
+        0
+    );
     assert!(
         app.planet_overlay
             .footer_notice
@@ -3253,7 +3248,12 @@ fn planet_list_transport_runs_inline_from_footer() {
         app.planet_overlay.prompt_mode,
         PlanetOverlayPromptMode::None
     );
-    assert_eq!(app.game_data.planets[record - 1].army_count_raw(), 4);
+    assert_eq!(
+        (app.game_data.planets[record - 1]
+            .armies
+            .min(u16::from(u8::MAX)) as u8),
+        4
+    );
     assert!(
         app.planet_overlay
             .footer_notice
@@ -3299,7 +3299,7 @@ fn planet_list_mass_commission_uses_all_owned_planets() {
             .contains("Mass commissioned")
     );
     assert_eq!(
-        app.game_data.planets[other_record - 1].stardock_count_raw(0),
+        (app.game_data.planets[other_record - 1].stardock[0].min(u32::from(u16::MAX)) as u16),
         0
     );
 }
@@ -3348,9 +3348,7 @@ fn owned_planet_popup_question_mark_opens_help_overlay() {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() == 1 && planet.coords_raw() == owned_coords
-        })
+        .find(|(_, planet)| planet.owner.0 == 1 && planet.sector.to_array() == owned_coords)
         .map(|(idx, _)| idx + 1)
         .expect("owned planet");
     let (column, row) = screen_point_for_sector(&app, owned_coords);
@@ -3392,8 +3390,8 @@ fn owned_planet_popup_build_opens_shared_overlay_with_command_line_footer() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(80);
-    planet.set_stored_production_points(80);
+    planet.production = nc_data::Real48::from_f64(f64::from(80));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(80));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3425,8 +3423,8 @@ fn owned_planet_build_overlay_uses_planet_title_instead_of_build_on_planet() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(80);
-    planet.set_stored_production_points(80);
+    planet.production = nc_data::Real48::from_f64(f64::from(80));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(80));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3455,8 +3453,8 @@ fn owned_planet_build_quantity_stays_on_shared_overlay() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(80);
-    planet.set_stored_production_points(80);
+    planet.production = nc_data::Real48::from_f64(f64::from(80));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(80));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3488,8 +3486,8 @@ fn owned_planet_no_budget_still_opens_build_overlay() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(1);
-    planet.set_stored_production_points(1);
+    planet.production = nc_data::Real48::from_f64(f64::from(1));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(1));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3517,8 +3515,8 @@ fn popup_launched_build_escape_returns_to_owned_planet_popup() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(80);
-    planet.set_stored_production_points(80);
+    planet.production = nc_data::Real48::from_f64(f64::from(80));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(80));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3545,8 +3543,8 @@ fn popup_launched_build_success_stays_in_build_overlay() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    let _ = planet.set_present_production_points(80);
-    planet.set_stored_production_points(80);
+    planet.production = nc_data::Real48::from_f64(f64::from(80));
+    planet.stored_goods = nc_data::Real48::from_f64(f64::from(80));
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3579,8 +3577,8 @@ fn popup_launched_build_delete_clears_selected_kind_in_place() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    planet.set_build_kind_raw(0, 1);
-    planet.set_build_count_raw(0, 10);
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.build_queue[0].points_owed = 10;
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
     app.handle_mouse(mouse(MouseEventKind::Down(MouseButton::Right), column, row));
@@ -3674,9 +3672,9 @@ fn keyboard_opening_fleet_list_clears_transient_location_filter() {
 #[test]
 fn owned_planet_popup_browse_uses_popup_record_not_crosshair() {
     let mut app = dash_app();
-    let other_coords = app.game_data.planets[1].coords_raw();
-    app.game_data.planets[0].set_build_kind_raw(0, 3);
-    app.game_data.planets[0].set_build_count_raw(0, 90);
+    let other_coords = app.game_data.planets[1].sector.to_array();
+    app.game_data.planets[0].build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+    app.game_data.planets[0].build_queue[0].points_owed = 90;
     app.open_owned_planet_popup(1);
     app.crosshair_x = other_coords[0];
     app.crosshair_y = other_coords[1];
@@ -3692,14 +3690,14 @@ fn owned_planet_popup_browse_uses_popup_record_not_crosshair() {
 fn hosted_draft_replay_refreshes_planet_status_cache() {
     let mut app = dash_app();
     // Turn-file builds must fit the planet budget, so fund the treasury.
-    app.game_data.planets[0].set_stored_production_points(50);
-    app.crosshair_x = app.game_data.planets[0].coords_raw()[0];
-    app.crosshair_y = app.game_data.planets[0].coords_raw()[1];
+    app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(50));
+    app.crosshair_x = app.game_data.planets[0].sector.to_array()[0];
+    app.crosshair_y = app.game_data.planets[0].sector.to_array()[1];
     let _ = planet_view::selected_planet_detail(&app).expect("cached detail");
     let before_revision = app.game_data_revision;
     let draft = TurnSubmission {
         player_record_index_1_based: 1,
-        year: app.game_data.conquest.game_year(),
+        year: app.game_data.conquest.game_year,
         tax_rate: None,
         diplomacy: Vec::new(),
         planets: vec![PlanetTurnBlock {
@@ -3732,7 +3730,7 @@ fn tax_prompt_updates_preview_and_hosted_draft() {
     app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
     assert_eq!(app.popup, ActivePopup::None);
-    assert_eq!(app.game_data.players[0].tax_rate(), 42);
+    assert_eq!(app.game_data.players[0].tax_rate, 42);
     assert_eq!(
         app.hosted_turn_draft
             .as_ref()
@@ -3842,8 +3840,8 @@ fn diplomacy_overlay_uses_live_planets_and_production() {
     let live_production = app.game_data.empire_present_production(1);
     assert!(live_planets > 0);
     assert!(live_production > 0);
-    app.game_data.players[0].set_planet_count_raw(0);
-    app.game_data.players[0].set_production_score_raw(0);
+    app.game_data.players[0].planet_count = 0;
+    app.game_data.players[0].production = 0;
 
     let own_row = diplomacy::table_rows(&app)
         .into_iter()
@@ -3871,8 +3869,8 @@ fn diplomacy_overlay_uses_live_planets_and_production() {
 fn diplomacy_selection_uses_displayed_live_ranking_order() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::Diplomacy;
-    app.game_data.players[0].set_production_score_raw(0);
-    app.game_data.players[1].set_production_score_raw(u16::MAX);
+    app.game_data.players[0].production = 0;
+    app.game_data.players[1].production = u16::MAX;
     app.diplomacy_overlay.selected = 0;
 
     let first_displayed_slot = diplomacy::table_rows(&app)
@@ -4178,14 +4176,14 @@ fn dash_app_with_starbase_store() -> DashApp {
         .expect("baseline with starbase");
     strengthen_first_owned_fleet(&mut game_data);
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
-    let planet_intel_by_viewer = (0..game_data.conquest.player_count())
+    let planet_intel_by_viewer = (0..game_data.conquest.player_count)
         .map(|_| BTreeMap::new())
         .collect::<Vec<_>>();
     let player_activity_states = store
-        .latest_player_activity_states(game_data.conquest.player_count())
+        .latest_player_activity_states(game_data.conquest.player_count)
         .expect("default player activity");
     let player_lifecycle_states = store
-        .latest_player_lifecycle_states(game_data.conquest.player_count())
+        .latest_player_lifecycle_states(game_data.conquest.player_count)
         .expect("default player lifecycle");
     store
         .save_runtime_state_structured_with_intel_and_activity(
@@ -4231,14 +4229,14 @@ fn dash_app_with_store() -> DashApp {
         .build_initialized_baseline()
         .expect("baseline");
     let store = CampaignStore::open_default_in_dir(&root).expect("open campaign store");
-    let planet_intel_by_viewer = (0..game_data.conquest.player_count())
+    let planet_intel_by_viewer = (0..game_data.conquest.player_count)
         .map(|_| BTreeMap::new())
         .collect::<Vec<_>>();
     let player_activity_states = store
-        .latest_player_activity_states(game_data.conquest.player_count())
+        .latest_player_activity_states(game_data.conquest.player_count)
         .expect("default player activity");
     let player_lifecycle_states = store
-        .latest_player_lifecycle_states(game_data.conquest.player_count())
+        .latest_player_lifecycle_states(game_data.conquest.player_count)
         .expect("default player lifecycle");
     store
         .save_runtime_state_structured_with_intel_and_activity(
@@ -4273,16 +4271,16 @@ fn strengthen_first_owned_fleet(game_data: &mut nc_data::CoreGameData) {
     for fleet in game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+        .filter(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
     {
-        fleet.set_battleship_count(1);
-        fleet.set_destroyer_count(1);
-        fleet.set_troop_transport_count(1);
-        fleet.set_army_count(2);
-        fleet.set_scout_count(1);
-        fleet.set_etac_count(1);
-        fleet.recompute_max_speed_from_composition();
-        fleet.set_current_speed(fleet.max_speed());
+        fleet.ships.battleships = 1;
+        fleet.ships.destroyers = 1;
+        nc_data::set_troop_transports(fleet, 1);
+        nc_data::set_armies_aboard(fleet, 2);
+        fleet.ships.scouts = 1;
+        fleet.ships.etacs = 1;
+        nc_data::recompute_max_speed(fleet);
+        fleet.speed = fleet.max_speed;
     }
 }
 
@@ -4290,10 +4288,10 @@ fn seed_unowned_target_world(game_data: &mut nc_data::CoreGameData, coords: [u8;
     let planet = game_data
         .planets
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 0 && planet.coords_raw() == [0, 0])
+        .find(|planet| planet.owner.0 == 0 && planet.sector.to_array() == [0, 0])
         .expect("unused unowned planet slot");
-    planet.set_coords_raw(coords);
-    planet.set_owner_empire_slot_raw(0);
+    planet.sector = nc_data::Coords::from_array(coords);
+    planet.owner.0 = 0;
 }
 
 fn view_world_audit_snapshots(
@@ -4305,7 +4303,7 @@ fn view_world_audit_snapshots(
         .iter()
         .enumerate()
         .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() != viewer_empire_id && planet.coords_raw() != [0, 0]
+            planet.owner.0 != viewer_empire_id && planet.sector.to_array() != [0, 0]
         })
         .map(|(idx, _)| idx + 1)
         .expect("non-owned target planet");
@@ -4316,7 +4314,7 @@ fn view_world_audit_snapshots(
         .enumerate()
         .filter_map(|(planet_index, planet)| {
             let planet_record_index_1_based = planet_index + 1;
-            if planet.owner_empire_slot_raw() == viewer_empire_id {
+            if planet.owner.0 == viewer_empire_id {
                 return None;
             }
             if planet_record_index_1_based == target_record_index {
@@ -4344,11 +4342,11 @@ fn view_world_audit_snapshots(
                 planet_record_index_1_based,
                 intel_tier: IntelTier::Partial,
                 compat_is_orbit_seed: false,
-                last_intel_year: Some(game_data.conquest.game_year()),
-                seen_year: Some(game_data.conquest.game_year()),
+                last_intel_year: Some(game_data.conquest.game_year),
+                seen_year: Some(game_data.conquest.game_year),
                 scout_year: None,
                 known_name: None,
-                known_owner_empire_id: Some(planet.owner_empire_slot_raw()),
+                known_owner_empire_id: Some(planet.owner.0),
                 known_potential_production: None,
                 known_armies: None,
                 known_ground_batteries: None,
@@ -4389,8 +4387,8 @@ fn first_owned_fleet_coords(app: &DashApp) -> [u8; 2] {
     app.game_data
         .fleets
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
-        .map(|fleet| fleet.current_location_coords_raw())
+        .find(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
+        .map(|fleet| fleet.sector.to_array())
         .expect("owned fleet")
 }
 
@@ -4398,8 +4396,8 @@ fn first_owned_planet_coords(app: &DashApp) -> [u8; 2] {
     app.game_data
         .planets
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() == 1 && planet.coords_raw() != [0, 0])
-        .map(|planet| planet.coords_raw())
+        .find(|planet| planet.owner.0 == 1 && planet.sector.to_array() != [0, 0])
+        .map(|planet| planet.sector.to_array())
         .expect("owned planet")
 }
 
@@ -4409,8 +4407,8 @@ fn first_owned_planet_record_index(app: &DashApp) -> usize {
         .iter()
         .enumerate()
         .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() as usize == app.player_record_index_1_based
-                && planet.coords_raw() != [0, 0]
+            planet.owner.0 as usize == app.player_record_index_1_based
+                && planet.sector.to_array() != [0, 0]
         })
         .map(|(idx, _)| idx + 1)
         .expect("owned planet")
@@ -4422,8 +4420,8 @@ fn first_non_owned_planet_record_index(app: &DashApp) -> usize {
         .iter()
         .enumerate()
         .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() as usize != app.player_record_index_1_based
-                && planet.coords_raw() != [0, 0]
+            planet.owner.0 as usize != app.player_record_index_1_based
+                && planet.sector.to_array() != [0, 0]
         })
         .map(|(idx, _)| idx + 1)
         .expect("non-owned planet")
@@ -4455,7 +4453,7 @@ fn owned_planet_record_index(app: &DashApp, coords: [u8; 2]) -> usize {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() == 1 && planet.coords_raw() == coords)
+        .find(|(_, planet)| planet.owner.0 == 1 && planet.sector.to_array() == coords)
         .map(|(idx, _)| idx + 1)
         .expect("owned planet")
 }
@@ -4467,7 +4465,7 @@ fn clear_stardock(app: &mut DashApp, record: usize) {
         .get_mut(record.saturating_sub(1))
         .expect("planet record");
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_count_raw(slot, 0);
+        planet.stardock[slot] = 0;
     }
 }
 
@@ -4478,8 +4476,7 @@ fn clear_owned_stardocks(app: &mut DashApp) {
         .iter()
         .enumerate()
         .filter_map(|(idx, planet)| {
-            (planet.owner_empire_slot_raw() as usize == app.player_record_index_1_based)
-                .then_some(idx + 1)
+            (planet.owner.0 as usize == app.player_record_index_1_based).then_some(idx + 1)
         })
         .collect::<Vec<_>>();
     for record in owned_records {
@@ -4488,24 +4485,24 @@ fn clear_owned_stardocks(app: &mut DashApp) {
 }
 
 fn prepare_selected_planet_for_owned_commands(app: &mut DashApp, record: usize) {
-    let coords = app.game_data.planets[record - 1].coords_raw();
+    let coords = app.game_data.planets[record - 1].sector.to_array();
     let planet = app
         .game_data
         .planets
         .get_mut(record.saturating_sub(1))
         .expect("planet record");
-    planet.set_army_count_raw(5);
-    planet.set_stardock_count_raw(0, 1);
+    planet.armies = 5;
+    planet.stardock[0] = 1;
 
     let fleet = app
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1)
         .expect("owned fleet");
-    fleet.set_current_location_coords_raw(coords);
-    fleet.set_troop_transport_count(2);
-    fleet.set_army_count(1);
+    fleet.sector = nc_data::Coords::from_array(coords);
+    nc_data::set_troop_transports(fleet, 2);
+    nc_data::set_armies_aboard(fleet, 1);
 }
 
 fn seed_extra_owned_planet_with_stardock(app: &mut DashApp) -> usize {
@@ -4514,10 +4511,10 @@ fn seed_extra_owned_planet_with_stardock(app: &mut DashApp) -> usize {
         .planets
         .iter_mut()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1 && planet.coords_raw() != [0, 0])
+        .find(|(_, planet)| planet.owner.0 != 1 && planet.sector.to_array() != [0, 0])
         .expect("non-player planet");
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_stardock_count_raw(0, 1);
+    planet.owner.0 = 1;
+    planet.stardock[0] = 1;
     idx + 1
 }
 
@@ -4528,7 +4525,7 @@ fn seed_extra_owned_regular_planet(app: &mut DashApp) -> usize {
             !app.game_data
                 .planets
                 .iter()
-                .any(|planet| planet.coords_raw() == *coords)
+                .any(|planet| planet.sector.to_array() == *coords)
         })
         .expect("unused regular planet coords");
     let (idx, planet) = app
@@ -4536,15 +4533,15 @@ fn seed_extra_owned_regular_planet(app: &mut DashApp) -> usize {
         .planets
         .iter_mut()
         .enumerate()
-        .find(|(_, planet)| planet.coords_raw() == [0, 0])
+        .find(|(_, planet)| planet.sector.to_array() == [0, 0])
         .expect("unused planet record");
-    planet.set_coords_raw(coords);
-    planet.set_potential_production_points(50);
-    planet.set_ownership_status_raw(1);
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_status_or_name_summary_raw("Outpost");
-    let potential = planet.potential_production_points().max(1);
-    assert!(planet.set_present_production_points(potential));
+    planet.sector = nc_data::Coords::from_array(coords);
+    planet.potential_production = 50;
+    planet.years_under_owner = 1;
+    planet.owner.0 = 1;
+    nc_data::set_planet_name(planet, "Outpost");
+    let potential = u16::from(planet.potential_production).max(1);
+    planet.production = nc_data::Real48::from_f64(f64::from(potential));
     app.game_data_revision += 1;
     idx + 1
 }
@@ -4560,9 +4557,9 @@ fn first_visible_foreign_planet_coords(app: &mut DashApp) -> [u8; 2] {
         .game_data
         .planets
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() != 1 && planet.coords_raw() != [0, 0])
+        .filter(|planet| planet.owner.0 != 1 && planet.sector.to_array() != [0, 0])
     {
-        let coords = planet.coords_raw();
+        let coords = planet.sector.to_array();
         app.crosshair_x = coords[0];
         app.crosshair_y = coords[1];
         if planet_view::selected_planet_detail(app).is_some() {
@@ -4596,14 +4593,14 @@ fn sector_has_planet(app: &DashApp, coords: [u8; 2]) -> bool {
     app.game_data
         .planets
         .iter()
-        .any(|planet| planet.coords_raw() == coords)
+        .any(|planet| planet.sector.to_array() == coords)
 }
 
 fn sector_has_player_fleet(app: &DashApp, coords: [u8; 2]) -> bool {
     app.game_data.fleets.iter().any(|fleet| {
-        fleet.owner_empire_raw() == app.player_record_index_1_based as u8
-            && fleet.has_any_force()
-            && fleet.current_location_coords_raw() == coords
+        fleet.owner.0 == app.player_record_index_1_based as u8
+            && nc_data::has_any_force(&fleet)
+            && fleet.sector.to_array() == coords
     })
 }
 

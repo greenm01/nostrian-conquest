@@ -469,7 +469,7 @@ fn format_intel_row(
             .players
             .get(owner.saturating_sub(1) as usize)
             .map(|player| {
-                if player.is_civil_disorder_player() {
+                if player.mode == nc_data::PlayerMode::CivilDisorder {
                     String::from("ICD")
                 } else {
                     format!("#{owner}")

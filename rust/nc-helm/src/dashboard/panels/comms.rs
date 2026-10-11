@@ -29,7 +29,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
         &app.queued_mail,
     );
 
-    let current_year = app.game_data.conquest.game_year();
+    let current_year = app.game_data.conquest.game_year;
 
     let mut unread_combat = 0;
     let mut unread_intel = 0;

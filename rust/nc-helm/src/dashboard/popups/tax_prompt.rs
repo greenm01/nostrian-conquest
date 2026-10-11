@@ -66,7 +66,7 @@ fn current_tax(app: &DashApp) -> u8 {
     app.game_data
         .players
         .get(app.player_record_index_1_based.saturating_sub(1))
-        .map(|player| player.tax_rate())
+        .map(|player| player.tax_rate)
         .unwrap_or(0)
 }
 

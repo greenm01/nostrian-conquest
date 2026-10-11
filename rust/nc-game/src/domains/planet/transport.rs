@@ -37,9 +37,7 @@ impl App {
                     .game_data
                     .planets
                     .get(row.planet_record_index_1_based - 1)
-                    .map(|planet| {
-                        planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based
-                    })
+                    .map(|planet| planet.owner.0 as usize == self.player.record_index_1_based)
                     .unwrap_or(false)
         })
     }
@@ -275,7 +273,7 @@ impl App {
             &self.game_data,
             self.player.record_index_1_based as u8,
             engine_transport_mode(mode),
-            fleet.local_slot_word_raw(),
+            fleet.fleet_number.0,
             &self.build_planet_rows(),
         )
         .map_err(|err| err.message().to_string())?;
@@ -363,7 +361,7 @@ impl App {
                         self.game_data
                             .fleets
                             .get(record - 1)
-                            .map(|fleet| fleet.local_slot_word_raw())
+                            .map(|fleet| fleet.fleet_number.0)
                     })
                     .or_else(|| self.default_fleet_transport_fleet_number(mode))
                     .map(|value| value.to_string())

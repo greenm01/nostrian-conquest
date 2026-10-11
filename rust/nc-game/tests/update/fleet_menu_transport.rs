@@ -7,7 +7,7 @@ fn owned_fleet_mut(state: &mut CampaignRuntimeState, fleet_number: u16) -> &mut 
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == fleet_number)
         .unwrap_or_else(|| panic!("fleet #{fleet_number} should exist"))
 }
 
@@ -20,12 +20,12 @@ fn set_fleet_ship_profile(
     scouts: u16,
     etacs: u16,
 ) {
-    fleet.set_battleship_count(battleships);
-    fleet.set_cruiser_count(cruisers);
-    fleet.set_destroyer_count(destroyers);
-    fleet.set_troop_transport_count(troop_transports);
-    fleet.set_scout_count(scouts);
-    fleet.set_etac_count(etacs);
+    fleet.ships.battleships = battleships;
+    fleet.ships.cruisers = cruisers;
+    fleet.ships.destroyers = destroyers;
+    nc_data::set_troop_transports(fleet, troop_transports);
+    fleet.ships.scouts = scouts;
+    fleet.ships.etacs = etacs;
 }
 
 fn assert_order_prompt_default(app: &mut App, expected: u16) {
@@ -76,14 +76,14 @@ fn fleet_order_prompt_uses_smart_default_while_other_prompts_keep_strongest_defa
     {
         let fleet = owned_fleet_mut(&mut state, 1);
         set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        fleet.set_standing_order_target_coords_raw([0, 0]);
+        fleet.order = nc_data::Order::HoldPosition;
+        fleet.target = nc_data::Coords::from_array([0, 0]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
         set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
-        fleet.set_standing_order_kind(nc_data::Order::MoveOnly);
-        fleet.set_standing_order_target_coords_raw([14, 9]);
+        fleet.order = nc_data::Order::MoveOnly;
+        fleet.target = nc_data::Coords::from_array([14, 9]);
     }
     save_runtime_state(&fixture_dir, &state);
     assert_eq!(strongest_owned_fleet_number(&fixture_dir), 2);
@@ -161,14 +161,14 @@ fn fleet_order_prompt_prefers_ready_etac_fleets_over_stronger_ready_non_etac_fle
     {
         let fleet = owned_fleet_mut(&mut state, 1);
         set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        fleet.set_standing_order_target_coords_raw([0, 0]);
+        fleet.order = nc_data::Order::HoldPosition;
+        fleet.target = nc_data::Coords::from_array([0, 0]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
         set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
-        fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        fleet.set_standing_order_target_coords_raw([0, 0]);
+        fleet.order = nc_data::Order::HoldPosition;
+        fleet.target = nc_data::Coords::from_array([0, 0]);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -201,15 +201,15 @@ fn fleet_order_prompt_avoids_patrol_and_blockade_fleets_when_other_owned_fleets_
     {
         let fleet = owned_fleet_mut(&mut state, 1);
         set_fleet_ship_profile(fleet, 1, 0, 0, 0, 0, 0);
-        fleet.set_standing_order_kind(nc_data::Order::MoveOnly);
-        fleet.set_standing_order_target_coords_raw([14, 9]);
+        fleet.order = nc_data::Order::MoveOnly;
+        fleet.target = nc_data::Coords::from_array([14, 9]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
-        let current = fleet.current_location_coords_raw();
+        let current = fleet.sector.to_array();
         set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::GuardBlockadeWorld);
-        fleet.set_standing_order_target_coords_raw(current);
+        fleet.order = nc_data::Order::GuardBlockadeWorld;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -241,17 +241,17 @@ fn fleet_order_prompt_prefers_combat_only_fallback_over_active_etac_fleets() {
     let mut state = latest_runtime_state(&fixture_dir);
     {
         let fleet = owned_fleet_mut(&mut state, 1);
-        let current = fleet.current_location_coords_raw();
+        let current = fleet.sector.to_array();
         set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::PatrolSector);
-        fleet.set_standing_order_target_coords_raw(current);
+        fleet.order = nc_data::Order::PatrolSector;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
-        let current = fleet.current_location_coords_raw();
+        let current = fleet.sector.to_array();
         set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
-        fleet.set_standing_order_kind(nc_data::Order::GuardBlockadeWorld);
-        fleet.set_standing_order_target_coords_raw(current);
+        fleet.order = nc_data::Order::GuardBlockadeWorld;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -284,14 +284,14 @@ fn fleet_order_prompt_uses_strength_when_no_ready_non_patrol_fleets_exist() {
     {
         let fleet = owned_fleet_mut(&mut state, 1);
         set_fleet_ship_profile(fleet, 0, 0, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::MoveOnly);
-        fleet.set_standing_order_target_coords_raw([14, 9]);
+        fleet.order = nc_data::Order::MoveOnly;
+        fleet.target = nc_data::Coords::from_array([14, 9]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
         set_fleet_ship_profile(fleet, 9, 0, 0, 0, 0, 0);
-        fleet.set_standing_order_kind(nc_data::Order::ViewWorld);
-        fleet.set_standing_order_target_coords_raw([13, 9]);
+        fleet.order = nc_data::Order::ViewWorld;
+        fleet.target = nc_data::Coords::from_array([13, 9]);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -323,15 +323,15 @@ fn fleet_order_prompt_fallback_ignores_active_same_system_colonize_orders() {
     let mut state = latest_runtime_state(&fixture_dir);
     for fleet_number in [1_u16, 2] {
         let fleet = owned_fleet_mut(&mut state, fleet_number);
-        let current = fleet.current_location_coords_raw();
-        fleet.set_standing_order_kind(nc_data::Order::ColonizeWorld);
-        fleet.set_standing_order_target_coords_raw(current);
+        let current = fleet.sector.to_array();
+        fleet.order = nc_data::Order::ColonizeWorld;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     for fleet_number in [3_u16, 4] {
         let fleet = owned_fleet_mut(&mut state, fleet_number);
-        let current = fleet.current_location_coords_raw();
-        fleet.set_standing_order_kind(nc_data::Order::GuardBlockadeWorld);
-        fleet.set_standing_order_target_coords_raw(current);
+        let current = fleet.sector.to_array();
+        fleet.order = nc_data::Order::GuardBlockadeWorld;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -364,21 +364,21 @@ fn fleet_order_prompt_fallback_ignores_mixed_combat_fleets_with_scouts_or_etacs(
     {
         let fleet = owned_fleet_mut(&mut state, 1);
         set_fleet_ship_profile(fleet, 0, 4, 0, 0, 0, 1);
-        fleet.set_standing_order_kind(nc_data::Order::MoveOnly);
-        fleet.set_standing_order_target_coords_raw([14, 9]);
+        fleet.order = nc_data::Order::MoveOnly;
+        fleet.target = nc_data::Coords::from_array([14, 9]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 2);
         set_fleet_ship_profile(fleet, 0, 0, 3, 0, 1, 0);
-        fleet.set_standing_order_kind(nc_data::Order::ViewWorld);
-        fleet.set_standing_order_target_coords_raw([13, 9]);
+        fleet.order = nc_data::Order::ViewWorld;
+        fleet.target = nc_data::Coords::from_array([13, 9]);
     }
     {
         let fleet = owned_fleet_mut(&mut state, 3);
         set_fleet_ship_profile(fleet, 0, 0, 1, 0, 0, 0);
-        let current = fleet.current_location_coords_raw();
-        fleet.set_standing_order_kind(nc_data::Order::GuardBlockadeWorld);
-        fleet.set_standing_order_target_coords_raw(current);
+        let current = fleet.sector.to_array();
+        fleet.order = nc_data::Order::GuardBlockadeWorld;
+        fleet.target = nc_data::Coords::from_array(current);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -617,40 +617,39 @@ fn fleet_review_prompt_shows_invalid_fleet_message_on_unknown_typed_id() {
 fn fleet_menu_load_and_unload_keys_open_fleet_transport_flow() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_battleship_count(0);
-    fleet_one.set_cruiser_count(0);
-    fleet_one.set_destroyer_count(0);
-    fleet_one.set_troop_transport_count(5);
-    fleet_one.set_army_count(1);
-    fleet_one.set_scout_count(0);
-    fleet_one.set_etac_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    fleet_one.ships.battleships = 0;
+    fleet_one.ships.cruisers = 0;
+    fleet_one.ships.destroyers = 0;
+    nc_data::set_troop_transports(fleet_one, 5);
+    nc_data::set_armies_aboard(fleet_one, 1);
+    fleet_one.ships.scouts = 0;
+    fleet_one.ships.etacs = 0;
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_battleship_count(4);
-    fleet_two.set_cruiser_count(0);
-    fleet_two.set_destroyer_count(0);
-    fleet_two.set_troop_transport_count(3);
-    fleet_two.set_army_count(3);
-    fleet_two.set_scout_count(0);
-    fleet_two.set_etac_count(0);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    fleet_two.ships.battleships = 4;
+    fleet_two.ships.cruisers = 0;
+    fleet_two.ships.destroyers = 0;
+    nc_data::set_troop_transports(fleet_two, 3);
+    nc_data::set_armies_aboard(fleet_two, 3);
+    fleet_two.ships.scouts = 0;
+    fleet_two.ships.etacs = 0;
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -760,29 +759,28 @@ fn fleet_menu_load_and_unload_keys_open_fleet_transport_flow() {
 fn fleet_transport_load_prompt_rejects_fleet_not_at_owned_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw([1, 1]);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array([1, 1]);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 0);
+    nc_data::recompute_max_speed(fleet_one);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(0);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 0);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -822,29 +820,28 @@ fn fleet_transport_load_prompt_rejects_fleet_not_at_owned_world() {
 fn fleet_transport_unload_prompt_rejects_fleet_not_at_owned_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw([1, 1]);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(2);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array([1, 1]);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 2);
+    nc_data::recompute_max_speed(fleet_one);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -884,41 +881,40 @@ fn fleet_transport_unload_prompt_rejects_fleet_not_at_owned_world() {
 fn fleet_transport_load_prompt_requires_armies_on_owned_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let extra_owned_idx = state
         .game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
-    state.game_data.planets[extra_owned_idx].set_owner_empire_slot_raw(1);
-    state.game_data.planets[extra_owned_idx].set_army_count_raw(0);
-    let other_coords = state.game_data.planets[extra_owned_idx].coords_raw();
+    state.game_data.planets[extra_owned_idx].owner.0 = 1;
+    state.game_data.planets[extra_owned_idx].armies = 0;
+    let other_coords = state.game_data.planets[extra_owned_idx].sector.to_array();
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(other_coords);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(other_coords);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 0);
+    nc_data::recompute_max_speed(fleet_one);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(0);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 0);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -958,41 +954,40 @@ fn fleet_transport_load_prompt_requires_armies_on_owned_world() {
 fn fleet_transport_unload_prompt_requires_room_on_owned_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let extra_owned_idx = state
         .game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
-    state.game_data.planets[extra_owned_idx].set_owner_empire_slot_raw(1);
-    state.game_data.planets[extra_owned_idx].set_army_count_raw(u8::MAX);
-    let other_coords = state.game_data.planets[extra_owned_idx].coords_raw();
+    state.game_data.planets[extra_owned_idx].owner.0 = 1;
+    state.game_data.planets[extra_owned_idx].armies = u16::from(u8::MAX);
+    let other_coords = state.game_data.planets[extra_owned_idx].sector.to_array();
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(other_coords);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(2);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(other_coords);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 2);
+    nc_data::recompute_max_speed(fleet_one);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1077,14 +1072,13 @@ fn fleet_menu_load_and_unload_show_menu_notice_when_no_transport_action_is_avail
 fn fleet_transport_quantity_prompt_stays_inline_on_fleet_menu() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet = &mut state.game_data.fleets[0];
-    fleet.set_current_location_coords_raw(home_coords);
-    fleet.set_troop_transport_count(3);
-    fleet.set_army_count(1);
-    fleet.recompute_max_speed_from_composition();
+    fleet.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet, 3);
+    nc_data::set_armies_aboard(fleet, 1);
+    nc_data::recompute_max_speed(fleet);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1126,30 +1120,29 @@ fn fleet_transport_quantity_prompt_stays_inline_on_fleet_menu() {
 fn fleet_transport_load_prompt_rejects_fleet_already_full() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
-    state.game_data.planets[homeworld_index].set_army_count_raw(12);
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
+    state.game_data.planets[homeworld_index].armies = 12;
     let fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet.set_current_location_coords_raw(home_coords);
-    fleet.set_troop_transport_count(4);
-    fleet.set_army_count(4);
-    fleet.recompute_max_speed_from_composition();
+    fleet.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet, 4);
+    nc_data::set_armies_aboard(fleet, 4);
+    nc_data::recompute_max_speed(fleet);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(0);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 0);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1184,29 +1177,28 @@ fn fleet_transport_load_prompt_rejects_fleet_already_full() {
 fn fleet_transport_unload_prompt_rejects_fleet_already_empty() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet.set_current_location_coords_raw(home_coords);
-    fleet.set_troop_transport_count(4);
-    fleet.set_army_count(0);
-    fleet.recompute_max_speed_from_composition();
+    fleet.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet, 4);
+    nc_data::set_armies_aboard(fleet, 0);
+    nc_data::recompute_max_speed(fleet);
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(2);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 2);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1241,44 +1233,43 @@ fn fleet_transport_unload_prompt_rejects_fleet_already_empty() {
 fn fleet_transport_load_default_skips_full_fleets_and_caps_qty_by_planet_armies() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
     let home_planet = &mut state.game_data.planets[homeworld_index];
-    let home_coords = home_planet.coords_raw();
-    home_planet.set_army_count_raw(2);
+    let home_coords = home_planet.sector.to_array();
+    home_planet.armies = 2;
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_troop_transport_count(6);
-    fleet_one.set_army_count(6);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_one, 6);
+    nc_data::set_armies_aboard(fleet_one, 6);
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(5);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 5);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw(home_coords);
-    fleet_three.set_troop_transport_count(6);
-    fleet_three.set_army_count(0);
-    fleet_three.recompute_max_speed_from_composition();
+    fleet_three.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_three, 6);
+    nc_data::set_armies_aboard(fleet_three, 0);
+    nc_data::recompute_max_speed(fleet_three);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -1314,43 +1305,42 @@ fn fleet_transport_load_default_skips_full_fleets_and_caps_qty_by_planet_armies(
 fn fleet_transport_unload_default_skips_empty_fleets_and_caps_qty_by_planet_capacity() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    state.game_data.planets[homeworld_index].set_army_count_raw(253);
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    state.game_data.planets[homeworld_index].armies = 253;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_troop_transport_count(6);
-    fleet_one.set_army_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_one, 6);
+    nc_data::set_armies_aboard(fleet_one, 0);
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(home_coords);
-    fleet_two.set_troop_transport_count(5);
-    fleet_two.set_army_count(5);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_two, 5);
+    nc_data::set_armies_aboard(fleet_two, 5);
+    nc_data::recompute_max_speed(fleet_two);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw(home_coords);
-    fleet_three.set_troop_transport_count(4);
-    fleet_three.set_army_count(2);
-    fleet_three.recompute_max_speed_from_composition();
+    fleet_three.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_three, 4);
+    nc_data::set_armies_aboard(fleet_three, 2);
+    nc_data::recompute_max_speed(fleet_three);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -1385,52 +1375,51 @@ fn fleet_transport_unload_default_skips_empty_fleets_and_caps_qty_by_planet_capa
 fn planet_menu_load_and_unload_use_inline_transport_prompts() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
-    state.game_data.planets[homeworld_index].set_army_count_raw(8);
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
+    state.game_data.planets[homeworld_index].armies = 8;
     let extra_owned_idx = state
         .game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
     let extra_planet = &mut state.game_data.planets[extra_owned_idx];
-    extra_planet.set_owner_empire_slot_raw(1);
-    extra_planet.set_army_count_raw(200);
-    let extra_coords = extra_planet.coords_raw();
+    extra_planet.owner.0 = 1;
+    extra_planet.armies = 200;
+    let extra_coords = extra_planet.sector.to_array();
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
     }
     let load_fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    load_fleet.set_current_location_coords_raw(home_coords);
-    load_fleet.set_troop_transport_count(4);
-    load_fleet.set_army_count(1);
-    load_fleet.recompute_max_speed_from_composition();
+    load_fleet.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(load_fleet, 4);
+    nc_data::set_armies_aboard(load_fleet, 1);
+    nc_data::recompute_max_speed(load_fleet);
     let unload_fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    unload_fleet.set_current_location_coords_raw(extra_coords);
-    unload_fleet.set_troop_transport_count(5);
-    unload_fleet.set_army_count(3);
-    unload_fleet.recompute_max_speed_from_composition();
+    unload_fleet.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(unload_fleet, 5);
+    nc_data::set_armies_aboard(unload_fleet, 3);
+    nc_data::recompute_max_speed(unload_fleet);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1559,66 +1548,65 @@ fn planet_menu_load_and_unload_use_inline_transport_prompts() {
 fn planet_transport_load_default_chooses_best_planet_and_fleet() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
-    state.game_data.planets[homeworld_index].set_army_count_raw(2);
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
+    state.game_data.planets[homeworld_index].armies = 2;
     let extra_owned_idx = state
         .game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
     let extra_planet = &mut state.game_data.planets[extra_owned_idx];
-    extra_planet.set_owner_empire_slot_raw(1);
-    extra_planet.set_army_count_raw(10);
-    let extra_coords = extra_planet.coords_raw();
+    extra_planet.owner.0 = 1;
+    extra_planet.armies = 10;
+    let extra_coords = extra_planet.sector.to_array();
 
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
     }
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 0);
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(extra_coords);
-    fleet_two.set_troop_transport_count(3);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(fleet_two, 3);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw(extra_coords);
-    fleet_three.set_troop_transport_count(5);
-    fleet_three.set_army_count(0);
-    fleet_three.recompute_max_speed_from_composition();
+    fleet_three.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(fleet_three, 5);
+    nc_data::set_armies_aboard(fleet_three, 0);
+    nc_data::recompute_max_speed(fleet_three);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -1660,66 +1648,65 @@ fn planet_transport_load_default_chooses_best_planet_and_fleet() {
 fn planet_transport_unload_default_chooses_best_planet_and_fleet() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
-    state.game_data.planets[homeworld_index].set_army_count_raw(250);
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
+    state.game_data.planets[homeworld_index].armies = 250;
     let extra_owned_idx = state
         .game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
     let extra_planet = &mut state.game_data.planets[extra_owned_idx];
-    extra_planet.set_owner_empire_slot_raw(1);
-    extra_planet.set_army_count_raw(200);
-    let extra_coords = extra_planet.coords_raw();
+    extra_planet.owner.0 = 1;
+    extra_planet.armies = 200;
+    let extra_coords = extra_planet.sector.to_array();
 
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
     }
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_troop_transport_count(6);
-    fleet_one.set_army_count(2);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_one, 6);
+    nc_data::set_armies_aboard(fleet_one, 2);
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw(extra_coords);
-    fleet_two.set_troop_transport_count(5);
-    fleet_two.set_army_count(1);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(fleet_two, 5);
+    nc_data::set_armies_aboard(fleet_two, 1);
+    nc_data::recompute_max_speed(fleet_two);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw(extra_coords);
-    fleet_three.set_troop_transport_count(4);
-    fleet_three.set_army_count(4);
-    fleet_three.recompute_max_speed_from_composition();
+    fleet_three.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(fleet_three, 4);
+    nc_data::set_armies_aboard(fleet_three, 4);
+    nc_data::recompute_max_speed(fleet_three);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -1761,42 +1748,41 @@ fn planet_transport_unload_default_chooses_best_planet_and_fleet() {
 fn planet_transport_load_prompt_rejects_fleet_not_at_owned_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
-    state.game_data.planets[homeworld_index].set_army_count_raw(8);
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
+    state.game_data.planets[homeworld_index].armies = 8;
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
     }
 
     let fleet_one = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw(home_coords);
-    fleet_one.set_troop_transport_count(4);
-    fleet_one.set_army_count(0);
-    fleet_one.recompute_max_speed_from_composition();
+    fleet_one.sector = nc_data::Coords::from_array(home_coords);
+    nc_data::set_troop_transports(fleet_one, 4);
+    nc_data::set_armies_aboard(fleet_one, 0);
+    nc_data::recompute_max_speed(fleet_one);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw([1, 1]);
-    fleet_two.set_troop_transport_count(4);
-    fleet_two.set_army_count(0);
-    fleet_two.recompute_max_speed_from_composition();
+    fleet_two.sector = nc_data::Coords::from_array([1, 1]);
+    nc_data::set_troop_transports(fleet_two, 4);
+    nc_data::set_armies_aboard(fleet_two, 0);
+    nc_data::recompute_max_speed(fleet_two);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -1925,57 +1911,57 @@ fn fleet_merge_defaults_to_largest_eligible_source_and_smallest_host() {
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw([1, 1]);
-    fleet_one.set_destroyer_count(4);
-    fleet_one.set_cruiser_count(0);
-    fleet_one.set_battleship_count(0);
-    fleet_one.set_troop_transport_count(0);
-    fleet_one.set_scout_count(0);
-    fleet_one.set_etac_count(0);
+    fleet_one.sector = nc_data::Coords::from_array([1, 1]);
+    fleet_one.ships.destroyers = 4;
+    fleet_one.ships.cruisers = 0;
+    fleet_one.ships.battleships = 0;
+    nc_data::set_troop_transports(fleet_one, 0);
+    fleet_one.ships.scouts = 0;
+    fleet_one.ships.etacs = 0;
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw([8, 8]);
-    fleet_two.set_destroyer_count(2);
-    fleet_two.set_cruiser_count(0);
-    fleet_two.set_battleship_count(0);
-    fleet_two.set_troop_transport_count(0);
-    fleet_two.set_scout_count(0);
-    fleet_two.set_etac_count(0);
+    fleet_two.sector = nc_data::Coords::from_array([8, 8]);
+    fleet_two.ships.destroyers = 2;
+    fleet_two.ships.cruisers = 0;
+    fleet_two.ships.battleships = 0;
+    nc_data::set_troop_transports(fleet_two, 0);
+    fleet_two.ships.scouts = 0;
+    fleet_two.ships.etacs = 0;
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw([8, 8]);
-    fleet_three.set_destroyer_count(5);
-    fleet_three.set_cruiser_count(0);
-    fleet_three.set_battleship_count(0);
-    fleet_three.set_troop_transport_count(0);
-    fleet_three.set_scout_count(0);
-    fleet_three.set_etac_count(0);
+    fleet_three.sector = nc_data::Coords::from_array([8, 8]);
+    fleet_three.ships.destroyers = 5;
+    fleet_three.ships.cruisers = 0;
+    fleet_three.ships.battleships = 0;
+    nc_data::set_troop_transports(fleet_three, 0);
+    fleet_three.ships.scouts = 0;
+    fleet_three.ships.etacs = 0;
 
     let fleet_four = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    fleet_four.set_current_location_coords_raw([8, 8]);
-    fleet_four.set_destroyer_count(7);
-    fleet_four.set_cruiser_count(0);
-    fleet_four.set_battleship_count(0);
-    fleet_four.set_troop_transport_count(0);
-    fleet_four.set_scout_count(0);
-    fleet_four.set_etac_count(0);
+    fleet_four.sector = nc_data::Coords::from_array([8, 8]);
+    fleet_four.ships.destroyers = 7;
+    fleet_four.ships.cruisers = 0;
+    fleet_four.ships.battleships = 0;
+    nc_data::set_troop_transports(fleet_four, 0);
+    fleet_four.ships.scouts = 0;
+    fleet_four.ships.etacs = 0;
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -2014,17 +2000,17 @@ fn fleet_merge_source_rejects_fleet_without_lower_numbered_host() {
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw([8, 8]);
+    fleet_one.sector = nc_data::Coords::from_array([8, 8]);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw([8, 8]);
+    fleet_two.sector = nc_data::Coords::from_array([8, 8]);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -2066,25 +2052,25 @@ fn fleet_merge_host_rejects_non_colocated_fleet() {
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    fleet_one.set_current_location_coords_raw([1, 1]);
+    fleet_one.sector = nc_data::Coords::from_array([1, 1]);
 
     let fleet_two = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw([8, 8]);
+    fleet_two.sector = nc_data::Coords::from_array([8, 8]);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw([8, 8]);
+    fleet_three.sector = nc_data::Coords::from_array([8, 8]);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -2127,25 +2113,25 @@ fn fleet_merge_auto_swaps_higher_numbered_fleet_into_lower_host() {
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    fleet_two.set_current_location_coords_raw([8, 8]);
+    fleet_two.sector = nc_data::Coords::from_array([8, 8]);
 
     let fleet_three = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    fleet_three.set_current_location_coords_raw([8, 8]);
+    fleet_three.sector = nc_data::Coords::from_array([8, 8]);
 
     let fleet_four = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    fleet_four.set_current_location_coords_raw([8, 8]);
+    fleet_four.sector = nc_data::Coords::from_array([8, 8]);
 
     save_runtime_state(&fixture_dir, &state);
 
@@ -2194,23 +2180,17 @@ fn fleet_merge_auto_swaps_higher_numbered_fleet_into_lower_host() {
         .game_data
         .fleets
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
     let host = state
         .game_data
         .fleets
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    assert_eq!(
-        source.standing_order_kind(),
-        nc_data::Order::JoinAnotherFleet
-    );
-    assert_eq!(source.join_host_fleet_id_raw(), host.local_slot_word_raw());
-    assert_eq!(
-        source.standing_order_target_coords_raw(),
-        host.current_location_coords_raw()
-    );
+    assert_eq!(source.order, nc_data::Order::JoinAnotherFleet);
+    assert_eq!(source.mission_target, host.fleet_number.0);
+    assert_eq!(source.target.to_array(), host.sector.to_array());
 }
 
 #[test]
@@ -2454,15 +2434,15 @@ fn fleet_list_ships_column_truncates_by_whole_token_with_plus_marker() {
 fn fleet_list_eta_column_shows_turns_remaining_for_arrived_fleets() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.conquest.set_game_year(3007);
+    state.game_data.conquest.game_year = 3007;
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_current_location_coords_raw([16, 13]);
-        fleet.set_standing_order_target_coords_raw([16, 13]);
+        fleet.sector = nc_data::Coords::from_array([16, 13]);
+        fleet.target = nc_data::Coords::from_array([16, 13]);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -2563,25 +2543,24 @@ fn fleet_list_table_renders_x_for_unreachable_eta_label() {
 fn fleet_list_load_keeps_confirmation_when_table_does_not_show_army_load_state() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    fleet.set_current_location_coords_raw(home_coords);
-    fleet.set_standing_order_target_coords_raw(home_coords);
-    fleet.set_battleship_count(0);
-    fleet.set_cruiser_count(0);
-    fleet.set_destroyer_count(0);
-    fleet.set_troop_transport_count(5);
-    fleet.set_army_count(0);
-    fleet.set_scout_count(0);
-    fleet.set_etac_count(0);
-    fleet.recompute_max_speed_from_composition();
+    fleet.sector = nc_data::Coords::from_array(home_coords);
+    fleet.target = nc_data::Coords::from_array(home_coords);
+    fleet.ships.battleships = 0;
+    fleet.ships.cruisers = 0;
+    fleet.ships.destroyers = 0;
+    nc_data::set_troop_transports(fleet, 5);
+    nc_data::set_armies_aboard(fleet, 0);
+    fleet.ships.scouts = 0;
+    fleet.ships.etacs = 0;
+    nc_data::recompute_max_speed(fleet);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -2627,25 +2606,24 @@ fn fleet_list_load_keeps_confirmation_when_table_does_not_show_army_load_state()
 fn fleet_list_transport_error_uses_slap_a_key_footer_and_consumes_next_key() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    let home_coords = state.game_data.planets[homeworld_index].coords_raw();
+    let homeworld_index = state.game_data.players[0].homeworld as usize - 1;
+    let home_coords = state.game_data.planets[homeworld_index].sector.to_array();
     let fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    fleet.set_current_location_coords_raw(home_coords);
-    fleet.set_standing_order_target_coords_raw(home_coords);
-    fleet.set_battleship_count(1);
-    fleet.set_cruiser_count(0);
-    fleet.set_destroyer_count(0);
-    fleet.set_troop_transport_count(0);
-    fleet.set_army_count(0);
-    fleet.set_scout_count(0);
-    fleet.set_etac_count(0);
-    fleet.recompute_max_speed_from_composition();
+    fleet.sector = nc_data::Coords::from_array(home_coords);
+    fleet.target = nc_data::Coords::from_array(home_coords);
+    fleet.ships.battleships = 1;
+    fleet.ships.cruisers = 0;
+    fleet.ships.destroyers = 0;
+    nc_data::set_troop_transports(fleet, 0);
+    nc_data::set_armies_aboard(fleet, 0);
+    fleet.ships.scouts = 0;
+    fleet.ships.etacs = 0;
+    nc_data::recompute_max_speed(fleet);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3005,8 +2983,8 @@ fn fleet_eta_uses_max_speed_when_selected_fleet_is_stopped() {
         .fleets
         .get_mut(0)
         .expect("fleet 1 should exist");
-    let current_coords = fleet.current_location_coords_raw();
-    fleet.set_current_speed(0);
+    let current_coords = fleet.sector.to_array();
+    fleet.speed = 0;
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -3059,8 +3037,8 @@ fn fleet_eta_allows_empty_sector_targets_for_resting_hold_fleets() {
         .fleets
         .get_mut(0)
         .expect("fleet 1 should exist");
-    fleet.set_current_speed(0);
-    fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
+    fleet.speed = 0;
+    fleet.order = nc_data::Order::HoldPosition;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {

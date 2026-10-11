@@ -210,7 +210,7 @@ impl EmpireProfileScreen {
             18,
             &format!(
                 "Autopilot is {}.",
-                if player.autopilot_flag() != 0 {
+                if u8::from(player.autopilot) != 0 {
                     "ON"
                 } else {
                     "OFF"

@@ -169,9 +169,9 @@ impl App {
             .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
             .collect::<BTreeMap<_, _>>();
         let player_activity_states =
-            campaign_store.latest_player_activity_states(game_data.conquest.player_count())?;
+            campaign_store.latest_player_activity_states(game_data.conquest.player_count)?;
         let player_lifecycle_states =
-            campaign_store.latest_player_lifecycle_states(game_data.conquest.player_count())?;
+            campaign_store.latest_player_lifecycle_states(game_data.conquest.player_count)?;
         let player_access_mode = player_access_mode(
             config.player_record_index_1_based,
             &player_lifecycle_states,

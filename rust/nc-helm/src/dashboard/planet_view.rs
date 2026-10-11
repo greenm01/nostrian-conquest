@@ -65,14 +65,14 @@ fn owned_planet_detail(
     budget: u32,
 ) -> SelectedPlanetDetail {
     let viewer_empire_id = app.player_record_index_1_based as u8;
-    let coords = planet.coords_raw();
-    let present = planet.present_production_points().unwrap_or(0);
-    let potential = planet.potential_production_points();
+    let coords = planet.sector.to_array();
+    let present = nc_data::present_production_points(&planet);
+    let potential = u16::from(planet.potential_production);
     let tax_rate = app
         .game_data
         .players
         .get(app.player_record_index_1_based.saturating_sub(1))
-        .map(|player| player.tax_rate())
+        .map(|player| player.tax_rate)
         .unwrap_or(0);
     let owned_since = app
         .owned_planet_years
@@ -81,7 +81,7 @@ fn owned_planet_detail(
         .unwrap_or_else(|| String::from("?"));
     let popup_lines = vec![
         detail_line("Coordinates", coords_label(coords)),
-        detail_line("Planet", planet.status_or_name_summary()),
+        detail_line("Planet", planet.name.trim().to_string()),
         detail_line(
             "Owner",
             owned_owner_detail_label(&app.game_data, viewer_empire_id),
@@ -93,17 +93,23 @@ fn owned_planet_detail(
         detail_line("Owned Since", owned_since),
         detail_line("Production", present.to_string()),
         detail_line("Potential Production", potential.to_string()),
-        detail_line("Treasury", planet.stored_production_points().to_string()),
+        detail_line(
+            "Treasury",
+            nc_data::stored_production_points(&planet).to_string(),
+        ),
         detail_line("Budget", budget.to_string()),
         detail_line("Efficiency", owned_efficiency_label(present, potential)),
         detail_line(
             "Expected Revenue",
             format!("{} points", yearly_tax_revenue(present, tax_rate)),
         ),
-        detail_line("Armies", planet.army_count_raw().to_string()),
+        detail_line(
+            "Armies",
+            (planet.armies.min(u16::from(u8::MAX)) as u8).to_string(),
+        ),
         detail_line(
             "Ground Batteries",
-            planet.ground_batteries_raw().to_string(),
+            (planet.ground_batteries.min(u16::from(u8::MAX)) as u8).to_string(),
         ),
         detail_line(
             "Space Forces",
@@ -117,7 +123,7 @@ fn owned_planet_detail(
         detail_line("Docked", format_stardock_summary(planet)),
     ];
     let widget_fields = vec![
-        widget_field("Planet", planet.status_or_name_summary()),
+        widget_field("Planet", planet.name.trim().to_string()),
         widget_field("Owner", String::from("You")),
         widget_field(
             "State",
@@ -125,12 +131,18 @@ fn owned_planet_detail(
         ),
         widget_field("Production", present.to_string()),
         widget_field("Potential Production", potential.to_string()),
-        widget_field("Treasury", planet.stored_production_points().to_string()),
+        widget_field(
+            "Treasury",
+            nc_data::stored_production_points(&planet).to_string(),
+        ),
         widget_field("Budget", budget.to_string()),
-        widget_field("Armies", planet.army_count_raw().to_string()),
+        widget_field(
+            "Armies",
+            (planet.armies.min(u16::from(u8::MAX)) as u8).to_string(),
+        ),
         widget_field(
             "Ground Batteries",
-            planet.ground_batteries_raw().to_string(),
+            (planet.ground_batteries.min(u16::from(u8::MAX)) as u8).to_string(),
         ),
         widget_field(
             "Starbases",
@@ -462,14 +474,13 @@ fn build_cached_sector_details(app: &DashApp) -> CachedSectorDetails {
         .filter_map(|world| {
             let planet_index_0_based = world.planet_record_index_1_based.checked_sub(1)?;
             let planet = app.game_data.planets.get(planet_index_0_based)?;
-            let detail = if planet.owner_empire_slot_raw() == viewer_empire_id {
+            let detail = if planet.owner.0 == viewer_empire_id {
                 let budget = budget_by_planet_index
                     .get(&world.planet_record_index_1_based)
                     .copied()
                     .unwrap_or_else(|| {
-                        planet
-                            .stored_production_points()
-                            .min(u32::from(planet.present_production_points().unwrap_or(0)))
+                        nc_data::stored_production_points(&planet)
+                            .min(u32::from(nc_data::present_production_points(&planet)))
                     });
                 owned_planet_detail(app, planet_index_0_based, planet, budget)
             } else {
@@ -565,38 +576,38 @@ fn owned_efficiency_label(current: u16, potential: u16) -> String {
     }
 }
 
-fn owned_owner_detail_label(game_data: &nc_data::CoreGameData, owner_empire_raw: u8) -> String {
-    if owner_empire_raw == 0 {
+fn owned_owner_detail_label(game_data: &nc_data::CoreGameData, owner_empire_id: u8) -> String {
+    if owner_empire_id == 0 {
         return String::from("Unowned");
     }
 
     let Some(player) = game_data
         .players
-        .get(owner_empire_raw.saturating_sub(1) as usize)
+        .get(owner_empire_id.saturating_sub(1) as usize)
     else {
-        return format!("Empire #{owner_empire_raw}");
+        return format!("Empire #{owner_empire_id}");
     };
 
-    let empire_name = player.controlled_empire_name_summary();
-    let legacy_name = player.legacy_status_name_summary();
+    let empire_name = player.empire_name.trim().to_string();
+    let legacy_name = player.empire_name.trim().to_string();
     if !empire_name.is_empty() && !legacy_name.starts_with("In Civil Disorder") {
-        format!("Empire #{owner_empire_raw} ({empire_name})")
+        format!("Empire #{owner_empire_id} ({empire_name})")
     } else if !legacy_name.is_empty() {
-        format!("Empire #{owner_empire_raw} ({legacy_name})")
+        format!("Empire #{owner_empire_id} ({legacy_name})")
     } else {
-        format!("Empire #{owner_empire_raw}")
+        format!("Empire #{owner_empire_id}")
     }
 }
 
-fn owner_state_detail_label(game_data: &nc_data::CoreGameData, owner_empire_raw: u8) -> String {
-    match game_data.empire_campaign_state(owner_empire_raw) {
+fn owner_state_detail_label(game_data: &nc_data::CoreGameData, owner_empire_id: u8) -> String {
+    match game_data.empire_campaign_state(owner_empire_id) {
         Some(CampaignState::Stable) => String::from("Stable"),
         Some(CampaignState::MarginalExistence) => String::from("Marginal Existence"),
         Some(CampaignState::DefectionRisk) => String::from("Defection Risk"),
         Some(CampaignState::Defeated) => String::from("Defeated"),
         Some(CampaignState::CivilDisorder) => String::from("In Civil Disorder"),
         Some(CampaignState::Rogue) => String::from("Rogue"),
-        None if owner_empire_raw == 0 => String::from("Unowned"),
+        None if owner_empire_id == 0 => String::from("Unowned"),
         None => String::from("Unknown"),
     }
 }
@@ -753,8 +764,8 @@ mod tests {
             crate::dashboard::geometry::ScreenGeometry::new(108, 26),
             1,
         );
-        app.crosshair_x = app.game_data.planets[0].coords_raw()[0];
-        app.crosshair_y = app.game_data.planets[0].coords_raw()[1];
+        app.crosshair_x = app.game_data.planets[0].sector.to_array()[0];
+        app.crosshair_y = app.game_data.planets[0].sector.to_array()[1];
 
         let detail = selected_planet_detail(&app).expect("selected world");
         assert_eq!(
@@ -813,9 +824,9 @@ mod tests {
     #[test]
     fn compact_unit_summary_uses_tui_style_without_dashes() {
         let mut planet = Planet::default();
-        planet.set_build_kind_raw(0, 3);
-        planet.set_build_count_raw(0, 90);
-        planet.set_stardock_count_raw(1, 5);
+        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+        planet.build_queue[0].points_owed = 90;
+        planet.stardock[1] = 5;
 
         assert_eq!(format_build_queue_summary(&planet), "2BB");
         assert_eq!(format_stardock_summary(&planet), "5CA");
@@ -867,7 +878,7 @@ mod tests {
         );
         let before = preferred_sector_detail_body_width(&app);
 
-        app.game_data.planets[0].set_planet_name("Frontier Bastion Prime");
+        nc_data::set_planet_name(&mut app.game_data.planets[0], "Frontier Bastion Prime");
         app.game_data_revision += 1;
 
         let after = preferred_sector_detail_body_width(&app);

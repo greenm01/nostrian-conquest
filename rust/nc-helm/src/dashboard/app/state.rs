@@ -1059,7 +1059,7 @@ impl DashApp {
         player_record_index_1_based: usize,
     ) -> Self {
         let startup_summary = StartupSummary {
-            game_year: game_data.conquest.game_year(),
+            game_year: game_data.conquest.game_year,
             show_login_review: false,
             pending_results: false,
             pending_messages: false,
@@ -1235,11 +1235,11 @@ pub(crate) fn initial_crosshair_coords(
     else {
         return [1, 1];
     };
-    let homeworld_index = player.homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = player.homeworld as usize;
     game_data
         .planets
         .get(homeworld_index.saturating_sub(1))
-        .map(|planet| planet.coords_raw())
+        .map(|planet| planet.sector.to_array())
         .unwrap_or([1, 1])
 }
 

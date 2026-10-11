@@ -289,7 +289,8 @@ fn planet_list_commission_opens_direct_draft_for_selected_planet_and_returns_to_
         .position(|row| {
             let planet = &app.game_data.planets[row.planet_record_index_1_based - 1];
             (0..nc_data::STARDOCK_SLOT_COUNT).any(|slot| {
-                planet.stardock_count_raw(slot) > 0 && planet.stardock_kind_raw(slot) != 0
+                (planet.stardock[slot].min(u32::from(u16::MAX)) as u16) > 0
+                    && nc_data::stardock_slot_kind(&planet, slot).to_raw() != 0
             })
         })
         .expect("fixture should have a planet with stardock units");
@@ -318,36 +319,36 @@ fn planet_list_build_specify_and_transport_stay_on_list_context() {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
     let extra_planet = &mut state.game_data.planets[extra_owned_idx];
-    extra_planet.set_owner_empire_slot_raw(1);
-    extra_planet.set_stored_production_points(10);
-    extra_planet.set_army_count_raw(9);
-    let extra_coords = extra_planet.coords_raw();
+    extra_planet.owner.0 = 1;
+    extra_planet.stored_goods = nc_data::Real48::from_f64(f64::from(10));
+    extra_planet.armies = 9;
+    let extra_coords = extra_planet.sector.to_array();
 
     for fleet in state
         .game_data
         .fleets
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::set_armies_aboard(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
     }
 
     let load_fleet = state
         .game_data
         .fleets
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    load_fleet.set_current_location_coords_raw(extra_coords);
-    load_fleet.set_troop_transport_count(5);
-    load_fleet.set_army_count(0);
-    load_fleet.recompute_max_speed_from_composition();
+    load_fleet.sector = nc_data::Coords::from_array(extra_coords);
+    nc_data::set_troop_transports(load_fleet, 5);
+    nc_data::set_armies_aboard(load_fleet, 0);
+    nc_data::recompute_max_speed(load_fleet);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -511,7 +512,7 @@ fn planet_commission_draft_render_does_not_crash_when_picker_rows_disappear() {
     let mut state = latest_runtime_state(&fixture_dir);
     for planet in &mut state.game_data.planets {
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
     save_runtime_state(&fixture_dir, &state);
@@ -553,7 +554,7 @@ fn planet_commission_picker_render_returns_to_planet_menu_when_empty() {
     let mut state = latest_runtime_state(&fixture_dir);
     for planet in &mut state.game_data.planets {
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
     save_runtime_state(&fixture_dir, &state);
@@ -586,7 +587,7 @@ fn planet_commission_uses_draft_for_ships_and_direct_result_for_starbases() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx)
         .collect::<Vec<_>>();
     let mut owned_planets = owned_planets;
@@ -596,21 +597,21 @@ fn planet_commission_uses_draft_for_ships_and_direct_result_for_starbases() {
             .planets
             .iter()
             .enumerate()
-            .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+            .find(|(_, planet)| planet.owner.0 != 1)
             .map(|(idx, _)| idx)
             .expect("fixture should have a spare planet");
-        state.game_data.planets[extra_idx].set_owner_empire_slot_raw(1);
-        state.game_data.planets[extra_idx].set_ownership_status_raw(1);
+        state.game_data.planets[extra_idx].owner.0 = 1;
+        state.game_data.planets[extra_idx].years_under_owner = 1;
         owned_planets.push(extra_idx);
     }
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
-    state.game_data.planets[owned_planets[0]].set_stardock_count_raw(0, 2);
-    state.game_data.planets[owned_planets[1]].set_stardock_count_raw(6, 1);
+    state.game_data.planets[owned_planets[0]].stardock[0] = 2;
+    state.game_data.planets[owned_planets[1]].stardock[6] = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -742,7 +743,7 @@ fn planet_commission_draft_keeps_intermediate_success_inline() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx)
         .collect::<Vec<_>>();
     let owned_planet = owned_planets
@@ -752,12 +753,12 @@ fn planet_commission_draft_keeps_intermediate_success_inline() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
     let planet = &mut state.game_data.planets[owned_planet];
-    planet.set_stardock_count_raw(0, 5);
-    planet.set_stardock_count_raw(2, 3);
+    planet.stardock[0] = 5;
+    planet.stardock[2] = 3;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -835,7 +836,7 @@ fn planet_commission_blank_submit_uses_displayed_default_qty() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx)
         .collect::<Vec<_>>();
     let owned_planet = owned_planets
@@ -845,11 +846,11 @@ fn planet_commission_blank_submit_uses_displayed_default_qty() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
     let planet = &mut state.game_data.planets[owned_planet];
-    planet.set_stardock_count_raw(2, 1);
+    planet.stardock[2] = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -906,7 +907,7 @@ fn planet_commission_blank_row_move_commits_displayed_default_qty() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx)
         .collect::<Vec<_>>();
     let owned_planet = owned_planets
@@ -916,12 +917,12 @@ fn planet_commission_blank_row_move_commits_displayed_default_qty() {
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
     let planet = &mut state.game_data.planets[owned_planet];
-    planet.set_stardock_count_raw(0, 2);
-    planet.set_stardock_count_raw(2, 1);
+    planet.stardock[0] = 2;
+    planet.stardock[2] = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -995,7 +996,7 @@ fn planet_commission_result_latches_dismiss_key_until_release() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx)
         .collect::<Vec<_>>();
     let mut owned_planets = owned_planets;
@@ -1005,21 +1006,21 @@ fn planet_commission_result_latches_dismiss_key_until_release() {
             .planets
             .iter()
             .enumerate()
-            .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+            .find(|(_, planet)| planet.owner.0 != 1)
             .map(|(idx, _)| idx)
             .expect("fixture should have a spare planet");
-        state.game_data.planets[extra_idx].set_owner_empire_slot_raw(1);
-        state.game_data.planets[extra_idx].set_ownership_status_raw(1);
+        state.game_data.planets[extra_idx].owner.0 = 1;
+        state.game_data.planets[extra_idx].years_under_owner = 1;
         owned_planets.push(extra_idx);
     }
     for &planet_idx in &owned_planets {
         let planet = &mut state.game_data.planets[planet_idx];
         for slot in 0..6 {
-            planet.set_stardock_count_raw(slot, 0);
+            planet.stardock[slot] = 0;
         }
     }
-    state.game_data.planets[owned_planets[0]].set_stardock_count_raw(0, 2);
-    state.game_data.planets[owned_planets[1]].set_stardock_count_raw(3, 2);
+    state.game_data.planets[owned_planets[0]].stardock[0] = 2;
+    state.game_data.planets[owned_planets[1]].stardock[3] = 2;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1132,23 +1133,25 @@ fn planet_build_menu_matches_verified_v15_command_layout() {
     let direct_homeworld = direct
         .planets
         .iter()
-        .find(|planet| {
-            planet.owner_empire_slot_raw() == 1 && planet.status_or_name_summary() == "Codex Prime"
-        })
+        .find(|planet| planet.owner.0 == 1 && planet.name.trim().to_string() == "Codex Prime")
         .expect("direct joined homeworld exists");
-    assert_eq!(direct_homeworld.present_production_points(), Some(100));
-    assert_eq!(direct_homeworld.stored_production_points(), 50);
+    assert_eq!(
+        Some(nc_data::present_production_points(&direct_homeworld)),
+        Some(100)
+    );
+    assert_eq!(nc_data::stored_production_points(&direct_homeworld), 50);
     let runtime = latest_runtime_state(&fixture_dir);
     let homeworld = runtime
         .game_data
         .planets
         .iter()
-        .find(|planet| {
-            planet.owner_empire_slot_raw() == 1 && planet.status_or_name_summary() == "Codex Prime"
-        })
+        .find(|planet| planet.owner.0 == 1 && planet.name.trim().to_string() == "Codex Prime")
         .expect("joined homeworld exists");
-    assert_eq!(homeworld.present_production_points(), Some(100));
-    assert_eq!(homeworld.stored_production_points(), 50);
+    assert_eq!(
+        Some(nc_data::present_production_points(&homeworld)),
+        Some(100)
+    );
+    assert_eq!(nc_data::stored_production_points(&homeworld), 50);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
         player_record_index_1_based: 1,
@@ -1246,10 +1249,10 @@ fn repeated_same_kind_build_submissions_merge_into_one_player_visible_total() {
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
     let planet = &app.game_data.planets[planet_idx];
-    assert_eq!(planet.build_kind_raw(0), 1);
-    assert_eq!(planet.build_count_raw(0), 25);
-    assert!((1..10).all(|slot| planet.build_count_raw(slot) == 0));
-    assert!((1..10).all(|slot| planet.build_kind_raw(slot) == 0));
+    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].points_owed, 25);
+    assert!((1..10).all(|slot| planet.build_queue[slot].points_owed == 0));
+    assert!((1..10).all(|slot| planet.build_queue[slot].kind.to_raw() == 0));
 
     app.open_planet_build_menu();
     app.render(&mut terminal).expect("render succeeds");
@@ -1297,9 +1300,9 @@ fn empty_build_quantity_submission_uses_max_affordable_default() {
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
     let planet = &app.game_data.planets[planet_idx];
-    assert_eq!(planet.build_kind_raw(0), 1);
-    assert_eq!(planet.build_count_raw(0), 50);
-    assert!((1..10).all(|slot| planet.build_count_raw(slot) == 0));
+    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].points_owed, 50);
+    assert!((1..10).all(|slot| planet.build_queue[slot].points_owed == 0));
 }
 
 #[test]
@@ -1310,9 +1313,9 @@ fn build_specify_from_menu_stays_on_build_menu_when_no_budget_remains() {
         .game_data
         .planets
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .find(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    homeworld.set_stored_production_points(1);
+    homeworld.stored_goods = nc_data::Real48::from_f64(f64::from(1));
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1352,9 +1355,9 @@ fn successful_build_that_exhausts_budget_returns_to_build_menu_with_notice() {
         .game_data
         .planets
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .find(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    homeworld.set_stored_production_points(2);
+    homeworld.stored_goods = nc_data::Real48::from_f64(f64::from(2));
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1497,10 +1500,10 @@ fn build_menu_planet_list_selects_build_target_and_returns_to_build_menu() {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
-    state.game_data.planets[extra_owned_idx].set_owner_empire_slot_raw(1);
+    state.game_data.planets[extra_owned_idx].owner.0 = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1848,9 +1851,9 @@ fn planet_database_filters_and_sorts_with_independent_f_and_s_prompts() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .filter(|(_, planet)| planet.owner.0 != 1)
         .take(3)
-        .map(|(idx, planet)| (idx + 1, planet.coords_raw()))
+        .map(|(idx, planet)| (idx + 1, planet.sector.to_array()))
         .collect::<Vec<_>>();
     assert_eq!(
         sample_worlds.len(),
@@ -2134,9 +2137,9 @@ fn planet_database_renders_unowned_and_unknown_owner_rows_distinctly() {
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .filter(|(_, planet)| planet.owner.0 != 1)
         .take(2)
-        .map(|(idx, planet)| (idx + 1, planet.coords_raw()))
+        .map(|(idx, planet)| (idx + 1, planet.sector.to_array()))
         .collect::<Vec<_>>();
     assert_eq!(
         sample_worlds.len(),
@@ -2210,11 +2213,11 @@ fn planet_database_renders_icd_owner_label_for_civil_disorder_worlds() {
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx + 1)
         .expect("fixture should contain a non-owned world");
 
-    app.game_data.players[1].set_civil_disorder_mode();
+    nc_data::set_civil_disorder(&mut app.game_data.players[1]);
     app.planet_intel_snapshots.insert(
         sample_world,
         PlanetIntelSnapshot {
@@ -2265,7 +2268,7 @@ fn planet_menu_tax_prompt_renders_inline_command_and_warning_stack() {
     })
     .expect("app should load");
     let mut terminal = CaptureTerminal::new();
-    let current_tax = app.game_data.players[app.player.record_index_1_based - 1].tax_rate();
+    let current_tax = app.game_data.players[app.player.record_index_1_based - 1].tax_rate;
 
     advance_to_main_menu(&mut app);
     assert_eq!(
@@ -2421,8 +2424,8 @@ fn planet_menu_scorch_prompt_defaults_to_lowest_owned_planet_and_validates_owner
         .game_data
         .planets
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() as usize != app.player.record_index_1_based)
-        .map(|planet| planet.coords_raw())
+        .find(|planet| planet.owner.0 as usize != app.player.record_index_1_based)
+        .map(|planet| planet.sector.to_array())
         .expect("non-owned planet exists");
     for ch in foreign_coords[0].to_string().chars() {
         assert_eq!(
@@ -2504,7 +2507,10 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
         .game_data
         .planet_record_index_at_coords(expected_coords)
         .expect("selected scorch planet index");
-    let expected_name = app.game_data.planets[expected_record_index].status_or_name_summary();
+    let expected_name = app.game_data.planets[expected_record_index]
+        .name
+        .trim()
+        .to_string();
 
     assert_eq!(
         apply_action(&mut app, Action::Planet(PlanetAction::SubmitScorchPrompt)),
@@ -2559,16 +2565,25 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
     );
 
     let scorched_planet = &app.game_data.planets[expected_record_index];
-    assert_eq!(scorched_planet.present_production_points(), Some(0));
-    assert_eq!(scorched_planet.potential_production_points(), 0);
-    assert_eq!(scorched_planet.stored_production_points(), 0);
-    assert!((0..10).all(|slot| scorched_planet.build_count_raw(slot) == 0));
-    assert!((0..10).all(|slot| scorched_planet.build_kind_raw(slot) == 0));
+    assert_eq!(
+        Some(nc_data::present_production_points(&scorched_planet)),
+        Some(0)
+    );
+    assert_eq!(u16::from(scorched_planet.potential_production), 0);
+    assert_eq!(nc_data::stored_production_points(&scorched_planet), 0);
+    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].points_owed == 0));
+    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].kind.to_raw() == 0));
     assert!(
-        (0..nc_data::STARDOCK_SLOT_COUNT).all(|slot| scorched_planet.stardock_count_raw(slot) == 0)
+        (0..nc_data::STARDOCK_SLOT_COUNT)
+            .all(|slot| (scorched_planet.stardock[slot].min(u32::from(u16::MAX)) as u16) == 0)
     );
     assert!(
-        (0..nc_data::STARDOCK_SLOT_COUNT).all(|slot| scorched_planet.stardock_kind_raw(slot) == 0)
+        (0..nc_data::STARDOCK_SLOT_COUNT).all(|slot| nc_data::stardock_slot_kind(
+            &scorched_planet,
+            slot
+        )
+        .to_raw()
+            == 0)
     );
 
     let reloaded = latest_runtime_state(&fixture_dir);
@@ -2578,9 +2593,12 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
             .contains(&(expected_record_index + 1))
     );
     let reloaded_planet = &reloaded.game_data.planets[expected_record_index];
-    assert_eq!(reloaded_planet.present_production_points(), Some(0));
-    assert_eq!(reloaded_planet.potential_production_points(), 0);
-    assert_eq!(reloaded_planet.stored_production_points(), 0);
+    assert_eq!(
+        Some(nc_data::present_production_points(&reloaded_planet)),
+        Some(0)
+    );
+    assert_eq!(u16::from(reloaded_planet.potential_production), 0);
+    assert_eq!(nc_data::stored_production_points(&reloaded_planet), 0);
 
     app.open_planet_info_detail_at_coords(expected_coords, Some(ScreenId::PlanetMenu))
         .expect("open planet info detail");

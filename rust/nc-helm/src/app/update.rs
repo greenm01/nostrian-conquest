@@ -1681,7 +1681,8 @@ mod tests {
             panic!("expected hosted route");
         };
         hosted.dashboard.overlay = ActiveOverlay::PlanetList;
-        hosted.dashboard.game_data.planets[0].set_stored_production_points(80);
+        hosted.dashboard.game_data.planets[0].stored_goods =
+            nc_data::Real48::from_f64(f64::from(80));
         hosted.dashboard.open_planet_build_specify();
 
         let effects = handle_key(
@@ -1756,7 +1757,7 @@ mod tests {
         let Route::HostedGame(hosted) = &model.route else {
             panic!("expected hosted route");
         };
-        assert_eq!(hosted.dashboard.game_data.players[0].tax_rate(), 42);
+        assert_eq!(hosted.dashboard.game_data.players[0].tax_rate, 42);
         assert_eq!(draft.tax_rate, Some(42));
     }
 
@@ -1831,7 +1832,7 @@ mod tests {
             panic!("expected hosted route");
         };
         assert_eq!(
-            hosted.dashboard.game_data.planets[0].stardock_count_raw(0),
+            (hosted.dashboard.game_data.planets[0].stardock[0].min(u32::from(u16::MAX)) as u16),
             0
         );
         assert_eq!(draft.planets.len(), 1);
@@ -1870,10 +1871,7 @@ mod tests {
         let Route::HostedGame(hosted) = &model.route else {
             panic!("expected hosted route");
         };
-        assert_eq!(
-            hosted.dashboard.game_data.fleets[0].rules_of_engagement(),
-            4
-        );
+        assert_eq!(hosted.dashboard.game_data.fleets[0].rules_of_engagement, 4);
         assert_eq!(draft.fleets.len(), 1);
         assert!(matches!(
             draft.fleets[0].actions.as_slice(),

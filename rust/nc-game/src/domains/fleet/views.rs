@@ -132,7 +132,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 .ok_or("fleet order row missing")?;
             let current_order_label = app.fleet_order_current_order_label();
             let new_order_label = app.fleet_order_new_order_label();
-            let current_year = app.game_data.conquest.game_year();
+            let current_year = app.game_data.conquest.game_year;
             let status_line = app.fleet_order_target_status_line();
             let target_prompt = app.fleet_order_target_prompt();
             let target_default = app.fleet_order_target_default();
@@ -167,7 +167,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 .map(crate::domains::fleet::screens::fleet::fleet_order_label)
                 .unwrap_or("Unknown")
                 .to_string();
-            let current_year = app.game_data.conquest.game_year();
+            let current_year = app.game_data.conquest.game_year;
             let target_prompt = app.fleet_group_target_prompt();
             let target_default = app.fleet_group_target_default();
             let target_x_default = app.fleet_group_target_x_default_value();

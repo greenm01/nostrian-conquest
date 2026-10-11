@@ -194,7 +194,7 @@ impl App {
             return;
         }
         let year = if self.messaging.inbox_year_input.trim().is_empty() {
-            self.game_data.conquest.game_year()
+            self.game_data.conquest.game_year
         } else {
             let Ok(year) = self.messaging.inbox_year_input.trim().parse::<u16>() else {
                 self.messaging.inbox_feedback =

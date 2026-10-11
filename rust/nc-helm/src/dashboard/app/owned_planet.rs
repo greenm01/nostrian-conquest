@@ -597,7 +597,7 @@ impl DashApp {
                     .game_data
                     .planets
                     .get(record.saturating_sub(1))
-                    .map(Planet::status_or_name_summary)
+                    .map(|planet| planet.name.trim().to_string())
                     .unwrap_or_else(|| "Planet".to_string());
                 self.game_data.scorch_planet_surface(record)?;
                 self.planet_scorch_orders.insert(record);
@@ -621,9 +621,7 @@ impl DashApp {
         self.game_data
             .planets
             .iter()
-            .filter(|planet| {
-                planet.owner_empire_slot_raw() as usize == self.player_record_index_1_based
-            })
+            .filter(|planet| planet.owner.0 as usize == self.player_record_index_1_based)
             .any(|planet| !planet_commission_slot_entries(planet).is_empty())
     }
 
@@ -648,7 +646,7 @@ impl DashApp {
                     .game_data
                     .fleets
                     .get(fleet_record_index_1_based.saturating_sub(1))
-                    .map(|fleet| fleet.local_slot_word_raw())
+                    .map(|fleet| fleet.fleet_number.0)
                     .unwrap_or_default();
                 format!("Commissioned Fleet #{fleet_number:02}.")
             }
@@ -659,7 +657,7 @@ impl DashApp {
                     .game_data
                     .bases
                     .get(base_record_index_1_based.saturating_sub(1))
-                    .map(|base| base.base_id_raw())
+                    .map(|base| base.base_id.0)
                     .unwrap_or_default();
                 format!("Commissioned Starbase #{base_number:02}.")
             }
@@ -695,8 +693,8 @@ impl DashApp {
             .game_data
             .fleets
             .iter()
-            .filter(|fleet| fleet.owner_empire_raw() as usize == self.player_record_index_1_based)
-            .map(|fleet| fleet.local_slot_word_raw())
+            .filter(|fleet| fleet.owner.0 as usize == self.player_record_index_1_based)
+            .map(|fleet| fleet.fleet_number.0)
             .max()
             .unwrap_or(1);
         let mut lines = Vec::new();

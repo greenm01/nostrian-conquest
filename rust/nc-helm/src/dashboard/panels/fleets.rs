@@ -37,29 +37,29 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let mut holding = 0;
 
     for planet in &app.game_data.planets {
-        if planet.owner_empire_slot_raw() != owner_slot {
+        if planet.owner.0 != owner_slot {
             continue;
         }
 
         for slot in 0..STARDOCK_SLOT_COUNT {
-            docked += u32::from(planet.stardock_count_raw(slot));
+            docked += planet.stardock[slot].min(u32::from(u16::MAX));
         }
     }
 
     for fleet in &app.game_data.fleets {
-        if fleet.owner_empire_raw() != owner_slot || !fleet.has_any_force() {
+        if fleet.owner.0 != owner_slot || !nc_data::has_any_force(&fleet) {
             continue;
         }
 
         total_fleets += 1;
-        total_ships += fleet.battleship_count() as u32
-            + fleet.cruiser_count() as u32
-            + fleet.destroyer_count() as u32
-            + fleet.scout_count() as u32
-            + fleet.troop_transport_count() as u32
-            + fleet.etac_count() as u32;
+        total_ships += fleet.ships.battleships as u32
+            + fleet.ships.cruisers as u32
+            + fleet.ships.destroyers as u32
+            + fleet.ships.scouts as u32
+            + nc_data::troop_transports(&fleet) as u32
+            + fleet.ships.etacs as u32;
 
-        match fleet.standing_order_kind() {
+        match fleet.order {
             Order::MoveOnly
             | Order::SeekHome
             | Order::JoinAnotherFleet

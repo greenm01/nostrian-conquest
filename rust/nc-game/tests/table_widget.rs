@@ -688,10 +688,10 @@ fn planet_brief_list_uses_database_style_stacked_header_and_owned_planet_columns
     let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
     let planet = &mut game_data.planets[0];
-    planet.set_build_count_raw(0, 5);
-    planet.set_build_kind_raw(0, 1);
-    planet.set_build_count_raw(1, 40);
-    planet.set_build_kind_raw(1, 6);
+    planet.build_queue[0].points_owed = 5;
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.build_queue[1].points_owed = 40;
+    planet.build_queue[1].kind = nc_data::ProductionItemKind::from_raw(6);
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
     let owned_planet_years = BTreeMap::new();

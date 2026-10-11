@@ -112,7 +112,7 @@ fn detail_lines(app: &DashApp, fleet_record_index_1_based: usize) -> Option<Vec<
         },
         DetailLine {
             label: "Max Speed",
-            value: fleet.max_speed().to_string(),
+            value: fleet.max_speed.to_string(),
         },
         DetailLine {
             label: "ROE",
@@ -128,7 +128,7 @@ fn detail_lines(app: &DashApp, fleet_record_index_1_based: usize) -> Option<Vec<
         },
         DetailLine {
             label: "Ships",
-            value: fleet.ship_composition_table_summary(),
+            value: nc_data::ship_composition_table_summary(&fleet),
         },
         DetailLine {
             label: "Armies",

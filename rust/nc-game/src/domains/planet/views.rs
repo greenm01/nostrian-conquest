@@ -97,7 +97,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             app.planet.info_error.as_deref(),
             app.planet.tax_prompt_active,
             &app.game_data.players[app.player.record_index_1_based - 1]
-                .tax_rate()
+                .tax_rate
                 .to_string(),
             &app.planet.tax_input,
             app.planet.tax_error.as_deref(),

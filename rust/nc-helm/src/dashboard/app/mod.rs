@@ -47,7 +47,7 @@ fn confirm_popup_width(title: &str, message: &str) -> usize {
 }
 
 fn map_coord_rows(app: &DashApp) -> Vec<Vec<String>> {
-    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count());
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count);
     let mut rows = Vec::with_capacity(usize::from(map_size) * usize::from(map_size));
     for x in 1..=map_size {
         for y in 1..=map_size {

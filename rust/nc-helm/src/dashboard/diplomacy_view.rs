@@ -7,8 +7,8 @@ use nc_data::{
 use crate::dashboard::theme;
 
 pub(crate) fn display_name(player: &Player, empire_slot: u8) -> String {
-    let name = player.controlled_empire_name_summary();
-    let fallback = player.legacy_status_name_summary();
+    let name = player.empire_name.trim().to_string();
+    let fallback = player.empire_name.trim().to_string();
     if !name.is_empty() {
         name
     } else if !fallback.is_empty() {
@@ -26,7 +26,7 @@ pub(crate) fn state_label_and_style(
     viewer_slot: u8,
     empire_slot: u8,
 ) -> (&'static str, CellStyle) {
-    if player.is_rogue_player() {
+    if player.mode == nc_data::PlayerMode::Rogue {
         ("Rogue", theme::alert_style())
     } else {
         match player_public_status(
@@ -52,7 +52,7 @@ pub(crate) fn relation_label_and_style(
 ) -> (&'static str, CellStyle) {
     if empire_slot == viewer_slot {
         ("—", theme::dim_style())
-    } else if viewer.and_then(|row| row.diplomatic_relation_toward(empire_slot))
+    } else if viewer.and_then(|row| nc_data::diplomatic_relation_toward(row, empire_slot))
         == Some(DiplomaticRelation::Enemy)
     {
         ("Enemy", theme::enemy_style())
