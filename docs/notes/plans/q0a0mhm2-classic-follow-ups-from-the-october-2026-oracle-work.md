@@ -538,3 +538,26 @@ For the owner:
    re-ordered, and a base is at rest by target and `TZ = Round(Z)` with the
    moving flag ignored (t064 required the flag clear and ignored `TZ`).
    The player manual's autopilot paragraph says so; the PDF is not rebuilt.
+
+Owner rulings on t070's questions (2026-10-11): a rogue starbase measures
+distances with zero offsets (classic reads uninitialised memory there, a
+classic bug); the pre-maintenance order check exempts the empires ECMAINT
+plays (rogue and autopilot), as classic does; escort release is wired into
+every place classic re-orders a guard (task t094); a rogue empire that loses
+its last world keeps patrolling, as in classic, instead of falling into civil
+disorder. By the existing rules, an order from the AI orders pass ends a
+fleet's escape episode as a player's order does, and t070's two autopilot
+fixes stay because they match classic.
+
+## t094
+
+Follow-ups to t070, after t080: (1) release a starbase's escort word
+wherever ECMAINT re-orders a Guard Starbase fleet: the encounter's decision
+aborts and battle retreats (`1b05:185e`, `1b05:1f5d`, `1b05:25ab`,
+`1b05:3151`) and fleet-record removal (`2895:3d46`, in
+`apply_fleet_removal_remap`), using `release_starbase_escort`; (2) exempt rogue
+and autopilot empires from `sanitize.rs`'s order check for warship-less
+Guard/Blockade fleets; (3) keep a worldless rogue empire alive and patrolling
+(`defeat_empire` must not turn it into civil disorder); (4) end a fleet's
+escape episode when the AI orders pass re-orders it. Verify each against
+classic where the t070 probe tooling can.
