@@ -424,8 +424,13 @@ pub enum MissionRetargetEvent {
         owner_empire: u8,
         mission: Mission,
         current_coords: [u8; 2],
+        /// The fleet is in a world's system (depth 0.5 or more); its report
+        /// is then headed "System(x,y)" instead of "Sector(x,y)".
+        in_system: bool,
         previous_target_coords: [u8; 2],
         new_target_coords: [u8; 2],
+        /// Tick (1-52) when this event occurred; None for events from before the year's ticks.
+        stardate_week: Option<u8>,
     },
     Abandoned {
         fleet_idx: usize,
@@ -435,6 +440,10 @@ pub enum MissionRetargetEvent {
         mission: Mission,
         previous_target_coords: [u8; 2],
         coords: [u8; 2],
+        /// As for `Retargeted`.
+        in_system: bool,
+        /// Tick (1-52) when this event occurred; None for events from before the year's ticks.
+        stardate_week: Option<u8>,
     },
 }
 
@@ -596,12 +605,8 @@ pub enum InvalidPlayerStateEvent {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SalvageFailureReason {
-    NoPlanetAtTarget,
-    PlanetNotOwned,
-}
-
+/// A fleet scrapped at a world of its empire. Salvage checks its target
+/// world's owner every tick, so a fleet only ever arrives at its own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SalvageResolvedEvent {
     Succeeded {
@@ -612,15 +617,8 @@ pub enum SalvageResolvedEvent {
         planet_idx: usize,
         coords: [u8; 2],
         recovered_points: u32,
-        /// Week of year (1–52) when this event occurred; None until canonicalized.
-        stardate_week: Option<u8>,
-    },
-    Failed {
-        fleet_idx: usize,
-        owner_empire: u8,
-        planet_idx: Option<usize>,
-        coords: [u8; 2],
-        reason: SalvageFailureReason,
+        /// Armies the fleet's loaded transports landed on the world.
+        armies_landed: u16,
         /// Week of year (1–52) when this event occurred; None until canonicalized.
         stardate_week: Option<u8>,
     },

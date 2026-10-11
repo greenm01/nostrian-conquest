@@ -136,31 +136,37 @@ rogue empire's orders pass (below) ever re-picks a Seek Home fleet's world.
   measured from where the fleet has just stepped, so it has already moved one
   tick toward the old target. That tick reports no arrival. A target sector
   with no world counts as not owned (classic reads a garbage owner there; see
-  the encounter spec's note on worldless sectors). [P: a Seek Home fleet whose
-  target belonged to empire 2 turned at stardate 1 and ended the year over
-  (12,12) at depth 0.670, which its first tick toward the old target
-  explains; a fleet seeking an empty sector turned the same way.]
+  the encounter spec's note on worldless sectors). [P: a Seek Home fleet in
+  deep space at (13,14), speed 3, whose target belonged to empire 2 turned at
+  stardate 1 and ended the year over (12,12) at depth 0.670, where 0.764
+  would have been had it not flown its first tick toward the old target; a
+  fleet seeking an empty sector turned the same way.]
   - Seek Home changes only its target sector; the order, `TZ`, and speed
     stay. Report: "Since we have lost control of planet "*name*" in
     System(*x*,*y*), we are changing course and heading for a different
     friendly world. Our new destination is planet "*name*" in
     System(*x*,*y*)."
   - Salvage changes its target sector, refills a zero speed from `0x09`, and
-    keeps the Salvage order, so the fleet salvages at the new world. Report:
-    "Since we no longer own the world in System(*x*,*y*), we are aborting our
-    salvage mission. Until ordered otherwise, we are going to seek to safety
-    of a friendly controlled world. Our new destination is planet "*name*" in
-    System(*x*,*y*)." [P: the fleet salvaged at (12,12) in tick 44 of the
-    same year.]
+    keeps the Salvage order, so the fleet salvages at the new world. [P: the
+    fleet salvaged at (12,12) in tick 44 of the same year.] Classic's report
+    says "we are aborting our salvage mission" and "we are going to seek to
+    safety of a friendly controlled world", although the fleet keeps its
+    order. NC keeps the behavior and corrects the report (owner decision,
+    2026-10-10): "Since we no longer own the world in System(*x*,*y*), we are
+    changing course. Until ordered otherwise, we are going to salvage our
+    fleet at a friendly controlled world. Our new destination is planet
+    "*name*" in System(*x*,*y*)."
 - When the empire owns no other world, the fleet holds: order Hold, speed 0,
   target its own sector, `TZ = Round(Z)`. Seek Home leaves the depth as it
-  is; Salvage also sets `Z` to `Round(Z)`, so a fleet between layers jumps to
-  the nearer one. Reports: "Since we have lost control of planet "*name*" in
-  System(*x*,*y*), we are holding our current position and awaiting new
-  orders." and "Since we no longer own the world in System(*x*,*y*), we are
-  aborting our salvage mission. Until ordered otherwise, we are going to hold
-  our current position and await new orders." [P: Seek Home kept depth
-  0.692; Salvage went from 0.692 to 1.0 and from 0.135 to 0.0.]
+  is. Classic's Salvage also sets `Z` to `Round(Z)`, so a fleet between
+  layers jumps to the nearer one; that is a classic bug and NC leaves the
+  depth as Seek Home does (owner decision, 2026-10-10). Reports: "Since we
+  have lost control of planet "*name*" in System(*x*,*y*), we are holding our
+  current position and awaiting new orders." and "Since we no longer own the
+  world in System(*x*,*y*), we are aborting our salvage mission. Until
+  ordered otherwise, we are going to hold our current position and await new
+  orders." [P: Seek Home kept depth 0.692; classic's Salvage went from 0.692
+  to 1.0 and from 0.135 to 0.0.]
 
 A Salvage that arrives (`0b5d:4d65`) adds to the world's stored goods
 (PLANETS `0x09`) 23 per battleship, 8 per cruiser, 3 per destroyer, 3 per
@@ -173,10 +179,10 @@ transporting to the planet's surface." ("army" for one). [C][P: one
 battleship, cruiser, destroyer, empty transport, ETAC, and scout and two
 loaded transports yielded 61 and landed 2 armies.]
 
-Rust still retargets every Seek Home fleet before the year by squared
-distance, lets a Salvage whose world was lost fail on arrival, and credits
-an arriving Salvage with half the fleet's summed cost, counting each army at
-2 and landing none; t064 brings it to this rule.
+Rust runs the check in the fleet's dispatch every tick
+(`movement/home.rs`), and the reports carry the tick as their stardate. A
+target sector with no world counts as not owned. Because the check comes
+first, a Salvage fleet only ever arrives at a world of its empire.
 
 ### Rogue And Autopilot Orders
 
@@ -217,9 +223,11 @@ ECMAINT also sets once a human empire has not signed on for SETUP's
   already in orbit there, else 1. A rogue with no world sends its fleets on
   random patrols instead (`24a3:0dbc`). [C]
 
-Rust's autopilot recall (`economics/ai.rs`) sends only autopilot Hold fleets
-outside an owned world's sector home by squared distance, and gives rogue
-fleets and starbases no orders; t064 brings it to this rule.
+Rust's autopilot recall (`economics/ai.rs`) follows this for autopilot
+empires: Hold fleets only, the flag-2 picker
+(`CoreGameData::nearest_productive_world`, which writes no production
+floor), the Guard/Blockade and Guard Starbase steps. Rogue empires' fleet and
+starbase orders are not implemented (t070).
 
 ### Hostile Missions
 

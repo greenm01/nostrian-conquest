@@ -124,10 +124,13 @@ pub(super) fn handle_fleet_arrival(
                 });
         }
         Order::Salvage => {
+            // The tick's home-world check passed, so the fleet's empire owns
+            // a world here.
             let planet_idx = game_data
                 .planets
                 .iter()
-                .position(|planet| planet.sector.to_array() == coords);
+                .position(|planet| planet.sector.to_array() == coords)
+                .ok_or("a Salvage fleet arrived where its empire has no world")?;
             queue_salvage_resolution(
                 game_data,
                 movement_events,
@@ -136,7 +139,7 @@ pub(super) fn handle_fleet_arrival(
                 owner_empire,
                 planet_idx,
                 coords,
-            )?;
+            );
         }
         Order::GuardBlockadeWorld => {
             let planet_idx = game_data

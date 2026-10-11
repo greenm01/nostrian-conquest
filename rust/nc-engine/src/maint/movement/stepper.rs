@@ -3,14 +3,7 @@ use crate::navigation::motion::{
 };
 use crate::navigation::{plan_route_with_intel, visible_hazard_intel_is_empty};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
-use nc_data::{Coords, Real48};
-
-pub(super) fn set_fleet_to_local_hold(fleet: &mut nc_data::Fleet) {
-    let coords = fleet.sector.to_array();
-    fleet.speed = 0;
-    fleet.order = Order::HoldPosition;
-    fleet.target = Coords::from_array(coords);
-}
+use nc_data::Real48;
 
 fn order_persists_on_arrival(order: Order) -> bool {
     // Note: Scout missions (ScoutSector, ScoutSolarSystem) are intentionally
