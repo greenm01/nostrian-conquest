@@ -53,15 +53,22 @@ where
     Ok(result)
 }
 
+/// Import `dir`'s classic files as the first snapshot of a store that has none.
+pub(crate) fn import_directory_if_store_empty(
+    dir: &Path,
+    store: &CampaignStore,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !store.has_snapshots()? {
+        import_directory_snapshot(store, dir)?;
+    }
+    Ok(())
+}
+
 pub(crate) fn load_runtime_state_preferring_live_directory(
     dir: &Path,
     store: &CampaignStore,
 ) -> Result<CampaignRuntimeState, Box<dyn std::error::Error>> {
-    if let Some(state) = store.load_latest_runtime_state()? {
-        return Ok(state);
-    }
-
-    import_directory_snapshot(store, dir)?;
+    import_directory_if_store_empty(dir, store)?;
     Ok(store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots after importing directory")?)
