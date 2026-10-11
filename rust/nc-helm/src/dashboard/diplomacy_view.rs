@@ -26,22 +26,23 @@ pub(crate) fn state_label_and_style(
     viewer_slot: u8,
     empire_slot: u8,
 ) -> (&'static str, CellStyle) {
-    if player.mode == nc_data::PlayerMode::Rogue {
-        ("Rogue", theme::alert_style())
-    } else {
-        match player_public_status(
-            game_data,
-            empire_slot as usize,
-            player_activity_states,
-            player_lifecycle_states,
-        ) {
-            PublicEmpireStatus::Active if empire_slot == viewer_slot => {
-                ("Active", theme::friendly_style())
-            }
-            PublicEmpireStatus::Active => ("Active", theme::dim_style()),
-            PublicEmpireStatus::Mia => ("MIA", theme::alert_style()),
-            PublicEmpireStatus::Defeated => ("Defeated", theme::icd_style()),
+    // A defeated empire stays Defeated after ECMAINT turns it into a rogue.
+    let status = player_public_status(
+        game_data,
+        empire_slot as usize,
+        player_activity_states,
+        player_lifecycle_states,
+    );
+    if player.mode == nc_data::PlayerMode::Rogue && status != PublicEmpireStatus::Defeated {
+        return ("Rogue", theme::alert_style());
+    }
+    match status {
+        PublicEmpireStatus::Active if empire_slot == viewer_slot => {
+            ("Active", theme::friendly_style())
         }
+        PublicEmpireStatus::Active => ("Active", theme::dim_style()),
+        PublicEmpireStatus::Mia => ("MIA", theme::alert_style()),
+        PublicEmpireStatus::Defeated => ("Defeated", theme::icd_style()),
     }
 }
 

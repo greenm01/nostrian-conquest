@@ -23,3 +23,9 @@ fn replay(scenario: &str) -> Vec<Violation> {
 fn a_fleet_may_move_on_after_a_mid_year_event() {
     assert_eq!(replay("bombard-arrival-then-roe-abort"), Vec::new());
 }
+
+/// t099: conversion to a planetless rogue disbands its unarmed fleets.
+#[test]
+fn a_planetless_rogues_disbanding_is_accounted_for() {
+    assert_eq!(replay("planetless-rogue-disbands-unarmed"), Vec::new());
+}

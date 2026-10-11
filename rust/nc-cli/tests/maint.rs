@@ -3436,8 +3436,11 @@ fn maint_rust_join_summary_uses_compact_oxford_fleet_lists() {
     game_data.players[0].mode = PlayerMode::Rogue;
     let host_number = game_data.fleets[0].fleet_number.0;
 
+    // The rogue empire merges only the fleets in orbit of its own world, so
+    // the joiners stay at its home world and the host goes to deep space.
+    game_data.fleets[0].sector = Coords::new(3, 9);
+    game_data.fleets[0].depth = Real48::ZERO;
     for fleet_idx in [1usize, 2, 3] {
-        game_data.fleets[fleet_idx].sector = Coords::new(3, 9);
         game_data.fleets[fleet_idx].order = Order::JoinAnotherFleet;
         game_data.fleets[fleet_idx].mission_target = host_number;
         game_data.fleets[fleet_idx].target = Coords::new(1, 1);
@@ -3799,9 +3802,14 @@ fn maint_rust_reports_fleet_defection_after_civil_disorder() {
             set_armies_aboard(fleet, 0);
         }
     }
+    // Empire 1 is in civil disorder and has just lost its last world; the
+    // count the last run saved still reads 1, so the run does not yet turn
+    // it into a rogue.
+    game_data.players[0].mode = PlayerMode::CivilDisorder;
+    game_data.players[0].planet_count = 1;
     save_classic_core_files(&target, &game_data).expect("mutated game should save");
 
-    let stdout = run_maint_rust_with_export(&target, 2);
+    let stdout = run_maint_rust_with_export(&target, 1);
     assert!(stdout.contains("Rust maintenance complete."));
 
     let post = load_classic_core_files(&target).expect("maint-rust output should load");

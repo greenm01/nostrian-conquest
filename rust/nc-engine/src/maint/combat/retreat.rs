@@ -56,13 +56,15 @@ fn apply_retreat_order(fleet: &mut nc_data::Fleet, retreat_target: [u8; 2]) {
     fleet.speed = fleet.max_speed;
 }
 
-/// Hold where the fleet is, leaving its position and depth as they are.
-fn hold_in_place(fleet: &mut nc_data::Fleet) {
+/// Hold where the fleet is, leaving its position and depth as they are. The
+/// target is its own sector and layer, `TZ = Round(Z)`, as in every Hold
+/// ECMAINT leaves a fleet on.
+pub(crate) fn hold_in_place(fleet: &mut nc_data::Fleet) {
     let coords = fleet.sector.to_array();
     fleet.speed = 0;
     fleet.order = Order::HoldPosition;
     fleet.target = Coords::from_array(coords);
-    set_mission_target(fleet, 0, 0);
+    set_mission_target(fleet, u8::from(fleet.depth.round() == 1), 0);
 }
 
 /// Take fleet `fleet_idx` off its order for `retreat_target`: Seek Home

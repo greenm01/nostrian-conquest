@@ -2,11 +2,11 @@
 //!
 //! Maintenance builds into stardocks, not fleets, and merges move ships
 //! between fleets of one empire, so fleet ships across all empires change
-//! only by reported losses, successful salvage, and civil-disorder
-//! defections:
+//! only by reported losses, successful salvage, civil-disorder
+//! defections and the planetless rogue orders pass:
 //!
 //! after = before - battle/retreat/bombard/assault losses
-//!                - salvaged fleets - defected fleets
+//!                - salvaged fleets - defected fleets - disbanded unarmed fleets
 //!
 //! A salvaged fleet is identified by its standing Salvage order and target
 //! before maintenance, a defected fleet by its empire and fleet number, and
@@ -17,8 +17,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use nc_data::{
-    CoreGameData, EncounterDispositionEvent, Fleet, Order, SalvageResolvedEvent, ShipLosses,
-    troop_transports,
+    CoreGameData, EncounterDispositionEvent, Fleet, Order, PlayerMode, SalvageResolvedEvent,
+    ShipLosses, has_combat_ships, troop_transports,
 };
 
 use super::{TurnObservation, Violation};
@@ -122,6 +122,24 @@ fn merged_fleets(observation: &TurnObservation) -> BTreeMap<(u8, u16), Ships> {
 fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
     let merged = merged_fleets(observation);
     let mut removed = [0; 6];
+    // The pre-tick orders pass disbands unarmed fleets of planetless rogues,
+    // including civil-disorder empires converted at its start. It reads the
+    // saved planet count; those empires do not participate in the AI merge.
+    for fleet in &observation.before.fleets {
+        let Some(player) = observation
+            .before
+            .players
+            .get(usize::from(fleet.owner.0).wrapping_sub(1))
+        else {
+            continue;
+        };
+        if player.planet_count == 0
+            && matches!(player.mode, PlayerMode::Rogue | PlayerMode::CivilDisorder)
+            && !has_combat_ships(fleet)
+        {
+            add_ships(&mut removed, ships_of(fleet));
+        }
+    }
     for event in &observation.events.salvage_events {
         let SalvageResolvedEvent::Succeeded {
             owner_empire,

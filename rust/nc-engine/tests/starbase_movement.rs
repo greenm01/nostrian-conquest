@@ -276,6 +276,9 @@ fn a_guard_that_would_pass_3000_ships_gives_up() {
 #[test]
 fn an_arriving_guard_with_no_partner_becomes_the_escort() {
     let mut game_data = load("ecmaint-starbase-lift-post");
+    // Isolate guard movement: the fixture's planetless civil-disorder empire
+    // would now become a rogue and disband its base before movement.
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
     // The base is in deep space at home. Fleet 2 comes from the next
     // sector with the world-target flag ECGAME writes for the order.
     guard(&mut game_data, 1, [15, 13], Real48::ZERO);
@@ -385,6 +388,9 @@ fn guard_arrivals(events: &MaintenanceEvents) -> usize {
 #[test]
 fn a_guard_arrives_at_its_base_once() {
     let mut game_data = load("ecmaint-starbase-lift-post");
+    // Isolate guard movement: the fixture's planetless civil-disorder empire
+    // would now become a rogue and disband its base before movement.
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
     guard(&mut game_data, 1, [15, 13], Real48::ZERO);
     let fleet = &mut game_data.fleets[1];
     fleet.target = Coords::from_array(HOME);
@@ -403,6 +409,9 @@ fn a_guard_arrives_at_its_base_once() {
 #[test]
 fn a_guard_in_orbit_climbs_to_its_deep_space_base() {
     let mut game_data = load("ecmaint-starbase-lift-post");
+    // Isolate guard movement: the fixture's planetless civil-disorder empire
+    // would now become a rogue and disband its base before movement.
+    game_data.players[0].mode = nc_data::PlayerMode::Human;
     guard(&mut game_data, 1, HOME, Real48::ONE);
     let ships = starship_count(&game_data.fleets[0]) + starship_count(&game_data.fleets[1]);
 

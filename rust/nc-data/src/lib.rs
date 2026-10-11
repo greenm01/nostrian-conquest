@@ -127,7 +127,7 @@ pub use player_activity::{
 pub use player_lifecycle::{
     PlayerAccessMode, PublicEmpireStatus, default_player_lifecycle_states,
     empire_has_recovery_path, is_campaign_contender, is_contesting_empire, player_access_mode,
-    player_public_status, set_civil_disorder,
+    player_public_status, set_civil_disorder, set_rogue,
 };
 pub use player_mail::{
     MAX_QUEUED_MESSAGES_PER_RECIPIENT_PER_YEAR, QueuedPlayerMail, append_mail_queue,
