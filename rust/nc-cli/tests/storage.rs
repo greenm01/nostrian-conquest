@@ -9,7 +9,7 @@ use std::path::Path;
 
 use common::{
     cleanup_dir, ecmaint_oracle_available, run_classic_ecgame_smoke_with_alias, run_ecmaint_oracle,
-    run_nc_cli, unique_temp_dir, without_unread_bytes,
+    run_nc_cli, run_nc_cli_failure_in_dir, unique_temp_dir, without_unread_bytes,
 };
 use nc_compat::{
     DatabaseDat, export_latest_snapshot_to_dir, load_classic_core_files, save_classic_core_files,
@@ -248,6 +248,48 @@ fn db_import_and_export_round_trip_fixture() {
 
     cleanup_dir(&source);
     cleanup_dir(&exported);
+}
+
+/// The stale-save guard also refuses an import older than the stored year;
+/// the operator is told about the store, not given the player's "log in again".
+#[test]
+fn db_import_refuses_a_directory_older_than_the_stored_year() {
+    let source = unique_temp_dir("nc-cli-db-import-stale");
+    common::copy_fixture_dir("fixtures/ecutil-init/v1.5", &source);
+    run_nc_cli(&["db-import", source.to_str().unwrap()]);
+
+    let store = CampaignStore::open_default_in_dir(&source).expect("open store");
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    state.game_data.conquest.game_year += 1;
+    let newer_year = state.game_data.conquest.game_year;
+    store
+        .save_runtime_state_structured(
+            newer_year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save the next year");
+
+    let stderr = run_nc_cli_failure_in_dir(
+        &["db-import", source.to_str().unwrap()],
+        common::rust_workspace(),
+    );
+
+    assert_eq!(
+        stderr.trim(),
+        format!(
+            "error: Refusing to import: the store already holds year {newer_year}, newer than \
+             the directory's year {}. Import into a fresh store or export the store first.",
+            newer_year - 1
+        )
+    );
+    assert!(!stderr.contains("Log in again"));
+
+    cleanup_dir(&source);
 }
 
 /// A classic export writes crippled hulls whole and says the recovery state

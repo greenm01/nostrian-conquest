@@ -1,13 +1,26 @@
 use std::path::Path;
 
 use nc_compat::{export_latest_snapshot_to_dir, import_directory_snapshot};
-use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, crippled_hull_count};
+use nc_data::{CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, crippled_hull_count};
 
 use crate::workspace::{overlay_classic_runtime_files, seed_classic_runtime_files};
 
 pub fn import_directory_to_db(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let store = CampaignStore::open_default_in_dir(dir)?;
-    let snapshot_id = import_directory_snapshot(&store, dir)?;
+    let snapshot_id = match import_directory_snapshot(&store, dir) {
+        Err(CampaignStoreError::StaleSnapshot {
+            loaded_year,
+            latest_year,
+        }) => {
+            return Err(format!(
+                "Refusing to import: the store already holds year {latest_year}, newer than \
+                 the directory's year {loaded_year}. Import into a fresh store or export the \
+                 store first."
+            )
+            .into());
+        }
+        result => result?,
+    };
     println!(
         "Imported {} into {} as snapshot {}.",
         dir.display(),

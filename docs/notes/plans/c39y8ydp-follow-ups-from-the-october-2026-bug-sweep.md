@@ -545,6 +545,8 @@ error's text, and each later save is refused the same way.
 message. The line is shorter than the example in the first note so it fits one
 80-column notice row.
 
+Result for t089 (2026-10-11): `nc-cli db-import` matches `CampaignStoreError::StaleSnapshot` and refuses with its own operator message, naming the store's year and the directory's year and saying to import into a fresh store or export the store first; the player-worded text is unchanged.
+
 ### t077
 
 `nc-helm`'s "current year only" inbox filter keeps items whose year equals
