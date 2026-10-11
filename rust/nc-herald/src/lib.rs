@@ -155,20 +155,39 @@ impl InGameEvent {
     }
 }
 
+/// Discord OAuth application configuration for token verification.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscordOAuthConfig {
+    pub client_id: String,
+    pub client_secret: String,
+}
+
+/// Request to exchange a Discord authorization code for a verified user profile.
+#[derive(Debug, Clone, Deserialize)]
+pub struct DiscordAuthRequest {
+    pub code: String,
+}
+
+/// Verified Discord user profile information.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscordUserProfile {
+    pub id: String,
+    pub username: String,
+    pub global_name: Option<String>,
+    pub avatar: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+struct DiscordTokenResponse {
+    access_token: String,
+}
+
 /// Herald dispatcher configuration.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct HeraldConfig {
     pub targets: Vec<PlatformTarget>,
     pub dry_run: bool,
-}
-
-impl Default for HeraldConfig {
-    fn default() -> Self {
-        Self {
-            targets: Vec::new(),
-            dry_run: true,
-        }
-    }
+    pub discord_oauth: Option<DiscordOAuthConfig>,
 }
 
 /// The Herald dispatcher service.
@@ -256,6 +275,59 @@ impl Herald {
         }
         Ok(())
     }
+
+    /// Exchange a Discord Embedded App SDK authorization code for a verified Discord user profile.
+    pub async fn exchange_discord_code(&self, code: &str) -> Result<DiscordUserProfile, Box<dyn std::error::Error + Send + Sync>> {
+        let Some(oauth) = &self.config.discord_oauth else {
+            return Err("Discord OAuth not configured on this herald instance".into());
+        };
+
+        if self.config.dry_run {
+            info!(code = %code, "Dry-run: mock Discord OAuth token exchange");
+            return Ok(DiscordUserProfile {
+                id: "123456789012345678".to_string(),
+                username: "mock_commander".to_string(),
+                global_name: Some("Mock Commander".to_string()),
+                avatar: None,
+            });
+        }
+
+        let params = [
+            ("client_id", oauth.client_id.as_str()),
+            ("client_secret", oauth.client_secret.as_str()),
+            ("grant_type", "authorization_code"),
+            ("code", code),
+        ];
+
+        let token_res = self.client
+            .post("https://discord.com/api/oauth2/token")
+            .form(&params)
+            .send()
+            .await?;
+
+        if !token_res.status().is_success() {
+            let status = token_res.status();
+            let body = token_res.text().await.unwrap_or_default();
+            return Err(format!("Discord OAuth token exchange failed with HTTP {status}: {body}").into());
+        }
+
+        let token_data: DiscordTokenResponse = token_res.json().await?;
+
+        let user_res = self.client
+            .get("https://discord.com/api/users/@me")
+            .bearer_auth(&token_data.access_token)
+            .send()
+            .await?;
+
+        if !user_res.status().is_success() {
+            let status = user_res.status();
+            let body = user_res.text().await.unwrap_or_default();
+            return Err(format!("Discord fetch user profile failed with HTTP {status}: {body}").into());
+        }
+
+        let profile: DiscordUserProfile = user_res.json().await?;
+        Ok(profile)
+    }
 }
 
 use std::sync::Arc;
@@ -273,6 +345,7 @@ pub fn create_listener_router(herald: Arc<Herald>) -> Router {
         .route("/health", get(health_handler))
         .route("/events", post(receive_event_handler))
         .route("/broadcast", post(receive_broadcast_handler))
+        .route("/auth/discord/token", post(exchange_discord_token_handler))
         .with_state(herald)
 }
 
@@ -282,6 +355,27 @@ async fn health_handler() -> Response {
         "service": "nc-herald",
     }))
     .into_response()
+}
+
+async fn exchange_discord_token_handler(
+    State(herald): State<Arc<Herald>>,
+    Json(req): Json<DiscordAuthRequest>,
+) -> Response {
+    match herald.exchange_discord_code(&req.code).await {
+        Ok(profile) => (
+            StatusCode::OK,
+            axum::response::Json(serde_json::to_value(&profile).unwrap_or_default()),
+        )
+            .into_response(),
+        Err(e) => {
+            error!("Failed to exchange Discord authorization code: {e}");
+            (
+                StatusCode::BAD_REQUEST,
+                axum::response::Json(serde_json::json!({ "error": e.to_string() })),
+            )
+                .into_response()
+        }
+    }
 }
 
 async fn receive_event_handler(
@@ -346,5 +440,35 @@ mod tests {
 
         let fields = embed["fields"].as_array().expect("fields array");
         assert_eq!(fields.len(), 3);
+    }
+
+    #[tokio::test]
+    async fn mock_discord_oauth_exchange() {
+        let config = HeraldConfig {
+            dry_run: true,
+            discord_oauth: Some(DiscordOAuthConfig {
+                client_id: "test_client_id".to_string(),
+                client_secret: "test_secret".to_string(),
+            }),
+            ..HeraldConfig::default()
+        };
+
+        let herald = Herald::new(config);
+        let profile = herald.exchange_discord_code("test_code_123").await.expect("exchange code in dry-run");
+        assert_eq!(profile.username, "mock_commander");
+        assert_eq!(profile.id, "123456789012345678");
+    }
+
+    #[tokio::test]
+    async fn oauth_not_configured_returns_error() {
+        let config = HeraldConfig {
+            dry_run: true,
+            discord_oauth: None,
+            ..HeraldConfig::default()
+        };
+
+        let herald = Herald::new(config);
+        let res = herald.exchange_discord_code("test_code_123").await;
+        assert!(res.is_err());
     }
 }

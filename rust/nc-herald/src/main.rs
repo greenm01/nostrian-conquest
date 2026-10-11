@@ -11,6 +11,14 @@ struct Cli {
     #[arg(long, env = "NC_DISCORD_WEBHOOK_URL")]
     discord_webhook: Option<String>,
 
+    /// Discord OAuth Client ID for Activity token verification
+    #[arg(long, env = "NC_DISCORD_CLIENT_ID")]
+    discord_client_id: Option<String>,
+
+    /// Discord OAuth Client Secret for Activity token verification
+    #[arg(long, env = "NC_DISCORD_CLIENT_SECRET")]
+    discord_client_secret: Option<String>,
+
     /// Dry run mode: print embeds to stdout instead of sending HTTP requests
     #[arg(long, default_value_t = false)]
     dry_run: bool,
@@ -72,7 +80,19 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     // If no webhook URL is provided, force dry-run mode
     let dry_run = cli.dry_run || targets.is_empty();
 
-    let config = HeraldConfig { targets, dry_run };
+    let discord_oauth = match (cli.discord_client_id, cli.discord_client_secret) {
+        (Some(client_id), Some(client_secret)) => Some(nc_herald::DiscordOAuthConfig {
+            client_id,
+            client_secret,
+        }),
+        _ => None,
+    };
+
+    let config = HeraldConfig {
+        targets,
+        dry_run,
+        discord_oauth,
+    };
     let herald = Herald::new(config);
 
     match cli.command {
@@ -83,7 +103,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             let app = nc_herald::create_listener_router(herald_arc);
 
             info!(addr = %bind_addr, "nc-herald daemon listening for incoming events");
-            println!("nc-herald: listening on http://{bind_addr} (POST /events, POST /broadcast)");
+            println!(
+                "nc-herald: listening on http://{bind_addr} (POST /events, POST /broadcast, POST /auth/discord/token)"
+            );
 
             axum::serve(listener, app).await?;
         }

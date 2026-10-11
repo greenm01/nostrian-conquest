@@ -30,12 +30,16 @@ This runbook guides sysops through deploying and operating **`nc-bridge`** (the 
  │    `nc-door` Process     │    │   `nc-herald` (Port 8081)│
  │  • Reads DOOR.KDL        │    │  • Listens for events    │
  │  • Reads/writes ncgame.db│    │  • Dispatches Discord    │
- └──────────────────────────┘    │    webhook embeds        │
-                                 └─────────────┬────────────┘
-                                               ▼
-                                 ┌──────────────────────────┐
-                                 │   Discord #announcements │
-                                 └──────────────────────────┘
+ └─────────────┬────────────┘    │    webhook embeds        │
+               │                 └─────────────┬────────────┘
+               │ Staged                        ▼
+               │ exports         ┌──────────────────────────┐
+               ▼                 │  Discord #galactic-news  │
+ ┌──────────────────────────┐    └──────────────────────────┘
+ │ `nc-discord` Gateway Bot │
+ │  • Serves /map, /report  │
+ │  • Ephemeral responses   │
+ └──────────────────────────┘
 ```
 
 ---
@@ -49,6 +53,7 @@ This runbook guides sysops through deploying and operating **`nc-bridge`** (the 
 ├── bin/
 │   ├── nc-bridge
 │   ├── nc-herald
+│   ├── nc-discord
 │   ├── nc-door
 │   └── nc-sysop
 ├── static/              # Web client assets (index.html, style.css, app.js)
@@ -119,9 +124,9 @@ curl http://127.0.0.1:8080/health
 
 ---
 
-## 4. Deploying `nc-herald` (The Event Listener)
+## 4. Deploying `nc-herald` (Outbound Event Hub & Activity OAuth)
 
-`nc-herald` runs as a daemon receiving real-time event alerts from `nc-bridge` and posting them to Discord.
+`nc-herald` runs as a lightweight daemon receiving real-time event alerts from `nc-bridge` and posting them to Discord webhooks, as well as exchanging Discord Activity OAuth2 codes.
 
 ### Systemd Service: `/etc/systemd/system/nc-herald.service`
 
@@ -138,6 +143,8 @@ WorkingDirectory=/srv/nc
 Environment=NC_HERALD_HOST=127.0.0.1
 Environment=NC_HERALD_PORT=8081
 Environment=NC_DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
+Environment=NC_DISCORD_CLIENT_ID=YOUR_DISCORD_CLIENT_ID
+Environment=NC_DISCORD_CLIENT_SECRET=YOUR_DISCORD_CLIENT_SECRET
 ExecStart=/srv/nc/bin/nc-herald listen
 Restart=always
 RestartSec=5
@@ -159,7 +166,53 @@ Verify the webhook with a test announcement:
 
 ---
 
-## 5. Daily Maintenance & The Galactic Gazette
+## 5. Deploying `nc-discord` (Interactive Slash Command Bot)
+
+`nc-discord` connects directly to the Discord Gateway using `poise` and `serenity`, registering interactive slash commands and delivering private player exports.
+
+### Systemd Service: `/etc/systemd/system/nc-discord.service`
+
+```ini
+[Unit]
+Description=Nostrian Conquest Discord Bot Daemon
+After=network.target
+
+[Service]
+Type=simple
+User=nostrian
+Group=nostrian
+WorkingDirectory=/srv/nc
+Environment=NC_DISCORD_BOT_TOKEN=YOUR_BOT_TOKEN
+Environment=NC_DISCORD_CAMPAIGN_DIR=/srv/nc/campaigns/capella
+Environment=NC_DISCORD_BRIDGE_URL=https://play.yourdomain.com
+ExecStart=/srv/nc/bin/nc-discord
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now nc-discord
+```
+
+### Slash Commands Registered by `nc-discord`
+
+* `/status` — Public campaign stardate, sector name, and maintenance countdown.
+* `/map [format]` — **Ephemeral (Fog of War safe)** starmap delivery. Optional dropdown choice:
+  * `Excel Workbook (.xlsx)` (default) — styled spreadsheet with frozen navy headers, sortable numeric cells, and a second tab containing the printable ASCII grid. Opens in Microsoft Excel, LibreOffice Calc, Apple Numbers, and Google Sheets.
+  * `All Formats` — attaches `.xlsx`, `.csv`, and `.txt` simultaneously.
+  * `Printable ASCII Grid (.txt)` — classic terminal dot-matrix starmap grid.
+  * `Raw CSV (.csv)` — raw comma-separated values.
+* `/report` — **Ephemeral** classified turn briefing delivering `ECREPORT-*.TXT`.
+* `/play` — Direct launcher card linking to the Web Door and Discord Activity.
+
+---
+
+## 6. Daily Maintenance & The Galactic Gazette
 
 Schedule daily maintenance via cron or systemd timer. At the end of maintenance, trigger the public turn broadcast:
 

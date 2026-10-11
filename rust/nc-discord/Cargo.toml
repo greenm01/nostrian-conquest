@@ -1,0 +1,18 @@
+[package]
+name = "nc-discord"
+version = "1.0.0-beta.3"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[[bin]]
+name = "nc-discord"
+path = "src/main.rs"
+
+[dependencies]
+nc-log = { path = "../nc-log" }
+tracing = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
+clap = { version = "4", features = ["derive", "env"] }
+poise = "0.6"
+serenity = { version = "0.12", default-features = false, features = ["client", "gateway", "rustls_backend", "model"] }
+rust_xlsxwriter = "0.80"

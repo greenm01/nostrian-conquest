@@ -306,23 +306,30 @@ nc-door \
 
 ```text
                ┌───────────────────────┐
-               │      nc-dropfile      │  <-- Shared Data Crate (KDL schema)
+               │      nc-dropfile      │  (Shared Data Crate)
                └───────────┬───────────┘
                            │
              ┌─────────────┴─────────────┐
              ▼                           ▼
   ┌─────────────────────┐     ┌─────────────────────┐
-  │       nc-game       │     │      nc-bridge      │  <-- WebSocket/PTY Daemon
-  │     (`nc-door`)     │     └──────────┬──────────┘      & Node Manager
+  │       nc-game       │     │      nc-bridge      │  (Web / PTY Daemon
+  │     (`nc-door`)     │     └──────────┬──────────┘   & Node Manager)
   └─────────────────────┘                │
                                          ▼
                               ┌─────────────────────┐
-                              │      nc-herald      │  <-- Discord/Matrix Bot &
-                              │                     │      Webhook Dispatcher
-                              └─────────────────────┘
+                              │      nc-herald      │  (Outbound Event Hub
+                              └──────────┬──────────┘   & Webhook Dispatcher)
+                                         │
+                 ┌───────────────────────┼───────────────────────┐
+                 ▼                       ▼                       ▼
+      ┌─────────────────────┐ ┌─────────────────────┐ ┌─────────────────────┐
+      │     nc-discord      │ │      nc-matrix      │ │    (Future Bots)    │
+      │   (Serenity/Poise)  │ │    (matrix-sdk)     │ │   Telegram / IRC    │
+      └─────────────────────┘ └─────────────────────┘ └─────────────────────┘
 ```
 
 * **Producer:** `nc-bridge` serializes `DoorKdl` into `/tmp/nc-nodes/node_N/door.kdl` when initializing a player session.
 * **Consumer:** `nc-door` parses `DoorKdl` on startup to bind player seats, configure sockets, and enforce time limits.
 * **Announcer:** `nc-herald` listens for outbound event callbacks fired by active nodes.
+* **Bot Gateways:** `nc-discord` (and future `nc-matrix`) provides interactive player utilities (`/map`, `/report`, `/play`).
 

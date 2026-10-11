@@ -290,40 +290,49 @@ Maintenance occurs completely asynchronously from player sessions.
 
 ## 8. Crate Architecture & Workspace Partitioning
 
-To ensure the simulation engine remains completely isolated from web frameworks and third-party chat APIs, the implementation is partitioned into three dedicated workspace crates:
+To ensure the simulation engine remains completely isolated from web frameworks and third-party chat APIs, the implementation is partitioned into dedicated workspace crates:
 
 ```text
                ┌───────────────────────┐
-               │      nc-dropfile      │  <-- Shared Data Crate (KDL schema)
+               │      nc-dropfile      │  (Shared Data Crate)
                └───────────┬───────────┘
                            │
              ┌─────────────┴─────────────┐
              ▼                           ▼
   ┌─────────────────────┐     ┌─────────────────────┐
-  │       nc-game       │     │      nc-bridge      │  <-- WebSocket/PTY Daemon
-  │     (`nc-door`)     │     └──────────┬──────────┘      & Node Manager
+  │       nc-game       │     │      nc-bridge      │  (Web / PTY Daemon
+  │     (`nc-door`)     │     └──────────┬──────────┘   & Node Manager)
   └─────────────────────┘                │
                                          ▼
                               ┌─────────────────────┐
-                              │      nc-herald      │  <-- Discord/Matrix Bot &
-                              │                     │      Webhook Dispatcher
-                              └─────────────────────┘
+                              │      nc-herald      │  (Outbound Event Hub
+                              └──────────┬──────────┘   & Webhook Dispatcher)
+                                         │
+                 ┌───────────────────────┼───────────────────────┐
+                 ▼                       ▼                       ▼
+      ┌─────────────────────┐ ┌─────────────────────┐ ┌─────────────────────┐
+      │     nc-discord      │ │      nc-matrix      │ │    (Future Bots)    │
+      │   (Serenity/Poise)  │ │    (matrix-sdk)     │ │   Telegram / IRC    │
+      └─────────────────────┘ └─────────────────────┘ └─────────────────────┘
 ```
 
 ### Crate Responsibilities
 
 * **`nc-dropfile` (Shared Dropfile Types & Schema):**
   * Lightweight data library with zero networking or async code.
-  * Owns the parser, serializer, and data types for `DOOR.KDL` and legacy dropfiles.
+  * Owns the parser, serializer, and data types for `DOOR.KDL` and legacy dropfiles (`DOOR32.SYS`, `DOOR.SYS`, `CHAIN.TXT`).
   * Consumed by `nc-game` (reader/player) and `nc-bridge` (producer/writer).
 * **`nc-bridge` (Web Terminal Daemon & Node Manager):**
   * Completely agnostic of Discord, Matrix, or specific chat platforms.
   * Hosts static web client assets (`xterm.js`, CP437 fonts).
   * Allocates virtual node slots and generates per-session `DOOR.KDL` files.
   * Spawns `nc-door` child processes and proxies WebSocket streams to TCP loopback / Unix sockets.
-* **`nc-herald` (Chat Platform Adapter & Broadcaster):**
-  * The only crate with platform-specific chat logic (Discord OAuth2, webhooks, Matrix API).
-  * Validates user authorization tokens from the Activity SDK.
+* **`nc-herald` (Outbound Event Hub & Webhook Broadcaster):**
+  * Lightweight HTTP event listener and webhook dispatcher (`axum` + `reqwest`).
+  * Ingests in-game tactical events from `nc-bridge` and verifies Discord OAuth2 Activity codes.
   * Formats maintenance results and broadcasts the "Galactic Gazette" embed.
-  * Relays live in-game event webhooks into channel announcements.
+* **`nc-discord` (Interactive Discord Slash Command Bot):**
+  * Connects to the Discord Gateway using `serenity` and `poise`.
+  * Handles interactive slash commands (`/status`, `/map`, `/report`, `/play`).
+  * Delivers personal starmap exports and classified turn briefings as private ephemeral messages to preserve Fog of War.
 
