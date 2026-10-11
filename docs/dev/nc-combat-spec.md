@@ -88,7 +88,7 @@ The Rust engine uses a **10x internal scale** for combat values to ensure high-p
 
 | Unit | AS (Attack) | DS (Defense) | Notes |
 | ---- | -- | -- | ----- |
-| Destroyer | 10 | 5 | Agile glass cannon (Execution) |
+| Destroyer | 10 | 8 | Fast raider and line support (Execution) |
 | Cruiser | 30 | 30 | Balanced brawler (Suppression) |
 | Battleship | 90 | 100 | Fleet anchor (Suppression) |
 | Scout | 0 | 10 | Non-combatant |
@@ -244,7 +244,7 @@ its defense strength:
 | ------ | ----------------------- |
 | Ground battery | 20 |
 | Army | 10 |
-| Docked ship (stardock) | Its fleet DS (DD 5, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
+| Docked ship (stardock) | Its fleet DS (DD 8, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
 | Stored goods / factories | Remaining hits ÷ 10, then 100 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
