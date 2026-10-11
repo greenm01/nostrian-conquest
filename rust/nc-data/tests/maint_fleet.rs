@@ -1824,8 +1824,8 @@ fn test_rendezvous_merge_emits_survivor_absorption_event() {
     assert!(events.fleet_merge_events.iter().any(|event| {
         event.kind == Mission::RendezvousSector
             && event.survivor_side
-            && event.host_fleet_id_raw == survivor_id
-            && event.absorbed_fleet_id_raw == absorbed_id
+            && event.host_fleet_id == survivor_id
+            && event.absorbed_fleet_id == absorbed_id
     }));
 }
 
@@ -2150,7 +2150,7 @@ fn test_guard_blockade_world_on_station_persists() {
 // ---------------------------------------------------------------------------
 
 /// Build a game state where a hostile fleet is already on-station and ready to
-/// execute (transit_ready_flag_raw == 0x80).  The target planet at [25,25] is
+/// execute (transit_ready_flag == 0x80).  The target planet at [25,25] is
 /// owned by empire 2 with 10 armies and 4 ground batteries.
 fn hostile_on_station_ready(
     order: Order,
@@ -2603,7 +2603,7 @@ fn test_join_succeeds_when_fleet_id_remapped_by_prior_salvage_removal() {
     }
 
     // Fleet 0 (fleet_id=1) is the joiner — co-located with the host, storing
-    // the host's current fleet_id (3) in join_host_fleet_id_raw.
+    // the host's current fleet_id (3) in join_host_fleet_id.
     {
         let joiner = &mut game_data.fleets[0];
         joiner.sector = Coords::from_array(host_coords);

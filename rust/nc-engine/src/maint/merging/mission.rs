@@ -56,8 +56,8 @@ pub(super) fn process_mission_fleet_merging(
             fleet_idx: joiner_idx,
             owner_empire: joiner_owner,
             kind: Mission::JoinAnotherFleet,
-            host_fleet_id_raw: game_data.fleets[host_idx].record.0,
-            absorbed_fleet_id_raw: joiner_fleet_id,
+            host_fleet_id: game_data.fleets[host_idx].record.0,
+            absorbed_fleet_id: joiner_fleet_id,
             host_fleet_number: game_data.fleets[host_idx].fleet_number.0 as u8,
             absorbed_fleet_number: game_data.fleets[joiner_idx].fleet_number.0 as u8,
             coords: joiner_coords,
@@ -100,8 +100,8 @@ pub(super) fn process_mission_fleet_merging(
                 fleet_idx: absorbed_idx,
                 owner_empire,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
-                absorbed_fleet_id_raw: absorbed_id,
+                host_fleet_id: game_data.fleets[survivor_idx].record.0,
+                absorbed_fleet_id: absorbed_id,
                 host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
                 absorbed_fleet_number: game_data.fleets[absorbed_idx].fleet_number.0 as u8,
                 coords,
@@ -112,8 +112,8 @@ pub(super) fn process_mission_fleet_merging(
                 fleet_idx: survivor_idx,
                 owner_empire,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
-                absorbed_fleet_id_raw: absorbed_id,
+                host_fleet_id: game_data.fleets[survivor_idx].record.0,
+                absorbed_fleet_id: absorbed_id,
                 host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
                 absorbed_fleet_number: game_data.fleets[absorbed_idx].fleet_number.0 as u8,
                 coords,
@@ -148,9 +148,7 @@ pub(super) fn process_join_host_updates(
     // (owner, absorbed fleet number) -> the merge that absorbed it.
     let mut absorbed_by = std::collections::HashMap::new();
     for event in merge_events {
-        if event.absorbed_fleet_id_raw != 0
-            && event.absorbed_fleet_id_raw != event.host_fleet_id_raw
-        {
+        if event.absorbed_fleet_id != 0 && event.absorbed_fleet_id != event.host_fleet_id {
             absorbed_by.insert(
                 (event.owner_empire, u16::from(event.absorbed_fleet_number)),
                 event,
@@ -221,7 +219,7 @@ pub(super) fn process_join_host_updates(
             fleet.order = Order::HoldPosition;
             fleet.speed = 0;
             fleet.target = Coords::from_array(coords);
-            // join_host_fleet_id_raw is already 0 — no need to set it again.
+            // join_host_fleet_id is already 0 — no need to set it again.
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
                 owner_empire: owner,

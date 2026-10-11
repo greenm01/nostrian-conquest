@@ -41,7 +41,7 @@ pub(super) fn sanitize_invalid_player_inputs(
             ) {
                 match reason {
                     FleetPlayerInputValidationError::InvalidOrder(reason) => {
-                        // A JoinAnotherFleet fleet with join_host_fleet_id_raw == 0 was
+                        // A JoinAnotherFleet fleet with join_host_fleet_id == 0 was
                         // remapped by cull_empty_fleets after its host was culled. That is
                         // an engine-set sentinel, not an invalid player input.  Leave the
                         // fleet alone here; process_join_host_updates will handle it via

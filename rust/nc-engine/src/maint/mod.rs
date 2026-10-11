@@ -884,7 +884,7 @@ fn apply_fleet_removal_remap(
     game_data.fleets = remapped_fleets;
 
     for player_idx in 0..game_data.players.len() {
-        let owner_raw = (player_idx + 1) as u8;
+        let owner = (player_idx + 1) as u8;
         let first_id = game_data.players[player_idx].fleets_first.0;
         let last_id = game_data.players[player_idx].fleets_last.0;
         let new_first = remap_id(first_id);
@@ -893,7 +893,7 @@ fn apply_fleet_removal_remap(
         game_data.players[player_idx].fleets_last.0 = if new_last == 0 && new_first != 0 {
             let mut max_new_id: u16 = new_first;
             for orig_idx in 0..fleet_count {
-                if pre_removal_owner[orig_idx] == owner_raw && !to_remove[orig_idx] {
+                if pre_removal_owner[orig_idx] == owner && !to_remove[orig_idx] {
                     let mapped = remap_id(pre_removal_fleet_id[orig_idx]);
                     if mapped > max_new_id {
                         max_new_id = mapped;

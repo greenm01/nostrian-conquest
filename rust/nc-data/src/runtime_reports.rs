@@ -324,16 +324,16 @@ fn parse_stardate_week_year(text: &str) -> Option<(u8, u16)> {
     let digit_start = tail.find(|ch: char| ch.is_ascii_digit())?;
     let digits = &tail[digit_start..];
     let slash = digits.find('/')?;
-    let week_raw = digits[..slash]
+    let week_text = digits[..slash]
         .chars()
         .filter(|ch| ch.is_ascii_digit())
         .collect::<String>();
-    let year_raw = digits[slash + 1..]
+    let year_text = digits[slash + 1..]
         .chars()
         .take_while(|ch| ch.is_ascii_digit())
         .collect::<String>();
-    let week = week_raw.parse::<u8>().ok()?;
-    let year = year_raw.parse::<u16>().ok()?;
+    let week = week_text.parse::<u8>().ok()?;
+    let year = year_text.parse::<u16>().ok()?;
     Some((week, year))
 }
 

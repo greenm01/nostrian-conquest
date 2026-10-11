@@ -22,10 +22,10 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         .collect();
 
     for world in projection.worlds {
-        let Some(owner_raw) = world.known_owner_empire_id else {
+        let Some(owner) = world.known_owner_empire_id else {
             continue;
         };
-        if owner_raw == 0 || owner_raw == viewer_empire {
+        if owner == 0 || owner == viewer_empire {
             continue;
         }
 

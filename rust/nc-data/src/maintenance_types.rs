@@ -370,9 +370,9 @@ pub struct FleetMergeEvent {
     /// Kind of merge-producing mission.
     pub kind: Mission,
     /// Structural fleet ID of the surviving host, for internal remap logic.
-    pub host_fleet_id_raw: u16,
+    pub host_fleet_id: u16,
     /// Structural fleet ID of the absorbed fleet, for internal remap logic.
-    pub absorbed_fleet_id_raw: u16,
+    pub absorbed_fleet_id: u16,
     /// Host fleet number that remained after the merge.
     pub host_fleet_number: u8,
     /// Fleet number that was absorbed/merged away.

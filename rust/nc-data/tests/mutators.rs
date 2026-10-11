@@ -1127,7 +1127,7 @@ fn can_set_other_setup_program_fields() {
 }
 
 #[test]
-fn can_set_purge_after_turns_raw() {
+fn can_set_purge_after_turns() {
     let mut setup = parse_setup_dat(&read_fixture("SETUP.DAT")).unwrap();
     assert_eq!(setup.purge_after_turns, 0);
     setup.purge_after_turns = 1;
