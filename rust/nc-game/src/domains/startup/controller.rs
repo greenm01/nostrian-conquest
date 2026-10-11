@@ -35,8 +35,7 @@ impl App {
         };
         let last_run_year = self
             .game_data
-            .player
-            .records
+            .players
             .get(player_idx)
             .map(|player| player.last_run_year_raw())
             .unwrap_or(0);
@@ -148,7 +147,7 @@ impl App {
             if let Some(row_idx) = row_idx {
                 delete_report_block_for_viewer(
                     &mut self.report_block_rows,
-                    &self.game_data.player.records,
+                    &self.game_data.players,
                     row_idx,
                     self.player.record_index_1_based as u8,
                 );
@@ -1236,8 +1235,7 @@ impl App {
 
     pub(crate) fn first_time_empire_rows(&self) -> Vec<String> {
         self.game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .map(|(idx, player)| {
@@ -1276,15 +1274,13 @@ impl App {
     ) -> Result<([u8; 2], u16, u16), Box<dyn std::error::Error>> {
         let planet_index = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
             .ok_or("player record missing for homeworld prompt")?
             .homeworld_planet_index_1_based_raw() as usize;
         let planet = self
             .game_data
             .planets
-            .records
             .get(planet_index.saturating_sub(1))
             .ok_or("homeworld planet missing for first-time prompt")?;
         Ok((
@@ -1307,7 +1303,6 @@ impl App {
         let planet = self
             .game_data
             .planets
-            .records
             .get(planet_index - 1)
             .ok_or("colony world missing for naming prompt")?;
         Ok((
@@ -1330,8 +1325,7 @@ impl App {
                 )?;
             let player_record_index_1_based = runtime_state
                 .game_data
-                .player
-                .records
+                .players
                 .iter()
                 .enumerate()
                 .find_map(|(idx, _)| {
@@ -1358,8 +1352,7 @@ impl App {
         if let Some(alias) = self.startup_state.caller_alias.as_deref() {
             if let Some(player) = self
                 .game_data
-                .player
-                .records
+                .players
                 .get_mut(self.player.record_index_1_based - 1)
             {
                 player.set_assigned_player_handle_raw(alias);
@@ -1394,8 +1387,7 @@ impl App {
         let seat = self.player.record_index_1_based;
         let player = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(seat - 1)
             .ok_or("player record missing for handle binding")?;
         if !player.assigned_player_handle_matches(handle) {
@@ -1443,8 +1435,7 @@ impl App {
     fn complete_preloaded_empire_rename(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let player = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(self.player.record_index_1_based - 1)
             .ok_or("player record missing for pre-loaded rename")?;
         player.set_controlled_empire_name_raw(&self.startup_state.first_time_empire_name);
@@ -1515,12 +1506,11 @@ impl App {
     fn sync_player_review_flags(&mut self) {
         let has_results = self.has_active_report_blocks();
         let results_chain =
-            layout_classic_results(&self.game_data.player.records, &self.report_block_rows)
+            layout_classic_results(&self.game_data.players, &self.report_block_rows)
                 .chain_for(self.player.record_index_1_based as u8);
         if let Some(player) = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(self.player.record_index_1_based - 1)
         {
             player.set_classic_login_reviewables_present(
@@ -1615,8 +1605,7 @@ impl App {
     fn pending_naming_screen(&self) -> Option<ScreenId> {
         let Some(player) = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
         else {
             return None;
@@ -1628,7 +1617,6 @@ impl App {
         if self
             .game_data
             .planets
-            .records
             .get(planet_index - 1)
             .filter(|planet| planet.is_named_homeworld_seed())
             .is_some()
@@ -1684,14 +1672,12 @@ impl App {
         let player_empire = self.player.record_index_1_based as u8;
         let homeworld_index = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
             .map(|player| player.homeworld_planet_index_1_based_raw() as usize)
             .unwrap_or(0);
         self.game_data
             .planets
-            .records
             .iter()
             .enumerate()
             .find(|(idx, planet)| {

@@ -15,7 +15,7 @@ fn baseline_game() -> nc_data::CoreGameData {
 }
 
 fn strip_empire_planets(game_data: &mut nc_data::CoreGameData, empire_raw: u8) {
-    for planet in &mut game_data.planets.records {
+    for planet in &mut game_data.planets {
         if planet.owner_empire_slot_raw() == empire_raw {
             planet.set_owner_empire_slot_raw(0);
             planet.set_ownership_status_raw(0);
@@ -24,7 +24,7 @@ fn strip_empire_planets(game_data: &mut nc_data::CoreGameData, empire_raw: u8) {
 }
 
 fn strip_empire_ships(game_data: &mut nc_data::CoreGameData, empire_raw: u8) {
-    for fleet in &mut game_data.fleets.records {
+    for fleet in &mut game_data.fleets {
         if fleet.owner_empire_raw() == empire_raw {
             fleet.set_destroyer_count(0);
             fleet.set_cruiser_count(0);
@@ -59,8 +59,8 @@ fn default_activity_states(player_count: usize) -> Vec<PlayerActivityState> {
 #[test]
 fn public_status_reports_mia_when_inactivity_autopilot_is_active() {
     let mut game_data = baseline_game();
-    game_data.player.records[0].set_autopilot_flag(1);
-    let mut activity = default_activity_states(game_data.player.records.len());
+    game_data.players[0].set_autopilot_flag(1);
+    let mut activity = default_activity_states(game_data.players.len());
     activity[0].inactivity_autopilot_pending_clear = true;
 
     let status = player_public_status(
@@ -76,7 +76,7 @@ fn public_status_reports_mia_when_inactivity_autopilot_is_active() {
 #[test]
 fn public_status_reports_defeated_for_terminal_loss_states() {
     let game_data = baseline_game();
-    let activity = default_activity_states(game_data.player.records.len());
+    let activity = default_activity_states(game_data.players.len());
     let mut lifecycle = default_player_lifecycle_states(game_data.conquest.player_count());
     lifecycle[0].terminal_outcome = TerminalOutcome::Defeated;
     lifecycle[1].terminal_outcome = TerminalOutcome::LostGame;
@@ -94,13 +94,13 @@ fn public_status_reports_defeated_for_terminal_loss_states() {
 #[test]
 fn recovery_path_requires_loaded_transports_or_etac_with_unowned_world() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
+    for planet in &mut game_data.planets {
         if planet.owner_empire_slot_raw() == 1 {
             planet.set_owner_empire_slot_raw(0);
             planet.set_ownership_status_raw(0);
         }
     }
-    for fleet in &mut game_data.fleets.records {
+    for fleet in &mut game_data.fleets {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_troop_transport_count(0);
             fleet.set_army_count(0);
@@ -112,14 +112,13 @@ fn recovery_path_requires_loaded_transports_or_etac_with_unowned_world() {
 
     let fleet_idx = game_data
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 1)
         .expect("player 1 fleet");
-    game_data.fleets.records[fleet_idx].set_etac_count(1);
+    game_data.fleets[fleet_idx].set_etac_count(1);
     assert!(empire_has_recovery_path(&game_data, 1));
 
-    for planet in &mut game_data.planets.records {
+    for planet in &mut game_data.planets {
         if planet.owner_empire_slot_raw() == 0 {
             planet.set_owner_empire_slot_raw(2);
             planet.set_ownership_status_raw(2);
@@ -127,11 +126,7 @@ fn recovery_path_requires_loaded_transports_or_etac_with_unowned_world() {
     }
     assert!(!empire_has_recovery_path(&game_data, 1));
 
-    let fleet = game_data
-        .fleets
-        .records
-        .get_mut(fleet_idx)
-        .expect("player 1 fleet");
+    let fleet = game_data.fleets.get_mut(fleet_idx).expect("player 1 fleet");
     fleet.set_etac_count(0);
     fleet.set_troop_transport_count(1);
     fleet.set_army_count(1);
@@ -193,12 +188,11 @@ fn losing_last_recovery_force_inside_window_is_not_reported_as_expiry() {
     strip_empire_ships(&mut game_data, 2);
     let fleet_idx = game_data
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 2)
         .expect("player 2 fleet");
-    game_data.fleets.records[fleet_idx].set_troop_transport_count(1);
-    game_data.fleets.records[fleet_idx].set_army_count(1);
+    game_data.fleets[fleet_idx].set_troop_transport_count(1);
+    game_data.fleets[fleet_idx].set_army_count(1);
 
     let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
     assert!(events.empire_elimination_events.is_empty());
@@ -206,11 +200,10 @@ fn losing_last_recovery_force_inside_window_is_not_reported_as_expiry() {
 
     let fleet_idx = game_data
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 2)
         .expect("player 2 fleet");
-    game_data.fleets.records[fleet_idx].set_army_count(0);
+    game_data.fleets[fleet_idx].set_army_count(0);
 
     let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
     let defeat = events
@@ -233,7 +226,7 @@ fn planetless_rogue_without_recovery_forces_does_not_block_victory() {
         strip_empire_planets(&mut game_data, empire_raw);
         strip_empire_ships(&mut game_data, empire_raw);
     }
-    game_data.player.records[3].set_player_mode_raw(0xff);
+    game_data.players[3].set_player_mode_raw(0xff);
     // Empire 2 keeps the campaign contested until its recovery window closes.
     lifecycle[1].recovery_window_turns_remaining = 1;
 

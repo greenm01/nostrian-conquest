@@ -86,13 +86,12 @@ fn partial_starmap_colors_viewer_and_known_enemy_worlds_by_empire_slot() {
     let enemy_idx = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should contain a non-player world");
-    let enemy = &mut app.game_data.planets.records[enemy_idx];
+    let enemy = &mut app.game_data.planets[enemy_idx];
     enemy.set_owner_empire_slot_raw(2);
     let enemy_coords = enemy.coords_raw();
     let enemy_name = enemy.status_or_name_summary();
@@ -140,7 +139,6 @@ fn partial_starmap_colors_viewer_and_known_enemy_worlds_by_empire_slot() {
     let homeworld = app
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() == 1)
         .expect("fixture should contain player homeworld");
@@ -516,7 +514,6 @@ fn planet_info_intel_detail_shows_last_intel_and_tier() {
     let (planet_idx, coords) = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| {
@@ -589,7 +586,6 @@ fn planet_info_intel_detail_shows_unowned_for_known_zero_owner() {
     let (planet_idx, coords) = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| {
@@ -656,7 +652,6 @@ fn owned_planet_info_detail_shows_owned_since_year() {
     let owned_idx = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| {
@@ -838,7 +833,7 @@ fn build_menu_review_shortcut_opens_owned_planet_info_with_build_queue_and_retur
         .game_data
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
-    let planet = &mut app.game_data.planets.records[planet_idx];
+    let planet = &mut app.game_data.planets[planet_idx];
     planet.set_build_count_raw(0, 5);
     planet.set_build_kind_raw(0, 1);
     planet.set_stardock_count_raw(0, 2);
@@ -889,7 +884,7 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
         .game_data
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
-    let planet = &mut app.game_data.planets.records[planet_idx];
+    let planet = &mut app.game_data.planets[planet_idx];
 
     for (slot, (points, kind_raw)) in [
         (50u8, 1u8),

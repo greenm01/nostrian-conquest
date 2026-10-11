@@ -44,7 +44,7 @@ pub(crate) fn set_bombard_onefleet(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         {
-            let fleet3 = &mut data.fleets.records[2];
+            let fleet3 = &mut data.fleets[2];
             fleet3.set_max_speed(3);
             fleet3.set_current_speed(3);
             fleet3.set_cruiser_count(ca);
@@ -53,15 +53,10 @@ pub(crate) fn set_bombard_onefleet(
         {
             let template = data
                 .planets
-                .records
                 .get(12)
                 .ok_or("planet record 13 missing")?
                 .clone();
-            let p14 = data
-                .planets
-                .records
-                .get_mut(13)
-                .ok_or("planet record 14 missing")?;
+            let p14 = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
             *p14 = template;
             p14.set_coords_raw([target_x, target_y]);
         }
@@ -143,7 +138,7 @@ pub(crate) fn validate_bombard_data(data: &CoreGameData) -> Result<(), Box<dyn s
     let mut errors = Vec::new();
 
     // Fleet 3: BombardWorld order targeting (15,13), speed 3, max_speed 3
-    match data.fleets.records.get(2) {
+    match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(fleet3) => {
             if fleet3.max_speed() != 3 {
@@ -174,7 +169,7 @@ pub(crate) fn validate_bombard_data(data: &CoreGameData) -> Result<(), Box<dyn s
     }
 
     // Planet 14: owned by empire 2, at (15,13), with armies and batteries
-    match data.planets.records.get(13) {
+    match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
             if p.coords_raw() != [0x0F, 0x0D] {

@@ -33,11 +33,11 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
 
     println!("Core State Report");
     println!("  dir={}", dir.display());
-    println!("  player_record_count={}", data.player.records.len());
-    println!("  planet_record_count={}", data.planets.records.len());
-    println!("  fleet_record_count={}", data.fleets.records.len());
-    println!("  base_record_count={}", data.bases.records.len());
-    println!("  ipbm_record_count={}", data.ipbm.records.len());
+    println!("  player_record_count={}", data.players.len());
+    println!("  planet_record_count={}", data.planets.len());
+    println!("  fleet_record_count={}", data.fleets.len());
+    println!("  base_record_count={}", data.bases.len());
+    println!("  ipbm_record_count={}", data.ipbms.len());
     println!("  conquest.game_year={}", data.conquest.game_year());
     println!(
         "  initialized_fleet_blocks={}",
@@ -97,7 +97,7 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
     println!("  campaign_contenders={:?}", campaign_contenders);
     println!("  sole_contender={:?}", sole_contender);
 
-    for (idx, record) in data.player.records.iter().enumerate() {
+    for (idx, record) in data.players.iter().enumerate() {
         let campaign_state = data
             .empire_campaign_state((idx + 1) as u8)
             .map(|state| state.as_str())
@@ -233,8 +233,8 @@ pub(crate) fn print_canonical_transition_details(
                 for record_index in
                     unique_record_indexes(&diff.differing_offsets, PLAYER_RECORD_SIZE)
                 {
-                    let current = &data.player.records[record_index - 1];
-                    let canonical = &baseline.player.records[record_index - 1];
+                    let current = &data.players[record_index - 1];
+                    let canonical = &baseline.players[record_index - 1];
                     println!(
                         "    record {} current: first_base_record_raw={} ipbm_chain_head_raw={} fleet_chain_head_raw={}",
                         record_index,
@@ -256,8 +256,8 @@ pub(crate) fn print_canonical_transition_details(
                 for record_index in
                     unique_record_indexes(&diff.differing_offsets, PLANET_RECORD_SIZE)
                 {
-                    let current = &data.planets.records[record_index - 1];
-                    let canonical = &baseline.planets.records[record_index - 1];
+                    let current = &data.planets[record_index - 1];
+                    let canonical = &baseline.planets[record_index - 1];
                     println!(
                         "    record {} current: {}",
                         record_index,
@@ -275,8 +275,8 @@ pub(crate) fn print_canonical_transition_details(
                 for record_index in
                     unique_record_indexes(&diff.differing_offsets, FLEET_RECORD_SIZE)
                 {
-                    let current = &data.fleets.records[record_index - 1];
-                    let canonical = &baseline.fleets.records[record_index - 1];
+                    let current = &data.fleets[record_index - 1];
+                    let canonical = &baseline.fleets[record_index - 1];
                     println!(
                         "    record {} current: loc={:?} target={:?} order={} aux={:?}",
                         record_index,
@@ -356,7 +356,7 @@ pub(crate) fn validate_core_state(dir: &Path) -> Result<(), Box<dyn std::error::
 
     if errors.is_empty() {
         println!("Valid core state");
-        println!("  base_record_count = {}", data.bases.records.len());
+        println!("  base_record_count = {}", data.bases.len());
         println!(
             "  player1_starbase_count = {}",
             data.player1_starbase_count_current_known()
@@ -365,7 +365,7 @@ pub(crate) fn validate_core_state(dir: &Path) -> Result<(), Box<dyn std::error::
             "  player1_owned_base_record_count = {}",
             data.player1_owned_base_record_count_current_known()
         );
-        println!("  ipbm_record_count = {}", data.ipbm.records.len());
+        println!("  ipbm_record_count = {}", data.ipbms.len());
         println!(
             "  player1_ipbm_count = {}",
             data.player1_ipbm_count_current_known()
@@ -526,8 +526,8 @@ pub(crate) fn sync_core_counts(dir: &Path) -> Result<(), Box<dyn std::error::Err
                 .copied()
                 .flatten(),
             owned_base_count,
-            data.player.records[idx].first_base_record_raw(),
-            data.player.records[idx].ipbm_chain_head_raw(),
+            data.players[idx].first_base_record_raw(),
+            data.players[idx].ipbm_chain_head_raw(),
             fleet_chain_head
         );
     }

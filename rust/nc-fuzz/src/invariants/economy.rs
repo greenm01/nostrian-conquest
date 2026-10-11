@@ -19,7 +19,7 @@ pub fn check_submitted_spending(
     submitted: &CoreGameData,
 ) -> Vec<Violation> {
     let mut violations = Vec::new();
-    for record in 1..=submitted.planets.records.len() {
+    for record in 1..=submitted.planets.len() {
         let committed_start = committed_points(turn_start, record);
         let committed = committed_points(submitted, record);
         if committed <= committed_start {
@@ -63,7 +63,7 @@ pub fn check_maintenance_spending(observation: &TurnObservation) -> Vec<Violatio
     );
 
     let mut violations = Vec::new();
-    for (idx, planet) in after.planets.records.iter().enumerate() {
+    for (idx, planet) in after.planets.iter().enumerate() {
         let record = idx + 1;
         let stored = planet.stored_production_points();
         if stored >= WRAPPED_TREASURY {
@@ -72,7 +72,7 @@ pub fn check_maintenance_spending(observation: &TurnObservation) -> Vec<Violatio
                 stored,
             });
         }
-        let owner = before.planets.records[idx].owner_empire_slot_raw();
+        let owner = before.planets[idx].owner_empire_slot_raw();
         if excluded.contains(&idx)
             || owner == 0
             || owner != planet.owner_empire_slot_raw()
@@ -97,14 +97,13 @@ pub fn check_maintenance_spending(observation: &TurnObservation) -> Vec<Violatio
 /// The autopilot and rogue AI queue builds of their own during maintenance.
 fn runs_ai(state: &CoreGameData, empire: u8) -> bool {
     state
-        .player
-        .records
+        .players
         .get(usize::from(empire) - 1)
         .is_some_and(|player| player.autopilot_flag() != 0 || player.is_rogue_player())
 }
 
 fn committed_points(state: &CoreGameData, record: usize) -> u32 {
-    let planet = &state.planets.records[record - 1];
+    let planet = &state.planets[record - 1];
     (0..10)
         .map(|slot| u32::from(planet.build_count_raw(slot)))
         .sum()

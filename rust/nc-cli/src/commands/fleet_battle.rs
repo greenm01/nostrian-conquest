@@ -78,7 +78,7 @@ pub(crate) fn set_fleet_battle(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         {
-            let f = &mut data.fleets.records[0];
+            let f = &mut data.fleets[0];
             f.set_current_location_coords_raw([battle_x, battle_y]);
             f.set_standing_order_target_coords_raw([battle_x, battle_y]);
             f.set_rules_of_engagement(f0_roe);
@@ -87,7 +87,7 @@ pub(crate) fn set_fleet_battle(
             f.set_destroyer_count(f0_dd);
         }
         {
-            let f = &mut data.fleets.records[2];
+            let f = &mut data.fleets[2];
             f.set_max_speed(3);
             f.set_current_speed(3);
             f.set_standing_order_kind(Order::BombardWorld);
@@ -96,7 +96,7 @@ pub(crate) fn set_fleet_battle(
             f.set_destroyer_count(f2_dd);
         }
         {
-            let f = &mut data.fleets.records[4];
+            let f = &mut data.fleets[4];
             f.set_max_speed(6);
             f.set_current_location_coords_raw([battle_x, battle_y]);
             f.set_standing_order_kind(Order::PatrolSector);
@@ -107,7 +107,7 @@ pub(crate) fn set_fleet_battle(
             f.set_cruiser_count(f4_ca);
         }
         {
-            let f = &mut data.fleets.records[8];
+            let f = &mut data.fleets[8];
             f.set_max_speed(6);
             f.set_current_speed(3);
             f.set_current_location_coords_raw([f8_loc_x, f8_loc_y]);
@@ -119,11 +119,7 @@ pub(crate) fn set_fleet_battle(
             f.set_cruiser_count(f8_ca);
         }
         {
-            let p = data
-                .planets
-                .records
-                .get_mut(13)
-                .ok_or("planet record 14 missing")?;
+            let p = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
             p.set_as_owned_target_world(
                 [p14_x, p14_y],
                 [0x64, 0x87],
@@ -366,7 +362,7 @@ pub(crate) fn validate_fleet_battle_data(
     let mut errors = Vec::new();
 
     // Fleet 0 (empire=1, slot=1): at (10,10), RoE=100, BB=50, CA=50, DD=50
-    match data.fleets.records.get(0) {
+    match data.fleets.first() {
         None => errors.push("missing fleet record 1".to_string()),
         Some(f) => {
             if f.current_location_coords_raw() != [0x0a, 0x0a] {
@@ -409,7 +405,7 @@ pub(crate) fn validate_fleet_battle_data(
     }
 
     // Fleet 2 (empire=1, slot=3): BombardWorld, speed=3/3, target (15,13), CA=50, DD=50
-    match data.fleets.records.get(2) {
+    match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
             if f.max_speed() != 3 {
@@ -452,7 +448,7 @@ pub(crate) fn validate_fleet_battle_data(
     }
 
     // Fleet 4 (empire=2, slot=1): Patrol at (10,10), speed=0/6, SC=0, BB=100, CA=0
-    match data.fleets.records.get(4) {
+    match data.fleets.get(4) {
         None => errors.push("missing fleet record 5".to_string()),
         Some(f) => {
             if f.max_speed() != 6 {
@@ -495,7 +491,7 @@ pub(crate) fn validate_fleet_battle_data(
     }
 
     // Fleet 8 (empire=3, slot=1): MoveOnly to (10,10), speed=3/6, loc=(9,10), SC=0, BB=1, CA=0
-    match data.fleets.records.get(8) {
+    match data.fleets.get(8) {
         None => errors.push("missing fleet record 9".to_string()),
         Some(f) => {
             if f.max_speed() != 6 {
@@ -544,7 +540,7 @@ pub(crate) fn validate_fleet_battle_data(
     }
 
     // Planet 14 (index 13): Dust Bowl-type world at (15,13), owned empire=2, armies=142, batteries=15
-    match data.planets.records.get(13) {
+    match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
             if p.coords_raw() != [0x0f, 0x0d] {

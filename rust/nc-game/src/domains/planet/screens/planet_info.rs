@@ -34,7 +34,6 @@ impl PlanetInfoScreen {
         let planet = frame
             .game_data
             .planets
-            .records
             .get(planet_idx)
             .ok_or("planet detail missing")?;
         if planet.owner_empire_slot_raw() as usize != frame.player.record_index_1_based {
@@ -57,8 +56,7 @@ impl PlanetInfoScreen {
         } else {
             (present as f64 / potential as f64) * 100.0
         };
-        let tax_rate =
-            frame.game_data.player.records[frame.player.record_index_1_based - 1].tax_rate();
+        let tax_rate = frame.game_data.players[frame.player.record_index_1_based - 1].tax_rate();
         let expected_revenue = yearly_tax_revenue(present, tax_rate);
         let budget = frame
             .game_data
@@ -377,11 +375,11 @@ fn intel_efficiency_label(current: Option<u8>, potential: Option<u16>) -> String
     }
 }
 
-fn format_stardock_summary(planet: &nc_data::PlanetRecord) -> String {
+fn format_stardock_summary(planet: &nc_data::Planet) -> String {
     shared_stardock_summary(planet, CompactUnitSummaryStyle::DashedCodes)
 }
 
-fn format_build_queue_summary(planet: &nc_data::PlanetRecord) -> String {
+fn format_build_queue_summary(planet: &nc_data::Planet) -> String {
     shared_build_queue_summary(planet, CompactUnitSummaryStyle::DashedCodes)
 }
 
@@ -421,7 +419,7 @@ fn owner_summary(frame: &ScreenFrame<'_>, owner_empire_raw: u8) -> String {
     }
 
     let idx = owner_empire_raw as usize - 1;
-    let Some(player) = frame.game_data.player.records.get(idx) else {
+    let Some(player) = frame.game_data.players.get(idx) else {
         return format!("Empire #{owner_empire_raw}");
     };
 

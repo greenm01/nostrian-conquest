@@ -42,8 +42,7 @@ impl EnemiesScreen {
         let viewer_empire = frame.player.record_index_1_based as u8;
         let mut others = frame
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx + 1 != frame.player.record_index_1_based)

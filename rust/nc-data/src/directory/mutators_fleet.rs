@@ -13,7 +13,6 @@ impl CoreGameData {
             return None;
         }
         self.fleets
-            .records
             .iter()
             .enumerate()
             .find(|(idx, fleet)| {
@@ -54,7 +53,7 @@ impl CoreGameData {
         local_slot: u16,
     ) -> Result<(), GameStateMutationError> {
         let owner_empire = player_index_1_based as u8;
-        let fleet = self.fleets.records.get(fleet_index_1_based - 1).ok_or(
+        let fleet = self.fleets.get(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -66,7 +65,7 @@ impl CoreGameData {
             });
         }
         if local_slot == 0
-            || self.fleets.records.iter().enumerate().any(|(idx, other)| {
+            || self.fleets.iter().enumerate().any(|(idx, other)| {
                 idx + 1 != fleet_index_1_based
                     && other.owner_empire_raw() == owner_empire
                     && other.local_slot_word_raw() == local_slot
@@ -80,14 +79,14 @@ impl CoreGameData {
         // ECGAME's renumbering (`0x15b35`) points the empire's Join orders
         // that name the old number at the new one.
         let old_slot = fleet.local_slot_word_raw();
-        for joiner in self.fleets.records.iter_mut().filter(|joiner| {
+        for joiner in self.fleets.iter_mut().filter(|joiner| {
             joiner.owner_empire_raw() == owner_empire
                 && joiner.standing_order_kind() == Order::JoinAnotherFleet
                 && joiner.join_host_fleet_id_raw() == old_slot
         }) {
             joiner.set_join_host_fleet_id_raw(local_slot);
         }
-        self.fleets.records[fleet_index_1_based - 1].set_local_slot_word_raw(local_slot);
+        self.fleets[fleet_index_1_based - 1].set_local_slot_word_raw(local_slot);
         Ok(())
     }
 
@@ -107,7 +106,6 @@ impl CoreGameData {
             })?;
         let max_speed = self
             .fleets
-            .records
             .get(record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: record_index_1_based,
@@ -134,13 +132,11 @@ impl CoreGameData {
                 max: max_speed,
             });
         }
-        let record = self
-            .fleets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+        let record = self.fleets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
         record.set_current_speed(speed);
         record.set_standing_order_code_raw(order_code);
         record.set_standing_order_target_coords_raw(target);
@@ -171,7 +167,7 @@ impl CoreGameData {
         aux0: Option<u8>,
         aux1: Option<u8>,
     ) -> Result<(), FleetOrderValidationError> {
-        let Some(fleet) = self.fleets.records.get(record_index_1_based - 1) else {
+        let Some(fleet) = self.fleets.get(record_index_1_based - 1) else {
             return Ok(());
         };
         let order = Order::from_raw(order_code);
@@ -185,7 +181,6 @@ impl CoreGameData {
         let has_loaded_troops = fleet.army_count() > 0;
         let planet_owner = self
             .planets
-            .records
             .iter()
             .find(|planet| planet.coords_raw() == target)
             .map(|planet| planet.owner_empire_slot_raw());
@@ -200,7 +195,7 @@ impl CoreGameData {
                     .map(u16::from)
                     .unwrap_or_else(|| fleet.guard_starbase_index_raw());
                 if base_id == 0
-                    || !self.bases.records.iter().any(|base| {
+                    || !self.bases.iter().any(|base| {
                         base.owner_empire_raw() == owner && base.base_id_raw() == base_id
                     })
                 {
@@ -288,7 +283,7 @@ impl CoreGameData {
                     .unwrap_or_else(|| fleet.join_host_fleet_id_raw());
                 if host_number == 0
                     || host_number == fleet.local_slot_word_raw()
-                    || !self.fleets.records.iter().any(|host| {
+                    || !self.fleets.iter().any(|host| {
                         host.owner_empire_raw() == owner
                             && host.local_slot_word_raw() == host_number
                     })
@@ -309,7 +304,7 @@ impl CoreGameData {
         aux0: Option<u8>,
         aux1: Option<u8>,
     ) -> Result<(), FleetPlayerInputValidationError> {
-        let Some(fleet) = self.fleets.records.get(record_index_1_based - 1) else {
+        let Some(fleet) = self.fleets.get(record_index_1_based - 1) else {
             return Ok(());
         };
         if fleet.current_speed() > fleet.max_speed() {
@@ -350,14 +345,12 @@ impl CoreGameData {
         }
 
         let owner_empire = player_index_1_based as u8;
-        let host = self
-            .fleets
-            .records
-            .get(host_fleet_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+        let host = self.fleets.get(host_fleet_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: host_fleet_index_1_based,
-            })?;
-        let fleet = self.fleets.records.get(fleet_index_1_based - 1).ok_or(
+            },
+        )?;
+        let fleet = self.fleets.get(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -380,7 +373,7 @@ impl CoreGameData {
         // ECGAME stores the host's fleet number (its 0x00 word), which is
         // what ECMAINT's merge matches against; the record id is not stored.
         let host_fleet_number = host.local_slot_word_raw();
-        let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
+        let fleet = self.fleets.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -402,7 +395,7 @@ impl CoreGameData {
         fleet_index_1_based: usize,
         speed: u8,
     ) -> Result<u8, GameStateMutationError> {
-        let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
+        let fleet = self.fleets.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -441,7 +434,7 @@ impl CoreGameData {
         roe: u8,
     ) -> Result<(), GameStateMutationError> {
         let owner_empire = player_index_1_based as u8;
-        let fleet = self.fleets.records.get(fleet_index_1_based - 1).ok_or(
+        let fleet = self.fleets.get(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -465,7 +458,7 @@ impl CoreGameData {
             });
         }
 
-        self.fleets.records[fleet_index_1_based - 1].set_rules_of_engagement(roe);
+        self.fleets[fleet_index_1_based - 1].set_rules_of_engagement(roe);
         Ok(())
     }
 }

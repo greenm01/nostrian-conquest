@@ -7,6 +7,10 @@ use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::load_classic_core_files;
+use nc_data::classic::{
+    serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
+    serialize_planets_dat, serialize_player_dat, serialize_setup_dat,
+};
 use nc_data::model::{BuildSlot, DiplomaticRelation, ProductionItemKind};
 use nc_data::{CampaignStore, CoreGameData, Real48};
 
@@ -51,13 +55,13 @@ fn game_dirs() -> Vec<PathBuf> {
 
 fn classic_files(game_data: &CoreGameData) -> [Vec<u8>; 7] {
     [
-        game_data.player.to_bytes(),
-        game_data.planets.to_bytes(),
-        game_data.fleets.to_bytes(),
-        game_data.bases.to_bytes(),
-        game_data.ipbm.to_bytes(),
-        game_data.setup.to_bytes(),
-        game_data.conquest.to_bytes(),
+        serialize_player_dat(&game_data.players),
+        serialize_planets_dat(&game_data.planets),
+        serialize_fleets_dat(&game_data.fleets),
+        serialize_bases_dat(&game_data.bases),
+        serialize_ipbm_dat(&game_data.ipbms),
+        serialize_setup_dat(&game_data.setup),
+        serialize_conquest_dat(&game_data.conquest),
     ]
 }
 
@@ -103,12 +107,12 @@ fn store_keeps_real48_bits_and_rust_only_values() {
 
     // A zero exponent with mantissa and sign bits set equals 0.0 as a
     // number but must keep its bits; so must the largest bit pattern.
-    let fleet = &mut game_data.fleets.records[0].fleet;
+    let fleet = &mut game_data.fleets[0];
     fleet.x_fraction = Real48::from_bytes([0x00, 0x12, 0x34, 0x56, 0x78, 0x9A]);
     fleet.y_fraction = Real48::from_bytes([0xFF; 6]);
     fleet.depth = Real48::from_bytes([0x80, 0xB9, 0xFF, 0xFF, 0xFF, 0x7F]);
 
-    let planet = &mut game_data.planets.records[0].planet;
+    let planet = &mut game_data.planets[0];
     planet.build_queue[0] = BuildSlot {
         points_owed: 200,
         kind: ProductionItemKind::Starbase,
@@ -123,16 +127,16 @@ fn store_keeps_real48_bits_and_rust_only_values() {
     };
     planet.name = "Caf\u{e9} \u{ff}".to_string();
 
-    let player = &mut game_data.player.records[1].player;
+    let player = &mut game_data.players[1];
     player.diplomacy[0] = DiplomaticRelation::Enemy;
     player.diplomacy[24] = DiplomaticRelation::Unknown(7);
     player.messages_first = -1;
 
-    game_data.setup.setup.version_tag = [0, b'E', 0xE9, b'1', 0xFF];
-    game_data.setup.setup.com_irq = [4, 3, 0, 255];
-    game_data.setup.setup.com_hw_flow_control = [true, false, false, true];
+    game_data.setup.version_tag = [0, b'E', 0xE9, b'1', 0xFF];
+    game_data.setup.com_irq = [4, 3, 0, 255];
+    game_data.setup.com_hw_flow_control = [true, false, false, true];
 
-    let conquest = &mut game_data.conquest.conquest;
+    let conquest = &mut game_data.conquest;
     conquest.maintenance_days.0 = [true, false, true, false, false, false, true];
     conquest.previous_production[24] = u16::MAX;
     conquest.previous_planet_count[0] = 255;
@@ -141,7 +145,7 @@ fn store_keeps_real48_bits_and_rust_only_values() {
     assert_round_trips(&store, &game_data, &dir);
     let loaded = store_round_trip(&store, &game_data);
     assert_eq!(
-        loaded.fleets.records[0].fleet.x_fraction.to_bytes(),
+        loaded.fleets[0].x_fraction.to_bytes(),
         [0x00, 0x12, 0x34, 0x56, 0x78, 0x9A]
     );
 }

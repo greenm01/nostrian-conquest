@@ -1,6 +1,6 @@
 use super::support::*;
 use super::*;
-use crate::PlanetRecord;
+use crate::Planet;
 
 impl CoreGameData {
     pub fn commission_planet_stardock_slot(
@@ -27,13 +27,11 @@ impl CoreGameData {
         }
 
         let owner_empire = player_index_1_based as u8;
-        let planet = self
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let planet = self.planets.get(planet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
-            })?;
+            },
+        )?;
         if planet.owner_empire_slot_raw() != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based,
@@ -56,13 +54,13 @@ impl CoreGameData {
         }
 
         if starbase_count == 1 {
-            if self.player.records.get(player_index_1_based - 1).is_none() {
+            if self.players.get(player_index_1_based - 1).is_none() {
                 return Err(GameStateMutationError::MissingPlayerRecord {
                     index_1_based: player_index_1_based,
                 });
             }
-            let record_idx = self.bases.records.len();
-            self.bases.records.push(build_guard_starbase_base_record(
+            let record_idx = self.bases.len();
+            self.bases.push(build_guard_starbase_base_record(
                 coords,
                 0,
                 0,
@@ -76,7 +74,6 @@ impl CoreGameData {
             self.link_new_base(record_idx);
             let planet = self
                 .planets
-                .records
                 .get_mut(planet_record_index_1_based - 1)
                 .ok_or(GameStateMutationError::MissingPlanetRecord {
                     index_1_based: planet_record_index_1_based,
@@ -87,7 +84,7 @@ impl CoreGameData {
                 planet.set_stardock_count(slot_0_based, left);
             }
             Ok(CommissionResult::Starbase {
-                base_record_index_1_based: self.bases.records.len(),
+                base_record_index_1_based: self.bases.len(),
             })
         } else {
             self.commission_planet_stardock_slots_with_draft(
@@ -111,13 +108,11 @@ impl CoreGameData {
         }
 
         let owner_empire = player_index_1_based as u8;
-        let planet = self
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let planet = self.planets.get(planet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
-            })?;
+            },
+        )?;
         if planet.owner_empire_slot_raw() != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based,
@@ -143,7 +138,6 @@ impl CoreGameData {
         let result = build_commissioned_fleet(self, player_index_1_based, coords, draft)?;
         let planet = self
             .planets
-            .records
             .get_mut(planet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
@@ -160,7 +154,6 @@ impl CoreGameData {
         let mut report = AutoCommissionReport::default();
         let planet_indices: Vec<usize> = self
             .planets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, planet)| planet.owner_empire_slot_raw() == owner_empire)
@@ -168,7 +161,7 @@ impl CoreGameData {
             .collect();
 
         for planet_index_1_based in planet_indices {
-            let Some(planet) = self.planets.records.get(planet_index_1_based - 1) else {
+            let Some(planet) = self.planets.get(planet_index_1_based - 1) else {
                 return Err(GameStateMutationError::MissingPlanetRecord {
                     index_1_based: planet_index_1_based,
                 });
@@ -240,7 +233,6 @@ impl CoreGameData {
                     } => {
                         let fleet_number = self
                             .fleets
-                            .records
                             .get(fleet_record_index_1_based - 1)
                             .ok_or(GameStateMutationError::MissingFleetRecord {
                                 index_1_based: fleet_record_index_1_based,
@@ -280,7 +272,6 @@ impl CoreGameData {
                     } => {
                         let starbase_number = self
                             .bases
-                            .records
                             .get(base_record_index_1_based - 1)
                             .ok_or(GameStateMutationError::MissingBaseRecord {
                                 index_1_based: base_record_index_1_based,
@@ -312,16 +303,14 @@ impl CoreGameData {
         base_id: u16,
         owner_empire: u8,
     ) -> Result<(), GameStateMutationError> {
-        let player = self
-            .player
-            .records
-            .get_mut(player_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlayerRecord {
+        let player = self.players.get_mut(player_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_index_1_based,
-            })?;
+            },
+        )?;
         player.set_first_base_record_raw(1);
 
-        let fleet = self.fleets.records.get_mut(fleet_index_1_based - 1).ok_or(
+        let fleet = self.fleets.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
@@ -330,30 +319,26 @@ impl CoreGameData {
         fleet.set_standing_order_target_coords_raw(target);
         fleet.set_mission_target(1, base_id);
 
-        self.bases = BaseDat {
-            records: vec![build_guard_starbase_base_record(
-                target,
-                base_id,
-                fleet.local_slot_word_raw(),
-                fleet.fleet_id_word_raw(),
-                owner_empire,
-                fleet.x_fraction(),
-                fleet.y_fraction(),
-                fleet.depth(),
-            )],
-        };
+        self.bases = vec![build_guard_starbase_base_record(
+            target,
+            base_id,
+            fleet.local_slot_word_raw(),
+            fleet.fleet_id_word_raw(),
+            owner_empire,
+            fleet.x_fraction(),
+            fleet.y_fraction(),
+            fleet.depth(),
+        )];
 
         Ok(())
     }
 
     pub fn set_ipbm_zero_records(&mut self, count: u16) {
-        if let Some(player1) = self.player.records.first_mut() {
+        if let Some(player1) = self.players.first_mut() {
             player1.set_ipbm_chain_head_raw(count);
         }
 
-        self.ipbm = IpbmDat {
-            records: (0..count).map(|_| IpbmRecord::new_zeroed()).collect(),
-        };
+        self.ipbms = (0..count).map(|_| Ipbm::default()).collect();
     }
 
     pub fn set_ipbm_record_prefix(
@@ -364,7 +349,7 @@ impl CoreGameData {
         gate: u16,
         follow_on: u16,
     ) -> Result<(), GameStateMutationError> {
-        let record = self.ipbm.records.get_mut(record_index_1_based - 1).ok_or(
+        let record = self.ipbms.get_mut(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingIpbmRecord {
                 index_1_based: record_index_1_based,
             },
@@ -380,7 +365,7 @@ impl CoreGameData {
 type SelectedStardockSlot = (usize, u8, u16);
 
 fn collect_selected_stardock_slots(
-    planet: &PlanetRecord,
+    planet: &Planet,
     planet_index_1_based: usize,
     slot_0_based_list: &[usize],
 ) -> Result<Vec<SelectedStardockSlot>, GameStateMutationError> {
@@ -441,7 +426,7 @@ fn draft_fits_within_available(
 }
 
 fn decrement_selected_ship_slots(
-    planet: &mut PlanetRecord,
+    planet: &mut Planet,
     selected: &[SelectedStardockSlot],
     draft: CommissionFleetDraft,
 ) -> Result<(), GameStateMutationError> {
@@ -492,10 +477,10 @@ fn build_commissioned_fleet(
     draft: CommissionFleetDraft,
 ) -> Result<CommissionResult, GameStateMutationError> {
     let owner_empire = player_index_1_based as u8;
-    let fleet_id = next_available_global_fleet_id(&game_data.fleets.records);
-    let local_slot = next_available_owned_fleet_local_slot(&game_data.fleets.records, owner_empire);
+    let fleet_id = next_available_global_fleet_id(&game_data.fleets);
+    let local_slot = next_available_owned_fleet_local_slot(&game_data.fleets, owner_empire);
 
-    let mut fleet = FleetRecord::new_zeroed();
+    let mut fleet = Fleet::default();
     fleet.set_local_slot_word_raw(local_slot);
     fleet.set_owner_empire_raw(owner_empire);
     fleet.set_fleet_id_word_raw(fleet_id);
@@ -515,15 +500,13 @@ fn build_commissioned_fleet(
     fleet.recompute_max_speed_from_composition();
     normalize_fleet_roe_for_composition(&mut fleet);
 
-    let player = game_data
-        .player
-        .records
-        .get_mut(player_index_1_based - 1)
-        .ok_or(GameStateMutationError::MissingPlayerRecord {
+    let player = game_data.players.get_mut(player_index_1_based - 1).ok_or(
+        GameStateMutationError::MissingPlayerRecord {
             index_1_based: player_index_1_based,
-        })?;
+        },
+    )?;
     let fleet_record_index_1_based =
-        append_fleet_to_owner_chain(&mut game_data.fleets.records, player, fleet);
+        append_fleet_to_owner_chain(&mut game_data.fleets, player, fleet);
     Ok(CommissionResult::Fleet {
         fleet_record_index_1_based,
     })

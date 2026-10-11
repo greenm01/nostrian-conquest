@@ -123,7 +123,7 @@ fn campaign_settings_new_defaults_inactivity_autopilot_to_three_turns() {
 #[test]
 fn latest_player_activity_states_derives_from_last_run_year_when_sidecar_missing() {
     let (root, store, mut game_data) = seeded_store("nc-data-settings-activity-derive");
-    game_data.player.records[0].set_last_run_year_raw(2998);
+    game_data.players[0].set_last_run_year_raw(2998);
     store
         .save_runtime_state_structured(&game_data, &BTreeSet::new(), &[], &[])
         .expect("save runtime state");

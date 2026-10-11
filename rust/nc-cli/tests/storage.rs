@@ -88,10 +88,10 @@ fn setup_classic_probe_planets(target: &Path) {
     let mut game_data = state.game_data;
     // Keep the foreign-intel storage probe independent of mapgen drift: the
     // scout/view tests below intentionally target planet record 5 at (9,2).
-    game_data.planets.records[4].set_coords_raw([9, 2]);
+    game_data.planets[4].set_coords_raw([9, 2]);
     // The probe worlds reuse the homeworld-seed marker (potential high byte
     // 135) after being named, so give them full production explicitly.
-    for planet in &mut game_data.planets.records {
+    for planet in &mut game_data.planets {
         if planet.is_homeworld_seed_ignoring_name() {
             let potential = planet.potential_production_points();
             let _ = planet.set_present_production_points(potential);
@@ -181,7 +181,7 @@ fn assert_database_row_survives_db_import_export(
     let source_database =
         DatabaseDat::parse(&source_database_bytes).expect("source DATABASE.DAT should parse");
     let expected = source_database
-        .record(planet_idx, player_idx, source_data.planets.records.len())
+        .record(planet_idx, player_idx, source_data.planets.len())
         .raw;
 
     fs::remove_file(source.join("ncgame.db")).expect("source ncgame.db should remove cleanly");
@@ -201,7 +201,7 @@ fn assert_database_row_survives_db_import_export(
     let exported_database =
         DatabaseDat::parse(&exported_database_bytes).expect("exported DATABASE.DAT should parse");
     let actual = exported_database
-        .record(planet_idx, player_idx, exported_data.planets.records.len())
+        .record(planet_idx, player_idx, exported_data.planets.len())
         .raw;
 
     assert_eq!(actual, expected);
@@ -306,11 +306,11 @@ fn db_export_preserves_classic_player_handle_identity() {
 
     let exported_data = load_classic_core_files(&exported).expect("exported game should load");
     assert_eq!(
-        exported_data.player.records[0].assigned_player_handle_summary(),
+        exported_data.players[0].assigned_player_handle_summary(),
         "SYSOP"
     );
     assert_eq!(
-        exported_data.player.records[0].controlled_empire_name_summary(),
+        exported_data.players[0].controlled_empire_name_summary(),
         "Auroran Combine"
     );
 
@@ -400,7 +400,7 @@ fn db_export_preserves_owned_world_compat_word_family_from_imported_template() {
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
-    let row = database.record(15, 0, exported_data.planets.records.len());
+    let row = database.record(15, 0, exported_data.planets.len());
     assert_eq!(u16::from_le_bytes([row.raw[0x1e], row.raw[0x1f]]), 0x42);
 
     cleanup_dir(&source);
@@ -426,7 +426,7 @@ fn db_export_keeps_unknown_rows_at_classic_sentinels() {
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
-    let row = database.record(0, 0, exported_data.planets.records.len());
+    let row = database.record(0, 0, exported_data.planets.len());
     assert_eq!(row.planet_name_bytes(), b"UNKNOWN");
     for offset in [
         0x15usize, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x23, 0x24, 0x25, 0x26,
@@ -475,7 +475,7 @@ fn db_export_emits_ecgame_accepted_foreign_full_intel_row_shape() {
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
-    let row = database.record(4, 0, exported_data.planets.records.len());
+    let row = database.record(4, 0, exported_data.planets.len());
     assert_eq!(row.planet_name_bytes(), b"Helios Prime");
     assert_eq!(row.raw[0x15], 4);
     assert_eq!(row.raw[0x1c], 136);
@@ -580,7 +580,7 @@ fn db_export_refreshes_stale_foreign_scout_row_visible_stats() {
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
-    let row = database.record(4, 0, exported_data.planets.records.len());
+    let row = database.record(4, 0, exported_data.planets.len());
     assert_eq!(row.planet_name_bytes(), b"Helios Prime");
     assert_eq!(row.raw[0x15], 4);
     assert_eq!(row.raw[0x1c], 136);
@@ -785,7 +785,7 @@ fn db_export_emits_ecgame_accepted_foreign_view_only_row_shape() {
     let database_bytes =
         fs::read(exported.join("DATABASE.DAT")).expect("DATABASE.DAT should exist");
     let database = DatabaseDat::parse(&database_bytes).expect("DATABASE.DAT should parse");
-    let row = database.record(4, 0, exported_data.planets.records.len());
+    let row = database.record(4, 0, exported_data.planets.len());
     assert_eq!(row.planet_name_bytes(), b"Helios Prime");
     assert_eq!(row.raw[0x15], 4);
     assert_eq!(row.raw[0x1c], 136);
@@ -914,7 +914,7 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
-    let target_world = &mut game_data.planets.records[13];
+    let target_world = &mut game_data.planets[13];
     target_world.set_as_owned_target_world(
         [15, 13],
         [0x64, 0x87],
@@ -928,7 +928,7 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
         0,
         2,
     );
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw([15, 13]);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
@@ -967,7 +967,7 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
-    let target_world = &mut game_data.planets.records[13];
+    let target_world = &mut game_data.planets[13];
     target_world.set_as_owned_target_world(
         [15, 13],
         [0x64, 0x87],
@@ -981,7 +981,7 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
         0,
         2,
     );
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw([15, 13]);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
@@ -1019,7 +1019,7 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
-    let target_world = &mut game_data.planets.records[13];
+    let target_world = &mut game_data.planets[13];
     target_world.set_as_owned_target_world(
         [15, 13],
         [0x64, 0x87],
@@ -1033,7 +1033,7 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
         0,
         2,
     );
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw([15, 13]);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);
@@ -1072,7 +1072,7 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &source);
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
-    let target_world = &mut game_data.planets.records[13];
+    let target_world = &mut game_data.planets[13];
     target_world.set_as_owned_target_world(
         [15, 13],
         [0x64, 0x87],
@@ -1086,7 +1086,7 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
         0,
         2,
     );
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw([15, 13]);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw([15, 13]);

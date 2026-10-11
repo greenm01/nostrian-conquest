@@ -263,7 +263,6 @@ fn planet_row_sort_metrics(
     let planet = app
         .game_data
         .planets
-        .records
         .get(row.planet_record_index_1_based.saturating_sub(1));
     let (treasury, budget) = planet_build_view(&app.game_data, row)
         .map(|view| (view.treasury_left, view.points_left))
@@ -310,7 +309,6 @@ fn planet_list_clause_matches(
     let planet = app
         .game_data
         .planets
-        .records
         .get(row.planet_record_index_1_based.saturating_sub(1));
     let (treasury, budget) = planet_build_view(&app.game_data, row)
         .map(|view| (i64::from(view.treasury_left), i64::from(view.points_left)))
@@ -1446,7 +1444,7 @@ impl App {
         }
         let raw = self.planet.tax_input.trim();
         let parsed = if raw.is_empty() {
-            self.game_data.player.records[self.player.record_index_1_based - 1].tax_rate()
+            self.game_data.players[self.player.record_index_1_based - 1].tax_rate()
         } else {
             match raw.parse::<u8>() {
                 Ok(value) => value,
@@ -1781,7 +1779,6 @@ impl App {
     fn planet_list_docked_units(&self, row: &nc_data::EmpirePlanetEconomyRow) -> u32 {
         self.game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based.saturating_sub(1))
             .map(|planet| {
                 (0..nc_data::STARDOCK_SLOT_COUNT)
@@ -1970,7 +1967,6 @@ impl App {
         let planet = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based.saturating_sub(1));
         let (treasury, budget) = planet_build_view(&self.game_data, &row)
             .map(|view| (view.treasury_left.to_string(), view.points_left.to_string()))
@@ -2333,19 +2329,17 @@ impl App {
     pub(crate) fn default_planet_prompt_coords(&self) -> [u8; 2] {
         let homeworld_index = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
             .map(|player| player.homeworld_planet_index_1_based_raw() as usize)
             .unwrap_or(0);
         if homeworld_index != 0 {
-            if let Some(planet) = self.game_data.planets.records.get(homeworld_index - 1) {
+            if let Some(planet) = self.game_data.planets.get(homeworld_index - 1) {
                 return planet.coords_raw();
             }
         }
         self.game_data
             .planets
-            .records
             .iter()
             .find(|planet| {
                 planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based

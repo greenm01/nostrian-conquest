@@ -9,9 +9,10 @@ mod intel;
 
 use database_projection::build_database_dat;
 use nc_classic::decode_report_blocks;
+use nc_data::classic::{parse_conquest_dat, parse_planets_dat};
 use nc_data::{
-    CLASSIC_RESULTS_RECORD_SIZE, CampaignStore, CampaignStoreError, ConquestDat, CoreGameData,
-    MaintenanceEvents, PlanetDat, QueuedPlayerMail, ReportBlockRow, classic_results_header_viewers,
+    CLASSIC_RESULTS_RECORD_SIZE, CampaignStore, CampaignStoreError, CoreGameData,
+    MaintenanceEvents, QueuedPlayerMail, ReportBlockRow, classic_results_header_viewers,
     derive_campaign_seed_from_runtime, layout_classic_results, load_mail_queue,
 };
 
@@ -104,11 +105,9 @@ pub fn export_snapshot_to_dir(
     })?;
     let mut game_data = store.load_snapshot_game_data(snapshot_id)?;
     let report_rows = store.load_snapshot_report_block_rows(snapshot_id, true)?;
-    let results = layout_classic_results(
-        &game_data.player.records,
-        &with_classic_record_bytes(&report_rows),
-    );
-    results.apply_to_players(&mut game_data.player.records);
+    let results =
+        layout_classic_results(&game_data.players, &with_classic_record_bytes(&report_rows));
+    results.apply_to_players(&mut game_data.players);
     save_classic_core_files(dir, &game_data)?;
     let planet_intel_by_viewer = store
         .load_snapshot_planet_intel_by_viewer(snapshot_id, game_data.conquest.player_count())?;
@@ -188,7 +187,7 @@ fn assign_classic_results_viewers(
     game_data: &CoreGameData,
     results_bytes: &[u8],
 ) {
-    let header_viewers = classic_results_header_viewers(&game_data.player.records, results_bytes);
+    let header_viewers = classic_results_header_viewers(&game_data.players, results_bytes);
     let mut header = 1usize;
     for row in rows {
         let Some(raw_bytes) = row.raw_bytes.as_ref() else {
@@ -234,7 +233,6 @@ pub fn write_default_database_dat_for_game_data(
 ) -> Result<(), CampaignStoreError> {
     let planet_names = game_data
         .planets
-        .records
         .iter()
         .map(|planet| planet.planet_name())
         .collect::<Vec<_>>();
@@ -251,8 +249,8 @@ pub fn regenerate_database_dat_from_directory(
     dir: &Path,
     template_path: Option<&Path>,
 ) -> Result<(), CampaignStoreError> {
-    let planets = PlanetDat::parse(&read_required_path(dir.join("PLANETS.DAT"))?)?;
-    let conquest = ConquestDat::parse(&read_required_path(dir.join("CONQUEST.DAT"))?)?;
+    let planets = parse_planets_dat(&read_required_path(dir.join("PLANETS.DAT"))?)?;
+    let conquest = parse_conquest_dat(&read_required_path(dir.join("CONQUEST.DAT"))?)?;
     let template = match template_path {
         Some(path) => Some(
             DatabaseDat::parse(&read_required_path(path.to_path_buf())?)
@@ -260,11 +258,7 @@ pub fn regenerate_database_dat_from_directory(
         ),
         None => None,
     };
-    let planet_names: Vec<String> = planets
-        .records
-        .iter()
-        .map(|planet| planet.planet_name())
-        .collect();
+    let planet_names: Vec<String> = planets.iter().map(|planet| planet.planet_name()).collect();
     let database = DatabaseDat::generate_from_planets_and_year(
         &planet_names,
         conquest.game_year(),
@@ -404,7 +398,7 @@ fn load_optional_database_template(
 }
 
 fn default_unknown_database_template(game_data: &CoreGameData) -> DatabaseDat {
-    let names = vec!["UNKNOWN".to_string(); game_data.planets.records.len()];
+    let names = vec!["UNKNOWN".to_string(); game_data.planets.len()];
     DatabaseDat::generate_from_planets_and_year(
         &names,
         game_data.conquest.game_year(),

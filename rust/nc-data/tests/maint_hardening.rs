@@ -16,16 +16,16 @@ fn load_fixture(name: &str) -> CoreGameData {
 #[test]
 fn invalid_bombard_order_is_canceled_before_execution() {
     let mut game_data = load_fixture("ecmaint-post");
-    let owner_empire_raw = game_data.fleets.records[0].owner_empire_raw();
-    for planet in &mut game_data.planets.records {
+    let owner_empire_raw = game_data.fleets[0].owner_empire_raw();
+    for planet in &mut game_data.planets {
         planet.set_owner_empire_slot_raw(0);
         planet.set_ownership_status_raw(0);
     }
-    let homeworld = &mut game_data.planets.records[0];
+    let homeworld = &mut game_data.planets[0];
     homeworld.set_owner_empire_slot_raw(owner_empire_raw);
     homeworld.set_ownership_status_raw(2);
     homeworld.set_coords_raw([10, 10]);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_current_location_coords_raw([15, 13]);
     fleet.set_standing_order_kind(Order::BombardWorld);
     fleet.set_standing_order_target_coords_raw([15, 13]);
@@ -52,7 +52,7 @@ fn invalid_bombard_order_is_canceled_before_execution() {
             }
         )
     }));
-    let fleet = &game_data.fleets.records[0];
+    let fleet = &game_data.fleets[0];
     assert_eq!(fleet.standing_order_kind(), Order::SeekHome);
     assert!(fleet.current_speed() > 0);
     assert_eq!(fleet.standing_order_target_coords_raw(), [10, 10]);
@@ -61,7 +61,7 @@ fn invalid_bombard_order_is_canceled_before_execution() {
 #[test]
 fn invalid_colonize_order_without_etac_is_canceled() {
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_etac_count(0);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -80,10 +80,10 @@ fn invalid_colonize_order_without_etac_is_canceled() {
     // The fleet already sits in orbit at home, so Seek Home resolves on the
     // first tick and the fleet holds there.
     assert_eq!(
-        game_data.fleets.records[0].standing_order_kind(),
+        game_data.fleets[0].standing_order_kind(),
         Order::HoldPosition
     );
-    assert_eq!(game_data.fleets.records[0].current_speed(), 0);
+    assert_eq!(game_data.fleets[0].current_speed(), 0);
 }
 
 #[test]
@@ -91,11 +91,10 @@ fn invalid_planet_build_input_is_cleared_before_processing() {
     let mut game_data = load_fixture("ecmaint-post");
     let planet_idx = game_data
         .planets
-        .records
         .iter()
         .position(|planet| planet.owner_empire_slot_raw() == 1)
         .expect("fixture should have owned planet");
-    let planet = &mut game_data.planets.records[planet_idx];
+    let planet = &mut game_data.planets[planet_idx];
     planet.set_build_count_raw(0, 12);
     planet.set_build_kind_raw(0, 0xfe);
 
@@ -107,7 +106,7 @@ fn invalid_planet_build_input_is_cleared_before_processing() {
             InvalidPlayerStateEvent::PlanetInput { planet_idx: idx, .. } if *idx == planet_idx
         )
     }));
-    let planet = &game_data.planets.records[planet_idx];
+    let planet = &game_data.planets[planet_idx];
     assert_eq!(planet.build_count_raw(0), 0);
     assert_eq!(planet.build_kind_raw(0), 0);
 }
@@ -115,7 +114,7 @@ fn invalid_planet_build_input_is_cleared_before_processing() {
 #[test]
 fn invalid_tax_rate_is_clamped_before_economy_processing() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].set_tax_rate_raw(255);
+    game_data.players[0].set_tax_rate_raw(255);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -129,13 +128,13 @@ fn invalid_tax_rate_is_clamped_before_economy_processing() {
             }
         )
     }));
-    assert_eq!(game_data.player.records[0].tax_rate(), 100);
+    assert_eq!(game_data.players[0].tax_rate(), 100);
 }
 
 #[test]
 fn non_combat_fleet_roe_is_reset_to_zero() {
     let mut game_data = load_fixture("ecmaint-post");
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_destroyer_count(0);
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
@@ -153,13 +152,13 @@ fn non_combat_fleet_roe_is_reset_to_zero() {
             InvalidPlayerStateEvent::FleetInput { fleet_idx: 0, .. }
         )
     }));
-    assert_eq!(game_data.fleets.records[0].rules_of_engagement(), 0);
+    assert_eq!(game_data.fleets[0].rules_of_engagement(), 0);
 }
 
 #[test]
 fn mixed_fleet_roe_is_not_reset_to_zero() {
     let mut game_data = load_fixture("ecmaint-post");
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_destroyer_count(1);
     fleet.set_cruiser_count(0);
     fleet.set_battleship_count(0);
@@ -177,13 +176,13 @@ fn mixed_fleet_roe_is_not_reset_to_zero() {
             InvalidPlayerStateEvent::FleetInput { fleet_idx: 0, .. }
         )
     }));
-    assert_eq!(game_data.fleets.records[0].rules_of_engagement(), 6);
+    assert_eq!(game_data.fleets[0].rules_of_engagement(), 6);
 }
 
 #[test]
 fn fleet_speed_is_clamped_to_current_maximum() {
     let mut game_data = load_fixture("ecmaint-post");
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_current_speed(fleet.max_speed().saturating_add(3));
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -195,16 +194,16 @@ fn fleet_speed_is_clamped_to_current_maximum() {
         )
     }));
     assert_eq!(
-        game_data.fleets.records[0].current_speed(),
-        game_data.fleets.records[0].max_speed()
+        game_data.fleets[0].current_speed(),
+        game_data.fleets[0].max_speed()
     );
 }
 
 #[test]
 fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.player.records[0].set_diplomatic_relation_byte_raw(1, 0x01);
-    game_data.player.records[0].set_diplomatic_relation_byte_raw(2, 0xfe);
+    game_data.players[0].set_diplomatic_relation_byte_raw(1, 0x01);
+    game_data.players[0].set_diplomatic_relation_byte_raw(2, 0xfe);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -215,11 +214,11 @@ fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
         )
     }));
     assert_eq!(
-        game_data.player.records[0].diplomatic_relation_byte_raw(1),
+        game_data.players[0].diplomatic_relation_byte_raw(1),
         Some(0x00)
     );
     assert_eq!(
-        game_data.player.records[0].diplomatic_relation_byte_raw(2),
+        game_data.players[0].diplomatic_relation_byte_raw(2),
         Some(0x00)
     );
 }
@@ -228,7 +227,7 @@ fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
 fn maintenance_survives_deterministic_invalid_input_matrix() {
     for order_code in 16..=31 {
         let mut game_data = load_fixture("ecmaint-post");
-        let fleet = &mut game_data.fleets.records[0];
+        let fleet = &mut game_data.fleets[0];
         fleet.set_current_location_coords_raw([15, 13]);
         fleet.set_standing_order_code_raw(order_code);
         fleet.set_standing_order_target_coords_raw([15, 13]);
@@ -237,10 +236,10 @@ fn maintenance_survives_deterministic_invalid_input_matrix() {
         fleet.set_troop_transport_count(1);
         fleet.set_army_count(4);
         fleet.set_rules_of_engagement(42);
-        game_data.planets.records[0].set_build_count_raw(0, 9);
-        game_data.planets.records[0].set_build_kind_raw(0, 0xfe);
-        game_data.planets.records[0].set_stardock_count_raw(0, 2);
-        game_data.player.records[0].set_tax_rate_raw(255);
+        game_data.planets[0].set_build_count_raw(0, 9);
+        game_data.planets[0].set_build_kind_raw(0, 0xfe);
+        game_data.planets[0].set_stardock_count_raw(0, 2);
+        game_data.players[0].set_tax_rate_raw(255);
 
         let result = run_maintenance_turn(&mut game_data);
         assert!(
@@ -254,7 +253,7 @@ fn maintenance_survives_deterministic_invalid_input_matrix() {
 fn maintenance_rejects_structurally_invalid_state_before_simulation() {
     let mut game_data = load_fixture("ecmaint-post");
     let start_year = game_data.conquest.game_year();
-    game_data.planets.records[0].set_owner_empire_slot_raw(99);
+    game_data.planets[0].set_owner_empire_slot_raw(99);
 
     let preflight = validate_maintenance_state(&game_data)
         .expect_err("structural validation should reject an out-of-range owner");
@@ -283,11 +282,11 @@ fn seek_home_picks_nearest_world_across_distant_coordinates() {
         .expect("baseline should build");
     // Squared distances past i16 range (dx = 234 to the homeworld at (16,13)).
     let far_world = [200, 1];
-    let planet = &mut game_data.planets.records[10];
+    let planet = &mut game_data.planets[10];
     planet.set_coords_raw(far_world);
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(2);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_current_location_coords_raw([250, 1]);
     fleet.set_standing_order_kind(Order::SeekHome);
     fleet.set_standing_order_target_coords_raw([16, 13]);
@@ -296,7 +295,7 @@ fn seek_home_picks_nearest_world_across_distant_coordinates() {
     run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
     assert_eq!(
-        game_data.fleets.records[0].standing_order_target_coords_raw(),
+        game_data.fleets[0].standing_order_target_coords_raw(),
         far_world
     );
 }

@@ -697,13 +697,11 @@ impl App {
                 let fleet = self
                     .game_data
                     .fleets
-                    .records
                     .get(fleet_record_index_1_based - 1)
                     .ok_or("commissioned fleet record missing")?;
                 let max_fleet_number = self
                     .game_data
                     .fleets
-                    .records
                     .iter()
                     .filter(|fleet| {
                         fleet.owner_empire_raw() as usize == self.player.record_index_1_based
@@ -722,7 +720,6 @@ impl App {
                 let base = self
                     .game_data
                     .bases
-                    .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
                 format!("Commissioned Starbase {:02}.", base.base_id_raw())
@@ -782,7 +779,6 @@ impl App {
                 let base = self
                     .game_data
                     .bases
-                    .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
                 format!("Commissioned Starbase {:02}.", base.base_id_raw())
@@ -955,7 +951,6 @@ impl App {
         let max_fleet_number = self
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| fleet.owner_empire_raw() as usize == self.player.record_index_1_based)
             .map(|fleet| fleet.local_slot_word_raw())
@@ -1363,7 +1358,6 @@ impl App {
             .filter(|row| {
                 self.game_data
                     .planets
-                    .records
                     .get(row.planet_record_index_1_based - 1)
                     .map(|record| {
                         (0..STARDOCK_SLOT_COUNT).any(|slot| {
@@ -1384,7 +1378,6 @@ impl App {
                 let record = self
                     .game_data
                     .planets
-                    .records
                     .get(row.planet_record_index_1_based - 1)?;
                 let mut destroyers = 0u32;
                 let mut cruisers = 0u32;
@@ -1463,12 +1456,7 @@ impl App {
         &self,
         planet_record_index_1_based: usize,
     ) -> Vec<PlanetCommissionRow> {
-        let Some(record) = self
-            .game_data
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-        else {
+        let Some(record) = self.game_data.planets.get(planet_record_index_1_based - 1) else {
             return vec![];
         };
         planet_commission_slot_entries(record)
@@ -1624,13 +1612,11 @@ impl App {
         let fleet = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .ok_or("commissioned fleet record missing")?;
         let max_fleet_number = self
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| fleet.owner_empire_raw() as usize == self.player.record_index_1_based)
             .map(|fleet| fleet.local_slot_word_raw())
@@ -1645,7 +1631,6 @@ impl App {
     fn owned_fleet_record_index_by_local_slot(&self, fleet_number: u16) -> Option<usize> {
         self.game_data
             .fleets
-            .records
             .iter()
             .enumerate()
             .find(|(_, fleet)| {
@@ -1705,7 +1690,6 @@ impl App {
         let Some(record) = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based - 1)
         else {
             return vec![];
@@ -1767,7 +1751,6 @@ impl App {
         let record = self
             .game_data
             .planets
-            .records
             .get(planet_record_index_1_based - 1)
             .ok_or("planet record missing")?;
         Ok(planet_build_committed_points(record))
@@ -1832,7 +1815,6 @@ impl App {
         let Some(record) = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based - 1)
         else {
             return vec![];

@@ -46,12 +46,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, frame: PanelWidgetFrame) {
 
 pub(crate) fn body_rows(app: &DashApp) -> Vec<DiplomacyPanelRow> {
     let viewer_idx = app.player_record_index_1_based;
-    let Some(viewer) = app
-        .game_data
-        .player
-        .records
-        .get(viewer_idx.saturating_sub(1))
-    else {
+    let Some(viewer) = app.game_data.players.get(viewer_idx.saturating_sub(1)) else {
         return Vec::new();
     };
     let viewer_slot = viewer_idx as u8;
@@ -67,8 +62,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<DiplomacyPanelRow> {
                 return None;
             }
             app.game_data
-                .player
-                .records
+                .players
                 .get(empire_slot.saturating_sub(1) as usize)?;
             let (relation, relation_style) =
                 relation_label_and_style(Some(viewer), viewer_slot, empire_slot);

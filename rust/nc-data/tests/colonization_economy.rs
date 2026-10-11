@@ -11,15 +11,13 @@ fn colonization_probe() -> (CoreGameData, usize) {
 
     let target_idx = game
         .planets
-        .records
         .iter()
         .position(|planet| planet.owner_empire_slot_raw() == 0)
         .expect("baseline should have an unowned planet");
-    let target_coords = game.planets.records[target_idx].coords_raw();
+    let target_coords = game.planets[target_idx].coords_raw();
 
     let fleet_idx = game
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 1 && fleet.etac_count() > 0)
         .expect("joined player should have an ETAC fleet");
@@ -28,7 +26,7 @@ fn colonization_probe() -> (CoreGameData, usize) {
     } else {
         [target_coords[0] + 1, target_coords[1]]
     };
-    game.fleets.records[fleet_idx].set_current_location_coords_raw(staging_coords);
+    game.fleets[fleet_idx].set_current_location_coords_raw(staging_coords);
     game.set_fleet_order(
         fleet_idx + 1,
         3,
@@ -58,7 +56,7 @@ fn newly_colonized_active_planets_skip_same_turn_economics() {
         )
     }));
 
-    let colony = &game.planets.records[target_idx];
+    let colony = &game.planets[target_idx];
     assert_eq!(colony.owner_empire_slot_raw(), 1);
     assert_eq!(colony.stored_production_points(), 0);
     assert_eq!(colony.present_production_points().unwrap_or(0), 1);

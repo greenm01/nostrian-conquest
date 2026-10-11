@@ -1,6 +1,5 @@
 use crate::{
-    CoreGameData, PlayerActivityState, PlayerLifecycleState, PlayerRecord, TerminalOutcome,
-    WinnerState,
+    CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, TerminalOutcome, WinnerState,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -21,11 +20,10 @@ pub enum PlayerAccessMode {
 pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> bool {
     let unowned_planet_exists = game_data
         .planets
-        .records
         .iter()
         .any(|planet| planet.owner_empire_slot_raw() == 0);
 
-    game_data.fleets.records.iter().any(|fleet| {
+    game_data.fleets.iter().any(|fleet| {
         if fleet.owner_empire_raw() != empire_raw {
             return false;
         }
@@ -36,7 +34,7 @@ pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> boo
 
 /// Joined and rogue empires both contest the campaign and can be eliminated;
 /// only civil disorder (0x00) is out of it.
-pub fn is_contesting_empire(player: &PlayerRecord) -> bool {
+pub fn is_contesting_empire(player: &Player) -> bool {
     player.owner_mode_raw() != 0x00
 }
 
@@ -48,11 +46,7 @@ pub fn is_campaign_contender(
     empire_raw: u8,
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> bool {
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_raw.saturating_sub(1) as usize)
-    else {
+    let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
         return false;
     };
     let lifecycle = player_lifecycle_states
@@ -64,7 +58,6 @@ pub fn is_campaign_contender(
     }
     let owns_any_planets = game_data
         .planets
-        .records
         .iter()
         .any(|planet| planet.owner_empire_slot_raw() == empire_raw);
     is_contesting_empire(player)
@@ -105,8 +98,7 @@ pub fn player_public_status(
             inactivity_autopilot_pending_clear: false,
         });
     let autopilot_active = game_data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based.saturating_sub(1))
         .map(|player| player.autopilot_flag() != 0)
         .unwrap_or(false);

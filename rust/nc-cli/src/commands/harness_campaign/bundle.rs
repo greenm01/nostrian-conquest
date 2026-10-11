@@ -1,8 +1,8 @@
 use std::fs;
 
 use nc_data::{
-    CampaignRuntimeState, FleetRecord, PlayerStarmapProjection, PlayerStarmapWorld,
-    ProductionItemKind, build_player_starmap_projection_from_snapshots,
+    CampaignRuntimeState, Fleet, PlayerStarmapProjection, PlayerStarmapWorld, ProductionItemKind,
+    build_player_starmap_projection_from_snapshots,
 };
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta_to_destination};
 
@@ -119,7 +119,7 @@ fn render_player_bundle_readme(
     turn_index_1_based: u16,
     year: u16,
 ) -> String {
-    let player = &state.game_data.player.records[assignment.record_index_1_based - 1];
+    let player = &state.game_data.players[assignment.record_index_1_based - 1];
     let empire_name = player.controlled_empire_name_summary();
     let handle = player.assigned_player_handle_summary();
     let economy = state
@@ -250,8 +250,7 @@ fn render_player_bundle_readme(
                 nc_data::DiplomaticRelation::Unknown(_) => "unknown",
             })
             .unwrap_or("unknown");
-        let other_empire =
-            state.game_data.player.records[other - 1].controlled_empire_name_summary();
+        let other_empire = state.game_data.players[other - 1].controlled_empire_name_summary();
         out.push_str(&format!(
             "- empire `{other}` (`{other_empire}`): `{relation}`\n"
         ));
@@ -260,7 +259,7 @@ fn render_player_bundle_readme(
 
     out.push_str("## Owned Planets\n\n");
     for planet in
-        state.game_data.planets.records.iter().filter(|planet| {
+        state.game_data.planets.iter().filter(|planet| {
             planet.owner_empire_slot_raw() as usize == assignment.record_index_1_based
         })
     {
@@ -317,7 +316,7 @@ fn render_player_bundle_readme(
     out.push('\n');
 
     out.push_str("## Owned Fleets\n\n");
-    for (idx, fleet) in state.game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
         if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
             continue;
         }
@@ -339,7 +338,7 @@ fn render_player_bundle_readme(
     out.push_str(
         "Use these as hard guardrails. If an order family is listed as unavailable, do not submit it this turn.\n\n",
     );
-    for (idx, fleet) in state.game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
         if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
             continue;
         }
@@ -495,7 +494,7 @@ fn render_player_bundle_readme(
         out.push_str("- none from the immediately completed turn\n");
     } else {
         for mail in incoming_messages {
-            let sender_name = state.game_data.player.records[mail.sender_empire_id as usize - 1]
+            let sender_name = state.game_data.players[mail.sender_empire_id as usize - 1]
                 .controlled_empire_name_summary();
             out.push_str(&format!(
                 "- from empire `{}` (`{}`), year `{}`\n",
@@ -556,7 +555,7 @@ fn render_llm_spatial_kdl(
         out.push_str(&render_world_node(viewer, world));
     }
 
-    for (idx, fleet) in state.game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
         if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
             continue;
         }
@@ -607,7 +606,7 @@ fn render_llm_spatial_kdl(
                     push_string_property(
                         &mut out,
                         "owner_empire_name",
-                        &state.game_data.player.records[owner_empire_id as usize - 1]
+                        &state.game_data.players[owner_empire_id as usize - 1]
                             .controlled_empire_name_summary(),
                     );
                 }
@@ -703,7 +702,7 @@ fn visible_planet_hints_from_projection(
     planets
 }
 
-fn fleet_capabilities(fleet: &FleetRecord) -> FleetCapabilities {
+fn fleet_capabilities(fleet: &Fleet) -> FleetCapabilities {
     FleetCapabilities {
         has_combat: fleet.destroyer_count() > 0
             || fleet.cruiser_count() > 0

@@ -1,6 +1,6 @@
 use std::cmp::Reverse;
 
-use nc_data::{CoreGameData, EmpirePlanetEconomyRow, FleetRecord};
+use nc_data::{CoreGameData, EmpirePlanetEconomyRow, Fleet};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ArmyTransportMode {
@@ -61,7 +61,7 @@ impl PlanetTransportSelectionError {
 
 pub fn transport_available_qty(
     mode: ArmyTransportMode,
-    fleet: &FleetRecord,
+    fleet: &Fleet,
     planet: &EmpirePlanetEconomyRow,
 ) -> u16 {
     match mode {
@@ -83,7 +83,6 @@ pub fn default_fleet_transport_fleet_number(
 ) -> Option<u16> {
     game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == owner_empire_id)
         .filter_map(|fleet| {
@@ -111,7 +110,6 @@ pub fn transport_fleet_candidates_for_planet(
 ) -> Vec<PlanetTransportFleetCandidate> {
     game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| {
@@ -170,7 +168,6 @@ pub fn resolve_planet_transport_fleet_selection(
 {
     let (fleet_record_index_1_based, fleet) = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .find(|(_, fleet)| {
@@ -233,7 +230,7 @@ pub fn resolve_planet_transport_fleet_selection(
 
 fn owned_planet_row_for_fleet<'a>(
     owned_planet_rows: &'a [EmpirePlanetEconomyRow],
-    fleet: &FleetRecord,
+    fleet: &Fleet,
 ) -> Option<&'a EmpirePlanetEconomyRow> {
     owned_planet_rows
         .iter()

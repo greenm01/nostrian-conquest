@@ -74,7 +74,7 @@ impl DashApp {
                         }
                     }
                     _ => {
-                        let total_rows = self.game_data.player.records.len();
+                        let total_rows = self.game_data.players.len();
                         handle_list_overlay_key(
                             key,
                             &mut self.diplomacy_overlay.selected,
@@ -1021,7 +1021,6 @@ impl DashApp {
         let owner = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based.saturating_sub(1))
             .map(|planet| planet.owner_empire_slot_raw())
             .unwrap_or(0);
@@ -2110,7 +2109,7 @@ fn delete_selected_inbox_item(app: &mut DashApp) {
     match item.source {
         DashInboxItemSource::ReportBlock(idx) => nc_data::delete_report_block_for_viewer(
             &mut app.report_block_rows,
-            &app.game_data.player.records,
+            &app.game_data.players,
             idx,
             viewer,
         ),

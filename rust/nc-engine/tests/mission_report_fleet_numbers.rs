@@ -24,7 +24,7 @@ fn baseline_game() -> nc_data::CoreGameData {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    for player in &mut game_data.player.records {
+    for player in &mut game_data.players {
         player.set_autopilot_flag(0);
     }
     game_data
@@ -33,8 +33,8 @@ fn baseline_game() -> nc_data::CoreGameData {
 #[test]
 fn salvage_success_report_names_the_salvaged_fleet() {
     let mut game_data = baseline_game();
-    let target = game_data.planets.records[0].coords_raw();
-    let fleet = &mut game_data.fleets.records[2];
+    let target = game_data.planets[0].coords_raw();
+    let fleet = &mut game_data.fleets[2];
     assert_eq!(fleet.local_slot_word_raw(), 3);
     fleet.set_current_location_coords_raw([target[0] + 1, target[1]]);
     fleet.set_standing_order_kind(Order::Salvage);

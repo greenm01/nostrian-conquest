@@ -57,7 +57,6 @@ pub(super) fn handle_fleet_arrival(
         Order::ScoutSolarSystem => {
             let planet_idx = game_data
                 .planets
-                .records
                 .iter()
                 .position(|planet| planet.coords_raw() == coords);
             let intel_event = planet_idx.map(|planet_idx| PlanetIntelEvent {
@@ -91,7 +90,6 @@ pub(super) fn handle_fleet_arrival(
         Order::ViewWorld => {
             let planet_idx = game_data
                 .planets
-                .records
                 .iter()
                 .position(|planet| planet.coords_raw() == coords);
             let intel_event = planet_idx.map(|planet_idx| PlanetIntelEvent {
@@ -129,7 +127,6 @@ pub(super) fn handle_fleet_arrival(
         Order::Salvage => {
             let planet_idx = game_data
                 .planets
-                .records
                 .iter()
                 .position(|planet| planet.coords_raw() == coords);
             queue_salvage_resolution(
@@ -145,11 +142,10 @@ pub(super) fn handle_fleet_arrival(
         Order::GuardBlockadeWorld => {
             let planet_idx = game_data
                 .planets
-                .records
                 .iter()
                 .position(|planet| planet.coords_raw() == coords);
             if let Some(planet_idx) = planet_idx {
-                let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+                let defender_empire = game_data.planets[planet_idx].owner_empire_slot_raw();
                 queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
             }
             movement_events.mission_events.push(MissionEvent {
@@ -212,7 +208,6 @@ pub(super) fn handle_fleet_arrival(
                 abort_reason: None,
                 planet_idx: game_data
                     .planets
-                    .records
                     .iter()
                     .position(|planet| planet.coords_raw() == coords),
                 location_coords: Some(coords),
@@ -240,14 +235,13 @@ pub(super) fn handle_hostile_target_entry(
         Order::BlitzWorld => Mission::BlitzWorld,
         _ => return,
     };
-    let owner_empire = game_data.fleets.records[fleet_idx].owner_empire_raw();
+    let owner_empire = game_data.fleets[fleet_idx].owner_empire_raw();
     let planet_idx = game_data
         .planets
-        .records
         .iter()
         .position(|planet| planet.coords_raw() == coords);
     if let Some(planet_idx) = planet_idx {
-        let defender_empire = game_data.planets.records[planet_idx].owner_empire_slot_raw();
+        let defender_empire = game_data.planets[planet_idx].owner_empire_slot_raw();
         queue_local_intrusion_escalation(movement_events, owner_empire, defender_empire);
     }
     movement_events.mission_events.push(MissionEvent {
@@ -267,7 +261,7 @@ pub(super) fn handle_hostile_target_entry(
 /// the system: 0x22 = 0 at full speed. A fleet that has already climbed back
 /// to depth 0 has also passed that Move's test, which stops it on Hold
 /// (0b5d:00ec). Returns whether the Move resolved.
-pub(super) fn complete_view_world(fleet: &mut nc_data::FleetRecord) -> bool {
+pub(super) fn complete_view_world(fleet: &mut nc_data::Fleet) -> bool {
     let [_, mission_id] = fleet.mission_aux_bytes();
     fleet.set_mission_aux_bytes([0, mission_id]);
     if fleet.depth().is_zero() {

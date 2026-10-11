@@ -1329,7 +1329,7 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<FleetOverlayRow> {
     let location_filter = app.fleet_overlay.location_filter;
     let mut rows = Vec::new();
 
-    for (idx, fleet) in app.game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in app.game_data.fleets.iter().enumerate() {
         if fleet.owner_empire_raw() != owner_slot || !fleet.has_any_force() {
             continue;
         }
@@ -1510,7 +1510,7 @@ fn eta_sort_key(label: &str) -> (u8, u16) {
     }
 }
 
-fn fleet_strength_key(fleet: &nc_data::FleetRecord) -> (u16, u16, u16, u16, u16, u16, u16) {
+fn fleet_strength_key(fleet: &nc_data::Fleet) -> (u16, u16, u16, u16, u16, u16, u16) {
     (
         fleet.battleship_count(),
         fleet.cruiser_count(),
@@ -1828,7 +1828,6 @@ mod tests {
         for fleet in app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
         {
@@ -1857,7 +1856,7 @@ mod tests {
     #[test]
     fn holding_filter_with_visible_rows_does_not_render_empty_state_footer() {
         let mut app = dash_app();
-        for (idx, fleet) in app.game_data.fleets.records.iter_mut().enumerate() {
+        for (idx, fleet) in app.game_data.fleets.iter_mut().enumerate() {
             if fleet.owner_empire_raw() != 1 {
                 continue;
             }
@@ -1918,7 +1917,6 @@ mod tests {
         let fleet = app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
             .expect("owned fleet");

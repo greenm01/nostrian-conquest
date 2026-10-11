@@ -21,8 +21,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     let mut violations = Vec::new();
     let active = |state: &CoreGameData, viewer: u8| {
         state
-            .player
-            .records
+            .players
             .get(usize::from(viewer).wrapping_sub(1))
             .is_some_and(|player| player.is_active_human_player())
     };
@@ -63,7 +62,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     }
 
     if !observation.events.campaign_outlook_events.is_empty() {
-        for (idx, player) in observation.flagged.player.records.iter().enumerate() {
+        for (idx, player) in observation.flagged.players.iter().enumerate() {
             let empire = (idx + 1) as u8;
             let heard = observation.report_rows.iter().any(|row| {
                 row.viewer_empire_id == empire

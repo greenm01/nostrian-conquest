@@ -461,8 +461,7 @@ impl DashApp {
         let raw = self.tax_prompt_input.trim();
         let tax_rate = if raw.is_empty() {
             self.game_data
-                .player
-                .records
+                .players
                 .get(self.player_record_index_1_based.saturating_sub(1))
                 .map(|player| player.tax_rate())
                 .unwrap_or(0)

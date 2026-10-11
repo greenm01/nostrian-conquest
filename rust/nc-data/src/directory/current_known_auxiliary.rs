@@ -1,4 +1,5 @@
 use super::*;
+use crate::classic::serialize_ipbm_dat;
 
 impl CoreGameData {
     pub fn planet_build_errors_current_known(
@@ -8,7 +9,7 @@ impl CoreGameData {
         kind_raw: u8,
     ) -> Vec<String> {
         let mut errors = Vec::new();
-        match self.planets.records.get(record_index_1_based - 1) {
+        match self.planets.get(record_index_1_based - 1) {
             Some(record) => {
                 if record.build_count_raw(0) != slot_raw {
                     errors.push(format!(
@@ -35,7 +36,7 @@ impl CoreGameData {
     pub fn guard_starbase_onebase_errors_current_known(&self) -> Vec<String> {
         let mut errors = Vec::new();
 
-        match self.player.records.first() {
+        match self.players.first() {
             Some(record) if record.first_base_record_raw() == 1 => {}
             Some(record) => errors.push(format!(
                 "PLAYER[1].first_base_record expected 1, got {}",
@@ -44,7 +45,7 @@ impl CoreGameData {
             None => errors.push("PLAYER.DAT missing record 1".to_string()),
         }
 
-        match self.fleets.records.first() {
+        match self.fleets.first() {
             Some(record) => {
                 if record.standing_order_code_raw() != 0x04 {
                     errors.push(format!(
@@ -59,20 +60,20 @@ impl CoreGameData {
             None => errors.push("FLEETS.DAT missing record 1".to_string()),
         }
 
-        let Some(fleet) = self.fleets.records.first() else {
+        let Some(fleet) = self.fleets.first() else {
             return errors;
         };
-        let Some(player1) = self.player.records.first() else {
+        let Some(player1) = self.players.first() else {
             return errors;
         };
 
-        if self.bases.records.len() != 1 {
+        if self.bases.len() != 1 {
             errors.push(format!(
                 "BASES.DAT expected 1 record, got {}",
-                self.bases.records.len()
+                self.bases.len()
             ));
         } else {
-            let base = &self.bases.records[0];
+            let base = &self.bases[0];
             if base.escort_fleet_slot_raw() == 0 {
                 errors.push("BASES[1].escort_fleet_slot expected non-zero".to_string());
             }
@@ -156,24 +157,21 @@ impl CoreGameData {
         player_record_index_1_based: usize,
         fleet_record_index_1_based: usize,
     ) -> Result<CurrentKnownGuardStarbaseLinkageSummary, GameStateMutationError> {
-        self.player
-            .records
-            .get(player_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlayerRecord {
+        self.players.get(player_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_record_index_1_based,
-            })?;
-        let fleet = self
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+            },
+        )?;
+        let fleet = self.fleets.get(fleet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_record_index_1_based,
-            })?;
+            },
+        )?;
 
         let selected_base = fleet
             .guard_starbase_index_raw()
             .checked_sub(1)
-            .and_then(|idx| self.bases.records.get(idx as usize));
+            .and_then(|idx| self.bases.get(idx as usize));
 
         Ok(CurrentKnownGuardStarbaseLinkageSummary {
             player_record_index_1_based,
@@ -306,7 +304,6 @@ impl CoreGameData {
 
     pub fn guarding_fleet_record_indexes_current_known(&self) -> Vec<usize> {
         self.fleets
-            .records
             .iter()
             .enumerate()
             .filter_map(|(idx, fleet)| (fleet.standing_order_code_raw() == 0x04).then_some(idx + 1))
@@ -350,9 +347,9 @@ impl CoreGameData {
 
     pub fn ipbm_count_length_errors_current_known(&self) -> Vec<String> {
         let expected_count = self.player1_ipbm_count_current_known();
-        let actual_count = self.ipbm.records.len();
+        let actual_count = self.ipbms.len();
         let expected_size = expected_count * crate::IPBM_RECORD_SIZE;
-        let actual_size = self.ipbm.to_bytes().len();
+        let actual_size = serialize_ipbm_dat(&self.ipbms).len();
 
         let mut errors = Vec::new();
         if actual_count != expected_count {

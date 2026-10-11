@@ -314,7 +314,7 @@ fn apply_player_theme_preference(
 
 /// Apply runtime operational settings to `game_data.setup`.
 ///
-/// If any SetupDat byte changed, save a new snapshot so the engine always
+/// If any Setup byte changed, save a new snapshot so the engine always
 /// sees the current config on the next run.  Returns the (possibly updated)
 /// `CoreGameData` and the active snapshot id (new if saved, original if not).
 fn apply_game_config_overrides(

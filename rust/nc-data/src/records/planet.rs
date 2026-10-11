@@ -1,10 +1,10 @@
 use crate::PLANET_RECORD_SIZE;
-use crate::classic::{decode_planet, encode_planet, parse_planets_dat};
+use crate::classic::{decode_planet, encode_planet};
 use crate::model::{Coords, Planet};
 use crate::real48::Real48;
-use crate::support::{ParseError, classic_text};
+use crate::support::classic_text;
 
-pub use crate::model::ProductionItemKind;
+use crate::model::ProductionItemKind;
 
 /// The stardock is 8 u32 counts at `+0x38`, one per item type, in this
 /// order: destroyer, cruiser, battleship, scout, troop transport, ETAC,
@@ -27,68 +27,52 @@ pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
         .flatten()
 }
 
-/// A [`Planet`] behind the accessor API call sites still use.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct PlanetRecord {
-    pub planet: Planet,
-}
-
-impl PlanetRecord {
-    pub fn new_zeroed() -> Self {
-        Self::default()
-    }
-
+impl Planet {
     pub fn from_raw(raw: [u8; PLANET_RECORD_SIZE]) -> Self {
-        Self {
-            planet: decode_planet(&raw),
-        }
+        decode_planet(&raw)
     }
 
     /// The classic PLANETS.DAT encoding of this record.
     pub fn to_bytes(&self) -> [u8; PLANET_RECORD_SIZE] {
-        encode_planet(&self.planet)
+        encode_planet(self)
     }
 
     /// Sector x, y and potential production, PLANETS.DAT 0x00..0x02.
     pub fn header_bytes(&self) -> [u8; 3] {
-        [
-            self.planet.sector.x,
-            self.planet.sector.y,
-            self.planet.potential_production,
-        ]
+        [self.sector.x, self.sector.y, self.potential_production]
     }
 
     pub fn coords_raw(&self) -> [u8; 2] {
-        self.planet.sector.to_array()
+        self.sector.to_array()
     }
 
     pub fn set_coords_raw(&mut self, coords: [u8; 2]) {
-        self.planet.sector = Coords::from_array(coords);
+        self.sector = Coords::from_array(coords);
     }
 
     pub fn string_len(&self) -> u8 {
-        self.planet.name.chars().count() as u8
+        self.name.chars().count() as u8
     }
 
     pub fn status_or_name_bytes(&self) -> &[u8] {
-        self.planet.name.as_bytes()
+        self.name.as_bytes()
     }
 
     pub fn potential_production_points(&self) -> u16 {
-        u16::from(self.planet.potential_production)
+        u16::from(self.potential_production)
     }
 
     pub fn set_potential_production_points(&mut self, value: u8) {
-        self.planet.potential_production = value;
+        self.potential_production = value;
     }
 
     /// Present production ("factories").
     pub fn present_production(&self) -> f64 {
-        self.planet.production.to_f64()
+        self.production.to_f64()
     }
 
     pub fn set_present_production(&mut self, value: f64) {
-        self.planet.production = Real48::from_f64(value);
+        self.production = Real48::from_f64(value);
     }
 
     /// Present production rounded to whole points.
@@ -107,11 +91,11 @@ impl PlanetRecord {
 
     /// Stored goods (production points).
     pub fn stored_goods(&self) -> f64 {
-        self.planet.stored_goods.to_f64()
+        self.stored_goods.to_f64()
     }
 
     pub fn set_stored_goods(&mut self, value: f64) {
-        self.planet.stored_goods = Real48::from_f64(value);
+        self.stored_goods = Real48::from_f64(value);
     }
 
     /// Stored goods rounded to whole points.
@@ -126,11 +110,11 @@ impl PlanetRecord {
     /// The Scorch-Earth order: on capture, production and goods are halved
     /// and the stardock emptied.
     pub fn scorch_earth_raw(&self) -> u8 {
-        u8::from(self.planet.scorch_earth)
+        u8::from(self.scorch_earth)
     }
 
     pub fn set_scorch_earth_raw(&mut self, value: u8) {
-        self.planet.scorch_earth = value != 0;
+        self.scorch_earth = value != 0;
     }
 
     pub fn potential_production_points_current_known(&self) -> u16 {
@@ -144,14 +128,14 @@ impl PlanetRecord {
     /// Stores `name` as classic text, cut to the 20 characters a planet
     /// name holds.
     pub fn set_planet_name(&mut self, name: &str) {
-        self.planet.name = classic_text(name)
+        self.name = classic_text(name)
             .chars()
             .take(PLANET_NAME_MAX_LEN)
             .collect();
     }
 
     pub fn planet_name(&self) -> String {
-        self.planet.name.clone()
+        self.name.clone()
     }
 
     pub fn set_status_or_name_summary_raw(&mut self, value: &str) {
@@ -165,23 +149,23 @@ impl PlanetRecord {
     /// Production points still owed in build slot `slot`.
     // t039: remove in phase 5
     pub fn build_count_raw(&self, slot: usize) -> u8 {
-        self.planet.build_queue[slot].points_owed
+        self.build_queue[slot].points_owed
     }
 
     /// The unit kind in build slot `slot` as its byte; 0 for an empty slot.
     // t039: remove in phase 5
     pub fn build_kind_raw(&self, slot: usize) -> u8 {
-        self.planet.build_queue[slot].kind.to_raw()
+        self.build_queue[slot].kind.to_raw()
     }
 
     // t039: remove in phase 5
     pub fn set_build_count_raw(&mut self, slot: usize, value: u8) {
-        self.planet.build_queue[slot].points_owed = value;
+        self.build_queue[slot].points_owed = value;
     }
 
     // t039: remove in phase 5
     pub fn set_build_kind_raw(&mut self, slot: usize, value: u8) {
-        self.planet.build_queue[slot].kind = ProductionItemKind::from_raw(value);
+        self.build_queue[slot].kind = ProductionItemKind::from_raw(value);
     }
 
     pub fn stardock_count_raw(&self, slot: usize) -> u16 {
@@ -189,7 +173,7 @@ impl PlanetRecord {
     }
 
     pub fn stardock_count(&self, slot: usize) -> u32 {
-        self.planet.stardock.to_counts()[slot]
+        self.stardock.to_counts()[slot]
     }
 
     /// The build kind in `slot`, or 0 when the slot is empty.
@@ -210,9 +194,9 @@ impl PlanetRecord {
     }
 
     pub fn set_stardock_count(&mut self, slot: usize, value: u32) {
-        let mut counts = self.planet.stardock.to_counts();
+        let mut counts = self.stardock.to_counts();
         counts[slot] = value;
-        self.planet.stardock = crate::model::Stardock::from_counts(counts);
+        self.stardock = crate::model::Stardock::from_counts(counts);
     }
 
     /// Seeds this record as an owned world from the byte pieces older
@@ -238,7 +222,7 @@ impl PlanetRecord {
         owner_empire_slot: u8,
     ) {
         let name_len = usize::from(name_len).min(name_buffer.len());
-        self.planet = Planet {
+        *self = Planet {
             sector: Coords::from_array(coords),
             potential_production: potential_production[0],
             production: Real48::from_bytes([
@@ -260,41 +244,41 @@ impl PlanetRecord {
     }
 
     pub fn owner_empire_slot_raw(&self) -> u8 {
-        self.planet.owner.0
+        self.owner.0
     }
     pub fn set_owner_empire_slot_raw(&mut self, value: u8) {
-        self.planet.owner.0 = value;
+        self.owner.0 = value;
     }
 
     /// Armies on the surface, as far as a byte holds them.
     pub fn army_count_raw(&self) -> u8 {
-        self.planet.armies.min(u16::from(u8::MAX)) as u8
+        self.armies.min(u16::from(u8::MAX)) as u8
     }
 
     pub fn set_army_count_raw(&mut self, value: u8) {
-        self.planet.armies = u16::from(value);
+        self.armies = u16::from(value);
     }
 
     /// Ground batteries, as far as a byte holds them.
     pub fn ground_batteries_raw(&self) -> u8 {
-        self.planet.ground_batteries.min(u16::from(u8::MAX)) as u8
+        self.ground_batteries.min(u16::from(u8::MAX)) as u8
     }
 
     pub fn set_ground_batteries_raw(&mut self, value: u8) {
-        self.planet.ground_batteries = u16::from(value);
+        self.ground_batteries = u16::from(value);
     }
 
     /// Years under the current owner, capped at 2: 0 just captured, 1
     /// recently captured, 2 fully functional.
     pub fn ownership_status_raw(&self) -> u8 {
-        self.planet.years_under_owner
+        self.years_under_owner
     }
     pub fn set_ownership_status_raw(&mut self, value: u8) {
-        self.planet.years_under_owner = value;
+        self.years_under_owner = value;
     }
 
     pub fn status_or_name_summary(&self) -> String {
-        self.planet.name.trim().to_string()
+        self.name.trim().to_string()
     }
 
     pub fn is_named_homeworld_seed(&self) -> bool {
@@ -342,28 +326,5 @@ impl PlanetRecord {
             parts.push(format!("batteries={}", self.ground_batteries_raw()));
         }
         parts.join(" | ")
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct PlanetDat {
-    pub records: Vec<PlanetRecord>,
-}
-
-impl PlanetDat {
-    pub fn parse(data: &[u8]) -> Result<Self, ParseError> {
-        Ok(Self {
-            records: parse_planets_dat(data)?
-                .into_iter()
-                .map(|planet| PlanetRecord { planet })
-                .collect(),
-        })
-    }
-
-    pub fn to_bytes(&self) -> Vec<u8> {
-        self.records
-            .iter()
-            .flat_map(|record| encode_planet(&record.planet))
-            .collect()
     }
 }

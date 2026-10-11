@@ -444,8 +444,7 @@ fn decode_text_lines(text: &str) -> Vec<String> {
 
 fn sender_label(game_data: &CoreGameData, sender_empire_id: u8) -> String {
     let Some(player) = game_data
-        .player
-        .records
+        .players
         .get(sender_empire_id.saturating_sub(1) as usize)
     else {
         return format!("Empire #{sender_empire_id}");

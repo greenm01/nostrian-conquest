@@ -5,8 +5,8 @@ use nc_compat::{load_classic_core_files, save_classic_core_files};
 fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let initial_fleet_count = game_data.fleets.records.len();
-    let donor = &mut game_data.fleets.records[0];
+    let initial_fleet_count = game_data.fleets.len();
+    let donor = &mut game_data.fleets[0];
     donor.set_scout_count(1);
     donor.set_cruiser_count(1);
     donor.set_destroyer_count(4);
@@ -100,7 +100,6 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
         "Commissioned Fleet #{:02} from Fleet #01.",
         updated
             .fleets
-            .records
             .last()
             .expect("detached fleet")
             .local_slot_word_raw()
@@ -112,20 +111,20 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
             .any(|line| line.contains(&first_commission_message))
     );
 
-    assert_eq!(updated.fleets.records.len(), initial_fleet_count + 1);
-    assert_eq!(updated.fleets.records[0].scout_count(), 1);
-    assert_eq!(updated.fleets.records[0].cruiser_count(), 1);
-    assert_eq!(updated.fleets.records[0].destroyer_count(), 3);
-    assert_eq!(updated.fleets.records[0].troop_transport_count(), 4);
-    assert_eq!(updated.fleets.records[0].army_count(), 4);
-    let detached = updated.fleets.records.last().expect("detached fleet");
+    assert_eq!(updated.fleets.len(), initial_fleet_count + 1);
+    assert_eq!(updated.fleets[0].scout_count(), 1);
+    assert_eq!(updated.fleets[0].cruiser_count(), 1);
+    assert_eq!(updated.fleets[0].destroyer_count(), 3);
+    assert_eq!(updated.fleets[0].troop_transport_count(), 4);
+    assert_eq!(updated.fleets[0].army_count(), 4);
+    let detached = updated.fleets.last().expect("detached fleet");
     assert_eq!(detached.destroyer_count(), 1);
     assert_eq!(detached.scout_count(), 0);
     assert_eq!(detached.cruiser_count(), 0);
     assert_eq!(detached.troop_transport_count(), 0);
     assert_eq!(detached.army_count(), 0);
     assert_eq!(detached.rules_of_engagement(), 6);
-    assert_eq!(updated.fleets.records[0].rules_of_engagement(), 0);
+    assert_eq!(updated.fleets[0].rules_of_engagement(), 0);
 }
 
 /// A detached fleet starts at ECGAME's default ROE, 6, whatever the donor's
@@ -134,7 +133,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
 fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
     donor.set_destroyer_count(2);
@@ -176,7 +175,6 @@ fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
     let roe_of = |destroyers: u16, scouts: u16, cruisers: u16| {
         updated
             .fleets
-            .records
             .iter()
             .find(|fleet| {
                 fleet.owner_empire_raw() == 1
@@ -196,7 +194,7 @@ fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
 fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
     donor.set_destroyer_count(4);
@@ -351,7 +349,7 @@ fn fleet_detach_x_clears_staged_selection_without_leaving_screen() {
 fn fleet_detach_leaves_at_least_one_ship_on_the_donor() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_destroyer_count(2);
     donor.set_battleship_count(0);
     donor.set_cruiser_count(0);
@@ -401,7 +399,7 @@ fn fleet_detach_leaves_at_least_one_ship_on_the_donor() {
 fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_destroyer_count(2);
     donor.set_battleship_count(0);
     donor.set_cruiser_count(0);
@@ -443,7 +441,6 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
     let updated = latest_runtime_state(&app.game_dir).game_data;
     let new_fleet_number = updated
         .fleets
-        .records
         .last()
         .expect("detached fleet")
         .local_slot_word_raw();
@@ -458,7 +455,7 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
 fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_battleship_count(0);
     donor.set_cruiser_count(1);
     donor.set_destroyer_count(0);
@@ -498,7 +495,7 @@ fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
     submit_detach(&mut app);
 
     let updated = latest_runtime_state(&fixture_dir).game_data;
-    let donor = &updated.fleets.records[0];
+    let donor = &updated.fleets[0];
     assert_eq!(donor.etac_count(), 0);
     assert_eq!(donor.cruiser_count(), 1);
     assert_eq!(donor.standing_order_kind(), nc_data::Order::HoldPosition);
@@ -512,7 +509,6 @@ fn fleet_detach_prompt_reports_missing_fleet_number() {
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let fleet_one = game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -525,7 +521,6 @@ fn fleet_detach_prompt_reports_missing_fleet_number() {
     fleet_one.set_etac_count(0);
     let fleet_two = game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet #2 should exist");
@@ -579,7 +574,7 @@ fn fleet_detach_prompt_reports_missing_fleet_number() {
 fn fleet_detach_prompt_reports_single_ship_fleet_as_ineligible() {
     let fixture_dir = temp_game_copy();
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
-    let donor = &mut game_data.fleets.records[0];
+    let donor = &mut game_data.fleets[0];
     donor.set_destroyer_count(1);
     donor.set_battleship_count(0);
     donor.set_cruiser_count(0);
@@ -591,7 +586,6 @@ fn fleet_detach_prompt_reports_single_ship_fleet_as_ineligible() {
     donor.set_current_speed(0);
     let fallback = game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet #2 should exist");
@@ -647,7 +641,6 @@ fn fleet_detach_prompt_defaults_to_largest_owned_fleet_by_ship_total() {
     let mut game_data = load_classic_core_files(&fixture_dir).expect("load fixture");
     let fleet_one = game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -660,7 +653,6 @@ fn fleet_detach_prompt_defaults_to_largest_owned_fleet_by_ship_total() {
     fleet_one.set_etac_count(0);
     let fleet_two = game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet #2 should exist");

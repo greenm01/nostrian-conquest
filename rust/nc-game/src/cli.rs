@@ -933,8 +933,7 @@ fn validate_runtime_game_config(
     let runtime_state = campaign_store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    game_config
-        .validate_reservations_for_player_count(runtime_state.game_data.player.records.len())?;
+    game_config.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
     Ok(())
 }
 
@@ -1091,7 +1090,7 @@ mod tests {
             .expect("load runtime state");
         data.join_player(player, &format!("Empire {player}"))
             .expect("join player");
-        data.player.records[player - 1].set_assigned_player_handle_raw(alias);
+        data.players[player - 1].set_assigned_player_handle_raw(alias);
         store
             .save_runtime_state_structured(&data, &BTreeSet::new(), &[], &[])
             .expect("save runtime state");
@@ -1338,7 +1337,7 @@ mod tests {
             .expect("load runtime state")
             .expect("runtime state");
         assert_eq!(
-            runtime_state.game_data.player.records[1].assigned_player_handle_summary(),
+            runtime_state.game_data.players[1].assigned_player_handle_summary(),
             "Starlord"
         );
         assert_eq!(
@@ -1614,7 +1613,6 @@ mod tests {
         let donor = app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
             .expect("fleet #4 should exist");
@@ -1632,7 +1630,6 @@ mod tests {
         let host = app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
             .expect("fleet #3 should exist");

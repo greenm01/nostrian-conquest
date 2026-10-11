@@ -5,12 +5,11 @@ use crate::{CoreGameData, Order};
 pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
     let owned_planets: Vec<(u8, [u8; 2])> = game_data
         .planets
-        .records
         .iter()
         .map(|planet| (planet.owner_empire_slot_raw(), planet.coords_raw()))
         .collect();
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
         if fleet.standing_order_kind() != Order::SeekHome {
             continue;
         }
@@ -54,7 +53,6 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
 pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
     let current_host_viability: std::collections::HashMap<(u8, u16), bool> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
             let viable = fleet.destroyer_count() > 0
@@ -71,7 +69,6 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
         .collect();
     let current_fleet_coords: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
             (
@@ -82,7 +79,7 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
         .collect();
 
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
         if fleet.standing_order_kind() != Order::JoinAnotherFleet {
             continue;
         }
@@ -127,7 +124,6 @@ pub(super) fn refresh_guard_starbase_targets(
 ) -> Vec<MissionRetargetEvent> {
     let active_bases_by_id: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .bases
-        .records
         .iter()
         .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
         .map(|base| {
@@ -139,13 +135,12 @@ pub(super) fn refresh_guard_starbase_targets(
         .collect();
     let active_base_coords: std::collections::HashSet<(u8, [u8; 2])> = game_data
         .bases
-        .records
         .iter()
         .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
         .map(|base| (base.owner_empire_raw(), base.coords_raw()))
         .collect();
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
         if fleet.standing_order_kind() != Order::GuardStarbase {
             continue;
         }

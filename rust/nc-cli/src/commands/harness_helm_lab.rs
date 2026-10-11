@@ -236,8 +236,7 @@ fn join_helm_lab_empires(dir: &Path, player_count: u8) -> Result<(), Box<dyn std
                 &homeworld_name(player_record_index_1_based, empire_name),
             )?;
             let player = game_data
-                .player
-                .records
+                .players
                 .get_mut(player_record_index_1_based - 1)
                 .ok_or_else(|| {
                     format!("player record index out of range: {player_record_index_1_based}")

@@ -8,25 +8,26 @@ use crate::commands::runtime::{
 };
 use crate::support::paths::display_repo_path;
 use crate::workspace::copy_init_files;
+use nc_data::classic::serialize_ipbm_dat;
 
 pub(crate) fn print_ipbm_report(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let ipbm_bytes = data.ipbm.to_bytes();
+    let ipbm_bytes = serialize_ipbm_dat(&data.ipbms);
 
     println!("IPBM Report");
     println!("  dir={}", dir.display());
     println!(
         "  player[1].ipbm_chain_head={}",
-        data.player.records[0].ipbm_chain_head_raw()
+        data.players[0].ipbm_chain_head_raw()
     );
-    println!("  file_record_count={}", data.ipbm.records.len());
+    println!("  file_record_count={}", data.ipbms.len());
     println!("  file_size={}", ipbm_bytes.len());
     println!(
         "  expected_size_from_player1={}",
-        data.player.records[0].ipbm_chain_head_raw() as usize * IPBM_RECORD_SIZE
+        data.players[0].ipbm_chain_head_raw() as usize * IPBM_RECORD_SIZE
     );
 
-    for (idx, record) in data.ipbm.records.iter().enumerate() {
+    for (idx, record) in data.ipbms.iter().enumerate() {
         println!(
             "  record {}: primary={:#06x} owner={} gate={:#06x} follow_on={:#06x} sector={:?} target={:?} target_depth={}",
             idx + 1,
@@ -84,13 +85,13 @@ pub(crate) fn set_ipbm_record_prefix(
 
 pub(crate) fn validate_ipbm(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_classic_core_files(dir)?;
-    let ipbm_bytes = data.ipbm.to_bytes();
+    let ipbm_bytes = serialize_ipbm_dat(&data.ipbms);
 
     let errors = data.ipbm_count_length_errors_current_known();
 
     if errors.is_empty() {
         let expected_count = data.player1_ipbm_count_current_known();
-        let actual_count = data.ipbm.records.len();
+        let actual_count = data.ipbms.len();
         println!("Valid IPBM count/length state");
         println!("  player[1].ipbm_chain_head = {}", expected_count);
         println!("  IPBM.DAT size = {}", ipbm_bytes.len());

@@ -19,7 +19,7 @@ pub fn push_combat_entries(
         if event.defender_empire_raw == 0 {
             continue;
         }
-        let Some(planet) = game_data.planets.records.get(event.planet_idx) else {
+        let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
         let [x, y] = planet.coords_raw();
@@ -381,7 +381,7 @@ pub fn push_combat_entries(
 
     // ----- Assault report events (invade/blitz) -----
     for event in &events.assault_report_events {
-        let Some(planet) = game_data.planets.records.get(event.planet_idx) else {
+        let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
         let [x, y] = planet.coords_raw();

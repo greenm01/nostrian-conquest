@@ -19,7 +19,7 @@ impl EmpireStatusScreen {
         menu: CommandMenu,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let player_idx = frame.player.record_index_1_based;
-        let player = &frame.game_data.player.records[player_idx - 1];
+        let player = &frame.game_data.players[player_idx - 1];
         let empire_raw = player_idx as u8;
         let label_width = aligned_label_width([
             "Empire",

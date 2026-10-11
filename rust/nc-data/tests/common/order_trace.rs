@@ -1,6 +1,6 @@
 use nc_data::{
-    BaseDat, BaseRecord, CoreGameData, FleetRecord, GameStateBuilder, MaintenanceEvents, Mission,
-    MissionOutcome, Order,
+    CoreGameData, Fleet, GameStateBuilder, MaintenanceEvents, Mission, MissionOutcome, Order,
+    Starbase,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -87,13 +87,13 @@ fn assert_fleet_state(
     expected: FleetTurnExpectation,
 ) {
     assert!(
-        fleet_idx < state.fleets.records.len(),
+        fleet_idx < state.fleets.len(),
         "{name} turn {} expected fleet index {} but only {} fleet(s) remain",
         expected.turn,
         fleet_idx,
-        state.fleets.records.len()
+        state.fleets.len()
     );
-    let fleet = &state.fleets.records[fleet_idx];
+    let fleet = &state.fleets[fleet_idx];
     assert_eq!(
         fleet.current_location_coords_raw(),
         expected.coords,
@@ -130,7 +130,7 @@ fn assert_fleet_state(
 
 pub fn build_move_only_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_scout_fleet(fleet);
     arm_new_order(
         fleet,
@@ -144,7 +144,7 @@ pub fn build_move_only_trace() -> CoreGameData {
 
 pub fn build_colonize_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Unowned);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_colonizer_fleet(fleet);
     arm_new_order(
         fleet,
@@ -158,7 +158,7 @@ pub fn build_colonize_world_trace() -> CoreGameData {
 
 pub fn build_view_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -172,7 +172,7 @@ pub fn build_view_world_trace() -> CoreGameData {
 
 pub fn build_seek_home_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Friendly);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -186,7 +186,7 @@ pub fn build_seek_home_trace() -> CoreGameData {
 
 pub fn build_salvage_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Friendly);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_salvage_fleet(fleet);
     arm_new_order(
         fleet,
@@ -200,7 +200,7 @@ pub fn build_salvage_trace() -> CoreGameData {
 
 pub fn build_scout_sector_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_scout_fleet(fleet);
     arm_new_order(
         fleet,
@@ -214,7 +214,7 @@ pub fn build_scout_sector_trace() -> CoreGameData {
 
 pub fn build_scout_system_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_scout_fleet(fleet);
     arm_new_order(
         fleet,
@@ -228,7 +228,7 @@ pub fn build_scout_system_trace() -> CoreGameData {
 
 pub fn build_patrol_sector_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -242,7 +242,7 @@ pub fn build_patrol_sector_trace() -> CoreGameData {
 
 pub fn build_guard_starbase_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    let mut base = BaseRecord::new_zeroed();
+    let mut base = Starbase::default();
     base.set_base_id_raw(1);
     base.set_owner_empire_raw(1);
     base.set_record_number_raw(1);
@@ -251,13 +251,11 @@ pub fn build_guard_starbase_trace() -> CoreGameData {
     base.set_at_rest_motion();
     base.set_target_coords_raw(TRACE_TARGET);
     base.set_target_depth_raw(1);
-    game_data.bases = BaseDat {
-        records: vec![base],
-    };
+    game_data.bases = vec![base];
     // The base heads player 1's chain.
-    game_data.player.records[0].set_first_base_record_raw(1);
+    game_data.players[0].set_first_base_record_raw(1);
 
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -272,7 +270,7 @@ pub fn build_guard_starbase_trace() -> CoreGameData {
 
 pub fn build_guard_blockade_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -286,7 +284,7 @@ pub fn build_guard_blockade_world_trace() -> CoreGameData {
 
 pub fn build_bombard_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_bombard_fleet(fleet);
     arm_new_order(
         fleet,
@@ -301,11 +299,11 @@ pub fn build_bombard_world_trace() -> CoreGameData {
 pub fn build_invade_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
     {
-        let target = &mut game_data.planets.records[TARGET_PLANET_IDX];
+        let target = &mut game_data.planets[TARGET_PLANET_IDX];
         target.set_ground_batteries_raw(1);
         target.set_army_count_raw(1);
     }
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_assault_fleet(fleet);
     arm_new_order(
         fleet,
@@ -320,13 +318,13 @@ pub fn build_invade_world_trace() -> CoreGameData {
 pub fn build_blitz_world_trace() -> CoreGameData {
     let mut game_data = build_world_trace(TargetWorldOwner::Foreign);
     {
-        let target = &mut game_data.planets.records[TARGET_PLANET_IDX];
+        let target = &mut game_data.planets[TARGET_PLANET_IDX];
         // No batteries: the landing is unopposed, so the outcome does not hang
         // on the year's combat rolls.
         target.set_ground_batteries_raw(0);
         target.set_army_count_raw(1);
     }
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_blitz_fleet(fleet);
     arm_new_order(
         fleet,
@@ -341,12 +339,12 @@ pub fn build_blitz_world_trace() -> CoreGameData {
 pub fn build_join_chase_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
 
-    let host = &mut game_data.fleets.records[0];
+    let host = &mut game_data.fleets[0];
     configure_cruiser_fleet(host);
     arm_new_order(host, Order::MoveOnly, [10, 10], [14, 10], TRACE_SPEED);
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
-    let joiner = &mut game_data.fleets.records[1];
+    let host_id = game_data.fleets[0].fleet_id_word_raw();
+    let joiner = &mut game_data.fleets[1];
     configure_cruiser_fleet(joiner);
     joiner.set_owner_empire_raw(1);
     arm_new_order(
@@ -363,15 +361,15 @@ pub fn build_join_chase_trace() -> CoreGameData {
 
 pub fn build_join_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    game_data.player.records[0].set_player_mode_raw(0xff);
+    game_data.players[0].set_player_mode_raw(0xff);
     let coords = [10, 10];
 
-    let host = &mut game_data.fleets.records[0];
+    let host = &mut game_data.fleets[0];
     configure_cruiser_fleet(host);
     arm_stationary_order(host, Order::HoldPosition, coords);
 
-    let host_id = game_data.fleets.records[0].fleet_id_word_raw();
-    let joiner = &mut game_data.fleets.records[1];
+    let host_id = game_data.fleets[0].fleet_id_word_raw();
+    let joiner = &mut game_data.fleets[1];
     configure_cruiser_fleet(joiner);
     joiner.set_owner_empire_raw(1);
     arm_stationary_order(joiner, Order::JoinAnotherFleet, coords);
@@ -382,7 +380,7 @@ pub fn build_join_merge_trace() -> CoreGameData {
 
 pub fn build_rendezvous_travel_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     arm_new_order(
         fleet,
@@ -396,14 +394,14 @@ pub fn build_rendezvous_travel_trace() -> CoreGameData {
 
 pub fn build_rendezvous_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    game_data.player.records[0].set_player_mode_raw(0xff);
+    game_data.players[0].set_player_mode_raw(0xff);
 
-    let slow = &mut game_data.fleets.records[0];
+    let slow = &mut game_data.fleets[0];
     configure_cruiser_fleet(slow);
     slow.set_max_speed(6);
     arm_stationary_order(slow, Order::RendezvousSector, TRACE_TARGET);
 
-    let fast = &mut game_data.fleets.records[1];
+    let fast = &mut game_data.fleets[1];
     configure_etac_fleet(fast);
     fast.set_owner_empire_raw(1);
     fast.set_max_speed(3);
@@ -424,7 +422,7 @@ pub fn configured_delayed_hostile_arrival_state(
     let target_coords = [25, 25];
     let target_idx = 4;
 
-    let target_world = &mut game_data.planets.records[target_idx];
+    let target_world = &mut game_data.planets[target_idx];
     target_world.set_coords_raw(target_coords);
     target_world.set_owner_empire_slot_raw(2);
     target_world.set_ownership_status_raw(2);
@@ -432,7 +430,7 @@ pub fn configured_delayed_hostile_arrival_state(
     target_world.set_army_count_raw(10);
     target_world.set_ground_batteries_raw(4);
 
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_battleship_count(ships.0);
     fleet.set_cruiser_count(ships.1);
     fleet.set_destroyer_count(ships.2);
@@ -458,8 +456,8 @@ pub fn build_trace_baseline() -> CoreGameData {
         .build_initialized_baseline()
         .expect("baseline should build");
 
-    game_data.bases = BaseDat { records: vec![] };
-    for fleet in game_data.fleets.records.iter_mut().skip(1) {
+    game_data.bases = vec![];
+    for fleet in game_data.fleets.iter_mut().skip(1) {
         clear_fleet_for_probe(fleet);
         fleet.set_owner_empire_raw(0);
         arm_stationary_order(fleet, Order::HoldPosition, [1, 1]);
@@ -470,7 +468,7 @@ pub fn build_trace_baseline() -> CoreGameData {
 
 pub fn build_world_trace(owner: TargetWorldOwner) -> CoreGameData {
     let mut game_data = build_trace_baseline();
-    let target = &mut game_data.planets.records[TARGET_PLANET_IDX];
+    let target = &mut game_data.planets[TARGET_PLANET_IDX];
     target.set_coords_raw(TRACE_TARGET);
     target.set_planet_name("Target");
     target.set_ground_batteries_raw(4);
@@ -492,7 +490,7 @@ pub fn build_world_trace(owner: TargetWorldOwner) -> CoreGameData {
     game_data
 }
 
-pub fn clear_fleet_for_probe(fleet: &mut FleetRecord) {
+pub fn clear_fleet_for_probe(fleet: &mut Fleet) {
     fleet.set_battleship_count(0);
     fleet.set_cruiser_count(0);
     fleet.set_destroyer_count(0);
@@ -504,38 +502,38 @@ pub fn clear_fleet_for_probe(fleet: &mut FleetRecord) {
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_cruiser_fleet(fleet: &mut FleetRecord) {
+pub fn configure_cruiser_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_cruiser_count(1);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_scout_fleet(fleet: &mut FleetRecord) {
+pub fn configure_scout_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_scout_count(1);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_colonizer_fleet(fleet: &mut FleetRecord) {
+pub fn configure_colonizer_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_etac_count(3);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_salvage_fleet(fleet: &mut FleetRecord) {
+pub fn configure_salvage_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_destroyer_count(1);
     fleet.set_cruiser_count(1);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_bombard_fleet(fleet: &mut FleetRecord) {
+pub fn configure_bombard_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_destroyer_count(1);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_assault_fleet(fleet: &mut FleetRecord) {
+pub fn configure_assault_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_battleship_count(4);
     fleet.set_cruiser_count(4);
@@ -545,7 +543,7 @@ pub fn configure_assault_fleet(fleet: &mut FleetRecord) {
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_blitz_fleet(fleet: &mut FleetRecord) {
+pub fn configure_blitz_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_destroyer_count(1);
     fleet.set_troop_transport_count(10);
@@ -553,19 +551,13 @@ pub fn configure_blitz_fleet(fleet: &mut FleetRecord) {
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn configure_etac_fleet(fleet: &mut FleetRecord) {
+pub fn configure_etac_fleet(fleet: &mut Fleet) {
     clear_fleet_for_probe(fleet);
     fleet.set_etac_count(1);
     fleet.recompute_max_speed_from_composition();
 }
 
-pub fn arm_new_order(
-    fleet: &mut FleetRecord,
-    order: Order,
-    start: [u8; 2],
-    target: [u8; 2],
-    speed: u8,
-) {
+pub fn arm_new_order(fleet: &mut Fleet, order: Order, start: [u8; 2], target: [u8; 2], speed: u8) {
     fleet.set_current_location_coords_raw(start);
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(target);
@@ -574,7 +566,7 @@ pub fn arm_new_order(
     fleet.set_at_rest_motion();
 }
 
-pub fn arm_stationary_order(fleet: &mut FleetRecord, order: Order, coords: [u8; 2]) {
+pub fn arm_stationary_order(fleet: &mut Fleet, order: Order, coords: [u8; 2]) {
     fleet.set_current_location_coords_raw(coords);
     fleet.set_standing_order_kind(order);
     fleet.set_standing_order_target_coords_raw(coords);

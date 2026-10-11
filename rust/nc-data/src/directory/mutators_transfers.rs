@@ -13,7 +13,6 @@ impl CoreGameData {
         let owner_empire = player_index_1_based as u8;
         let donor = self
             .fleets
-            .records
             .get(donor_fleet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: donor_fleet_record_index_1_based,
@@ -123,13 +122,13 @@ impl CoreGameData {
         }
         clear_roe_without_warships(&mut donor_after);
 
-        let mut new_fleet = FleetRecord::new_zeroed();
+        let mut new_fleet = Fleet::default();
         new_fleet.set_owner_empire_raw(owner_empire);
         new_fleet.set_local_slot_word_raw(next_available_owned_fleet_local_slot(
-            &self.fleets.records,
+            &self.fleets,
             owner_empire,
         ));
-        new_fleet.set_fleet_id_word_raw(next_available_global_fleet_id(&self.fleets.records));
+        new_fleet.set_fleet_id_word_raw(next_available_global_fleet_id(&self.fleets));
         new_fleet.set_current_location_coords_raw(donor.current_location_coords_raw());
         new_fleet.set_x_fraction(donor.x_fraction());
         new_fleet.set_y_fraction(donor.y_fraction());
@@ -150,20 +149,17 @@ impl CoreGameData {
         clear_roe_without_warships(&mut new_fleet);
 
         let donor_fleet_number = donor_after.local_slot_word_raw();
-        self.fleets.records[donor_fleet_record_index_1_based - 1] = donor_after;
-        let player = self
-            .player
-            .records
-            .get_mut(player_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlayerRecord {
+        self.fleets[donor_fleet_record_index_1_based - 1] = donor_after;
+        let player = self.players.get_mut(player_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_index_1_based,
-            })?;
+            },
+        )?;
         let new_fleet_record_index_1_based =
-            append_fleet_to_owner_chain(&mut self.fleets.records, player, new_fleet);
+            append_fleet_to_owner_chain(&mut self.fleets, player, new_fleet);
         // The chain sort can move the donor's contents to another record.
         let donor_fleet_record_index_1_based = self
             .fleets
-            .records
             .iter()
             .position(|fleet| {
                 fleet.owner_empire_raw() == owner_empire
@@ -194,7 +190,6 @@ impl CoreGameData {
         let owner_empire = player_index_1_based as u8;
         let donor = self
             .fleets
-            .records
             .get(donor_fleet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: donor_fleet_record_index_1_based,
@@ -202,7 +197,6 @@ impl CoreGameData {
             .clone();
         let host = self
             .fleets
-            .records
             .get(host_fleet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: host_fleet_record_index_1_based,
@@ -347,8 +341,8 @@ impl CoreGameData {
         normalize_post_composition_fleet_state(&mut donor_after);
         clear_roe_without_warships(&mut donor_after);
 
-        self.fleets.records[donor_fleet_record_index_1_based - 1] = donor_after;
-        self.fleets.records[host_fleet_record_index_1_based - 1] = host_after;
+        self.fleets[donor_fleet_record_index_1_based - 1] = donor_after;
+        self.fleets[host_fleet_record_index_1_based - 1] = host_after;
 
         Ok(FleetTransferResult {
             donor_fleet_record_index_1_based,
@@ -367,20 +361,16 @@ impl CoreGameData {
             return Ok(());
         }
         let owner_empire = player_index_1_based as u8;
-        let planet = self
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let planet = self.planets.get(planet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
-            })?;
-        let fleet = self
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+            },
+        )?;
+        let fleet = self.fleets.get(fleet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_record_index_1_based,
-            })?;
+            },
+        )?;
 
         if planet.owner_empire_slot_raw() != owner_empire
             || fleet.owner_empire_raw() != owner_empire
@@ -412,18 +402,15 @@ impl CoreGameData {
 
         let planet = self
             .planets
-            .records
             .get_mut(planet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
             })?;
-        let fleet = self
-            .fleets
-            .records
-            .get_mut(fleet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+        let fleet = self.fleets.get_mut(fleet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_record_index_1_based,
-            })?;
+            },
+        )?;
 
         planet.set_army_count_raw(planet.army_count_raw().saturating_sub(qty as u8));
         fleet.set_army_count(fleet.army_count().saturating_add(qty));
@@ -441,20 +428,16 @@ impl CoreGameData {
             return Ok(());
         }
         let owner_empire = player_index_1_based as u8;
-        let planet = self
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let planet = self.planets.get(planet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
-            })?;
-        let fleet = self
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+            },
+        )?;
+        let fleet = self.fleets.get(fleet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_record_index_1_based,
-            })?;
+            },
+        )?;
 
         if planet.owner_empire_slot_raw() != owner_empire
             || fleet.owner_empire_raw() != owner_empire
@@ -485,18 +468,15 @@ impl CoreGameData {
 
         let planet = self
             .planets
-            .records
             .get_mut(planet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
             })?;
-        let fleet = self
-            .fleets
-            .records
-            .get_mut(fleet_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingFleetRecord {
+        let fleet = self.fleets.get_mut(fleet_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_record_index_1_based,
-            })?;
+            },
+        )?;
 
         planet.set_army_count_raw(planet.army_count_raw().saturating_add(qty as u8));
         fleet.set_army_count(fleet.army_count().saturating_sub(qty));

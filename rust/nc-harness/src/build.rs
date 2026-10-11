@@ -70,8 +70,8 @@ pub fn build_scenario(spec: &ScenarioSpec) -> Result<BuiltScenario, HarnessError
             label: spec.metadata.label.clone(),
             player_count: spec.metadata.player_count,
             year: spec.metadata.year,
-            planet_records: game_data.planets.records.len(),
-            fleet_records: game_data.fleets.records.len(),
+            planet_records: game_data.planets.len(),
+            fleet_records: game_data.fleets.len(),
             queue_mail_count: queued_mail.len(),
             results_blocks: spec.results_blocks.len(),
             message_blocks: spec.message_blocks.len(),
@@ -109,9 +109,7 @@ fn apply_house_specs(
     game_data: &mut CoreGameData,
 ) -> Result<(), HarnessError> {
     for house in &spec.houses {
-        if house.record_index_1_based == 0
-            || house.record_index_1_based > game_data.player.records.len()
-        {
+        if house.record_index_1_based == 0 || house.record_index_1_based > game_data.players.len() {
             return Err(HarnessError::Validation(format!(
                 "house record out of range: {}",
                 house.record_index_1_based
@@ -133,8 +131,7 @@ fn apply_house_specs(
         }
 
         let player = game_data
-            .player
-            .records
+            .players
             .get_mut(house.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -177,7 +174,6 @@ fn apply_planet_specs(
     for planet_spec in &spec.planets {
         let planet = game_data
             .planets
-            .records
             .get_mut(planet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -246,7 +242,6 @@ fn apply_commissions(
         }
         let owner_empire = game_data
             .planets
-            .records
             .get(planet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -279,7 +274,6 @@ fn apply_fleet_specs(
     for fleet_spec in &spec.fleets {
         let fleet = game_data
             .fleets
-            .records
             .get_mut(fleet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -404,15 +398,15 @@ fn sync_review_flags(
     report_block_rows: &[ReportBlockRow],
     message_blocks: &[ReviewBlockSpec],
 ) {
-    for player in &mut game_data.player.records {
+    for player in &mut game_data.players {
         player.set_classic_login_reviewables_present(false);
         player.set_classic_reports_pending_flag_raw(0);
         player.set_classic_messages_pending_flag_raw(0);
     }
-    layout_classic_results(&game_data.player.records, report_block_rows)
-        .apply_to_players(&mut game_data.player.records);
+    layout_classic_results(&game_data.players, report_block_rows)
+        .apply_to_players(&mut game_data.players);
 
-    let mut message_counts = vec![0usize; game_data.player.records.len()];
+    let mut message_counts = vec![0usize; game_data.players.len()];
     for block in message_blocks {
         if let Some(player) = block.player_record_index_1_based {
             if let Some(count) = message_counts.get_mut(player - 1) {
@@ -421,7 +415,7 @@ fn sync_review_flags(
         }
     }
 
-    for (idx, player) in game_data.player.records.iter_mut().enumerate() {
+    for (idx, player) in game_data.players.iter_mut().enumerate() {
         if player.classic_results_chain().is_some() {
             player.set_classic_results_review_state_present(true);
             player.set_classic_reports_pending_flag_raw(1);

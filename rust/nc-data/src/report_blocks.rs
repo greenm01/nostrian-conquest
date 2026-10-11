@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::PlayerRecord;
+use crate::Player;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportBlockRow {
@@ -27,7 +27,7 @@ impl ReportBlockRow {
 /// left alone.
 pub fn delete_report_block_for_viewer(
     rows: &mut Vec<ReportBlockRow>,
-    players: &[PlayerRecord],
+    players: &[Player],
     row_index: usize,
     viewer_empire_id: u8,
 ) {
@@ -59,7 +59,7 @@ pub fn delete_report_block_for_viewer(
 /// Delete every report one empire can see from that empire's view.
 pub fn delete_report_blocks_for_viewer(
     rows: &mut Vec<ReportBlockRow>,
-    players: &[PlayerRecord],
+    players: &[Player],
     viewer_empire_id: u8,
 ) {
     for row_index in 0..rows.len() {

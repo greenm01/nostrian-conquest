@@ -96,7 +96,7 @@ pub(crate) fn plan_route_to_destination(
     destination: [u8; 2],
 ) -> Option<PlannedRoute> {
     let mut game_data = game_data.clone();
-    let fleet = game_data.fleets.records.get_mut(fleet_idx)?;
+    let fleet = game_data.fleets.get_mut(fleet_idx)?;
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw(destination);
     route::plan_route(&game_data, fleet_idx)

@@ -184,7 +184,7 @@ pub fn push_mission_entries(
             if matching_roe_abort_disposition_index(events, event).is_some() {
                 continue;
             }
-            let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+            let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
                 continue;
             };
             let coords = event
@@ -254,7 +254,7 @@ pub fn push_mission_entries(
         if batched_abort_indices.contains(&ev_idx) {
             continue;
         }
-        let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+        let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
             continue;
         };
         let coords = event
@@ -327,7 +327,6 @@ pub fn push_mission_entries(
             (Mission::GuardStarbase, MissionOutcome::Arrived) => {
                 let starbase_text = game_data
                     .bases
-                    .records
                     .iter()
                     .find(|base| {
                         base.coords_raw() == coords
@@ -351,7 +350,6 @@ pub fn push_mission_entries(
                 let guard_label = fleet.guard_starbase_index_raw();
                 let partner = game_data
                     .fleets
-                    .records
                     .iter()
                     .enumerate()
                     .find(|(idx, other)| {
@@ -377,7 +375,7 @@ pub fn push_mission_entries(
             }
             (Mission::GuardBlockadeWorld, MissionOutcome::Arrived) => {
                 let body = if let Some(planet_idx) = event.planet_idx {
-                    if let Some(planet) = game_data.planets.records.get(planet_idx) {
+                    if let Some(planet) = game_data.planets.get(planet_idx) {
                         format!(
                             " Guard/Blockade World mission report: We have arrived at planet \"{}\" in Sector({x},{y}) and are beginning our guarding/blockading assignment.",
                             planet.planet_name(),
@@ -468,7 +466,7 @@ pub fn push_mission_entries(
                             snapshot.known_potential_production.unwrap_or(0),
                         )
                     } else if let Some(planet_idx) = event.planet_idx {
-                        if let Some(planet) = game_data.planets.records.get(planet_idx) {
+                        if let Some(planet) = game_data.planets.get(planet_idx) {
                             let owner_clause = if planet.owner_empire_slot_raw() == 0 {
                                 "unowned".to_string()
                             } else {
@@ -527,7 +525,7 @@ pub fn push_mission_entries(
                 let bombard_force_destroyed =
                     mission_event_has_fleet_destroyed(game_data, events, event);
                 let body = if let Some(planet_idx) = event.planet_idx {
-                    if let Some(planet) = game_data.planets.records.get(planet_idx) {
+                    if let Some(planet) = game_data.planets.get(planet_idx) {
                         let context_rows = vec![StructuredBodyItem::Label {
                             label: LABEL_TARGET_WORLD.to_string(),
                             value: format!("planet \"{}\"", planet.planet_name()),
@@ -706,7 +704,6 @@ pub fn push_mission_entries(
                         )
                     } else if let Some(planet) = game_data
                         .planets
-                        .records
                         .iter()
                         .find(|planet| planet.coords_raw() == [x, y])
                     {

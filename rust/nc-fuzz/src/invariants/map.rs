@@ -18,10 +18,10 @@ pub fn check(state: &CoreGameData) -> Vec<Violation> {
             });
         }
     };
-    for (idx, planet) in state.planets.records.iter().enumerate() {
+    for (idx, planet) in state.planets.iter().enumerate() {
         out_of_map(format!("planet {}", idx + 1), planet.coords_raw());
     }
-    for (idx, fleet) in state.fleets.records.iter().enumerate() {
+    for (idx, fleet) in state.fleets.iter().enumerate() {
         out_of_map(
             format!("fleet record {}", idx + 1),
             fleet.current_location_coords_raw(),
@@ -29,7 +29,7 @@ pub fn check(state: &CoreGameData) -> Vec<Violation> {
     }
 
     let mut seen = BTreeMap::new();
-    for (idx, planet) in state.planets.records.iter().enumerate() {
+    for (idx, planet) in state.planets.iter().enumerate() {
         if let Some(first) = seen.insert(planet.coords_raw(), idx + 1) {
             violations.push(Violation::PlanetsShareSector {
                 first_record: first,

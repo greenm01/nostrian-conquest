@@ -2,9 +2,8 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use nc_data::{
-    CampaignStore, CoreGameData, FleetDetachSelection, IntelTier, PlanetIntelSnapshot,
-    PlanetRecord, ProductionItemKind, QueuedPlayerMail, ReportBlockRow,
-    merge_player_intel_from_runtime,
+    CampaignStore, CoreGameData, FleetDetachSelection, IntelTier, Planet, PlanetIntelSnapshot,
+    ProductionItemKind, QueuedPlayerMail, ReportBlockRow, merge_player_intel_from_runtime,
 };
 
 use crate::commands::runtime::{
@@ -136,7 +135,6 @@ pub(crate) fn seed_player1_tui_stress(
     let homeworld_coords = state
         .game_data
         .planets
-        .records
         .iter()
         .take(player_count)
         .map(|planet| planet.coords_raw())
@@ -180,8 +178,8 @@ pub(crate) fn seed_player1_tui_stress(
     )?;
 
     Ok(Player1TuiStressSeedReport {
-        planets: state.game_data.planets.records.len(),
-        fleets: state.game_data.fleets.records.len(),
+        planets: state.game_data.planets.len(),
+        fleets: state.game_data.fleets.len(),
         report_blocks: state.report_block_rows.len(),
         player1_mail: state
             .queued_mail
@@ -205,12 +203,11 @@ struct PlanetPayload {
 }
 
 fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::error::Error>> {
-    let total_planets = game_data.planets.records.len();
+    let total_planets = game_data.planets.len();
     let player_count = game_data.conquest.player_count();
     let owners = ownership_sequence_for_players(player_count, total_planets);
     let empire_short_names = game_data
-        .player
-        .records
+        .players
         .iter()
         .map(|record| {
             let empire = record.controlled_empire_name_summary();
@@ -224,7 +221,7 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
         .collect::<Vec<_>>();
     let mut seen_per_owner = BTreeMap::<u8, usize>::new();
 
-    for (idx, planet) in game_data.planets.records.iter_mut().enumerate() {
+    for (idx, planet) in game_data.planets.iter_mut().enumerate() {
         let owner = owners[idx];
         let ordinal = seen_per_owner.entry(owner).or_insert(0usize);
         let payload = planet_payload(&empire_short_names, owner, idx + 1, *ordinal);
@@ -254,21 +251,21 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
     Ok(())
 }
 
-fn clear_planet_build_queue(planet: &mut PlanetRecord) {
+fn clear_planet_build_queue(planet: &mut Planet) {
     for slot in 0..10 {
         planet.set_build_count_raw(slot, 0);
         planet.set_build_kind_raw(slot, 0);
     }
 }
 
-fn clear_planet_stardock(planet: &mut PlanetRecord) {
+fn clear_planet_stardock(planet: &mut Planet) {
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
         planet.set_stardock_count_raw(slot, 0);
     }
 }
 
 fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, u8, u16)]) {
-    let total_planets = game_data.planets.records.len();
+    let total_planets = game_data.planets.len();
     for (record_index_1_based, kind_raw, count) in specs {
         let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
             continue;
@@ -276,7 +273,7 @@ fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, u8, u16)]
         if *record_index_1_based > total_planets {
             continue;
         }
-        let planet = &mut game_data.planets.records[*record_index_1_based - 1];
+        let planet = &mut game_data.planets[*record_index_1_based - 1];
         planet.set_stardock_count_raw(slot, *count);
     }
 }
@@ -288,7 +285,6 @@ fn apply_player_owned_stardock_specs(
 ) {
     let owned_planet_records = game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == owner_empire_id)
@@ -302,7 +298,7 @@ fn apply_player_owned_stardock_specs(
         let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
             continue;
         };
-        let planet = &mut game_data.planets.records[record_index_1_based - 1];
+        let planet = &mut game_data.planets[record_index_1_based - 1];
         planet.set_stardock_count_raw(slot, *count);
     }
 }
@@ -434,7 +430,6 @@ fn generic_planet_name(
 fn player_owned_planet_coords(game_data: &CoreGameData, owner: u8) -> Vec<[u8; 2]> {
     game_data
         .planets
-        .records
         .iter()
         .filter(|planet| planet.owner_empire_slot_raw() == owner)
         .map(|planet| planet.coords_raw())
@@ -451,10 +446,10 @@ fn configure_player_one_fleets(
     let p3_home = homeworld_coords.get(2).copied().unwrap_or(home);
     let home_fleet_records = [1usize, 2, 3, 4];
 
-    set_fleet_composition(&mut game_data.fleets.records[0], 30, 18, 24, 36, 18, 0, 10);
-    set_fleet_composition(&mut game_data.fleets.records[1], 4, 0, 2, 6, 6, 0, 0);
-    set_fleet_composition(&mut game_data.fleets.records[2], 2, 0, 1, 4, 4, 4, 0);
-    set_fleet_composition(&mut game_data.fleets.records[3], 6, 4, 6, 8, 2, 0, 2);
+    set_fleet_composition(&mut game_data.fleets[0], 30, 18, 24, 36, 18, 0, 10);
+    set_fleet_composition(&mut game_data.fleets[1], 4, 0, 2, 6, 6, 0, 0);
+    set_fleet_composition(&mut game_data.fleets[2], 2, 0, 1, 4, 4, 4, 0);
+    set_fleet_composition(&mut game_data.fleets[3], 6, 4, 6, 8, 2, 0, 2);
 
     for fleet_record_index_1_based in home_fleet_records {
         set_fleet_location(game_data, fleet_record_index_1_based, home)?;
@@ -514,7 +509,7 @@ fn configure_other_player_fleets(
         let transports = 2 + (player as u16 % 3);
         let etacs = player as u16 % 2;
         set_fleet_composition(
-            &mut game_data.fleets.records[donor_record_index_1_based - 1],
+            &mut game_data.fleets[donor_record_index_1_based - 1],
             scouts,
             battleships,
             cruisers,
@@ -563,7 +558,7 @@ fn configure_other_player_fleets(
 }
 
 fn set_fleet_composition(
-    fleet: &mut nc_data::FleetRecord,
+    fleet: &mut nc_data::Fleet,
     scouts: u16,
     battleships: u16,
     cruisers: u16,
@@ -590,11 +585,7 @@ fn set_fleet_location(
     fleet_record_index_1_based: usize,
     coords: [u8; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let Some(fleet) = game_data
-        .fleets
-        .records
-        .get_mut(fleet_record_index_1_based - 1)
-    else {
+    let Some(fleet) = game_data.fleets.get_mut(fleet_record_index_1_based - 1) else {
         return Err(
             format!("fleet record index out of range: {fleet_record_index_1_based}").into(),
         );
@@ -709,7 +700,6 @@ fn commission_player_one_starbases(
 ) -> Result<usize, Box<dyn std::error::Error>> {
     let owned_planets = game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
@@ -719,7 +709,7 @@ fn commission_player_one_starbases(
     let mut commissioned = 0usize;
     for planet_index_1_based in owned_planets {
         let starbase_slots = {
-            let planet = &game_data.planets.records[planet_index_1_based - 1];
+            let planet = &game_data.planets[planet_index_1_based - 1];
             (0..nc_data::STARDOCK_SLOT_COUNT)
                 .filter(|slot| {
                     planet.stardock_kind_raw(*slot) == 9 && planet.stardock_count_raw(*slot) > 0
@@ -751,7 +741,6 @@ fn seed_player_one_intel(
 
     let foreign_owned = game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| {
@@ -785,7 +774,7 @@ fn seed_player_one_intel(
 
 fn partial_snapshot(
     planet_record_index_1_based: usize,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     intel_year: u16,
 ) -> PlanetIntelSnapshot {
     PlanetIntelSnapshot {
@@ -812,7 +801,7 @@ fn partial_snapshot(
 fn full_snapshot(
     game_data: &CoreGameData,
     planet_record_index_1_based: usize,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     intel_year: u16,
 ) -> PlanetIntelSnapshot {
     PlanetIntelSnapshot {
@@ -841,7 +830,7 @@ fn full_snapshot(
     }
 }
 
-fn format_stardock_summary(planet: &nc_data::PlanetRecord) -> String {
+fn format_stardock_summary(planet: &nc_data::Planet) -> String {
     let mut parts = Vec::new();
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
         let count = u32::from(planet.stardock_count_raw(slot));
@@ -861,13 +850,11 @@ fn format_stardock_summary(planet: &nc_data::PlanetRecord) -> String {
 fn format_orbit_summary(game_data: &CoreGameData, coords: [u8; 2]) -> String {
     let fleet_count = game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.current_location_coords_raw() == coords && fleet_has_any_force(fleet))
         .count();
     let starbase_count = game_data
         .bases
-        .records
         .iter()
         .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
         .count();
@@ -897,7 +884,7 @@ fn format_orbit_summary(game_data: &CoreGameData, coords: [u8; 2]) -> String {
     }
 }
 
-fn fleet_has_any_force(fleet: &nc_data::FleetRecord) -> bool {
+fn fleet_has_any_force(fleet: &nc_data::Fleet) -> bool {
     fleet.scout_count() > 0
         || fleet.battleship_count() > 0
         || fleet.cruiser_count() > 0

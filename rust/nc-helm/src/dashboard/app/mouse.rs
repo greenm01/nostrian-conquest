@@ -406,7 +406,6 @@ impl DashApp {
         let owner = self
             .game_data
             .planets
-            .records
             .get(detail.planet_record_index_1_based.saturating_sub(1))
             .map(|planet| planet.owner_empire_slot_raw())
             .unwrap_or(0);
@@ -484,7 +483,7 @@ impl DashApp {
 
     fn player_has_fleets_at(&self, coords: [u8; 2]) -> bool {
         let owner_slot = self.player_record_index_1_based as u8;
-        self.game_data.fleets.records.iter().any(|fleet| {
+        self.game_data.fleets.iter().any(|fleet| {
             fleet.owner_empire_raw() == owner_slot
                 && fleet.has_any_force()
                 && fleet.current_location_coords_raw() == coords

@@ -21,7 +21,7 @@ const BY_TRAVEL: [u8; 2] = [12, 11];
 /// instead; without, it owns nothing.
 fn board(friendly_worlds: bool) -> CoreGameData {
     let mut game_data = board_with_world();
-    let planets = &mut game_data.planets.records;
+    let planets = &mut game_data.planets;
     planets[HOME_PLANET_IDX].set_owner_empire_slot_raw(3);
     if friendly_worlds {
         planets[7].set_coords_raw(BY_MANHATTAN);
@@ -93,7 +93,7 @@ fn a_fleet_turned_back_by_a_base_heads_home_by_travel_distance() {
         // Tick 52 is the orbital gate's abort; earlier ones are the
         // bomber's own sighting of the base on its way down.
         sighted += usize::from(tick < 52);
-        let fleet = &game_data.fleets.records[0];
+        let fleet = &game_data.fleets[0];
         assert_eq!(fleet.standing_order_kind(), Order::SeekHome);
         assert_eq!(fleet.standing_order_target_coords_raw(), BY_TRAVEL);
         assert_eq!(fleet.world_target_flag_raw(), 1);
@@ -110,7 +110,7 @@ fn a_fleet_turned_back_by_a_base_with_no_world_to_seek_stops_where_it_is() {
             continue;
         }
         sighted += 1;
-        let fleet = &game_data.fleets.records[0];
+        let fleet = &game_data.fleets[0];
         assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
         assert_eq!(fleet.current_speed(), 0);
         assert_eq!(fleet.current_location_coords_raw(), WORLD);
@@ -126,7 +126,7 @@ fn a_fleet_turned_back_by_a_base_with_no_world_to_seek_stops_where_it_is() {
 fn a_fleet_turned_back_by_a_guard_heads_home_by_travel_distance() {
     let mut rechecked = 0;
     for (game_data, events) in years(&guard_blocks(true), &declared(&[]), 0..32) {
-        let fleet = &game_data.fleets.records[0];
+        let fleet = &game_data.fleets[0];
         // The orbital gate's abort is reported; the re-check's is not.
         if fleet.standing_order_kind() != Order::SeekHome || reported_abort(&events).is_some() {
             continue;
@@ -142,7 +142,7 @@ fn a_fleet_turned_back_by_a_guard_heads_home_by_travel_distance() {
 fn a_fleet_turned_back_by_a_guard_with_no_world_to_seek_climbs_out() {
     let mut climbing = 0;
     for (game_data, _) in years(&guard_blocks(false), &declared(&[]), 0..32) {
-        let fleet = &game_data.fleets.records[0];
+        let fleet = &game_data.fleets[0];
         if fleet.standing_order_kind() != Order::MoveOnly {
             continue;
         }

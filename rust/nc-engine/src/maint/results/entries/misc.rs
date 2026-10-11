@@ -33,7 +33,7 @@ pub fn push_misc_entries(
             } => (planet_idx, colonizer_empire_raw, stardate_week),
             nc_data::ColonizationResolvedEvent::Aborted { .. } => continue,
         };
-        let Some(planet) = game_data.planets.records.get(planet_idx) else {
+        let Some(planet) = game_data.planets.get(planet_idx) else {
             continue;
         };
         let [x, y] = planet.coords_raw();
@@ -249,7 +249,6 @@ pub fn push_misc_entries(
                 let [x, y] = coords;
                 let planet_name = game_data
                     .planets
-                    .records
                     .get(planet_idx)
                     .map(|planet| planet.planet_name())
                     .unwrap_or_else(|| "the target world".to_string());
@@ -274,7 +273,6 @@ pub fn push_misc_entries(
                 let [x, y] = coords;
                 let planet_name = game_data
                     .planets
-                    .records
                     .get(planet_idx)
                     .map(|planet| planet.planet_name())
                     .unwrap_or_else(|| "the target world".to_string());

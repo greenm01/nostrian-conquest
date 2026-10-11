@@ -1,36 +1,36 @@
 //! Read-only views of the live state that policies choose from.
 
-use nc_data::{CoreGameData, FleetRecord, PlanetRecord, map_size_for_player_count};
+use nc_data::{CoreGameData, Fleet, Planet, map_size_for_player_count};
 
 pub fn map_size(state: &CoreGameData) -> u8 {
     map_size_for_player_count(state.conquest.player_count())
 }
 
-pub fn fleet(state: &CoreGameData, record: usize) -> &FleetRecord {
-    &state.fleets.records[record - 1]
+pub fn fleet(state: &CoreGameData, record: usize) -> &Fleet {
+    &state.fleets[record - 1]
 }
 
-pub fn planet(state: &CoreGameData, record: usize) -> &PlanetRecord {
-    &state.planets.records[record - 1]
+pub fn planet(state: &CoreGameData, record: usize) -> &Planet {
+    &state.planets[record - 1]
 }
 
 /// 1-based records of the empire's fleets that still carry ships.
 pub fn owned_fleets(state: &CoreGameData, empire_raw: u8) -> Vec<usize> {
-    records_where(&state.fleets.records, |fleet| {
+    records_where(&state.fleets, |fleet| {
         fleet.owner_empire_raw() == empire_raw && fleet.has_any_force()
     })
 }
 
 /// 1-based records of the empire's planets.
 pub fn owned_planets(state: &CoreGameData, empire_raw: u8) -> Vec<usize> {
-    records_where(&state.planets.records, |planet| {
+    records_where(&state.planets, |planet| {
         planet.owner_empire_slot_raw() == empire_raw
     })
 }
 
 /// 1-based records of placed planets that pass `keep`.
-pub fn planets_where(state: &CoreGameData, keep: impl Fn(&PlanetRecord) -> bool) -> Vec<usize> {
-    records_where(&state.planets.records, |planet| {
+pub fn planets_where(state: &CoreGameData, keep: impl Fn(&Planet) -> bool) -> Vec<usize> {
+    records_where(&state.planets, |planet| {
         planet.coords_raw() != [0, 0] && keep(planet)
     })
 }
@@ -38,10 +38,9 @@ pub fn planets_where(state: &CoreGameData, keep: impl Fn(&PlanetRecord) -> bool)
 pub fn foreign_fleet_coords(state: &CoreGameData, empire_raw: u8) -> Vec<[u8; 2]> {
     state
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() != empire_raw && fleet.has_any_force())
-        .map(FleetRecord::current_location_coords_raw)
+        .map(Fleet::current_location_coords_raw)
         .collect()
 }
 

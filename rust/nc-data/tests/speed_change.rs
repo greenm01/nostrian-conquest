@@ -13,7 +13,7 @@ fn ecmaint_post() -> CoreGameData {
 
 /// Fleet record 3 (one destroyer) under way on Move to (10,10).
 fn moving_fleet_3(data: &mut CoreGameData) {
-    let fleet = &mut data.fleets.records[2];
+    let fleet = &mut data.fleets[2];
     fleet.set_standing_order_kind(Order::MoveOnly);
     fleet.set_standing_order_target_coords_raw([10, 10]);
     fleet.set_current_speed(6);
@@ -25,23 +25,23 @@ fn moving_fleet_3(data: &mut CoreGameData) {
 fn a_speed_change_writes_only_the_speed_bytes() {
     let mut data = ecmaint_post();
     moving_fleet_3(&mut data);
-    let before = data.fleets.records[2].to_bytes();
+    let before = data.fleets[2].to_bytes();
     assert_eq!(data.set_fleet_speed(1, 3, 2), Ok(2));
-    let after = data.fleets.records[2].to_bytes();
+    let after = data.fleets[2].to_bytes();
     let changed = (0..before.len())
         .filter(|&offset| before[offset] != after[offset])
         .collect::<Vec<_>>();
     assert_eq!(changed, vec![0x0a]);
-    assert_eq!(data.fleets.records[2].mission_id_raw(), 0x0103);
+    assert_eq!(data.fleets[2].mission_id_raw(), 0x0103);
 }
 
 #[test]
 fn a_speed_change_recomputes_the_maximum_speed() {
     let mut data = ecmaint_post();
     moving_fleet_3(&mut data);
-    data.fleets.records[2].set_max_speed(2);
+    data.fleets[2].set_max_speed(2);
     assert_eq!(data.set_fleet_speed(1, 3, 6), Ok(6));
-    assert_eq!(data.fleets.records[2].max_speed(), 6);
+    assert_eq!(data.fleets[2].max_speed(), 6);
 }
 
 #[test]
@@ -49,10 +49,10 @@ fn a_fleet_on_hold_or_at_its_target_keeps_speed_zero() {
     let mut data = ecmaint_post();
     // ecmaint-post fleet 1 guards its home world (16,13) at rest: arrived.
     assert_eq!(data.set_fleet_speed(1, 1, 2), Ok(0));
-    assert_eq!(data.fleets.records[0].current_speed(), 0);
+    assert_eq!(data.fleets[0].current_speed(), 0);
 
     moving_fleet_3(&mut data);
-    data.fleets.records[2].set_standing_order_kind(Order::HoldPosition);
+    data.fleets[2].set_standing_order_kind(Order::HoldPosition);
     assert_eq!(data.set_fleet_speed(1, 3, 2), Ok(0));
 }
 
@@ -80,6 +80,6 @@ fn turn_files_change_speed_with_a_speed_node() {
     let submission = TurnSubmission::parse_kdl_str(&kdl).unwrap();
     assert!(submission.to_kdl_string().contains("speed value=4"));
     submission.apply_to(&mut data, &mut Vec::new()).unwrap();
-    assert_eq!(data.fleets.records[2].current_speed(), 4);
-    assert_eq!(data.fleets.records[2].mission_id_raw(), 0x0103);
+    assert_eq!(data.fleets[2].current_speed(), 4);
+    assert_eq!(data.fleets[2].mission_id_raw(), 0x0103);
 }

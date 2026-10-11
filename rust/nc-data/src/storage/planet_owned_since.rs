@@ -59,7 +59,7 @@ pub(super) fn write_owned_planet_year_rows(
              snapshot_id, owner_empire_id, planet_record_index, acquired_year
          ) VALUES (?1, ?2, ?3, ?4)",
     )?;
-    for (planet_idx, planet) in game_data.planets.records.iter().enumerate() {
+    for (planet_idx, planet) in game_data.planets.iter().enumerate() {
         let owner_empire_id = planet.owner_empire_slot_raw();
         if owner_empire_id == 0 {
             continue;

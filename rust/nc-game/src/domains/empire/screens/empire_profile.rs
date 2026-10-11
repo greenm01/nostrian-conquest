@@ -26,7 +26,7 @@ impl EmpireProfileScreen {
         menu: CommandMenu,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let player_idx = frame.player.record_index_1_based;
-        let player = &frame.game_data.player.records[player_idx - 1];
+        let player = &frame.game_data.players[player_idx - 1];
         let economy = frame.game_data.empire_economy_summary(player_idx);
         let active = frame.game_data.empire_active_duty_summary(player_idx);
         let stardock = frame.game_data.empire_stardock_summary(player_idx);

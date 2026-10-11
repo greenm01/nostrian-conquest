@@ -470,7 +470,7 @@ fn load_diplomacy_overrides_if_present(
     }
 
     let config = DiplomacyConfig::load_kdl(&path)?
-        .validate_for_player_count(game_data.player.records.len() as u8)?;
+        .validate_for_player_count(game_data.players.len() as u8)?;
     Ok(config
         .directives
         .into_iter()

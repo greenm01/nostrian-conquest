@@ -21,7 +21,7 @@ pub(super) fn process_colonizations(
     let mut resolved = Vec::new();
     for event in events {
         let [cx, cy] = event.coords;
-        let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+        let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
             resolved.push(ColonizationResolvedEvent::Aborted {
                 fleet_idx: event.fleet_idx,
                 colonizer_empire_raw: event.owner_empire,
@@ -43,13 +43,13 @@ pub(super) fn process_colonizations(
             continue;
         }
 
-        let planet_idx = game_data.planets.records.iter().position(|p| {
+        let planet_idx = game_data.planets.iter().position(|p| {
             let [px, py] = p.coords_raw();
             px == cx && py == cy
         });
 
         if let Some(idx) = planet_idx {
-            let planet = &mut game_data.planets.records[idx];
+            let planet = &mut game_data.planets[idx];
             let is_unowned = planet.owner_empire_slot_raw() == 0;
             if is_unowned {
                 planet.set_planet_name("Not Named Yet");
@@ -59,13 +59,13 @@ pub(super) fn process_colonizations(
                 planet.set_present_production(1.0);
 
                 let player_idx = (event.owner_empire as usize).saturating_sub(1);
-                if player_idx < game_data.player.records.len() {
-                    let current_count = game_data.player.records[player_idx].planet_count_raw();
-                    game_data.player.records[player_idx]
+                if player_idx < game_data.players.len() {
+                    let current_count = game_data.players[player_idx].planet_count_raw();
+                    game_data.players[player_idx]
                         .set_planet_count_raw(current_count.saturating_add(1));
 
-                    let current_score = game_data.player.records[player_idx].production_score_raw();
-                    game_data.player.records[player_idx]
+                    let current_score = game_data.players[player_idx].production_score_raw();
+                    game_data.players[player_idx]
                         .set_production_score_raw(current_score.saturating_add(1));
                 }
 

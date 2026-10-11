@@ -10,7 +10,7 @@
 //! speed 0, still on Bombard, or holding after Invade or Blitz.
 
 use nc_compat::load_classic_core_files;
-use nc_data::{BaseRecord, CoreGameData, FleetRecord, MaintenanceEvents, Mission};
+use nc_data::{CoreGameData, Fleet, MaintenanceEvents, Mission, Starbase};
 use nc_engine::run_maintenance_turn;
 use std::path::Path;
 
@@ -61,7 +61,7 @@ fn scenario(case: &Case) -> CoreGameData {
     let mut game_data = if matches!(mission, 6..=8) {
         let mut game_data = load_fixture("ecmaint-bombard-pre");
         // The scenario's own attacker is parked at home, out of the way.
-        let parked = &mut game_data.fleets.records[2];
+        let parked = &mut game_data.fleets[2];
         parked.set_scout_count(0);
         parked.set_battleship_count(0);
         parked.set_cruiser_count(1);
@@ -82,7 +82,7 @@ fn scenario(case: &Case) -> CoreGameData {
         // `nc-cli guard-starbase-onebase`: Starbase 1 at rest in orbit at
         // the guard's target, escorted by fleet 1.
         let base_at = [start[0x20], start[0x21]];
-        let mut base = BaseRecord::new_zeroed();
+        let mut base = Starbase::default();
         base.set_escort_fleet_slot_raw(1);
         base.set_base_id_raw(1);
         base.set_record_number_raw(1);
@@ -91,22 +91,21 @@ fn scenario(case: &Case) -> CoreGameData {
         base.set_target_coords_raw(base_at);
         base.set_target_depth_raw(1);
         base.set_owner_empire_raw(1);
-        game_data.bases.records = vec![base];
-        game_data.player.records[0].set_first_base_record_raw(1);
+        game_data.bases = vec![base];
+        game_data.players[0].set_first_base_record_raw(1);
     }
-    let mut fleet = FleetRecord::from_raw(start[..].try_into().expect("a fleet record"));
+    let mut fleet = Fleet::from_raw(start[..].try_into().expect("a fleet record"));
     if matches!(mission, 10 | 11) {
         // Classic counts the lone scout at 0x32, Rust at 0x24.
         fleet.set_scout_count(1);
     }
-    game_data.fleets.records[0] = fleet;
+    game_data.fleets[0] = fleet;
     game_data
 }
 
 fn empire_one_fleets(game_data: &CoreGameData) -> usize {
     game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
         .count()
@@ -140,7 +139,7 @@ fn run_cases(cases: &[Case]) {
             let fleets_before = empire_one_fleets(&game_data);
             let events = run_maintenance_turn(&mut game_data)
                 .unwrap_or_else(|err| panic!("{} year {year}: {err}", case.name));
-            let fleet = &game_data.fleets.records[0];
+            let fleet = &game_data.fleets[0];
             match expected {
                 Year::State(speed, order, motion) => {
                     assert_eq!(

@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use nc_data::{
-    BaseRecord, CompactUnitSummaryStyle, GameStateBuilder, OwnedPlanetStatus,
+    CompactUnitSummaryStyle, GameStateBuilder, OwnedPlanetStatus, Starbase,
     format_build_queue_summary, format_owned_orbit_summary, format_stardock_summary,
     owned_orbit_presence, owned_planet_status,
 };
@@ -12,7 +12,7 @@ fn compact_planet_summaries_support_all_dashboard_and_game_styles() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[0];
+    let planet = &mut game_data.planets[0];
     planet.set_build_kind_raw(0, 3);
     planet.set_build_count_raw(0, 90);
     planet.set_stardock_count_raw(1, 5);
@@ -39,15 +39,15 @@ fn orbit_presence_summary_counts_fleets_and_starbases() {
         .expect("baseline");
     let coords = [1, 1];
 
-    game_data.fleets.records[0].set_owner_empire_raw(1);
-    game_data.fleets.records[0].set_current_location_coords_raw(coords);
-    game_data.fleets.records[0].set_destroyer_count(1);
+    game_data.fleets[0].set_owner_empire_raw(1);
+    game_data.fleets[0].set_current_location_coords_raw(coords);
+    game_data.fleets[0].set_destroyer_count(1);
 
-    let mut base = BaseRecord::new_zeroed();
+    let mut base = Starbase::default();
     base.set_coords_raw(coords);
     base.set_owner_empire_raw(1);
     base.set_base_id_raw(1);
-    game_data.bases.records.push(base);
+    game_data.bases.push(base);
 
     let summary = owned_orbit_presence(&game_data, 1, coords);
     assert_eq!(summary.fleets, 1);
@@ -61,7 +61,7 @@ fn owned_planet_status_distinguishes_damage_and_scorch() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[1];
+    let planet = &mut game_data.planets[1];
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(1);
     planet.set_potential_production_points(10);

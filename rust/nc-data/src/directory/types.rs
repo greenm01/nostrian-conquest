@@ -1,14 +1,16 @@
-use crate::{BaseDat, ConquestDat, FleetDat, IpbmDat, PlanetDat, PlayerDat, SetupDat};
+use crate::model::{Conquest, Fleet, Ipbm, Planet, Player, Setup, Starbase};
 
+/// One game's state: every empire, world, fleet, starbase, and IPBM in
+/// record order, with the installation settings and the game clock.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreGameData {
-    pub player: PlayerDat,
-    pub planets: PlanetDat,
-    pub fleets: FleetDat,
-    pub bases: BaseDat,
-    pub ipbm: IpbmDat,
-    pub setup: SetupDat,
-    pub conquest: ConquestDat,
+    pub players: Vec<Player>,
+    pub planets: Vec<Planet>,
+    pub fleets: Vec<Fleet>,
+    pub bases: Vec<Starbase>,
+    pub ipbms: Vec<Ipbm>,
+    pub setup: Setup,
+    pub conquest: Conquest,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

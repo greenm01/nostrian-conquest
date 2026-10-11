@@ -3,8 +3,8 @@ use crate::CoreGameData;
 /// A merge must not lose ships: refuse it when the scout word could not hold
 /// both fleets' scouts. The fleets then stay separate.
 pub(super) fn merge_fits_host(game_data: &CoreGameData, host_idx: usize, donor_idx: usize) -> bool {
-    let host_scouts = game_data.fleets.records[host_idx].scout_count();
-    let donor_scouts = game_data.fleets.records[donor_idx].scout_count();
+    let host_scouts = game_data.fleets[host_idx].scout_count();
+    let donor_scouts = game_data.fleets[donor_idx].scout_count();
     host_scouts.checked_add(donor_scouts).is_some()
 }
 
@@ -13,15 +13,15 @@ pub(super) fn merge_one_fleet_into_host(
     host_idx: usize,
     donor_idx: usize,
 ) {
-    let bb = game_data.fleets.records[donor_idx].battleship_count();
-    let ca = game_data.fleets.records[donor_idx].cruiser_count();
-    let dd = game_data.fleets.records[donor_idx].destroyer_count();
-    let empty_tt = game_data.fleets.records[donor_idx].empty_transport_count();
-    let loaded_tt = game_data.fleets.records[donor_idx].loaded_transport_count();
-    let et = game_data.fleets.records[donor_idx].etac_count();
-    let sc = game_data.fleets.records[donor_idx].scout_count();
+    let bb = game_data.fleets[donor_idx].battleship_count();
+    let ca = game_data.fleets[donor_idx].cruiser_count();
+    let dd = game_data.fleets[donor_idx].destroyer_count();
+    let empty_tt = game_data.fleets[donor_idx].empty_transport_count();
+    let loaded_tt = game_data.fleets[donor_idx].loaded_transport_count();
+    let et = game_data.fleets[donor_idx].etac_count();
+    let sc = game_data.fleets[donor_idx].scout_count();
 
-    let host = &mut game_data.fleets.records[host_idx];
+    let host = &mut game_data.fleets[host_idx];
     host.set_battleship_count(host.battleship_count().saturating_add(bb));
     host.set_cruiser_count(host.cruiser_count().saturating_add(ca));
     host.set_destroyer_count(host.destroyer_count().saturating_add(dd));

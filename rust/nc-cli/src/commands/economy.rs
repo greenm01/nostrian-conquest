@@ -20,7 +20,7 @@ pub(crate) fn init_tax_growth_probe(
         data.set_player_tax_rate(player_record_index_1_based, tax_rate)?;
 
         let empire_raw = player_record_index_1_based as u8;
-        let Some(homeworld_idx) = data.planets.records.iter().position(|planet| {
+        let Some(homeworld_idx) = data.planets.iter().position(|planet| {
             planet.owner_empire_slot_raw() == empire_raw && planet.is_homeworld_seed_ignoring_name()
         }) else {
             return Err(format!(
@@ -31,7 +31,7 @@ pub(crate) fn init_tax_growth_probe(
         };
 
         {
-            let homeworld = &mut data.planets.records[homeworld_idx];
+            let homeworld = &mut data.planets[homeworld_idx];
             homeworld.set_stored_production_points(0);
             homeworld.set_army_count_raw(10);
             homeworld.set_ground_batteries_raw(4);
@@ -40,7 +40,6 @@ pub(crate) fn init_tax_growth_probe(
 
         let unowned_indices = data
             .planets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -59,8 +58,8 @@ pub(crate) fn init_tax_growth_probe(
         for (planet_idx, (name, present, potential, armies, batteries)) in
             unowned_indices.into_iter().zip(PROBE_COLONY_SPECS)
         {
-            let coords = data.planets.records[planet_idx].coords_raw();
-            let planet = &mut data.planets.records[planet_idx];
+            let coords = data.planets[planet_idx].coords_raw();
+            let planet = &mut data.planets[planet_idx];
             planet.set_as_owned_target_world(
                 coords,
                 [0; 2],
@@ -107,8 +106,7 @@ pub(crate) fn init_starbase_tax_probe(
     with_runtime_game_mut(dir, |data| {
         let empire_raw = player_record_index_1_based as u8;
         let empire_name = data
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .map(|player| player.controlled_empire_name_summary())
             .filter(|name| !name.trim().is_empty() && name != "In Civil Disorder")
@@ -117,14 +115,13 @@ pub(crate) fn init_starbase_tax_probe(
         data.join_player(player_record_index_1_based, &empire_name)?;
         data.set_player_tax_rate(player_record_index_1_based, tax_rate)?;
 
-        if let Some(player) = data.player.records.get_mut(player_record_index_1_based - 1) {
+        if let Some(player) = data.players.get_mut(player_record_index_1_based - 1) {
             player.set_first_base_record_raw(0);
         }
         data.bases
-            .records
             .retain(|base| base.owner_empire_raw() != empire_raw);
 
-        let Some(homeworld_idx) = data.planets.records.iter().position(|planet| {
+        let Some(homeworld_idx) = data.planets.iter().position(|planet| {
             planet.owner_empire_slot_raw() == empire_raw && planet.is_homeworld_seed_ignoring_name()
         }) else {
             return Err(format!(
@@ -135,7 +132,7 @@ pub(crate) fn init_starbase_tax_probe(
         };
 
         {
-            let homeworld = &mut data.planets.records[homeworld_idx];
+            let homeworld = &mut data.planets[homeworld_idx];
             homeworld.set_stored_production_points(0);
             homeworld.set_army_count_raw(10);
             homeworld.set_ground_batteries_raw(4);
@@ -144,7 +141,6 @@ pub(crate) fn init_starbase_tax_probe(
 
         let unowned_indices = data
             .planets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -164,7 +160,7 @@ pub(crate) fn init_starbase_tax_probe(
         for (planet_idx, (name, has_starbase)) in
             unowned_indices.into_iter().zip(STARBASE_PROBE_COLONY_SPECS)
         {
-            let planet = &mut data.planets.records[planet_idx];
+            let planet = &mut data.planets[planet_idx];
             planet.set_owner_empire_slot_raw(empire_raw);
             planet.set_ownership_status_raw(2);
             planet.set_planet_name(name);
@@ -225,8 +221,7 @@ pub(crate) fn print_economy_report(
     let data = load_runtime_game_data(dir)?;
     let economy = data.empire_economy_summary(player_record_index_1_based);
     let player = data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based - 1)
         .ok_or("missing player record")?;
 

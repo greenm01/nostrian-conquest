@@ -41,8 +41,7 @@ pub(super) fn write_player_activity_rows(
 
     for state in &mut states {
         let current_last_run_year = game_data
-            .player
-            .records
+            .players
             .get(state.player_record_index_1_based.saturating_sub(1))
             .map(|player| player.last_run_year_raw())
             .unwrap_or(0);
@@ -140,7 +139,7 @@ fn normalize_activity_states(
     states: &[PlayerActivityState],
     game_data: &CoreGameData,
 ) -> Vec<PlayerActivityState> {
-    let player_count = game_data.player.records.len() as u8;
+    let player_count = game_data.players.len() as u8;
     let mut normalized = default_player_activity_states(player_count);
     for state in states {
         if let Some(slot) = normalized.get_mut(state.player_record_index_1_based.saturating_sub(1))
@@ -150,8 +149,7 @@ fn normalize_activity_states(
     }
     for state in &mut normalized {
         let current_last_run_year = game_data
-            .player
-            .records
+            .players
             .get(state.player_record_index_1_based.saturating_sub(1))
             .map(|player| player.last_run_year_raw())
             .unwrap_or(0);

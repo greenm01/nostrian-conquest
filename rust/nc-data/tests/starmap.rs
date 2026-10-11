@@ -9,10 +9,10 @@ fn player_starmap_projection_shows_full_geometry_but_only_known_details() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[0].set_coords_raw([5, 2]);
-    game_data.planets.records[1].set_coords_raw([10, 15]);
+    game_data.planets[0].set_coords_raw([5, 2]);
+    game_data.planets[1].set_coords_raw([10, 15]);
 
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let mut database =
         DatabaseDat::new_zeroed((game_data.conquest.player_count() as usize) * planet_count);
     let record = database.record_mut(0, 0, planet_count);
@@ -46,11 +46,7 @@ fn player_starmap_projection_shows_full_geometry_but_only_known_details() {
         .expect("known world should exist");
     assert_eq!(
         known.known_name.as_deref(),
-        Some(
-            game_data.planets.records[0]
-                .status_or_name_summary()
-                .as_str()
-        )
+        Some(game_data.planets[0].status_or_name_summary().as_str())
     );
 
     let unknown = projection
@@ -69,11 +65,11 @@ fn player_starmap_projection_always_marks_owned_worlds_as_owned() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[0].set_coords_raw([5, 2]);
-    game_data.planets.records[0].set_owner_empire_slot_raw(1);
-    game_data.planets.records[0].set_planet_name("Home");
+    game_data.planets[0].set_coords_raw([5, 2]);
+    game_data.planets[0].set_owner_empire_slot_raw(1);
+    game_data.planets[0].set_planet_name("Home");
 
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let database =
         DatabaseDat::new_zeroed((game_data.conquest.player_count() as usize) * planet_count);
 
@@ -95,15 +91,15 @@ fn player_starmap_projection_always_marks_owned_worlds_as_owned() {
     assert_eq!(home.known_name.as_deref(), Some("Home"));
     assert_eq!(
         home.known_potential_production,
-        Some(game_data.planets.records[0].potential_production_points())
+        Some(game_data.planets[0].potential_production_points())
     );
     assert_eq!(
         home.known_armies,
-        Some(game_data.planets.records[0].army_count_raw())
+        Some(game_data.planets[0].army_count_raw())
     );
     assert_eq!(
         home.known_ground_batteries,
-        Some(game_data.planets.records[0].ground_batteries_raw())
+        Some(game_data.planets[0].ground_batteries_raw())
     );
     assert_eq!(home.known_starbase_count, Some(0));
 }
@@ -138,10 +134,10 @@ fn player_starmap_projection_uses_database_intel_for_known_foreign_owner() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[1].set_coords_raw([10, 15]);
-    game_data.planets.records[1].set_owner_empire_slot_raw(2);
+    game_data.planets[1].set_coords_raw([10, 15]);
+    game_data.planets[1].set_owner_empire_slot_raw(2);
 
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let mut database =
         DatabaseDat::new_zeroed((game_data.conquest.player_count() as usize) * planet_count);
     let record = database.record_mut(1, 0, planet_count);

@@ -687,7 +687,7 @@ fn planet_brief_list_uses_database_style_stacked_header_and_owned_planet_columns
     let mut screen = PlanetListScreen::new();
     let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load init fixture");
-    let planet = &mut game_data.planets.records[0];
+    let planet = &mut game_data.planets[0];
     planet.set_build_count_raw(0, 5);
     planet.set_build_kind_raw(0, 1);
     planet.set_build_count_raw(1, 40);

@@ -1,8 +1,8 @@
-use nc_data::{ClassicResultsChain, PlayerRecord};
+use nc_data::{ClassicResultsChain, Player};
 
 #[test]
 fn classic_results_chain_round_trips() {
-    let mut player = PlayerRecord::new_zeroed();
+    let mut player = Player::default();
     player.set_results_first(i32::from_le_bytes([0xAA; 4]));
     player.set_results_last(i32::from_le_bytes([0xAA; 4]));
 

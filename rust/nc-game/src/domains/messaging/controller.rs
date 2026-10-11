@@ -129,7 +129,7 @@ impl App {
         if self.current_screen != ScreenId::ComposeMessageRecipient {
             return;
         }
-        let total = self.game_data.player.records.len().saturating_sub(1);
+        let total = self.game_data.players.len().saturating_sub(1);
         let max_offset = total.saturating_sub(self.compose_recipient_visible_rows());
         self.messaging.compose_recipient_scroll_offset = self
             .messaging
@@ -142,7 +142,7 @@ impl App {
         if self.current_screen != ScreenId::ComposeMessageRecipient {
             return;
         }
-        let total = self.game_data.player.records.len().saturating_sub(1);
+        let total = self.game_data.players.len().saturating_sub(1);
         if total == 0 {
             return;
         }
@@ -169,8 +169,7 @@ impl App {
         let empire_id = if self.messaging.compose_recipient_input.trim().is_empty() {
             let ids: Vec<u8> = self
                 .game_data
-                .player
-                .records
+                .players
                 .iter()
                 .enumerate()
                 .filter(|(idx, _)| *idx + 1 != self.player.record_index_1_based)
@@ -513,8 +512,7 @@ impl App {
     fn sync_compose_recipient_cursor_to_input(&mut self) {
         let ids = self
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx + 1 != self.player.record_index_1_based)
@@ -608,7 +606,7 @@ impl App {
     pub fn delete_reviewables(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         delete_report_blocks_for_viewer(
             &mut self.report_block_rows,
-            &self.game_data.player.records,
+            &self.game_data.players,
             self.player.record_index_1_based as u8,
         );
         for mail in &mut self.queued_mail {
@@ -618,8 +616,7 @@ impl App {
         }
         if let Some(player) = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(self.player.record_index_1_based - 1)
         {
             player.set_classic_login_reviewables_present(false);
@@ -680,11 +677,7 @@ pub(crate) fn compose_recipient_label(game_data: &CoreGameData, empire_id: Optio
     let Some(empire_id) = empire_id else {
         return "<unknown>".to_string();
     };
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_id.saturating_sub(1) as usize)
-    else {
+    let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire {empire_id}");
     };
     let name = player.controlled_empire_name_summary();

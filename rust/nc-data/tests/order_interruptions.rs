@@ -7,8 +7,8 @@ use common::order_trace::{
 };
 use nc_data::Real48;
 use nc_data::{
-    BaseDat, BaseRecord, CoreGameData, FleetOrderValidationError, InvalidPlayerStateEvent, Mission,
-    MissionOutcome, MissionRetargetEvent, Order,
+    CoreGameData, FleetOrderValidationError, InvalidPlayerStateEvent, Mission, MissionOutcome,
+    MissionRetargetEvent, Order, Starbase,
 };
 
 const RETREAT_TARGET: [u8; 2] = [15, 8];
@@ -402,7 +402,7 @@ fn build_seek_home_retarget_trace() -> CoreGameData {
     set_world_owner(&mut game_data, TARGET_PLANET_IDX, TRACE_TARGET, 1);
     set_world_owner(&mut game_data, TARGET_PLANET_IDX + 1, RETREAT_TARGET, 1);
 
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     configure_cruiser_fleet(fleet);
     fleet.set_max_speed(TRACE_SPEED);
     arm_new_order(
@@ -418,7 +418,7 @@ fn build_seek_home_retarget_trace() -> CoreGameData {
 
 fn invalidate_seek_home_target_before_turn(turn: usize, game_data: &mut CoreGameData) {
     if turn == 2 {
-        let target = &mut game_data.planets.records[TARGET_PLANET_IDX];
+        let target = &mut game_data.planets[TARGET_PLANET_IDX];
         target.set_owner_empire_slot_raw(2);
         target.set_ownership_status_raw(2);
     }
@@ -552,7 +552,7 @@ fn build_missing_blitz_troops_no_retreat_trace() -> CoreGameData {
         MissingCapability::LoadedTroops,
         false,
     );
-    game_data.fleets.records[0].set_owner_empire_raw(9);
+    game_data.fleets[0].set_owner_empire_raw(9);
     game_data
 }
 
@@ -614,16 +614,14 @@ fn build_capability_invalidated_trace(
         set_world_owner(&mut game_data, TARGET_PLANET_IDX + 1, RETREAT_TARGET, 1);
     }
     if order == Order::GuardStarbase {
-        let mut base = BaseRecord::new_zeroed();
+        let mut base = Starbase::default();
         base.set_base_id_raw(1);
         base.set_owner_empire_raw(1);
         base.set_coords_raw(TRACE_TARGET);
-        game_data.bases = BaseDat {
-            records: vec![base],
-        };
+        game_data.bases = vec![base];
     }
 
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     clear_fleet_for_probe(fleet);
     match missing {
         MissingCapability::Scout => {
@@ -657,7 +655,7 @@ fn build_stale_off_target_hostile_trace(
 ) -> CoreGameData {
     let (mut game_data, _target_idx, _target_coords) =
         configured_delayed_hostile_arrival_state(order, ships);
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_max_speed(TRACE_SPEED);
     fleet.set_current_location_coords_raw(OFF_TARGET_START);
     fleet.set_current_speed(0);
@@ -738,7 +736,7 @@ fn assert_invalid_player_reason(
 }
 
 fn clear_all_planet_ownership(game_data: &mut CoreGameData) {
-    for planet in &mut game_data.planets.records {
+    for planet in &mut game_data.planets {
         planet.set_owner_empire_slot_raw(0);
         planet.set_ownership_status_raw(0);
         planet.set_ground_batteries_raw(0);
@@ -747,7 +745,7 @@ fn clear_all_planet_ownership(game_data: &mut CoreGameData) {
 }
 
 fn set_world_owner(game_data: &mut CoreGameData, planet_idx: usize, coords: [u8; 2], owner: u8) {
-    let planet = &mut game_data.planets.records[planet_idx];
+    let planet = &mut game_data.planets[planet_idx];
     planet.set_coords_raw(coords);
     planet.set_planet_name("Trace");
     planet.set_owner_empire_slot_raw(owner);

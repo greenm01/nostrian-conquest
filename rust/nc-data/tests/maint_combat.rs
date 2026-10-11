@@ -23,7 +23,7 @@ fn configured_assault_state(order_code: u8) -> CoreGameData {
     let mut game_data = load_fixture("ecmaint-post");
 
     // Use the unowned world at (15,13) as a deterministic assault target.
-    let target = &mut game_data.planets.records[13];
+    let target = &mut game_data.planets[13];
     target.set_as_owned_target_world(
         [15, 13],
         [0x64, 0x87],
@@ -39,7 +39,7 @@ fn configured_assault_state(order_code: u8) -> CoreGameData {
     );
 
     // Reuse fleet 1 as the attacker and mark it as already-arrived this turn.
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw([15, 13]);
     attacker.set_standing_order_code_raw(order_code);
     attacker.set_standing_order_target_coords_raw([15, 13]);
@@ -63,7 +63,7 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     let coords = [9, 13];
     let target = [15, 13];
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw(coords);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw(target);
@@ -78,7 +78,7 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     attacker.set_rules_of_engagement(attacker_roe);
     common::stall_in_place(attacker);
 
-    let hostile = &mut game_data.fleets.records[4];
+    let hostile = &mut game_data.fleets[4];
     hostile.set_current_location_coords_raw(coords);
     hostile.set_standing_order_kind(Order::MoveOnly);
     hostile.set_standing_order_target_coords_raw([8, 13]);
@@ -104,7 +104,7 @@ fn configure_bombard_target_world(
     stored_goods: u32,
     factories: u16,
 ) {
-    let target = &mut game_data.planets.records[13];
+    let target = &mut game_data.planets[13];
     target.set_ground_batteries_raw(batteries);
     target.set_army_count_raw(armies);
     target.set_stored_production_points(stored_goods);
@@ -115,7 +115,7 @@ fn configure_bombard_target_world(
 }
 
 fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
+    let mut base = nc_data::Starbase::default();
     base.set_base_id_raw(1);
     base.set_record_number_raw(1);
     base.set_coords_raw(coords);
@@ -124,7 +124,7 @@ fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2])
     // In orbit (depth 1), as commissioned starbases are.
     base.set_at_rest_motion();
     base.set_target_depth_raw(1);
-    game_data.bases.records.push(base);
+    game_data.bases.push(base);
 }
 
 fn mutual_enemy_overrides(left: u8, right: u8) -> [DiplomacyOverride; 2] {
@@ -146,8 +146,8 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [15, 13];
 
-    game_data.bases.records.clear();
-    for fleet in &mut game_data.fleets.records {
+    game_data.bases.clear();
+    for fleet in &mut game_data.fleets {
         let current = fleet.current_location_coords_raw();
         fleet.set_current_speed(0);
         fleet.set_standing_order_kind(Order::HoldPosition);
@@ -162,7 +162,7 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
         fleet.set_etac_count(0);
     }
 
-    let target = &mut game_data.planets.records[13];
+    let target = &mut game_data.planets[13];
     target.set_as_owned_target_world(
         coords,
         [0x64, 0x87],
@@ -177,7 +177,7 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
         2,
     );
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_current_location_coords_raw(coords);
     attacker.set_standing_order_kind(Order::InvadeWorld);
     attacker.set_standing_order_target_coords_raw(coords);
@@ -188,7 +188,7 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
     attacker.set_troop_transport_count(1);
     attacker.set_army_count(1);
 
-    let defender = &mut game_data.fleets.records[4];
+    let defender = &mut game_data.fleets[4];
     defender.set_current_location_coords_raw(coords);
     defender.set_standing_order_kind(Order::HoldPosition);
     defender.set_standing_order_target_coords_raw(coords);
@@ -202,7 +202,7 @@ fn configured_dominant_invalidated_invade_state() -> CoreGameData {
 fn canonical_bombardment_consumes_order_and_devastates_target() {
     let mut game_data = load_fixture("ecmaint-bombard-arrive");
 
-    let pre_target = game_data.planets.records[13].clone();
+    let pre_target = game_data.planets[13].clone();
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
     assert_eq!(events.bombard_events.len(), 1);
@@ -214,7 +214,7 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
     );
     assert!(events.colonization_events.is_empty());
 
-    let attacker = &game_data.fleets.records[2];
+    let attacker = &game_data.fleets[2];
     assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
     // Bombardment persists: fleet keeps BombardWorld order for next turn.
     assert_eq!(
@@ -227,7 +227,7 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
     assert_eq!(attacker.cruiser_count(), 0);
     assert_eq!(attacker.destroyer_count(), 0);
 
-    let post_target = &game_data.planets.records[13];
+    let post_target = &game_data.planets[13];
     assert_eq!(
         post_target.owner_empire_slot_raw(),
         pre_target.owner_empire_slot_raw()
@@ -246,11 +246,11 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
         assert_eq!(post_target.army_count_raw(), pre_target.army_count_raw());
     }
     assert_eq!(
-        game_data.player.records[0].diplomatic_relation_toward(2),
+        game_data.players[0].diplomatic_relation_toward(2),
         Some(nc_data::DiplomaticRelation::Enemy)
     );
     assert_eq!(
-        game_data.player.records[1].diplomatic_relation_toward(1),
+        game_data.players[1].diplomatic_relation_toward(1),
         Some(nc_data::DiplomaticRelation::Enemy)
     );
 }
@@ -260,7 +260,7 @@ fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
     let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
     configure_bombard_target_world(&mut game_data, 0, 6, 0, 0);
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_destroyer_count(0);
     attacker.set_cruiser_count(1);
 
@@ -272,11 +272,11 @@ fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
     assert_eq!(bombard.defender_armies_initial, 6);
     assert_eq!(bombard.attacker_losses, nc_data::ShipLosses::default());
 
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert_eq!(attacker.cruiser_count(), 1);
     assert_eq!(attacker.destroyer_count(), 0);
 
-    let target = &game_data.planets.records[13];
+    let target = &game_data.planets[13];
     assert_eq!(target.ground_batteries_raw(), 0);
     assert!(target.army_count_raw() < 6);
 }
@@ -286,7 +286,7 @@ fn bombardment_batteries_still_inflict_orbital_losses() {
     let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
     configure_bombard_target_world(&mut game_data, 4, 0, 0, 0);
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_destroyer_count(0);
     attacker.set_cruiser_count(1);
 
@@ -303,15 +303,15 @@ fn bombardment_batteries_still_inflict_orbital_losses() {
         "ground batteries should still inflict orbital losses"
     );
 
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert_eq!(attacker.cruiser_count(), 0);
 }
 
 #[test]
 fn foreign_contact_without_enemy_declaration_reports_but_does_not_force_battle() {
     let mut game_data = load_fixture("ecmaint-fleet-battle-pre");
-    game_data.fleets.records[0].set_standing_order_kind(Order::ScoutSector);
-    game_data.fleets.records[0].set_scout_count(1);
+    game_data.fleets[0].set_standing_order_kind(Order::ScoutSector);
+    game_data.fleets[0].set_scout_count(1);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -331,15 +331,15 @@ fn foreign_contact_without_enemy_declaration_reports_but_does_not_force_battle()
 #[test]
 fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_counts() {
     let mut game_data = load_fixture("ecmaint-fleet-battle-pre");
-    game_data.fleets.records[0].set_standing_order_kind(Order::ScoutSector);
-    game_data.fleets.records[0].set_scout_count(1);
+    game_data.fleets[0].set_standing_order_kind(Order::ScoutSector);
+    game_data.fleets[0].set_scout_count(1);
     let diplomacy = mutual_enemy_overrides(1, 2);
 
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, _| {
-        !year.fleets.records[0].has_any_force()
+        !year.fleets[0].has_any_force()
     });
 
-    let loser_one = &game_data.fleets.records[0];
+    let loser_one = &game_data.fleets[0];
     assert_eq!(loser_one.current_location_coords_raw(), [10, 10]);
     assert_eq!(loser_one.standing_order_code_raw(), 0);
     assert_eq!(loser_one.rules_of_engagement(), 0);
@@ -368,7 +368,7 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
             .any(|event| { event.coords == [10, 10] && matches!(event.viewer_empire_raw, 1 | 2) })
     );
 
-    let survivor = &game_data.fleets.records[6];
+    let survivor = &game_data.fleets[6];
     assert_eq!(survivor.current_location_coords_raw(), [10, 10]);
     assert_eq!(survivor.battleship_count(), 1);
     // The fixture's byte 0x24 = 10 is the mission id's high byte; the fleet
@@ -376,7 +376,7 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
     assert_eq!(survivor.scout_count(), 0);
     assert_eq!(survivor.etac_count(), 1);
 
-    for fleet in &game_data.fleets.records {
+    for fleet in &game_data.fleets {
         assert!(fleet.battleship_count() <= 100);
         assert!(fleet.cruiser_count() <= 100);
         assert!(fleet.destroyer_count() <= 100);
@@ -399,7 +399,7 @@ fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() 
 
     // The battle comes mid-year: the aborted fleet seeks home at once and may
     // reach it (16,13) before the year ends.
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert_ne!(attacker.standing_order_kind(), Order::InvadeWorld);
     assert!(matches!(
         attacker.standing_order_kind(),
@@ -407,7 +407,7 @@ fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() 
     ));
     assert_eq!(attacker.standing_order_target_coords_raw(), [16, 13]);
 
-    assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 2);
+    assert_eq!(game_data.planets[13].owner_empire_slot_raw(), 2);
     assert!(
         events.assault_report_events.is_empty(),
         "fleet battle should invalidate the stale invade before the assault phase runs"
@@ -435,7 +435,7 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [15, 13];
 
-    let patrol = &mut game_data.fleets.records[0];
+    let patrol = &mut game_data.fleets[0];
     patrol.set_current_location_coords_raw(coords);
     patrol.set_standing_order_kind(Order::PatrolSector);
     patrol.set_destroyer_count(1);
@@ -447,7 +447,7 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
     patrol.set_rules_of_engagement(0);
     common::stall_in_place(patrol);
 
-    let hostile = &mut game_data.fleets.records[4];
+    let hostile = &mut game_data.fleets[4];
     hostile.set_current_location_coords_raw(coords);
     hostile.set_standing_order_kind(Order::MoveOnly);
     hostile.set_destroyer_count(1);
@@ -480,13 +480,10 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
         )
     }));
     assert_eq!(
-        game_data.fleets.records[0].standing_order_kind(),
+        game_data.fleets[0].standing_order_kind(),
         Order::PatrolSector
     );
-    assert_eq!(
-        game_data.fleets.records[4].standing_order_kind(),
-        Order::MoveOnly
-    );
+    assert_eq!(game_data.fleets[4].standing_order_kind(), Order::MoveOnly);
 }
 
 /// A year in which someone withdrew under ROE; a failed intercept alone
@@ -507,9 +504,7 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     // its loaded transports (losing them aborts the mission for another
     // reason).
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, events| {
-        retreated(events)
-            && year.fleets.records[0].army_count() == 2
-            && year.fleets.records[4].has_any_force()
+        retreated(events) && year.fleets[0].army_count() == 2 && year.fleets[4].has_any_force()
     });
 
     assert!(
@@ -543,7 +538,7 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
             && event.outcome == MissionOutcome::Aborted
     }));
 
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert_eq!(attacker.standing_order_kind(), Order::InvadeWorld);
     assert_eq!(attacker.standing_order_target_coords_raw(), [15, 13]);
     // Re-rated by its losses, the invader carries on toward its target at
@@ -553,7 +548,7 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
     assert!((9..15).contains(&x) && y == 13, "{:?}", [x, y]);
     assert_eq!(attacker.current_speed(), attacker.max_speed());
 
-    let hostile = &game_data.fleets.records[4];
+    let hostile = &game_data.fleets[4];
     assert_eq!(hostile.standing_order_kind(), Order::SeekHome);
     // The retreat runs at the full speed of the ships it has left (0 when
     // this stalled contact lost none).
@@ -585,7 +580,7 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
             && event.outcome == MissionOutcome::Aborted
     }));
 
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert_eq!(attacker.standing_order_kind(), Order::SeekHome);
     // The retreat runs at full speed (0 for this stalled contact).
     assert_eq!(attacker.current_speed(), attacker.max_speed());
@@ -596,7 +591,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
     let mut game_data = load_fixture("ecmaint-post");
     let target = [15, 13];
 
-    let target_world = &mut game_data.planets.records[13];
+    let target_world = &mut game_data.planets[13];
     target_world.set_as_owned_target_world(
         target,
         [0x64, 0x87],
@@ -611,7 +606,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
         2,
     );
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_owner_empire_raw(1);
     attacker.set_current_location_coords_raw([14, 13]);
     attacker.set_standing_order_kind(Order::BombardWorld);
@@ -627,7 +622,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
     attacker.set_etac_count(0);
     attacker.set_rules_of_engagement(0);
 
-    let defender = &mut game_data.fleets.records[4];
+    let defender = &mut game_data.fleets[4];
     defender.set_owner_empire_raw(2);
     defender.set_current_location_coords_raw(target);
     defender.set_standing_order_kind(Order::GuardBlockadeWorld);
@@ -661,7 +656,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [8, 8];
 
-    let left = &mut game_data.fleets.records[0];
+    let left = &mut game_data.fleets[0];
     left.set_current_location_coords_raw(coords);
     left.set_standing_order_kind(Order::MoveOnly);
     left.set_standing_order_target_coords_raw([9, 8]);
@@ -674,7 +669,7 @@ fn enemy_transit_fleets_can_fight_in_deep_space() {
     left.set_rules_of_engagement(10);
     common::stall_in_place(left);
 
-    let right = &mut game_data.fleets.records[4];
+    let right = &mut game_data.fleets[4];
     right.set_current_location_coords_raw(coords);
     right.set_standing_order_kind(Order::MoveOnly);
     right.set_standing_order_target_coords_raw([7, 8]);
@@ -702,7 +697,7 @@ fn anchored_guard_intercepts_declared_enemy_transit_contact() {
     let coords = [16, 13];
     add_active_starbase(&mut game_data, 1, coords);
 
-    let defender = &mut game_data.fleets.records[0];
+    let defender = &mut game_data.fleets[0];
     defender.set_current_location_coords_raw(coords);
     defender.set_standing_order_kind(Order::GuardStarbase);
     defender.set_standing_order_target_coords_raw(coords);
@@ -716,7 +711,7 @@ fn anchored_guard_intercepts_declared_enemy_transit_contact() {
     defender.set_rules_of_engagement(10);
     defender.set_mission_aux_bytes([1, 1]);
 
-    let transit = &mut game_data.fleets.records[4];
+    let transit = &mut game_data.fleets[4];
     transit.set_current_location_coords_raw(coords);
     transit.set_standing_order_kind(Order::MoveOnly);
     transit.set_standing_order_target_coords_raw([18, 13]);
@@ -750,7 +745,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [15, 13];
 
-    let fleet = &mut game_data.fleets.records[0];
+    let fleet = &mut game_data.fleets[0];
     fleet.set_current_location_coords_raw(coords);
     fleet.set_standing_order_kind(Order::PatrolSector);
     fleet.set_destroyer_count(0);
@@ -762,7 +757,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     fleet.set_rules_of_engagement(6);
     common::stall_in_place(fleet);
 
-    let hostile = &mut game_data.fleets.records[4];
+    let hostile = &mut game_data.fleets[4];
     hostile.set_current_location_coords_raw(coords);
     hostile.set_standing_order_kind(Order::MoveOnly);
     hostile.set_destroyer_count(0);
@@ -784,14 +779,14 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
             })
     });
 
-    assert!(game_data.fleets.records[0].cruiser_count() > 0);
+    assert!(game_data.fleets[0].cruiser_count() > 0);
     assert_eq!(
-        game_data.fleets.records[0].standing_order_kind(),
+        game_data.fleets[0].standing_order_kind(),
         Order::PatrolSector
     );
-    assert_eq!(game_data.fleets.records[0].current_speed(), 0);
+    assert_eq!(game_data.fleets[0].current_speed(), 0);
     assert_eq!(
-        game_data.fleets.records[0].standing_order_target_coords_raw(),
+        game_data.fleets[0].standing_order_target_coords_raw(),
         [16, 13]
     );
     assert!(events.fleet_battle_events.iter().any(|event| {
@@ -808,7 +803,7 @@ fn combat_reports_enemy_fleet_by_empire_local_slot() {
     let mut game_data = load_fixture("ecmaint-post");
     let coords = [8, 8];
 
-    let left = &mut game_data.fleets.records[0];
+    let left = &mut game_data.fleets[0];
     left.set_current_location_coords_raw(coords);
     left.set_standing_order_kind(Order::MoveOnly);
     left.set_standing_order_target_coords_raw([9, 8]);
@@ -821,7 +816,7 @@ fn combat_reports_enemy_fleet_by_empire_local_slot() {
     left.set_rules_of_engagement(10);
     common::stall_in_place(left);
 
-    let right = &mut game_data.fleets.records[4];
+    let right = &mut game_data.fleets[4];
     right.set_current_location_coords_raw(coords);
     right.set_standing_order_kind(Order::MoveOnly);
     right.set_standing_order_target_coords_raw([7, 8]);
@@ -856,7 +851,7 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
     let coords = [8, 8];
     let mut game_data = load_fixture("ecmaint-post");
 
-    for fleet in &mut game_data.fleets.records {
+    for fleet in &mut game_data.fleets {
         let current = fleet.current_location_coords_raw();
         fleet.set_current_speed(0);
         fleet.set_standing_order_kind(Order::HoldPosition);
@@ -871,7 +866,7 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
         fleet.set_etac_count(0);
     }
 
-    let screened = &mut game_data.fleets.records[0];
+    let screened = &mut game_data.fleets[0];
     screened.set_current_location_coords_raw(coords);
     screened.set_standing_order_kind(Order::PatrolSector);
     screened.set_standing_order_target_coords_raw(coords);
@@ -880,7 +875,7 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
     screened.set_army_count(1);
     screened.set_rules_of_engagement(0);
 
-    let attacker = &mut game_data.fleets.records[4];
+    let attacker = &mut game_data.fleets[4];
     attacker.set_current_location_coords_raw(coords);
     attacker.set_standing_order_kind(Order::HoldPosition);
     attacker.set_standing_order_target_coords_raw(coords);
@@ -891,10 +886,10 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
 
     let diplomacy = mutual_enemy_overrides(1, 2);
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |year, _| {
-        year.fleets.records[0].troop_transport_count() == 0
+        year.fleets[0].troop_transport_count() == 0
     });
 
-    let screened = &game_data.fleets.records[0];
+    let screened = &game_data.fleets[0];
     assert_eq!(
         screened.cruiser_count(),
         0,
@@ -919,7 +914,7 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
     fn configured_three_way_battle() -> (CoreGameData, Vec<DiplomacyOverride>) {
         let mut game_data = load_fixture("ecmaint-post");
 
-        let fleet_a = &mut game_data.fleets.records[0];
+        let fleet_a = &mut game_data.fleets[0];
         fleet_a.set_current_location_coords_raw([15, 13]);
         fleet_a.set_standing_order_kind(Order::HoldPosition);
         fleet_a.set_destroyer_count(1);
@@ -931,7 +926,7 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
         fleet_a.set_etac_count(0);
         fleet_a.set_rules_of_engagement(6);
 
-        let fleet_b = &mut game_data.fleets.records[4];
+        let fleet_b = &mut game_data.fleets[4];
         fleet_b.set_current_location_coords_raw([15, 13]);
         fleet_b.set_standing_order_kind(Order::HoldPosition);
         fleet_b.set_destroyer_count(1);
@@ -943,7 +938,7 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
         fleet_b.set_etac_count(0);
         fleet_b.set_rules_of_engagement(6);
 
-        let fleet_c = &mut game_data.fleets.records[8];
+        let fleet_c = &mut game_data.fleets[8];
         fleet_c.set_current_location_coords_raw([15, 13]);
         fleet_c.set_standing_order_kind(Order::HoldPosition);
         fleet_c.set_destroyer_count(0);
@@ -977,8 +972,8 @@ fn canonical_three_empire_open_space_battle_resolves_deterministically() {
 
     for idx in [0usize, 4, 8] {
         assert_eq!(
-            first.fleets.records[idx],
-            second.fleets.records[idx],
+            first.fleets[idx],
+            second.fleets[idx],
             "seeded combat should resolve reproducibly for fleet record {}",
             idx + 1
         );
@@ -990,7 +985,7 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
     let mut game_data = load_fixture("ecmaint-post");
     add_active_starbase(&mut game_data, 1, [16, 13]);
 
-    let defender = &mut game_data.fleets.records[0];
+    let defender = &mut game_data.fleets[0];
     defender.set_current_location_coords_raw([16, 13]);
     defender.set_standing_order_kind(Order::GuardStarbase);
     defender.set_standing_order_target_coords_raw([16, 13]);
@@ -1005,7 +1000,7 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
 
     // Blockading the world enters its solar system: a hostile intrusion.
     // (A fleet merely holding in the sector's deep space would not be.)
-    let attacker = &mut game_data.fleets.records[4];
+    let attacker = &mut game_data.fleets[4];
     attacker.set_current_location_coords_raw([16, 13]);
     attacker.set_standing_order_kind(Order::GuardBlockadeWorld);
     attacker.set_standing_order_target_coords_raw([16, 13]);
@@ -1020,14 +1015,14 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
 
     let (game_data, _) = common::first_year(&game_data, &[], common::battle);
 
-    let attacker = &game_data.fleets.records[4];
+    let attacker = &game_data.fleets[4];
     assert_eq!(attacker.cruiser_count(), 0);
     assert_eq!(attacker.standing_order_code_raw(), 0);
     assert_eq!(attacker.rules_of_engagement(), 0);
 
-    assert_eq!(game_data.bases.records.len(), 1);
-    assert_eq!(game_data.bases.records[0].owner_empire_raw(), 1);
-    assert_eq!(game_data.bases.records[0].coords_raw(), [16, 13]);
+    assert_eq!(game_data.bases.len(), 1);
+    assert_eq!(game_data.bases[0].owner_empire_raw(), 1);
+    assert_eq!(game_data.bases[0].coords_raw(), [16, 13]);
 }
 
 #[test]
@@ -1035,7 +1030,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
     let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
     let coords = [15, 13];
 
-    for fleet in game_data.fleets.records.iter_mut().skip(1) {
+    for fleet in game_data.fleets.iter_mut().skip(1) {
         let current = fleet.current_location_coords_raw();
         fleet.set_current_speed(0);
         fleet.set_standing_order_kind(Order::HoldPosition);
@@ -1049,7 +1044,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
         fleet.set_etac_count(0);
     }
 
-    let attacker = &mut game_data.fleets.records[0];
+    let attacker = &mut game_data.fleets[0];
     attacker.set_destroyer_count(1);
     attacker.set_cruiser_count(0);
     attacker.set_battleship_count(0);
@@ -1059,8 +1054,8 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
 
     let (game_data, events) = common::first_year(&game_data, &[], common::battle);
 
-    assert_eq!(game_data.bases.records.len(), 1);
-    assert_eq!(game_data.bases.records[0].owner_empire_raw(), 2);
+    assert_eq!(game_data.bases.len(), 1);
+    assert_eq!(game_data.bases[0].owner_empire_raw(), 2);
     assert!(
         events
             .fleet_battle_events
@@ -1075,12 +1070,12 @@ fn canonical_invade_against_standing_batteries_aborts_without_retry() {
     let mut game_data = configured_assault_state(7);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_troop_transport_count(2);
         attacker.set_army_count(2);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(10);
         target.set_ground_batteries_raw(4);
     }
@@ -1088,8 +1083,8 @@ fn canonical_invade_against_standing_batteries_aborts_without_retry() {
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
     assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Aborted);
-    let attacker = &game_data.fleets.records[0];
-    let target = &game_data.planets.records[13];
+    let attacker = &game_data.fleets[0];
+    let target = &game_data.planets[13];
     // The batteries held, so no troops landed, and their return fire
     // destroys this small force. The invasion is over: the order is Hold.
     assert!(!attacker.has_any_force());
@@ -1111,13 +1106,13 @@ fn failed_invasion_holds_in_orbit_without_retry() {
     let mut game_data = configured_assault_state(7);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_battleship_count(5);
         attacker.set_troop_transport_count(2);
         attacker.set_army_count(2);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(10);
         target.set_ground_batteries_raw(5);
     }
@@ -1127,18 +1122,18 @@ fn failed_invasion_holds_in_orbit_without_retry() {
     // The batteries fall, the two armies land and lose, and the surviving
     // ships hold in orbit.
     assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Failed);
-    let attacker = &game_data.fleets.records[0];
+    let attacker = &game_data.fleets[0];
     assert!(attacker.battleship_count() > 0);
     assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
     assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
     assert_eq!(attacker.current_speed(), 0);
     assert_eq!(attacker.depth(), nc_data::Real48::ONE);
-    assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 2);
+    assert_eq!(game_data.planets[13].owner_empire_slot_raw(), 2);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert!(events.assault_report_events.is_empty());
     assert_eq!(
-        game_data.fleets.records[0].standing_order_kind(),
+        game_data.fleets[0].standing_order_kind(),
         Order::HoldPosition
     );
 }
@@ -1148,7 +1143,7 @@ fn canonical_invade_softening_caps_at_half_of_starting_armies() {
     let mut game_data = configured_assault_state(7);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_battleship_count(20);
         attacker.set_cruiser_count(20);
         attacker.set_destroyer_count(20);
@@ -1156,14 +1151,14 @@ fn canonical_invade_softening_caps_at_half_of_starting_armies() {
         attacker.set_army_count(80);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(62);
         target.set_ground_batteries_raw(0);
     }
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    let target = &game_data.planets.records[13];
+    let target = &game_data.planets[13];
     let assault = &events.assault_report_events[0];
     assert_eq!(target.owner_empire_slot_raw(), 1);
     assert_eq!(assault.kind, Mission::InvadeWorld);
@@ -1178,7 +1173,7 @@ fn canonical_invade_softening_leaves_majority_on_odd_army_counts() {
     let mut game_data = configured_assault_state(7);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_battleship_count(20);
         attacker.set_cruiser_count(20);
         attacker.set_destroyer_count(20);
@@ -1186,7 +1181,7 @@ fn canonical_invade_softening_leaves_majority_on_odd_army_counts() {
         attacker.set_army_count(20);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(5);
         target.set_ground_batteries_raw(0);
     }
@@ -1206,20 +1201,20 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     let mut game_data = configured_assault_state(8);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_troop_transport_count(40);
         attacker.set_army_count(40);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(3);
         target.set_ground_batteries_raw(2);
     }
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    let attacker = &game_data.fleets.records[0];
-    let target = &game_data.planets.records[13];
+    let attacker = &game_data.fleets[0];
+    let target = &game_data.planets[13];
     assert_eq!(attacker.standing_order_code_raw(), 0);
     assert_eq!(attacker.current_speed(), 0);
     assert_eq!(attacker.army_count(), 0);
@@ -1270,20 +1265,20 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
     let mut game_data = configured_assault_state(8);
 
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_troop_transport_count(4);
         attacker.set_army_count(4);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(10);
         target.set_ground_batteries_raw(2);
     }
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    let attacker = &game_data.fleets.records[0];
-    let target = &game_data.planets.records[13];
+    let attacker = &game_data.fleets[0];
+    let target = &game_data.planets[13];
     assert_eq!(attacker.standing_order_code_raw(), 0);
     assert_eq!(attacker.current_speed(), 0);
     assert_eq!(attacker.army_count(), 0);
@@ -1311,7 +1306,6 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
     assert!(
         game_data
             .fleets
-            .records
             .iter()
             .all(|fleet| fleet.standing_order_kind() != Order::BlitzWorld)
     );
@@ -1321,23 +1315,23 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
 fn bombardment_repeats_each_year_until_the_order_changes() {
     let mut game_data = configured_assault_state(6);
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_battleship_count(20);
         attacker.set_destroyer_count(0);
     }
-    game_data.planets.records[13].set_ground_batteries_raw(1);
+    game_data.planets[13].set_ground_batteries_raw(1);
 
     for year in 1..=2 {
         let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
         assert_eq!(events.bombard_events.len(), 1, "year {year} bombards");
-        let attacker = &game_data.fleets.records[0];
+        let attacker = &game_data.fleets[0];
         assert_eq!(attacker.standing_order_kind(), Order::BombardWorld);
         assert_eq!(attacker.current_location_coords_raw(), [15, 13]);
         assert_eq!(attacker.current_speed(), 0);
         assert_eq!(attacker.depth(), nc_data::Real48::ONE);
     }
 
-    game_data.fleets.records[0].set_standing_order_kind(Order::HoldPosition);
+    game_data.fleets[0].set_standing_order_kind(Order::HoldPosition);
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert!(events.bombard_events.is_empty());
 }
@@ -1346,25 +1340,25 @@ fn bombardment_repeats_each_year_until_the_order_changes() {
 fn hostile_order_given_in_orbit_strikes_at_the_next_maintenance() {
     let mut game_data = configured_assault_state(0);
     {
-        let attacker = &mut game_data.fleets.records[0];
+        let attacker = &mut game_data.fleets[0];
         attacker.set_current_speed(0);
         attacker.set_battleship_count(20);
         attacker.set_troop_transport_count(40);
         attacker.set_army_count(40);
     }
     {
-        let target = &mut game_data.planets.records[13];
+        let target = &mut game_data.planets[13];
         target.set_army_count_raw(3);
         target.set_ground_batteries_raw(0);
     }
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert!(events.assault_report_events.is_empty());
 
-    game_data.fleets.records[0].set_standing_order_kind(Order::InvadeWorld);
+    game_data.fleets[0].set_standing_order_kind(Order::InvadeWorld);
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Succeeded);
-    assert_eq!(game_data.planets.records[13].owner_empire_slot_raw(), 1);
-    let attacker = &game_data.fleets.records[0];
+    assert_eq!(game_data.planets[13].owner_empire_slot_raw(), 1);
+    let attacker = &game_data.fleets[0];
     assert_eq!(attacker.standing_order_kind(), Order::HoldPosition);
     assert_eq!(attacker.current_speed(), 0);
 }
@@ -1372,7 +1366,7 @@ fn hostile_order_given_in_orbit_strikes_at_the_next_maintenance() {
 #[test]
 fn bombarding_fleet_destroyed_by_batteries_stays_destroyed() {
     let mut game_data = configured_assault_state(6);
-    game_data.planets.records[13].set_ground_batteries_raw(20);
+    game_data.planets[13].set_ground_batteries_raw(20);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert_eq!(events.bombard_events.len(), 1);
@@ -1380,7 +1374,6 @@ fn bombarding_fleet_destroyed_by_batteries_stays_destroyed() {
     assert!(
         game_data
             .fleets
-            .records
             .first()
             .is_none_or(|fleet| fleet.owner_empire_raw() != 1 || !fleet.has_any_force())
     );
@@ -1390,7 +1383,6 @@ fn bombarding_fleet_destroyed_by_batteries_stays_destroyed() {
     assert!(
         game_data
             .fleets
-            .records
             .iter()
             .all(|fleet| fleet.standing_order_kind() != Order::BombardWorld
                 || fleet.owner_empire_raw() != 1)

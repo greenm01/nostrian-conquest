@@ -108,7 +108,7 @@ pub fn board() -> CoreGameData {
         .join("ecmaint-post")
         .join("v1.5");
     let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
-    game_data.bases.records.clear();
+    game_data.bases.clear();
     game_data
 }
 
@@ -118,7 +118,7 @@ pub const WORLD: [u8; 2] = [15, 13];
 /// `board()` with `WORLD` given to empire 2.
 pub fn board_with_world() -> CoreGameData {
     let mut game_data = board();
-    game_data.planets.records[13].set_as_owned_target_world(
+    game_data.planets[13].set_as_owned_target_world(
         WORLD,
         [0x64, 0x87],
         [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
@@ -137,7 +137,7 @@ pub fn board_with_world() -> CoreGameData {
 /// Replace fleet record `idx` (owned by `fleet.owner` in the fixture:
 /// records 0-3 empire 1, 4-7 empire 2, 8-11 empire 3, 12-15 empire 4).
 pub fn put(game_data: &mut CoreGameData, idx: usize, fleet: Fleet) {
-    let record = &mut game_data.fleets.records[idx];
+    let record = &mut game_data.fleets[idx];
     assert_eq!(record.owner_empire_raw(), fleet.owner, "fleet {idx} owner");
     record.set_current_location_coords_raw(fleet.at);
     record.set_x_fraction(Real48::HALF);
@@ -170,7 +170,7 @@ pub fn add_starbase(
     coords: [u8; 2],
     in_system: bool,
 ) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
+    let mut base = nc_data::Starbase::default();
     base.set_base_id_raw(u16::from(id));
     base.set_record_number_raw(1);
     base.set_coords_raw(coords);
@@ -181,7 +181,7 @@ pub fn add_starbase(
         base.set_depth(nc_data::Real48::ZERO);
     }
     base.set_target_depth_raw(u8::from(in_system));
-    game_data.bases.records.push(base);
+    game_data.bases.push(base);
 }
 
 /// Diplomacy among empires 1-4: `(from, to)` means `from` has declared `to`

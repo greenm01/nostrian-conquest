@@ -330,7 +330,6 @@ fn ensure_player_owns_planet(
 ) -> Result<(), TurnSubmissionError> {
     let planet = game_data
         .planets
-        .records
         .get(planet_record_index_1_based - 1)
         .ok_or_else(|| {
             TurnSubmissionError::Validation(format!(
@@ -354,7 +353,6 @@ fn ensure_player_owns_fleet(
 ) -> Result<(), TurnSubmissionError> {
     let fleet = game_data
         .fleets
-        .records
         .get(fleet_record_index_1_based - 1)
         .ok_or_else(|| {
             TurnSubmissionError::Validation(format!(

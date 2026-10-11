@@ -7,7 +7,7 @@
 //! (`step`, ECMAINT 0824:01c0). After each tick the order's arrival test runs
 //! (dispatcher 0b5d:5581); the first tick that passes resolves the order.
 
-use nc_data::{BaseRecord, FleetRecord, Order, Real48};
+use nc_data::{Fleet, Order, Real48, Starbase};
 
 pub(crate) const TICKS_PER_YEAR: u8 = 52;
 
@@ -19,7 +19,7 @@ pub(crate) struct Motion {
 }
 
 impl Motion {
-    pub(crate) fn of_fleet(fleet: &FleetRecord) -> Self {
+    pub(crate) fn of_fleet(fleet: &Fleet) -> Self {
         let [x, y] = fleet.current_location_coords_raw();
         Self {
             x: Real48::from_int(i32::from(x)) + fleet.x_fraction(),
@@ -28,7 +28,7 @@ impl Motion {
         }
     }
 
-    pub(crate) fn of_base(base: &BaseRecord) -> Self {
+    pub(crate) fn of_base(base: &Starbase) -> Self {
         let [x, y] = base.coords_raw();
         Self {
             x: Real48::from_int(i32::from(x)) + base.x_fraction(),
@@ -50,7 +50,7 @@ impl Motion {
         [self.x.trunc() as u8, self.y.trunc() as u8]
     }
 
-    pub(crate) fn write_to(self, fleet: &mut FleetRecord) {
+    pub(crate) fn write_to(self, fleet: &mut Fleet) {
         let [x, y] = self.sector();
         fleet.set_current_location_coords_raw([x, y]);
         fleet.set_x_fraction(self.x - Real48::from_int(i32::from(x)));
@@ -58,7 +58,7 @@ impl Motion {
         fleet.set_depth(self.z);
     }
 
-    pub(crate) fn write_to_base(self, base: &mut BaseRecord) {
+    pub(crate) fn write_to_base(self, base: &mut Starbase) {
         let [x, y] = self.sector();
         base.set_coords_raw([x, y]);
         base.set_x_fraction(self.x - Real48::from_int(i32::from(x)));

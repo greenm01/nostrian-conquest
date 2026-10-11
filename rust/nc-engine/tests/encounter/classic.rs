@@ -268,7 +268,7 @@ fn starbases_sight_at_classic_odds_and_never_attack() {
         let mut scenario = board();
         if in_system {
             // A base stays in orbit only over a world of its owner's.
-            scenario.planets.records[13].set_as_owned_target_world(
+            scenario.planets[13].set_as_owned_target_world(
                 sector,
                 [0x64, 0x87],
                 [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
@@ -387,7 +387,7 @@ fn an_attacker_loses_the_ticks_movement() {
         .max_speed(5)
         .heading(Order::MoveOnly, [12, row], false, 1);
     let x_of = |game_data: &nc_data::CoreGameData| {
-        let fleet = &game_data.fleets.records[0];
+        let fleet = &game_data.fleets[0];
         f64::from(fleet.current_location_coords_raw()[0]) + fleet.x_fraction().to_f64()
     };
     let mut alone = board();
@@ -487,7 +487,7 @@ fn a_starbase_reports_what_it_makes_of_the_fleet() {
     ] {
         let mut scenario = board();
         if in_system {
-            scenario.planets.records[13].set_as_owned_target_world(
+            scenario.planets[13].set_as_owned_target_world(
                 sector,
                 [0x64, 0x87],
                 [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
@@ -632,7 +632,7 @@ fn a_holding_fleets_speed_is_zeroed_by_its_dispatch() {
     let (game_data, _) = years(&scenario, &declared(&[]), 0..1)
         .next()
         .expect("one year");
-    let fleet = &game_data.fleets.records[0];
+    let fleet = &game_data.fleets[0];
     assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
     assert_eq!(fleet.current_speed(), 0);
     assert_eq!(fleet.current_location_coords_raw(), sector);

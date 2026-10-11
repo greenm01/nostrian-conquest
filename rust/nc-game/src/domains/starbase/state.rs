@@ -35,7 +35,6 @@ impl StarbaseState {
     ) -> Vec<StarbaseRow> {
         let mut rows = game_data
             .bases
-            .records
             .iter()
             .enumerate()
             .filter(|(_, base)| base.owner_empire_raw() as usize == player_record_index_1_based)

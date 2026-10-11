@@ -1,6 +1,6 @@
 use nc_data::{
     AutoCommissionEntry, AutoCommissionFleetEntry, AutoCommissionStarbaseEntry, CommissionResult,
-    EmpirePlanetEconomyRow, PlanetRecord,
+    EmpirePlanetEconomyRow, Planet,
 };
 use nc_engine::{
     ArmyTransportMode, PlanetCommissionSlotEntry, planet_commission_slot_entries,
@@ -68,9 +68,9 @@ impl DashApp {
         }
     }
 
-    pub(crate) fn owned_planet_record(&self) -> Option<&PlanetRecord> {
+    pub(crate) fn owned_planet_record(&self) -> Option<&Planet> {
         let record = self.owned_planet_popup_record_index_1_based()?;
-        self.game_data.planets.records.get(record.saturating_sub(1))
+        self.game_data.planets.get(record.saturating_sub(1))
     }
 
     pub(crate) fn owned_planet_row(&self) -> Option<EmpirePlanetEconomyRow> {
@@ -596,9 +596,8 @@ impl DashApp {
                 let planet_name = self
                     .game_data
                     .planets
-                    .records
                     .get(record.saturating_sub(1))
-                    .map(PlanetRecord::status_or_name_summary)
+                    .map(Planet::status_or_name_summary)
                     .unwrap_or_else(|| "Planet".to_string());
                 self.game_data.scorch_planet_surface(record)?;
                 self.planet_scorch_orders.insert(record);
@@ -621,7 +620,6 @@ impl DashApp {
     fn any_owned_planet_commission_entries(&self) -> bool {
         self.game_data
             .planets
-            .records
             .iter()
             .filter(|planet| {
                 planet.owner_empire_slot_raw() as usize == self.player_record_index_1_based
@@ -649,7 +647,6 @@ impl DashApp {
                 let fleet_number = self
                     .game_data
                     .fleets
-                    .records
                     .get(fleet_record_index_1_based.saturating_sub(1))
                     .map(|fleet| fleet.local_slot_word_raw())
                     .unwrap_or_default();
@@ -661,7 +658,6 @@ impl DashApp {
                 let base_number = self
                     .game_data
                     .bases
-                    .records
                     .get(base_record_index_1_based.saturating_sub(1))
                     .map(|base| base.base_id_raw())
                     .unwrap_or_default();
@@ -686,7 +682,6 @@ impl DashApp {
     ) -> Vec<PlanetCommissionSlotEntry> {
         self.game_data
             .planets
-            .records
             .get(record.saturating_sub(1))
             .map(planet_commission_slot_entries)
             .unwrap_or_default()
@@ -699,7 +694,6 @@ impl DashApp {
         let max_fleet_number = self
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| fleet.owner_empire_raw() as usize == self.player_record_index_1_based)
             .map(|fleet| fleet.local_slot_word_raw())

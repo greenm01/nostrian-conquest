@@ -10,7 +10,6 @@ fn seed_non_owned_world(
 ) -> usize {
     let (planet_index, planet) = game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() == 0 && planet.coords_raw() == [0, 0])
@@ -27,7 +26,6 @@ fn snapshot_map(
 ) -> BTreeMap<usize, PlanetIntelSnapshot> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter_map(|(planet_index, planet)| {
@@ -86,7 +84,7 @@ fn view_world_prefers_unknown_targets_while_any_remain() {
     assert_eq!(target, Some([8, 8]));
     assert_ne!(
         target,
-        Some(game_data.planets.records[nearer_known_target - 1].coords_raw())
+        Some(game_data.planets[nearer_known_target - 1].coords_raw())
     );
 }
 

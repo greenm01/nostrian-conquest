@@ -48,7 +48,7 @@ pub(crate) fn set_invade_onefleet(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         {
-            let f = &mut data.fleets.records[2];
+            let f = &mut data.fleets[2];
             // The preserved fixture holds the old "invasion armies" byte at
             // 0x08, which classic reads as the high byte of the previous-fleet
             // word.
@@ -66,11 +66,7 @@ pub(crate) fn set_invade_onefleet(
             f.set_troop_transport_count(tt);
         }
         {
-            let p = data
-                .planets
-                .records
-                .get_mut(13)
-                .ok_or("planet record 14 missing")?;
+            let p = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
             p.set_as_owned_target_world(
                 [target_x, target_y],
                 [0x64, 0x87],
@@ -174,7 +170,7 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
 
     // Fleet 2 (empire=1, slot=3): InvadeWorld, speed=3/3, target (15,13),
     // army_count=100, SC=0, BB=100, CA=50, DD=50, TT=50
-    match data.fleets.records.get(2) {
+    match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
             if f.previous_fleet_id() != 0x6402 {
@@ -238,7 +234,7 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     }
 
     // Planet 14 (index 13): Dust Bowl-type world at (15,13), owned empire=2, armies=142, batteries=15
-    match data.planets.records.get(13) {
+    match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
             if p.coords_raw() != [0x0f, 0x0d] {

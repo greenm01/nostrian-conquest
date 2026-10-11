@@ -29,7 +29,7 @@ fn configure_fleet(
     fleet_number: u8,
     coords: [u8; 2],
 ) {
-    let fleet = &mut game_data.fleets.records[fleet_idx];
+    let fleet = &mut game_data.fleets[fleet_idx];
     fleet.set_owner_empire_raw(owner_empire_raw);
     fleet.set_local_slot_word_raw(fleet_number as u16);
     fleet.set_current_location_coords_raw(coords);

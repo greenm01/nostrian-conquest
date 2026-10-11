@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord, Order};
+use nc_data::{CoreGameData, Fleet, FleetDetachSelection, Order};
 use nc_engine::run_maintenance_turn;
 
 fn load_fixture(name: &str) -> CoreGameData {
@@ -16,7 +16,7 @@ fn load_fixture(name: &str) -> CoreGameData {
     load_classic_core_files(&dir).unwrap_or_else(|e| panic!("load fixture {name}: {e}"))
 }
 
-fn set_ships(fleet: &mut FleetRecord, cruisers: u16, destroyers: u16, etacs: u16, roe: u8) {
+fn set_ships(fleet: &mut Fleet, cruisers: u16, destroyers: u16, etacs: u16, roe: u8) {
     fleet.set_battleship_count(0);
     fleet.set_cruiser_count(cruisers);
     fleet.set_destroyer_count(destroyers);
@@ -37,7 +37,7 @@ fn set_ships(fleet: &mut FleetRecord, cruisers: u16, destroyers: u16, etacs: u16
 /// two DDs at ROE 0, #4 an ETAC at ROE 5.
 fn probe_setup() -> CoreGameData {
     let mut game_data = load_fixture("ecmaint-post");
-    let fleets = &mut game_data.fleets.records;
+    let fleets = &mut game_data.fleets;
     set_ships(&mut fleets[0], 1, 0, 1, 6);
     set_ships(&mut fleets[1], 1, 0, 1, 6);
     set_ships(&mut fleets[2], 0, 2, 0, 0);
@@ -57,7 +57,6 @@ fn ships(cruisers: u16, destroyers: u16) -> FleetDetachSelection {
 fn chain(game_data: &CoreGameData) -> Vec<(usize, u16, u16, u16, u16)> {
     game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 1)
@@ -79,8 +78,8 @@ fn a_donor_left_without_warships_drops_to_roe_0() {
     let result = game_data
         .detach_ships_to_new_fleet(1, 1, ships(1, 0), None, 6)
         .expect("detach");
-    assert_eq!(game_data.fleets.records[0].rules_of_engagement(), 0);
-    let new_fleet = &game_data.fleets.records[result.new_fleet_record_index_1_based - 1];
+    assert_eq!(game_data.fleets[0].rules_of_engagement(), 0);
+    let new_fleet = &game_data.fleets[result.new_fleet_record_index_1_based - 1];
     assert_eq!(new_fleet.rules_of_engagement(), 6);
 }
 
@@ -91,8 +90,8 @@ fn a_donor_that_keeps_a_warship_keeps_its_roe() {
         .detach_ships_to_new_fleet(1, 3, ships(0, 1), None, 0)
         .expect("detach");
     // Fleet #3 keeps ROE 0, and the new combat fleet takes the ROE 0 asked for.
-    assert_eq!(game_data.fleets.records[2].rules_of_engagement(), 0);
-    let new_fleet = &game_data.fleets.records[result.new_fleet_record_index_1_based - 1];
+    assert_eq!(game_data.fleets[2].rules_of_engagement(), 0);
+    let new_fleet = &game_data.fleets[result.new_fleet_record_index_1_based - 1];
     assert_eq!(new_fleet.rules_of_engagement(), 0);
 }
 
@@ -106,9 +105,9 @@ fn a_new_fleet_without_warships_gets_roe_0() {
     let result = game_data
         .detach_ships_to_new_fleet(1, 1, etac, None, 6)
         .expect("detach");
-    let new_fleet = &game_data.fleets.records[result.new_fleet_record_index_1_based - 1];
+    let new_fleet = &game_data.fleets[result.new_fleet_record_index_1_based - 1];
     assert_eq!(new_fleet.rules_of_engagement(), 0);
-    assert_eq!(game_data.fleets.records[0].rules_of_engagement(), 6);
+    assert_eq!(game_data.fleets[0].rules_of_engagement(), 6);
 }
 
 #[test]
@@ -117,8 +116,8 @@ fn a_transfer_clears_the_donor_roe_and_leaves_the_host_roe() {
     game_data
         .transfer_ships_between_fleets(1, 2, 4, ships(1, 0))
         .expect("transfer");
-    assert_eq!(game_data.fleets.records[1].rules_of_engagement(), 0);
-    let host = &game_data.fleets.records[3];
+    assert_eq!(game_data.fleets[1].rules_of_engagement(), 0);
+    let host = &game_data.fleets[3];
     assert_eq!(host.cruiser_count(), 1);
     assert_eq!(host.rules_of_engagement(), 5);
 }
@@ -143,7 +142,7 @@ fn new_fleets_join_the_chain_end_and_leave_the_player_tail() {
             (18, 6, 18, 0, 17),
         ]
     );
-    let player = &game_data.player.records[0];
+    let player = &game_data.players[0];
     assert_eq!(player.fleet_chain_head_raw(), 1);
     // ECGAME writes the tail only when it deletes a fleet.
     assert_eq!(player.fleet_chain_tail_raw(), 4);
@@ -152,8 +151,8 @@ fn new_fleets_join_the_chain_end_and_leave_the_player_tail() {
 #[test]
 fn a_new_fleet_in_a_number_gap_moves_contents_not_links() {
     let mut game_data = probe_setup();
-    game_data.fleets.records[2].set_local_slot_word_raw(4);
-    game_data.fleets.records[3].set_local_slot_word_raw(5);
+    game_data.fleets[2].set_local_slot_word_raw(4);
+    game_data.fleets[3].set_local_slot_word_raw(5);
     let result = game_data
         .detach_ships_to_new_fleet(1, 1, ships(1, 0), None, 6)
         .expect("detach");
@@ -172,26 +171,26 @@ fn a_new_fleet_in_a_number_gap_moves_contents_not_links() {
     );
     assert_eq!(result.new_fleet_record_index_1_based, 3);
     assert_eq!(result.donor_fleet_record_index_1_based, 1);
-    let fleets = &game_data.fleets.records;
+    let fleets = &game_data.fleets;
     assert_eq!(fleets[2].cruiser_count(), 1);
     assert_eq!(fleets[3].destroyer_count(), 2);
     assert_eq!(fleets[16].etac_count(), 1);
     assert_eq!(fleets[16].rules_of_engagement(), 5);
-    assert_eq!(game_data.player.records[0].fleet_chain_tail_raw(), 4);
+    assert_eq!(game_data.players[0].fleet_chain_tail_raw(), 4);
 }
 
 #[test]
 fn a_moved_donor_is_reported_at_its_new_record() {
     let mut game_data = probe_setup();
-    game_data.fleets.records[2].set_local_slot_word_raw(4);
-    game_data.fleets.records[3].set_local_slot_word_raw(5);
+    game_data.fleets[2].set_local_slot_word_raw(4);
+    game_data.fleets[3].set_local_slot_word_raw(5);
     // Detaching from fleet #4 (record 3) creates #3, which takes record 3.
     let result = game_data
         .detach_ships_to_new_fleet(1, 3, ships(0, 1), None, 6)
         .expect("detach");
     assert_eq!(result.new_fleet_record_index_1_based, 3);
     assert_eq!(result.donor_fleet_record_index_1_based, 4);
-    let donor = &game_data.fleets.records[3];
+    let donor = &game_data.fleets[3];
     assert_eq!(donor.local_slot_word_raw(), 4);
     assert_eq!(donor.destroyer_count(), 1);
 }
@@ -199,15 +198,14 @@ fn a_moved_donor_is_reported_at_its_new_record() {
 #[test]
 fn commissioning_into_a_number_gap_sorts_the_chain_like_detach() {
     let mut game_data = probe_setup();
-    game_data.fleets.records[2].set_local_slot_word_raw(4);
-    game_data.fleets.records[3].set_local_slot_word_raw(5);
+    game_data.fleets[2].set_local_slot_word_raw(4);
+    game_data.fleets[3].set_local_slot_word_raw(5);
     let planet_idx = game_data
         .planets
-        .records
         .iter()
         .position(|planet| planet.coords_raw() == [16, 13])
         .expect("home world");
-    let planet = &mut game_data.planets.records[planet_idx];
+    let planet = &mut game_data.planets[planet_idx];
     let slot = nc_data::stardock_slot_for_kind(1).expect("destroyer slot");
     planet.set_stardock_count_raw(slot, 1);
 
@@ -225,7 +223,7 @@ fn commissioning_into_a_number_gap_sorts_the_chain_like_detach() {
             (17, 5, 17, 0, 4),
         ]
     );
-    let fleets = &game_data.fleets.records;
+    let fleets = &game_data.fleets;
     assert_eq!(fleets[2].destroyer_count(), 1);
     assert_eq!(fleets[3].destroyer_count(), 2);
     assert_eq!(fleets[16].etac_count(), 1);
@@ -236,14 +234,13 @@ fn a_maintenance_merge_leaves_the_host_roe() {
     // ECMAINT's merge (2895:4a6b) adds the ships and never writes 0x25.
     let mut game_data = probe_setup();
     for (record, cruisers, roe) in [(0, 0, 0), (1, 1, 6)] {
-        let fleet = &mut game_data.fleets.records[record];
+        let fleet = &mut game_data.fleets[record];
         set_ships(fleet, cruisers, 0, 1, roe);
         fleet.set_standing_order_kind(Order::RendezvousSector);
     }
     run_maintenance_turn(&mut game_data).expect("maintenance");
     let host = game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 survives");

@@ -3,8 +3,7 @@ use crate::Real48;
 
 impl CoreGameData {
     pub fn player_fleet_chain_heads_current_known(&self) -> Vec<usize> {
-        self.player
-            .records
+        self.players
             .iter()
             .map(|record| record.fleet_chain_head_raw() as usize)
             .collect()
@@ -14,10 +13,9 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
         player_count > 0
-            && self.fleets.records.len() == expected_fleet_count
+            && self.fleets.len() == expected_fleet_count
             && self
                 .fleets
-                .records
                 .chunks_exact(4)
                 .enumerate()
                 .all(|(block_idx, group)| {
@@ -44,7 +42,6 @@ impl CoreGameData {
 
     pub fn current_known_initialized_fleet_block_head_ids(&self) -> Vec<usize> {
         self.fleets
-            .records
             .chunks(4)
             .filter_map(|group| group.first())
             .map(|record| record.fleet_id() as usize)
@@ -56,16 +53,16 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
-        if self.fleets.records.len() != expected_fleet_count {
+        if self.fleets.len() != expected_fleet_count {
             errors.push(format!(
                 "FLEETS.DAT record count expected {}, got {}",
                 expected_fleet_count,
-                self.fleets.records.len()
+                self.fleets.len()
             ));
             return errors;
         }
 
-        for (block_idx, group) in self.fleets.records.chunks_exact(4).enumerate() {
+        for (block_idx, group) in self.fleets.chunks_exact(4).enumerate() {
             for (slot_idx, record) in group.iter().enumerate() {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
                 let expected_fleet_id = fleet_record_index_1_based as u16;
@@ -123,11 +120,11 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
-        if self.fleets.records.len() != expected_fleet_count {
+        if self.fleets.len() != expected_fleet_count {
             return errors;
         }
 
-        for (block_idx, group) in self.fleets.records.chunks_exact(4).enumerate() {
+        for (block_idx, group) in self.fleets.chunks_exact(4).enumerate() {
             let expected_loc = group[0].current_location_coords_raw();
             let expected_mission = group[0].mission_param_bytes().to_vec();
 
@@ -245,7 +242,7 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
-        if self.fleets.records.len() != expected_fleet_count {
+        if self.fleets.len() != expected_fleet_count {
             return errors;
         }
 
@@ -258,7 +255,7 @@ impl CoreGameData {
 
             for slot_idx in 0..4 {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
-                let record = &self.fleets.records[fleet_record_index_1_based - 1];
+                let record = &self.fleets[fleet_record_index_1_based - 1];
                 if record.standing_order_code_raw() != 5 {
                     errors.push(format!(
                         "FLEET[{}].standing_order expected 5 for initialized baseline, got {}",
@@ -292,7 +289,7 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
-        if self.fleets.records.len() != expected_fleet_count {
+        if self.fleets.len() != expected_fleet_count {
             return errors;
         }
 
@@ -302,7 +299,7 @@ impl CoreGameData {
             else {
                 continue;
             };
-            let fleet = &self.fleets.records[block_idx * 4];
+            let fleet = &self.fleets[block_idx * 4];
             let actual_loc = fleet.current_location_coords_raw();
             let actual_target = fleet.standing_order_target_coords_raw();
             if actual_loc != expected_coords {
@@ -336,7 +333,7 @@ impl CoreGameData {
         aux1: Option<u8>,
     ) -> Vec<String> {
         let mut errors = Vec::new();
-        match self.fleets.records.get(record_index_1_based - 1) {
+        match self.fleets.get(record_index_1_based - 1) {
             Some(record) => {
                 if record.current_speed() != speed {
                     errors.push(format!(

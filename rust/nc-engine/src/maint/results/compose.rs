@@ -14,7 +14,6 @@ impl ReportSuppressionPlan {
     pub(super) fn build(game_data: &CoreGameData, events: &MaintenanceEvents) -> Self {
         let surviving_fleet_report_keys = game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| fleet.has_any_force())
             .filter_map(|fleet| {
@@ -47,7 +46,6 @@ impl ReportSuppressionPlan {
                 } => {
                     let fleet_number = game_data
                         .fleets
-                        .records
                         .get(fleet_idx)
                         .map(|f| f.local_slot_word_raw() as u8)
                         .filter(|n| *n != 0)?;
@@ -99,7 +97,7 @@ pub(super) fn mission_event_has_fleet_destroyed(
     events: &MaintenanceEvents,
     event: &nc_data::MissionEvent,
 ) -> bool {
-    let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
         return false;
     };
     let fleet_number = fleet.local_slot_word_raw() as u8;
@@ -152,7 +150,7 @@ pub(super) enum AbortDisposition {
     Holding,
 }
 
-pub(super) fn fleet_abort_disposition(fleet: &nc_data::FleetRecord) -> AbortDisposition {
+pub(super) fn fleet_abort_disposition(fleet: &nc_data::Fleet) -> AbortDisposition {
     if fleet.standing_order_kind() == Order::SeekHome && fleet.current_speed() > 0 {
         AbortDisposition::Retreating
     } else {

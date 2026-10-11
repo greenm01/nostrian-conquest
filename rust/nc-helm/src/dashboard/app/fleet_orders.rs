@@ -1190,7 +1190,6 @@ impl DashApp {
                 let Some(fleet) = self
                     .game_data
                     .fleets
-                    .records
                     .get(row.fleet_record_index_1_based.saturating_sub(1))
                 else {
                     return vec![false; FLEET_MISSION_OPTIONS.len()];
@@ -1447,7 +1446,6 @@ impl DashApp {
         let target_planet = self
             .game_data
             .planets
-            .records
             .iter()
             .find(|planet| planet.coords_raw() == destination);
         if fleet_order_target_requires_planet_system(mission_code) && target_planet.is_none() {
@@ -1528,7 +1526,6 @@ impl DashApp {
         let speed = self
             .game_data
             .fleets
-            .records
             .get(selected_row.fleet_record_index_1_based.saturating_sub(1))
             .map(|fleet| {
                 let speed = fleet.current_speed();
@@ -1589,7 +1586,6 @@ impl DashApp {
             let speed = self
                 .game_data
                 .fleets
-                .records
                 .get(row.fleet_record_index_1_based.saturating_sub(1))
                 .map(|fleet| {
                     let speed = fleet.current_speed();
@@ -1929,7 +1925,6 @@ impl DashApp {
                 .map(|row| {
                     self.game_data
                         .fleets
-                        .records
                         .get(row.fleet_record_index_1_based - 1)
                         .map(|fleet| fleet.rules_of_engagement())
                         .unwrap_or(0)
@@ -1938,7 +1933,6 @@ impl DashApp {
                     rows.iter().all(|row| {
                         self.game_data
                             .fleets
-                            .records
                             .get(row.fleet_record_index_1_based - 1)
                             .map(|fleet| fleet.rules_of_engagement() == *roe)
                             .unwrap_or(false)
@@ -1989,7 +1983,7 @@ impl DashApp {
         let Some(donor_index) = self.fleet_overlay.transfer_donor_record_index_1_based else {
             return 0;
         };
-        let Some(fleet) = self.game_data.fleets.records.get(donor_index - 1) else {
+        let Some(fleet) = self.game_data.fleets.get(donor_index - 1) else {
             return 0;
         };
         match class {
@@ -2121,7 +2115,6 @@ impl DashApp {
         let Some(fleet) = self
             .game_data
             .fleets
-            .records
             .get(row.fleet_record_index_1_based.saturating_sub(1))
         else {
             return false;

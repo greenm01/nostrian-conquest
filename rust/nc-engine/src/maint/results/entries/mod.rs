@@ -37,7 +37,7 @@ pub struct ReportEntry {
 
 pub fn build_results_dat(game_data: &CoreGameData, events: &MaintenanceEvents) -> Vec<u8> {
     let rows = build_results_rows_with_review(game_data, events);
-    layout_classic_results(&game_data.player.records, &rows).bytes
+    layout_classic_results(&game_data.players, &rows).bytes
 }
 
 pub fn build_results_report_blocks(
@@ -48,9 +48,8 @@ pub fn build_results_report_blocks(
 }
 
 pub fn apply_results_reviewable_flags(game_data: &mut CoreGameData, rows: &[ReportBlockRow]) {
-    layout_classic_results(&game_data.player.records, rows)
-        .apply_to_players(&mut game_data.player.records);
-    for player in &mut game_data.player.records {
+    layout_classic_results(&game_data.players, rows).apply_to_players(&mut game_data.players);
+    for player in &mut game_data.players {
         let has_results = player.classic_results_chain().is_some();
         player.set_classic_results_review_state_present(has_results);
     }
@@ -172,8 +171,7 @@ pub(super) fn build_rows_for_viewer(
 /// empires have no commander, so neither has anyone to review results.
 pub(super) fn occupied_result_viewers(game_data: &CoreGameData) -> Vec<u8> {
     game_data
-        .player
-        .records
+        .players
         .iter()
         .enumerate()
         .filter_map(|(idx, player)| player.is_active_human_player().then_some((idx + 1) as u8))

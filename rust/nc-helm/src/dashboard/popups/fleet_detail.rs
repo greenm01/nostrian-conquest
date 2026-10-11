@@ -97,7 +97,6 @@ fn detail_lines(app: &DashApp, fleet_record_index_1_based: usize) -> Option<Vec<
     let fleet = app
         .game_data
         .fleets
-        .records
         .get(fleet_record_index_1_based.checked_sub(1)?)?;
     let row = fleet_list::table_rows(app)
         .into_iter()

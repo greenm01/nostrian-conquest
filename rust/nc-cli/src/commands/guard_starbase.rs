@@ -40,9 +40,9 @@ pub(crate) fn validate_guard_starbase_scenario(
 
     if errors.is_empty() {
         let linkage = data.guard_starbase_linkage_summary_current_known(1, 1)?;
-        let fleet = &data.fleets.records[0];
-        let player1 = &data.player.records[0];
-        let base = &data.bases.records[0];
+        let fleet = &data.fleets[0];
+        let player1 = &data.players[0];
+        let base = &data.bases[0];
         println!("Valid guard-starbase scenario");
         println!("  PLAYER[1].first_base_record = 1");
         println!(
@@ -71,16 +71,8 @@ pub(crate) fn validate_guard_starbase_scenario(
 
 pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let player1 = data
-        .player
-        .records
-        .first()
-        .ok_or("PLAYER.DAT missing record 1")?;
-    let fleet1 = data
-        .fleets
-        .records
-        .first()
-        .ok_or("FLEETS.DAT missing record 1")?;
+    let player1 = data.players.first().ok_or("PLAYER.DAT missing record 1")?;
+    let fleet1 = data.fleets.first().ok_or("FLEETS.DAT missing record 1")?;
 
     println!("Guard Starbase Report");
     println!("  dir={}", dir.display());
@@ -121,8 +113,8 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
         );
     }
 
-    if let Some(base1) = data.bases.records.first() {
-        println!("  base_count={}", data.bases.records.len());
+    if let Some(base1) = data.bases.first() {
+        println!("  base_count={}", data.bases.len());
         println!(
             "  base[1].escort={} id={} owner={} next={:#06x} record={:#06x} prev={:#06x} coords={:?} moving={} target={:?} target_depth={}",
             base1.escort_fleet_slot_raw(),

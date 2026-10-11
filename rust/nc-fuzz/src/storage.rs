@@ -50,7 +50,7 @@ fn round_trip(
         .latest_player_lifecycle_states(player_count)
         .map_err(|err| format!("lifecycle load failed: {err}"))?;
 
-    let difference = if loaded.game_data.player != game_data.player {
+    let difference = if loaded.game_data.players != game_data.players {
         Some("player records")
     } else if loaded.game_data.planets != game_data.planets {
         Some("planet records")

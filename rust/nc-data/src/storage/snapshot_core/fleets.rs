@@ -2,7 +2,6 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
 use crate::model::{Coords, EmpireId, Fleet, FleetId, Order, RecordNumber, ShipCounts};
-use crate::{FleetDat, FleetRecord};
 
 /// One row per FLEETS.DAT record.
 pub(super) const SCHEMA: &str = "
@@ -40,10 +39,9 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &FleetDat,
+    fleets: &[Fleet],
 ) -> Result<(), CampaignStoreError> {
-    for (index, record) in data.records.iter().enumerate() {
-        let fleet = &record.fleet;
+    for (index, fleet) in fleets.iter().enumerate() {
         let ships = &fleet.ships;
         insert_row(
             tx,
@@ -85,14 +83,13 @@ pub(super) fn write(
 pub(super) fn load(
     conn: &mut Connection,
     snapshot_id: i64,
-) -> Result<FleetDat, CampaignStoreError> {
+) -> Result<Vec<Fleet>, CampaignStoreError> {
     let mut stmt =
         conn.prepare("SELECT * FROM snapshot_fleets WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let records = stmt
         .query_map(params![snapshot_id], fleet_from_row)?
-        .map(|fleet| fleet.map(|fleet| FleetRecord { fleet }))
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(FleetDat { records })
+    Ok(records)
 }
 
 fn fleet_from_row(row: &Row<'_>) -> rusqlite::Result<Fleet> {

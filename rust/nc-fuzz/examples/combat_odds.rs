@@ -150,7 +150,6 @@ fn placement() -> ([usize; 2], [u8; 2]) {
     let data = &built.game_data;
     let first_fleet = |empire: u8| {
         data.fleets
-            .records
             .iter()
             .position(|fleet| fleet.owner_empire_raw() == empire)
             .map(|idx| idx + 1)
@@ -158,11 +157,8 @@ fn placement() -> ([usize; 2], [u8; 2]) {
     };
     let map = map_size_for_player_count(2);
     let occupied = |coords: [u8; 2]| {
-        data.planets
-            .records
-            .iter()
-            .any(|p| p.coords_raw() == coords)
-            || data.bases.records.iter().any(|b| b.coords_raw() == coords)
+        data.planets.iter().any(|p| p.coords_raw() == coords)
+            || data.bases.iter().any(|b| b.coords_raw() == coords)
     };
     let mut empty = None;
     'search: for x in 1..=map {

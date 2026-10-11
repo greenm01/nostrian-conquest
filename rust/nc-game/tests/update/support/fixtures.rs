@@ -120,7 +120,7 @@ pub(crate) fn temp_full_game_copy() -> TempGameDir {
 pub(crate) fn temp_joined_no_assets_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    for planet in &mut state.game_data.planets.records {
+    for planet in &mut state.game_data.planets {
         if planet.owner_empire_slot_raw() == 1 {
             planet.set_owner_empire_slot_raw(0);
             planet.set_ownership_status_raw(0);
@@ -133,13 +133,13 @@ pub(crate) fn temp_joined_no_assets_copy() -> TempGameDir {
 pub(crate) fn temp_joined_empty_empire_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    for planet in &mut state.game_data.planets.records {
+    for planet in &mut state.game_data.planets {
         if planet.owner_empire_slot_raw() == 1 {
             planet.set_owner_empire_slot_raw(0);
             planet.set_ownership_status_raw(0);
         }
     }
-    for fleet in &mut state.game_data.fleets.records {
+    for fleet in &mut state.game_data.fleets {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_owner_empire_raw(0);
         }
@@ -165,7 +165,6 @@ pub(crate) fn first_empty_sector(game_data: &CoreGameData) -> [u8; 2] {
         for y in 1..=map_size {
             if game_data
                 .planets
-                .records
                 .iter()
                 .all(|planet| planet.coords_raw() != [x, y])
             {
@@ -179,7 +178,6 @@ pub(crate) fn first_empty_sector(game_data: &CoreGameData) -> [u8; 2] {
 pub(crate) fn first_other_planet_coords(game_data: &CoreGameData, excluded: [u8; 2]) -> [u8; 2] {
     game_data
         .planets
-        .records
         .iter()
         .map(|planet| planet.coords_raw())
         .find(|coords| *coords != excluded)
@@ -192,7 +190,6 @@ pub(crate) fn temp_game_with_auto_commission_copy() -> TempGameDir {
     let homeworld = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .find(|planet| planet.owner_empire_slot_raw() == 1)
         .expect("owned planet exists");
@@ -206,10 +203,10 @@ pub(crate) fn temp_game_with_auto_commission_copy() -> TempGameDir {
 pub(crate) fn temp_game_with_same_sector_fleets_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    state.game_data.fleets.records[0].set_current_location_coords_raw([6, 5]);
-    state.game_data.fleets.records[0].set_standing_order_target_coords_raw([6, 5]);
-    state.game_data.fleets.records[1].set_current_location_coords_raw([6, 5]);
-    state.game_data.fleets.records[1].set_standing_order_target_coords_raw([6, 5]);
+    state.game_data.fleets[0].set_current_location_coords_raw([6, 5]);
+    state.game_data.fleets[0].set_standing_order_target_coords_raw([6, 5]);
+    state.game_data.fleets[1].set_current_location_coords_raw([6, 5]);
+    state.game_data.fleets[1].set_standing_order_target_coords_raw([6, 5]);
     save_runtime_state(&root, &state);
     root
 }
@@ -289,7 +286,7 @@ pub(crate) fn save_runtime_state_with_intel_and_activity(
 
 pub(crate) fn partial_known_world_snapshot(
     planet_record_index_1_based: usize,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     owner_empire_id: u8,
     year: u16,
 ) -> PlanetIntelSnapshot {
@@ -383,7 +380,6 @@ pub(crate) fn strongest_owned_fleet_number(root: &Path) -> u16 {
     latest_runtime_state(root)
         .game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
         .max_by_key(|fleet| {

@@ -34,7 +34,6 @@ pub(crate) fn set_planet_owner(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         record.set_owner_empire_slot_raw(owner_slot);
@@ -57,7 +56,6 @@ pub(crate) fn set_planet_name(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         record.set_planet_name(name);
@@ -80,7 +78,6 @@ pub(crate) fn set_planet_stats(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         record.set_army_count_raw(armies);
@@ -104,14 +101,13 @@ pub(crate) fn set_planet_potential(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         // The potential, then the present production real's exponent byte.
         record.set_potential_production_points(p1);
-        let mut production = record.planet.production.to_bytes();
+        let mut production = record.production.to_bytes();
         production[0] = p2;
-        record.planet.production = Real48::from_bytes(production);
+        record.production = Real48::from_bytes(production);
         Ok(())
     })?;
 
@@ -130,7 +126,6 @@ pub(crate) fn set_planet_present(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         if !record.set_present_production_points(points) {
@@ -154,7 +149,6 @@ pub(crate) fn set_planet_stored(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         record.set_stored_production_points(points);
@@ -182,7 +176,6 @@ pub(crate) fn set_planet_stardock_slot(
     with_runtime_game_mut(dir, |data| {
         let record = data
             .planets
-            .records
             .get_mut(record_index_1_based - 1)
             .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
         record.set_stardock_count_raw(slot, count);
@@ -231,7 +224,7 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
         ];
 
         for (idx, coords, owner, name, potential, fact_word, tax) in hw_specs {
-            let record = &mut data.planets.records[idx - 1];
+            let record = &mut data.planets[idx - 1];
             record.set_coords_raw(coords);
             record.set_owner_empire_slot_raw(owner);
             record.set_ownership_status_raw(2);
@@ -241,8 +234,8 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
             // goods exponent, and the goods mantissa's top byte.
             let [fact_high, goods_exponent] = u16::to_le_bytes(fact_word);
             record.set_potential_production_points(potential[0]);
-            record.planet.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, fact_high]);
-            record.planet.stored_goods = Real48::from_bytes([goods_exponent, 0, 0, 0, 0, tax]);
+            record.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, fact_high]);
+            record.stored_goods = Real48::from_bytes([goods_exponent, 0, 0, 0, 0, tax]);
             record.set_army_count_raw(if idx == 16 { 142 } else { 10 });
             record.set_ground_batteries_raw(if idx == 16 { 15 } else { 4 });
         }
@@ -268,14 +261,14 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
         ];
 
         for (idx, coords, potential) in unowned_specs {
-            let record = &mut data.planets.records[idx - 1];
+            let record = &mut data.planets[idx - 1];
             record.set_coords_raw(coords);
             record.set_owner_empire_slot_raw(0);
             record.set_ownership_status_raw(0);
             record.set_status_or_name_prefix_raw("Unowned");
             record.set_potential_production_points(potential[0]);
-            record.planet.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, 0]);
-            record.planet.stored_goods = Real48::ZERO;
+            record.production = Real48::from_bytes([potential[1], 0, 0, 0, 0, 0]);
+            record.stored_goods = Real48::ZERO;
             record.set_army_count_raw(0);
             record.set_ground_batteries_raw(0);
         }
@@ -299,7 +292,6 @@ pub(crate) fn print_planet_build_report(
     let data = load_runtime_game_data(dir)?;
     let record = data
         .planets
-        .records
         .get(record_index_1_based - 1)
         .ok_or_else(|| format!("planet record index out of range: {record_index_1_based}"))?;
     println!("Planet Build Report");

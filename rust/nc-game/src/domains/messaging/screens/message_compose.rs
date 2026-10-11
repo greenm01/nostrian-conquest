@@ -51,8 +51,7 @@ impl MessageComposeScreen {
         let mut buffer = new_playfield_for(frame.geometry);
         let rows = frame
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx + 1 != frame.player.record_index_1_based)
@@ -656,11 +655,7 @@ fn visible_window_start(total: usize, visible: usize, cursor_row: usize) -> usiz
 }
 
 fn compose_empire_label(game_data: &nc_data::CoreGameData, empire_id: u8) -> String {
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_id.saturating_sub(1) as usize)
-    else {
+    let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire {empire_id:02}");
     };
     let name = player.controlled_empire_name_summary();

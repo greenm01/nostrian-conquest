@@ -147,7 +147,6 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
     let target = [pick_from(choices, &edges)?, pick_from(choices, &edges)?];
     let max_speed = state
         .fleets
-        .records
         .get(record.wrapping_sub(1))
         .map_or(0, |fleet| fleet.max_speed());
     let speed = pick_from(
@@ -170,7 +169,7 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
 
 /// Own fleets, a foreign fleet, record 0, and records just past the end.
 fn fleet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<usize> {
-    let count = state.fleets.records.len();
+    let count = state.fleets.len();
     let mut records = owned_fleets(state, empire);
     if let Some(foreign) =
         (1..=count).find(|&record| fleet(state, record).owner_empire_raw() != empire)
@@ -182,7 +181,7 @@ fn fleet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<us
 }
 
 fn planet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<usize> {
-    let count = state.planets.records.len();
+    let count = state.planets.len();
     let mut records = owned_planets(state, empire);
     records.extend([0, 1, count, count + 1, u16::MAX as usize]);
     pick_from(choices, &records)
@@ -190,7 +189,7 @@ fn planet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<u
 
 /// Nothing, everything, or one more than the donor carries.
 fn edge_selection(state: &CoreGameData, record: usize, choices: Choices) -> FleetDetachSelection {
-    let Some(donor) = state.fleets.records.get(record.wrapping_sub(1)) else {
+    let Some(donor) = state.fleets.get(record.wrapping_sub(1)) else {
         return FleetDetachSelection {
             destroyers: 1,
             ..FleetDetachSelection::default()

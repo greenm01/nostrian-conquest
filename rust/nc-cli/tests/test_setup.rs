@@ -29,12 +29,9 @@ fn player_name_updates_handle_and_empire() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
+    assert_eq!(data.players[0].assigned_player_handle_summary(), "tester01");
     assert_eq!(
-        data.player.records[0].assigned_player_handle_summary(),
-        "tester01"
-    );
-    assert_eq!(
-        data.player.records[0].controlled_empire_name_summary(),
+        data.players[0].controlled_empire_name_summary(),
         "Auroran_Combine"
     );
 
@@ -75,12 +72,9 @@ fn classic_login_prepare_sets_matching_handle_without_renaming_empire_by_default
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
+    assert_eq!(data.players[0].assigned_player_handle_summary(), "SYSOP");
     assert_eq!(
-        data.player.records[0].assigned_player_handle_summary(),
-        "SYSOP"
-    );
-    assert_eq!(
-        data.player.records[0].controlled_empire_name_summary(),
+        data.players[0].controlled_empire_name_summary(),
         "Auroran_Combine"
     );
 
@@ -112,11 +106,8 @@ fn player_join_seeds_last_run_year_for_returning_player_state() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.player.records[0].last_run_year_raw(), 3000);
-    assert_eq!(
-        data.player.records[0].assigned_player_handle_summary(),
-        "SYSOP"
-    );
+    assert_eq!(data.players[0].last_run_year_raw(), 3000);
+    assert_eq!(data.players[0].assigned_player_handle_summary(), "SYSOP");
 
     cleanup_dir(&target);
 }
@@ -144,7 +135,7 @@ fn economy_starbase_probe_init_creates_matched_plain_and_starbase_colonies() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
+    assert_eq!(data.players[0].first_base_record_raw(), 1);
 
     let rows = data.empire_planet_economy_rows(1);
     let plain = rows
@@ -213,9 +204,9 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.fleets.records.len(), 17);
-    let donor = &data.fleets.records[0];
-    let new_fleet = &data.fleets.records[16];
+    assert_eq!(data.fleets.len(), 17);
+    let donor = &data.fleets[0];
+    let new_fleet = &data.fleets[16];
     assert_eq!(donor.battleship_count(), 7);
     assert_eq!(donor.cruiser_count(), 8);
     assert_eq!(donor.destroyer_count(), 11);

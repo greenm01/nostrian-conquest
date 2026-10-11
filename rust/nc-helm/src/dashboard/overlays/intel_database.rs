@@ -466,8 +466,7 @@ fn format_intel_row(
         Some(0) => String::from("Unowned"),
         Some(owner) => app
             .game_data
-            .player
-            .records
+            .players
             .get(owner.saturating_sub(1) as usize)
             .map(|player| {
                 if player.is_civil_disorder_player() {

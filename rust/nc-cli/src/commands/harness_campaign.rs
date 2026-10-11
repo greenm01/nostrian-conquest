@@ -654,8 +654,7 @@ fn default_player_assignments(
     game_id: &str,
 ) -> Vec<PlayerAssignment> {
     let mut players = game_data
-        .player
-        .records
+        .players
         .iter()
         .enumerate()
         .filter(|(_, record)| {

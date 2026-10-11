@@ -53,7 +53,7 @@ pub(crate) fn set_econ(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         {
-            let f = &mut data.fleets.records[2];
+            let f = &mut data.fleets[2];
             f.set_max_speed(3);
             f.set_current_speed(3);
             f.set_standing_order_kind(Order::BombardWorld);
@@ -63,11 +63,7 @@ pub(crate) fn set_econ(
             f.set_destroyer_count(dd);
         }
         {
-            let p = data
-                .planets
-                .records
-                .get_mut(13)
-                .ok_or("planet record 14 missing")?;
+            let p = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
             p.set_as_owned_target_world(
                 [p14_x, p14_y],
                 [0x64, 0x87],
@@ -189,7 +185,7 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
     let mut errors = Vec::new();
 
     // Fleet 2 (empire=1, slot=3): BombardWorld, speed=3/3, target (15,13), BB=50, CA=50
-    match data.fleets.records.get(2) {
+    match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
             if f.max_speed() != 3 {
@@ -232,7 +228,7 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
     }
 
     // Planet 14 (index 13): Dust Bowl-type world at (15,13), owned empire=2, armies=142, batteries=15
-    match data.planets.records.get(13) {
+    match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
             if p.coords_raw() != [0x0f, 0x0d] {

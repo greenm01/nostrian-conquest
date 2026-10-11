@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{PlayerRecord, ReportBlockRow};
+use crate::{Player, ReportBlockRow};
 
 pub const CLASSIC_RESULTS_RECORD_SIZE: usize = 84;
 const CHAIN_ID_OFFSET: usize = 74;
@@ -34,7 +34,7 @@ impl ClassicResultsLayout {
     }
 
     /// Point every `PLAYER.DAT` record at its chain in this file.
-    pub fn apply_to_players(&self, players: &mut [PlayerRecord]) {
+    pub fn apply_to_players(&self, players: &mut [Player]) {
         for (idx, player) in players.iter_mut().enumerate() {
             player.set_classic_results_chain(self.chain_for((idx + 1) as u8));
         }
@@ -49,10 +49,7 @@ impl ClassicResultsLayout {
 /// into the chain of every active human empire, because a classic header
 /// belongs to exactly one chain. Deleted rows and rows without classic record
 /// bytes are left out.
-pub fn layout_classic_results(
-    players: &[PlayerRecord],
-    rows: &[ReportBlockRow],
-) -> ClassicResultsLayout {
+pub fn layout_classic_results(players: &[Player], rows: &[ReportBlockRow]) -> ClassicResultsLayout {
     let broadcast_viewers = players
         .iter()
         .enumerate()
@@ -128,7 +125,7 @@ pub fn layout_classic_results(
 ///
 /// Keys are 1-based header record indexes. Headers no chain reaches are
 /// absent.
-pub fn classic_results_header_viewers(players: &[PlayerRecord], bytes: &[u8]) -> BTreeMap<u16, u8> {
+pub fn classic_results_header_viewers(players: &[Player], bytes: &[u8]) -> BTreeMap<u16, u8> {
     let record_count = bytes.len() / CLASSIC_RESULTS_RECORD_SIZE;
     let mut viewers = BTreeMap::new();
     for (idx, player) in players.iter().enumerate() {

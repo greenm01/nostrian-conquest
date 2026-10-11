@@ -57,7 +57,7 @@ fn join_player(
 }
 
 fn hold_all_fleets_in_place(game_data: &mut CoreGameData) {
-    for fleet in &mut game_data.fleets.records {
+    for fleet in &mut game_data.fleets {
         let coords = fleet.current_location_coords_raw();
         fleet.set_standing_order_kind(Order::GuardBlockadeWorld);
         fleet.set_standing_order_target_coords_raw(coords);
@@ -96,7 +96,6 @@ fn load_runtime_state(dir: &Path) -> CampaignRuntimeState {
 fn first_owned_planet_coords(game_data: &CoreGameData, owner: u8) -> [u8; 2] {
     game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() == owner)
         .map(|planet| planet.coords_raw())
@@ -106,12 +105,11 @@ fn first_owned_planet_coords(game_data: &CoreGameData, owner: u8) -> [u8; 2] {
 fn first_unowned_planet_coords(game_data: &CoreGameData, excluded: &[[u8; 2]]) -> [u8; 2] {
     game_data
         .planets
-        .records
         .iter()
         .map(|planet| planet.coords_raw())
         .find(|coords| {
             !excluded.contains(coords)
-                && game_data.planets.records.iter().any(|planet| {
+                && game_data.planets.iter().any(|planet| {
                     planet.coords_raw() == *coords && planet.owner_empire_slot_raw() == 0
                 })
         })
@@ -120,7 +118,7 @@ fn first_unowned_planet_coords(game_data: &CoreGameData, excluded: &[[u8; 2]]) -
 
 fn assert_runtime_playability_invariants(runtime: &CampaignRuntimeState) {
     validate_maintenance_state(&runtime.game_data).expect("runtime state should remain valid");
-    for fleet in &runtime.game_data.fleets.records {
+    for fleet in &runtime.game_data.fleets {
         assert!(
             fleet.current_speed() <= fleet.max_speed(),
             "fleet speed should never exceed max speed"
@@ -143,7 +141,7 @@ fn assert_runtime_playability_invariants(runtime: &CampaignRuntimeState) {
 fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
     let target = unique_temp_dir("nc-sysop-maint-view-world");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let viewer = &mut game_data.fleets.records[0];
+    let viewer = &mut game_data.fleets[0];
     viewer.set_standing_order_kind(Order::ViewWorld);
     viewer.set_standing_order_target_coords_raw([15, 13]);
     viewer.set_scout_count(0);
@@ -171,7 +169,7 @@ fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
     let intel = store
         .latest_planet_intel_for_viewer(1)
         .expect("load viewer intel");
-    let target_world = &runtime.game_data.planets.records[13];
+    let target_world = &runtime.game_data.planets[13];
     let snapshot = intel
         .iter()
         .find(|snapshot| snapshot.planet_record_index_1_based == 14)
@@ -201,7 +199,7 @@ fn nc_sysop_maint_persists_view_world_reports_and_runtime_intel() {
 fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
     let target = unique_temp_dir("nc-sysop-maint-unread-reports");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let viewer = &mut game_data.fleets.records[0];
+    let viewer = &mut game_data.fleets[0];
     viewer.set_standing_order_kind(Order::ViewWorld);
     viewer.set_standing_order_target_coords_raw([15, 13]);
     viewer.set_scout_count(0);
@@ -256,7 +254,7 @@ fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
 fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     let target = unique_temp_dir("nc-sysop-maint-scout-system");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let scout = &mut game_data.fleets.records[0];
+    let scout = &mut game_data.fleets[0];
     scout.set_standing_order_kind(Order::ScoutSolarSystem);
     scout.set_standing_order_target_coords_raw([15, 13]);
     scout.set_scout_count(1);
@@ -264,7 +262,7 @@ fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     // Cruiser speed settles in orbit one sector away within the year.
     scout.recompute_max_speed_from_composition();
     scout.set_current_speed(scout.max_speed());
-    game_data.planets.records[13].set_stardock_count_raw(0, 2);
+    game_data.planets[13].set_stardock_count_raw(0, 2);
     seed_runtime_snapshot(&target, &game_data);
 
     let stdout = run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
@@ -285,7 +283,7 @@ fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     let intel = store
         .latest_planet_intel_for_viewer(1)
         .expect("load viewer intel");
-    let target_world = &runtime.game_data.planets.records[13];
+    let target_world = &runtime.game_data.planets[13];
     let snapshot = intel
         .iter()
         .find(|snapshot| snapshot.planet_record_index_1_based == 14)
@@ -341,14 +339,12 @@ fn nc_sysop_maint_persists_bombardment_report_and_runtime_damage() {
     let pre = load_fixture("ecmaint-bombard-arrive");
     let target_coords = pre
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.standing_order_kind() == Order::BombardWorld)
         .map(|fleet| fleet.standing_order_target_coords_raw())
         .expect("bombard fixture should contain a bombardment fleet");
     let pre_target = pre
         .planets
-        .records
         .iter()
         .find(|planet| planet.coords_raw() == target_coords)
         .expect("bombard target world should exist");
@@ -363,7 +359,6 @@ fn nc_sysop_maint_persists_bombardment_report_and_runtime_damage() {
     let post_target = runtime
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.coords_raw() == target_coords)
         .expect("bombard target world should remain present");
@@ -399,15 +394,15 @@ fn nc_sysop_maint_persists_join_host_destroyed_report_and_runtime_state() {
     let target = unique_temp_dir("nc-sysop-maint-join-host-destroyed");
     let mut game_data = load_fixture("ecmaint-post");
 
-    let host_number = game_data.fleets.records[0].local_slot_word_raw();
-    game_data.fleets.records[0].set_destroyer_count(0);
-    game_data.fleets.records[0].set_cruiser_count(0);
-    game_data.fleets.records[0].set_battleship_count(0);
-    game_data.fleets.records[0].set_scout_count(0);
-    game_data.fleets.records[0].set_troop_transport_count(0);
-    game_data.fleets.records[0].set_etac_count(0);
+    let host_number = game_data.fleets[0].local_slot_word_raw();
+    game_data.fleets[0].set_destroyer_count(0);
+    game_data.fleets[0].set_cruiser_count(0);
+    game_data.fleets[0].set_battleship_count(0);
+    game_data.fleets[0].set_scout_count(0);
+    game_data.fleets[0].set_troop_transport_count(0);
+    game_data.fleets[0].set_etac_count(0);
 
-    let joiner = &mut game_data.fleets.records[1];
+    let joiner = &mut game_data.fleets[1];
     joiner.set_current_location_coords_raw([7, 9]);
     joiner.set_standing_order_kind(Order::JoinAnotherFleet);
     joiner.set_join_host_fleet_id_raw(host_number);
@@ -420,7 +415,7 @@ fn nc_sysop_maint_persists_join_host_destroyed_report_and_runtime_state() {
     assert!(stdout.contains("Rust maintenance complete."));
 
     let runtime = load_runtime_state(&target);
-    let joiner = &runtime.game_data.fleets.records[0];
+    let joiner = &runtime.game_data.fleets[0];
 
     assert!(runtime.report_block_rows.iter().any(|row| {
         row.decoded_text.contains("Join mission summary")
@@ -448,7 +443,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         .build_initialized_baseline()
         .expect("baseline should build");
 
-    for fleet in &mut game_data.fleets.records {
+    for fleet in &mut game_data.fleets {
         let coords = fleet.current_location_coords_raw();
         fleet.set_standing_order_kind(Order::HoldPosition);
         fleet.set_standing_order_target_coords_raw(coords);
@@ -461,7 +456,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
 
     let player1_fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 1)
@@ -469,7 +463,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         .collect::<Vec<_>>();
     let player2_fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 2)
@@ -477,7 +470,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         .collect::<Vec<_>>();
     let player3_fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 3)
@@ -485,7 +477,6 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         .collect::<Vec<_>>();
     let player4_fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 4)
@@ -493,7 +484,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         .collect::<Vec<_>>();
 
     {
-        let viewer = &mut game_data.fleets.records[player1_fleets[0]];
+        let viewer = &mut game_data.fleets[player1_fleets[0]];
         viewer.set_cruiser_count(1);
         viewer.set_destroyer_count(0);
         viewer.set_battleship_count(0);
@@ -507,9 +498,9 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         viewer.set_current_speed(viewer.max_speed());
         viewer.set_current_speed(viewer.max_speed());
     }
-    let host_number = game_data.fleets.records[player4_fleets[0]].local_slot_word_raw();
+    let host_number = game_data.fleets[player4_fleets[0]].local_slot_word_raw();
     {
-        let host = &mut game_data.fleets.records[player4_fleets[0]];
+        let host = &mut game_data.fleets[player4_fleets[0]];
         host.set_cruiser_count(1);
         host.set_destroyer_count(0);
         host.set_battleship_count(0);
@@ -525,7 +516,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         host.set_current_speed(host.max_speed());
     }
     {
-        let joiner = &mut game_data.fleets.records[player4_fleets[1]];
+        let joiner = &mut game_data.fleets[player4_fleets[1]];
         joiner.set_cruiser_count(1);
         joiner.set_destroyer_count(0);
         joiner.set_battleship_count(0);
@@ -542,7 +533,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         joiner.set_current_speed(joiner.max_speed());
     }
     {
-        let bombard = &mut game_data.fleets.records[player2_fleets[0]];
+        let bombard = &mut game_data.fleets[player2_fleets[0]];
         bombard.set_destroyer_count(1);
         bombard.set_cruiser_count(0);
         bombard.set_battleship_count(0);
@@ -558,7 +549,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
         bombard.set_current_speed(bombard.max_speed());
     }
     {
-        let colonizer = &mut game_data.fleets.records[player3_fleets[0]];
+        let colonizer = &mut game_data.fleets[player3_fleets[0]];
         colonizer.set_etac_count(3);
         colonizer.set_cruiser_count(0);
         colonizer.set_destroyer_count(0);
@@ -582,7 +573,7 @@ fn nc_sysop_maint_multi_turn_canary_preserves_playability_invariants() {
     // The home guards of empires 1 and 2 hold fire (ROE 0), so the viewer
     // and the bomber reach orbit whatever the sighting rolls.
     for &idx in player1_fleets[1..].iter().chain(player2_fleets[1..].iter()) {
-        game_data.fleets.records[idx].set_rules_of_engagement(0);
+        game_data.fleets[idx].set_rules_of_engagement(0);
     }
 
     seed_runtime_snapshot(&target, &game_data);
@@ -633,22 +624,22 @@ fn nc_sysop_maint_scopes_runtime_reports_and_intel_per_viewer() {
     join_player(&mut game_data, 4, "Empire Four", "Bastion");
     hold_all_fleets_in_place(&mut game_data);
 
-    let player_1_coords = game_data.planets.records[13].coords_raw();
-    let player_4_coords = game_data.planets.records[6].coords_raw();
+    let player_1_coords = game_data.planets[13].coords_raw();
+    let player_4_coords = game_data.planets[6].coords_raw();
     // Cruiser speed settles in orbit one sector away within the year.
     for idx in [0, 12] {
-        let fleet = &mut game_data.fleets.records[idx];
+        let fleet = &mut game_data.fleets[idx];
         fleet.set_etac_count(0);
         fleet.recompute_max_speed_from_composition();
     }
-    let player_1_speed = game_data.fleets.records[0].max_speed();
-    let player_4_speed = game_data.fleets.records[12].max_speed();
-    game_data.fleets.records[0].set_standing_order_kind(Order::ViewWorld);
-    game_data.fleets.records[0].set_standing_order_target_coords_raw(player_1_coords);
-    game_data.fleets.records[0].set_current_speed(player_1_speed);
-    game_data.fleets.records[12].set_standing_order_kind(Order::ViewWorld);
-    game_data.fleets.records[12].set_standing_order_target_coords_raw(player_4_coords);
-    game_data.fleets.records[12].set_current_speed(player_4_speed);
+    let player_1_speed = game_data.fleets[0].max_speed();
+    let player_4_speed = game_data.fleets[12].max_speed();
+    game_data.fleets[0].set_standing_order_kind(Order::ViewWorld);
+    game_data.fleets[0].set_standing_order_target_coords_raw(player_1_coords);
+    game_data.fleets[0].set_current_speed(player_1_speed);
+    game_data.fleets[12].set_standing_order_kind(Order::ViewWorld);
+    game_data.fleets[12].set_standing_order_target_coords_raw(player_4_coords);
+    game_data.fleets[12].set_current_speed(player_4_speed);
     seed_runtime_snapshot(&target, &game_data);
 
     let stdout = run_nc_sysop(&["maint", target.to_str().expect("utf-8 path"), "1"]);
@@ -747,8 +738,8 @@ fn nc_sysop_maint_view_world_on_station_generates_report() {
 
     // Place fleet 0 at the coords of planet 13 with ViewWorld order and
     // speed=0 so it has nothing to travel — it is already on station.
-    let planet_coords = game_data.planets.records[13].coords_raw();
-    let viewer = &mut game_data.fleets.records[0];
+    let planet_coords = game_data.planets[13].coords_raw();
+    let viewer = &mut game_data.fleets[0];
     viewer.set_current_location_coords_raw(planet_coords);
     viewer.set_standing_order_kind(Order::ViewWorld);
     viewer.set_standing_order_target_coords_raw(planet_coords);
@@ -786,7 +777,7 @@ fn nc_sysop_maint_view_world_on_station_generates_report() {
 
     // ViewWorld is one-shot: the order must revert to HoldPosition after firing.
     assert_eq!(
-        runtime.game_data.fleets.records[0].standing_order_kind(),
+        runtime.game_data.fleets[0].standing_order_kind(),
         Order::HoldPosition,
         "on-station ViewWorld must reset to HoldPosition after firing"
     );
@@ -803,8 +794,8 @@ fn nc_sysop_maint_scout_sector_on_station_persists_report() {
     let target = unique_temp_dir("nc-sysop-maint-scout-sector-on-station");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
 
-    let planet_coords = game_data.planets.records[13].coords_raw();
-    let scout = &mut game_data.fleets.records[0];
+    let planet_coords = game_data.planets[13].coords_raw();
+    let scout = &mut game_data.fleets[0];
     scout.set_current_location_coords_raw(planet_coords);
     scout.set_standing_order_kind(Order::ScoutSector);
     scout.set_standing_order_target_coords_raw(planet_coords);
@@ -830,7 +821,7 @@ fn nc_sysop_maint_scout_sector_on_station_persists_report() {
         "on-station ScoutSector must not emit a repeating status report"
     );
     assert_eq!(
-        runtime.game_data.fleets.records[0].standing_order_kind(),
+        runtime.game_data.fleets[0].standing_order_kind(),
         Order::ScoutSector,
         "ScoutSector must persist on station after firing"
     );
@@ -845,8 +836,8 @@ fn nc_sysop_maint_scout_system_on_station_persists_report_and_intel() {
     let target = unique_temp_dir("nc-sysop-maint-scout-system-on-station");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
 
-    let planet_coords = game_data.planets.records[13].coords_raw();
-    let scout = &mut game_data.fleets.records[0];
+    let planet_coords = game_data.planets[13].coords_raw();
+    let scout = &mut game_data.fleets[0];
     scout.set_current_location_coords_raw(planet_coords);
     scout.set_standing_order_kind(Order::ScoutSolarSystem);
     scout.set_standing_order_target_coords_raw(planet_coords);
@@ -882,7 +873,7 @@ fn nc_sysop_maint_scout_system_on_station_persists_report_and_intel() {
     );
 
     assert_eq!(
-        runtime.game_data.fleets.records[0].standing_order_kind(),
+        runtime.game_data.fleets[0].standing_order_kind(),
         Order::ScoutSolarSystem,
         "ScoutSolarSystem must persist on station after firing"
     );
@@ -901,7 +892,7 @@ fn nc_sysop_maint_view_world_reports_when_the_fleet_settles_not_on_sector_entry(
     let target_dir = unique_temp_dir("nc-sysop-maint-view-world-settles");
     let mut game_data = load_fixture("ecmaint-fleet-pre");
 
-    let viewer = &mut game_data.fleets.records[0];
+    let viewer = &mut game_data.fleets[0];
     viewer.set_current_location_coords_raw([5, 3]);
     viewer.set_standing_order_kind(Order::ViewWorld);
     viewer.set_standing_order_target_coords_raw([7, 4]);
@@ -916,8 +907,7 @@ fn nc_sysop_maint_view_world_reports_when_the_fleet_settles_not_on_sector_entry(
             .load_latest_runtime_state()
             .expect("load runtime state")
             .expect("runtime snapshot should exist");
-        let in_target_sector =
-            runtime.game_data.fleets.records[0].current_location_coords_raw() == [7, 4];
+        let in_target_sector = runtime.game_data.fleets[0].current_location_coords_raw() == [7, 4];
         let reported = runtime
             .report_block_rows
             .iter()

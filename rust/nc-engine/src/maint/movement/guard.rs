@@ -20,17 +20,17 @@ impl YearMovement<'_> {
         fleet_idx: usize,
         tick: u8,
     ) {
-        let fleet = &game_data.fleets.records[fleet_idx];
+        let fleet = &game_data.fleets[fleet_idx];
         let owner = fleet.owner_empire_raw();
         let base_id = fleet.guard_starbase_index_raw();
         let sector = fleet.current_location_coords_raw();
-        let Some(base_idx) = game_data.bases.records.iter().position(|base| {
+        let Some(base_idx) = game_data.bases.iter().position(|base| {
             base.base_id_raw() != 0
                 && base.owner_empire_raw() == owner
                 && base.base_id_raw() == base_id
         }) else {
             // The base is gone: the guard holds where it is (`0b5d:0c17`).
-            let fleet = &mut game_data.fleets.records[fleet_idx];
+            let fleet = &mut game_data.fleets[fleet_idx];
             let previous_target_coords = fleet.standing_order_target_coords_raw();
             fleet.set_standing_order_kind(Order::HoldPosition);
             fleet.set_current_speed(0);
@@ -46,7 +46,7 @@ impl YearMovement<'_> {
                 });
             return;
         };
-        let base = &game_data.bases.records[base_idx];
+        let base = &game_data.bases[base_idx];
         let fleet_layer = layer(fleet.depth());
         let base_layer = layer(base.depth());
         if sector == base.coords_raw()
@@ -57,7 +57,7 @@ impl YearMovement<'_> {
             // At rest in orbit under a base in deep space: its target is
             // the orbit it sits in, so it would never move. It climbs to
             // the base and arrives there. Classic leaves it in orbit (t040).
-            let fleet = &mut game_data.fleets.records[fleet_idx];
+            let fleet = &mut game_data.fleets[fleet_idx];
             fleet.set_mission_target(base_layer, fleet.mission_id_raw());
             return;
         }
@@ -65,11 +65,11 @@ impl YearMovement<'_> {
             return;
         }
         self.tracks[fleet_idx].resolve(fleet);
-        game_data.fleets.records[fleet_idx].set_current_speed(0);
+        game_data.fleets[fleet_idx].set_current_speed(0);
 
         // Another guard of the base already at rest here takes this one in.
-        let partner = (0..game_data.fleets.records.len()).find(|&other| {
-            let guard = &game_data.fleets.records[other];
+        let partner = (0..game_data.fleets.len()).find(|&other| {
+            let guard = &game_data.fleets[other];
             other != fleet_idx
                 && self.in_play(game_data, other)
                 && guard.owner_empire_raw() == owner
@@ -97,7 +97,7 @@ impl YearMovement<'_> {
             }
             Some(_) => {
                 // The merge would pass the ship limit: the guard gives up.
-                game_data.fleets.records[fleet_idx].set_standing_order_kind(Order::HoldPosition);
+                game_data.fleets[fleet_idx].set_standing_order_kind(Order::HoldPosition);
                 event.outcome = MissionOutcome::Failed;
             }
             None => {
@@ -106,13 +106,13 @@ impl YearMovement<'_> {
                 // once. Classic keeps the target layer, and a guard whose
                 // layer differs from the base's arrives again every tick
                 // (t040).
-                let base_depth = game_data.bases.records[base_idx].depth();
-                let fleet = &mut game_data.fleets.records[fleet_idx];
+                let base_depth = game_data.bases[base_idx].depth();
+                let fleet = &mut game_data.fleets[fleet_idx];
                 fleet.set_depth(base_depth);
                 fleet.set_mission_target(base_layer, fleet.mission_id_raw());
                 let slot = fleet.local_slot_word_raw();
-                game_data.bases.records[base_idx].set_escort_fleet_slot_raw(slot);
-                self.tracks[fleet_idx].resolve(&game_data.fleets.records[fleet_idx]);
+                game_data.bases[base_idx].set_escort_fleet_slot_raw(slot);
+                self.tracks[fleet_idx].resolve(&game_data.fleets[fleet_idx]);
             }
         }
         self.events.mission_events.push(event);

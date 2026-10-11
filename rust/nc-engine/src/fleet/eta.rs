@@ -120,7 +120,7 @@ pub fn fleet_eta_estimate_sort_key(estimate: FleetEtaEstimate) -> (u8, u16) {
 }
 
 fn fleet_display_eta_estimate(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
-    let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
     if fleet.standing_order_kind() == Order::HoldPosition {

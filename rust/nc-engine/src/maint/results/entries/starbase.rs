@@ -36,7 +36,7 @@ pub fn push_starbase_entries(
                 response,
             } => {
                 let planet = planet_idx
-                    .and_then(|idx| game_data.planets.records.get(idx))
+                    .and_then(|idx| game_data.planets.get(idx))
                     .map_or_else(String::new, |planet| planet.planet_name());
                 let action = match response {
                     LostWorldResponse::Holding => {
@@ -91,7 +91,6 @@ pub fn push_starbase_entries(
 pub fn starbase_at(game_data: &CoreGameData, owner: u8, coords: [u8; 2]) -> String {
     game_data
         .bases
-        .records
         .iter()
         .find(|base| {
             base.coords_raw() == coords

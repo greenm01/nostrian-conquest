@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 
 use crate::dashboard::geometry::ScreenGeometry;
 use nc_data::{
-    BaseRecord, CampaignStore, CoreGameData, FleetRecord, GameStateBuilder, IntelTier, Order,
-    PlanetIntelSnapshot, PlanetRecord, PlayerActivityState, PlayerLifecycleState,
-    PlayerWarStatsState, QueuedPlayerMail, ReportBlockRow, ReportsPreview, WinnerState,
+    CampaignStore, CoreGameData, Fleet, GameStateBuilder, IntelTier, Order, Planet,
+    PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
+    QueuedPlayerMail, ReportBlockRow, ReportsPreview, Starbase, WinnerState,
     default_player_lifecycle_states, has_visible_runtime_messages, has_visible_runtime_reports,
 };
 use nc_nostr::state_sync::{GameState, HostedFleetShips, HostedOwnedFleet, HostedWorldState};
@@ -177,8 +177,7 @@ impl DashLaunchState {
 
             let player_record = app
                 .game_data
-                .player
-                .records
+                .players
                 .get(app.player_record_index_1_based.saturating_sub(1));
             let results_word = player_record
                 .map(|p| p.classic_results_review_word_raw())
@@ -281,17 +280,14 @@ fn ensure_planet_capacity(game_data: &mut CoreGameData, snapshot: &GameState) {
         )
         .max()
         .unwrap_or(0);
-    if max_index > game_data.planets.records.len() {
-        game_data
-            .planets
-            .records
-            .resize_with(max_index, PlanetRecord::new_zeroed);
+    if max_index > game_data.planets.len() {
+        game_data.planets.resize_with(max_index, Planet::default);
     }
 }
 
 fn set_player_records(game_data: &mut CoreGameData, snapshot: &GameState, player_count: u8) {
     for seat in 1..=player_count as usize {
-        if let Some(player) = game_data.player.records.get_mut(seat - 1) {
+        if let Some(player) = game_data.players.get_mut(seat - 1) {
             player.set_player_mode_raw(0x01);
             player.set_controlled_empire_name_raw(&format!("Empire {seat}"));
             player.set_tax_rate_raw(50);
@@ -305,17 +301,13 @@ fn set_player_records(game_data: &mut CoreGameData, snapshot: &GameState, player
         if empire_id == 0 || empire_id > usize::from(player_count) {
             continue;
         }
-        if let Some(player) = game_data.player.records.get_mut(empire_id - 1) {
+        if let Some(player) = game_data.players.get_mut(empire_id - 1) {
             player.set_controlled_empire_name_raw(&roster_entry.empire_name);
         }
     }
 
     let viewer_index = snapshot.player_seat as usize;
-    if let Some(player) = game_data
-        .player
-        .records
-        .get_mut(viewer_index.saturating_sub(1))
-    {
+    if let Some(player) = game_data.players.get_mut(viewer_index.saturating_sub(1)) {
         player.set_controlled_empire_name_raw(&snapshot.state.player.empire_name);
         if let Some(handle) = snapshot.state.player.handle.as_deref() {
             player.set_assigned_player_handle_raw(handle);
@@ -336,7 +328,6 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
     for world in &snapshot.state.starmap.worlds {
         let Some(record) = game_data
             .planets
-            .records
             .get_mut(world.planet_index.saturating_sub(1))
         else {
             continue;
@@ -368,7 +359,6 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
     for planet in &snapshot.state.owned_planets {
         let Some(record) = game_data
             .planets
-            .records
             .get_mut(planet.planet_index.saturating_sub(1))
         else {
             continue;
@@ -393,13 +383,13 @@ fn set_planets(game_data: &mut CoreGameData, snapshot: &GameState) {
 
 fn set_bases(game_data: &mut CoreGameData, snapshot: &GameState) {
     let mut next_base_id = 1u16;
-    let mut records: Vec<BaseRecord> = Vec::new();
+    let mut records: Vec<Starbase> = Vec::new();
     for planet in &snapshot.state.owned_planets {
         for slot in 0..planet.starbase_count.max(1) {
             if slot >= planet.starbase_count {
                 break;
             }
-            let mut base = BaseRecord::new_zeroed();
+            let mut base = Starbase::default();
             base.set_base_id_raw(next_base_id);
             base.set_owner_empire_raw(snapshot.player_seat as u8);
             base.set_record_number_raw(next_base_id);
@@ -415,27 +405,24 @@ fn set_bases(game_data: &mut CoreGameData, snapshot: &GameState) {
             next_base_id = next_base_id.saturating_add(1);
         }
     }
-    game_data.bases.records = records;
+    game_data.bases = records;
     game_data.relink_base_chain(snapshot.player_seat as u8);
     game_data.sync_last_base_records();
 }
 
 fn set_fleets(game_data: &mut CoreGameData, snapshot: &GameState) {
     let count = snapshot.state.owned_fleets.len().max(1);
-    game_data
-        .fleets
-        .records
-        .resize_with(count, FleetRecord::new_zeroed);
+    game_data.fleets.resize_with(count, Fleet::default);
     for (idx, fleet) in snapshot.state.owned_fleets.iter().enumerate() {
-        let Some(record) = game_data.fleets.records.get_mut(idx) else {
+        let Some(record) = game_data.fleets.get_mut(idx) else {
             continue;
         };
         *record = build_fleet_record(snapshot.player_seat as u8, fleet);
     }
 }
 
-fn build_fleet_record(viewer_empire_id: u8, fleet: &HostedOwnedFleet) -> FleetRecord {
-    let mut record = FleetRecord::new_zeroed();
+fn build_fleet_record(viewer_empire_id: u8, fleet: &HostedOwnedFleet) -> Fleet {
+    let mut record = Fleet::default();
     record.set_local_slot_word_raw(u16::from(fleet.local_slot));
     record.set_owner_empire_raw(viewer_empire_id);
     record.set_fleet_id_word_raw(u16::from(fleet.fleet_id));
@@ -449,7 +436,7 @@ fn build_fleet_record(viewer_empire_id: u8, fleet: &HostedOwnedFleet) -> FleetRe
     record
 }
 
-fn apply_ship_counts(record: &mut FleetRecord, ships: &HostedFleetShips) {
+fn apply_ship_counts(record: &mut Fleet, ships: &HostedFleetShips) {
     record.set_scout_count(ships.scout);
     record.set_battleship_count(ships.battleship);
     record.set_cruiser_count(ships.cruiser);
@@ -655,7 +642,7 @@ mod tests {
 
         assert_eq!(launch.game_data.conquest.player_count(), 2);
         assert_eq!(
-            launch.game_data.player.records[1].controlled_empire_name_summary(),
+            launch.game_data.players[1].controlled_empire_name_summary(),
             "Rigel Empire"
         );
     }

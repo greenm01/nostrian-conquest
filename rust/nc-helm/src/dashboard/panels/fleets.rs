@@ -36,7 +36,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let mut guarding = 0;
     let mut holding = 0;
 
-    for planet in &app.game_data.planets.records {
+    for planet in &app.game_data.planets {
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }
@@ -46,7 +46,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
         }
     }
 
-    for fleet in &app.game_data.fleets.records {
+    for fleet in &app.game_data.fleets {
         if fleet.owner_empire_raw() != owner_slot || !fleet.has_any_force() {
             continue;
         }

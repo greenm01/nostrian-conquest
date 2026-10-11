@@ -205,7 +205,6 @@ pub fn push_intel_entries(
                     StarbaseAlert::HeadedAtOurWorld => {
                         let planet = game_data
                             .planets
-                            .records
                             .iter()
                             .find(|planet| planet.coords_raw() == event.coords)
                             .map(|planet| planet.planet_name())
@@ -271,7 +270,7 @@ pub fn push_intel_entries(
         if event.reporting_empire_raw == 0 {
             continue;
         }
-        let Some(planet) = game_data.planets.records.get(event.planet_idx) else {
+        let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
         let [x, y] = planet.coords_raw();

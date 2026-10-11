@@ -23,8 +23,7 @@ pub fn apply_inactivity_autopilot_policy(
     let current_year = game_data.conquest.game_year();
     for state in player_activity_states {
         let Some(player) = game_data
-            .player
-            .records
+            .players
             .get_mut(state.player_record_index_1_based.saturating_sub(1))
         else {
             continue;
@@ -50,8 +49,7 @@ pub fn record_interactive_participation(
 ) {
     let current_year = game_data.conquest.game_year();
     if let Some(player) = game_data
-        .player
-        .records
+        .players
         .get_mut(player_record_index_1_based.saturating_sub(1))
     {
         player.set_last_run_year_raw(current_year);
@@ -80,8 +78,7 @@ pub fn record_submitted_turn_participation(
     state.last_participation_year = year;
     if state.inactivity_autopilot_pending_clear {
         if let Some(player) = game_data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based.saturating_sub(1))
         {
             player.set_autopilot_flag(0);

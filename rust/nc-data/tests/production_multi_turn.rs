@@ -4,25 +4,20 @@ use common::production::{
     commissioned_starbase, configured_conquest, joinable_single_player_game,
     owned_planet_with_present_production, player_with_empire_name, zeroed_setup,
 };
-use nc_data::{
-    BaseDat, CoreGameData, FleetDat, IpbmDat, PlanetDat, PlayerDat, ProductionItemKind,
-    yearly_tax_revenue,
-};
+use nc_data::{CoreGameData, ProductionItemKind, yearly_tax_revenue};
 use nc_engine::run_maintenance_turn;
 
 fn multi_planet_game(
-    player: nc_data::PlayerRecord,
-    planets: Vec<nc_data::PlanetRecord>,
-    bases: Vec<nc_data::BaseRecord>,
+    player: nc_data::Player,
+    planets: Vec<nc_data::Planet>,
+    bases: Vec<nc_data::Starbase>,
 ) -> CoreGameData {
     CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: planets },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: bases },
-        ipbm: IpbmDat { records: vec![] },
+        players: vec![player],
+        planets,
+        fleets: vec![],
+        bases,
+        ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
     }
@@ -40,16 +35,13 @@ fn joined_homeworld_spending_carries_forward_across_turns() {
     game.join_player(1, "Codex Dominion")
         .expect("join player should succeed");
 
-    let homeworld_idx = game.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1;
-    assert_eq!(
-        game.planets.records[homeworld_idx].stored_production_points(),
-        50
-    );
+    let homeworld_idx = game.players[0].homeworld_planet_index_1_based_raw() as usize - 1;
+    assert_eq!(game.planets[homeworld_idx].stored_production_points(), 50);
     game.append_planet_build_order(homeworld_idx + 1, 50, 1)
         .expect("build order should queue");
 
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    let homeworld = &game.planets.records[homeworld_idx];
+    let homeworld = &game.planets[homeworld_idx];
     assert_eq!(homeworld.stored_production_points(), 50);
     assert_eq!(homeworld.build_count_raw(0), 0);
     assert_eq!(homeworld.build_kind_raw(0), 0);
@@ -59,10 +51,7 @@ fn joined_homeworld_spending_carries_forward_across_turns() {
     );
 
     run_maintenance_turn(&mut game).expect("second maintenance should succeed");
-    assert_eq!(
-        game.planets.records[homeworld_idx].stored_production_points(),
-        100
-    );
+    assert_eq!(game.planets[homeworld_idx].stored_production_points(), 100);
 }
 
 #[test]
@@ -77,7 +66,7 @@ fn partial_build_consumes_only_yearly_spend_before_revenue_credit() {
     let mut game = multi_planet_game(player, vec![planet], vec![]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
-    let planet = &game.planets.records[0];
+    let planet = &game.planets[0];
     assert_eq!(planet.build_count_raw(0), 50);
     assert_eq!(planet.build_kind_raw(0), 1);
     assert_eq!(planet.stored_production_points(), 150);
@@ -85,7 +74,7 @@ fn partial_build_consumes_only_yearly_spend_before_revenue_credit() {
     assert_eq!(planet.stardock_count_raw(0), 20);
 
     run_maintenance_turn(&mut game).expect("second maintenance should succeed");
-    let planet = &game.planets.records[0];
+    let planet = &game.planets[0];
     assert_eq!(planet.build_count_raw(0), 0);
     assert_eq!(planet.build_kind_raw(0), 0);
     assert_eq!(planet.stored_production_points(), 150);
@@ -107,7 +96,7 @@ fn multiple_build_slots_share_one_planet_spend_budget_per_turn() {
     let mut game = multi_planet_game(player, vec![planet], vec![]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
-    let planet = &game.planets.records[0];
+    let planet = &game.planets[0];
     assert_eq!(planet.build_count_raw(0), 0);
     assert_eq!(planet.build_kind_raw(0), 0);
     assert_eq!(planet.build_count_raw(1), 15);
@@ -131,7 +120,7 @@ fn capped_surface_build_keeps_full_stored_reserve() {
     let mut game = multi_planet_game(player, vec![planet], vec![]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
-    let planet = &game.planets.records[0];
+    let planet = &game.planets[0];
     assert_eq!(planet.build_count_raw(0), 100);
     assert_eq!(planet.build_kind_raw(0), 8);
     assert_eq!(planet.army_count_raw(), u8::MAX);
@@ -150,12 +139,9 @@ fn multi_turn_empire_economy_tracks_growth_and_revenue_across_owned_planets() {
     assert_eq!(game.empire_available_production_points(1), 62);
 
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    assert_eq!(game.planets.records[0].stored_production_points(), 50);
-    assert_eq!(game.planets.records[1].stored_production_points(), 17);
-    assert_eq!(
-        game.planets.records[1].present_production_points(),
-        Some(35)
-    );
+    assert_eq!(game.planets[0].stored_production_points(), 50);
+    assert_eq!(game.planets[1].stored_production_points(), 17);
+    assert_eq!(game.planets[1].present_production_points(), Some(35));
     assert_eq!(
         game.empire_available_production_points(1),
         yearly_tax_revenue(100, 50) + yearly_tax_revenue(35, 50)
@@ -163,12 +149,9 @@ fn multi_turn_empire_economy_tracks_growth_and_revenue_across_owned_planets() {
     assert_eq!(game.empire_available_production_points(1), 67);
 
     run_maintenance_turn(&mut game).expect("second maintenance should succeed");
-    assert_eq!(game.planets.records[0].stored_production_points(), 100);
-    assert_eq!(game.planets.records[1].stored_production_points(), 39);
-    assert_eq!(
-        game.planets.records[1].present_production_points(),
-        Some(44)
-    );
+    assert_eq!(game.planets[0].stored_production_points(), 100);
+    assert_eq!(game.planets[1].stored_production_points(), 39);
+    assert_eq!(game.planets[1].present_production_points(), Some(44));
     assert_eq!(
         game.empire_available_production_points(1),
         yearly_tax_revenue(100, 50) + yearly_tax_revenue(44, 50)
@@ -199,8 +182,8 @@ fn commissioned_starbase_changes_multi_turn_growth_and_build_capacity_but_not_re
     run_turns(&mut with_base, 1);
     run_turns(&mut without_base, 1);
 
-    let with_base_planet = &with_base.planets.records[0];
-    let without_base_planet = &without_base.planets.records[0];
+    let with_base_planet = &with_base.planets[0];
+    let without_base_planet = &without_base.planets[0];
 
     assert_eq!(with_base.empire_available_production_points(1), 30);
     assert_eq!(without_base.empire_available_production_points(1), 28);
@@ -231,13 +214,10 @@ fn commissioned_starbases_do_not_change_multi_turn_high_tax_penalty_behavior() {
     run_turns(&mut with_base, 2);
     run_turns(&mut without_base, 2);
 
+    assert_eq!(with_base.planets[0].present_production_points(), Some(56));
     assert_eq!(
-        with_base.planets.records[0].present_production_points(),
-        Some(56)
-    );
-    assert_eq!(
-        with_base.planets.records[0].present_production_points(),
-        without_base.planets.records[0].present_production_points()
+        with_base.planets[0].present_production_points(),
+        without_base.planets[0].present_production_points()
     );
     assert_eq!(
         with_base.empire_available_production_points(1),
@@ -262,14 +242,14 @@ fn build_spending_is_capped_by_planet_treasury() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     // Treasury 0: nothing is spent or delivered; revenue still lands.
-    let broke = &game.planets.records[0];
+    let broke = &game.planets[0];
     assert_eq!(broke.build_count_raw(0), 100);
     assert_eq!(broke.build_kind_raw(0), 1);
     assert_eq!(broke.stardock_count_raw(0), 0);
     assert_eq!(broke.stored_production_points(), 50);
 
     // Treasury 30 < capacity 100: spend 30 and deliver 6 destroyers.
-    let short = &game.planets.records[1];
+    let short = &game.planets[1];
     assert_eq!(short.build_count_raw(0), 70);
     assert_eq!(short.stardock_kind_raw(0), 1);
     assert_eq!(short.stardock_count_raw(0), 6);
@@ -285,7 +265,7 @@ fn rogue_empire_planets_collect_revenue_and_grow() {
     let mut game = multi_planet_game(player, vec![planet], vec![]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
-    let planet = &game.planets.records[0];
+    let planet = &game.planets[0];
     assert_eq!(planet.present_production_points(), Some(57));
     assert_eq!(planet.stored_production_points(), 28);
 }

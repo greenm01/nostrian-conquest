@@ -12,8 +12,7 @@ pub(crate) fn set_player_name(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
@@ -42,8 +41,7 @@ pub(crate) fn join_player(
     with_runtime_game_mut_and_export(dir, |data| {
         data.join_player(player_record_index_1_based, empire_name)?;
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
@@ -79,8 +77,7 @@ pub(crate) fn prepare_classic_login(
 
     with_runtime_game_mut_and_export(dir, |data| {
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
@@ -107,8 +104,7 @@ fn current_empire_name(
 ) -> Result<String, Box<dyn std::error::Error>> {
     with_runtime_game_mut(dir, |data: &mut CoreGameData| {
         let player = data
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")

@@ -1,5 +1,5 @@
 use nc_data::{
-    BombardEvent, ContactReportSource, GameStateBuilder, MaintenanceEvents, Mission, PlanetRecord,
+    BombardEvent, ContactReportSource, GameStateBuilder, MaintenanceEvents, Mission, Planet,
     ScoutContactEvent, ShipLosses,
 };
 use nc_engine::{build_results_dat, build_results_report_blocks};
@@ -18,12 +18,12 @@ fn seeded_game_data() -> nc_data::CoreGameData {
 }
 
 fn seed_world_with_raw_name(game_data: &mut nc_data::CoreGameData, name: &[u8]) {
-    let mut planet = PlanetRecord::new_zeroed();
+    let mut planet = Planet::default();
     planet.set_coords_raw([9, 6]);
     planet.set_planet_name(&String::from_utf8_lossy(name));
     planet.set_owner_empire_slot_raw(1);
     planet.set_ownership_status_raw(2);
-    game_data.planets.records[0] = planet;
+    game_data.planets[0] = planet;
 }
 
 fn defender_bombard_events() -> MaintenanceEvents {

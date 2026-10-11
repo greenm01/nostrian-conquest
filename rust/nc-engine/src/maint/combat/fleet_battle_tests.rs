@@ -42,7 +42,7 @@ fn board() -> CoreGameData {
 
 /// Make fleet record `idx` a fleet of `owner` holding in `DEEP_SPACE`.
 fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe: u8) {
-    let fleet = &mut game_data.fleets.records[idx];
+    let fleet = &mut game_data.fleets[idx];
     fleet.set_owner_empire_raw(owner);
     fleet.set_current_location_coords_raw(DEEP_SPACE);
     fleet.set_standing_order_kind(Order::HoldPosition);
@@ -68,7 +68,7 @@ fn fight(
     defender: usize,
 ) {
     let side = |fleet: usize| BattleSide {
-        empire: game_data.fleets.records[fleet].owner_empire_raw(),
+        empire: game_data.fleets[fleet].owner_empire_raw(),
         fleets: vec![fleet],
         bases: Vec::new(),
     };
@@ -79,7 +79,7 @@ fn fight(
 }
 
 fn transports(game_data: &CoreGameData, idx: usize) -> u16 {
-    game_data.fleets.records[idx].troop_transport_count()
+    game_data.fleets[idx].troop_transport_count()
 }
 
 #[test]
@@ -175,8 +175,8 @@ fn a_withdrawal_spends_carried_hits_and_the_next_battle_starts_at_zero() {
     // and the withdrawal exchange's 90 plus the carried 35 finish it. No
     // single volley reaches 100.
     fight(&mut game_data, &rolls, 1, 0, 4);
-    assert_eq!(game_data.fleets.records[4].battleship_count(), 0);
-    assert_eq!(game_data.fleets.records[0].battleship_count(), 2);
+    assert_eq!(game_data.fleets[4].battleship_count(), 0);
+    assert_eq!(game_data.fleets[0].battleship_count(), 2);
 
     // The 25 hits left over against empire 2 die with that battle. Against
     // 200 transports the battleships' 64 rounds of 45 buy 288 steps of 10:

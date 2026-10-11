@@ -39,8 +39,8 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
         .expect("save initial snapshot");
 
     let initial_year = game.conquest.game_year();
-    let homeworld_one = game.player.records[0].homeworld_planet_index_1_based_raw() as usize;
-    let homeworld_two = game.player.records[1].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_one = game.players[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_two = game.players[1].homeworld_planet_index_1_based_raw() as usize;
     assert_eq!(
         store
             .latest_owned_planet_years_for_empire(1)
@@ -58,7 +58,6 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
 
     let captured_planet = game
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -66,8 +65,8 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
         .expect("baseline should have an unowned planet");
     game.conquest = configured_conquest(2);
     game.conquest.set_game_year(3001);
-    game.planets.records[captured_planet].set_owner_empire_slot_raw(1);
-    game.planets.records[captured_planet].set_ownership_status_raw(2);
+    game.planets[captured_planet].set_owner_empire_slot_raw(1);
+    game.planets[captured_planet].set_ownership_status_raw(2);
 
     store
         .save_runtime_state_structured(&game, &BTreeSet::new(), &[], &[])
@@ -80,8 +79,8 @@ fn owned_since_sidecar_carries_forward_and_resets_on_owner_change() {
     assert_eq!(latest_empire_one.get(&homeworld_one), Some(&initial_year));
 
     game.conquest.set_game_year(3002);
-    game.planets.records[captured_planet].set_owner_empire_slot_raw(2);
-    game.planets.records[captured_planet].set_ownership_status_raw(2);
+    game.planets[captured_planet].set_owner_empire_slot_raw(2);
+    game.planets[captured_planet].set_ownership_status_raw(2);
 
     store
         .save_runtime_state_structured(&game, &BTreeSet::new(), &[], &[])

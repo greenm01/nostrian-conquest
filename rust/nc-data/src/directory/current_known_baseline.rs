@@ -20,11 +20,11 @@ impl CoreGameData {
         errors.extend(self.current_known_setup_baseline_errors());
         errors.extend(self.current_known_conquest_baseline_errors());
         errors.extend(self.current_known_player_input_errors());
-        if self.ipbm.records.len() != expected_ipbm {
+        if self.ipbms.len() != expected_ipbm {
             errors.push(format!(
                 "IPBM.DAT record count expected {}, got {}",
                 expected_ipbm,
-                self.ipbm.records.len()
+                self.ipbms.len()
             ));
         }
 
@@ -33,7 +33,7 @@ impl CoreGameData {
 
     pub fn current_known_player_input_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        for (fleet_idx, fleet) in self.fleets.records.iter().enumerate() {
+        for (fleet_idx, fleet) in self.fleets.iter().enumerate() {
             if let Err(reason) = self.validate_fleet_player_inputs(
                 fleet_idx + 1,
                 fleet.standing_order_code_raw(),
@@ -48,7 +48,7 @@ impl CoreGameData {
                 ));
             }
         }
-        for planet_idx in 0..self.planets.records.len() {
+        for planet_idx in 0..self.planets.len() {
             if let Err(reason) = self.validate_planet_player_inputs(planet_idx + 1) {
                 errors.push(format!(
                     "PLANET[{}] invalid player input: {:?}",
@@ -57,7 +57,7 @@ impl CoreGameData {
                 ));
             }
         }
-        for (player_idx, player) in self.player.records.iter().enumerate() {
+        for (player_idx, player) in self.players.iter().enumerate() {
             if player.tax_rate() > 100 {
                 errors.push(format!(
                     "PLAYER[{}] invalid tax rate {}",
@@ -66,7 +66,7 @@ impl CoreGameData {
                 ));
             }
         }
-        for player_idx in 0..self.player.records.len() {
+        for player_idx in 0..self.players.len() {
             for reason in self.validate_player_diplomacy_inputs(player_idx + 1) {
                 errors.push(format!(
                     "PLAYER[{}] invalid diplomacy input: {:?}",
@@ -97,7 +97,7 @@ impl CoreGameData {
     pub fn current_known_planet_owner_slot_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
         let player_count = self.conquest.player_count() as usize;
-        for (idx, record) in self.planets.records.iter().enumerate() {
+        for (idx, record) in self.planets.iter().enumerate() {
             let owner = record.owner_empire_slot_raw() as usize;
             if owner > player_count {
                 errors.push(format!(
@@ -114,7 +114,7 @@ impl CoreGameData {
     pub fn current_known_base_owner_empire_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
         let player_count = self.conquest.player_count() as usize;
-        for (idx, record) in self.bases.records.iter().enumerate() {
+        for (idx, record) in self.bases.iter().enumerate() {
             let owner = record.owner_empire_raw() as usize;
             let is_active = record.base_id_raw() != 0;
             if (is_active && owner == 0) || owner > player_count {
@@ -130,12 +130,12 @@ impl CoreGameData {
     }
 
     pub fn sync_player1_current_known_counts(&mut self) {
-        let ipbm_count = self.ipbm.records.len() as u16;
-        if self.player.records.is_empty() {
+        let ipbm_count = self.ipbms.len() as u16;
+        if self.players.is_empty() {
             return;
         }
         self.relink_base_chain(1);
-        self.player.records[0].set_ipbm_chain_head_raw(ipbm_count);
+        self.players[0].set_ipbm_chain_head_raw(ipbm_count);
     }
 
     pub fn sync_current_known_baseline_controls_and_counts(&mut self) {
@@ -172,7 +172,7 @@ impl CoreGameData {
 
             for slot_idx in 0..4 {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
-                let mut record = FleetRecord::new_zeroed();
+                let mut record = Fleet::default();
                 let fleet_id = fleet_record_index_1_based as u16;
                 let local_slot = (slot_idx + 1) as u16;
                 let owner_empire = (block_idx + 1) as u8;
@@ -204,13 +204,13 @@ impl CoreGameData {
             }
         }
 
-        self.fleets.records = records;
+        self.fleets = records;
     }
 
     pub fn sync_current_known_initialized_planet_payloads(&mut self) {
         let player_count = self.conquest.player_count() as usize;
 
-        for record in &mut self.planets.records {
+        for record in &mut self.planets {
             let owner = record.owner_empire_slot_raw() as usize;
             if record.is_homeworld_seed_ignoring_name() && (1..=player_count).contains(&owner) {
                 record.set_potential_production_points(100);
@@ -258,22 +258,22 @@ impl CoreGameData {
     /// of the pass.
     pub fn sync_current_known_initialized_conquest_post_maint_header(&mut self) {
         self.conquest.set_game_year(3001);
-        self.conquest.snapshot_previous_year(&self.player.records);
+        self.conquest.snapshot_previous_year(&self.players);
     }
 
     pub fn current_known_empty_auxiliary_state_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
 
-        if !self.bases.records.is_empty() {
+        if !self.bases.is_empty() {
             errors.push(format!(
                 "BASES.DAT expected empty auxiliary baseline, got {} records",
-                self.bases.records.len()
+                self.bases.len()
             ));
         }
-        if !self.ipbm.records.is_empty() {
+        if !self.ipbms.is_empty() {
             errors.push(format!(
                 "IPBM.DAT expected empty auxiliary baseline, got {} records",
-                self.ipbm.records.len()
+                self.ipbms.len()
             ));
         }
 
@@ -289,8 +289,8 @@ impl CoreGameData {
     }
 
     pub fn sync_current_known_empty_auxiliary_state(&mut self) {
-        self.bases.records.clear();
-        self.ipbm.records.clear();
+        self.bases.clear();
+        self.ipbms.clear();
     }
 
     pub fn current_known_setup_baseline_errors(&self) -> Vec<String> {

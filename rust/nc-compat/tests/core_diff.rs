@@ -86,7 +86,7 @@ fn current_known_baseline_diff_counts_detect_mutated_files() {
     assert_eq!(clean_setup, 0);
 
     data.setup.set_version_tag(b"BAD!!");
-    data.planets.records[14].set_stored_goods(3.0);
+    data.planets[14].set_stored_goods(3.0);
 
     let diffs = current_known_baseline_diff_counts(&data);
     assert!(
@@ -120,7 +120,7 @@ fn current_known_baseline_diff_offsets_pinpoint_mutated_bytes() {
         .clone();
 
     data.setup.set_version_tag(b"BAD!!");
-    data.planets.records[14].set_stored_goods(3.0);
+    data.planets[14].set_stored_goods(3.0);
 
     let diffs = current_known_baseline_diff_offsets(&data);
     let setup_offsets = &diffs

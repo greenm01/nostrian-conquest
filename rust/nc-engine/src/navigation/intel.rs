@@ -16,7 +16,6 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         build_player_starmap_projection_from_snapshots(game_data, snapshots, viewer_empire_raw);
     let viewer_owned_worlds: HashSet<[u8; 2]> = game_data
         .planets
-        .records
         .iter()
         .filter(|planet| planet.owner_empire_slot_raw() == viewer_empire_raw)
         .map(|planet| planet.coords_raw())
@@ -37,7 +36,7 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         }
     }
 
-    for fleet in &game_data.fleets.records {
+    for fleet in &game_data.fleets {
         if fleet.owner_empire_raw() == 0 || fleet.owner_empire_raw() == viewer_empire_raw {
             continue;
         }

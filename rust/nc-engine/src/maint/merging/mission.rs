@@ -6,7 +6,7 @@ use crate::{CoreGameData, Order, maint::FleetRemovalRemapInfo};
 pub(super) fn process_mission_fleet_merging(
     game_data: &mut CoreGameData,
 ) -> Result<(Vec<FleetMergeEvent>, FleetRemovalRemapInfo), Box<dyn std::error::Error>> {
-    let fleet_count = game_data.fleets.records.len();
+    let fleet_count = game_data.fleets.len();
     if fleet_count == 0 {
         return Ok((Vec::new(), FleetRemovalRemapInfo::default()));
     }
@@ -17,7 +17,6 @@ pub(super) fn process_mission_fleet_merging(
     // ECMAINT finds the host by owner and fleet number (the 0x00 word).
     let fleet_lookup: std::collections::HashMap<(u8, u16), usize> = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .map(|(idx, fleet)| ((fleet.owner_empire_raw(), fleet.local_slot_word_raw()), idx))
@@ -27,7 +26,7 @@ pub(super) fn process_mission_fleet_merging(
         if to_remove[joiner_idx] {
             continue;
         }
-        let joiner = &game_data.fleets.records[joiner_idx];
+        let joiner = &game_data.fleets[joiner_idx];
         if joiner.standing_order_kind() != Order::JoinAnotherFleet {
             continue;
         }
@@ -41,11 +40,10 @@ pub(super) fn process_mission_fleet_merging(
         if host_idx == joiner_idx || to_remove[host_idx] {
             continue;
         }
-        let same_coords =
-            game_data.fleets.records[host_idx].current_location_coords_raw() == joiner_coords;
+        let same_coords = game_data.fleets[host_idx].current_location_coords_raw() == joiner_coords;
         // The join resolves when the joiner settles at its target depth in
         // the host's sector, as ECMAINT's join arrival test requires.
-        let joiner = &game_data.fleets.records[joiner_idx];
+        let joiner = &game_data.fleets[joiner_idx];
         let settled = joiner.depth() == target_depth(joiner.world_target_flag_raw());
         if !same_coords || !settled || !merge_fits_host(game_data, host_idx, joiner_idx) {
             continue;
@@ -57,10 +55,10 @@ pub(super) fn process_mission_fleet_merging(
             fleet_idx: joiner_idx,
             owner_empire_raw: joiner_owner,
             kind: Mission::JoinAnotherFleet,
-            host_fleet_id_raw: game_data.fleets.records[host_idx].fleet_id_word_raw(),
+            host_fleet_id_raw: game_data.fleets[host_idx].fleet_id_word_raw(),
             absorbed_fleet_id_raw: joiner_fleet_id,
-            host_fleet_number: game_data.fleets.records[host_idx].local_slot_word_raw() as u8,
-            absorbed_fleet_number: game_data.fleets.records[joiner_idx].local_slot_word_raw() as u8,
+            host_fleet_number: game_data.fleets[host_idx].local_slot_word_raw() as u8,
+            absorbed_fleet_number: game_data.fleets[joiner_idx].local_slot_word_raw() as u8,
             coords: joiner_coords,
             survivor_side: false,
             stardate_week: None,
@@ -69,7 +67,7 @@ pub(super) fn process_mission_fleet_merging(
 
     let mut rendezvous_groups: std::collections::BTreeMap<(u8, [u8; 2]), Vec<usize>> =
         std::collections::BTreeMap::new();
-    for (idx, fleet) in game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in game_data.fleets.iter().enumerate() {
         if to_remove[idx] || fleet.standing_order_kind() != Order::RendezvousSector {
             continue;
         }
@@ -87,26 +85,24 @@ pub(super) fn process_mission_fleet_merging(
         if group.len() < 2 {
             continue;
         }
-        group.sort_by_key(|idx| game_data.fleets.records[*idx].fleet_id_word_raw());
+        group.sort_by_key(|idx| game_data.fleets[*idx].fleet_id_word_raw());
         let survivor_idx = group[0];
         for &absorbed_idx in group.iter().skip(1) {
             if to_remove[absorbed_idx] || !merge_fits_host(game_data, survivor_idx, absorbed_idx) {
                 continue;
             }
-            let absorbed_id = game_data.fleets.records[absorbed_idx].fleet_id_word_raw();
-            let owner_empire_raw = game_data.fleets.records[absorbed_idx].owner_empire_raw();
+            let absorbed_id = game_data.fleets[absorbed_idx].fleet_id_word_raw();
+            let owner_empire_raw = game_data.fleets[absorbed_idx].owner_empire_raw();
             merge_one_fleet_into_host(game_data, survivor_idx, absorbed_idx);
             to_remove[absorbed_idx] = true;
             merge_events.push(FleetMergeEvent {
                 fleet_idx: absorbed_idx,
                 owner_empire_raw,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id_word_raw(),
+                host_fleet_id_raw: game_data.fleets[survivor_idx].fleet_id_word_raw(),
                 absorbed_fleet_id_raw: absorbed_id,
-                host_fleet_number: game_data.fleets.records[survivor_idx].local_slot_word_raw()
-                    as u8,
-                absorbed_fleet_number: game_data.fleets.records[absorbed_idx].local_slot_word_raw()
-                    as u8,
+                host_fleet_number: game_data.fleets[survivor_idx].local_slot_word_raw() as u8,
+                absorbed_fleet_number: game_data.fleets[absorbed_idx].local_slot_word_raw() as u8,
                 coords,
                 survivor_side: false,
                 stardate_week: None,
@@ -115,12 +111,10 @@ pub(super) fn process_mission_fleet_merging(
                 fleet_idx: survivor_idx,
                 owner_empire_raw,
                 kind: Mission::RendezvousSector,
-                host_fleet_id_raw: game_data.fleets.records[survivor_idx].fleet_id_word_raw(),
+                host_fleet_id_raw: game_data.fleets[survivor_idx].fleet_id_word_raw(),
                 absorbed_fleet_id_raw: absorbed_id,
-                host_fleet_number: game_data.fleets.records[survivor_idx].local_slot_word_raw()
-                    as u8,
-                absorbed_fleet_number: game_data.fleets.records[absorbed_idx].local_slot_word_raw()
-                    as u8,
+                host_fleet_number: game_data.fleets[survivor_idx].local_slot_word_raw() as u8,
+                absorbed_fleet_number: game_data.fleets[absorbed_idx].local_slot_word_raw() as u8,
                 coords,
                 survivor_side: true,
                 stardate_week: None,
@@ -168,7 +162,6 @@ pub(super) fn process_join_host_updates(
 
     let current_host_viability: std::collections::HashMap<(u8, u16), bool> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
             let viable = fleet.destroyer_count() > 0
@@ -185,7 +178,6 @@ pub(super) fn process_join_host_updates(
         .collect();
     let current_fleet_coords: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
             (
@@ -196,7 +188,7 @@ pub(super) fn process_join_host_updates(
         .collect();
 
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
         if fleet.standing_order_kind() != Order::JoinAnotherFleet {
             continue;
         }

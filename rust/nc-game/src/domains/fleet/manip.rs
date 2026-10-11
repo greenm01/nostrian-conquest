@@ -5,7 +5,7 @@ use crate::screen::layout::PromptFeedback;
 use crate::screen::{
     CommandMenu, FleetDetachClass, FleetDetachMode, FleetRow, FleetTransferMode, ScreenId,
 };
-use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord, NEW_FLEET_DEFAULT_ROE};
+use nc_data::{CoreGameData, Fleet, FleetDetachSelection, NEW_FLEET_DEFAULT_ROE};
 use nc_engine::{
     fleet_eta_label as engine_fleet_eta_label, fleet_list_eta_label as engine_fleet_list_eta_label,
     fleet_record_supports_mission_code, fleet_target_eta_message, resolve_checked_fleet_merge_plan,
@@ -597,7 +597,6 @@ impl App {
         if self
             .game_data
             .fleets
-            .records
             .get(donor_record_index_1_based - 1)
             .is_none()
         {
@@ -820,7 +819,6 @@ impl App {
     fn current_fleet_detach_ship_total(&self, fleet_record_index_1_based: usize) -> u32 {
         self.game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .map(|fleet| {
                 u32::from(fleet.battleship_count())
@@ -852,12 +850,7 @@ impl App {
         let Some(fleet_record_index_1_based) = self.fleet.detach_donor_record_index_1_based else {
             return 0;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return 0;
         };
         let class_available = match class {
@@ -940,7 +933,7 @@ impl App {
         }
     }
 
-    fn format_fleet_detach_summary_from_record(&self, record: &FleetRecord) -> String {
+    fn format_fleet_detach_summary_from_record(&self, record: &Fleet) -> String {
         let empty_transports = record
             .troop_transport_count()
             .saturating_sub(record.army_count());
@@ -955,12 +948,11 @@ impl App {
         })
     }
 
-    fn fleet_detach_donor_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_detach_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.detach_donor_record_index_1_based?;
         let mut donor_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
         donor_after.set_battleship_count(
@@ -1004,12 +996,7 @@ impl App {
         let Some(fleet_record_index_1_based) = self.fleet.detach_donor_record_index_1_based else {
             return false;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return false;
         };
         let Some(mut donor_after) = self.fleet_detach_donor_after_selection_record() else {
@@ -1087,7 +1074,6 @@ impl App {
     pub(crate) fn fleet_number_for_record_index(&self, record_index_1_based: usize) -> Option<u16> {
         self.game_data
             .fleets
-            .records
             .get(record_index_1_based - 1)
             .map(|fleet| fleet.local_slot_word_raw())
     }
@@ -1107,7 +1093,7 @@ impl App {
     pub(crate) fn fleet_transfer_source_summary(&self) -> String {
         self.fleet
             .transfer_donor_record_index_1_based
-            .and_then(|idx| self.game_data.fleets.records.get(idx - 1))
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
             .map(|fleet| self.format_fleet_detach_summary_from_record(fleet))
             .unwrap_or_else(|| "none".to_string())
     }
@@ -1115,7 +1101,7 @@ impl App {
     pub(crate) fn fleet_transfer_destination_summary(&self) -> String {
         self.fleet
             .transfer_host_record_index_1_based
-            .and_then(|idx| self.game_data.fleets.records.get(idx - 1))
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
             .map(|fleet| self.format_fleet_detach_summary_from_record(fleet))
             .unwrap_or_else(|| "none".to_string())
     }
@@ -1256,12 +1242,7 @@ impl App {
         else {
             return 0;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return 0;
         };
         let class_available = match class {
@@ -1294,12 +1275,11 @@ impl App {
         class_available.min(total_limit as u16)
     }
 
-    fn fleet_transfer_donor_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_transfer_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.transfer_donor_record_index_1_based?;
         let mut donor_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
         donor_after.set_battleship_count(
@@ -1339,12 +1319,11 @@ impl App {
         Some(donor_after)
     }
 
-    fn fleet_transfer_host_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_transfer_host_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.transfer_host_record_index_1_based?;
         let mut host_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
         host_after.set_battleship_count(

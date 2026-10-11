@@ -374,7 +374,7 @@ pub fn roe_retreat_loss_clause(losses: ShipLosses) -> String {
     }
 }
 
-pub fn stardock_scan_summary(planet: &nc_data::PlanetRecord) -> String {
+pub fn stardock_scan_summary(planet: &nc_data::Planet) -> String {
     use nc_data::ProductionItemKind;
 
     let mut parts = Vec::new();

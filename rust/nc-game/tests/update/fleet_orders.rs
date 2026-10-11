@@ -612,7 +612,6 @@ fn fleet_order_applies_move_order_to_selected_fleet_only() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet #2 should exist");
@@ -622,7 +621,6 @@ fn fleet_order_applies_move_order_to_selected_fleet_only() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| !(fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2))
             .filter(|fleet| fleet.standing_order_code_raw() == 1)
@@ -638,7 +636,6 @@ fn fleet_order_confirm_uses_stopped_eta_when_selected_fleet_speed_is_zero() {
     let current_coords = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -647,7 +644,6 @@ fn fleet_order_confirm_uses_stopped_eta_when_selected_fleet_speed_is_zero() {
     state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -701,7 +697,6 @@ fn fleet_group_order_confirm_uses_eta_when_selected_fleet_speed_is_zero() {
     let current_coords = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -710,7 +705,6 @@ fn fleet_group_order_confirm_uses_eta_when_selected_fleet_speed_is_zero() {
     state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -775,7 +769,6 @@ fn fleet_list_live_eta_projects_years_for_stopped_fleet_after_new_order() {
     let current_coords = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -784,7 +777,6 @@ fn fleet_list_live_eta_projects_years_for_stopped_fleet_after_new_order() {
     state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -826,7 +818,6 @@ fn fleet_list_live_eta_projects_years_for_stopped_fleet_after_new_order() {
     let (fleet_idx, ordered_fleet) = state
         .game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .find(|(_, fleet)| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
@@ -867,7 +858,6 @@ fn fleet_group_selection_live_eta_projects_years_for_stopped_fleet() {
     let current_coords = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist")
@@ -876,7 +866,6 @@ fn fleet_group_selection_live_eta_projects_years_for_stopped_fleet() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -888,7 +877,6 @@ fn fleet_group_selection_live_eta_projects_years_for_stopped_fleet() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .position(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
             .expect("fleet #1 should exist"),
@@ -1008,7 +996,6 @@ fn fleet_record_supports_manual_requirement_classes() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .get_mut(0)
         .expect("fleet 1 should exist");
 
@@ -1051,14 +1038,8 @@ fn fleet_record_supports_manual_requirement_classes() {
 fn fleet_order_allows_guard_starbase_from_fleet_command() {
     let fixture_dir = temp_game_with_starbase_copy();
     let before = latest_runtime_state(&fixture_dir);
-    assert_eq!(
-        before.game_data.fleets.records[0].standing_order_code_raw(),
-        4
-    );
-    assert_eq!(
-        before.game_data.fleets.records[1].standing_order_code_raw(),
-        5
-    );
+    assert_eq!(before.game_data.fleets[0].standing_order_code_raw(), 4);
+    assert_eq!(before.game_data.fleets[1].standing_order_code_raw(), 5);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
         player_record_index_1_based: 1,
@@ -1120,7 +1101,6 @@ fn fleet_order_allows_guard_starbase_from_fleet_command() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet #2 should exist");
@@ -1245,7 +1225,6 @@ fn fleet_order_allows_join_another_fleet_from_fleet_command() {
     let source = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -1254,7 +1233,7 @@ fn fleet_order_allows_join_another_fleet_from_fleet_command() {
         nc_data::Order::JoinAnotherFleet
     );
     assert_ne!(source.join_host_fleet_id_raw(), 0);
-    let valid_host = state.game_data.fleets.records.iter().any(|fleet| {
+    let valid_host = state.game_data.fleets.iter().any(|fleet| {
         fleet.owner_empire_raw() == 1
             && fleet.local_slot_word_raw() == source.join_host_fleet_id_raw()
             && fleet.current_location_coords_raw() == source.standing_order_target_coords_raw()
@@ -1267,8 +1246,8 @@ fn fleet_order_allows_rendezvous_sector_from_fleet_command() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     let rendezvous_target = [10, 13];
-    state.game_data.fleets.records[1].set_standing_order_kind(nc_data::Order::RendezvousSector);
-    state.game_data.fleets.records[1].set_standing_order_target_coords_raw(rendezvous_target);
+    state.game_data.fleets[1].set_standing_order_kind(nc_data::Order::RendezvousSector);
+    state.game_data.fleets[1].set_standing_order_target_coords_raw(rendezvous_target);
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -1320,7 +1299,6 @@ fn fleet_order_allows_rendezvous_sector_from_fleet_command() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -1368,12 +1346,9 @@ fn fleet_order_persists_immediately_and_reloaded_tables_reflect_it() {
     assert_eq!(app.current_screen(), ScreenId::FleetMenu);
 
     let persisted = latest_runtime_state(&fixture_dir);
+    assert_eq!(persisted.game_data.fleets[1].standing_order_code_raw(), 1);
     assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_code_raw(),
-        1
-    );
-    assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_target_coords_raw(),
+        persisted.game_data.fleets[1].standing_order_target_coords_raw(),
         [14, 9]
     );
 
@@ -1410,7 +1385,7 @@ fn fleet_order_persists_immediately_and_reloaded_tables_reflect_it() {
 fn fleet_order_from_stopped_fleet_uses_max_speed() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[1].set_current_speed(0);
+    state.game_data.fleets[1].set_current_speed(0);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1443,18 +1418,15 @@ fn fleet_order_from_stopped_fleet_uses_max_speed() {
     confirm_fleet_order(&mut app, true);
 
     let persisted = latest_runtime_state(&fixture_dir);
+    assert_eq!(persisted.game_data.fleets[1].standing_order_code_raw(), 1);
     assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_code_raw(),
-        1
-    );
-    assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_target_coords_raw(),
+        persisted.game_data.fleets[1].standing_order_target_coords_raw(),
         [14, 9]
     );
-    assert_eq!(persisted.game_data.fleets.records[1].current_speed(), 3);
+    assert_eq!(persisted.game_data.fleets[1].current_speed(), 3);
     assert_eq!(
-        persisted.game_data.fleets.records[1].current_speed(),
-        persisted.game_data.fleets.records[1].max_speed()
+        persisted.game_data.fleets[1].current_speed(),
+        persisted.game_data.fleets[1].max_speed()
     );
 }
 
@@ -1462,7 +1434,7 @@ fn fleet_order_from_stopped_fleet_uses_max_speed() {
 fn fleet_order_preserves_explicit_nonzero_speed() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[1].set_current_speed(1);
+    state.game_data.fleets[1].set_current_speed(1);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1495,16 +1467,13 @@ fn fleet_order_preserves_explicit_nonzero_speed() {
     confirm_fleet_order(&mut app, true);
 
     let persisted = latest_runtime_state(&fixture_dir);
+    assert_eq!(persisted.game_data.fleets[1].standing_order_code_raw(), 1);
     assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_code_raw(),
-        1
-    );
-    assert_eq!(
-        persisted.game_data.fleets.records[1].standing_order_target_coords_raw(),
+        persisted.game_data.fleets[1].standing_order_target_coords_raw(),
         [14, 9]
     );
-    assert_eq!(persisted.game_data.fleets.records[1].current_speed(), 1);
-    assert_eq!(persisted.game_data.fleets.records[1].max_speed(), 3);
+    assert_eq!(persisted.game_data.fleets[1].current_speed(), 1);
+    assert_eq!(persisted.game_data.fleets[1].max_speed(), 3);
 }
 
 #[test]
@@ -1514,12 +1483,11 @@ fn fleet_order_screen_uses_compact_summary_and_eta_confirm() {
     let bombard_target = state
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() != 1)
         .expect("fixture should have a foreign world")
         .coords_raw();
-    state.game_data.fleets.records[1].set_standing_order_code_raw(5);
+    state.game_data.fleets[1].set_standing_order_code_raw(5);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1619,7 +1587,6 @@ fn fleet_group_order_uses_compact_summary_and_eta_confirm() {
     let bombard_target = latest_runtime_state(&fixture_dir)
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() != 1)
         .expect("fixture should have a foreign world")
@@ -1873,13 +1840,12 @@ fn fleet_order_scout_system_defaults_avoid_worlds_targeted_by_other_friendly_sco
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     let viewer_index = 0usize;
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
@@ -1892,19 +1858,19 @@ fn fleet_order_scout_system_defaults_avoid_worlds_targeted_by_other_friendly_sco
     });
     let claimed_coords = candidates[0].1;
     let fallback_coords = candidates[1].1;
-    state.game_data.planets.records[candidates[0].0].set_owner_empire_slot_raw(2);
-    state.game_data.planets.records[candidates[1].0].set_owner_empire_slot_raw(2);
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    state.game_data.planets[candidates[0].0].set_owner_empire_slot_raw(2);
+    state.game_data.planets[candidates[1].0].set_owner_empire_slot_raw(2);
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
     }
-    let selected_fleet_number = state.game_data.fleets.records[0].local_slot_word_raw();
-    state.game_data.fleets.records[0].set_scout_count(1);
-    state.game_data.fleets.records[0].set_standing_order_code_raw(0);
-    state.game_data.fleets.records[1].set_scout_count(1);
-    state.game_data.fleets.records[1].set_standing_order_kind(nc_data::Order::ScoutSolarSystem);
-    state.game_data.fleets.records[1].set_standing_order_target_coords_raw(claimed_coords);
+    let selected_fleet_number = state.game_data.fleets[0].local_slot_word_raw();
+    state.game_data.fleets[0].set_scout_count(1);
+    state.game_data.fleets[0].set_standing_order_code_raw(0);
+    state.game_data.fleets[1].set_scout_count(1);
+    state.game_data.fleets[1].set_standing_order_kind(nc_data::Order::ScoutSolarSystem);
+    state.game_data.fleets[1].set_standing_order_target_coords_raw(claimed_coords);
     let mut planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
         .map(|viewer_empire_id| {
             CampaignStore::open_default_in_dir(&fixture_dir)
@@ -1922,7 +1888,7 @@ fn fleet_order_scout_system_defaults_avoid_worlds_targeted_by_other_friendly_sco
         candidates[0].0 + 1,
         partial_known_world_snapshot(
             candidates[0].0 + 1,
-            &state.game_data.planets.records[candidates[0].0],
+            &state.game_data.planets[candidates[0].0],
             2,
             year,
         ),
@@ -1931,7 +1897,7 @@ fn fleet_order_scout_system_defaults_avoid_worlds_targeted_by_other_friendly_sco
         candidates[1].0 + 1,
         partial_known_world_snapshot(
             candidates[1].0 + 1,
-            &state.game_data.planets.records[candidates[1].0],
+            &state.game_data.planets[candidates[1].0],
             2,
             year,
         ),
@@ -2006,7 +1972,6 @@ fn fleet_order_view_world_defaults_to_unknown_world_instead_of_closer_partial_wo
     let selected_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("player should have a fleet");
@@ -2015,7 +1980,6 @@ fn fleet_order_view_world_defaults_to_unknown_world_instead_of_closer_partial_wo
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
@@ -2031,7 +1995,6 @@ fn fleet_order_view_world_defaults_to_unknown_world_instead_of_closer_partial_wo
     for planet in state
         .game_data
         .planets
-        .records
         .iter_mut()
         .filter(|planet| planet.owner_empire_slot_raw() != 1)
     {
@@ -2041,7 +2004,7 @@ fn fleet_order_view_world_defaults_to_unknown_world_instead_of_closer_partial_wo
         latest_planet_intel_by_viewer(&fixture_dir, state.game_data.conquest.player_count());
     let year = state.game_data.conquest.game_year();
     planet_intel_by_viewer[viewer_index].clear();
-    for (idx, planet) in state.game_data.planets.records.iter().enumerate() {
+    for (idx, planet) in state.game_data.planets.iter().enumerate() {
         if planet.owner_empire_slot_raw() == 1 || idx == unknown_idx {
             continue;
         }
@@ -2097,7 +2060,6 @@ fn fleet_order_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let selected_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("player should have a fleet");
@@ -2106,7 +2068,6 @@ fn fleet_order_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
@@ -2122,7 +2083,6 @@ fn fleet_order_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     for planet in state
         .game_data
         .planets
-        .records
         .iter_mut()
         .filter(|planet| planet.owner_empire_slot_raw() != 1)
     {
@@ -2131,7 +2091,6 @@ fn fleet_order_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let claimer = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() != selected_fleet_number
@@ -2143,7 +2102,7 @@ fn fleet_order_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
         latest_planet_intel_by_viewer(&fixture_dir, state.game_data.conquest.player_count());
     let year = state.game_data.conquest.game_year();
     planet_intel_by_viewer[viewer_index].clear();
-    for (idx, planet) in state.game_data.planets.records.iter().enumerate() {
+    for (idx, planet) in state.game_data.planets.iter().enumerate() {
         if planet.owner_empire_slot_raw() == 1 || idx == claimed_idx || idx == fallback_idx {
             continue;
         }
@@ -2198,7 +2157,6 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     for fleet in state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
     {
@@ -2207,7 +2165,6 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let mut owned_fleets = state
         .game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
         .collect::<Vec<_>>();
@@ -2225,7 +2182,6 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
@@ -2241,7 +2197,6 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     for planet in state
         .game_data
         .planets
-        .records
         .iter_mut()
         .filter(|planet| planet.owner_empire_slot_raw() != 1)
     {
@@ -2250,7 +2205,6 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
     let claimer = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == claimer_number
@@ -2262,7 +2216,7 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
         latest_planet_intel_by_viewer(&fixture_dir, state.game_data.conquest.player_count());
     let year = state.game_data.conquest.game_year();
     planet_intel_by_viewer[viewer_index].clear();
-    for (idx, planet) in state.game_data.planets.records.iter().enumerate() {
+    for (idx, planet) in state.game_data.planets.iter().enumerate() {
         if planet.owner_empire_slot_raw() == 1 || idx == claimed_idx || idx == fallback_idx {
             continue;
         }
@@ -2342,7 +2296,6 @@ fn fleet_order_view_world_falls_back_to_closest_non_owned_world_when_no_unknown_
     let selected_fleet_number = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("player should have a fleet")
@@ -2350,7 +2303,6 @@ fn fleet_order_view_world_falls_back_to_closest_non_owned_world_when_no_unknown_
     let fleet_coords = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == selected_fleet_number
@@ -2360,7 +2312,6 @@ fn fleet_order_view_world_falls_back_to_closest_non_owned_world_when_no_unknown_
     for planet in state
         .game_data
         .planets
-        .records
         .iter_mut()
         .filter(|planet| planet.owner_empire_slot_raw() != 1)
     {
@@ -2371,7 +2322,7 @@ fn fleet_order_view_world_falls_back_to_closest_non_owned_world_when_no_unknown_
     let year = state.game_data.conquest.game_year();
     planet_intel_by_viewer[viewer_index].clear();
     let mut fallback_candidates = Vec::new();
-    for (idx, planet) in state.game_data.planets.records.iter().enumerate() {
+    for (idx, planet) in state.game_data.planets.iter().enumerate() {
         if planet.owner_empire_slot_raw() == 1 {
             continue;
         }
@@ -2432,13 +2383,12 @@ fn fleet_group_bombard_mission_defaults_to_closest_known_enemy_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     let viewer_index = 0usize;
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut foreign_candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() != 1)
@@ -2451,8 +2401,8 @@ fn fleet_group_bombard_mission_defaults_to_closest_known_enemy_world() {
     });
     let (closest_idx, closest_coords) = foreign_candidates[0];
     let (other_idx, _) = foreign_candidates[1];
-    state.game_data.planets.records[closest_idx].set_owner_empire_slot_raw(2);
-    state.game_data.planets.records[other_idx].set_owner_empire_slot_raw(2);
+    state.game_data.planets[closest_idx].set_owner_empire_slot_raw(2);
+    state.game_data.planets[other_idx].set_owner_empire_slot_raw(2);
     let mut planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
         .map(|viewer_empire_id| {
             CampaignStore::open_default_in_dir(&fixture_dir)
@@ -2469,19 +2419,14 @@ fn fleet_group_bombard_mission_defaults_to_closest_known_enemy_world() {
         closest_idx + 1,
         partial_known_world_snapshot(
             closest_idx + 1,
-            &state.game_data.planets.records[closest_idx],
+            &state.game_data.planets[closest_idx],
             2,
             year,
         ),
     );
     planet_intel_by_viewer[viewer_index].insert(
         other_idx + 1,
-        partial_known_world_snapshot(
-            other_idx + 1,
-            &state.game_data.planets.records[other_idx],
-            2,
-            year,
-        ),
+        partial_known_world_snapshot(other_idx + 1, &state.game_data.planets[other_idx], 2, year),
     );
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
@@ -2541,13 +2486,12 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     let viewer_index = 0usize;
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut unowned_candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -2576,7 +2520,7 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
         unowned_candidates[0].0 + 1,
         partial_known_world_snapshot(
             unowned_candidates[0].0 + 1,
-            &state.game_data.planets.records[unowned_candidates[0].0],
+            &state.game_data.planets[unowned_candidates[0].0],
             0,
             year,
         ),
@@ -2585,12 +2529,12 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
         unowned_candidates[1].0 + 1,
         partial_known_world_snapshot(
             unowned_candidates[1].0 + 1,
-            &state.game_data.planets.records[unowned_candidates[1].0],
+            &state.game_data.planets[unowned_candidates[1].0],
             0,
             year,
         ),
     );
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -2599,7 +2543,6 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
         let other_etac = state
             .game_data
             .fleets
-            .records
             .iter_mut()
             .enumerate()
             .find(|(idx, fleet)| {
@@ -2613,7 +2556,6 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
     let selected_etac = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1
@@ -2686,13 +2628,12 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     let viewer_index = 0usize;
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut unowned_candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -2720,12 +2661,12 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
         unowned_candidates[0].0 + 1,
         partial_known_world_snapshot(
             unowned_candidates[0].0 + 1,
-            &state.game_data.planets.records[unowned_candidates[0].0],
+            &state.game_data.planets[unowned_candidates[0].0],
             0,
             year,
         ),
     );
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -2734,7 +2675,6 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
         let other_etac = state
             .game_data
             .fleets
-            .records
             .iter_mut()
             .enumerate()
             .find(|(idx, fleet)| {
@@ -2749,7 +2689,6 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
         let selected_etac = state
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| {
                 fleet.owner_empire_raw() == 1
@@ -2817,7 +2756,6 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
     let selected_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == selected_fleet_number
@@ -2836,7 +2774,6 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
     let (target_index, target) = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -2857,12 +2794,12 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
         target_index + 1,
         partial_known_world_snapshot(
             target_index + 1,
-            &state.game_data.planets.records[target_index],
+            &state.game_data.planets[target_index],
             0,
             state.game_data.conquest.game_year(),
         ),
     );
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -2870,7 +2807,6 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
     let owned_fleet_indexes = state
         .game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, fleet)| fleet.owner_empire_raw() == 1)
@@ -2878,8 +2814,8 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
         .take(2)
         .collect::<Vec<_>>();
     for idx in &owned_fleet_indexes {
-        state.game_data.fleets.records[*idx].set_etac_count(1);
-        state.game_data.fleets.records[*idx].set_standing_order_code_raw(0);
+        state.game_data.fleets[*idx].set_etac_count(1);
+        state.game_data.fleets[*idx].set_standing_order_code_raw(0);
     }
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
@@ -2961,7 +2897,6 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| {
                 fleet.owner_empire_raw() == 1
@@ -2977,13 +2912,12 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
 fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -2996,7 +2930,7 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
     });
     let hidden_colonized_idx = candidates[0].0;
     let hidden_colonized_coords = candidates[0].1;
-    state.game_data.planets.records[hidden_colonized_idx].set_owner_empire_slot_raw(2);
+    state.game_data.planets[hidden_colonized_idx].set_owner_empire_slot_raw(2);
     let mut planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
         .map(|viewer_empire_id| {
             CampaignStore::open_default_in_dir(&fixture_dir)
@@ -3009,7 +2943,7 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
         })
         .collect::<Vec<_>>();
     planet_intel_by_viewer[0].remove(&(hidden_colonized_idx + 1));
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -3017,7 +2951,6 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
     let selected_etac = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.etac_count() > 0)
         .expect("fixture should have a selectable ETAC fleet");
@@ -3085,13 +3018,12 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
 fn fleet_order_colonize_defaults_to_hidden_unknown_owner_worlds_in_planet_database() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let home_coords = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let home_coords = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     let mut candidates = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
@@ -3116,7 +3048,7 @@ fn fleet_order_colonize_defaults_to_hidden_unknown_owner_worlds_in_planet_databa
         })
         .collect::<Vec<_>>();
     planet_intel_by_viewer[0].remove(&(hidden_target_index + 1));
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -3124,7 +3056,6 @@ fn fleet_order_colonize_defaults_to_hidden_unknown_owner_worlds_in_planet_databa
     let selected_etac = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.etac_count() > 0)
         .expect("fixture should have a selectable ETAC fleet");
@@ -3387,14 +3318,13 @@ fn fleet_group_order_allows_owned_planet_for_blockade_mission() {
     let target_idx = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a foreign world");
-    state.game_data.planets.records[target_idx].set_owner_empire_slot_raw(1);
-    let owned_target = state.game_data.planets.records[target_idx].coords_raw();
+    state.game_data.planets[target_idx].set_owner_empire_slot_raw(1);
+    let owned_target = state.game_data.planets[target_idx].coords_raw();
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -3444,7 +3374,6 @@ fn fleet_group_order_allows_owned_planet_for_blockade_mission() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| {
             fleet.owner_empire_raw() == 1
@@ -3469,18 +3398,16 @@ fn fleet_order_blockade_mission_defaults_to_closest_owned_planet() {
     let target_idx = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned world");
-    state.game_data.planets.records[target_idx].set_owner_empire_slot_raw(1);
-    let owned_target = state.game_data.planets.records[target_idx].coords_raw();
+    state.game_data.planets[target_idx].set_owner_empire_slot_raw(1);
+    let owned_target = state.game_data.planets[target_idx].coords_raw();
     let selected_fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("player 1 fleet #1 should exist");
@@ -3528,7 +3455,7 @@ fn fleet_order_blockade_mission_defaults_to_closest_owned_planet() {
 fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -3536,7 +3463,6 @@ fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
     let scout_fleet = state
         .game_data
         .fleets
-        .records
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.set_scout_count(1);
@@ -3544,14 +3470,13 @@ fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
     let enemy_idx = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a foreign world");
-    state.game_data.planets.records[enemy_idx].set_owner_empire_slot_raw(1);
-    let owned_target = state.game_data.planets.records[enemy_idx].coords_raw();
+    state.game_data.planets[enemy_idx].set_owner_empire_slot_raw(1);
+    let owned_target = state.game_data.planets[enemy_idx].coords_raw();
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -3623,7 +3548,7 @@ fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
 fn fleet_order_rejects_owned_planet_for_scout_system_mission() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -3631,13 +3556,12 @@ fn fleet_order_rejects_owned_planet_for_scout_system_mission() {
     let scout_fleet = state
         .game_data
         .fleets
-        .records
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.set_scout_count(1);
     scout_fleet.set_standing_order_code_raw(0);
-    let owned_target = state.game_data.planets.records
-        [state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize - 1]
+    let owned_target = state.game_data.planets
+        [state.game_data.players[0].homeworld_planet_index_1_based_raw() as usize - 1]
         .coords_raw();
     save_runtime_state(&fixture_dir, &state);
 
@@ -3702,18 +3626,16 @@ fn fleet_order_salvage_defaults_to_closest_owned_planet() {
     let extra_owned_idx = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should have a non-owned planet");
-    state.game_data.planets.records[extra_owned_idx].set_owner_empire_slot_raw(1);
-    let nearest_owned = state.game_data.planets.records[extra_owned_idx].coords_raw();
+    state.game_data.planets[extra_owned_idx].set_owner_empire_slot_raw(1);
+    let nearest_owned = state.game_data.planets[extra_owned_idx].coords_raw();
     let selected_fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("player 1 fleet #1 should exist");
@@ -3782,7 +3704,6 @@ fn fleet_order_patrol_defaults_x_and_y_to_current_sector() {
     let patrol_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("fixture should have a player fleet");
@@ -3854,7 +3775,6 @@ fn fleet_order_hold_defaults_to_current_sector_and_persists_target() {
     let hold_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -3918,7 +3838,6 @@ fn fleet_order_hold_defaults_to_current_sector_and_persists_target() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .expect("fleet should still exist");
@@ -3936,7 +3855,6 @@ fn fleet_list_eta_is_zero_for_hold_orders_even_with_stale_off_sector_target() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -3982,7 +3900,6 @@ fn fleet_list_eta_is_zero_when_non_hold_target_matches_current_location() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 should exist");
@@ -4053,7 +3970,6 @@ fn fleet_order_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .expect("fleet should still exist");
@@ -4079,7 +3995,6 @@ fn fleet_order_seek_home_aborts_in_the_only_home_system() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .expect("fleet should still exist");
@@ -4091,7 +4006,6 @@ fn player_1_worlds(fixture_dir: &std::path::Path) -> Vec<[u8; 2]> {
     latest_runtime_state(fixture_dir)
         .game_data
         .planets
-        .records
         .iter()
         .filter(|planet| planet.owner_empire_slot_raw() == 1)
         .map(|planet| planet.coords_raw())
@@ -4132,7 +4046,6 @@ fn seek_home_from_the_home_system(fixture_dir: &std::path::Path, answer: Option<
     latest_runtime_state(fixture_dir)
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 2)
         .map(|fleet| {
@@ -4177,7 +4090,6 @@ fn fleet_order_salvage_with_one_owned_world_needs_no_target() {
     let ordered_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .expect("fleet should still exist");
@@ -4192,7 +4104,6 @@ fn park_player_1_fleet_away(fixture_dir: &std::path::Path, fleet_number: u16) ->
     let home = state
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() == 1)
         .map(|planet| planet.coords_raw())
@@ -4200,7 +4111,6 @@ fn park_player_1_fleet_away(fixture_dir: &std::path::Path, fleet_number: u16) ->
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .expect("fleet should exist");
@@ -4216,7 +4126,6 @@ fn give_player_1_a_second_world(fixture_dir: &std::path::Path) {
     let planet = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .rev()
         .find(|planet| planet.owner_empire_slot_raw() == 0)
@@ -4311,13 +4220,12 @@ fn fleet_order_salvage_rejects_foreign_planet_target() {
     let foreign_idx = state
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .find(|(_, planet)| planet.owner_empire_slot_raw() == 0)
         .map(|(idx, _)| idx)
         .expect("fixture should have an unowned planet");
-    state.game_data.planets.records[foreign_idx].set_owner_empire_slot_raw(2);
+    state.game_data.planets[foreign_idx].set_owner_empire_slot_raw(2);
     let mut planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
         .map(|viewer_empire_id| {
             CampaignStore::open_default_in_dir(&fixture_dir)
@@ -4333,12 +4241,12 @@ fn fleet_order_salvage_rejects_foreign_planet_target() {
         foreign_idx + 1,
         partial_known_world_snapshot(
             foreign_idx + 1,
-            &state.game_data.planets.records[foreign_idx],
+            &state.game_data.planets[foreign_idx],
             2,
             state.game_data.conquest.game_year(),
         ),
     );
-    let foreign_target = state.game_data.planets.records[foreign_idx].coords_raw();
+    let foreign_target = state.game_data.planets[foreign_idx].coords_raw();
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
     give_player_1_a_second_world(&fixture_dir);
 
@@ -4397,7 +4305,6 @@ fn fleet_order_salvage_rejects_unowned_planet_target() {
     let unowned_target = state
         .game_data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() == 0)
         .map(|planet| planet.coords_raw())
@@ -4507,7 +4414,7 @@ fn fleet_group_order_allows_manual_combat_target_without_known_enemy_world() {
 fn fleet_group_order_allows_manual_scout_target_without_known_enemy_world() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
@@ -4515,7 +4422,6 @@ fn fleet_group_order_allows_manual_scout_target_without_known_enemy_world() {
     let scout_fleet = state
         .game_data
         .fleets
-        .records
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.set_scout_count(1);
@@ -4585,7 +4491,6 @@ fn fleet_group_patrol_defaults_x_and_y_to_selected_sector() {
     let patrol_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("fixture should have a player fleet");
@@ -4670,7 +4575,6 @@ fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
     let hold_fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .expect("fixture should have a player fleet");
@@ -4748,7 +4652,6 @@ fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| {
                 fleet.owner_empire_raw() == 1
@@ -4800,7 +4703,6 @@ fn fleet_group_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
     let ordered = state
         .game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
         .map(|fleet| {
@@ -4853,7 +4755,7 @@ fn fleet_group_seek_home_of_one_home_fleet_asks_for_the_next_closest() {
     confirm_fleet_group_order(&mut app, true);
 
     let state = latest_runtime_state(&fixture_dir);
-    assert!(state.game_data.fleets.records.iter().any(|fleet| {
+    assert!(state.game_data.fleets.iter().any(|fleet| {
         fleet.owner_empire_raw() == 1
             && fleet.standing_order_code_raw() == 2
             && fleet.standing_order_target_coords_raw() == worlds[1]
@@ -4864,13 +4766,13 @@ fn fleet_group_seek_home_of_one_home_fleet_asks_for_the_next_closest() {
 fn fleet_group_order_applies_move_order_to_selected_fleets() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    for fleet in state.game_data.fleets.records.iter_mut() {
+    for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner_empire_raw() == 1 {
             fleet.set_standing_order_code_raw(9);
         }
     }
-    state.game_data.fleets.records[0].set_standing_order_code_raw(0);
-    state.game_data.fleets.records[1].set_standing_order_code_raw(0);
+    state.game_data.fleets[0].set_standing_order_code_raw(0);
+    state.game_data.fleets[1].set_standing_order_code_raw(0);
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -4941,20 +4843,14 @@ fn fleet_group_order_applies_move_order_to_selected_fleets() {
     );
 
     let state = latest_runtime_state(&fixture_dir);
+    assert_eq!(state.game_data.fleets[0].standing_order_code_raw(), 1);
     assert_eq!(
-        state.game_data.fleets.records[0].standing_order_code_raw(),
-        1
-    );
-    assert_eq!(
-        state.game_data.fleets.records[0].standing_order_target_coords_raw(),
+        state.game_data.fleets[0].standing_order_target_coords_raw(),
         [10, 13]
     );
+    assert_eq!(state.game_data.fleets[1].standing_order_code_raw(), 1);
     assert_eq!(
-        state.game_data.fleets.records[1].standing_order_code_raw(),
-        1
-    );
-    assert_eq!(
-        state.game_data.fleets.records[1].standing_order_target_coords_raw(),
+        state.game_data.fleets[1].standing_order_target_coords_raw(),
         [10, 13]
     );
 }
@@ -5063,7 +4959,6 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
     let joined_fleets = state
         .game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.standing_order_code_raw() == 13)
         .collect::<Vec<_>>();
@@ -5082,7 +4977,7 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
 fn fleet_group_order_persists_rendezvous_target_for_selected_fleets() {
     let fixture_dir = temp_game_copy();
     let state = latest_runtime_state(&fixture_dir);
-    let rendezvous_target = state.game_data.fleets.records[0].current_location_coords_raw();
+    let rendezvous_target = state.game_data.fleets[0].current_location_coords_raw();
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
         player_record_index_1_based: 1,
@@ -5160,7 +5055,6 @@ fn fleet_group_order_persists_rendezvous_target_for_selected_fleets() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| {
                 fleet.owner_empire_raw() == 1
@@ -5369,7 +5263,6 @@ fn fleet_change_roe_rejects_support_only_fleet_with_updated_message() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
         .expect("player 1 fleet #4 should exist");
@@ -5429,7 +5322,6 @@ fn fleet_list_checked_change_clears_only_successful_fleets_on_partial_roe_update
         let combat = app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
             .expect("player 1 fleet #4 should exist");
@@ -5446,7 +5338,6 @@ fn fleet_list_checked_change_clears_only_successful_fleets_on_partial_roe_update
         let support = app
             .game_data
             .fleets
-            .records
             .iter_mut()
             .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
             .expect("player 1 fleet #1 should exist");
@@ -5463,7 +5354,6 @@ fn fleet_list_checked_change_clears_only_successful_fleets_on_partial_roe_update
     let combat_record_index = app
         .game_data
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
         .expect("fleet #4 record index")
@@ -5471,7 +5361,6 @@ fn fleet_list_checked_change_clears_only_successful_fleets_on_partial_roe_update
     let support_record_index = app
         .game_data
         .fleets
-        .records
         .iter()
         .position(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
         .expect("fleet #1 record index")
@@ -5543,7 +5432,6 @@ fn fleet_change_id_updates_visible_fleet_number_inline() {
         state
             .game_data
             .fleets
-            .records
             .iter()
             .any(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 12)
     );
@@ -5614,7 +5502,6 @@ fn fleet_change_speed_updates_current_speed_inline() {
     let fleet = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
         .expect("fleet #4 should exist");

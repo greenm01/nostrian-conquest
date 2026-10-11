@@ -53,7 +53,7 @@ pub(crate) fn set_raw_fleet_order(
 ) -> Result<[u8; 2], nc_data::GameStateMutationError> {
     let current_aux = record_index_1_based
         .checked_sub(1)
-        .and_then(|idx| data.fleets.records.get(idx))
+        .and_then(|idx| data.fleets.get(idx))
         .map(|fleet| fleet.mission_aux_bytes())
         .unwrap_or_default();
     data.set_fleet_order(
@@ -78,7 +78,6 @@ fn ensure_planet_target_for_order(
     if !fleet_order_requires_planet_target(order_code)
         || data
             .planets
-            .records
             .iter()
             .any(|planet| planet.coords_raw() == coords)
     {
@@ -87,15 +86,13 @@ fn ensure_planet_target_for_order(
 
     let template = data
         .planets
-        .records
         .iter()
         .find(|planet| planet.owner_empire_slot_raw() == 0)
-        .or_else(|| data.planets.records.last())
+        .or_else(|| data.planets.last())
         .ok_or("no planet record available to clone target coordinates")?
         .clone();
     let target = data
         .planets
-        .records
         .last_mut()
         .ok_or("no planet record available to receive target coordinates")?;
     *target = template;
@@ -122,7 +119,6 @@ pub(crate) fn print_fleet_order_report(
     let data = load_runtime_game_data(dir)?;
     let record = data
         .fleets
-        .records
         .get(record_index_1_based - 1)
         .ok_or_else(|| format!("fleet record index out of range: {record_index_1_based}"))?;
     println!("Fleet Order Report");

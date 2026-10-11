@@ -139,7 +139,6 @@ mod tests {
         let occupied = app
             .game_data
             .planets
-            .records
             .iter()
             .map(|planet| planet.coords_raw())
             .collect::<std::collections::BTreeSet<_>>();

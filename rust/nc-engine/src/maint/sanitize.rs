@@ -19,11 +19,11 @@ pub(super) fn sanitize_invalid_player_inputs(
 ) -> Vec<InvalidPlayerStateEvent> {
     let mut events = Vec::new();
 
-    for fleet_idx in 0..game_data.fleets.records.len() {
+    for fleet_idx in 0..game_data.fleets.len() {
         let mut rescan = true;
         while rescan {
             rescan = false;
-            let fleet = &game_data.fleets.records[fleet_idx];
+            let fleet = &game_data.fleets[fleet_idx];
             let order_code = fleet.standing_order_code_raw();
             let target = fleet.standing_order_target_coords_raw();
             let owner_empire_raw = fleet.owner_empire_raw();
@@ -44,8 +44,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         // the HostDestroyed path.
                         let is_post_cull_join_sentinel =
                             matches!(reason, FleetOrderValidationError::InvalidJoinHost)
-                                && game_data.fleets.records[fleet_idx].join_host_fleet_id_raw()
-                                    == 0;
+                                && game_data.fleets[fleet_idx].join_host_fleet_id_raw() == 0;
                         let should_sanitize = !is_post_cull_join_sentinel
                             && matches!(
                                 reason,
@@ -63,7 +62,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         let retreat_target = capability_loss_requires_abort_and_seek_home(reason)
                             .then(|| super::combat::nearest_friendly_world(game_data, fleet_idx))
                             .flatten();
-                        let fleet = &mut game_data.fleets.records[fleet_idx];
+                        let fleet = &mut game_data.fleets[fleet_idx];
                         if capability_loss_requires_abort_and_seek_home(reason) {
                             super::combat::abort_mission_to_seek_home_or_hold(
                                 fleet,
@@ -84,7 +83,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         });
                     }
                     FleetPlayerInputValidationError::SpeedExceedsMaximum { max, .. } => {
-                        game_data.fleets.records[fleet_idx].set_current_speed(max);
+                        game_data.fleets[fleet_idx].set_current_speed(max);
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -94,7 +93,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         rescan = true;
                     }
                     FleetPlayerInputValidationError::RulesOfEngagementOutOfRange { .. } => {
-                        game_data.fleets.records[fleet_idx].set_rules_of_engagement(10);
+                        game_data.fleets[fleet_idx].set_rules_of_engagement(10);
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -104,7 +103,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         rescan = true;
                     }
                     FleetPlayerInputValidationError::NonCombatFleetMustUseZeroRoe { .. } => {
-                        game_data.fleets.records[fleet_idx].set_rules_of_engagement(0);
+                        game_data.fleets[fleet_idx].set_rules_of_engagement(0);
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -118,9 +117,9 @@ pub(super) fn sanitize_invalid_player_inputs(
         }
     }
 
-    for planet_idx in 0..game_data.planets.records.len() {
+    for planet_idx in 0..game_data.planets.len() {
         let (owner_empire_raw, coords, reason_opt) = {
-            let planet = &game_data.planets.records[planet_idx];
+            let planet = &game_data.planets[planet_idx];
             (
                 planet.owner_empire_slot_raw(),
                 planet.coords_raw(),
@@ -130,7 +129,7 @@ pub(super) fn sanitize_invalid_player_inputs(
             )
         };
         if let Some(reason) = reason_opt {
-            let planet = &mut game_data.planets.records[planet_idx];
+            let planet = &mut game_data.planets[planet_idx];
             for slot in 0..10 {
                 let build_count = planet.build_count_raw(slot);
                 let build_kind = planet.build_kind_raw(slot);
@@ -167,20 +166,20 @@ pub(super) fn sanitize_invalid_player_inputs(
         }
     }
 
-    for player_idx in 0..game_data.player.records.len() {
-        let tax_rate = game_data.player.records[player_idx].tax_rate();
+    for player_idx in 0..game_data.players.len() {
+        let tax_rate = game_data.players[player_idx].tax_rate();
         if tax_rate > 100 {
-            game_data.player.records[player_idx].set_tax_rate_raw(100);
+            game_data.players[player_idx].set_tax_rate_raw(100);
             events.push(InvalidPlayerStateEvent::PlayerTaxRate {
                 player_idx,
                 owner_empire_raw: (player_idx + 1) as u8,
                 tax_rate,
             });
         }
-        let player_count = game_data.player.records.len() as u8;
+        let player_count = game_data.players.len() as u8;
         for target_empire_raw in 1..=player_count {
             let reason = {
-                let player = &game_data.player.records[player_idx];
+                let player = &game_data.players[player_idx];
                 let raw = player
                     .diplomatic_relation_byte_raw(target_empire_raw)
                     .unwrap_or(0);
@@ -197,7 +196,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                 }
             };
             if let Some(reason) = reason {
-                let _ = game_data.player.records[player_idx]
+                let _ = game_data.players[player_idx]
                     .set_diplomatic_relation_byte_raw(target_empire_raw, 0x00);
                 events.push(InvalidPlayerStateEvent::DiplomacyInput {
                     player_idx,

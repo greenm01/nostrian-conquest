@@ -10,7 +10,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use nc_compat::{
     export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
 };
-use nc_data::{BaseDat, BaseRecord, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Real48};
+use nc_data::classic::{parse_bases_dat, serialize_bases_dat};
+use nc_data::{CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Real48, Starbase};
 use nc_engine::run_maintenance_turn;
 
 fn repo_root() -> PathBuf {
@@ -70,9 +71,9 @@ fn bases_dat_dirs() -> Vec<PathBuf> {
 #[test]
 fn shipped_base_reads_the_classic_layout() {
     let bytes = fs::read(repo_root().join("original/v1.5/BASES.DAT")).unwrap();
-    let bases = BaseDat::parse(&bytes).unwrap();
-    assert_eq!(bases.records.len(), 1);
-    let base = &bases.records[0];
+    let bases = parse_bases_dat(&bytes).unwrap();
+    assert_eq!(bases.len(), 1);
+    let base = &bases[0];
     assert_eq!(base.escort_fleet_slot_raw(), 1);
     assert_eq!(base.base_id_raw(), 1);
     assert_eq!(base.owner_empire_raw(), 1);
@@ -90,7 +91,7 @@ fn shipped_base_reads_the_classic_layout() {
 
 #[test]
 fn base_accessors_use_the_classic_offsets() {
-    let mut base = BaseRecord::new_zeroed();
+    let mut base = Starbase::default();
     base.set_escort_fleet_slot_raw(0x0102);
     base.set_base_id_raw(0x0304);
     base.set_owner_empire_raw(5);
@@ -136,7 +137,7 @@ fn every_preserved_bases_dat_round_trips_through_the_campaign_database() {
             non_empty += 1;
         }
         assert_eq!(
-            BaseDat::parse(&original).unwrap().to_bytes(),
+            serialize_bases_dat(&parse_bases_dat(&original).unwrap()),
             original,
             "{}",
             dir.display()
@@ -169,7 +170,7 @@ fn every_preserved_bases_dat_round_trips_through_the_campaign_database() {
 fn classic_moved_bases_import_and_pass_preflight() {
     // Lift: classic took the base out of orbit when its world changed hands.
     let lift = load_fixture("ecmaint-starbase-lift-post");
-    let base = &lift.bases.records[0];
+    let base = &lift.bases[0];
     assert_eq!(base.owner_empire_raw(), 1);
     assert_eq!(base.base_id_raw(), 1);
     assert_eq!(base.target_depth_raw(), 0);
@@ -179,14 +180,14 @@ fn classic_moved_bases_import_and_pass_preflight() {
         [0x7b, 0x4a, 0x9e, 0xd8, 0x89, 0x1d]
     );
     // The escort rode along: same depth, retargeted to the base's layer.
-    let escort = &lift.fleets.records[0];
+    let escort = &lift.fleets[0];
     assert_eq!(escort.local_slot_word_raw(), base.escort_fleet_slot_raw());
     assert_eq!(escort.depth(), base.depth());
     assert_eq!(escort.world_target_flag_raw(), 0);
 
     // Move: the base is under way to (18,13) in deep space.
     let moving = load_fixture("ecmaint-starbase-move-post");
-    let base = &moving.bases.records[0];
+    let base = &moving.bases[0];
     assert_eq!(base.owner_empire_raw(), 1);
     assert_eq!(base.moving_flag_raw(), 1);
     assert_eq!(base.target_coords_raw(), [18, 13]);
@@ -210,7 +211,7 @@ fn owner_check_reads_the_owner_byte() {
             .current_known_base_owner_empire_errors()
             .is_empty()
     );
-    game_data.bases.records[0].set_owner_empire_raw(0);
+    game_data.bases[0].set_owner_empire_raw(0);
     assert_eq!(
         game_data.current_known_base_owner_empire_errors(),
         vec!["BASES[1].owner_empire expected 1..=4, got 0".to_string()]

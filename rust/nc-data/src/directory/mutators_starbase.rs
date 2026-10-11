@@ -13,7 +13,7 @@ impl CoreGameData {
         destination: [u8; 2],
     ) -> Result<(), GameStateMutationError> {
         let owner_empire = player_index_1_based as u8;
-        let own_world_at_destination = self.planets.records.iter().any(|planet| {
+        let own_world_at_destination = self.planets.iter().any(|planet| {
             planet.coords_raw() == destination && planet.owner_empire_slot_raw() == owner_empire
         });
         self.owned_base_mut(player_index_1_based, base_record_index_1_based)?;
@@ -45,17 +45,17 @@ impl CoreGameData {
     /// rest in orbit there keeps them alive. On "yes" ECGAME clears the
     /// world's whole build queue, with no refund.
     fn cancel_builds_relying_on_base(&mut self, base_idx: usize) {
-        let base = &self.bases.records[base_idx];
+        let base = &self.bases[base_idx];
         if base.depth() < Real48::ONE {
             return;
         }
         let (owner, coords) = (base.owner_empire_raw(), base.coords_raw());
-        let Some(planet_idx) = self.planets.records.iter().position(|planet| {
+        let Some(planet_idx) = self.planets.iter().position(|planet| {
             planet.coords_raw() == coords && planet.owner_empire_slot_raw() == owner
         }) else {
             return;
         };
-        let planet = &self.planets.records[planet_idx];
+        let planet = &self.planets[planet_idx];
         let costs = (0..10).filter_map(|slot| {
             let count = u32::from(planet.build_count_raw(slot));
             let cost = ProductionItemKind::from_raw(planet.build_kind_raw(slot)).build_cost()?;
@@ -67,7 +67,7 @@ impl CoreGameData {
         if f64::from(dearest) <= production && f64::from(total) <= production {
             return;
         }
-        let other_base_in_orbit = self.bases.records.iter().enumerate().any(|(idx, other)| {
+        let other_base_in_orbit = self.bases.iter().enumerate().any(|(idx, other)| {
             idx != base_idx
                 && other.coords_raw() == coords
                 && other.depth() >= Real48::HALF
@@ -78,7 +78,7 @@ impl CoreGameData {
         if other_base_in_orbit {
             return;
         }
-        let planet = &mut self.planets.records[planet_idx];
+        let planet = &mut self.planets[planet_idx];
         for slot in 0..10 {
             planet.set_build_count_raw(slot, 0);
             planet.set_build_kind_raw(slot, 0);
@@ -89,14 +89,12 @@ impl CoreGameData {
         &mut self,
         player_index_1_based: usize,
         base_record_index_1_based: usize,
-    ) -> Result<&mut BaseRecord, GameStateMutationError> {
-        let base = self
-            .bases
-            .records
-            .get_mut(base_record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingBaseRecord {
+    ) -> Result<&mut Starbase, GameStateMutationError> {
+        let base = self.bases.get_mut(base_record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingBaseRecord {
                 index_1_based: base_record_index_1_based,
-            })?;
+            },
+        )?;
         if base.base_id_raw() == 0 || base.owner_empire_raw() as usize != player_index_1_based {
             return Err(GameStateMutationError::BaseOwnershipMismatch {
                 player_index_1_based,

@@ -56,8 +56,7 @@ pub fn ensure_hosted_player_initialized(
 
     let mut game_data = runtime.game_data.clone();
     let empire_name = game_data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based.saturating_sub(1))
         .map(|player| {
             let empire_name = player.controlled_empire_name_summary();
@@ -72,8 +71,7 @@ pub fn ensure_hosted_player_initialized(
     game_data.join_player(player_record_index_1_based, &empire_name)?;
     if let Some(handle) = handle {
         if let Some(player) = game_data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based.saturating_sub(1))
         {
             player.set_assigned_player_handle_raw(handle);
@@ -97,15 +95,14 @@ pub fn apply_hosted_first_join_names(
     let runtime = load_latest_runtime_state(&store)?;
     let mut game_data = runtime.game_data.clone();
     let player = game_data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based.saturating_sub(1))
         .ok_or_else(|| format!("missing player record for seat {}", player_seat))?;
     let empire_pending = player.controlled_empire_name_summary() == "In Civil Disorder";
     let homeworld_pending = player
         .homeworld_planet_index_1_based_raw()
         .checked_sub(1)
-        .and_then(|idx| game_data.planets.records.get(idx as usize))
+        .and_then(|idx| game_data.planets.get(idx as usize))
         .is_some_and(|planet| planet.is_named_homeworld_seed());
 
     if !empire_pending && !homeworld_pending {
@@ -113,8 +110,7 @@ pub fn apply_hosted_first_join_names(
     }
 
     if let Some(player) = game_data
-        .player
-        .records
+        .players
         .get_mut(player_record_index_1_based.saturating_sub(1))
     {
         player.set_controlled_empire_name_raw(empire_name);

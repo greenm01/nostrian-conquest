@@ -122,7 +122,7 @@ pub(super) fn fleet_state_from_records(
 ) -> FleetCombatState {
     let mut state = FleetCombatState::default();
     for &idx in fleet_indices {
-        let fleet = &game_data.fleets.records[idx];
+        let fleet = &game_data.fleets[idx];
         state.counts[IDX_DD] += fleet.destroyer_count() as u32;
         state.counts[IDX_CA] += fleet.cruiser_count() as u32;
         state.counts[IDX_BB] += fleet.battleship_count() as u32;
@@ -184,19 +184,14 @@ fn task_force_role(
     coords: [u8; 2],
     fleet_indices: &[usize],
 ) -> BattleRole {
-    if let Some(planet) = game_data
-        .planets
-        .records
-        .iter()
-        .find(|p| p.coords_raw() == coords)
-    {
+    if let Some(planet) = game_data.planets.iter().find(|p| p.coords_raw() == coords) {
         if planet.owner_empire_slot_raw() == empire {
             return BattleRole::IncumbentDefender;
         }
     }
     let guarding = fleet_indices.iter().any(|&idx| {
         matches!(
-            game_data.fleets.records[idx].standing_order_kind(),
+            game_data.fleets[idx].standing_order_kind(),
             Order::GuardStarbase | Order::GuardBlockadeWorld
         )
     });
@@ -262,7 +257,6 @@ pub(super) fn tf_has_any_units(tf: &TaskForce) -> bool {
 pub(super) fn planet_idx_at_coords(game_data: &CoreGameData, coords: [u8; 2]) -> Option<usize> {
     game_data
         .planets
-        .records
         .iter()
         .position(|planet| planet.coords_raw() == coords)
 }

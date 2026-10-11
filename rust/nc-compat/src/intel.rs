@@ -10,11 +10,10 @@ pub fn merge_player_intel_from_compat(
     year: u16,
     previous: Option<&BTreeMap<usize, PlanetIntelSnapshot>>,
 ) -> BTreeMap<usize, PlanetIntelSnapshot> {
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let viewer_index = viewer_empire_id.saturating_sub(1) as usize;
     let viewer_is_active = game_data
-        .player
-        .records
+        .players
         .get(viewer_index)
         .map(|player| player.occupied_flag() != 0)
         .unwrap_or(false);
@@ -40,11 +39,7 @@ pub fn merge_player_intel_from_compat(
                 && viewer_is_active
                 && current_snapshot.intel_tier == IntelTier::Owned
             {
-                if let Some(planet) = game_data
-                    .planets
-                    .records
-                    .get(planet_record_index_1_based - 1)
-                {
+                if let Some(planet) = game_data.planets.get(planet_record_index_1_based - 1) {
                     current_snapshot.known_name = Some(planet.status_or_name_summary());
                 }
                 current_snapshot.last_intel_year = Some(year);
@@ -78,11 +73,10 @@ fn compat_worlds(
     database: &DatabaseDat,
     viewer_empire_id: u8,
 ) -> Vec<PlayerStarmapWorld> {
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let viewer_index = viewer_empire_id.saturating_sub(1) as usize;
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .map(|(planet_index, planet)| {
@@ -98,8 +92,7 @@ fn compat_worlds(
                 decode_known_owner_empire_id(db_record, game_data, decoded_name.is_some());
             let known_owner_empire_name = known_owner_empire_id.and_then(|empire_id| {
                 (empire_id >= 1).then(|| {
-                    game_data.player.records[empire_id as usize - 1]
-                        .controlled_empire_name_summary()
+                    game_data.players[empire_id as usize - 1].controlled_empire_name_summary()
                 })
             });
             let known_potential_production = decode_known_u16(db_record.raw[0x1c]);

@@ -2,8 +2,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use nc_data::{
-    CampaignSettings, CampaignStore, CoreGameData, DiplomaticRelation, PlanetIntelSnapshot,
-    PlayerRecord, ProductionItemKind, QueuedPlayerMail, ReportBlockRow, STARDOCK_SLOT_COUNT,
+    CampaignSettings, CampaignStore, CoreGameData, DiplomaticRelation, PlanetIntelSnapshot, Player,
+    ProductionItemKind, QueuedPlayerMail, ReportBlockRow, STARDOCK_SLOT_COUNT,
     active_starbase_count_at, build_player_starmap_projection_from_snapshots,
     merge_player_intel_from_runtime,
 };
@@ -57,8 +57,7 @@ pub fn build_game_state_payload(
     let snapshot = load_player_runtime_snapshot(game_dir, viewer_empire_id)?;
     let player = snapshot
         .game_data
-        .player
-        .records
+        .players
         .get(viewer_empire_id as usize - 1)
         .ok_or_else(|| format!("missing player record for seat {}", player_seat))?;
 
@@ -134,7 +133,7 @@ fn load_player_runtime_snapshot(
 }
 
 fn player_state(
-    player: &PlayerRecord,
+    player: &Player,
     game_data: &CoreGameData,
     viewer_empire_id: u8,
 ) -> HostedPlayerState {
@@ -160,7 +159,6 @@ fn player_state(
         planet_count: player.planet_count_raw(),
         starbase_count: game_data
             .bases
-            .records
             .iter()
             .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() == viewer_empire_id)
             .count()
@@ -174,8 +172,7 @@ fn player_state(
 fn roster_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedPlayerRosterEntry> {
     let player_count = usize::from(game_data.conquest.player_count());
     game_data
-        .player
-        .records
+        .players
         .iter()
         .take(player_count)
         .enumerate()
@@ -224,7 +221,6 @@ fn starmap_state(projection: &nc_data::PlayerStarmapProjection) -> HostedStarmap
 fn owned_planets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedOwnedPlanet> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| planet.owner_empire_slot_raw() == viewer_empire_id)
@@ -262,7 +258,6 @@ fn owned_planets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<Ho
 fn owned_fleets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedOwnedFleet> {
     game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == viewer_empire_id && fleet.has_any_force())
         .map(|fleet| HostedOwnedFleet {
@@ -322,7 +317,7 @@ fn visible_report_blocks(
         .collect()
 }
 
-fn display_player_name(player: &PlayerRecord, player_seat: u32) -> String {
+fn display_player_name(player: &Player, player_seat: u32) -> String {
     let empire_name = player.controlled_empire_name_summary();
     if !empire_name.is_empty() {
         empire_name
@@ -331,7 +326,7 @@ fn display_player_name(player: &PlayerRecord, player_seat: u32) -> String {
     }
 }
 
-fn player_mode_label(player: &PlayerRecord) -> &'static str {
+fn player_mode_label(player: &Player) -> &'static str {
     if player.is_active_human_player() {
         "active"
     } else if player.is_rogue_player() {

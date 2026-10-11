@@ -619,7 +619,6 @@ fn world_index_for_projection(projection: &PlayerStarmapProjection) -> BTreeMap<
 fn viewer_fleet_sector_coords_fast(app: &DashApp, viewer_empire_id: u8) -> BTreeSet<[u8; 2]> {
     app.game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.owner_empire_raw() == viewer_empire_id && fleet.has_any_force())
         .map(|fleet| fleet.current_location_coords_raw())
@@ -744,8 +743,7 @@ pub(crate) fn marker_kind_for_world(
         Some(owner) => {
             let is_icd = app
                 .game_data
-                .player
-                .records
+                .players
                 .get(owner.saturating_sub(1) as usize)
                 .map(|player| player.is_civil_disorder_player())
                 .unwrap_or(false);
@@ -754,8 +752,7 @@ pub(crate) fn marker_kind_for_world(
             } else {
                 let viewer = app
                     .game_data
-                    .player
-                    .records
+                    .players
                     .get(viewer_empire_id.saturating_sub(1) as usize);
                 let is_enemy = viewer.and_then(|viewer| viewer.diplomatic_relation_toward(owner))
                     == Some(DiplomaticRelation::Enemy);
@@ -887,7 +884,7 @@ mod tests {
             .with_year(3006)
             .build_initialized_baseline()
             .expect("baseline game data");
-        game_data.player.records[2].set_player_mode_raw(0x00);
+        game_data.players[2].set_player_mode_raw(0x00);
 
         assert_eq!(owner_label(&game_data, Some(0)), "Unowned");
         assert_eq!(owner_label(&game_data, Some(3)), "ICD");
@@ -1967,7 +1964,7 @@ mod tests {
     }
 
     fn place_viewer_fleet_at_record(app: &mut DashApp, fleet_idx: usize, coords: [u8; 2]) {
-        let fleet = &mut app.game_data.fleets.records[fleet_idx];
+        let fleet = &mut app.game_data.fleets[fleet_idx];
         fleet.set_owner_empire_raw(app.player_record_index_1_based as u8);
         fleet.set_current_location_coords_raw(coords);
         fleet.set_destroyer_count(1);
@@ -2070,8 +2067,7 @@ fn owner_label(game_data: &CoreGameData, known_owner_empire_id: Option<u8>) -> S
     match known_owner_empire_id {
         Some(0) => String::from("Unowned"),
         Some(owner) => game_data
-            .player
-            .records
+            .players
             .get(owner.saturating_sub(1) as usize)
             .map(|player| {
                 if player.is_civil_disorder_player() {

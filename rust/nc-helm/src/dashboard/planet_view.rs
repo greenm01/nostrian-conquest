@@ -2,8 +2,8 @@ use std::cell::Ref;
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CampaignState, CompactUnitSummaryStyle, IntelTier, OwnedPlanetStatus, PlanetIntelSnapshot,
-    PlanetRecord, PlayerStarmapWorld, active_starbase_count_at,
+    CampaignState, CompactUnitSummaryStyle, IntelTier, OwnedPlanetStatus, Planet,
+    PlanetIntelSnapshot, PlayerStarmapWorld, active_starbase_count_at,
     format_build_queue_summary as shared_build_queue_summary,
     format_owned_orbit_summary as shared_owned_orbit_summary,
     format_stardock_summary as shared_stardock_summary, owned_orbit_presence, owned_planet_status,
@@ -61,7 +61,7 @@ pub(crate) fn preferred_sector_detail_body_rows(app: &DashApp) -> usize {
 fn owned_planet_detail(
     app: &DashApp,
     planet_index_0_based: usize,
-    planet: &PlanetRecord,
+    planet: &Planet,
     budget: u32,
 ) -> SelectedPlanetDetail {
     let viewer_empire_id = app.player_record_index_1_based as u8;
@@ -70,8 +70,7 @@ fn owned_planet_detail(
     let potential = planet.potential_production_points();
     let tax_rate = app
         .game_data
-        .player
-        .records
+        .players
         .get(app.player_record_index_1_based.saturating_sub(1))
         .map(|player| player.tax_rate())
         .unwrap_or(0);
@@ -462,7 +461,7 @@ fn build_cached_sector_details(app: &DashApp) -> CachedSectorDetails {
         .iter()
         .filter_map(|world| {
             let planet_index_0_based = world.planet_record_index_1_based.checked_sub(1)?;
-            let planet = app.game_data.planets.records.get(planet_index_0_based)?;
+            let planet = app.game_data.planets.get(planet_index_0_based)?;
             let detail = if planet.owner_empire_slot_raw() == viewer_empire_id {
                 let budget = budget_by_planet_index
                     .get(&world.planet_record_index_1_based)
@@ -572,8 +571,7 @@ fn owned_owner_detail_label(game_data: &nc_data::CoreGameData, owner_empire_raw:
     }
 
     let Some(player) = game_data
-        .player
-        .records
+        .players
         .get(owner_empire_raw.saturating_sub(1) as usize)
     else {
         return format!("Empire #{owner_empire_raw}");
@@ -675,11 +673,11 @@ fn intel_tier_code(
     }
 }
 
-fn format_stardock_summary(planet: &PlanetRecord) -> String {
+fn format_stardock_summary(planet: &Planet) -> String {
     shared_stardock_summary(planet, CompactUnitSummaryStyle::JoinedCodes)
 }
 
-fn format_build_queue_summary(planet: &PlanetRecord) -> String {
+fn format_build_queue_summary(planet: &Planet) -> String {
     shared_build_queue_summary(planet, CompactUnitSummaryStyle::JoinedCodes)
 }
 
@@ -694,7 +692,7 @@ fn format_owned_orbit_summary(app: &DashApp, coords: [u8; 2], viewer_empire_id: 
 fn owned_status_widget_label(
     app: &DashApp,
     planet_index_0_based: usize,
-    _planet: &PlanetRecord,
+    _planet: &Planet,
 ) -> String {
     match owned_planet_status(
         &app.game_data,
@@ -714,7 +712,7 @@ fn owned_status_widget_label(
 fn owned_status_detail_label(
     app: &DashApp,
     planet_index_0_based: usize,
-    _planet: &PlanetRecord,
+    _planet: &Planet,
 ) -> String {
     match owned_planet_status(
         &app.game_data,
@@ -736,7 +734,7 @@ fn owned_status_detail_label(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nc_data::{GameStateBuilder, PlanetRecord};
+    use nc_data::{GameStateBuilder, Planet};
 
     #[test]
     fn widget_rows_use_split_owned_world_fields() {
@@ -755,8 +753,8 @@ mod tests {
             crate::dashboard::geometry::ScreenGeometry::new(108, 26),
             1,
         );
-        app.crosshair_x = app.game_data.planets.records[0].coords_raw()[0];
-        app.crosshair_y = app.game_data.planets.records[0].coords_raw()[1];
+        app.crosshair_x = app.game_data.planets[0].coords_raw()[0];
+        app.crosshair_y = app.game_data.planets[0].coords_raw()[1];
 
         let detail = selected_planet_detail(&app).expect("selected world");
         assert_eq!(
@@ -814,7 +812,7 @@ mod tests {
 
     #[test]
     fn compact_unit_summary_uses_tui_style_without_dashes() {
-        let mut planet = PlanetRecord::new_zeroed();
+        let mut planet = Planet::default();
         planet.set_build_kind_raw(0, 3);
         planet.set_build_count_raw(0, 90);
         planet.set_stardock_count_raw(1, 5);
@@ -869,7 +867,7 @@ mod tests {
         );
         let before = preferred_sector_detail_body_width(&app);
 
-        app.game_data.planets.records[0].set_planet_name("Frontier Bastion Prime");
+        app.game_data.planets[0].set_planet_name("Frontier Bastion Prime");
         app.game_data_revision += 1;
 
         let after = preferred_sector_detail_body_width(&app);

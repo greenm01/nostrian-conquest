@@ -1,19 +1,15 @@
 use crate::support::*;
 
-fn owned_fleet_mut(
-    state: &mut CampaignRuntimeState,
-    fleet_number: u16,
-) -> &mut nc_data::FleetRecord {
+fn owned_fleet_mut(state: &mut CampaignRuntimeState, fleet_number: u16) -> &mut nc_data::Fleet {
     state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
         .unwrap_or_else(|| panic!("fleet #{fleet_number} should exist"))
 }
 
-fn clear_fleet_force(fleet: &mut nc_data::FleetRecord) {
+fn clear_fleet_force(fleet: &mut nc_data::Fleet) {
     fleet.set_scout_count(0);
     fleet.set_battleship_count(0);
     fleet.set_cruiser_count(0);
@@ -31,7 +27,6 @@ fn fleet_menu_shows_no_active_fleets_when_owned_slots_are_empty() {
     for fleet in state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
     {
@@ -213,7 +208,6 @@ fn fleet_list_action_clamps_stale_cursor_before_using_visible_hold_row() {
     let held_fleet_number = state
         .game_data
         .fleets
-        .records
         .iter()
         .find(|fleet| fleet.owner_empire_raw() == 1)
         .map(|fleet| fleet.local_slot_word_raw())
@@ -221,7 +215,6 @@ fn fleet_list_action_clamps_stale_cursor_before_using_visible_hold_row() {
     for fleet in state
         .game_data
         .fleets
-        .records
         .iter_mut()
         .filter(|fleet| fleet.owner_empire_raw() == 1)
     {

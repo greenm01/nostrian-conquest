@@ -177,19 +177,16 @@ fn snapshot_empire_summaries(game_data: &CoreGameData) -> Vec<(usize, usize, u32
         .map(|empire_raw| {
             let planets = game_data
                 .planets
-                .records
                 .iter()
                 .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
                 .count();
             let fleets = game_data
                 .fleets
-                .records
                 .iter()
                 .filter(|fleet| fleet.owner_empire_raw() == empire_raw && fleet_has_units(fleet))
                 .count();
             let ships = game_data
                 .fleets
-                .records
                 .iter()
                 .filter(|fleet| fleet.owner_empire_raw() == empire_raw)
                 .map(total_fleet_units)
@@ -199,11 +196,11 @@ fn snapshot_empire_summaries(game_data: &CoreGameData) -> Vec<(usize, usize, u32
         .collect()
 }
 
-fn fleet_has_units(fleet: &nc_data::FleetRecord) -> bool {
+fn fleet_has_units(fleet: &nc_data::Fleet) -> bool {
     total_fleet_units(fleet) > 0
 }
 
-fn total_fleet_units(fleet: &nc_data::FleetRecord) -> u32 {
+fn total_fleet_units(fleet: &nc_data::Fleet) -> u32 {
     u32::from(fleet.battleship_count())
         + u32::from(fleet.cruiser_count())
         + u32::from(fleet.destroyer_count())

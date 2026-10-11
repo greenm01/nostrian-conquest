@@ -36,7 +36,6 @@ impl App {
                 && self
                     .game_data
                     .planets
-                    .records
                     .get(row.planet_record_index_1_based - 1)
                     .map(|planet| {
                         planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based
@@ -270,7 +269,6 @@ impl App {
         let fleet = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .ok_or_else(|| "Selected fleet is no longer available.".to_string())?;
         let (fleet_row, planet) = resolve_planet_transport_fleet_selection(
@@ -364,7 +362,6 @@ impl App {
                     .and_then(|record| {
                         self.game_data
                             .fleets
-                            .records
                             .get(record - 1)
                             .map(|fleet| fleet.local_slot_word_raw())
                     })

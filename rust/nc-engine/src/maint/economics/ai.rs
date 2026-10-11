@@ -10,9 +10,9 @@ use nc_data::{
 pub fn process_autopilot_fleet_orders(
     game_data: &mut CoreGameData,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    for player_idx in 0..game_data.player.records.len() {
-        let mode = game_data.player.records[player_idx].owner_mode_raw();
-        let autopilot = game_data.player.records[player_idx].autopilot_flag();
+    for player_idx in 0..game_data.players.len() {
+        let mode = game_data.players[player_idx].owner_mode_raw();
+        let autopilot = game_data.players[player_idx].autopilot_flag();
         if !(mode == 0x01 && autopilot == 0x01) {
             continue;
         }
@@ -28,9 +28,9 @@ pub fn process_autopilot_ai(
     game_data: &mut CoreGameData,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_count = game_data.conquest.player_count();
-    for player_idx in 0..game_data.player.records.len() {
-        let mode = game_data.player.records[player_idx].owner_mode_raw();
-        let autopilot = game_data.player.records[player_idx].autopilot_flag();
+    for player_idx in 0..game_data.players.len() {
+        let mode = game_data.players[player_idx].owner_mode_raw();
+        let autopilot = game_data.players[player_idx].autopilot_flag();
         let ai_active = mode == 0xff || (mode == 0x01 && autopilot == 0x01);
         if !ai_active {
             continue;
@@ -39,7 +39,7 @@ pub fn process_autopilot_ai(
         let owner_slot = (player_idx + 1) as u8;
         let posture = assess_empire_posture(game_data, player_idx, owner_slot, player_count);
 
-        game_data.player.records[player_idx].set_tax_rate_raw(posture.tax_rate);
+        game_data.players[player_idx].set_tax_rate_raw(posture.tax_rate);
 
         commission_stardock_starbases(game_data, owner_slot)?;
         autopilot_build_queue(game_data, owner_slot, &posture)?;
@@ -66,7 +66,6 @@ fn assess_empire_posture(
     // Empire-wide development ratio: sum(present) / sum(potential).
     let (total_present, total_potential) = game_data
         .planets
-        .records
         .iter()
         .filter(|p| p.owner_empire_slot_raw() == owner_slot)
         .fold((0u32, 0u32), |(pres, pot), p| {
@@ -81,7 +80,7 @@ fn assess_empire_posture(
     };
 
     // Count declared enemies.
-    let player = &game_data.player.records[player_idx];
+    let player = &game_data.players[player_idx];
     let enemy_count = (1..=player_count)
         .filter(|&e| e != owner_slot)
         .filter(|&e| player.diplomatic_relation_toward(e) == Some(DiplomaticRelation::Enemy))
@@ -112,14 +111,13 @@ fn assess_empire_posture(
 fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
     let owned_planet_coords: Vec<[u8; 2]> = game_data
         .planets
-        .records
         .iter()
         .filter(|p| p.owner_empire_slot_raw() == owner_slot)
         .map(|p| p.coords_raw())
         .collect();
 
-    for fleet_idx in 0..game_data.fleets.records.len() {
-        let fleet = &game_data.fleets.records[fleet_idx];
+    for fleet_idx in 0..game_data.fleets.len() {
+        let fleet = &game_data.fleets[fleet_idx];
         if fleet.owner_empire_raw() != owner_slot || !fleet.has_any_force() {
             continue;
         }
@@ -133,7 +131,7 @@ fn autopilot_fleet_orders(game_data: &mut CoreGameData, owner_slot: u8) {
             continue;
         }
 
-        let fleet = &mut game_data.fleets.records[fleet_idx];
+        let fleet = &mut game_data.fleets[fleet_idx];
         let max_speed = fleet.max_speed();
         let target =
             nearest_owned_planet_coords(fleet.current_location_coords_raw(), &owned_planet_coords)
@@ -159,9 +157,9 @@ fn commission_stardock_starbases(
     game_data: &mut CoreGameData,
     owner_slot: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    for planet_idx in 0..game_data.planets.records.len() {
+    for planet_idx in 0..game_data.planets.len() {
         for slot in 0..STARDOCK_SLOT_COUNT {
-            let planet = &game_data.planets.records[planet_idx];
+            let planet = &game_data.planets[planet_idx];
             if planet.owner_empire_slot_raw() == owner_slot
                 && planet.stardock_count_raw(slot) > 0
                 && planet.stardock_item_kind_current_known(slot) == ProductionItemKind::Starbase
@@ -184,7 +182,6 @@ fn autopilot_build_queue(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let has_starbase_at: std::collections::HashSet<[u8; 2]> = game_data
         .bases
-        .records
         .iter()
         .filter(|b| b.owner_empire_raw() == owner_slot && b.base_id_raw() != 0)
         .map(|b| b.coords_raw())
@@ -198,8 +195,8 @@ fn autopilot_build_queue(
         1
     };
 
-    for planet_idx in 0..game_data.planets.records.len() {
-        let planet = &game_data.planets.records[planet_idx];
+    for planet_idx in 0..game_data.planets.len() {
+        let planet = &game_data.planets[planet_idx];
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }

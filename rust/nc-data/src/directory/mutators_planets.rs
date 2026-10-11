@@ -5,7 +5,7 @@ impl CoreGameData {
         &self,
         planet_index_1_based: usize,
     ) -> Result<(), PlanetPlayerInputValidationError> {
-        let Some(planet) = self.planets.records.get(planet_index_1_based - 1) else {
+        let Some(planet) = self.planets.get(planet_index_1_based - 1) else {
             return Ok(());
         };
         for slot in 0..10 {
@@ -71,13 +71,11 @@ impl CoreGameData {
                 reason: PlanetPlayerInputValidationError::InvalidBuildKind(kind_raw),
             });
         }
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
         record.set_build_count_raw(0, slot_raw);
         record.set_build_kind_raw(0, kind_raw);
         Ok(())
@@ -87,13 +85,11 @@ impl CoreGameData {
         &mut self,
         record_index_1_based: usize,
     ) -> Result<(), GameStateMutationError> {
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
         for slot in 0..10 {
             record.set_build_count_raw(slot, 0);
             record.set_build_kind_raw(slot, 0);
@@ -105,13 +101,11 @@ impl CoreGameData {
         &mut self,
         record_index_1_based: usize,
     ) -> Result<(), GameStateMutationError> {
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
 
         record.set_potential_production_points(0);
         let _ = record.set_present_production_points(0);
@@ -133,13 +127,11 @@ impl CoreGameData {
         record_index_1_based: usize,
         kind: ProductionItemKind,
     ) -> Result<usize, GameStateMutationError> {
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
         let mut cleared = 0usize;
         for slot in 0..10 {
             if ProductionItemKind::from_raw(record.build_kind_raw(slot)) == kind {
@@ -157,13 +149,11 @@ impl CoreGameData {
         kind: ProductionItemKind,
         points_to_remove: u32,
     ) -> Result<u32, GameStateMutationError> {
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
         let mut remaining = points_to_remove;
         let mut removed = 0u32;
         for slot in (0..10).rev() {
@@ -193,7 +183,7 @@ impl CoreGameData {
         &self,
         record_index_1_based: usize,
     ) -> Result<u16, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
+        let record = self.planets.get(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
             },
@@ -205,7 +195,7 @@ impl CoreGameData {
         &self,
         record_index_1_based: usize,
     ) -> Result<u16, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
+        let record = self.planets.get(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
             },
@@ -220,7 +210,7 @@ impl CoreGameData {
         record_index_1_based: usize,
         kind: ProductionItemKind,
     ) -> Result<u32, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
+        let record = self.planets.get(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
             },
@@ -249,7 +239,7 @@ impl CoreGameData {
         &self,
         record_index_1_based: usize,
     ) -> Result<u32, GameStateMutationError> {
-        let record = self.planets.records.get(record_index_1_based - 1).ok_or(
+        let record = self.planets.get(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
             },
@@ -268,7 +258,7 @@ impl CoreGameData {
         record_index_1_based: usize,
     ) -> Result<u32, GameStateMutationError> {
         let budget = self.planet_build_budget(record_index_1_based)?;
-        let record = &self.planets.records[record_index_1_based - 1];
+        let record = &self.planets[record_index_1_based - 1];
         let committed = (0..10)
             .map(|slot| u32::from(record.build_count_raw(slot)))
             .sum::<u32>();
@@ -318,13 +308,11 @@ impl CoreGameData {
         }
 
         let slot_capacity = build_queue_slot_capacity(kind).unwrap_or(u32::from(u8::MAX));
-        let record = self
-            .planets
-            .records
-            .get_mut(record_index_1_based - 1)
-            .ok_or(GameStateMutationError::MissingPlanetRecord {
+        let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
+            GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
-            })?;
+            },
+        )?;
 
         let mut remaining = points_remaining_raw;
         for slot in 0..10 {

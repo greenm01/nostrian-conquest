@@ -90,6 +90,11 @@ pub use map_export::{
     PlayerMapExportData, PlayerMapExportFile, STARMAP_CSV_FILE_NAME, STARMAP_DETAILS_CSV_FILE_NAME,
     STARMAP_TEXT_FILE_NAME, build_player_map_export_data,
 };
+pub use model::{
+    BuildSlot, Conquest, Coords, DiplomaticRelation, EmpireId, Fleet, FleetId, Ipbm,
+    MaintenanceDays, Order, Planet, Player, PlayerMode, ProductionItemKind, RecordNumber, Setup,
+    ShipCounts, Starbase, StarbaseId, Stardock,
+};
 pub use planet_summary::{
     CompactUnitSummaryStyle, OrbitPresenceSummary, OwnedPlanetStatus, build_queue_unit_counts,
     compact_unit_code, format_build_queue_summary, format_owned_orbit_summary,
@@ -115,15 +120,7 @@ pub use player_war_stats::{
     apply_maintenance_events_to_player_war_stats, default_player_war_stats_states,
 };
 pub use real48::Real48;
-pub use records::base::{BaseDat, BaseRecord};
-pub use records::conquest::ConquestDat;
-pub use records::fleet::{FleetDat, FleetRecord, Order};
-pub use records::ipbm::{IpbmDat, IpbmRecord};
-pub use records::planet::{
-    PlanetDat, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT, stardock_slot_for_kind,
-};
-pub use records::player::{DiplomaticRelation, PlayerDat, PlayerRecord};
-pub use records::setup::SetupDat;
+pub use records::planet::{STARDOCK_SLOT_COUNT, stardock_slot_for_kind};
 pub use report_blocks::{
     ReportBlockRow, carry_unread_report_blocks, delete_report_block_for_viewer,
     delete_report_blocks_for_viewer,

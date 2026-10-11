@@ -12,7 +12,7 @@ use crate::dashboard::table::{
 };
 use crate::dashboard::table_filter::{FilterKind, TableFilterClause, TableFilterColumn};
 use crate::dashboard::table_selection;
-use nc_data::{EmpirePlanetEconomyRow, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT};
+use nc_data::{EmpirePlanetEconomyRow, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT};
 use nc_engine::{BUILD_UNITS, planet_build_view};
 
 use crate::dashboard::app::state::{
@@ -769,7 +769,6 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<PlanetOverlayRow> {
     let starbase_coords = app
         .game_data
         .bases
-        .records
         .iter()
         .filter(|base| {
             base.owner_empire_raw() == app.player_record_index_1_based as u8
@@ -785,7 +784,6 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<PlanetOverlayRow> {
         .filter_map(|row| {
             app.game_data
                 .planets
-                .records
                 .get(row.planet_record_index_1_based.saturating_sub(1))
                 .map(|planet| {
                     format_planet_row_cells(
@@ -895,7 +893,7 @@ fn clamp_scroll(scroll: usize, selected: usize, max_rows: usize, total_rows: usi
 fn format_planet_row_cells(
     game_data: &nc_data::CoreGameData,
     row: &EmpirePlanetEconomyRow,
-    planet: &PlanetRecord,
+    planet: &Planet,
     has_starbase: bool,
 ) -> PlanetOverlayRow {
     let coords = planet.coords_raw();
@@ -951,7 +949,7 @@ fn effective_points_left(
         })
 }
 
-fn build_queue_total(planet: &PlanetRecord) -> u32 {
+fn build_queue_total(planet: &Planet) -> u32 {
     (0..10)
         .map(|slot| {
             let points = u32::from(planet.build_count_raw(slot));
@@ -964,7 +962,7 @@ fn build_queue_total(planet: &PlanetRecord) -> u32 {
         .sum()
 }
 
-fn docked_total(planet: &PlanetRecord) -> u32 {
+fn docked_total(planet: &Planet) -> u32 {
     (0..STARDOCK_SLOT_COUNT)
         .map(|slot| u32::from(planet.stardock_count_raw(slot)))
         .sum()
@@ -1333,7 +1331,7 @@ mod tests {
             .with_player_count(4)
             .build_initialized_baseline()
             .expect("baseline");
-        let planet = &mut game_data.planets.records[0];
+        let planet = &mut game_data.planets[0];
         planet.set_stored_production_points(165);
         planet.set_build_kind_raw(0, 1);
         planet.set_build_count_raw(0, 5);
@@ -1380,7 +1378,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets.records[0].set_stored_production_points(80);
+        app.game_data.planets[0].set_stored_production_points(80);
         app.open_planet_build_specify();
 
         let browse_rect = build_specify_popup_rect(&app);
@@ -1410,7 +1408,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets.records[0].set_stored_production_points(80);
+        app.game_data.planets[0].set_stored_production_points(80);
         app.open_planet_build_specify();
 
         let mut buf = PlayfieldBuffer::new(160, 45, theme::body_style());
@@ -1446,7 +1444,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets.records[0].set_stored_production_points(80);
+        app.game_data.planets[0].set_stored_production_points(80);
         app.open_planet_build_specify();
         app.planet_overlay.build_unit_input.push('1');
         app.submit_planet_build_browse_input()
@@ -1482,7 +1480,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets.records[0].set_stored_production_points(80);
+        app.game_data.planets[0].set_stored_production_points(80);
         app.open_planet_build_specify();
 
         let popup = build_specify_popup_rect(&app);

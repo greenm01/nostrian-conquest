@@ -554,7 +554,6 @@ impl App {
         let target_planet = self
             .game_data
             .planets
-            .records
             .iter()
             .find(|planet| planet.coords_raw() == destination);
         if fleet_order_target_requires_planet_system(mission_code) && target_planet.is_none() {
@@ -1782,7 +1781,6 @@ impl App {
         let Some(fleet) = self
             .game_data
             .fleets
-            .records
             .get(row.fleet_record_index_1_based - 1)
         else {
             return false;
@@ -1861,7 +1859,6 @@ impl App {
             let speed = self
                 .game_data
                 .fleets
-                .records
                 .get(row.fleet_record_index_1_based - 1)
                 .map(|fleet| {
                     let speed = fleet.current_speed();

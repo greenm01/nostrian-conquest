@@ -632,8 +632,7 @@ fn validate_reservations_against_runtime(
     let runtime_state = store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    settings
-        .validate_reservations_for_player_count(runtime_state.game_data.player.records.len())?;
+    settings.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
     Ok(())
 }
 
@@ -644,7 +643,7 @@ fn validate_bbs_reservations_against_runtime(
     let runtime_state = store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    config.validate_reservations_for_player_count(runtime_state.game_data.player.records.len())?;
+    config.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
     Ok(())
 }
 

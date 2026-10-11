@@ -185,8 +185,8 @@ impl App {
                     .planet
                     .scorch_selected_planet_record
                     .ok_or_else(|| "Choose one of your planets first.".to_string())?;
-                let planet_name = self.game_data.planets.records[planet_record_index - 1]
-                    .status_or_name_summary();
+                let planet_name =
+                    self.game_data.planets[planet_record_index - 1].status_or_name_summary();
                 self.game_data
                     .scorch_planet_surface(planet_record_index)
                     .map_err(|err| err.to_string())?;
@@ -290,7 +290,6 @@ impl App {
         let Some((record_index, planet)) =
             self.game_data
                 .planets
-                .records
                 .iter()
                 .enumerate()
                 .find(|(_, planet)| {
@@ -315,7 +314,7 @@ impl App {
 
     pub(crate) fn selected_planet_scorch_name_and_coords(&self) -> Option<(String, [u8; 2])> {
         let record_index = self.planet.scorch_selected_planet_record?;
-        let planet = self.game_data.planets.records.get(record_index - 1)?;
+        let planet = self.game_data.planets.get(record_index - 1)?;
         Some((planet.status_or_name_summary(), planet.coords_raw()))
     }
 }

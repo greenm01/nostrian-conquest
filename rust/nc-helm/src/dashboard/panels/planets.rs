@@ -46,13 +46,12 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let starbase_coords: std::collections::HashSet<[u8; 2]> = app
         .game_data
         .bases
-        .records
         .iter()
         .filter(|b| b.owner_empire_raw() == owner_slot && b.base_id_raw() != 0)
         .map(|b| b.coords_raw())
         .collect();
 
-    for planet in &app.game_data.planets.records {
+    for planet in &app.game_data.planets {
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }
@@ -207,7 +206,7 @@ mod tests {
             ScreenGeometry::new(0, 0),
             1,
         );
-        let homeworld = &mut app.game_data.planets.records[0];
+        let homeworld = &mut app.game_data.planets[0];
         homeworld.set_build_kind_raw(0, 3);
         homeworld.set_build_count_raw(0, 90);
 

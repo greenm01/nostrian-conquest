@@ -2,7 +2,7 @@ use std::collections::BTreeMap;
 
 use nc_classic::{DatabaseDat, DatabaseRecord};
 use nc_data::{
-    CoreGameData, IntelTier, MaintenanceEvents, PlanetDat, PlanetIntelSnapshot, PlanetIntelSource,
+    CoreGameData, IntelTier, MaintenanceEvents, Planet, PlanetIntelSnapshot, PlanetIntelSource,
 };
 
 /// Regenerate classic `DATABASE.DAT` from structured runtime state plus
@@ -12,13 +12,13 @@ use nc_data::{
 /// preserve orbit/build-queue edge cases when projecting classic rows.
 pub fn build_database_dat(
     game_data: &CoreGameData,
-    pre_maint_planets: &PlanetDat,
+    pre_maint_planets: &[Planet],
     planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
     events: &MaintenanceEvents,
     template: Option<&DatabaseDat>,
 ) -> DatabaseDat {
     let player_count = game_data.conquest.player_count() as usize;
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let expected_record_count = player_count * planet_count;
     let template = template
         .filter(|db| db.records.len() == expected_record_count)
@@ -27,7 +27,6 @@ pub fn build_database_dat(
     let mut new_database = DatabaseDat::generate_from_planets_and_year(
         &game_data
             .planets
-            .records
             .iter()
             .map(|planet| planet.planet_name())
             .collect::<Vec<_>>(),
@@ -41,13 +40,13 @@ pub fn build_database_dat(
 
     for player in 0..player_count {
         let viewer_empire_raw = (player + 1) as u8;
-        let viewer_is_active = game_data.player.records[player].occupied_flag() != 0;
+        let viewer_is_active = game_data.players[player].occupied_flag() != 0;
         let previous_rows = planet_intel_by_viewer.get(player);
         for planet_idx in 0..planet_count {
             let record_idx = DatabaseDat::record_index(planet_idx, player, planet_count);
             let template_record = template.and_then(|db| db.records.get(record_idx));
             let record = &mut new_database.records[record_idx];
-            let planet = &game_data.planets.records[planet_idx];
+            let planet = &game_data.planets[planet_idx];
             let snapshot = previous_rows.and_then(|rows| rows.get(&(planet_idx + 1)));
             let current_turn_grant = current_turn_grants.get(&(viewer_empire_raw, planet_idx));
             let template_is_orbit = template_record.map(is_orbit_record).unwrap_or(false);
@@ -142,7 +141,7 @@ fn preserve_orbit_record(
     record: &mut DatabaseRecord,
     template_record: &DatabaseRecord,
     game_data: &CoreGameData,
-    pre_maint_planets: &PlanetDat,
+    pre_maint_planets: &[Planet],
     planet_idx: usize,
     player_idx: usize,
     intel_year: u16,
@@ -153,23 +152,23 @@ fn preserve_orbit_record(
     set_year_word(record, 0x18, Some(intel_year));
     set_year_word(record, 0x27, Some(intel_year));
 
-    if planet_idx < pre_maint_planets.records.len() {
+    if planet_idx < pre_maint_planets.len() {
         let had_build_queue =
-            (0..10).any(|slot| pre_maint_planets.records[planet_idx].build_count_raw(slot) > 0);
+            (0..10).any(|slot| pre_maint_planets[planet_idx].build_count_raw(slot) > 0);
         if had_build_queue {
             record.raw[0x1e] = 0x00;
         }
     }
 
-    if planet_idx < game_data.planets.records.len() {
-        let planet = &game_data.planets.records[planet_idx];
+    if planet_idx < game_data.planets.len() {
+        let planet = &game_data.planets[planet_idx];
         let planet_owner = planet.owner_empire_slot_raw() as usize;
         if planet.has_homeworld_seed_production()
             && planet_owner > 0
             && planet_owner == player_idx + 1
         {
-            let player_mode = game_data.player.records[player_idx].player_mode_raw();
-            let autopilot = game_data.player.records[player_idx].autopilot_flag();
+            let player_mode = game_data.players[player_idx].player_mode_raw();
+            let autopilot = game_data.players[player_idx].autopilot_flag();
             let ai_ran = player_mode == 0xff || (player_mode == 0x01 && autopilot == 0x01);
             if ai_ran {
                 let owner_slot = planet_owner as u8;
@@ -282,7 +281,7 @@ fn apply_owned_world_row(
     record: &mut DatabaseRecord,
     template_record: Option<&DatabaseRecord>,
     snapshot: Option<&PlanetIntelSnapshot>,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     intel_year: u16,
 ) {
     let potential = planet.potential_production_points_current_known();
@@ -306,7 +305,7 @@ fn apply_owned_world_row(
 fn apply_intel_grant_row(
     record: &mut DatabaseRecord,
     template_record: Option<&DatabaseRecord>,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     intel_year: u16,
     current_game_year: u16,
     source: PlanetIntelSource,
@@ -445,16 +444,13 @@ fn template_word_1e(template_record: Option<&DatabaseRecord>) -> Option<u16> {
         .filter(|value| *value != u16::MAX)
 }
 
-fn scout_visible_current_production(planet: &nc_data::PlanetRecord) -> u16 {
+fn scout_visible_current_production(planet: &nc_data::Planet) -> u16 {
     planet
         .present_production_points_current_known()
         .unwrap_or_else(|| planet.potential_production_points_current_known())
 }
 
-fn owned_row_word_1e(
-    planet: &nc_data::PlanetRecord,
-    template_record: Option<&DatabaseRecord>,
-) -> u16 {
+fn owned_row_word_1e(planet: &nc_data::Planet, template_record: Option<&DatabaseRecord>) -> u16 {
     if planet.is_homeworld_seed_ignoring_name()
         && template_record
             .filter(|row| {

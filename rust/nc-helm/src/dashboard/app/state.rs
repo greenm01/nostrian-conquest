@@ -1230,8 +1230,7 @@ pub(crate) fn initial_crosshair_coords(
         return coords;
     }
     let Some(player) = game_data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based.saturating_sub(1))
     else {
         return [1, 1];
@@ -1239,7 +1238,6 @@ pub(crate) fn initial_crosshair_coords(
     let homeworld_index = player.homeworld_planet_index_1_based_raw() as usize;
     game_data
         .planets
-        .records
         .get(homeworld_index.saturating_sub(1))
         .map(|planet| planet.coords_raw())
         .unwrap_or([1, 1])

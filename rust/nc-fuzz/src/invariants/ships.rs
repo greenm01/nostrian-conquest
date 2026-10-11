@@ -17,7 +17,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use nc_data::{
-    CoreGameData, EncounterDispositionEvent, FleetRecord, Order, SalvageResolvedEvent, ShipLosses,
+    CoreGameData, EncounterDispositionEvent, Fleet, Order, SalvageResolvedEvent, ShipLosses,
 };
 
 use super::{TurnObservation, Violation};
@@ -94,7 +94,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
 /// empire and fleet number.
 fn merged_fleets(observation: &TurnObservation) -> BTreeMap<(u8, u16), Ships> {
     let mut fleets = BTreeMap::new();
-    for fleet in &observation.before.fleets.records {
+    for fleet in &observation.before.fleets {
         add_ships(fleets.entry(fleet_key(fleet)).or_default(), ships_of(fleet));
     }
     let mut seen = BTreeSet::new();
@@ -130,7 +130,7 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
         else {
             continue;
         };
-        let mut candidates = observation.before.fleets.records.iter().filter(|fleet| {
+        let mut candidates = observation.before.fleets.iter().filter(|fleet| {
             fleet.owner_empire_raw() == owner_empire_raw
                 && fleet.standing_order_kind() == Order::Salvage
                 && fleet.standing_order_target_coords_raw() == coords
@@ -177,19 +177,19 @@ fn took_losses(observation: &TurnObservation, empire: u8) -> bool {
             .any(|event| event.attacker_empire_raw == empire)
 }
 
-fn fleet_key(fleet: &FleetRecord) -> (u8, u16) {
+fn fleet_key(fleet: &Fleet) -> (u8, u16) {
     (fleet.owner_empire_raw(), fleet.local_slot_word_raw())
 }
 
 fn fleet_ships(state: &CoreGameData) -> Ships {
     let mut total = [0; 6];
-    for fleet in &state.fleets.records {
+    for fleet in &state.fleets {
         add_ships(&mut total, ships_of(fleet));
     }
     total
 }
 
-fn ships_of(fleet: &FleetRecord) -> Ships {
+fn ships_of(fleet: &Fleet) -> Ships {
     [
         u32::from(fleet.destroyer_count()),
         u32::from(fleet.cruiser_count()),

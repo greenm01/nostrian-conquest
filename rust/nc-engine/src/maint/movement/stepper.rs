@@ -5,7 +5,7 @@ use crate::navigation::{plan_route_with_intel, visible_hazard_intel_is_empty};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
 use nc_data::Real48;
 
-pub(super) fn set_fleet_to_local_hold(fleet: &mut nc_data::FleetRecord) {
+pub(super) fn set_fleet_to_local_hold(fleet: &mut nc_data::Fleet) {
     let coords = fleet.current_location_coords_raw();
     fleet.set_current_speed(0);
     fleet.set_standing_order_kind(Order::HoldPosition);
@@ -58,7 +58,7 @@ pub(in crate::maint) enum TickEnd {
 /// starts a new course.
 type OrderKey = (u8, [u8; 2], u8);
 
-fn order_key(fleet: &nc_data::FleetRecord) -> OrderKey {
+fn order_key(fleet: &nc_data::Fleet) -> OrderKey {
     (
         fleet.standing_order_code_raw(),
         fleet.standing_order_target_coords_raw(),
@@ -87,7 +87,7 @@ pub(super) struct FleetTrack {
 impl FleetTrack {
     /// The order classic would see: a View fleet climbing out is on a Move
     /// to depth 0.
-    pub(super) fn effective_order(&self, fleet: &nc_data::FleetRecord) -> (Order, u8) {
+    pub(super) fn effective_order(&self, fleet: &nc_data::Fleet) -> (Order, u8) {
         if self.viewing_out == Some(order_key(fleet)) {
             (Order::MoveOnly, 0)
         } else {
@@ -101,7 +101,7 @@ impl FleetTrack {
     }
 
     /// The order resolved this tick; the fleet stops until it changes.
-    pub(super) fn resolve(&mut self, fleet: &nc_data::FleetRecord) {
+    pub(super) fn resolve(&mut self, fleet: &nc_data::Fleet) {
         self.resolved = Some(order_key(fleet));
         self.motion = None;
     }
@@ -112,7 +112,7 @@ impl FleetTrack {
     }
 
     /// Undo this tick's step (an attacker loses the tick's movement).
-    pub(super) fn undo_step(&mut self, fleet: &mut nc_data::FleetRecord) {
+    pub(super) fn undo_step(&mut self, fleet: &mut nc_data::Fleet) {
         if let Some((motion, _)) = self.before {
             motion.write_to(fleet);
             self.motion = Some(motion);
@@ -121,7 +121,7 @@ impl FleetTrack {
 
     /// The year is over: a View fleet still climbing out stops; its viewing
     /// report turns the order into the Move out (`complete_view_world`).
-    pub(super) fn finish(&self, fleet: &mut nc_data::FleetRecord) {
+    pub(super) fn finish(&self, fleet: &mut nc_data::Fleet) {
         if self.viewing_out == Some(order_key(fleet)) {
             fleet.set_current_speed(0);
         }
@@ -137,7 +137,7 @@ pub(super) fn step_fleet(
     visible_hazards_by_empire: &[VisibleHazardIntel],
 ) -> bool {
     track.before = None;
-    let fleet = &game_data.fleets.records[fleet_idx];
+    let fleet = &game_data.fleets[fleet_idx];
     let key = order_key(fleet);
     if track.resolved == Some(key) {
         return false;
@@ -175,7 +175,7 @@ pub(super) fn step_fleet(
         };
         track.course = Some((key, course));
     }
-    let fleet = &mut game_data.fleets.records[fleet_idx];
+    let fleet = &mut game_data.fleets[fleet_idx];
     let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
     let speed = fleet.current_speed();
     let order = if viewing_out { Order::MoveOnly } else { order };
@@ -208,7 +208,7 @@ pub(super) fn test_arrival(
     if track.before.is_none() {
         return TickEnd::Underway;
     }
-    let fleet = &mut game_data.fleets.records[fleet_idx];
+    let fleet = &mut game_data.fleets[fleet_idx];
     let key = order_key(fleet);
     let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
     let order = fleet.standing_order_kind();
@@ -261,7 +261,7 @@ fn fleet_course(
     visible_hazards_by_empire: &[VisibleHazardIntel],
     target: [u8; 2],
 ) -> Course {
-    let owner = game_data.fleets.records[fleet_idx].owner_empire_raw();
+    let owner = game_data.fleets[fleet_idx].owner_empire_raw();
     let Some(intel) = visible_hazards_by_empire.get(usize::from(owner.saturating_sub(1))) else {
         return Course::direct(target);
     };
@@ -278,7 +278,7 @@ fn fleet_course(
 }
 
 /// What a resolved order leaves on the fleet besides its arrival position.
-fn apply_resolution_state(fleet: &mut nc_data::FleetRecord, order: Order) {
+fn apply_resolution_state(fleet: &mut nc_data::Fleet, order: Order) {
     if !order_persists_on_arrival(order) {
         fleet.set_current_speed(0);
         fleet.set_standing_order_kind(Order::HoldPosition);

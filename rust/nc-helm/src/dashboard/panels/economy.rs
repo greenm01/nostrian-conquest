@@ -23,7 +23,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, frame: PanelWidgetFrame) {
 
 pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let player_idx = app.player_record_index_1_based.saturating_sub(1);
-    let Some(player) = app.game_data.player.records.get(player_idx) else {
+    let Some(player) = app.game_data.players.get(player_idx) else {
         return Vec::new();
     };
     let tax = player.tax_rate();
@@ -32,7 +32,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let mut total_treasury: u32 = 0;
     let mut total_present: u32 = 0;
     let mut total_potential: u32 = 0;
-    for planet in &app.game_data.planets.records {
+    for planet in &app.game_data.planets {
         if planet.owner_empire_slot_raw() != owner_slot {
             continue;
         }

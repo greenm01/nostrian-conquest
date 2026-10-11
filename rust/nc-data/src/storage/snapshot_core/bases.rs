@@ -2,7 +2,6 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
 use crate::model::{Coords, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
-use crate::{BaseDat, BaseRecord};
 
 /// One row per BASES.DAT record.
 pub(super) const SCHEMA: &str = "
@@ -30,10 +29,9 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &BaseDat,
+    bases: &[Starbase],
 ) -> Result<(), CampaignStoreError> {
-    for (index, record) in data.records.iter().enumerate() {
-        let base = &record.base;
+    for (index, base) in bases.iter().enumerate() {
         insert_row(
             tx,
             "snapshot_bases",
@@ -61,14 +59,16 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(conn: &mut Connection, snapshot_id: i64) -> Result<BaseDat, CampaignStoreError> {
+pub(super) fn load(
+    conn: &mut Connection,
+    snapshot_id: i64,
+) -> Result<Vec<Starbase>, CampaignStoreError> {
     let mut stmt =
         conn.prepare("SELECT * FROM snapshot_bases WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let records = stmt
         .query_map(params![snapshot_id], base_from_row)?
-        .map(|base| base.map(|base| BaseRecord { base }))
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(BaseDat { records })
+    Ok(records)
 }
 
 fn base_from_row(row: &Row<'_>) -> rusqlite::Result<Starbase> {

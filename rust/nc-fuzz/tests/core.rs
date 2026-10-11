@@ -100,15 +100,15 @@ fn untouched_state_has_no_violations() {
 
 #[test]
 fn invariants_catch_tampering() {
-    let off_map = tampered(|state| state.fleets.records[0].set_current_location_coords_raw([0, 5]));
+    let off_map = tampered(|state| state.fleets[0].set_current_location_coords_raw([0, 5]));
     assert!(
         matches!(off_map.as_slice(), [Violation::CoordinateOutOfMap { .. }]),
         "{off_map:?}"
     );
 
     let shared = tampered(|state| {
-        let coords = state.planets.records[0].coords_raw();
-        state.planets.records[1].set_coords_raw(coords);
+        let coords = state.planets[0].coords_raw();
+        state.planets[1].set_coords_raw(coords);
     });
     assert!(
         shared
@@ -118,7 +118,7 @@ fn invariants_catch_tampering() {
     );
 
     let lost = tampered(|state| {
-        let fleet = &mut state.fleets.records[2];
+        let fleet = &mut state.fleets[2];
         fleet.set_destroyer_count(fleet.destroyer_count() - 1);
     });
     assert!(
@@ -126,7 +126,7 @@ fn invariants_catch_tampering() {
         "{lost:?}"
     );
 
-    let seized = tampered(|state| state.planets.records[1].set_owner_empire_slot_raw(1));
+    let seized = tampered(|state| state.planets[1].set_owner_empire_slot_raw(1));
     assert!(
         matches!(
             seized.as_slice(),

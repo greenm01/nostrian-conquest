@@ -2,7 +2,7 @@ use super::*;
 
 impl CoreGameData {
     pub fn player_owned_base_record_counts_current_known(&self) -> Vec<usize> {
-        (1..=self.player.records.len())
+        (1..=self.players.len())
             .map(|player_record_index_1_based| {
                 self.player_owned_base_record_count_current_known(player_record_index_1_based)
             })
@@ -10,7 +10,7 @@ impl CoreGameData {
     }
 
     pub fn player_owned_planet_counts_current_known(&self) -> Vec<usize> {
-        (1..=self.player.records.len())
+        (1..=self.players.len())
             .map(|player_record_index_1_based| {
                 self.player_owned_planet_count_current_known(player_record_index_1_based)
             })
@@ -22,7 +22,6 @@ impl CoreGameData {
         (1..=player_count)
             .map(|player_record_index_1_based| {
                 self.planets
-                    .records
                     .iter()
                     .find(|record| {
                         record.owner_empire_slot_raw() as usize == player_record_index_1_based
@@ -39,7 +38,6 @@ impl CoreGameData {
         for player_record_index_1_based in 1..=player_count {
             let matches = self
                 .planets
-                .records
                 .iter()
                 .enumerate()
                 .filter(|(_, record)| {
@@ -63,7 +61,7 @@ impl CoreGameData {
         let mut errors = Vec::new();
         let player_count = self.conquest.player_count() as usize;
 
-        for (idx, record) in self.planets.records.iter().enumerate() {
+        for (idx, record) in self.planets.iter().enumerate() {
             let planet_index_1_based = idx + 1;
             let owner = record.owner_empire_slot_raw() as usize;
             let is_homeworld_seed = record.is_homeworld_seed_ignoring_name();
@@ -109,7 +107,7 @@ impl CoreGameData {
     pub fn current_known_homeworld_seed_payload_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
 
-        for (idx, record) in self.planets.records.iter().enumerate() {
+        for (idx, record) in self.planets.iter().enumerate() {
             if !record.is_homeworld_seed_ignoring_name() {
                 continue;
             }
@@ -180,7 +178,7 @@ impl CoreGameData {
     pub fn current_known_unowned_planet_payload_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
 
-        for (idx, record) in self.planets.records.iter().enumerate() {
+        for (idx, record) in self.planets.iter().enumerate() {
             if record.is_homeworld_seed_ignoring_name() {
                 continue;
             }

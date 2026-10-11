@@ -24,8 +24,7 @@ pub use results::{
 use crate::VisibleHazardIntel;
 use fleet_refs::{FleetIndexRemap, TurnFleetRefs};
 use nc_data::{
-    CoreGameData, FleetRecord, Order, PlayerLifecycleState, WinnerState,
-    default_player_lifecycle_states,
+    CoreGameData, Fleet, Order, PlayerLifecycleState, WinnerState, default_player_lifecycle_states,
 };
 use std::fmt;
 
@@ -294,7 +293,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // CONQUEST.DAT rankings before the pass changes them.
     game_data
         .conquest
-        .snapshot_previous_year(&game_data.player.records);
+        .snapshot_previous_year(&game_data.players);
 
     let initial_campaign_outlook = campaign::campaign_outlook(game_data, player_lifecycle_states);
     let initial_campaign_outcome =
@@ -510,8 +509,8 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
                 planet_idx: Some(planet_idx),
-                location_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
+                location_coords: Some(game_data.planets[planet_idx].coords_raw()),
+                target_coords: Some(game_data.planets[planet_idx].coords_raw()),
                 stardate_week,
             }),
             ColonizationResolvedEvent::BlockedByOwner {
@@ -527,8 +526,8 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 outcome: MissionOutcome::Failed,
                 abort_reason: None,
                 planet_idx: Some(planet_idx),
-                location_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
-                target_coords: Some(game_data.planets.records[planet_idx].coords_raw()),
+                location_coords: Some(game_data.planets[planet_idx].coords_raw()),
+                target_coords: Some(game_data.planets[planet_idx].coords_raw()),
                 stardate_week,
             }),
             ColonizationResolvedEvent::Aborted {
@@ -545,7 +544,6 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
                 abort_reason: None,
                 planet_idx: game_data
                     .planets
-                    .records
                     .iter()
                     .position(|planet| planet.coords_raw() == coords),
                 location_coords: Some(coords),
@@ -627,13 +625,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 fn fleet_record_keys(game_data: &CoreGameData) -> Vec<(u8, u16)> {
     game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| (fleet.owner_empire_raw(), fleet.local_slot_word_raw()))
         .collect()
 }
 
-fn fleet_has_presence(fleet: &FleetRecord) -> bool {
+fn fleet_has_presence(fleet: &Fleet) -> bool {
     fleet.has_any_force()
 }
 
@@ -671,7 +668,7 @@ fn restore_scout_orders_and_generate_on_station_observations(
     // Restore scout orders for fleets that just arrived and survived combat.
     // This completes the persistence cycle for newly-arrived scouts.
     for (&fleet_idx, &kind) in &scout_arrivals {
-        let Some(fleet) = game_data.fleets.records.get_mut(fleet_idx) else {
+        let Some(fleet) = game_data.fleets.get_mut(fleet_idx) else {
             continue;
         };
         if !fleet.has_any_force() {
@@ -686,7 +683,7 @@ fn restore_scout_orders_and_generate_on_station_observations(
     }
 
     // Generate per-turn observations for scouts already on station from previous turns.
-    for (fleet_idx, fleet) in game_data.fleets.records.iter().enumerate() {
+    for (fleet_idx, fleet) in game_data.fleets.iter().enumerate() {
         if !fleet.has_any_force() {
             continue;
         }
@@ -721,7 +718,6 @@ fn restore_scout_orders_and_generate_on_station_observations(
             Order::ScoutSolarSystem => {
                 let planet_idx = game_data
                     .planets
-                    .records
                     .iter()
                     .position(|planet| planet.coords_raw() == coords);
                 if let Some(planet_idx) = planet_idx {
@@ -764,7 +760,7 @@ fn finalize_pending_observation_events(
 ) {
     let pending_events = std::mem::take(&mut movement_events.pending_observation_events);
     for pending in pending_events {
-        let Some(fleet) = game_data.fleets.records.get_mut(pending.fleet_idx) else {
+        let Some(fleet) = game_data.fleets.get_mut(pending.fleet_idx) else {
             continue;
         };
         if !fleet_has_presence(fleet) {
@@ -814,26 +810,23 @@ fn apply_fleet_removal_remap(
     game_data: &mut CoreGameData,
     to_remove: &[bool],
 ) -> FleetRemovalRemapInfo {
-    let fleet_count = game_data.fleets.records.len();
+    let fleet_count = game_data.fleets.len();
     if fleet_count == 0 || to_remove.len() != fleet_count {
         return FleetRemovalRemapInfo::default();
     }
 
     let pre_removal_owner: Vec<u8> = game_data
         .fleets
-        .records
         .iter()
         .map(|f| f.owner_empire_raw())
         .collect();
     let pre_removal_fleet_id: Vec<u16> = game_data
         .fleets
-        .records
         .iter()
         .map(|f| f.fleet_id_word_raw())
         .collect();
     let removed_fleet_keys: std::collections::HashSet<(u8, u16)> = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(idx, _)| to_remove[*idx])
@@ -873,7 +866,7 @@ fn apply_fleet_removal_remap(
         ..FleetRemovalRemapInfo::default()
     };
     let mut remapped_fleets = Vec::new();
-    for (idx, fleet) in game_data.fleets.records.iter().enumerate() {
+    for (idx, fleet) in game_data.fleets.iter().enumerate() {
         if to_remove[idx] {
             continue;
         }
@@ -898,16 +891,16 @@ fn apply_fleet_removal_remap(
         }
         remapped_fleets.push(remapped);
     }
-    game_data.fleets.records = remapped_fleets;
+    game_data.fleets = remapped_fleets;
 
-    for player_idx in 0..game_data.player.records.len() {
+    for player_idx in 0..game_data.players.len() {
         let owner_raw = (player_idx + 1) as u8;
-        let first_id = game_data.player.records[player_idx].fleet_chain_head_raw();
-        let last_id = game_data.player.records[player_idx].fleet_chain_tail_raw();
+        let first_id = game_data.players[player_idx].fleet_chain_head_raw();
+        let last_id = game_data.players[player_idx].fleet_chain_tail_raw();
         let new_first = remap_id(first_id);
         let new_last = remap_id(last_id);
-        game_data.player.records[player_idx].set_fleet_chain_head_raw(new_first);
-        game_data.player.records[player_idx].set_fleet_chain_tail_raw(
+        game_data.players[player_idx].set_fleet_chain_head_raw(new_first);
+        game_data.players[player_idx].set_fleet_chain_tail_raw(
             if new_last == 0 && new_first != 0 {
                 let mut max_new_id: u16 = new_first;
                 for orig_idx in 0..fleet_count {
@@ -938,7 +931,6 @@ fn remove_selected_fleets(
 fn cull_empty_fleets(game_data: &mut CoreGameData) -> std::collections::HashMap<u16, u8> {
     let to_remove: Vec<bool> = game_data
         .fleets
-        .records
         .iter()
         .map(|f| !f.has_any_force())
         .collect();

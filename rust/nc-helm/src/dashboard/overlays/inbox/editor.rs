@@ -43,8 +43,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame: MapWidgetFrame
         .compose_recipient_empire
         .and_then(|id| {
             app.game_data
-                .player
-                .records
+                .players
                 .get(id as usize - 1)
                 .map(|p| p.controlled_empire_name_summary())
         })

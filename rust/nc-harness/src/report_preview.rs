@@ -1,4 +1,4 @@
-use nc_data::{FleetRecord, PlanetRecord, ReportBlockRow, StarbaseAlert};
+use nc_data::{Fleet, Planet, ReportBlockRow, StarbaseAlert};
 use nc_engine::{
     AssaultReportEvent, BombardEvent, ContactReportSource, EncounterDispositionEvent,
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, GameRng, MaintenanceEvents,
@@ -442,7 +442,7 @@ fn build_bombard_preview(seed: u64, sample_index: usize) -> Result<PreviewScenar
         defense_batteries,
     );
     configure_fleet(
-        &mut world.game_data.fleets.records[ATTACKER_FLEET_IDX],
+        &mut world.game_data.fleets[ATTACKER_FLEET_IDX],
         ATTACKER_EMPIRE,
         ATTACKER_FLEET_NUMBER,
         world.target_coords,
@@ -551,7 +551,7 @@ fn build_assault_preview(
         defense_batteries,
     );
     configure_fleet(
-        &mut world.game_data.fleets.records[ATTACKER_FLEET_IDX],
+        &mut world.game_data.fleets[ATTACKER_FLEET_IDX],
         ATTACKER_EMPIRE,
         ATTACKER_FLEET_NUMBER,
         world.target_coords,
@@ -893,7 +893,7 @@ fn build_encounter_preview(
     let friendly = sample_contact_force(&mut rng);
     let enemy = sample_battle_force(&mut rng);
     configure_fleet(
-        &mut world.game_data.fleets.records[ATTACKER_FLEET_IDX],
+        &mut world.game_data.fleets[ATTACKER_FLEET_IDX],
         ATTACKER_EMPIRE,
         ATTACKER_FLEET_NUMBER,
         world.target_coords,
@@ -1036,7 +1036,7 @@ fn build_ownership_change_preview(
         defense_batteries,
     );
     configure_fleet(
-        &mut world.game_data.fleets.records[ATTACKER_FLEET_IDX],
+        &mut world.game_data.fleets[ATTACKER_FLEET_IDX],
         ATTACKER_EMPIRE,
         ATTACKER_FLEET_NUMBER,
         world.target_coords,
@@ -1299,7 +1299,7 @@ fn configure_named_player(
     handle: &str,
     empire_name: &str,
 ) {
-    if let Some(player) = game_data.player.records.get_mut((empire_raw - 1) as usize) {
+    if let Some(player) = game_data.players.get_mut((empire_raw - 1) as usize) {
         player.set_owner_empire_raw(empire_raw);
         player.set_occupied_flag(empire_raw);
         player.set_assigned_player_handle_raw(handle);
@@ -1315,8 +1315,8 @@ fn configure_target_planet(
     armies: u8,
     batteries: u8,
 ) {
-    let planet = &mut game_data.planets.records[TARGET_PLANET_IDX];
-    *planet = PlanetRecord::new_zeroed();
+    let planet = &mut game_data.planets[TARGET_PLANET_IDX];
+    *planet = Planet::default();
     planet.set_coords_raw(coords);
     planet.set_planet_name(name);
     planet.set_owner_empire_slot_raw(owner_empire_raw);
@@ -1329,7 +1329,7 @@ fn configure_target_planet(
 }
 
 fn configure_fleet(
-    fleet: &mut FleetRecord,
+    fleet: &mut Fleet,
     owner_empire_raw: u8,
     fleet_number: u8,
     coords: [u8; 2],
@@ -1337,7 +1337,7 @@ fn configure_fleet(
     order: Order,
     target: [u8; 2],
 ) {
-    *fleet = FleetRecord::new_zeroed();
+    *fleet = Fleet::default();
     fleet.set_owner_empire_raw(owner_empire_raw);
     fleet.set_local_slot_word_raw(fleet_number.into());
     fleet.set_current_location_coords_raw(coords);

@@ -1,7 +1,6 @@
 use super::*;
 use crate::{
-    PlayerRecord, ProductionItemKind, Real48, build_capacity, yearly_growth_delta,
-    yearly_tax_revenue,
+    Player, ProductionItemKind, Real48, build_capacity, yearly_growth_delta, yearly_tax_revenue,
 };
 
 impl CoreGameData {
@@ -19,7 +18,6 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> usize {
         self.planets
-            .records
             .iter()
             .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
             .count()
@@ -30,7 +28,6 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> usize {
         self.bases
-            .records
             .iter()
             .filter(|record| record.owner_empire_raw() as usize == player_record_index_1_based)
             .count()
@@ -41,15 +38,13 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> usize {
         self.fleets
-            .records
             .iter()
             .filter(|record| record.owner_empire_raw() as usize == player_record_index_1_based)
             .count()
     }
 
     pub fn player_ipbm_count_current_known(&self, player_record_index_1_based: usize) -> usize {
-        self.player
-            .records
+        self.players
             .get(player_record_index_1_based - 1)
             .map(|record| record.ipbm_chain_head_raw() as usize)
             .unwrap_or(0)
@@ -61,7 +56,6 @@ impl CoreGameData {
 
     pub fn empire_present_production(&self, player_record_index_1_based: usize) -> u16 {
         self.planets
-            .records
             .iter()
             .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
             .filter_map(|record| record.present_production_points())
@@ -70,7 +64,6 @@ impl CoreGameData {
 
     pub fn empire_potential_production(&self, player_record_index_1_based: usize) -> u16 {
         self.planets
-            .records
             .iter()
             .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
             .map(|record| record.potential_production_points())
@@ -79,14 +72,12 @@ impl CoreGameData {
 
     pub fn empire_available_production_points(&self, player_record_index_1_based: usize) -> u32 {
         let tax_rate = self
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .map(|record| record.tax_rate())
             .unwrap_or(0);
 
         self.planets
-            .records
             .iter()
             .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
             .filter_map(|record| {
@@ -119,7 +110,7 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> usize {
         let own = self.player_owned_planet_count_current_known(player_record_index_1_based);
-        1 + (1..=self.player.records.len())
+        1 + (1..=self.players.len())
             .filter(|&idx| idx != player_record_index_1_based)
             .filter(|&idx| self.player_owned_planet_count_current_known(idx) > own)
             .count()
@@ -127,7 +118,7 @@ impl CoreGameData {
 
     pub fn empire_rank_by_present_production(&self, player_record_index_1_based: usize) -> usize {
         let own = self.empire_present_production(player_record_index_1_based);
-        1 + (1..=self.player.records.len())
+        1 + (1..=self.players.len())
             .filter(|&idx| idx != player_record_index_1_based)
             .filter(|&idx| self.empire_present_production(idx) > own)
             .count()
@@ -138,8 +129,7 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> EmpireEconomySummary {
         let tax_rate = self
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .map(|record| record.tax_rate())
             .unwrap_or(0);
@@ -168,7 +158,7 @@ impl CoreGameData {
         let empire_raw = player_record_index_1_based as u8;
         let mut summary = EmpireUnitSummary::default();
 
-        for fleet in &self.fleets.records {
+        for fleet in &self.fleets {
             if fleet.owner_empire_raw() != empire_raw {
                 continue;
             }
@@ -183,7 +173,7 @@ impl CoreGameData {
         summary.starbases =
             self.player_owned_base_record_count_current_known(player_record_index_1_based) as u32;
 
-        for planet in &self.planets.records {
+        for planet in &self.planets {
             if planet.owner_empire_slot_raw() != empire_raw {
                 continue;
             }
@@ -198,7 +188,7 @@ impl CoreGameData {
         let empire_raw = player_record_index_1_based as u8;
         let mut summary = EmpireUnitSummary::default();
 
-        for planet in &self.planets.records {
+        for planet in &self.planets {
             if planet.owner_empire_slot_raw() != empire_raw {
                 continue;
             }
@@ -230,8 +220,7 @@ impl CoreGameData {
         sort: EmpireProductionRankingSort,
     ) -> Vec<EmpireProductionRankingRow> {
         let mut rows = self
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .map(|(idx, record)| EmpireProductionRankingRow {
@@ -272,7 +261,6 @@ impl CoreGameData {
         player_record_index_1_based: usize,
     ) -> Vec<EmpirePlanetEconomyRow> {
         self.planets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, record)| {
@@ -281,8 +269,7 @@ impl CoreGameData {
             .filter_map(|(idx, record)| {
                 let present_production = record.present_production_points()?;
                 let tax_rate = self
-                    .player
-                    .records
+                    .players
                     .get(player_record_index_1_based - 1)
                     .map(|player| player.tax_rate())
                     .unwrap_or(0);
@@ -319,7 +306,7 @@ impl CoreGameData {
     /// the world's sector at depth 0.5 or more, with that sector as its
     /// target and orbit as its target layer.
     pub fn planet_has_friendly_starbase(&self, owner_empire_raw: u8, coords: [u8; 2]) -> bool {
-        self.bases.records.iter().any(|base| {
+        self.bases.iter().any(|base| {
             base.owner_empire_raw() == owner_empire_raw
                 && base.coords_raw() == coords
                 && base.base_id_raw() != 0
@@ -338,7 +325,6 @@ impl CoreGameData {
 
     pub fn planet_record_index_at_coords(&self, coords: [u8; 2]) -> Option<usize> {
         self.planets
-            .records
             .iter()
             .position(|planet| planet.coords_raw() == coords)
     }
@@ -401,7 +387,7 @@ impl CoreGameData {
 
     pub fn empire_campaign_state(&self, empire_raw: u8) -> Option<CampaignState> {
         let player_idx = empire_raw.checked_sub(1)? as usize;
-        let player = self.player.records.get(player_idx)?;
+        let player = self.players.get(player_idx)?;
 
         match player.owner_mode_raw() {
             0x00 => return Some(CampaignState::CivilDisorder),
@@ -412,7 +398,6 @@ impl CoreGameData {
 
         let owned_planets = self
             .planets
-            .records
             .iter()
             .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
             .count();
@@ -423,7 +408,7 @@ impl CoreGameData {
         let mut has_any_fleet_presence = false;
         let mut can_recover_planet = false;
 
-        for fleet in &self.fleets.records {
+        for fleet in &self.fleets {
             if fleet.owner_empire_raw() != empire_raw {
                 continue;
             }
@@ -458,7 +443,7 @@ impl CoreGameData {
     }
 
     pub fn campaign_contenders(&self) -> Vec<u8> {
-        (1..=self.player.records.len() as u8)
+        (1..=self.players.len() as u8)
             .filter(|&empire_raw| crate::is_campaign_contender(self, empire_raw, &[]))
             .collect()
     }
@@ -494,7 +479,7 @@ impl CoreGameData {
     }
 }
 
-fn empire_name_for_rankings(record: &PlayerRecord) -> String {
+fn empire_name_for_rankings(record: &Player) -> String {
     let empire = record.controlled_empire_name_summary();
     if !empire.is_empty() {
         return empire;

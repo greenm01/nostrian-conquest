@@ -354,7 +354,7 @@ impl App {
             }
             InboxItemSource::ReportBlock(index) => delete_report_block_for_viewer(
                 &mut self.report_block_rows,
-                &self.game_data.player.records,
+                &self.game_data.players,
                 index,
                 self.player.record_index_1_based as u8,
             ),

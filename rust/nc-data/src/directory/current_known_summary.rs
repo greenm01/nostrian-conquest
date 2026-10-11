@@ -17,9 +17,9 @@ impl CoreGameData {
     }
 
     pub fn current_known_key_word_summary(&self) -> CurrentKnownKeyWordSummary {
-        let player1 = self.player.records.first();
-        let fleet1 = self.fleets.records.first();
-        let base1 = self.bases.records.first();
+        let player1 = self.players.first();
+        let fleet1 = self.fleets.first();
+        let base1 = self.bases.first();
 
         CurrentKnownKeyWordSummary {
             player_first_base_record: player1
@@ -36,7 +36,7 @@ impl CoreGameData {
             base1_id: base1.map(|record| record.base_id_raw()),
             base1_record_number: base1.map(|record| record.record_number_raw()),
             base1_coords: base1.map(|record| record.coords_raw()),
-            ipbm_record_count: self.ipbm.records.len(),
+            ipbm_record_count: self.ipbms.len(),
         }
     }
 }

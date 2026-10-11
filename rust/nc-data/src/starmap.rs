@@ -243,7 +243,6 @@ pub fn build_player_starmap_projection_from_snapshots(
     let map_size = map_size_for_player_count(game_data.conquest.player_count());
     let worlds = game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .map(|(planet_index, planet)| {
@@ -262,8 +261,7 @@ pub fn build_player_starmap_projection_from_snapshots(
             };
             let known_owner_empire_name = known_owner_empire_id.and_then(|empire_id| {
                 (empire_id >= 1).then(|| {
-                    game_data.player.records[empire_id as usize - 1]
-                        .controlled_empire_name_summary()
+                    game_data.players[empire_id as usize - 1].controlled_empire_name_summary()
                 })
             });
 

@@ -25,7 +25,6 @@ pub(crate) fn set_fleet_ships(
     with_runtime_game_mut_and_export(dir, |data| {
         let fleet = data
             .fleets
-            .records
             .get_mut(fleet_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("fleet record index out of range: {fleet_record_index_1_based}")
@@ -67,7 +66,6 @@ pub(crate) fn set_fleet_location(
     with_runtime_game_mut_and_export(dir, |data| {
         let fleet = data
             .fleets
-            .records
             .get_mut(fleet_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("fleet record index out of range: {fleet_record_index_1_based}")

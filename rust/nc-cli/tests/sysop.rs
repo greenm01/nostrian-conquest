@@ -14,13 +14,10 @@ fn sysop_new_game_default_four_player() {
     assert!(stdout.contains("players=4"));
     assert!(target.join("DATABASE.DAT").exists());
     let game_data = load_classic_core_files(&target).expect("generated game should load");
-    assert_eq!(game_data.player.records[0].owner_mode_raw(), 0);
-    assert_eq!(game_data.planets.records[0].planet_name(), "Not Named Yet");
-    assert_eq!(game_data.player.records[0].tax_rate(), 50);
-    assert_eq!(
-        game_data.planets.records[0].present_production_points(),
-        Some(100)
-    );
+    assert_eq!(game_data.players[0].owner_mode_raw(), 0);
+    assert_eq!(game_data.planets[0].planet_name(), "Not Named Yet");
+    assert_eq!(game_data.players[0].tax_rate(), 50);
+    assert_eq!(game_data.planets[0].present_production_points(), Some(100));
     assert!(target.join("ECGAME.EXE").exists());
     assert!(target.join("ECMAINT.EXE").exists());
     assert!(target.join("ECUTIL.EXE").exists());

@@ -32,7 +32,6 @@ impl DashApp {
     pub(crate) fn first_owned_planet_coords_for_repro(&self) -> Option<[u8; 2]> {
         self.game_data
             .planets
-            .records
             .iter()
             .find(|planet| planet.owner_empire_slot_raw() == 1 && planet.coords_raw() != [0, 0])
             .map(|planet| planet.coords_raw())

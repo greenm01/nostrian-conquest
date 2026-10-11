@@ -7,7 +7,6 @@ pub fn guard_fleet_numbers_for_starbase(
 ) -> Vec<u16> {
     let mut fleets = game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| {
             fleet.owner_empire_raw() as usize == player_record_index_1_based

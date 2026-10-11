@@ -3,7 +3,7 @@ use std::path::Path;
 
 use crate::commands::runtime::load_runtime_game_data;
 use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
-use nc_data::{ConquestDat, CoreGameData, PlanetRecord, SetupDat};
+use nc_data::{Conquest, CoreGameData, Planet, Setup};
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, plan_route};
 
 pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
@@ -14,7 +14,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     println!();
 
     println!("Players:");
-    for (idx, record) in data.player.records.iter().enumerate() {
+    for (idx, record) in data.players.iter().enumerate() {
         let campaign_state = data
             .empire_campaign_state((idx + 1) as u8)
             .map(|state| state.as_str())
@@ -46,7 +46,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
     println!();
 
     println!("Planets:");
-    for (idx, record) in data.planets.records.iter().enumerate().take(5) {
+    for (idx, record) in data.planets.iter().enumerate().take(5) {
         let bytes = record.to_bytes();
         println!(
             "  planet {:02}: coords={:?} hdr={:02x?} len={} text='{}' tail58={:02x?} fact_word={:04x} summary='{}'",
@@ -60,11 +60,10 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.derived_summary()
         );
     }
-    println!("  ... {} total planet records", data.planets.records.len());
+    println!("  ... {} total planet records", data.planets.len());
 
     let homeworld_like = data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, record)| record.is_named_homeworld_seed())
@@ -84,14 +83,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!();
     println!("Fleets:");
-    let fleet_display_count = data.fleets.records.len().min(16);
-    for (idx, record) in data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .take(fleet_display_count)
-    {
+    let fleet_display_count = data.fleets.len().min(16);
+    for (idx, record) in data.fleets.iter().enumerate().take(fleet_display_count) {
         println!(
             "  fleet {:02}: id={} slot={} prev={} next={} cur_spd={} max_spd={} roe={} ships={} loc_raw={:02x?} order={}({}) target_raw={:02x?} summary='{}'",
             idx + 1,
@@ -111,22 +104,21 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         );
         println!("    mission_aux={:02x?}", record.mission_aux_bytes());
     }
-    if data.fleets.records.len() > fleet_display_count {
-        println!("  ... {} total fleet records", data.fleets.records.len());
+    if data.fleets.len() > fleet_display_count {
+        println!("  ... {} total fleet records", data.fleets.len());
     }
 
-    let looks_like_initialized_blocks = !data.fleets.records.is_empty()
-        && data.fleets.records.len() % 4 == 0
+    let looks_like_initialized_blocks = !data.fleets.is_empty()
+        && data.fleets.len() % 4 == 0
         && data
             .fleets
-            .records
             .chunks_exact(4)
             .all(|group| group.iter().map(|r| r.local_slot()).eq([1, 2, 3, 4]));
 
     if looks_like_initialized_blocks {
         println!();
         println!("Fleet Groups:");
-        for (group_idx, group) in data.fleets.records.chunks_exact(4).enumerate() {
+        for (group_idx, group) in data.fleets.chunks_exact(4).enumerate() {
             let home = group[0].current_location_coords_raw();
             println!(
                 "  empire block {}: loc_raw={:02x?} target_raw={:02x?}",
@@ -150,7 +142,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!();
     println!("Bases:");
-    for (idx, record) in data.bases.records.iter().enumerate() {
+    for (idx, record) in data.bases.iter().enumerate() {
         println!(
             "  base {:02}: escort={} id={} owner={} next={} record={} prev={} coords={:02x?} moving={} target={:02x?} target_depth={}",
             idx + 1,
@@ -169,7 +161,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!();
     println!("IPBM:");
-    for (idx, record) in data.ipbm.records.iter().enumerate() {
+    for (idx, record) in data.ipbms.iter().enumerate() {
         println!(
             "  record {:02}: number={} owner={} next={} record_number={}",
             idx + 1,
@@ -235,7 +227,7 @@ pub(crate) fn inspect_fleet_movement(
     } else {
         load_runtime_game_data(dir)?
     };
-    let Some(fleet) = data.fleets.records.get(fleet_record_index_1_based - 1) else {
+    let Some(fleet) = data.fleets.get(fleet_record_index_1_based - 1) else {
         return Err(format!("fleet record out of range: {fleet_record_index_1_based}").into());
     };
     let eta = estimate_fleet_eta(&data, fleet_record_index_1_based - 1);
@@ -316,7 +308,7 @@ pub(crate) fn inspect_classic_login(
     println!("Caller alias: {caller_alias}");
     println!("Classic login compatibility:");
 
-    for (idx, player) in data.player.records.iter().enumerate() {
+    for (idx, player) in data.players.iter().enumerate() {
         let slot = idx + 1;
         let handle = player.assigned_player_handle_summary();
         let empire = player.controlled_empire_name_summary();
@@ -326,7 +318,7 @@ pub(crate) fn inspect_classic_login(
             .unwrap_or("unknown");
         let homeworld = login_homeworld_like_planet(&data, slot as u8, player);
         let homeworld_name = homeworld
-            .map(PlanetRecord::planet_name)
+            .map(Planet::planet_name)
             .unwrap_or_else(|| "<unknown>".to_string());
         let classification = classify_classic_login_state(&data, slot as u8, caller_alias);
 
@@ -421,7 +413,7 @@ pub(crate) fn dump_headers(dir: &Path) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
-fn print_header_summary(setup: &SetupDat, conquest: &ConquestDat) {
+fn print_header_summary(setup: &Setup, conquest: &Conquest) {
     println!(
         "SETUP version: {}",
         String::from_utf8_lossy(setup.version_tag())
@@ -499,11 +491,7 @@ fn classify_classic_login_state(
     empire_raw: u8,
     caller_alias: &str,
 ) -> &'static str {
-    let Some(player) = data
-        .player
-        .records
-        .get(empire_raw.saturating_sub(1) as usize)
-    else {
+    let Some(player) = data.players.get(empire_raw.saturating_sub(1) as usize) else {
         return "unknown";
     };
 
@@ -527,24 +515,21 @@ fn classify_classic_login_state(
     }
 }
 
-fn homeworld_planet<'a>(
-    data: &'a CoreGameData,
-    player: &nc_data::PlayerRecord,
-) -> Option<&'a PlanetRecord> {
+fn homeworld_planet<'a>(data: &'a CoreGameData, player: &nc_data::Player) -> Option<&'a Planet> {
     let index = player.homeworld_planet_index_1_based_raw() as usize;
     if index == 0 {
         return None;
     }
-    data.planets.records.get(index - 1)
+    data.planets.get(index - 1)
 }
 
 fn login_homeworld_like_planet<'a>(
     data: &'a CoreGameData,
     empire_raw: u8,
-    player: &nc_data::PlayerRecord,
-) -> Option<&'a PlanetRecord> {
+    player: &nc_data::Player,
+) -> Option<&'a Planet> {
     homeworld_planet(data, player).or_else(|| {
-        data.planets.records.iter().find(|planet| {
+        data.planets.iter().find(|planet| {
             planet.owner_empire_slot_raw() == empire_raw && planet.is_named_homeworld_seed()
         })
     })

@@ -210,7 +210,7 @@ pub(super) fn distribute_fleet_losses(
 
     let mut remaining = losses;
     for &idx in fleet_indices {
-        let fleet = &mut game_data.fleets.records[idx];
+        let fleet = &mut game_data.fleets[idx];
 
         let dd_loss = remaining[0].min(fleet.destroyer_count() as u32) as u16;
         fleet.set_destroyer_count(fleet.destroyer_count().saturating_sub(dd_loss));
@@ -259,9 +259,9 @@ fn remove_destroyed_starbases(
 ) -> Vec<u16> {
     let mut destroyed_ids = Vec::new();
     for &idx in bases.iter().take(destroyed as usize) {
-        destroyed_ids.push(game_data.bases.records[idx].base_id_raw());
+        destroyed_ids.push(game_data.bases[idx].base_id_raw());
         game_data.unlink_base(idx);
-        game_data.bases.records[idx] = nc_data::BaseRecord::new_zeroed();
+        game_data.bases[idx] = nc_data::Starbase::default();
     }
     destroyed_ids
 }
@@ -309,8 +309,7 @@ fn abort_invalid_dominant_missions_after_battle(
             let Some(kind) = mission_kind_for_order(Some(order)) else {
                 continue;
             };
-            let target_coords =
-                game_data.fleets.records[fleet_idx].standing_order_target_coords_raw();
+            let target_coords = game_data.fleets[fleet_idx].standing_order_target_coords_raw();
             let validation = game_data.validate_fleet_order_payload(
                 fleet_idx + 1,
                 order.to_raw(),
@@ -325,7 +324,7 @@ fn abort_invalid_dominant_missions_after_battle(
                 continue;
             }
 
-            let owner_empire_raw = game_data.fleets.records[fleet_idx].owner_empire_raw();
+            let owner_empire_raw = game_data.fleets[fleet_idx].owner_empire_raw();
             retreat_fleet(game_data, fleet_idx);
             events.mission_events.push(MissionEvent {
                 fleet_idx,
@@ -335,9 +334,7 @@ fn abort_invalid_dominant_missions_after_battle(
                 abort_reason: Some(MissionAbortReason::CapabilityLost),
                 planet_idx: planet_idx_at_coords(game_data, coords),
                 location_coords: Some(coords),
-                target_coords: Some(
-                    game_data.fleets.records[fleet_idx].standing_order_target_coords_raw(),
-                ),
+                target_coords: Some(game_data.fleets[fleet_idx].standing_order_target_coords_raw()),
                 stardate_week: None,
             });
         }
@@ -356,7 +353,7 @@ fn emit_aborted_mission_events_for_task_force(
         let Some(kind) = mission_kind_for_order(pre_orders.get(&fleet_idx).copied()) else {
             continue;
         };
-        let fleet = &game_data.fleets.records[fleet_idx];
+        let fleet = &game_data.fleets[fleet_idx];
         events.mission_events.push(MissionEvent {
             fleet_idx,
             owner_empire_raw: fleet.owner_empire_raw(),
@@ -380,7 +377,7 @@ fn task_force_has_tt_only_blitz_assault(
         && task_force.state.has_units()
         && task_force.fleet_indices.iter().any(|&fleet_idx| {
             pre_orders.get(&fleet_idx) == Some(&Order::BlitzWorld) && {
-                let fleet = &game_data.fleets.records[fleet_idx];
+                let fleet = &game_data.fleets[fleet_idx];
                 fleet.troop_transport_count() > 0 && fleet.army_count() > 0
             }
         })
@@ -408,7 +405,7 @@ fn tt_only_blitz_followthrough_empire(
                 .iter()
                 .any(|&fleet_idx| {
                     pre_orders.get(&fleet_idx) == Some(&Order::BlitzWorld) && {
-                        let fleet = &game_data.fleets.records[fleet_idx];
+                        let fleet = &game_data.fleets[fleet_idx];
                         fleet.troop_transport_count() > 0 && fleet.army_count() > 0
                     }
                 })
@@ -527,7 +524,7 @@ pub(super) fn fight_encounter_with_rolls(
     let pre_encounter_orders: HashMap<usize, Order> = task_forces
         .iter()
         .flat_map(|tf| tf.fleet_indices.iter().copied())
-        .map(|idx| (idx, game_data.fleets.records[idx].standing_order_kind()))
+        .map(|idx| (idx, game_data.fleets[idx].standing_order_kind()))
         .collect();
     let participants: Vec<u8> = task_forces
         .iter()
@@ -555,7 +552,7 @@ pub(super) fn fight_encounter_with_rolls(
         .iter()
         .flat_map(|tf| tf.fleet_indices.iter().copied())
         .map(|idx| {
-            let fleet = &game_data.fleets.records[idx];
+            let fleet = &game_data.fleets[idx];
             (
                 idx,
                 ShipLosses {
@@ -572,12 +569,11 @@ pub(super) fn fight_encounter_with_rolls(
     let original_fleet_loaded_armies: HashMap<usize, u32> = task_forces
         .iter()
         .flat_map(|tf| tf.fleet_indices.iter().copied())
-        .map(|idx| (idx, u32::from(game_data.fleets.records[idx].army_count())))
+        .map(|idx| (idx, u32::from(game_data.fleets[idx].army_count())))
         .collect();
 
     let planet_owner = game_data
         .planets
-        .records
         .iter()
         .find(|p| p.coords_raw() == coords)
         .map(|p| p.owner_empire_slot_raw());
@@ -622,7 +618,7 @@ pub(super) fn fight_encounter_with_rolls(
                 .fleet_indices
                 .iter()
                 .filter_map(|idx| {
-                    let fleet = &game_data.fleets.records[*idx];
+                    let fleet = &game_data.fleets[*idx];
                     (fleet.destroyer_count() > 0
                         || fleet.cruiser_count() > 0
                         || fleet.battleship_count() > 0)
@@ -769,7 +765,7 @@ pub(super) fn fight_encounter_with_rolls(
                     .fleet_indices
                     .iter()
                     .filter_map(|&idx| {
-                        let fleet = &game_data.fleets.records[idx];
+                        let fleet = &game_data.fleets[idx];
                         (fleet.destroyer_count() > 0
                             || fleet.cruiser_count() > 0
                             || fleet.battleship_count() > 0)
@@ -930,7 +926,7 @@ pub(super) fn fight_encounter_with_rolls(
     let pre_retreat_orders: HashMap<usize, Order> = task_forces
         .iter()
         .flat_map(|tf| tf.fleet_indices.iter().copied())
-        .map(|idx| (idx, game_data.fleets.records[idx].standing_order_kind()))
+        .map(|idx| (idx, game_data.fleets[idx].standing_order_kind()))
         .collect();
     let tt_only_blitz_followthrough = (dominant_empire.is_none())
         .then(|| tt_only_blitz_followthrough_empire(game_data, &task_forces, &pre_retreat_orders))
@@ -949,7 +945,7 @@ pub(super) fn fight_encounter_with_rolls(
                 task_force_has_tt_only_blitz_assault(game_data, tf, &pre_retreat_orders);
             if blocked_tt_only_blitz {
                 for &fleet_idx in &tf.fleet_indices {
-                    set_fleet_to_hold_current_position(&mut game_data.fleets.records[fleet_idx]);
+                    set_fleet_to_hold_current_position(&mut game_data.fleets[fleet_idx]);
                 }
             } else {
                 retreat_task_force(game_data, tf);
@@ -1033,8 +1029,7 @@ pub(super) fn fight_encounter_with_rolls(
                     target_empire_raw,
                     target_fleet_number,
                     enemy_initial: ship_counts_from_state(&enemy_before),
-                    retreat_target_coords: game_data.fleets.records[idx]
-                        .standing_order_target_coords_raw(),
+                    retreat_target_coords: game_data.fleets[idx].standing_order_target_coords_raw(),
                     losses_sustained: losses,
                     enemy_losses_inflicted,
                     reason: EncounterDispositionReason::RoeWithdrawal,
@@ -1093,7 +1088,7 @@ pub(super) fn fight_encounter_with_rolls(
         let reporting_fleet_idx =
             preferred_reporting_fleet_index(game_data, &after_tf.fleet_indices);
         let reporting_fleet_number = reporting_fleet_idx
-            .map(|idx| game_data.fleets.records[idx].local_slot_word_raw() as u8)
+            .map(|idx| game_data.fleets[idx].local_slot_word_raw() as u8)
             .filter(|fleet_number| *fleet_number != 0);
         let reporting_mission = reporting_fleet_idx
             .and_then(|idx| mission_kind_for_order(pre_encounter_orders.get(&idx).copied()));

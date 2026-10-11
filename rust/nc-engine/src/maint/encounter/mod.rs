@@ -73,7 +73,6 @@ fn layer_of(depth: Real48) -> u8 {
 fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
     let fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .map(|(index, fleet)| Unit {
@@ -86,7 +85,6 @@ fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
         });
     let bases = game_data
         .bases
-        .records
         .iter()
         .enumerate()
         .map(|(index, base)| Unit {

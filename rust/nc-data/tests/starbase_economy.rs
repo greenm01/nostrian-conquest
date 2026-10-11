@@ -7,42 +7,38 @@ use common::production::{
     commissioned_starbase, configured_conquest, owned_planet_with_present_production,
     player_with_empire_name, zeroed_setup,
 };
-use nc_data::{BaseDat, BaseRecord, CoreGameData, FleetDat, IpbmDat, PlanetDat, PlayerDat, Real48};
+use nc_data::{CoreGameData, Real48, Starbase};
 use nc_engine::run_maintenance_turn;
 
 const WORLD: [u8; 2] = [8, 8];
 
-fn colony_game(bases: Vec<BaseRecord>) -> CoreGameData {
+fn colony_game(bases: Vec<Starbase>) -> CoreGameData {
     let mut player = player_with_empire_name("Alpha", 50, 0);
     player.set_player_mode_raw(0x01);
     let mut colony = owned_planet_with_present_production(1, 100, 50, 0, 3, 1);
     colony.set_coords_raw(WORLD);
     CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![colony],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: bases },
-        ipbm: IpbmDat { records: vec![] },
+        players: vec![player],
+        planets: vec![colony],
+        fleets: vec![],
+        bases,
+        ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
     }
 }
 
-fn deep_space_base() -> BaseRecord {
+fn deep_space_base() -> Starbase {
     let mut base = commissioned_starbase(1, WORLD);
     base.set_depth(Real48::ZERO);
     base.set_target_depth_raw(0);
     base
 }
 
-fn present_after_one_year(bases: Vec<BaseRecord>) -> Option<u16> {
+fn present_after_one_year(bases: Vec<Starbase>) -> Option<u16> {
     let mut game = colony_game(bases);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    game.planets.records[0].present_production_points()
+    game.planets[0].present_production_points()
 }
 
 #[test]
@@ -75,18 +71,15 @@ fn a_moving_base_gives_no_growth_bonus_even_when_it_ends_the_year_at_rest() {
     base.set_moving_flag_raw(1);
     let mut game = colony_game(vec![base]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
-    assert_eq!(game.bases.records[0].moving_flag_raw(), 0);
-    assert_eq!(
-        game.planets.records[0].present_production_points(),
-        Some(57)
-    );
+    assert_eq!(game.bases[0].moving_flag_raw(), 0);
+    assert_eq!(game.planets[0].present_production_points(), Some(57));
 }
 
 #[test]
 fn build_budget_takes_five_times_production_only_from_a_base_bound_for_orbit() {
-    let budget = |base: BaseRecord| {
+    let budget = |base: Starbase| {
         let mut game = colony_game(vec![base]);
-        game.planets.records[0].set_stored_production_points(1000);
+        game.planets[0].set_stored_production_points(1000);
         game.planet_build_budget(1).expect("budget")
     };
 

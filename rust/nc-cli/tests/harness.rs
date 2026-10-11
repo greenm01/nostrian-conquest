@@ -50,7 +50,7 @@ results-block player=1 "Ready to launch"
     assert!(stdout.contains("Saved runtime scenario"));
     let store = CampaignStore::open_default_in_dir(&target_dir).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.player.records[0].tax_rate(), 40);
+    assert_eq!(state.game_data.players[0].tax_rate(), 40);
     assert_eq!(state.report_block_rows.len(), 1);
 
     cleanup_dir(&scenario_root);
@@ -191,11 +191,10 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
     let unique_coords = state
         .game_data
         .planets
-        .records
         .iter()
         .map(|planet| planet.coords_raw())
         .collect::<BTreeSet<_>>();
-    assert_eq!(state.game_data.planets.records.len(), 60);
+    assert_eq!(state.game_data.planets.len(), 60);
     assert_eq!(unique_coords.len(), 60);
     assert!(
         unique_coords
@@ -212,10 +211,9 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
     );
     assert!(state.queued_mail.len() >= 10);
     assert!(
-        state.game_data.fleets.records.iter().any(|fleet| {
+        state.game_data.fleets.iter().any(|fleet| {
             fleet.owner_empire_raw() == 1
-                && fleet.current_location_coords_raw()
-                    == state.game_data.planets.records[0].coords_raw()
+                && fleet.current_location_coords_raw() == state.game_data.planets[0].coords_raw()
                 && fleet.troop_transport_count() >= 4
                 && fleet.army_count() == 0
         }),
@@ -225,7 +223,6 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
         state
             .game_data
             .fleets
-            .records
             .iter()
             .any(|fleet| fleet.owner_empire_raw() == 1 && fleet.army_count() > 0),
         "expected at least one loaded player 1 transport fleet"
@@ -234,7 +231,6 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
         state
             .game_data
             .bases
-            .records
             .iter()
             .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0)
     );
@@ -313,12 +309,9 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
         let store = CampaignStore::open_default_in_dir(&dir).unwrap();
         let state = store.load_latest_runtime_state().unwrap().unwrap();
         assert_eq!(state.game_data.conquest.player_count(), player_count);
-        assert_eq!(
-            state.game_data.planets.records.len(),
-            player_count as usize * 5
-        );
+        assert_eq!(state.game_data.planets.len(), player_count as usize * 5);
         assert!(
-            state.game_data.planets.records.iter().all(|planet| {
+            state.game_data.planets.iter().all(|planet| {
                 (1..=map_size).contains(&planet.coords_raw()[0])
                     && (1..=map_size).contains(&planet.coords_raw()[1])
             }),
@@ -327,11 +320,11 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
         assert!(state.report_block_rows.len() >= 8);
         assert!(state.queued_mail.len() >= 10);
         assert_eq!(
-            state.game_data.player.records[0].controlled_empire_name_summary(),
+            state.game_data.players[0].controlled_empire_name_summary(),
             "Aurora League"
         );
         assert_eq!(
-            state.game_data.player.records[0].assigned_player_handle_summary(),
+            state.game_data.players[0].assigned_player_handle_summary(),
             "p01"
         );
         let viewer1 = store.latest_planet_intel_for_viewer(1).unwrap();
@@ -343,7 +336,6 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
         saw_active_player1_starbase |= state
             .game_data
             .bases
-            .records
             .iter()
             .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0);
     }

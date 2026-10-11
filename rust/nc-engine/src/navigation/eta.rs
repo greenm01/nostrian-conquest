@@ -7,7 +7,7 @@ use super::{FleetEtaEstimate, plan_route, plan_route_to_destination};
 const ETA_YEAR_LIMIT: u16 = 1000;
 
 pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
-    let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
     let order = fleet.standing_order_kind();
@@ -34,7 +34,7 @@ pub(super) fn estimate_fleet_eta_to_destination(
     include_system: bool,
     use_max_speed_if_stopped: bool,
 ) -> FleetEtaEstimate {
-    let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
     if fleet.current_location_coords_raw() == destination {

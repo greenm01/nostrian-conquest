@@ -75,18 +75,18 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_planets = player_count.saturating_mul(5);
 
-        if self.player.records.len() != player_count {
+        if self.players.len() != player_count {
             errors.push(format!(
                 "PLAYER.DAT record count expected {}, got {}",
                 player_count,
-                self.player.records.len()
+                self.players.len()
             ));
         }
-        if self.planets.records.len() != expected_planets {
+        if self.planets.len() != expected_planets {
             errors.push(format!(
                 "PLANETS.DAT record count expected {}, got {}",
                 expected_planets,
-                self.planets.records.len()
+                self.planets.len()
             ));
         }
 
@@ -117,7 +117,7 @@ impl CoreGameData {
         let player_count = self.conquest.player_count() as usize;
         let expected_fleets = player_count * 4;
 
-        for (fleet_idx, fleet) in self.fleets.records.iter().enumerate() {
+        for (fleet_idx, fleet) in self.fleets.iter().enumerate() {
             let owner = fleet.owner_empire_raw() as usize;
 
             // Determine expected owner from fleet index

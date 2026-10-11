@@ -41,13 +41,12 @@ pub(super) fn recompute_player_planet_stats(game_data: &mut CoreGameData) {
 pub(super) fn starbase_planets(game_data: &CoreGameData) -> Vec<usize> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| {
             let owner = planet.owner_empire_slot_raw();
             owner != 0
-                && game_data.bases.records.iter().any(|base| {
+                && game_data.bases.iter().any(|base| {
                     base.owner_empire_raw() == owner
                         && base.base_id_raw() != 0
                         && base.coords_raw() == planet.coords_raw()

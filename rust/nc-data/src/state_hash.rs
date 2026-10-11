@@ -55,36 +55,36 @@ impl StateHash {
 
     pub(crate) fn game_data(&mut self, game_data: &CoreGameData) {
         let CoreGameData {
-            player,
+            players,
             planets,
             fleets,
             bases,
-            ipbm,
+            ipbms,
             setup,
             conquest,
         } = game_data;
-        self.u64(player.records.len() as u64);
-        for record in &player.records {
-            self.player(&record.player);
+        self.u64(players.len() as u64);
+        for player in players {
+            self.player(player);
         }
-        self.u64(planets.records.len() as u64);
-        for record in &planets.records {
-            self.planet(&record.planet);
+        self.u64(planets.len() as u64);
+        for planet in planets {
+            self.planet(planet);
         }
-        self.u64(fleets.records.len() as u64);
-        for record in &fleets.records {
-            self.fleet(&record.fleet);
+        self.u64(fleets.len() as u64);
+        for fleet in fleets {
+            self.fleet(fleet);
         }
-        self.u64(bases.records.len() as u64);
-        for record in &bases.records {
-            self.starbase(&record.base);
+        self.u64(bases.len() as u64);
+        for base in bases {
+            self.starbase(base);
         }
-        self.u64(ipbm.records.len() as u64);
-        for record in &ipbm.records {
-            self.ipbm(&record.ipbm);
+        self.u64(ipbms.len() as u64);
+        for ipbm in ipbms {
+            self.ipbm(ipbm);
         }
-        self.setup(&setup.setup);
-        self.conquest(&conquest.conquest);
+        self.setup(setup);
+        self.conquest(conquest);
     }
 
     fn player(&mut self, player: &Player) {

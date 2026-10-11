@@ -2,7 +2,6 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, index_below, insert_row, position_of, real48_at, real48_column};
 use crate::model::{BuildSlot, Coords, EmpireId, Planet, ProductionItemKind, Stardock};
-use crate::{PlanetDat, PlanetRecord};
 
 /// One row per PLANETS.DAT record. `snapshot_planet_build_slots` holds the
 /// occupied slots of each planet's build queue (`slot` 0 to 9); a slot with
@@ -44,10 +43,9 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &PlanetDat,
+    planets: &[Planet],
 ) -> Result<(), CampaignStoreError> {
-    for (index, record) in data.records.iter().enumerate() {
-        let planet = &record.planet;
+    for (index, planet) in planets.iter().enumerate() {
         let record_index = index + 1;
         let dock = &planet.stardock;
         insert_row(
@@ -100,12 +98,11 @@ pub(super) fn write(
 pub(super) fn load(
     conn: &mut Connection,
     snapshot_id: i64,
-) -> Result<PlanetDat, CampaignStoreError> {
+) -> Result<Vec<Planet>, CampaignStoreError> {
     let mut stmt = conn
         .prepare("SELECT * FROM snapshot_planets WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let mut records = stmt
         .query_map(params![snapshot_id], planet_from_row)?
-        .map(|planet| planet.map(|planet| PlanetRecord { planet }))
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut stmt = conn.prepare(
@@ -126,10 +123,10 @@ pub(super) fn load(
     for row in rows {
         let (record_index, slot, entry) = row?;
         let record = position_of(record_index, records.len(), "planet record")?;
-        let queue = &mut records[record].planet.build_queue;
+        let queue = &mut records[record].build_queue;
         queue[index_below(slot, queue.len(), "build slot")?] = entry;
     }
-    Ok(PlanetDat { records })
+    Ok(records)
 }
 
 fn planet_from_row(row: &Row<'_>) -> rusqlite::Result<Planet> {

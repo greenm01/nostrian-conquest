@@ -439,7 +439,7 @@ fn reserved_dropfile_alias_rejects_conflicting_stored_player_handle() {
     let mut data = load_classic_core_files(&fixture_dir).expect("load fixture");
     data.join_player(1, "Codex Dominion")
         .expect("join player for mismatch test");
-    data.player.records[0].set_assigned_player_handle_raw("OTHER");
+    data.players[0].set_assigned_player_handle_raw("OTHER");
     save_classic_core_files(&fixture_dir, &data).expect("save fixture");
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     import_directory_snapshot(&store, &fixture_dir).expect("refresh sqlite snapshot");

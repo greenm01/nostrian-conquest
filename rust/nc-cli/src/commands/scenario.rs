@@ -363,7 +363,7 @@ fn validate_fleet_order_data(data: &CoreGameData) -> Result<(), Box<dyn std::err
         println!("  FLEET[1].target = (15, 13)");
         println!(
             "  FLEET[1].aux = {:02x?}",
-            data.fleets.records[0].mission_aux_bytes()
+            data.fleets[0].mission_aux_bytes()
         );
         Ok(())
     } else {
@@ -387,9 +387,9 @@ fn validate_guard_starbase_data(data: &CoreGameData) -> Result<(), Box<dyn std::
     let errors = data.guard_starbase_onebase_errors_current_known();
     if errors.is_empty() {
         println!("Valid guard-starbase scenario");
-        let fleet = &data.fleets.records[0];
-        let player1 = &data.player.records[0];
-        let base = &data.bases.records[0];
+        let fleet = &data.fleets[0];
+        let player1 = &data.players[0];
+        let base = &data.bases[0];
         println!("  PLAYER[1].first_base_record = 1");
         println!(
             "  linkage keys: player[44]={} fleet[00]={} fleet[05]={} base[07]={}",

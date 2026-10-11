@@ -26,7 +26,7 @@ pub(crate) fn push_fleet_contact(
     coords: [u8; 2],
     tick: u8,
 ) {
-    let target = &game_data.fleets.records[target_fleet_idx];
+    let target = &game_data.fleets[target_fleet_idx];
     let target_empire = target.owner_empire_raw();
     let (small_vessels, medium_vessels, large_vessels) =
         vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
@@ -34,7 +34,7 @@ pub(crate) fn push_fleet_contact(
     let (viewer_empire_raw, source, reporting_fleet_number, reporting_initial, armies) =
         match observer {
             ContactObserver::Fleet(idx) => {
-                let fleet = &game_data.fleets.records[idx];
+                let fleet = &game_data.fleets[idx];
                 let source = contact_reporting_kind(fleet.standing_order_kind())
                     .map(ContactReportSource::FleetMission)
                     .unwrap_or(ContactReportSource::Fleet(fleet.local_slot_word_raw() as u8));
@@ -47,7 +47,7 @@ pub(crate) fn push_fleet_contact(
                 )
             }
             ContactObserver::Base(idx, alert) => {
-                let base = &game_data.bases.records[idx];
+                let base = &game_data.bases[idx];
                 (
                     base.owner_empire_raw(),
                     ContactReportSource::Starbase {
@@ -97,7 +97,7 @@ pub(crate) fn push_no_engagement(
     tick: u8,
     reason: EncounterDispositionReason,
 ) {
-    let fleet = &game_data.fleets.records[fleet_idx];
+    let fleet = &game_data.fleets[fleet_idx];
     let (small_vessels, medium_vessels, large_vessels) =
         vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
     encounter_disposition_events.push(EncounterDispositionEvent::NoEngagement {
@@ -107,7 +107,7 @@ pub(crate) fn push_no_engagement(
         coords,
         friendly_initial: ship_counts_from_fleet(fleet),
         friendly_loaded_armies_initial: u32::from(fleet.army_count()),
-        target_empire_raw: game_data.fleets.records[target_fleet_idx].owner_empire_raw(),
+        target_empire_raw: game_data.fleets[target_fleet_idx].owner_empire_raw(),
         target_fleet_number: single_named_fleet_number(game_data, &[target_fleet_idx]),
         small_vessels,
         medium_vessels,
@@ -117,7 +117,7 @@ pub(crate) fn push_no_engagement(
     });
 }
 
-fn ship_counts_from_fleet(fleet: &nc_data::FleetRecord) -> ShipLosses {
+fn ship_counts_from_fleet(fleet: &nc_data::Fleet) -> ShipLosses {
     ShipLosses {
         destroyers: u32::from(fleet.destroyer_count()),
         cruisers: u32::from(fleet.cruiser_count()),
@@ -143,16 +143,9 @@ fn push_civil_disorder_contact_intel(
     {
         return;
     }
-    let Some((planet_idx, _planet)) =
-        game_data
-            .planets
-            .records
-            .iter()
-            .enumerate()
-            .find(|(_, planet)| {
-                planet.coords_raw() == coords && planet.owner_empire_slot_raw() == target_empire_raw
-            })
-    else {
+    let Some((planet_idx, _planet)) = game_data.planets.iter().enumerate().find(|(_, planet)| {
+        planet.coords_raw() == coords && planet.owner_empire_slot_raw() == target_empire_raw
+    }) else {
         return;
     };
     if planet_intel_events.iter().any(|event| {
@@ -179,7 +172,7 @@ pub(super) fn single_named_fleet_number(
 ) -> Option<u8> {
     let named_fleets = fleet_indices
         .iter()
-        .filter_map(|idx| game_data.fleets.records.get(*idx))
+        .filter_map(|idx| game_data.fleets.get(*idx))
         .filter(|fleet| {
             fleet.destroyer_count() > 0
                 || fleet.cruiser_count() > 0
@@ -205,7 +198,7 @@ pub(super) fn preferred_reporting_fleet_number(
 ) -> Option<u8> {
     fleet_indices
         .iter()
-        .filter_map(|idx| game_data.fleets.records.get(*idx))
+        .filter_map(|idx| game_data.fleets.get(*idx))
         .map(|fleet| fleet.local_slot_word_raw() as u8)
         .filter(|fleet_number| *fleet_number != 0)
         .min()
@@ -218,9 +211,9 @@ pub(super) fn preferred_reporting_fleet_index(
     fleet_indices
         .iter()
         .copied()
-        .filter(|idx| game_data.fleets.records.get(*idx).is_some())
-        .filter(|idx| game_data.fleets.records[*idx].local_slot_word_raw() != 0)
-        .min_by_key(|idx| game_data.fleets.records[*idx].local_slot_word_raw())
+        .filter(|idx| game_data.fleets.get(*idx).is_some())
+        .filter(|idx| game_data.fleets[*idx].local_slot_word_raw() != 0)
+        .min_by_key(|idx| game_data.fleets[*idx].local_slot_word_raw())
 }
 
 pub(super) fn loaded_armies_for_fleet_indices(
@@ -229,7 +222,7 @@ pub(super) fn loaded_armies_for_fleet_indices(
 ) -> u32 {
     fleet_indices
         .iter()
-        .filter_map(|idx| game_data.fleets.records.get(*idx))
+        .filter_map(|idx| game_data.fleets.get(*idx))
         .map(|fleet| fleet.army_count() as u32)
         .sum()
 }

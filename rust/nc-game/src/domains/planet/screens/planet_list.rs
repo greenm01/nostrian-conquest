@@ -661,7 +661,6 @@ fn planet_list_footer_floor(frame: &ScreenFrame<'_>, mode: PlanetListMode) -> us
             let max_fleet_default = frame
                 .game_data
                 .fleets
-                .records
                 .iter()
                 .filter(|fleet| {
                     fleet.owner_empire_raw() as usize == frame.player.record_index_1_based
@@ -802,7 +801,6 @@ fn docked_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> u32 {
     frame
         .game_data
         .planets
-        .records
         .get(row.planet_record_index_1_based.saturating_sub(1))
         .map(|planet| {
             (0..STARDOCK_SLOT_COUNT)
@@ -816,7 +814,6 @@ fn queued_build_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> 
     frame
         .game_data
         .planets
-        .records
         .get(row.planet_record_index_1_based.saturating_sub(1))
         .map(|planet| {
             (0..10)

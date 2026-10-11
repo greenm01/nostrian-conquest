@@ -17,7 +17,7 @@ use support::{Fleet, Ships, WORLD, board_with_world, put, years};
 fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
     let mut scenario = board_with_world();
     let planet_idx = 13;
-    let planet = &mut scenario.planets.records[planet_idx];
+    let planet = &mut scenario.planets[planet_idx];
     assert_eq!(planet.coords_raw(), WORLD);
     assert_eq!(format_stardock_summary(planet, CompactUnitSummaryStyle::Words), "Nothing");
     // Two destroyers (5 points each), well inside the world's budget.
@@ -34,12 +34,12 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
             .max_speed(5)
             .heading(Order::ScoutSolarSystem, WORLD, true, 5),
     );
-    scenario.fleets.records[0].set_depth(Real48::from_f64(0.95));
+    scenario.fleets[0].set_depth(Real48::from_f64(0.95));
 
     let (game_data, events) = years(&scenario, &[], 0..1).next().expect("one year");
 
     let dock_after = format_stardock_summary(
-        &game_data.planets.records[planet_idx],
+        &game_data.planets[planet_idx],
         CompactUnitSummaryStyle::Words,
     );
     assert_eq!(dock_after, "2 destroyers");

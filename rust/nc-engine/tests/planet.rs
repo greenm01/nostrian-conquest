@@ -27,7 +27,7 @@ fn planet_build_view_counts_queue_and_stardock_units() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[0];
+    let planet = &mut game_data.planets[0];
     planet.set_build_kind_raw(0, 3);
     planet.set_build_count_raw(0, 90);
     planet.set_stardock_count_raw(1, 5);
@@ -46,7 +46,7 @@ fn planet_build_view_budget_capped_by_treasury_not_revenue() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[0];
+    let planet = &mut game_data.planets[0];
     planet.set_build_kind_raw(0, 6);
     planet.set_build_count_raw(0, 20);
 
@@ -135,19 +135,19 @@ fn default_transport_fleet_prefers_highest_eligible_capacity() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let homeworld_coords = game_data.planets.records[0].coords_raw();
-    let homeworld = &mut game_data.planets.records[0];
+    let homeworld_coords = game_data.planets[0].coords_raw();
+    let homeworld = &mut game_data.planets[0];
     homeworld.set_army_count_raw(50);
 
-    for (idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
+    for (idx, fleet) in game_data.fleets.iter_mut().enumerate() {
         fleet.set_owner_empire_raw(1);
         fleet.set_local_slot_word_raw((idx + 1) as u16);
         fleet.set_current_location_coords_raw(homeworld_coords);
         fleet.set_troop_transport_count(0);
         fleet.set_army_count(0);
     }
-    game_data.fleets.records[0].set_troop_transport_count(4);
-    game_data.fleets.records[1].set_troop_transport_count(8);
+    game_data.fleets[0].set_troop_transport_count(4);
+    game_data.fleets[1].set_troop_transport_count(8);
 
     let rows = game_data.empire_planet_economy_rows(1);
     let fleet_number =

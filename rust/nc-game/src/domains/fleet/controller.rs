@@ -11,7 +11,7 @@ use crate::screen::{
     CommandMenu, FleetEtaMode, FleetListFilter, FleetListFilterPromptMode, FleetListSort, FleetRow,
     PlanetTransportMode, ScreenId, SortDirection,
 };
-use nc_data::{FleetRecord, Order};
+use nc_data::{Fleet, Order};
 use nc_engine::{
     FleetTargetInputKind, SelectedFleetRef, fleet_target_input_kind, fleet_target_status_line,
 };
@@ -22,7 +22,7 @@ use nc_ui::table_filter::{
 };
 use std::cmp::{Ordering, Reverse};
 
-fn fleet_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, u16, u16, u16, Reverse<u16>) {
+fn fleet_strength_key(fleet: &Fleet) -> (u16, u16, u16, u16, u16, u16, Reverse<u16>) {
     (
         fleet.battleship_count(),
         fleet.cruiser_count(),
@@ -34,7 +34,7 @@ fn fleet_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, u16, u16, u16, Rev
     )
 }
 
-fn fleet_combat_only_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, Reverse<u16>) {
+fn fleet_combat_only_strength_key(fleet: &Fleet) -> (u16, u16, u16, Reverse<u16>) {
     (
         fleet.battleship_count(),
         fleet.cruiser_count(),
@@ -43,11 +43,11 @@ fn fleet_combat_only_strength_key(fleet: &FleetRecord) -> (u16, u16, u16, Revers
     )
 }
 
-fn fleet_is_idle_hold(fleet: &FleetRecord) -> bool {
+fn fleet_is_idle_hold(fleet: &Fleet) -> bool {
     fleet.standing_order_kind() == Order::HoldPosition
 }
 
-fn fleet_is_combat_only_fallback_candidate(fleet: &FleetRecord) -> bool {
+fn fleet_is_combat_only_fallback_candidate(fleet: &Fleet) -> bool {
     (fleet.destroyer_count() > 0 || fleet.cruiser_count() > 0 || fleet.battleship_count() > 0)
         && fleet.scout_count() == 0
         && fleet.etac_count() == 0
@@ -252,10 +252,9 @@ fn apply_sort_direction(direction: SortDirection, ordering: Ordering) -> Orderin
 }
 
 impl App {
-    fn active_owned_fleet_records(&self) -> impl Iterator<Item = (usize, &FleetRecord)> + '_ {
+    fn active_owned_fleet_records(&self) -> impl Iterator<Item = (usize, &Fleet)> + '_ {
         self.game_data
             .fleets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, fleet)| {
@@ -264,7 +263,7 @@ impl App {
             })
     }
 
-    fn active_owned_fleets(&self) -> impl Iterator<Item = &FleetRecord> + '_ {
+    fn active_owned_fleets(&self) -> impl Iterator<Item = &Fleet> + '_ {
         self.active_owned_fleet_records().map(|(_, fleet)| fleet)
     }
 
@@ -495,7 +494,6 @@ impl App {
             .retain(|record_index_1_based| {
                 self.game_data
                     .fleets
-                    .records
                     .get(*record_index_1_based - 1)
                     .is_some_and(|fleet| {
                         fleet.owner_empire_raw() as usize == self.player.record_index_1_based
@@ -516,9 +514,8 @@ impl App {
             .find_map(|record_index_1_based| {
                 self.game_data
                     .fleets
-                    .records
                     .get(*record_index_1_based - 1)
-                    .map(FleetRecord::local_slot_word_raw)
+                    .map(Fleet::local_slot_word_raw)
             })
         {
             return Some(fleet_number);
@@ -1631,7 +1628,6 @@ impl App {
     pub fn current_fleet_roe_by_id(&self, fleet_id: u16) -> Option<u8> {
         self.game_data
             .fleets
-            .records
             .iter()
             .find(|fleet| {
                 fleet.owner_empire_raw() as usize == self.player.record_index_1_based
@@ -1704,14 +1700,12 @@ impl App {
                 self.fleet.list_sort_direction,
                 self.game_data
                     .fleets
-                    .records
                     .get(left.fleet_record_index_1_based.saturating_sub(1))
                     .map(fleet_strength_key)
                     .cmp(
                         &self
                             .game_data
                             .fleets
-                            .records
                             .get(right.fleet_record_index_1_based.saturating_sub(1))
                             .map(fleet_strength_key),
                     ),
@@ -2037,7 +2031,6 @@ impl App {
     fn fleet_ship_total(&self, fleet_record_index_1_based: usize) -> u32 {
         self.game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .map(|fleet| {
                 u32::from(fleet.battleship_count())

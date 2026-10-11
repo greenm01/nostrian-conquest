@@ -7,7 +7,7 @@ pub fn report_header(source_clause: &str, week: Option<u8>, year: u16) -> String
 
 pub fn empire_label(game_data: &CoreGameData, empire_raw: u8) -> String {
     let idx = empire_raw.saturating_sub(1) as usize;
-    let Some(player) = game_data.player.records.get(idx) else {
+    let Some(player) = game_data.players.get(idx) else {
         return format!("Empire #{empire_raw}");
     };
     let empire = player.controlled_empire_name_summary();
@@ -26,7 +26,7 @@ pub fn empire_label(game_data: &CoreGameData, empire_raw: u8) -> String {
 
 pub fn classic_empire_display_name(game_data: &CoreGameData, empire_raw: u8) -> Option<String> {
     let idx = empire_raw.saturating_sub(1) as usize;
-    let player = game_data.player.records.get(idx)?;
+    let player = game_data.players.get(idx)?;
     let empire = player.controlled_empire_name_summary();
     if !empire.is_empty() {
         return Some(empire);
@@ -90,7 +90,6 @@ pub fn owned_fleet_source_clause_from_idx(
 pub fn fleet_number_from_idx(game_data: &CoreGameData, fleet_idx: usize) -> Option<u8> {
     game_data
         .fleets
-        .records
         .get(fleet_idx)
         .map(|fleet| fleet.local_slot_word_raw() as u8)
         .filter(|fleet_number| *fleet_number != 0)
@@ -208,7 +207,7 @@ pub fn nearest_owned_destination_text(
     empire_raw: u8,
     coords: [u8; 2],
 ) -> String {
-    if let Some(planet) = game_data.planets.records.iter().find(|planet| {
+    if let Some(planet) = game_data.planets.iter().find(|planet| {
         planet.coords_raw() == coords && planet.owner_empire_slot_raw() == empire_raw
     }) {
         format!(
@@ -340,7 +339,7 @@ pub fn structured_repulsed_assault_alert(kind: Mission, outcome: MissionOutcome)
 
 pub fn aborted_mission_follow_on_text(
     game_data: &CoreGameData,
-    fleet: &nc_data::FleetRecord,
+    fleet: &nc_data::Fleet,
     empire_raw: u8,
 ) -> String {
     use nc_data::Order;
@@ -360,7 +359,7 @@ pub fn aborted_mission_follow_on_text(
 /// stopped there; it still withdrew.
 pub fn aborted_event_follow_on_text(
     game_data: &CoreGameData,
-    fleet: &nc_data::FleetRecord,
+    fleet: &nc_data::Fleet,
     event: &nc_data::MissionEvent,
 ) -> String {
     if let (Some(at), Some(target)) = (event.location_coords, event.target_coords)
@@ -383,7 +382,6 @@ pub fn aborted_mission_follow_on_text_from_idx(
 ) -> String {
     game_data
         .fleets
-        .records
         .get(fleet_idx)
         .map(|fleet| aborted_mission_follow_on_text(game_data, fleet, empire_raw))
         .unwrap_or_else(|| "holding position and awaiting orders".to_string())

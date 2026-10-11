@@ -1,8 +1,8 @@
-use nc_data::{DiplomaticRelation, PlayerRecord};
+use nc_data::{DiplomaticRelation, Player};
 
 #[test]
 fn player_record_diplomacy_slots_map_enemy_and_neutral() {
-    let mut player = PlayerRecord::new_zeroed();
+    let mut player = Player::default();
 
     assert_eq!(
         player.diplomatic_relation_toward(1),
@@ -46,7 +46,7 @@ fn player_record_diplomacy_slots_map_enemy_and_neutral() {
 
 #[test]
 fn player_record_diplomacy_out_of_range_is_unknown() {
-    let player = PlayerRecord::new_zeroed();
+    let player = Player::default();
     assert_eq!(player.diplomatic_relation_toward(0), None);
     assert_eq!(player.diplomatic_relation_toward(26), None);
 }

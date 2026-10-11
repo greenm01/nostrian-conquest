@@ -26,7 +26,7 @@ pub(in crate::maint) struct BaseStep {
 }
 
 /// Whether `fleet` guards base `base_id` of empire `owner`.
-fn guards(fleet: &nc_data::FleetRecord, owner: u8, base_id: u16) -> bool {
+fn guards(fleet: &nc_data::Fleet, owner: u8, base_id: u16) -> bool {
     fleet.owner_empire_raw() == owner
         && fleet.standing_order_kind() == Order::GuardStarbase
         && fleet.guard_starbase_index_raw() == base_id
@@ -39,14 +39,14 @@ fn layer(depth: Real48) -> u8 {
 
 /// Whether two fleets merged would stay within the ship limit.
 pub(super) fn merge_fits(game_data: &CoreGameData, host: usize, donor: usize) -> bool {
-    let fleets = &game_data.fleets.records;
+    let fleets = &game_data.fleets;
     fleets[host].total_starships() + fleets[donor].total_starships() <= MAX_MERGED_SHIPS
 }
 
 impl YearMovement<'_> {
     /// A fleet still in play: it has ships and has not merged away.
     pub(super) fn in_play(&self, game_data: &CoreGameData, fleet_idx: usize) -> bool {
-        !self.to_remove[fleet_idx] && game_data.fleets.records[fleet_idx].has_any_force()
+        !self.to_remove[fleet_idx] && game_data.fleets[fleet_idx].has_any_force()
     }
 
     /// Step base `base_idx` one tick at speed 1 (`0824:02d8`).
@@ -56,7 +56,7 @@ impl YearMovement<'_> {
         base_idx: usize,
         tick: u8,
     ) -> BaseStep {
-        let base = &mut game_data.bases.records[base_idx];
+        let base = &mut game_data.bases[base_idx];
         if base.target_depth_raw() > 1 {
             base.set_target_depth_raw(1);
         }
@@ -68,7 +68,7 @@ impl YearMovement<'_> {
         }
         let escort = self.find_escort(game_data, base_idx);
         let stepped = step(motion, 1, &mut Course::direct(target), depth);
-        let base = &mut game_data.bases.records[base_idx];
+        let base = &mut game_data.bases[base_idx];
         stepped.write_to_base(base);
         let base = base.clone();
         let (owner, base_id) = (base.owner_empire_raw(), base.base_id_raw());
@@ -86,13 +86,13 @@ impl YearMovement<'_> {
         }
         // Every guard heads for the base's new sector and layer; one that
         // already shares them joins the escort (`0824:0e2a`).
-        for fleet_idx in 0..game_data.fleets.records.len() {
+        for fleet_idx in 0..game_data.fleets.len() {
             if !self.in_play(game_data, fleet_idx)
-                || !guards(&game_data.fleets.records[fleet_idx], owner, base_id)
+                || !guards(&game_data.fleets[fleet_idx], owner, base_id)
             {
                 continue;
             }
-            let fleet = &mut game_data.fleets.records[fleet_idx];
+            let fleet = &mut game_data.fleets[fleet_idx];
             fleet.set_standing_order_target_coords_raw(sector);
             fleet.set_mission_target(base_layer, fleet.mission_id_raw());
             self.tracks[fleet_idx].reload();
@@ -112,8 +112,8 @@ impl YearMovement<'_> {
     /// The escort rides with the base (`0824:0c46`): it takes the base's
     /// position and depth, and aims at the base's sector and layer.
     fn carry_escort(&mut self, game_data: &mut CoreGameData, escort: usize, base_idx: usize) {
-        let base = &game_data.bases.records[base_idx];
-        let fleet = &mut game_data.fleets.records[escort];
+        let base = &game_data.bases[base_idx];
+        let fleet = &mut game_data.fleets[escort];
         fleet.set_current_location_coords_raw(base.coords_raw());
         fleet.set_x_fraction(base.x_fraction());
         fleet.set_y_fraction(base.y_fraction());
@@ -127,11 +127,11 @@ impl YearMovement<'_> {
     /// guard of the base, at rest, that is its recorded escort or shares
     /// its sector and layer.
     fn find_escort(&self, game_data: &CoreGameData, base_idx: usize) -> Option<usize> {
-        let base = &game_data.bases.records[base_idx];
+        let base = &game_data.bases[base_idx];
         let (owner, base_id) = (base.owner_empire_raw(), base.base_id_raw());
         let cell = (base.coords_raw(), layer(base.depth()));
-        (0..game_data.fleets.records.len()).find(|&fleet_idx| {
-            let fleet = &game_data.fleets.records[fleet_idx];
+        (0..game_data.fleets.len()).find(|&fleet_idx| {
+            let fleet = &game_data.fleets[fleet_idx];
             self.in_play(game_data, fleet_idx)
                 && fleet.owner_empire_raw() == owner
                 && (fleet.local_slot_word_raw() == base.escort_fleet_slot_raw()
@@ -153,7 +153,7 @@ impl YearMovement<'_> {
     ) {
         merge_fleet_into_host(game_data, host, donor);
         self.to_remove[donor] = true;
-        let fleets = &game_data.fleets.records;
+        let fleets = &game_data.fleets;
         let event = FleetMergeEvent {
             fleet_idx: donor,
             owner_empire_raw: fleets[donor].owner_empire_raw(),
@@ -178,7 +178,7 @@ impl YearMovement<'_> {
         tick: u8,
     ) {
         let last_tick = tick == TICKS_PER_YEAR;
-        let base = &game_data.bases.records[base_idx];
+        let base = &game_data.bases[base_idx];
         let owner = base.owner_empire_raw();
         let sector = base.coords_raw();
         let target = base.target_coords_raw();
@@ -189,7 +189,7 @@ impl YearMovement<'_> {
                 || (last_tick && depth.round() == i32::from(target_layer)));
         let mut moving = base.moving_flag_raw() != 0;
         let report = |game_data: &CoreGameData, report| {
-            let base = &game_data.bases.records[base_idx];
+            let base = &game_data.bases[base_idx];
             StarbaseReportEvent {
                 owner_empire_raw: owner,
                 starbase_id: base.base_id_raw(),
@@ -212,7 +212,7 @@ impl YearMovement<'_> {
         } else {
             moving = true;
         }
-        game_data.bases.records[base_idx].set_moving_flag_raw(u8::from(moving));
+        game_data.bases[base_idx].set_moving_flag_raw(u8::from(moving));
 
         // A base bound for a world, or resting in orbit, needs its owner to
         // hold that world.
@@ -226,12 +226,9 @@ impl YearMovement<'_> {
         };
         let planet_idx = game_data
             .planets
-            .records
             .iter()
             .position(|planet| planet.coords_raw() == world_sector);
-        if planet_idx
-            .is_some_and(|idx| game_data.planets.records[idx].owner_empire_slot_raw() == owner)
-        {
+        if planet_idx.is_some_and(|idx| game_data.planets[idx].owner_empire_slot_raw() == owner) {
             return;
         }
         let in_orbit_there = planet_idx.is_some() && sector == world_sector && depth.round() == 1;
@@ -244,7 +241,7 @@ impl YearMovement<'_> {
         } else {
             None
         };
-        let base = &mut game_data.bases.records[base_idx];
+        let base = &mut game_data.bases[base_idx];
         let response = if holds {
             let held = depth.round().clamp(0, 1);
             base.set_target_depth_raw(held as u8);
@@ -294,8 +291,8 @@ mod tests {
 
         movement.dispatch_base(&mut game_data, 0, TICKS_PER_YEAR);
 
-        let base = &game_data.bases.records[0];
-        let escort = &game_data.fleets.records[0];
+        let base = &game_data.bases[0];
+        let escort = &game_data.fleets[0];
         assert_eq!(base.depth(), Real48::ZERO);
         assert_eq!(base.target_depth_raw(), 0);
         assert_eq!(escort.depth(), Real48::ZERO);

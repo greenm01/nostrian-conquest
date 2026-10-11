@@ -12,7 +12,6 @@ pub fn merge_player_intel_from_runtime(
 ) -> BTreeMap<usize, PlanetIntelSnapshot> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .map(|(planet_index, planet)| {
@@ -86,7 +85,7 @@ pub fn build_runtime_planet_intel_snapshot(
     planet_idx: usize,
     source: PlanetIntelSource,
 ) -> Option<PlanetIntelSnapshot> {
-    let planet = game_data.planets.records.get(planet_idx)?;
+    let planet = game_data.planets.get(planet_idx)?;
     Some(snapshot_from_runtime_grant(
         PlanetIntelSnapshot {
             planet_record_index_1_based: planet_idx + 1,
@@ -166,7 +165,7 @@ pub fn active_starbase_count_at(game_data: &CoreGameData, coords: [u8; 2]) -> u8
 fn snapshot_from_runtime(
     planet_record_index_1_based: usize,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     viewer_empire_id: u8,
     year: u16,
     current_turn_grant: Option<&PlanetIntelEvent>,
@@ -231,7 +230,7 @@ fn snapshot_from_runtime(
 fn snapshot_from_turn_grant(
     snapshot: PlanetIntelSnapshot,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     viewer_empire_id: u8,
     year: u16,
     grant: &PlanetIntelEvent,
@@ -256,7 +255,7 @@ fn snapshot_from_turn_grant(
 fn snapshot_from_runtime_grant(
     mut snapshot: PlanetIntelSnapshot,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     source: PlanetIntelSource,
     viewer_empire_id: u8,
     year: u16,
@@ -433,7 +432,7 @@ fn viewer_has_fleet_presence(
     viewer_empire_id: u8,
     coords: [u8; 2],
 ) -> bool {
-    game_data.fleets.records.iter().any(|fleet| {
+    game_data.fleets.iter().any(|fleet| {
         fleet.owner_empire_raw() == viewer_empire_id
             && fleet.current_location_coords_raw() == coords
             && fleet.has_any_force()
@@ -443,7 +442,7 @@ fn viewer_has_fleet_presence(
 fn refresh_visible_snapshot_from_runtime(
     game_data: &CoreGameData,
     snapshot: &PlanetIntelSnapshot,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     year: u16,
 ) -> PlanetIntelSnapshot {
     if matches!(snapshot.intel_tier, IntelTier::Unknown | IntelTier::Owned) {
@@ -502,13 +501,11 @@ fn snapshot_fingerprint_matches(left: &PlanetIntelSnapshot, right: &PlanetIntelS
 fn orbit_presence(game_data: &CoreGameData, coords: [u8; 2]) -> OrbitPresence {
     let fleet_count = game_data
         .fleets
-        .records
         .iter()
         .filter(|fleet| fleet.current_location_coords_raw() == coords && fleet.has_any_force())
         .count() as u32;
     let starbase_count = game_data
         .bases
-        .records
         .iter()
         .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
         .count()

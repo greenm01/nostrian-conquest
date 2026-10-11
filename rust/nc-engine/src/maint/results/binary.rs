@@ -220,8 +220,7 @@ pub fn push_routed_message_chunked(
         text
     );
     if let Some(player) = game_data
-        .player
-        .records
+        .players
         .get_mut(recipient_empire_raw.saturating_sub(1) as usize)
     {
         player.set_classic_login_reviewables_present(true);

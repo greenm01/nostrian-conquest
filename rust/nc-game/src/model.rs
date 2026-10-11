@@ -44,8 +44,7 @@ impl PlayerContext {
         record_index_1_based: usize,
     ) -> Result<Self, Box<dyn std::error::Error>> {
         let record = game_data
-            .player
-            .records
+            .players
             .get(record_index_1_based - 1)
             .ok_or_else(|| format!("PLAYER.DAT missing record {record_index_1_based}"))?;
         let classic_login_state =
@@ -74,11 +73,7 @@ impl PlayerContext {
 
 impl ClassicLoginState {
     pub fn from_game_data(game_data: &CoreGameData, empire_raw: u8) -> Self {
-        let Some(player) = game_data
-            .player
-            .records
-            .get(empire_raw.saturating_sub(1) as usize)
-        else {
+        let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
             return Self::FirstTimeMenu;
         };
 
@@ -101,16 +96,16 @@ impl ClassicLoginState {
 fn homeworld_like_planet<'a>(
     game_data: &'a CoreGameData,
     empire_raw: u8,
-    player: &nc_data::PlayerRecord,
-) -> Option<&'a nc_data::PlanetRecord> {
+    player: &nc_data::Player,
+) -> Option<&'a nc_data::Planet> {
     let index = player.homeworld_planet_index_1_based_raw() as usize;
     if index > 0 {
-        if let Some(planet) = game_data.planets.records.get(index - 1) {
+        if let Some(planet) = game_data.planets.get(index - 1) {
             return Some(planet);
         }
     }
 
-    game_data.planets.records.iter().find(|planet| {
+    game_data.planets.iter().find(|planet| {
         planet.owner_empire_slot_raw() == empire_raw && planet.is_named_homeworld_seed()
     })
 }
@@ -124,21 +119,16 @@ impl MainMenuSummary {
     ) -> Self {
         let owned_planets = game_data
             .planets
-            .records
             .iter()
             .filter(|planet| planet.owner_empire_slot_raw() as usize == player_record_index_1_based)
             .count();
         let owned_fleets = game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| fleet.owner_empire_raw() as usize == player_record_index_1_based)
             .count();
 
-        let player_record = game_data
-            .player
-            .records
-            .get(player_record_index_1_based - 1);
+        let player_record = game_data.players.get(player_record_index_1_based - 1);
         let pending_results = player_record
             .map(|record| {
                 record.has_classic_results_chain_state()
@@ -153,7 +143,7 @@ impl MainMenuSummary {
 
         Self {
             game_year: game_data.conquest.game_year(),
-            player_count: game_data.player.records.len(),
+            player_count: game_data.players.len(),
             owned_planets,
             owned_fleets,
             pending_messages,

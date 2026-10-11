@@ -1,12 +1,12 @@
 use crate::dashboard::buffer::{CellStyle, GameColor};
 use nc_data::{
-    DiplomaticRelation, PlayerActivityState, PlayerLifecycleState, PlayerRecord,
-    PublicEmpireStatus, player_public_status,
+    DiplomaticRelation, Player, PlayerActivityState, PlayerLifecycleState, PublicEmpireStatus,
+    player_public_status,
 };
 
 use crate::dashboard::theme;
 
-pub(crate) fn display_name(player: &PlayerRecord, empire_slot: u8) -> String {
+pub(crate) fn display_name(player: &Player, empire_slot: u8) -> String {
     let name = player.controlled_empire_name_summary();
     let fallback = player.legacy_status_name_summary();
     if !name.is_empty() {
@@ -20,7 +20,7 @@ pub(crate) fn display_name(player: &PlayerRecord, empire_slot: u8) -> String {
 
 pub(crate) fn state_label_and_style(
     game_data: &nc_data::CoreGameData,
-    player: &PlayerRecord,
+    player: &Player,
     player_activity_states: &[PlayerActivityState],
     player_lifecycle_states: &[PlayerLifecycleState],
     viewer_slot: u8,
@@ -46,7 +46,7 @@ pub(crate) fn state_label_and_style(
 }
 
 pub(crate) fn relation_label_and_style(
-    viewer: Option<&PlayerRecord>,
+    viewer: Option<&Player>,
     viewer_slot: u8,
     empire_slot: u8,
 ) -> (&'static str, CellStyle) {
@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn blank_display_name_falls_back_to_empire_slot() {
-        let player = PlayerRecord::new_zeroed();
+        let player = Player::default();
         assert_eq!(display_name(&player, 4), "Empire #4");
     }
 

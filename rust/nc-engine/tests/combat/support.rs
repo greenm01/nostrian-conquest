@@ -28,8 +28,8 @@ pub fn empty_board(armies: u8, batteries: u8) -> CoreGameData {
         .join("ecmaint-post")
         .join("v1.5");
     let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
-    game_data.bases.records.clear();
-    game_data.planets.records[SYSTEM_PLANET_IDX].set_as_owned_target_world(
+    game_data.bases.clear();
+    game_data.planets[SYSTEM_PLANET_IDX].set_as_owned_target_world(
         SYSTEM,
         [0x64, 0x87],
         [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
@@ -57,7 +57,7 @@ pub fn place_fleet(
     ships: Ships,
     roe: u8,
 ) {
-    let fleet = &mut game_data.fleets.records[idx];
+    let fleet = &mut game_data.fleets[idx];
     fleet.set_owner_empire_raw(owner);
     fleet.set_current_location_coords_raw(coords);
     fleet.set_standing_order_kind(order);
@@ -80,7 +80,7 @@ pub fn place_fleet(
 
 /// A starbase of `owner` at rest in orbit (depth 1.0) over `coords`.
 pub fn place_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
+    let mut base = nc_data::Starbase::default();
     base.set_base_id_raw(1);
     base.set_record_number_raw(1);
     base.set_coords_raw(coords);
@@ -88,13 +88,13 @@ pub fn place_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) 
     base.set_owner_empire_raw(owner);
     base.set_at_rest_motion();
     base.set_target_depth_raw(1);
-    game_data.bases.records.push(base);
+    game_data.bases.push(base);
 }
 
 /// Settle a fleet that already sits at its hostile-mission target at rest in
 /// orbit (depth 1.0), so its strike test passes on the first tick.
 pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
-    let fleet = &mut game_data.fleets.records[idx];
+    let fleet = &mut game_data.fleets[idx];
     fleet.set_current_speed(3);
     fleet.set_mission_target(1, fleet.mission_id_raw());
     fleet.set_at_rest_motion();

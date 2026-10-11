@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{CoreGameData, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT};
+use crate::{CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactUnitSummaryStyle {
@@ -40,7 +40,7 @@ pub fn compact_unit_code(kind: ProductionItemKind) -> &'static str {
     }
 }
 
-pub fn stardock_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
+pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..STARDOCK_SLOT_COUNT {
         let count = u32::from(planet.stardock_count_raw(slot));
@@ -53,7 +53,7 @@ pub fn stardock_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
     counts_by_kind
 }
 
-pub fn build_queue_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
+pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
         let points = u32::from(planet.build_count_raw(slot));
@@ -120,11 +120,11 @@ pub fn format_unit_counts(
     }
 }
 
-pub fn format_stardock_summary(planet: &PlanetRecord, style: CompactUnitSummaryStyle) -> String {
+pub fn format_stardock_summary(planet: &Planet, style: CompactUnitSummaryStyle) -> String {
     format_unit_counts(&stardock_unit_counts(planet), style)
 }
 
-pub fn format_build_queue_summary(planet: &PlanetRecord, style: CompactUnitSummaryStyle) -> String {
+pub fn format_build_queue_summary(planet: &Planet, style: CompactUnitSummaryStyle) -> String {
     format_unit_counts(&build_queue_unit_counts(planet), style)
 }
 
@@ -136,7 +136,6 @@ pub fn owned_orbit_presence(
     OrbitPresenceSummary {
         fleets: game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| {
                 fleet.current_location_coords_raw() == coords
@@ -146,7 +145,6 @@ pub fn owned_orbit_presence(
             .count(),
         starbases: game_data
             .bases
-            .records
             .iter()
             .filter(|base| {
                 base.coords_raw() == coords
@@ -197,7 +195,7 @@ pub fn owned_planet_status(
     if scorch_orders.contains(&(planet_index_0_based + 1)) {
         return OwnedPlanetStatus::Scorched;
     }
-    let planet = &game_data.planets.records[planet_index_0_based];
+    let planet = &game_data.planets[planet_index_0_based];
     if planet.is_homeworld_seed_ignoring_name() {
         return OwnedPlanetStatus::Homeworld;
     }

@@ -67,21 +67,21 @@ messages-block player=1 "Incoming traffic\nStand by."
     let spec = ScenarioSpec::load_kdl(&scenario_path).unwrap();
     let built = build_scenario(&spec).unwrap();
 
-    assert_eq!(built.game_data.player.records[0].tax_rate(), 35);
+    assert_eq!(built.game_data.players[0].tax_rate(), 35);
     assert_eq!(
-        built.game_data.player.records[0].assigned_player_handle_summary(),
+        built.game_data.players[0].assigned_player_handle_summary(),
         "SYSOP"
     );
     assert_eq!(
-        built.game_data.player.records[0].controlled_empire_name_summary(),
+        built.game_data.players[0].controlled_empire_name_summary(),
         "Aurora"
     );
-    assert_eq!(built.game_data.fleets.records.len(), 17);
+    assert_eq!(built.game_data.fleets.len(), 17);
     assert_eq!(built.queued_mail.len(), 2);
     assert_eq!(built.report_block_rows.len(), 1);
     assert!(
-        built.game_data.player.records[0].has_classic_results_review_state()
-            || built.game_data.player.records[0].classic_reports_pending_flag_raw() != 0
+        built.game_data.players[0].has_classic_results_review_state()
+            || built.game_data.players[0].classic_reports_pending_flag_raw() != 0
     );
 }
 
@@ -195,14 +195,14 @@ turn-file path="turn-1.kdl"
 
     let spec = CombatScenarioSpec::load_kdl(&combat_path).unwrap();
     let built = build_scenario(&spec.scenario).unwrap();
-    assert_eq!(built.game_data.player.records[1].tax_rate(), 40);
-    assert!(built.game_data.player.records[1].is_active_human_player());
-    assert_eq!(built.game_data.player.records[0].autopilot_flag(), 1);
-    assert_eq!(built.game_data.player.records[1].autopilot_flag(), 0);
+    assert_eq!(built.game_data.players[1].tax_rate(), 40);
+    assert!(built.game_data.players[1].is_active_human_player());
+    assert_eq!(built.game_data.players[0].autopilot_flag(), 1);
+    assert_eq!(built.game_data.players[1].autopilot_flag(), 0);
 
     let run = run_combat_scenario(&spec).unwrap();
     assert_eq!(run.report.final_year, 3002);
-    assert_eq!(run.built.game_data.player.records[1].tax_rate(), 60);
+    assert_eq!(run.built.game_data.players[1].tax_rate(), 60);
 }
 
 #[test]
