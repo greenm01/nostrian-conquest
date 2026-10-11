@@ -35,26 +35,25 @@ Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
 ## Next work
 
-Run `zk queue`: t024 is next. All four beta.3 candidates are built from signed
-commit `1b993652` and staged under `releases/`, with a verified signed checksum
-manifest. See the [release plan](../notes/plans/fv6fg33o-release-v1-0-0-beta-3.md)
-for hashes, compilers and acceptance limits. Linux and all three Windows
-packages passed fresh-game creation, two maintenance turns, socket door startup
-and clean disconnect. The Windows candidates passed explicit Defender scans.
-The full workspace passed 3,233 tests, zero failures and 11 ignored; the Rust
-tree has not changed since that run. Five packaging tests pass.
+Beta.3 is published. t024 is complete: all four BBS/sysop packages, their
+signed checksum manifest, and the matching download page are live. The
+quick-start PDF appears above the full manuals. All seven archive/manual links
+returned HTTP 200 with matching hashes; downloaded checksums and the GPG
+signature verified. See the [release plan](../notes/plans/fv6fg33o-release-v1-0-0-beta-3.md)
+for build commit `1b993652`, hashes, compiler versions and acceptance limits.
 
-The x86 Defender block was cleared by using source-built standard libraries,
-as the Win7+ target already did. Both x86 release targets now use that method.
-No Defender exclusion or allow rule was added. The packager uses Cargo-reported
-executable paths and records the actual compiler. The quick-start and both
-full manuals are included and verified byte for byte.
+The x86 Defender block was cleared by building the standard library from
+source, as the Win7+ target already did. Both x86 release targets now use that
+method. No exclusion or allow rule was added. All three Windows candidates
+passed explicit Defender scans and runtime smoke tests on Windows 11; Windows
+7 itself was not tested. Linux passed the same runtime smoke tests. The
+workspace passed 3,233 tests, zero failures and 11 ignored; five packaging
+tests passed.
 
-Next: obtain the owner's publication approval, upload all four archives and
-the manifest/signature together, then deploy the matching download page and
-verify its links. No release assets or live website files have changed yet.
-Windows builds use a native MSVC host; sync by a git bundle rather than remote
-`git pull`, which has hung before. Check its tree before updating it.
+Run `zk queue` before starting new work. The next priority is owner-directed
+playtesting and concrete bug reports. Windows builds use a native MSVC host;
+sync by git bundle rather than remote `git pull`, which has hung before.
+Check its tree before updating it.
 
 All commits must be signed. A cold GPG/SSH agent cache can block signing or
 pushing; ask the owner to unlock it instead of committing unsigned. Fetch

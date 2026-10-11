@@ -1,2 +1,1 @@
 # One task per line, a blank line between tasks: keep it that way so the file reads as a list. A row is `(priority) date text +lane +project @context id:tNNN order:NNN [details](note)`; closed rows move to done-YYYY-MM.md.
-(A) 2026-10-09 Rebuild and verify all beta.3 packages, sign and upload them, and deploy matching download links. +critical +release @playtest id:t024 order:310 depends:t023 [details](docs/notes/plans/fv6fg33o-release-v1-0-0-beta-3.md#t024)

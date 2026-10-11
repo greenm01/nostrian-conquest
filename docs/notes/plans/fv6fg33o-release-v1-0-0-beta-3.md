@@ -128,9 +128,26 @@ The Rust tree is unchanged since the 3,233-test workspace run.
 | `windows7-x86.zip` | `b7226b73be998b8f6c0044549f735b1e13b9a306b449faf7bfcff7a28561d755` |
 
 All names begin `nc-sysop-v1.0.0-beta.3-`. The complete four-archive manifest
-is signed and verified. Candidates, manifest and detached signature are staged
-under `releases/`. Publication and the matching download-page deployment remain
-pending; no live assets or website files have been changed.
+is signed and verified. Archives, manifest and detached signature are staged
+under `releases/`.
+
+## Publication result, 2026-10-11
+
+With the owner's approval, all four archives and the signed checksum manifest
+were uploaded to the existing `release-artifacts` release. The preserved DOS
+archives were left untouched. Release notes identify the build commit and the
+Windows acceptance limit.
+
+The download page was deployed to the production server. It links to beta.3
+for all four platforms and lists the quick-start PDF above the player and sysop
+manuals. The public page matches the committed HTML byte for byte. All seven
+archive/manual links returned HTTP 200; downloaded bytes match the recorded
+archive hashes or the committed PDFs. A separate download of all four archives,
+the checksum manifest and its detached signature passed checksum and GPG
+verification.
+
+Live entry points: [downloads](https://nostrian-conquest.com/downloads.html)
+and [release assets](https://github.com/greenm01/nostrian-conquest/releases/tag/release-artifacts).
 
 ## Connections
 
