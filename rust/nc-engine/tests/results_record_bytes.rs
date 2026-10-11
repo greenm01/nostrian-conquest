@@ -32,9 +32,9 @@ fn defender_bombard_events() -> MaintenanceEvents {
     let mut events = MaintenanceEvents::default();
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 2,
+        attacker_empire: 2,
         attacker_fleet_number: Some(10),
-        defender_empire_raw: 1,
+        defender_empire: 1,
         attacker_initial: ShipLosses {
             battleships: 26,
             cruisers: 58,
@@ -60,7 +60,7 @@ fn defender_bombard_events() -> MaintenanceEvents {
 fn patrol_contact_events() -> MaintenanceEvents {
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::PatrolSector),
         reporting_fleet_number: Some(13),
         reporting_initial: ShipLosses {
@@ -69,7 +69,7 @@ fn patrol_contact_events() -> MaintenanceEvents {
         },
         reporting_loaded_armies_initial: 0,
         coords: [24, 14],
-        target_empire_raw: 2,
+        target_empire: 2,
         target_fleet_number: Some(5),
         small_vessels: 2,
         medium_vessels: 0,

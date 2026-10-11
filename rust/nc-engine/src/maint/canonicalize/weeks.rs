@@ -70,7 +70,7 @@ fn assign_assault_event_weeks(events: &mut MaintenanceEvents) {
             if matches!(e.kind, Mission::InvadeWorld | Mission::BlitzWorld) {
                 Some((
                     e.planet_idx.unwrap_or(usize::MAX),
-                    e.owner_empire_raw,
+                    e.owner_empire,
                     e.stardate_week.unwrap_or(1),
                 ))
             } else {
@@ -85,7 +85,7 @@ fn assign_assault_event_weeks(events: &mut MaintenanceEvents) {
         }
         let week = mission_weeks
             .iter()
-            .find(|(pidx, emp, _)| *pidx == e.planet_idx && *emp == e.attacker_empire_raw)
+            .find(|(pidx, emp, _)| *pidx == e.planet_idx && *emp == e.attacker_empire)
             .map(|(_, _, w)| *w)
             .unwrap_or(2);
         e.stardate_week = Some(week);
@@ -100,7 +100,7 @@ fn assign_bombard_event_weeks(events: &mut MaintenanceEvents) {
             if e.kind == Mission::BombardWorld && e.outcome == MissionOutcome::Succeeded {
                 Some((
                     e.planet_idx.unwrap_or(usize::MAX),
-                    e.owner_empire_raw,
+                    e.owner_empire,
                     e.stardate_week.unwrap_or(1),
                 ))
             } else {
@@ -115,7 +115,7 @@ fn assign_bombard_event_weeks(events: &mut MaintenanceEvents) {
         }
         let week = bombard_weeks
             .iter()
-            .find(|(pidx, emp, _)| *pidx == e.planet_idx && *emp == e.attacker_empire_raw)
+            .find(|(pidx, emp, _)| *pidx == e.planet_idx && *emp == e.attacker_empire)
             .map(|(_, _, w)| *w)
             .unwrap_or(2);
         e.stardate_week = Some(week);
@@ -139,7 +139,7 @@ fn assign_planet_intel_event_weeks(events: &mut MaintenanceEvents) {
             .mission_events
             .iter()
             .find(|mission| {
-                mission.owner_empire_raw == e.viewer_empire_raw
+                mission.owner_empire == e.viewer_empire
                     && mission.fleet_idx == e.source_fleet_idx.unwrap_or(usize::MAX)
                     && matches!(
                         mission.outcome,

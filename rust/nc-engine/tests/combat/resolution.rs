@@ -50,13 +50,13 @@ fn battle_reaching_the_round_cap_ends_as_a_stalemate() {
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == 1)
+            .any(|event| event.reporting_empire == 1)
     );
     assert!(
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == 2)
+            .any(|event| event.reporting_empire == 2)
     );
 }
 

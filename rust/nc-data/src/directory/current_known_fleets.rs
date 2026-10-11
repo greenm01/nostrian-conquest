@@ -120,12 +120,8 @@ impl CoreGameData {
 
         for (block_idx, group) in self.fleets.chunks_exact(4).enumerate() {
             let expected_loc = group[0].sector.to_array();
-            let expected_mission = [
-                group[0].order.to_raw(),
-                group[0].target.x,
-                group[0].target.y,
-            ]
-            .to_vec();
+            let expected_mission =
+                [group[0].order.code(), group[0].target.x, group[0].target.y].to_vec();
 
             for (slot_idx, record) in group.iter().enumerate() {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
@@ -145,14 +141,14 @@ impl CoreGameData {
                         record.sector.to_array()
                     ));
                 }
-                if [record.order.to_raw(), record.target.x, record.target.y]
+                if [record.order.code(), record.target.x, record.target.y]
                     != expected_mission.as_slice()
                 {
                     errors.push(format!(
                         "FLEET[{}].mission_param_bytes expected {:?}, got {:?}",
                         fleet_record_index_1_based,
                         expected_mission,
-                        [record.order.to_raw(), record.target.x, record.target.y]
+                        [record.order.code(), record.target.x, record.target.y]
                     ));
                 }
                 if record.owner.0 != expected_owner_empire {
@@ -243,11 +239,11 @@ impl CoreGameData {
             for slot_idx in 0..4 {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
                 let record = &self.fleets[fleet_record_index_1_based - 1];
-                if record.order.to_raw() != 5 {
+                if record.order.code() != 5 {
                     errors.push(format!(
                         "FLEET[{}].standing_order expected 5 for initialized baseline, got {}",
                         fleet_record_index_1_based,
-                        record.order.to_raw()
+                        record.order.code()
                     ));
                 }
                 if record.target.to_array() != expected_coords {
@@ -328,12 +324,12 @@ impl CoreGameData {
                         record_index_1_based, speed, record.speed
                     ));
                 }
-                if record.order.to_raw() != order_code {
+                if record.order.code() != order_code {
                     errors.push(format!(
                         "FLEET[{}].order expected {:#04x}, got {:#04x}",
                         record_index_1_based,
                         order_code,
-                        record.order.to_raw()
+                        record.order.code()
                     ));
                 }
                 if record.target.to_array() != target {

@@ -158,7 +158,7 @@ fn moving_a_base_cancels_the_builds_that_rely_on_it() {
         .expect("move");
     let planet = &game_data.planets[planet_idx];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
 }
 
 #[test]

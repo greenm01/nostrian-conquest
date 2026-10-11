@@ -51,7 +51,7 @@ pub(super) fn load_campaign_seed_tx(
 }
 
 pub(super) fn load_winner_state(conn: &mut Connection) -> Result<WinnerState, CampaignStoreError> {
-    let winner_empire_raw = conn
+    let winner_empire = conn
         .query_row(
             "SELECT int_value FROM campaign_metadata WHERE key = 'winner_empire_raw'",
             [],
@@ -70,7 +70,7 @@ pub(super) fn load_winner_state(conn: &mut Connection) -> Result<WinnerState, Ca
         .map(|value| value.map(|v| v as u16))
         .map_err(CampaignStoreError::Sql)?;
     Ok(WinnerState {
-        winner_empire_raw,
+        winner_empire,
         winner_declared_year,
     })
 }
@@ -78,7 +78,7 @@ pub(super) fn load_winner_state(conn: &mut Connection) -> Result<WinnerState, Ca
 pub(super) fn load_winner_state_tx(
     tx: &rusqlite::Transaction<'_>,
 ) -> Result<WinnerState, CampaignStoreError> {
-    let winner_empire_raw = tx
+    let winner_empire = tx
         .query_row(
             "SELECT int_value FROM campaign_metadata WHERE key = 'winner_empire_raw'",
             [],
@@ -97,7 +97,7 @@ pub(super) fn load_winner_state_tx(
         .map(|value| value.map(|v| v as u16))
         .map_err(CampaignStoreError::Sql)?;
     Ok(WinnerState {
-        winner_empire_raw,
+        winner_empire,
         winner_declared_year,
     })
 }
@@ -137,11 +137,11 @@ pub(super) fn persist_winner_state_tx(
          WHERE key IN ('winner_empire_raw', 'winner_declared_year')",
         [],
     )?;
-    if let Some(winner_empire_raw) = winner_state.winner_empire_raw {
+    if let Some(winner_empire) = winner_state.winner_empire {
         tx.execute(
             "INSERT INTO campaign_metadata(key, int_value)
              VALUES ('winner_empire_raw', ?1)",
-            params![i64::from(winner_empire_raw)],
+            params![i64::from(winner_empire)],
         )?;
     }
     if let Some(winner_declared_year) = winner_state.winner_declared_year {

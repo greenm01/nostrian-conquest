@@ -52,7 +52,7 @@ pub(super) fn write(
             named_params! {
                 ":snapshot_id": snapshot_id,
                 ":record_index": record_index,
-                ":mode": player.mode.to_raw(),
+                ":mode": player.mode.code(),
                 ":handle": player.handle,
                 ":page_lines": player.page_lines,
                 ":empire_name": player.empire_name,
@@ -82,7 +82,7 @@ pub(super) fn write(
                     ":snapshot_id": snapshot_id,
                     ":record_index": record_index,
                     ":toward_empire": slot + 1,
-                    ":relation": relation.to_raw(),
+                    ":relation": relation.code(),
                 },
             )?;
         }
@@ -116,14 +116,14 @@ pub(super) fn load(
         let (record_index, toward_empire, relation) = row?;
         let record = position_of(record_index, records.len(), "player record")?;
         let slot = position_of(toward_empire, 25, "diplomacy empire")?;
-        records[record].diplomacy[slot] = DiplomaticRelation::from_raw(relation);
+        records[record].diplomacy[slot] = DiplomaticRelation::from_code(relation);
     }
     Ok(records)
 }
 
 fn player_from_row(row: &Row<'_>) -> rusqlite::Result<Player> {
     Ok(Player {
-        mode: PlayerMode::from_raw(row.get("mode")?),
+        mode: PlayerMode::from_code(row.get("mode")?),
         handle: row.get("handle")?,
         page_lines: row.get("page_lines")?,
         empire_name: row.get("empire_name")?,

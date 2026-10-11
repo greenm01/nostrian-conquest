@@ -18,19 +18,19 @@ pub fn push_misc_entries(
 ) {
     // ----- Colonization events -----
     for event in &events.colonization_events {
-        let (planet_idx, colonizer_empire_raw, event_week) = match *event {
+        let (planet_idx, colonizer_empire, event_week) = match *event {
             nc_data::ColonizationResolvedEvent::Succeeded {
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 stardate_week,
                 ..
-            } => (planet_idx, colonizer_empire_raw, stardate_week),
+            } => (planet_idx, colonizer_empire, stardate_week),
             nc_data::ColonizationResolvedEvent::BlockedByOwner {
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 stardate_week,
                 ..
-            } => (planet_idx, colonizer_empire_raw, stardate_week),
+            } => (planet_idx, colonizer_empire, stardate_week),
             nc_data::ColonizationResolvedEvent::Aborted { .. } => continue,
         };
         let Some(planet) = game_data.planets.get(planet_idx) else {
@@ -49,9 +49,9 @@ pub fn push_misc_entries(
             nc_data::ColonizationResolvedEvent::Succeeded { .. } => {
                 " Colonization mission report: We have arrived at our target world, successfully terraformed it, and have started a new colony. We await new orders...".to_string()
             }
-            nc_data::ColonizationResolvedEvent::BlockedByOwner { owner_empire_raw, .. } => format!(
+            nc_data::ColonizationResolvedEvent::BlockedByOwner { owner_empire, .. } => format!(
                 " Colonization mission report: We have entered System({x},{y}) and have determined that aliens are already living on the world found within! We have gone ahead and performed a long range viewing analysis and have determined that the world is owned by {} and has a potential of {} points. We are aborting our mission and are leaving the alien solar system.",
-                classic_empire_clause(game_data, owner_empire_raw),
+                classic_empire_clause(game_data, owner_empire),
                 u16::from(planet.potential_production),
             ),
             nc_data::ColonizationResolvedEvent::Aborted { .. } => continue,
@@ -61,7 +61,7 @@ pub fn push_misc_entries(
             kind: 0x09,
             tail: RESULTS_TAIL_COLONIZATION,
             target: ReportTarget::Both {
-                recipient: colonizer_empire_raw,
+                recipient: colonizer_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event_week,
@@ -82,7 +82,7 @@ pub fn push_misc_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -96,12 +96,12 @@ pub fn push_misc_entries(
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
         for recipient in occupied_result_viewers(game_data) {
-            let body = if recipient == event.empire_raw {
+            let body = if recipient == event.empire {
                 " We now stand as the sole remaining serious contender for the imperial throne. Other empires may still persist, but none currently appear capable of challenging our claim.".to_string()
             } else {
                 format!(
                     " {} now stands as the sole remaining serious contender for the imperial throne. No other empire, ours included, currently appears capable of challenging its claim.",
-                    empire_label(game_data, event.empire_raw),
+                    empire_label(game_data, event.empire),
                 )
             };
             entries.push(ReportEntry {
@@ -125,7 +125,7 @@ pub fn push_misc_entries(
     for event in &events.empire_elimination_events {
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
-        let defeated = empire_label(game_data, event.defeated_empire_raw);
+        let defeated = empire_label(game_data, event.defeated_empire);
         let cause_clause = match event.cause {
             nc_data::EmpireEliminationCause::LastPlanetLost => match event.coords {
                 Some([x, y]) => format!(
@@ -148,14 +148,14 @@ pub fn push_misc_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.defeated_empire_raw,
+                recipient: event.defeated_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
             narrative_phase: narrative_phase_for_report_text(&loser_body),
         });
 
-        if let Some(victor_empire_raw) = event.victor_empire_raw {
+        if let Some(victor_empire) = event.victor_empire {
             let victor_body = match event.cause {
                 nc_data::EmpireEliminationCause::LastPlanetLost => match event.coords {
                     Some([x, y]) => format!(
@@ -177,7 +177,7 @@ pub fn push_misc_entries(
                 kind: 0x06,
                 tail: RESULTS_TAIL_FLEET,
                 target: ReportTarget::Both {
-                    recipient: victor_empire_raw,
+                    recipient: victor_empire,
                 },
                 repeat_next_pointer: false,
                 stardate_week: event.stardate_week,
@@ -190,8 +190,8 @@ pub fn push_misc_entries(
     for event in &events.game_victory_notice_events {
         let source = "From your Fleet Command Center:";
         let header = report_header(source, event.stardate_week, year);
-        let winner = empire_label(game_data, event.winner_empire_raw);
-        let body = if event.recipient_empire_raw == event.winner_empire_raw {
+        let winner = empire_label(game_data, event.winner_empire);
+        let body = if event.recipient_empire == event.winner_empire {
             format!(
                 " ALERT: Victory declared! We have been recognized as Emperor. The campaign is over. You may continue to review the final game state in survey mode, but no further orders will be accepted."
             )
@@ -205,7 +205,7 @@ pub fn push_misc_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.recipient_empire_raw,
+                recipient: event.recipient_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -226,7 +226,7 @@ pub fn push_misc_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -236,10 +236,10 @@ pub fn push_misc_entries(
 
     // ----- Salvage events -----
     for event in &events.salvage_events {
-        let (owner_empire_raw, event_week, source, body) = match *event {
+        let (owner_empire, event_week, source, body) = match *event {
             nc_data::SalvageResolvedEvent::Succeeded {
                 fleet_number,
-                owner_empire_raw,
+                owner_empire,
                 planet_idx,
                 coords,
                 recovered_points,
@@ -253,7 +253,7 @@ pub fn push_misc_entries(
                     .map(|planet| planet.name.clone())
                     .unwrap_or_else(|| "the target world".to_string());
                 (
-                    owner_empire_raw,
+                    owner_empire,
                     stardate_week,
                     owned_fleet_source_clause(Some(fleet_number), &format!("System({x},{y})")),
                     format!(
@@ -263,7 +263,7 @@ pub fn push_misc_entries(
             }
             nc_data::SalvageResolvedEvent::Failed {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 planet_idx: Some(planet_idx),
                 coords,
                 reason: nc_data::SalvageFailureReason::PlanetNotOwned,
@@ -277,7 +277,7 @@ pub fn push_misc_entries(
                     .map(|planet| planet.name.clone())
                     .unwrap_or_else(|| "the target world".to_string());
                 (
-                    owner_empire_raw,
+                    owner_empire,
                     stardate_week,
                     owned_fleet_source_clause_from_idx(
                         game_data,
@@ -291,7 +291,7 @@ pub fn push_misc_entries(
             }
             nc_data::SalvageResolvedEvent::Failed {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 coords,
                 reason: nc_data::SalvageFailureReason::NoPlanetAtTarget,
                 stardate_week,
@@ -299,7 +299,7 @@ pub fn push_misc_entries(
             } => {
                 let [x, y] = coords;
                 (
-                    owner_empire_raw,
+                    owner_empire,
                     stardate_week,
                     owned_fleet_source_clause_from_idx(
                         game_data,
@@ -317,7 +317,7 @@ pub fn push_misc_entries(
             kind: 0x05,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: owner_empire_raw,
+                recipient: owner_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event_week,
@@ -327,26 +327,22 @@ pub fn push_misc_entries(
 
     // ----- Invalid player state events -----
     for event in &events.invalid_player_state_events {
-        let (owner_empire_raw, source, body) = match *event {
+        let (owner_empire, source, body) = match *event {
             nc_data::InvalidPlayerStateEvent::FleetMission {
                 fleet_idx,
-                owner_empire_raw,
-                order_code_raw,
+                owner_empire,
+                order_code,
                 coords,
                 reason,
             } => {
-                let order_name = nc_data::Order::from_raw(order_code_raw)
+                let order_name = nc_data::Order::from_code(order_code)
                     .display_label()
                     .to_lowercase();
                 let body = if capability_loss_invalid_order_reason(reason) {
                     format!(
                         " Hostile action forced us to abort the {order_name} mission because {}. The fleet is {}.",
                         fleet_order_validation_reason_text(reason),
-                        aborted_mission_follow_on_text_from_idx(
-                            game_data,
-                            fleet_idx,
-                            owner_empire_raw
-                        )
+                        aborted_mission_follow_on_text_from_idx(game_data, fleet_idx, owner_empire)
                     )
                 } else {
                     format!(
@@ -355,7 +351,7 @@ pub fn push_misc_entries(
                     )
                 };
                 (
-                    owner_empire_raw,
+                    owner_empire,
                     owned_fleet_source_clause_from_idx(
                         game_data,
                         fleet_idx,
@@ -366,12 +362,12 @@ pub fn push_misc_entries(
             }
             nc_data::InvalidPlayerStateEvent::FleetInput {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 coords,
                 reason,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 owned_fleet_source_clause_from_idx(
                     game_data,
                     fleet_idx,
@@ -383,12 +379,12 @@ pub fn push_misc_entries(
                 ),
             ),
             nc_data::InvalidPlayerStateEvent::PlanetInput {
-                owner_empire_raw,
+                owner_empire,
                 coords,
                 reason,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 format!("From planet in System({},{}) :", coords[0], coords[1]),
                 format!(
                     " Invalid planetary input was cleared because {}.",
@@ -396,33 +392,33 @@ pub fn push_misc_entries(
                 ),
             ),
             nc_data::InvalidPlayerStateEvent::PlayerTaxRate {
-                owner_empire_raw,
+                owner_empire,
                 tax_rate,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 "From your central administration:".to_string(),
                 format!(
                     " Tax rate input {}% for {} was invalid and has been clamped to 100%.",
                     tax_rate,
-                    empire_label(game_data, owner_empire_raw)
+                    empire_label(game_data, owner_empire)
                 ),
             ),
             nc_data::InvalidPlayerStateEvent::DiplomacyInput {
-                owner_empire_raw,
+                owner_empire,
                 reason,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 "From your foreign ministry:".to_string(),
                 format!(
                     " Invalid diplomacy input for {} was reset because {}.",
-                    empire_label(game_data, owner_empire_raw),
+                    empire_label(game_data, owner_empire),
                     diplomacy_input_validation_reason_text(reason)
                 ),
             ),
         };
-        if owner_empire_raw == 0 {
+        if owner_empire == 0 {
             continue;
         }
         // Invalid state events don't have stardate_week on the event itself; use year start.
@@ -432,7 +428,7 @@ pub fn push_misc_entries(
             kind: 0x05,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: owner_empire_raw,
+                recipient: owner_empire,
             },
             repeat_next_pointer: false,
             stardate_week: None,
@@ -459,11 +455,7 @@ pub fn push_misc_entries(
             .iter()
             .filter(|e| e.kind == Mission::RendezvousSector && e.survivor_side)
         {
-            let key = (
-                event.owner_empire_raw,
-                event.coords,
-                event.host_fleet_number,
-            );
+            let key = (event.owner_empire, event.coords, event.host_fleet_number);
             rendezvous_groups
                 .entry(key)
                 .or_default()
@@ -474,7 +466,7 @@ pub fn push_misc_entries(
         }
 
         for (key, absorbed_numbers) in &rendezvous_groups {
-            let (owner_empire_raw, coords, host_fleet_number) = *key;
+            let (owner_empire, coords, host_fleet_number) = *key;
             let [x, y] = coords;
             let (host_fleet_idx, stardate_week) = rendezvous_meta[key];
             let source =
@@ -496,7 +488,7 @@ pub fn push_misc_entries(
                 kind: 0x05,
                 tail: RESULTS_TAIL_FLEET,
                 target: ReportTarget::Both {
-                    recipient: owner_empire_raw,
+                    recipient: owner_empire,
                 },
                 repeat_next_pointer: false,
                 stardate_week: stardate_week,
@@ -527,13 +519,13 @@ pub fn push_misc_entries(
         };
         let (recipient, body) = match *event {
             nc_data::MissionRetargetEvent::Retargeted {
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::SeekHome,
                 previous_target_coords,
                 new_target_coords,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 format!(
                     " Seek-Home mission report: Our original destination at Sector({},{}) was lost. We are seeking refuge at Sector({},{}).",
                     previous_target_coords[0],
@@ -543,37 +535,37 @@ pub fn push_misc_entries(
                 ),
             ),
             nc_data::MissionRetargetEvent::Abandoned {
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::SeekHome,
                 coords,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 format!(
                     " Seek-Home mission report: With no friendly planets remaining, we are holding our position in Sector({},{}) and awaiting orders.",
                     coords[0], coords[1]
                 ),
             ),
             nc_data::MissionRetargetEvent::Retargeted {
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::GuardStarbase,
                 previous_target_coords: _,
                 new_target_coords,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 format!(
                     " Guard Starbase mission report: The guarded starbase relocated. We are moving to Sector({},{}) to resume escort duty.",
                     new_target_coords[0], new_target_coords[1]
                 ),
             ),
             nc_data::MissionRetargetEvent::Abandoned {
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::GuardStarbase,
                 coords,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 format!(
                     " Guard Starbase mission report: The guarded starbase was destroyed or lost. We are holding our position in Sector({},{}) and awaiting orders.",
                     coords[0], coords[1]
@@ -612,15 +604,15 @@ pub fn push_roe_entries(
         if consumed_roe_disposition_indices.contains(&disposition_idx) {
             continue;
         }
-        let (owner_empire_raw, event_week, source, body) = match *event {
+        let (owner_empire, event_week, source, body) = match *event {
             nc_data::EncounterDispositionEvent::NoEngagement {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 mission,
                 coords,
                 friendly_initial,
                 friendly_loaded_armies_initial,
-                target_empire_raw,
+                target_empire,
                 target_fleet_number,
                 small_vessels,
                 medium_vessels,
@@ -628,7 +620,7 @@ pub fn push_roe_entries(
                 reason,
                 stardate_week,
             } => (
-                owner_empire_raw,
+                owner_empire,
                 stardate_week,
                 owned_fleet_source_clause_from_idx(
                     game_data,
@@ -638,13 +630,13 @@ pub fn push_roe_entries(
                 {
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let enemy = if let Some(enemy) =
-                        known_hostile_fleet_label(game_data, target_fleet_number, target_empire_raw)
+                        known_hostile_fleet_label(game_data, target_fleet_number, target_empire)
                     {
                         format!("It is {enemy}.")
                     } else {
                         format!(
                             "It belongs to {}.",
-                            classic_empire_clause(game_data, target_empire_raw)
+                            classic_empire_clause(game_data, target_empire)
                         )
                     };
                     let size_summary = contact_size_summary_from_counts(
@@ -675,12 +667,12 @@ pub fn push_roe_entries(
             ),
             nc_data::EncounterDispositionEvent::Retreated {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 mission,
                 coords,
                 friendly_initial,
                 friendly_loaded_armies_initial,
-                target_empire_raw,
+                target_empire,
                 target_fleet_number,
                 enemy_initial,
                 retreat_target_coords,
@@ -689,7 +681,7 @@ pub fn push_roe_entries(
                 stardate_week,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 stardate_week,
                 owned_fleet_source_clause_from_idx(
                     game_data,
@@ -701,7 +693,7 @@ pub fn push_roe_entries(
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
                         "{prefix} We engaged {}. We had {}. The alien force contained {}. In accordance with our ROE, we withdrew toward System({},{}) {}. {}",
-                        classic_enemy_reference(game_data, target_fleet_number, target_empire_raw),
+                        classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         fleet_force_summary(enemy_initial, 0),
                         retreat_target_coords[0],
@@ -713,12 +705,12 @@ pub fn push_roe_entries(
             ),
             nc_data::EncounterDispositionEvent::PursuitFire {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 mission,
                 coords,
                 friendly_initial,
                 friendly_loaded_armies_initial,
-                target_empire_raw,
+                target_empire,
                 target_fleet_number,
                 enemy_initial,
                 retreat_target_coords,
@@ -727,7 +719,7 @@ pub fn push_roe_entries(
                 stardate_week,
                 ..
             } => (
-                owner_empire_raw,
+                owner_empire,
                 stardate_week,
                 owned_fleet_source_clause_from_idx(
                     game_data,
@@ -740,7 +732,7 @@ pub fn push_roe_entries(
                     format!(
                         "{prefix} We had {}. We attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We withdrew toward System({},{}) {}. {}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
-                        classic_enemy_reference(game_data, target_fleet_number, target_empire_raw),
+                        classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(enemy_initial, 0),
                         retreat_target_coords[0],
                         retreat_target_coords[1],
@@ -752,13 +744,13 @@ pub fn push_roe_entries(
         };
         // Deduplicate NoEngagement: one avoidance report per enemy per location.
         if let nc_data::EncounterDispositionEvent::NoEngagement {
-            target_empire_raw,
+            target_empire,
             coords,
             reason,
             ..
         } = event
         {
-            if !seen_avoidance.insert((owner_empire_raw, *target_empire_raw, *coords, *reason)) {
+            if !seen_avoidance.insert((owner_empire, *target_empire, *coords, *reason)) {
                 continue;
             }
         }
@@ -768,7 +760,7 @@ pub fn push_roe_entries(
             kind: 0x05,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: owner_empire_raw,
+                recipient: owner_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event_week,

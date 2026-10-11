@@ -593,7 +593,7 @@ impl App {
         {
             return Err("That mission requires one of your owned planets.".to_string());
         }
-        if mission_code == nc_data::Order::ColonizeWorld.to_raw() {
+        if mission_code == nc_data::Order::ColonizeWorld.code() {
             let selected_records = if single {
                 self.fleet_order_selected_row()
                     .map(|row| BTreeSet::from([row.fleet_record_index_1_based]))
@@ -1162,7 +1162,7 @@ impl App {
                         }
                         // Each fleet of a group seeks its own nearest world.
                         Ok(Some(_))
-                            if mission_code == nc_data::Order::SeekHome.to_raw()
+                            if mission_code == nc_data::Order::SeekHome.code()
                                 && records.len() > 1 =>
                         {
                             if let Err(err) =
@@ -1835,7 +1835,7 @@ impl App {
             .iter()
             .map(|row| row.fleet_record_index_1_based)
             .collect::<BTreeSet<_>>();
-        if mission_code == nc_data::Order::ColonizeWorld.to_raw() {
+        if mission_code == nc_data::Order::ColonizeWorld.code() {
             self.validate_friendly_colonize_assignment(target, &selected_records)?;
         }
         let records = selected_rows
@@ -1844,7 +1844,7 @@ impl App {
             .collect::<Vec<_>>();
         // A lone fleet keeps the target its order screen chose.
         let seek_home_targets =
-            if mission_code == nc_data::Order::SeekHome.to_raw() && records.len() > 1 {
+            if mission_code == nc_data::Order::SeekHome.code() && records.len() > 1 {
                 automatic_order_targets(&self.game_data, mission_code, &records)?
             } else {
                 None
@@ -2023,7 +2023,7 @@ fn fleet_group_order_requires_target(_order_code: u8) -> bool {
 }
 
 fn fleet_group_order_label(order_code: u8) -> &'static str {
-    match nc_data::Order::from_raw(order_code) {
+    match nc_data::Order::from_code(order_code) {
         nc_data::Order::HoldPosition => "hold",
         nc_data::Order::MoveOnly => "move",
         nc_data::Order::SeekHome => "seek-home",

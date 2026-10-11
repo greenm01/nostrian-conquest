@@ -2133,7 +2133,7 @@ fn remove_preview_queued_message(app: &mut DashApp, message: &nc_data::TurnMessa
     let year = app.game_data.conquest.game_year;
     if let Some(index) = app.queued_mail.iter().position(|mail| {
         mail.sender_empire_id == sender
-            && mail.recipient_empire_id == message.recipient_empire_raw
+            && mail.recipient_empire_id == message.recipient_empire
             && mail.year == year
             && mail.subject == message.subject
             && mail.body == message.body

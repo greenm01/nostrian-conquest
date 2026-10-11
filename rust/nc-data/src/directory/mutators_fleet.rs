@@ -8,18 +8,18 @@ use crate::{
 impl CoreGameData {
     pub fn conflicting_friendly_colonize_fleet_record(
         &self,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         target: [u8; 2],
         excluded_fleet_record_indexes_1_based: &BTreeSet<usize>,
     ) -> Option<usize> {
-        if owner_empire_raw == 0 {
+        if owner_empire == 0 {
             return None;
         }
         self.fleets
             .iter()
             .enumerate()
             .find(|(idx, fleet)| {
-                fleet.owner.0 == owner_empire_raw
+                fleet.owner.0 == owner_empire
                     && !excluded_fleet_record_indexes_1_based.contains(&(idx + 1))
                     && fleet.ships.etacs > 0
                     && fleet.order == Order::ColonizeWorld
@@ -30,13 +30,13 @@ impl CoreGameData {
 
     pub fn validate_friendly_colonize_target_available(
         &self,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         target: [u8; 2],
         excluded_fleet_record_indexes_1_based: &BTreeSet<usize>,
     ) -> Result<(), FleetOrderValidationError> {
         if let Some(conflicting_fleet_record_index_1_based) = self
             .conflicting_friendly_colonize_fleet_record(
-                owner_empire_raw,
+                owner_empire,
                 target,
                 excluded_fleet_record_indexes_1_based,
             )
@@ -114,7 +114,7 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             })?
             .max_speed;
-        if Order::from_raw(order_code) == Order::SeekHome
+        if Order::from_code(order_code) == Order::SeekHome
             && ![
                 self.nearest_owned_world(record_index_1_based, false),
                 self.nearest_owned_world(record_index_1_based, true),
@@ -141,13 +141,13 @@ impl CoreGameData {
             },
         )?;
         record.speed = speed;
-        record.order = Order::from_raw(order_code);
+        record.order = Order::from_code(order_code);
         record.target = Coords::from_array(target);
         // ECGAME writes 0x22 = world-target flag (0 for sector-targeted orders,
         // 1 otherwise) and the 0x23 word = mission id (starbase id for Guard
         // Starbase, host fleet number for Join); explicit aux bytes override
         // 0x22 and 0x23 byte for byte, and the high byte 0x24 is zero.
-        let mut mission_aux = [u8::from(Order::from_raw(order_code).targets_world()), 0];
+        let mut mission_aux = [u8::from(Order::from_code(order_code).targets_world()), 0];
         if let Some(value) = aux0 {
             mission_aux[0] = value;
         }
@@ -173,7 +173,7 @@ impl CoreGameData {
         let Some(fleet) = self.fleets.get(record_index_1_based - 1) else {
             return Ok(());
         };
-        let order = Order::from_raw(order_code);
+        let order = Order::from_code(order_code);
         if matches!(order, Order::Unknown(_)) {
             return Err(FleetOrderValidationError::UnknownOrderCode(order_code));
         }

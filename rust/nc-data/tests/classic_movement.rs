@@ -120,9 +120,9 @@ fn struck(events: &MaintenanceEvents, mission: u8) -> bool {
         6 => events
             .bombard_events
             .iter()
-            .any(|event| event.attacker_fleet_number == Some(1) && event.attacker_empire_raw == 1),
+            .any(|event| event.attacker_fleet_number == Some(1) && event.attacker_empire == 1),
         7 | 8 => events.assault_report_events.iter().any(|event| {
-            event.attacker_empire_raw == 1
+            event.attacker_empire == 1
                 && event.kind
                     == if mission == 7 {
                         Mission::InvadeWorld
@@ -154,7 +154,7 @@ fn run_cases(cases: &[Case]) {
                     );
                     assert_eq!(fleet.speed, *speed, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.order.to_raw(),
+                        fleet.order.code(),
                         *order,
                         "{} year {year} order",
                         case.name
@@ -188,7 +188,7 @@ fn run_cases(cases: &[Case]) {
                     );
                     assert_eq!(fleet.speed, 0, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.order.to_raw(),
+                        fleet.order.code(),
                         if mission == 6 { 6 } else { 0 },
                         "{} year {year} order",
                         case.name

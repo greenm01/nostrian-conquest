@@ -290,7 +290,7 @@ fn planet_list_commission_opens_direct_draft_for_selected_planet_and_returns_to_
             let planet = &app.game_data.planets[row.planet_record_index_1_based - 1];
             (0..nc_data::STARDOCK_SLOT_COUNT).any(|slot| {
                 (planet.stardock[slot].min(u32::from(u16::MAX)) as u16) > 0
-                    && nc_data::stardock_slot_kind(&planet, slot).to_raw() != 0
+                    && nc_data::stardock_slot_kind(&planet, slot).code() != 0
             })
         })
         .expect("fixture should have a planet with stardock units");
@@ -1249,10 +1249,10 @@ fn repeated_same_kind_build_submissions_merge_into_one_player_visible_total() {
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
     let planet = &app.game_data.planets[planet_idx];
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].kind.code(), 1);
     assert_eq!(planet.build_queue[0].points_owed, 25);
     assert!((1..10).all(|slot| planet.build_queue[slot].points_owed == 0));
-    assert!((1..10).all(|slot| planet.build_queue[slot].kind.to_raw() == 0));
+    assert!((1..10).all(|slot| planet.build_queue[slot].kind.code() == 0));
 
     app.open_planet_build_menu();
     app.render(&mut terminal).expect("render succeeds");
@@ -1300,7 +1300,7 @@ fn empty_build_quantity_submission_uses_max_affordable_default() {
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
     let planet = &app.game_data.planets[planet_idx];
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].kind.code(), 1);
     assert_eq!(planet.build_queue[0].points_owed, 50);
     assert!((1..10).all(|slot| planet.build_queue[slot].points_owed == 0));
 }
@@ -2572,7 +2572,7 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
     assert_eq!(u16::from(scorched_planet.potential_production), 0);
     assert_eq!(nc_data::stored_production_points(&scorched_planet), 0);
     assert!((0..10).all(|slot| scorched_planet.build_queue[slot].points_owed == 0));
-    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].kind.to_raw() == 0));
+    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].kind.code() == 0));
     assert!(
         (0..nc_data::STARDOCK_SLOT_COUNT)
             .all(|slot| (scorched_planet.stardock[slot].min(u32::from(u16::MAX)) as u16) == 0)
@@ -2582,7 +2582,7 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
             &scorched_planet,
             slot
         )
-        .to_raw()
+        .code()
             == 0)
     );
 

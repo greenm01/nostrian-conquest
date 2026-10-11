@@ -111,7 +111,7 @@ impl StateHash {
             diplomacy,
             autopilot,
         } = player;
-        self.u64(u64::from(mode.to_raw()));
+        self.u64(u64::from(mode.code()));
         self.text(handle);
         self.u64(u64::from(*page_lines));
         self.text(empire_name);
@@ -134,7 +134,7 @@ impl StateHash {
         self.u64(u64::from(*tax_rate));
         self.u64(u64::from(*production));
         for relation in diplomacy {
-            self.u64(u64::from(relation.to_raw()));
+            self.u64(u64::from(relation.code()));
         }
         self.bool(*autopilot);
     }
@@ -161,7 +161,7 @@ impl StateHash {
         self.text(name);
         for BuildSlot { points_owed, kind } in build_queue {
             self.u64(u64::from(*points_owed));
-            self.u64(u64::from(kind.to_raw()));
+            self.u64(u64::from(kind.code()));
         }
         let Stardock {
             destroyers,
@@ -223,7 +223,7 @@ impl StateHash {
         for real in [x_fraction, y_fraction, depth] {
             self.real(*real);
         }
-        self.u64(u64::from(order.to_raw()));
+        self.u64(u64::from(order.code()));
         self.coords(*target);
         self.u64(u64::from(*target_depth));
         self.u64(u64::from(*mission_target));

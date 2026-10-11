@@ -4,24 +4,24 @@ impl CoreGameData {
     pub fn planet_build_errors_current_known(
         &self,
         record_index_1_based: usize,
-        slot_raw: u8,
-        kind_raw: u8,
+        slot: u8,
+        kind: u8,
     ) -> Vec<String> {
         let mut errors = Vec::new();
         match self.planets.get(record_index_1_based - 1) {
             Some(record) => {
-                if record.build_queue[0].points_owed != slot_raw {
+                if record.build_queue[0].points_owed != slot {
                     errors.push(format!(
                         "PLANET[{}].build_slot expected {:#04x}, got {:#04x}",
-                        record_index_1_based, slot_raw, record.build_queue[0].points_owed
+                        record_index_1_based, slot, record.build_queue[0].points_owed
                     ));
                 }
-                if record.build_queue[0].kind.to_raw() != kind_raw {
+                if record.build_queue[0].kind.code() != kind {
                     errors.push(format!(
                         "PLANET[{}].build_kind expected {:#04x}, got {:#04x}",
                         record_index_1_based,
-                        kind_raw,
-                        record.build_queue[0].kind.to_raw()
+                        kind,
+                        record.build_queue[0].kind.code()
                     ));
                 }
             }
@@ -44,10 +44,10 @@ impl CoreGameData {
 
         match self.fleets.first() {
             Some(record) => {
-                if record.order.to_raw() != 0x04 {
+                if record.order.code() != 0x04 {
                     errors.push(format!(
                         "FLEET[1].order expected 0x04, got {:#04x}",
-                        record.order.to_raw()
+                        record.order.code()
                     ));
                 }
                 if record.mission_target == 0 {
@@ -171,7 +171,7 @@ impl CoreGameData {
             player_starbase_count: self
                 .base_chain(player_record_index_1_based as u8)
                 .map_or(0, |chain| chain.len() as u16),
-            fleet_order: fleet.order.to_raw(),
+            fleet_order: fleet.order.code(),
             fleet_local_slot: fleet.fleet_number.0,
             fleet_id: fleet.record.0,
             guard_index: fleet.mission_target,
@@ -298,7 +298,7 @@ impl CoreGameData {
         self.fleets
             .iter()
             .enumerate()
-            .filter_map(|(idx, fleet)| (fleet.order.to_raw() == 0x04).then_some(idx + 1))
+            .filter_map(|(idx, fleet)| (fleet.order.code() == 0x04).then_some(idx + 1))
             .collect()
     }
 

@@ -1,5 +1,5 @@
 use crate::navigation::sector_distance_sq;
-use crate::{CoreGameData, production_item_kind_raw};
+use crate::{CoreGameData, production_item_kind_code};
 use nc_data::{
     Coords, DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT,
     build_queue_unit_counts, diplomatic_relation_toward, has_any_force, present_production_points,
@@ -13,7 +13,7 @@ pub fn process_autopilot_fleet_orders(
     game_data: &mut CoreGameData,
 ) -> Result<(), Box<dyn std::error::Error>> {
     for player_idx in 0..game_data.players.len() {
-        let mode = game_data.players[player_idx].mode.to_raw();
+        let mode = game_data.players[player_idx].mode.code();
         let autopilot = u8::from(game_data.players[player_idx].autopilot);
         if !(mode == 0x01 && autopilot == 0x01) {
             continue;
@@ -31,7 +31,7 @@ pub fn process_autopilot_ai(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_count = game_data.conquest.player_count;
     for player_idx in 0..game_data.players.len() {
-        let mode = game_data.players[player_idx].mode.to_raw();
+        let mode = game_data.players[player_idx].mode.code();
         let autopilot = u8::from(game_data.players[player_idx].autopilot);
         let ai_active = mode == 0xff || (mode == 0x01 && autopilot == 0x01);
         if !ai_active {
@@ -240,7 +240,7 @@ fn autopilot_build_queue(
         let queued = build_queue_unit_counts(planet);
         let queued_qty = |kind: ProductionItemKind| {
             queued
-                .get(&production_item_kind_raw(kind))
+                .get(&production_item_kind_code(kind))
                 .copied()
                 .unwrap_or(0)
         };

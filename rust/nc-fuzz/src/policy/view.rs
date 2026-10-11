@@ -15,15 +15,15 @@ pub fn planet(state: &CoreGameData, record: usize) -> &Planet {
 }
 
 /// 1-based records of the empire's fleets that still carry ships.
-pub fn owned_fleets(state: &CoreGameData, empire_raw: u8) -> Vec<usize> {
+pub fn owned_fleets(state: &CoreGameData, empire: u8) -> Vec<usize> {
     records_where(&state.fleets, |fleet| {
-        fleet.owner.0 == empire_raw && has_any_force(fleet)
+        fleet.owner.0 == empire && has_any_force(fleet)
     })
 }
 
 /// 1-based records of the empire's planets.
-pub fn owned_planets(state: &CoreGameData, empire_raw: u8) -> Vec<usize> {
-    records_where(&state.planets, |planet| planet.owner.0 == empire_raw)
+pub fn owned_planets(state: &CoreGameData, empire: u8) -> Vec<usize> {
+    records_where(&state.planets, |planet| planet.owner.0 == empire)
 }
 
 /// 1-based records of placed planets that pass `keep`.
@@ -33,18 +33,18 @@ pub fn planets_where(state: &CoreGameData, keep: impl Fn(&Planet) -> bool) -> Ve
     })
 }
 
-pub fn foreign_fleet_coords(state: &CoreGameData, empire_raw: u8) -> Vec<[u8; 2]> {
+pub fn foreign_fleet_coords(state: &CoreGameData, empire: u8) -> Vec<[u8; 2]> {
     state
         .fleets
         .iter()
-        .filter(|fleet| fleet.owner.0 != empire_raw && has_any_force(fleet))
+        .filter(|fleet| fleet.owner.0 != empire && has_any_force(fleet))
         .map(|fleet| fleet.sector.to_array())
         .collect()
 }
 
 /// The empire's owned planet at the fleet's location, if any.
-pub fn owned_planet_at(state: &CoreGameData, empire_raw: u8, coords: [u8; 2]) -> Option<usize> {
-    owned_planets(state, empire_raw)
+pub fn owned_planet_at(state: &CoreGameData, empire: u8, coords: [u8; 2]) -> Option<usize> {
+    owned_planets(state, empire)
         .into_iter()
         .find(|&record| planet(state, record).sector.to_array() == coords)
 }

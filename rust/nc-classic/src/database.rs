@@ -111,8 +111,8 @@ impl DatabaseRecord {
             && self.word_at(0x25) == 4
     }
 
-    pub fn is_compat_orbit_seed_for_viewer(&self, viewer_empire_raw: u8) -> bool {
-        self.is_compat_orbit_seed() && self.raw[0x15] == viewer_empire_raw
+    pub fn is_compat_orbit_seed_for_viewer(&self, viewer_empire: u8) -> bool {
+        self.is_compat_orbit_seed() && self.raw[0x15] == viewer_empire
     }
 }
 

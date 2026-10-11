@@ -199,10 +199,10 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
                     f.speed
                 ));
             }
-            if f.order.to_raw() != 0x06 {
+            if f.order.code() != 0x06 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x06 (BombardWorld), got {:#04x}",
-                    f.order.to_raw()
+                    f.order.code()
                 ));
             }
             if f.target.to_array() != [0x0f, 0x0d] {

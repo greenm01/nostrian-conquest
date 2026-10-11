@@ -90,8 +90,8 @@ impl CaseSetup {
         }
     }
 
-    pub fn policy(&self, empire_raw: u8) -> Policy {
-        self.policies[usize::from(empire_raw) - 1]
+    pub fn policy(&self, empire: u8) -> Policy {
+        self.policies[usize::from(empire) - 1]
     }
 
     pub fn summary(&self) -> String {
@@ -138,13 +138,13 @@ impl CaseSetup {
             },
             houses: empires
                 .clone()
-                .map(|empire_raw| HouseSpec {
-                    record_index_1_based: usize::from(empire_raw),
+                .map(|empire| HouseSpec {
+                    record_index_1_based: usize::from(empire),
                     handle: None,
                     empire_name: None,
                     homeworld_name: None,
                     tax_rate: None,
-                    autopilot: self.policy(empire_raw) == Policy::Autopilot,
+                    autopilot: self.policy(empire) == Policy::Autopilot,
                 })
                 .collect(),
             diplomacy: if self.war {
@@ -155,8 +155,8 @@ impl CaseSetup {
                             .clone()
                             .filter(move |&to| to != from)
                             .map(move |to| DiplomacySpec {
-                                from_empire_raw: from,
-                                to_empire_raw: to,
+                                from_empire: from,
+                                to_empire: to,
                                 relation: DiplomaticRelation::Enemy,
                             })
                     })
@@ -166,9 +166,9 @@ impl CaseSetup {
             },
             planets: self
                 .collapsed_empire
-                .map(|empire_raw| PlanetSpec {
-                    record_index_1_based: usize::from(empire_raw),
-                    owner_empire_raw: Some(0),
+                .map(|empire| PlanetSpec {
+                    record_index_1_based: usize::from(empire),
+                    owner_empire: Some(0),
                     ..PlanetSpec::default()
                 })
                 .into_iter()

@@ -37,7 +37,7 @@ impl YearMovement<'_> {
                 .push(MissionRetargetEvent::Abandoned {
                     fleet_idx,
                     reporting_fleet_number: Some(fleet.fleet_number.0 as u8),
-                    owner_empire_raw: owner,
+                    owner_empire: owner,
                     mission: Mission::GuardStarbase,
                     previous_target_coords,
                     coords: sector,
@@ -79,7 +79,7 @@ impl YearMovement<'_> {
         });
         let mut event = MissionEvent {
             fleet_idx,
-            owner_empire_raw: owner,
+            owner_empire: owner,
             kind: Mission::GuardStarbase,
             outcome: MissionOutcome::Arrived,
             abort_reason: None,

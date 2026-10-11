@@ -11,7 +11,7 @@ pub(super) fn queue_salvage_resolution(
     movement_events: &mut MovementEvents,
     to_remove: &mut [bool],
     fleet_idx: usize,
-    owner_empire_raw: u8,
+    owner_empire: u8,
     planet_idx: Option<usize>,
     coords: [u8; 2],
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -25,13 +25,12 @@ pub(super) fn queue_salvage_resolution(
         "salvage dispatched to empty fleet (fleet_idx={fleet_idx}) -- should have been culled at turn start"
     );
 
-    let salvage_event =
-        resolve_salvage_arrival(game_data, fleet_idx, owner_empire_raw, planet_idx)?;
+    let salvage_event = resolve_salvage_arrival(game_data, fleet_idx, owner_empire, planet_idx)?;
     match salvage_event {
         SalvageResolvedEvent::Succeeded { .. } => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 kind: Mission::Salvage,
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
@@ -50,7 +49,7 @@ pub(super) fn queue_salvage_resolution(
         SalvageResolvedEvent::Failed { .. } => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 kind: Mission::Salvage,
                 outcome: MissionOutcome::Failed,
                 abort_reason: None,
@@ -69,7 +68,7 @@ pub(super) fn queue_salvage_resolution(
 fn resolve_salvage_arrival(
     game_data: &mut CoreGameData,
     fleet_idx: usize,
-    owner_empire_raw: u8,
+    owner_empire: u8,
     planet_idx: Option<usize>,
 ) -> Result<SalvageResolvedEvent, Box<dyn std::error::Error>> {
     let coords = game_data.fleets[fleet_idx].sector.to_array();
@@ -78,7 +77,7 @@ fn resolve_salvage_arrival(
         set_fleet_to_local_hold(fleet);
         return Ok(SalvageResolvedEvent::Failed {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             planet_idx: None,
             coords,
             reason: SalvageFailureReason::NoPlanetAtTarget,
@@ -86,12 +85,12 @@ fn resolve_salvage_arrival(
         });
     };
 
-    if game_data.planets[planet_idx].owner.0 != owner_empire_raw {
+    if game_data.planets[planet_idx].owner.0 != owner_empire {
         let fleet = &mut game_data.fleets[fleet_idx];
         set_fleet_to_local_hold(fleet);
         return Ok(SalvageResolvedEvent::Failed {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             planet_idx: Some(planet_idx),
             coords,
             reason: SalvageFailureReason::PlanetNotOwned,
@@ -107,7 +106,7 @@ fn resolve_salvage_arrival(
     Ok(SalvageResolvedEvent::Succeeded {
         fleet_idx,
         fleet_number: game_data.fleets[fleet_idx].fleet_number.0 as u8,
-        owner_empire_raw,
+        owner_empire,
         planet_idx,
         coords,
         recovered_points,

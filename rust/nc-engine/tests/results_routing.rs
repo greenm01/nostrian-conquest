@@ -16,14 +16,14 @@ fn joined_game_data() -> nc_data::CoreGameData {
 fn outlook_events() -> MaintenanceEvents {
     let mut events = MaintenanceEvents::default();
     events.campaign_outlook_events.push(CampaignOutlookEvent {
-        empire_raw: 2,
+        empire: 2,
         stardate_week: Some(4),
     });
     events
 }
 
-fn has_results(game_data: &nc_data::CoreGameData, empire_raw: u8) -> bool {
-    has_results_chain(&game_data.players[empire_raw as usize - 1])
+fn has_results(game_data: &nc_data::CoreGameData, empire: u8) -> bool {
+    has_results_chain(&game_data.players[empire as usize - 1])
 }
 
 #[test]
@@ -33,10 +33,10 @@ fn campaign_outlook_reaches_every_joined_empire() {
     assert!(!rows.is_empty());
 
     apply_results_reviewable_flags(&mut game_data, &rows);
-    for empire_raw in 1..=4 {
+    for empire in 1..=4 {
         assert!(
-            has_results(&game_data, empire_raw),
-            "empire {empire_raw} should have the outlook report"
+            has_results(&game_data, empire),
+            "empire {empire} should have the outlook report"
         );
     }
 }
@@ -45,9 +45,9 @@ fn campaign_outlook_reaches_every_joined_empire() {
 fn campaign_outlook_claims_the_throne_only_for_the_leader() {
     let game_data = joined_game_data();
     let rows = build_results_report_blocks(&game_data, &outlook_events());
-    let text_for = |empire_raw: u8| {
+    let text_for = |empire: u8| {
         rows.iter()
-            .filter(|row| row.is_visible_to_viewer(empire_raw))
+            .filter(|row| row.is_visible_to_viewer(empire))
             .map(|row| row.decoded_text.replace('\n', " "))
             .collect::<Vec<_>>()
             .join(" ")
@@ -55,8 +55,8 @@ fn campaign_outlook_claims_the_throne_only_for_the_leader() {
 
     let leader = text_for(2);
     assert!(leader.contains("our claim"), "{leader}");
-    for empire_raw in [1, 3, 4] {
-        let other = text_for(empire_raw);
+    for empire in [1, 3, 4] {
+        let other = text_for(empire);
         assert!(other.contains("Empire #2"), "{other}");
         assert!(!other.contains("our claim"), "{other}");
     }
@@ -83,15 +83,15 @@ fn emperor_outcome_is_reported_only_through_targeted_victory_notices() {
     let game_data = joined_game_data();
     let mut events = MaintenanceEvents::default();
     events.campaign_outcome_events.push(CampaignOutcomeEvent {
-        emperor_empire_raw: 1,
+        emperor_empire: 1,
         stardate_week: Some(4),
     });
-    for recipient_empire_raw in [1, 2] {
+    for recipient_empire in [1, 2] {
         events
             .game_victory_notice_events
             .push(GameVictoryNoticeEvent {
-                recipient_empire_raw,
-                winner_empire_raw: 1,
+                recipient_empire,
+                winner_empire: 1,
                 stardate_week: Some(4),
             });
     }
@@ -101,9 +101,9 @@ fn emperor_outcome_is_reported_only_through_targeted_victory_notices() {
         rows.iter().all(|row| row.viewer_empire_id != 0),
         "emperor outcome must not be broadcast: {rows:?}"
     );
-    let visible = |empire_raw: u8| {
+    let visible = |empire: u8| {
         rows.iter()
-            .filter(|row| row.is_visible_to_viewer(empire_raw))
+            .filter(|row| row.is_visible_to_viewer(empire))
             .count()
     };
     assert_eq!(visible(1), 1);
@@ -120,7 +120,7 @@ fn invalid_input_on_unowned_planet_is_not_reported_to_empire_one() {
         .invalid_player_state_events
         .push(InvalidPlayerStateEvent::PlanetInput {
             planet_idx: 0,
-            owner_empire_raw: 0,
+            owner_empire: 0,
             coords: [7, 7],
             reason: PlanetPlayerInputValidationError::MissingBuildKindForCount,
         });
@@ -136,12 +136,8 @@ fn word(bytes: &[u8], offset: usize) -> u16 {
 /// Walk one empire's chain from PLAYER.DAT +0x38, checking each header's
 /// ChainId names the previous header and +0x3c names the last one. Returns
 /// the 1-based header record indexes.
-fn walk_player_chain(
-    game_data: &nc_data::CoreGameData,
-    empire_raw: u8,
-    results: &[u8],
-) -> Vec<u16> {
-    let player = &game_data.players[empire_raw as usize - 1];
+fn walk_player_chain(game_data: &nc_data::CoreGameData, empire: u8, results: &[u8]) -> Vec<u16> {
+    let player = &game_data.players[empire as usize - 1];
     let (first, last) = (player.results_first as u16, player.results_last as u16);
     let mut headers = Vec::new();
     let mut previous = 0;
@@ -151,7 +147,7 @@ fn walk_player_chain(
         assert_eq!(
             word(record, 74),
             previous,
-            "empire {empire_raw} header {header} ChainId"
+            "empire {empire} header {header} ChainId"
         );
         headers.push(header);
         previous = header;
@@ -160,7 +156,7 @@ fn walk_player_chain(
     assert_eq!(
         headers.last().copied().unwrap_or(0),
         last,
-        "empire {empire_raw} +0x3c"
+        "empire {empire} +0x3c"
     );
     headers
 }
@@ -169,12 +165,12 @@ fn walk_player_chain(
 fn every_empire_chain_uses_absolute_header_indexes_in_one_shared_file() {
     let mut game_data = joined_game_data();
     let mut events = outlook_events();
-    for recipient_empire_raw in [1, 2] {
+    for recipient_empire in [1, 2] {
         events
             .game_victory_notice_events
             .push(GameVictoryNoticeEvent {
-                recipient_empire_raw,
-                winner_empire_raw: 1,
+                recipient_empire,
+                winner_empire: 1,
                 stardate_week: Some(4),
             });
     }
@@ -184,13 +180,13 @@ fn every_empire_chain_uses_absolute_header_indexes_in_one_shared_file() {
     apply_results_reviewable_flags(&mut game_data, &rows);
 
     let mut reached = std::collections::BTreeSet::new();
-    for empire_raw in 1..=4u8 {
-        let headers = walk_player_chain(&game_data, empire_raw, &results);
+    for empire in 1..=4u8 {
+        let headers = walk_player_chain(&game_data, empire, &results);
         let expected = rows
             .iter()
-            .filter(|row| row.is_visible_to_viewer(empire_raw))
+            .filter(|row| row.is_visible_to_viewer(empire))
             .count();
-        assert_eq!(headers.len(), expected, "empire {empire_raw} report count");
+        assert_eq!(headers.len(), expected, "empire {empire} report count");
         for header in headers {
             assert!(reached.insert(header), "header {header} is in two chains");
         }

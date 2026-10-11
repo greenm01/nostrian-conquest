@@ -12,7 +12,7 @@ pub fn fleet_target_eta_estimate(
         game_data,
         fleet_record_index_1_based.saturating_sub(1),
         destination,
-        Order::from_raw(mission_code).targets_world(),
+        Order::from_code(mission_code).targets_world(),
         true,
     )
 }

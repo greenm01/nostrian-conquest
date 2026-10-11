@@ -98,10 +98,10 @@ fn push_assault_destroyed_fleet_event(
     enemy_ground_armies_initial: u8,
     enemy_ground_battery_losses: u8,
     enemy_ground_army_losses: u8,
-    primary_enemy_empire_raw: u8,
+    primary_enemy_empire: u8,
 ) {
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
-        reporting_empire_raw: game_data.fleets[fleet_indices[0]].owner.0,
+        reporting_empire: game_data.fleets[fleet_indices[0]].owner.0,
         fleet_number: preferred_reporting_fleet_number(game_data, fleet_indices).unwrap_or(0),
         coords,
         was_intercepting: false,
@@ -116,8 +116,7 @@ fn push_assault_destroyed_fleet_event(
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses,
         enemy_ground_army_losses,
-        primary_enemy_empire_raw: (primary_enemy_empire_raw != 0)
-            .then_some(primary_enemy_empire_raw),
+        primary_enemy_empire: (primary_enemy_empire != 0).then_some(primary_enemy_empire),
         primary_enemy_fleet_number: None,
         stardate_week: None,
     });
@@ -132,7 +131,7 @@ fn fleet_still_ready_for_assault(game_data: &CoreGameData, fleet_idx: usize, ord
         return false;
     }
     game_data
-        .validate_fleet_order_payload(fleet_idx + 1, order.to_raw(), target_coords, None, None)
+        .validate_fleet_order_payload(fleet_idx + 1, order.code(), target_coords, None, None)
         .is_ok()
 }
 
@@ -490,7 +489,7 @@ pub(crate) fn resolve_strike(
     let fleets = [fleet_idx];
     let mission_event = move |outcome, abort_reason| MissionEvent {
         fleet_idx,
-        owner_empire_raw: empire,
+        owner_empire: empire,
         kind,
         outcome,
         abort_reason,
@@ -595,9 +594,9 @@ pub(crate) fn resolve_strike(
             let post_docked_summary = stardock_summary(post_planet);
             events.bombard_events.push(BombardEvent {
                 planet_idx,
-                attacker_empire_raw: empire,
+                attacker_empire: empire,
                 attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
-                defender_empire_raw: post_planet.owner.0,
+                defender_empire: post_planet.owner.0,
                 attacker_initial: ship_counts_from_state(&before),
                 attacker_loaded_armies_initial: initial_attacking_armies,
                 defender_batteries_initial: pre_batteries,
@@ -755,9 +754,9 @@ pub(crate) fn resolve_strike(
                         .ownership_change_events
                         .push(PlanetOwnershipChangeEvent {
                             planet_idx,
-                            reporting_empire_raw: previous_owner,
-                            previous_owner_empire_raw: previous_owner,
-                            new_owner_empire_raw: empire,
+                            reporting_empire: previous_owner,
+                            previous_owner_empire: previous_owner,
+                            new_owner_empire: empire,
                             stardate_week: None,
                         });
                     events
@@ -767,8 +766,8 @@ pub(crate) fn resolve_strike(
                         kind: Mission::InvadeWorld,
                         attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                         planet_idx,
-                        attacker_empire_raw: empire,
-                        defender_empire_raw: previous_owner,
+                        attacker_empire: empire,
+                        defender_empire: previous_owner,
                         attacker_initial: ship_counts_from_state(&before),
                         attacker_loaded_armies_initial: initial_attacking_armies,
                         defender_batteries_initial: pre_batteries,
@@ -807,8 +806,8 @@ pub(crate) fn resolve_strike(
                         kind: Mission::InvadeWorld,
                         attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                         planet_idx,
-                        attacker_empire_raw: empire,
-                        defender_empire_raw: previous_owner,
+                        attacker_empire: empire,
+                        defender_empire: previous_owner,
                         attacker_initial: ship_counts_from_state(&before),
                         attacker_loaded_armies_initial: initial_attacking_armies,
                         defender_batteries_initial: pre_batteries,
@@ -848,8 +847,8 @@ pub(crate) fn resolve_strike(
                     kind: Mission::InvadeWorld,
                     attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                     planet_idx,
-                    attacker_empire_raw: empire,
-                    defender_empire_raw: previous_owner,
+                    attacker_empire: empire,
+                    defender_empire: previous_owner,
                     attacker_initial: ship_counts_from_state(&before),
                     attacker_loaded_armies_initial: initial_attacking_armies,
                     defender_batteries_initial: pre_batteries,
@@ -984,9 +983,9 @@ pub(crate) fn resolve_strike(
                     .ownership_change_events
                     .push(PlanetOwnershipChangeEvent {
                         planet_idx,
-                        reporting_empire_raw: previous_owner,
-                        previous_owner_empire_raw: previous_owner,
-                        new_owner_empire_raw: empire,
+                        reporting_empire: previous_owner,
+                        previous_owner_empire: previous_owner,
+                        new_owner_empire: empire,
                         stardate_week: None,
                     });
                 events
@@ -996,8 +995,8 @@ pub(crate) fn resolve_strike(
                     kind: Mission::BlitzWorld,
                     attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                     planet_idx,
-                    attacker_empire_raw: empire,
-                    defender_empire_raw: previous_owner,
+                    attacker_empire: empire,
+                    defender_empire: previous_owner,
                     attacker_initial: ship_counts_from_state(&cover_state),
                     attacker_loaded_armies_initial: attacking_armies,
                     defender_batteries_initial: pre_batteries,
@@ -1035,8 +1034,8 @@ pub(crate) fn resolve_strike(
                     kind: Mission::BlitzWorld,
                     attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
                     planet_idx,
-                    attacker_empire_raw: empire,
-                    defender_empire_raw: previous_owner,
+                    attacker_empire: empire,
+                    defender_empire: previous_owner,
                     attacker_initial: ship_counts_from_state(&cover_state),
                     attacker_loaded_armies_initial: attacking_armies,
                     defender_batteries_initial: pre_batteries,

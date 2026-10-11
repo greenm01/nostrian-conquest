@@ -121,7 +121,7 @@ pub fn run_case(choices: &mut dyn ChoiceSource, config: &FuzzConfig) -> CaseRun 
         if !run.violations.is_empty() {
             break;
         }
-        if play.winner_state.winner_empire_raw.is_some() || turn == run.setup.turns {
+        if play.winner_state.winner_empire.is_some() || turn == run.setup.turns {
             run.violations
                 .extend(check_round_trip(&play, &checked.report_rows));
             break;

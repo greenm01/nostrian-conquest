@@ -19,11 +19,11 @@ pub enum PlayerAccessMode {
     LockedOut,
 }
 
-pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> bool {
+pub fn empire_has_recovery_path(game_data: &CoreGameData, empire: u8) -> bool {
     let unowned_planet_exists = game_data.planets.iter().any(|planet| planet.owner.0 == 0);
 
     game_data.fleets.iter().any(|fleet| {
-        if fleet.owner.0 != empire_raw {
+        if fleet.owner.0 != empire {
             return false;
         }
         (troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0)
@@ -42,7 +42,7 @@ pub fn set_civil_disorder(player: &mut Player) {
 /// Joined and rogue empires both contest the campaign and can be eliminated;
 /// only civil disorder (0x00) is out of it.
 pub fn is_contesting_empire(player: &Player) -> bool {
-    player.mode.to_raw() != 0x00
+    player.mode.code() != 0x00
 }
 
 /// A contesting empire still contends for the throne while it holds a world,
@@ -50,27 +50,27 @@ pub fn is_contesting_empire(player: &Player) -> bool {
 /// lifecycle states count as a fresh empire's.
 pub fn is_campaign_contender(
     game_data: &CoreGameData,
-    empire_raw: u8,
+    empire: u8,
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> bool {
-    let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
+    let Some(player) = game_data.players.get(empire.saturating_sub(1) as usize) else {
         return false;
     };
     let lifecycle = player_lifecycle_states
-        .get(empire_raw.saturating_sub(1) as usize)
+        .get(empire.saturating_sub(1) as usize)
         .copied()
-        .unwrap_or_else(|| PlayerLifecycleState::for_player(empire_raw as usize));
+        .unwrap_or_else(|| PlayerLifecycleState::for_player(empire as usize));
     if !matches!(lifecycle.terminal_outcome, TerminalOutcome::None) {
         return false;
     }
     let owns_any_planets = game_data
         .planets
         .iter()
-        .any(|planet| planet.owner.0 == empire_raw);
+        .any(|planet| planet.owner.0 == empire);
     is_contesting_empire(player)
         && (owns_any_planets
             || lifecycle.recovery_window_turns_remaining > 0
-            || empire_has_recovery_path(game_data, empire_raw))
+            || empire_has_recovery_path(game_data, empire))
 }
 
 pub fn default_player_lifecycle_states(player_count: u8) -> Vec<PlayerLifecycleState> {
@@ -135,7 +135,7 @@ pub fn player_access_mode(
             }
         }
         TerminalOutcome::None => {
-            if winner_state.winner_empire_raw.is_some() {
+            if winner_state.winner_empire.is_some() {
                 PlayerAccessMode::LockedOut
             } else {
                 PlayerAccessMode::Normal

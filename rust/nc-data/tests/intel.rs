@@ -151,7 +151,7 @@ fn runtime_intel_merges_scouted_worlds_without_compat_database() {
         5usize,
         PlanetIntelEvent {
             planet_idx: 4,
-            viewer_empire_raw: 1,
+            viewer_empire: 1,
             source: PlanetIntelSource::ScoutSolarSystem,
             source_fleet_idx: None,
             observed_snapshot: None,
@@ -190,7 +190,7 @@ fn blocked_colonization_intel_reveals_owner_and_potential() {
         5usize,
         PlanetIntelEvent {
             planet_idx: 4,
-            viewer_empire_raw: 1,
+            viewer_empire: 1,
             source: PlanetIntelSource::ColonizeBlockedByOwner,
             source_fleet_idx: Some(3),
             observed_snapshot: None,
@@ -229,7 +229,7 @@ fn civil_disorder_contact_intel_only_reveals_owner() {
         5usize,
         PlanetIntelEvent {
             planet_idx: 4,
-            viewer_empire_raw: 1,
+            viewer_empire: 1,
             source: PlanetIntelSource::CivilDisorderContact,
             source_fleet_idx: Some(3),
             observed_snapshot: None,
@@ -296,10 +296,10 @@ fn identified_civil_disorder_contact_emits_owner_only_intel() {
     let known_world = known.get(&5).expect("ICD contact world should be stored");
 
     assert!(events.scout_contact_events.iter().any(|event| {
-        event.viewer_empire_raw == 1 && event.target_empire_raw == 2 && event.coords == [9, 2]
+        event.viewer_empire == 1 && event.target_empire == 2 && event.coords == [9, 2]
     }));
     assert!(events.planet_intel_events.iter().any(|event| {
-        event.viewer_empire_raw == 1
+        event.viewer_empire == 1
             && event.planet_idx == 4
             && event.source == PlanetIntelSource::CivilDisorderContact
     }));

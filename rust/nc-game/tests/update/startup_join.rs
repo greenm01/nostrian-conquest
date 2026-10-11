@@ -1310,7 +1310,7 @@ fn escaping_empire_name_does_not_partially_join_player() {
     );
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    assert_eq!(game_data.players[0].mode.to_raw(), 0);
+    assert_eq!(game_data.players[0].mode.code(), 0);
 }
 
 #[test]
@@ -1504,7 +1504,7 @@ fn first_time_join_flow_updates_player_and_homeworld_then_enters_main_menu() {
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
     let player = &game_data.players[0];
-    assert_eq!(player.mode.to_raw(), 1);
+    assert_eq!(player.mode.code(), 1);
     assert_eq!(player.empire_name.trim().to_string(), "Codex Dominion");
     assert_eq!(u8::from(player.autopilot), 0);
     let homeworld_index = player.homeworld as usize;
@@ -1574,8 +1574,8 @@ fn unbound_bbs_first_time_join_claims_lowest_open_unreserved_seat() {
     assert_eq!(app.player.record_index_1_based, 2);
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    assert_eq!(game_data.players[0].mode.to_raw(), 0);
-    assert_eq!(game_data.players[1].mode.to_raw(), 1);
+    assert_eq!(game_data.players[0].mode.code(), 0);
+    assert_eq!(game_data.players[1].mode.code(), 1);
     assert_eq!(game_data.players[1].handle.trim().to_string(), "RIVAL");
     assert_eq!(
         game_data.players[1].empire_name.trim().to_string(),
@@ -1915,7 +1915,7 @@ fn reserved_first_time_join_flow_updates_player_and_homeworld_then_enters_main_m
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
     let player = &game_data.players[0];
-    assert_eq!(player.mode.to_raw(), 1);
+    assert_eq!(player.mode.code(), 1);
     assert_eq!(player.empire_name.trim().to_string(), "Codex Dominion");
     let homeworld_index = player.homeworld as usize;
     let homeworld = &game_data.planets[homeworld_index - 1];
@@ -2042,7 +2042,7 @@ fn defeated_player_with_pending_reports_uses_returning_review_flow() {
     let fixture_dir = temp_game_copy();
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.players[0].mode = nc_data::PlayerMode::from_raw(0);
+    state.game_data.players[0].mode = nc_data::PlayerMode::from_code(0);
     state.report_block_rows.push(nc_data::ReportBlockRow {
         viewer_empire_id: 1,
         block_index: 0,
@@ -2117,7 +2117,7 @@ fn first_time_join_does_not_offer_spent_civil_disorder_seats() {
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
     for (idx, player) in state.game_data.players.iter_mut().enumerate() {
-        player.mode = nc_data::PlayerMode::from_raw(0);
+        player.mode = nc_data::PlayerMode::from_code(0);
         player.last_year_on = 3005 + idx as u16;
         player.planet_count = 0;
     }

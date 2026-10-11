@@ -104,115 +104,115 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     };
 
     for event in &events.mission_events {
-        let mut fleet_claim = FleetClaim::owned(event.fleet_idx, event.owner_empire_raw);
+        let mut fleet_claim = FleetClaim::owned(event.fleet_idx, event.owner_empire);
         fleet_claim.coords = event.location_coords;
         claim(event, fleet_claim);
     }
     for event in &events.encounter_disposition_events {
         let (EncounterDispositionEvent::NoEngagement {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         }
         | EncounterDispositionEvent::Retreated {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         }
         | EncounterDispositionEvent::PursuitFire {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         }) = *event;
-        claim(event, FleetClaim::at(fleet_idx, owner_empire_raw, coords));
+        claim(event, FleetClaim::at(fleet_idx, owner_empire, coords));
     }
     for event in &events.colonization_events {
         let fleet_claim = match *event {
             ColonizationResolvedEvent::Succeeded {
                 fleet_idx,
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 ..
             }
             | ColonizationResolvedEvent::BlockedByOwner {
                 fleet_idx,
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 ..
             } => FleetClaim::at(
                 fleet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 planet_coords(after, planet_idx),
             ),
             ColonizationResolvedEvent::Aborted {
                 fleet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 ..
-            } => FleetClaim::owned(fleet_idx, colonizer_empire_raw),
+            } => FleetClaim::owned(fleet_idx, colonizer_empire),
         };
         claim(event, fleet_claim);
     }
     for event in &events.salvage_events {
         let (SalvageResolvedEvent::Succeeded {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         }
         | SalvageResolvedEvent::Failed {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         }) = *event;
-        claim(event, FleetClaim::at(fleet_idx, owner_empire_raw, coords));
+        claim(event, FleetClaim::at(fleet_idx, owner_empire, coords));
     }
     for event in &events.join_host_events {
         let (JoinMissionHostEvent::Retargeted {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             ..
         }
         | JoinMissionHostEvent::HostDestroyed {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             ..
         }) = *event;
-        claim(event, FleetClaim::owned(fleet_idx, owner_empire_raw));
+        claim(event, FleetClaim::owned(fleet_idx, owner_empire));
     }
     for event in &events.mission_retarget_events {
         let (MissionRetargetEvent::Retargeted {
             fleet_idx,
             reporting_fleet_number,
-            owner_empire_raw,
+            owner_empire,
             ..
         }
         | MissionRetargetEvent::Abandoned {
             fleet_idx,
             reporting_fleet_number,
-            owner_empire_raw,
+            owner_empire,
             ..
         }) = *event;
-        let mut fleet_claim = FleetClaim::owned(fleet_idx, owner_empire_raw);
+        let mut fleet_claim = FleetClaim::owned(fleet_idx, owner_empire);
         fleet_claim.fleet_number = reporting_fleet_number;
         claim(event, fleet_claim);
     }
     for event in &events.invalid_player_state_events {
         if let InvalidPlayerStateEvent::FleetMission {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             ..
         }
         | InvalidPlayerStateEvent::FleetInput {
             fleet_idx,
-            owner_empire_raw,
+            owner_empire,
             ..
         } = *event
         {
-            claim(event, FleetClaim::owned(fleet_idx, owner_empire_raw));
+            claim(event, FleetClaim::owned(fleet_idx, owner_empire));
         }
     }
     for event in events
@@ -220,13 +220,13 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         .iter()
         .filter(|event| event.survivor_side)
     {
-        let mut fleet_claim = FleetClaim::owned(event.fleet_idx, event.owner_empire_raw);
+        let mut fleet_claim = FleetClaim::owned(event.fleet_idx, event.owner_empire);
         fleet_claim.fleet_number = Some(event.host_fleet_number);
         claim(event, fleet_claim);
     }
     for event in &events.planet_intel_events {
         if let Some(fleet_idx) = event.source_fleet_idx {
-            claim(event, FleetClaim::owned(fleet_idx, event.viewer_empire_raw));
+            claim(event, FleetClaim::owned(fleet_idx, event.viewer_empire));
         }
     }
 

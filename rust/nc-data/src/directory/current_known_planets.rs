@@ -155,7 +155,7 @@ impl CoreGameData {
             }
             if (0..10).any(|slot| {
                 record.build_queue[slot].points_owed != 0
-                    || record.build_queue[slot].kind.to_raw() != 0
+                    || record.build_queue[slot].kind.code() != 0
             }) {
                 errors.push(format!(
                     "PLANET[{}] build queue expected all zeroes for homeworld seed",
@@ -163,7 +163,7 @@ impl CoreGameData {
                 ));
             }
             if (0..crate::STARDOCK_SLOT_COUNT).any(|slot| {
-                stardock_slot_kind(record, slot).to_raw() != 0 || record.stardock[slot] != 0
+                stardock_slot_kind(record, slot).code() != 0 || record.stardock[slot] != 0
             }) {
                 errors.push(format!(
                     "PLANET[{}] stardock expected all zeroes for homeworld seed",
@@ -232,7 +232,7 @@ impl CoreGameData {
             }
             if (0..10).any(|slot| {
                 record.build_queue[slot].points_owed != 0
-                    || record.build_queue[slot].kind.to_raw() != 0
+                    || record.build_queue[slot].kind.code() != 0
             }) {
                 errors.push(format!(
                     "PLANET[{}] build queue expected all zeroes for unowned baseline",
@@ -240,7 +240,7 @@ impl CoreGameData {
                 ));
             }
             if (0..crate::STARDOCK_SLOT_COUNT).any(|slot| {
-                stardock_slot_kind(record, slot).to_raw() != 0 || record.stardock[slot] != 0
+                stardock_slot_kind(record, slot).code() != 0 || record.stardock[slot] != 0
             }) {
                 errors.push(format!(
                     "PLANET[{}] stardock expected all zeroes for unowned baseline",

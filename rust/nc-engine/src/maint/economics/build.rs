@@ -23,10 +23,8 @@ pub(super) fn process_build_completion(
                 continue;
             }
 
-            let build_kind = game_data.planets[planet_idx].build_queue[slot]
-                .kind
-                .to_raw();
-            let build_item_kind = ProductionItemKind::from_raw(build_kind);
+            let build_kind = game_data.planets[planet_idx].build_queue[slot].kind.code();
+            let build_item_kind = ProductionItemKind::from_code(build_kind);
             let decrement = u32::from(build_count).min(remaining_spend_capacity);
             let new_count = u32::from(build_count).saturating_sub(decrement) as u8;
             let completed_qty = completed_unit_count(build_item_kind, build_count, new_count);
@@ -111,8 +109,8 @@ fn ceil_div(value: u32, divisor: u32) -> u32 {
 }
 
 /// Completed ships and starbases wait in their type's stardock slot.
-fn add_to_stardock(planet: &mut nc_data::Planet, kind_raw: u8, qty: u32) {
-    if let Some(slot) = nc_data::stardock_slot_for_kind(kind_raw) {
+fn add_to_stardock(planet: &mut nc_data::Planet, kind: u8, qty: u32) {
+    if let Some(slot) = nc_data::stardock_slot_for_kind(kind) {
         let current = planet.stardock[slot];
         planet.stardock[slot] = current.saturating_add(qty);
     }

@@ -308,8 +308,8 @@ fn alien_patrol_at_home(game_data: &mut CoreGameData) {
 
 fn empire_2_declares_empire_1() -> Vec<DiplomacyOverride> {
     vec![DiplomacyOverride {
-        from_empire_raw: 2,
-        to_empire_raw: 1,
+        from_empire: 2,
+        to_empire: 1,
         relation: DiplomaticRelation::Enemy,
     }]
 }

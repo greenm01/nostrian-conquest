@@ -20,7 +20,7 @@ fn scenario_invade_recreates_known_valid_pre_fixture() {
 
     export_campaign_db(&target, &target);
     let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets[2].order.to_raw(), 0x07);
+    assert_eq!(fleets[2].order.code(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();
@@ -59,7 +59,7 @@ fn scenario_init_replayable_invade_uses_documented_order_code() {
     assert!(stdout.contains("Replayable scenario directory initialized at"));
 
     let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets[2].order.to_raw(), 0x07);
+    assert_eq!(fleets[2].order.code(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     for name in ["PLANETS.DAT", "SETUP.DAT"] {
@@ -101,7 +101,7 @@ fn invade_init_uses_documented_order_code() {
 
     export_campaign_db(&target, &target);
     let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets[2].order.to_raw(), 0x07);
+    assert_eq!(fleets[2].order.code(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();

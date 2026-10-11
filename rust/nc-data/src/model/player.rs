@@ -14,7 +14,7 @@ pub enum PlayerMode {
 }
 
 impl PlayerMode {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_code(raw: u8) -> Self {
         match raw {
             0x00 => Self::CivilDisorder,
             0x01 => Self::Human,
@@ -23,7 +23,7 @@ impl PlayerMode {
         }
     }
 
-    pub fn to_raw(self) -> u8 {
+    pub fn code(self) -> u8 {
         match self {
             Self::CivilDisorder => 0x00,
             Self::Human => 0x01,
@@ -44,7 +44,7 @@ pub enum DiplomaticRelation {
 }
 
 impl DiplomaticRelation {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_code(raw: u8) -> Self {
         match raw {
             0x00 => Self::Neutral,
             0x01 => Self::Enemy,
@@ -52,7 +52,7 @@ impl DiplomaticRelation {
         }
     }
 
-    pub fn to_raw(self) -> u8 {
+    pub fn code(self) -> u8 {
         match self {
             Self::Neutral => 0x00,
             Self::Enemy => 0x01,

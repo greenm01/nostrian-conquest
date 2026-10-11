@@ -284,7 +284,7 @@ fn render_player_bundle_readme(
         let build_slots = (0..10)
             .filter_map(|slot| {
                 let count = planet.build_queue[slot].points_owed;
-                let kind = planet.build_queue[slot].kind.to_raw();
+                let kind = planet.build_queue[slot].kind.code();
                 (count > 0 || kind > 0).then_some(format!(
                     "slot {}: points={} kind_raw={}",
                     slot + 1,

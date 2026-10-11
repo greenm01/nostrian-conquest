@@ -60,7 +60,7 @@ type OrderKey = (u8, [u8; 2], u8);
 
 fn order_key(fleet: &nc_data::Fleet) -> OrderKey {
     (
-        fleet.order.to_raw(),
+        fleet.order.code(),
         fleet.target.to_array(),
         fleet.target_depth,
     )

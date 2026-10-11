@@ -61,7 +61,7 @@ pub enum DoorConnectionType {
 }
 
 impl DoorConnectionType {
-    fn from_door32_raw(value: u32) -> Self {
+    fn from_door32(value: u32) -> Self {
         match value {
             0 => Self::Local,
             1 => Self::Serial,
@@ -184,7 +184,7 @@ fn parse_door32(lines: &[&str]) -> DropfileInfo {
         timeout_minutes: parse_u32(lines, 9),
         screen_columns: parse_u32(lines, 11).map(|value| value as usize),
         screen_rows: parse_u32(lines, 12).map(|value| value as usize),
-        connection_type: parse_u32(lines, 1).map(DoorConnectionType::from_door32_raw),
+        connection_type: parse_u32(lines, 1).map(DoorConnectionType::from_door32),
         socket_descriptor: parse_u64(lines, 2),
     }
 }

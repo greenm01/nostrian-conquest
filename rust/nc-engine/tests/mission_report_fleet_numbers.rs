@@ -62,7 +62,7 @@ fn absorbed_side_merge_index_does_not_hide_another_fleets_rendezvous_arrival() {
     // Fleet index 1 is waiting alone at its rendezvous point.
     events.mission_events.push(MissionEvent {
         fleet_idx: 1,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::RendezvousSector,
         outcome: MissionOutcome::Arrived,
         abort_reason: None,
@@ -75,10 +75,10 @@ fn absorbed_side_merge_index_does_not_hide_another_fleets_rendezvous_arrival() {
     for (fleet_idx, survivor_side) in [(1, false), (0, true)] {
         events.fleet_merge_events.push(FleetMergeEvent {
             fleet_idx,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             kind: Mission::RendezvousSector,
-            host_fleet_id_raw: 1,
-            absorbed_fleet_id_raw: 9,
+            host_fleet_id: 1,
+            absorbed_fleet_id: 9,
             host_fleet_number: 1,
             absorbed_fleet_number: 9,
             coords: [12, 12],

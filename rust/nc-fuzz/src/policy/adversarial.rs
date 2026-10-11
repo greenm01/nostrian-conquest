@@ -39,7 +39,7 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
             &[0, 100, 101, u8::MAX],
         )?)),
         3 => {
-            let to_empire_raw = pick_from(
+            let to_empire = pick_from(
                 choices,
                 &[
                     0,
@@ -50,19 +50,19 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
                 ],
             )?;
             Some(TurnAction::Diplomacy(TurnDiplomacyDirective {
-                to_empire_raw,
+                to_empire,
                 relation: DiplomaticRelation::Enemy,
             }))
         }
         4 => {
             let world = planet_record(state, empire, choices)?;
-            let points_remaining_raw = pick_from(choices, &[1, 4, 5, 45, 50, u8::MAX])?;
-            let kind_raw = choices.pick(0, 11) as u8;
+            let points_remaining = pick_from(choices, &[1, 4, 5, 45, 50, u8::MAX])?;
+            let kind = choices.pick(0, 11) as u8;
             Some(TurnAction::Planet(
                 world,
                 PlanetTurnAction::Build {
-                    points_remaining_raw,
-                    kind_raw,
+                    points_remaining,
+                    kind,
                 },
             ))
         }
@@ -74,10 +74,10 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
                 },
                 1 => PlanetTurnAction::RemoveBuild {
                     qty: pick_from(choices, &EDGE_U16)?,
-                    kind_raw: choices.pick(0, 11) as u8,
+                    kind: choices.pick(0, 11) as u8,
                 },
                 2 => PlanetTurnAction::ClearBuildKind {
-                    kind_raw: choices.pick(0, 11) as u8,
+                    kind: choices.pick(0, 11) as u8,
                 },
                 3 => PlanetTurnAction::Rename {
                     name: pick_from(choices, &NAMES)?.to_string(),

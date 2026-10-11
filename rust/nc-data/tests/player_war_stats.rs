@@ -37,7 +37,7 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         .colonization_events
         .push(nc_data::ColonizationResolvedEvent::Succeeded {
             fleet_idx: 0,
-            colonizer_empire_raw: 1,
+            colonizer_empire: 1,
             planet_idx: 0,
             stardate_week: Some(10),
         });
@@ -45,16 +45,16 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         .ownership_change_events
         .push(nc_data::PlanetOwnershipChangeEvent {
             planet_idx: 0,
-            reporting_empire_raw: 2,
-            previous_owner_empire_raw: 2,
-            new_owner_empire_raw: 1,
+            reporting_empire: 2,
+            previous_owner_empire: 2,
+            new_owner_empire: 1,
             stardate_week: Some(12),
         });
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 1,
+        attacker_empire: 1,
         attacker_fleet_number: Some(1),
-        defender_empire_raw: 2,
+        defender_empire: 2,
         attacker_initial: ShipLosses::default(),
         attacker_loaded_armies_initial: 0,
         defender_batteries_initial: 3,
@@ -79,8 +79,8 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(2),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses::default(),
         attacker_loaded_armies_initial: 3,
         defender_batteries_initial: 1,
@@ -98,12 +98,12 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         stardate_week: Some(16),
     });
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(3),
         reporting_mission: Some(Mission::PatrolSector),
         perspective: nc_data::maintenance_types::FleetBattlePerspective::Attacked,
         coords: [8, 8],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(4),
         held_field: true,
         friendly_initial: ShipLosses::default(),

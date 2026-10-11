@@ -48,7 +48,7 @@ pub(super) fn parse_turn_submission(input: &str) -> Result<TurnSubmission, TurnS
             }
             "diplomacy" => {
                 submission.diplomacy.push(TurnDiplomacyDirective {
-                    to_empire_raw: prop_u8(node, "to")?,
+                    to_empire: prop_u8(node, "to")?,
                     relation: parse_diplomatic_relation(node)?,
                 });
             }
@@ -84,15 +84,15 @@ fn parse_planet_block(node: &::kdl::KdlNode) -> Result<PlanetTurnBlock, TurnSubm
             }),
             "clear_build_queue" => actions.push(PlanetTurnAction::ClearBuildQueue),
             "clear_build_kind" => actions.push(PlanetTurnAction::ClearBuildKind {
-                kind_raw: parse_production_kind_raw(child)?,
+                kind: parse_production_kind_code(child)?,
             }),
             "remove_build" => actions.push(PlanetTurnAction::RemoveBuild {
                 qty: prop_u16(child, "qty")?,
-                kind_raw: parse_production_kind_raw(child)?,
+                kind: parse_production_kind_code(child)?,
             }),
             "build" => actions.push(PlanetTurnAction::Build {
-                points_remaining_raw: prop_u8(child, "points")?,
-                kind_raw: parse_production_kind_raw(child)?,
+                points_remaining: prop_u8(child, "points")?,
+                kind: parse_production_kind_code(child)?,
             }),
             "commission" => actions.push(PlanetTurnAction::Commission {
                 slot_0_based: prop_usize(child, "slot")?.checked_sub(1).ok_or_else(|| {
@@ -186,7 +186,7 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
 
 fn parse_message(node: &::kdl::KdlNode) -> Result<TurnMessage, TurnSubmissionError> {
     Ok(TurnMessage {
-        recipient_empire_raw: prop_u8(node, "to")?,
+        recipient_empire: prop_u8(node, "to")?,
         subject: opt_prop_string(node, "subject")?.unwrap_or_default(),
         body: prop_string(node, "body")?,
     })
@@ -216,7 +216,7 @@ fn parse_order_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
         return order_code_from_name(&value);
     }
     let raw = prop_u8_with_aliases(node, &["code", "order_code"])?;
-    match Order::from_raw(raw) {
+    match Order::from_code(raw) {
         Order::Unknown(_) => Err(TurnSubmissionError::Parse(format!(
             "unknown fleet order code: {raw}"
         ))),
@@ -234,7 +234,7 @@ fn parse_order_target(
         (Some(x), Some(y)) => Ok(Some([x, y])),
         (None, None)
             if matches!(
-                Order::from_raw(order_code),
+                Order::from_code(order_code),
                 Order::SeekHome | Order::Salvage
             ) =>
         {
@@ -273,12 +273,12 @@ fn order_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
     Ok(raw)
 }
 
-fn parse_production_kind_raw(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
+fn parse_production_kind_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
     if let Some(value) = opt_prop_string(node, "kind")? {
-        return production_kind_raw_from_name(&value);
+        return production_kind_code_from_name(&value);
     }
     let raw = prop_u8_with_aliases(node, &["kind_raw", "raw"])?;
-    match ProductionItemKind::from_raw(raw) {
+    match ProductionItemKind::from_code(raw) {
         ProductionItemKind::Unknown(_) => Err(TurnSubmissionError::Parse(format!(
             "unknown production kind: {raw}"
         ))),
@@ -286,7 +286,7 @@ fn parse_production_kind_raw(node: &::kdl::KdlNode) -> Result<u8, TurnSubmission
     }
 }
 
-fn production_kind_raw_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
+fn production_kind_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
     let raw = match value.to_ascii_lowercase().as_str() {
         "destroyer" | "destroyers" => 1,
         "cruiser" | "cruisers" => 2,

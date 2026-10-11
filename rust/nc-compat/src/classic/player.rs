@@ -10,10 +10,10 @@ use super::{
 pub fn decode_player(bytes: &[u8; PLAYER_RECORD_SIZE]) -> Player {
     let mut diplomacy = [DiplomaticRelation::Neutral; 25];
     for (slot, &byte) in diplomacy.iter_mut().zip(&bytes[0x54..0x6D]) {
-        *slot = DiplomaticRelation::from_raw(byte);
+        *slot = DiplomaticRelation::from_code(byte);
     }
     Player {
-        mode: PlayerMode::from_raw(bytes[0x00]),
+        mode: PlayerMode::from_code(bytes[0x00]),
         handle: padded_text(&bytes[0x01..0x1A]),
         page_lines: bytes[0x1A],
         empire_name: pascal_string(bytes, 0x1B, 20),
@@ -39,7 +39,7 @@ pub fn decode_player(bytes: &[u8; PLAYER_RECORD_SIZE]) -> Player {
 
 pub fn encode_player(player: &Player) -> [u8; PLAYER_RECORD_SIZE] {
     let mut bytes = [0u8; PLAYER_RECORD_SIZE];
-    bytes[0x00] = player.mode.to_raw();
+    bytes[0x00] = player.mode.code();
     put_padded_text(&mut bytes[0x01..0x1A], &player.handle);
     bytes[0x1A] = player.page_lines;
     put_pascal_string(&mut bytes, 0x1B, 20, &player.empire_name);
@@ -61,7 +61,7 @@ pub fn encode_player(player: &Player) -> [u8; PLAYER_RECORD_SIZE] {
     bytes[0x51] = player.tax_rate;
     put_u16(&mut bytes, 0x52, player.production);
     for (slot, relation) in bytes[0x54..0x6D].iter_mut().zip(player.diplomacy) {
-        *slot = relation.to_raw();
+        *slot = relation.code();
     }
     bytes[0x6D] = u8::from(player.autopilot);
     bytes

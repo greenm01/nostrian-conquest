@@ -25,7 +25,7 @@ pub(super) fn process_colonizations(
         let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
             resolved.push(ColonizationResolvedEvent::Aborted {
                 fleet_idx: event.fleet_idx,
-                colonizer_empire_raw: event.owner_empire,
+                colonizer_empire: event.owner_empire,
                 coords: event.coords,
                 stardate_week: None,
             });
@@ -37,7 +37,7 @@ pub(super) fn process_colonizations(
         if colonization_aborted {
             resolved.push(ColonizationResolvedEvent::Aborted {
                 fleet_idx: event.fleet_idx,
-                colonizer_empire_raw: event.owner_empire,
+                colonizer_empire: event.owner_empire,
                 coords: event.coords,
                 stardate_week: None,
             });
@@ -71,15 +71,15 @@ pub(super) fn process_colonizations(
                 resolved.push(ColonizationResolvedEvent::Succeeded {
                     fleet_idx: event.fleet_idx,
                     planet_idx: idx,
-                    colonizer_empire_raw: event.owner_empire,
+                    colonizer_empire: event.owner_empire,
                     stardate_week: None,
                 });
             } else {
                 resolved.push(ColonizationResolvedEvent::BlockedByOwner {
                     fleet_idx: event.fleet_idx,
                     planet_idx: idx,
-                    colonizer_empire_raw: event.owner_empire,
-                    owner_empire_raw: planet.owner.0,
+                    colonizer_empire: event.owner_empire,
+                    owner_empire: planet.owner.0,
                     stardate_week: None,
                 });
             }

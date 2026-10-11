@@ -189,11 +189,11 @@ pub(crate) fn parse_target_and_fleet_spec(
 
 pub(crate) fn parse_target_and_planet_spec(args: Vec<String>) -> Option<(PathBuf, usize, u8, u8)> {
     match args.as_slice() {
-        [target, record_index, slot_raw, kind_raw] => Some((
+        [target, record_index, slot, kind] => Some((
             PathBuf::from(target),
             parse_usize_1_based(record_index, "planet record index").ok()?,
-            parse_u8_arg(slot_raw, "build slot").ok()?,
-            parse_u8_arg(kind_raw, "build kind").ok()?,
+            parse_u8_arg(slot, "build slot").ok()?,
+            parse_u8_arg(kind, "build kind").ok()?,
         )),
         _ => None,
     }
@@ -640,10 +640,10 @@ pub(crate) fn parse_target_and_econ_spec_list(
 pub(crate) fn parse_planet_build_spec(value: &str) -> Option<(usize, u8, u8)> {
     let parts = value.split(':').collect::<Vec<_>>();
     match parts.as_slice() {
-        [record_index, slot_raw, kind_raw] => Some((
+        [record_index, slot, kind] => Some((
             parse_usize_1_based(record_index, "planet record index").ok()?,
-            parse_u8_arg(slot_raw, "build slot").ok()?,
-            parse_u8_arg(kind_raw, "build kind").ok()?,
+            parse_u8_arg(slot, "build slot").ok()?,
+            parse_u8_arg(kind, "build kind").ok()?,
         )),
         _ => None,
     }

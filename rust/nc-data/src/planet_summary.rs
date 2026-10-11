@@ -48,11 +48,11 @@ pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..STARDOCK_SLOT_COUNT {
         let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
-        let kind_raw = stardock_slot_kind(planet, slot).to_raw();
-        if count == 0 || kind_raw == 0 {
+        let kind = stardock_slot_kind(planet, slot).code();
+        if count == 0 || kind == 0 {
             continue;
         }
-        *counts_by_kind.entry(kind_raw).or_default() += count;
+        *counts_by_kind.entry(kind).or_default() += count;
     }
     counts_by_kind
 }
@@ -61,16 +61,16 @@ pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
         let points = u32::from(planet.build_queue[slot].points_owed);
-        let kind_raw = planet.build_queue[slot].kind.to_raw();
-        if points == 0 || kind_raw == 0 {
+        let kind_code = planet.build_queue[slot].kind.code();
+        if points == 0 || kind_code == 0 {
             continue;
         }
-        let kind = ProductionItemKind::from_raw(kind_raw);
+        let kind = ProductionItemKind::from_code(kind_code);
         let qty = kind
             .build_cost()
             .map(|cost| points.div_ceil(cost))
             .unwrap_or(0);
-        *counts_by_kind.entry(kind_raw).or_default() += qty;
+        *counts_by_kind.entry(kind_code).or_default() += qty;
     }
     counts_by_kind
 }
@@ -79,16 +79,16 @@ pub fn ordered_unit_count_entries(
     counts_by_kind: &BTreeMap<u8, u32>,
 ) -> Vec<(ProductionItemKind, u32)> {
     let mut ordered_kind_raws = vec![1, 2, 3, 4, 5, 6, 9, 8, 7];
-    for kind_raw in counts_by_kind.keys() {
-        if !ordered_kind_raws.contains(kind_raw) {
-            ordered_kind_raws.push(*kind_raw);
+    for kind in counts_by_kind.keys() {
+        if !ordered_kind_raws.contains(kind) {
+            ordered_kind_raws.push(*kind);
         }
     }
     ordered_kind_raws
         .into_iter()
-        .filter_map(|kind_raw| {
-            let count = counts_by_kind.get(&kind_raw).copied().unwrap_or(0);
-            (count != 0).then_some((ProductionItemKind::from_raw(kind_raw), count))
+        .filter_map(|kind| {
+            let count = counts_by_kind.get(&kind).copied().unwrap_or(0);
+            (count != 0).then_some((ProductionItemKind::from_code(kind), count))
         })
         .collect()
 }
@@ -298,11 +298,11 @@ pub fn planet_derived_summary(planet: &Planet) -> String {
         parts.push("likely_homeworld_seed".to_string());
     }
     let first_slot = planet.build_queue[0];
-    if first_slot.points_owed != 0 || first_slot.kind.to_raw() != 0 {
+    if first_slot.points_owed != 0 || first_slot.kind.code() != 0 {
         parts.push(format!(
             "build_raw={:02x}/{:02x}",
             first_slot.points_owed,
-            first_slot.kind.to_raw()
+            first_slot.kind.code()
         ));
     }
     if planet.owner.0 != 0 {

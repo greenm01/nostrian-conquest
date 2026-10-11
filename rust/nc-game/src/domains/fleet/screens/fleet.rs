@@ -2200,7 +2200,7 @@ fn group_selection_columns(max_fleet_number: u16) -> [TableColumn<'static>; 10] 
 }
 
 pub(crate) fn fleet_order_label(order_code: u8) -> &'static str {
-    match nc_data::Order::from_raw(order_code) {
+    match nc_data::Order::from_code(order_code) {
         nc_data::Order::HoldPosition => "Hold",
         nc_data::Order::MoveOnly => "Move",
         nc_data::Order::SeekHome => "Seek home",
@@ -2222,7 +2222,7 @@ pub(crate) fn fleet_order_label(order_code: u8) -> &'static str {
 }
 
 pub(crate) fn fleet_table_order_label(order_code: u8) -> &'static str {
-    match nc_data::Order::from_raw(order_code) {
+    match nc_data::Order::from_code(order_code) {
         nc_data::Order::HoldPosition => "Hold",
         nc_data::Order::MoveOnly => "Move",
         nc_data::Order::SeekHome => "Seek home",

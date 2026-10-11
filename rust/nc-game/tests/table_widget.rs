@@ -689,9 +689,9 @@ fn planet_brief_list_uses_database_style_stacked_header_and_owned_planet_columns
         .expect("load init fixture");
     let planet = &mut game_data.planets[0];
     planet.build_queue[0].points_owed = 5;
-    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_code(1);
     planet.build_queue[1].points_owed = 40;
-    planet.build_queue[1].kind = nc_data::ProductionItemKind::from_raw(6);
+    planet.build_queue[1].kind = nc_data::ProductionItemKind::from_code(6);
     let player = joined_player_context();
     let planet_intel_snapshots = BTreeMap::new();
     let owned_planet_years = BTreeMap::new();

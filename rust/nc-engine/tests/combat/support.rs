@@ -115,8 +115,8 @@ pub fn diplomacy(enemy_pairs: &[(u8, u8)]) -> Vec<DiplomacyOverride> {
                 .iter()
                 .any(|&(a, b)| (a, b) == (from, to) || (b, a) == (from, to));
             overrides.push(DiplomacyOverride {
-                from_empire_raw: from,
-                to_empire_raw: to,
+                from_empire: from,
+                to_empire: to,
                 relation: if enemy {
                     DiplomaticRelation::Enemy
                 } else {

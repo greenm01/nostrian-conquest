@@ -80,11 +80,11 @@ fn render_setup(kdl: &mut String, spec: &ScenarioSpec, turns: usize) {
         let _ = writeln!(
             kdl,
             "relation from={} to={} status=\"{status}\"",
-            relation.from_empire_raw, relation.to_empire_raw
+            relation.from_empire, relation.to_empire
         );
     }
     for planet in &spec.planets {
-        let owner = planet.owner_empire_raw.unwrap_or_default();
+        let owner = planet.owner_empire.unwrap_or_default();
         let _ = writeln!(
             kdl,
             "planet record={} {{\n  owner record={owner}\n}}",

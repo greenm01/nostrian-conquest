@@ -87,7 +87,7 @@ pub(super) fn write(
                     ":record_index": record_index,
                     ":slot": slot,
                     ":points_owed": entry.points_owed,
-                    ":kind": entry.kind.to_raw(),
+                    ":kind": entry.kind.code(),
                 },
             )?;
         }
@@ -116,7 +116,7 @@ pub(super) fn load(
             row.get::<_, usize>("slot")?,
             BuildSlot {
                 points_owed: row.get("points_owed")?,
-                kind: ProductionItemKind::from_raw(row.get("kind")?),
+                kind: ProductionItemKind::from_code(row.get("kind")?),
             },
         ))
     })?;

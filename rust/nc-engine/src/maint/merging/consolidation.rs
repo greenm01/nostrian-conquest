@@ -65,10 +65,10 @@ pub(super) fn process_fleet_merging(
                 if let Some(kind) = merge_kind {
                     merge_events.push(FleetMergeEvent {
                         fleet_idx: fi,
-                        owner_empire_raw: owner,
+                        owner_empire: owner,
                         kind,
-                        host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
-                        absorbed_fleet_id_raw: game_data.fleets[fi].record.0,
+                        host_fleet_id: game_data.fleets[survivor_idx].record.0,
+                        absorbed_fleet_id: game_data.fleets[fi].record.0,
                         host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
                         absorbed_fleet_number: game_data.fleets[fi].fleet_number.0 as u8,
                         coords,
@@ -78,10 +78,10 @@ pub(super) fn process_fleet_merging(
                     if kind == Mission::RendezvousSector {
                         merge_events.push(FleetMergeEvent {
                             fleet_idx: survivor_idx,
-                            owner_empire_raw: owner,
+                            owner_empire: owner,
                             kind,
-                            host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
-                            absorbed_fleet_id_raw: game_data.fleets[fi].record.0,
+                            host_fleet_id: game_data.fleets[survivor_idx].record.0,
+                            absorbed_fleet_id: game_data.fleets[fi].record.0,
                             host_fleet_number: game_data.fleets[survivor_idx].fleet_number.0 as u8,
                             absorbed_fleet_number: game_data.fleets[fi].fleet_number.0 as u8,
                             coords,

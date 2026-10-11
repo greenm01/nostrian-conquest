@@ -23,10 +23,12 @@ pub(crate) fn init_tax_growth_probe(
     with_runtime_game_mut(dir, |data| {
         data.set_player_tax_rate(player_record_index_1_based, tax_rate)?;
 
-        let empire_raw = player_record_index_1_based as u8;
-        let Some(homeworld_idx) = data.planets.iter().position(|planet| {
-            planet.owner.0 == empire_raw && is_homeworld_seed_ignoring_name(planet)
-        }) else {
+        let empire = player_record_index_1_based as u8;
+        let Some(homeworld_idx) = data
+            .planets
+            .iter()
+            .position(|planet| planet.owner.0 == empire && is_homeworld_seed_ignoring_name(planet))
+        else {
             return Err(format!(
                 "player {} homeworld seed not found",
                 player_record_index_1_based
@@ -70,7 +72,7 @@ pub(crate) fn init_tax_growth_probe(
                 armies: u16::from(armies),
                 ground_batteries: u16::from(batteries),
                 years_under_owner: 2,
-                owner: EmpireId(empire_raw),
+                owner: EmpireId(empire),
                 ..Planet::default()
             };
             planet.potential_production = potential.min(u16::from(u8::MAX)) as u8;
@@ -104,7 +106,7 @@ pub(crate) fn init_starbase_tax_probe(
     tax_rate: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut(dir, |data| {
-        let empire_raw = player_record_index_1_based as u8;
+        let empire = player_record_index_1_based as u8;
         let empire_name = data
             .players
             .get(player_record_index_1_based - 1)
@@ -118,11 +120,13 @@ pub(crate) fn init_starbase_tax_probe(
         if let Some(player) = data.players.get_mut(player_record_index_1_based - 1) {
             player.bases_first.0 = 0;
         }
-        data.bases.retain(|base| base.owner.0 != empire_raw);
+        data.bases.retain(|base| base.owner.0 != empire);
 
-        let Some(homeworld_idx) = data.planets.iter().position(|planet| {
-            planet.owner.0 == empire_raw && is_homeworld_seed_ignoring_name(planet)
-        }) else {
+        let Some(homeworld_idx) = data
+            .planets
+            .iter()
+            .position(|planet| planet.owner.0 == empire && is_homeworld_seed_ignoring_name(planet))
+        else {
             return Err(format!(
                 "player {} homeworld seed not found",
                 player_record_index_1_based
@@ -160,7 +164,7 @@ pub(crate) fn init_starbase_tax_probe(
             unowned_indices.into_iter().zip(STARBASE_PROBE_COLONY_SPECS)
         {
             let planet = &mut data.planets[planet_idx];
-            planet.owner.0 = empire_raw;
+            planet.owner.0 = empire;
             planet.years_under_owner = 2;
             set_planet_name(planet, name);
             planet.potential_production =

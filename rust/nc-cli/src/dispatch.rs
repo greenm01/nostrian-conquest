@@ -461,19 +461,19 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 print_usage();
                 return Ok(());
             };
-            let Some(slot_raw) = args.next() else {
+            let Some(slot_code) = args.next() else {
                 print_usage();
                 return Ok(());
             };
-            let Some(kind_raw) = args.next() else {
+            let Some(kind) = args.next() else {
                 print_usage();
                 return Ok(());
             };
             set_planet_build(
                 &dir,
                 parse_usize_1_based(&record_index, "planet record index")?,
-                parse_u8_arg(&slot_raw, "build slot")?,
-                parse_u8_arg(&kind_raw, "build kind")?,
+                parse_u8_arg(&slot_code, "build slot")?,
+                parse_u8_arg(&kind, "build kind")?,
             )?;
         }
         "planet-owner" => {
@@ -633,7 +633,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 print_usage();
                 return Ok(());
             };
-            let Some(kind_raw) = args.next() else {
+            let Some(kind) = args.next() else {
                 print_usage();
                 return Ok(());
             };
@@ -645,7 +645,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 &dir,
                 record_index.parse()?,
                 slot.parse()?,
-                kind_raw.parse()?,
+                kind.parse()?,
                 count.parse()?,
             )?;
         }
@@ -661,7 +661,7 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
         }
         "planet-build-init" => {
             let remaining = args.collect::<Vec<_>>();
-            let Some((target, record_index, slot_raw, kind_raw)) =
+            let Some((target, record_index, slot_code, kind)) =
                 parse_target_and_planet_spec(remaining)
             else {
                 print_usage();
@@ -671,8 +671,8 @@ pub fn run_args(mut args: impl Iterator<Item = String>) -> Result<(), Box<dyn st
                 &post_maint_fixture_dir(),
                 &target,
                 record_index,
-                slot_raw,
-                kind_raw,
+                slot_code,
+                kind,
             )?;
         }
         "planet-build-batch-init" => {

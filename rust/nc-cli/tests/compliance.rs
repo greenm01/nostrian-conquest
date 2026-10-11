@@ -94,7 +94,7 @@ fn core_validate_rejects_invalid_diplomacy_bytes() {
 
     let mut data = load_classic_core_files(&target).unwrap();
     set_diplomatic_relation_toward(&mut data.players[0], 1, DiplomaticRelation::Enemy);
-    set_diplomatic_relation_toward(&mut data.players[0], 2, DiplomaticRelation::from_raw(0xfe));
+    set_diplomatic_relation_toward(&mut data.players[0], 2, DiplomaticRelation::from_code(0xfe));
     save_classic_core_files(&target, &data).unwrap();
 
     let stderr = common::run_nc_cli_failure_in_dir(

@@ -658,7 +658,7 @@ fn default_player_assignments(
         .iter()
         .enumerate()
         .filter(|(_, record)| {
-            record.mode.to_raw() != 0
+            record.mode.code() != 0
                 || !record.handle.trim().to_string().is_empty()
                 || !record.empire_name.trim().to_string().is_empty()
         })

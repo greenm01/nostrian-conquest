@@ -234,7 +234,7 @@ fn print_combat_report(report: &nc_harness::CombatRunReport) {
     for empire in &report.empires {
         println!(
             "  empire={} planets:{}->{} fleets:{}->{} ships:{}->{}",
-            empire.empire_raw,
+            empire.empire,
             empire.planets_before,
             empire.planets_after,
             empire.fleets_before,
@@ -315,7 +315,7 @@ fn print_report_preview(run: &nc_harness::ReportPreviewRun) {
                 println!("    event: {line}");
             }
             for viewer in &case.viewer_reports {
-                println!("    {} (empire={}):", viewer.role, viewer.empire_raw);
+                println!("    {} (empire={}):", viewer.role, viewer.empire);
                 if viewer.reports.is_empty() {
                     println!("      <no visible report>");
                     continue;

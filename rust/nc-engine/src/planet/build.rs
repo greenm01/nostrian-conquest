@@ -61,8 +61,8 @@ pub struct PlanetCommissionDraftState {
     pub rows: Vec<PlanetCommissionDraftEntry>,
 }
 
-pub fn production_item_kind_raw(kind: ProductionItemKind) -> u8 {
-    kind.to_raw()
+pub fn production_item_kind_code(kind: ProductionItemKind) -> u8 {
+    kind.code()
 }
 
 pub fn planet_build_committed_points(planet: &Planet) -> u32 {
@@ -91,12 +91,12 @@ pub fn planet_build_orders(planet: &Planet) -> Vec<PlanetBuildOrderLine> {
     (0..10)
         .filter_map(|slot| {
             let points = planet.build_queue[slot].points_owed;
-            let kind_raw = planet.build_queue[slot].kind.to_raw();
-            if points == 0 || kind_raw == 0 {
+            let kind_code = planet.build_queue[slot].kind.code();
+            if points == 0 || kind_code == 0 {
                 None
             } else {
                 Some(PlanetBuildOrderLine {
-                    kind: ProductionItemKind::from_raw(kind_raw),
+                    kind: ProductionItemKind::from_code(kind_code),
                     points_remaining: points,
                 })
             }
@@ -185,12 +185,12 @@ pub fn planet_build_list_entries(planet: &Planet) -> Vec<PlanetBuildListEntry> {
     let queue_qty_by_kind = build_queue_unit_counts(planet);
     ordered_kind_raws(&queue_qty_by_kind)
         .into_iter()
-        .filter_map(|kind_raw| {
-            let queue_qty = queue_qty_by_kind.get(&kind_raw).copied().unwrap_or(0);
+        .filter_map(|kind_code| {
+            let queue_qty = queue_qty_by_kind.get(&kind_code).copied().unwrap_or(0);
             if queue_qty == 0 {
                 return None;
             }
-            let kind = ProductionItemKind::from_raw(kind_raw);
+            let kind = ProductionItemKind::from_code(kind_code);
             let points = build_unit_spec_by_kind(kind).map(|u| u.cost).unwrap_or(0);
             Some(PlanetBuildListEntry {
                 kind,
@@ -274,8 +274,8 @@ pub fn planet_commission_draft_state(
             continue;
         }
         draft_slots.push(row.slot_0_based);
-        let kind_raw = production_item_kind_raw(row.kind);
-        let entry = totals.entry(kind_raw).or_insert((row.kind, 0));
+        let kind_code = production_item_kind_code(row.kind);
+        let entry = totals.entry(kind_code).or_insert((row.kind, 0));
         entry.1 = entry
             .1
             .saturating_add(row.qty.min(u32::from(u16::MAX)) as u16);
@@ -290,8 +290,8 @@ pub fn planet_commission_draft_state(
         ProductionItemKind::Transport,
         ProductionItemKind::Etac,
     ] {
-        let kind_raw = production_item_kind_raw(kind);
-        let Some((kind, qty)) = totals.remove(&kind_raw) else {
+        let kind_code = production_item_kind_code(kind);
+        let Some((kind, qty)) = totals.remove(&kind_code) else {
             continue;
         };
         draft_rows.push(PlanetCommissionDraftEntry {
@@ -332,9 +332,9 @@ pub fn commission_fleet_draft_from_entries(
 
 fn ordered_kind_raws(counts_by_kind: &BTreeMap<u8, u32>) -> Vec<u8> {
     let mut ordered_kind_raws = vec![1, 2, 3, 4, 5, 6, 9, 8, 7];
-    for kind_raw in counts_by_kind.keys() {
-        if !ordered_kind_raws.contains(kind_raw) {
-            ordered_kind_raws.push(*kind_raw);
+    for kind in counts_by_kind.keys() {
+        if !ordered_kind_raws.contains(kind) {
+            ordered_kind_raws.push(*kind);
         }
     }
     ordered_kind_raws

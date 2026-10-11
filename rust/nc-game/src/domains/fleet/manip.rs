@@ -1003,7 +1003,7 @@ impl App {
             return false;
         };
         nc_data::recompute_max_speed(&mut donor_after);
-        if !fleet_record_supports_mission_code(&donor_after, donor_after.order.to_raw()) {
+        if !fleet_record_supports_mission_code(&donor_after, donor_after.order.code()) {
             return false;
         }
         donor_after.max_speed > 0 && fleet.speed > donor_after.max_speed
@@ -1366,9 +1366,9 @@ impl App {
         include_system: bool,
     ) -> String {
         let mission_code = if include_system {
-            nc_data::Order::ScoutSolarSystem.to_raw()
+            nc_data::Order::ScoutSolarSystem.code()
         } else {
-            nc_data::Order::MoveOnly.to_raw()
+            nc_data::Order::MoveOnly.code()
         };
         fleet_target_eta_message(
             &self.game_data,

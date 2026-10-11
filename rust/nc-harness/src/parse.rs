@@ -207,27 +207,27 @@ fn validate_unique_indices(
 fn validate_relations(relations: &[DiplomacySpec], player_count: u8) -> Result<(), HarnessError> {
     let mut seen = BTreeSet::new();
     for relation in relations {
-        if relation.from_empire_raw == 0 || relation.from_empire_raw > player_count {
+        if relation.from_empire == 0 || relation.from_empire > player_count {
             return Err(HarnessError::Validation(format!(
                 "relation.from must be in 1..={player_count}, got {}",
-                relation.from_empire_raw
+                relation.from_empire
             )));
         }
-        if relation.to_empire_raw == 0 || relation.to_empire_raw > player_count {
+        if relation.to_empire == 0 || relation.to_empire > player_count {
             return Err(HarnessError::Validation(format!(
                 "relation.to must be in 1..={player_count}, got {}",
-                relation.to_empire_raw
+                relation.to_empire
             )));
         }
-        if relation.from_empire_raw == relation.to_empire_raw {
+        if relation.from_empire == relation.to_empire {
             return Err(HarnessError::Validation(
                 "relation cannot target the same empire".to_string(),
             ));
         }
-        if !seen.insert((relation.from_empire_raw, relation.to_empire_raw)) {
+        if !seen.insert((relation.from_empire, relation.to_empire)) {
             return Err(HarnessError::Validation(format!(
                 "duplicate relation {} -> {}",
-                relation.from_empire_raw, relation.to_empire_raw
+                relation.from_empire, relation.to_empire
             )));
         }
     }
@@ -261,8 +261,8 @@ fn parse_house(node: &kdl::KdlNode) -> Result<HouseSpec, HarnessError> {
 
 fn parse_relation(node: &kdl::KdlNode) -> Result<DiplomacySpec, HarnessError> {
     Ok(DiplomacySpec {
-        from_empire_raw: prop_u8(node, "from")?,
-        to_empire_raw: prop_u8(node, "to")?,
+        from_empire: prop_u8(node, "from")?,
+        to_empire: prop_u8(node, "to")?,
         relation: parse_diplomatic_relation(&prop_string(node, "status")?)?,
     })
 }
@@ -279,7 +279,7 @@ fn parse_planet(node: &kdl::KdlNode) -> Result<PlanetSpec, HarnessError> {
     for child in children.nodes() {
         match child.name().value() {
             "coords" => spec.coords = Some([prop_u8(child, "x")?, prop_u8(child, "y")?]),
-            "owner" => spec.owner_empire_raw = Some(prop_u8(child, "record")?),
+            "owner" => spec.owner_empire = Some(prop_u8(child, "record")?),
             "name" => spec.name = Some(text_value(child, "planet name")?),
             "production" => {
                 spec.potential_production = opt_prop_u16(child, "potential")?;
@@ -315,7 +315,7 @@ fn parse_fleet(node: &kdl::KdlNode) -> Result<FleetSpec, HarnessError> {
         .ok_or_else(|| HarnessError::Parse("fleet nodes must have children".to_string()))?;
     for child in children.nodes() {
         match child.name().value() {
-            "owner" => spec.owner_empire_raw = Some(prop_u8(child, "record")?),
+            "owner" => spec.owner_empire = Some(prop_u8(child, "record")?),
             "coords" => spec.coords = Some([prop_u8(child, "x")?, prop_u8(child, "y")?]),
             "ships" => {
                 spec.ships = Some(FleetShipsSpec {
@@ -344,7 +344,7 @@ fn parse_fleet(node: &kdl::KdlNode) -> Result<FleetSpec, HarnessError> {
 
 fn parse_fleet_order(node: &kdl::KdlNode) -> Result<FleetOrderSpec, HarnessError> {
     let kind = if let Some(raw) = opt_prop_u8(node, "code")? {
-        Order::from_raw(raw)
+        Order::from_code(raw)
     } else {
         parse_order_kind(&prop_string(node, "kind")?)?
     };
@@ -361,14 +361,14 @@ fn parse_fleet_order(node: &kdl::KdlNode) -> Result<FleetOrderSpec, HarnessError
 }
 
 fn parse_stardock_slot(node: &kdl::KdlNode) -> Result<StardockSlotSpec, HarnessError> {
-    let kind_raw = if let Some(kind_raw) = opt_prop_u8(node, "kind_raw")? {
-        kind_raw
+    let kind = if let Some(kind) = opt_prop_u8(node, "kind_raw")? {
+        kind
     } else {
-        parse_production_kind_raw(&prop_string(node, "kind")?)?
+        parse_production_kind_code(&prop_string(node, "kind")?)?
     };
     Ok(StardockSlotSpec {
         slot_0_based: prop_usize_1_based(node, "slot")? - 1,
-        kind_raw,
+        kind,
         count: prop_u16(node, "count")?,
     })
 }
@@ -388,8 +388,8 @@ fn parse_turn_file(node: &kdl::KdlNode, base_dir: &Path) -> Result<TurnFileSpec,
 
 fn parse_queued_mail(node: &kdl::KdlNode) -> Result<QueuedMailSpec, HarnessError> {
     Ok(QueuedMailSpec {
-        sender_empire_raw: prop_u8(node, "from")?,
-        recipient_empire_raw: prop_u8(node, "to")?,
+        sender_empire: prop_u8(node, "from")?,
+        recipient_empire: prop_u8(node, "to")?,
         year: opt_prop_u16(node, "year")?,
         subject: opt_prop_string(node, "subject")?.unwrap_or_default(),
         body: prop_string(node, "body")?,
@@ -457,8 +457,8 @@ fn parse_relation_dimension(node: &kdl::KdlNode) -> Result<SweepDimension, Harne
         ));
     }
     Ok(SweepDimension::DiplomaticRelation {
-        from_empire_raw: prop_u8(node, "from")?,
-        to_empire_raw: prop_u8(node, "to")?,
+        from_empire: prop_u8(node, "from")?,
+        to_empire: prop_u8(node, "to")?,
         values,
     })
 }
@@ -488,7 +488,7 @@ fn parse_planet_stat_field(value: &str) -> Result<PlanetStatField, HarnessError>
     }
 }
 
-fn parse_production_kind_raw(value: &str) -> Result<u8, HarnessError> {
+fn parse_production_kind_code(value: &str) -> Result<u8, HarnessError> {
     let kind = match value {
         "destroyer" | "dd" => ProductionItemKind::Destroyer,
         "cruiser" | "ca" => ProductionItemKind::Cruiser,

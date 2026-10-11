@@ -41,7 +41,7 @@ impl CoreGameData {
         for (fleet_idx, fleet) in self.fleets.iter().enumerate() {
             if let Err(reason) = self.validate_fleet_player_inputs(
                 fleet_idx + 1,
-                fleet.order.to_raw(),
+                fleet.order.code(),
                 fleet.target.to_array(),
                 None,
                 None,

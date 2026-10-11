@@ -1240,7 +1240,7 @@ impl App {
             .enumerate()
             .map(|(idx, player)| {
                 let slot = idx + 1;
-                if player.mode.to_raw() != 0 {
+                if player.mode.code() != 0 {
                     let handle = player.handle.trim().to_string();
                     let empire = player.empire_name.trim().to_string();
                     format!(

@@ -93,7 +93,7 @@ fn merged_roe_abort_report_body(
         nc_data::EncounterDispositionEvent::Retreated {
             friendly_initial,
             friendly_loaded_armies_initial,
-            target_empire_raw,
+            target_empire,
             target_fleet_number,
             enemy_initial,
             retreat_target_coords,
@@ -102,14 +102,10 @@ fn merged_roe_abort_report_body(
             ..
         } => format!(
             "{prefix} We engaged {}. We had {}. The alien force contained {}. In accordance with our ROE, we withdrew toward {} {}. {} {}",
-            classic_enemy_reference(game_data, *target_fleet_number, *target_empire_raw),
+            classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
             fleet_force_summary(*enemy_initial, 0),
-            nearest_owned_destination_text(
-                game_data,
-                event.owner_empire_raw,
-                *retreat_target_coords
-            ),
+            nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),
             roe_retreat_loss_clause(*losses_sustained),
             enemy_losses_sentence(*enemy_losses_inflicted),
             roe_abort_outcome_text(event.kind),
@@ -118,7 +114,7 @@ fn merged_roe_abort_report_body(
             friendly_initial,
             friendly_loaded_armies_initial,
             enemy_initial,
-            target_empire_raw,
+            target_empire,
             target_fleet_number,
             retreat_target_coords,
             losses_sustained,
@@ -127,13 +123,9 @@ fn merged_roe_abort_report_body(
         } => format!(
             "{prefix} We had {}. We attempted to disengage from {} in accordance with our ROE, but suffered pursuit fire from an alien force containing {} while withdrawing toward {} {}. {} {}",
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
-            classic_enemy_reference(game_data, *target_fleet_number, *target_empire_raw),
+            classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
             fleet_force_summary(*enemy_initial, 0),
-            nearest_owned_destination_text(
-                game_data,
-                event.owner_empire_raw,
-                *retreat_target_coords
-            ),
+            nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),
             roe_retreat_loss_clause(*losses_sustained),
             enemy_losses_sentence(*enemy_losses_inflicted),
             roe_abort_outcome_text(event.kind),
@@ -160,7 +152,7 @@ pub fn push_mission_entries(
     //   2. Assault succeeded/failed → AssaultReportEvent already covers it
     //      (existing rule, preserved here).
     //
-    // Grouping key: (owner_empire_raw, coords, AbortDisposition)
+    // Grouping key: (owner_empire, coords, AbortDisposition)
     // Within a group, fleets are listed as "Fleet N (ShortLabel)".
     let mut batched_abort_indices: BTreeSet<usize> = BTreeSet::new();
     {
@@ -197,13 +189,13 @@ pub fn push_mission_entries(
             let fleet_number = fleet.fleet_number.0 as u8;
             let label = mission_short_label(event.kind);
             groups
-                .entry((event.owner_empire_raw, coords, disposition))
+                .entry((event.owner_empire, coords, disposition))
                 .or_default()
                 .push((ev_idx, fleet_number, label, event.stardate_week));
         }
         // Emit one batched report per group that has 2+ fleets; mark all as handled.
         // Single-fleet groups are left for the main loop.
-        for ((empire_raw, coords, disposition), mut fleet_entries) in groups {
+        for ((empire, coords, disposition), mut fleet_entries) in groups {
             if fleet_entries.len() < 2 {
                 continue;
             }
@@ -231,9 +223,7 @@ pub fn push_mission_entries(
                 text: format!("{header}{body}"),
                 kind: 0x05,
                 tail: RESULTS_TAIL_FLEET,
-                target: ReportTarget::Both {
-                    recipient: empire_raw,
-                },
+                target: ReportTarget::Both { recipient: empire },
                 repeat_next_pointer: false,
                 stardate_week: week,
                 narrative_phase: narrative_phase_for_report_text(&body),
@@ -333,7 +323,7 @@ pub fn push_mission_entries(
                     .iter()
                     .find(|base| {
                         base.sector.to_array() == coords
-                            && base.owner.0 == event.owner_empire_raw
+                            && base.owner.0 == event.owner_empire
                             && base.base_id.0 != 0
                     })
                     .map(|base| format!("Starbase {}", base.base_id.0))
@@ -357,7 +347,7 @@ pub fn push_mission_entries(
                     .enumerate()
                     .find(|(idx, other)| {
                         *idx != event.fleet_idx
-                            && other.owner.0 == event.owner_empire_raw
+                            && other.owner.0 == event.owner_empire
                             && other.sector.to_array() == coords
                             && other.order == nc_data::Order::GuardStarbase
                             && other.mission_target == guard_label
@@ -372,7 +362,7 @@ pub fn push_mission_entries(
                     source_clause.clone(),
                     MissionReportBody::Narrative(format!(
                         " Guard Starbase mission report: We have arrived at {} and have found {partner} already guarding it. However, since a fleet cannot have more than 3000 ships, we cannot merge with them. We are therefore aborting our mission and are awaiting new orders.",
-                        super::starbase::starbase_at(game_data, event.owner_empire_raw, coords)
+                        super::starbase::starbase_at(game_data, event.owner_empire, coords)
                     )),
                 )
             }
@@ -523,7 +513,7 @@ pub fn push_mission_entries(
             (Mission::BombardWorld, MissionOutcome::Succeeded) => {
                 let bombard_event = events.bombard_events.iter().find(|bombard| {
                     bombard.planet_idx == event.planet_idx.unwrap_or(usize::MAX)
-                        && bombard.attacker_empire_raw == event.owner_empire_raw
+                        && bombard.attacker_empire == event.owner_empire
                 });
                 let bombard_force_destroyed =
                     mission_event_has_fleet_destroyed(game_data, events, event);
@@ -791,7 +781,7 @@ pub fn push_mission_entries(
             kind,
             tail,
             target: ReportTarget::Both {
-                recipient: event.owner_empire_raw,
+                recipient: event.owner_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,

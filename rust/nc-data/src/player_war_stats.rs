@@ -13,30 +13,28 @@ pub fn apply_maintenance_events_to_player_war_stats(
 ) {
     for event in &events.colonization_events {
         if let crate::ColonizationResolvedEvent::Succeeded {
-            colonizer_empire_raw,
-            ..
+            colonizer_empire, ..
         } = event
         {
-            if let Some(stats) = state_for_empire(player_war_stats, *colonizer_empire_raw) {
+            if let Some(stats) = state_for_empire(player_war_stats, *colonizer_empire) {
                 stats.colonies_established += 1;
             }
         }
     }
 
     for event in &events.ownership_change_events {
-        if let Some(stats) = state_for_empire(player_war_stats, event.new_owner_empire_raw) {
+        if let Some(stats) = state_for_empire(player_war_stats, event.new_owner_empire) {
             stats.worlds_taken += 1;
         }
-        if event.previous_owner_empire_raw != 0 {
-            if let Some(stats) = state_for_empire(player_war_stats, event.previous_owner_empire_raw)
-            {
+        if event.previous_owner_empire != 0 {
+            if let Some(stats) = state_for_empire(player_war_stats, event.previous_owner_empire) {
                 stats.worlds_lost += 1;
             }
         }
     }
 
     for event in &events.bombard_events {
-        if let Some(stats) = state_for_empire(player_war_stats, event.attacker_empire_raw) {
+        if let Some(stats) = state_for_empire(player_war_stats, event.attacker_empire) {
             stats.bombardments_launched += 1;
             add_ship_losses(&mut stats.units_lost, event.attacker_losses);
             add_unit_summary(&mut stats.enemy_units_destroyed, event.docked_losses);
@@ -44,8 +42,8 @@ pub fn apply_maintenance_events_to_player_war_stats(
             stats.enemy_units_destroyed.ground_batteries +=
                 u32::from(event.defender_battery_losses);
         }
-        if event.defender_empire_raw != 0 {
-            if let Some(stats) = state_for_empire(player_war_stats, event.defender_empire_raw) {
+        if event.defender_empire != 0 {
+            if let Some(stats) = state_for_empire(player_war_stats, event.defender_empire) {
                 stats.bombardments_suffered += 1;
                 stats.units_lost.armies += u32::from(event.defender_army_losses);
                 stats.units_lost.ground_batteries += u32::from(event.defender_battery_losses);
@@ -56,7 +54,7 @@ pub fn apply_maintenance_events_to_player_war_stats(
     }
 
     for event in &events.assault_report_events {
-        if let Some(stats) = state_for_empire(player_war_stats, event.attacker_empire_raw) {
+        if let Some(stats) = state_for_empire(player_war_stats, event.attacker_empire) {
             match event.kind {
                 Mission::InvadeWorld => {
                     stats.invade_attempts += 1;
@@ -78,8 +76,8 @@ pub fn apply_maintenance_events_to_player_war_stats(
             stats.enemy_units_destroyed.ground_batteries +=
                 u32::from(event.defender_battery_losses);
         }
-        if event.defender_empire_raw != 0 {
-            if let Some(stats) = state_for_empire(player_war_stats, event.defender_empire_raw) {
+        if event.defender_empire != 0 {
+            if let Some(stats) = state_for_empire(player_war_stats, event.defender_empire) {
                 stats.units_lost.armies += u32::from(event.defender_army_losses);
                 stats.units_lost.ground_batteries += u32::from(event.defender_battery_losses);
                 add_ship_losses(&mut stats.enemy_units_destroyed, event.attacker_ship_losses);
@@ -92,7 +90,7 @@ pub fn apply_maintenance_events_to_player_war_stats(
     }
 
     for event in &events.fleet_battle_events {
-        if let Some(stats) = state_for_empire(player_war_stats, event.reporting_empire_raw) {
+        if let Some(stats) = state_for_empire(player_war_stats, event.reporting_empire) {
             add_ship_losses(&mut stats.units_lost, event.friendly_losses);
             stats.units_lost.starbases += event.friendly_starbases_lost;
             add_ship_losses(&mut stats.enemy_units_destroyed, event.enemy_losses);
@@ -103,9 +101,9 @@ pub fn apply_maintenance_events_to_player_war_stats(
 
 fn state_for_empire(
     player_war_stats: &mut [PlayerWarStatsState],
-    empire_raw: u8,
+    empire: u8,
 ) -> Option<&mut PlayerWarStatsState> {
-    player_war_stats.get_mut(empire_raw.saturating_sub(1) as usize)
+    player_war_stats.get_mut(empire.saturating_sub(1) as usize)
 }
 
 fn add_ship_losses(summary: &mut EmpireUnitSummary, losses: ShipLosses) {

@@ -107,11 +107,11 @@ message to=2 subject="Border" body="Holding lane."
     assert_eq!(
         data.planets[planet_record_index_1_based - 1].build_queue[0]
             .kind
-            .to_raw(),
+            .code(),
         4
     );
     assert_eq!(
-        stardock_slot_kind(&data.planets[planet_record_index_1_based - 1], 0).to_raw(),
+        stardock_slot_kind(&data.planets[planet_record_index_1_based - 1], 0).code(),
         0
     );
     assert_eq!(
@@ -224,9 +224,9 @@ planet record={planet_record_index_1_based} {{
         .expect("apply clear_build_kind");
 
     let planet = &data.planets[planet_record_index_1_based - 1];
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[1].kind.to_raw(), 2);
+    assert_eq!(planet.build_queue[1].kind.code(), 2);
     assert_eq!(planet.build_queue[1].points_owed, 30);
 }
 
@@ -265,9 +265,9 @@ planet record={planet_record_index_1_based} {{
         .expect("apply remove_build");
 
     let planet = &data.planets[planet_record_index_1_based - 1];
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].kind.code(), 1);
     assert_eq!(planet.build_queue[0].points_owed, 10);
-    assert_eq!(planet.build_queue[1].kind.to_raw(), 2);
+    assert_eq!(planet.build_queue[1].kind.code(), 2);
     assert_eq!(planet.build_queue[1].points_owed, 30);
 }
 
@@ -420,14 +420,14 @@ planet record={planet_record_index_1_based} {{
                 planet_index_1_based,
                 reason:
                     PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-                        kind_raw,
-                        points_remaining_raw,
+                        kind,
+                        points_remaining,
                     },
             },
         ) => {
             assert_eq!(planet_index_1_based, planet_record_index_1_based);
-            assert_eq!(kind_raw, 4);
-            assert_eq!(points_remaining_raw, 14);
+            assert_eq!(kind, 4);
+            assert_eq!(points_remaining, 14);
         }
         other => panic!("unexpected error: {other:?}"),
     }

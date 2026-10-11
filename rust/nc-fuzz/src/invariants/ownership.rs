@@ -11,16 +11,16 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     let events = observation.events;
     let mut explained = BTreeMap::new();
     for event in &events.ownership_change_events {
-        explained.insert(event.planet_idx, event.new_owner_empire_raw);
+        explained.insert(event.planet_idx, event.new_owner_empire);
     }
     for event in &events.colonization_events {
         if let ColonizationResolvedEvent::Succeeded {
             planet_idx,
-            colonizer_empire_raw,
+            colonizer_empire,
             ..
         } = *event
         {
-            explained.insert(planet_idx, colonizer_empire_raw);
+            explained.insert(planet_idx, colonizer_empire);
         }
     }
 

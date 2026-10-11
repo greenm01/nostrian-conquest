@@ -44,9 +44,9 @@ pub fn plan_route(game_data: &CoreGameData, fleet_idx: usize) -> Option<PlannedR
 pub fn visible_hazard_intel_from_snapshots(
     game_data: &CoreGameData,
     snapshots: &BTreeMap<usize, PlanetIntelSnapshot>,
-    viewer_empire_raw: u8,
+    viewer_empire: u8,
 ) -> VisibleHazardIntel {
-    intel::visible_hazard_intel_from_snapshots(game_data, snapshots, viewer_empire_raw)
+    intel::visible_hazard_intel_from_snapshots(game_data, snapshots, viewer_empire)
 }
 
 pub fn plan_route_with_intel(

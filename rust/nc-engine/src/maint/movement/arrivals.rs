@@ -8,16 +8,15 @@ use nc_data::build_runtime_planet_intel_snapshot;
 
 fn queue_local_intrusion_escalation(
     movement_events: &mut MovementEvents,
-    owner_empire_raw: u8,
-    defender_empire_raw: u8,
+    owner_empire: u8,
+    defender_empire: u8,
 ) {
-    if owner_empire_raw != 0 && defender_empire_raw != 0 && owner_empire_raw != defender_empire_raw
-    {
+    if owner_empire != 0 && defender_empire != 0 && owner_empire != defender_empire {
         movement_events
             .diplomatic_escalation_events
             .push(DiplomaticEscalationEvent {
-                left_empire_raw: owner_empire_raw,
-                right_empire_raw: defender_empire_raw,
+                left_empire: owner_empire,
+                right_empire: defender_empire,
                 stardate_week: None,
             });
     }
@@ -44,7 +43,7 @@ pub(super) fn handle_fleet_arrival(
         Order::ScoutSector => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::ScoutSector,
                 outcome: MissionOutcome::Arrived,
                 abort_reason: None,
@@ -61,7 +60,7 @@ pub(super) fn handle_fleet_arrival(
                 .position(|planet| planet.sector.to_array() == coords);
             let intel_event = planet_idx.map(|planet_idx| PlanetIntelEvent {
                 planet_idx,
-                viewer_empire_raw: owner_empire,
+                viewer_empire: owner_empire,
                 source: PlanetIntelSource::ScoutSolarSystem,
                 source_fleet_idx: Some(fleet_idx),
                 observed_snapshot: build_runtime_planet_intel_snapshot(
@@ -77,7 +76,7 @@ pub(super) fn handle_fleet_arrival(
                 .pending_observation_events
                 .push(PendingObservationEvent {
                     fleet_idx,
-                    owner_empire_raw: owner_empire,
+                    owner_empire,
                     kind: Mission::ScoutSolarSystem,
                     outcome: MissionOutcome::Succeeded,
                     planet_idx,
@@ -94,7 +93,7 @@ pub(super) fn handle_fleet_arrival(
                 .position(|planet| planet.sector.to_array() == coords);
             let intel_event = planet_idx.map(|planet_idx| PlanetIntelEvent {
                 planet_idx,
-                viewer_empire_raw: owner_empire,
+                viewer_empire: owner_empire,
                 source: PlanetIntelSource::ViewWorld,
                 source_fleet_idx: Some(fleet_idx),
                 observed_snapshot: build_runtime_planet_intel_snapshot(
@@ -110,7 +109,7 @@ pub(super) fn handle_fleet_arrival(
                 .pending_observation_events
                 .push(PendingObservationEvent {
                     fleet_idx,
-                    owner_empire_raw: owner_empire,
+                    owner_empire,
                     kind: Mission::ViewWorld,
                     outcome: if planet_idx.is_some() {
                         MissionOutcome::Succeeded
@@ -150,7 +149,7 @@ pub(super) fn handle_fleet_arrival(
             }
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::GuardBlockadeWorld,
                 outcome: MissionOutcome::Arrived,
                 abort_reason: None,
@@ -163,7 +162,7 @@ pub(super) fn handle_fleet_arrival(
         Order::RendezvousSector => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::RendezvousSector,
                 outcome: MissionOutcome::Arrived,
                 abort_reason: None,
@@ -176,7 +175,7 @@ pub(super) fn handle_fleet_arrival(
         Order::MoveOnly => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::MoveOnly,
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
@@ -189,7 +188,7 @@ pub(super) fn handle_fleet_arrival(
         Order::PatrolSector => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::PatrolSector,
                 outcome: MissionOutcome::Arrived,
                 abort_reason: None,
@@ -202,7 +201,7 @@ pub(super) fn handle_fleet_arrival(
         Order::SeekHome => {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: owner_empire,
+                owner_empire,
                 kind: Mission::SeekHome,
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
@@ -246,7 +245,7 @@ pub(super) fn handle_hostile_target_entry(
     }
     movement_events.mission_events.push(MissionEvent {
         fleet_idx,
-        owner_empire_raw: owner_empire,
+        owner_empire,
         kind,
         outcome: MissionOutcome::Arrived,
         abort_reason: None,

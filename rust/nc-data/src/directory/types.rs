@@ -160,10 +160,7 @@ pub enum FleetPlayerInputValidationError {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlanetPlayerInputValidationError {
     InvalidBuildKind(u8),
-    InvalidBuildPointsForKind {
-        kind_raw: u8,
-        points_remaining_raw: u32,
-    },
+    InvalidBuildPointsForKind { kind: u8, points_remaining: u32 },
     MissingBuildKindForCount,
     MissingBuildCountForKind,
     InvalidStardockKind(u8),
@@ -174,9 +171,9 @@ pub enum PlanetPlayerInputValidationError {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerDiplomacyValidationError {
-    TargetOutOfRange { target_empire_raw: u8 },
-    SelfTarget { empire_raw: u8 },
-    InvalidStoredRelationByte { target_empire_raw: u8, raw: u8 },
+    TargetOutOfRange { target_empire: u8 },
+    SelfTarget { empire: u8 },
+    InvalidStoredRelationByte { target_empire: u8, raw: u8 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

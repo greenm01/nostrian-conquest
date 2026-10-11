@@ -817,7 +817,7 @@ fn outbox_rows(
         .iter()
         .enumerate()
         .map(|(idx, message)| {
-            let emp_id = message.recipient_empire_raw;
+            let emp_id = message.recipient_empire;
             let emp_name = app_compose_empire_name(game_data, emp_id);
             vec![
                 format!("{:02}", idx + 1),
@@ -1023,7 +1023,7 @@ mod tests {
             .expect("draft")
             .messages
             .push(TurnMessage {
-                recipient_empire_raw: 2,
+                recipient_empire: 2,
                 subject: "Move".to_string(),
                 body: "Fleet moves".to_string(),
             });
@@ -1050,7 +1050,7 @@ mod tests {
             .expect("draft")
             .messages
             .push(TurnMessage {
-                recipient_empire_raw: 2,
+                recipient_empire: 2,
                 subject: "Move".to_string(),
                 body: "Fleet moves".to_string(),
             });

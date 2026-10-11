@@ -10,7 +10,7 @@ pub fn decode_planet(bytes: &[u8; PLANET_RECORD_SIZE]) -> Planet {
     // Rust's slots, not classic's counts by kind; see `Planet::build_queue`.
     let build_queue = std::array::from_fn(|slot| BuildSlot {
         points_owed: bytes[0x24 + slot],
-        kind: ProductionItemKind::from_raw(bytes[0x2E + slot]),
+        kind: ProductionItemKind::from_code(bytes[0x2E + slot]),
     });
     let mut dock = [0u32; 8];
     for (slot, count) in dock.iter_mut().enumerate() {
@@ -42,7 +42,7 @@ pub fn encode_planet(planet: &Planet) -> [u8; PLANET_RECORD_SIZE] {
     put_pascal_string(&mut bytes, 0x0F, 20, &planet.name);
     for (slot, entry) in planet.build_queue.iter().enumerate() {
         bytes[0x24 + slot] = entry.points_owed;
-        bytes[0x2E + slot] = entry.kind.to_raw();
+        bytes[0x2E + slot] = entry.kind.code();
     }
     for (slot, count) in planet.stardock.to_counts().into_iter().enumerate() {
         put_u32(&mut bytes, 0x38 + 4 * slot, count);

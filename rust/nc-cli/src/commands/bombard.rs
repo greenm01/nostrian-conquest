@@ -64,7 +64,7 @@ pub(crate) fn set_bombard_onefleet(
             data,
             3,
             3,
-            Order::BombardWorld.to_raw(),
+            Order::BombardWorld.code(),
             [target_x, target_y],
             None,
             None,
@@ -153,10 +153,10 @@ pub(crate) fn validate_bombard_data(data: &CoreGameData) -> Result<(), Box<dyn s
                     fleet3.speed
                 ));
             }
-            if fleet3.order.to_raw() != 0x06 {
+            if fleet3.order.code() != 0x06 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x06 (bombard), got {:#04x}",
-                    fleet3.order.to_raw()
+                    fleet3.order.code()
                 ));
             }
             if fleet3.target.to_array() != [0x0F, 0x0D] {

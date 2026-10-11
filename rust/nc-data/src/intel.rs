@@ -125,7 +125,7 @@ pub fn latest_planet_intel_grants_for_viewer(
     for event in events
         .planet_intel_events
         .iter()
-        .filter(|event| event.viewer_empire_raw == viewer_empire_id)
+        .filter(|event| event.viewer_empire == viewer_empire_id)
     {
         let entry = grants
             .entry(event.planet_idx + 1)

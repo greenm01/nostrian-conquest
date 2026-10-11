@@ -15,7 +15,7 @@ fn builder_creates_valid_gamestate() {
     // Validate with preflight
     let errors = data.ecmaint_preflight_errors();
     assert!(errors.is_empty(), "Preflight errors: {:?}", errors);
-    assert!(data.players.iter().all(|player| player.mode.to_raw() == 1));
+    assert!(data.players.iter().all(|player| player.mode.code() == 1));
     assert_eq!(data.players[0].tax_rate, 50);
     assert_eq!(present_production_points(&data.planets[0]), 100);
 }
@@ -28,7 +28,7 @@ fn builder_with_fleet_order() {
         .expect("Should build successfully");
 
     let fleet = &data.fleets[0];
-    assert_eq!(fleet.order.to_raw(), 0x0C);
+    assert_eq!(fleet.order.code(), 0x0C);
     assert_eq!(fleet.speed, 3);
 }
 
@@ -41,7 +41,7 @@ fn builder_with_planet_build() {
 
     let planet = &data.planets[14]; // 15 is 1-based, so index 14
     assert_eq!(planet.build_queue[0].points_owed, 0x03);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0x01);
+    assert_eq!(planet.build_queue[0].kind.code(), 0x01);
 }
 
 #[test]
@@ -60,7 +60,7 @@ fn builder_with_guard_starbase() {
 
     // Fleet should have guard order
     let fleet = &data.fleets[0];
-    assert_eq!(fleet.order.to_raw(), 0x04); // Guard Starbase
+    assert_eq!(fleet.order.code(), 0x04); // Guard Starbase
     assert_eq!(
         [fleet.target_depth, fleet.mission_target as u8],
         [0x01, 0x01]
@@ -102,8 +102,8 @@ fn builder_can_create_joinable_new_game_baseline() {
         .build_joinable_new_game_baseline()
         .expect("Should build successfully");
 
-    assert_eq!(data.players[0].mode.to_raw(), 0);
-    assert_eq!(data.players[1].mode.to_raw(), 0);
+    assert_eq!(data.players[0].mode.code(), 0);
+    assert_eq!(data.players[1].mode.code(), 0);
     assert!(data.players[0].autopilot);
     assert!(data.players[1].autopilot);
     assert_eq!(data.players[0].fleets_first.0, 1);

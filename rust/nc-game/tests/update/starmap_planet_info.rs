@@ -829,7 +829,7 @@ fn build_menu_review_shortcut_opens_owned_planet_info_with_build_queue_and_retur
         .expect("current build planet should exist");
     let planet = &mut app.game_data.planets[planet_idx];
     planet.build_queue[0].points_owed = 5;
-    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_code(1);
     planet.stardock[0] = 2;
 
     assert_eq!(
@@ -895,7 +895,7 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
     .enumerate()
     {
         planet.build_queue[slot].points_owed = points;
-        planet.build_queue[slot].kind = nc_data::ProductionItemKind::from_raw(kind_code);
+        planet.build_queue[slot].kind = nc_data::ProductionItemKind::from_code(kind_code);
     }
 
     for (count, kind_code) in [

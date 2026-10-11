@@ -655,11 +655,11 @@ fn render_review_transcript(
                 let value_end = year_start + year_len;
 
                 // Zero-pad week to 2 digits at display time.
-                let week_raw = &line[label_end..after_week];
+                let week = &line[label_end..after_week];
                 let week_padded = if week_len == 1 {
-                    format!("0{week_raw}")
+                    format!("0{week}")
                 } else {
-                    week_raw.to_string()
+                    week.to_string()
                 };
 
                 let mut col = STARTUP_LEFT_COL;

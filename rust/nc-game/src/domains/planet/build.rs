@@ -16,7 +16,7 @@ use nc_engine::{
     commission_fleet_draft_from_entries, planet_build_committed_points, planet_build_list_entries,
     planet_build_max_quantity, planet_build_orders, planet_build_unavailable_message,
     planet_build_view, planet_commission_draft_state, planet_commission_slot_entries,
-    planet_has_any_buildable_unit, production_item_kind_raw,
+    planet_has_any_buildable_unit, production_item_kind_code,
 };
 
 impl App {
@@ -881,7 +881,7 @@ impl App {
                 let unit_label = build_unit_spec_by_kind(row.kind)
                     .map(|spec| spec.label.to_string())
                     .unwrap_or_else(|| {
-                        format!("Unknown (kind {})", production_item_kind_raw(row.kind))
+                        format!("Unknown (kind {})", production_item_kind_code(row.kind))
                     });
                 PlanetCommissionDraftRow {
                     direct_slot_0_based: row.direct_slot_0_based,
@@ -1301,7 +1301,7 @@ impl App {
         match self.game_data.append_planet_build_order(
             planet_record,
             points,
-            production_item_kind_raw(kind),
+            production_item_kind_code(kind),
         ) {
             Ok(()) => {}
             Err(GameStateMutationError::PlanetBuildQueueFull { .. }) => {
@@ -1360,8 +1360,8 @@ impl App {
                     .map(|record| {
                         (0..STARDOCK_SLOT_COUNT).any(|slot| {
                             let count = record.stardock[slot].min(u32::from(u16::MAX)) as u16;
-                            let kind = ProductionItemKind::from_raw(
-                                nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                            let kind = ProductionItemKind::from_code(
+                                nc_data::stardock_slot_kind(&record, slot).code(),
                             );
                             count > 0 && kind.requires_stardock()
                         })
@@ -1391,8 +1391,8 @@ impl App {
                     if count == 0 {
                         continue;
                     }
-                    match ProductionItemKind::from_raw(
-                        nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                    match ProductionItemKind::from_code(
+                        nc_data::stardock_slot_kind(&record, slot).code(),
                     ) {
                         ProductionItemKind::Destroyer => {
                             destroyers = destroyers.saturating_add(count)
@@ -1467,7 +1467,7 @@ impl App {
                 let unit_label = build_unit_spec_by_kind(entry.kind)
                     .map(|spec| spec.label.to_string())
                     .unwrap_or_else(|| {
-                        format!("Unknown (kind {})", production_item_kind_raw(entry.kind))
+                        format!("Unknown (kind {})", production_item_kind_code(entry.kind))
                     });
                 PlanetCommissionRow {
                     slot_0_based: entry.slot_0_based,
@@ -1507,7 +1507,7 @@ impl App {
                 let unit_label = build_unit_spec_by_kind(row.kind)
                     .map(|spec| spec.label.to_string())
                     .unwrap_or_else(|| {
-                        format!("Unknown (kind {})", production_item_kind_raw(row.kind))
+                        format!("Unknown (kind {})", production_item_kind_code(row.kind))
                     });
                 PlanetCommissionDraftRow {
                     direct_slot_0_based: row.direct_slot_0_based,
@@ -1827,7 +1827,7 @@ impl App {
                 let unit_label = build_unit_spec_by_kind(entry.kind)
                     .map(|u| u.label.to_string())
                     .unwrap_or_else(|| {
-                        format!("Unknown (kind {})", production_item_kind_raw(entry.kind))
+                        format!("Unknown (kind {})", production_item_kind_code(entry.kind))
                     });
                 PlanetBuildListRow {
                     kind: entry.kind,

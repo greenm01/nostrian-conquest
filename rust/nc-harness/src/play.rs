@@ -43,7 +43,7 @@ impl ScenarioPlay {
     /// Run one maintenance turn. Maintenance is frozen once a winner is
     /// declared, matching campaign maintenance.
     pub fn run_maintenance(&mut self) -> Result<MaintenanceEvents, HarnessError> {
-        if self.winner_state.winner_empire_raw.is_some() {
+        if self.winner_state.winner_empire.is_some() {
             return Err(HarnessError::Validation(
                 "campaign winner has already been declared; maintenance is frozen".to_string(),
             ));

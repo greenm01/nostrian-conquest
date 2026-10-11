@@ -86,11 +86,11 @@ pub fn planet_input_validation_reason_text(reason: PlanetPlayerInputValidationEr
             format!("the build queue contains unknown item kind {kind:#04x}")
         }
         PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-            kind_raw,
-            points_remaining_raw,
+            kind,
+            points_remaining,
         } => {
             format!(
-                "the build queue stores invalid points {points_remaining_raw} for item kind {kind_raw:#04x}"
+                "the build queue stores invalid points {points_remaining} for item kind {kind:#04x}"
             )
         }
         PlanetPlayerInputValidationError::MissingBuildKindForCount => {
@@ -116,24 +116,20 @@ pub fn planet_input_validation_reason_text(reason: PlanetPlayerInputValidationEr
 
 pub fn diplomacy_input_validation_reason_text(reason: PlayerDiplomacyValidationError) -> String {
     match reason {
-        PlayerDiplomacyValidationError::TargetOutOfRange { target_empire_raw } => {
+        PlayerDiplomacyValidationError::TargetOutOfRange { target_empire } => {
             format!(
                 "target empire {} was outside the active player range",
-                target_empire_raw
+                target_empire
             )
         }
-        PlayerDiplomacyValidationError::SelfTarget { empire_raw } => {
+        PlayerDiplomacyValidationError::SelfTarget { empire } => {
+            format!("empire {} attempted to target itself in diplomacy", empire)
+        }
+        PlayerDiplomacyValidationError::InvalidStoredRelationByte { target_empire, raw } => {
             format!(
-                "empire {} attempted to target itself in diplomacy",
-                empire_raw
+                "stored diplomacy byte {raw:#04x} toward empire {} was invalid",
+                target_empire
             )
         }
-        PlayerDiplomacyValidationError::InvalidStoredRelationByte {
-            target_empire_raw,
-            raw,
-        } => format!(
-            "stored diplomacy byte {raw:#04x} toward empire {} was invalid",
-            target_empire_raw
-        ),
     }
 }

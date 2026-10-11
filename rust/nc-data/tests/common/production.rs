@@ -103,10 +103,10 @@ pub fn single_planet_game(player: Player, planet: Planet) -> CoreGameData {
     }
 }
 
-pub fn commissioned_starbase(owner_empire_raw: u8, coords: [u8; 2]) -> Starbase {
+pub fn commissioned_starbase(owner_empire: u8, coords: [u8; 2]) -> Starbase {
     let mut base = Starbase::default();
     base.base_id.0 = 1;
-    base.owner.0 = owner_empire_raw;
+    base.owner.0 = owner_empire;
     base.sector = Coords::from_array(coords);
     // At rest in orbit, as a commissioned base starts.
     set_starbase_at_rest(&mut base);

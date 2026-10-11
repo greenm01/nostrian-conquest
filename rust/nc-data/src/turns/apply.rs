@@ -37,7 +37,7 @@ pub(super) fn apply_turn_submission(
     for directive in &submission.diplomacy {
         game_data.set_stored_diplomatic_relation(
             player_record_index_1_based as u8,
-            directive.to_empire_raw,
+            directive.to_empire,
             directive.relation,
         )?;
     }
@@ -138,7 +138,7 @@ fn apply_planet_action(
             )?;
             game_data.clear_planet_build_queue(planet.planet_record_index_1_based)?;
         }
-        PlanetTurnAction::ClearBuildKind { kind_raw } => {
+        PlanetTurnAction::ClearBuildKind { kind: kind_code } => {
             ensure_player_owns_planet(
                 game_data,
                 player_record_index_1_based,
@@ -146,19 +146,22 @@ fn apply_planet_action(
             )?;
             game_data.clear_planet_build_orders_by_kind(
                 planet.planet_record_index_1_based,
-                ProductionItemKind::from_raw(*kind_raw),
+                ProductionItemKind::from_code(*kind_code),
             )?;
         }
-        PlanetTurnAction::RemoveBuild { qty, kind_raw } => {
+        PlanetTurnAction::RemoveBuild {
+            qty,
+            kind: kind_code,
+        } => {
             ensure_player_owns_planet(
                 game_data,
                 player_record_index_1_based,
                 planet.planet_record_index_1_based,
             )?;
-            let kind = ProductionItemKind::from_raw(*kind_raw);
+            let kind = ProductionItemKind::from_code(*kind_code);
             let Some(cost) = kind.build_cost() else {
                 return Err(TurnSubmissionError::Validation(format!(
-                    "unknown production kind: {kind_raw}"
+                    "unknown production kind: {kind_code}"
                 )));
             };
             let points_to_remove = u32::from(*qty).saturating_mul(cost);
@@ -169,8 +172,8 @@ fn apply_planet_action(
             )?;
         }
         PlanetTurnAction::Build {
-            points_remaining_raw,
-            kind_raw,
+            points_remaining,
+            kind: kind_code,
         } => {
             ensure_player_owns_planet(
                 game_data,
@@ -179,16 +182,16 @@ fn apply_planet_action(
             )?;
             let points_left =
                 game_data.planet_build_points_left(planet.planet_record_index_1_based)?;
-            if u32::from(*points_remaining_raw) > points_left {
+            if u32::from(*points_remaining) > points_left {
                 return Err(TurnSubmissionError::Validation(format!(
-                    "build of {points_remaining_raw} points exceeds planet {}'s remaining budget of {points_left}",
+                    "build of {points_remaining} points exceeds planet {}'s remaining budget of {points_left}",
                     planet.planet_record_index_1_based
                 )));
             }
             game_data.append_planet_build_order(
                 planet.planet_record_index_1_based,
-                u32::from(*points_remaining_raw),
-                *kind_raw,
+                u32::from(*points_remaining),
+                *kind_code,
             )?;
         }
         PlanetTurnAction::Commission { slot_0_based } => {
@@ -395,7 +398,7 @@ fn ensure_order_target_within_map(
     target: [u8; 2],
 ) -> Result<(), TurnSubmissionError> {
     let map_size = crate::map_size_for_player_count(game_data.conquest.player_count);
-    if Order::from_raw(order_code) == Order::HoldPosition
+    if Order::from_code(order_code) == Order::HoldPosition
         || crate::sector_within_map(target, map_size)
     {
         return Ok(());
@@ -415,7 +418,7 @@ fn queue_message(
     let (subject, body) = validate_queued_player_message(
         queued_mail,
         sender_player_record_index_1_based as u8,
-        message.recipient_empire_raw,
+        message.recipient_empire,
         game_data.conquest.game_year,
         game_data.conquest.player_count,
         &message.subject,
@@ -425,7 +428,7 @@ fn queue_message(
 
     queued_mail.push(QueuedPlayerMail {
         sender_empire_id: sender_player_record_index_1_based as u8,
-        recipient_empire_id: message.recipient_empire_raw,
+        recipient_empire_id: message.recipient_empire,
         year: game_data.conquest.game_year,
         subject,
         body,

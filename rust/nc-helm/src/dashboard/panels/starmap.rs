@@ -885,7 +885,7 @@ mod tests {
             .with_year(3006)
             .build_initialized_baseline()
             .expect("baseline game data");
-        game_data.players[2].mode = nc_data::PlayerMode::from_raw(0x00);
+        game_data.players[2].mode = nc_data::PlayerMode::from_code(0x00);
 
         assert_eq!(owner_label(&game_data, Some(0)), "Unowned");
         assert_eq!(owner_label(&game_data, Some(3)), "ICD");

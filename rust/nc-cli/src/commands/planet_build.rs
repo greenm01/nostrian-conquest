@@ -11,17 +11,17 @@ use crate::workspace::copy_init_files;
 pub(crate) fn set_planet_build(
     dir: &Path,
     record_index_1_based: usize,
-    slot_raw: u8,
-    kind_raw: u8,
+    slot: u8,
+    kind: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut(dir, |data| {
-        data.set_planet_build(record_index_1_based, slot_raw, kind_raw)
+        data.set_planet_build(record_index_1_based, slot, kind)
             .map_err(|err| err.to_string().into())
     })?;
 
     println!(
         "Planet record {} updated: build_slot={:#04x} build_kind={:#04x}",
-        record_index_1_based, slot_raw, kind_raw
+        record_index_1_based, slot, kind
     );
     Ok(())
 }
@@ -164,11 +164,11 @@ pub(crate) fn set_planet_stardock_slot(
     dir: &Path,
     record_index_1_based: usize,
     slot: usize,
-    kind_raw: u8,
+    kind: u8,
     count: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    if nc_data::stardock_slot_for_kind(kind_raw) != Some(slot) {
-        return Err(format!("stardock slot {slot} does not hold kind {kind_raw:#04x}").into());
+    if nc_data::stardock_slot_for_kind(kind) != Some(slot) {
+        return Err(format!("stardock slot {slot} does not hold kind {kind:#04x}").into());
     }
 
     with_runtime_game_mut(dir, |data| {
@@ -182,7 +182,7 @@ pub(crate) fn set_planet_stardock_slot(
 
     println!(
         "Planet record {} stardock slot {} set: kind={:#04x} count={}",
-        record_index_1_based, slot, kind_raw, count
+        record_index_1_based, slot, kind, count
     );
     Ok(())
 }
@@ -296,14 +296,14 @@ pub(crate) fn print_planet_build_report(
     println!("  dir={}", dir.display());
     println!("  record={}", record_index_1_based);
     println!("  build_slot={:#04x}", record.build_queue[0].points_owed);
-    println!("  build_kind={:#04x}", record.build_queue[0].kind.to_raw());
+    println!("  build_kind={:#04x}", record.build_queue[0].kind.code());
     println!(
         "  stardock_count={:#04x}",
         u16::try_from(record.stardock.destroyers).unwrap_or(u16::MAX)
     );
     println!(
         "  stardock_kind={:#04x}",
-        stardock_slot_kind(record, 0).to_raw()
+        stardock_slot_kind(record, 0).code()
     );
     println!("  owner={:#04x}", record.owner.0);
     println!("  coords={:?}", record.sector.to_array());
@@ -315,11 +315,11 @@ pub(crate) fn init_planet_build_scenario(
     source: &Path,
     target: &Path,
     record_index_1_based: usize,
-    slot_raw: u8,
-    kind_raw: u8,
+    slot: u8,
+    kind: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
     copy_init_files(source, target)?;
-    set_planet_build(target, record_index_1_based, slot_raw, kind_raw)?;
+    set_planet_build(target, record_index_1_based, slot, kind)?;
     export_runtime_snapshot_in_place(target)?;
     println!("Planet-build directory initialized at {}", target.display());
     Ok(())
@@ -337,14 +337,14 @@ pub(crate) fn init_planet_build_batch(
     manifest.push_str(&format!("target_root={}\n", target_root.display()));
     manifest.push('\n');
 
-    for (record_index, slot_raw, kind_raw) in specs {
-        let name = format!("p{:02}-s{:02x}-k{:02x}", record_index, slot_raw, kind_raw);
+    for (record_index, slot, kind) in specs {
+        let name = format!("p{:02}-s{:02x}-k{:02x}", record_index, slot, kind);
         let scenario_dir = target_root.join(&name);
-        init_planet_build_scenario(source, &scenario_dir, *record_index, *slot_raw, *kind_raw)?;
+        init_planet_build_scenario(source, &scenario_dir, *record_index, *slot, *kind)?;
         manifest.push_str(&format!("{name}\n"));
         manifest.push_str(&format!(
             "  spec={}:{:#04x}:{:#04x}\n",
-            record_index, slot_raw, kind_raw
+            record_index, slot, kind
         ));
         manifest.push_str(&format!("  dir={}\n", scenario_dir.display()));
         manifest.push_str(&format!(

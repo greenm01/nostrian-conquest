@@ -2682,7 +2682,7 @@ fn fleet_list_load_quantity_prompt_keeps_scrollbar_gutter() {
             fleet_number: (24 - idx) as u16,
             coords: [((idx % 31) + 1) as u8, (((idx * 3) % 31) + 1) as u8],
             target_coords: [((idx % 31) + 1) as u8, (((idx * 3) % 31) + 1) as u8],
-            order_code: nc_data::Order::HoldPosition.to_raw(),
+            order_code: nc_data::Order::HoldPosition.code(),
             current_speed: 0,
             max_speed: 9,
             eta_label: "0".to_string(),

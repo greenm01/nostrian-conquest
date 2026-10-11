@@ -21,12 +21,12 @@ pub struct ShipLosses {
 pub struct BombardEvent {
     /// Planet index (into PLANETS.DAT records) that was bombarded.
     pub planet_idx: usize,
-    /// Attacking fleet's owner_empire_raw (1-based player index).
-    pub attacker_empire_raw: u8,
+    /// Attacking fleet's owner_empire (1-based player index).
+    pub attacker_empire: u8,
     /// Attacking fleet number when one specific fleet can be named.
     pub attacker_fleet_number: Option<u8>,
     /// Defending empire that should receive the bombardment report, if any.
-    pub defender_empire_raw: u8,
+    pub defender_empire: u8,
     /// Initial attacking fleet composition observed by both sides.
     pub attacker_initial: ShipLosses,
     /// Initial loaded armies aboard the attacking force.
@@ -65,9 +65,9 @@ pub struct AssaultReportEvent {
     /// Planet index (into PLANETS.DAT records) that was attacked.
     pub planet_idx: usize,
     /// Acting empire that should receive the attacker-side report.
-    pub attacker_empire_raw: u8,
+    pub attacker_empire: u8,
     /// Defending empire that was attacked, if any.
-    pub defender_empire_raw: u8,
+    pub defender_empire: u8,
     /// Initial attacking fleet composition observed by both sides.
     pub attacker_initial: ShipLosses,
     /// Initial loaded armies aboard the attacking force.
@@ -111,7 +111,7 @@ pub struct PlanetIntelEvent {
     /// Planet index (into PLANETS.DAT records) whose intel should be refreshed.
     pub planet_idx: usize,
     /// Viewer empire (1-based player index) whose DATABASE record should be updated.
-    pub viewer_empire_raw: u8,
+    pub viewer_empire: u8,
     /// Mission/combat family that produced this refresh.
     pub source: PlanetIntelSource,
     /// Source fleet index when one specific fleet observation produced this refresh.
@@ -128,11 +128,11 @@ pub struct PlanetOwnershipChangeEvent {
     /// Planet index (into PLANETS.DAT records) that changed owner.
     pub planet_idx: usize,
     /// Empire that should receive the "we were captured" report.
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     /// Previous owner empire slot (1-based, or 0 if unowned).
-    pub previous_owner_empire_raw: u8,
+    pub previous_owner_empire: u8,
     /// New owner empire slot (1-based).
-    pub new_owner_empire_raw: u8,
+    pub new_owner_empire: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
 }
@@ -148,7 +148,7 @@ pub enum FleetBattlePerspective {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FleetBattleEvent {
     /// Empire that should receive this battle report.
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     /// Reporting fleet number when one specific fleet can be named.
     pub reporting_fleet_number: Option<u8>,
     /// Reporting fleet mission context when one classic mission-family label applies.
@@ -158,7 +158,7 @@ pub struct FleetBattleEvent {
     /// Coordinates where the battle took place.
     pub coords: [u8; 2],
     /// Hostile empires this side encountered.
-    pub enemy_empires_raw: Vec<u8>,
+    pub enemy_empires: Vec<u8>,
     /// Primary hostile fleet number when one specific enemy fleet can be named.
     pub primary_enemy_fleet_number: Option<u8>,
     /// Whether the reporting empire held the field after the battle.
@@ -191,7 +191,7 @@ pub struct FleetBattleEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FleetDestroyedEvent {
     /// Empire that receives the destruction report.
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     /// Player-visible fleet number that was lost.
     pub fleet_number: u8,
     /// Coordinates of the loss.
@@ -221,7 +221,7 @@ pub struct FleetDestroyedEvent {
     /// Hostile armies destroyed before contact was lost.
     pub enemy_ground_army_losses: u8,
     /// Hostile empire if a primary enemy can be named.
-    pub primary_enemy_empire_raw: Option<u8>,
+    pub primary_enemy_empire: Option<u8>,
     /// Hostile fleet number if one specific enemy fleet can be named.
     pub primary_enemy_fleet_number: Option<u8>,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
@@ -232,7 +232,7 @@ pub struct FleetDestroyedEvent {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StarbaseDestroyedEvent {
     /// Empire that receives the destruction report.
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     /// Starbase ID that was lost.
     pub starbase_id: u16,
     /// Coordinates of the loss.
@@ -244,7 +244,7 @@ pub struct StarbaseDestroyedEvent {
     /// Observed hostile losses before contact was lost.
     pub enemy_losses: ShipLosses,
     /// Hostile empire if a primary enemy can be named.
-    pub primary_enemy_empire_raw: Option<u8>,
+    pub primary_enemy_empire: Option<u8>,
     /// Hostile fleet number if one specific enemy fleet can be named.
     pub primary_enemy_fleet_number: Option<u8>,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
@@ -255,7 +255,7 @@ pub struct StarbaseDestroyedEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StarbaseReportEvent {
     /// Empire that owns the base and receives the report.
-    pub owner_empire_raw: u8,
+    pub owner_empire: u8,
     pub starbase_id: u16,
     /// The base's sector when it reported.
     pub coords: [u8; 2],
@@ -307,13 +307,13 @@ pub enum StarbaseAlert {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StarbaseSightingEvent {
     /// Empire that owns the reporting base and receives the report.
-    pub viewer_empire_raw: u8,
+    pub viewer_empire: u8,
     pub starbase_id: u16,
     /// The sector both bases share.
     pub coords: [u8; 2],
     /// Whether they are in a world's system (depth layer 1).
     pub in_system: bool,
-    pub target_empire_raw: u8,
+    pub target_empire: u8,
     pub target_starbase_id: u16,
     /// The viewer has declared the target's empire an enemy: "We are
     /// alerting all fleets in the area." Otherwise "Continuing with
@@ -335,7 +335,7 @@ pub enum ContactReportSource {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ScoutContactEvent {
     /// Empire that owns the observing fleet.
-    pub viewer_empire_raw: u8,
+    pub viewer_empire: u8,
     /// Fleet or starbase source that made the contact.
     pub source: ContactReportSource,
     /// Fleet number of the reporting fleet when the source is a fleet.
@@ -347,7 +347,7 @@ pub struct ScoutContactEvent {
     /// Coordinates where the contact occurred.
     pub coords: [u8; 2],
     /// Empire that was detected.
-    pub target_empire_raw: u8,
+    pub target_empire: u8,
     /// Target fleet number when one specific hostile fleet can be named.
     pub target_fleet_number: Option<u8>,
     /// Aggregate "small vessel" count in the detected force.
@@ -366,13 +366,13 @@ pub struct FleetMergeEvent {
     /// Fleet index in FLEETS.DAT that merged away.
     pub fleet_idx: usize,
     /// Empire that owned the merging fleet.
-    pub owner_empire_raw: u8,
+    pub owner_empire: u8,
     /// Kind of merge-producing mission.
     pub kind: Mission,
     /// Structural fleet ID of the surviving host, for internal remap logic.
-    pub host_fleet_id_raw: u16,
+    pub host_fleet_id: u16,
     /// Structural fleet ID of the absorbed fleet, for internal remap logic.
-    pub absorbed_fleet_id_raw: u16,
+    pub absorbed_fleet_id: u16,
     /// Host fleet number that remained after the merge.
     pub host_fleet_number: u8,
     /// Fleet number that was absorbed/merged away.
@@ -393,7 +393,7 @@ pub enum JoinMissionHostEvent {
         /// Joining fleet index in FLEETS.DAT.
         fleet_idx: usize,
         /// Empire that owned the joining fleet.
-        owner_empire_raw: u8,
+        owner_empire: u8,
         /// Previous host fleet number, when still known.
         previous_host_fleet_number: Option<u8>,
         /// New surviving host fleet number, when one specific fleet can be named.
@@ -406,7 +406,7 @@ pub enum JoinMissionHostEvent {
         /// Joining fleet index in FLEETS.DAT.
         fleet_idx: usize,
         /// Empire that owned the joining fleet.
-        owner_empire_raw: u8,
+        owner_empire: u8,
         /// Destroyed host fleet number, when still known.
         destroyed_host_fleet_number: Option<u8>,
         /// Current location of the joining fleet.
@@ -421,7 +421,7 @@ pub enum MissionRetargetEvent {
         fleet_idx: usize,
         /// Player-visible fleet number captured when the event was created.
         reporting_fleet_number: Option<u8>,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         mission: Mission,
         current_coords: [u8; 2],
         previous_target_coords: [u8; 2],
@@ -431,7 +431,7 @@ pub enum MissionRetargetEvent {
         fleet_idx: usize,
         /// Player-visible fleet number captured when the event was created.
         reporting_fleet_number: Option<u8>,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         mission: Mission,
         previous_target_coords: [u8; 2],
         coords: [u8; 2],
@@ -480,7 +480,7 @@ pub struct MissionEvent {
     /// Fleet index in FLEETS.DAT that attempted the mission.
     pub fleet_idx: usize,
     /// Empire that owned the acting fleet (1-based player index).
-    pub owner_empire_raw: u8,
+    pub owner_empire: u8,
     /// Mission kind.
     pub kind: Mission,
     /// Resolved outcome class.
@@ -510,12 +510,12 @@ pub enum EncounterDispositionReason {
 pub enum EncounterDispositionEvent {
     NoEngagement {
         fleet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         mission: Option<Mission>,
         coords: [u8; 2],
         friendly_initial: ShipLosses,
         friendly_loaded_armies_initial: u32,
-        target_empire_raw: u8,
+        target_empire: u8,
         target_fleet_number: Option<u8>,
         small_vessels: u32,
         medium_vessels: u32,
@@ -526,12 +526,12 @@ pub enum EncounterDispositionEvent {
     },
     Retreated {
         fleet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         mission: Option<Mission>,
         coords: [u8; 2],
         friendly_initial: ShipLosses,
         friendly_loaded_armies_initial: u32,
-        target_empire_raw: u8,
+        target_empire: u8,
         target_fleet_number: Option<u8>,
         enemy_initial: ShipLosses,
         retreat_target_coords: [u8; 2],
@@ -546,12 +546,12 @@ pub enum EncounterDispositionEvent {
     /// exchange at CER 0.50 before the withdrawer escapes.
     PursuitFire {
         fleet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         mission: Option<Mission>,
         coords: [u8; 2],
         friendly_initial: ShipLosses,
         friendly_loaded_armies_initial: u32,
-        target_empire_raw: u8,
+        target_empire: u8,
         target_fleet_number: Option<u8>,
         enemy_initial: ShipLosses,
         retreat_target_coords: [u8; 2],
@@ -567,31 +567,31 @@ pub enum EncounterDispositionEvent {
 pub enum InvalidPlayerStateEvent {
     FleetMission {
         fleet_idx: usize,
-        owner_empire_raw: u8,
-        order_code_raw: u8,
+        owner_empire: u8,
+        order_code: u8,
         coords: [u8; 2],
         reason: FleetOrderValidationError,
     },
     FleetInput {
         fleet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         coords: [u8; 2],
         reason: FleetPlayerInputValidationError,
     },
     PlanetInput {
         planet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         coords: [u8; 2],
         reason: PlanetPlayerInputValidationError,
     },
     PlayerTaxRate {
         player_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         tax_rate: u8,
     },
     DiplomacyInput {
         player_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         reason: PlayerDiplomacyValidationError,
     },
 }
@@ -608,7 +608,7 @@ pub enum SalvageResolvedEvent {
         fleet_idx: usize,
         /// Number of the salvaged fleet, which is removed before reporting.
         fleet_number: u8,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         planet_idx: usize,
         coords: [u8; 2],
         recovered_points: u32,
@@ -617,7 +617,7 @@ pub enum SalvageResolvedEvent {
     },
     Failed {
         fleet_idx: usize,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         planet_idx: Option<usize>,
         coords: [u8; 2],
         reason: SalvageFailureReason,
@@ -628,22 +628,22 @@ pub enum SalvageResolvedEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiplomacyOverride {
-    pub from_empire_raw: u8,
-    pub to_empire_raw: u8,
+    pub from_empire: u8,
+    pub to_empire: u8,
     pub relation: DiplomaticRelation,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiplomaticEscalationEvent {
-    pub left_empire_raw: u8,
-    pub right_empire_raw: u8,
+    pub left_empire: u8,
+    pub right_empire: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CivilDisorderEvent {
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     pub prior_label: String,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
@@ -651,22 +651,22 @@ pub struct CivilDisorderEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CampaignOutlookEvent {
-    pub empire_raw: u8,
+    pub empire: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CampaignOutcomeEvent {
-    pub emperor_empire_raw: u8,
+    pub emperor_empire: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct GameVictoryNoticeEvent {
-    pub recipient_empire_raw: u8,
-    pub winner_empire_raw: u8,
+    pub recipient_empire: u8,
+    pub winner_empire: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
 }
@@ -680,8 +680,8 @@ pub enum EmpireEliminationCause {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct EmpireEliminationEvent {
-    pub defeated_empire_raw: u8,
-    pub victor_empire_raw: Option<u8>,
+    pub defeated_empire: u8,
+    pub victor_empire: Option<u8>,
     pub cause: EmpireEliminationCause,
     pub planet_idx: Option<usize>,
     pub coords: Option<[u8; 2]>,
@@ -691,7 +691,7 @@ pub struct EmpireEliminationEvent {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FleetDefectionEvent {
-    pub reporting_empire_raw: u8,
+    pub reporting_empire: u8,
     pub fleet_number: u8,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
     pub stardate_week: Option<u8>,
@@ -707,7 +707,7 @@ pub enum ColonizationResolvedEvent {
         /// Planet index (into PLANETS.DAT records) that was colonized.
         planet_idx: usize,
         /// Empire that established the colony (1-based player index).
-        colonizer_empire_raw: u8,
+        colonizer_empire: u8,
         /// Week of year (1–52) when this event occurred; None until canonicalized.
         stardate_week: Option<u8>,
     },
@@ -718,9 +718,9 @@ pub enum ColonizationResolvedEvent {
         /// Planet index (into PLANETS.DAT records) that blocked colonization.
         planet_idx: usize,
         /// Empire that attempted the colony mission (1-based player index).
-        colonizer_empire_raw: u8,
+        colonizer_empire: u8,
         /// Current owner of the world (1-based player index).
-        owner_empire_raw: u8,
+        owner_empire: u8,
         /// Week of year (1–52) when this event occurred; None until canonicalized.
         stardate_week: Option<u8>,
     },
@@ -729,7 +729,7 @@ pub enum ColonizationResolvedEvent {
         /// Fleet index in FLEETS.DAT that attempted the mission.
         fleet_idx: usize,
         /// Empire that attempted the colony mission (1-based player index).
-        colonizer_empire_raw: u8,
+        colonizer_empire: u8,
         /// Coordinates where the mission was aborted.
         coords: [u8; 2],
         /// Week of year (1–52) when this event occurred; None until canonicalized.

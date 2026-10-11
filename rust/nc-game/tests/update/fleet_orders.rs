@@ -615,7 +615,7 @@ fn fleet_order_applies_move_order_to_selected_fleet_only() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    assert_eq!(ordered_fleet.order.to_raw(), 1);
+    assert_eq!(ordered_fleet.order.code(), 1);
     assert_eq!(ordered_fleet.target.to_array(), [14, 9]);
     assert_eq!(
         state
@@ -623,7 +623,7 @@ fn fleet_order_applies_move_order_to_selected_fleet_only() {
             .fleets
             .iter()
             .filter(|fleet| !(fleet.owner.0 == 1 && fleet.fleet_number.0 == 2))
-            .filter(|fleet| fleet.order.to_raw() == 1)
+            .filter(|fleet| fleet.order.code() == 1)
             .count(),
         0
     );
@@ -1042,8 +1042,8 @@ fn fleet_record_supports_manual_requirement_classes() {
 fn fleet_order_allows_guard_starbase_from_fleet_command() {
     let fixture_dir = temp_game_with_starbase_copy();
     let before = latest_runtime_state(&fixture_dir);
-    assert_eq!(before.game_data.fleets[0].order.to_raw(), 4);
-    assert_eq!(before.game_data.fleets[1].order.to_raw(), 5);
+    assert_eq!(before.game_data.fleets[0].order.code(), 4);
+    assert_eq!(before.game_data.fleets[1].order.code(), 5);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
         player_record_index_1_based: 1,
@@ -1108,7 +1108,7 @@ fn fleet_order_allows_guard_starbase_from_fleet_command() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet #2 should exist");
-    assert_eq!(ordered_fleet.order.to_raw(), 4);
+    assert_eq!(ordered_fleet.order.code(), 4);
     assert_eq!(
         ([
             ordered_fleet.target_depth,
@@ -1347,7 +1347,7 @@ fn fleet_order_persists_immediately_and_reloaded_tables_reflect_it() {
     assert_eq!(app.current_screen(), ScreenId::FleetMenu);
 
     let persisted = latest_runtime_state(&fixture_dir);
-    assert_eq!(persisted.game_data.fleets[1].order.to_raw(), 1);
+    assert_eq!(persisted.game_data.fleets[1].order.code(), 1);
     assert_eq!(persisted.game_data.fleets[1].target.to_array(), [14, 9]);
 
     let mut reloaded = App::load(AppConfig {
@@ -1416,7 +1416,7 @@ fn fleet_order_from_stopped_fleet_uses_max_speed() {
     confirm_fleet_order(&mut app, true);
 
     let persisted = latest_runtime_state(&fixture_dir);
-    assert_eq!(persisted.game_data.fleets[1].order.to_raw(), 1);
+    assert_eq!(persisted.game_data.fleets[1].order.code(), 1);
     assert_eq!(persisted.game_data.fleets[1].target.to_array(), [14, 9]);
     assert_eq!(persisted.game_data.fleets[1].speed, 3);
     assert_eq!(
@@ -1462,7 +1462,7 @@ fn fleet_order_preserves_explicit_nonzero_speed() {
     confirm_fleet_order(&mut app, true);
 
     let persisted = latest_runtime_state(&fixture_dir);
-    assert_eq!(persisted.game_data.fleets[1].order.to_raw(), 1);
+    assert_eq!(persisted.game_data.fleets[1].order.code(), 1);
     assert_eq!(persisted.game_data.fleets[1].target.to_array(), [14, 9]);
     assert_eq!(persisted.game_data.fleets[1].speed, 1);
     assert_eq!(persisted.game_data.fleets[1].max_speed, 3);
@@ -1480,7 +1480,7 @@ fn fleet_order_screen_uses_compact_summary_and_eta_confirm() {
         .expect("fixture should have a foreign world")
         .sector
         .to_array();
-    state.game_data.fleets[1].order = nc_data::Order::from_raw(5);
+    state.game_data.fleets[1].order = nc_data::Order::from_code(5);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1856,12 +1856,12 @@ fn fleet_order_scout_system_defaults_avoid_worlds_targeted_by_other_friendly_sco
     state.game_data.planets[candidates[1].0].owner.0 = 2;
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let selected_fleet_number = state.game_data.fleets[0].fleet_number.0;
     state.game_data.fleets[0].ships.scouts = 1;
-    state.game_data.fleets[0].order = nc_data::Order::from_raw(0);
+    state.game_data.fleets[0].order = nc_data::Order::from_code(0);
     state.game_data.fleets[1].ships.scouts = 1;
     state.game_data.fleets[1].order = nc_data::Order::ScoutSolarSystem;
     state.game_data.fleets[1].target = nc_data::Coords::from_array(claimed_coords);
@@ -2152,7 +2152,7 @@ fn fleet_group_view_world_defaults_avoid_unknown_worlds_targeted_by_other_friend
         .iter_mut()
         .filter(|fleet| fleet.owner.0 == 1)
     {
-        fleet.order = nc_data::Order::from_raw(0);
+        fleet.order = nc_data::Order::from_code(0);
     }
     let mut owned_fleets = state
         .game_data
@@ -2527,7 +2527,7 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
     );
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     {
@@ -2552,7 +2552,7 @@ fn fleet_group_colonize_mission_skips_worlds_claimed_by_other_friendly_etacs() {
                 && fleet.order != nc_data::Order::ColonizeWorld
         })
         .expect("fixture should have a selectable ETAC fleet");
-    selected_etac.order = nc_data::Order::from_raw(0);
+    selected_etac.order = nc_data::Order::from_code(0);
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
     let mut app = App::load(AppConfig {
@@ -2657,7 +2657,7 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
     );
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     {
@@ -2683,7 +2683,7 @@ fn fleet_order_colonize_rejects_duplicate_friendly_target() {
                     && fleet.order != nc_data::Order::ColonizeWorld
             })
             .expect("fixture should have a selectable ETAC fleet");
-        selected_etac.order = nc_data::Order::from_raw(0);
+        selected_etac.order = nc_data::Order::from_code(0);
         selected_etac.fleet_number.0
     };
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
@@ -2783,7 +2783,7 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
     );
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let owned_fleet_indexes = state
@@ -2797,7 +2797,7 @@ fn fleet_group_colonize_rejects_multiple_selected_etacs_for_one_target() {
         .collect::<Vec<_>>();
     for idx in &owned_fleet_indexes {
         state.game_data.fleets[*idx].ships.etacs = 1;
-        state.game_data.fleets[*idx].order = nc_data::Order::from_raw(0);
+        state.game_data.fleets[*idx].order = nc_data::Order::from_code(0);
     }
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
@@ -2927,7 +2927,7 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
     planet_intel_by_viewer[0].remove(&(hidden_colonized_idx + 1));
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let selected_etac = state
@@ -2936,7 +2936,7 @@ fn fleet_group_colonize_mission_allows_hidden_colonized_worlds_as_targets() {
         .iter_mut()
         .find(|fleet| fleet.owner.0 == 1 && fleet.ships.etacs > 0)
         .expect("fixture should have a selectable ETAC fleet");
-    selected_etac.order = nc_data::Order::from_raw(0);
+    selected_etac.order = nc_data::Order::from_code(0);
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
     let mut app = App::load(AppConfig {
@@ -3032,7 +3032,7 @@ fn fleet_order_colonize_defaults_to_hidden_unknown_owner_worlds_in_planet_databa
     planet_intel_by_viewer[0].remove(&(hidden_target_index + 1));
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let selected_etac = state
@@ -3042,7 +3042,7 @@ fn fleet_order_colonize_defaults_to_hidden_unknown_owner_worlds_in_planet_databa
         .find(|fleet| fleet.owner.0 == 1 && fleet.ships.etacs > 0)
         .expect("fixture should have a selectable ETAC fleet");
     let selected_fleet_number = selected_etac.fleet_number.0;
-    selected_etac.order = nc_data::Order::from_raw(0);
+    selected_etac.order = nc_data::Order::from_code(0);
     save_runtime_state_with_intel(&fixture_dir, &state, &planet_intel_by_viewer);
 
     let mut app = App::load(AppConfig {
@@ -3433,7 +3433,7 @@ fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
     let mut state = latest_runtime_state(&fixture_dir);
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let scout_fleet = state
@@ -3442,7 +3442,7 @@ fn fleet_group_order_rejects_owned_planet_for_scout_mission() {
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.ships.scouts = 1;
-    scout_fleet.order = nc_data::Order::from_raw(0);
+    scout_fleet.order = nc_data::Order::from_code(0);
     let enemy_idx = state
         .game_data
         .planets
@@ -3526,7 +3526,7 @@ fn fleet_order_rejects_owned_planet_for_scout_system_mission() {
     let mut state = latest_runtime_state(&fixture_dir);
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let scout_fleet = state
@@ -3535,7 +3535,7 @@ fn fleet_order_rejects_owned_planet_for_scout_system_mission() {
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.ships.scouts = 1;
-    scout_fleet.order = nc_data::Order::from_raw(0);
+    scout_fleet.order = nc_data::Order::from_code(0);
     let owned_target = state.game_data.planets[state.game_data.players[0].homeworld as usize - 1]
         .sector
         .to_array();
@@ -3817,7 +3817,7 @@ fn fleet_order_hold_defaults_to_current_sector_and_persists_target() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == fleet_number)
         .expect("fleet should still exist");
-    assert_eq!(ordered_fleet.order.to_raw(), 0);
+    assert_eq!(ordered_fleet.order.code(), 0);
     assert_eq!(ordered_fleet.target.to_array(), hold_coords);
 }
 
@@ -3946,7 +3946,7 @@ fn fleet_order_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == fleet_number)
         .expect("fleet should still exist");
-    assert_eq!(ordered_fleet.order.to_raw(), 2);
+    assert_eq!(ordered_fleet.order.code(), 2);
     assert_eq!(ordered_fleet.target.to_array(), home);
 }
 
@@ -3971,7 +3971,7 @@ fn fleet_order_seek_home_aborts_in_the_only_home_system() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .expect("fleet should still exist");
-    assert_ne!(fleet.order.to_raw(), 2);
+    assert_ne!(fleet.order.code(), 2);
 }
 
 /// Player 1's worlds in PLANETS.DAT order: the home world, then the second.
@@ -4022,7 +4022,7 @@ fn seek_home_from_the_home_system(fixture_dir: &std::path::Path, answer: Option<
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 2)
         .map(|fleet| {
-            assert_eq!(fleet.order.to_raw(), 2);
+            assert_eq!(fleet.order.code(), 2);
             fleet.target.to_array()
         })
         .expect("fleet should still exist")
@@ -4066,7 +4066,7 @@ fn fleet_order_salvage_with_one_owned_world_needs_no_target() {
         .iter()
         .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == fleet_number)
         .expect("fleet should still exist");
-    assert_eq!(ordered_fleet.order.to_raw(), 15);
+    assert_eq!(ordered_fleet.order.code(), 15);
     assert_eq!(ordered_fleet.target.to_array(), home);
 }
 
@@ -4389,7 +4389,7 @@ fn fleet_group_order_allows_manual_scout_target_without_known_enemy_world() {
     let mut state = latest_runtime_state(&fixture_dir);
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
     let scout_fleet = state
@@ -4398,7 +4398,7 @@ fn fleet_group_order_allows_manual_scout_target_without_known_enemy_world() {
         .get_mut(0)
         .expect("fleet 1 should exist");
     scout_fleet.ships.scouts = 1;
-    scout_fleet.order = nc_data::Order::from_raw(0);
+    scout_fleet.order = nc_data::Order::from_code(0);
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -4628,7 +4628,7 @@ fn fleet_group_hold_defaults_to_selected_sector_and_persists_target() {
             .iter()
             .filter(|fleet| {
                 fleet.owner.0 == 1
-                    && fleet.order.to_raw() == 0
+                    && fleet.order.code() == 0
                     && fleet.target.to_array() == hold_coords
             })
             .count(),
@@ -4681,7 +4681,7 @@ fn fleet_group_seek_home_targets_the_nearest_owned_world_without_a_prompt() {
         .map(|fleet| {
             (
                 fleet.fleet_number.0,
-                fleet.order.to_raw(),
+                fleet.order.code(),
                 fleet.target.to_array(),
             )
         })
@@ -4729,7 +4729,7 @@ fn fleet_group_seek_home_of_one_home_fleet_asks_for_the_next_closest() {
 
     let state = latest_runtime_state(&fixture_dir);
     assert!(state.game_data.fleets.iter().any(|fleet| {
-        fleet.owner.0 == 1 && fleet.order.to_raw() == 2 && fleet.target.to_array() == worlds[1]
+        fleet.owner.0 == 1 && fleet.order.code() == 2 && fleet.target.to_array() == worlds[1]
     }));
 }
 
@@ -4739,11 +4739,11 @@ fn fleet_group_order_applies_move_order_to_selected_fleets() {
     let mut state = latest_runtime_state(&fixture_dir);
     for fleet in state.game_data.fleets.iter_mut() {
         if fleet.owner.0 == 1 {
-            fleet.order = nc_data::Order::from_raw(9);
+            fleet.order = nc_data::Order::from_code(9);
         }
     }
-    state.game_data.fleets[0].order = nc_data::Order::from_raw(0);
-    state.game_data.fleets[1].order = nc_data::Order::from_raw(0);
+    state.game_data.fleets[0].order = nc_data::Order::from_code(0);
+    state.game_data.fleets[1].order = nc_data::Order::from_code(0);
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -4814,9 +4814,9 @@ fn fleet_group_order_applies_move_order_to_selected_fleets() {
     );
 
     let state = latest_runtime_state(&fixture_dir);
-    assert_eq!(state.game_data.fleets[0].order.to_raw(), 1);
+    assert_eq!(state.game_data.fleets[0].order.code(), 1);
     assert_eq!(state.game_data.fleets[0].target.to_array(), [10, 13]);
-    assert_eq!(state.game_data.fleets[1].order.to_raw(), 1);
+    assert_eq!(state.game_data.fleets[1].order.code(), 1);
     assert_eq!(state.game_data.fleets[1].target.to_array(), [10, 13]);
 }
 
@@ -4925,11 +4925,11 @@ fn fleet_group_order_accepts_join_fleet_mission_number() {
         .game_data
         .fleets
         .iter()
-        .filter(|fleet| fleet.owner.0 == 1 && fleet.order.to_raw() == 13)
+        .filter(|fleet| fleet.owner.0 == 1 && fleet.order.code() == 13)
         .collect::<Vec<_>>();
     assert_eq!(joined_fleets.len(), 1);
     let ordered_fleet = joined_fleets[0];
-    assert_eq!(ordered_fleet.order.to_raw(), 13);
+    assert_eq!(ordered_fleet.order.code(), 13);
     assert_ne!(ordered_fleet.mission_target, 0);
     assert_ne!(ordered_fleet.mission_target, ordered_fleet.fleet_number.0);
     assert_eq!(ordered_fleet.target.to_array(), [16, 13]);

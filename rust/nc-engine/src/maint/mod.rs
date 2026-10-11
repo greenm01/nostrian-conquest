@@ -36,7 +36,7 @@ struct ColonizationEvent {
     fleet_idx: usize,
     /// Target coordinates where colonization occurred.
     coords: [u8; 2],
-    /// Empire that colonized (owner_empire_raw from fleet record).
+    /// Empire that colonized (owner_empire from fleet record).
     owner_empire: u8,
     /// The tick the fleet arrived.
     stardate_week: Option<u8>,
@@ -73,7 +73,7 @@ pub(super) struct FleetRemovalRemapInfo {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct PendingObservationEvent {
     fleet_idx: usize,
-    owner_empire_raw: u8,
+    owner_empire: u8,
     kind: Mission,
     outcome: MissionOutcome,
     planet_idx: Option<usize>,
@@ -498,12 +498,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             ColonizationResolvedEvent::Succeeded {
                 fleet_idx,
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: colonizer_empire_raw,
+                owner_empire: colonizer_empire,
                 kind: Mission::ColonizeWorld,
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
@@ -515,12 +515,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             ColonizationResolvedEvent::BlockedByOwner {
                 fleet_idx,
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: colonizer_empire_raw,
+                owner_empire: colonizer_empire,
                 kind: Mission::ColonizeWorld,
                 outcome: MissionOutcome::Failed,
                 abort_reason: None,
@@ -531,13 +531,13 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             }),
             ColonizationResolvedEvent::Aborted {
                 fleet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 coords,
                 stardate_week,
                 ..
             } => mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw: colonizer_empire_raw,
+                owner_empire: colonizer_empire,
                 kind: Mission::ColonizeWorld,
                 outcome: MissionOutcome::Aborted,
                 abort_reason: None,
@@ -558,12 +558,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             ColonizationResolvedEvent::BlockedByOwner {
                 fleet_idx,
                 planet_idx,
-                colonizer_empire_raw,
+                colonizer_empire,
                 stardate_week,
                 ..
             } => Some(PlanetIntelEvent {
                 planet_idx,
-                viewer_empire_raw: colonizer_empire_raw,
+                viewer_empire: colonizer_empire,
                 source: nc_data::PlanetIntelSource::ColonizeBlockedByOwner,
                 source_fleet_idx: Some(fleet_idx),
                 observed_snapshot: None,
@@ -698,12 +698,12 @@ fn restore_scout_orders_and_generate_on_station_observations(
         if coords != target || !settled {
             continue;
         }
-        let owner_empire_raw = fleet.owner.0;
+        let owner_empire = fleet.owner.0;
         match order {
             Order::ScoutSector => {
                 movement_events.mission_events.push(MissionEvent {
                     fleet_idx,
-                    owner_empire_raw,
+                    owner_empire,
                     kind: Mission::ScoutSector,
                     outcome: MissionOutcome::Succeeded,
                     abort_reason: None,
@@ -721,12 +721,12 @@ fn restore_scout_orders_and_generate_on_station_observations(
                 if let Some(planet_idx) = planet_idx {
                     movement_events.planet_intel_events.push(PlanetIntelEvent {
                         planet_idx,
-                        viewer_empire_raw: owner_empire_raw,
+                        viewer_empire: owner_empire,
                         source: nc_data::PlanetIntelSource::ScoutSolarSystem,
                         source_fleet_idx: Some(fleet_idx),
                         observed_snapshot: nc_data::build_runtime_planet_intel_snapshot(
                             game_data,
-                            owner_empire_raw,
+                            owner_empire,
                             game_data.conquest.game_year,
                             planet_idx,
                             nc_data::PlanetIntelSource::ScoutSolarSystem,
@@ -736,7 +736,7 @@ fn restore_scout_orders_and_generate_on_station_observations(
                 }
                 movement_events.mission_events.push(MissionEvent {
                     fleet_idx,
-                    owner_empire_raw,
+                    owner_empire,
                     kind: Mission::ScoutSolarSystem,
                     outcome: MissionOutcome::Succeeded,
                     abort_reason: None,
@@ -766,7 +766,7 @@ fn finalize_pending_observation_events(
         }
         let mission_aborted = combat_mission_events.iter().any(|event| {
             event.fleet_idx == pending.fleet_idx
-                && event.owner_empire_raw == pending.owner_empire_raw
+                && event.owner_empire == pending.owner_empire
                 && event.kind == pending.kind
                 && event.outcome == MissionOutcome::Aborted
         });
@@ -779,7 +779,7 @@ fn finalize_pending_observation_events(
         }
         movement_events.mission_events.push(MissionEvent {
             fleet_idx: pending.fleet_idx,
-            owner_empire_raw: pending.owner_empire_raw,
+            owner_empire: pending.owner_empire,
             kind: pending.kind,
             outcome: pending.outcome,
             abort_reason: None,
@@ -791,7 +791,7 @@ fn finalize_pending_observation_events(
         if moved_out {
             movement_events.mission_events.push(MissionEvent {
                 fleet_idx: pending.fleet_idx,
-                owner_empire_raw: pending.owner_empire_raw,
+                owner_empire: pending.owner_empire,
                 kind: Mission::MoveOnly,
                 outcome: MissionOutcome::Succeeded,
                 abort_reason: None,
@@ -884,7 +884,7 @@ fn apply_fleet_removal_remap(
     game_data.fleets = remapped_fleets;
 
     for player_idx in 0..game_data.players.len() {
-        let owner_raw = (player_idx + 1) as u8;
+        let owner = (player_idx + 1) as u8;
         let first_id = game_data.players[player_idx].fleets_first.0;
         let last_id = game_data.players[player_idx].fleets_last.0;
         let new_first = remap_id(first_id);
@@ -893,7 +893,7 @@ fn apply_fleet_removal_remap(
         game_data.players[player_idx].fleets_last.0 = if new_last == 0 && new_first != 0 {
             let mut max_new_id: u16 = new_first;
             for orig_idx in 0..fleet_count {
-                if pre_removal_owner[orig_idx] == owner_raw && !to_remove[orig_idx] {
+                if pre_removal_owner[orig_idx] == owner && !to_remove[orig_idx] {
                     let mapped = remap_id(pre_removal_fleet_id[orig_idx]);
                     if mapped > max_new_id {
                         max_new_id = mapped;

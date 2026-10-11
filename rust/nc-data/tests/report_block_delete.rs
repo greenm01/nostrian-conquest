@@ -8,7 +8,7 @@ fn players() -> Vec<Player> {
     [0x01, 0x01, 0xff]
         .into_iter()
         .map(|mode| Player {
-            mode: PlayerMode::from_raw(mode),
+            mode: PlayerMode::from_code(mode),
             ..Player::default()
         })
         .collect()

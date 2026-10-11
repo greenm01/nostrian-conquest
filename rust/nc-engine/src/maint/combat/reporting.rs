@@ -32,43 +32,43 @@ pub(crate) fn push_fleet_contact(
     let (small_vessels, medium_vessels, large_vessels) =
         vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
     let target_fleet_number = single_named_fleet_number(game_data, &[target_fleet_idx]);
-    let (viewer_empire_raw, source, reporting_fleet_number, reporting_initial, armies) =
-        match observer {
-            ContactObserver::Fleet(idx) => {
-                let fleet = &game_data.fleets[idx];
-                let source = contact_reporting_kind(fleet.order)
-                    .map(ContactReportSource::FleetMission)
-                    .unwrap_or(ContactReportSource::Fleet(fleet.fleet_number.0 as u8));
-                (
-                    fleet.owner.0,
-                    source,
-                    Some(fleet.fleet_number.0 as u8),
-                    ship_counts_from_fleet(fleet),
-                    u32::from(fleet.ships.loaded_transports),
-                )
-            }
-            ContactObserver::Base(idx, alert) => {
-                let base = &game_data.bases[idx];
-                (
-                    base.owner.0,
-                    ContactReportSource::Starbase {
-                        id: base.base_id.0,
-                        alert,
-                    },
-                    None,
-                    ShipLosses::default(),
-                    0,
-                )
-            }
-        };
+    let (viewer_empire, source, reporting_fleet_number, reporting_initial, armies) = match observer
+    {
+        ContactObserver::Fleet(idx) => {
+            let fleet = &game_data.fleets[idx];
+            let source = contact_reporting_kind(fleet.order)
+                .map(ContactReportSource::FleetMission)
+                .unwrap_or(ContactReportSource::Fleet(fleet.fleet_number.0 as u8));
+            (
+                fleet.owner.0,
+                source,
+                Some(fleet.fleet_number.0 as u8),
+                ship_counts_from_fleet(fleet),
+                u32::from(fleet.ships.loaded_transports),
+            )
+        }
+        ContactObserver::Base(idx, alert) => {
+            let base = &game_data.bases[idx];
+            (
+                base.owner.0,
+                ContactReportSource::Starbase {
+                    id: base.base_id.0,
+                    alert,
+                },
+                None,
+                ShipLosses::default(),
+                0,
+            )
+        }
+    };
     scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw,
+        viewer_empire,
         source,
         reporting_fleet_number,
         reporting_initial,
         reporting_loaded_armies_initial: armies,
         coords,
-        target_empire_raw: target_empire,
+        target_empire,
         target_fleet_number,
         small_vessels,
         medium_vessels,
@@ -79,7 +79,7 @@ pub(crate) fn push_fleet_contact(
         planet_intel_events,
         game_data,
         coords,
-        viewer_empire_raw,
+        viewer_empire,
         target_empire,
         tick,
     );
@@ -103,12 +103,12 @@ pub(crate) fn push_no_engagement(
         vessel_size_summary(&fleet_state_from_records(game_data, &[target_fleet_idx], 0));
     encounter_disposition_events.push(EncounterDispositionEvent::NoEngagement {
         fleet_idx,
-        owner_empire_raw: fleet.owner.0,
+        owner_empire: fleet.owner.0,
         mission: mission_kind_for_order(Some(fleet.order)),
         coords,
         friendly_initial: ship_counts_from_fleet(fleet),
         friendly_loaded_armies_initial: u32::from(fleet.ships.loaded_transports),
-        target_empire_raw: game_data.fleets[target_fleet_idx].owner.0,
+        target_empire: game_data.fleets[target_fleet_idx].owner.0,
         target_fleet_number: single_named_fleet_number(game_data, &[target_fleet_idx]),
         small_vessels,
         medium_vessels,
@@ -133,25 +133,27 @@ fn push_civil_disorder_contact_intel(
     planet_intel_events: &mut Vec<PlanetIntelEvent>,
     game_data: &CoreGameData,
     coords: [u8; 2],
-    viewer_empire_raw: u8,
-    target_empire_raw: u8,
+    viewer_empire: u8,
+    target_empire: u8,
     tick: u8,
 ) {
-    if viewer_empire_raw == 0
-        || target_empire_raw == 0
-        || game_data.empire_campaign_state(target_empire_raw)
+    if viewer_empire == 0
+        || target_empire == 0
+        || game_data.empire_campaign_state(target_empire)
             != Some(nc_data::CampaignState::CivilDisorder)
     {
         return;
     }
-    let Some((planet_idx, _planet)) = game_data.planets.iter().enumerate().find(|(_, planet)| {
-        planet.sector.to_array() == coords && planet.owner.0 == target_empire_raw
-    }) else {
+    let Some((planet_idx, _planet)) =
+        game_data.planets.iter().enumerate().find(|(_, planet)| {
+            planet.sector.to_array() == coords && planet.owner.0 == target_empire
+        })
+    else {
         return;
     };
     if planet_intel_events.iter().any(|event| {
         event.planet_idx == planet_idx
-            && event.viewer_empire_raw == viewer_empire_raw
+            && event.viewer_empire == viewer_empire
             && event.source == PlanetIntelSource::CivilDisorderContact
     }) {
         return;
@@ -159,7 +161,7 @@ fn push_civil_disorder_contact_intel(
     push_planet_intel(
         planet_intel_events,
         planet_idx,
-        viewer_empire_raw,
+        viewer_empire,
         PlanetIntelSource::CivilDisorderContact,
     );
     if let Some(event) = planet_intel_events.last_mut() {
@@ -276,15 +278,15 @@ pub(super) fn vessel_size_summary(state: &FleetCombatState) -> (u32, u32, u32) {
 pub(super) fn push_planet_intel(
     planet_intel_events: &mut Vec<PlanetIntelEvent>,
     planet_idx: usize,
-    viewer_empire_raw: u8,
+    viewer_empire: u8,
     source: PlanetIntelSource,
 ) {
-    if viewer_empire_raw == 0 {
+    if viewer_empire == 0 {
         return;
     }
     planet_intel_events.push(PlanetIntelEvent {
         planet_idx,
-        viewer_empire_raw,
+        viewer_empire,
         source,
         source_fleet_idx: None,
         observed_snapshot: None,

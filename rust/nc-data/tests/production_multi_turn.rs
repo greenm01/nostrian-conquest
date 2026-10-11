@@ -47,7 +47,7 @@ fn joined_homeworld_spending_carries_forward_across_turns() {
     let homeworld = &game.planets[homeworld_idx];
     assert_eq!(stored_production_points(homeworld), 50);
     assert_eq!(homeworld.build_queue[0].points_owed, 0);
-    assert_eq!(homeworld.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(homeworld.build_queue[0].kind.code(), 0);
     assert_eq!(
         stardock_slot_kind(homeworld, 0),
         ProductionItemKind::Destroyer
@@ -71,17 +71,17 @@ fn partial_build_consumes_only_yearly_spend_before_revenue_credit() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 50);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].kind.code(), 1);
     assert_eq!(stored_production_points(planet), 150);
-    assert_eq!(stardock_slot_kind(planet, 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(planet, 0).code(), 1);
     assert_eq!(planet.stardock.destroyers, 20);
 
     run_maintenance_turn(&mut game).expect("second maintenance should succeed");
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(stored_production_points(planet), 150);
-    assert_eq!(stardock_slot_kind(planet, 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(planet, 0).code(), 1);
     assert_eq!(planet.stardock.destroyers, 30);
 }
 
@@ -101,13 +101,13 @@ fn multiple_build_slots_share_one_planet_spend_budget_per_turn() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(planet.build_queue[1].points_owed, 15);
-    assert_eq!(planet.build_queue[1].kind.to_raw(), 6);
+    assert_eq!(planet.build_queue[1].kind.code(), 6);
     assert_eq!(stored_production_points(planet), 178);
-    assert_eq!(stardock_slot_kind(planet, 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(planet, 0).code(), 1);
     assert_eq!(planet.stardock.destroyers, 5);
-    assert_eq!(stardock_slot_kind(planet, 5).to_raw(), 6);
+    assert_eq!(stardock_slot_kind(planet, 5).code(), 6);
     assert_eq!(planet.stardock.etacs, 1);
 }
 
@@ -125,7 +125,7 @@ fn capped_surface_build_keeps_full_stored_reserve() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 100);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 8);
+    assert_eq!(planet.build_queue[0].kind.code(), 8);
     assert_eq!(u8::try_from(planet.armies).unwrap_or(u8::MAX), u8::MAX);
     assert_eq!(stored_production_points(planet), 170);
 }
@@ -247,14 +247,14 @@ fn build_spending_is_capped_by_planet_treasury() {
     // Treasury 0: nothing is spent or delivered; revenue still lands.
     let broke = &game.planets[0];
     assert_eq!(broke.build_queue[0].points_owed, 100);
-    assert_eq!(broke.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(broke.build_queue[0].kind.code(), 1);
     assert_eq!(broke.stardock.destroyers, 0);
     assert_eq!(stored_production_points(broke), 50);
 
     // Treasury 30 < capacity 100: spend 30 and deliver 6 destroyers.
     let short = &game.planets[1];
     assert_eq!(short.build_queue[0].points_owed, 70);
-    assert_eq!(stardock_slot_kind(short, 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(short, 0).code(), 1);
     assert_eq!(short.stardock.destroyers, 6);
     assert_eq!(stored_production_points(short), 50);
 }

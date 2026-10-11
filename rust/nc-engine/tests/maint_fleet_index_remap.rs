@@ -269,7 +269,7 @@ fn join_resolves_by_fleet_number_when_host_number_differs_from_record_id() {
     assert!(
         events.fleet_merge_events.iter().any(|event| {
             event.kind == Mission::JoinAnotherFleet
-                && event.owner_empire_raw == 2
+                && event.owner_empire == 2
                 && event.host_fleet_number == 1
                 && event.absorbed_fleet_number == 2
         }),
@@ -328,7 +328,7 @@ fn move_report_names_mover_shifted_by_civil_disorder_defection() {
     let moves = events
         .mission_events
         .iter()
-        .filter(|event| event.kind == Mission::MoveOnly && event.owner_empire_raw == 2)
+        .filter(|event| event.kind == Mission::MoveOnly && event.owner_empire == 2)
         .collect::<Vec<_>>();
     assert_eq!(moves.len(), 1, "one move report: {moves:?}");
     assert_eq!(fleet_identity(&game_data, moves[0].fleet_idx), (2, 1));

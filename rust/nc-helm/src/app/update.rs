@@ -1712,8 +1712,8 @@ mod tests {
         assert!(matches!(
             draft.planets[0].actions.as_slice(),
             [PlanetTurnAction::Build {
-                points_remaining_raw: 5,
-                kind_raw: 1
+                points_remaining: 5,
+                kind: 1
             }]
         ));
     }
@@ -1798,7 +1798,7 @@ mod tests {
             Some(DiplomaticRelation::Enemy)
         );
         assert_eq!(draft.diplomacy.len(), 1);
-        assert_eq!(draft.diplomacy[0].to_empire_raw, target);
+        assert_eq!(draft.diplomacy[0].to_empire, target);
         assert_eq!(draft.diplomacy[0].relation, DiplomaticRelation::Enemy);
     }
 
@@ -1921,7 +1921,7 @@ mod tests {
             panic!("expected hosted draft save effect, got {:?}", effects);
         };
         assert_eq!(draft.messages.len(), 1);
-        assert_eq!(draft.messages[0].recipient_empire_raw, 2);
+        assert_eq!(draft.messages[0].recipient_empire, 2);
         assert_eq!(draft.messages[0].subject, "Hi");
         assert_eq!(draft.messages[0].body, "Move");
         assert!(
@@ -2222,8 +2222,8 @@ mod tests {
                 planets: vec![PlanetTurnBlock {
                     planet_record_index_1_based: 1,
                     actions: vec![PlanetTurnAction::Build {
-                        points_remaining_raw: 5,
-                        kind_raw: 1,
+                        points_remaining: 5,
+                        kind: 1,
                     }],
                 }],
                 fleets: Vec::new(),

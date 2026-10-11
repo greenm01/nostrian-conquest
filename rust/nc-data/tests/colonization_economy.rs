@@ -33,7 +33,7 @@ fn colonization_probe() -> (CoreGameData, usize) {
     game.set_fleet_order(
         fleet_idx + 1,
         3,
-        Order::ColonizeWorld.to_raw(),
+        Order::ColonizeWorld.code(),
         target_coords,
         None,
         None,
@@ -53,7 +53,7 @@ fn newly_colonized_active_planets_skip_same_turn_economics() {
             event,
             ColonizationResolvedEvent::Succeeded {
                 planet_idx,
-                colonizer_empire_raw: 1,
+                colonizer_empire: 1,
                 ..
             } if *planet_idx == target_idx
         )

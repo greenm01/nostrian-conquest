@@ -451,7 +451,7 @@ fn run_maintenance_for_dir(
     let mut player_war_stats = store.latest_player_war_stats(game_data.conquest.player_count)?;
     let mut all_events = MaintenanceEvents::default();
 
-    if winner_state.winner_empire_raw.is_some() {
+    if winner_state.winner_empire.is_some() {
         return Err("campaign winner has already been declared; maintenance is frozen".into());
     }
 
