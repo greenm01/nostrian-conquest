@@ -191,7 +191,11 @@ impl App {
                 config.player_record_index_1_based as u8,
                 &report_block_rows,
             ),
-            has_visible_runtime_messages(config.player_record_index_1_based as u8, &queued_mail),
+            has_visible_runtime_messages(
+                config.player_record_index_1_based as u8,
+                &queued_mail,
+                game_data.conquest.game_year,
+            ),
         );
         let startup_summary = StartupSummary::from_reports(
             main_menu_summary.game_year,

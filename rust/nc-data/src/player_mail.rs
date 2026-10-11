@@ -17,8 +17,24 @@ pub struct QueuedPlayerMail {
 }
 
 impl QueuedPlayerMail {
-    pub fn is_visible_to_recipient(&self, recipient_empire_id: u8) -> bool {
-        self.recipient_empire_id == recipient_empire_id && !self.recipient_deleted
+    /// Maintenance delivers mail. A message carries the year it was queued and
+    /// every maintenance advances the game year, so a message from an earlier
+    /// year has been delivered and one from the current year has not.
+    pub fn is_delivered(&self, current_year: u16) -> bool {
+        self.year < current_year
+    }
+
+    /// The sender's own message, queued this turn and not yet delivered: the
+    /// outbox and the inbox's outgoing rows list it, and it can be cancelled.
+    pub fn is_queued_by(&self, sender_empire_id: u8, current_year: u16) -> bool {
+        self.sender_empire_id == sender_empire_id && !self.is_delivered(current_year)
+    }
+
+    /// Delivered to this recipient and not deleted by them.
+    pub fn is_visible_to_recipient(&self, recipient_empire_id: u8, current_year: u16) -> bool {
+        self.recipient_empire_id == recipient_empire_id
+            && !self.recipient_deleted
+            && self.is_delivered(current_year)
     }
 
     pub fn mark_deleted_by_recipient(&mut self) {

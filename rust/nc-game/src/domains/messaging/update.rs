@@ -16,7 +16,6 @@ pub fn update(app: &mut App, action: MessagingAction) {
         MessagingAction::MoveInboxCursor(delta) => app.move_inbox_cursor(delta),
         MessagingAction::PageInboxCursor(delta) => app.page_inbox_cursor(delta),
         MessagingAction::ScrollInboxPreview(delta) => app.scroll_inbox_preview(delta),
-        MessagingAction::PageInboxPreview(delta) => app.page_inbox_preview(delta),
         MessagingAction::ToggleInboxFocus => app.toggle_inbox_focus(),
         MessagingAction::AppendInboxIdChar(ch) => app.append_inbox_id_char(ch),
         MessagingAction::BackspaceInboxIdInput => app.backspace_inbox_id_input(),
@@ -77,6 +76,12 @@ pub fn update(app: &mut App, action: MessagingAction) {
         }
         MessagingAction::AppendComposeOutboxChar(ch) => app.append_compose_outbox_char(ch),
         MessagingAction::BackspaceComposeOutboxInput => app.backspace_compose_outbox_input(),
+        MessagingAction::OpenComposeOutboxMessage => app.open_compose_outbox_message(),
+        MessagingAction::ScrollComposeOutboxMessage(delta) => {
+            app.scroll_compose_outbox_message(delta)
+        }
+        MessagingAction::OpenComposeOutboxDeleteConfirm => app.open_compose_outbox_delete_confirm(),
+        MessagingAction::ReturnToComposeOutboxList => app.return_to_compose_outbox_list(),
         MessagingAction::DeleteQueuedComposeMessage => {
             if let Err(err) = app.delete_queued_compose_message() {
                 app.log_action_error("delete_queued_compose_message", err.as_ref());

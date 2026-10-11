@@ -11,8 +11,12 @@ fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
 
+/// The fixture in 3004, so the 3003 mail below has been delivered.
 fn fixture_game_data() -> CoreGameData {
-    load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5")).expect("load fixture")
+    let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
+        .expect("load fixture");
+    game_data.conquest.game_year = 3004;
+    game_data
 }
 
 fn visible_mail(sender: u8, recipient: u8, year: u16, subject: &str) -> QueuedPlayerMail {

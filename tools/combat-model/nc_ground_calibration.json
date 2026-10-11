@@ -1,0 +1,3334 @@
+{
+  "method": "Exact finite-state enumeration in floating point, cap 64. Shared models also enumerate their longest path. Blitz uses existing planetary CRT, not the approved flat fleet table.",
+  "engine_validated": false,
+  "candidates": "Shared: one roll per side; fractional army damage carries within landing only; no free critical. Independent: each army fires once per round, attacker p=.30, defender p=.35. Mutual annihilation leaves owner with zero armies.",
+  "ground": [
+    {
+      "attackers": 5,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.0,
+          "rounds": 1.363,
+          "mutual": 0.0,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 0.0,
+          "defender_survivors": 9.5167
+        },
+        "vbam-first-carry": {
+          "capture": 3.4189646509731224e-11,
+          "rounds": 2.145074698504823,
+          "mutual": 0.0,
+          "maximum_rounds": 19,
+          "cap": 0.0,
+          "attacker_survivors": 3.5651857370731236e-11,
+          "defender_survivors": 9.709684664599166
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.0038055311999999997,
+          "rounds": 1.3993108528,
+          "mutual": 0.00343174032,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.0038055311999999997,
+          "defender_survivors": 6.4878352884799995
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.0013618688000000007,
+          "rounds": 1.2430761472000003,
+          "mutual": 0.001679943680000001,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.0013618688000000007,
+          "defender_survivors": 6.7105575475200006
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.0,
+          "rounds": 1.2000000000000002,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 0.0,
+          "defender_survivors": 6.22
+        },
+        "independent-30-35": {
+          "capture": 0.0005918581835355555,
+          "rounds": 1.9621549082653074,
+          "mutual": 8.348191335246565e-05,
+          "cap": 8.833867713188133e-24
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        }
+      }
+    },
+    {
+      "attackers": 6,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.0,
+          "rounds": 1.7373184000000004,
+          "mutual": 0.0,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 0.0,
+          "defender_survivors": 9.01110064
+        },
+        "vbam-first-carry": {
+          "capture": 7.000685249930594e-06,
+          "rounds": 2.571918023024878,
+          "mutual": 0.0,
+          "maximum_rounds": 23,
+          "cap": 0.0,
+          "attacker_survivors": 1.1158854692336986e-05,
+          "defender_survivors": 9.281579663303685
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.043199277962399994,
+          "rounds": 1.7315100493360003,
+          "mutual": 0.0267574628964,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 0.09143997276239998,
+          "defender_survivors": 5.3594717707012
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.021881065945600003,
+          "rounds": 1.5613115326080003,
+          "mutual": 0.020277434176000007,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 0.045907421145600015,
+          "defender_survivors": 5.685389881318399
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.007360000000000003,
+          "rounds": 1.5664000000000002,
+          "mutual": 0.012384000000000003,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.007360000000000003,
+          "defender_survivors": 5.30976
+        },
+        "independent-30-35": {
+          "capture": 0.004893243171624977,
+          "rounds": 2.3846265100335438,
+          "mutual": 0.0005359403239525205,
+          "cap": 5.46777595992372e-23
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 7,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.020134186911399597,
+          "rounds": 1.8156977521391648,
+          "mutual": 0.0,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 0.05100468839139961,
+          "defender_survivors": 8.4814472853606
+        },
+        "vbam-first-carry": {
+          "capture": 0.00068536330752508,
+          "rounds": 3.0516651226554683,
+          "mutual": 0.0,
+          "maximum_rounds": 25,
+          "cap": 0.0,
+          "attacker_survivors": 0.0014957591326321656,
+          "defender_survivors": 8.588285611411157
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.137489167812,
+          "rounds": 1.9137272416180002,
+          "mutual": 0.0195419657799,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 0.31273789981199995,
+          "defender_survivors": 4.4414391041181
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.08441190857600002,
+          "rounds": 1.6977943650240004,
+          "mutual": 0.0154911309504,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 0.17764669257600002,
+          "defender_survivors": 4.8596448875136
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.05048000000000001,
+          "rounds": 1.62072,
+          "mutual": 0.02832,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.07936000000000001,
+          "defender_survivors": 4.375439999999999
+        },
+        "independent-30-35": {
+          "capture": 0.023837373591421025,
+          "rounds": 2.874721942710962,
+          "mutual": 0.00198883491437078,
+          "cap": 2.0737489566365047e-22
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 8,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.06522484431708443,
+          "rounds": 1.9987419135095457,
+          "mutual": 0.0,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 0.2263813597306844,
+          "defender_survivors": 7.825303644950916
+        },
+        "vbam-first-carry": {
+          "capture": 0.008669628173244128,
+          "rounds": 3.6436438048140944,
+          "mutual": 0.0,
+          "maximum_rounds": 27,
+          "cap": 0.0,
+          "attacker_survivors": 0.02309405234084169,
+          "defender_survivors": 7.686078973422747
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.2614513842743259,
+          "rounds": 1.9121134602102847,
+          "mutual": 0.032037529370962145,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 0.8236290862823259,
+          "defender_survivors": 3.3670017116835123
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.18756063828369152,
+          "rounds": 1.7124828164579333,
+          "mutual": 0.0301719608557248,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 0.5402263121236917,
+          "defender_survivors": 3.785227784553383
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.196616,
+          "rounds": 1.6401792000000002,
+          "mutual": 0.02167728,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 0.44408800000000004,
+          "defender_survivors": 3.6720064
+        },
+        "independent-30-35": {
+          "capture": 0.0777151734620295,
+          "rounds": 3.430656080327073,
+          "mutual": 0.00481244336410389,
+          "cap": 5.346386668700781e-22
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.2
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.2
+        }
+      }
+    },
+    {
+      "attackers": 9,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.1391947566106938,
+          "rounds": 2.0126514915660945,
+          "mutual": 0.0,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 0.5806605171056209,
+          "defender_survivors": 7.157843686014597
+        },
+        "vbam-first-carry": {
+          "capture": 0.04838429377661112,
+          "rounds": 4.343216302926103,
+          "mutual": 0.0,
+          "maximum_rounds": 28,
+          "cap": 0.0,
+          "attacker_survivors": 0.15775038616448092,
+          "defender_survivors": 6.505829344025521
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.33979863238574753,
+          "rounds": 1.8486284415292116,
+          "mutual": 0.007500825888088878,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 1.4702320599618577,
+          "defender_survivors": 2.8089664561459635
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.25753005235946663,
+          "rounds": 1.6568220868700236,
+          "mutual": 0.004841171347917312,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 1.0633081303825067,
+          "defender_survivors": 3.242142215825416
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.25640235200000006,
+          "rounds": 1.6436810880000001,
+          "mutual": 0.016539119999999997,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.8638448320000001,
+          "defender_survivors": 2.718242528
+        },
+        "independent-30-35": {
+          "capture": 0.18517620276942165,
+          "rounds": 3.969879270684545,
+          "mutual": 0.008236719044276303,
+          "cap": 1.0044995894130847e-21
+        },
+        "current": {
+          "capture": 0.02,
+          "rounds": 1.08,
+          "mutual": 0.21
+        },
+        "current-defender-tie": {
+          "capture": 0.02,
+          "rounds": 1.08,
+          "mutual": 0.21
+        }
+      }
+    },
+    {
+      "attackers": 10,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.19937982784794422,
+          "rounds": 2.104158491080634,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 1.073653799571476,
+          "defender_survivors": 6.474795711812509
+        },
+        "vbam-first-carry": {
+          "capture": 0.1515689052741916,
+          "rounds": 5.060500124239733,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 0.5742030472710814,
+          "defender_survivors": 5.058968605544282
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.398688302763197,
+          "rounds": 1.6083867242859327,
+          "mutual": 0.20262339447360606,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 2.164484130804644,
+          "defender_survivors": 2.164484130804644
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.2999493386313213,
+          "rounds": 1.4699268652785284,
+          "mutual": 0.24135274428334866,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 1.5951326004311932,
+          "defender_survivors": 2.5677299012576817
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.299334152,
+          "rounds": 1.451104888,
+          "mutual": 0.24371096,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 1.410938432,
+          "defender_survivors": 2.237522328
+        },
+        "independent-30-35": {
+          "capture": 0.3446219932307518,
+          "rounds": 4.3564660108089965,
+          "mutual": 0.010572483642303837,
+          "cap": 1.4454128309960753e-21
+        },
+        "current": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.7290000000000001
+        },
+        "current-defender-tie": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.7290000000000001
+        }
+      }
+    },
+    {
+      "attackers": 11,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.27564023713537944,
+          "rounds": 2.5769737756618896,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 1.6503083340764535,
+          "defender_survivors": 5.653394023233446
+        },
+        "vbam-first-carry": {
+          "capture": 0.3421594223961562,
+          "rounds": 5.538799606390712,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 1.52924510752314,
+          "defender_survivors": 3.44364620042108
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.6328580653810628,
+          "rounds": 1.8698935569538828,
+          "mutual": 0.008817212396813077,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 2.8863957404443896,
+          "defender_survivors": 1.7400889257360341
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.5656814062407636,
+          "rounds": 1.8068166447388345,
+          "mutual": 0.008611736326879681,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 2.219900245886972,
+          "defender_survivors": 2.104389486590117
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.59270056,
+          "rounds": 1.778649784,
+          "mutual": 0.010909944,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 2.184265776,
+          "defender_survivors": 1.624824216
+        },
+        "independent-30-35": {
+          "capture": 0.5285472857475075,
+          "rounds": 4.489422764384101,
+          "mutual": 0.010633199385751486,
+          "cap": 1.6530776129751438e-21
+        },
+        "current": {
+          "capture": 0.83,
+          "rounds": 1.1,
+          "mutual": 0.436
+        },
+        "current-defender-tie": {
+          "capture": 0.426,
+          "rounds": 1.1,
+          "mutual": 0.436
+        }
+      }
+    },
+    {
+      "attackers": 12,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.38258824681349907,
+          "rounds": 2.3452884779586674,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 2.572768302314152,
+          "defender_survivors": 4.879146992201278
+        },
+        "vbam-first-carry": {
+          "capture": 0.5689342303066579,
+          "rounds": 5.559414283660918,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 3.0162947924257666,
+          "defender_survivors": 2.0167051374762472
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.684183934747967,
+          "rounds": 1.9048213640649405,
+          "mutual": 0.02352250960346299,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 3.840372795005787,
+          "defender_survivors": 1.20021363568059
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.6145026869021184,
+          "rounds": 1.8395878901951543,
+          "mutual": 0.027501719368822224,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 3.058248721997638,
+          "defender_survivors": 1.4982843834927395
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.617145028,
+          "rounds": 1.7591540319999999,
+          "mutual": 0.02959506,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 2.8902832480000002,
+          "defender_survivors": 1.3645567920000001
+        },
+        "independent-30-35": {
+          "capture": 0.6991982901105933,
+          "rounds": 4.365342841184016,
+          "mutual": 0.008666918536240657,
+          "cap": 1.54634929339312e-21
+        },
+        "current": {
+          "capture": 0.8608,
+          "rounds": 1.1002,
+          "mutual": 0.42632
+        },
+        "current-defender-tie": {
+          "capture": 0.44480000000000003,
+          "rounds": 1.1002,
+          "mutual": 0.42632
+        }
+      }
+    },
+    {
+      "attackers": 13,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.4300209141537118,
+          "rounds": 2.4344904899403157,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 3.3117640286817376,
+          "defender_survivors": 4.216063657165186
+        },
+        "vbam-first-carry": {
+          "capture": 0.7751879977087639,
+          "rounds": 5.155265920148182,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 4.907227822749172,
+          "defender_survivors": 0.9545525236379804
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.7505976850068127,
+          "rounds": 1.9405384925055065,
+          "mutual": 0.01463758534557018,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 4.692520903798322,
+          "defender_survivors": 0.8312763622063171
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.6800556277773366,
+          "rounds": 1.8927804417431107,
+          "mutual": 0.016977497807089438,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 3.8218746804510966,
+          "defender_survivors": 1.079697200558774
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.7098836499999999,
+          "rounds": 1.8188083000000002,
+          "mutual": 0.05831535,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 3.8475992000000003,
+          "defender_survivors": 0.678201
+        },
+        "independent-30-35": {
+          "capture": 0.8300220972744157,
+          "rounds": 4.065925554931603,
+          "mutual": 0.005878862488013699,
+          "cap": 1.21040114737413e-21
+        },
+        "current": {
+          "capture": 0.92,
+          "rounds": 1.05,
+          "mutual": 0.48
+        },
+        "current-defender-tie": {
+          "capture": 0.467,
+          "rounds": 1.05,
+          "mutual": 0.48
+        }
+      }
+    },
+    {
+      "attackers": 14,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.4825397154090481,
+          "rounds": 2.485249975764879,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 4.1679614722673985,
+          "defender_survivors": 3.412292643952778
+        },
+        "vbam-first-carry": {
+          "capture": 0.902146608321715,
+          "rounds": 4.579308671754423,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 6.758094448495148,
+          "defender_survivors": 0.38310249672564956
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.8340655907981328,
+          "rounds": 1.9551530411380593,
+          "mutual": 0.014149822228576199,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 5.822663849698433,
+          "defender_survivors": 0.5087030812722909
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.7787217842574832,
+          "rounds": 1.9487934996333327,
+          "mutual": 0.0188076828259536,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 4.8830495575786825,
+          "defender_survivors": 0.6856691026705632
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.7854220000000001,
+          "rounds": 1.8618130000000002,
+          "mutual": 0.04092,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 4.715832,
+          "defender_survivors": 0.466683
+        },
+        "independent-30-35": {
+          "capture": 0.9146996404429896,
+          "rounds": 3.6980237872300905,
+          "mutual": 0.003389648435834267,
+          "cap": 8.075878153949433e-22
+        },
+        "current": {
+          "capture": 0.9473,
+          "rounds": 1.0715000000000001,
+          "mutual": 0.28585
+        },
+        "current-defender-tie": {
+          "capture": 0.66265,
+          "rounds": 1.0715000000000001,
+          "mutual": 0.28585
+        }
+      }
+    },
+    {
+      "attackers": 15,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.5610739725819514,
+          "rounds": 2.4427422014536067,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 5.084281434562819,
+          "defender_survivors": 2.722956229834567
+        },
+        "vbam-first-carry": {
+          "capture": 0.9656971414648208,
+          "rounds": 4.033704211058439,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 8.474684257818945,
+          "defender_survivors": 0.12346433892445685
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.8881512475981732,
+          "rounds": 1.859850241127883,
+          "mutual": 0.0126505913591016,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 6.847190049130173,
+          "defender_survivors": 0.2936887609587252
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.842590858530256,
+          "rounds": 1.8554736667623042,
+          "mutual": 0.017928749281607998,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 5.857510264490256,
+          "defender_survivors": 0.41721260694813594
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.8781325,
+          "rounds": 1.7754895000000002,
+          "mutual": 0.008107199999999998,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 5.954026000000001,
+          "defender_survivors": 0.25810949999999994
+        },
+        "independent-30-35": {
+          "capture": 0.9618002730019833,
+          "rounds": 3.342407127201339,
+          "mutual": 0.0016901167180730233,
+          "cap": 4.663594129548652e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.3
+        },
+        "current-defender-tie": {
+          "capture": 0.7,
+          "rounds": 1.0,
+          "mutual": 0.3
+        }
+      }
+    },
+    {
+      "attackers": 16,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.6561792008231554,
+          "rounds": 2.456107286165624,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 6.1117745719609875,
+          "defender_survivors": 1.9454996674929985
+        },
+        "vbam-first-carry": {
+          "capture": 0.9889040767907766,
+          "rounds": 3.5911433374175608,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 10.027432259763053,
+          "defender_survivors": 0.03771081511559697
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9253686651510711,
+          "rounds": 1.8042736987961518,
+          "mutual": 0.02525408579133387,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 8.146597831415072,
+          "defender_survivors": 0.16305101382959508
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.8910287622627482,
+          "rounds": 1.8027777308833544,
+          "mutual": 0.03749089457674128,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 7.148486146262749,
+          "defender_survivors": 0.24199852240051054
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.8930528799999999,
+          "rounds": 1.71717172,
+          "mutual": 0.040769400000000004,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 6.931554080000001,
+          "defender_survivors": 0.19290131999999996
+        },
+        "independent-30-35": {
+          "capture": 0.984646300806823,
+          "rounds": 3.0379349190845426,
+          "mutual": 0.0007391239104958153,
+          "cap": 2.3608861179040483e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 17,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.7724770683590622,
+          "rounds": 2.3112013218590097,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 7.475335380728977,
+          "defender_survivors": 1.4002465403918183
+        },
+        "vbam-first-carry": {
+          "capture": 0.9969137662784302,
+          "rounds": 3.258036327201718,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 11.489513398528612,
+          "defender_survivors": 0.00984862807769588
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9609653646756122,
+          "rounds": 1.7618792768784344,
+          "mutual": 0.003558212584771464,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 9.20231001159241,
+          "defender_survivors": 0.09021368088401624
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9402324775649862,
+          "rounds": 1.7715014821494075,
+          "mutual": 0.005286626916433919,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 8.190897253104987,
+          "defender_survivors": 0.14084894019057986
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.9723565000000001,
+          "rounds": 1.7509075,
+          "mutual": 0.004554,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 8.24733,
+          "defender_survivors": 0.033889499999999996
+        },
+        "independent-30-35": {
+          "capture": 0.9944283508211822,
+          "rounds": 2.7917536638321314,
+          "mutual": 0.0002868531314446855,
+          "cap": 1.0591442061637343e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 18,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.8226476775183568,
+          "rounds": 2.2631751197759202,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 8.813782103870091,
+          "defender_survivors": 0.9719227628489087
+        },
+        "vbam-first-carry": {
+          "capture": 0.9992534395118939,
+          "rounds": 2.995526727155959,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 12.849677803384264,
+          "defender_survivors": 0.0022428239072688903
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9751536165217852,
+          "rounds": 1.758093526299843,
+          "mutual": 0.0044162355340296,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 10.419833478682186,
+          "defender_survivors": 0.0413805639441852
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.958483441588384,
+          "rounds": 1.771285091022376,
+          "mutual": 0.007788955784472,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 9.419439514176386,
+          "defender_survivors": 0.06850135262714399
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.9836199999999999,
+          "rounds": 1.7489050000000002,
+          "mutual": 0.0072,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 9.25192,
+          "defender_survivors": 0.012554999999999997
+        },
+        "independent-30-35": {
+          "capture": 0.9981640157888295,
+          "rounds": 2.5958389447704118,
+          "mutual": 9.977709631554902e-05,
+          "cap": 4.2499251042270486e-23
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 19,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.865856319578035,
+          "rounds": 2.224039621002439,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 10.096984057496286,
+          "defender_survivors": 0.7002436011916555
+        },
+        "vbam-first-carry": {
+          "capture": 0.9998413749935144,
+          "rounds": 2.805060147746869,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 14.11489019094251,
+          "defender_survivors": 0.0004502842245034446
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9910941881531536,
+          "rounds": 1.7405570983903504,
+          "mutual": 0.0032676790472928006,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 11.502984933273154,
+          "defender_survivors": 0.011598605279553599
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.98387321658184,
+          "rounds": 1.75176027664576,
+          "mutual": 0.005905559178719999,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 10.50819273408184,
+          "defender_survivors": 0.02161039123944
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.3967500000000002,
+          "mutual": 0.0,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 10.64075,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9994476554483058,
+          "rounds": 2.438567943022278,
+          "mutual": 3.1366493139792975e-05,
+          "cap": 1.537512048187476e-23
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 20,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.9176105710029712,
+          "rounds": 1.9745505820005325,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 11.425912738469632,
+          "defender_survivors": 0.4362950164410016
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999729510174057,
+          "rounds": 2.6527778380941514,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 15.327832714701449,
+          "defender_survivors": 7.276603275388213e-05
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9991315274176,
+          "rounds": 1.4019173023359999,
+          "mutual": 0.0004118088384,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 12.878510234617597,
+          "defender_survivors": 0.00045666374399999996
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9979092172000001,
+          "rounds": 1.4052762490000001,
+          "mutual": 0.00097786305,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 11.937203517199999,
+          "defender_survivors": 0.0011129197499999998
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.372,
+          "mutual": 0.0,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 11.6655,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9998475374972003,
+          "rounds": 2.3097754701113864,
+          "mutual": 8.975784163791197e-06,
+          "cap": 5.049795840590773e-24
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        },
+        "current-defender-tie": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        }
+      }
+    }
+  ],
+  "scale": [
+    {
+      "attackers": 1,
+      "defenders": 1,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.335661,
+          "rounds": 1.4336290000000003,
+          "mutual": 0.0,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.335661,
+          "defender_survivors": 0.664339
+        },
+        "vbam-first-carry": {
+          "capture": 0.30489557496414055,
+          "rounds": 3.36114665684232,
+          "mutual": 0.0,
+          "maximum_rounds": 10,
+          "cap": 0.0,
+          "attacker_survivors": 0.30489557496414055,
+          "defender_survivors": 0.6951044250358607
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.335661,
+          "rounds": 1.4336290000000003,
+          "mutual": 0.328678,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.335661,
+          "defender_survivors": 0.335661
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.254744,
+          "rounds": 1.343416,
+          "mutual": 0.349352,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.254744,
+          "defender_survivors": 0.395904
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 1.0,
+          "maximum_rounds": 1,
+          "cap": 0.0,
+          "attacker_survivors": 0.0,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.35779816513761464,
+          "rounds": 1.8348623853211006,
+          "mutual": 0.19266055045871555,
+          "cap": 1.296371235261546e-22
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 1.0
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 1.0
+        }
+      }
+    },
+    {
+      "attackers": 2,
+      "defenders": 1,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.8506155999999999,
+          "rounds": 1.5174159999999999,
+          "mutual": 0.0,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 1.3516156000000001,
+          "defender_survivors": 0.1493844
+        },
+        "vbam-first-carry": {
+          "capture": 0.9996340448203341,
+          "rounds": 2.102874920393811,
+          "mutual": 0.0,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 1.9216627808203348,
+          "defender_survivors": 0.0003659551796666303
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.94012,
+          "rounds": 1.3216,
+          "mutual": 0.04548,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 1.4411200000000002,
+          "defender_survivors": 0.0144
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9097,
+          "rounds": 1.3225000000000002,
+          "mutual": 0.0678,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 1.3076999999999999,
+          "defender_survivors": 0.0225
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0,
+          "maximum_rounds": 1,
+          "cap": 0.0,
+          "attacker_survivors": 1.0,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.8383894135305956,
+          "rounds": 1.9290959634373712,
+          "mutual": 0.04848317594082128,
+          "cap": 1.6287741160572939e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.5
+        },
+        "current-defender-tie": {
+          "capture": 0.5,
+          "rounds": 1.0,
+          "mutual": 0.5
+        }
+      }
+    },
+    {
+      "attackers": 3,
+      "defenders": 1,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.99424,
+          "rounds": 1.3144000000000002,
+          "mutual": 0.0,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 2.44724,
+          "defender_survivors": 0.0057599999999999995
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999999999900007,
+          "rounds": 1.7514410210000007,
+          "mutual": 0.0,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 2.9732220139900014,
+          "defender_survivors": 1.000000000000001e-11
+        },
+        "eots-simultaneous-carry": {
+          "capture": 1.0,
+          "rounds": 1.3000000000000003,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 2.4530000000000003,
+          "defender_survivors": 0.0
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 1.0,
+          "rounds": 1.3,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 2.323,
+          "defender_survivors": 0.0
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0,
+          "maximum_rounds": 1,
+          "cap": 0.0,
+          "attacker_survivors": 2.0,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.975032043104495,
+          "rounds": 1.5849533111262546,
+          "mutual": 0.0074903870686514286,
+          "cap": 8.426387960600068e-23
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 2,
+      "defenders": 2,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.2379974871,
+          "rounds": 1.7108051448999997,
+          "mutual": 0.0,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.37689748710000004,
+          "defender_survivors": 1.3620725129
+        },
+        "vbam-first-carry": {
+          "capture": 0.22987488964122077,
+          "rounds": 4.076952945901132,
+          "mutual": 0.0,
+          "maximum_rounds": 15,
+          "cap": 0.0,
+          "attacker_survivors": 0.26714786878322083,
+          "defender_survivors": 1.1216851914522206
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.38192554409999996,
+          "rounds": 1.4974440048999997,
+          "mutual": 0.23614891180000003,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.5208255441,
+          "defender_survivors": 0.5208255441
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.2889140384,
+          "rounds": 1.3900857376000002,
+          "mutual": 0.2663281472,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 0.37731403840000005,
+          "defender_survivors": 0.6163578144
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.2,
+          "rounds": 1.3000000000000003,
+          "mutual": 0.5,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 0.2,
+          "defender_survivors": 0.3
+        },
+        "independent-30-35": {
+          "capture": 0.3915376019281285,
+          "rounds": 2.6270239913631546,
+          "mutual": 0.08093132372732265,
+          "cap": 3.092261662027926e-22
+        },
+        "current": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.9
+        },
+        "current-defender-tie": {
+          "capture": 0.0,
+          "rounds": 1.0,
+          "mutual": 0.9
+        }
+      }
+    },
+    {
+      "attackers": 3,
+      "defenders": 2,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.55628903487,
+          "rounds": 2.0920680896,
+          "mutual": 0.0,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 1.1279591348699998,
+          "defender_survivors": 0.68578096513
+        },
+        "vbam-first-carry": {
+          "capture": 0.9504454085887413,
+          "rounds": 3.387689948875358,
+          "mutual": 0.0,
+          "maximum_rounds": 15,
+          "cap": 0.0,
+          "attacker_survivors": 1.9326293725954644,
+          "defender_survivors": 0.0551947898664596
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.773267053,
+          "rounds": 1.7274028300000002,
+          "mutual": 0.092041977,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 1.3642880530000001,
+          "defender_survivors": 0.13469097
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.7000457920000001,
+          "rounds": 1.7043666400000002,
+          "mutual": 0.116328348,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 1.129961792,
+          "defender_survivors": 0.18362585999999997
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.8500000000000001,
+          "rounds": 1.3,
+          "mutual": 0.15,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 1.2,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.7590351385142825,
+          "rounds": 2.648918701338717,
+          "mutual": 0.04165623686598513,
+          "cap": 3.4823157182081046e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.5
+        },
+        "current-defender-tie": {
+          "capture": 0.5,
+          "rounds": 1.0,
+          "mutual": 0.5
+        }
+      }
+    },
+    {
+      "attackers": 4,
+      "defenders": 2,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.88429771996,
+          "rounds": 1.7411316460000001,
+          "mutual": 0.0,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 2.4025738199599997,
+          "defender_survivors": 0.17126228004
+        },
+        "vbam-first-carry": {
+          "capture": 0.9997914989105678,
+          "rounds": 2.3061162269600035,
+          "mutual": 0.0,
+          "maximum_rounds": 15,
+          "cap": 0.0,
+          "attacker_survivors": 3.412921918055827,
+          "defender_survivors": 0.00021344837633307989
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9928144,
+          "rounds": 1.3655920000000001,
+          "mutual": 0.0054576,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 2.7207044,
+          "defender_survivors": 0.001728
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9864550000000001,
+          "rounds": 1.375375,
+          "mutual": 0.01017,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 2.487225,
+          "defender_survivors": 0.003375
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.3,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 2.2,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9360336693115707,
+          "rounds": 2.2193877786961353,
+          "mutual": 0.012139663724061093,
+          "cap": 2.1283741039992497e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 5,
+      "defenders": 2,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.9726622864,
+          "rounds": 1.5277474576000003,
+          "mutual": 0.0,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 3.5720730864,
+          "defender_survivors": 0.027337713600000004
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999999390729999,
+          "rounds": 1.8457437630896834,
+          "mutual": 0.0,
+          "maximum_rounds": 14,
+          "cap": 0.0,
+          "attacker_survivors": 4.620393728967747,
+          "defender_survivors": 6.092700074269215e-08
+        },
+        "eots-simultaneous-carry": {
+          "capture": 1.0,
+          "rounds": 1.3000000000000003,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 3.7529999999999992,
+          "defender_survivors": 0.0
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 1.0,
+          "rounds": 1.3,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 3.5320000000000005,
+          "defender_survivors": 0.0
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0,
+          "maximum_rounds": 1,
+          "cap": 0.0,
+          "attacker_survivors": 3.5000000000000004,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.987742949062353,
+          "rounds": 1.828367105045146,
+          "mutual": 0.002417856952268823,
+          "cap": 8.244518189906265e-23
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        },
+        "current-defender-tie": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        }
+      }
+    },
+    {
+      "attackers": 5,
+      "defenders": 5,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.2259258624751899,
+          "rounds": 2.0248939107434523,
+          "mutual": 0.0,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 0.6430676193451899,
+          "defender_survivors": 3.1853113159548103
+        },
+        "vbam-first-carry": {
+          "capture": 0.1800527962798288,
+          "rounds": 4.788580512112822,
+          "mutual": 0.0,
+          "maximum_rounds": 22,
+          "cap": 0.0,
+          "attacker_survivors": 0.38100566085082216,
+          "defender_survivors": 2.544604814954326
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.39297926654494886,
+          "rounds": 1.5870395395485721,
+          "mutual": 0.21404146691010223,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 1.1255792527449489,
+          "defender_survivors": 1.1255792527449489
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.2951296311090944,
+          "rounds": 1.4555706179593215,
+          "mutual": 0.25056063092779524,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 0.8443473399090945,
+          "defender_survivors": 1.3397496651631102
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.28532,
+          "rounds": 1.3820800000000002,
+          "mutual": 0.2804,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 0.5911200000000001,
+          "defender_survivors": 0.93648
+        },
+        "independent-30-35": {
+          "capture": 0.3795262980130808,
+          "rounds": 3.681498284139622,
+          "mutual": 0.025376242813814086,
+          "cap": 7.948791502067351e-22
+        },
+        "current": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.732
+        },
+        "current-defender-tie": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.732
+        }
+      }
+    },
+    {
+      "attackers": 8,
+      "defenders": 5,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.6424555574390841,
+          "rounds": 2.373070315850035,
+          "mutual": 0.0,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 3.1712759425190837,
+          "defender_survivors": 1.1019736018309159
+        },
+        "vbam-first-carry": {
+          "capture": 0.9847879580095711,
+          "rounds": 3.475792590072565,
+          "mutual": 0.0,
+          "maximum_rounds": 23,
+          "cap": 0.0,
+          "attacker_survivors": 5.157437930876638,
+          "defender_survivors": 0.02934046644610898
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.92533113279628,
+          "rounds": 1.7630059804529203,
+          "mutual": 0.027454646407440008,
+          "maximum_rounds": 8,
+          "cap": 0.0,
+          "attacker_survivors": 4.248559528796281,
+          "defender_survivors": 0.09688482479628
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.8919083125456,
+          "rounds": 1.7609045176384002,
+          "mutual": 0.0396112075248,
+          "maximum_rounds": 8,
+          "cap": 0.0,
+          "attacker_survivors": 3.7397340725456005,
+          "defender_survivors": 0.1444082599296
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.8908,
+          "rounds": 1.6927,
+          "mutual": 0.048,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 3.1128,
+          "defender_survivors": 0.08369999999999998
+        },
+        "independent-30-35": {
+          "capture": 0.9329784999517761,
+          "rounds": 3.011516221369899,
+          "mutual": 0.005636764763064624,
+          "cap": 4.2006583351446804e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.3
+        },
+        "current-defender-tie": {
+          "capture": 0.7,
+          "rounds": 1.0,
+          "mutual": 0.3
+        }
+      }
+    },
+    {
+      "attackers": 10,
+      "defenders": 5,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.9096053938899241,
+          "rounds": 1.9330963652874569,
+          "mutual": 0.0,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 5.856025705261923,
+          "defender_survivors": 0.25725130885807596
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999299938312947,
+          "rounds": 2.561756266321047,
+          "mutual": 0.0,
+          "maximum_rounds": 22,
+          "cap": 0.0,
+          "attacker_survivors": 7.834303341053548,
+          "defender_survivors": 0.00011158783388622248
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.99276272848,
+          "rounds": 1.3993108528,
+          "mutual": 0.00343174032,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 6.4878352884799995,
+          "defender_survivors": 0.0038055311999999997
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9860614480000001,
+          "rounds": 1.40184166,
+          "mutual": 0.006519087000000001,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 6.002823448,
+          "defender_survivors": 0.007419464999999999
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.3,
+          "mutual": 0.0,
+          "maximum_rounds": 2,
+          "cap": 0.0,
+          "attacker_survivors": 5.75,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9941517782103455,
+          "rounds": 2.3163272660039507,
+          "mutual": 0.0005720338026297642,
+          "cap": 7.571562970965139e-23
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.1
+        },
+        "current-defender-tie": {
+          "capture": 0.9,
+          "rounds": 1.0,
+          "mutual": 0.1
+        }
+      }
+    },
+    {
+      "attackers": 10,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.19937982784794422,
+          "rounds": 2.104158491080634,
+          "mutual": 0.0,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 1.073653799571476,
+          "defender_survivors": 6.474795711812509
+        },
+        "vbam-first-carry": {
+          "capture": 0.1515689052741916,
+          "rounds": 5.060500124239733,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 0.5742030472710814,
+          "defender_survivors": 5.058968605544282
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.398688302763197,
+          "rounds": 1.6083867242859327,
+          "mutual": 0.20262339447360606,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 2.164484130804644,
+          "defender_survivors": 2.164484130804644
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.2999493386313213,
+          "rounds": 1.4699268652785284,
+          "mutual": 0.24135274428334866,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 1.5951326004311932,
+          "defender_survivors": 2.5677299012576817
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.299334152,
+          "rounds": 1.451104888,
+          "mutual": 0.24371096,
+          "maximum_rounds": 6,
+          "cap": 0.0,
+          "attacker_survivors": 1.410938432,
+          "defender_survivors": 2.237522328
+        },
+        "independent-30-35": {
+          "capture": 0.3446219932307518,
+          "rounds": 4.3564660108089965,
+          "mutual": 0.010572483642303837,
+          "cap": 1.4454128309960753e-21
+        },
+        "current": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.7290000000000001
+        },
+        "current-defender-tie": {
+          "capture": 0.08,
+          "rounds": 1.02,
+          "mutual": 0.7290000000000001
+        }
+      }
+    },
+    {
+      "attackers": 15,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.5610739725819514,
+          "rounds": 2.4427422014536067,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 5.084281434562819,
+          "defender_survivors": 2.722956229834567
+        },
+        "vbam-first-carry": {
+          "capture": 0.9656971414648208,
+          "rounds": 4.033704211058439,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 8.474684257818945,
+          "defender_survivors": 0.12346433892445685
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.8881512475981732,
+          "rounds": 1.859850241127883,
+          "mutual": 0.0126505913591016,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 6.847190049130173,
+          "defender_survivors": 0.2936887609587252
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.842590858530256,
+          "rounds": 1.8554736667623042,
+          "mutual": 0.017928749281607998,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 5.857510264490256,
+          "defender_survivors": 0.41721260694813594
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.8781325,
+          "rounds": 1.7754895000000002,
+          "mutual": 0.008107199999999998,
+          "maximum_rounds": 5,
+          "cap": 0.0,
+          "attacker_survivors": 5.954026000000001,
+          "defender_survivors": 0.25810949999999994
+        },
+        "independent-30-35": {
+          "capture": 0.9618002730019833,
+          "rounds": 3.342407127201339,
+          "mutual": 0.0016901167180730233,
+          "cap": 4.663594129548652e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.3
+        },
+        "current-defender-tie": {
+          "capture": 0.7,
+          "rounds": 1.0,
+          "mutual": 0.3
+        }
+      }
+    },
+    {
+      "attackers": 20,
+      "defenders": 10,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.9176105710029712,
+          "rounds": 1.9745505820005325,
+          "mutual": 0.0,
+          "maximum_rounds": 12,
+          "cap": 0.0,
+          "attacker_survivors": 11.425912738469632,
+          "defender_survivors": 0.4362950164410016
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999729510174057,
+          "rounds": 2.6527778380941514,
+          "mutual": 0.0,
+          "maximum_rounds": 29,
+          "cap": 0.0,
+          "attacker_survivors": 15.327832714701449,
+          "defender_survivors": 7.276603275388213e-05
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9991315274176,
+          "rounds": 1.4019173023359999,
+          "mutual": 0.0004118088384,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 12.878510234617597,
+          "defender_survivors": 0.00045666374399999996
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.9979092172000001,
+          "rounds": 1.4052762490000001,
+          "mutual": 0.00097786305,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 11.937203517199999,
+          "defender_survivors": 0.0011129197499999998
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.372,
+          "mutual": 0.0,
+          "maximum_rounds": 3,
+          "cap": 0.0,
+          "attacker_survivors": 11.6655,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9998475374972003,
+          "rounds": 2.3097754701113864,
+          "mutual": 8.975784163791197e-06,
+          "cap": 5.049795840590773e-24
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        },
+        "current-defender-tie": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        }
+      }
+    },
+    {
+      "attackers": 20,
+      "defenders": 20,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.1900640589283935,
+          "rounds": 2.141651402381127,
+          "mutual": 0.0,
+          "maximum_rounds": 13,
+          "cap": 0.0,
+          "attacker_survivors": 1.8712338555447345,
+          "defender_survivors": 13.064600005982387
+        },
+        "vbam-first-carry": {
+          "capture": 0.15270108691903309,
+          "rounds": 5.2221398264406815,
+          "mutual": 0.0,
+          "maximum_rounds": 35,
+          "cap": 0.0,
+          "attacker_survivors": 1.1301822819038185,
+          "defender_survivors": 9.851020568224534
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.40081295366507563,
+          "rounds": 1.6248114409018992,
+          "mutual": 0.19837409266984873,
+          "maximum_rounds": 13,
+          "cap": 0.0,
+          "attacker_survivors": 4.131651113406736,
+          "defender_survivors": 4.131651113406735
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.30085394589546194,
+          "rounds": 1.4802218560713607,
+          "mutual": 0.23793095993825306,
+          "maximum_rounds": 13,
+          "cap": 0.0,
+          "attacker_survivors": 3.0551790517930897,
+          "defender_survivors": 4.9060692566914605
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.30200899734963205,
+          "rounds": 1.468746429639808,
+          "mutual": 0.23737169705216002,
+          "maximum_rounds": 9,
+          "cap": 0.0,
+          "attacker_survivors": 3.023860347597312,
+          "defender_survivors": 4.831673391685248
+        },
+        "independent-30-35": {
+          "capture": 0.2913168344317982,
+          "rounds": 4.9206746686100935,
+          "mutual": 0.004243482098433661,
+          "cap": 2.429765423291866e-21
+        },
+        "current": {
+          "capture": 0.0808,
+          "rounds": 1.0202,
+          "mutual": 0.72732
+        },
+        "current-defender-tie": {
+          "capture": 0.0808,
+          "rounds": 1.0202,
+          "mutual": 0.72732
+        }
+      }
+    },
+    {
+      "attackers": 30,
+      "defenders": 20,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.559969098646568,
+          "rounds": 2.47723683773007,
+          "mutual": 0.0,
+          "maximum_rounds": 14,
+          "cap": 0.0,
+          "attacker_survivors": 9.93501772335297,
+          "defender_survivors": 5.254526549817821
+        },
+        "vbam-first-carry": {
+          "capture": 0.9652284543244715,
+          "rounds": 4.102109379607573,
+          "mutual": 0.0,
+          "maximum_rounds": 36,
+          "cap": 0.0,
+          "attacker_survivors": 16.791672210857744,
+          "defender_survivors": 0.24555305481699582
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.9015346666033893,
+          "rounds": 1.8748351940391164,
+          "mutual": 0.0023802504667351206,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 13.700234412951033,
+          "defender_survivors": 0.54883955216439
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.8641075785365993,
+          "rounds": 1.8710261249773343,
+          "mutual": 0.0036917912950739282,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 11.82568353995502,
+          "defender_survivors": 0.7703183157622068
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.877737355,
+          "rounds": 1.8293983174000001,
+          "mutual": 0.0033515333999999996,
+          "maximum_rounds": 7,
+          "cap": 0.0,
+          "attacker_survivors": 11.872532413600002,
+          "defender_survivors": 0.6217573146
+        },
+        "independent-30-35": {
+          "capture": 0.9942938495138811,
+          "rounds": 3.29459194407666,
+          "mutual": 0.00014424327533411768,
+          "cap": 1.6528602815751693e-22
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.3
+        },
+        "current-defender-tie": {
+          "capture": 0.7,
+          "rounds": 1.0,
+          "mutual": 0.3
+        }
+      }
+    },
+    {
+      "attackers": 40,
+      "defenders": 20,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.9229019928911756,
+          "rounds": 1.9857794865313207,
+          "mutual": 0.0,
+          "maximum_rounds": 14,
+          "cap": 0.0,
+          "attacker_survivors": 22.67788547937157,
+          "defender_survivors": 0.7532728381047634
+        },
+        "vbam-first-carry": {
+          "capture": 0.9999860655968986,
+          "rounds": 2.665211978276895,
+          "mutual": 0.0,
+          "maximum_rounds": 35,
+          "cap": 0.0,
+          "attacker_survivors": 30.403857924132762,
+          "defender_survivors": 7.012034478177596e-05
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.999895783290112,
+          "rounds": 1.40223007628032,
+          "mutual": 4.9417060607999994e-05,
+          "maximum_rounds": 8,
+          "cap": 0.0,
+          "attacker_survivors": 25.469931228154106,
+          "defender_survivors": 5.479964927999999e-05
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.99968638258,
+          "rounds": 1.40579143735,
+          "mutual": 0.0001466794575,
+          "maximum_rounds": 8,
+          "cap": 0.0,
+          "attacker_survivors": 23.68016052758,
+          "defender_survivors": 0.00016693796249999995
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 1.0,
+          "rounds": 1.4008,
+          "mutual": 0.0,
+          "maximum_rounds": 4,
+          "cap": 0.0,
+          "attacker_survivors": 23.626325,
+          "defender_survivors": 0.0
+        },
+        "independent-30-35": {
+          "capture": 0.9999998593281579,
+          "rounds": 2.27937076185418,
+          "mutual": 5.000802935432126e-09,
+          "cap": 1.160812216062871e-26
+        },
+        "current": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        },
+        "current-defender-tie": {
+          "capture": 1.0,
+          "rounds": 1.0,
+          "mutual": 0.0
+        }
+      }
+    },
+    {
+      "attackers": 40,
+      "defenders": 40,
+      "rules": {
+        "eots-first-carry": {
+          "capture": 0.190121922731519,
+          "rounds": 2.1514399622962297,
+          "mutual": 0.0,
+          "maximum_rounds": 16,
+          "cap": 0.0,
+          "attacker_survivors": 3.7155045668770557,
+          "defender_survivors": 25.943903975492965
+        },
+        "vbam-first-carry": {
+          "capture": 0.15259449510940032,
+          "rounds": 5.312873737454258,
+          "mutual": 0.0,
+          "maximum_rounds": 42,
+          "cap": 0.0,
+          "attacker_survivors": 2.2155410410997733,
+          "defender_survivors": 19.45863668628288
+        },
+        "eots-simultaneous-carry": {
+          "capture": 0.40204121071816085,
+          "rounds": 1.6299294762457033,
+          "mutual": 0.19591757856367828,
+          "maximum_rounds": 16,
+          "cap": 0.0,
+          "attacker_survivors": 8.216222126061359,
+          "defender_survivors": 8.216222126061359
+        },
+        "eots-simultaneous-plus1-carry": {
+          "capture": 0.3021415386425478,
+          "rounds": 1.48317214058347,
+          "mutual": 0.2359332795542309,
+          "maximum_rounds": 16,
+          "cap": 0.0,
+          "attacker_survivors": 6.0886120702962,
+          "defender_survivors": 9.762394072473633
+        },
+        "eots-simultaneous-plus1-ceil": {
+          "capture": 0.3024936462580171,
+          "rounds": 1.477410557913673,
+          "mutual": 0.2360606113636598,
+          "maximum_rounds": 11,
+          "cap": 0.0,
+          "attacker_survivors": 6.073185463689725,
+          "defender_survivors": 9.722490790526765
+        },
+        "independent-30-35": {
+          "capture": 0.22085793891826533,
+          "rounds": 5.349220990201442,
+          "mutual": 0.0015807852065915836,
+          "cap": 3.717564580956932e-21
+        },
+        "current": {
+          "capture": 0.0808,
+          "rounds": 1.0202,
+          "mutual": 0.72729
+        },
+        "current-defender-tie": {
+          "capture": 0.0808,
+          "rounds": 1.0202,
+          "mutual": 0.72729
+        }
+      }
+    }
+  ],
+  "blitz": [
+    {
+      "loaded_armies": 5,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 6,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 7,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 8,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 9,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 10,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 11,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 12,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 13,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 1.0000000000000007
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 14,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.9000000000000006,
+        "1": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 1.3924176006783208e-16,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 15,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.9000000000000006,
+        "2": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 1.3073750392078077e-10,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 16,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.9000000000000006,
+        "3": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 6.38205202262864e-08,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 17,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.8000000000000005,
+        "1": 0.09999999999999999,
+        "4": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 0.0,
+        "eots-simultaneous-carry": 0.0,
+        "eots-simultaneous-plus1-carry": 0.0,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 3.4302139179223043e-06,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 18,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.8000000000000005,
+        "2": 0.09999999999999999,
+        "5": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 3.418964650973122e-12,
+        "eots-simultaneous-carry": 0.00038055311999999995,
+        "eots-simultaneous-plus1-carry": 0.00013618688000000006,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 5.918594909105946e-05,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 19,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.8000000000000005,
+        "3": 0.09999999999999999,
+        "6": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 7.000685249930594e-07,
+        "eots-simultaneous-carry": 0.004319927796239999,
+        "eots-simultaneous-plus1-carry": 0.00218810659456,
+        "eots-simultaneous-plus1-ceil": 0.0007360000000000002,
+        "independent-30-35": 0.0004893881376827239,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 20,
+      "cruisers": 0,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.8000000000000005,
+        "4": 0.09999999999999999,
+        "7": 0.09999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0020134186911399594,
+        "vbam-first-carry": 6.853633075250799e-05,
+        "eots-simultaneous-carry": 0.013748916781199999,
+        "eots-simultaneous-plus1-carry": 0.008441190857600001,
+        "eots-simultaneous-plus1-ceil": 0.005048,
+        "independent-30-35": 0.0023871675730598855,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 5,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.45000000000000007,
+        "1": 0.09,
+        "2": 0.03,
+        "3": 0.03,
+        "5": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 1.3675858603892491e-11,
+        "eots-simultaneous-carry": 0.00152221248,
+        "eots-simultaneous-plus1-carry": 0.0005447475200000004,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.00023676245879166658,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 6,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.39,
+        "1": 0.060000000000000005,
+        "2": 0.09,
+        "3": 0.03,
+        "4": 0.03,
+        "6": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 2.800274099972238e-06,
+        "eots-simultaneous-carry": 0.01727971118496,
+        "eots-simultaneous-plus1-carry": 0.00875242637824,
+        "eots-simultaneous-plus1-ceil": 0.0029440000000000013,
+        "independent-30-35": 0.001958345596645231,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 7,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.31,
+        "1": 0.08,
+        "2": 0.060000000000000005,
+        "3": 0.09,
+        "4": 0.03,
+        "5": 0.03,
+        "7": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.00805367476455984,
+        "vbam-first-carry": 0.00027414532403572143,
+        "eots-simultaneous-carry": 0.0551098330608,
+        "eots-simultaneous-plus1-carry": 0.03380561949440001,
+        "eots-simultaneous-plus1-ceil": 0.020192000000000005,
+        "independent-30-35": 0.00955379176316063,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 8,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.31000000000000005,
+        "2": 0.08,
+        "3": 0.060000000000000005,
+        "4": 0.09,
+        "5": 0.03,
+        "6": 0.03,
+        "8": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.026089937726833774,
+        "vbam-first-carry": 0.0034680612908808382,
+        "eots-simultaneous-carry": 0.10599069798460237,
+        "eots-simultaneous-plus1-carry": 0.07572154335584462,
+        "eots-simultaneous-plus1-ceil": 0.0788672,
+        "independent-30-35": 0.031253748014894764,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 9,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.28,
+        "1": 0.03,
+        "3": 0.08,
+        "4": 0.060000000000000005,
+        "5": 0.09,
+        "6": 0.03,
+        "7": 0.03,
+        "9": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.05628192825161951,
+        "vbam-first-carry": 0.01937448843350477,
+        "eots-simultaneous-carry": 0.14168260413553102,
+        "eots-simultaneous-plus1-carry": 0.10632337837143466,
+        "eots-simultaneous-plus1-ceil": 0.10429614080000003,
+        "independent-30-35": 0.07498777603194513,
+        "current": 0.008
+      }
+    },
+    {
+      "loaded_armies": 10,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.26,
+        "1": 0.02,
+        "2": 0.03,
+        "4": 0.08,
+        "5": 0.060000000000000005,
+        "6": 0.09,
+        "7": 0.03,
+        "8": 0.03,
+        "10": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.08231270207603221,
+        "vbam-first-carry": 0.060908841917823586,
+        "eots-simultaneous-carry": 0.1755598045564846,
+        "eots-simultaneous-plus1-carry": 0.13018991992142326,
+        "eots-simultaneous-plus1-ceil": 0.12780894080000002,
+        "independent-30-35": 0.14137402129071813,
+        "current": 0.032
+      }
+    },
+    {
+      "loaded_armies": 11,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.26,
+        "2": 0.02,
+        "3": 0.03,
+        "5": 0.08,
+        "6": 0.060000000000000005,
+        "7": 0.09,
+        "8": 0.03,
+        "9": 0.03,
+        "11": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.11820075970401109,
+        "vbam-first-carry": 0.13863748935848558,
+        "eots-simultaneous-carry": 0.2864511509290513,
+        "eots-simultaneous-plus1-carry": 0.2486441684481762,
+        "eots-simultaneous-plus1-ceil": 0.25565557456000004,
+        "independent-30-35": 0.22179198162645836,
+        "current": 0.3326
+      }
+    },
+    {
+      "loaded_armies": 12,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.22000000000000003,
+        "1": 0.04,
+        "3": 0.02,
+        "4": 0.03,
+        "6": 0.08,
+        "7": 0.060000000000000005,
+        "8": 0.09,
+        "9": 0.03,
+        "10": 0.03,
+        "12": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.17027082346238037,
+        "vbam-first-carry": 0.23439423648305074,
+        "eots-simultaneous-carry": 0.3310640988440565,
+        "eots-simultaneous-plus1-carry": 0.28622111372631126,
+        "eots-simultaneous-plus1-ceil": 0.28484314632,
+        "independent-30-35": 0.3043903712333199,
+        "current": 0.34732
+      }
+    },
+    {
+      "loaded_armies": 13,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.22,
+        "2": 0.04,
+        "4": 0.02,
+        "5": 0.03,
+        "7": 0.08,
+        "8": 0.060000000000000005,
+        "9": 0.09,
+        "10": 0.03,
+        "11": 0.03,
+        "13": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.20431072131788391,
+        "vbam-first-carry": 0.3298166421095333,
+        "eots-simultaneous-carry": 0.38856772437918974,
+        "eots-simultaneous-plus1-carry": 0.33921632521655065,
+        "eots-simultaneous-plus1-ceil": 0.34962607303999993,
+        "independent-30-35": 0.3814581176639821,
+        "current": 0.39710000000000006
+      }
+    },
+    {
+      "loaded_armies": 14,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.15000000000000002,
+        "1": 0.07,
+        "3": 0.04,
+        "5": 0.02,
+        "6": 0.03,
+        "8": 0.08,
+        "9": 0.060000000000000005,
+        "10": 0.09,
+        "11": 0.03,
+        "12": 0.03,
+        "14": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.24427659813040897,
+        "vbam-first-carry": 0.40542949228614517,
+        "eots-simultaneous-carry": 0.45169556121977467,
+        "eots-simultaneous-plus1-carry": 0.40503000053273,
+        "eots-simultaneous-plus1-ceil": 0.40873846244,
+        "independent-30-35": 0.45121464887386187,
+        "current": 0.43804400000000004
+      }
+    },
+    {
+      "loaded_armies": 15,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.15000000000000002,
+        "2": 0.07,
+        "4": 0.04,
+        "6": 0.02,
+        "7": 0.03,
+        "9": 0.08,
+        "10": 0.060000000000000005,
+        "11": 0.09,
+        "12": 0.03,
+        "13": 0.03,
+        "15": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.29731788101105516,
+        "vbam-first-carry": 0.4703824501735562,
+        "eots-simultaneous-carry": 0.511355022866468,
+        "eots-simultaneous-plus1-carry": 0.4683537624969834,
+        "eots-simultaneous-plus1-ceil": 0.48454074802,
+        "independent-30-35": 0.5144717506032767,
+        "current": 0.534524
+      }
+    },
+    {
+      "loaded_armies": 16,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.11,
+        "1": 0.04,
+        "3": 0.07,
+        "5": 0.04,
+        "7": 0.02,
+        "8": 0.03,
+        "10": 0.08,
+        "11": 0.060000000000000005,
+        "12": 0.09,
+        "13": 0.03,
+        "14": 0.03,
+        "16": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.3591296709530587,
+        "vbam-first-carry": 0.5300146235032444,
+        "eots-simultaneous-carry": 0.5598760127382831,
+        "eots-simultaneous-plus1-carry": 0.5207864326243168,
+        "eots-simultaneous-plus1-ceil": 0.52404021978,
+        "independent-30-35": 0.5712425368449103,
+        "current": 0.5896910000000001
+      }
+    },
+    {
+      "loaded_armies": 17,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.1,
+        "1": 0.01,
+        "2": 0.04,
+        "4": 0.07,
+        "6": 0.04,
+        "8": 0.02,
+        "9": 0.03,
+        "11": 0.08,
+        "12": 0.060000000000000005,
+        "13": 0.09,
+        "14": 0.03,
+        "15": 0.03,
+        "17": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.4294879736214917,
+        "vbam-first-carry": 0.5877017478130221,
+        "eots-simultaneous-carry": 0.6124370817636652,
+        "eots-simultaneous-plus1-carry": 0.5804144074972569,
+        "eots-simultaneous-plus1-ceil": 0.59910230054,
+        "independent-30-35": 0.6203117272341814,
+        "current": 0.659867
+      }
+    },
+    {
+      "loaded_armies": 18,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.1,
+        "2": 0.01,
+        "3": 0.04,
+        "5": 0.07,
+        "7": 0.04,
+        "9": 0.02,
+        "10": 0.03,
+        "12": 0.08,
+        "13": 0.060000000000000005,
+        "14": 0.09,
+        "15": 0.03,
+        "16": 0.03,
+        "18": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.47498421263472107,
+        "vbam-first-carry": 0.6371007929568906,
+        "eots-simultaneous-carry": 0.6438260986703603,
+        "eots-simultaneous-plus1-carry": 0.6130713668262959,
+        "eots-simultaneous-plus1-ceil": 0.6253634342400001,
+        "independent-30-35": 0.6607562946250747,
+        "current": 0.6721210000000001
+      }
+    },
+    {
+      "loaded_armies": 19,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.1,
+        "3": 0.01,
+        "4": 0.04,
+        "6": 0.07,
+        "8": 0.04,
+        "10": 0.02,
+        "11": 0.03,
+        "13": 0.08,
+        "14": 0.060000000000000005,
+        "15": 0.09,
+        "16": 0.03,
+        "17": 0.03,
+        "19": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.5179187269395996,
+        "vbam-first-carry": 0.6762111002895856,
+        "eots-simultaneous-carry": 0.6834945715333675,
+        "eots-simultaneous-plus1-carry": 0.657451587480316,
+        "eots-simultaneous-plus1-ceil": 0.67105775824,
+        "independent-30-35": 0.693198443372028,
+        "current": 0.7069380000000001
+      }
+    },
+    {
+      "loaded_armies": 20,
+      "cruisers": 3,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.08,
+        "1": 0.02,
+        "4": 0.01,
+        "5": 0.04,
+        "7": 0.07,
+        "9": 0.04,
+        "11": 0.02,
+        "12": 0.03,
+        "14": 0.08,
+        "15": 0.060000000000000005,
+        "16": 0.09,
+        "17": 0.03,
+        "18": 0.03,
+        "20": 0.4
+      },
+      "capture": {
+        "eots-first-carry": 0.5701893499345743,
+        "vbam-first-carry": 0.70488368318655,
+        "eots-simultaneous-carry": 0.7175847700266296,
+        "eots-simultaneous-plus1-carry": 0.6951841664892401,
+        "eots-simultaneous-plus1-ceil": 0.69873382032,
+        "independent-30-35": 0.7198655167145303,
+        "current": 0.729008
+      }
+    },
+    {
+      "loaded_armies": 5,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.02,
+        "1": 0.03,
+        "2": 0.02,
+        "3": 0.02,
+        "4": 0.01,
+        "5": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 3.0770681858758096e-11,
+        "eots-simultaneous-carry": 0.003424978079999999,
+        "eots-simultaneous-plus1-carry": 0.0012256819200000006,
+        "eots-simultaneous-plus1-ceil": 0.0,
+        "independent-30-35": 0.0005330281768253659,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 6,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.01,
+        "1": 0.01,
+        "2": 0.03,
+        "3": 0.02,
+        "4": 0.02,
+        "5": 0.01,
+        "6": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.0,
+        "vbam-first-carry": 6.300617066834e-06,
+        "eots-simultaneous-carry": 0.038917405478159986,
+        "eots-simultaneous-plus1-carry": 0.019706578039040003,
+        "eots-simultaneous-plus1-ceil": 0.006624000000000002,
+        "independent-30-35": 0.004410536282406701,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 7,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "0": 0.01,
+        "2": 0.01,
+        "3": 0.03,
+        "4": 0.02,
+        "5": 0.02,
+        "6": 0.01,
+        "7": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.018120768220259636,
+        "vbam-first-carry": 0.0006168969843088641,
+        "eots-simultaneous-carry": 0.12424835443442399,
+        "eots-simultaneous-plus1-carry": 0.07621676575385601,
+        "eots-simultaneous-plus1-ceil": 0.04550560000000001,
+        "independent-30-35": 0.021515111029679256,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 8,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "1": 0.01,
+        "3": 0.01,
+        "4": 0.03,
+        "5": 0.02,
+        "6": 0.02,
+        "7": 0.01,
+        "8": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.05890370175448998,
+        "vbam-first-carry": 0.007809659003383757,
+        "eots-simultaneous-carry": 0.2376212337082613,
+        "eots-simultaneous-plus1-carry": 0.17011355223599434,
+        "eots-simultaneous-plus1-ceil": 0.1776064,
+        "independent-30-35": 0.07029276732507132,
+        "current": 0.0
+      }
+    },
+    {
+      "loaded_armies": 9,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "2": 0.01,
+        "4": 0.01,
+        "5": 0.03,
+        "6": 0.02,
+        "7": 0.02,
+        "8": 0.01,
+        "9": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.12633021313102327,
+        "vbam-first-carry": 0.04364640796156363,
+        "eots-simultaneous-carry": 0.31216121784140405,
+        "eots-simultaneous-plus1-carry": 0.23581936906078887,
+        "eots-simultaneous-plus1-ceil": 0.23388507680000004,
+        "independent-30-35": 0.16802844534233227,
+        "current": 0.018
+      }
+    },
+    {
+      "loaded_armies": 10,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "3": 0.01,
+        "5": 0.01,
+        "6": 0.03,
+        "7": 0.02,
+        "8": 0.02,
+        "9": 0.01,
+        "10": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.1825409732538264,
+        "vbam-first-carry": 0.1370831675350533,
+        "eots-simultaneous-carry": 0.37153030350333327,
+        "eots-simultaneous-plus1-carry": 0.2786392068953456,
+        "eots-simultaneous-plus1-ceil": 0.27712748032,
+        "independent-30-35": 0.314195329135476,
+        "current": 0.0722
+      }
+    },
+    {
+      "loaded_armies": 11,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "4": 0.01,
+        "6": 0.01,
+        "7": 0.03,
+        "8": 0.02,
+        "9": 0.02,
+        "10": 0.01,
+        "11": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.25476242932621845,
+        "vbam-first-carry": 0.3106208785543578,
+        "eots-simultaneous-carry": 0.590140810017774,
+        "eots-simultaneous-plus1-carry": 0.5237657407325995,
+        "eots-simultaneous-plus1-ceil": 0.54707221256,
+        "independent-30-35": 0.4851610012905439,
+        "current": 0.7481999999999999
+      }
+    },
+    {
+      "loaded_armies": 12,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "5": 0.01,
+        "7": 0.01,
+        "8": 0.03,
+        "9": 0.02,
+        "10": 0.02,
+        "11": 0.01,
+        "12": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.3560154033913022,
+        "vbam-first-carry": 0.5197284079595842,
+        "eots-simultaneous-carry": 0.6461203491483096,
+        "eots-simultaneous-plus1-carry": 0.5763433770164007,
+        "eots-simultaneous-plus1-ceil": 0.57887554088,
+        "independent-30-35": 0.6477356453986229,
+        "current": 0.7850199999999999
+      }
+    },
+    {
+      "loaded_armies": 13,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "6": 0.01,
+        "8": 0.01,
+        "9": 0.03,
+        "10": 0.02,
+        "11": 0.02,
+        "12": 0.01,
+        "13": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.4051731976476337,
+        "vbam-first-carry": 0.7147714018962442,
+        "eots-simultaneous-carry": 0.716251148810436,
+        "eots-simultaneous-plus1-carry": 0.6453280253791427,
+        "eots-simultaneous-plus1-ceil": 0.6726392600799999,
+        "independent-30-35": 0.7778566262770643,
+        "current": 0.855408
+      }
+    },
+    {
+      "loaded_armies": 14,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "7": 0.01,
+        "9": 0.01,
+        "10": 0.03,
+        "11": 0.02,
+        "12": 0.02,
+        "13": 0.01,
+        "14": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.4593252069593172,
+        "vbam-first-carry": 0.8429434642497545,
+        "eots-simultaneous-carry": 0.8012393756558416,
+        "eots-simultaneous-plus1-carry": 0.7436717437406601,
+        "eots-simultaneous-plus1-ceil": 0.7502243963399999,
+        "independent-30-35": 0.8685136044491276,
+        "current": 0.8981859999999999
+      }
+    },
+    {
+      "loaded_armies": 15,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "8": 0.01,
+        "10": 0.01,
+        "11": 0.03,
+        "12": 0.02,
+        "13": 0.02,
+        "14": 0.01,
+        "15": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.5369594095329026,
+        "vbam-first-carry": 0.9168985059682232,
+        "eots-simultaneous-carry": 0.8619595499732398,
+        "eots-simultaneous-plus1-carry": 0.8138556987697673,
+        "eots-simultaneous-plus1-ceil": 0.8474545618799999,
+        "independent-30-35": 0.925431440093268,
+        "current": 0.9707889999999999
+      }
+    },
+    {
+      "loaded_armies": 16,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "9": 0.01,
+        "11": 0.01,
+        "12": 0.03,
+        "13": 0.02,
+        "14": 0.02,
+        "15": 0.01,
+        "16": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.6300492303997802,
+        "vbam-first-carry": 0.9541907967178841,
+        "eots-simultaneous-carry": 0.9036586616481517,
+        "eots-simultaneous-plus1-carry": 0.8661945380555381,
+        "eots-simultaneous-plus1-ceil": 0.8694404099599999,
+        "independent-30-35": 0.9588072917989956,
+        "current": 0.9816699999999999
+      }
+    },
+    {
+      "loaded_armies": 17,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "10": 0.01,
+        "12": 0.01,
+        "13": 0.03,
+        "14": 0.02,
+        "15": 0.02,
+        "16": 0.01,
+        "17": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.7413837354624332,
+        "vbam-first-carry": 0.974928976701297,
+        "eots-simultaneous-carry": 0.9419135045528038,
+        "eots-simultaneous-plus1-carry": 0.9170919593755242,
+        "eots-simultaneous-plus1-ceil": 0.9477837700999999,
+        "independent-30-35": 0.9777008427676775,
+        "current": 0.9859539999999999
+      }
+    },
+    {
+      "loaded_armies": 18,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "11": 0.01,
+        "13": 0.01,
+        "14": 0.03,
+        "15": 0.02,
+        "16": 0.02,
+        "17": 0.01,
+        "18": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.7939855468933761,
+        "vbam-first-carry": 0.9866271300393014,
+        "eots-simultaneous-carry": 0.9623748319991704,
+        "eots-simultaneous-plus1-carry": 0.9425288384889611,
+        "eots-simultaneous-plus1-ceil": 0.9669937746999999,
+        "independent-30-35": 0.9882475122378434,
+        "current": 0.9959189999999999
+      }
+    },
+    {
+      "loaded_armies": 19,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "12": 0.01,
+        "14": 0.01,
+        "15": 0.03,
+        "16": 0.02,
+        "17": 0.02,
+        "18": 0.01,
+        "19": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.8415537885787434,
+        "vbam-first-carry": 0.9932478513808943,
+        "eots-simultaneous-carry": 0.9812900187829959,
+        "eots-simultaneous-plus1-carry": 0.9709059246035981,
+        "eots-simultaneous-plus1-ceil": 0.98751403288,
+        "independent-30-35": 0.9940590105895188,
+        "current": 0.9980809999999999
+      }
+    },
+    {
+      "loaded_armies": 20,
+      "cruisers": 6,
+      "batteries": 3,
+      "defenders": 10,
+      "landed_distribution": {
+        "13": 0.01,
+        "15": 0.01,
+        "16": 0.03,
+        "17": 0.02,
+        "18": 0.02,
+        "19": 0.01,
+        "20": 0.8999999999999999
+      },
+      "capture": {
+        "eots-first-carry": 0.8960068969080539,
+        "vbam-first-carry": 0.9969733874768658,
+        "eots-simultaneous-carry": 0.9920002454619015,
+        "eots-simultaneous-plus1-carry": 0.9878886737598441,
+        "eots-simultaneous-plus1-ceil": 0.9917912778999999,
+        "independent-30-35": 0.9971667203611322,
+        "current": 0.9991999999999999
+      }
+    }
+  ]
+}

@@ -1,0 +1,190 @@
+[
+  {
+    "rt": 1,
+    "starbase": false,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 1,
+        "recovered": 1
+      }
+    ]
+  },
+  {
+    "rt": 1,
+    "starbase": true,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 1,
+        "recovered": 1
+      }
+    ]
+  },
+  {
+    "rt": 2,
+    "starbase": false,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 1,
+        "recovered": 1
+      }
+    ]
+  },
+  {
+    "rt": 2,
+    "starbase": true,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 1,
+        "recovered": 1
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 1,
+        "recovered": 0
+      }
+    ]
+  },
+  {
+    "rt": 3,
+    "starbase": false,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 3,
+        "nominal": 1,
+        "recovered": 1
+      }
+    ]
+  },
+  {
+    "rt": 3,
+    "starbase": true,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 1,
+        "recovered": 1
+      },
+      {
+        "year_after_damage": 3,
+        "nominal": 1,
+        "recovered": 0
+      }
+    ]
+  },
+  {
+    "rt": 4,
+    "starbase": false,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 3,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 4,
+        "nominal": 1,
+        "recovered": 1
+      }
+    ]
+  },
+  {
+    "rt": 4,
+    "starbase": true,
+    "timeline": [
+      {
+        "year_after_damage": 0,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 1,
+        "nominal": 0,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 2,
+        "nominal": 1,
+        "recovered": 1
+      },
+      {
+        "year_after_damage": 3,
+        "nominal": 1,
+        "recovered": 0
+      },
+      {
+        "year_after_damage": 4,
+        "nominal": 1,
+        "recovered": 0
+      }
+    ]
+  }
+]

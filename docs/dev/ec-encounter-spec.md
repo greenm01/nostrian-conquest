@@ -363,17 +363,28 @@ ECGAME's Seek Home uses), keeping the first on a tie. It finds nothing when
 the empire owns no other world. Every abort in ECMAINT asks it this way,
 with flag 1: both decision aborts above (`1b05:1877` fleet, `1b05:1f76`
 base, which the starbase gate `110a:67bd` also runs), the battle's scatter and
-retreat (`1b05:25c2`, `1b05:2f41`, `1b05:309f`), Seek Home whose world was
-lost (`0b5d:033d`), an aborted Salvage (`0b5d:4b2a`), and a defecting
-fleet (`24a3:380b`). Only rogue and autopilot orders call it with flag 2,
-which divides each distance by the world's present production. [P t059:
+retreat (`1b05:25c2`, `1b05:2f41`, `1b05:309f`), Seek Home and Salvage
+whose world is not the empire's (`0b5d:033d`, `0b5d:4b2a`; see
+[ec-movement-spec.md](ec-movement-spec.md)), and a defecting fleet
+(`24a3:380b`). [P t059:
 a bombard fleet in orbit of (16,13) that would not fight the starbase
 there went to (10,6), 9.22 sectors across the map and 13 by the Manhattan
 count, not to (18,3), 10.20 and 12; a Seek Home fleet in orbit of
 its own world (16,13) whose target was lost went to its other world
-(12,12), not to (16,13).] Rust uses this picker for both decision aborts,
-the orbital gate's abort, a fleet that lost the ships its mission needs,
-and the battle's retreats.
+(12,12), not to (16,13).] Only the rogue and autopilot orders pass calls it
+with flag 2 (`24a3:26c2` fleets, `24a3:29c5` rogue starbases; the orders
+are in the movement spec). Flag 2 keeps every owned world, the one in O's
+own system included, and ranks them by travel distance divided by present
+production (PLANETS `+0x03`), a production below 1.0 counting as 1.0; ties
+still go to the earlier world, and a lone candidate is taken without
+measuring.
+[P t064: an autopilot fleet at (13,12) chose (16,13), 4.16 away at
+production 5, over (12,12), 2.0 away at production 2; a fleet in orbit of
+its own (12,12) chose (12,12); a fleet 1.5 from both (12,11) and (12,12) at
+equal production chose (12,11); a fleet 1.0 from a world of production 0
+chose it over (16,13) at 15.3 and production 5.] Rust uses this picker for
+both decision aborts, the orbital gate's abort, a fleet that lost the ships
+its mission needs, and the battle's retreats.
 
 ### Starbase target `1b05:1d11`
 - If `layer(O.Z)==1`, `O.order in {6,7,8}`, `O.x==O.tx && O.y==O.ty`,

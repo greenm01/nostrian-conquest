@@ -10,6 +10,19 @@ use crate::screen::{
 use crate::startup::StartupPhase;
 
 impl App {
+    /// Screens that take free text, where `?` is a character and Ctrl+G
+    /// opens help (Ctrl+H is Backspace on BBS terminals).
+    fn free_text_entry_active(&self) -> bool {
+        matches!(
+            self.current_screen,
+            ScreenId::FirstTimeJoinEmpireName
+                | ScreenId::FirstTimeHomeworldName
+                | ScreenId::ColonyWorldName
+                | ScreenId::ComposeMessageSubject
+                | ScreenId::ComposeMessageBody
+        )
+    }
+
     pub fn handle_key(&self, key: crossterm::event::KeyEvent) -> Action {
         let key = self.normalize_navigation_hotkeys(key);
         if key.code == crossterm::event::KeyCode::Char('c')
@@ -33,7 +46,15 @@ impl App {
         if let Some(action) = self.handle_table_filter_prompt_dismiss_latch(key) {
             return action;
         }
-        if matches!(
+        if self.free_text_entry_active() {
+            if key.code == crossterm::event::KeyCode::Char('g')
+                && key
+                    .modifiers
+                    .contains(crossterm::event::KeyModifiers::CONTROL)
+            {
+                return Action::OpenPopupHelp;
+            }
+        } else if matches!(
             key,
             crossterm::event::KeyEvent {
                 code: crossterm::event::KeyCode::Char('?'),
@@ -312,7 +333,9 @@ impl App {
             ScreenId::ComposeMessageRecipient => self.message_compose.handle_recipient_key(key),
             ScreenId::ComposeMessageSubject => self.message_compose.handle_subject_key(key),
             ScreenId::ComposeMessageBody => self.message_compose.handle_body_key(key),
-            ScreenId::ComposeMessageOutbox => self.message_compose.handle_outbox_key(key),
+            ScreenId::ComposeMessageOutbox => self
+                .message_compose
+                .handle_outbox_key(key, self.messaging.compose_outbox_mode),
             ScreenId::ComposeMessageDiscardConfirm => {
                 self.message_compose.handle_discard_confirm_key(key)
             }

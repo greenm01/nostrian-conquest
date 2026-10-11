@@ -139,7 +139,7 @@ fn render_player_bundle_readme(
         .queued_mail
         .iter()
         .filter(|mail| {
-            mail.is_visible_to_recipient(assignment.record_index_1_based as u8)
+            mail.is_visible_to_recipient(assignment.record_index_1_based as u8, year)
                 && mail.year.saturating_add(1) == year
         })
         .collect::<Vec<_>>();

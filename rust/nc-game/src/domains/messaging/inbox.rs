@@ -9,6 +9,7 @@ use crate::domains::messaging::state::{
 };
 use crate::reports::{
     InboxDisplayItem, InboxItem, InboxItemSource, InboxItemType, runtime_inbox_items,
+    runtime_outgoing_inbox_items,
 };
 use crate::screen::ScreenId;
 use crate::screen::layout::{PromptFeedback, command_line_row_for};
@@ -46,96 +47,69 @@ impl App {
                 }
                 _ => Action::Noop,
             },
-            InboxPromptMode::DeleteConfirm => match key.code {
-                KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    Action::Messaging(MessagingAction::ConfirmDeleteInboxItem)
-                }
-                KeyCode::Char('n')
-                | KeyCode::Char('N')
-                | KeyCode::Char('q')
-                | KeyCode::Char('Q')
-                | KeyCode::Esc => Action::Messaging(MessagingAction::CancelInboxPrompt),
-                _ => Action::Noop,
+            InboxPromptMode::DeleteConfirm => match delete_prompt_choice(key) {
+                Some(true) => Action::Messaging(MessagingAction::ConfirmDeleteInboxItem),
+                Some(false) => Action::Messaging(MessagingAction::CancelInboxPrompt),
+                None => Action::Noop,
             },
-            InboxPromptMode::Normal => match key.code {
-                KeyCode::Char('m') | KeyCode::Char('M') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterMessages)
-                }
-                KeyCode::Char('r') | KeyCode::Char('R') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterReports)
-                }
-                KeyCode::Char('a') | KeyCode::Char('A') => {
-                    Action::Messaging(MessagingAction::SetInboxTypeFilterAll)
-                }
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
-                    if self.messaging.inbox_year_filter.is_some() {
-                        Action::Messaging(MessagingAction::ClearInboxYearFilter)
-                    } else {
-                        Action::Messaging(MessagingAction::OpenInboxYearPrompt)
-                    }
-                }
-                KeyCode::Char('d') | KeyCode::Char('D') => {
-                    Action::Messaging(MessagingAction::OpenInboxDeleteConfirm)
-                }
-                KeyCode::Tab => Action::Messaging(MessagingAction::ToggleInboxFocus),
-                KeyCode::Backspace => Action::Messaging(MessagingAction::BackspaceInboxIdInput),
-                KeyCode::Enter => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox if self.messaging.inbox_id_input.trim().is_empty() => {
-                        Action::Messaging(MessagingAction::ToggleInboxFocus)
-                    }
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::SubmitInboxIdInput),
-                    InboxFocus::Preview => Action::Noop,
-                },
-                KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
-                    Action::ReturnToCommandMenu
-                }
-                KeyCode::PageUp => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::PageInboxCursor(-1)),
-                    InboxFocus::Preview => Action::Messaging(MessagingAction::PageInboxPreview(-1)),
-                },
-                KeyCode::PageDown => match self.messaging.inbox_focus {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::PageInboxCursor(1)),
-                    InboxFocus::Preview => Action::Messaging(MessagingAction::PageInboxPreview(1)),
-                },
-                KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => match self
-                    .messaging
-                    .inbox_focus
+            InboxPromptMode::Normal => {
+                if self.messaging.inbox_focus == InboxFocus::Preview
+                    && let Some(delta) = preview_scroll_lines(key)
                 {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
-                    InboxFocus::Preview => {
-                        Action::Messaging(MessagingAction::ScrollInboxPreview(-1))
+                    return Action::Messaging(MessagingAction::ScrollInboxPreview(delta));
+                }
+                match key.code {
+                    KeyCode::Char('m') | KeyCode::Char('M') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterMessages)
                     }
-                },
-                KeyCode::Down | KeyCode::Char('j') | KeyCode::Char('J') => {
-                    match self.messaging.inbox_focus {
-                        InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
-                        InboxFocus::Preview => {
-                            Action::Messaging(MessagingAction::ScrollInboxPreview(1))
+                    KeyCode::Char('r') | KeyCode::Char('R') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterReports)
+                    }
+                    KeyCode::Char('a') | KeyCode::Char('A') => {
+                        Action::Messaging(MessagingAction::SetInboxTypeFilterAll)
+                    }
+                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                        if self.messaging.inbox_year_filter.is_some() {
+                            Action::Messaging(MessagingAction::ClearInboxYearFilter)
+                        } else {
+                            Action::Messaging(MessagingAction::OpenInboxYearPrompt)
                         }
                     }
-                }
-                KeyCode::Left | KeyCode::Char('h') | KeyCode::Char('H') => match self
-                    .messaging
-                    .inbox_focus
-                {
-                    InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
-                    InboxFocus::Preview => {
-                        Action::Messaging(MessagingAction::ScrollInboxPreview(-1))
+                    KeyCode::Char('d') | KeyCode::Char('D') => {
+                        Action::Messaging(MessagingAction::OpenInboxDeleteConfirm)
                     }
-                },
-                KeyCode::Right | KeyCode::Char('l') | KeyCode::Char('L') => {
-                    match self.messaging.inbox_focus {
-                        InboxFocus::Inbox => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
-                        InboxFocus::Preview => {
-                            Action::Messaging(MessagingAction::ScrollInboxPreview(1))
+                    KeyCode::Tab => Action::Messaging(MessagingAction::ToggleInboxFocus),
+                    KeyCode::Backspace => Action::Messaging(MessagingAction::BackspaceInboxIdInput),
+                    KeyCode::Enter => match self.messaging.inbox_focus {
+                        InboxFocus::Inbox if self.messaging.inbox_id_input.trim().is_empty() => {
+                            Action::Messaging(MessagingAction::ToggleInboxFocus)
                         }
+                        InboxFocus::Inbox => Action::Messaging(MessagingAction::SubmitInboxIdInput),
+                        InboxFocus::Preview => Action::Noop,
+                    },
+                    KeyCode::Esc | KeyCode::Char('q') | KeyCode::Char('Q') => {
+                        Action::ReturnToCommandMenu
                     }
+                    KeyCode::PageUp => Action::Messaging(MessagingAction::PageInboxCursor(-1)),
+                    KeyCode::PageDown => Action::Messaging(MessagingAction::PageInboxCursor(1)),
+                    KeyCode::Up
+                    | KeyCode::Char('k')
+                    | KeyCode::Char('K')
+                    | KeyCode::Left
+                    | KeyCode::Char('h')
+                    | KeyCode::Char('H') => Action::Messaging(MessagingAction::MoveInboxCursor(-1)),
+                    KeyCode::Down
+                    | KeyCode::Char('j')
+                    | KeyCode::Char('J')
+                    | KeyCode::Right
+                    | KeyCode::Char('l')
+                    | KeyCode::Char('L') => Action::Messaging(MessagingAction::MoveInboxCursor(1)),
+                    KeyCode::Char(ch) if ch.is_ascii_digit() => {
+                        Action::Messaging(MessagingAction::AppendInboxIdChar(ch))
+                    }
+                    _ => Action::Noop,
                 }
-                KeyCode::Char(ch) if ch.is_ascii_digit() => {
-                    Action::Messaging(MessagingAction::AppendInboxIdChar(ch))
-                }
-                _ => Action::Noop,
-            },
+            }
         }
     }
 
@@ -242,19 +216,13 @@ impl App {
     }
 
     pub fn scroll_inbox_preview(&mut self, delta: i8) {
-        let visible_rows = self.inbox_preview_visible_rows();
-        let total = self.current_inbox_preview_lines().len();
-        let max_scroll = total.saturating_sub(visible_rows);
-        self.messaging.inbox_preview_scroll = self
-            .messaging
-            .inbox_preview_scroll
-            .saturating_add_signed(delta as isize)
-            .min(max_scroll);
+        self.messaging.inbox_preview_scroll = scrolled_preview_offset(
+            self.messaging.inbox_preview_scroll,
+            delta,
+            self.current_inbox_preview_lines().len(),
+            self.inbox_preview_visible_rows(),
+        );
         self.messaging.inbox_feedback = None;
-    }
-
-    pub fn page_inbox_preview(&mut self, delta: i8) {
-        self.scroll_inbox_preview(delta.saturating_mul(INBOX_PREVIEW_PAGE_DELTA));
     }
 
     pub fn toggle_inbox_focus(&mut self) {
@@ -347,6 +315,9 @@ impl App {
         };
         let deleted_id = self.current_inbox_display_id();
         match item.source {
+            InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Outgoing => {
+                self.cancel_queued_mail(index);
+            }
             InboxItemSource::QueuedMail(index) => {
                 if let Some(mail) = self.queued_mail.get_mut(index) {
                     mail.mark_deleted_by_recipient();
@@ -375,20 +346,25 @@ impl App {
         type_filter: InboxTypeFilter,
         year_filter: Option<u16>,
     ) -> Vec<InboxItem> {
-        runtime_inbox_items(
-            &self.game_data,
-            self.player.record_index_1_based as u8,
-            &self.report_block_rows,
-            &self.queued_mail,
-        )
-        .into_iter()
-        .filter(|item| match type_filter {
-            InboxTypeFilter::All => true,
-            InboxTypeFilter::Messages => item.item_type == InboxItemType::Message,
-            InboxTypeFilter::Reports => item.item_type == InboxItemType::Report,
-        })
-        .filter(|item| year_filter.is_none_or(|year| item.year == year))
-        .collect()
+        let viewer_empire_id = self.player.record_index_1_based as u8;
+        runtime_outgoing_inbox_items(&self.game_data, viewer_empire_id, &self.queued_mail)
+            .into_iter()
+            .chain(runtime_inbox_items(
+                &self.game_data,
+                viewer_empire_id,
+                &self.report_block_rows,
+                &self.queued_mail,
+            ))
+            .filter(|item| match type_filter {
+                InboxTypeFilter::All => true,
+                InboxTypeFilter::Messages => matches!(
+                    item.item_type,
+                    InboxItemType::Message | InboxItemType::Outgoing
+                ),
+                InboxTypeFilter::Reports => item.item_type == InboxItemType::Report,
+            })
+            .filter(|item| year_filter.is_none_or(|year| item.year == year))
+            .collect()
     }
 
     pub fn filtered_inbox_items(&self) -> Vec<InboxItem> {
@@ -504,6 +480,21 @@ impl App {
         }
     }
 
+    /// Keeps session IDs on the same messages after `queued_mail[removed]` is
+    /// removed and the later entries shift down by one.
+    pub(crate) fn shift_inbox_display_ids_after_mail_removal(&mut self, removed: usize) {
+        self.messaging.inbox_display_ids = std::mem::take(&mut self.messaging.inbox_display_ids)
+            .into_iter()
+            .filter_map(|(source, display_id)| match source {
+                InboxItemSource::QueuedMail(index) if index == removed => None,
+                InboxItemSource::QueuedMail(index) if index > removed => {
+                    Some((InboxItemSource::QueuedMail(index - 1), display_id))
+                }
+                _ => Some((source, display_id)),
+            })
+            .collect();
+    }
+
     fn reset_inbox_jump_and_preview(&mut self) {
         self.messaging.inbox_id_input.clear();
         self.messaging.inbox_preview_scroll = 0;
@@ -527,5 +518,58 @@ impl App {
 
     pub fn inbox_preview_scroll_offset(&self) -> usize {
         self.messaging.inbox_preview_scroll
+    }
+}
+
+/// The inbox preview's scroll keys, as a line delta: arrows and h/j/k/l move
+/// one line, PgUp and PgDn a page. The outbox read view shares them.
+pub(crate) fn preview_scroll_lines(key: KeyEvent) -> Option<i8> {
+    match key.code {
+        KeyCode::Up
+        | KeyCode::Char('k')
+        | KeyCode::Char('K')
+        | KeyCode::Left
+        | KeyCode::Char('h')
+        | KeyCode::Char('H') => Some(-1),
+        KeyCode::Down
+        | KeyCode::Char('j')
+        | KeyCode::Char('J')
+        | KeyCode::Right
+        | KeyCode::Char('l')
+        | KeyCode::Char('L') => Some(1),
+        KeyCode::PageUp => Some(-INBOX_PREVIEW_PAGE_DELTA),
+        KeyCode::PageDown => Some(INBOX_PREVIEW_PAGE_DELTA),
+        _ => None,
+    }
+}
+
+/// Moves a preview's scroll offset by `delta` lines, stopping where the last
+/// line reaches the bottom of the visible rows.
+pub(crate) fn scrolled_preview_offset(
+    offset: usize,
+    delta: i8,
+    total_lines: usize,
+    visible_rows: usize,
+) -> usize {
+    offset
+        .saturating_add_signed(delta as isize)
+        .min(total_lines.saturating_sub(visible_rows))
+}
+
+/// The inbox's "Delete item NN? [Y]/N" prompt, which the outbox shares.
+pub(crate) fn delete_item_prompt(item_label: &str) -> String {
+    format!("Delete item {item_label}? [Y]/N -> ")
+}
+
+/// Keys for that prompt: Enter or Y deletes, N, Q, or Esc keeps the item.
+pub(crate) fn delete_prompt_choice(key: KeyEvent) -> Option<bool> {
+    match key.code {
+        KeyCode::Enter | KeyCode::Char('y') | KeyCode::Char('Y') => Some(true),
+        KeyCode::Char('n')
+        | KeyCode::Char('N')
+        | KeyCode::Char('q')
+        | KeyCode::Char('Q')
+        | KeyCode::Esc => Some(false),
+        _ => None,
     }
 }

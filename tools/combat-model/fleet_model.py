@@ -74,6 +74,8 @@ class Model:
         self.execution = [i for i in k if CLASSES[i] in rules['execution_classes']]
         self.suppression = [i for i in k if self.AS[i] > 0 and i not in self.execution]
         self.crit_order = sorted(k, key=lambda i: self.DS[i])
+        if 'critical_order' in rules:
+            self.crit_order = [CLASSES.index(c) for c in rules['critical_order']]
         self.mixed = [CLASSES.index(c) for c in ('DD', 'CA', 'BB') if c in CLASSES]
         self.sb = CLASSES.index('SB')
         self.tt = CLASSES.index('TT')
@@ -380,7 +382,7 @@ class Model:
 
     def _leave(self, a, b, wd_a, wd_b, fought, exchange):
         mode = self.rules['withdrawal']
-        if mode == 'none' or (wd_a and wd_b):
+        if mode == 'none' or (wd_a and wd_b and not self.rules.get('mutual_withdrawal_exchange', False)):
             return [(1.0, fought, ('terminal', a, b, wd_a, wd_b))]
         conditional = self.rules['screen'] == 'conditional'
         if mode == 'pressed':

@@ -125,10 +125,9 @@ It is responsible for:
 - keeping classic file handling out of normal engine/client code
 
 This is the only layer that should need to think in terms of classic
-directories as a workflow boundary. Phase 5 moves the core codecs from
+directories as a workflow boundary. Phase 5 moved the core codecs from
 `nc-data/src/classic/` to `nc-compat/src/classic/` after removing their last
-transitional accessor callers. That move is pending on the policy worktree
-at `2c1d32b4`; the boundary test deliberately rejects its current placement.
+transitional accessor callers; the boundary test passes.
 
 ### `nc-sysop`
 
@@ -232,7 +231,7 @@ rust/
 ├── nc-engine
 │   └── src/          # public engine/rules surface
 ├── nc-compat
-│   ├── src/classic/  # seven core .DAT codecs after the phase-5 move
+│   ├── src/classic/  # seven core .DAT codecs
 │   └── src/          # classic import/export and compat projections
 ├── nc-sysop
 │   └── src/          # public sysop/admin/maintenance workflows
@@ -474,7 +473,7 @@ These are lexical policy checks, not a Rust or TOML parser.
 
 Run the boundary checks from `rust/` with
 `cargo-slot nostrian-conquest cargo test -p nc-data -p nc-engine --test classic_boundary`.
-The source check stays red until the phase-5 codec move lands.
+Both checks pass since the phase-5 codec move landed.
 
 The test split should mirror the code split. If a feature area deserves its own
 module, it usually deserves its own test surface too.

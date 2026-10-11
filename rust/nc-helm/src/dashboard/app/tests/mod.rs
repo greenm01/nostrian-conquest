@@ -5455,7 +5455,7 @@ fn mouse_wheel_inbox_list_requests_redraw() {
         QueuedPlayerMail {
             sender_empire_id: 2,
             recipient_empire_id: 1,
-            year: 3012,
+            year: app.game_data.conquest.game_year - 1,
             subject: "Test A".to_string(),
             body: "Body A".to_string(),
             recipient_deleted: false,
@@ -5463,7 +5463,7 @@ fn mouse_wheel_inbox_list_requests_redraw() {
         QueuedPlayerMail {
             sender_empire_id: 2,
             recipient_empire_id: 1,
-            year: 3012,
+            year: app.game_data.conquest.game_year - 1,
             subject: "Test B".to_string(),
             body: "Body B".to_string(),
             recipient_deleted: false,
@@ -5494,7 +5494,7 @@ fn mouse_wheel_inbox_preview_requests_redraw() {
     app.queued_mail = vec![QueuedPlayerMail {
         sender_empire_id: 2,
         recipient_empire_id: 1,
-        year: 3012,
+        year: app.game_data.conquest.game_year - 1,
         subject: "Test subject".to_string(),
         body: "Test body with enough length to create a preview.".to_string(),
         recipient_deleted: false,

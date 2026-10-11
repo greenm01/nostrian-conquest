@@ -1467,7 +1467,11 @@ impl App {
             &self.game_data,
             self.player.record_index_1_based,
             has_results,
-            has_visible_runtime_messages(self.player.record_index_1_based as u8, &self.queued_mail),
+            has_visible_runtime_messages(
+                self.player.record_index_1_based as u8,
+                &self.queued_mail,
+                self.game_data.conquest.game_year,
+            ),
         );
         let startup_summary = StartupSummary::from_reports(
             summary.game_year,
@@ -1515,6 +1519,7 @@ impl App {
                     || has_visible_runtime_messages(
                         self.player.record_index_1_based as u8,
                         &self.queued_mail,
+                        self.game_data.conquest.game_year,
                     ),
             );
             nc_data::set_results_chain(player, results_chain);

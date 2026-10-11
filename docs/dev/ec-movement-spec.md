@@ -84,8 +84,10 @@ passes resolves the order.
 
 | Orders | Arrival test |
 | --- | --- |
-| Move, Patrol, Guard/Blockade, View, Scout Sector, Scout System, Join, Rendezvous, Salvage | in the target sector and `Z == TZ` |
-| Seek Home, Colonize | the test above, or `Round(Z) == 1` at the end of tick 52 |
+| Move, Patrol, Guard/Blockade, View, Scout Sector, Scout System, Join, Rendezvous | in the target sector and `Z == TZ` |
+| Seek Home | the empire owns the target world (see below), then the test above, or `Round(Z) == 1` at the end of tick 52 |
+| Colonize | the test above, or `Round(Z) == 1` at the end of tick 52 |
+| Salvage | the empire owns the target world (see below), then in the target sector with `Z >= 1.0` |
 | Guard Starbase | the starbase is in the same sector and depth layer (`Z >= 0.5`) and speed > 0 |
 | Bombard, Invade, Blitz | ownership checks, then in the target sector with `Round(Z) >= 1` and `Z >= 1.0` |
 
@@ -110,6 +112,113 @@ way, so a guard at a base in deep space settles in deep space.
 Fleet ETA replays the same step from the fleet's current state and reports
 the year the order's arrival test first passes. ECGAME's ETA screen asks
 whether to include time to enter the system, which selects `TZ`.
+
+### Seek Home And Salvage Check Their World
+
+"[C]" marks a rule read from ECMAINT's code, "[P]" one confirmed by a classic
+probe, as in [ec-encounter-spec.md](ec-encounter-spec.md); addresses are
+seg:off in the unpacked ECMAINT.
+
+Seek Home and Salvage look at the owner of their target world every tick, in
+the fleet's dispatch after its step and before the arrival test (`0b5d:01f9`
+Seek Home, `0b5d:4a44` Salvage). Nothing looks before the year, and only a
+rogue empire's orders pass (below) ever re-picks a Seek Home fleet's world.
+[C][P]
+
+- While the fleet's empire owns the target world, the order runs on
+  unchanged. Seek Home keeps the world it was given even when another owned
+  world is nearer. [P: a fleet at (13,13) seeking (16,13) flew on toward it
+  although (12,12), also owned, was nearer.]
+- In the first tick the world is not the empire's, whether it was lost or
+  never owned, the fleet turns for the nearest friendly world: the picker
+  `24a3:0876` with flag 1 ([ec-encounter-spec.md](ec-encounter-spec.md)),
+  measured from where the fleet has just stepped, so it has already moved one
+  tick toward the old target. That tick reports no arrival. A target sector
+  with no world counts as not owned (classic reads a garbage owner there; see
+  the encounter spec's note on worldless sectors). [P: a Seek Home fleet whose
+  target belonged to empire 2 turned at stardate 1 and ended the year over
+  (12,12) at depth 0.670, which its first tick toward the old target
+  explains; a fleet seeking an empty sector turned the same way.]
+  - Seek Home changes only its target sector; the order, `TZ`, and speed
+    stay. Report: "Since we have lost control of planet "*name*" in
+    System(*x*,*y*), we are changing course and heading for a different
+    friendly world. Our new destination is planet "*name*" in
+    System(*x*,*y*)."
+  - Salvage changes its target sector, refills a zero speed from `0x09`, and
+    keeps the Salvage order, so the fleet salvages at the new world. Report:
+    "Since we no longer own the world in System(*x*,*y*), we are aborting our
+    salvage mission. Until ordered otherwise, we are going to seek to safety
+    of a friendly controlled world. Our new destination is planet "*name*" in
+    System(*x*,*y*)." [P: the fleet salvaged at (12,12) in tick 44 of the
+    same year.]
+- When the empire owns no other world, the fleet holds: order Hold, speed 0,
+  target its own sector, `TZ = Round(Z)`. Seek Home leaves the depth as it
+  is; Salvage also sets `Z` to `Round(Z)`, so a fleet between layers jumps to
+  the nearer one. Reports: "Since we have lost control of planet "*name*" in
+  System(*x*,*y*), we are holding our current position and awaiting new
+  orders." and "Since we no longer own the world in System(*x*,*y*), we are
+  aborting our salvage mission. Until ordered otherwise, we are going to hold
+  our current position and await new orders." [P: Seek Home kept depth
+  0.692; Salvage went from 0.692 to 1.0 and from 0.135 to 0.0.]
+
+A Salvage that arrives (`0b5d:4d65`) adds to the world's stored goods
+(PLANETS `0x09`) 23 per battleship, 8 per cruiser, 3 per destroyer, 3 per
+transport empty or loaded, 10 per ETAC, and 8 per scout: each ship's half
+cost rounded up, summed as a u16. Each loaded transport lands its army on the
+world (PLANETS `0x58`), and the fleet is deleted. The report ends "We estimate
+that our fleet will yield *N* production point(s)." and, with loaded
+transports, "In addition, we have transfered the *N* armies we were
+transporting to the planet's surface." ("army" for one). [C][P: one
+battleship, cruiser, destroyer, empty transport, ETAC, and scout and two
+loaded transports yielded 61 and landed 2 armies.]
+
+Rust still retargets every Seek Home fleet before the year by squared
+distance, lets a Salvage whose world was lost fail on arrival, and credits
+an arriving Salvage with half the fleet's summed cost, counting each army at
+2 and landing none; t064 brings it to this rule.
+
+### Rogue And Autopilot Orders
+
+Once a year, before the planet pass and the ticks, ECMAINT's orders pass
+(`24a3:3cc6`) gives fleets new orders in `24a3:25f7` for rogue empires that
+own a world (PLAYER `0x00 = 0xFF`, planet count `0x50` as the last run saved
+it, nonzero) and for human empires on autopilot (PLAYER `0x6D` nonzero, which
+ECMAINT also sets once a human empire has not signed on for SETUP's
+`autopilot_after_turns` years). [C][P]
+
+- A rogue empire's fleets all get new orders, whatever their order; an
+  autopilot empire's only when they are on Hold. [P: autopilot left a Move
+  fleet and a Seek Home fleet alone.] Fleets go in unit-table order, each
+  empire's fleet chain.
+- The destination is the picker with flag 2: every owned world, the one in
+  the fleet's own system included, by travel distance divided by present
+  production of at least 1.0 ([ec-encounter-spec.md](ec-encounter-spec.md)).
+  When the empire owns no world, the fleet is left as it is.
+- The fleet's target becomes that world with `TZ = 1`; a Guard Starbase
+  fleet first clears its base's escort word (`2895:30f4`). A fleet in that
+  world's sector with `Round(Z) = 1` and any battleship, cruiser, or
+  destroyer takes Guard/Blockade (5) with speed 0 and its maximum speed
+  recomputed (`24a3:036b`), and its ROE becomes 10 for a rogue, or 6 on
+  autopilot when it was 0; without warships its order stays. Any other fleet
+  takes Seek Home (2) at its maximum speed, and a rogue's ROE becomes 0.
+  [P: an autopilot Hold fleet in orbit with a cruiser and ROE 0 took
+  Guard/Blockade with ROE 6; one with only an ETAC stayed on Hold; a rogue
+  fleet on a Move order went home within the year with ROE 0, and the rogue's
+  Guard/Blockade fleet at home kept its order with ROE 10.]
+- A fleet that is now on Guard/Blockade at speed 0 then takes the first
+  starbase of its empire in its sector, in the system layer, at rest at its
+  target, with no escort (BASES `0x00 = 0`): order Guard Starbase (4),
+  `0x23` the base id, and the base's escort word the fleet's `0x00` word.
+  [P: an autopilot Hold fleet in orbit under an unescorted Starbase 1 took
+  order 4 with `0x23 = 1`, and the base's escort word became 1.]
+- A rogue's starbases (`24a3:28fe`) take the same pick from their own
+  position: target the world with `TZ = 1`, moving flag 0 if the base is
+  already in orbit there, else 1. A rogue with no world sends its fleets on
+  random patrols instead (`24a3:0dbc`). [C]
+
+Rust's autopilot recall (`economics/ai.rs`) sends only autopilot Hold fleets
+outside an owned world's sector home by squared distance, and gives rogue
+fleets and starbases no orders; t064 brings it to this rule.
 
 ### Hostile Missions
 
@@ -225,7 +334,7 @@ finishes.
 | `ColonizeWorld` | One-shot completion | `COLONIZE A WORLD` | transit to raw world | completes on arrival if colonization succeeds; otherwise fails/aborts and awaits new orders | no |
 | `JoinAnotherFleet` | Persistent standing | `JOIN ANOTHER FLEET` | transit toward the designated host fleet, with retargeting as the host moves | remains a join mission until fleets meet and merge; abandons if the host is lost | yes |
 | `RendezvousSector` | Persistent standing | `RENDEZVOUS` | transit to the rendezvous sector, then wait there for more rendezvous fleets | lowest fleet ID host absorbs later arrivals and remains on rendezvous until replaced | yes |
-| `Salvage` | One-shot completion | `SALVAGE` | transit to target world | completes when salvage resolves or fails | no |
+| `Salvage` | One-shot completion | `SALVAGE` | transit to target world; if the world is lost, to the nearest friendly world | scraps the fleet at the world; holds when no friendly world is left | no |
 
 ## Contact And Hostility
 

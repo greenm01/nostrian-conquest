@@ -1,0 +1,6129 @@
+{
+  "seed": 680000,
+  "method": "Seeded repeated-contact cohort simulation. Four imposed encounters, no replacements, fixed fresh enemy each time. Assisted means a protected full quiet pass at a separate friendly base, never the combat pass; travel feasibility is not modelled. Cohort allocation reuses fleet_model. Not movement, map generation or an economic campaign.",
+  "schedules": {
+    "uniform2": {
+      "DD": 2,
+      "CA": 2,
+      "BB": 2,
+      "SB": 2,
+      "SC": 2,
+      "TT": 2,
+      "ET": 2
+    },
+    "uniform1": {
+      "DD": 1,
+      "CA": 1,
+      "BB": 1,
+      "SB": 1,
+      "SC": 1,
+      "TT": 1,
+      "ET": 1
+    },
+    "dd1-only": {
+      "DD": 1,
+      "CA": 2,
+      "BB": 2,
+      "SB": 2,
+      "SC": 2,
+      "TT": 2,
+      "ET": 2
+    },
+    "class123-sb2": {
+      "DD": 1,
+      "CA": 2,
+      "BB": 3,
+      "SB": 2,
+      "SC": 2,
+      "TT": 2,
+      "ET": 2
+    },
+    "class123-sb3": {
+      "DD": 1,
+      "CA": 2,
+      "BB": 3,
+      "SB": 3,
+      "SC": 2,
+      "TT": 2,
+      "ET": 2
+    }
+  },
+  "scenarios": {
+    "screen": [
+      {
+        "DD": 12,
+        "CA": 6,
+        "BB": 2
+      },
+      {
+        "CA": 12
+      },
+      [
+        6,
+        10
+      ]
+    ],
+    "capital": [
+      {
+        "BB": 6
+      },
+      {
+        "CA": 15
+      },
+      [
+        6,
+        10
+      ]
+    ],
+    "base": [
+      {
+        "SB": 2,
+        "CA": 4
+      },
+      {
+        "CA": 10
+      },
+      [
+        10,
+        10
+      ]
+    ]
+  },
+  "rows": [
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 91.51859504132231,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 1.0,
+            "BB": 0.9845119217444467,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6922,
+      "mean_destroyed_cost": 218.12,
+      "mean_hulls_destroyed": {
+        "DD": 11.9674,
+        "CA": 5.9214,
+        "BB": 1.5436,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 91.51859504132231,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 1.0,
+            "BB": 0.9845119217444467,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6922,
+      "mean_destroyed_cost": 218.12,
+      "mean_hulls_destroyed": {
+        "DD": 11.9674,
+        "CA": 5.9214,
+        "BB": 1.5436,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 0,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 91.51859504132231,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 1.0,
+            "BB": 0.9845119217444467,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6922,
+      "mean_destroyed_cost": 218.12,
+      "mean_hulls_destroyed": {
+        "DD": 11.9674,
+        "CA": 5.9214,
+        "BB": 1.5436,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 0,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 91.51859504132231,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 1.0,
+            "BB": 0.9845119217444467,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6922,
+      "mean_destroyed_cost": 218.12,
+      "mean_hulls_destroyed": {
+        "DD": 11.9674,
+        "CA": 5.9214,
+        "BB": 1.5436,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 0.6408402203856749,
+          "mean_as_given_alive": 135.6611570247934,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.09138697937727457,
+            "BB": 0.5767271245159975,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6108,
+      "mean_destroyed_cost": 208.38,
+      "mean_hulls_destroyed": {
+        "DD": 11.9196,
+        "CA": 5.7542,
+        "BB": 1.3882,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 145.06832437275986,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 104.78477961432507,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.09673613841918993,
+            "BB": 0.9901348902758205,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6694,
+      "mean_destroyed_cost": 214.527,
+      "mean_hulls_destroyed": {
+        "DD": 11.9418,
+        "CA": 5.829,
+        "BB": 1.4974,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 137.519041218638,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 0.6408402203856749,
+          "mean_as_given_alive": 135.6611570247934,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.09138697937727457,
+            "BB": 0.5767271245159975,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6108,
+      "mean_destroyed_cost": 208.38,
+      "mean_hulls_destroyed": {
+        "DD": 11.9196,
+        "CA": 5.7542,
+        "BB": 1.3882,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 145.06832437275986,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 104.78477961432507,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.09673613841918993,
+            "BB": 0.9901348902758205,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6694,
+      "mean_destroyed_cost": 214.527,
+      "mean_hulls_destroyed": {
+        "DD": 11.9418,
+        "CA": 5.829,
+        "BB": 1.4974,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 0.6155913978494624,
+          "mean_as_given_alive": 217.95138888888889,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.09068466096115865,
+            "BB": 0.508248043347381,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7452,
+          "damaged_probability_given_alive": 0.6900161030595813,
+          "mean_as_given_alive": 176.34594739667205,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.8253275109170306,
+            "BB": 0.27186977027232617,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.4206,
+      "mean_destroyed_cost": 183.851,
+      "mean_hulls_destroyed": {
+        "DD": 11.8636,
+        "CA": 5.2584,
+        "BB": 1.0146,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 304.69477911646584,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.896,
+          "damaged_probability_given_alive": 0.6513392857142857,
+          "mean_as_given_alive": 238.88392857142858,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.10598876650375666,
+            "BB": 0.4838709677419355,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7764,
+          "damaged_probability_given_alive": 0.7442040185471407,
+          "mean_as_given_alive": 189.36115404430706,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.8071561338289963,
+            "BB": 0.28637081717650437,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.388,
+      "mean_destroyed_cost": 177.602,
+      "mean_hulls_destroyed": {
+        "DD": 11.7364,
+        "CA": 5.093,
+        "BB": 0.945,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.6180722891566265,
+          "mean_as_given_alive": 379.09236947791163,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.95,
+          "damaged_probability_given_alive": 0.40926315789473683,
+          "mean_as_given_alive": 326.88947368421054,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.2851077726975833,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.8912,
+          "damaged_probability_given_alive": 0.5379263913824057,
+          "mean_as_given_alive": 270.52962298025136,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.3798283261802575,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.2292,
+      "mean_destroyed_cost": 136.671,
+      "mean_hulls_destroyed": {
+        "DD": 10.4868,
+        "CA": 3.8722,
+        "BB": 0.5812,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.6180722891566265,
+          "mean_as_given_alive": 379.09236947791163,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.95,
+          "damaged_probability_given_alive": 0.40926315789473683,
+          "mean_as_given_alive": 326.88947368421054,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.2851077726975833,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.8912,
+          "damaged_probability_given_alive": 0.5379263913824057,
+          "mean_as_given_alive": 270.52962298025136,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.3798283261802575,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.2292,
+      "mean_destroyed_cost": 136.671,
+      "mean_hulls_destroyed": {
+        "DD": 10.4868,
+        "CA": 3.8722,
+        "BB": 0.5812,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 4,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 4,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 0,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 0,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 0.2652449183605465,
+          "mean_as_given_alive": 233.18727090969676,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.18393086535092842,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.5548,
+      "mean_destroyed_cost": 212.229,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.7162,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 0.2652449183605465,
+          "mean_as_given_alive": 233.18727090969676,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.18393086535092842,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.5548,
+      "mean_destroyed_cost": 212.229,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.7162,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 188.22096128170895,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9540952592922324,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.6002,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 129.0469843385538,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.9949783954221652,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.7286,
+      "mean_destroyed_cost": 243.972,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.4216,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 0.42834890965732086,
+          "mean_as_given_alive": 322.5600801068091,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.20760071221900733,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7972,
+          "damaged_probability_given_alive": 0.9197190165579529,
+          "mean_as_given_alive": 237.8135975915705,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.569731124388919,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.3884,
+      "mean_destroyed_cost": 181.35,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.03,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 0.42834890965732086,
+          "mean_as_given_alive": 322.5600801068091,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.20760071221900733,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7972,
+          "damaged_probability_given_alive": 0.9197190165579529,
+          "mean_as_given_alive": 237.8135975915705,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.569731124388919,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.3884,
+      "mean_destroyed_cost": 181.35,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.03,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 0.42834890965732086,
+          "mean_as_given_alive": 322.5600801068091,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.20760071221900733,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7972,
+          "damaged_probability_given_alive": 0.9197190165579529,
+          "mean_as_given_alive": 237.8135975915705,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.569731124388919,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.3884,
+      "mean_destroyed_cost": 181.35,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.03,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 306.305176565008,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.7123771207348085,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.8988,
+          "damaged_probability_given_alive": 0.42834890965732086,
+          "mean_as_given_alive": 322.5600801068091,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.20760071221900733,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.7972,
+          "damaged_probability_given_alive": 0.9197190165579529,
+          "mean_as_given_alive": 237.8135975915705,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.569731124388919,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.3884,
+      "mean_destroyed_cost": 181.35,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.03,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform2",
+      "gap": 4,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "class123-sb2",
+      "gap": 4,
+      "assisted": true,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "uniform2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 88.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb2",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 88.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb3",
+      "gap": 0,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 0,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 0,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 0,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 88.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 93.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 93.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb3",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 108.24778761061947,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 1.0,
+            "BB": null,
+            "SB": 0.9169295478443743,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.0024,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 93.33333333333333,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 1.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 1.0,
+      "mean_destroyed_cost": 160.0,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 4.0,
+        "BB": 0.0,
+        "SB": 2.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 0.8672566371681416,
+          "mean_as_given_alive": 137.6283185840708,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.021739130434782608,
+            "BB": null,
+            "SB": 0.7665615141955836,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.008,
+          "damaged_probability_given_alive": 0.725,
+          "mean_as_given_alive": 164.875,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9807692307692307,
+            "BB": null,
+            "SB": 0.3188405797101449,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9986,
+      "mean_destroyed_cost": 159.859,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.9986,
+        "BB": 0.0,
+        "SB": 1.9976,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 0.8672566371681416,
+          "mean_as_given_alive": 137.6283185840708,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.021739130434782608,
+            "BB": null,
+            "SB": 0.7665615141955836,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.008,
+          "damaged_probability_given_alive": 0.725,
+          "mean_as_given_alive": 164.875,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9807692307692307,
+            "BB": null,
+            "SB": 0.3188405797101449,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9986,
+      "mean_destroyed_cost": 159.859,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.9986,
+        "BB": 0.0,
+        "SB": 1.9976,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb3",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 168.32226762002043,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9879418736473256,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.113,
+          "damaged_probability_given_alive": 0.8672566371681416,
+          "mean_as_given_alive": 137.6283185840708,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.021739130434782608,
+            "BB": null,
+            "SB": 0.7665615141955836,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.008,
+          "damaged_probability_given_alive": 0.725,
+          "mean_as_given_alive": 164.875,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.9807692307692307,
+            "BB": null,
+            "SB": 0.3188405797101449,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9986,
+      "mean_destroyed_cost": 159.859,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.9986,
+        "BB": 0.0,
+        "SB": 1.9976,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 264.60418794688457,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.4082,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 249.093581577658,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.186,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 240.08602150537635,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9248,
+      "mean_destroyed_cost": 151.159,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.8766,
+        "BB": 0.0,
+        "SB": 1.8602,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 264.60418794688457,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.4082,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 249.093581577658,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.186,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 240.08602150537635,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9248,
+      "mean_destroyed_cost": 151.159,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.8766,
+        "BB": 0.0,
+        "SB": 1.8602,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb3",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.7734933605720122,
+          "mean_as_given_alive": 205.0408580183861,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.6260904576566904,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.2324,
+          "damaged_probability_given_alive": 0.6876075731497419,
+          "mean_as_given_alive": 195.83476764199656,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.508235294117647,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.056,
+          "damaged_probability_given_alive": 0.6964285714285714,
+          "mean_as_given_alive": 183.25,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.5317460317460317,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9884,
+      "mean_destroyed_cost": 158.608,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.9792,
+        "BB": 0.0,
+        "SB": 1.9784,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "uniform2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 264.60418794688457,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.4082,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 249.093581577658,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.186,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 240.08602150537635,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9248,
+      "mean_destroyed_cost": 151.159,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.8766,
+        "BB": 0.0,
+        "SB": 1.8602,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb2",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 264.60418794688457,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.4082,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 249.093581577658,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.186,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 240.08602150537635,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9248,
+      "mean_destroyed_cost": 151.159,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.8766,
+        "BB": 0.0,
+        "SB": 1.8602,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "base",
+      "schedule": "class123-sb3",
+      "gap": 4,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 320.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 4,
+          "alive_probability": 0.7832,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 264.60418794688457,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 8,
+          "alive_probability": 0.4082,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 249.093581577658,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 12,
+          "alive_probability": 0.186,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 240.08602150537635,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": 0.0,
+            "BB": null,
+            "SB": 0.0,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9248,
+      "mean_destroyed_cost": 151.159,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 3.8766,
+        "BB": 0.0,
+        "SB": 1.8602,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 252.24450715581537,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.613,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 110.22512234910278,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9998050302203159,
+            "BB": 0.9623960695389266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.1046,
+          "damaged_probability_given_alive": 0.7973231357552581,
+          "mean_as_given_alive": 86.75908221797323,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.17903930131004367,
+            "BB": 0.8060522696011004,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.991,
+      "mean_destroyed_cost": 239.376,
+      "mean_hulls_destroyed": {
+        "DD": 12.0,
+        "CA": 5.9968,
+        "BB": 1.9872,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 252.24450715581537,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.613,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 114.72593800978792,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9998050302203159,
+            "BB": 0.9623960695389266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.1106,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 84.32188065099457,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.20391061452513967,
+            "BB": 0.9899749373433584,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9902,
+      "mean_destroyed_cost": 239.174,
+      "mean_hulls_destroyed": {
+        "DD": 11.9938,
+        "CA": 5.9908,
+        "BB": 1.9854,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 252.24450715581537,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.613,
+          "damaged_probability_given_alive": 0.7171288743882545,
+          "mean_as_given_alive": 160.36704730831974,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.15363618639110938,
+            "BB": 0.6483371126228269,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.2096,
+          "damaged_probability_given_alive": 0.5954198473282443,
+          "mean_as_given_alive": 145.88263358778627,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.7489433643279797,
+            "BB": 0.31653823355068167,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.939,
+      "mean_destroyed_cost": 234.886,
+      "mean_hulls_destroyed": {
+        "DD": 11.9774,
+        "CA": 5.9588,
+        "BB": 1.9026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 289.9234025398105,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.6602,
+          "damaged_probability_given_alive": 0.7258406543471675,
+          "mean_as_given_alive": 194.33959406240533,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.1587751247807905,
+            "BB": 0.5881347238844247,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.2878,
+          "damaged_probability_given_alive": 0.6657400972897846,
+          "mean_as_given_alive": 169.72897845726197,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.7601791530944625,
+            "BB": 0.35084119819450144,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.8964,
+      "mean_destroyed_cost": 230.051,
+      "mean_hulls_destroyed": {
+        "DD": 11.908,
+        "CA": 5.8786,
+        "BB": 1.8296,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 405.4061681112679,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.897,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 350.7759197324415,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.7302,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 315.06710490276635,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.4582,
+      "mean_destroyed_cost": 161.204,
+      "mean_hulls_destroyed": {
+        "DD": 10.4086,
+        "CA": 4.2912,
+        "BB": 0.9954,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "class123-sb2",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 0.6166095545252973,
+          "mean_as_given_alive": 359.5716589397299,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.8,
+          "damaged_probability_given_alive": 0.43375,
+          "mean_as_given_alive": 298.9025,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.3321385902031063,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.5546,
+          "damaged_probability_given_alive": 0.579516768842409,
+          "mean_as_given_alive": 252.75513883880274,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.44816053511705684,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6846,
+      "mean_destroyed_cost": 196.608,
+      "mean_hulls_destroyed": {
+        "DD": 11.103,
+        "CA": 5.1126,
+        "BB": 1.4312,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 263.4497991967871,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.8928,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 145.06832437275986,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9999177090190915,
+            "BB": 0.9353401565322095,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.5808,
+          "damaged_probability_given_alive": 0.65633608815427,
+          "mean_as_given_alive": 135.76101928374655,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.09673613841918993,
+            "BB": 0.5876786792832696,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.6074,
+      "mean_destroyed_cost": 208.209,
+      "mean_hulls_destroyed": {
+        "DD": 11.9292,
+        "CA": 5.7702,
+        "BB": 1.378,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 1,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 1,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 252.24450715581537,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 2,
+          "alive_probability": 0.613,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 114.72593800978792,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9998050302203159,
+            "BB": 0.9623960695389266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 3,
+          "alive_probability": 0.1106,
+          "damaged_probability_given_alive": 0.8083182640144665,
+          "mean_as_given_alive": 95.79566003616637,
+          "class_damaged_fraction": {
+            "DD": 1.0,
+            "CA": 0.20391061452513967,
+            "BB": 0.8132832080200502,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.9876,
+      "mean_destroyed_cost": 239.012,
+      "mean_hulls_destroyed": {
+        "DD": 11.9938,
+        "CA": 5.9908,
+        "BB": 1.9818,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 304.69477911646584,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9197199880845993,
+            "BB": 0.4921677614957049,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.896,
+          "damaged_probability_given_alive": 0.6513392857142857,
+          "mean_as_given_alive": 238.88392857142858,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.10598876650375666,
+            "BB": 0.4838709677419355,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.7764,
+          "damaged_probability_given_alive": 0.7442040185471407,
+          "mean_as_given_alive": 189.36115404430706,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.8071561338289963,
+            "BB": 0.28637081717650437,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.388,
+      "mean_destroyed_cost": 177.602,
+      "mean_hulls_destroyed": {
+        "DD": 11.7364,
+        "CA": 5.093,
+        "BB": 0.945,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 1.0,
+          "mean_as_given_alive": 289.9234025398105,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.9144138779722917,
+            "BB": 0.5158227848101266,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.6602,
+          "damaged_probability_given_alive": 0.7258406543471675,
+          "mean_as_given_alive": 194.33959406240533,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.1587751247807905,
+            "BB": 0.5881347238844247,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.2878,
+          "damaged_probability_given_alive": 0.6657400972897846,
+          "mean_as_given_alive": 169.72897845726197,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.7601791530944625,
+            "BB": 0.35084119819450144,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.8964,
+      "mean_destroyed_cost": 230.051,
+      "mean_hulls_destroyed": {
+        "DD": 11.908,
+        "CA": 5.8786,
+        "BB": 1.8296,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "dd1-only",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "pursuit",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9922,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 405.4061681112679,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.897,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 350.7759197324415,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.7302,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 315.06710490276635,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.4582,
+      "mean_destroyed_cost": 161.204,
+      "mean_hulls_destroyed": {
+        "DD": 10.4086,
+        "CA": 4.2912,
+        "BB": 0.9954,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform1",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "screen",
+      "schedule": "uniform1",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 480.0,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.996,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 423.0983935742972,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.983,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 373.53001017293997,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9538,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 331.68588802684,
+          "class_damaged_fraction": {
+            "DD": 0.0,
+            "CA": 0.0,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.0938,
+      "mean_destroyed_cost": 105.493,
+      "mean_hulls_destroyed": {
+        "DD": 9.5606,
+        "CA": 2.9382,
+        "BB": 0.3026,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform1",
+      "gap": 2,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 2,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 4,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 6,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    },
+    {
+      "scenario": "capital",
+      "schedule": "uniform1",
+      "gap": 3,
+      "assisted": false,
+      "pursuit": "none",
+      "trials": 5000,
+      "entries": [
+        {
+          "wave": 0,
+          "year": 0,
+          "alive_probability": 1.0,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 540.0,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 1,
+          "year": 3,
+          "alive_probability": 0.9968,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 475.7684590690209,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 2,
+          "year": 6,
+          "alive_probability": 0.9704,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 424.8103874690849,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        },
+        {
+          "wave": 3,
+          "year": 9,
+          "alive_probability": 0.9242,
+          "damaged_probability_given_alive": 0.0,
+          "mean_as_given_alive": 384.8712399913439,
+          "class_damaged_fraction": {
+            "DD": null,
+            "CA": null,
+            "BB": 0.0,
+            "SB": null,
+            "SC": null,
+            "TT": null,
+            "ET": null
+          }
+        }
+      ],
+      "destroyed_probability": 0.1382,
+      "mean_destroyed_cost": 117.504,
+      "mean_hulls_destroyed": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 2.6112,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      }
+    }
+  ]
+}

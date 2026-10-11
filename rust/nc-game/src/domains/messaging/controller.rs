@@ -3,9 +3,12 @@ use crate::app::state::App;
 use crate::domains::messaging::screens::message_compose::{
     COMPOSE_BODY_WRAP_WIDTH, ComposeCursor, compose_cursor_for_index,
     compose_existing_index_for_cursor, compose_row_end_col, materialize_compose_cursor,
+    outbox_message_body_rows, outbox_message_view_lines,
 };
+use crate::domains::messaging::scrolled_preview_offset;
+use crate::domains::messaging::state::OutboxMode;
 use crate::model::{MainMenuSummary, ReviewSummary};
-use crate::reports::has_visible_runtime_messages;
+use crate::reports::{has_visible_runtime_messages, runtime_outgoing_message_lines};
 use crate::screen::{CommandMenu, ScreenId};
 use nc_data::{
     CoreGameData, QueuedPlayerMail, delete_report_blocks_for_viewer, validate_queue_message_limit,
@@ -31,7 +34,11 @@ impl App {
             &self.game_data,
             self.player.record_index_1_based,
             self.has_active_report_blocks(),
-            has_visible_runtime_messages(self.player.record_index_1_based as u8, &self.queued_mail),
+            has_visible_runtime_messages(
+                self.player.record_index_1_based as u8,
+                &self.queued_mail,
+                self.game_data.conquest.game_year,
+            ),
         );
         let review_summary = ReviewSummary::from_main_menu(&summary);
         if !review_summary.reviewable_results && !review_summary.reviewable_messages {
@@ -94,6 +101,7 @@ impl App {
         self.messaging.compose_outbox_status = None;
         self.messaging.compose_outbox_scroll_offset = 0;
         self.messaging.compose_outbox_cursor = 0;
+        self.messaging.compose_outbox_mode = OutboxMode::List;
         self.current_screen = ScreenId::ComposeMessageOutbox;
     }
 
@@ -455,35 +463,62 @@ impl App {
         }
     }
 
+    pub fn open_compose_outbox_message(&mut self) {
+        if self.select_compose_outbox_message().is_some() {
+            self.messaging.compose_outbox_mode = OutboxMode::Read;
+            self.messaging.compose_outbox_read_scroll = 0;
+        }
+    }
+
+    /// Scrolls the message open in the outbox read view, as the inbox preview
+    /// scrolls.
+    pub fn scroll_compose_outbox_message(&mut self, delta: i8) {
+        if self.current_screen != ScreenId::ComposeMessageOutbox
+            || self.messaging.compose_outbox_mode != OutboxMode::Read
+        {
+            return;
+        }
+        let total_lines = self
+            .compose_outbox_queue_indexes()
+            .get(self.messaging.compose_outbox_cursor)
+            .map(|&idx| {
+                outbox_message_view_lines(&runtime_outgoing_message_lines(
+                    &self.game_data,
+                    &self.queued_mail[idx],
+                ))
+                .len()
+            })
+            .unwrap_or(0);
+        self.messaging.compose_outbox_read_scroll = scrolled_preview_offset(
+            self.messaging.compose_outbox_read_scroll,
+            delta,
+            total_lines,
+            outbox_message_body_rows(self.screen_geometry),
+        );
+    }
+
+    pub fn open_compose_outbox_delete_confirm(&mut self) {
+        if self.select_compose_outbox_message().is_some() {
+            self.messaging.compose_outbox_mode = OutboxMode::DeleteConfirm;
+        }
+    }
+
+    pub fn return_to_compose_outbox_list(&mut self) {
+        self.messaging.compose_outbox_mode = OutboxMode::List;
+    }
+
     pub fn delete_queued_compose_message(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.current_screen != ScreenId::ComposeMessageOutbox {
+        if self.current_screen != ScreenId::ComposeMessageOutbox
+            || self.messaging.compose_outbox_mode != OutboxMode::DeleteConfirm
+        {
             return Ok(());
         }
-        // If the input box is empty, use the cursor row (1-based queue_no).
-        let queue_no = if self.messaging.compose_outbox_input.trim().is_empty() {
-            self.messaging.compose_outbox_cursor + 1
-        } else {
-            let Ok(n) = self.messaging.compose_outbox_input.parse::<usize>() else {
-                self.messaging.compose_outbox_status =
-                    Some("Enter a queued message number.".to_string());
-                return Ok(());
-            };
-            if n == 0 {
-                self.messaging.compose_outbox_status =
-                    Some("Enter a queued message number.".to_string());
-                return Ok(());
-            }
-            n
-        };
-
-        let sender_empire_id = self.player.record_index_1_based as u8;
-        let mut queue = self.queued_mail.clone();
-        let own_indexes = queue
-            .iter()
-            .enumerate()
-            .filter_map(|(idx, mail)| (mail.sender_empire_id == sender_empire_id).then_some(idx))
-            .collect::<Vec<_>>();
-        let Some(queue_index) = own_indexes.get(queue_no - 1).copied() else {
+        self.messaging.compose_outbox_mode = OutboxMode::List;
+        let own_indexes = self.compose_outbox_queue_indexes();
+        let Some(queue_index) = own_indexes
+            .get(self.messaging.compose_outbox_cursor)
+            .copied()
+        else {
             self.messaging.compose_outbox_status = Some(format!(
                 "Enter a queued message number in 1..={}.",
                 own_indexes.len()
@@ -491,8 +526,7 @@ impl App {
             return Ok(());
         };
 
-        queue.remove(queue_index);
-        self.queued_mail = queue;
+        self.cancel_queued_mail(queue_index);
         self.save_game_data()?;
         self.messaging.compose_outbox_input.clear();
         self.messaging.compose_outbox_status = None;
@@ -507,6 +541,50 @@ impl App {
         self.messaging.compose_outbox_scroll_offset =
             self.messaging.compose_outbox_scroll_offset.min(max_offset);
         Ok(())
+    }
+
+    /// Removes the player's own queued message outright, as the outbox and the
+    /// inbox both do when it is cancelled before maintenance. The caller saves.
+    pub(crate) fn cancel_queued_mail(&mut self, queue_index: usize) {
+        self.queued_mail.remove(queue_index);
+        self.shift_inbox_display_ids_after_mail_removal(queue_index);
+    }
+
+    /// Resolves the typed queue number, or the highlighted row when nothing is
+    /// typed, to a position in the player's own queue and moves the cursor
+    /// there.
+    fn select_compose_outbox_message(&mut self) -> Option<usize> {
+        if self.current_screen != ScreenId::ComposeMessageOutbox {
+            return None;
+        }
+        let position = if self.messaging.compose_outbox_input.trim().is_empty() {
+            self.messaging.compose_outbox_cursor
+        } else {
+            match self.messaging.compose_outbox_input.parse::<usize>() {
+                Ok(queue_no) if queue_no > 0 => queue_no - 1,
+                _ => {
+                    self.messaging.compose_outbox_status =
+                        Some("Enter a queued message number.".to_string());
+                    return None;
+                }
+            }
+        };
+        let total = self.compose_outbox_queue_len();
+        if position >= total {
+            self.messaging.compose_outbox_status =
+                Some(format!("Enter a queued message number in 1..={total}."));
+            return None;
+        }
+        self.messaging.compose_outbox_input.clear();
+        self.messaging.compose_outbox_status = None;
+        self.messaging.compose_outbox_cursor = position;
+        let visible_rows = self.compose_outbox_visible_rows();
+        sync_scroll_to_cursor(
+            &mut self.messaging.compose_outbox_scroll_offset,
+            self.messaging.compose_outbox_cursor,
+            visible_rows,
+        );
+        Some(position)
     }
 
     fn sync_compose_recipient_cursor_to_input(&mut self) {
@@ -609,8 +687,9 @@ impl App {
             &self.game_data.players,
             self.player.record_index_1_based as u8,
         );
+        let current_year = self.game_data.conquest.game_year;
         for mail in &mut self.queued_mail {
-            if mail.is_visible_to_recipient(self.player.record_index_1_based as u8) {
+            if mail.is_visible_to_recipient(self.player.record_index_1_based as u8, current_year) {
                 mail.mark_deleted_by_recipient();
             }
         }
@@ -663,13 +742,24 @@ impl App {
     pub(crate) fn compose_outbox_queue(
         &self,
     ) -> Result<Vec<QueuedPlayerMail>, Box<dyn std::error::Error>> {
-        let sender_empire_id = self.player.record_index_1_based as u8;
         Ok(self
-            .queued_mail
-            .clone()
+            .compose_outbox_queue_indexes()
             .into_iter()
-            .filter(|mail| mail.sender_empire_id == sender_empire_id)
+            .map(|idx| self.queued_mail[idx].clone())
             .collect())
+    }
+
+    /// Positions in `queued_mail` of the player's messages queued this turn,
+    /// in queue order: the outbox rows. Delivered messages are not listed.
+    fn compose_outbox_queue_indexes(&self) -> Vec<usize> {
+        let sender_empire_id = self.player.record_index_1_based as u8;
+        let current_year = self.game_data.conquest.game_year;
+        self.queued_mail
+            .iter()
+            .enumerate()
+            .filter(|(_, mail)| mail.is_queued_by(sender_empire_id, current_year))
+            .map(|(idx, _)| idx)
+            .collect()
     }
 }
 

@@ -426,7 +426,7 @@ fn compose_body_uses_full_80x25_vertical_editor_space() {
     assert!(row_text(&buffer, 19).contains("line 16"));
     assert!(row_text(&buffer, 22).trim().is_empty());
     assert!(row_text(&buffer, 23).contains("Chars:"));
-    assert!(row_text(&buffer, 24).starts_with("COMMAND <- ? ^E ^X ->"));
+    assert!(row_text(&buffer, 24).starts_with("COMMAND <- ^G ^E ^X ->"));
 }
 
 #[test]
@@ -487,6 +487,46 @@ fn compose_send_confirm_uses_default_no_prompt_markup() {
         row[choice + 4].style,
         classic::prompt_square_delimiter_style()
     );
+}
+
+#[test]
+fn compose_outbox_message_view_fits_80x25_in_the_inbox_preview_box() {
+    let mut screen = MessageComposeScreen::new();
+    let mut lines = vec![
+        "To Red Horizon Pact (Empire #2)".to_string(),
+        format!("Subject: {}", "s".repeat(60)),
+    ];
+    lines.extend((1..=40).map(|idx| format!("line {idx:02} {}", "w".repeat(70))));
+    let buffer = screen
+        .render_outbox_message(ScreenGeometry::local_default(), &lines, 0)
+        .expect("outbox message view renders");
+
+    assert_eq!(buffer.height(), PLAYFIELD_HEIGHT);
+    assert!(row_text(&buffer, 0).starts_with(" COMMUNICATE (SEND MESSAGE):"));
+    assert!(row_text(&buffer, 1).starts_with('┌'));
+    assert!(row_text(&buffer, 2).starts_with("│To Red Horizon Pact (Empire #2)"));
+    assert!(row_text(&buffer, 22).starts_with('│'));
+    assert!(row_text(&buffer, 23).starts_with('└'));
+    assert_eq!(
+        row_text(&buffer, COMMAND_LINE_ROW).trim_end(),
+        " (slap a key)"
+    );
+}
+
+#[test]
+fn compose_sent_adds_outbox_hint_above_dismiss_prompt() {
+    let mut screen = MessageComposeScreen::new();
+    let buffer = screen
+        .render_sent("Message queued for Empire 2. It will be delivered after turn maintenance.")
+        .expect("sent screen renders");
+
+    assert!(row_text(&buffer, 3).starts_with("Message queued for Empire 2."));
+    assert_eq!(
+        row_text(&buffer, 4).trim_end(),
+        "Press D on the recipient list to review or cancel it before maintenance."
+    );
+    assert!(row_text(&buffer, 5).trim().is_empty());
+    assert_eq!(row_text(&buffer, 6).trim_end(), "(slap a key)");
 }
 
 #[test]

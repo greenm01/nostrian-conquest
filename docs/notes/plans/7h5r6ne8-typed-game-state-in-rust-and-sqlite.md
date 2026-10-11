@@ -330,8 +330,8 @@ At `2c1d32b4`, `CoreGameData` holds `Player`, `Planet`, `Fleet`, `Starbase`,
 `Ipbm`, `Setup` and `Conquest` directly from `nc-data/src/model/`. Callers
 read and write named fields. Operations with logic use focused free functions,
 including fleet ships, orders, motion, names, rankings and planet summaries.
-The remaining `records/` transitional methods and core codecs are being
-removed from nc-data by the phase-5 implementation branch.
+The `records/` transitional methods went at `382527e3`, and the core codecs
+moved to `nc-compat/src/classic/` at `cd880dad`.
 
 The new `nc-data/tests/classic_boundary.rs` scans all seven runtime/shared
 source trees named in the architecture policy. It rejects core codec symbols,
@@ -347,8 +347,11 @@ to fail before that move. The requested cargo-slot command ran at `2c1d32b4`: tw
 `core_classic_codecs_stay_out_of_runtime_sources` fails as intended. Its
 17 offending files are the eight `classic/` files, seven `records/` files,
 `lib.rs` and `directory/current_known_auxiliary.rs`. No other scanned crate
-fails. Final module inventory and post-move validation are pending; this
-section does not claim phase 5 is complete or oracle parity.
+fails. After the move, `nc-compat/src/classic/{mod,base,conquest,fleet,ipbm,planet,player,setup}.rs`
+hold the codecs, `ClassicFile`, the ignored-byte map, and the record and
+file sizes; nc-classic lends `ParseError`, `copy_array`, and `expect_size`;
+nc-data keeps the typed model only. All three boundary tests and the full
+workspace suite pass.
 
 ## Phase 6 — docs and tracking
 

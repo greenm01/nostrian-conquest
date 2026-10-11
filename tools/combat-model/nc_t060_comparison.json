@@ -1,0 +1,837 @@
+{
+  "seed": 20261010,
+  "trials": 20000,
+  "exact_limit": 100000,
+  "rulesets": {
+    "engine-t060": {
+      "name": "engine-t060",
+      "effect": {
+        "kind": "flat",
+        "rows": [
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          4,
+          4,
+          4,
+          4
+        ],
+        "unit": 4
+      },
+      "mixed_shift": 1,
+      "base_shift": 1,
+      "base_condition": "present",
+      "shift_cap": 2,
+      "execution_classes": [
+        "DD",
+        "SB"
+      ],
+      "crippled_ds": "full",
+      "remainder": "carry",
+      "critical": "free-kill",
+      "screen": "absolute",
+      "roe": "lock3",
+      "withdrawal": "pressed",
+      "round_cap": 64,
+      "mutual_withdrawal_exchange": true,
+      "critical_order": [
+        "DD",
+        "SC",
+        "TT",
+        "ET",
+        "CA",
+        "BB",
+        "SB"
+      ]
+    }
+  },
+  "unit_variants": {
+    "baseline": {
+      "DD": {
+        "AS": 10,
+        "DS": 5,
+        "cost": 5,
+        "fire": "execution",
+        "line": true
+      },
+      "CA": {
+        "AS": 30,
+        "DS": 30,
+        "cost": 15,
+        "fire": "suppression",
+        "line": true
+      },
+      "BB": {
+        "AS": 90,
+        "DS": 100,
+        "cost": 45,
+        "fire": "suppression",
+        "line": true
+      },
+      "SB": {
+        "AS": 100,
+        "DS": 120,
+        "cost": 50,
+        "fire": "execution",
+        "line": true
+      },
+      "SC": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 15,
+        "fire": null,
+        "line": false
+      },
+      "TT": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 5,
+        "fire": null,
+        "line": false
+      },
+      "ET": {
+        "AS": 0,
+        "DS": 20,
+        "cost": 20,
+        "fire": null,
+        "line": false
+      }
+    }
+  },
+  "unit_overrides": [],
+  "battles": [
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "10 CA vs 10 CA",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 9879,
+        "B": 10013,
+        "mutual": 108,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.4870228152349903,
+          0.5008795084012886
+        ],
+        "B": [
+          0.4937210272992824,
+          0.5075787230538448
+        ],
+        "mutual": [
+          0.004474973029329244,
+          0.006514989037369452
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.49395,
+        "B": 0.50065,
+        "mutual": 0.0054,
+        "stalemate": 0.0
+      },
+      "rounds": 4.58435,
+      "loss_left": 94.4415,
+      "loss_right": 92.74575,
+      "crippled_left": 46.90425,
+      "crippled_right": 47.78925,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 6.2961,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 6.18305,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 16.69
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "11 CA vs 10 CA",
+      "left": {
+        "CA": 11
+      },
+      "right": {
+        "CA": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 13049,
+        "B": 6868,
+        "mutual": 83,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.6458217271609632,
+          0.6590197210455304
+        ],
+        "B": [
+          0.336849760493754,
+          0.35001038519901795
+        ],
+        "mutual": [
+          0.003349280597342023,
+          0.005141161559496934
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.65245,
+        "B": 0.3434,
+        "mutual": 0.00415,
+        "stalemate": 0.0
+      },
+      "rounds": 4.4788,
+      "loss_left": 79.78425,
+      "loss_right": 112.227,
+      "crippled_left": 68.40675,
+      "crippled_right": 33.33,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 5.31895,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 7.4818,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 16.01
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "15 CA vs 10 CA",
+      "left": {
+        "CA": 15
+      },
+      "right": {
+        "CA": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 19367,
+        "B": 618,
+        "mutual": 15,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.965832373039425,
+          0.9706877467868218
+        ],
+        "B": [
+          0.02859036093519906,
+          0.033389807292638296
+        ],
+        "mutual": [
+          0.0004545801908539521,
+          0.0012371678111665165
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.96835,
+        "B": 0.0309,
+        "mutual": 0.00075,
+        "stalemate": 0.0
+      },
+      "rounds": 3.3236,
+      "loss_left": 25.2735,
+      "loss_right": 147.3285,
+      "crippled_left": 130.03725,
+      "crippled_right": 2.631,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 1.6849,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 9.8219,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 15.35
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "20 CA vs 10 CA",
+      "left": {
+        "CA": 20
+      },
+      "right": {
+        "CA": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "exact",
+      "states": 59586,
+      "p": {
+        "A": 0.9999939736896123,
+        "B": 5.307498358141116e-06,
+        "mutual": 7.188120299166026e-07,
+        "stalemate": 0.0
+      },
+      "rounds": 2.1196050100418744,
+      "loss_left": 4.173785470393945,
+      "loss_right": 149.99981841122107,
+      "crippled_left": 133.1728117129061,
+      "crippled_right": 0.00018158877897811272,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 0.2782523646929297,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 9.999987894081405,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0000000000000002,
+      "viable_right": 1.0000000000000002,
+      "seconds": 8.26
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "30 DD vs 10 CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "exact",
+      "states": 14201,
+      "p": {
+        "A": 0.09780464826672071,
+        "B": 0.8957087569160621,
+        "mutual": 0.006486594817217795,
+        "stalemate": 0.0
+      },
+      "rounds": 2.307279467917986,
+      "loss_left": 141.59010395786325,
+      "loss_right": 71.30412579732943,
+      "crippled_left": 8.129530742136827,
+      "crippled_right": 0.0,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 28.318020791572646,
+        "CA": 0.0,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 4.75360838648863,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0000000000000004,
+      "viable_right": 1.0000000000000004,
+      "seconds": 1.96
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "90 DD vs 10 BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 1075,
+        "B": 18850,
+        "mutual": 75,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.050709279984152596,
+          0.05696211219592078
+        ],
+        "B": [
+          0.9391878929774266,
+          0.9456421551129208
+        ],
+        "mutual": [
+          0.0029929385837864702,
+          0.00469765720189737
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.05375,
+        "B": 0.9425,
+        "mutual": 0.00375,
+        "stalemate": 0.0
+      },
+      "rounds": 2.2724,
+      "loss_left": 436.89675,
+      "loss_right": 187.56675,
+      "crippled_left": 12.925,
+      "crippled_right": 0.0,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 87.37935,
+        "CA": 0.0,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 4.16815,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 1.07
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "30 CA vs 10 BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 8057,
+        "B": 11889,
+        "mutual": 54,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.39607182599292956,
+          0.4096654866127715
+        ],
+        "B": [
+          0.5876277290919848,
+          0.6012359952970171
+        ],
+        "mutual": [
+          0.002070090977540913,
+          0.003520908083860748
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.40285,
+        "B": 0.59445,
+        "mutual": 0.0027,
+        "stalemate": 0.0
+      },
+      "rounds": 4.96625,
+      "loss_left": 318.2025,
+      "loss_right": 242.16075,
+      "crippled_left": 117.68325,
+      "crippled_right": 170.136,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 21.2135,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 0.0,
+        "BB": 5.38135,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 15.26
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "29 CA + 3 DD vs 30 CA",
+      "left": {
+        "CA": 29,
+        "DD": 3
+      },
+      "right": {
+        "CA": 30
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 20000,
+      "counts": {
+        "A": 11004,
+        "B": 8976,
+        "mutual": 20,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.5432965097468669,
+          0.5570842098331003
+        ],
+        "B": [
+          0.44191739438271066,
+          0.45570227010943437
+        ],
+        "mutual": [
+          0.0006474660464272732,
+          0.001544185937565143
+        ],
+        "stalemate": [
+          0.0,
+          0.00019203605610462545
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.5502,
+        "B": 0.4488,
+        "mutual": 0.001,
+        "stalemate": 0.0
+      },
+      "rounds": 4.6996,
+      "loss_left": 258.463,
+      "loss_right": 305.52375,
+      "crippled_left": 161.8025,
+      "crippled_right": 125.57625,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 2.29385,
+        "CA": 16.46625,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 20.36825,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 2.17
+    },
+    {
+      "ruleset": "engine-t060",
+      "units": "baseline",
+      "case": "10 CA ROE 6 vs 15 CA",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 15
+      },
+      "roe": [
+        6,
+        10
+      ],
+      "method": "exact",
+      "states": 90568,
+      "p": {
+        "A": 0.025124441656300393,
+        "B": 0.9746861257869147,
+        "mutual": 0.00018943255678581443,
+        "stalemate": 0.0
+      },
+      "rounds": 3.0648067368021414,
+      "loss_left": 139.60087243303045,
+      "loss_right": 21.58048930623188,
+      "crippled_left": 10.350110198962609,
+      "crippled_right": 132.72354319376825,
+      "withdrew_left": 0.3194545415865014,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 0.0,
+        "CA": 9.306724828868697,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 1.4386992870821256,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0000000000000007,
+      "viable_right": 1.0000000000000007,
+      "seconds": 17.93
+    }
+  ],
+  "engine_rules": "engine-t060",
+  "engine": [
+    {
+      "case": "10 CA vs 10 CA",
+      "model_left": "49.4% [48.7, 50.1]",
+      "engine_left": "49.7% [49.0, 50.4] n=19998",
+      "model_mutual": "0.5%",
+      "engine_mutual": "0.5%",
+      "model_loss": "94.4 / 92.7",
+      "engine_loss": "93.3 / 93.8",
+      "years_per_battle": "1.21",
+      "agree": "yes"
+    },
+    {
+      "case": "11 CA vs 10 CA",
+      "model_left": "65.2% [64.6, 65.9]",
+      "engine_left": "65.8% [65.1, 66.4] n=20000",
+      "model_mutual": "0.4%",
+      "engine_mutual": "0.4%",
+      "model_loss": "79.8 / 112.2",
+      "engine_loss": "79.0 / 113.0",
+      "years_per_battle": "1.20",
+      "agree": "yes"
+    },
+    {
+      "case": "15 CA vs 10 CA",
+      "model_left": "96.8% [96.6, 97.1]",
+      "engine_left": "96.8% [96.6, 97.1] n=20000",
+      "model_mutual": "0.1%",
+      "engine_mutual": "0.1%",
+      "model_loss": "25.3 / 147.3",
+      "engine_loss": "24.5 / 147.3",
+      "years_per_battle": "1.17",
+      "agree": "yes"
+    },
+    {
+      "case": "20 CA vs 10 CA",
+      "model_left": "100.0%",
+      "engine_left": "100.0% [100.0, 100.0] n=20000",
+      "model_mutual": "0.0%",
+      "engine_mutual": "0.0%",
+      "model_loss": "4.2 / 150.0",
+      "engine_loss": "4.0 / 150.0",
+      "years_per_battle": "1.14",
+      "agree": "yes"
+    },
+    {
+      "case": "30 DD vs 10 CA",
+      "model_left": "9.8%",
+      "engine_left": "9.7% [9.3, 10.1] n=20000",
+      "model_mutual": "0.6%",
+      "engine_mutual": "0.7%",
+      "model_loss": "141.6 / 71.3",
+      "engine_loss": "141.6 / 71.3",
+      "years_per_battle": "1.17",
+      "agree": "yes"
+    },
+    {
+      "case": "90 DD vs 10 BB",
+      "model_left": "5.4% [5.1, 5.7]",
+      "engine_left": "5.5% [5.1, 5.8] n=20000",
+      "model_mutual": "0.4%",
+      "engine_mutual": "0.3%",
+      "model_loss": "436.9 / 187.6",
+      "engine_loss": "436.9 / 188.4",
+      "years_per_battle": "1.06",
+      "agree": "yes"
+    },
+    {
+      "case": "30 CA vs 10 BB",
+      "model_left": "40.3% [39.6, 41.0]",
+      "engine_left": "40.3% [39.7, 41.0] n=20000",
+      "model_mutual": "0.3%",
+      "engine_mutual": "0.3%",
+      "model_loss": "318.2 / 242.2",
+      "engine_loss": "317.9 / 242.5",
+      "years_per_battle": "1.08",
+      "agree": "yes"
+    },
+    {
+      "case": "29 CA + 3 DD vs 30 CA",
+      "model_left": "55.0% [54.3, 55.7]",
+      "engine_left": "55.5% [54.8, 56.2] n=20000",
+      "model_mutual": "0.1%",
+      "engine_mutual": "0.1%",
+      "model_loss": "258.5 / 305.5",
+      "engine_loss": "255.5 / 306.5",
+      "years_per_battle": "1.05",
+      "agree": "yes"
+    },
+    {
+      "case": "10 CA ROE 6 vs 15 CA",
+      "model_left": "2.5%",
+      "engine_left": "2.4% [2.2, 2.7] n=20000",
+      "model_mutual": "0.0%",
+      "engine_mutual": "0.0%",
+      "model_loss": "139.6 / 21.6",
+      "engine_loss": "139.3 / 21.6",
+      "years_per_battle": "1.17",
+      "agree": "yes"
+    }
+  ]
+}

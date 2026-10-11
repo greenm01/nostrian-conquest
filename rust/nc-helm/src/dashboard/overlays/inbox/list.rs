@@ -940,6 +940,7 @@ mod tests {
             PathBuf::from("."),
             GameStateBuilder::new()
                 .with_player_count(25)
+                .with_year(3013)
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
@@ -1115,6 +1116,7 @@ mod tests {
             PathBuf::from("."),
             GameStateBuilder::new()
                 .with_player_count(25)
+                .with_year(3013)
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),

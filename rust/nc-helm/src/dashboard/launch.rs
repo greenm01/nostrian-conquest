@@ -166,7 +166,11 @@ impl DashLaunchState {
 
         let viewer_id = app.player_record_index_1_based as u8;
         let reports_pending = has_visible_runtime_reports(viewer_id, &app.report_block_rows);
-        let messages_pending = has_visible_runtime_messages(viewer_id, &app.queued_mail);
+        let messages_pending = has_visible_runtime_messages(
+            viewer_id,
+            &app.queued_mail,
+            app.game_data.conquest.game_year,
+        );
 
         if reports_pending || messages_pending {
             let game_key = if let Some(store) = &app.campaign_store {

@@ -249,6 +249,17 @@ Windows Terminal renders them, and the input check works either way.
    the program exits; `echo %ERRORLEVEL%` prints `0`. Before the fix, a
    mouse, focus, or resize event left the session stuck past its limit.
 
+Windows result (2026-10-10, the user on bean, PowerShell 7.6, Windows
+console): `Esc` closes the quit prompt at once, also after arrow keys and
+window events. The check found three more console bugs, fixed and verified
+there: the help screen crashed because Rust's console `Stdout` refuses
+non-UTF-8 bytes (`466344c7`, raw `WriteFile`); arrow keys never reached the
+door (`4bd50a69`, VT input mode); and every frame cleared the screen first,
+which flashed (`739158c9`, rows redrawn in place). The session limit works
+too: the two-minute warning appeared on time, and at three minutes the
+session printed "Your time limit for this session has expired. Returning to
+the BBS." and returned to the prompt.
+
 ### t020
 
 Door edge cases: an unterminated telnet `IAC SB` swallows input with no length
@@ -455,3 +466,62 @@ maintenance on them. The shipped BBS and localhost paths (`nc-sysop maint`)
 are not affected. Finish the hosted maintenance path (apply submissions,
 compose reports, keep mail and scorch orders) or gate the command until it
 is finished. Found by the t039 phase 4 agent on 2026-10-10.
+The t067 follow-up confirmed the mail side: hosted maintenance saves queued
+mail as empty and `ProcessTurnSubmission` is a stub, so no mail reaches a
+hosted game, and maintenance would wipe it if it did.
+
+### t067
+
+Reported by the user on 2026-10-10: after sending a message there seemed to
+be no way to review it or cancel it before maintenance. The outbox exists
+(Messages, then `D` on the recipient list) but is hard to find, shows only
+number, recipient, and subject, and deletes the highlighted message on
+`Enter` without asking, although its help calls `Enter` "accept highlighted
+item" and its footer shows only `? <Q>`.
+
+Decision (2026-10-10, owner): within the existing screens and table layout,
+`Enter` opens the highlighted queued message to read; `D` deletes it after a
+"Delete? [Y]/N" prompt that defaults to yes, as the inbox does; the outbox
+footer shows `D`; and the send confirmation says that `D` on the recipient
+list reviews or cancels queued messages.
+
+The owner then clarified the real problem: after sending, Review Inbox said
+"Notice: Inbox is empty.", so the message seemed gone. Added to t067: Review
+Inbox lists the player's own messages queued this turn, first and marked
+outgoing, with the recipient in the sender's place; `Enter` reads one and
+`D` cancels it with the inbox's default-yes prompt. They leave the list when
+maintenance delivers them.
+
+Result (2026-10-10): merged. The outbox reads on `Enter` and deletes on `D`
+after the inbox's default-yes prompt; Review Inbox lists the player's queued
+messages first, marked `OUT`, until maintenance. The agent also fixed an
+outbox crash (a 60-character subject pushed the table past 80 columns) and
+stale inbox numbers after a cancel. Owner decisions on its findings: the
+outbox shows only this turn's queued messages; a recipient sees a message
+only after the maintenance that delivers it (shared local and BBS games
+delivered at once before); the outbox read view scrolls like the inbox
+preview. Those three land as a follow-up commit under t067.
+
+Follow-up (2026-10-10): the outbox lists only this turn's queued messages;
+mail reaches its recipient only after the maintenance that delivers it (its
+year is before the current one) in the inbox, login review, counts, bulk
+delete, nc-helm, and the hosted payload; the outbox read view scrolls with
+the inbox preview's keys.
+
+### t076
+
+Found by the t067 follow-up (2026-10-10): a player session left open
+while maintenance runs keeps saving to the year it loaded. The store keeps
+one snapshot per game year and loads the highest, so anything the session
+saves afterwards (mail, orders) lands in the old year's snapshot and is
+silently lost. Detect a newer snapshot before saving, refuse the stale
+write, and tell the player that maintenance has run and the session must
+reload.
+
+### t077
+
+`nc-helm`'s "current year only" inbox filter keeps items whose year equals
+the current year, but delivered mail and maintenance reports carry an
+earlier year (`report_year = year - 1`), so the filter hides everything.
+Make it show the latest delivered year. The filter is off by default.
+Found by the t067 follow-up.
