@@ -205,6 +205,16 @@ pub fn update_settings(
     Ok(())
 }
 
+/// Record the year and turn maintenance advanced the game to.
+pub fn set_game_clock(conn: &Connection, game_id: &str, year: u16, turn: u32) -> SqliteResult<()> {
+    conn.execute(
+        "UPDATE game_metadata SET current_year = ?1, current_turn = ?2, updated_at = ?3
+         WHERE id = ?4",
+        params![year, turn, chrono::Utc::now().timestamp(), game_id],
+    )?;
+    Ok(())
+}
+
 pub fn mark_catalog_dirty(conn: &Connection, game_id: &str) -> SqliteResult<()> {
     let now = chrono::Utc::now().timestamp();
     conn.execute(
