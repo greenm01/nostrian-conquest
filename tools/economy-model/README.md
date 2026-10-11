@@ -127,3 +127,17 @@ classic capture destruction, raid success or complete campaigns.
 `test_conquest_review.py` runs under unittest discovery. See the
 [conquest review](../../docs/notes/investigations/et03gvm9-conquest-income-inherited-assets-and-bombardment-economics.md)
 for the proposed decision4 and remaining decision5 questions.
+
+## Bombardment and recoverable Scorch (t087)
+
+`python3 tools/economy-model/raid_review.py --trials 10000` writes
+`raid_review_results.json`: orbital gates followed by bombardment, with
+retained damage, DD8 and the approved battery shield. Three goods rates use
+matched seeds; repeated stationary raids are separate controls. This is
+conditional on arriving at contact, not an engine run or map campaign.
+`python3 tools/economy-model/scorch_review.py` writes
+`scorch_review_results.json`: enumerated classic-style annual production
+decay, proposed NC debt/queue adaptations, and approved smooth recovery.
+Both new test files run under unittest discovery. See the
+[joint item5 review](../../docs/notes/investigations/wrk1xd3p-bombardment-raid-costs-and-recoverable-scorch-earth.md)
+for the proposed rates, full Scorch contract and limits.
