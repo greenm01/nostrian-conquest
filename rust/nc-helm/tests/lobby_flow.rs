@@ -301,6 +301,22 @@ fn lobby_quit_confirm_enter_defaults_to_no() {
 }
 
 #[test]
+fn lobby_quit_confirm_escape_declines() {
+    let (mut app, _) = App::new(None);
+    let _ = app.dispatch(Msg::Unlocked(Ok(dummy_session("captain"))));
+    let _ = app.dispatch(Msg::Key(key(nc_helm::KeyCode::Esc)));
+
+    let effects = app.dispatch(Msg::Key(key(nc_helm::KeyCode::Esc)));
+
+    assert!(effects.is_empty());
+    assert!(!app.model().should_quit);
+    match &app.model().route {
+        Route::Lobby(lobby) => assert!(!lobby.quit_confirm_open),
+        other => panic!("expected lobby route, got {other:?}"),
+    }
+}
+
+#[test]
 fn open_games_scrolls_when_selection_moves_past_visible_body() {
     let (mut app, _) = App::new(None);
     let _ = app.dispatch(Msg::Unlocked(Ok(dummy_session("captain"))));
@@ -358,6 +374,37 @@ fn enter_on_sandbox_open_game_opens_confirm_then_y_joins() {
         effects.as_slice(),
         [Effect::JoinSandboxGame { row, .. }] if row.game_id == "phase-sapling-awful"
     ));
+}
+
+#[test]
+fn sandbox_join_and_delete_confirms_cancel_on_enter_and_escape() {
+    let lobby_with = |my_games| {
+        let (mut app, _) = App::new(None);
+        let _ = app.dispatch(Msg::Unlocked(Ok(dummy_session("captain"))));
+        let _ = app.dispatch(Msg::LobbyUpdated(Ok(LobbySnapshot {
+            cache: ClientCache::empty(),
+            my_games,
+            open_games: vec![sandbox_open_game_row()],
+            notices: Vec::new(),
+        })));
+        app
+    };
+    for cancel in [nc_helm::KeyCode::Enter, nc_helm::KeyCode::Esc] {
+        let mut app = lobby_with(Vec::new());
+        let _ = app.dispatch(Msg::Key(key(nc_helm::KeyCode::Char('o'))));
+        let _ = app.dispatch(Msg::Key(key(nc_helm::KeyCode::Enter)));
+        assert!(matches!(app.model().route, Route::SandboxJoinConfirm(_)));
+        let effects = app.dispatch(Msg::Key(key(cancel)));
+        assert!(effects.is_empty());
+        assert!(matches!(app.model().route, Route::Lobby(_)));
+
+        let mut app = lobby_with(vec![my_game_row("joined")]);
+        let _ = app.dispatch(Msg::Key(alt_key(nc_helm::KeyCode::Char('d'))));
+        assert!(matches!(app.model().route, Route::SandboxDeleteConfirm(_)));
+        let effects = app.dispatch(Msg::Key(key(cancel)));
+        assert!(effects.is_empty());
+        assert!(matches!(app.model().route, Route::Lobby(_)));
+    }
 }
 
 #[test]

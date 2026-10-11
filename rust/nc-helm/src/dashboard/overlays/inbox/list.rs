@@ -64,11 +64,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame: MapWidgetFrame
             InboxFocus::List => "List",
             InboxFocus::Preview => "Preview",
         },
-        if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
-        } else {
-            ""
-        }
+        delete_prompt(app)
     );
     let parent = dashboard_overlay_parent_rect(dashboard::dashboard_layout(app).widgets);
     let body_width = inbox_body_width(&filter_line).min(max_overlay_body_width_for_parent(parent));
@@ -222,11 +218,7 @@ pub(crate) fn popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
             InboxFocus::List => "List",
             InboxFocus::Preview => "Preview",
         },
-        if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
-        } else {
-            ""
-        }
+        delete_prompt(app)
     );
     let parent = dashboard_overlay_parent_rect(dashboard::dashboard_layout(app).widgets);
     let body_width = inbox_body_width(&filter_line).min(max_overlay_body_width_for_parent(parent));
@@ -240,6 +232,15 @@ pub(crate) fn popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
         footer,
         app.overlay_position_for(ActiveOverlay::Inbox),
     )
+}
+
+/// The inbox's delete prompt, which the outbox's `D` shares.
+fn delete_prompt(app: &DashApp) -> &'static str {
+    if app.inbox_overlay.delete_confirm {
+        "  Delete this item? [Y]/N"
+    } else {
+        ""
+    }
 }
 
 fn inbox_footer<'a>(app: &'a DashApp, selected_default: Option<&'a str>) -> TableFooter<'a> {
@@ -288,11 +289,12 @@ fn draw_outbox(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame: MapWidgetFr
         input: &app.inbox_overlay.prompt_input,
     };
     let filter_line = format!(
-        "OUTBOX - Focus:{}",
+        "OUTBOX - Focus:{}{}",
         match app.inbox_overlay.outbox_focus {
             InboxFocus::List => "List",
             InboxFocus::Preview => "Preview",
-        }
+        },
+        delete_prompt(app)
     );
     let parent = dashboard_overlay_parent_rect(dashboard::dashboard_layout(app).widgets);
     let body_width = inbox_body_width(&filter_line).min(max_overlay_body_width_for_parent(parent));
@@ -418,11 +420,12 @@ fn outbox_popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
         .outbox_selected
         .min(messages.len().saturating_sub(1));
     let filter_line = format!(
-        "OUTBOX - Focus:{}",
+        "OUTBOX - Focus:{}{}",
         match app.inbox_overlay.outbox_focus {
             InboxFocus::List => "List",
             InboxFocus::Preview => "Preview",
-        }
+        },
+        delete_prompt(app)
     );
     let parent = dashboard_overlay_parent_rect(dashboard::dashboard_layout(app).widgets);
     let body_width = inbox_body_width(&filter_line).min(max_overlay_body_width_for_parent(parent));
@@ -479,11 +482,7 @@ pub fn hit_test_inbox_pane(
             InboxFocus::List => "List",
             InboxFocus::Preview => "Preview",
         },
-        if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
-        } else {
-            ""
-        }
+        delete_prompt(app)
     );
     let parent = dashboard_overlay_parent_rect(dashboard::dashboard_layout(app).widgets);
     let body_width = inbox_body_width(&filter_line).min(max_overlay_body_width_for_parent(parent));

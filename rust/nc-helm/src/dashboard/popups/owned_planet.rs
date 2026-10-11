@@ -137,7 +137,7 @@ fn popup_layout<'a>(
                 app,
                 TableFooter::CommandPrompt {
                     label: "COMMAND",
-                    prompt: "Mass commission? Y/[N] ->",
+                    prompt: "Mass commission? [Y]/N ->",
                 },
             ),
         ),
