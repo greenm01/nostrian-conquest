@@ -1,0 +1,10 @@
+[package]
+name = "nc-dropfile"
+version = "1.0.0-beta.3"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[dependencies]
+kdl = "6"
+serde = { version = "1", features = ["derive"] }
+thiserror = "2"
