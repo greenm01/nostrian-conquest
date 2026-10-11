@@ -2,7 +2,7 @@ import unittest
 from fractions import Fraction as F
 
 from accounting_review import step
-from starbase_review import bonus, grow, growth_control, local_build, surge
+from starbase_review import bonus, cycle_control, cycle_path, grow, growth_control, local_build, surge
 
 
 class StarbaseTests(unittest.TestCase):
@@ -43,6 +43,22 @@ class StarbaseTests(unittest.TestCase):
         result=local_build(100,50)
         self.assertEqual((result['order_pass'],result['completion_pass'],result['first_bonus_pass']),(5,6,7))
         self.assertIsNone(local_build(20,50)['order_pass'])
+
+    def test_requested_cycles_have_no_steady_income_gain(self):
+        for taxes in ([75,64,64],[70,64]):
+            for start in (50,100):
+                result=cycle_control(start,100,taxes)
+                self.assertLess(result['steady_mean_income'],65)
+                self.assertLess(result['steady_cycle_start'],100)
+                self.assertLess(result['comparisons'][-1]['extra_income'],0)
+                steady=cycle_path(result['steady_cycle_start'],100,taxes)
+                self.assertEqual(steady['production'],result['steady_cycle_start'])
+
+    def test_emergency_cycle_gains_cash_but_does_not_restore_full_production(self):
+        for taxes in ([75,64,64],[70,64]):
+            result=cycle_control(100,100,taxes)['comparisons'][0]
+            self.assertGreater(result['extra_income'],0)
+            self.assertLess(result['cycle']['production'],100)
 
     def test_spending_conserves_cash_and_does_not_multiply_income(self):
         for n in (0,1,3):

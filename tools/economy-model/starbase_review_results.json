@@ -4279,6 +4279,412 @@
       ]
     }
   ],
+  "tax_cycles": [
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 60.3547125,
+            "income": 113.838366
+          },
+          "constant65": {
+            "production": 62.01005859,
+            "income": 113.58895996
+          },
+          "extra_income": 0.24940604
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 82.19162778,
+            "income": 708.48342274
+          },
+          "constant65": {
+            "production": 87.33914307,
+            "income": 721.89395163
+          },
+          "extra_income": -13.41052889
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 92.92829945,
+            "income": 3444.52408446
+          },
+          "constant65": {
+            "production": 99.79443821,
+            "income": 3562.46484385
+          },
+          "extra_income": -117.94075939
+        }
+      ],
+      "steady_cycle_start": 93.10543641,
+      "steady_mean_income": 62.49807796,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 60.61567912,
+            "income": 114.09730464
+          },
+          "constant65": {
+            "production": 62.01005859,
+            "income": 113.58895996
+          },
+          "extra_income": 0.50834468
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 82.68587003,
+            "income": 712.17291883
+          },
+          "constant65": {
+            "production": 87.33914307,
+            "income": 721.89395163
+          },
+          "extra_income": -9.7210328
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.1346248,
+            "income": 3457.39425477
+          },
+          "constant65": {
+            "production": 99.79443821,
+            "income": 3562.46484385
+          },
+          "extra_income": -105.07058908
+        }
+      ],
+      "steady_cycle_start": 93.29051028,
+      "steady_mean_income": 62.61819638,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 57.4575,
+            "income": 74.0478
+          },
+          "constant65": {
+            "production": 58.3671875,
+            "income": 73.28242187
+          },
+          "extra_income": 0.76537813
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 76.72701273,
+            "income": 444.28521169
+          },
+          "constant65": {
+            "production": 79.98762024,
+            "income": 446.72677425
+          },
+          "extra_income": -2.44156255
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.41884434,
+            "income": 2222.30356571
+          },
+          "constant65": {
+            "production": 98.71682784,
+            "income": 2269.76950273
+          },
+          "extra_income": -47.46593702
+        }
+      ],
+      "steady_cycle_start": 94.56229459,
+      "steady_mean_income": 63.16850911,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 57.59775,
+            "income": 74.13756
+          },
+          "constant65": {
+            "production": 58.3671875,
+            "income": 73.28242187
+          },
+          "extra_income": 0.85513812
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 77.08296976,
+            "income": 445.80840692
+          },
+          "constant65": {
+            "production": 79.98762024,
+            "income": 446.72677425
+          },
+          "extra_income": -0.91836733
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.59478119,
+            "income": 2229.15221168
+          },
+          "constant65": {
+            "production": 98.71682784,
+            "income": 2269.76950273
+          },
+          "extra_income": -40.61729105
+        }
+      ],
+      "steady_cycle_start": 94.66768571,
+      "steady_mean_income": 63.23598577,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 98.3438,
+            "income": 199.275232
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 195.0
+          },
+          "extra_income": 4.275232
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 94.85106188,
+            "income": 974.09695757
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 975.0
+          },
+          "extra_income": -0.90304243
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.13376885,
+            "income": 3798.72603525
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 3900.0
+          },
+          "extra_income": -101.27396475
+        }
+      ],
+      "steady_cycle_start": 93.10543641,
+      "steady_mean_income": 62.49807796,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 98.354702,
+            "income": 199.28604928
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 195.0
+          },
+          "extra_income": 4.28604928
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 94.93409739,
+            "income": 974.4706204
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 975.0
+          },
+          "extra_income": -0.5293796
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.31467058,
+            "income": 3803.5411658
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 3900.0
+          },
+          "extra_income": -96.4588342
+        }
+      ],
+      "steady_cycle_start": 93.29051028,
+      "steady_mean_income": 62.61819638,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 99.09,
+            "income": 132.7176
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 130.0
+          },
+          "extra_income": 2.7176
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 96.73864142,
+            "income": 654.55252529
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 650.0
+          },
+          "extra_income": 4.55252529
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 94.70182389,
+            "income": 2563.8892062
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 2600.0
+          },
+          "extra_income": -36.1107938
+        }
+      ],
+      "steady_cycle_start": 94.56229459,
+      "steady_mean_income": 63.16850911,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 99.093,
+            "income": 132.71952
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 130.0
+          },
+          "extra_income": 2.71952
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 96.76690421,
+            "income": 654.62989371
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 650.0
+          },
+          "extra_income": 4.62989371
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 94.79576631,
+            "income": 2565.28695259
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 2600.0
+          },
+          "extra_income": -34.71304741
+        }
+      ],
+      "steady_cycle_start": 94.66768571,
+      "steady_mean_income": 63.23598577,
+      "steady65_mean_income": 65.0
+    }
+  ],
   "anti_stack": [
     {
       "bases": 0,

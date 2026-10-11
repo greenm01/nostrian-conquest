@@ -108,7 +108,9 @@ order date and is not an approved rule.
 `python3 tools/economy-model/starbase_review.py` writes
 `starbase_review_results.json`. Exact controls separate growth payback,
 imposed arrival delay, locally funded build/commission timing and reserve
-spending capacity. They use approved smooth growth/P3 and base cost50, with
+spending capacity. Exact limiting-cycle controls compare75/64/64 and70/64
+with steady65, at starting production50 and100, with and without a base.
+They use approved smooth growth/P3 and base cost50, with
 non-stacking bonuses; there is no engine movement or battle simulation.
 `test_starbase_review.py` is included in unittest discovery. See the
 [starbase review](../../docs/notes/investigations/w3vj4wti-starbase-growth-capacity-and-economic-concentration.md)

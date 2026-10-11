@@ -89,6 +89,36 @@ def surge(start_goods,bases,years=5):
     return rows
 
 
+def cycle_path(start,k,taxes,cycles=1,bases=1):
+    p,goods=F(start),F(0)
+    for tax in taxes*cycles:
+        p,income=grow(p,k,tax,bases)
+        goods+=income
+    return dict(production=p,income=goods)
+
+
+def cycle_control(start,k,taxes,bases=1):
+    # Compose P_next=q*P+c over the cycle; all coefficients are rational.
+    q,c=F(1),F(0)
+    for tax in taxes:
+        a=F(100-min(tax,95),400)*(1+bonus(tax) if bases else 1)
+        b=F(max(0,tax-65),500)
+        q,c=(1-a-b)*q,(1-a-b)*c+a*k
+    steady_start=c/(1-q)
+    steady=cycle_path(steady_start,k,taxes,bases=bases)
+    assert steady['production']==steady_start
+    comparisons=[]
+    for cycles in (1,5,20):
+        changed=cycle_path(start,k,taxes,cycles,bases)
+        fixed=cycle_path(start,k,[65]*len(taxes),cycles,bases)
+        comparisons.append(dict(cycles=cycles,cycle=changed,constant65=fixed,
+                                extra_income=changed['income']-fixed['income']))
+    return dict(start=start,k=k,taxes=taxes,bases=bases,comparisons=comparisons,
+                steady_cycle_start=steady_start,
+                steady_mean_income=steady['income']/len(taxes),
+                steady65_mean_income=F(k*65,100))
+
+
 def experiment():
     return dict(method='Exact rational arithmetic; approved smooth growth/P3, price50, nonstacking presence. Imposed delays, no engine/DOS runs or campaign odds.',
         growth=[growth_control(k,p,t) for k in (10,20,50,100,150)
@@ -97,6 +127,7 @@ def experiment():
         bonus_candidates=[growth_control(100,3,50,peak=b) for b in (F(0),F(1,4),F(1,2),F(1))],
         local_build=[local_build(k,t) for k in (10,20,50,100,150) for t in (35,50,60,65)],
         surge=[dict(initial_goods=g,bases=n,passes=surge(g,n)) for g in (50,500) for n in (0,1,3)],
+        tax_cycles=[cycle_control(p,100,taxes,n) for p in (50,100) for taxes in ([75,64,64],[70,64]) for n in (0,1)],
         anti_stack=[dict(bases=n,production_after_one_pass=grow(F(3),100,50,n)[0],capacity=whole_capacity(F(100),bool(n))) for n in (0,1,2,5)])
 
 

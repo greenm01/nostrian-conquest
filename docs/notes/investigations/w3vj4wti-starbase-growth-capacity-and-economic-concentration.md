@@ -20,7 +20,7 @@ Decision3 of [t051’s scope](0t08owtu-economy-review-decisions-and-campaign-pac
 3. Keep the price50 and existing commissioning/eligibility rules for this decision. A docked base gives neither benefit. A completed base must be commissioned; growth eligibility is evaluated before the economic pass. Do not grant an arrival a retroactive bonus or require a full quiet year for economics merely because RT assistance has that separate condition.
 4. Report through the existing Budget/Revenue fields and manual: a base spends reserves faster, helps an underdeveloped world grow, and does not generate money at a fully developed world. No new menus, upkeep, repair charges or economic damage scaling is proposed.
 
-This is a draft for Claude’s challenge, not an owner decision. Economic eligibility for a crippled base is worth stating explicitly: my default is to keep these binary infrastructure benefits while a commissioned base survives and otherwise qualifies, with combat AS reduced under the approved combat rule. Do not silently halve economic bonuses or introduce another recovery condition. RT assistance eligibility remains its separate decision.
+Claude agrees with the rates, non-stacking and retaining binary economic benefits for crippled bases while they survive and otherwise qualify. Combat AS remains reduced under the approved combat rule. RT assistance eligibility remains its separate decision. The follow-up cycle and source checks below complete the requested review; the owner has not approved item3 yet.
 
 ## Exact growth model
 
@@ -118,15 +118,52 @@ A commissioned surviving base may lose combat strength under RT. No existing eco
 
 ## Player explanation
 
-“A base helps an underdeveloped world grow at modest taxes and lets it spend saved points up to five times its production. It does not multiply income. More bases at the same world do not increase either economic bonus.”
+“A base at rest in orbit makes its world grow half again as fast at taxes of50% or less. The extra growth fades to zero as taxes rise to65%. A base lets the world spend saved points up to five times its production. More bases at one world add defense, not growth or build capacity.” Add the existing arrival exception in the manual: a base descending toward its own world can enable the larger build budget before it settles enough to help growth.
 
 Use existing budget and next-revenue fields, and Appendix A for the taper and eligibility distinction. No additional status column, investment command or economic stat is needed. A mature world’s unchanged revenue alongside a larger budget should make the different roles clear.
+
+## Follow-up: tax cycles with the smooth taper
+
+Continuity alone does not prove tax cycling is unprofitable. We tested the two cycles that exposed the gated minimum, with one base at a K100 world starting at P50 or P100. No spending, war or change in ownership/base eligibility occurs. We also retain no-base controls in the JSON. Taxes are empire-wide in the game; these isolated-world results are not an empire policy ranking.
+
+| Starting P | Repeating taxes | Extra income over steady65 after one cycle | After20 cycles | Limiting mean income per pass | Steady65 limiting income |
+| --- | --- | ---: | ---: | ---: | ---: |
+| 50 | 75,64,64 | +0.51 | -105.07 | 62.62 | 65.00 |
+| 100 | 75,64,64 | +4.29 | -96.46 | 62.62 | 65.00 |
+| 50 | 70,64 | +0.86 | -40.62 | 63.24 | 65.00 |
+| 100 | 70,64 | +2.72 | -34.71 | 63.24 | 65.00 |
+
+Twenty cycles means60 passes in the first pair and40 in the second. The comparisons use the same starting production and base on both policies. The partly developed steady65 control grows; it is not incorrectly credited65 from its first pass.
+
+These are exact limiting-cycle calculations, not just a finite cutoff. Each pass is an affine map `P_next=q*P+c` with rational coefficients. Compose the maps over the tax sequence to obtain `P_after=Q*P_before+C`. The unique limiting start of cycle is `C/(1-Q)`. Running that production through the sequence returns exactly to itself and gives the mean incomes above. The limiting start-of-cycle production is93.29051 for75/64/64 and94.66769 for70/64, below full production100.
+
+Starting at full production, the first75/64/64 cycle ends at98.354702 and earns199.28605 versus195 for steady65. The first70/64 cycle ends at99.093 and earns132.71952 versus130. The early cash advantage is real, but the world has not recovered its starting productive strength. Repetition pays less in the long run. This preserves emergency taxation’s intended timing tradeoff rather than the rejected floor’s repeating extra income at fully restored production.
+
+This establishes no lasting advantage for the two requested cycles. It is not a theorem covering every adaptive policy, finite campaign horizon, base placement or empire age mix. No change to the taper is warranted by these controls.
+
+## Follow-up: where the eligibility rules come from
+
+Both rules have classic provenance, but they belong to different executables. They are not two inventions of Rust:
+
+- **Growth eligibility:** ECMAINT1852:011b..0206, including the moving-flag check, documented under [Starbase tax cut](../../dev/ec-economy-reference.md#starbase-tax-cut). This has disassembly and t041 probe evidence: layer1 and stationary count; deep space and moving do not. Rust deliberately requires the owner’s base instead of reproducing classic’s foreign-base bug. The50% taper is NC’s chosen benefit, not classic’s random tax reduction.
+- **Capacity eligibility:** ECGAME Planet Command B, file0x12616..0x126D4, with budget calculation0x126EB..0x12843, documented under [Build screen](../../dev/ec-economy-reference.md#build-screen). The source marks this code-only evidence. It scans the player’s own base chain, matching the world, layer1 and destination orbit; it does not check moving. It is the classic order-admission rule, not an ECMAINT maintenance spending limit. Classic maintenance completes its queued orders without that capacity gate; NC applies its own budget-limited completion rule.
+
+The reference explicitly records the orbit-test mismatch. The older [oracle audit](../../dev/starbase-economy-oracle-audit.md) reports larger imported build-capacity values, but that alone is not a direct probe of the precise moving-base eligibility predicate. Do not promote it to stronger evidence than the decoded reference.
+
+Recommend preserving both eligibility tests in this item. Unifying on the stationary condition would deliberately change classic build-screen eligibility, delaying an arriving base’s larger budget; it would not merely clean up two Rust-only helpers. The ordinary final descent can fit within one year, but this review does not prove an unconditional “one pass at most” bound under movement interruption, changed orders or ownership changes. No source or contract needs that promise to retain today’s rule.
+
+## Joint recommendation after Claude’s challenges
+
+1. Keep the growth bonus: half again as fast at tax50 or below, fading continuously to zero at65; keep5x capacity and cost50. A favorable K100/P3 base pays for itself through extra income in8 passes, but a five-pass arrival delay pushes that to22; K20 cannot repay50 through growth alone.
+2. One qualifying base supplies the full economic benefit; more add defense/redundancy, not extra growth or capacity. A crippled surviving base still qualifies economically. RT assistance remains separate.
+3. Keep the inherited eligibility distinction: growth requires the owner’s base at rest in layer1; capacity uses ECGAME’s own-world/destination-orbit test and can count a descending base. No docked or foreign-base benefit. Explain the arrival exception in the manual and keep existing Budget/Revenue fields.
+4. The tested75/64/64 and70/64 cycles with a base settle at62.62 and63.24 income per pass, below steady65. Brief emergency cash gains come with unrecovered production. No disagreement remains on rates, stacking or crippled-base economics; preserving the two classic-derived predicates is the proposed resolution to Claude’s provenance challenge.
 
 ## Evidence and limits
 
 [Model](../../../tools/economy-model/starbase_review.py), [results](../../../tools/economy-model/starbase_review_results.json), [tests](../../../tools/economy-model/test_starbase_review.py). Run `python3 tools/economy-model/starbase_review.py` and the economy-model unittest discovery command.
 
-36 tests pass across economy-model, including seven new checks for the approved smooth-growth equivalence, non-stacking, full-production revenue, the finite return bound, delayed arrival, local order/completion/commission timing and cash conservation. The timing control is an explicit model assumption informed by the human commissioning flow, not an engine-run result. No Monte Carlo is needed for these deterministic controls. No live campaign, oracle validation or post-implementation parity is claimed.
+38 tests pass across economy-model, including nine starbase checks for the approved smooth-growth equivalence, non-stacking, full-production revenue, the finite return bound, delayed arrival, local order/completion/commission timing cash conservation and exact limiting-cycle/temporary-gain behavior. The timing control is an explicit model assumption informed by the human commissioning flow, not an engine-run result. No Monte Carlo is needed for these deterministic controls. No live campaign, oracle validation or post-implementation parity is claimed.
 
 ## Connections
 
