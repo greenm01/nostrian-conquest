@@ -20,8 +20,8 @@ use super::state::{
     ship_losses_from_states,
 };
 use nc_data::{
-    Real48, has_any_force, present_production_points, set_armies_aboard, stardock_slot_kind,
-    stored_production_points,
+    InheritedAssets, Real48, has_any_force, present_production_points, set_armies_aboard,
+    stardock_slot_kind, stored_production_points,
 };
 
 #[derive(Debug, Default)]
@@ -151,6 +151,10 @@ fn stardock_item_ds(kind: ProductionItemKind) -> u32 {
     }
 }
 
+/// Stored goods one point of bombardment reaching industry destroys, beside
+/// the one point of production it destroys.
+const GOODS_DESTROYED_PER_POINT: u32 = 25;
+
 /// Each docked item costs its own DS in hits. Hits too few to destroy the
 /// next item move on to the following slot; partial hits never carry over.
 fn reduce_stardock(planet: &mut nc_data::Planet, mut hits: u32) -> u32 {
@@ -272,7 +276,7 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
 
     let hits = hits / 10;
     if hits > 0 {
-        let goods_loss = hits.saturating_mul(100);
+        let goods_loss = hits.saturating_mul(GOODS_DESTROYED_PER_POINT);
         planet.stored_goods = Real48::from_f64(f64::from(
             stored_production_points(planet).saturating_sub(goods_loss),
         ));
@@ -281,6 +285,55 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
         let factories = present_production_points(planet);
         let loss = hits.min(u32::from(factories)) as u16;
         planet.production = Real48::from_f64(f64::from(factories.saturating_sub(loss)));
+    }
+}
+
+/// A scorched world that falls (ECMAINT `110a:6e6a..6f02`): the defenders
+/// halve its production and its positive goods, empty the dock, and lift the
+/// order, and production never ends below 1.0. Debt is untouched, and a world
+/// with no potential stays at production 0.
+fn apply_scorch_on_capture(planet: &mut nc_data::Planet) {
+    if !planet.scorch_earth {
+        return;
+    }
+    let goods = planet.stored_goods.to_f64();
+    if goods > 0.0 {
+        planet.stored_goods = Real48::from_f64(goods / 2.0);
+    }
+    let production = planet.production.to_f64() / 2.0;
+    planet.production = if planet.potential_production > 0 {
+        Real48::from_f64(production.max(1.0))
+    } else {
+        Real48::from_f64(production)
+    };
+    planet.stardock = nc_data::Stardock::default();
+    planet.scorch_earth = false;
+}
+
+/// The world passes to `new_owner` with `garrison` armies and `batteries`.
+/// Everything else the fight left stands: goods, production, docked ships,
+/// and the build queue pass intact, with no capture bonus and no forgiven
+/// debt, unless the defenders had scorched it. Returns what the new owner
+/// finds, for the capture report.
+fn capture_planet(
+    planet: &mut nc_data::Planet,
+    new_owner: u8,
+    garrison: u32,
+    batteries: u16,
+) -> InheritedAssets {
+    let scorched = planet.scorch_earth;
+    planet.owner.0 = new_owner;
+    // Just captured: no income until the yearly pass has stepped the status
+    // to 2, as ECMAINT does.
+    planet.years_under_owner = 0;
+    planet.armies = u16::from(garrison.min(255) as u8);
+    planet.ground_batteries = batteries;
+    apply_scorch_on_capture(planet);
+    InheritedAssets {
+        stored_goods: stored_production_points(planet),
+        docked: stardock_summary(planet),
+        queued_work: planet.build_queue.iter().map(|slot| slot.points_owed).sum(),
+        scorched,
     }
 }
 
@@ -737,13 +790,12 @@ pub(crate) fn resolve_strike(
                     set_armies_aboard(&mut game_data.fleets[idx], 0);
                 }
                 if attacker_survivors > 0 && defender_survivors == 0 {
-                    let planet = &mut game_data.planets[planet_idx];
-                    planet.owner.0 = empire;
-                    // Just captured: no income until the yearly pass has
-                    // stepped the status to 2, as ECMAINT does.
-                    planet.years_under_owner = 0;
-                    planet.armies = u16::from(attacker_survivors.min(255) as u8);
-                    planet.ground_batteries = 0;
+                    let inherited = capture_planet(
+                        &mut game_data.planets[planet_idx],
+                        empire,
+                        attacker_survivors,
+                        0,
+                    );
                     events
                         .ownership_change_events
                         .push(PlanetOwnershipChangeEvent {
@@ -772,6 +824,7 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
+                        inherited: Some(inherited),
                         outcome: MissionOutcome::Succeeded,
                         stardate_week: None,
                     });
@@ -812,6 +865,7 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
+                        inherited: None,
                         outcome: MissionOutcome::Failed,
                         stardate_week: None,
                     });
@@ -856,6 +910,7 @@ pub(crate) fn resolve_strike(
                     ),
                     defender_army_losses_softening: 0,
                     defender_army_losses: 0,
+                    inherited: None,
                     outcome: MissionOutcome::Aborted,
                     stardate_week: None,
                 });
@@ -963,15 +1018,13 @@ pub(crate) fn resolve_strike(
                 set_armies_aboard(&mut game_data.fleets[idx], 0);
             }
             if attacker_survivors > 0 && defender_survivors == 0 {
-                let batteries =
-                    u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
-                let planet = &mut game_data.planets[planet_idx];
-                planet.owner.0 = empire;
-                // Just captured: no income until the yearly pass has
-                // stepped the status to 2, as ECMAINT does.
-                planet.years_under_owner = 0;
-                planet.armies = u16::from(attacker_survivors.min(255) as u8);
-                planet.ground_batteries = u16::from(batteries);
+                let batteries = game_data.planets[planet_idx].ground_batteries;
+                let inherited = capture_planet(
+                    &mut game_data.planets[planet_idx],
+                    empire,
+                    attacker_survivors,
+                    batteries,
+                );
                 events
                     .ownership_change_events
                     .push(PlanetOwnershipChangeEvent {
@@ -1000,6 +1053,7 @@ pub(crate) fn resolve_strike(
                     defender_battery_losses,
                     defender_army_losses_softening: 0,
                     defender_army_losses,
+                    inherited: Some(inherited),
                     outcome: MissionOutcome::Succeeded,
                     stardate_week: None,
                 });
@@ -1039,6 +1093,7 @@ pub(crate) fn resolve_strike(
                     defender_battery_losses,
                     defender_army_losses_softening: 0,
                     defender_army_losses,
+                    inherited: None,
                     outcome: MissionOutcome::Failed,
                     stardate_week: None,
                 });

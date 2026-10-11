@@ -308,7 +308,7 @@ its defense strength:
 | Ground battery | 20 |
 | Army | 10 |
 | Docked ship (stardock) | Its fleet DS (DD 5, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
-| Stored goods / factories | Remaining hits ÷ 10, then 100 goods and 1 factory per point |
+| Stored goods / factories | Remaining hits ÷ 10, then 25 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
 over between rounds. Once the stardock is exposed, hits too few to destroy the
@@ -341,6 +341,22 @@ same turn.
 
 Invade supplies its own softening once suppression has cleared the batteries,
 so a separate Bombard order is not required first.
+
+#### Capture
+A world that falls passes to the new owner with what the fight left standing:
+stored goods, production, docked ships, and queued build work. There is no
+capture bonus, no loss by mission, and no forgiven debt. An Invade capture
+leaves no batteries; a Blitz capture keeps the surviving ones. The status
+resets to 0, the start of conversion.
+
+A world whose owner had set Scorch Earth is halved as it falls
+(`110a:6e6a..6f02`): production and positive goods are halved, the stardock
+is emptied, the order is lifted, and production is raised to at least 1.0.
+Debt is untouched, and a world with no potential stays at production 0. The
+build queue is not burned. A failed assault leaves the order set.
+
+The attacker's capture report lists the goods, docked ships, and queued work
+the world passed on, and says when the defenders had scorched it.
 
 #### Failure Is Not Defeat
 A fleet whose landing fails, or whose Invade is blocked because batteries

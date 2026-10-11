@@ -9,6 +9,8 @@
 mod assault;
 #[cfg(test)]
 mod assault_tests;
+#[cfg(test)]
+mod capture_tests;
 mod exchange;
 mod fleet_battle;
 #[cfg(test)]

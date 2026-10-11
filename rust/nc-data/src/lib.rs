@@ -85,11 +85,12 @@ pub use maintenance_types::{
     CivilDisorderEvent, ColonizationResolvedEvent, ContactReportSource, DiplomacyOverride,
     DiplomaticEscalationEvent, EmpireEliminationCause, EmpireEliminationEvent,
     EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent, FleetDefectionEvent,
-    FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InvalidPlayerStateEvent,
-    JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission, MissionAbortReason,
-    MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
-    PlanetOwnershipChangeEvent, SalvageResolvedEvent, ScoutContactEvent, ShipLosses, StarbaseAlert,
-    StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
+    FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,
+    InvalidPlayerStateEvent, JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission,
+    MissionAbortReason, MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, SalvageResolvedEvent, ScoutContactEvent,
+    ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
+    StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{

@@ -366,3 +366,58 @@ fn a_bombardment_turn_costs_what_the_shield_model_says() {
         );
     }
 }
+
+// Economy decision 5: bombardment destroys 25 goods per point of industry.
+
+#[test]
+fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
+    // One ship bombards a world with nothing in orbit, no battery, and no
+    // garrison: rounds 1 and 2 find nothing to hit and round 3 breaks
+    // through to the economy. On the overwhelming column the point count is
+    // `floor(hits / 10)`; exact enumeration over the ten rolls gives a
+    // cruiser 4.9 points and a battleship 22.9 (5,000 goods, so the supply
+    // never caps the loss), and 25 goods a point makes the ADR's "about 123
+    // of 500" cruiser raid and 473 battleship raid.
+    const TRIALS: u64 = 2000;
+    for (name, ships, mean_points) in [
+        (
+            "cruiser",
+            Ships {
+                ca: 1,
+                ..Ships::default()
+            },
+            4.9,
+        ),
+        (
+            "battleship",
+            Ships {
+                bb: 1,
+                ..Ships::default()
+            },
+            22.9,
+        ),
+    ] {
+        let mut game_data = assault_on_system(Order::BombardWorld, ships, 0, 0);
+        game_data.planets[SYSTEM_PLANET_IDX].stored_goods = Real48::from_int(5000);
+        let mut points = Vec::new();
+        for seed in 0..TRIALS {
+            let (_, events) = year(&game_data, seed);
+            let bombard = &events.bombard_events[0];
+            assert_eq!(
+                bombard.stored_goods_destroyed,
+                25 * u32::from(bombard.factories_destroyed),
+                "{name}, seed {seed}"
+            );
+            points.push(f64::from(bombard.factories_destroyed));
+        }
+        let n = TRIALS as f64;
+        let mean = points.iter().sum::<f64>() / n;
+        let variance = points.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / (n - 1.0);
+        let se = (variance / n).sqrt();
+        eprintln!("{name}: {mean:.3} points (se {se:.3}), model {mean_points}");
+        assert!(
+            (mean - mean_points).abs() <= 4.5 * se,
+            "{name}: {mean:.3} points (se {se:.3}), model {mean_points}"
+        );
+    }
+}

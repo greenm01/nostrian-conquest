@@ -570,6 +570,12 @@ Damage short of a whole army carries into the next round of the same landing and
 
 Capture odds follow the ratio of landed armies to defending armies, roughly the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. Appendix B gives the table.
 
+=== Captured Worlds
+
+A world that falls passes to you with what the fight left standing: its stored goods, production, docked ships, and queued build work. There is no capture bonus, no loss for the kind of attack, and no forgiveness of debt. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+
+A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
+
 === Failed Assaults
 
 Failure is not defeat. A fleet whose landing fails, or whose Invade is blocked because batteries survived suppression, keeps its survivors in orbit on Hold and receives a failure report. A blocked Invade lands nothing and its armies stay aboard. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
@@ -1124,7 +1130,7 @@ Orbital hits on a world pay each target's DS on the same 10x scale:
 - Ship in the stardock: its own DS from the unit table (docked batteries `20`,
   armies `10`)
 - Stored goods and factories: remaining hits are divided by `10`, and each
-  point then destroys `100` stored goods and `1` factory
+  point then destroys `25` stored goods and `1` factory
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
 over to the next round. Once the stardock is exposed, hits too few for the next
