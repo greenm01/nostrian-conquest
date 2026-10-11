@@ -83,8 +83,10 @@ cost, and that it stays until rescinded. The separate pending-orders set
 (`planet_scorch_orders`) is gone; the flag on the planet is the one source.
 `economy_model.rs` checks the decay against `scorch_review.py`: all twenty
 factors, both goods branches, debt untouched, the floor, and recovery after
-rescinding. The bombard rate and capture handling belong to the planetary
-lane.
+rescinding. In `maint/combat/assault.rs`, bombardment destroys 25 goods and
+1 production per 10 hits reaching industry, and burns only positive goods,
+fraction and all, so a debt is left alone; a scorched world that falls is
+halved and its order lifted.
 
 ## Acceptance and connections
 

@@ -222,7 +222,8 @@ forecast.
 Spending takes whole points. The spendable part of a treasury is the whole
 points of its non-negative part, `floor(max(0, treasury))`. The fraction left
 over stays in the treasury. A negative treasury is a debt: it stays negative
-and income pays it down. The screens show a debt as 0 spendable points. Debt
+and income pays it down. The screens show a debt as 0 spendable points. Bombardment
+and Scorch Earth reduce only a positive treasury and leave a debt alone. Debt
 comes from imported classic states, where ECMAINT charges builds without
 checking the treasury; builds under Rust's budget rule never create it.
 

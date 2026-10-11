@@ -54,8 +54,10 @@ option).
 The cancel-build screen is done in t084: it now reads "Cancelling releases N
 unpaid points. Points already spent are not refunded." The quiet years were
 already the pass's rule (a world with status below 2 neither grows nor earns),
-and the Revenue forecast now shows 0 for such a world. Capture inheritance and
-the inherited-assets lines in capture reports belong to the planetary lane.
+and the Revenue forecast now shows 0 for such a world. Capture inheritance is
+in `maint/combat/assault.rs`: goods, production, dock, and queue pass intact,
+and debt is not forgiven. The capture report's inherited-assets line shows
+the whole points the new owner can spend, while the world keeps the fraction.
 
 ## Acceptance and connections
 

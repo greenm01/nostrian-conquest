@@ -58,7 +58,8 @@ pub struct BombardEvent {
 /// What a captured world passed to its new owner, as the capture left it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct InheritedAssets {
-    /// Stored goods, in whole points; debt is not an asset.
+    /// Stored goods the new owner can spend, in whole points (the planet
+    /// keeps the fraction); debt is not an asset.
     pub stored_goods: u32,
     /// Ships and starbases waiting in the stardock.
     pub docked: EmpireUnitSummary,

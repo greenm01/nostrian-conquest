@@ -154,6 +154,21 @@ fn a_capture_does_not_floor_production_or_forgive_debt() {
 }
 
 #[test]
+fn the_report_shows_whole_points_but_the_world_keeps_the_fraction() {
+    let world = Planet {
+        stored_goods: Real48::from_f64(61.75),
+        ..held_world()
+    };
+    let mut game_data = strike_board(Order::BlitzWorld, 5, world);
+    let events = resolve_strike(&mut game_data, 0, 0);
+
+    assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
+    // The new owner can spend 61 points and holds 0.75 more.
+    assert_eq!(inherited(&events).stored_goods, 61);
+    assert_eq!(goods(&game_data), 61.75);
+}
+
+#[test]
 fn a_scorched_world_that_falls_is_halved_and_its_dock_emptied() {
     for order in [Order::InvadeWorld, Order::BlitzWorld] {
         let world = Planet {

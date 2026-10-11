@@ -262,3 +262,28 @@ fn an_unshielded_dock_takes_the_hits_before_the_armies_behind_it() {
     assert_eq!(planet.stardock.battleships, 0);
     assert_eq!(planet.armies, 18);
 }
+
+#[test]
+fn bombardment_destroys_only_positive_goods_and_keeps_their_fraction() {
+    // 20 hits reach industry as 2 points: 50 goods and 2 production.
+    let mut planet = world(0, 0, 0, 0);
+    planet.stored_goods = Real48::from_f64(100.75);
+    planet.production = Real48::from_f64(50.25);
+    apply_planet_bombardment_damage(&mut planet, 20);
+    assert_eq!(planet.stored_goods.to_f64(), 50.75);
+    assert_eq!(planet.production.to_f64(), 48.25);
+
+    // More than the world holds leaves 0, not a debt.
+    planet.stored_goods = Real48::from_f64(10.5);
+    apply_planet_bombardment_damage(&mut planet, 20);
+    assert_eq!(planet.stored_goods.to_f64(), 0.0);
+}
+
+#[test]
+fn bombarding_a_world_in_debt_leaves_the_debt() {
+    let mut planet = world(0, 0, 0, 0);
+    planet.stored_goods = Real48::from_f64(-40.5);
+    apply_planet_bombardment_damage(&mut planet, 20);
+    assert_eq!(planet.stored_goods.to_f64(), -40.5);
+    assert_eq!(planet.production.to_f64(), 98.0, "production still burns");
+}

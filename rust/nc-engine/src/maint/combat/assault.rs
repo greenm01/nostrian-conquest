@@ -276,15 +276,14 @@ pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits
 
     let hits = hits / 10;
     if hits > 0 {
-        let goods_loss = hits.saturating_mul(GOODS_DESTROYED_PER_POINT);
-        planet.stored_goods = Real48::from_f64(f64::from(
-            stored_production_points(planet).saturating_sub(goods_loss),
-        ));
-    }
-    if hits > 0 {
-        let factories = present_production_points(planet);
-        let loss = hits.min(u32::from(factories)) as u16;
-        planet.production = Real48::from_f64(f64::from(factories.saturating_sub(loss)));
+        // Only positive goods burn, fraction and all; a debt is left alone.
+        let goods = planet.stored_goods.to_f64();
+        if goods > 0.0 {
+            let goods_loss = f64::from(hits.saturating_mul(GOODS_DESTROYED_PER_POINT));
+            planet.stored_goods = Real48::from_f64((goods - goods_loss).max(0.0));
+        }
+        let production = planet.production.to_f64();
+        planet.production = Real48::from_f64((production - f64::from(hits)).max(0.0));
     }
 }
 
