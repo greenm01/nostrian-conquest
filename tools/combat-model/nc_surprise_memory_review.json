@@ -1,0 +1,132 @@
+{
+  "method": "Exact independent sighting trials at awareness zero; no battles, movement, intercepts or additional observers. Both forces remain across the boundary. Memory means any prior sighting, not identification.",
+  "interpretation": "Eligibility disagreement among these controlled holdovers, not ambush frequency or campaign frequency. Scouts cannot attack alone. Later sightings can eliminate the disagreement before an attack.",
+  "rows": [
+    {
+      "case": "10 CA / Hold / deep",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.003330866937632457,
+      "unsighted_holdover_probability": 0.9966691330623676,
+      "snapshot_suppresses_but_memory_allows": 0.9966691330623676
+    },
+    {
+      "case": "10 CA / Hold / deep",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.003330866937632457,
+      "unsighted_holdover_probability": 0.9867429526003608,
+      "snapshot_suppresses_but_memory_allows": 0.9867429526003608
+    },
+    {
+      "case": "10 CA / Hold / deep",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.003330866937632457,
+      "unsighted_holdover_probability": 0.8407220404077597,
+      "snapshot_suppresses_but_memory_allows": 0.8407220404077597
+    },
+    {
+      "case": "10 CA / Patrol / deep",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.03330866937632457,
+      "unsighted_holdover_probability": 0.9666913306236754,
+      "snapshot_suppresses_but_memory_allows": 0.9666913306236754
+    },
+    {
+      "case": "10 CA / Patrol / deep",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.03330866937632457,
+      "unsighted_holdover_probability": 0.8732755386078122,
+      "snapshot_suppresses_but_memory_allows": 0.8732755386078122
+    },
+    {
+      "case": "10 CA / Patrol / deep",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.03330866937632457,
+      "unsighted_holdover_probability": 0.17177772176122727,
+      "snapshot_suppresses_but_memory_allows": 0.17177772176122727
+    },
+    {
+      "case": "10 CA / Blockade guard / orbit",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.08327167344081142,
+      "unsighted_holdover_probability": 0.9167283265591886,
+      "snapshot_suppresses_but_memory_allows": 0.9167283265591886
+    },
+    {
+      "case": "10 CA / Blockade guard / orbit",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.08327167344081142,
+      "unsighted_holdover_probability": 0.7062567382668559,
+      "snapshot_suppresses_but_memory_allows": 0.7062567382668559
+    },
+    {
+      "case": "10 CA / Blockade guard / orbit",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.08327167344081142,
+      "unsighted_holdover_probability": 0.010877118421960218,
+      "snapshot_suppresses_but_memory_allows": 0.010877118421960218
+    },
+    {
+      "case": "1 DD / Blockade guard / orbit",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.01862011224138181,
+      "unsighted_holdover_probability": 0.9813798877586182,
+      "snapshot_suppresses_but_memory_allows": 0.9813798877586182
+    },
+    {
+      "case": "1 DD / Blockade guard / orbit",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.01862011224138181,
+      "unsighted_holdover_probability": 0.9275740997099122,
+      "snapshot_suppresses_but_memory_allows": 0.9275740997099122
+    },
+    {
+      "case": "1 DD / Blockade guard / orbit",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.01862011224138181,
+      "unsighted_holdover_probability": 0.3762980566815822,
+      "snapshot_suppresses_but_memory_allows": 0.3762980566815822
+    },
+    {
+      "case": "1 SC / Blockade guard / orbit",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.001665433468816228,
+      "unsighted_holdover_probability": 0.9983345665311838,
+      "snapshot_suppresses_but_memory_allows": 0.9983345665311838
+    },
+    {
+      "case": "1 SC / Blockade guard / orbit",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.001665433468816228,
+      "unsighted_holdover_probability": 0.9933548896668204,
+      "snapshot_suppresses_but_memory_allows": 0.9933548896668204
+    },
+    {
+      "case": "1 SC / Blockade guard / orbit",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.001665433468816228,
+      "unsighted_holdover_probability": 0.9169753062501802,
+      "snapshot_suppresses_but_memory_allows": 0.9169753062501802
+    },
+    {
+      "case": "1 SC / Starbase / orbit",
+      "prior_scan_ticks": 1,
+      "sighting_probability_per_tick": 0.00832716734408114,
+      "unsighted_holdover_probability": 0.9916728326559189,
+      "snapshot_suppresses_but_memory_allows": 0.9916728326559189
+    },
+    {
+      "case": "1 SC / Starbase / orbit",
+      "prior_scan_ticks": 4,
+      "sighting_probability_per_tick": 0.00832716734408114,
+      "unsighted_holdover_probability": 0.9671050760475156,
+      "snapshot_suppresses_but_memory_allows": 0.9671050760475156
+    },
+    {
+      "case": "1 SC / Starbase / orbit",
+      "prior_scan_ticks": 52,
+      "sighting_probability_per_tick": 0.00832716734408114,
+      "unsighted_holdover_probability": 0.647377522300272,
+      "snapshot_suppresses_but_memory_allows": 0.647377522300272
+    }
+  ]
+}

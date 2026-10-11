@@ -432,3 +432,14 @@ accounting with altered DS, RT timing and the transport measure. See the
 [investigation](../../docs/notes/investigations/wnwxz2et-destroyer-durability-under-withdrawal-and-recovery.md)
 for the recommendation and its limits. These are design controls, not an
 engine validation of the pending retreat and recovery implementations.
+
+### Surprise memory controls (t073)
+
+`python3 tools/combat-model/surprise_memory_review.py` regenerates
+`nc_surprise_memory_review.json`. It calculates exact probabilities of an
+unsighted force remaining across the annual boundary, comparing surprise
+eligibility under a co-presence snapshot with actual sighting memory.
+These are conditional detection controls, not campaign ambush frequencies.
+Run `python3 -m unittest discover -s tools/combat-model -p test_surprise_memory_review.py`.
+The [decision-6 investigation](../../docs/notes/investigations/m1h272uh-joined-participation-surprise-and-allocation-fairness.md)
+records the assumptions, state cost and pending participation work.
