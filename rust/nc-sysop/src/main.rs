@@ -1,20 +1,12 @@
 mod usage;
 
-use std::collections::BTreeMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
 use nc_data::{
-    BbsGameConfig, CampaignSettings, CampaignStore, MaintenanceEvents, PlanetIntelSnapshot,
-    SeatReservation, apply_inactivity_autopilot_policy,
-    apply_maintenance_events_to_player_war_stats, carry_unread_report_blocks,
-    generate_campaign_seed, latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
+    BbsGameConfig, CampaignSettings, CampaignStore, SeatReservation, generate_campaign_seed,
 };
-use nc_engine::{
-    VisibleHazardIntel, apply_results_reviewable_flags, build_results_report_blocks,
-    build_seeded_new_game, run_maintenance_turn_with_context_seed_and_lifecycle,
-    visible_hazard_intel_from_snapshots,
-};
+use nc_engine::{CampaignMaintenance, build_seeded_new_game};
 
 #[derive(Clone)]
 struct ParsedArgs {
@@ -433,96 +425,19 @@ fn run_maintenance_for_dir(
         if turns == 1 { "" } else { "s" }
     );
     let store = CampaignStore::open_default_in_dir(dir)?;
-    let runtime_state = store
-        .load_latest_runtime_state()?
-        .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    let mut game_data = runtime_state.game_data;
-    let campaign_seed = runtime_state.campaign_seed;
-    let mut winner_state = runtime_state.winner_state;
-    let start_year = game_data.conquest.game_year;
-    let mut planet_intel_by_viewer = store.load_snapshot_planet_intel_by_viewer(
-        runtime_state.snapshot_id,
-        game_data.conquest.player_count,
-    )?;
-    let mut player_activity_states =
-        store.latest_player_activity_states(game_data.conquest.player_count)?;
-    let mut player_lifecycle_states =
-        store.latest_player_lifecycle_states(game_data.conquest.player_count)?;
-    let mut player_war_stats = store.latest_player_war_stats(game_data.conquest.player_count)?;
-    let mut all_events = MaintenanceEvents::default();
-
-    if winner_state.winner_empire.is_some() {
-        return Err("campaign winner has already been declared; maintenance is frozen".into());
-    }
+    let mut maintenance = CampaignMaintenance::load(&store)?;
+    let start_year = maintenance.start_year();
 
     for turn in 1..=turns {
-        let inactivity_threshold =
-            u8::try_from(game_data.setup.autopilot_after_turns).unwrap_or(u8::MAX);
-        apply_inactivity_autopilot_policy(
-            &mut game_data,
-            inactivity_threshold,
-            &mut player_activity_states,
+        maintenance.run_turn()?;
+        println!(
+            "  Turn {}: year {}",
+            turn, maintenance.game_data.conquest.game_year
         );
-        let visible_hazards = visible_hazards_from_snapshots(&game_data, &planet_intel_by_viewer);
-        let events = if visible_hazards.is_empty() {
-            run_maintenance_turn_with_context_seed_and_lifecycle(
-                &mut game_data,
-                campaign_seed,
-                &[],
-                &[],
-                &mut player_lifecycle_states,
-                &mut winner_state,
-            )?
-        } else {
-            run_maintenance_turn_with_context_seed_and_lifecycle(
-                &mut game_data,
-                campaign_seed,
-                &visible_hazards,
-                &[],
-                &mut player_lifecycle_states,
-                &mut winner_state,
-            )?
-        };
-        let planet_intel_grants_by_viewer = (1..=game_data.conquest.player_count)
-            .map(|viewer_empire_id| {
-                latest_planet_intel_grants_for_viewer(&events, viewer_empire_id)
-            })
-            .collect::<Vec<_>>();
-        extend_maintenance_events(&mut all_events, events);
-        for viewer_empire_id in 1..=game_data.conquest.player_count {
-            let viewer_idx = viewer_empire_id.saturating_sub(1) as usize;
-            let previous = planet_intel_by_viewer
-                .get(viewer_idx)
-                .cloned()
-                .unwrap_or_default();
-            planet_intel_by_viewer[viewer_idx] = merge_player_intel_from_runtime(
-                &game_data,
-                viewer_empire_id,
-                game_data.conquest.game_year,
-                Some(&previous),
-                planet_intel_grants_by_viewer.get(viewer_idx),
-            );
-        }
-        println!("  Turn {}: year {}", turn, game_data.conquest.game_year);
     }
 
-    let report_block_rows = carry_unread_report_blocks(
-        &runtime_state.report_block_rows,
-        build_results_report_blocks(&game_data, &all_events),
-    );
-    apply_results_reviewable_flags(&mut game_data, &report_block_rows);
-    apply_maintenance_events_to_player_war_stats(&mut player_war_stats, &all_events);
-    store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
-        start_year,
-        &game_data,
-        &report_block_rows,
-        &runtime_state.queued_mail,
-        &planet_intel_by_viewer,
-        &player_activity_states,
-        &player_lifecycle_states,
-        &player_war_stats,
-        winner_state,
-    )?;
+    let end_year = maintenance.game_data.conquest.game_year;
+    maintenance.save(&store)?;
 
     if update_schedule {
         let mut settings = store.load_campaign_settings()?;
@@ -534,95 +449,9 @@ fn run_maintenance_for_dir(
         }
     }
 
-    println!(
-        "  Year advanced: {} -> {}",
-        start_year, game_data.conquest.game_year
-    );
+    println!("  Year advanced: {} -> {}", start_year, end_year);
     println!("Rust maintenance complete.");
     Ok(())
-}
-
-fn extend_maintenance_events(all_events: &mut MaintenanceEvents, events: MaintenanceEvents) {
-    all_events.bombard_events.extend(events.bombard_events);
-    all_events
-        .planet_intel_events
-        .extend(events.planet_intel_events);
-    all_events
-        .ownership_change_events
-        .extend(events.ownership_change_events);
-    all_events
-        .fleet_battle_events
-        .extend(events.fleet_battle_events);
-    all_events
-        .fleet_destroyed_events
-        .extend(events.fleet_destroyed_events);
-    all_events
-        .starbase_destroyed_events
-        .extend(events.starbase_destroyed_events);
-    all_events
-        .assault_report_events
-        .extend(events.assault_report_events);
-    all_events
-        .scout_contact_events
-        .extend(events.scout_contact_events);
-    all_events
-        .starbase_sighting_events
-        .extend(events.starbase_sighting_events);
-    all_events
-        .encounter_disposition_events
-        .extend(events.encounter_disposition_events);
-    all_events
-        .invalid_player_state_events
-        .extend(events.invalid_player_state_events);
-    all_events
-        .fleet_merge_events
-        .extend(events.fleet_merge_events);
-    all_events.join_host_events.extend(events.join_host_events);
-    all_events
-        .mission_retarget_events
-        .extend(events.mission_retarget_events);
-    all_events
-        .colonization_events
-        .extend(events.colonization_events);
-    all_events.mission_events.extend(events.mission_events);
-    all_events.salvage_events.extend(events.salvage_events);
-    all_events
-        .diplomatic_escalation_events
-        .extend(events.diplomatic_escalation_events);
-    all_events
-        .civil_disorder_events
-        .extend(events.civil_disorder_events);
-    all_events
-        .campaign_outlook_events
-        .extend(events.campaign_outlook_events);
-    all_events
-        .campaign_outcome_events
-        .extend(events.campaign_outcome_events);
-    all_events
-        .game_victory_notice_events
-        .extend(events.game_victory_notice_events);
-    all_events
-        .empire_elimination_events
-        .extend(events.empire_elimination_events);
-    all_events
-        .fleet_defection_events
-        .extend(events.fleet_defection_events);
-}
-
-fn visible_hazards_from_snapshots(
-    game_data: &nc_data::CoreGameData,
-    planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
-) -> Vec<VisibleHazardIntel> {
-    (1..=game_data.conquest.player_count as usize)
-        .map(|viewer_idx| {
-            let empty = BTreeMap::new();
-            visible_hazard_intel_from_snapshots(
-                game_data,
-                planet_intel_by_viewer.get(viewer_idx - 1).unwrap_or(&empty),
-                viewer_idx as u8,
-            )
-        })
-        .collect()
 }
 
 fn validate_reservations_against_runtime(
