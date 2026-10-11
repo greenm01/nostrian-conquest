@@ -225,12 +225,12 @@ impl DashApp {
             },
             PlanetOverlayPromptMode::MassCommissionConfirm => match key.code {
                 KeyCode::Char('?') => self.open_overlay_help(HelpContext::PlanetList),
-                KeyCode::Char('y') | KeyCode::Char('Y') => {
+                KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
                     if let Err(err) = self.confirm_planet_overlay_mass_commission() {
                         self.planet_overlay.prompt_status = Some(err.to_string());
                     }
                 }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Esc => {
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
                     self.planet_overlay.clear_prompt()
                 }
                 _ => {}
@@ -1284,13 +1284,13 @@ impl DashApp {
             }
             state::InboxPromptMode::ComposeConfirm => match key.code {
                 KeyCode::Char('?') => self.open_overlay_help(HelpContext::InboxCompose),
-                KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
+                KeyCode::Char('y') | KeyCode::Char('Y') => {
                     if let Err(err) = self.confirm_inbox_compose_message() {
                         self.inbox_overlay.prompt_status = Some(err.to_string());
                         self.inbox_overlay.prompt_mode = state::InboxPromptMode::ComposeBody;
                     }
                 }
-                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
+                KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Esc => {
                     self.inbox_overlay.prompt_mode = state::InboxPromptMode::ComposeBody;
                 }
                 _ => {}

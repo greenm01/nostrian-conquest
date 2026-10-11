@@ -142,7 +142,7 @@ fn inbox_cancel_of_an_outgoing_row_asks_then_removes_it_everywhere() {
     assert!(
         render_dashboard_lines(&app)
             .iter()
-            .any(|line| line.contains("Delete this item? Y/[N]"))
+            .any(|line| line.contains("Delete this item? [Y]/N"))
     );
     app.handle_key(KeyEvent::new(KeyCode::Char('n'), KeyModifiers::NONE));
     assert!(!app.inbox_overlay.delete_confirm);

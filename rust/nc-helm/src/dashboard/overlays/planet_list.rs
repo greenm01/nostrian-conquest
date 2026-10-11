@@ -234,7 +234,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, map_frame: MapWidgetFrame)
         },
         PlanetOverlayPromptMode::MassCommissionConfirm => TableFooter::CommandPrompt {
             label: "COMMAND",
-            prompt: "Mass commission? Y/[N] ->",
+            prompt: "Mass commission? [Y]/N ->",
         },
         PlanetOverlayPromptMode::TransportFleetSelect { mode } => {
             filter_prompt = match mode {
@@ -405,7 +405,7 @@ pub(crate) fn popup_rect(app: &DashApp, map_frame: MapWidgetFrame) -> Option<Rec
         },
         PlanetOverlayPromptMode::MassCommissionConfirm => TableFooter::CommandPrompt {
             label: "COMMAND",
-            prompt: "Mass commission? Y/[N] ->",
+            prompt: "Mass commission? [Y]/N ->",
         },
         PlanetOverlayPromptMode::TransportFleetSelect { mode } => {
             filter_prompt = match mode {
