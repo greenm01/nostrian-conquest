@@ -14,3 +14,6 @@ mod odds;
 
 #[path = "encounter/aborts.rs"]
 mod aborts;
+
+#[path = "encounter/memory.rs"]
+mod memory;

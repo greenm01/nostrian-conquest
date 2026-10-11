@@ -67,6 +67,7 @@ pub fn load_classic_core_files(dir: &Path) -> Result<CoreGameData, GameDirectory
         ipbms: load_optional_parsed(dir, "IPBM.DAT", parse_ipbm_dat)?.unwrap_or_default(),
         setup: load_parsed(dir, "SETUP.DAT", parse_setup_dat)?,
         conquest: load_parsed(dir, "CONQUEST.DAT", parse_conquest_dat)?,
+        sightings: Default::default(),
     })
 }
 

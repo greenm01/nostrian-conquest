@@ -1,5 +1,7 @@
 use crate::ShipCategory;
-use crate::model::{Conquest, Fleet, Ipbm, Planet, Player, ProductionItemKind, Setup, Starbase};
+use crate::model::{
+    Conquest, Fleet, Ipbm, Planet, Player, ProductionItemKind, Setup, SightingMemory, Starbase,
+};
 
 /// The orders the accepted `ecmaint-build-pre` fixture queues on planet 15.
 pub const PLANET_BUILD_CURRENT_KNOWN_ORDERS: [(ProductionItemKind, u32); 2] = [
@@ -8,7 +10,8 @@ pub const PLANET_BUILD_CURRENT_KNOWN_ORDERS: [(ProductionItemKind, u32); 2] = [
 ];
 
 /// One game's state: every empire, world, fleet, starbase, and IPBM in
-/// record order, with the installation settings and the game clock.
+/// record order, with the installation settings, the game clock, and what
+/// each empire has sighted where its units stand.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreGameData {
     pub players: Vec<Player>,
@@ -18,6 +21,8 @@ pub struct CoreGameData {
     pub ipbms: Vec<Ipbm>,
     pub setup: Setup,
     pub conquest: Conquest,
+    /// Not a classic field: an export drops it and an import starts empty.
+    pub sightings: SightingMemory,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

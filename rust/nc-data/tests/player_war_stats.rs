@@ -124,6 +124,7 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         },
         enemy_starbases_destroyed: 1,
         stardate_week: Some(18),
+        surprise: false,
     });
 
     apply_maintenance_events_to_player_war_stats(&mut states, &events);

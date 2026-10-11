@@ -25,6 +25,7 @@ fn colony_game(bases: Vec<Starbase>) -> CoreGameData {
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     }
 }
 

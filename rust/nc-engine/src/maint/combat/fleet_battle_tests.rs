@@ -102,6 +102,21 @@ pub(super) fn fight_sides(
     attackers: &[usize],
     defenders: &[usize],
 ) -> FleetBattle {
+    fight_sides_by_surprise(
+        game_data, dice, round_cap, battle_key, attackers, defenders, false,
+    )
+}
+
+/// `fight_sides`, the attackers striking by `surprise` or not.
+pub(super) fn fight_sides_by_surprise(
+    game_data: &mut CoreGameData,
+    dice: &dyn BattleDice,
+    round_cap: u32,
+    battle_key: u64,
+    attackers: &[usize],
+    defenders: &[usize],
+    surprise: bool,
+) -> FleetBattle {
     let side = |fleets: &[usize]| BattleSide {
         empire: game_data.fleets[fleets[0]].owner.0,
         fleets: fleets.to_vec(),
@@ -109,7 +124,7 @@ pub(super) fn fight_sides(
     };
     let (attacker, defender) = (side(attackers), side(defenders));
     fight_encounter_with_dice(
-        game_data, dice, round_cap, battle_key, DEEP_SPACE, &attacker, &defender,
+        game_data, dice, round_cap, battle_key, DEEP_SPACE, &attacker, &defender, surprise,
     )
 }
 
@@ -224,7 +239,7 @@ fn mixed_fleets_and_starbases_each_add_one_to_the_die() {
         for &idx in classes {
             state.counts[idx] = 1;
         }
-        fleet_die_modifier(&state)
+        fleet_die_modifier(&state, false)
     };
     assert_eq!(modifier(&[IDX_CA]), 0);
     assert_eq!(modifier(&[IDX_DD, IDX_CA]), 1);
@@ -712,4 +727,163 @@ fn a_departing_fleet_leaves_the_carried_hits_with_its_side() {
     fight_sides(&mut game_data, &dice, 2, 1, &[0], &[4, 5]);
     assert_eq!(game_data.fleets[4].crippled.cruisers.total(), 0);
     assert_eq!(game_data.fleets[5].crippled.cruisers.total(), 1);
+}
+
+/// Combat decision 6: a surprise adds 1 to the attacking side's die in its
+/// first exchange, and only that. Ten destroyers a side, all rolling 2: an
+/// unmodified 2 is a quarter of the 100 AS (25 hits, which destroy one
+/// destroyer at 16 apiece) and a 3 is half (50 hits, three destroyed).
+#[test]
+fn a_surprise_adds_one_to_the_attackers_first_exchange_only() {
+    let battle = |attacker: usize, defender: usize, surprise: bool, round_cap: u32| {
+        let mut game_data = board();
+        place(&mut game_data, attacker, 1, Ships { dd: 10, ..NONE }, 10);
+        place(&mut game_data, defender, 2, Ships { dd: 10, ..NONE }, 10);
+        let dice = Scripted {
+            d10: &|_, _, _, _| 2,
+            pursuit: &|_, _, _| ESCAPED,
+        };
+        fight_sides_by_surprise(
+            &mut game_data,
+            &dice,
+            round_cap,
+            1,
+            &[attacker],
+            &[defender],
+            surprise,
+        );
+        game_data
+    };
+    let plain = battle(0, 4, false, 1);
+    assert_eq!(plain.fleets[4].ships.destroyers, 9);
+    assert_eq!(plain.fleets[0].ships.destroyers, 9);
+    let surprised = battle(0, 4, true, 1);
+    assert_eq!(surprised.fleets[4].ships.destroyers, 7);
+    assert_eq!(
+        surprised.fleets[0].ships.destroyers, 9,
+        "the defender gets nothing"
+    );
+
+    // The attacker is the surprising side whatever the empire numbers:
+    // empire 2 attacking empire 1 gets the same.
+    let mut game_data = board();
+    place(&mut game_data, 4, 2, Ships { dd: 10, ..NONE }, 10);
+    place(&mut game_data, 0, 1, Ships { dd: 10, ..NONE }, 10);
+    let dice = Scripted {
+        d10: &|_, _, _, _| 2,
+        pursuit: &|_, _, _| ESCAPED,
+    };
+    fight_sides_by_surprise(&mut game_data, &dice, 1, 1, &[4], &[0], true);
+    assert_eq!(game_data.fleets[0].ships.destroyers, 7);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 9);
+
+    // Two exchanges: a surprise 2 then an ordinary 2 is what an ordinary 3
+    // then an ordinary 2 would have been, so the second exchange had none.
+    let rolls = |first: u8| {
+        move |_: u64, round: u32, acting: u8, _: u8| {
+            if acting == 1 && round == 1 { first } else { 2 }
+        }
+    };
+    let run = |first: u8, surprise: bool| {
+        let mut game_data = board();
+        place(&mut game_data, 0, 1, Ships { dd: 10, ..NONE }, 10);
+        place(&mut game_data, 4, 2, Ships { dd: 10, ..NONE }, 10);
+        let script = rolls(first);
+        let dice = Scripted {
+            d10: &script,
+            pursuit: &|_, _, _| ESCAPED,
+        };
+        fight_sides_by_surprise(&mut game_data, &dice, 2, 1, &[0], &[4], surprise);
+        game_data
+    };
+    let (by_surprise, by_roll, unaided) = (run(2, true), run(3, false), run(2, false));
+    assert_eq!(by_surprise.fleets[0], by_roll.fleets[0]);
+    assert_eq!(by_surprise.fleets[4], by_roll.fleets[4]);
+    assert_ne!(by_surprise.fleets[4], unaided.fleets[4]);
+}
+
+/// The surprise counts within the +2 cap on a side's die modifier, and does
+/// not make an unmodified natural 9 anything else.
+#[test]
+fn a_surprise_counts_within_the_modifier_cap_and_leaves_criticals_alone() {
+    let modifier = |classes: &[usize], surprise: bool| {
+        let mut state = FleetCombatState::default();
+        for &idx in classes {
+            state.counts[idx] = 1;
+        }
+        fleet_die_modifier(&state, surprise)
+    };
+    assert_eq!(modifier(&[IDX_CA], true), 1);
+    assert_eq!(modifier(&[IDX_DD, IDX_CA], true), 2, "mixed and surprise");
+    assert_eq!(
+        modifier(&[IDX_CA, IDX_SB], true),
+        2,
+        "starbase and surprise"
+    );
+    assert_eq!(
+        modifier(&[IDX_DD, IDX_CA, IDX_SB], true),
+        modifier(&[IDX_DD, IDX_CA, IDX_SB], false),
+        "mixed, starbase, and surprise stop at the cap"
+    );
+
+    let lone = modifier(&[IDX_CA], true);
+    assert!(
+        fleet_volley(9, lone, 100).critical,
+        "an unmodified 9 still is"
+    );
+    assert!(
+        !fleet_volley(8, lone, 100).critical,
+        "a 9 made by surprise is not"
+    );
+    assert_eq!(
+        fleet_volley(8, lone, 100).hits,
+        fleet_volley(9, 0, 100).hits
+    );
+}
+
+/// A pursuit exchange never gets the surprise. A pair of cruisers that
+/// strikes by surprise breaks a lone cruiser (30 hits cripple it) and the
+/// cruiser's ROE 6 sends it off; the caught cruiser stands for one pursuit
+/// exchange at an ordinary 2, 15 hits, which cannot finish it. Were the
+/// surprise there, 30 hits would.
+#[test]
+fn a_pursuit_exchange_never_gets_the_surprise() {
+    let run = |first: u8, surprise: bool| {
+        let mut game_data = board();
+        place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
+        place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 6);
+        let script = move |kind: u64, round: u32, acting: u8, _: u8| {
+            if kind == 1 && acting == 1 && round == 1 {
+                first
+            } else {
+                2
+            }
+        };
+        let dice = Scripted {
+            d10: &script,
+            pursuit: &|_, _, _| CAUGHT,
+        };
+        let battle = fight_sides_by_surprise(
+            &mut game_data,
+            &dice,
+            COMBAT_GUARDRAIL_MAX_ROUNDS,
+            1,
+            &[0],
+            &[4],
+            surprise,
+        );
+        (game_data, battle)
+    };
+    let (surprised, battle) = run(2, true);
+    assert_eq!(
+        departure(&battle, 4),
+        Some((EncounterDispositionReason::RoeWithdrawal, true)),
+        "the cruiser broke off and was caught"
+    );
+    assert_eq!(surprised.fleets[4].ships.cruisers, 1);
+    assert_eq!(surprised.fleets[4].crippled.cruisers.total(), 1);
+    // Same as an ordinary 3 in the first exchange and an ordinary 2 after.
+    let (by_roll, _) = run(3, false);
+    assert_eq!(surprised.fleets[4], by_roll.fleets[4]);
+    assert_eq!(surprised.fleets[0], by_roll.fleets[0]);
 }

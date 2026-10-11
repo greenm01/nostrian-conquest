@@ -82,13 +82,16 @@ fn battle_has_live_hostile_targets(task_forces: &[TaskForce]) -> bool {
 
 /// One exchange of fire: every side still in the battle fires one volley
 /// at its target, all from the same moment, and the hits land together
-/// with what each side carried. Returns whether anyone fired.
+/// with what each side carried. `surprise` names the empire whose side
+/// strikes by surprise in this exchange, if any. Returns whether anyone
+/// fired.
 fn fire_exchange(
     task_forces: &mut [TaskForce],
     dice: &dyn BattleDice,
     kind: u64,
     round: u32,
     planet_owner: Option<u8>,
+    surprise: Option<u8>,
 ) -> bool {
     let mut pending_suppression: HashMap<u8, u32> = HashMap::new();
     let mut pending_execution: HashMap<u8, u32> = HashMap::new();
@@ -106,7 +109,7 @@ fn fire_exchange(
         let our_as = tf.state.total_combat_as();
         let result = fleet_volley(
             dice.d10(kind, round, tf.empire, target_empire),
-            fleet_die_modifier(&tf.state),
+            fleet_die_modifier(&tf.state, surprise == Some(tf.empire)),
             our_as,
         );
         let sup_hits = if result.hits > 0 {
@@ -323,7 +326,7 @@ fn pursue(
         task_forces[fleeing].members[m].left = None;
     }
     task_forces[fleeing].rebuild();
-    fire_exchange(task_forces, dice, pursuit_kind, round, planet_owner);
+    fire_exchange(task_forces, dice, pursuit_kind, round, planet_owner, None);
     for &(m, reason) in &caught {
         task_forces[fleeing].members[m].left = Some(Withdrawal {
             reason,
@@ -531,7 +534,9 @@ pub(crate) struct FleetBattle {
 /// Fight one encounter battle between two empires at `coords`: the
 /// attacker's side, its fleets that volunteered, and the defender's roster,
 /// the units the encounter assembled. `battle_key` tells apart battles
-/// fought at the same place in one year.
+/// fought at the same place in one year. The attacker strikes by `surprise`
+/// when the defending empire had not sighted it there: its first exchange
+/// gets +1 on the die, within the modifier cap.
 ///
 /// This is Rust's battle (seeded flat effectiveness table, carried hits,
 /// ROE checks after every exchange by every fleet, pursuit of fleets that
@@ -545,6 +550,7 @@ pub(crate) fn fight_encounter(
     coords: [u8; 2],
     attacker: &BattleSide,
     defender: &BattleSide,
+    surprise: bool,
 ) -> FleetBattle {
     let dice = SeededDice {
         campaign_seed,
@@ -559,10 +565,12 @@ pub(crate) fn fight_encounter(
         coords,
         attacker,
         defender,
+        surprise,
     )
 }
 
 /// `fight_encounter` with the dice and the round cap supplied by the caller.
+#[allow(clippy::too_many_arguments)]
 pub(super) fn fight_encounter_with_dice(
     game_data: &mut CoreGameData,
     dice: &dyn BattleDice,
@@ -571,6 +579,7 @@ pub(super) fn fight_encounter_with_dice(
     coords: [u8; 2],
     attacker: &BattleSide,
     defender: &BattleSide,
+    surprise: bool,
 ) -> FleetBattle {
     let mut events = FleetBattlePhaseEvents::default();
     let combat_kind = COMBAT_KIND_FLEET | battle_key << 8;
@@ -676,7 +685,17 @@ pub(super) fn fight_encounter_with_dice(
             break;
         }
         round += 1;
-        combat_occurred |= fire_exchange(&mut task_forces, dice, combat_kind, round, planet_owner);
+        // Only the attacker's first exchange can be a surprise; a pursuit
+        // exchange never is.
+        let surprise_for = (surprise && round == 1).then_some(attacker.empire);
+        combat_occurred |= fire_exchange(
+            &mut task_forces,
+            dice,
+            combat_kind,
+            round,
+            planet_owner,
+            surprise_for,
+        );
 
         let dropped = prune(&mut task_forces);
         if dropped.is_empty() {
@@ -1004,6 +1023,7 @@ pub(super) fn fight_encounter_with_dice(
             enemy_losses,
             enemy_starbases_destroyed: enemy_before.counts[IDX_SB]
                 .saturating_sub(enemy_after.counts[IDX_SB]),
+            surprise,
             stardate_week: None,
         });
 

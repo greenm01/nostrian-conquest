@@ -335,6 +335,56 @@ fn db_export_says_the_recovery_state_of_crippled_hulls_is_lost() {
     cleanup_dir(&exported);
 }
 
+/// A classic export drops the sighting memory and says so, and the store
+/// keeps it; with none remembered it says nothing.
+#[test]
+fn db_export_says_the_sighting_memory_is_not_written() {
+    let source = unique_temp_dir("nc-cli-db-export-sightings");
+    let exported = unique_temp_dir("nc-cli-db-export-sightings-target");
+    common::copy_fixture_dir("fixtures/ecutil-init/v1.5", &source);
+    run_nc_cli(&["db-import", source.to_str().unwrap()]);
+    let export = || {
+        run_nc_cli(&[
+            "db-export",
+            source.to_str().unwrap(),
+            exported.to_str().unwrap(),
+        ])
+    };
+    assert!(!export().contains("Sighting memory"));
+
+    let store = CampaignStore::open_default_in_dir(&source).expect("open store");
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    state.game_data.sightings.note(1, Coords::new(7, 9), 1, 2);
+    state.game_data.sightings.note(2, Coords::new(7, 9), 1, 1);
+    store
+        .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+    let stdout = export();
+    assert!(
+        stdout.contains("Sighting memory at 2 place(s) was not written")
+            && stdout.contains("surprise starts fresh"),
+        "{stdout}"
+    );
+    assert!(
+        store
+            .load_latest_runtime_game_data()
+            .expect("the store is unchanged")
+            .sightings
+            .knows(1, Coords::new(7, 9), 1, 2)
+    );
+
+    cleanup_dir(&source);
+    cleanup_dir(&exported);
+}
+
 #[test]
 fn sqlite_maint_exported_directory_is_accepted_by_ecmaint_oracle() {
     if !ecmaint_oracle_available() {

@@ -107,6 +107,7 @@ fn finishing_fire_spreads_over_a_sides_fleets_by_turns_left() {
         DEEP_SPACE,
         &attacker,
         &defender,
+        false,
     );
 
     // The hull with two turns left is the one finished, though fleet 4 is

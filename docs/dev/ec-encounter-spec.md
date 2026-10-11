@@ -72,6 +72,34 @@ that empire knows about that unit: 0 unknown, 1 contact, 2 identified,
   escort carried along with a moving starbase is reset too.
 - Nothing else lowers awareness.
 
+### Sighting memory (NC addition)
+
+Not classic: ECMAINT keeps nothing but the awareness above. NC adds, per
+viewing empire, sector, and depth layer, the set of opponent empires it has
+sighted there, which decides whether an attack is a surprise (combat decision
+6, [ADR atdsvb5y](../notes/decisions/atdsvb5y-surprise-uses-local-sighting-memory.md)).
+The awareness table is untouched and still reset each year; the memory is
+not, and it changes no roll in this spec.
+
+- Written: every successful sighting roll of a fleet or starbase (section
+  2: the roll that passes in the pairing loop, before the contact report or
+  the decision) adds the sighted unit's empire to the observer's empire's set
+  for the observer's sector and layer. A battle adds each of its two empires
+  to the other's set (section 5, and the orbital gate), and so does a
+  planetary strike on a world another empire holds.
+- Read: when an attack starts, before the battle raises awareness or adds to
+  the sets, the attacker's empire is looked up in the defender's set; absent
+  means a surprise (the attacking side's +1 in its first exchange,
+  [nc-combat-spec.md](nc-combat-spec.md) Surprise).
+- Cleared: when the empire's last fleet or starbase in that sector and layer
+  leaves it, is destroyed, or leaves play. The loop checks after each unit's
+  turn (the places that unit and the battles of its turn emptied), and again
+  against the records when a pass begins and after its colonization and
+  defections.
+- Kept: across ticks and years while the empire is present, whoever comes or
+  goes. It is part of the saved state (`snapshot_sightings`), omitted from
+  a classic export, and empty after a classic import.
+
 ### Year driver `0824:1004` [C]
 Called once per simulated year (ECMAINT `/R` normally runs one year).
 Before it, per year: `0824:26a5` (CONQUEST previous-year snapshot),
@@ -463,7 +491,7 @@ sector with no world belongs to no one and is nobody's system.
    at rest among them guards. Third empires still never join.
 4. The battle starts at a separation distance of `5 + Random(20)` (the
    `Random(5)+5` surprise branch needs a flag that the encounter path always
-   passes as 0). The battle itself, with its retreat, scatter, and loss
+   passes as 0; NC's surprise is another rule, see Sighting memory). The battle itself, with its retreat, scatter, and loss
    rules, is decoded in [ec-battle-spec.md](ec-battle-spec.md) §3.
 5. After the battle [C][P]: survivors' max speed recomputed (`24a3:036b`);
    destroyed fleets/bases deleted (entry inactive); each participant in layer

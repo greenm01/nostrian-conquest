@@ -695,6 +695,7 @@ fn build_fleet_battle_preview(
         enemy_losses: defender_losses,
         enemy_starbases_destroyed: 0,
         stardate_week: week,
+        surprise: false,
     });
     world.events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: DEFENDER_EMPIRE,
@@ -720,6 +721,7 @@ fn build_fleet_battle_preview(
         enemy_losses: attacker_losses,
         enemy_starbases_destroyed: 0,
         stardate_week: week,
+        surprise: false,
     });
     world.finish(
         if held_field {
@@ -796,6 +798,7 @@ fn build_fleet_destroyed_preview(
         enemy_losses: defender_force.to_ship_losses(),
         enemy_starbases_destroyed: 0,
         stardate_week: week,
+        surprise: false,
     });
     world.finish(
         if enemy_starbases > 0 {

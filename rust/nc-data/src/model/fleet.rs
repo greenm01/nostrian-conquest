@@ -221,6 +221,6 @@ impl EscapeEpisode {
     }
 }
 
-fn empire_bit(empire: u8) -> Option<u32> {
+pub(super) fn empire_bit(empire: u8) -> Option<u32> {
     (1..=32).contains(&empire).then(|| 1 << (empire - 1))
 }
