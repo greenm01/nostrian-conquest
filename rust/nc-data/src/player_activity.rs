@@ -1,3 +1,4 @@
+use crate::PlayerMode;
 use crate::{CoreGameData, PlayerActivityState};
 
 pub const DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS: u8 = 3;
@@ -20,7 +21,7 @@ pub fn apply_inactivity_autopilot_policy(
     if threshold == 0 {
         return;
     }
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     for state in player_activity_states {
         let Some(player) = game_data
             .players
@@ -28,15 +29,15 @@ pub fn apply_inactivity_autopilot_policy(
         else {
             continue;
         };
-        if !player.is_active_human_player() {
+        if player.mode != PlayerMode::Human {
             continue;
         }
         let missed_turns = current_year.saturating_sub(state.last_participation_year);
         if missed_turns < u16::from(threshold) {
             continue;
         }
-        if player.autopilot_flag() == 0 {
-            player.set_autopilot_flag(1);
+        if !player.autopilot {
+            player.autopilot = true;
             state.inactivity_autopilot_pending_clear = true;
         }
     }
@@ -47,18 +48,18 @@ pub fn record_interactive_participation(
     player_record_index_1_based: usize,
     player_activity_states: &mut [PlayerActivityState],
 ) {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     if let Some(player) = game_data
         .players
         .get_mut(player_record_index_1_based.saturating_sub(1))
     {
-        player.set_last_run_year_raw(current_year);
+        player.last_year_on = current_year;
         if let Some(state) =
             player_activity_states.get_mut(player_record_index_1_based.saturating_sub(1))
         {
             state.last_participation_year = current_year;
             if state.inactivity_autopilot_pending_clear {
-                player.set_autopilot_flag(0);
+                player.autopilot = false;
                 state.inactivity_autopilot_pending_clear = false;
             }
         }
@@ -81,7 +82,7 @@ pub fn record_submitted_turn_participation(
             .players
             .get_mut(player_record_index_1_based.saturating_sub(1))
         {
-            player.set_autopilot_flag(0);
+            player.autopilot = false;
         }
         state.inactivity_autopilot_pending_clear = false;
     }

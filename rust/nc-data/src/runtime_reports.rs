@@ -104,7 +104,7 @@ pub fn runtime_inbox_items(
     report_blocks: &[ReportBlockRow],
     queued_mail: &[QueuedPlayerMail],
 ) -> Vec<InboxItem> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     let mut items = report_blocks
         .iter()
         .enumerate()
@@ -449,11 +449,11 @@ fn sender_label(game_data: &CoreGameData, sender_empire_id: u8) -> String {
     else {
         return format!("Empire #{sender_empire_id}");
     };
-    let controlled = player.controlled_empire_name_summary();
+    let controlled = player.empire_name.trim().to_string();
     if !controlled.is_empty() {
         return controlled;
     }
-    let legacy = player.legacy_status_name_summary();
+    let legacy = player.empire_name.trim().to_string();
     if !legacy.is_empty() {
         return legacy;
     }

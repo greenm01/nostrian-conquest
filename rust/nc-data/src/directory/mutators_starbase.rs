@@ -1,4 +1,5 @@
 use super::*;
+use crate::{Coords, ProductionItemKind};
 
 impl CoreGameData {
     /// Starbase Command "Move": what ECGAME writes on a confirmed move. The
@@ -14,14 +15,14 @@ impl CoreGameData {
     ) -> Result<(), GameStateMutationError> {
         let owner_empire = player_index_1_based as u8;
         let own_world_at_destination = self.planets.iter().any(|planet| {
-            planet.coords_raw() == destination && planet.owner_empire_slot_raw() == owner_empire
+            planet.sector.to_array() == destination && planet.owner.0 == owner_empire
         });
         self.owned_base_mut(player_index_1_based, base_record_index_1_based)?;
         self.cancel_builds_relying_on_base(base_record_index_1_based - 1);
         let base = self.owned_base_mut(player_index_1_based, base_record_index_1_based)?;
-        base.set_moving_flag_raw(1);
-        base.set_target_coords_raw(destination);
-        base.set_target_depth_raw(u8::from(own_world_at_destination));
+        base.moving = true;
+        base.target = Coords::from_array(destination);
+        base.target_depth = u8::from(own_world_at_destination);
         Ok(())
     }
 
@@ -33,9 +34,9 @@ impl CoreGameData {
         base_record_index_1_based: usize,
     ) -> Result<(), GameStateMutationError> {
         let base = self.owned_base_mut(player_index_1_based, base_record_index_1_based)?;
-        base.set_moving_flag_raw(0);
-        base.set_target_coords_raw(base.coords_raw());
-        base.set_target_depth_raw(base.depth().round() as u8);
+        base.moving = false;
+        base.target = base.sector;
+        base.target_depth = base.depth.round() as u8;
         Ok(())
     }
 
@@ -46,42 +47,44 @@ impl CoreGameData {
     /// world's whole build queue, with no refund.
     fn cancel_builds_relying_on_base(&mut self, base_idx: usize) {
         let base = &self.bases[base_idx];
-        if base.depth() < Real48::ONE {
+        if base.depth < Real48::ONE {
             return;
         }
-        let (owner, coords) = (base.owner_empire_raw(), base.coords_raw());
-        let Some(planet_idx) = self.planets.iter().position(|planet| {
-            planet.coords_raw() == coords && planet.owner_empire_slot_raw() == owner
-        }) else {
+        let (owner, coords) = (base.owner.0, base.sector.to_array());
+        let Some(planet_idx) = self
+            .planets
+            .iter()
+            .position(|planet| planet.sector.to_array() == coords && planet.owner.0 == owner)
+        else {
             return;
         };
         let planet = &self.planets[planet_idx];
         let costs = (0..10).filter_map(|slot| {
-            let count = u32::from(planet.build_count_raw(slot));
-            let cost = ProductionItemKind::from_raw(planet.build_kind_raw(slot)).build_cost()?;
+            let count = u32::from(planet.build_queue[slot].points_owed);
+            let cost = planet.build_queue[slot].kind.build_cost()?;
             (count > 0).then_some((count, cost))
         });
         let total: u32 = costs.clone().map(|(count, cost)| count * cost).sum();
         let dearest = costs.map(|(_, cost)| cost).max().unwrap_or(0);
-        let production = planet.present_production();
+        let production = planet.production.to_f64();
         if f64::from(dearest) <= production && f64::from(total) <= production {
             return;
         }
         let other_base_in_orbit = self.bases.iter().enumerate().any(|(idx, other)| {
             idx != base_idx
-                && other.coords_raw() == coords
-                && other.depth() >= Real48::HALF
-                && other.moving_flag_raw() == 0
-                && other.target_coords_raw() == coords
-                && other.target_depth_raw() >= 1
+                && other.sector.to_array() == coords
+                && other.depth >= Real48::HALF
+                && !other.moving
+                && other.target.to_array() == coords
+                && other.target_depth >= 1
         });
         if other_base_in_orbit {
             return;
         }
         let planet = &mut self.planets[planet_idx];
         for slot in 0..10 {
-            planet.set_build_count_raw(slot, 0);
-            planet.set_build_kind_raw(slot, 0);
+            planet.build_queue[slot].points_owed = 0;
+            planet.build_queue[slot].kind = ProductionItemKind::Unknown(0);
         }
     }
 
@@ -95,7 +98,7 @@ impl CoreGameData {
                 index_1_based: base_record_index_1_based,
             },
         )?;
-        if base.base_id_raw() == 0 || base.owner_empire_raw() as usize != player_index_1_based {
+        if base.base_id.0 == 0 || base.owner.0 as usize != player_index_1_based {
             return Err(GameStateMutationError::BaseOwnershipMismatch {
                 player_index_1_based,
                 base_record_index_1_based,

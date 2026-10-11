@@ -7,6 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::PlayerMode;
 use crate::{Player, ReportBlockRow};
 
 pub const CLASSIC_RESULTS_RECORD_SIZE: usize = 84;
@@ -27,7 +28,7 @@ pub struct ClassicResultsChain {
 /// `PLAYER.DAT`, or 0 when it has none.
 pub fn results_chain(player: &Player) -> Option<ClassicResultsChain> {
     let first_header = player.results_first as u16;
-    (first_header != 0).then(|| ClassicResultsChain {
+    (first_header != 0).then_some(ClassicResultsChain {
         first_header,
         last_header: player.results_last as u16,
     })
@@ -80,7 +81,7 @@ impl ClassicResultsLayout {
     /// Point every `PLAYER.DAT` record at its chain in this file.
     pub fn apply_to_players(&self, players: &mut [Player]) {
         for (idx, player) in players.iter_mut().enumerate() {
-            player.set_classic_results_chain(self.chain_for((idx + 1) as u8));
+            set_results_chain(player, self.chain_for((idx + 1) as u8));
         }
     }
 }
@@ -97,7 +98,7 @@ pub fn layout_classic_results(players: &[Player], rows: &[ReportBlockRow]) -> Cl
     let broadcast_viewers = players
         .iter()
         .enumerate()
-        .filter(|(_, player)| player.is_active_human_player())
+        .filter(|(_, player)| player.mode == PlayerMode::Human)
         .map(|(idx, _)| (idx + 1) as u8)
         .collect::<BTreeSet<_>>();
     let laid_out_rows = rows
@@ -173,7 +174,7 @@ pub fn classic_results_header_viewers(players: &[Player], bytes: &[u8]) -> BTree
     let record_count = bytes.len() / CLASSIC_RESULTS_RECORD_SIZE;
     let mut viewers = BTreeMap::new();
     for (idx, player) in players.iter().enumerate() {
-        let Some(chain) = player.classic_results_chain() else {
+        let Some(chain) = results_chain(player) else {
             continue;
         };
         let mut header = chain.first_header;

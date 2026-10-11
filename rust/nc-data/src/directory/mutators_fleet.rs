@@ -1,6 +1,9 @@
 use std::collections::BTreeSet;
 
 use super::*;
+use crate::{
+    Coords, Order, has_combat_ships, is_support_only, recompute_max_speed, set_mission_target,
+};
 
 impl CoreGameData {
     pub fn conflicting_friendly_colonize_fleet_record(
@@ -16,11 +19,11 @@ impl CoreGameData {
             .iter()
             .enumerate()
             .find(|(idx, fleet)| {
-                fleet.owner_empire_raw() == owner_empire_raw
+                fleet.owner.0 == owner_empire_raw
                     && !excluded_fleet_record_indexes_1_based.contains(&(idx + 1))
-                    && fleet.etac_count() > 0
-                    && fleet.standing_order_kind() == Order::ColonizeWorld
-                    && fleet.standing_order_target_coords_raw() == target
+                    && fleet.ships.etacs > 0
+                    && fleet.order == Order::ColonizeWorld
+                    && fleet.target.to_array() == target
             })
             .map(|(idx, _)| idx + 1)
     }
@@ -58,7 +61,7 @@ impl CoreGameData {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        if fleet.owner_empire_raw() != owner_empire {
+        if fleet.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based,
@@ -67,8 +70,8 @@ impl CoreGameData {
         if local_slot == 0
             || self.fleets.iter().enumerate().any(|(idx, other)| {
                 idx + 1 != fleet_index_1_based
-                    && other.owner_empire_raw() == owner_empire
-                    && other.local_slot_word_raw() == local_slot
+                    && other.owner.0 == owner_empire
+                    && other.fleet_number.0 == local_slot
             })
         {
             return Err(GameStateMutationError::InvalidFleetLocalSlot {
@@ -78,15 +81,15 @@ impl CoreGameData {
         }
         // ECGAME's renumbering (`0x15b35`) points the empire's Join orders
         // that name the old number at the new one.
-        let old_slot = fleet.local_slot_word_raw();
+        let old_slot = fleet.fleet_number.0;
         for joiner in self.fleets.iter_mut().filter(|joiner| {
-            joiner.owner_empire_raw() == owner_empire
-                && joiner.standing_order_kind() == Order::JoinAnotherFleet
-                && joiner.join_host_fleet_id_raw() == old_slot
+            joiner.owner.0 == owner_empire
+                && joiner.order == Order::JoinAnotherFleet
+                && joiner.mission_target == old_slot
         }) {
-            joiner.set_join_host_fleet_id_raw(local_slot);
+            joiner.mission_target = local_slot;
         }
-        self.fleets[fleet_index_1_based - 1].set_local_slot_word_raw(local_slot);
+        self.fleets[fleet_index_1_based - 1].fleet_number.0 = local_slot;
         Ok(())
     }
 
@@ -110,7 +113,7 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: record_index_1_based,
             })?
-            .max_speed();
+            .max_speed;
         if Order::from_raw(order_code) == Order::SeekHome
             && ![
                 self.nearest_owned_world(record_index_1_based, false),
@@ -137,9 +140,9 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             },
         )?;
-        record.set_current_speed(speed);
-        record.set_standing_order_code_raw(order_code);
-        record.set_standing_order_target_coords_raw(target);
+        record.speed = speed;
+        record.order = Order::from_raw(order_code);
+        record.target = Coords::from_array(target);
         // ECGAME writes 0x22 = world-target flag (0 for sector-targeted orders,
         // 1 otherwise) and the 0x23 word = mission id (starbase id for Guard
         // Starbase, host fleet number for Join); explicit aux bytes override
@@ -151,12 +154,12 @@ impl CoreGameData {
         if let Some(value) = aux1 {
             mission_aux[1] = value;
         }
-        record.set_mission_target(mission_aux[0], u16::from(mission_aux[1]));
+        set_mission_target(record, mission_aux[0], u16::from(mission_aux[1]));
         // ECGAME clears ROE on any order given to a fleet with no BB, CA, or DD.
-        if !record.has_any_combat_ships() {
-            record.set_rules_of_engagement(0);
+        if !has_combat_ships(record) {
+            record.rules_of_engagement = 0;
         }
-        Ok(record.mission_aux_bytes())
+        Ok([record.target_depth, record.mission_target as u8])
     }
 
     pub fn validate_fleet_order_payload(
@@ -174,16 +177,16 @@ impl CoreGameData {
         if matches!(order, Order::Unknown(_)) {
             return Err(FleetOrderValidationError::UnknownOrderCode(order_code));
         }
-        let owner = fleet.owner_empire_raw();
-        let has_combat = fleet.has_any_combat_ships();
-        let has_scout = fleet.scout_count() > 0;
-        let has_etac = fleet.etac_count() > 0;
-        let has_loaded_troops = fleet.army_count() > 0;
+        let owner = fleet.owner.0;
+        let has_combat = has_combat_ships(fleet);
+        let has_scout = fleet.ships.scouts > 0;
+        let has_etac = fleet.ships.etacs > 0;
+        let has_loaded_troops = fleet.ships.loaded_transports > 0;
         let planet_owner = self
             .planets
             .iter()
-            .find(|planet| planet.coords_raw() == target)
-            .map(|planet| planet.owner_empire_slot_raw());
+            .find(|planet| planet.sector.to_array() == target)
+            .map(|planet| planet.owner.0);
 
         match order {
             Order::GuardStarbase => {
@@ -191,13 +194,12 @@ impl CoreGameData {
                     return Err(FleetOrderValidationError::MissingCombatShips);
                 }
                 let _ = aux0;
-                let base_id = aux1
-                    .map(u16::from)
-                    .unwrap_or_else(|| fleet.guard_starbase_index_raw());
+                let base_id = aux1.map(u16::from).unwrap_or_else(|| fleet.mission_target);
                 if base_id == 0
-                    || !self.bases.iter().any(|base| {
-                        base.owner_empire_raw() == owner && base.base_id_raw() == base_id
-                    })
+                    || !self
+                        .bases
+                        .iter()
+                        .any(|base| base.owner.0 == owner && base.base_id.0 == base_id)
                 {
                     return Err(FleetOrderValidationError::InvalidGuardStarbase);
                 }
@@ -278,15 +280,13 @@ impl CoreGameData {
             }
             Order::JoinAnotherFleet => {
                 let _ = aux0;
-                let host_number = aux1
-                    .map(u16::from)
-                    .unwrap_or_else(|| fleet.join_host_fleet_id_raw());
+                let host_number = aux1.map(u16::from).unwrap_or_else(|| fleet.mission_target);
                 if host_number == 0
-                    || host_number == fleet.local_slot_word_raw()
-                    || !self.fleets.iter().any(|host| {
-                        host.owner_empire_raw() == owner
-                            && host.local_slot_word_raw() == host_number
-                    })
+                    || host_number == fleet.fleet_number.0
+                    || !self
+                        .fleets
+                        .iter()
+                        .any(|host| host.owner.0 == owner && host.fleet_number.0 == host_number)
                 {
                     return Err(FleetOrderValidationError::InvalidJoinHost);
                 }
@@ -307,23 +307,23 @@ impl CoreGameData {
         let Some(fleet) = self.fleets.get(record_index_1_based - 1) else {
             return Ok(());
         };
-        if fleet.current_speed() > fleet.max_speed() {
+        if fleet.speed > fleet.max_speed {
             return Err(FleetPlayerInputValidationError::SpeedExceedsMaximum {
-                speed: fleet.current_speed(),
-                max: fleet.max_speed(),
+                speed: fleet.speed,
+                max: fleet.max_speed,
             });
         }
-        if fleet.is_support_only() && fleet.rules_of_engagement() != 0 {
+        if is_support_only(fleet) && fleet.rules_of_engagement != 0 {
             return Err(
                 FleetPlayerInputValidationError::NonCombatFleetMustUseZeroRoe {
-                    roe: fleet.rules_of_engagement(),
+                    roe: fleet.rules_of_engagement,
                 },
             );
         }
-        if fleet.rules_of_engagement() > 10 {
+        if fleet.rules_of_engagement > 10 {
             return Err(
                 FleetPlayerInputValidationError::RulesOfEngagementOutOfRange {
-                    roe: fleet.rules_of_engagement(),
+                    roe: fleet.rules_of_engagement,
                 },
             );
         }
@@ -356,32 +356,32 @@ impl CoreGameData {
             },
         )?;
 
-        if fleet.owner_empire_raw() != owner_empire {
+        if fleet.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based,
             });
         }
-        if host.owner_empire_raw() != owner_empire {
+        if host.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based: host_fleet_index_1_based,
             });
         }
 
-        let host_coords = host.current_location_coords_raw();
+        let host_coords = host.sector.to_array();
         // ECGAME stores the host's fleet number (its 0x00 word), which is
         // what ECMAINT's merge matches against; the record id is not stored.
-        let host_fleet_number = host.local_slot_word_raw();
+        let host_fleet_number = host.fleet_number.0;
         let fleet = self.fleets.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        fleet.set_current_speed(fleet.max_speed());
-        fleet.set_standing_order_kind(Order::JoinAnotherFleet);
-        fleet.set_standing_order_target_coords_raw(host_coords);
-        fleet.set_mission_target(1, host_fleet_number);
+        fleet.speed = fleet.max_speed;
+        fleet.order = Order::JoinAnotherFleet;
+        fleet.target = Coords::from_array(host_coords);
+        set_mission_target(fleet, 1, host_fleet_number);
         Ok(())
     }
 
@@ -400,29 +400,28 @@ impl CoreGameData {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        if fleet.owner_empire_raw() != player_index_1_based as u8 {
+        if fleet.owner.0 != player_index_1_based as u8 {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based,
             });
         }
         let mut changed = fleet.clone();
-        changed.recompute_max_speed_from_composition();
-        let arrived = changed.standing_order_target_coords_raw()
-            == changed.current_location_coords_raw()
-            && changed.depth().round() == i32::from(changed.world_target_flag_raw());
-        let speed = if arrived || changed.standing_order_kind() == Order::HoldPosition {
+        recompute_max_speed(&mut changed);
+        let arrived = changed.target == changed.sector
+            && changed.depth.round() == i32::from(changed.target_depth);
+        let speed = if arrived || changed.order == Order::HoldPosition {
             0
-        } else if (1..=changed.max_speed()).contains(&speed) {
+        } else if (1..=changed.max_speed).contains(&speed) {
             speed
         } else {
             return Err(GameStateMutationError::InvalidFleetSpeed {
                 fleet_index_1_based,
                 requested: speed,
-                max: changed.max_speed(),
+                max: changed.max_speed,
             });
         };
-        changed.set_current_speed(speed);
+        changed.speed = speed;
         *fleet = changed;
         Ok(speed)
     }
@@ -439,7 +438,7 @@ impl CoreGameData {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        if fleet.owner_empire_raw() != owner_empire {
+        if fleet.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based,
@@ -451,14 +450,14 @@ impl CoreGameData {
                 reason: FleetPlayerInputValidationError::RulesOfEngagementOutOfRange { roe },
             });
         }
-        if fleet.is_support_only() && roe != 0 {
+        if is_support_only(fleet) && roe != 0 {
             return Err(GameStateMutationError::InvalidFleetPlayerInput {
                 fleet_index_1_based,
                 reason: FleetPlayerInputValidationError::NonCombatFleetMustUseZeroRoe { roe },
             });
         }
 
-        self.fleets[fleet_index_1_based - 1].set_rules_of_engagement(roe);
+        self.fleets[fleet_index_1_based - 1].rules_of_engagement = roe;
         Ok(())
     }
 }

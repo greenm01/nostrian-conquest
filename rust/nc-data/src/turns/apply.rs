@@ -12,7 +12,7 @@ pub(super) fn apply_turn_submission(
     queued_mail: &mut Vec<QueuedPlayerMail>,
 ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
     let player_record_index_1_based = submission.player_record_index_1_based;
-    let player_count = game_data.conquest.player_count() as usize;
+    let player_count = game_data.conquest.player_count as usize;
     if player_record_index_1_based == 0 || player_record_index_1_based > player_count {
         return Err(TurnSubmissionError::Validation(format!(
             "turn player must be in 1..={player_count}, got {}",
@@ -20,7 +20,7 @@ pub(super) fn apply_turn_submission(
         )));
     }
 
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     if submission.year != current_year {
         return Err(TurnSubmissionError::Validation(format!(
             "turn year mismatch: file declares {}, campaign year is {}",
@@ -337,7 +337,7 @@ fn ensure_player_owns_planet(
                 planet_record_index_1_based
             ))
         })?;
-    if planet.owner_empire_slot_raw() as usize != player_record_index_1_based {
+    if planet.owner.0 as usize != player_record_index_1_based {
         return Err(TurnSubmissionError::Validation(format!(
             "planet {} is not owned by player {}",
             planet_record_index_1_based, player_record_index_1_based
@@ -360,7 +360,7 @@ fn ensure_player_owns_fleet(
                 fleet_record_index_1_based
             ))
         })?;
-    if fleet.owner_empire_raw() as usize != player_record_index_1_based {
+    if fleet.owner.0 as usize != player_record_index_1_based {
         return Err(TurnSubmissionError::Validation(format!(
             "fleet {} is not owned by player {}",
             fleet_record_index_1_based, player_record_index_1_based
@@ -394,7 +394,7 @@ fn ensure_order_target_within_map(
     order_code: u8,
     target: [u8; 2],
 ) -> Result<(), TurnSubmissionError> {
-    let map_size = crate::map_size_for_player_count(game_data.conquest.player_count());
+    let map_size = crate::map_size_for_player_count(game_data.conquest.player_count);
     if Order::from_raw(order_code) == Order::HoldPosition
         || crate::sector_within_map(target, map_size)
     {
@@ -416,8 +416,8 @@ fn queue_message(
         queued_mail,
         sender_player_record_index_1_based as u8,
         message.recipient_empire_raw,
-        game_data.conquest.game_year(),
-        game_data.conquest.player_count(),
+        game_data.conquest.game_year,
+        game_data.conquest.player_count,
         &message.subject,
         &message.body,
     )
@@ -426,7 +426,7 @@ fn queue_message(
     queued_mail.push(QueuedPlayerMail {
         sender_empire_id: sender_player_record_index_1_based as u8,
         recipient_empire_id: message.recipient_empire_raw,
-        year: game_data.conquest.game_year(),
+        year: game_data.conquest.game_year,
         subject,
         body,
         recipient_deleted: false,

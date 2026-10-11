@@ -2,6 +2,9 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use crate::homeworld_seed::is_named_homeworld_seed;
 use crate::{CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT};
+use crate::{
+    has_any_force, is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactUnitSummaryStyle {
@@ -44,8 +47,8 @@ pub fn compact_unit_code(kind: ProductionItemKind) -> &'static str {
 pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..STARDOCK_SLOT_COUNT {
-        let count = u32::from(planet.stardock_count_raw(slot));
-        let kind_raw = planet.stardock_kind_raw(slot);
+        let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
+        let kind_raw = stardock_slot_kind(planet, slot).to_raw();
         if count == 0 || kind_raw == 0 {
             continue;
         }
@@ -57,8 +60,8 @@ pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
 pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
-        let points = u32::from(planet.build_count_raw(slot));
-        let kind_raw = planet.build_kind_raw(slot);
+        let points = u32::from(planet.build_queue[slot].points_owed);
+        let kind_raw = planet.build_queue[slot].kind.to_raw();
         if points == 0 || kind_raw == 0 {
             continue;
         }
@@ -139,18 +142,18 @@ pub fn owned_orbit_presence(
             .fleets
             .iter()
             .filter(|fleet| {
-                fleet.current_location_coords_raw() == coords
-                    && fleet.owner_empire_raw() == owner_empire_id
-                    && fleet.has_any_force()
+                fleet.sector.to_array() == coords
+                    && fleet.owner.0 == owner_empire_id
+                    && has_any_force(fleet)
             })
             .count(),
         starbases: game_data
             .bases
             .iter()
             .filter(|base| {
-                base.coords_raw() == coords
-                    && base.owner_empire_raw() == owner_empire_id
-                    && base.base_id_raw() != 0
+                base.sector.to_array() == coords
+                    && base.owner.0 == owner_empire_id
+                    && base.base_id.0 != 0
             })
             .count(),
     }
@@ -197,14 +200,14 @@ pub fn owned_planet_status(
         return OwnedPlanetStatus::Scorched;
     }
     let planet = &game_data.planets[planet_index_0_based];
-    if planet.is_homeworld_seed_ignoring_name() {
+    if is_homeworld_seed_ignoring_name(planet) {
         return OwnedPlanetStatus::Homeworld;
     }
-    if game_data.planet_has_friendly_starbase(owner_empire_id, planet.coords_raw()) {
+    if game_data.planet_has_friendly_starbase(owner_empire_id, planet.sector.to_array()) {
         return OwnedPlanetStatus::StarbasePresent;
     }
-    let present = planet.present_production_points().unwrap_or(0);
-    let potential = planet.potential_production_points();
+    let present = present_production_points(planet);
+    let potential = u16::from(planet.potential_production);
     if present == 0 && potential > 0 {
         OwnedPlanetStatus::FactoriesDestroyed
     } else if present < potential {

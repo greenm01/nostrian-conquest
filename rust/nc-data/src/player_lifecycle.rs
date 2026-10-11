@@ -1,4 +1,5 @@
 use crate::names::set_empire_name;
+use crate::troop_transports;
 use crate::{
     CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, PlayerMode, TerminalOutcome,
     WinnerState,
@@ -20,17 +21,14 @@ pub enum PlayerAccessMode {
 }
 
 pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> bool {
-    let unowned_planet_exists = game_data
-        .planets
-        .iter()
-        .any(|planet| planet.owner_empire_slot_raw() == 0);
+    let unowned_planet_exists = game_data.planets.iter().any(|planet| planet.owner.0 == 0);
 
     game_data.fleets.iter().any(|fleet| {
-        if fleet.owner_empire_raw() != empire_raw {
+        if fleet.owner.0 != empire_raw {
             return false;
         }
-        (fleet.troop_transport_count() > 0 && fleet.army_count() > 0)
-            || (unowned_planet_exists && fleet.etac_count() > 0)
+        (troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0)
+            || (unowned_planet_exists && fleet.ships.etacs > 0)
     })
 }
 
@@ -45,7 +43,7 @@ pub fn set_civil_disorder(player: &mut Player) {
 /// Joined and rogue empires both contest the campaign and can be eliminated;
 /// only civil disorder (0x00) is out of it.
 pub fn is_contesting_empire(player: &Player) -> bool {
-    player.owner_mode_raw() != 0x00
+    player.mode.to_raw() != 0x00
 }
 
 /// A contesting empire still contends for the throne while it holds a world,
@@ -69,7 +67,7 @@ pub fn is_campaign_contender(
     let owns_any_planets = game_data
         .planets
         .iter()
-        .any(|planet| planet.owner_empire_slot_raw() == empire_raw);
+        .any(|planet| planet.owner.0 == empire_raw);
     is_contesting_empire(player)
         && (owns_any_planets
             || lifecycle.recovery_window_turns_remaining > 0
@@ -110,7 +108,7 @@ pub fn player_public_status(
     let autopilot_active = game_data
         .players
         .get(player_record_index_1_based.saturating_sub(1))
-        .map(|player| player.autopilot_flag() != 0)
+        .map(|player| player.autopilot)
         .unwrap_or(false);
     if autopilot_active && activity.inactivity_autopilot_pending_clear {
         PublicEmpireStatus::Mia

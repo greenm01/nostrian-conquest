@@ -1,6 +1,10 @@
 use super::support::*;
 use super::*;
 use crate::Planet;
+use crate::{
+    Coords, recompute_max_speed, set_fleet_at_rest, set_mission_target, set_troop_transports,
+    stardock_slot_kind,
+};
 
 impl CoreGameData {
     pub fn commission_planet_stardock_slot(
@@ -32,13 +36,13 @@ impl CoreGameData {
                 index_1_based: planet_record_index_1_based,
             },
         )?;
-        if planet.owner_empire_slot_raw() != owner_empire {
+        if planet.owner.0 != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based,
                 planet_index_1_based: planet_record_index_1_based,
             });
         }
-        let coords = planet.coords_raw();
+        let coords = planet.sector.to_array();
         let selected = collect_selected_stardock_slots(
             planet,
             planet_record_index_1_based,
@@ -80,8 +84,8 @@ impl CoreGameData {
                 })?;
             // The starbase slot holds every docked base; one leaves.
             for (slot_0_based, _, _) in selected {
-                let left = planet.stardock_count(slot_0_based).saturating_sub(1);
-                planet.set_stardock_count(slot_0_based, left);
+                let left = planet.stardock[slot_0_based].saturating_sub(1);
+                planet.stardock[slot_0_based] = left;
             }
             Ok(CommissionResult::Starbase {
                 base_record_index_1_based: self.bases.len(),
@@ -113,14 +117,14 @@ impl CoreGameData {
                 index_1_based: planet_record_index_1_based,
             },
         )?;
-        if planet.owner_empire_slot_raw() != owner_empire {
+        if planet.owner.0 != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based,
                 planet_index_1_based: planet_record_index_1_based,
             });
         }
 
-        let coords = planet.coords_raw();
+        let coords = planet.sector.to_array();
         let selected = collect_selected_stardock_slots(
             planet,
             planet_record_index_1_based,
@@ -156,7 +160,7 @@ impl CoreGameData {
             .planets
             .iter()
             .enumerate()
-            .filter(|(_, planet)| planet.owner_empire_slot_raw() == owner_empire)
+            .filter(|(_, planet)| planet.owner.0 == owner_empire)
             .map(|(idx, _)| idx + 1)
             .collect();
 
@@ -166,8 +170,8 @@ impl CoreGameData {
                     index_1_based: planet_index_1_based,
                 });
             };
-            let planet_name = planet.planet_name();
-            let coords = planet.coords_raw();
+            let planet_name = planet.name.clone();
+            let coords = planet.sector.to_array();
             let mut ship_slots = Vec::new();
             let mut starbase_slots = Vec::new();
             let mut ship_count = 0u32;
@@ -178,11 +182,11 @@ impl CoreGameData {
             let mut transports = 0u32;
             let mut etacs = 0u32;
             for slot in 0..crate::STARDOCK_SLOT_COUNT {
-                let count = u32::from(planet.stardock_count_raw(slot));
+                let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
                 if count == 0 {
                     continue;
                 }
-                match ProductionItemKind::from_raw(planet.stardock_kind_raw(slot)) {
+                match stardock_slot_kind(planet, slot) {
                     ProductionItemKind::Destroyer
                     | ProductionItemKind::Cruiser
                     | ProductionItemKind::Battleship
@@ -191,7 +195,7 @@ impl CoreGameData {
                     | ProductionItemKind::Etac => {
                         ship_slots.push(slot);
                         ship_count = ship_count.saturating_add(count);
-                        match ProductionItemKind::from_raw(planet.stardock_kind_raw(slot)) {
+                        match stardock_slot_kind(planet, slot) {
                             ProductionItemKind::Destroyer => {
                                 destroyers = destroyers.saturating_add(count)
                             }
@@ -237,7 +241,8 @@ impl CoreGameData {
                             .ok_or(GameStateMutationError::MissingFleetRecord {
                                 index_1_based: fleet_record_index_1_based,
                             })?
-                            .local_slot_word_raw();
+                            .fleet_number
+                            .0;
                         report.fleets_created += 1;
                         report.ships_commissioned =
                             report.ships_commissioned.saturating_add(ship_count);
@@ -276,7 +281,8 @@ impl CoreGameData {
                             .ok_or(GameStateMutationError::MissingBaseRecord {
                                 index_1_based: base_record_index_1_based,
                             })?
-                            .base_id_raw();
+                            .base_id
+                            .0;
                         report.starbases_commissioned += 1;
                         report.entries.push(AutoCommissionEntry::Starbase(
                             AutoCommissionStarbaseEntry {
@@ -308,26 +314,26 @@ impl CoreGameData {
                 index_1_based: player_index_1_based,
             },
         )?;
-        player.set_first_base_record_raw(1);
+        player.bases_first.0 = 1;
 
         let fleet = self.fleets.get_mut(fleet_index_1_based - 1).ok_or(
             GameStateMutationError::MissingFleetRecord {
                 index_1_based: fleet_index_1_based,
             },
         )?;
-        fleet.set_standing_order_kind(Order::GuardStarbase);
-        fleet.set_standing_order_target_coords_raw(target);
-        fleet.set_mission_target(1, base_id);
+        fleet.order = Order::GuardStarbase;
+        fleet.target = Coords::from_array(target);
+        set_mission_target(fleet, 1, base_id);
 
         self.bases = vec![build_guard_starbase_base_record(
             target,
             base_id,
-            fleet.local_slot_word_raw(),
-            fleet.fleet_id_word_raw(),
+            fleet.fleet_number.0,
+            fleet.record.0,
             owner_empire,
-            fleet.x_fraction(),
-            fleet.y_fraction(),
-            fleet.depth(),
+            fleet.x_fraction,
+            fleet.y_fraction,
+            fleet.depth,
         )];
 
         Ok(())
@@ -335,7 +341,7 @@ impl CoreGameData {
 
     pub fn set_ipbm_zero_records(&mut self, count: u16) {
         if let Some(player1) = self.players.first_mut() {
-            player1.set_ipbm_chain_head_raw(count);
+            player1.ipbms_first.0 = count;
         }
 
         self.ipbms = (0..count).map(|_| Ipbm::default()).collect();
@@ -354,10 +360,10 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             },
         )?;
-        record.set_ipbm_number_raw(primary);
-        record.set_owner_empire_raw(owner);
-        record.set_next_ipbm_link_raw(gate);
-        record.set_record_number_raw(follow_on);
+        record.ipbm_number = primary;
+        record.owner.0 = owner;
+        record.next.0 = gate;
+        record.record.0 = follow_on;
         Ok(())
     }
 }
@@ -372,8 +378,8 @@ fn collect_selected_stardock_slots(
     let mut selected = Vec::with_capacity(slot_0_based_list.len());
     for &slot_0_based in slot_0_based_list {
         if slot_0_based >= crate::STARDOCK_SLOT_COUNT
-            || planet.stardock_kind_raw(slot_0_based) == 0
-            || planet.stardock_count_raw(slot_0_based) == 0
+            || stardock_slot_kind(planet, slot_0_based).to_raw() == 0
+            || planet.stardock[slot_0_based] == 0
         {
             return Err(GameStateMutationError::EmptyStardockSlot {
                 planet_index_1_based,
@@ -382,8 +388,8 @@ fn collect_selected_stardock_slots(
         }
         selected.push((
             slot_0_based,
-            planet.stardock_kind_raw(slot_0_based),
-            planet.stardock_count_raw(slot_0_based),
+            stardock_slot_kind(planet, slot_0_based).to_raw(),
+            u16::try_from(planet.stardock[slot_0_based]).unwrap_or(u16::MAX),
         ));
     }
     Ok(selected)
@@ -450,10 +456,10 @@ fn decrement_selected_ship_slots(
         if *remaining_for_kind == 0 {
             continue;
         }
-        let available = planet.stardock_count_raw(*slot_0_based);
+        let available = u16::try_from(planet.stardock[*slot_0_based]).unwrap_or(u16::MAX);
         let consumed = available.min(*remaining_for_kind);
         let new_count = available.saturating_sub(consumed);
-        planet.set_stardock_count_raw(*slot_0_based, new_count);
+        planet.stardock[*slot_0_based] = u32::from(new_count);
         *remaining_for_kind = remaining_for_kind.saturating_sub(consumed);
     }
 
@@ -481,23 +487,23 @@ fn build_commissioned_fleet(
     let local_slot = next_available_owned_fleet_local_slot(&game_data.fleets, owner_empire);
 
     let mut fleet = Fleet::default();
-    fleet.set_local_slot_word_raw(local_slot);
-    fleet.set_owner_empire_raw(owner_empire);
-    fleet.set_fleet_id_word_raw(fleet_id);
-    fleet.set_current_speed(0);
-    fleet.set_current_location_coords_raw(coords);
-    fleet.set_at_rest_motion();
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_standing_order_target_coords_raw(coords);
-    fleet.set_mission_target(0, 0);
-    fleet.set_rules_of_engagement(crate::NEW_FLEET_DEFAULT_ROE);
-    fleet.set_destroyer_count(draft.destroyers);
-    fleet.set_cruiser_count(draft.cruisers);
-    fleet.set_battleship_count(draft.battleships);
-    fleet.set_scout_count(draft.scouts);
-    fleet.set_troop_transport_count(draft.transports);
-    fleet.set_etac_count(draft.etacs);
-    fleet.recompute_max_speed_from_composition();
+    fleet.fleet_number.0 = local_slot;
+    fleet.owner.0 = owner_empire;
+    fleet.record.0 = fleet_id;
+    fleet.speed = 0;
+    fleet.sector = Coords::from_array(coords);
+    set_fleet_at_rest(&mut fleet);
+    fleet.order = Order::HoldPosition;
+    fleet.target = Coords::from_array(coords);
+    set_mission_target(&mut fleet, 0, 0);
+    fleet.rules_of_engagement = crate::NEW_FLEET_DEFAULT_ROE;
+    fleet.ships.destroyers = draft.destroyers;
+    fleet.ships.cruisers = draft.cruisers;
+    fleet.ships.battleships = draft.battleships;
+    fleet.ships.scouts = draft.scouts;
+    set_troop_transports(&mut fleet, draft.transports);
+    fleet.ships.etacs = draft.etacs;
+    recompute_max_speed(&mut fleet);
     normalize_fleet_roe_for_composition(&mut fleet);
 
     let player = game_data.players.get_mut(player_index_1_based - 1).ok_or(

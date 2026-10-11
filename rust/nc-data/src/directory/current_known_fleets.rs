@@ -5,12 +5,12 @@ impl CoreGameData {
     pub fn player_fleet_chain_heads_current_known(&self) -> Vec<usize> {
         self.players
             .iter()
-            .map(|record| record.fleet_chain_head_raw() as usize)
+            .map(|record| record.fleets_first.0 as usize)
             .collect()
     }
 
     pub fn looks_like_initialized_fleet_blocks_current_known(&self) -> bool {
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
         player_count > 0
             && self.fleets.len() == expected_fleet_count
@@ -32,10 +32,10 @@ impl CoreGameData {
                         } else {
                             expected_fleet_id + 1
                         };
-                        record.fleet_id() == expected_fleet_id
-                            && record.local_slot() == expected_local_slot
-                            && record.previous_fleet_id() == expected_prev
-                            && record.next_fleet_id() == expected_next
+                        record.record.0 == expected_fleet_id
+                            && record.fleet_number.0 as u8 == expected_local_slot
+                            && record.prev.0 == expected_prev
+                            && record.next.0 == expected_next
                     })
                 })
     }
@@ -44,13 +44,13 @@ impl CoreGameData {
         self.fleets
             .chunks(4)
             .filter_map(|group| group.first())
-            .map(|record| record.fleet_id() as usize)
+            .map(|record| record.record.0 as usize)
             .collect()
     }
 
     pub fn current_known_initialized_fleet_block_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
         if self.fleets.len() != expected_fleet_count {
@@ -78,36 +78,30 @@ impl CoreGameData {
                     expected_fleet_id + 1
                 };
 
-                if record.fleet_id() != expected_fleet_id {
+                if record.record.0 != expected_fleet_id {
                     errors.push(format!(
                         "FLEET[{}].fleet_id expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_fleet_id,
-                        record.fleet_id()
+                        fleet_record_index_1_based, expected_fleet_id, record.record.0
                     ));
                 }
-                if record.local_slot() != expected_local_slot {
+                if record.fleet_number.0 as u8 != expected_local_slot {
                     errors.push(format!(
                         "FLEET[{}].local_slot expected {}, got {}",
                         fleet_record_index_1_based,
                         expected_local_slot,
-                        record.local_slot()
+                        record.fleet_number.0 as u8
                     ));
                 }
-                if record.previous_fleet_id() != expected_prev {
+                if record.prev.0 != expected_prev {
                     errors.push(format!(
                         "FLEET[{}].previous_fleet_id expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_prev,
-                        record.previous_fleet_id()
+                        fleet_record_index_1_based, expected_prev, record.prev.0
                     ));
                 }
-                if record.next_fleet_id() != expected_next {
+                if record.next.0 != expected_next {
                     errors.push(format!(
                         "FLEET[{}].next_fleet_id expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_next,
-                        record.next_fleet_id()
+                        fleet_record_index_1_based, expected_next, record.next.0
                     ));
                 }
             }
@@ -117,7 +111,7 @@ impl CoreGameData {
 
     pub fn current_known_initialized_fleet_payload_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
         if self.fleets.len() != expected_fleet_count {
@@ -125,8 +119,13 @@ impl CoreGameData {
         }
 
         for (block_idx, group) in self.fleets.chunks_exact(4).enumerate() {
-            let expected_loc = group[0].current_location_coords_raw();
-            let expected_mission = group[0].mission_param_bytes().to_vec();
+            let expected_loc = group[0].sector.to_array();
+            let expected_mission = [
+                group[0].order.to_raw(),
+                group[0].target.x,
+                group[0].target.y,
+            ]
+            .to_vec();
 
             for (slot_idx, record) in group.iter().enumerate() {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
@@ -138,97 +137,85 @@ impl CoreGameData {
                 let expected_et = if slot_idx < 2 { 1 } else { 0 };
                 let expected_roe = 6;
 
-                if record.current_location_coords_raw() != expected_loc {
+                if record.sector.to_array() != expected_loc {
                     errors.push(format!(
                         "FLEET[{}].current_location expected {:?}, got {:?}",
                         fleet_record_index_1_based,
                         expected_loc,
-                        record.current_location_coords_raw()
+                        record.sector.to_array()
                     ));
                 }
-                if record.mission_param_bytes() != expected_mission.as_slice() {
+                if [record.order.to_raw(), record.target.x, record.target.y]
+                    != expected_mission.as_slice()
+                {
                     errors.push(format!(
                         "FLEET[{}].mission_param_bytes expected {:?}, got {:?}",
                         fleet_record_index_1_based,
                         expected_mission,
-                        record.mission_param_bytes()
+                        [record.order.to_raw(), record.target.x, record.target.y]
                     ));
                 }
-                if record.owner_empire_raw() != expected_owner_empire {
+                if record.owner.0 != expected_owner_empire {
                     errors.push(format!(
                         "FLEET[{}].owner_empire expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_owner_empire,
-                        record.owner_empire_raw()
+                        fleet_record_index_1_based, expected_owner_empire, record.owner.0
                     ));
                 }
-                if record.max_speed() != expected_max_speed {
+                if record.max_speed != expected_max_speed {
                     errors.push(format!(
                         "FLEET[{}].max_speed expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_max_speed,
-                        record.max_speed()
+                        fleet_record_index_1_based, expected_max_speed, record.max_speed
                     ));
                 }
-                if record.current_speed() != expected_cur_speed {
+                if record.speed != expected_cur_speed {
                     errors.push(format!(
                         "FLEET[{}].current_speed expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_cur_speed,
-                        record.current_speed()
+                        fleet_record_index_1_based, expected_cur_speed, record.speed
                     ));
                 }
-                if record.rules_of_engagement() != expected_roe {
+                if record.rules_of_engagement != expected_roe {
                     errors.push(format!(
                         "FLEET[{}].roe expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_roe,
-                        record.rules_of_engagement()
+                        fleet_record_index_1_based, expected_roe, record.rules_of_engagement
                     ));
                 }
-                if record.cruiser_count() != expected_ca {
+                if record.ships.cruisers != expected_ca {
                     errors.push(format!(
                         "FLEET[{}].cruiser_count expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_ca,
-                        record.cruiser_count()
+                        fleet_record_index_1_based, expected_ca, record.ships.cruisers
                     ));
                 }
-                if record.destroyer_count() != expected_dd {
+                if record.ships.destroyers != expected_dd {
                     errors.push(format!(
                         "FLEET[{}].destroyer_count expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_dd,
-                        record.destroyer_count()
+                        fleet_record_index_1_based, expected_dd, record.ships.destroyers
                     ));
                 }
-                if record.etac_count() != expected_et {
+                if record.ships.etacs != expected_et {
                     errors.push(format!(
                         "FLEET[{}].etac_count expected {}, got {}",
-                        fleet_record_index_1_based,
-                        expected_et,
-                        record.etac_count()
+                        fleet_record_index_1_based, expected_et, record.ships.etacs
                     ));
                 }
-                if record.x_fraction() != Real48::HALF {
+                if record.x_fraction != Real48::HALF {
                     errors.push(format!(
                         "FLEET[{}].x_fraction expected 0.5, got {:?}",
                         fleet_record_index_1_based,
-                        record.x_fraction().to_bytes()
+                        record.x_fraction.to_bytes()
                     ));
                 }
-                if record.y_fraction() != Real48::HALF {
+                if record.y_fraction != Real48::HALF {
                     errors.push(format!(
                         "FLEET[{}].y_fraction expected 0.5, got {:?}",
                         fleet_record_index_1_based,
-                        record.y_fraction().to_bytes()
+                        record.y_fraction.to_bytes()
                     ));
                 }
-                if record.depth() != Real48::ONE {
+                if record.depth != Real48::ONE {
                     errors.push(format!(
                         "FLEET[{}].depth expected 1.0, got {:?}",
                         fleet_record_index_1_based,
-                        record.depth().to_bytes()
+                        record.depth.to_bytes()
                     ));
                 }
             }
@@ -239,7 +226,7 @@ impl CoreGameData {
 
     pub fn current_known_initialized_fleet_mission_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
         if self.fleets.len() != expected_fleet_count {
@@ -256,26 +243,26 @@ impl CoreGameData {
             for slot_idx in 0..4 {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
                 let record = &self.fleets[fleet_record_index_1_based - 1];
-                if record.standing_order_code_raw() != 5 {
+                if record.order.to_raw() != 5 {
                     errors.push(format!(
                         "FLEET[{}].standing_order expected 5 for initialized baseline, got {}",
                         fleet_record_index_1_based,
-                        record.standing_order_code_raw()
+                        record.order.to_raw()
                     ));
                 }
-                if record.standing_order_target_coords_raw() != expected_coords {
+                if record.target.to_array() != expected_coords {
                     errors.push(format!(
                         "FLEET[{}].standing_order_target expected {:?} for initialized baseline, got {:?}",
                         fleet_record_index_1_based,
                         expected_coords,
-                        record.standing_order_target_coords_raw()
+                        record.target.to_array()
                     ));
                 }
-                if record.mission_aux_bytes() != [1, 0] {
+                if [record.target_depth, record.mission_target as u8] != [1, 0] {
                     errors.push(format!(
                         "FLEET[{}].mission_aux expected [1, 0] for initialized baseline, got {:?}",
                         fleet_record_index_1_based,
-                        record.mission_aux_bytes()
+                        [record.target_depth, record.mission_target as u8]
                     ));
                 }
             }
@@ -286,7 +273,7 @@ impl CoreGameData {
 
     pub fn current_known_initialized_homeworld_alignment_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleet_count = player_count.saturating_mul(4);
 
         if self.fleets.len() != expected_fleet_count {
@@ -300,8 +287,8 @@ impl CoreGameData {
                 continue;
             };
             let fleet = &self.fleets[block_idx * 4];
-            let actual_loc = fleet.current_location_coords_raw();
-            let actual_target = fleet.standing_order_target_coords_raw();
+            let actual_loc = fleet.sector.to_array();
+            let actual_target = fleet.target.to_array();
             if actual_loc != expected_coords {
                 errors.push(format!(
                     "FLEET block {} location expected homeworld seed {:?}, got {:?}",
@@ -335,32 +322,30 @@ impl CoreGameData {
         let mut errors = Vec::new();
         match self.fleets.get(record_index_1_based - 1) {
             Some(record) => {
-                if record.current_speed() != speed {
+                if record.speed != speed {
                     errors.push(format!(
                         "FLEET[{}].current_speed expected {}, got {}",
-                        record_index_1_based,
-                        speed,
-                        record.current_speed()
+                        record_index_1_based, speed, record.speed
                     ));
                 }
-                if record.standing_order_code_raw() != order_code {
+                if record.order.to_raw() != order_code {
                     errors.push(format!(
                         "FLEET[{}].order expected {:#04x}, got {:#04x}",
                         record_index_1_based,
                         order_code,
-                        record.standing_order_code_raw()
+                        record.order.to_raw()
                     ));
                 }
-                if record.standing_order_target_coords_raw() != target {
+                if record.target.to_array() != target {
                     errors.push(format!(
                         "FLEET[{}].target expected ({}, {}), got {:?}",
                         record_index_1_based,
                         target[0],
                         target[1],
-                        record.standing_order_target_coords_raw()
+                        record.target.to_array()
                     ));
                 }
-                let mission_aux = record.mission_aux_bytes();
+                let mission_aux = [record.target_depth, record.mission_target as u8];
                 if let Some(value) = aux0 {
                     if mission_aux[0] != value {
                         errors.push(format!(

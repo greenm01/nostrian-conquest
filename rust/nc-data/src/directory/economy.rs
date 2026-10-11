@@ -2,6 +2,10 @@ use super::*;
 use crate::{
     Player, ProductionItemKind, Real48, build_capacity, yearly_growth_delta, yearly_tax_revenue,
 };
+use crate::{
+    is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
+    stored_production_points, troop_transports,
+};
 
 impl CoreGameData {
     /// The bases player 1's PLAYER chain reaches.
@@ -19,7 +23,7 @@ impl CoreGameData {
     ) -> usize {
         self.planets
             .iter()
-            .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
             .count()
     }
 
@@ -29,7 +33,7 @@ impl CoreGameData {
     ) -> usize {
         self.bases
             .iter()
-            .filter(|record| record.owner_empire_raw() as usize == player_record_index_1_based)
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
             .count()
     }
 
@@ -39,14 +43,14 @@ impl CoreGameData {
     ) -> usize {
         self.fleets
             .iter()
-            .filter(|record| record.owner_empire_raw() as usize == player_record_index_1_based)
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
             .count()
     }
 
     pub fn player_ipbm_count_current_known(&self, player_record_index_1_based: usize) -> usize {
         self.players
             .get(player_record_index_1_based - 1)
-            .map(|record| record.ipbm_chain_head_raw() as usize)
+            .map(|record| record.ipbms_first.0 as usize)
             .unwrap_or(0)
     }
 
@@ -57,16 +61,16 @@ impl CoreGameData {
     pub fn empire_present_production(&self, player_record_index_1_based: usize) -> u16 {
         self.planets
             .iter()
-            .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
-            .filter_map(|record| record.present_production_points())
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
+            .map(present_production_points)
             .sum()
     }
 
     pub fn empire_potential_production(&self, player_record_index_1_based: usize) -> u16 {
         self.planets
             .iter()
-            .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
-            .map(|record| record.potential_production_points())
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
+            .map(|record| u16::from(record.potential_production))
             .sum()
     }
 
@@ -74,17 +78,13 @@ impl CoreGameData {
         let tax_rate = self
             .players
             .get(player_record_index_1_based - 1)
-            .map(|record| record.tax_rate())
+            .map(|record| record.tax_rate)
             .unwrap_or(0);
 
         self.planets
             .iter()
-            .filter(|record| record.owner_empire_slot_raw() as usize == player_record_index_1_based)
-            .filter_map(|record| {
-                record
-                    .present_production_points()
-                    .map(|points| yearly_tax_revenue(points, tax_rate))
-            })
+            .filter(|record| record.owner.0 as usize == player_record_index_1_based)
+            .map(|record| yearly_tax_revenue(present_production_points(record), tax_rate))
             .sum()
     }
 
@@ -131,7 +131,7 @@ impl CoreGameData {
         let tax_rate = self
             .players
             .get(player_record_index_1_based - 1)
-            .map(|record| record.tax_rate())
+            .map(|record| record.tax_rate)
             .unwrap_or(0);
         EmpireEconomySummary {
             owned_planets: self
@@ -159,26 +159,27 @@ impl CoreGameData {
         let mut summary = EmpireUnitSummary::default();
 
         for fleet in &self.fleets {
-            if fleet.owner_empire_raw() != empire_raw {
+            if fleet.owner.0 != empire_raw {
                 continue;
             }
-            summary.destroyers += u32::from(fleet.destroyer_count());
-            summary.cruisers += u32::from(fleet.cruiser_count());
-            summary.battleships += u32::from(fleet.battleship_count());
-            summary.scouts += u32::from(fleet.scout_count());
-            summary.transports += u32::from(fleet.troop_transport_count());
-            summary.etacs += u32::from(fleet.etac_count());
+            summary.destroyers += u32::from(fleet.ships.destroyers);
+            summary.cruisers += u32::from(fleet.ships.cruisers);
+            summary.battleships += u32::from(fleet.ships.battleships);
+            summary.scouts += u32::from(fleet.ships.scouts);
+            summary.transports += u32::from(troop_transports(fleet));
+            summary.etacs += u32::from(fleet.ships.etacs);
         }
 
         summary.starbases =
             self.player_owned_base_record_count_current_known(player_record_index_1_based) as u32;
 
         for planet in &self.planets {
-            if planet.owner_empire_slot_raw() != empire_raw {
+            if planet.owner.0 != empire_raw {
                 continue;
             }
-            summary.armies += u32::from(planet.army_count_raw());
-            summary.ground_batteries += u32::from(planet.ground_batteries_raw());
+            summary.armies += u32::from(u8::try_from(planet.armies).unwrap_or(u8::MAX));
+            summary.ground_batteries +=
+                u32::from(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
         }
 
         summary
@@ -189,15 +190,15 @@ impl CoreGameData {
         let mut summary = EmpireUnitSummary::default();
 
         for planet in &self.planets {
-            if planet.owner_empire_slot_raw() != empire_raw {
+            if planet.owner.0 != empire_raw {
                 continue;
             }
             for slot in 0..crate::STARDOCK_SLOT_COUNT {
-                let count = u32::from(planet.stardock_count_raw(slot));
+                let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
                 if count == 0 {
                     continue;
                 }
-                match planet.stardock_item_kind_current_known(slot) {
+                match stardock_slot_kind(planet, slot) {
                     ProductionItemKind::Destroyer => summary.destroyers += count,
                     ProductionItemKind::Cruiser => summary.cruisers += count,
                     ProductionItemKind::Battleship => summary.battleships += count,
@@ -263,40 +264,38 @@ impl CoreGameData {
         self.planets
             .iter()
             .enumerate()
-            .filter(|(_, record)| {
-                record.owner_empire_slot_raw() as usize == player_record_index_1_based
-            })
-            .filter_map(|(idx, record)| {
-                let present_production = record.present_production_points()?;
+            .filter(|(_, record)| record.owner.0 as usize == player_record_index_1_based)
+            .map(|(idx, record)| {
+                let present_production = present_production_points(record);
                 let tax_rate = self
                     .players
                     .get(player_record_index_1_based - 1)
-                    .map(|player| player.tax_rate())
+                    .map(|player| player.tax_rate)
                     .unwrap_or(0);
                 let has_friendly_starbase = self.planet_has_friendly_starbase(
                     player_record_index_1_based as u8,
-                    record.coords_raw(),
+                    record.sector.to_array(),
                 );
-                Some(EmpirePlanetEconomyRow {
+                EmpirePlanetEconomyRow {
                     planet_record_index_1_based: idx + 1,
-                    coords: record.coords_raw(),
-                    planet_name: record.status_or_name_summary(),
+                    coords: record.sector.to_array(),
+                    planet_name: record.name.trim().to_string(),
                     present_production,
-                    potential_production: record.potential_production_points(),
-                    stored_production_points: record.stored_production_points(),
+                    potential_production: u16::from(record.potential_production),
+                    stored_production_points: stored_production_points(record),
                     yearly_tax_revenue: yearly_tax_revenue(present_production, tax_rate),
                     yearly_growth_delta: yearly_growth_delta(
                         present_production,
-                        record.potential_production_points(),
+                        u16::from(record.potential_production),
                         tax_rate,
                         has_friendly_starbase,
                     ),
                     build_capacity: build_capacity(present_production, has_friendly_starbase),
                     has_friendly_starbase,
-                    armies: record.army_count_raw(),
-                    ground_batteries: record.ground_batteries_raw(),
-                    is_homeworld_seed: record.is_homeworld_seed_ignoring_name(),
-                })
+                    armies: u8::try_from(record.armies).unwrap_or(u8::MAX),
+                    ground_batteries: u8::try_from(record.ground_batteries).unwrap_or(u8::MAX),
+                    is_homeworld_seed: is_homeworld_seed_ignoring_name(record),
+                }
             })
             .collect()
     }
@@ -307,12 +306,12 @@ impl CoreGameData {
     /// target and orbit as its target layer.
     pub fn planet_has_friendly_starbase(&self, owner_empire_raw: u8, coords: [u8; 2]) -> bool {
         self.bases.iter().any(|base| {
-            base.owner_empire_raw() == owner_empire_raw
-                && base.coords_raw() == coords
-                && base.base_id_raw() != 0
-                && base.depth() >= Real48::HALF
-                && base.target_coords_raw() == coords
-                && base.target_depth_raw() >= 1
+            base.owner.0 == owner_empire_raw
+                && base.sector.to_array() == coords
+                && base.base_id.0 != 0
+                && base.depth >= Real48::HALF
+                && base.target.to_array() == coords
+                && base.target_depth >= 1
         })
     }
 
@@ -326,7 +325,7 @@ impl CoreGameData {
     pub fn planet_record_index_at_coords(&self, coords: [u8; 2]) -> Option<usize> {
         self.planets
             .iter()
-            .position(|planet| planet.coords_raw() == coords)
+            .position(|planet| planet.sector.to_array() == coords)
     }
 
     pub fn empire_potential_production_current_known(
@@ -389,7 +388,7 @@ impl CoreGameData {
         let player_idx = empire_raw.checked_sub(1)? as usize;
         let player = self.players.get(player_idx)?;
 
-        match player.owner_mode_raw() {
+        match player.mode.to_raw() {
             0x00 => return Some(CampaignState::CivilDisorder),
             0xff => return Some(CampaignState::Rogue),
             0x01 => {}
@@ -399,7 +398,7 @@ impl CoreGameData {
         let owned_planets = self
             .planets
             .iter()
-            .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
+            .filter(|planet| planet.owner.0 == empire_raw)
             .count();
         if owned_planets > 0 {
             return Some(CampaignState::Stable);
@@ -409,24 +408,24 @@ impl CoreGameData {
         let mut can_recover_planet = false;
 
         for fleet in &self.fleets {
-            if fleet.owner_empire_raw() != empire_raw {
+            if fleet.owner.0 != empire_raw {
                 continue;
             }
 
-            let has_presence = fleet.scout_count() > 0
-                || fleet.battleship_count() > 0
-                || fleet.cruiser_count() > 0
-                || fleet.destroyer_count() > 0
-                || fleet.troop_transport_count() > 0
-                || fleet.army_count() > 0
-                || fleet.etac_count() > 0;
+            let has_presence = fleet.ships.scouts > 0
+                || fleet.ships.battleships > 0
+                || fleet.ships.cruisers > 0
+                || fleet.ships.destroyers > 0
+                || troop_transports(fleet) > 0
+                || fleet.ships.loaded_transports > 0
+                || fleet.ships.etacs > 0;
             if !has_presence {
                 continue;
             }
             has_any_fleet_presence = true;
 
-            if fleet.etac_count() > 0
-                || (fleet.troop_transport_count() > 0 && fleet.army_count() > 0)
+            if fleet.ships.etacs > 0
+                || (troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0)
             {
                 can_recover_planet = true;
                 break;
@@ -480,12 +479,12 @@ impl CoreGameData {
 }
 
 fn empire_name_for_rankings(record: &Player) -> String {
-    let empire = record.controlled_empire_name_summary();
+    let empire = record.empire_name.trim().to_string();
     if !empire.is_empty() {
         return empire;
     }
 
-    let legacy = record.legacy_status_name_summary();
+    let legacy = record.empire_name.trim().to_string();
     if !legacy.is_empty() {
         legacy
     } else {

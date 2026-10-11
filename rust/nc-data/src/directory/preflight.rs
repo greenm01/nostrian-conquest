@@ -49,7 +49,7 @@ impl CoreGameData {
     /// ECMAINT checks: year in valid range, player_count plausible
     fn conquest_header_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let year = self.conquest.game_year();
+        let year = self.conquest.game_year;
 
         // Year should be in a reasonable range (3000-3100 based on game context)
         if year < 3000 || year > 3100 {
@@ -59,7 +59,7 @@ impl CoreGameData {
             ));
         }
 
-        let player_count = self.conquest.player_count();
+        let player_count = self.conquest.player_count;
         if player_count == 0 || player_count > 25 {
             errors.push(format!(
                 "CONQUEST.DAT.player_count {} out of range (1-25)",
@@ -72,7 +72,7 @@ impl CoreGameData {
 
     fn record_count_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_planets = player_count.saturating_mul(5);
 
         if self.players.len() != player_count {
@@ -98,10 +98,10 @@ impl CoreGameData {
     fn setup_header_errors(&self) -> Vec<String> {
         let mut errors = Vec::new();
 
-        if self.setup.version_tag() != b"EC151" {
+        if self.setup.version_tag != *b"EC151" {
             errors.push(format!(
                 "SETUP.DAT.version_tag expected EC151, got {:?}",
-                String::from_utf8_lossy(self.setup.version_tag())
+                String::from_utf8_lossy(self.setup.version_tag.as_slice())
             ));
         }
 
@@ -114,11 +114,11 @@ impl CoreGameData {
         let mut errors = Vec::new();
 
         // For each fleet block (player_count * 4 records)
-        let player_count = self.conquest.player_count() as usize;
+        let player_count = self.conquest.player_count as usize;
         let expected_fleets = player_count * 4;
 
         for (fleet_idx, fleet) in self.fleets.iter().enumerate() {
-            let owner = fleet.owner_empire_raw() as usize;
+            let owner = fleet.owner.0 as usize;
 
             // Determine expected owner from fleet index
             let expected_owner = if fleet_idx < expected_fleets {

@@ -13,7 +13,7 @@ impl CoreGameData {
             return Ok(Vec::new());
         };
         let mut chain = Vec::new();
-        let mut link = player.first_base_record_raw();
+        let mut link = player.bases_first.0;
         while link != 0 {
             let idx = usize::from(link) - 1;
             let Some(base) = self.bases.get(idx) else {
@@ -26,14 +26,14 @@ impl CoreGameData {
                     "PLAYER[{empire}] base chain loops back to BASES record {link}"
                 ));
             }
-            if base.owner_empire_raw() != empire {
+            if base.owner.0 != empire {
                 return Err(format!(
                     "BASES[{link}] in PLAYER[{empire}]'s chain is owned by empire {}",
-                    base.owner_empire_raw()
+                    base.owner.0
                 ));
             }
             chain.push(idx);
-            link = base.next_base_link_raw();
+            link = base.next.0;
         }
         Ok(chain)
     }
@@ -55,13 +55,13 @@ impl CoreGameData {
         self.bases
             .iter()
             .enumerate()
-            .filter(|(idx, base)| base.base_id_raw() != 0 && !chained.contains(idx))
+            .filter(|(idx, base)| base.base_id.0 != 0 && !chained.contains(idx))
             .map(|(idx, base)| {
                 format!(
                     "BASES[{}] (empire {}, Starbase {}) is not in its owner's chain",
                     idx + 1,
-                    base.owner_empire_raw(),
-                    base.base_id_raw()
+                    base.owner.0,
+                    base.base_id.0
                 )
             })
             .collect()
@@ -71,12 +71,12 @@ impl CoreGameData {
     /// unused starbase id, keeping the chain sorted by id (ECMAINT
     /// `2000:6493`). Returns the id.
     pub fn link_new_base(&mut self, record_idx: usize) -> u16 {
-        let empire = self.bases[record_idx].owner_empire_raw();
+        let empire = self.bases[record_idx].owner.0;
         let chain = self.base_chain(empire).unwrap_or_default();
         let mut base_id = 1;
         let mut next = None;
         for &idx in &chain {
-            if self.bases[idx].base_id_raw() > base_id {
+            if self.bases[idx].base_id.0 > base_id {
                 next = Some(idx);
                 break;
             }
@@ -91,22 +91,22 @@ impl CoreGameData {
         };
         let record_number = |idx: usize| (idx + 1) as u16;
         let base = &mut self.bases[record_idx];
-        base.set_base_id_raw(base_id);
-        base.set_record_number_raw(record_number(record_idx));
-        base.set_next_base_link_raw(next.map_or(0, record_number));
-        base.set_previous_base_link_raw(previous.map_or(0, record_number));
+        base.base_id.0 = base_id;
+        base.record.0 = record_number(record_idx);
+        base.next.0 = next.map_or(0, record_number);
+        base.prev.0 = previous.map_or(0, record_number);
         if let Some(next) = next {
-            self.bases[next].set_previous_base_link_raw(record_number(record_idx));
+            self.bases[next].prev.0 = record_number(record_idx);
         }
         if let Some(previous) = previous {
-            self.bases[previous].set_next_base_link_raw(record_number(record_idx));
+            self.bases[previous].next.0 = record_number(record_idx);
         }
         let player = &mut self.players[usize::from(empire) - 1];
         if previous.is_none() {
-            player.set_first_base_record_raw(record_number(record_idx));
+            player.bases_first.0 = record_number(record_idx);
         }
         if next.is_none() {
-            player.set_last_base_record_raw(record_number(record_idx));
+            player.bases_last.0 = record_number(record_idx);
         }
         base_id
     }
@@ -115,34 +115,34 @@ impl CoreGameData {
     /// neighbours.
     pub fn unlink_base(&mut self, record_idx: usize) {
         let base = &self.bases[record_idx];
-        let empire = base.owner_empire_raw();
-        let next = base.next_base_link_raw();
-        let previous = base.previous_base_link_raw();
+        let empire = base.owner.0;
+        let next = base.next.0;
+        let previous = base.prev.0;
         if let Some(next_base) = usize::from(next)
             .checked_sub(1)
             .and_then(|idx| self.bases.get_mut(idx))
         {
-            next_base.set_previous_base_link_raw(previous);
+            next_base.prev.0 = previous;
         }
         if let Some(previous_base) = usize::from(previous)
             .checked_sub(1)
             .and_then(|idx| self.bases.get_mut(idx))
         {
-            previous_base.set_next_base_link_raw(next);
+            previous_base.next.0 = next;
         }
         let record_number = (record_idx + 1) as u16;
         let Some(player) = self.players.get_mut(usize::from(empire).wrapping_sub(1)) else {
             return;
         };
-        if player.first_base_record_raw() == record_number {
-            player.set_first_base_record_raw(next);
+        if player.bases_first.0 == record_number {
+            player.bases_first.0 = next;
         }
-        if player.last_base_record_raw() == record_number {
-            player.set_last_base_record_raw(previous);
+        if player.bases_last.0 == record_number {
+            player.bases_last.0 = previous;
         }
         let base = &mut self.bases[record_idx];
-        base.set_next_base_link_raw(0);
-        base.set_previous_base_link_raw(0);
+        base.next.0 = 0;
+        base.prev.0 = 0;
     }
 
     /// Rebuild empire `empire`'s chain from its live bases, sorted by id:
@@ -152,21 +152,21 @@ impl CoreGameData {
         let mut owned: Vec<usize> = (0..self.bases.len())
             .filter(|&idx| {
                 let base = &self.bases[idx];
-                base.base_id_raw() != 0 && base.owner_empire_raw() == empire
+                base.base_id.0 != 0 && base.owner.0 == empire
             })
             .collect();
-        owned.sort_by_key(|&idx| self.bases[idx].base_id_raw());
+        owned.sort_by_key(|&idx| self.bases[idx].base_id.0);
         let record_number = |idx: Option<&usize>| idx.map_or(0, |idx| (idx + 1) as u16);
         for (at, &idx) in owned.iter().enumerate() {
             let previous = at.checked_sub(1).and_then(|at| owned.get(at));
             let next = owned.get(at + 1);
             let base = &mut self.bases[idx];
-            base.set_record_number_raw((idx + 1) as u16);
-            base.set_next_base_link_raw(record_number(next));
-            base.set_previous_base_link_raw(record_number(previous));
+            base.record.0 = (idx + 1) as u16;
+            base.next.0 = record_number(next);
+            base.prev.0 = record_number(previous);
         }
         if let Some(player) = self.players.get_mut(usize::from(empire).wrapping_sub(1)) {
-            player.set_first_base_record_raw(record_number(owned.first()));
+            player.bases_first.0 = record_number(owned.first());
         }
     }
 
@@ -179,7 +179,7 @@ impl CoreGameData {
                 .ok()
                 .and_then(|chain| chain.last().map(|idx| (idx + 1) as u16))
                 .unwrap_or(0);
-            self.players[empire - 1].set_last_base_record_raw(tail);
+            self.players[empire - 1].bases_last.0 = tail;
         }
     }
 }

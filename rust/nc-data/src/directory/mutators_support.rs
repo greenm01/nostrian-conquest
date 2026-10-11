@@ -1,10 +1,11 @@
 use super::*;
+use crate::{Coords, has_combat_ships, is_support_only, set_mission_target, troop_transports};
 
 pub(super) fn next_available_owned_fleet_local_slot(records: &[Fleet], owner_empire: u8) -> u16 {
     let mut owned_slots = records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == owner_empire)
-        .map(Fleet::local_slot_word_raw)
+        .filter(|fleet| fleet.owner.0 == owner_empire)
+        .map(|fleet| fleet.fleet_number.0)
         .filter(|slot| *slot != 0)
         .collect::<Vec<_>>();
     owned_slots.sort_unstable();
@@ -24,7 +25,7 @@ pub(super) fn next_available_owned_fleet_local_slot(records: &[Fleet], owner_emp
 pub(super) fn next_available_global_fleet_id(records: &[Fleet]) -> u16 {
     let mut fleet_ids = records
         .iter()
-        .map(Fleet::fleet_id_word_raw)
+        .map(|fleet| fleet.record.0)
         .filter(|fleet_id| *fleet_id != 0)
         .collect::<Vec<_>>();
     fleet_ids.sort_unstable();
@@ -44,25 +45,29 @@ pub(super) fn next_available_global_fleet_id(records: &[Fleet]) -> u16 {
 pub(super) fn composition_invalidates_current_mission(
     record: &Fleet,
 ) -> Option<FleetOrderValidationError> {
-    match record.standing_order_kind() {
+    match record.order {
         Order::GuardStarbase | Order::GuardBlockadeWorld | Order::BombardWorld
-            if !record.has_any_combat_ships() =>
+            if !has_combat_ships(record) =>
         {
             Some(FleetOrderValidationError::MissingCombatShips)
         }
-        Order::InvadeWorld if !record.has_any_combat_ships() => {
+        Order::InvadeWorld if !has_combat_ships(record) => {
             Some(FleetOrderValidationError::MissingCombatShips)
         }
-        Order::InvadeWorld if record.troop_transport_count() == 0 || record.army_count() == 0 => {
+        Order::InvadeWorld
+            if troop_transports(record) == 0 || record.ships.loaded_transports == 0 =>
+        {
             Some(FleetOrderValidationError::MissingLoadedTroopTransports)
         }
-        Order::BlitzWorld if record.troop_transport_count() == 0 || record.army_count() == 0 => {
+        Order::BlitzWorld
+            if troop_transports(record) == 0 || record.ships.loaded_transports == 0 =>
+        {
             Some(FleetOrderValidationError::MissingLoadedTroopTransports)
         }
-        Order::ScoutSector | Order::ScoutSolarSystem if record.scout_count() == 0 => {
+        Order::ScoutSector | Order::ScoutSolarSystem if record.ships.scouts == 0 => {
             Some(FleetOrderValidationError::MissingScoutShip)
         }
-        Order::ColonizeWorld if record.etac_count() == 0 => {
+        Order::ColonizeWorld if record.ships.etacs == 0 => {
             Some(FleetOrderValidationError::MissingEtac)
         }
         _ => None,
@@ -70,28 +75,28 @@ pub(super) fn composition_invalidates_current_mission(
 }
 
 pub(super) fn set_fleet_to_local_hold(record: &mut Fleet) {
-    let coords = record.current_location_coords_raw();
-    record.set_current_speed(0);
-    record.set_standing_order_kind(Order::HoldPosition);
-    record.set_standing_order_target_coords_raw(coords);
-    record.set_mission_target(0, 0);
+    let coords = record.sector.to_array();
+    record.speed = 0;
+    record.order = Order::HoldPosition;
+    record.target = Coords::from_array(coords);
+    set_mission_target(record, 0, 0);
 }
 
 /// ECGAME's donor recompute after a detach or transfer (`0x18333`): a fleet
 /// left without a BB, CA, or DD gets ROE 0. Any other ROE stays.
 pub(super) fn clear_roe_without_warships(record: &mut Fleet) {
-    if !record.has_any_combat_ships() {
-        record.set_rules_of_engagement(0);
+    if !has_combat_ships(record) {
+        record.rules_of_engagement = 0;
     }
 }
 
 pub(super) fn normalize_fleet_roe_for_composition(record: &mut Fleet) {
-    if record.is_support_only() {
-        record.set_rules_of_engagement(0);
-    } else if record.has_any_combat_ships() && record.rules_of_engagement() == 0 {
+    if is_support_only(record) {
+        record.rules_of_engagement = 0;
+    } else if has_combat_ships(record) && record.rules_of_engagement == 0 {
         // Combat fleets should not default to Pacifist (ROE 0) upon commissioning.
         // Default to ROE 6 (Engage equal or inferior strength).
-        record.set_rules_of_engagement(crate::NEW_FLEET_DEFAULT_ROE);
+        record.rules_of_engagement = crate::NEW_FLEET_DEFAULT_ROE;
     }
 }
 
@@ -117,28 +122,29 @@ pub(super) fn append_fleet_to_owner_chain(
     player: &mut Player,
     mut fleet: Fleet,
 ) -> usize {
-    let owner_empire = fleet.owner_empire_raw();
+    let owner_empire = fleet.owner.0;
     let mut chain = Vec::new();
-    let mut fleet_id = player.fleet_chain_head_raw();
+    let mut fleet_id = player.fleets_first.0;
     while fleet_id != 0 && chain.len() < records.len() {
-        let Some(idx) = records.iter().position(|record| {
-            record.owner_empire_raw() == owner_empire && record.fleet_id_word_raw() == fleet_id
-        }) else {
+        let Some(idx) = records
+            .iter()
+            .position(|record| record.owner.0 == owner_empire && record.record.0 == fleet_id)
+        else {
             break;
         };
         chain.push(idx);
-        fleet_id = records[idx].next_fleet_link_word_raw();
+        fleet_id = records[idx].next.0;
     }
 
-    let new_fleet_id = fleet.fleet_id_word_raw();
-    let new_fleet_number = fleet.local_slot_word_raw();
-    fleet.set_next_fleet_link_word_raw(0);
+    let new_fleet_id = fleet.record.0;
+    let new_fleet_number = fleet.fleet_number.0;
+    fleet.next.0 = 0;
     if let Some(&last) = chain.last() {
-        fleet.set_previous_fleet_id(records[last].fleet_id_word_raw());
-        records[last].set_next_fleet_link_word_raw(new_fleet_id);
+        fleet.prev.0 = records[last].record.0;
+        records[last].next.0 = new_fleet_id;
     } else {
-        fleet.set_previous_fleet_id(0);
-        player.set_fleet_chain_head_raw(new_fleet_id);
+        fleet.prev.0 = 0;
+        player.fleets_first.0 = new_fleet_id;
     }
     records.push(fleet);
     chain.push(records.len() - 1);
@@ -147,16 +153,16 @@ pub(super) fn append_fleet_to_owner_chain(
         .iter()
         .map(|&idx| records[idx].clone())
         .collect::<Vec<_>>();
-    contents.sort_by_key(Fleet::local_slot_word_raw);
+    contents.sort_by_key(|fleet| fleet.fleet_number.0);
     for (&idx, mut content) in chain.iter().zip(contents) {
-        content.set_next_fleet_link_word_raw(records[idx].next_fleet_link_word_raw());
-        content.set_fleet_id_word_raw(records[idx].fleet_id_word_raw());
-        content.set_previous_fleet_id(records[idx].previous_fleet_id());
+        content.next.0 = records[idx].next.0;
+        content.record.0 = records[idx].record.0;
+        content.prev.0 = records[idx].prev.0;
         records[idx] = content;
     }
     chain
         .into_iter()
-        .find(|&idx| records[idx].local_slot_word_raw() == new_fleet_number)
+        .find(|&idx| records[idx].fleet_number.0 == new_fleet_number)
         .map_or(records.len(), |idx| idx + 1)
 }
 
@@ -174,15 +180,15 @@ pub(super) fn build_guard_starbase_base_record(
     depth: Real48,
 ) -> Starbase {
     let mut record = Starbase::default();
-    record.set_escort_fleet_slot_raw(escort_fleet_slot);
-    record.set_base_id_raw(base_id);
-    record.set_owner_empire_raw(owner_empire);
-    record.set_record_number_raw(record_number);
-    record.set_coords_raw(coords);
-    record.set_x_fraction(x_fraction);
-    record.set_y_fraction(y_fraction);
-    record.set_depth(depth);
-    record.set_target_coords_raw(coords);
-    record.set_target_depth_raw(1);
+    record.escort.0 = escort_fleet_slot;
+    record.base_id.0 = base_id;
+    record.owner.0 = owner_empire;
+    record.record.0 = record_number;
+    record.sector = Coords::from_array(coords);
+    record.x_fraction = x_fraction;
+    record.y_fraction = y_fraction;
+    record.depth = depth;
+    record.target = Coords::from_array(coords);
+    record.target_depth = 1;
     record
 }

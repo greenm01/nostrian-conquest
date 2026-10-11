@@ -264,28 +264,32 @@ impl CampaignStore {
         let setup = &mut game_data.setup;
         let mut changed = false;
 
-        if setup.snoop_enabled() != settings.snoop_enabled {
-            setup.set_snoop_enabled(settings.snoop_enabled);
+        if setup.snoop != settings.snoop_enabled {
+            setup.snoop = settings.snoop_enabled;
             changed = true;
         }
-        if setup.max_time_between_keys_minutes_raw() != settings.session_max_idle_minutes {
-            setup.set_max_time_between_keys_minutes_raw(settings.session_max_idle_minutes);
+        if u8::try_from(setup.max_key_gap_minutes).unwrap_or(u8::MAX)
+            != settings.session_max_idle_minutes
+        {
+            setup.max_key_gap_minutes = u16::from(settings.session_max_idle_minutes);
             changed = true;
         }
-        if setup.minimum_time_granted_minutes_raw() != settings.session_minimum_time_minutes {
-            setup.set_minimum_time_granted_minutes_raw(settings.session_minimum_time_minutes);
+        if setup.minimum_time_minutes != settings.session_minimum_time_minutes {
+            setup.minimum_time_minutes = settings.session_minimum_time_minutes;
             changed = true;
         }
-        if setup.local_timeout_enabled() != settings.session_local_timeout {
-            setup.set_local_timeout_enabled(settings.session_local_timeout);
+        if setup.local_timeout != settings.session_local_timeout {
+            setup.local_timeout = settings.session_local_timeout;
             changed = true;
         }
-        if setup.remote_timeout_enabled() != settings.session_remote_timeout {
-            setup.set_remote_timeout_enabled(settings.session_remote_timeout);
+        if setup.remote_timeout != settings.session_remote_timeout {
+            setup.remote_timeout = settings.session_remote_timeout;
             changed = true;
         }
-        if setup.autopilot_inactive_turns_raw() != settings.inactivity_autopilot_after_turns {
-            setup.set_autopilot_inactive_turns_raw(settings.inactivity_autopilot_after_turns);
+        if u8::try_from(setup.autopilot_after_turns).unwrap_or(u8::MAX)
+            != settings.inactivity_autopilot_after_turns
+        {
+            setup.autopilot_after_turns = u16::from(settings.inactivity_autopilot_after_turns);
             changed = true;
         }
         if changed {

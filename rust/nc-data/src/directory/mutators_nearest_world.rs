@@ -19,13 +19,13 @@ impl CoreGameData {
         skip_current_system: bool,
     ) -> Option<[u8; 2]> {
         let fleet = self.fleets.get(fleet_record_index_1_based - 1)?;
-        let here = fleet.current_location_coords_raw();
-        let in_system = fleet.depth() >= Real48::HALF;
+        let here = fleet.sector.to_array();
+        let in_system = fleet.depth >= Real48::HALF;
         let candidates = self
             .planets
             .iter()
-            .filter(|planet| planet.owner_empire_slot_raw() == fleet.owner_empire_raw())
-            .map(|planet| planet.coords_raw())
+            .filter(|planet| planet.owner.0 == fleet.owner.0)
+            .map(|planet| planet.sector.to_array())
             .filter(|coords| !(skip_current_system && in_system && *coords == here))
             .collect::<Vec<_>>();
         if candidates.len() <= 1 {
@@ -88,20 +88,20 @@ impl CoreGameData {
 /// ECGAME's zero-ETA test: the fleet is in the target sector at the depth
 /// layer of a world target (`Round(Z) == 1`).
 fn fleet_is_in_system(fleet: &Fleet, coords: [u8; 2]) -> bool {
-    fleet.current_location_coords_raw() == coords && fleet.depth().round() == 1
+    fleet.sector.to_array() == coords && fleet.depth.round() == 1
 }
 
 /// ECGAME's travel distance from the fleet to the target cell at depth
 /// `target_depth` (`0x1d8ac`), in 6-byte reals.
 fn travel_distance(fleet: &Fleet, target: [u8; 2], target_depth: Real48) -> Real48 {
-    let here = fleet.current_location_coords_raw();
-    let depth = fleet.depth();
+    let here = fleet.sector.to_array();
+    let depth = fleet.depth;
     if here == target && depth.round() == target_depth.round() {
         return Real48::ZERO;
     }
     let to_centre = target_depth == Real48::ONE;
-    let dx = axis_distance(here[0], fleet.x_fraction(), target[0], to_centre);
-    let dy = axis_distance(here[1], fleet.y_fraction(), target[1], to_centre);
+    let dx = axis_distance(here[0], fleet.x_fraction, target[0], to_centre);
+    let dy = axis_distance(here[1], fleet.y_fraction, target[1], to_centre);
     let flat = (dx * dx + dy * dy).sqrt();
     if here == target {
         (depth - target_depth).abs() + flat

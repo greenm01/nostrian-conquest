@@ -95,7 +95,8 @@ pub fn ship_composition_summary(fleet: &Fleet) -> String {
         ("ET", fleet.ships.etacs),
     ]
     .into_iter()
-    .filter_map(|(label, count)| (count > 0).then(|| format!("{label}={count}")))
+    .filter(|&(_, count)| count > 0)
+    .map(|(label, count)| format!("{label}={count}"))
     .collect();
     assert!(!parts.is_empty(), "empty fleet record is not a fleet");
     parts.join(" ")

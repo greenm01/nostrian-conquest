@@ -145,7 +145,7 @@ pub(super) fn write_planet_intel_rows(
     current_rows_override: Option<&[BTreeMap<usize, PlanetIntelSnapshot>]>,
     previous: &BTreeMap<(u8, usize), PlanetIntelSnapshot>,
 ) -> Result<(), CampaignStoreError> {
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
     let mut stmt = tx.prepare(
         "INSERT INTO planet_intel(
              snapshot_id, viewer_empire_id, planet_record_index, intel_tier, last_intel_year,

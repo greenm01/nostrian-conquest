@@ -4,6 +4,7 @@ use crate::{
     CoreGameData, IntelTier, PlanetIntelSnapshot, active_starbase_count_at,
     map_size_for_player_count,
 };
+use crate::{present_production_points, stored_production_points};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerStarmapWorld {
@@ -240,17 +241,17 @@ pub fn build_player_starmap_projection_from_snapshots(
     snapshots: &BTreeMap<usize, PlanetIntelSnapshot>,
     viewer_empire_id: u8,
 ) -> PlayerStarmapProjection {
-    let map_size = map_size_for_player_count(game_data.conquest.player_count());
+    let map_size = map_size_for_player_count(game_data.conquest.player_count);
     let worlds = game_data
         .planets
         .iter()
         .enumerate()
         .map(|(planet_index, planet)| {
             let snapshot = snapshots.get(&(planet_index + 1));
-            let actual_owner_empire_id = planet.owner_empire_slot_raw();
+            let actual_owner_empire_id = planet.owner.0;
             let is_owned_world = actual_owner_empire_id == viewer_empire_id;
             let known_name = if is_owned_world {
-                Some(planet.status_or_name_summary())
+                Some(planet.name.trim().to_string())
             } else {
                 snapshot.and_then(|row| row.known_name.clone())
             };
@@ -261,13 +262,16 @@ pub fn build_player_starmap_projection_from_snapshots(
             };
             let known_owner_empire_name = known_owner_empire_id.and_then(|empire_id| {
                 (empire_id >= 1).then(|| {
-                    game_data.players[empire_id as usize - 1].controlled_empire_name_summary()
+                    game_data.players[empire_id as usize - 1]
+                        .empire_name
+                        .trim()
+                        .to_string()
                 })
             });
 
             PlayerStarmapWorld {
                 planet_record_index_1_based: planet_index + 1,
-                coords: planet.coords_raw(),
+                coords: planet.sector.to_array(),
                 intel_tier: if is_owned_world {
                     IntelTier::Owned
                 } else {
@@ -284,32 +288,35 @@ pub fn build_player_starmap_projection_from_snapshots(
                 known_owner_empire_id,
                 known_owner_empire_name,
                 known_potential_production: if is_owned_world {
-                    Some(planet.potential_production_points())
+                    Some(u16::from(planet.potential_production))
                 } else {
                     snapshot.and_then(|row| row.known_potential_production)
                 },
                 known_armies: if is_owned_world {
-                    Some(planet.army_count_raw())
+                    Some(u8::try_from(planet.armies).unwrap_or(u8::MAX))
                 } else {
                     snapshot.and_then(|row| row.known_armies)
                 },
                 known_ground_batteries: if is_owned_world {
-                    Some(planet.ground_batteries_raw())
+                    Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX))
                 } else {
                     snapshot.and_then(|row| row.known_ground_batteries)
                 },
                 known_starbase_count: if is_owned_world {
-                    Some(active_starbase_count_at(game_data, planet.coords_raw()))
+                    Some(active_starbase_count_at(
+                        game_data,
+                        planet.sector.to_array(),
+                    ))
                 } else {
                     snapshot.and_then(|row| row.known_starbase_count)
                 },
                 known_current_production: if is_owned_world {
-                    planet.present_production_points().map(|v| v as u8)
+                    Some(present_production_points(planet)).map(|v| v as u8)
                 } else {
                     snapshot.and_then(|row| row.known_current_production)
                 },
                 known_stored_points: if is_owned_world {
-                    Some(planet.stored_production_points() as u16)
+                    Some(stored_production_points(planet) as u16)
                 } else {
                     snapshot.and_then(|row| row.known_stored_points)
                 },
@@ -330,7 +337,7 @@ pub fn build_player_starmap_projection_from_snapshots(
     PlayerStarmapProjection {
         map_width: map_size,
         map_height: map_size,
-        year: game_data.conquest.game_year(),
+        year: game_data.conquest.game_year,
         viewer_empire_id,
         worlds,
     }

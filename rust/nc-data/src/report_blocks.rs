@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 
 use crate::Player;
+use crate::PlayerMode;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportBlockRow {
@@ -43,7 +44,7 @@ pub fn delete_report_block_for_viewer(
     let copies = players
         .iter()
         .enumerate()
-        .filter(|(_, player)| player.is_active_human_player())
+        .filter(|(_, player)| player.mode == PlayerMode::Human)
         .map(|(idx, _)| (idx + 1) as u8)
         .filter(|empire_id| *empire_id != viewer_empire_id)
         .map(|empire_id| ReportBlockRow {

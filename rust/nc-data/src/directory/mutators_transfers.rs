@@ -1,5 +1,6 @@
 use super::support::*;
 use super::*;
+use crate::{recompute_max_speed, set_armies_aboard, set_mission_target, starship_count};
 
 impl CoreGameData {
     pub fn detach_ships_to_new_fleet(
@@ -17,7 +18,7 @@ impl CoreGameData {
             .ok_or(GameStateMutationError::MissingFleetRecord {
                 index_1_based: donor_fleet_record_index_1_based,
             })?;
-        if donor.owner_empire_raw() != owner_empire {
+        if donor.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based: donor_fleet_record_index_1_based,
@@ -29,16 +30,16 @@ impl CoreGameData {
             });
         }
 
-        let available_full_transports = donor.loaded_transport_count();
-        let available_empty_transports = donor.empty_transport_count();
+        let available_full_transports = donor.ships.loaded_transports;
+        let available_empty_transports = donor.ships.empty_transports;
         for (ship_kind, requested, available) in [
             (
                 "battleships",
                 selection.battleships,
-                donor.battleship_count(),
+                donor.ships.battleships,
             ),
-            ("cruisers", selection.cruisers, donor.cruiser_count()),
-            ("destroyers", selection.destroyers, donor.destroyer_count()),
+            ("cruisers", selection.cruisers, donor.ships.cruisers),
+            ("destroyers", selection.destroyers, donor.ships.destroyers),
             (
                 "full transports",
                 selection.full_transports,
@@ -49,8 +50,8 @@ impl CoreGameData {
                 selection.empty_transports,
                 available_empty_transports,
             ),
-            ("scout ships", selection.scouts, donor.scout_count()),
-            ("ETAC ships", selection.etacs, donor.etac_count()),
+            ("scout ships", selection.scouts, donor.ships.scouts),
+            ("ETAC ships", selection.etacs, donor.ships.etacs),
         ] {
             if requested > available {
                 return Err(
@@ -64,9 +65,7 @@ impl CoreGameData {
             }
         }
 
-        let remaining_ships = donor
-            .total_starships()
-            .saturating_sub(selection.total_ships());
+        let remaining_ships = starship_count(donor).saturating_sub(selection.total_ships());
         if remaining_ships == 0 {
             return Err(GameStateMutationError::FleetDetachLeavesFleetEmpty {
                 fleet_index_1_based: donor_fleet_record_index_1_based,
@@ -74,48 +73,43 @@ impl CoreGameData {
         }
 
         let mut donor_after = donor.clone();
-        donor_after.set_battleship_count(
-            donor_after
-                .battleship_count()
-                .saturating_sub(selection.battleships),
-        );
-        donor_after.set_cruiser_count(
-            donor_after
-                .cruiser_count()
-                .saturating_sub(selection.cruisers),
-        );
-        donor_after.set_destroyer_count(
-            donor_after
-                .destroyer_count()
-                .saturating_sub(selection.destroyers),
-        );
-        donor_after.set_empty_transport_count(
-            donor_after
-                .empty_transport_count()
-                .saturating_sub(selection.empty_transports),
-        );
-        donor_after.set_loaded_transport_count(
-            donor_after
-                .loaded_transport_count()
-                .saturating_sub(selection.full_transports),
-        );
-        donor_after.set_scout_count(donor_after.scout_count().saturating_sub(selection.scouts));
-        donor_after.set_etac_count(donor_after.etac_count().saturating_sub(selection.etacs));
-        donor_after.recompute_max_speed_from_composition();
+        donor_after.ships.battleships = donor_after
+            .ships
+            .battleships
+            .saturating_sub(selection.battleships);
+        donor_after.ships.cruisers = donor_after
+            .ships
+            .cruisers
+            .saturating_sub(selection.cruisers);
+        donor_after.ships.destroyers = donor_after
+            .ships
+            .destroyers
+            .saturating_sub(selection.destroyers);
+        donor_after.ships.empty_transports = donor_after
+            .ships
+            .empty_transports
+            .saturating_sub(selection.empty_transports);
+        donor_after.ships.loaded_transports = donor_after
+            .ships
+            .loaded_transports
+            .saturating_sub(selection.full_transports);
+        donor_after.ships.scouts = donor_after.ships.scouts.saturating_sub(selection.scouts);
+        donor_after.ships.etacs = donor_after.ships.etacs.saturating_sub(selection.etacs);
+        recompute_max_speed(&mut donor_after);
         let donor_mission_invalidated = composition_invalidates_current_mission(&donor_after);
         if donor_mission_invalidated.is_none()
-            && donor_after.max_speed() > 0
-            && donor.current_speed() > donor_after.max_speed()
+            && donor_after.max_speed > 0
+            && donor.speed > donor_after.max_speed
         {
-            let requested = donor_speed.unwrap_or(donor_after.max_speed());
-            if requested == 0 || requested > donor_after.max_speed() {
+            let requested = donor_speed.unwrap_or(donor_after.max_speed);
+            if requested == 0 || requested > donor_after.max_speed {
                 return Err(GameStateMutationError::InvalidFleetSpeed {
                     fleet_index_1_based: donor_fleet_record_index_1_based,
                     requested,
-                    max: donor_after.max_speed(),
+                    max: donor_after.max_speed,
                 });
             }
-            donor_after.set_current_speed(requested);
+            donor_after.speed = requested;
         }
         if donor_mission_invalidated.is_some() {
             set_fleet_to_local_hold(&mut donor_after);
@@ -123,32 +117,30 @@ impl CoreGameData {
         clear_roe_without_warships(&mut donor_after);
 
         let mut new_fleet = Fleet::default();
-        new_fleet.set_owner_empire_raw(owner_empire);
-        new_fleet.set_local_slot_word_raw(next_available_owned_fleet_local_slot(
-            &self.fleets,
-            owner_empire,
-        ));
-        new_fleet.set_fleet_id_word_raw(next_available_global_fleet_id(&self.fleets));
-        new_fleet.set_current_location_coords_raw(donor.current_location_coords_raw());
-        new_fleet.set_x_fraction(donor.x_fraction());
-        new_fleet.set_y_fraction(donor.y_fraction());
-        new_fleet.set_depth(donor.depth());
-        new_fleet.set_standing_order_kind(Order::HoldPosition);
-        new_fleet.set_standing_order_target_coords_raw(donor.current_location_coords_raw());
-        new_fleet.set_mission_target(0, 0);
-        new_fleet.set_rules_of_engagement(new_fleet_roe.min(10));
-        new_fleet.set_battleship_count(selection.battleships);
-        new_fleet.set_cruiser_count(selection.cruisers);
-        new_fleet.set_destroyer_count(selection.destroyers);
-        new_fleet.set_empty_transport_count(selection.empty_transports);
-        new_fleet.set_loaded_transport_count(selection.full_transports);
-        new_fleet.set_scout_count(selection.scouts);
-        new_fleet.set_etac_count(selection.etacs);
-        new_fleet.recompute_max_speed_from_composition();
-        new_fleet.set_current_speed(0);
+        new_fleet.owner.0 = owner_empire;
+        new_fleet.fleet_number.0 =
+            next_available_owned_fleet_local_slot(&self.fleets, owner_empire);
+        new_fleet.record.0 = next_available_global_fleet_id(&self.fleets);
+        new_fleet.sector = donor.sector;
+        new_fleet.x_fraction = donor.x_fraction;
+        new_fleet.y_fraction = donor.y_fraction;
+        new_fleet.depth = donor.depth;
+        new_fleet.order = Order::HoldPosition;
+        new_fleet.target = donor.sector;
+        set_mission_target(&mut new_fleet, 0, 0);
+        new_fleet.rules_of_engagement = new_fleet_roe.min(10);
+        new_fleet.ships.battleships = selection.battleships;
+        new_fleet.ships.cruisers = selection.cruisers;
+        new_fleet.ships.destroyers = selection.destroyers;
+        new_fleet.ships.empty_transports = selection.empty_transports;
+        new_fleet.ships.loaded_transports = selection.full_transports;
+        new_fleet.ships.scouts = selection.scouts;
+        new_fleet.ships.etacs = selection.etacs;
+        recompute_max_speed(&mut new_fleet);
+        new_fleet.speed = 0;
         clear_roe_without_warships(&mut new_fleet);
 
-        let donor_fleet_number = donor_after.local_slot_word_raw();
+        let donor_fleet_number = donor_after.fleet_number.0;
         self.fleets[donor_fleet_record_index_1_based - 1] = donor_after;
         let player = self.players.get_mut(player_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlayerRecord {
@@ -162,8 +154,7 @@ impl CoreGameData {
             .fleets
             .iter()
             .position(|fleet| {
-                fleet.owner_empire_raw() == owner_empire
-                    && fleet.local_slot_word_raw() == donor_fleet_number
+                fleet.owner.0 == owner_empire && fleet.fleet_number.0 == donor_fleet_number
             })
             .map_or(donor_fleet_record_index_1_based, |idx| idx + 1);
 
@@ -203,19 +194,19 @@ impl CoreGameData {
             })?
             .clone();
 
-        if donor.owner_empire_raw() != owner_empire {
+        if donor.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based: donor_fleet_record_index_1_based,
             });
         }
-        if host.owner_empire_raw() != owner_empire {
+        if host.owner.0 != owner_empire {
             return Err(GameStateMutationError::FleetOwnershipMismatch {
                 player_index_1_based,
                 fleet_index_1_based: host_fleet_record_index_1_based,
             });
         }
-        if donor.current_location_coords_raw() != host.current_location_coords_raw() {
+        if donor.sector != host.sector {
             return Err(GameStateMutationError::InvalidFleetMergeSelection {
                 fleet_index_1_based: donor_fleet_record_index_1_based,
                 host_fleet_index_1_based: host_fleet_record_index_1_based,
@@ -227,16 +218,16 @@ impl CoreGameData {
             });
         }
 
-        let available_full_transports = donor.loaded_transport_count();
-        let available_empty_transports = donor.empty_transport_count();
+        let available_full_transports = donor.ships.loaded_transports;
+        let available_empty_transports = donor.ships.empty_transports;
         for (ship_kind, requested, available) in [
             (
                 "battleships",
                 selection.battleships,
-                donor.battleship_count(),
+                donor.ships.battleships,
             ),
-            ("cruisers", selection.cruisers, donor.cruiser_count()),
-            ("destroyers", selection.destroyers, donor.destroyer_count()),
+            ("cruisers", selection.cruisers, donor.ships.cruisers),
+            ("destroyers", selection.destroyers, donor.ships.destroyers),
             (
                 "full transports",
                 selection.full_transports,
@@ -247,8 +238,8 @@ impl CoreGameData {
                 selection.empty_transports,
                 available_empty_transports,
             ),
-            ("scout ships", selection.scouts, donor.scout_count()),
-            ("ETAC ships", selection.etacs, donor.etac_count()),
+            ("scout ships", selection.scouts, donor.ships.scouts),
+            ("ETAC ships", selection.etacs, donor.ships.etacs),
         ] {
             if requested > available {
                 return Err(
@@ -262,9 +253,7 @@ impl CoreGameData {
             }
         }
 
-        let remaining_ships = donor
-            .total_starships()
-            .saturating_sub(selection.total_ships());
+        let remaining_ships = starship_count(&donor).saturating_sub(selection.total_ships());
         if remaining_ships == 0 {
             return Err(GameStateMutationError::FleetDetachLeavesFleetEmpty {
                 fleet_index_1_based: donor_fleet_record_index_1_based,
@@ -272,69 +261,56 @@ impl CoreGameData {
         }
 
         let mut donor_after = donor.clone();
-        donor_after.set_battleship_count(
-            donor_after
-                .battleship_count()
-                .saturating_sub(selection.battleships),
-        );
-        donor_after.set_cruiser_count(
-            donor_after
-                .cruiser_count()
-                .saturating_sub(selection.cruisers),
-        );
-        donor_after.set_destroyer_count(
-            donor_after
-                .destroyer_count()
-                .saturating_sub(selection.destroyers),
-        );
-        donor_after.set_empty_transport_count(
-            donor_after
-                .empty_transport_count()
-                .saturating_sub(selection.empty_transports),
-        );
-        donor_after.set_loaded_transport_count(
-            donor_after
-                .loaded_transport_count()
-                .saturating_sub(selection.full_transports),
-        );
-        donor_after.set_scout_count(donor_after.scout_count().saturating_sub(selection.scouts));
-        donor_after.set_etac_count(donor_after.etac_count().saturating_sub(selection.etacs));
-        donor_after.recompute_max_speed_from_composition();
-        if donor_after.current_speed() > donor_after.max_speed() {
-            donor_after.set_current_speed(donor_after.max_speed());
+        donor_after.ships.battleships = donor_after
+            .ships
+            .battleships
+            .saturating_sub(selection.battleships);
+        donor_after.ships.cruisers = donor_after
+            .ships
+            .cruisers
+            .saturating_sub(selection.cruisers);
+        donor_after.ships.destroyers = donor_after
+            .ships
+            .destroyers
+            .saturating_sub(selection.destroyers);
+        donor_after.ships.empty_transports = donor_after
+            .ships
+            .empty_transports
+            .saturating_sub(selection.empty_transports);
+        donor_after.ships.loaded_transports = donor_after
+            .ships
+            .loaded_transports
+            .saturating_sub(selection.full_transports);
+        donor_after.ships.scouts = donor_after.ships.scouts.saturating_sub(selection.scouts);
+        donor_after.ships.etacs = donor_after.ships.etacs.saturating_sub(selection.etacs);
+        recompute_max_speed(&mut donor_after);
+        if donor_after.speed > donor_after.max_speed {
+            donor_after.speed = donor_after.max_speed;
         }
 
         let mut host_after = host.clone();
-        host_after.set_battleship_count(
-            host_after
-                .battleship_count()
-                .saturating_add(selection.battleships),
-        );
-        host_after.set_cruiser_count(
-            host_after
-                .cruiser_count()
-                .saturating_add(selection.cruisers),
-        );
-        host_after.set_destroyer_count(
-            host_after
-                .destroyer_count()
-                .saturating_add(selection.destroyers),
-        );
-        host_after.set_empty_transport_count(
-            host_after
-                .empty_transport_count()
-                .saturating_add(selection.empty_transports),
-        );
-        host_after.set_loaded_transport_count(
-            host_after
-                .loaded_transport_count()
-                .saturating_add(selection.full_transports),
-        );
-        host_after.set_scout_count(host_after.scout_count().saturating_add(selection.scouts));
-        host_after.set_etac_count(host_after.etac_count().saturating_add(selection.etacs));
-        host_after.recompute_max_speed_from_composition();
-        if host_after.current_speed() > host_after.max_speed() {
-            host_after.set_current_speed(host_after.max_speed());
+        host_after.ships.battleships = host_after
+            .ships
+            .battleships
+            .saturating_add(selection.battleships);
+        host_after.ships.cruisers = host_after.ships.cruisers.saturating_add(selection.cruisers);
+        host_after.ships.destroyers = host_after
+            .ships
+            .destroyers
+            .saturating_add(selection.destroyers);
+        host_after.ships.empty_transports = host_after
+            .ships
+            .empty_transports
+            .saturating_add(selection.empty_transports);
+        host_after.ships.loaded_transports = host_after
+            .ships
+            .loaded_transports
+            .saturating_add(selection.full_transports);
+        host_after.ships.scouts = host_after.ships.scouts.saturating_add(selection.scouts);
+        host_after.ships.etacs = host_after.ships.etacs.saturating_add(selection.etacs);
+        recompute_max_speed(&mut host_after);
+        if host_after.speed > host_after.max_speed {
+            host_after.speed = host_after.max_speed;
         }
 
         // ECGAME's transfer leaves the host's ROE alone.
@@ -372,9 +348,9 @@ impl CoreGameData {
             },
         )?;
 
-        if planet.owner_empire_slot_raw() != owner_empire
-            || fleet.owner_empire_raw() != owner_empire
-            || fleet.current_location_coords_raw() != planet.coords_raw()
+        if planet.owner.0 != owner_empire
+            || fleet.owner.0 != owner_empire
+            || fleet.sector != planet.sector
         {
             return Err(GameStateMutationError::FleetNotAtPlanet {
                 fleet_index_1_based: fleet_record_index_1_based,
@@ -382,7 +358,7 @@ impl CoreGameData {
             });
         }
 
-        let available_planet_armies = u16::from(planet.army_count_raw());
+        let available_planet_armies = u16::from(u8::try_from(planet.armies).unwrap_or(u8::MAX));
         if qty > available_planet_armies {
             return Err(GameStateMutationError::PlanetArmyShortage {
                 planet_index_1_based: planet_record_index_1_based,
@@ -391,7 +367,7 @@ impl CoreGameData {
             });
         }
 
-        let available_transport_capacity = fleet.empty_transport_count();
+        let available_transport_capacity = fleet.ships.empty_transports;
         if qty > available_transport_capacity {
             return Err(GameStateMutationError::TransportCapacityExceeded {
                 fleet_index_1_based: fleet_record_index_1_based,
@@ -412,8 +388,12 @@ impl CoreGameData {
             },
         )?;
 
-        planet.set_army_count_raw(planet.army_count_raw().saturating_sub(qty as u8));
-        fleet.set_army_count(fleet.army_count().saturating_add(qty));
+        planet.armies = u16::from(
+            u8::try_from(planet.armies)
+                .unwrap_or(u8::MAX)
+                .saturating_sub(qty as u8),
+        );
+        set_armies_aboard(fleet, fleet.ships.loaded_transports.saturating_add(qty));
         Ok(())
     }
 
@@ -439,9 +419,9 @@ impl CoreGameData {
             },
         )?;
 
-        if planet.owner_empire_slot_raw() != owner_empire
-            || fleet.owner_empire_raw() != owner_empire
-            || fleet.current_location_coords_raw() != planet.coords_raw()
+        if planet.owner.0 != owner_empire
+            || fleet.owner.0 != owner_empire
+            || fleet.sector != planet.sector
         {
             return Err(GameStateMutationError::FleetNotAtPlanet {
                 fleet_index_1_based: fleet_record_index_1_based,
@@ -449,7 +429,7 @@ impl CoreGameData {
             });
         }
 
-        let available_loaded_armies = fleet.army_count();
+        let available_loaded_armies = fleet.ships.loaded_transports;
         if qty > available_loaded_armies {
             return Err(GameStateMutationError::FleetArmyShortage {
                 fleet_index_1_based: fleet_record_index_1_based,
@@ -457,7 +437,8 @@ impl CoreGameData {
                 available: available_loaded_armies,
             });
         }
-        let available_planet_capacity = u16::from(u8::MAX.saturating_sub(planet.army_count_raw()));
+        let available_planet_capacity =
+            u16::from(u8::MAX.saturating_sub(u8::try_from(planet.armies).unwrap_or(u8::MAX)));
         if qty > available_planet_capacity {
             return Err(GameStateMutationError::PlanetArmyCapacityExceeded {
                 planet_index_1_based: planet_record_index_1_based,
@@ -478,8 +459,12 @@ impl CoreGameData {
             },
         )?;
 
-        planet.set_army_count_raw(planet.army_count_raw().saturating_add(qty as u8));
-        fleet.set_army_count(fleet.army_count().saturating_sub(qty));
+        planet.armies = u16::from(
+            u8::try_from(planet.armies)
+                .unwrap_or(u8::MAX)
+                .saturating_add(qty as u8),
+        );
+        set_armies_aboard(fleet, fleet.ships.loaded_transports.saturating_sub(qty));
         normalize_post_composition_fleet_state(fleet);
         Ok(())
     }

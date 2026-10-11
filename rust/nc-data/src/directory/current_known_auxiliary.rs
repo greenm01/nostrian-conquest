@@ -11,20 +11,18 @@ impl CoreGameData {
         let mut errors = Vec::new();
         match self.planets.get(record_index_1_based - 1) {
             Some(record) => {
-                if record.build_count_raw(0) != slot_raw {
+                if record.build_queue[0].points_owed != slot_raw {
                     errors.push(format!(
                         "PLANET[{}].build_slot expected {:#04x}, got {:#04x}",
-                        record_index_1_based,
-                        slot_raw,
-                        record.build_count_raw(0)
+                        record_index_1_based, slot_raw, record.build_queue[0].points_owed
                     ));
                 }
-                if record.build_kind_raw(0) != kind_raw {
+                if record.build_queue[0].kind.to_raw() != kind_raw {
                     errors.push(format!(
                         "PLANET[{}].build_kind expected {:#04x}, got {:#04x}",
                         record_index_1_based,
                         kind_raw,
-                        record.build_kind_raw(0)
+                        record.build_queue[0].kind.to_raw()
                     ));
                 }
             }
@@ -37,23 +35,23 @@ impl CoreGameData {
         let mut errors = Vec::new();
 
         match self.players.first() {
-            Some(record) if record.first_base_record_raw() == 1 => {}
+            Some(record) if record.bases_first.0 == 1 => {}
             Some(record) => errors.push(format!(
                 "PLAYER[1].first_base_record expected 1, got {}",
-                record.first_base_record_raw()
+                record.bases_first.0
             )),
             None => errors.push("PLAYER.DAT missing record 1".to_string()),
         }
 
         match self.fleets.first() {
             Some(record) => {
-                if record.standing_order_code_raw() != 0x04 {
+                if record.order.to_raw() != 0x04 {
                     errors.push(format!(
                         "FLEET[1].order expected 0x04, got {:#04x}",
-                        record.standing_order_code_raw()
+                        record.order.to_raw()
                     ));
                 }
-                if record.guard_starbase_index_raw() == 0 {
+                if record.mission_target == 0 {
                     errors.push("FLEET[1].guard starbase index expected non-zero".to_string());
                 }
             }
@@ -74,77 +72,72 @@ impl CoreGameData {
             ));
         } else {
             let base = &self.bases[0];
-            if base.escort_fleet_slot_raw() == 0 {
+            if base.escort.0 == 0 {
                 errors.push("BASES[1].escort_fleet_slot expected non-zero".to_string());
             }
-            if base.escort_fleet_slot_raw() != fleet.local_slot_word_raw() {
+            if base.escort.0 != fleet.fleet_number.0 {
                 errors.push(format!(
                     "BASES[1].escort_fleet_slot expected FLEET[1].local_slot_word {}, got {}",
-                    fleet.local_slot_word_raw(),
-                    base.escort_fleet_slot_raw()
+                    fleet.fleet_number.0, base.escort.0
                 ));
             }
-            if base.base_id_raw() != fleet.guard_starbase_index_raw() {
+            if base.base_id.0 != fleet.mission_target {
                 errors.push(format!(
                     "BASES[1].base_id expected FLEET[1].guard index {}, got {}",
-                    fleet.guard_starbase_index_raw(),
-                    base.base_id_raw()
+                    fleet.mission_target, base.base_id.0
                 ));
             }
-            if base.coords_raw() != fleet.standing_order_target_coords_raw() {
+            if base.sector != fleet.target {
                 errors.push(format!(
                     "BASES[1].coords expected {:?}, got {:?}",
-                    fleet.standing_order_target_coords_raw(),
-                    base.coords_raw()
+                    fleet.target.to_array(),
+                    base.sector.to_array()
                 ));
             }
-            if base.target_coords_raw() != base.coords_raw() {
+            if base.target != base.sector {
                 errors.push(format!(
                     "BASES[1].target coords expected {:?}, got {:?}",
-                    base.coords_raw(),
-                    base.target_coords_raw()
+                    base.sector.to_array(),
+                    base.target.to_array()
                 ));
             }
-            if base.record_number_raw() != player1.first_base_record_raw() {
+            if base.record.0 != player1.bases_first.0 {
                 errors.push(format!(
                     "BASES[1].record_number expected PLAYER[1].first_base_record {}, got {}",
-                    player1.first_base_record_raw(),
-                    base.record_number_raw()
+                    player1.bases_first.0, base.record.0
                 ));
             }
-            if fleet.local_slot_word_raw() != player1.first_base_record_raw() {
+            if fleet.fleet_number.0 != player1.bases_first.0 {
                 errors.push(format!(
                     "FLEET[1].local slot word expected PLAYER[1].first_base_record {}, got {}",
-                    player1.first_base_record_raw(),
-                    fleet.local_slot_word_raw()
+                    player1.bases_first.0, fleet.fleet_number.0
                 ));
             }
-            if fleet.fleet_id_word_raw() != base.record_number_raw() {
+            if fleet.record.0 != base.record.0 {
                 errors.push(format!(
                     "FLEET[1].fleet ID word expected BASES[1].record_number {}, got {}",
-                    base.record_number_raw(),
-                    fleet.fleet_id_word_raw()
+                    base.record.0, fleet.record.0
                 ));
             }
-            if base.x_fraction() != fleet.x_fraction() {
+            if base.x_fraction != fleet.x_fraction {
                 errors.push(format!(
                     "BASES[1].x_fraction expected FLEET[1].x_fraction {:?}, got {:?}",
-                    fleet.x_fraction().to_bytes(),
-                    base.x_fraction().to_bytes()
+                    fleet.x_fraction.to_bytes(),
+                    base.x_fraction.to_bytes()
                 ));
             }
-            if base.y_fraction() != fleet.y_fraction() {
+            if base.y_fraction != fleet.y_fraction {
                 errors.push(format!(
                     "BASES[1].y_fraction expected FLEET[1].y_fraction {:?}, got {:?}",
-                    fleet.y_fraction().to_bytes(),
-                    base.y_fraction().to_bytes()
+                    fleet.y_fraction.to_bytes(),
+                    base.y_fraction.to_bytes()
                 ));
             }
-            if base.depth() != fleet.depth() {
+            if base.depth != fleet.depth {
                 errors.push(format!(
                     "BASES[1].depth expected FLEET[1].depth {:?}, got {:?}",
-                    fleet.depth().to_bytes(),
-                    base.depth().to_bytes()
+                    fleet.depth.to_bytes(),
+                    base.depth.to_bytes()
                 ));
             }
         }
@@ -169,7 +162,7 @@ impl CoreGameData {
         )?;
 
         let selected_base = fleet
-            .guard_starbase_index_raw()
+            .mission_target
             .checked_sub(1)
             .and_then(|idx| self.bases.get(idx as usize));
 
@@ -179,18 +172,18 @@ impl CoreGameData {
             player_starbase_count: self
                 .base_chain(player_record_index_1_based as u8)
                 .map_or(0, |chain| chain.len() as u16),
-            fleet_order: fleet.standing_order_code_raw(),
-            fleet_local_slot: fleet.local_slot_word_raw(),
-            fleet_id: fleet.fleet_id_word_raw(),
-            guard_index: fleet.guard_starbase_index_raw(),
-            target_coords: fleet.standing_order_target_coords_raw(),
+            fleet_order: fleet.order.to_raw(),
+            fleet_local_slot: fleet.fleet_number.0,
+            fleet_id: fleet.record.0,
+            guard_index: fleet.mission_target,
+            target_coords: fleet.target.to_array(),
             selected_base_present: selected_base.is_some(),
-            selected_base_escort_fleet_slot: selected_base.map(|base| base.escort_fleet_slot_raw()),
-            selected_base_id: selected_base.map(|base| base.base_id_raw()),
-            selected_base_record_number: selected_base.map(|base| base.record_number_raw()),
-            selected_base_coords: selected_base.map(|base| base.coords_raw()),
-            selected_base_target_coords: selected_base.map(|base| base.target_coords_raw()),
-            selected_base_owner_empire: selected_base.map(|base| base.owner_empire_raw()),
+            selected_base_escort_fleet_slot: selected_base.map(|base| base.escort.0),
+            selected_base_id: selected_base.map(|base| base.base_id.0),
+            selected_base_record_number: selected_base.map(|base| base.record.0),
+            selected_base_coords: selected_base.map(|base| base.sector.to_array()),
+            selected_base_target_coords: selected_base.map(|base| base.target.to_array()),
+            selected_base_owner_empire: selected_base.map(|base| base.owner.0),
         })
     }
 
@@ -306,7 +299,7 @@ impl CoreGameData {
         self.fleets
             .iter()
             .enumerate()
-            .filter_map(|(idx, fleet)| (fleet.standing_order_code_raw() == 0x04).then_some(idx + 1))
+            .filter_map(|(idx, fleet)| (fleet.order.to_raw() == 0x04).then_some(idx + 1))
             .collect()
     }
 

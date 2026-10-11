@@ -22,20 +22,16 @@ impl CoreGameData {
         let base1 = self.bases.first();
 
         CurrentKnownKeyWordSummary {
-            player_first_base_record: player1
-                .map(|record| record.first_base_record_raw())
-                .unwrap_or(0),
-            player_ipbm_count: player1
-                .map(|record| record.ipbm_chain_head_raw())
-                .unwrap_or(0),
-            fleet1_local_slot: fleet1.map(|record| record.local_slot_word_raw()),
-            fleet1_id: fleet1.map(|record| record.fleet_id_word_raw()),
-            fleet1_guard_index: fleet1.map(|record| record.guard_starbase_index_raw()),
-            fleet1_target: fleet1.map(|record| record.standing_order_target_coords_raw()),
-            base1_escort_fleet_slot: base1.map(|record| record.escort_fleet_slot_raw()),
-            base1_id: base1.map(|record| record.base_id_raw()),
-            base1_record_number: base1.map(|record| record.record_number_raw()),
-            base1_coords: base1.map(|record| record.coords_raw()),
+            player_first_base_record: player1.map(|record| record.bases_first.0).unwrap_or(0),
+            player_ipbm_count: player1.map(|record| record.ipbms_first.0).unwrap_or(0),
+            fleet1_local_slot: fleet1.map(|record| record.fleet_number.0),
+            fleet1_id: fleet1.map(|record| record.record.0),
+            fleet1_guard_index: fleet1.map(|record| record.mission_target),
+            fleet1_target: fleet1.map(|record| record.target.to_array()),
+            base1_escort_fleet_slot: base1.map(|record| record.escort.0),
+            base1_id: base1.map(|record| record.base_id.0),
+            base1_record_number: base1.map(|record| record.record.0),
+            base1_coords: base1.map(|record| record.sector.to_array()),
             ipbm_record_count: self.ipbms.len(),
         }
     }
