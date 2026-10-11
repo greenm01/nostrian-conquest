@@ -57,8 +57,8 @@ impl MessageComposeScreen {
             .filter(|(idx, _)| *idx + 1 != frame.player.record_index_1_based)
             .map(|(idx, player)| {
                 let empire_id = idx + 1;
-                let name = player.controlled_empire_name_summary();
-                let fallback = player.legacy_status_name_summary();
+                let name = player.empire_name.trim().to_string();
+                let fallback = player.empire_name.trim().to_string();
                 let display = if !name.is_empty() { name } else { fallback };
                 vec![format_empire_id(empire_id as u8), display]
             })
@@ -658,8 +658,8 @@ fn compose_empire_label(game_data: &nc_data::CoreGameData, empire_id: u8) -> Str
     let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire {empire_id:02}");
     };
-    let name = player.controlled_empire_name_summary();
-    let fallback = player.legacy_status_name_summary();
+    let name = player.empire_name.trim().to_string();
+    let fallback = player.empire_name.trim().to_string();
     let display = if !name.is_empty() { name } else { fallback };
     format!("{} {}", format_empire_id(empire_id), display)
 }

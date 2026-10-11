@@ -193,7 +193,7 @@ impl App {
                 }
             }
         };
-        let max_empire = self.game_data.conquest.player_count();
+        let max_empire = self.game_data.conquest.player_count;
         if !(1..=max_empire).contains(&empire_id) {
             self.messaging.compose_recipient_status =
                 Some(format!("Enter an empire number in 1..={max_empire}."));
@@ -384,7 +384,7 @@ impl App {
             &self.queued_mail,
             self.player.record_index_1_based as u8,
             recipient_empire_id,
-            self.game_data.conquest.game_year(),
+            self.game_data.conquest.game_year,
         ) {
             self.messaging.compose_body_status = Some(err);
             self.current_screen = ScreenId::ComposeMessageBody;
@@ -393,7 +393,7 @@ impl App {
         self.queued_mail.push(QueuedPlayerMail {
             sender_empire_id: self.player.record_index_1_based as u8,
             recipient_empire_id,
-            year: self.game_data.conquest.game_year(),
+            year: self.game_data.conquest.game_year,
             subject: self.messaging.compose_subject.trim().to_string(),
             body,
             recipient_deleted: false,
@@ -619,8 +619,8 @@ impl App {
             .players
             .get_mut(self.player.record_index_1_based - 1)
         {
-            player.set_classic_login_reviewables_present(false);
-            player.set_classic_results_chain(None);
+            nc_data::set_login_reviewables_present(player, false);
+            nc_data::set_results_chain(player, None);
         }
         self.save_game_data()?;
         self.messaging.delete_reviewables_prompt_active = false;
@@ -680,8 +680,8 @@ pub(crate) fn compose_recipient_label(game_data: &CoreGameData, empire_id: Optio
     let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire {empire_id}");
     };
-    let name = player.controlled_empire_name_summary();
-    let fallback = player.legacy_status_name_summary();
+    let name = player.empire_name.trim().to_string();
+    let fallback = player.empire_name.trim().to_string();
     let display = if !name.is_empty() { name } else { fallback };
     format!("Empire {empire_id} ({display})")
 }

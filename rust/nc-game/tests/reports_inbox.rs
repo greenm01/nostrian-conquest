@@ -370,7 +370,7 @@ fn reports_screen_uses_themed_scrollbar_thumb_style() {
             "",
             InboxPromptMode::Normal,
             None,
-            game_data.conquest.game_year(),
+            game_data.conquest.game_year,
         )
         .expect("inbox render");
     let thumb = (0..25)

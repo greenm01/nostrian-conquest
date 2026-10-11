@@ -24,33 +24,33 @@ use std::cmp::{Ordering, Reverse};
 
 fn fleet_strength_key(fleet: &Fleet) -> (u16, u16, u16, u16, u16, u16, Reverse<u16>) {
     (
-        fleet.battleship_count(),
-        fleet.cruiser_count(),
-        fleet.destroyer_count(),
-        fleet.troop_transport_count(),
-        fleet.scout_count(),
-        fleet.etac_count(),
-        Reverse(fleet.local_slot_word_raw()),
+        fleet.ships.battleships,
+        fleet.ships.cruisers,
+        fleet.ships.destroyers,
+        nc_data::troop_transports(&fleet),
+        fleet.ships.scouts,
+        fleet.ships.etacs,
+        Reverse(fleet.fleet_number.0),
     )
 }
 
 fn fleet_combat_only_strength_key(fleet: &Fleet) -> (u16, u16, u16, Reverse<u16>) {
     (
-        fleet.battleship_count(),
-        fleet.cruiser_count(),
-        fleet.destroyer_count(),
-        Reverse(fleet.local_slot_word_raw()),
+        fleet.ships.battleships,
+        fleet.ships.cruisers,
+        fleet.ships.destroyers,
+        Reverse(fleet.fleet_number.0),
     )
 }
 
 fn fleet_is_idle_hold(fleet: &Fleet) -> bool {
-    fleet.standing_order_kind() == Order::HoldPosition
+    fleet.order == Order::HoldPosition
 }
 
 fn fleet_is_combat_only_fallback_candidate(fleet: &Fleet) -> bool {
-    (fleet.destroyer_count() > 0 || fleet.cruiser_count() > 0 || fleet.battleship_count() > 0)
-        && fleet.scout_count() == 0
-        && fleet.etac_count() == 0
+    (fleet.ships.destroyers > 0 || fleet.ships.cruisers > 0 || fleet.ships.battleships > 0)
+        && fleet.ships.scouts == 0
+        && fleet.ships.etacs == 0
 }
 
 fn fleet_matches_filter(row: &FleetRow, filter: FleetListFilter) -> bool {
@@ -258,8 +258,8 @@ impl App {
             .iter()
             .enumerate()
             .filter(|(_, fleet)| {
-                fleet.owner_empire_raw() as usize == self.player.record_index_1_based
-                    && fleet.has_any_force()
+                fleet.owner.0 as usize == self.player.record_index_1_based
+                    && nc_data::has_any_force(&fleet)
             })
     }
 
@@ -457,23 +457,23 @@ impl App {
     pub(crate) fn strongest_owned_fleet_number(&self) -> Option<u16> {
         self.active_owned_fleets()
             .max_by_key(|fleet| fleet_strength_key(fleet))
-            .map(|fleet| fleet.local_slot_word_raw())
+            .map(|fleet| fleet.fleet_number.0)
     }
 
     pub(crate) fn largest_owned_fleet_number_by_ship_total(&self) -> Option<u16> {
         self.active_owned_fleets()
             .max_by_key(|fleet| {
                 (
-                    u32::from(fleet.battleship_count())
-                        + u32::from(fleet.cruiser_count())
-                        + u32::from(fleet.destroyer_count())
-                        + u32::from(fleet.troop_transport_count())
-                        + u32::from(fleet.scout_count())
-                        + u32::from(fleet.etac_count()),
-                    Reverse(fleet.local_slot_word_raw()),
+                    u32::from(fleet.ships.battleships)
+                        + u32::from(fleet.ships.cruisers)
+                        + u32::from(fleet.ships.destroyers)
+                        + u32::from(nc_data::troop_transports(&fleet))
+                        + u32::from(fleet.ships.scouts)
+                        + u32::from(fleet.ships.etacs),
+                    Reverse(fleet.fleet_number.0),
                 )
             })
-            .map(|fleet| fleet.local_slot_word_raw())
+            .map(|fleet| fleet.fleet_number.0)
     }
 
     pub(crate) fn remember_newly_commissioned_fleet_record(
@@ -496,8 +496,8 @@ impl App {
                     .fleets
                     .get(*record_index_1_based - 1)
                     .is_some_and(|fleet| {
-                        fleet.owner_empire_raw() as usize == self.player.record_index_1_based
-                            && fleet.has_any_force()
+                        fleet.owner.0 as usize == self.player.record_index_1_based
+                            && nc_data::has_any_force(&fleet)
                             && fleet_is_idle_hold(fleet)
                     })
             });
@@ -515,7 +515,7 @@ impl App {
                 self.game_data
                     .fleets
                     .get(*record_index_1_based - 1)
-                    .map(Fleet::local_slot_word_raw)
+                    .map(|fleet| fleet.fleet_number.0)
             })
         {
             return Some(fleet_number);
@@ -524,13 +524,13 @@ impl App {
         let idle_etacs = owned
             .iter()
             .copied()
-            .filter(|fleet| fleet_is_idle_hold(fleet) && fleet.etac_count() > 0)
+            .filter(|fleet| fleet_is_idle_hold(fleet) && fleet.ships.etacs > 0)
             .collect::<Vec<_>>();
         if let Some(fleet) = idle_etacs
             .into_iter()
             .max_by_key(|fleet| fleet_strength_key(fleet))
         {
-            return Some(fleet.local_slot_word_raw());
+            return Some(fleet.fleet_number.0);
         }
 
         let idle_hold = owned
@@ -542,7 +542,7 @@ impl App {
             .into_iter()
             .max_by_key(|fleet| fleet_strength_key(fleet))
         {
-            return Some(fleet.local_slot_word_raw());
+            return Some(fleet.fleet_number.0);
         }
 
         let fallback_combat = owned
@@ -554,13 +554,13 @@ impl App {
             .into_iter()
             .max_by_key(|fleet| fleet_combat_only_strength_key(fleet))
         {
-            return Some(fleet.local_slot_word_raw());
+            return Some(fleet.fleet_number.0);
         }
 
         owned
             .into_iter()
             .max_by_key(|fleet| fleet_strength_key(fleet))
-            .map(|fleet| fleet.local_slot_word_raw())
+            .map(|fleet| fleet.fleet_number.0)
     }
 
     pub(crate) fn fleet_menu_prompt_label(&self) -> Option<String> {
@@ -1587,7 +1587,7 @@ impl App {
                     return;
                 };
                 let map_size =
-                    nc_engine::map_size_for_player_count(self.game_data.conquest.player_count());
+                    nc_engine::map_size_for_player_count(self.game_data.conquest.player_count);
                 if destination[0] == 0
                     || destination[1] == 0
                     || destination[0] > map_size
@@ -1630,10 +1630,10 @@ impl App {
             .fleets
             .iter()
             .find(|fleet| {
-                fleet.owner_empire_raw() as usize == self.player.record_index_1_based
-                    && fleet.local_slot_word_raw() == fleet_id
+                fleet.owner.0 as usize == self.player.record_index_1_based
+                    && fleet.fleet_number.0 == fleet_id
             })
-            .map(|fleet| fleet.rules_of_engagement())
+            .map(|fleet| fleet.rules_of_engagement)
     }
 
     pub(crate) fn fleet_list_rows(&self) -> Vec<FleetRow> {
@@ -1766,38 +1766,36 @@ impl App {
     pub(crate) fn fleet_rows(&self) -> Vec<FleetRow> {
         let fleet_numbers: std::collections::HashSet<u16> = self
             .active_owned_fleet_records()
-            .map(|(_, fleet)| fleet.local_slot_word_raw())
+            .map(|(_, fleet)| fleet.fleet_number.0)
             .collect();
         let mut rows = self
             .active_owned_fleet_records()
             .map(|(idx, fleet)| {
-                let join_host_fleet_number =
-                    if fleet.standing_order_kind() == nc_data::Order::JoinAnotherFleet {
-                        Some(fleet.join_host_fleet_id_raw())
-                            .filter(|number| fleet_numbers.contains(number))
-                    } else {
-                        None
-                    };
+                let join_host_fleet_number = if fleet.order == nc_data::Order::JoinAnotherFleet {
+                    Some(fleet.mission_target).filter(|number| fleet_numbers.contains(number))
+                } else {
+                    None
+                };
                 let order_label = if let Some(host_num) = join_host_fleet_number {
                     format!("Join Fleet #{host_num}")
                 } else {
-                    fleet.standing_order_summary()
+                    nc_data::order_summary(&fleet)
                 };
                 FleetRow {
                     fleet_record_index_1_based: idx + 1,
-                    fleet_number: fleet.local_slot_word_raw(),
-                    coords: fleet.current_location_coords_raw(),
-                    target_coords: fleet.standing_order_target_coords_raw(),
-                    order_code: fleet.standing_order_code_raw(),
-                    current_speed: fleet.current_speed(),
-                    max_speed: fleet.max_speed(),
+                    fleet_number: fleet.fleet_number.0,
+                    coords: fleet.sector.to_array(),
+                    target_coords: fleet.target.to_array(),
+                    order_code: fleet.order.to_raw(),
+                    current_speed: fleet.speed,
+                    max_speed: fleet.max_speed,
                     eta_label: fleet_eta_label(&self.game_data, idx),
                     list_eta_label: fleet_list_eta_label(&self.game_data, idx),
-                    rules_of_engagement: fleet.rules_of_engagement(),
-                    loaded_armies: fleet.army_count(),
+                    rules_of_engagement: fleet.rules_of_engagement,
+                    loaded_armies: fleet.ships.loaded_transports,
                     order_label,
-                    composition_label: fleet.ship_composition_summary(),
-                    table_ships_label: fleet.ship_composition_table_summary(),
+                    composition_label: nc_data::ship_composition_summary(&fleet),
+                    table_ships_label: nc_data::ship_composition_table_summary(&fleet),
                     join_host_fleet_number,
                 }
             })
@@ -2033,12 +2031,12 @@ impl App {
             .fleets
             .get(fleet_record_index_1_based - 1)
             .map(|fleet| {
-                u32::from(fleet.battleship_count())
-                    + u32::from(fleet.cruiser_count())
-                    + u32::from(fleet.destroyer_count())
-                    + u32::from(fleet.troop_transport_count())
-                    + u32::from(fleet.scout_count())
-                    + u32::from(fleet.etac_count())
+                u32::from(fleet.ships.battleships)
+                    + u32::from(fleet.ships.cruisers)
+                    + u32::from(fleet.ships.destroyers)
+                    + u32::from(nc_data::troop_transports(&fleet))
+                    + u32::from(fleet.ships.scouts)
+                    + u32::from(fleet.ships.etacs)
             })
             .unwrap_or(0)
     }

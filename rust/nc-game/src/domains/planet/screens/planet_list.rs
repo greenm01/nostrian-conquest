@@ -662,10 +662,8 @@ fn planet_list_footer_floor(frame: &ScreenFrame<'_>, mode: PlanetListMode) -> us
                 .game_data
                 .fleets
                 .iter()
-                .filter(|fleet| {
-                    fleet.owner_empire_raw() as usize == frame.player.record_index_1_based
-                })
-                .map(|fleet| fleet.local_slot_word_raw())
+                .filter(|fleet| fleet.owner.0 as usize == frame.player.record_index_1_based)
+                .map(|fleet| fleet.fleet_number.0)
                 .max()
                 .unwrap_or(1)
                 .to_string();
@@ -804,7 +802,7 @@ fn docked_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> u32 {
         .get(row.planet_record_index_1_based.saturating_sub(1))
         .map(|planet| {
             (0..STARDOCK_SLOT_COUNT)
-                .map(|slot| u32::from(planet.stardock_count_raw(slot)))
+                .map(|slot| u32::from(planet.stardock[slot].min(u32::from(u16::MAX)) as u16))
                 .sum()
         })
         .unwrap_or(0)
@@ -819,8 +817,10 @@ fn queued_build_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> 
             (0..10)
                 .map(|slot| {
                     build_quantity_from_points(
-                        nc_data::ProductionItemKind::from_raw(planet.build_kind_raw(slot)),
-                        u32::from(planet.build_count_raw(slot)),
+                        nc_data::ProductionItemKind::from_raw(
+                            planet.build_queue[slot].kind.to_raw(),
+                        ),
+                        u32::from(planet.build_queue[slot].points_owed),
                     )
                 })
                 .sum()

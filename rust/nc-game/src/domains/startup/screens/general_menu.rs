@@ -96,7 +96,7 @@ impl GeneralMenuScreen {
             "? X V I A S P M C R D O E <Q>",
         );
         let autopilot_on =
-            frame.game_data.players[frame.player.record_index_1_based - 1].autopilot_flag() != 0;
+            u8::from(frame.game_data.players[frame.player.record_index_1_based - 1].autopilot) != 0;
         draw_menu_entry_with_toggle(
             &mut buffer,
             PRIMARY_MENU_ROW + 1,

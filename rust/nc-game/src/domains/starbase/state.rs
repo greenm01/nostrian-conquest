@@ -37,23 +37,23 @@ impl StarbaseState {
             .bases
             .iter()
             .enumerate()
-            .filter(|(_, base)| base.owner_empire_raw() as usize == player_record_index_1_based)
+            .filter(|(_, base)| base.owner.0 as usize == player_record_index_1_based)
             .map(|(idx, base)| {
                 let guard_fleet_numbers = guard_fleet_numbers_for_starbase(
                     game_data,
                     player_record_index_1_based,
-                    base.base_id_raw(),
+                    base.base_id.0,
                 );
-                let destination_coords = base.target_coords_raw();
+                let destination_coords = base.target.to_array();
                 let operation_label =
-                    starbase_operation_label(base.coords_raw(), destination_coords);
-                let eta_label = starbase_eta_label(base.coords_raw(), destination_coords);
+                    starbase_operation_label(base.sector.to_array(), destination_coords);
+                let eta_label = starbase_eta_label(base.sector.to_array(), destination_coords);
                 StarbaseRow {
                     base_record_index_1_based: idx + 1,
-                    base_id: base.base_id_raw(),
+                    base_id: base.base_id.0,
                     escort_list_label: format_starbase_list_guard_label(&guard_fleet_numbers),
                     escort_review_label: format_starbase_review_guard_label(&guard_fleet_numbers),
-                    coords: base.coords_raw(),
+                    coords: base.sector.to_array(),
                     destination_coords,
                     eta_label,
                     operation_label,

@@ -49,8 +49,8 @@ impl PlayerContext {
             .ok_or_else(|| format!("PLAYER.DAT missing record {record_index_1_based}"))?;
         let classic_login_state =
             ClassicLoginState::from_game_data(game_data, record_index_1_based as u8);
-        let empire_name = record.controlled_empire_name_summary();
-        let handle = record.assigned_player_handle_summary();
+        let empire_name = record.empire_name.trim().to_string();
+        let handle = record.handle.trim().to_string();
         Ok(Self {
             record_index_1_based,
             is_joined: classic_login_state != ClassicLoginState::FirstTimeMenu,
@@ -72,20 +72,20 @@ impl PlayerContext {
 }
 
 impl ClassicLoginState {
-    pub fn from_game_data(game_data: &CoreGameData, empire_raw: u8) -> Self {
-        let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
+    pub fn from_game_data(game_data: &CoreGameData, empire_id: u8) -> Self {
+        let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
             return Self::FirstTimeMenu;
         };
 
-        if !player.is_active_human_player() {
+        if !(player.mode == nc_data::PlayerMode::Human) {
             return Self::FirstTimeMenu;
         }
 
-        let Some(homeworld) = homeworld_like_planet(game_data, empire_raw, player) else {
+        let Some(homeworld) = homeworld_like_planet(game_data, empire_id, player) else {
             return Self::ReturningPlayer;
         };
 
-        if homeworld.is_named_homeworld_seed() {
+        if nc_data::is_named_homeworld_seed(&homeworld) {
             Self::MatchedPreloadedFirstLogin
         } else {
             Self::ReturningPlayer
@@ -95,19 +95,20 @@ impl ClassicLoginState {
 
 fn homeworld_like_planet<'a>(
     game_data: &'a CoreGameData,
-    empire_raw: u8,
+    empire_id: u8,
     player: &nc_data::Player,
 ) -> Option<&'a nc_data::Planet> {
-    let index = player.homeworld_planet_index_1_based_raw() as usize;
+    let index = player.homeworld as usize;
     if index > 0 {
         if let Some(planet) = game_data.planets.get(index - 1) {
             return Some(planet);
         }
     }
 
-    game_data.planets.iter().find(|planet| {
-        planet.owner_empire_slot_raw() == empire_raw && planet.is_named_homeworld_seed()
-    })
+    game_data
+        .planets
+        .iter()
+        .find(|planet| planet.owner.0 == empire_id && nc_data::is_named_homeworld_seed(&planet))
 }
 
 impl MainMenuSummary {
@@ -120,29 +121,26 @@ impl MainMenuSummary {
         let owned_planets = game_data
             .planets
             .iter()
-            .filter(|planet| planet.owner_empire_slot_raw() as usize == player_record_index_1_based)
+            .filter(|planet| planet.owner.0 as usize == player_record_index_1_based)
             .count();
         let owned_fleets = game_data
             .fleets
             .iter()
-            .filter(|fleet| fleet.owner_empire_raw() as usize == player_record_index_1_based)
+            .filter(|fleet| fleet.owner.0 as usize == player_record_index_1_based)
             .count();
 
         let player_record = game_data.players.get(player_record_index_1_based - 1);
         let pending_results = player_record
-            .map(|record| {
-                record.has_classic_results_chain_state()
-                    || record.has_classic_results_review_state()
-            })
+            .map(|record| nc_data::has_results_chain(&record) || (record.messages_last != 0))
             .unwrap_or(false)
             || results_present;
         let pending_messages = player_record
-            .map(|record| record.has_classic_messages_review_state())
+            .map(|record| record.messages_first != 0)
             .unwrap_or(false)
             || runtime_messages_present;
 
         Self {
-            game_year: game_data.conquest.game_year(),
+            game_year: game_data.conquest.game_year,
             player_count: game_data.players.len(),
             owned_planets,
             owned_fleets,

@@ -127,7 +127,7 @@ message to=2 subject="Scout" body="Watch the lane."
 
     let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.players[0].tax_rate(), 37);
+    assert_eq!(state.game_data.players[0].tax_rate, 37);
     assert_eq!(state.queued_mail.len(), 1);
     assert_eq!(state.queued_mail[0].sender_empire_id, 1);
     assert_eq!(state.queued_mail[0].recipient_empire_id, 2);
@@ -206,33 +206,35 @@ fn submit_turn_keeps_motion_for_on_station_hostile_orders() {
         .fleets
         .iter()
         .enumerate()
-        .find(|(_, fleet)| fleet.owner_empire_raw() == 1)
+        .find(|(_, fleet)| fleet.owner.0 == 1)
         .map(|(idx, _)| idx + 1)
         .expect("fixture should contain a player 1 fleet");
     let target_planet_record_index_1_based = game_data
         .planets
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() == 2)
+        .find(|(_, planet)| planet.owner.0 == 2)
         .map(|(idx, _)| idx + 1)
         .expect("fixture should contain a player 2 world");
-    let target_coords = game_data.planets[target_planet_record_index_1_based - 1].coords_raw();
-    let year = game_data.conquest.game_year();
+    let target_coords = game_data.planets[target_planet_record_index_1_based - 1]
+        .sector
+        .to_array();
+    let year = game_data.conquest.game_year;
 
     {
         let fleet = &mut game_data.fleets[fleet_record_index_1_based - 1];
-        fleet.set_current_location_coords_raw(target_coords);
-        fleet.set_battleship_count(1);
-        fleet.set_cruiser_count(0);
-        fleet.set_destroyer_count(1);
-        fleet.set_troop_transport_count(2);
-        fleet.set_army_count(6);
-        fleet.set_scout_count(0);
-        fleet.set_etac_count(0);
-        fleet.recompute_max_speed_from_composition();
-        fleet.set_current_speed(fleet.max_speed());
+        fleet.sector = nc_data::Coords::from_array(target_coords);
+        fleet.ships.battleships = 1;
+        fleet.ships.cruisers = 0;
+        fleet.ships.destroyers = 1;
+        nc_data::set_troop_transports(fleet, 2);
+        nc_data::set_armies_aboard(fleet, 6);
+        fleet.ships.scouts = 0;
+        fleet.ships.etacs = 0;
+        nc_data::recompute_max_speed(fleet);
+        fleet.speed = fleet.max_speed;
     }
-    let depth_before = game_data.fleets[fleet_record_index_1_based - 1].depth();
+    let depth_before = game_data.fleets[fleet_record_index_1_based - 1].depth;
     store
         .save_runtime_state_structured(&game_data, &BTreeSet::new(), &[], &[])
         .expect("mutated state should save");
@@ -275,13 +277,13 @@ fleet record={fleet_record_index_1_based} {{
     let state = store.load_latest_runtime_state().unwrap().unwrap();
     let fleet = &state.game_data.fleets[fleet_record_index_1_based - 1];
 
-    assert_eq!(fleet.standing_order_kind(), Order::InvadeWorld);
-    assert_eq!(fleet.current_location_coords_raw(), target_coords);
-    assert_eq!(fleet.standing_order_target_coords_raw(), target_coords);
+    assert_eq!(fleet.order, Order::InvadeWorld);
+    assert_eq!(fleet.sector.to_array(), target_coords);
+    assert_eq!(fleet.target.to_array(), target_coords);
     // Like ECGAME, the order keeps the fleet's motion; the strike test
     // passes once maintenance finds it settled in orbit.
-    assert_eq!(fleet.current_speed(), 4);
-    assert_eq!(fleet.depth(), depth_before);
+    assert_eq!(fleet.speed, 4);
+    assert_eq!(fleet.depth, depth_before);
 
     cleanup_dir(&target);
 }

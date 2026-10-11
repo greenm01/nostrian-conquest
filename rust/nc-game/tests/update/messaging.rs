@@ -204,7 +204,7 @@ fn compose_subject_prompt_uses_esc_cancel_markup() {
 fn compose_message_rejects_fourth_message_to_same_recipient_in_same_year() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     for subject in ["One", "Two", "Three"] {
         runtime.queued_mail.push(QueuedPlayerMail {
             sender_empire_id: 1,
@@ -302,7 +302,7 @@ fn apply_action_deletes_queued_message_from_outbox() {
 fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     set_runtime_report_blocks(
         &mut runtime,
         classic_chunked_report_blocks(&[
@@ -429,7 +429,7 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
 fn reports_inbox_rejects_no_match_year_filter_without_blanking_the_table() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     runtime
@@ -565,7 +565,7 @@ fn reports_inbox_question_mark_opens_popup_help_with_inbox_commands() {
 fn reports_inbox_enter_moves_focus_to_preview_when_id_input_is_empty() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     runtime
@@ -612,7 +612,7 @@ fn reports_inbox_enter_moves_focus_to_preview_when_id_input_is_empty() {
 fn reports_inbox_typed_id_jump_moves_selection_immediately() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     runtime
         .queued_mail
         .push(incoming_mail(2, 1, current_year, "Alpha", "Body Alpha"));
@@ -671,7 +671,7 @@ fn reports_inbox_typed_id_jump_moves_selection_immediately() {
 fn reports_inbox_delete_keeps_sparse_session_ids_without_empty_rows() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     clear_runtime_report_blocks(&mut runtime);
     runtime.queued_mail.clear();
     for subject in ["Alpha", "Beta", "Gamma", "Delta"] {
@@ -774,7 +774,7 @@ fn reports_inbox_delete_keeps_sparse_session_ids_without_empty_rows() {
 fn reports_inbox_leaves_scrollbar_gutter_when_many_items_exist() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     for idx in 0..12 {
         runtime.queued_mail.push(incoming_mail(
             2,
@@ -819,7 +819,7 @@ fn reports_inbox_leaves_scrollbar_gutter_when_many_items_exist() {
 fn reports_inbox_long_preview_scrolls_and_clamps_without_panicking() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let current_year = runtime.game_data.conquest.game_year();
+    let current_year = runtime.game_data.conquest.game_year;
     runtime
         .queued_mail
         .push(incoming_mail(2, 1, current_year, "Older", "Short body"));

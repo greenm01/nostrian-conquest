@@ -79,8 +79,7 @@ impl App {
 
     pub fn toggle_autopilot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let player = &mut self.game_data.players[self.player.record_index_1_based - 1];
-        let next = if player.autopilot_flag() == 0 { 1 } else { 0 };
-        player.set_autopilot_flag(next);
+        player.autopilot = !player.autopilot;
         nc_data::clear_inactivity_autopilot_pending(
             self.player.record_index_1_based,
             &mut self.player_activity_states,
@@ -133,7 +132,7 @@ impl App {
                 }
             }
         };
-        let max_empire = self.game_data.conquest.player_count();
+        let max_empire = self.game_data.conquest.player_count;
         if !(1..=max_empire).contains(&empire_id) {
             self.empire.enemies_status =
                 Some(format!("Enter an empire number in 1..={max_empire}."));
@@ -165,7 +164,7 @@ impl App {
     }
 
     pub fn current_autopilot_flag(&self) -> u8 {
-        self.game_data.players[self.player.record_index_1_based - 1].autopilot_flag()
+        u8::from(self.game_data.players[self.player.record_index_1_based - 1].autopilot)
     }
 
     pub fn current_relation_to(&self, empire_id: u8) -> Option<nc_data::DiplomaticRelation> {

@@ -509,7 +509,7 @@ impl App {
         default: Option<u8>,
         axis_label: &str,
     ) -> Result<u8, String> {
-        let max = map_size_for_player_count(self.game_data.conquest.player_count());
+        let max = map_size_for_player_count(self.game_data.conquest.player_count);
         let raw = input.trim();
         let value = if raw.is_empty() {
             default.ok_or_else(|| format!("Enter {axis_label} from 1 to {max}."))?
@@ -555,7 +555,7 @@ impl App {
             .game_data
             .planets
             .iter()
-            .find(|planet| planet.coords_raw() == destination);
+            .find(|planet| planet.sector.to_array() == destination);
         if fleet_order_target_requires_planet_system(mission_code) && target_planet.is_none() {
             return Err(if single {
                 "That mission needs a system with a planet at the target.".to_string()
@@ -566,9 +566,7 @@ impl App {
         }
         if fleet_order_target_rejects_owned_planet(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize == self.player.record_index_1_based)
                 .unwrap_or(false)
         {
             return Err(if single {
@@ -579,9 +577,7 @@ impl App {
         }
         if fleet_order_target_rejects_owned_scout_target(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize == self.player.record_index_1_based)
                 .unwrap_or(false)
         {
             return Err(if single {
@@ -592,9 +588,7 @@ impl App {
         }
         if fleet_order_target_requires_owned_planet(mission_code)
             && target_planet
-                .map(|planet| {
-                    planet.owner_empire_slot_raw() as usize != self.player.record_index_1_based
-                })
+                .map(|planet| planet.owner.0 as usize != self.player.record_index_1_based)
                 .unwrap_or(true)
         {
             return Err("That mission requires one of your owned planets.".to_string());
@@ -670,11 +664,11 @@ impl App {
         match estimate {
             nc_engine::FleetEtaEstimate::Arrived => format!(
                 "{subject} reaches {target} in 0 year(s), arriving in {}.",
-                self.game_data.conquest.game_year()
+                self.game_data.conquest.game_year
             ),
             nc_engine::FleetEtaEstimate::Years(years) => format!(
                 "{subject} reaches {target} in {years} year(s), arriving in {}.",
-                self.game_data.conquest.game_year() + years
+                self.game_data.conquest.game_year + years
             ),
             nc_engine::FleetEtaEstimate::Stopped => {
                 format!("{subject} is stopped and cannot reach {target}.")
@@ -1861,8 +1855,8 @@ impl App {
                 .fleets
                 .get(row.fleet_record_index_1_based - 1)
                 .map(|fleet| {
-                    let speed = fleet.current_speed();
-                    if speed == 0 { fleet.max_speed() } else { speed }
+                    let speed = fleet.speed;
+                    if speed == 0 { fleet.max_speed } else { speed }
                 })
                 .unwrap_or(row.current_speed);
             self.game_data.set_fleet_order(

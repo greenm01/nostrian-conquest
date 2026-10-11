@@ -346,7 +346,7 @@ impl App {
                 ) else {
                     return Err("Enter coordinates like 10,13".to_string());
                 };
-                let map_size = map_size_for_player_count(self.game_data.conquest.player_count());
+                let map_size = map_size_for_player_count(self.game_data.conquest.player_count);
                 if destination[0] == 0
                     || destination[1] == 0
                     || destination[0] > map_size

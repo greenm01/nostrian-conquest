@@ -276,17 +276,21 @@ fn planet_row_sort_metrics(
         .map(|planet| {
             (0..10)
                 .map(|slot| {
-                    let points = u32::from(planet.build_count_raw(slot));
-                    let kind = nc_data::ProductionItemKind::from_raw(planet.build_kind_raw(slot));
+                    let points = u32::from(planet.build_queue[slot].points_owed);
+                    let kind = nc_data::ProductionItemKind::from_raw(
+                        planet.build_queue[slot].kind.to_raw(),
+                    );
                     kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                 })
                 .sum()
         })
         .unwrap_or(0);
     let docked = app.planet_list_docked_units(row);
-    let armies = planet.map(|planet| planet.army_count_raw()).unwrap_or(0);
+    let armies = planet
+        .map(|planet| planet.armies.min(u16::from(u8::MAX)) as u8)
+        .unwrap_or(0);
     let batteries = planet
-        .map(|planet| planet.ground_batteries_raw())
+        .map(|planet| planet.ground_batteries.min(u16::from(u8::MAX)) as u8)
         .unwrap_or(0);
     (treasury, budget, build_queue, docked, armies, batteries)
 }
@@ -340,9 +344,10 @@ fn planet_list_clause_matches(
                 .map(|planet| {
                     (0..10)
                         .map(|slot| {
-                            let points = u32::from(planet.build_count_raw(slot));
-                            let kind =
-                                nc_data::ProductionItemKind::from_raw(planet.build_kind_raw(slot));
+                            let points = u32::from(planet.build_queue[slot].points_owed);
+                            let kind = nc_data::ProductionItemKind::from_raw(
+                                planet.build_queue[slot].kind.to_raw(),
+                            );
                             kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                         })
                         .sum::<u32>() as i64
@@ -355,12 +360,12 @@ fn planet_list_clause_matches(
         "sbs" => clause
             .predicate
             .matches_number(Some(i64::from(u8::from(row.has_friendly_starbase)))),
-        "ars" => clause
-            .predicate
-            .matches_number(planet.map(|planet| i64::from(planet.army_count_raw()))),
-        "gbs" => clause
-            .predicate
-            .matches_number(planet.map(|planet| i64::from(planet.ground_batteries_raw()))),
+        "ars" => clause.predicate.matches_number(
+            planet.map(|planet| i64::from(planet.armies.min(u16::from(u8::MAX)) as u8)),
+        ),
+        "gbs" => clause.predicate.matches_number(
+            planet.map(|planet| i64::from(planet.ground_batteries.min(u16::from(u8::MAX)) as u8)),
+        ),
         _ => true,
     }
 }
@@ -1444,7 +1449,7 @@ impl App {
         }
         let raw = self.planet.tax_input.trim();
         let parsed = if raw.is_empty() {
-            self.game_data.players[self.player.record_index_1_based - 1].tax_rate()
+            self.game_data.players[self.player.record_index_1_based - 1].tax_rate
         } else {
             match raw.parse::<u8>() {
                 Ok(value) => value,
@@ -1782,7 +1787,7 @@ impl App {
             .get(row.planet_record_index_1_based.saturating_sub(1))
             .map(|planet| {
                 (0..nc_data::STARDOCK_SLOT_COUNT)
-                    .map(|slot| u32::from(planet.stardock_count_raw(slot)))
+                    .map(|slot| u32::from(planet.stardock[slot].min(u32::from(u16::MAX)) as u16))
                     .sum()
             })
             .unwrap_or(0)
@@ -1991,9 +1996,10 @@ impl App {
                 .map(|planet| {
                     (0..10)
                         .map(|slot| {
-                            let points = u32::from(planet.build_count_raw(slot));
-                            let kind =
-                                nc_data::ProductionItemKind::from_raw(planet.build_kind_raw(slot));
+                            let points = u32::from(planet.build_queue[slot].points_owed);
+                            let kind = nc_data::ProductionItemKind::from_raw(
+                                planet.build_queue[slot].kind.to_raw(),
+                            );
                             kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                         })
                         .sum::<u32>()
@@ -2003,10 +2009,10 @@ impl App {
             "sta" => self.planet_list_docked_units(&row).to_string(),
             "sbs" => u8::from(row.has_friendly_starbase).to_string(),
             "ars" => planet
-                .map(|planet| planet.army_count_raw().to_string())
+                .map(|planet| (planet.armies.min(u16::from(u8::MAX)) as u8).to_string())
                 .unwrap_or_default(),
             "gbs" => planet
-                .map(|planet| planet.ground_batteries_raw().to_string())
+                .map(|planet| (planet.ground_batteries.min(u16::from(u8::MAX)) as u8).to_string())
                 .unwrap_or_default(),
             _ => String::new(),
         }
@@ -2331,21 +2337,21 @@ impl App {
             .game_data
             .players
             .get(self.player.record_index_1_based - 1)
-            .map(|player| player.homeworld_planet_index_1_based_raw() as usize)
+            .map(|player| player.homeworld as usize)
             .unwrap_or(0);
         if homeworld_index != 0 {
             if let Some(planet) = self.game_data.planets.get(homeworld_index - 1) {
-                return planet.coords_raw();
+                return planet.sector.to_array();
             }
         }
         self.game_data
             .planets
             .iter()
             .find(|planet| {
-                planet.owner_empire_slot_raw() as usize == self.player.record_index_1_based
-                    && planet.is_homeworld_seed_ignoring_name()
+                planet.owner.0 as usize == self.player.record_index_1_based
+                    && nc_data::is_homeworld_seed_ignoring_name(&planet)
             })
-            .map(|planet| planet.coords_raw())
+            .map(|planet| planet.sector.to_array())
             .unwrap_or([8, 2])
     }
 
