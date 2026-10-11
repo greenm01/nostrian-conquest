@@ -85,9 +85,7 @@ impl Starbase {
     }
     /// At rest in orbit at the sector centre: offsets 0.5, depth 1.0.
     pub fn set_at_rest_motion(&mut self) {
-        self.set_x_fraction(Real48::HALF);
-        self.set_y_fraction(Real48::HALF);
-        self.set_depth(Real48::ONE);
+        crate::motion::set_starbase_at_rest(self)
     }
     /// 1 while the base is under way to its target, 0 once it has arrived
     /// or been halted.

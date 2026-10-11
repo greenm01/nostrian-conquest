@@ -1,12 +1,8 @@
 use crate::classic::{decode_player, encode_player};
 use crate::model::{Player, PlayerMode};
-use crate::support::classic_text;
 use crate::{ClassicResultsChain, PLAYER_RECORD_SIZE};
 
 use crate::model::DiplomaticRelation;
-
-const HANDLE_LEN: usize = 25;
-const EMPIRE_NAME_LEN: usize = 20;
 
 impl Player {
     pub fn from_raw(raw: [u8; PLAYER_RECORD_SIZE]) -> Self {
@@ -92,14 +88,11 @@ impl Player {
     /// Whether `alias` names this handle as `set_assigned_player_handle_raw`
     /// stores it: `?` for each character outside classic text, cut to 25.
     pub fn assigned_player_handle_matches(&self, alias: &str) -> bool {
-        let stored = classic_text(alias);
-        let stored = &stored[..stored.len().min(HANDLE_LEN)];
-        self.assigned_player_handle_summary()
-            .eq_ignore_ascii_case(stored.trim())
+        crate::names::player_handle_matches(self, alias)
     }
 
     pub fn set_assigned_player_handle_raw(&mut self, value: &str) {
-        self.handle = classic_text(value).chars().take(HANDLE_LEN).collect();
+        crate::names::set_player_handle(self, value)
     }
 
     pub fn controlled_empire_name_len_raw(&self) -> u8 {
@@ -223,15 +216,11 @@ impl Player {
     }
 
     pub fn classic_results_chain(&self) -> Option<ClassicResultsChain> {
-        let first_header = self.classic_results_first_header_raw();
-        (first_header != 0).then(|| ClassicResultsChain {
-            first_header,
-            last_header: self.classic_results_last_header_raw(),
-        })
+        crate::classic_results::results_chain(self)
     }
 
     pub fn has_classic_results_chain_state(&self) -> bool {
-        self.results_first != 0 || self.results_last != 0
+        crate::classic_results::has_results_chain(self)
     }
 
     pub fn has_any_classic_review_state(&self) -> bool {
@@ -280,50 +269,30 @@ impl Player {
     /// the mirrored advertisement here and route all startup-review
     /// producers through this helper.
     pub fn set_classic_login_reviewables_present(&mut self, present: bool) {
-        self.set_classic_messages_review_state_present(present);
-        self.set_classic_results_review_state_present(present);
+        crate::classic_results::set_login_reviewables_present(self, present)
     }
 
     /// Point this empire at its chain in the shared `RESULTS.DAT`.  Lay the
     /// file out with [`crate::layout_classic_results`] to get the chain.
     pub fn set_classic_results_chain(&mut self, chain: Option<ClassicResultsChain>) {
-        let chain = chain.unwrap_or(ClassicResultsChain {
-            first_header: 0,
-            last_header: 0,
-        });
-        self.results_first = i32::from(chain.first_header);
-        self.results_last = i32::from(chain.last_header);
+        crate::classic_results::set_results_chain(self, chain)
     }
 
     /// Stores `value` as classic text, cut to the 20 characters an empire
     /// name holds.
     pub fn set_controlled_empire_name_raw(&mut self, value: &str) {
-        self.empire_name = classic_text(value).chars().take(EMPIRE_NAME_LEN).collect();
+        crate::names::set_empire_name(self, value)
     }
 
     /// Returns the empire to civil disorder as ECUTIL and ECMAINT do: mode
     /// 0, a blank handle, and the name "In Civil Disorder". Every other
     /// field stays.
     pub fn set_civil_disorder_mode(&mut self) {
-        self.mode = PlayerMode::CivilDisorder;
-        self.handle.clear();
-        self.set_controlled_empire_name_raw("In Civil Disorder");
+        crate::player_lifecycle::set_civil_disorder(self)
     }
 
     pub fn ownership_summary(&self) -> String {
-        let legacy = self.controlled_empire_name_summary();
-        let handle = self.assigned_player_handle_summary();
-        let empire = self.controlled_empire_name_summary();
-
-        if self.is_rogue_player() {
-            format!("rogue label='{legacy}'")
-        } else if legacy.starts_with("In Civil Disorder") || legacy == "Unowned" {
-            format!("unowned label='{legacy}'")
-        } else if self.assigned_player_flag_raw() != 0 || !handle.is_empty() || !empire.is_empty() {
-            format!("player handle='{}' empire='{}'", handle, empire)
-        } else {
-            format!("unowned label='{legacy}'")
-        }
+        crate::names::ownership_summary(self)
     }
 
     pub fn tax_rate(&self) -> u8 {
@@ -438,14 +407,12 @@ impl Player {
     /// Stored diplomatic relation toward another empire, or `None` for a
     /// byte no classic program writes.
     pub fn diplomatic_relation_toward(&self, other_empire_raw: u8) -> Option<DiplomaticRelation> {
-        match self.diplomacy.get(diplomacy_slot(other_empire_raw)?)? {
-            DiplomaticRelation::Unknown(_) => None,
-            relation => Some(*relation),
-        }
+        crate::diplomacy::diplomatic_relation_toward(self, other_empire_raw)
     }
 
     pub fn diplomatic_relation_byte_raw(&self, other_empire_raw: u8) -> Option<u8> {
-        Some(self.diplomacy[diplomacy_slot(other_empire_raw)?].to_raw())
+        crate::diplomacy::stored_diplomatic_relation(self, other_empire_raw)
+            .map(DiplomaticRelation::to_raw)
     }
 
     pub fn set_diplomatic_relation_byte_raw(&mut self, other_empire_raw: u8, raw: u8) -> bool {
@@ -457,20 +424,8 @@ impl Player {
         other_empire_raw: u8,
         relation: DiplomaticRelation,
     ) -> bool {
-        match diplomacy_slot(other_empire_raw) {
-            Some(slot) => {
-                self.diplomacy[slot] = relation;
-                true
-            }
-            None => false,
-        }
+        crate::diplomacy::set_diplomatic_relation_toward(self, other_empire_raw, relation)
     }
-}
-
-fn diplomacy_slot(other_empire_raw: u8) -> Option<usize> {
-    (1..=25)
-        .contains(&other_empire_raw)
-        .then(|| usize::from(other_empire_raw) - 1)
 }
 
 fn with_low_word(value: i32, word: u16) -> i32 {

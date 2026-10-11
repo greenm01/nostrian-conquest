@@ -21,6 +21,50 @@ pub struct ClassicResultsChain {
     pub last_header: u16,
 }
 
+/// This empire's chain in the shared `RESULTS.DAT`: original `ECMAINT`
+/// output (two- and three-human oracle runs, see `fixtures/ecmaint-results-*`)
+/// stores the 1-based record indexes of its first and last report headers in
+/// `PLAYER.DAT`, or 0 when it has none.
+pub fn results_chain(player: &Player) -> Option<ClassicResultsChain> {
+    let first_header = player.results_first as u16;
+    (first_header != 0).then(|| ClassicResultsChain {
+        first_header,
+        last_header: player.results_last as u16,
+    })
+}
+
+/// Point this empire at its chain in the shared `RESULTS.DAT`. Lay the file
+/// out with [`layout_classic_results`] to get the chain.
+pub fn set_results_chain(player: &mut Player, chain: Option<ClassicResultsChain>) {
+    let chain = chain.unwrap_or(ClassicResultsChain {
+        first_header: 0,
+        last_header: 0,
+    });
+    player.results_first = i32::from(chain.first_header);
+    player.results_last = i32::from(chain.last_header);
+}
+
+/// Whether either end of this empire's results chain is set.
+pub fn has_results_chain(player: &Player) -> bool {
+    player.results_first != 0 || player.results_last != 0
+}
+
+/// Advertise login-time reviewables to classic ECGAME.
+///
+/// Current compatibility rule:
+/// - classic delivery/review probes use both message records together
+///   for unread mail
+/// - results-only startup probing does not become reviewable when only
+///   the results-side record is set
+///
+/// Until a stricter family split is proven in classic login flow, keep the
+/// mirrored advertisement here and route all startup-review producers
+/// through this helper.
+pub fn set_login_reviewables_present(player: &mut Player, present: bool) {
+    player.messages_first = i32::from(present);
+    player.messages_last = i32::from(present);
+}
+
 /// A laid-out shared `RESULTS.DAT` and the chain of every empire in it.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ClassicResultsLayout {

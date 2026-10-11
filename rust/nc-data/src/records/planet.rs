@@ -2,30 +2,8 @@ use crate::PLANET_RECORD_SIZE;
 use crate::classic::{decode_planet, encode_planet};
 use crate::model::{Coords, Planet};
 use crate::real48::Real48;
-use crate::support::classic_text;
 
 use crate::model::ProductionItemKind;
-
-/// The stardock is 8 u32 counts at `+0x38`, one per item type, in this
-/// order: destroyer, cruiser, battleship, scout, troop transport, ETAC,
-/// starbase, IPBM (`docs/dev/ec-battle-spec.md`).
-pub const STARDOCK_SLOT_COUNT: usize = 8;
-/// The build kind each stardock slot holds. Rust builds no IPBMs, so that
-/// slot has no kind.
-const STARDOCK_SLOT_KINDS: [u8; STARDOCK_SLOT_COUNT] = [1, 2, 3, 4, 5, 6, 9, 0];
-/// Classic stores a planet name as a `String[20]`.
-const PLANET_NAME_MAX_LEN: usize = 20;
-
-/// The stardock slot that holds items of build kind `kind_raw`, if any.
-pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
-    (kind_raw != 0)
-        .then(|| {
-            STARDOCK_SLOT_KINDS
-                .iter()
-                .position(|&kind| kind == kind_raw)
-        })
-        .flatten()
-}
 
 impl Planet {
     pub fn from_raw(raw: [u8; PLANET_RECORD_SIZE]) -> Self {
@@ -77,11 +55,7 @@ impl Planet {
 
     /// Present production rounded to whole points.
     pub fn present_production_points(&self) -> Option<u16> {
-        Some(
-            self.present_production()
-                .round()
-                .clamp(0.0, f64::from(u16::MAX)) as u16,
-        )
+        Some(crate::economy::present_production_points(self))
     }
 
     pub fn set_present_production_points(&mut self, value: u16) -> bool {
@@ -100,7 +74,7 @@ impl Planet {
 
     /// Stored goods rounded to whole points.
     pub fn stored_production_points(&self) -> u32 {
-        self.stored_goods().round().clamp(0.0, f64::from(u32::MAX)) as u32
+        crate::economy::stored_production_points(self)
     }
 
     pub fn set_stored_production_points(&mut self, value: u32) {
@@ -128,10 +102,7 @@ impl Planet {
     /// Stores `name` as classic text, cut to the 20 characters a planet
     /// name holds.
     pub fn set_planet_name(&mut self, name: &str) {
-        self.name = classic_text(name)
-            .chars()
-            .take(PLANET_NAME_MAX_LEN)
-            .collect();
+        crate::names::set_planet_name(self, name)
     }
 
     pub fn planet_name(&self) -> String {
@@ -173,16 +144,12 @@ impl Planet {
     }
 
     pub fn stardock_count(&self, slot: usize) -> u32 {
-        self.stardock.to_counts()[slot]
+        self.stardock[slot]
     }
 
     /// The build kind in `slot`, or 0 when the slot is empty.
     pub fn stardock_kind_raw(&self, slot: usize) -> u8 {
-        if self.stardock_count(slot) == 0 {
-            0
-        } else {
-            STARDOCK_SLOT_KINDS[slot]
-        }
+        crate::stardock::stardock_slot_kind(self, slot).to_raw()
     }
 
     pub fn stardock_item_kind_current_known(&self, slot: usize) -> ProductionItemKind {
@@ -194,9 +161,7 @@ impl Planet {
     }
 
     pub fn set_stardock_count(&mut self, slot: usize, value: u32) {
-        let mut counts = self.stardock.to_counts();
-        counts[slot] = value;
-        self.stardock = crate::model::Stardock::from_counts(counts);
+        self.stardock[slot] = value;
     }
 
     /// Seeds this record as an owned world from the byte pieces older
@@ -282,49 +247,21 @@ impl Planet {
     }
 
     pub fn is_named_homeworld_seed(&self) -> bool {
-        self.status_or_name_summary() == "Not Named Yet"
+        crate::homeworld_seed::is_named_homeworld_seed(self)
     }
 
     /// Present production in `64 <= P < 128`, the band ECUTIL's homeworld
     /// seed (100) falls in; older code read this as the production real's
     /// exponent byte, `0x87`.
     pub fn has_homeworld_seed_production(&self) -> bool {
-        (64.0..128.0).contains(&self.present_production())
+        crate::homeworld_seed::has_homeworld_seed_production(self)
     }
 
     pub fn is_homeworld_seed_ignoring_name(&self) -> bool {
-        self.ownership_status_raw() == 2
-            && self.owner_empire_slot_raw() != 0
-            && self.has_homeworld_seed_production()
+        crate::homeworld_seed::is_homeworld_seed_ignoring_name(self)
     }
 
     pub fn derived_summary(&self) -> String {
-        let [x, y] = self.coords_raw();
-        let text = self.status_or_name_summary();
-        let mut parts = vec![format!("({},{}): {}", x, y, text)];
-        if self.is_named_homeworld_seed() {
-            parts.push("likely_homeworld_seed".to_string());
-        }
-        if self.build_count_raw(0) != 0 || self.build_kind_raw(0) != 0 {
-            parts.push(format!(
-                "build_raw={:02x}/{:02x}",
-                self.build_count_raw(0),
-                self.build_kind_raw(0)
-            ));
-        }
-        if self.owner_empire_slot_raw() != 0 {
-            parts.push(format!(
-                "owner_slot={} owner_status={:02x}",
-                self.owner_empire_slot_raw(),
-                self.ownership_status_raw()
-            ));
-        }
-        if self.army_count_raw() != 0 {
-            parts.push(format!("armies={}", self.army_count_raw()));
-        }
-        if self.ground_batteries_raw() != 0 {
-            parts.push(format!("batteries={}", self.ground_batteries_raw()));
-        }
-        parts.join(" | ")
+        crate::planet_summary::planet_derived_summary(self)
     }
 }

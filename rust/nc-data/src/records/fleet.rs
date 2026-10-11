@@ -41,20 +41,15 @@ impl Fleet {
     }
 
     pub fn total_starships(&self) -> u32 {
-        u32::from(self.battleship_count())
-            + u32::from(self.cruiser_count())
-            + u32::from(self.destroyer_count())
-            + u32::from(self.troop_transport_count())
-            + u32::from(self.scout_count())
-            + u32::from(self.etac_count())
+        crate::fleet_ships::starship_count(self)
     }
 
     pub fn has_any_combat_ships(&self) -> bool {
-        self.destroyer_count() > 0 || self.cruiser_count() > 0 || self.battleship_count() > 0
+        crate::fleet_ships::has_combat_ships(self)
     }
 
     pub fn is_support_only(&self) -> bool {
-        !self.has_any_combat_ships() && self.total_starships() > 0
+        crate::fleet_ships::is_support_only(self)
     }
     pub fn fleet_id_word_raw(&self) -> u16 {
         self.record.0
@@ -95,33 +90,11 @@ impl Fleet {
     /// minimum over the ship types present (ETAC 3, BB 4, CA 5, transports
     /// 5, DD 6, scouts 6).
     pub fn recompute_max_speed_from_composition(&mut self) {
-        let mut max_speed = 7;
-        for (count, speed) in [
-            (self.etac_count(), 3),
-            (self.battleship_count(), 4),
-            (self.cruiser_count(), 5),
-            (self.troop_transport_count(), 5),
-            (self.destroyer_count(), 6),
-            (self.scout_count(), 6),
-        ] {
-            if count > 0 {
-                max_speed = max_speed.min(speed);
-            }
-        }
-        self.set_max_speed(max_speed);
-        if self.current_speed() > max_speed {
-            self.set_current_speed(max_speed);
-        }
+        crate::fleet_ships::recompute_max_speed(self)
     }
 
     pub fn has_any_force(&self) -> bool {
-        self.scout_count() > 0
-            || self.battleship_count() > 0
-            || self.cruiser_count() > 0
-            || self.destroyer_count() > 0
-            || self.troop_transport_count() > 0
-            || self.army_count() > 0
-            || self.etac_count() > 0
+        crate::fleet_ships::has_any_force(self)
     }
 
     /// The order code and target sector, as FLEETS.DAT 0x1F..0x21 hold them.
@@ -177,8 +150,7 @@ impl Fleet {
     /// Writes the target depth and the mission target together, as ECGAME
     /// does when it sets an order.
     pub fn set_mission_target(&mut self, world_target_flag: u8, mission_id: u16) {
-        self.target_depth = world_target_flag;
-        self.mission_target = mission_id;
+        crate::fleet_orders::set_mission_target(self, world_target_flag, mission_id)
     }
     /// Writes the target depth and the low byte of the mission target; the
     /// high byte is left alone.
@@ -212,36 +184,11 @@ impl Fleet {
     }
     /// At rest in orbit at the sector centre: offsets 0.5, depth 1.0.
     pub fn set_at_rest_motion(&mut self) {
-        self.set_x_fraction(Real48::HALF);
-        self.set_y_fraction(Real48::HALF);
-        self.set_depth(Real48::ONE);
+        crate::motion::set_fleet_at_rest(self)
     }
 
     pub fn standing_order_summary(&self) -> String {
-        let [x, y] = self.standing_order_target_coords_raw();
-        match self.standing_order_kind() {
-            Order::HoldPosition => "Hold position".to_string(),
-            Order::MoveOnly => format!("Move fleet to Sector ({x},{y})"),
-            Order::SeekHome => "Seek home".to_string(),
-            Order::PatrolSector => format!("Patrol Sector ({x},{y})"),
-            Order::GuardStarbase => format!("Guard starbase at Sector ({x},{y})"),
-            Order::GuardBlockadeWorld => {
-                format!("Guard/blockade world in System ({x},{y})")
-            }
-            Order::BombardWorld => format!("Bombard world in System ({x},{y})"),
-            Order::InvadeWorld => format!("Invade world in System ({x},{y})"),
-            Order::BlitzWorld => format!("Blitz world in System ({x},{y})"),
-            Order::ViewWorld => format!("View world in System ({x},{y})"),
-            Order::ScoutSector => format!("Scout Sector ({x},{y})"),
-            Order::ScoutSolarSystem => format!("Scout solar system ({x},{y})"),
-            Order::ColonizeWorld => format!("Colonize world in System ({x},{y})"),
-            Order::JoinAnotherFleet => "Join another fleet".to_string(),
-            Order::RendezvousSector => format!("Rendezvous at Sector ({x},{y})"),
-            Order::Salvage => format!("Salvage at Sector ({x},{y})"),
-            Order::Unknown(code) => {
-                format!("Unknown order {code} target ({x},{y})")
-            }
-        }
+        crate::fleet_orders::order_summary(self)
     }
 
     pub fn rules_of_engagement(&self) -> u8 {
@@ -284,15 +231,12 @@ impl Fleet {
     }
     /// All troop transports, empty and loaded.
     pub fn troop_transport_count(&self) -> u16 {
-        self.empty_transport_count()
-            .saturating_add(self.loaded_transport_count())
+        crate::fleet_ships::troop_transports(self)
     }
     /// Sets the transport total, keeping loaded transports (up to the new
     /// total) and making the rest empty.
     pub fn set_troop_transport_count(&mut self, total: u16) {
-        let loaded = self.loaded_transport_count().min(total);
-        self.set_loaded_transport_count(loaded);
-        self.set_empty_transport_count(total - loaded);
+        crate::fleet_ships::set_troop_transports(self, total)
     }
     /// Armies aboard: one per loaded transport.
     pub fn army_count(&self) -> u16 {
@@ -301,9 +245,7 @@ impl Fleet {
     /// Loads or unloads armies, moving transports between the empty and
     /// loaded counts. The transport total grows if it cannot hold `armies`.
     pub fn set_army_count(&mut self, armies: u16) {
-        let total = self.troop_transport_count();
-        self.set_loaded_transport_count(armies);
-        self.set_empty_transport_count(total.saturating_sub(armies));
+        crate::fleet_ships::set_armies_aboard(self, armies)
     }
     pub fn etac_count(&self) -> u16 {
         self.ships.etacs
@@ -318,53 +260,11 @@ impl Fleet {
         self.ships.scouts = value;
     }
 
-    fn counted_ship_composition_parts(&self) -> Vec<String> {
-        [
-            ("SC", self.scout_count()),
-            ("BB", self.battleship_count()),
-            ("CA", self.cruiser_count()),
-            ("DD", self.destroyer_count()),
-            ("TT", self.troop_transport_count()),
-            ("AR", self.army_count()),
-            ("ET", self.etac_count()),
-        ]
-        .into_iter()
-        .filter_map(|(label, count)| (count > 0).then(|| format!("{label}={count}")))
-        .collect()
-    }
-
-    fn fleet_list_ship_composition_tokens(&self) -> Vec<String> {
-        fn token(label: &str, count: u16) -> Option<String> {
-            match count {
-                0 => None,
-                1 => Some(label.to_string()),
-                _ => Some(format!("{count}{label}")),
-            }
-        }
-
-        [
-            token("SC", self.scout_count()),
-            token("BB", self.battleship_count()),
-            token("CA", self.cruiser_count()),
-            token("DD", self.destroyer_count()),
-            token("TT*", self.loaded_transport_count()),
-            token("TT", self.empty_transport_count()),
-            token("ET", self.etac_count()),
-        ]
-        .into_iter()
-        .flatten()
-        .collect()
-    }
-
     pub fn ship_composition_summary(&self) -> String {
-        let parts = self.counted_ship_composition_parts();
-        assert!(!parts.is_empty(), "empty fleet record is not a fleet");
-        parts.join(" ")
+        crate::fleet_ships::ship_composition_summary(self)
     }
 
     pub fn ship_composition_table_summary(&self) -> String {
-        let parts = self.fleet_list_ship_composition_tokens();
-        assert!(!parts.is_empty(), "empty fleet record is not a fleet");
-        parts.join(" ")
+        crate::fleet_ships::ship_composition_table_summary(self)
     }
 }

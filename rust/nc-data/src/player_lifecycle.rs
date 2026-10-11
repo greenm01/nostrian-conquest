@@ -1,5 +1,7 @@
+use crate::names::set_empire_name;
 use crate::{
-    CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, TerminalOutcome, WinnerState,
+    CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, PlayerMode, TerminalOutcome,
+    WinnerState,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -30,6 +32,14 @@ pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> boo
         (fleet.troop_transport_count() > 0 && fleet.army_count() > 0)
             || (unowned_planet_exists && fleet.etac_count() > 0)
     })
+}
+
+/// Returns the empire to civil disorder as ECUTIL and ECMAINT do: mode 0, a
+/// blank handle, and the name "In Civil Disorder". Every other field stays.
+pub fn set_civil_disorder(player: &mut Player) {
+    player.mode = PlayerMode::CivilDisorder;
+    player.handle.clear();
+    set_empire_name(player, "In Civil Disorder");
 }
 
 /// Joined and rogue empires both contest the campaign and can be eliminated;

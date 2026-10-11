@@ -47,11 +47,7 @@ impl Conquest {
     /// previous-year arrays, as ECMAINT does at the start of a pass
     /// (0x27A5). Slots without a player record read 0.
     pub fn snapshot_previous_year(&mut self, players: &[Player]) {
-        for slot in 0..25 {
-            let player = players.get(slot);
-            self.previous_production[slot] = player.map_or(0, Player::production_score_raw);
-            self.previous_planet_count[slot] = player.map_or(0, Player::planet_count_raw);
-        }
+        crate::rankings::snapshot_previous_year(self, players)
     }
     pub fn to_bytes(&self) -> Vec<u8> {
         encode_conquest(self).to_vec()

@@ -1,5 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
+use crate::homeworld_seed::is_named_homeworld_seed;
 use crate::{CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -280,4 +281,40 @@ fn unit_words(kind: ProductionItemKind, count: u32) -> &'static str {
         }
         ProductionItemKind::Unknown(_) => "unknown units",
     }
+}
+
+/// One planet record for inspection output: sector, name, and whatever of
+/// the first build slot, owner, armies, and batteries is set.
+pub fn planet_derived_summary(planet: &Planet) -> String {
+    let text = planet.name.trim();
+    let mut parts = vec![format!(
+        "({},{}): {}",
+        planet.sector.x, planet.sector.y, text
+    )];
+    if is_named_homeworld_seed(planet) {
+        parts.push("likely_homeworld_seed".to_string());
+    }
+    let first_slot = planet.build_queue[0];
+    if first_slot.points_owed != 0 || first_slot.kind.to_raw() != 0 {
+        parts.push(format!(
+            "build_raw={:02x}/{:02x}",
+            first_slot.points_owed,
+            first_slot.kind.to_raw()
+        ));
+    }
+    if planet.owner.0 != 0 {
+        parts.push(format!(
+            "owner_slot={} owner_status={:02x}",
+            planet.owner.0, planet.years_under_owner
+        ));
+    }
+    let armies = u8::try_from(planet.armies).unwrap_or(u8::MAX);
+    if armies != 0 {
+        parts.push(format!("armies={armies}"));
+    }
+    let batteries = u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX);
+    if batteries != 0 {
+        parts.push(format!("batteries={batteries}"));
+    }
+    parts.join(" | ")
 }
