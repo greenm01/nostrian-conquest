@@ -542,3 +542,58 @@ fn a_human_guard_starbase_fleet_that_lost_its_warships_holds_and_lets_go_of_its_
     assert_eq!(game_data.fleets[0].order, Order::HoldPosition);
     assert_eq!(game_data.bases[0].escort.0, 0);
 }
+
+#[test]
+fn autopilot_leaves_an_etac_only_guard_blockade_fleet_on_its_order_and_it_takes_a_base() {
+    // Classic ETAC probe, three years: ECMAINT checks no order of an
+    // autopilot empire. The fleet without warships takes the base on Guard
+    // Starbase (its ROE 6 becomes 0 as for any fleet without warships) and
+    // holds it: the autopilot re-orders only Hold fleets.
+    let mut game_data = autopilot_scenario();
+    let base = add_base(&mut game_data, 1, NEAR_WORLD, Real48::ONE, 1, 0);
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 0, 1);
+    place_fleet(
+        &mut game_data,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        NEAR_WORLD,
+        0,
+    );
+    game_data.fleets[0].rules_of_engagement = 6;
+
+    for _ in 0..3 {
+        run(&mut game_data);
+        let fleet = &game_data.fleets[0];
+        assert_eq!(fleet.order, Order::GuardStarbase);
+        assert_eq!(fleet.mission_target, 1);
+        assert_eq!(fleet.rules_of_engagement, 0);
+        assert_eq!(game_data.bases[base].escort, fleet.fleet_number);
+    }
+}
+
+#[test]
+fn a_human_etac_only_guard_blockade_fleet_still_holds() {
+    // The same fleet of a human empire not on autopilot: classic sent it to
+    // Hold at ROE 0. Only the empires ECMAINT plays are left unchecked.
+    let mut game_data = scenario();
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 0, 1);
+    place_fleet(
+        &mut game_data,
+        HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        HOME,
+        0,
+    );
+    game_data.fleets[0].rules_of_engagement = 6;
+    add_base(&mut game_data, 1, HOME, Real48::ONE, 1, 0);
+
+    run(&mut game_data);
+
+    let fleet = &game_data.fleets[0];
+    assert_eq!(fleet.order, Order::HoldPosition);
+    assert_eq!(fleet.rules_of_engagement, 0);
+    assert_eq!(game_data.bases[0].escort.0, 0);
+}
+

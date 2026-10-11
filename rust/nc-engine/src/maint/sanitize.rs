@@ -8,6 +8,26 @@ use nc_data::{
     stardock_slot_kind, stored_diplomatic_relation,
 };
 
+/// ECMAINT checks no order of the empires it plays. A rogue or autopilot
+/// fleet on Guard/Blockade or Guard Starbase without warships stays on it,
+/// and the orders pass lets it take a starbase (`24a3:25f7`).
+fn ecmaint_leaves_unarmed_guard_alone(
+    game_data: &CoreGameData,
+    fleet_idx: usize,
+    reason: FleetOrderValidationError,
+) -> bool {
+    let fleet = &game_data.fleets[fleet_idx];
+    reason == FleetOrderValidationError::MissingCombatShips
+        && matches!(
+            fleet.order,
+            Order::GuardBlockadeWorld | Order::GuardStarbase
+        )
+        && game_data
+            .players
+            .get(usize::from(fleet.owner.0).saturating_sub(1))
+            .is_some_and(|player| player.played_by_ecmaint())
+}
+
 fn capability_loss_requires_abort_and_seek_home(reason: FleetOrderValidationError) -> bool {
     matches!(
         reason,
@@ -60,7 +80,9 @@ pub(super) fn sanitize_invalid_player_inputs(
                                     | FleetOrderValidationError::InvalidJoinHost
                                     | FleetOrderValidationError::TargetOwnedByFleetEmpire
                             );
-                        if !should_sanitize {
+                        if !should_sanitize
+                            || ecmaint_leaves_unarmed_guard_alone(game_data, fleet_idx, reason)
+                        {
                             break;
                         }
                         let retreat_target = capability_loss_requires_abort_and_seek_home(reason)

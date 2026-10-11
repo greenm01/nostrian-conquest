@@ -6,7 +6,10 @@
 
 use super::super::{FleetRemovalRemapInfo, apply_fleet_removal_remap};
 use crate::CoreGameData;
-use nc_data::{Coords, GameRng, Order, PlayerMode, RNG_TAG_ORDERS, Real48, recompute_max_speed};
+use nc_data::{
+    Coords, DiplomaticRelation, GameRng, Order, PlayerMode, RNG_TAG_ORDERS, Real48,
+    recompute_max_speed, set_diplomatic_relation_toward,
+};
 
 /// Who the pass is playing for. An autopilot empire's fleets are re-ordered
 /// only from Hold; a rogue empire's all are.
@@ -34,7 +37,10 @@ pub(super) fn process_home_orders(
                 fleet_orders(game_data, owner, Governor::Rogue);
                 starbase_orders(game_data, owner);
             }
-            PlayerMode::Rogue => patrol_orders(game_data, owner, campaign_seed, &mut disbanded),
+            PlayerMode::Rogue => {
+                declare_humans_enemies(game_data, owner);
+                patrol_orders(game_data, owner, campaign_seed, &mut disbanded);
+            }
             PlayerMode::Human if player.autopilot => {
                 fleet_orders(game_data, owner, Governor::Autopilot);
             }
@@ -143,6 +149,20 @@ fn starbase_orders(game_data: &mut CoreGameData, owner: u8) {
         base.target = Coords::from_array(world);
         base.target_depth = 1;
         base.moving = base.sector.to_array() != world || base.depth.round() != 1;
+    }
+}
+
+/// `24a3:0c2a`. A rogue empire with no world marks every human empire its
+/// enemy, each year; nothing takes the mark back.
+fn declare_humans_enemies(game_data: &mut CoreGameData, owner: u8) {
+    for human in 1..=game_data.players.len() as u8 {
+        if human != owner && game_data.players[usize::from(human) - 1].mode == PlayerMode::Human {
+            set_diplomatic_relation_toward(
+                &mut game_data.players[usize::from(owner) - 1],
+                human,
+                DiplomaticRelation::Enemy,
+            );
+        }
     }
 }
 

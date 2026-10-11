@@ -11,10 +11,7 @@ pub fn process_autopilot_ai(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let player_count = game_data.conquest.player_count;
     for player_idx in 0..game_data.players.len() {
-        let mode = game_data.players[player_idx].mode.code();
-        let autopilot = u8::from(game_data.players[player_idx].autopilot);
-        let ai_active = mode == 0xff || (mode == 0x01 && autopilot == 0x01);
-        if !ai_active {
+        if !game_data.players[player_idx].played_by_ecmaint() {
             continue;
         }
 

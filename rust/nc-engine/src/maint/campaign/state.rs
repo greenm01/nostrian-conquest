@@ -96,7 +96,9 @@ pub(super) fn apply_campaign_state_transitions(
         ) {
             continue;
         }
-        if !is_contesting_empire(player) {
+        // ECMAINT keeps playing a rogue empire after its last world falls:
+        // its warships patrol (`24a3:0dbc`) and the slot stays rogue.
+        if !is_contesting_empire(player) || player.mode == PlayerMode::Rogue {
             continue;
         }
 
