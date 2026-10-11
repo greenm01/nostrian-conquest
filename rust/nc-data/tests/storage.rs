@@ -679,7 +679,7 @@ fn sqlite_store_rejects_legacy_byte_table_schema() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 14,
+                expected: 15,
                 found: None
             }
         ),
@@ -704,7 +704,7 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
              int_value INTEGER NOT NULL
          );
          INSERT INTO campaign_metadata(key, int_value)
-         VALUES ('runtime_schema_version', 13);",
+         VALUES ('runtime_schema_version', 14);",
     )
     .expect("seed prior runtime schema");
     drop(conn);
@@ -715,8 +715,8 @@ fn sqlite_store_rejects_prior_runtime_schema_version() {
         matches!(
             err,
             CampaignStoreError::SchemaVersionMismatch {
-                expected: 14,
-                found: Some(13)
+                expected: 15,
+                found: Some(14)
             }
         ),
         "unexpected error: {err}"
