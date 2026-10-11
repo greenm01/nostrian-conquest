@@ -206,8 +206,8 @@ pub fn push_intel_entries(
                         let planet = game_data
                             .planets
                             .iter()
-                            .find(|planet| planet.coords_raw() == event.coords)
-                            .map(|planet| planet.planet_name())
+                            .find(|planet| planet.sector.to_array() == event.coords)
+                            .map(|planet| planet.name.clone())
                             .unwrap_or_default();
                         format!(
                             "The aliens appear to be headed at our planet {planet}! We are alerting all fleets in the area."
@@ -273,10 +273,10 @@ pub fn push_intel_entries(
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
-        let [x, y] = planet.coords_raw();
+        let [x, y] = planet.sector.to_array();
         let source = format!(
             "From planet \"{}\" in System({x},{y}):",
-            planet.planet_name()
+            planet.name.clone()
         );
         let header = report_header(&source, event.stardate_week, year);
         let items = if let Some(assault) = events.assault_report_events.iter().find(|assault| {

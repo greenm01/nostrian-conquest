@@ -49,7 +49,7 @@ const DAY_NAMES: [&str; 7] = [
 /// `conquest.maintenance_schedule_enabled()` returns a 7-element array indexed
 /// `[Sun, Mon, Tue, Wed, Thu, Fri, Sat]`.
 pub fn check_maintenance_schedule(conquest: &Conquest) -> GateResult {
-    let schedule = conquest.maintenance_schedule_enabled();
+    let schedule = conquest.maintenance_days.0;
     let today = today_weekday() as usize;
     if schedule[today] {
         GateResult::Allowed

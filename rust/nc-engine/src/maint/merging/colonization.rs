@@ -1,5 +1,6 @@
 use super::super::{ColonizationEvent, ColonizationResolvedEvent};
 use crate::{CoreGameData, Order};
+use nc_data::{Real48, set_planet_name};
 
 /// Apply colonization events to the in-memory planet and player records.
 ///
@@ -30,9 +31,9 @@ pub(super) fn process_colonizations(
             });
             continue;
         };
-        let colonization_aborted = fleet.current_location_coords_raw() != event.coords
-            || fleet.standing_order_kind() == Order::SeekHome
-            || fleet.etac_count() == 0;
+        let colonization_aborted = fleet.sector.to_array() != event.coords
+            || fleet.order == Order::SeekHome
+            || fleet.ships.etacs == 0;
         if colonization_aborted {
             resolved.push(ColonizationResolvedEvent::Aborted {
                 fleet_idx: event.fleet_idx,
@@ -44,29 +45,27 @@ pub(super) fn process_colonizations(
         }
 
         let planet_idx = game_data.planets.iter().position(|p| {
-            let [px, py] = p.coords_raw();
+            let [px, py] = p.sector.to_array();
             px == cx && py == cy
         });
 
         if let Some(idx) = planet_idx {
             let planet = &mut game_data.planets[idx];
-            let is_unowned = planet.owner_empire_slot_raw() == 0;
+            let is_unowned = planet.owner.0 == 0;
             if is_unowned {
-                planet.set_planet_name("Not Named Yet");
-                planet.set_ownership_status_raw(2);
-                planet.set_owner_empire_slot_raw(event.owner_empire);
-                planet.set_army_count_raw(1);
-                planet.set_present_production(1.0);
+                set_planet_name(planet, "Not Named Yet");
+                planet.years_under_owner = 2;
+                planet.owner.0 = event.owner_empire;
+                planet.armies = 1;
+                planet.production = Real48::from_f64(1.0);
 
                 let player_idx = (event.owner_empire as usize).saturating_sub(1);
                 if player_idx < game_data.players.len() {
-                    let current_count = game_data.players[player_idx].planet_count_raw();
-                    game_data.players[player_idx]
-                        .set_planet_count_raw(current_count.saturating_add(1));
+                    let current_count = game_data.players[player_idx].planet_count;
+                    game_data.players[player_idx].planet_count = current_count.saturating_add(1);
 
-                    let current_score = game_data.players[player_idx].production_score_raw();
-                    game_data.players[player_idx]
-                        .set_production_score_raw(current_score.saturating_add(1));
+                    let current_score = game_data.players[player_idx].production;
+                    game_data.players[player_idx].production = current_score.saturating_add(1);
                 }
 
                 resolved.push(ColonizationResolvedEvent::Succeeded {
@@ -80,7 +79,7 @@ pub(super) fn process_colonizations(
                     fleet_idx: event.fleet_idx,
                     planet_idx: idx,
                     colonizer_empire_raw: event.owner_empire,
-                    owner_empire_raw: planet.owner_empire_slot_raw(),
+                    owner_empire_raw: planet.owner.0,
                     stardate_week: None,
                 });
             }

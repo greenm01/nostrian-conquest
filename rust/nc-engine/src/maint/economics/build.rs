@@ -1,4 +1,5 @@
 use crate::{CoreGameData, ProductionItemKind};
+use nc_data::{Real48, stored_production_points};
 
 pub(super) fn process_build_completion(
     game_data: &mut CoreGameData,
@@ -12,7 +13,7 @@ pub(super) fn process_build_completion(
 
         let mut had_builds = false;
         for slot in 0..10 {
-            let build_count = game_data.planets[planet_idx].build_count_raw(slot);
+            let build_count = game_data.planets[planet_idx].build_queue[slot].points_owed;
 
             if build_count == 0 {
                 continue;
@@ -22,7 +23,9 @@ pub(super) fn process_build_completion(
                 continue;
             }
 
-            let build_kind = game_data.planets[planet_idx].build_kind_raw(slot);
+            let build_kind = game_data.planets[planet_idx].build_queue[slot]
+                .kind
+                .to_raw();
             let build_item_kind = ProductionItemKind::from_raw(build_kind);
             let decrement = u32::from(build_count).min(remaining_spend_capacity);
             let new_count = u32::from(build_count).saturating_sub(decrement) as u8;
@@ -30,14 +33,16 @@ pub(super) fn process_build_completion(
 
             match build_item_kind {
                 ProductionItemKind::Army => {
-                    let current = game_data.planets[planet_idx].army_count_raw();
+                    let current =
+                        u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX);
                     let free_capacity = u32::from(u8::MAX.saturating_sub(current));
                     if completed_qty > free_capacity {
                         continue;
                     }
                 }
                 ProductionItemKind::GroundBattery => {
-                    let current = game_data.planets[planet_idx].ground_batteries_raw();
+                    let current = u8::try_from(game_data.planets[planet_idx].ground_batteries)
+                        .unwrap_or(u8::MAX);
                     let free_capacity = u32::from(u8::MAX.saturating_sub(current));
                     if completed_qty > free_capacity {
                         continue;
@@ -46,22 +51,24 @@ pub(super) fn process_build_completion(
                 _ => {}
             }
 
-            let current_stored = game_data.planets[planet_idx].stored_production_points();
-            game_data.planets[planet_idx]
-                .set_stored_production_points(current_stored.saturating_sub(decrement));
-            game_data.planets[planet_idx].set_build_count_raw(slot, new_count);
+            let current_stored = stored_production_points(&game_data.planets[planet_idx]);
+            game_data.planets[planet_idx].stored_goods =
+                Real48::from_f64(f64::from(current_stored.saturating_sub(decrement)));
+            game_data.planets[planet_idx].build_queue[slot].points_owed = new_count;
             remaining_spend_capacity = remaining_spend_capacity.saturating_sub(decrement);
 
             match build_item_kind {
                 ProductionItemKind::Army => {
-                    let current = game_data.planets[planet_idx].army_count_raw();
-                    game_data.planets[planet_idx]
-                        .set_army_count_raw(current.saturating_add(completed_qty as u8));
+                    let current =
+                        u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX);
+                    game_data.planets[planet_idx].armies =
+                        u16::from(current.saturating_add(completed_qty as u8));
                 }
                 ProductionItemKind::GroundBattery => {
-                    let current = game_data.planets[planet_idx].ground_batteries_raw();
-                    game_data.planets[planet_idx]
-                        .set_ground_batteries_raw(current.saturating_add(completed_qty as u8));
+                    let current = u8::try_from(game_data.planets[planet_idx].ground_batteries)
+                        .unwrap_or(u8::MAX);
+                    game_data.planets[planet_idx].ground_batteries =
+                        u16::from(current.saturating_add(completed_qty as u8));
                 }
                 kind if kind.requires_stardock() => {
                     add_to_stardock(
@@ -74,7 +81,8 @@ pub(super) fn process_build_completion(
             }
 
             if new_count == 0 {
-                game_data.planets[planet_idx].set_build_kind_raw(slot, 0);
+                game_data.planets[planet_idx].build_queue[slot].kind =
+                    ProductionItemKind::Unknown(0);
             }
         }
 
@@ -105,7 +113,7 @@ fn ceil_div(value: u32, divisor: u32) -> u32 {
 /// Completed ships and starbases wait in their type's stardock slot.
 fn add_to_stardock(planet: &mut nc_data::Planet, kind_raw: u8, qty: u32) {
     if let Some(slot) = nc_data::stardock_slot_for_kind(kind_raw) {
-        let current = planet.stardock_count(slot);
-        planet.set_stardock_count(slot, current.saturating_add(qty));
+        let current = planet.stardock[slot];
+        planet.stardock[slot] = current.saturating_add(qty);
     }
 }

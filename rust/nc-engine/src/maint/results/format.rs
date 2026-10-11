@@ -10,9 +10,9 @@ pub fn empire_label(game_data: &CoreGameData, empire_raw: u8) -> String {
     let Some(player) = game_data.players.get(idx) else {
         return format!("Empire #{empire_raw}");
     };
-    let empire = player.controlled_empire_name_summary();
-    let handle = player.assigned_player_handle_summary();
-    let legacy = player.legacy_status_name_summary();
+    let empire = player.empire_name.trim().to_string();
+    let handle = player.handle.trim().to_string();
+    let legacy = player.empire_name.trim().to_string();
     if !empire.is_empty() {
         format!("Empire #{empire_raw} \"{empire}\"")
     } else if !handle.is_empty() {
@@ -27,15 +27,15 @@ pub fn empire_label(game_data: &CoreGameData, empire_raw: u8) -> String {
 pub fn classic_empire_display_name(game_data: &CoreGameData, empire_raw: u8) -> Option<String> {
     let idx = empire_raw.saturating_sub(1) as usize;
     let player = game_data.players.get(idx)?;
-    let empire = player.controlled_empire_name_summary();
+    let empire = player.empire_name.trim().to_string();
     if !empire.is_empty() {
         return Some(empire);
     }
-    let legacy = player.legacy_status_name_summary();
+    let legacy = player.empire_name.trim().to_string();
     if !legacy.is_empty() {
         return Some(legacy);
     }
-    let handle = player.assigned_player_handle_summary();
+    let handle = player.handle.trim().to_string();
     if !handle.is_empty() {
         return Some(handle);
     }
@@ -91,7 +91,7 @@ pub fn fleet_number_from_idx(game_data: &CoreGameData, fleet_idx: usize) -> Opti
     game_data
         .fleets
         .get(fleet_idx)
-        .map(|fleet| fleet.local_slot_word_raw() as u8)
+        .map(|fleet| fleet.fleet_number.0 as u8)
         .filter(|fleet_number| *fleet_number != 0)
 }
 
@@ -207,12 +207,14 @@ pub fn nearest_owned_destination_text(
     empire_raw: u8,
     coords: [u8; 2],
 ) -> String {
-    if let Some(planet) = game_data.planets.iter().find(|planet| {
-        planet.coords_raw() == coords && planet.owner_empire_slot_raw() == empire_raw
-    }) {
+    if let Some(planet) = game_data
+        .planets
+        .iter()
+        .find(|planet| planet.sector.to_array() == coords && planet.owner.0 == empire_raw)
+    {
         format!(
             "planet \"{}\", located in {}",
-            planet.planet_name(),
+            planet.name.clone(),
             coords_system_text(coords)
         )
     } else {
@@ -343,8 +345,8 @@ pub fn aborted_mission_follow_on_text(
     empire_raw: u8,
 ) -> String {
     use nc_data::Order;
-    if fleet.standing_order_kind() == Order::SeekHome && fleet.current_speed() > 0 {
-        let retreat_target = fleet.standing_order_target_coords_raw();
+    if fleet.order == Order::SeekHome && fleet.speed > 0 {
+        let retreat_target = fleet.target.to_array();
         format!(
             "withdrawing toward {}",
             nearest_owned_destination_text(game_data, empire_raw, retreat_target)
@@ -364,8 +366,8 @@ pub fn aborted_event_follow_on_text(
 ) -> String {
     if let (Some(at), Some(target)) = (event.location_coords, event.target_coords)
         && at != target
-        && fleet.standing_order_kind() == nc_data::Order::HoldPosition
-        && fleet.current_location_coords_raw() == target
+        && fleet.order == nc_data::Order::HoldPosition
+        && fleet.sector.to_array() == target
     {
         return format!(
             "withdrawing toward {}",

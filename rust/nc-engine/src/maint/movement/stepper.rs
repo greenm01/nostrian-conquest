@@ -3,13 +3,13 @@ use crate::navigation::motion::{
 };
 use crate::navigation::{plan_route_with_intel, visible_hazard_intel_is_empty};
 use crate::{CoreGameData, Order, VisibleHazardIntel};
-use nc_data::Real48;
+use nc_data::{Coords, Real48};
 
 pub(super) fn set_fleet_to_local_hold(fleet: &mut nc_data::Fleet) {
-    let coords = fleet.current_location_coords_raw();
-    fleet.set_current_speed(0);
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_standing_order_target_coords_raw(coords);
+    let coords = fleet.sector.to_array();
+    fleet.speed = 0;
+    fleet.order = Order::HoldPosition;
+    fleet.target = Coords::from_array(coords);
 }
 
 fn order_persists_on_arrival(order: Order) -> bool {
@@ -60,9 +60,9 @@ type OrderKey = (u8, [u8; 2], u8);
 
 fn order_key(fleet: &nc_data::Fleet) -> OrderKey {
     (
-        fleet.standing_order_code_raw(),
-        fleet.standing_order_target_coords_raw(),
-        fleet.world_target_flag_raw(),
+        fleet.order.to_raw(),
+        fleet.target.to_array(),
+        fleet.target_depth,
     )
 }
 
@@ -91,7 +91,7 @@ impl FleetTrack {
         if self.viewing_out == Some(order_key(fleet)) {
             (Order::MoveOnly, 0)
         } else {
-            (fleet.standing_order_kind(), fleet.world_target_flag_raw())
+            (fleet.order, fleet.target_depth)
         }
     }
 
@@ -123,7 +123,7 @@ impl FleetTrack {
     /// report turns the order into the Move out (`complete_view_world`).
     pub(super) fn finish(&self, fleet: &mut nc_data::Fleet) {
         if self.viewing_out == Some(order_key(fleet)) {
-            fleet.set_current_speed(0);
+            fleet.speed = 0;
         }
     }
 }
@@ -143,12 +143,12 @@ pub(super) fn step_fleet(
         return false;
     }
     let viewing_out = track.viewing_out == Some(key);
-    let order = fleet.standing_order_kind();
-    let target = fleet.standing_order_target_coords_raw();
+    let order = fleet.order;
+    let target = fleet.target.to_array();
     let depth = if viewing_out {
         Real48::ZERO
     } else {
-        target_depth(fleet.world_target_flag_raw())
+        target_depth(fleet.target_depth)
     };
     // A standing order already settled on station stays put; it resolved in
     // an earlier year (scouts report from station in the observation phase).
@@ -161,7 +161,7 @@ pub(super) fn step_fleet(
             track.motion.unwrap_or_else(|| Motion::of_fleet(fleet)),
             target,
             depth,
-            fleet.current_speed(),
+            fleet.speed,
             false,
         );
     if on_station || (!viewing_out && matches!(order, Order::HoldPosition | Order::Unknown(_))) {
@@ -177,23 +177,16 @@ pub(super) fn step_fleet(
     }
     let fleet = &mut game_data.fleets[fleet_idx];
     let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
-    let speed = fleet.current_speed();
+    let speed = fleet.speed;
     let order = if viewing_out { Order::MoveOnly } else { order };
     let course = &mut track.course.as_mut().expect("course set above").1;
-    let (motion_after, speed_after) = advance(
-        motion,
-        speed,
-        fleet.max_speed(),
-        order,
-        target,
-        depth,
-        course,
-    );
+    let (motion_after, speed_after) =
+        advance(motion, speed, fleet.max_speed, order, target, depth, course);
     track.before = Some((motion, speed));
     track.motion = Some(motion_after);
     track.travel_speed = track.travel_speed.max(speed).max(speed_after);
     motion_after.write_to(fleet);
-    fleet.set_current_speed(speed_after);
+    fleet.speed = speed_after;
     true
 }
 
@@ -211,29 +204,23 @@ pub(super) fn test_arrival(
     let fleet = &mut game_data.fleets[fleet_idx];
     let key = order_key(fleet);
     let motion = track.motion.unwrap_or_else(|| Motion::of_fleet(fleet));
-    let order = fleet.standing_order_kind();
-    let target = fleet.standing_order_target_coords_raw();
+    let order = fleet.order;
+    let target = fleet.target.to_array();
     let last_tick = tick == TICKS_PER_YEAR;
     if track.viewing_out == Some(key) {
         if ArrivalRule::for_order(Order::MoveOnly).passes(
             motion,
             target,
             Real48::ZERO,
-            fleet.current_speed(),
+            fleet.speed,
             last_tick,
         ) {
             track.resolved = Some(key);
         }
         return TickEnd::Underway;
     }
-    let depth = target_depth(fleet.world_target_flag_raw());
-    if !ArrivalRule::for_order(order).passes(
-        motion,
-        target,
-        depth,
-        fleet.current_speed(),
-        last_tick,
-    ) {
+    let depth = target_depth(fleet.target_depth);
+    if !ArrivalRule::for_order(order).passes(motion, target, depth, fleet.speed, last_tick) {
         return TickEnd::Underway;
     }
     if order == Order::ViewWorld {
@@ -242,12 +229,12 @@ pub(super) fn test_arrival(
         // rest of the year. The order stays View until the viewing report
         // is finalized after the year (`complete_view_world`).
         track.viewing_out = Some(key);
-        fleet.set_current_speed(fleet.max_speed());
+        fleet.speed = fleet.max_speed;
         return TickEnd::Resolved;
     }
     track.resolved = Some(key);
     if is_hostile_order(order) {
-        fleet.set_current_speed(0);
+        fleet.speed = 0;
         return TickEnd::Strike;
     }
     apply_resolution_state(fleet, order);
@@ -261,7 +248,7 @@ fn fleet_course(
     visible_hazards_by_empire: &[VisibleHazardIntel],
     target: [u8; 2],
 ) -> Course {
-    let owner = game_data.fleets[fleet_idx].owner_empire_raw();
+    let owner = game_data.fleets[fleet_idx].owner.0;
     let Some(intel) = visible_hazards_by_empire.get(usize::from(owner.saturating_sub(1))) else {
         return Course::direct(target);
     };
@@ -280,11 +267,11 @@ fn fleet_course(
 /// What a resolved order leaves on the fleet besides its arrival position.
 fn apply_resolution_state(fleet: &mut nc_data::Fleet, order: Order) {
     if !order_persists_on_arrival(order) {
-        fleet.set_current_speed(0);
-        fleet.set_standing_order_kind(Order::HoldPosition);
+        fleet.speed = 0;
+        fleet.order = Order::HoldPosition;
         return;
     }
     if !order_keeps_speed_on_arrival(order) {
-        fleet.set_current_speed(0);
+        fleet.speed = 0;
     }
 }

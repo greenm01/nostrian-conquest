@@ -1,6 +1,6 @@
 use std::collections::{BTreeSet, HashSet};
 
-use nc_data::{CoreGameData, MaintenanceEvents, MissionOutcome, Order};
+use nc_data::{CoreGameData, MaintenanceEvents, MissionOutcome, Order, has_any_force};
 
 pub(super) type FleetReportKey = (u8, u8);
 
@@ -15,11 +15,10 @@ impl ReportSuppressionPlan {
         let surviving_fleet_report_keys = game_data
             .fleets
             .iter()
-            .filter(|fleet| fleet.has_any_force())
+            .filter(|fleet| has_any_force(fleet))
             .filter_map(|fleet| {
-                let fleet_number = fleet.local_slot_word_raw() as u8;
-                (fleet.owner_empire_raw() != 0 && fleet_number != 0)
-                    .then_some((fleet.owner_empire_raw(), fleet_number))
+                let fleet_number = fleet.fleet_number.0 as u8;
+                (fleet.owner.0 != 0 && fleet_number != 0).then_some((fleet.owner.0, fleet_number))
             })
             .collect();
         let destroyed_fleet_report_keys = events
@@ -47,7 +46,7 @@ impl ReportSuppressionPlan {
                     let fleet_number = game_data
                         .fleets
                         .get(fleet_idx)
-                        .map(|f| f.local_slot_word_raw() as u8)
+                        .map(|f| f.fleet_number.0 as u8)
                         .filter(|n| *n != 0)?;
                     Some((owner_empire_raw, fleet_number))
                 }
@@ -100,7 +99,7 @@ pub(super) fn mission_event_has_fleet_destroyed(
     let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
         return false;
     };
-    let fleet_number = fleet.local_slot_word_raw() as u8;
+    let fleet_number = fleet.fleet_number.0 as u8;
     events.fleet_destroyed_events.iter().any(|destroyed| {
         destroyed.fleet_number == fleet_number
             && destroyed.reporting_empire_raw == event.owner_empire_raw
@@ -151,7 +150,7 @@ pub(super) enum AbortDisposition {
 }
 
 pub(super) fn fleet_abort_disposition(fleet: &nc_data::Fleet) -> AbortDisposition {
-    if fleet.standing_order_kind() == Order::SeekHome && fleet.current_speed() > 0 {
+    if fleet.order == Order::SeekHome && fleet.speed > 0 {
         AbortDisposition::Retreating
     } else {
         AbortDisposition::Holding

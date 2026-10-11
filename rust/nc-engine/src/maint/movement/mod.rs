@@ -40,7 +40,7 @@ impl<'a> YearMovement<'a> {
             start: game_data
                 .fleets
                 .iter()
-                .map(|fleet| fleet.current_location_coords_raw())
+                .map(|fleet| fleet.sector.to_array())
                 .collect(),
             entered_target: vec![false; fleet_count],
             to_remove: vec![false; fleet_count],
@@ -73,16 +73,16 @@ impl<'a> YearMovement<'a> {
         let (target, order_kind, owner_empire, sector) = {
             let fleet = &game_data.fleets[fleet_idx];
             (
-                fleet.standing_order_target_coords_raw(),
-                fleet.standing_order_kind(),
-                fleet.owner_empire_raw(),
-                fleet.current_location_coords_raw(),
+                fleet.target.to_array(),
+                fleet.order,
+                fleet.owner.0,
+                fleet.sector.to_array(),
             )
         };
         if order_kind == Order::HoldPosition {
             // Classic's Hold action zeroes the speed, so a holding fleet's
             // visibility loses its speed term after its first tick.
-            game_data.fleets[fleet_idx].set_current_speed(0);
+            game_data.fleets[fleet_idx].speed = 0;
             return Ok(TickEnd::Underway);
         }
         let marks = EventMarks::of(&self.events);

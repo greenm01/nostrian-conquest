@@ -1,7 +1,7 @@
 use nc_data::{CoreGameData, EmpireProductionRankingSort};
 
 pub fn build_rankings_text(game_data: &CoreGameData) -> String {
-    let year = game_data.conquest.game_year();
+    let year = game_data.conquest.game_year;
     let stardate = crate::maint::timing::format_rankings_stardate(year);
     let rows = game_data.empire_production_ranking_rows(EmpireProductionRankingSort::Production);
 

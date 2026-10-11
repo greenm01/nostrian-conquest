@@ -8,7 +8,9 @@
 use std::path::Path;
 
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, Order};
+use nc_data::{
+    Coords, CoreGameData, Order, set_armies_aboard, set_troop_transports, troop_transports,
+};
 
 use super::exchange::{COMBAT_KIND_WITHDRAWAL, fleet_die_modifier, fleet_volley};
 use super::fleet_battle::{BattleSide, fight_encounter_with_rolls};
@@ -43,19 +45,19 @@ fn board() -> CoreGameData {
 /// Make fleet record `idx` a fleet of `owner` holding in `DEEP_SPACE`.
 fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Ships, roe: u8) {
     let fleet = &mut game_data.fleets[idx];
-    fleet.set_owner_empire_raw(owner);
-    fleet.set_current_location_coords_raw(DEEP_SPACE);
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_standing_order_target_coords_raw(DEEP_SPACE);
-    fleet.set_current_speed(0);
-    fleet.set_destroyer_count(ships.dd);
-    fleet.set_cruiser_count(ships.ca);
-    fleet.set_battleship_count(ships.bb);
-    fleet.set_scout_count(0);
-    fleet.set_troop_transport_count(ships.tt);
-    fleet.set_army_count(0);
-    fleet.set_etac_count(0);
-    fleet.set_rules_of_engagement(roe);
+    fleet.owner.0 = owner;
+    fleet.sector = Coords::from_array(DEEP_SPACE);
+    fleet.order = Order::HoldPosition;
+    fleet.target = Coords::from_array(DEEP_SPACE);
+    fleet.speed = 0;
+    fleet.ships.destroyers = ships.dd;
+    fleet.ships.cruisers = ships.ca;
+    fleet.ships.battleships = ships.bb;
+    fleet.ships.scouts = 0;
+    set_troop_transports(fleet, ships.tt);
+    set_armies_aboard(fleet, 0);
+    fleet.ships.etacs = 0;
+    fleet.rules_of_engagement = roe;
 }
 
 /// Fight one battle in `DEEP_SPACE` between two fleet records, each a side
@@ -68,7 +70,7 @@ fn fight(
     defender: usize,
 ) {
     let side = |fleet: usize| BattleSide {
-        empire: game_data.fleets[fleet].owner_empire_raw(),
+        empire: game_data.fleets[fleet].owner.0,
         fleets: vec![fleet],
         bases: Vec::new(),
     };
@@ -79,7 +81,7 @@ fn fight(
 }
 
 fn transports(game_data: &CoreGameData, idx: usize) -> u16 {
-    game_data.fleets[idx].troop_transport_count()
+    troop_transports(&game_data.fleets[idx])
 }
 
 #[test]
@@ -175,8 +177,8 @@ fn a_withdrawal_spends_carried_hits_and_the_next_battle_starts_at_zero() {
     // and the withdrawal exchange's 90 plus the carried 35 finish it. No
     // single volley reaches 100.
     fight(&mut game_data, &rolls, 1, 0, 4);
-    assert_eq!(game_data.fleets[4].battleship_count(), 0);
-    assert_eq!(game_data.fleets[0].battleship_count(), 2);
+    assert_eq!(game_data.fleets[4].ships.battleships, 0);
+    assert_eq!(game_data.fleets[0].ships.battleships, 2);
 
     // The 25 hits left over against empire 2 die with that battle. Against
     // 200 transports the battleships' 64 rounds of 45 buy 288 steps of 10:

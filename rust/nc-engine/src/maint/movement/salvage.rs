@@ -4,6 +4,7 @@ use super::super::{
 };
 use super::stepper::set_fleet_to_local_hold;
 use crate::{CoreGameData, ProductionItemKind};
+use nc_data::{Real48, has_any_force, stored_production_points, troop_transports};
 
 pub(super) fn queue_salvage_resolution(
     game_data: &mut CoreGameData,
@@ -20,7 +21,7 @@ pub(super) fn queue_salvage_resolution(
     // turn it arrives — the cull cannot catch that, so we fall through rather
     // than panic.
     debug_assert!(
-        game_data.fleets[fleet_idx].has_any_force(),
+        has_any_force(&game_data.fleets[fleet_idx]),
         "salvage dispatched to empty fleet (fleet_idx={fleet_idx}) -- should have been culled at turn start"
     );
 
@@ -71,7 +72,7 @@ fn resolve_salvage_arrival(
     owner_empire_raw: u8,
     planet_idx: Option<usize>,
 ) -> Result<SalvageResolvedEvent, Box<dyn std::error::Error>> {
-    let coords = game_data.fleets[fleet_idx].current_location_coords_raw();
+    let coords = game_data.fleets[fleet_idx].sector.to_array();
     let Some(planet_idx) = planet_idx else {
         let fleet = &mut game_data.fleets[fleet_idx];
         set_fleet_to_local_hold(fleet);
@@ -85,7 +86,7 @@ fn resolve_salvage_arrival(
         });
     };
 
-    if game_data.planets[planet_idx].owner_empire_slot_raw() != owner_empire_raw {
+    if game_data.planets[planet_idx].owner.0 != owner_empire_raw {
         let fleet = &mut game_data.fleets[fleet_idx];
         set_fleet_to_local_hold(fleet);
         return Ok(SalvageResolvedEvent::Failed {
@@ -99,13 +100,13 @@ fn resolve_salvage_arrival(
     }
 
     let recovered_points = fleet_salvage_value(&game_data.fleets[fleet_idx]);
-    let current_stored = game_data.planets[planet_idx].stored_production_points();
-    game_data.planets[planet_idx]
-        .set_stored_production_points(current_stored.saturating_add(recovered_points));
+    let current_stored = stored_production_points(&game_data.planets[planet_idx]);
+    game_data.planets[planet_idx].stored_goods =
+        Real48::from_f64(f64::from(current_stored.saturating_add(recovered_points)));
 
     Ok(SalvageResolvedEvent::Succeeded {
         fleet_idx,
-        fleet_number: game_data.fleets[fleet_idx].local_slot_word_raw() as u8,
+        fleet_number: game_data.fleets[fleet_idx].fleet_number.0 as u8,
         owner_empire_raw,
         planet_idx,
         coords,
@@ -115,14 +116,14 @@ fn resolve_salvage_arrival(
 }
 
 fn fleet_salvage_value(fleet: &nc_data::Fleet) -> u32 {
-    let total_cost = u32::from(fleet.destroyer_count())
+    let total_cost = u32::from(fleet.ships.destroyers)
         * purchase_cost(ProductionItemKind::Destroyer)
-        + u32::from(fleet.cruiser_count()) * purchase_cost(ProductionItemKind::Cruiser)
-        + u32::from(fleet.battleship_count()) * purchase_cost(ProductionItemKind::Battleship)
-        + u32::from(fleet.scout_count()) * purchase_cost(ProductionItemKind::Scout)
-        + u32::from(fleet.troop_transport_count()) * purchase_cost(ProductionItemKind::Transport)
-        + u32::from(fleet.etac_count()) * purchase_cost(ProductionItemKind::Etac)
-        + u32::from(fleet.army_count()) * purchase_cost(ProductionItemKind::Army);
+        + u32::from(fleet.ships.cruisers) * purchase_cost(ProductionItemKind::Cruiser)
+        + u32::from(fleet.ships.battleships) * purchase_cost(ProductionItemKind::Battleship)
+        + u32::from(fleet.ships.scouts) * purchase_cost(ProductionItemKind::Scout)
+        + u32::from(troop_transports(fleet)) * purchase_cost(ProductionItemKind::Transport)
+        + u32::from(fleet.ships.etacs) * purchase_cost(ProductionItemKind::Etac)
+        + u32::from(fleet.ships.loaded_transports) * purchase_cost(ProductionItemKind::Army);
     total_cost / 2
 }
 

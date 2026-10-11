@@ -18,6 +18,7 @@
 use crate::{CoreGameData, Order};
 
 use super::state::TaskForce;
+use nc_data::{Coords, set_fleet_at_rest, set_mission_target, troop_transports};
 
 /// Where fleet `fleet_idx` goes when it abandons its mission: ECMAINT's
 /// nearest friendly world (`24a3:0876`, flag 1), which is ECGAME's picker
@@ -32,29 +33,29 @@ pub(crate) fn nearest_friendly_world(
 }
 
 pub(super) fn set_fleet_to_hold_current_position(fleet: &mut nc_data::Fleet) {
-    let coords = fleet.current_location_coords_raw();
-    fleet.set_current_speed(0);
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_standing_order_target_coords_raw(coords);
-    fleet.set_at_rest_motion();
+    let coords = fleet.sector.to_array();
+    fleet.speed = 0;
+    fleet.order = Order::HoldPosition;
+    fleet.target = Coords::from_array(coords);
+    set_fleet_at_rest(fleet);
 }
 
 /// Seek Home to `retreat_target` as the order path writes it: world target,
 /// no mission id, full speed.
 fn apply_retreat_order(fleet: &mut nc_data::Fleet, retreat_target: [u8; 2]) {
-    fleet.set_standing_order_kind(Order::SeekHome);
-    fleet.set_standing_order_target_coords_raw(retreat_target);
-    fleet.set_mission_target(1, 0);
-    fleet.set_current_speed(fleet.max_speed());
+    fleet.order = Order::SeekHome;
+    fleet.target = Coords::from_array(retreat_target);
+    set_mission_target(fleet, 1, 0);
+    fleet.speed = fleet.max_speed;
 }
 
 /// Hold where the fleet is, leaving its position and depth as they are.
 fn hold_in_place(fleet: &mut nc_data::Fleet) {
-    let coords = fleet.current_location_coords_raw();
-    fleet.set_current_speed(0);
-    fleet.set_standing_order_kind(Order::HoldPosition);
-    fleet.set_standing_order_target_coords_raw(coords);
-    fleet.set_mission_target(0, 0);
+    let coords = fleet.sector.to_array();
+    fleet.speed = 0;
+    fleet.order = Order::HoldPosition;
+    fleet.target = Coords::from_array(coords);
+    set_mission_target(fleet, 0, 0);
 }
 
 pub(crate) fn abort_mission_to_seek_home_or_hold(
@@ -81,15 +82,15 @@ pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
 pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &TaskForce) {
     for &idx in &task_force.fleet_indices {
         let fleet = &mut game_data.fleets[idx];
-        if fleet.destroyer_count() == 0
-            && fleet.cruiser_count() == 0
-            && fleet.battleship_count() == 0
-            && fleet.scout_count() == 0
-            && fleet.troop_transport_count() == 0
-            && fleet.etac_count() == 0
+        if fleet.ships.destroyers == 0
+            && fleet.ships.cruisers == 0
+            && fleet.ships.battleships == 0
+            && fleet.ships.scouts == 0
+            && troop_transports(fleet) == 0
+            && fleet.ships.etacs == 0
         {
             set_fleet_to_hold_current_position(fleet);
-            fleet.set_rules_of_engagement(0);
+            fleet.rules_of_engagement = 0;
             continue;
         }
 

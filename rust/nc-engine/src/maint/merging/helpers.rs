@@ -1,10 +1,11 @@
 use crate::CoreGameData;
+use nc_data::recompute_max_speed;
 
 /// A merge must not lose ships: refuse it when the scout word could not hold
 /// both fleets' scouts. The fleets then stay separate.
 pub(super) fn merge_fits_host(game_data: &CoreGameData, host_idx: usize, donor_idx: usize) -> bool {
-    let host_scouts = game_data.fleets[host_idx].scout_count();
-    let donor_scouts = game_data.fleets[donor_idx].scout_count();
+    let host_scouts = game_data.fleets[host_idx].ships.scouts;
+    let donor_scouts = game_data.fleets[donor_idx].ships.scouts;
     host_scouts.checked_add(donor_scouts).is_some()
 }
 
@@ -13,22 +14,22 @@ pub(super) fn merge_one_fleet_into_host(
     host_idx: usize,
     donor_idx: usize,
 ) {
-    let bb = game_data.fleets[donor_idx].battleship_count();
-    let ca = game_data.fleets[donor_idx].cruiser_count();
-    let dd = game_data.fleets[donor_idx].destroyer_count();
-    let empty_tt = game_data.fleets[donor_idx].empty_transport_count();
-    let loaded_tt = game_data.fleets[donor_idx].loaded_transport_count();
-    let et = game_data.fleets[donor_idx].etac_count();
-    let sc = game_data.fleets[donor_idx].scout_count();
+    let bb = game_data.fleets[donor_idx].ships.battleships;
+    let ca = game_data.fleets[donor_idx].ships.cruisers;
+    let dd = game_data.fleets[donor_idx].ships.destroyers;
+    let empty_tt = game_data.fleets[donor_idx].ships.empty_transports;
+    let loaded_tt = game_data.fleets[donor_idx].ships.loaded_transports;
+    let et = game_data.fleets[donor_idx].ships.etacs;
+    let sc = game_data.fleets[donor_idx].ships.scouts;
 
     let host = &mut game_data.fleets[host_idx];
-    host.set_battleship_count(host.battleship_count().saturating_add(bb));
-    host.set_cruiser_count(host.cruiser_count().saturating_add(ca));
-    host.set_destroyer_count(host.destroyer_count().saturating_add(dd));
-    host.set_empty_transport_count(host.empty_transport_count().saturating_add(empty_tt));
-    host.set_loaded_transport_count(host.loaded_transport_count().saturating_add(loaded_tt));
-    host.set_etac_count(host.etac_count().saturating_add(et));
-    host.set_scout_count(host.scout_count().saturating_add(sc));
+    host.ships.battleships = host.ships.battleships.saturating_add(bb);
+    host.ships.cruisers = host.ships.cruisers.saturating_add(ca);
+    host.ships.destroyers = host.ships.destroyers.saturating_add(dd);
+    host.ships.empty_transports = host.ships.empty_transports.saturating_add(empty_tt);
+    host.ships.loaded_transports = host.ships.loaded_transports.saturating_add(loaded_tt);
+    host.ships.etacs = host.ships.etacs.saturating_add(et);
+    host.ships.scouts = host.ships.scouts.saturating_add(sc);
     // 2895:4a6b leaves the host's ROE alone.
-    host.recompute_max_speed_from_composition();
+    recompute_max_speed(host);
 }

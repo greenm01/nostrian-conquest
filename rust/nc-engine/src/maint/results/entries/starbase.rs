@@ -37,7 +37,7 @@ pub fn push_starbase_entries(
             } => {
                 let planet = planet_idx
                     .and_then(|idx| game_data.planets.get(idx))
-                    .map_or_else(String::new, |planet| planet.planet_name());
+                    .map_or_else(String::new, |planet| planet.name.clone());
                 let action = match response {
                     LostWorldResponse::Holding => {
                         "we are holding our current position and awaiting new orders.".to_string()
@@ -93,11 +93,9 @@ pub fn starbase_at(game_data: &CoreGameData, owner: u8, coords: [u8; 2]) -> Stri
         .bases
         .iter()
         .find(|base| {
-            base.coords_raw() == coords
-                && base.owner_empire_raw() == owner
-                && base.base_id_raw() != 0
+            base.sector.to_array() == coords && base.owner.0 == owner && base.base_id.0 != 0
         })
-        .map(|base| format!("Starbase {}", base.base_id_raw()))
+        .map(|base| format!("Starbase {}", base.base_id.0))
         .unwrap_or_else(|| "the assigned starbase".to_string())
 }
 

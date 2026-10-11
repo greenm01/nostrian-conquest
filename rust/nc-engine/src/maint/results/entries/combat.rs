@@ -22,10 +22,10 @@ pub fn push_combat_entries(
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
-        let [x, y] = planet.coords_raw();
+        let [x, y] = planet.sector.to_array();
         let source = format!(
             "From planet \"{}\" in System({x},{y}):",
-            planet.planet_name()
+            planet.name.clone()
         );
         let header = report_header(&source, event.stardate_week, year);
         let attacker = classic_enemy_reference_titlecase(
@@ -384,7 +384,7 @@ pub fn push_combat_entries(
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
             continue;
         };
-        let [x, y] = planet.coords_raw();
+        let [x, y] = planet.sector.to_array();
         let attacker_force = assault_attacker_force_summary(event);
         let source =
             owned_fleet_source_clause(event.attacker_fleet_number, &format!("System({x},{y})"));
@@ -399,7 +399,7 @@ pub fn push_combat_entries(
             }
             (Mission::BlitzWorld, MissionOutcome::Succeeded) => Some(format!(
                 "We have seized planet \"{}\" in a fast assault.",
-                planet.planet_name()
+                planet.name.clone()
             )),
             (Mission::BlitzWorld, MissionOutcome::Failed) => {
                 Some("The blitz attack failed.".to_string())
@@ -408,7 +408,7 @@ pub fn push_combat_entries(
         };
         let context_rows = vec![StructuredBodyItem::Label {
             label: LABEL_TARGET_WORLD.to_string(),
-            value: format!("planet \"{}\"", planet.planet_name()),
+            value: format!("planet \"{}\"", planet.name.clone()),
         }];
         let mut force_rows = vec![
             StructuredBodyItem::Label {
@@ -494,7 +494,7 @@ pub fn push_combat_entries(
 
         let defender_source = format!(
             "From planet \"{}\" in System({x},{y}):",
-            planet.planet_name()
+            planet.name.clone()
         );
         let defender_header = report_header(&defender_source, event.stardate_week, year);
         let attacker = classic_enemy_reference_titlecase(

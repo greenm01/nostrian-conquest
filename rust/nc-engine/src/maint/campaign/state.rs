@@ -4,8 +4,8 @@ use super::super::{
 };
 use crate::{CoreGameData, DiplomaticRelation};
 use nc_data::{
-    CampaignOutcome, CampaignOutlook, PlayerLifecycleState, TerminalOutcome, WinnerState,
-    empire_has_recovery_path, is_campaign_contender, is_contesting_empire,
+    CampaignOutcome, CampaignOutlook, PlayerLifecycleState, PlayerMode, TerminalOutcome,
+    WinnerState, empire_has_recovery_path, is_campaign_contender, is_contesting_empire,
 };
 
 const RECOVERY_WINDOW_TURNS: u8 = 3;
@@ -173,7 +173,7 @@ pub(super) fn apply_campaign_state_transitions(
             unreachable!();
         };
         winner_state.winner_empire_raw = Some(emperor_empire_raw);
-        winner_state.winner_declared_year = Some(game_data.conquest.game_year());
+        winner_state.winner_declared_year = Some(game_data.conquest.game_year);
         if let Some(lifecycle) = player_lifecycle_states.get_mut(emperor_empire_raw as usize - 1) {
             lifecycle.terminal_outcome = TerminalOutcome::Winner;
             lifecycle.terminal_review_consumed = false;
@@ -230,7 +230,7 @@ pub(super) fn apply_civil_disorder_fleet_defections(
         let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
             continue;
         };
-        if player.owner_mode_raw() != 0x00 {
+        if player.mode.to_raw() != 0x00 {
             continue;
         }
         if newly_defeated
@@ -242,7 +242,7 @@ pub(super) fn apply_civil_disorder_fleet_defections(
         if game_data
             .planets
             .iter()
-            .any(|planet| planet.owner_empire_slot_raw() == empire_raw)
+            .any(|planet| planet.owner.0 == empire_raw)
         {
             continue;
         }
@@ -252,15 +252,15 @@ pub(super) fn apply_civil_disorder_fleet_defections(
             .iter()
             .enumerate()
             .filter(|(_, fleet)| {
-                fleet.owner_empire_raw() == empire_raw && super::super::fleet_has_presence(fleet)
+                fleet.owner.0 == empire_raw && super::super::fleet_has_presence(fleet)
             })
-            .max_by_key(|(_, fleet)| fleet.fleet_id());
+            .max_by_key(|(_, fleet)| fleet.record.0);
 
         if let Some((fleet_idx, fleet)) = candidate {
             to_remove[fleet_idx] = true;
             events.push(FleetDefectionEvent {
                 reporting_empire_raw: empire_raw,
-                fleet_number: fleet.local_slot_word_raw() as u8,
+                fleet_number: fleet.fleet_number.0 as u8,
                 stardate_week: None,
             });
         }
@@ -322,7 +322,7 @@ fn defeat_empire(
         .players
         .get_mut(empire_raw.saturating_sub(1) as usize)
     {
-        player.set_owner_empire_raw(0x00);
+        player.mode = PlayerMode::CivilDisorder;
     }
     let (victor_empire_raw, planet_idx, coords) = context.unwrap_or((None, None, None));
     events.push(EmpireEliminationEvent {
@@ -351,7 +351,7 @@ fn elimination_context(
                 let coords = game_data
                     .planets
                     .get(event.planet_idx)
-                    .map(|planet| planet.coords_raw());
+                    .map(|planet| planet.sector.to_array());
                 (
                     Some(event.new_owner_empire_raw),
                     Some(event.planet_idx),
@@ -389,18 +389,18 @@ fn owned_planet_count(game_data: &CoreGameData, empire_raw: u8) -> usize {
     game_data
         .planets
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
+        .filter(|planet| planet.owner.0 == empire_raw)
         .count()
 }
 
 fn is_joined_empire(player: &nc_data::Player) -> bool {
-    !matches!(player.owner_mode_raw(), 0x00 | 0xff)
+    !matches!(player.mode.to_raw(), 0x00 | 0xff)
 }
 
 fn is_rogue_empire(game_data: &CoreGameData, empire_raw: u8) -> bool {
     game_data
         .players
         .get(empire_raw.saturating_sub(1) as usize)
-        .map(|player| player.owner_mode_raw() == 0xff)
+        .map(|player| player.mode.to_raw() == 0xff)
         .unwrap_or(false)
 }

@@ -137,10 +137,10 @@ pub fn fleet_record_supports_requirement(
     requirement: FleetMissionRequirement,
 ) -> bool {
     let has_combat =
-        fleet.battleship_count() > 0 || fleet.cruiser_count() > 0 || fleet.destroyer_count() > 0;
-    let has_loaded_troops = fleet.army_count() > 0;
-    let has_scout = fleet.scout_count() > 0;
-    let has_etac = fleet.etac_count() > 0;
+        fleet.ships.battleships > 0 || fleet.ships.cruisers > 0 || fleet.ships.destroyers > 0;
+    let has_loaded_troops = fleet.ships.loaded_transports > 0;
+    let has_scout = fleet.ships.scouts > 0;
+    let has_etac = fleet.ships.etacs > 0;
 
     match requirement {
         FleetMissionRequirement::Any => true,

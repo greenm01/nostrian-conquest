@@ -2,8 +2,9 @@
 //! dispatch, and the strike a hostile order makes when its test passes.
 
 use nc_data::{
-    DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
-    MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent,
+    Coords, DiplomacyOverride, DiplomaticRelation, EncounterDispositionReason, GameRng, Mission,
+    MissionAbortReason, Order, Real48, StarbaseAlert, StarbaseSightingEvent, has_any_force,
+    troop_transports,
 };
 
 use super::rules::{
@@ -89,7 +90,7 @@ impl Year<'_> {
         events.stamp(tick);
         self.assault_events.append(events);
         self.movement.reload(fleet_idx);
-        self.units[unit].active = game_data.fleets[fleet_idx].has_any_force();
+        self.units[unit].active = has_any_force(&game_data.fleets[fleet_idx]);
     }
 
     /// The orbital gate, classic's starbase gate (`110a:67bd`) extended to
@@ -124,11 +125,10 @@ impl Year<'_> {
                         UnitKind::Base => true,
                         UnitKind::Fleet => {
                             let fleet = &game_data.fleets[u.index];
-                            (fleet.destroyer_count() > 0
-                                || fleet.cruiser_count() > 0
-                                || fleet.battleship_count() > 0)
-                                && !(fleet.standing_order_kind() == Order::SeekHome
-                                    && fleet.current_speed() > 0)
+                            (fleet.ships.destroyers > 0
+                                || fleet.ships.cruisers > 0
+                                || fleet.ships.battleships > 0)
+                                && !(fleet.order == Order::SeekHome && fleet.speed > 0)
                         }
                     }
             })
@@ -136,7 +136,7 @@ impl Year<'_> {
         if defenders.is_empty() {
             return true;
         }
-        let order = game_data.fleets[fleet_idx].standing_order_kind();
+        let order = game_data.fleets[fleet_idx].order;
         let facts = self.fleet_facts(game_data, fleet_idx);
         let defence = defenders
             .iter()
@@ -173,14 +173,14 @@ impl Year<'_> {
         let battle_key = ORBITAL_GATE_BATTLE | u64::from(tick) | (unit as u64) << 8;
         self.fight(game_data, tick, battle_key, sector, &attacker, &defender);
         let fleet = &game_data.fleets[fleet_idx];
-        fleet.has_any_force() && fleet.standing_order_kind() == order
+        has_any_force(fleet) && fleet.order == order
     }
 
     /// Move fleet unit `unit`'s table entry to where its record now is; a
     /// unit that changes sector or layer is forgotten by every empire.
     fn follow_fleet(&mut self, game_data: &CoreGameData, unit: usize) {
         let fleet = &game_data.fleets[self.units[unit].index];
-        let (sector, layer) = (fleet.current_location_coords_raw(), layer_of(fleet.depth()));
+        let (sector, layer) = (fleet.sector.to_array(), layer_of(fleet.depth));
         let entry = &mut self.units[unit];
         if (entry.sector, entry.layer) != (sector, layer) {
             entry.sector = sector;
@@ -195,16 +195,16 @@ impl Year<'_> {
     fn follow_base_step(&mut self, game_data: &CoreGameData, unit: usize, step: &BaseStep) {
         let base = &game_data.bases[self.units[unit].index];
         let entry = &mut self.units[unit];
-        entry.sector = base.coords_raw();
-        entry.layer = layer_of(base.depth());
+        entry.sector = base.sector.to_array();
+        entry.layer = layer_of(base.depth);
         if step.moved_cell {
             self.awareness.forget(unit);
         }
         if let Some(escort) = step.escort.and_then(|fleet_idx| self.fleet_unit(fleet_idx)) {
             let fleet = &game_data.fleets[self.units[escort].index];
             let entry = &mut self.units[escort];
-            entry.sector = fleet.current_location_coords_raw();
-            entry.layer = layer_of(fleet.depth());
+            entry.sector = fleet.sector.to_array();
+            entry.layer = layer_of(fleet.depth);
             if step.moved_cell {
                 self.awareness.forget(escort);
             }
@@ -233,21 +233,21 @@ impl Year<'_> {
         let fleet = &game_data.fleets[fleet_idx];
         let (order, target_flag) = self.movement.effective_order(game_data, fleet_idx);
         FleetFacts {
-            owner: fleet.owner_empire_raw(),
+            owner: fleet.owner.0,
             order: order.to_raw(),
-            sector: fleet.current_location_coords_raw(),
-            layer: layer_of(fleet.depth()),
-            target: fleet.standing_order_target_coords_raw(),
+            sector: fleet.sector.to_array(),
+            layer: layer_of(fleet.depth),
+            target: fleet.target.to_array(),
             target_layer: target_flag.min(1),
-            speed: fleet.current_speed(),
-            max_speed: fleet.max_speed(),
-            roe: fleet.rules_of_engagement(),
-            battleships: fleet.battleship_count(),
-            cruisers: fleet.cruiser_count(),
-            destroyers: fleet.destroyer_count(),
-            transports: fleet.troop_transport_count(),
-            etacs: fleet.etac_count(),
-            scouts: u16::from(fleet.scout_count()),
+            speed: fleet.speed,
+            max_speed: fleet.max_speed,
+            roe: fleet.rules_of_engagement,
+            battleships: fleet.ships.battleships,
+            cruisers: fleet.ships.cruisers,
+            destroyers: fleet.ships.destroyers,
+            transports: troop_transports(fleet),
+            etacs: fleet.ships.etacs,
+            scouts: fleet.ships.scouts,
         }
     }
 
@@ -276,12 +276,12 @@ impl Year<'_> {
         } = self.units[observer];
         // A base under way does not scan.
         let base = &game_data.bases[base_idx];
-        if base.coords_raw() != base.target_coords_raw()
-            || base.depth() != Real48::from_int(i32::from(base.target_depth_raw()))
+        if base.sector != base.target
+            || base.depth != Real48::from_int(i32::from(base.target_depth))
         {
             return;
         }
-        let base_id = base.base_id_raw();
+        let base_id = base.base_id.0;
         let factor = base_factor(layer);
         for target in 0..self.units.len() {
             if !self.meets(observer, target) {
@@ -325,7 +325,7 @@ impl Year<'_> {
                             coords: sector,
                             in_system: layer == 1,
                             target_empire_raw: unit.owner,
-                            target_starbase_id: target_base.base_id_raw(),
+                            target_starbase_id: target_base.base_id.0,
                             alerting,
                             stardate_week: Some(tick),
                         });
@@ -463,7 +463,7 @@ impl Year<'_> {
                     let defense = BASE_STRENGTH.wrapping_add(guard.map_or(0, |g| {
                         strength(&self.fleet_facts(game_data, self.units[g].index))
                     }));
-                    let declared = self.declared_enemy(game_data, owner, base.owner_empire_raw());
+                    let declared = self.declared_enemy(game_data, owner, base.owner.0);
                     let verdict = decide_vs_base(&facts, defense, declared);
                     if verdict == Verdict::Aborted {
                         let report = (aware <= 1).then_some(tick);
@@ -507,7 +507,7 @@ impl Year<'_> {
     /// The first active fleet guarding base unit `base` (`1b05:21de`).
     fn guard_fleet_of(&self, game_data: &CoreGameData, base: usize) -> Option<usize> {
         let b = self.units[base];
-        let base_id = game_data.bases[b.index].base_id_raw();
+        let base_id = game_data.bases[b.index].base_id.0;
         (0..self.units.len()).find(|&unit| {
             let u = self.units[unit];
             u.kind == UnitKind::Fleet
@@ -517,8 +517,7 @@ impl Year<'_> {
                 && u.layer == b.layer
                 && {
                     let fleet = &game_data.fleets[u.index];
-                    fleet.standing_order_kind() == Order::GuardStarbase
-                        && fleet.guard_starbase_index_raw() == base_id
+                    fleet.order == Order::GuardStarbase && fleet.mission_target == base_id
                 }
         })
     }
@@ -527,7 +526,7 @@ impl Year<'_> {
     fn guarded_base_of(&self, game_data: &CoreGameData, fleet_unit: usize) -> Option<usize> {
         let f = self.units[fleet_unit];
         let fleet = &game_data.fleets[f.index];
-        if fleet.standing_order_kind() != Order::GuardStarbase || fleet.current_speed() != 0 {
+        if fleet.order != Order::GuardStarbase || fleet.speed != 0 {
             return None;
         }
         (0..self.units.len()).find(|&unit| {
@@ -537,7 +536,7 @@ impl Year<'_> {
                 && u.owner == f.owner
                 && u.sector == f.sector
                 && u.layer == f.layer
-                && game_data.bases[u.index].base_id_raw() == fleet.guard_starbase_index_raw()
+                && game_data.bases[u.index].base_id.0 == fleet.mission_target
         })
     }
 
@@ -605,8 +604,8 @@ impl Year<'_> {
         }
         for unit in &mut self.units {
             unit.active = match unit.kind {
-                UnitKind::Fleet => unit.active && game_data.fleets[unit.index].has_any_force(),
-                UnitKind::Base => game_data.bases[unit.index].base_id_raw() != 0,
+                UnitKind::Fleet => unit.active && has_any_force(&game_data.fleets[unit.index]),
+                UnitKind::Base => game_data.bases[unit.index].base_id.0 != 0,
             };
         }
     }
@@ -623,8 +622,8 @@ impl Year<'_> {
         report: Option<u8>,
     ) {
         let fleet = &game_data.fleets[fleet_idx];
-        let coords = fleet.current_location_coords_raw();
-        let order = fleet.standing_order_kind();
+        let coords = fleet.sector.to_array();
+        let order = fleet.order;
         let kind = match order {
             Order::ColonizeWorld => Some(Mission::ColonizeWorld),
             other => mission_kind_for_order(Some(other)),
@@ -633,20 +632,20 @@ impl Year<'_> {
         let fleet = &mut game_data.fleets[fleet_idx];
         match (home, fallback) {
             (Some(home), _) => {
-                fleet.set_standing_order_kind(Order::SeekHome);
-                fleet.set_standing_order_target_coords_raw(home);
-                fleet.set_mission_target(1, fleet.mission_id_raw());
-                fleet.set_current_speed(fleet.max_speed());
+                fleet.order = Order::SeekHome;
+                fleet.target = Coords::from_array(home);
+                fleet.target_depth = 1;
+                fleet.speed = fleet.max_speed;
             }
             (None, AbortFallback::ClimbOut) => {
-                fleet.set_standing_order_kind(Order::MoveOnly);
-                fleet.set_standing_order_target_coords_raw(coords);
-                fleet.set_mission_target(0, fleet.mission_id_raw());
-                fleet.set_current_speed(fleet.max_speed());
+                fleet.order = Order::MoveOnly;
+                fleet.target = Coords::from_array(coords);
+                fleet.target_depth = 0;
+                fleet.speed = fleet.max_speed;
             }
             (None, AbortFallback::Hold) => {
-                fleet.set_standing_order_kind(Order::HoldPosition);
-                fleet.set_current_speed(0);
+                fleet.order = Order::HoldPosition;
+                fleet.speed = 0;
             }
         }
         if let Some(tick) = report {
@@ -668,19 +667,19 @@ impl Year<'_> {
             return;
         };
         let fleet = &game_data.fleets[fleet_idx];
-        let coords = fleet.current_location_coords_raw();
+        let coords = fleet.sector.to_array();
         self.events.mission_events.push(MissionEvent {
             fleet_idx,
-            owner_empire_raw: fleet.owner_empire_raw(),
+            owner_empire_raw: fleet.owner.0,
             kind,
             outcome: MissionOutcome::Aborted,
             abort_reason: Some(MissionAbortReason::OrbitBlocked),
             planet_idx: game_data
                 .planets
                 .iter()
-                .position(|planet| planet.coords_raw() == coords),
+                .position(|planet| planet.sector.to_array() == coords),
             location_coords: Some(coords),
-            target_coords: Some(fleet.standing_order_target_coords_raw()),
+            target_coords: Some(fleet.target.to_array()),
             stardate_week: Some(tick),
         });
     }
@@ -692,8 +691,8 @@ fn world_owner_at(game_data: &CoreGameData, sector: [u8; 2]) -> Option<u8> {
     game_data
         .planets
         .iter()
-        .find(|planet| planet.coords_raw() == sector)
-        .map(|planet| planet.owner_empire_slot_raw())
+        .find(|planet| planet.sector.to_array() == sector)
+        .map(|planet| planet.owner.0)
 }
 
 /// Where an aborting fleet goes with no friendly world to seek.

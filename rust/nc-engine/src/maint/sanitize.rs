@@ -3,6 +3,10 @@ use crate::{
     CoreGameData, FleetOrderValidationError, FleetPlayerInputValidationError, Order,
     PlayerDiplomacyValidationError, ProductionItemKind,
 };
+use nc_data::{
+    Coords, DiplomaticRelation, set_diplomatic_relation_toward, set_mission_target,
+    stardock_slot_kind, stored_diplomatic_relation,
+};
 
 fn capability_loss_requires_abort_and_seek_home(reason: FleetOrderValidationError) -> bool {
     matches!(
@@ -24,10 +28,10 @@ pub(super) fn sanitize_invalid_player_inputs(
         while rescan {
             rescan = false;
             let fleet = &game_data.fleets[fleet_idx];
-            let order_code = fleet.standing_order_code_raw();
-            let target = fleet.standing_order_target_coords_raw();
-            let owner_empire_raw = fleet.owner_empire_raw();
-            let coords = fleet.current_location_coords_raw();
+            let order_code = fleet.order.to_raw();
+            let target = fleet.target.to_array();
+            let owner_empire_raw = fleet.owner.0;
+            let coords = fleet.sector.to_array();
             if let Err(reason) = game_data.validate_fleet_player_inputs(
                 fleet_idx + 1,
                 order_code,
@@ -44,7 +48,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         // the HostDestroyed path.
                         let is_post_cull_join_sentinel =
                             matches!(reason, FleetOrderValidationError::InvalidJoinHost)
-                                && game_data.fleets[fleet_idx].join_host_fleet_id_raw() == 0;
+                                && game_data.fleets[fleet_idx].mission_target == 0;
                         let should_sanitize = !is_post_cull_join_sentinel
                             && matches!(
                                 reason,
@@ -69,10 +73,10 @@ pub(super) fn sanitize_invalid_player_inputs(
                                 retreat_target,
                             );
                         } else {
-                            fleet.set_standing_order_kind(Order::HoldPosition);
-                            fleet.set_current_speed(0);
-                            fleet.set_standing_order_target_coords_raw(coords);
-                            fleet.set_mission_target(0, 0);
+                            fleet.order = Order::HoldPosition;
+                            fleet.speed = 0;
+                            fleet.target = Coords::from_array(coords);
+                            set_mission_target(fleet, 0, 0);
                         }
                         events.push(InvalidPlayerStateEvent::FleetMission {
                             fleet_idx,
@@ -83,7 +87,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         });
                     }
                     FleetPlayerInputValidationError::SpeedExceedsMaximum { max, .. } => {
-                        game_data.fleets[fleet_idx].set_current_speed(max);
+                        game_data.fleets[fleet_idx].speed = max;
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -93,7 +97,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         rescan = true;
                     }
                     FleetPlayerInputValidationError::RulesOfEngagementOutOfRange { .. } => {
-                        game_data.fleets[fleet_idx].set_rules_of_engagement(10);
+                        game_data.fleets[fleet_idx].rules_of_engagement = 10;
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -103,7 +107,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         rescan = true;
                     }
                     FleetPlayerInputValidationError::NonCombatFleetMustUseZeroRoe { .. } => {
-                        game_data.fleets[fleet_idx].set_rules_of_engagement(0);
+                        game_data.fleets[fleet_idx].rules_of_engagement = 0;
                         events.push(InvalidPlayerStateEvent::FleetInput {
                             fleet_idx,
                             owner_empire_raw,
@@ -121,8 +125,8 @@ pub(super) fn sanitize_invalid_player_inputs(
         let (owner_empire_raw, coords, reason_opt) = {
             let planet = &game_data.planets[planet_idx];
             (
-                planet.owner_empire_slot_raw(),
-                planet.coords_raw(),
+                planet.owner.0,
+                planet.sector.to_array(),
                 game_data
                     .validate_planet_player_inputs(planet_idx + 1)
                     .err(),
@@ -131,8 +135,8 @@ pub(super) fn sanitize_invalid_player_inputs(
         if let Some(reason) = reason_opt {
             let planet = &mut game_data.planets[planet_idx];
             for slot in 0..10 {
-                let build_count = planet.build_count_raw(slot);
-                let build_kind = planet.build_kind_raw(slot);
+                let build_count = planet.build_queue[slot].points_owed;
+                let build_kind = planet.build_queue[slot].kind.to_raw();
                 if build_count == 0 && build_kind != 0
                     || build_count != 0
                         && matches!(
@@ -140,13 +144,13 @@ pub(super) fn sanitize_invalid_player_inputs(
                             ProductionItemKind::Unknown(_)
                         )
                 {
-                    planet.set_build_count_raw(slot, 0);
-                    planet.set_build_kind_raw(slot, 0);
+                    planet.build_queue[slot].points_owed = 0;
+                    planet.build_queue[slot].kind = ProductionItemKind::Unknown(0);
                 }
             }
             for slot in 0..crate::STARDOCK_SLOT_COUNT {
-                let stardock_count = planet.stardock_count_raw(slot);
-                let stardock_kind = planet.stardock_kind_raw(slot);
+                let stardock_count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
+                let stardock_kind = stardock_slot_kind(planet, slot).to_raw();
                 if stardock_count == 0 && stardock_kind != 0
                     || stardock_count != 0
                         && matches!(
@@ -154,7 +158,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                             ProductionItemKind::Unknown(_)
                         )
                 {
-                    planet.set_stardock_count_raw(slot, 0);
+                    planet.stardock[slot] = 0;
                 }
             }
             events.push(InvalidPlayerStateEvent::PlanetInput {
@@ -167,9 +171,9 @@ pub(super) fn sanitize_invalid_player_inputs(
     }
 
     for player_idx in 0..game_data.players.len() {
-        let tax_rate = game_data.players[player_idx].tax_rate();
+        let tax_rate = game_data.players[player_idx].tax_rate;
         if tax_rate > 100 {
-            game_data.players[player_idx].set_tax_rate_raw(100);
+            game_data.players[player_idx].tax_rate = 100;
             events.push(InvalidPlayerStateEvent::PlayerTaxRate {
                 player_idx,
                 owner_empire_raw: (player_idx + 1) as u8,
@@ -180,9 +184,8 @@ pub(super) fn sanitize_invalid_player_inputs(
         for target_empire_raw in 1..=player_count {
             let reason = {
                 let player = &game_data.players[player_idx];
-                let raw = player
-                    .diplomatic_relation_byte_raw(target_empire_raw)
-                    .unwrap_or(0);
+                let raw = stored_diplomatic_relation(player, target_empire_raw)
+                    .map_or(0, DiplomaticRelation::to_raw);
                 let empire_raw = (player_idx + 1) as u8;
                 if target_empire_raw == empire_raw {
                     (raw != 0).then_some(PlayerDiplomacyValidationError::SelfTarget { empire_raw })
@@ -196,8 +199,11 @@ pub(super) fn sanitize_invalid_player_inputs(
                 }
             };
             if let Some(reason) = reason {
-                let _ = game_data.players[player_idx]
-                    .set_diplomatic_relation_byte_raw(target_empire_raw, 0x00);
+                let _ = set_diplomatic_relation_toward(
+                    &mut game_data.players[player_idx],
+                    target_empire_raw,
+                    DiplomaticRelation::Neutral,
+                );
                 events.push(InvalidPlayerStateEvent::DiplomacyInput {
                     player_idx,
                     owner_empire_raw: (player_idx + 1) as u8,

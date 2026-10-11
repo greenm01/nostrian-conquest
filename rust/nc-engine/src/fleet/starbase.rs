@@ -9,11 +9,11 @@ pub fn guard_fleet_numbers_for_starbase(
         .fleets
         .iter()
         .filter(|fleet| {
-            fleet.owner_empire_raw() as usize == player_record_index_1_based
-                && fleet.standing_order_kind() == Order::GuardStarbase
-                && fleet.guard_starbase_index_raw() == base_id
+            fleet.owner.0 as usize == player_record_index_1_based
+                && fleet.order == Order::GuardStarbase
+                && fleet.mission_target == base_id
         })
-        .map(|fleet| fleet.local_slot_word_raw())
+        .map(|fleet| fleet.fleet_number.0)
         .collect::<Vec<_>>();
     fleets.sort_unstable();
     fleets.dedup();
