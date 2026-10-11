@@ -1,5 +1,14 @@
 use crate::CoreGameData;
-use nc_data::recompute_max_speed;
+use nc_data::{recompute_max_speed, starship_count};
+
+/// A fleet cannot grow past this many ships by merging (`2895:3057`).
+const MAX_MERGED_SHIPS: u32 = 3000;
+
+/// Whether two fleets merged would stay within the ship limit.
+pub(in crate::maint) fn merge_fits(game_data: &CoreGameData, host: usize, donor: usize) -> bool {
+    let fleets = &game_data.fleets;
+    starship_count(&fleets[host]) + starship_count(&fleets[donor]) <= MAX_MERGED_SHIPS
+}
 
 /// A merge must not lose ships: refuse it when the scout word could not hold
 /// both fleets' scouts. The fleets then stay separate.

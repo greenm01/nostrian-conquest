@@ -7,14 +7,15 @@
 //! Rust agreed on every record). Empire 2 is the rogue empire: its home world
 //! (4,13) has production 100, and it also owns (12,12) at production 2. Its
 //! other three fleets are parked in deep space on Hold, spread out so the
-//! rogue fleet consolidation finds nothing to merge.
+//! merge pass finds nothing to merge.
 
 mod common;
 
 use common::move_scenario::*;
 use nc_data::{
     Coords, CoreGameData, DiplomaticRelation, EscapeEpisode, Fleet, GameRng, Order, PlayerMode,
-    RNG_TAG_ORDERS, Real48, stored_diplomatic_relation,
+    RNG_TAG_ORDERS, Real48, set_diplomatic_relation_toward, set_empire_name, set_player_handle,
+    stored_diplomatic_relation,
 };
 use nc_engine::run_maintenance_turn_with_seed;
 
@@ -489,6 +490,355 @@ fn a_rogue_base_measures_from_the_sector_corner() {
     assert!(game_data.bases[base].moving);
 }
 
+// ── Merges ──────────────────────────────────────────────────────────────
+//
+// The merge pass (`24a3:216f`, probed 2026-10-11 under DOSBox-X on the move
+// fixture with Rust agreeing on every record) joins co-located fleets only in
+// orbit of the playing empire's own worlds, before the empire's orders.
+
+/// Fleet `n` as `destroyers` destroyers on Hold at the center of `sector`.
+fn hold_destroyers(
+    game_data: &mut CoreGameData,
+    n: usize,
+    sector: [u8; 2],
+    depth: Real48,
+    destroyers: u16,
+) {
+    let fleet = rogue(game_data, n);
+    set_ships(fleet, 0, 0, destroyers, 0, 0);
+    let target_depth = u8::from(depth == Real48::ONE);
+    set_fleet(
+        fleet,
+        sector,
+        depth,
+        Order::HoldPosition,
+        sector,
+        target_depth,
+        0,
+        3,
+    );
+}
+
+/// Empire 2's fleets.
+fn rogue_fleets(game_data: &CoreGameData) -> Vec<&Fleet> {
+    game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 2)
+        .collect()
+}
+
+/// The fleet of empire 2 with this number, if it is still there.
+fn rogue_fleet_numbered(game_data: &CoreGameData, number: u16) -> Option<&Fleet> {
+    rogue_fleets(game_data)
+        .into_iter()
+        .find(|fleet| fleet.fleet_number.0 == number)
+}
+
+#[test]
+fn rogue_fleets_in_orbit_of_their_own_world_merge_into_the_first_whatever_their_orders() {
+    // A Move fleet under way, a Hold fleet, and an ETAC on Guard/Blockade
+    // over the home world became one fleet, the first; the fourth fleet,
+    // elsewhere, stayed its own.
+    let mut game_data = rogue_scenario();
+    let mover = rogue(&mut game_data, 0);
+    set_ships(mover, 0, 1, 0, 0, 0);
+    set_fleet(
+        mover,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::MoveOnly,
+        [8, 13],
+        0,
+        3,
+        3,
+    );
+    hold_destroyers(&mut game_data, 1, ROGUE_HOME, Real48::ONE, 1);
+    let etac = rogue(&mut game_data, 2);
+    set_ships(etac, 0, 0, 0, 0, 1);
+    set_fleet(
+        etac,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        ROGUE_HOME,
+        1,
+        0,
+        0,
+    );
+    let first = rogue(&mut game_data, 0).fleet_number.0;
+
+    run(&mut game_data);
+
+    assert_eq!(rogue_fleets(&game_data).len(), 2);
+    let merged = rogue_fleet_numbered(&game_data, first).expect("the first fleet hosts");
+    let ships = &merged.ships;
+    assert_eq!((ships.cruisers, ships.destroyers, ships.etacs), (1, 1, 1));
+}
+
+#[test]
+fn rogue_fleets_elsewhere_do_not_merge() {
+    // Two fleets over a world the rogue does not own, in deep space, or in
+    // the deep layer of its home sector stayed apart.
+    for (sector, depth) in [
+        (UNOWNED_WORLD, Real48::ONE),
+        ([8, 13], Real48::ZERO),
+        (ROGUE_HOME, Real48::ZERO),
+    ] {
+        let mut game_data = rogue_scenario();
+        hold_destroyers(&mut game_data, 0, sector, depth, 1);
+        hold_destroyers(&mut game_data, 1, sector, depth, 1);
+
+        run(&mut game_data);
+
+        assert_eq!(rogue_fleets(&game_data).len(), 4, "{sector:?} at {depth:?}");
+    }
+}
+
+#[test]
+fn two_rogue_fleets_merge_only_up_to_3000_ships() {
+    // 1500 and 1500 destroyers merged; 1500 and 1501 stayed apart.
+    for (second, merged) in [(1500, true), (1501, false)] {
+        let mut game_data = rogue_scenario();
+        hold_destroyers(&mut game_data, 0, ROGUE_HOME, Real48::ONE, 1500);
+        hold_destroyers(&mut game_data, 1, ROGUE_HOME, Real48::ONE, second);
+
+        run(&mut game_data);
+
+        assert_eq!(
+            rogue_fleets(&game_data).len(),
+            if merged { 3 } else { 4 },
+            "{second}"
+        );
+    }
+}
+
+/// A Guard Starbase fleet of `destroyers` on `base_id`, and Hold destroyers
+/// beside it, over `sector`; `base_target_depth` 0 puts the base about to lift.
+fn guard_and_hold_pair(
+    game_data: &mut CoreGameData,
+    guard: usize,
+    hold: usize,
+    sector: [u8; 2],
+    base_id: u16,
+    base_target_depth: u8,
+) {
+    let fleet = rogue(game_data, guard);
+    set_ships(fleet, 0, 0, 1, 0, 0);
+    set_fleet(
+        fleet,
+        sector,
+        Real48::ONE,
+        Order::GuardStarbase,
+        sector,
+        1,
+        0,
+        10,
+    );
+    fleet.mission_target = base_id;
+    let escort = fleet.fleet_number.0;
+    hold_destroyers(game_data, hold, sector, Real48::ONE, 1);
+    add_base(game_data, 2, sector, Real48::ONE, base_target_depth, escort);
+}
+
+#[test]
+fn a_rogue_guard_starbase_fleet_hosts_over_a_base_at_rest_but_is_taken_in_over_a_lifting_one() {
+    // Home: the guard's base rests, so the guard hosts and takes the Hold
+    // fleet in. (12,12): the base is about to lift, so the guard cannot host
+    // and the Hold fleet takes it in.
+    let mut game_data = rogue_scenario();
+    guard_and_hold_pair(&mut game_data, 0, 1, ROGUE_HOME, 1, 1);
+    guard_and_hold_pair(&mut game_data, 2, 3, NEAR_WORLD, 2, 0);
+    let numbers: Vec<u16> = (0..4)
+        .map(|n| rogue(&mut game_data, n).fleet_number.0)
+        .collect();
+
+    run(&mut game_data);
+
+    assert_eq!(rogue_fleets(&game_data).len(), 2);
+    let host = rogue_fleet_numbered(&game_data, numbers[0]).expect("the resting guard hosts");
+    assert_eq!(host.ships.destroyers, 2);
+    let host = rogue_fleet_numbered(&game_data, numbers[3]).expect("the Hold fleet hosts");
+    assert_eq!(host.ships.destroyers, 2);
+}
+
+#[test]
+fn a_rogue_guard_starbase_fleet_that_names_no_base_never_hosts() {
+    // Owner-approved deviation: a guard with no base cannot host, even
+    // when classic's stale flag would permit it. The Hold fleet hosts.
+    let mut game_data = rogue_scenario();
+    let guard = rogue(&mut game_data, 0);
+    set_ships(guard, 0, 0, 1, 0, 0);
+    set_fleet(
+        guard,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardStarbase,
+        ROGUE_HOME,
+        1,
+        0,
+        10,
+    );
+    guard.mission_target = 9;
+    hold_destroyers(&mut game_data, 1, ROGUE_HOME, Real48::ONE, 1);
+    let first = rogue(&mut game_data, 0).fleet_number.0;
+    let hold = rogue(&mut game_data, 1).fleet_number.0;
+    let first_record = rogue(&mut game_data, 0).record;
+    let hold_record = rogue(&mut game_data, 1).record;
+    rogue(&mut game_data, 0).next = hold_record;
+    rogue(&mut game_data, 1).prev = first_record;
+    game_data.players[1].fleets_first = first_record;
+    game_data.players[1].fleets_last = hold_record;
+    keep_only(&mut game_data, &[0, 1]);
+
+    run(&mut game_data);
+
+    assert!(rogue_fleet_numbered(&game_data, first).is_none());
+    let host = rogue_fleet_numbered(&game_data, hold).expect("the Hold fleet hosts");
+    assert_eq!(host.ships.destroyers, 2);
+    assert_eq!(game_data.players[1].fleets_first, host.record);
+    assert_eq!(game_data.players[1].fleets_last, host.record);
+    assert_eq!(host.prev.0, 0);
+    assert_eq!(host.next.0, 0);
+
+    // The result is independent of an earlier guard over a lifting base:
+    // neither guard can host, and the Hold fleet takes both in.
+    let mut game_data = rogue_scenario();
+    guard_and_hold_pair(&mut game_data, 0, 2, ROGUE_HOME, 1, 0);
+    let nameless = rogue(&mut game_data, 1);
+    set_ships(nameless, 0, 0, 1, 0, 0);
+    set_fleet(
+        nameless,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardStarbase,
+        ROGUE_HOME,
+        1,
+        0,
+        10,
+    );
+    nameless.mission_target = 9;
+    let numbers: Vec<u16> = (0..3)
+        .map(|n| rogue(&mut game_data, n).fleet_number.0)
+        .collect();
+
+    run(&mut game_data);
+
+    assert!(rogue_fleet_numbered(&game_data, numbers[0]).is_none());
+    assert!(rogue_fleet_numbered(&game_data, numbers[1]).is_none());
+    let host = rogue_fleet_numbered(&game_data, numbers[2]).expect("the Hold fleet hosts");
+    assert_eq!(host.ships.destroyers, 3);
+}
+
+/// Empire 2 as a human empire on autopilot, owning the same two worlds.
+fn autopilot_scenario() -> CoreGameData {
+    let mut game_data = rogue_scenario();
+    game_data.players[1].mode = PlayerMode::Human;
+    game_data.players[1].autopilot = true;
+    game_data
+}
+
+#[test]
+fn an_autopilot_merges_hold_and_guard_blockade_fleets_at_rest_in_orbit_of_its_worlds() {
+    // Two Hold fleets and a Guard/Blockade fleet at rest over the home world
+    // became the first; a Move fleet over (12,12) with a Hold fleet, and a
+    // Guard/Blockade fleet that is under way, did not merge.
+    let mut game_data = autopilot_scenario();
+    hold_destroyers(&mut game_data, 0, ROGUE_HOME, Real48::ONE, 1);
+    hold_destroyers(&mut game_data, 1, ROGUE_HOME, Real48::ONE, 1);
+    let guard = rogue(&mut game_data, 2);
+    set_ships(guard, 0, 1, 0, 0, 0);
+    set_fleet(
+        guard,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        ROGUE_HOME,
+        1,
+        0,
+        6,
+    );
+    let first = rogue(&mut game_data, 0).fleet_number.0;
+
+    run(&mut game_data);
+
+    assert_eq!(rogue_fleets(&game_data).len(), 2);
+    let merged = rogue_fleet_numbered(&game_data, first).expect("the first fleet hosts");
+    assert_eq!((merged.ships.cruisers, merged.ships.destroyers), (1, 2));
+}
+
+#[test]
+fn an_autopilot_leaves_other_orders_and_fleets_under_way_unmerged() {
+    // Over (12,12): a Move fleet at rest beside a Hold fleet, and over the
+    // home world a Guard/Blockade fleet at rest beside one that is setting
+    // out. Neither pair merged.
+    let mut game_data = autopilot_scenario();
+    let mover = rogue(&mut game_data, 0);
+    set_ships(mover, 0, 0, 1, 0, 0);
+    set_fleet(
+        mover,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::MoveOnly,
+        NEAR_WORLD,
+        1,
+        0,
+        3,
+    );
+    hold_destroyers(&mut game_data, 1, NEAR_WORLD, Real48::ONE, 1);
+    let at_rest = rogue(&mut game_data, 2);
+    set_ships(at_rest, 0, 1, 0, 0, 0);
+    set_fleet(
+        at_rest,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        ROGUE_HOME,
+        1,
+        0,
+        6,
+    );
+    let setting_out = rogue(&mut game_data, 3);
+    set_ships(setting_out, 0, 0, 1, 0, 0);
+    set_fleet(
+        setting_out,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        NEAR_WORLD,
+        1,
+        2,
+        6,
+    );
+
+    run(&mut game_data);
+
+    assert_eq!(rogue_fleets(&game_data).len(), 4);
+}
+
+#[test]
+fn an_autopilot_guard_starbase_fleet_hosts_but_is_never_taken_in() {
+    // Home: a Hold fleet and then a guard over a base at rest; the guard
+    // hosts, as the second fleet, and takes the first in. (12,12): a guard
+    // whose base is about to lift, then a Hold fleet; the guard cannot host
+    // and cannot be taken in, so they stay apart.
+    let mut game_data = autopilot_scenario();
+    guard_and_hold_pair(&mut game_data, 1, 0, ROGUE_HOME, 1, 1);
+    guard_and_hold_pair(&mut game_data, 2, 3, NEAR_WORLD, 2, 0);
+    let numbers: Vec<u16> = (0..4)
+        .map(|n| rogue(&mut game_data, n).fleet_number.0)
+        .collect();
+
+    run(&mut game_data);
+
+    assert_eq!(rogue_fleets(&game_data).len(), 3);
+    assert!(rogue_fleet_numbered(&game_data, numbers[0]).is_none());
+    let host = rogue_fleet_numbered(&game_data, numbers[1]).expect("the guard hosts");
+    assert_eq!(host.ships.destroyers, 2);
+    assert!(rogue_fleet_numbered(&game_data, numbers[2]).is_some());
+    assert!(rogue_fleet_numbered(&game_data, numbers[3]).is_some());
+}
+
 // ── No world ────────────────────────────────────────────────────────────
 
 fn armed_idle(game_data: &mut CoreGameData, n: usize, sector: [u8; 2]) {
@@ -694,6 +1044,129 @@ fn a_rogue_that_loses_its_last_world_goes_on_patrolling() {
     let fleet = rogue(&mut game_data, 0);
     assert_eq!(fleet.order, Order::PatrolSector);
     assert_eq!(fleet.rules_of_engagement, 10);
+}
+
+// ── Civil disorder ──────────────────────────────────────────────────────
+//
+// The orders pass starts with `24a3:0c2a`: a civil-disorder empire with no
+// world (probed 2026-10-11, three years; Rust agreed on every record but the
+// random patrol targets) becomes a rogue. Its name "In Civil Disorder"
+// becomes "Rogues" and any other name stays, its handle goes blank, and its
+// stances stay; the pass then plays it as a rogue with no world.
+
+/// Empire 3 is in civil disorder with no world: its home world (6,5) is
+/// unowned and the saved count is 0. It has a cruiser on Hold in deep space,
+/// an ETAC fleet, a scout fleet, and a starbase; it was a player, so it has
+/// a handle, and it is at war with empire 4.
+fn planetless_civil_disorder_scenario() -> CoreGameData {
+    let mut game_data = scenario();
+    planet_at(&mut game_data, [6, 5]).owner.0 = 0;
+    game_data.players[2].planet_count = 0;
+    set_player_handle(&mut game_data.players[2], "OLDPLAYER");
+    set_diplomatic_relation_toward(&mut game_data.players[2], 4, DiplomaticRelation::Enemy);
+    // A cruiser, an ETAC, a scout, and an empty fleet that is culled.
+    for (n, (cruisers, scouts, etacs)) in [(1, 0, 0), (0, 0, 1), (0, 1, 0), (0, 0, 0)]
+        .into_iter()
+        .enumerate()
+    {
+        let fleet = &mut game_data.fleets[8 + n];
+        set_ships(fleet, 0, cruisers, 0, scouts, etacs);
+        let sector = [8 + n as u8, 8];
+        set_fleet(
+            fleet,
+            sector,
+            Real48::ZERO,
+            Order::HoldPosition,
+            sector,
+            0,
+            0,
+            3,
+        );
+    }
+    add_base(&mut game_data, 3, [6, 5], Real48::ONE, 1, 0);
+    game_data
+}
+
+#[test]
+fn a_civil_disorder_empire_with_no_world_becomes_a_rogue_that_patrols() {
+    let mut game_data = planetless_civil_disorder_scenario();
+
+    run(&mut game_data);
+
+    let player = &game_data.players[2];
+    assert_eq!(player.mode, PlayerMode::Rogue);
+    assert_eq!(player.empire_name, "Rogues");
+    assert!(player.handle.trim().is_empty());
+    // The stance it had stays; every human empire becomes an enemy.
+    assert_eq!(
+        stored_diplomatic_relation(player, 4),
+        Some(DiplomaticRelation::Enemy)
+    );
+    assert_eq!(
+        stored_diplomatic_relation(player, 1),
+        Some(DiplomaticRelation::Enemy)
+    );
+    assert_eq!(
+        stored_diplomatic_relation(player, 2),
+        Some(DiplomaticRelation::Neutral)
+    );
+    // The warship patrols; the unarmed fleets and the starbase are gone.
+    let fleets: Vec<&Fleet> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 3)
+        .collect();
+    assert_eq!(fleets.len(), 1);
+    assert_eq!(fleets[0].ships.cruisers, 1);
+    assert_eq!(fleets[0].order, Order::PatrolSector);
+    assert_eq!(fleets[0].rules_of_engagement, 10);
+    assert!(
+        game_data
+            .bases
+            .iter()
+            .all(|base| base.owner.0 != 3 || base.base_id.0 == 0)
+    );
+}
+
+#[test]
+fn a_civil_disorder_empire_with_a_world_stays_in_civil_disorder() {
+    // Empires 2 and 4 own their home worlds.
+    let mut game_data = planetless_civil_disorder_scenario();
+
+    run(&mut game_data);
+
+    for empire in [1usize, 3] {
+        let player = &game_data.players[empire];
+        assert_eq!(
+            player.mode,
+            PlayerMode::CivilDisorder,
+            "empire {}",
+            empire + 1
+        );
+        assert_eq!(player.empire_name, "In Civil Disorder");
+    }
+}
+
+#[test]
+fn a_planetless_civil_disorder_empire_keeps_a_name_of_its_own_and_with_no_fleet_its_base() {
+    let mut game_data = planetless_civil_disorder_scenario();
+    set_empire_name(&mut game_data.players[2], "Fallen Empire");
+    game_data.fleets.retain(|fleet| fleet.owner.0 != 3);
+    game_data.players[2].fleets_first.0 = 0;
+    game_data.players[2].fleets_last.0 = 0;
+
+    run(&mut game_data);
+
+    let player = &game_data.players[2];
+    assert_eq!(player.mode, PlayerMode::Rogue);
+    assert_eq!(player.empire_name, "Fallen Empire");
+    assert!(player.handle.trim().is_empty());
+    assert!(
+        game_data
+            .bases
+            .iter()
+            .any(|base| base.owner.0 == 3 && base.base_id.0 == 1)
+    );
 }
 
 // ── Escape episodes ─────────────────────────────────────────────────────

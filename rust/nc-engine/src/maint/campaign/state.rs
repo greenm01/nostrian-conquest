@@ -220,6 +220,10 @@ pub(super) fn apply_campaign_state_transitions(
     events
 }
 
+/// A civil-disorder empire with no world loses one fleet to defection each
+/// year. ECMAINT's orders pass turns such an empire into a rogue when the next
+/// run starts (`24a3:0c2a`), so this sees only an empire that lost its last
+/// world, and was not eliminated, in the run just played.
 pub(super) fn apply_civil_disorder_fleet_defections(
     game_data: &mut CoreGameData,
     newly_defeated: &[EmpireEliminationEvent],
@@ -306,6 +310,9 @@ pub(super) fn apply_stored_diplomatic_escalations(
     Ok(())
 }
 
+/// An eliminated empire goes to civil disorder; the next run's orders pass
+/// turns it into a rogue, and its player keeps the final review
+/// (`TerminalOutcome::Defeated`).
 fn defeat_empire(
     game_data: &mut CoreGameData,
     lifecycle: &mut PlayerLifecycleState,

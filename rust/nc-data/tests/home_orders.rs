@@ -661,3 +661,35 @@ fn the_autopilot_starbase_step_ends_the_escape_of_a_fleet_it_did_not_order() {
     assert_eq!(game_data.fleets[0].order, Order::GuardStarbase);
     assert_eq!(game_data.fleets[0].escape, None);
 }
+
+#[test]
+fn a_premaintenance_abort_holds_in_its_current_layer() {
+    for depth in [Real48::ZERO, Real48::ONE] {
+        let mut game_data = scenario();
+        // Without an owned destination, an unarmed human guard must Hold.
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == 1 {
+                planet.owner.0 = 0;
+            }
+        }
+        set_ships(&mut game_data.fleets[0], 0, 0, 0, 0, 1);
+        place_fleet(
+            &mut game_data,
+            HOME,
+            depth,
+            Order::GuardBlockadeWorld,
+            HOME,
+            0,
+        );
+        run(&mut game_data);
+        let fleet = game_data
+            .fleets
+            .iter()
+            .find(|f| f.owner.0 == 1)
+            .expect("surviving ETAC");
+        assert_eq!(fleet.order, Order::HoldPosition);
+        assert_eq!(fleet.depth, depth);
+        assert_eq!(fleet.target_depth, u8::from(depth == Real48::ONE));
+        assert_eq!(fleet.speed, 0);
+    }
+}

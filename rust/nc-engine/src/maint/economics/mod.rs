@@ -9,8 +9,9 @@ use crate::CoreGameData;
 pub(super) fn process_home_orders(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
+    player_lifecycle_states: &[nc_data::PlayerLifecycleState],
 ) -> Result<Option<FleetRemovalRemapInfo>, Box<dyn std::error::Error>> {
-    orders::process_home_orders(game_data, campaign_seed)
+    orders::process_home_orders(game_data, campaign_seed, player_lifecycle_states)
 }
 
 pub fn process_autopilot_ai(

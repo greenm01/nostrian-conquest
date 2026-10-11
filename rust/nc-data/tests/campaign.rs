@@ -373,8 +373,9 @@ fn maintenance_emits_campaign_outcome_when_last_stable_contender_remains() {
     assert_eq!(events.game_victory_notice_events.len(), 0);
 }
 
-#[test]
-fn civil_disorder_empire_loses_one_fleet_to_defection_each_turn() {
+/// Empire 1 is in civil disorder and has just lost its last world: the world
+/// is gone and the count the last run saved (PLAYER `0x50`) still reads 1.
+fn civil_disorder_empire_that_just_lost_its_last_world() -> nc_data::CoreGameData {
     let mut game_data = baseline_game();
     for planet in &mut game_data.planets {
         if planet.owner.0 == 1 {
@@ -389,71 +390,64 @@ fn civil_disorder_empire_loses_one_fleet_to_defection_each_turn() {
             set_armies_aboard(fleet, 0);
         }
     }
+    game_data.players[0].mode = nc_data::PlayerMode::CivilDisorder;
+    game_data.players[0].planet_count = 1;
+    game_data
+}
 
-    let first_events =
-        run_maintenance_turn(&mut game_data).expect("first maintenance should succeed");
-    assert_eq!(first_events.civil_disorder_events.len(), 0);
-    assert_eq!(first_events.empire_elimination_events.len(), 1);
-    let fleet_count_after_collapse = game_data
+#[test]
+fn civil_disorder_empire_that_loses_its_last_world_loses_one_fleet_to_defection() {
+    // ECMAINT's orders pass turns a civil-disorder empire with no world into
+    // a rogue when the next run starts, so defection sees only the run in
+    // which the world was lost.
+    let mut game_data = civil_disorder_empire_that_just_lost_its_last_world();
+    let fleet_count_before = game_data
         .fleets
         .iter()
         .filter(|fleet| fleet.owner.0 == 1)
         .count();
 
-    let second_events =
-        run_maintenance_turn(&mut game_data).expect("second maintenance should succeed");
-    let fleet_count_after_defection = game_data
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    let fleet_count_after = game_data
         .fleets
         .iter()
         .filter(|fleet| fleet.owner.0 == 1)
         .count();
+    assert_eq!(events.fleet_defection_events.len(), 1);
+    assert_eq!(fleet_count_after + 1, fleet_count_before);
+    assert_eq!(game_data.players[0].mode, nc_data::PlayerMode::CivilDisorder);
 
-    assert_eq!(second_events.fleet_defection_events.len(), 1);
-    assert_eq!(fleet_count_after_defection + 1, fleet_count_after_collapse);
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert_eq!(events.fleet_defection_events.len(), 0);
+    assert_eq!(game_data.players[0].mode, nc_data::PlayerMode::Rogue);
 }
 
 /// A defection takes a whole fleet, counters and all; the fleets that stay
 /// keep theirs, and the recovery step has already counted them down.
 #[test]
 fn defection_leaves_the_crippled_counts_of_the_fleets_that_stay() {
-    let mut game_data = baseline_game();
-    for planet in &mut game_data.planets {
-        if planet.owner.0 == 1 {
-            planet.owner.0 = 0;
-            planet.years_under_owner = 0;
-        }
-    }
+    let mut game_data = civil_disorder_empire_that_just_lost_its_last_world();
     for fleet in &mut game_data.fleets {
         if fleet.owner.0 == 1 {
-            fleet.ships.etacs = 0;
-            set_troop_transports(fleet, 0);
-            set_armies_aboard(fleet, 0);
             fleet.ships.cruisers = fleet.ships.cruisers.max(2);
             fleet.crippled.cruisers.turns[1] = 2;
         }
     }
 
-    run_maintenance_turn(&mut game_data).expect("first maintenance should succeed");
-    let counted_down = |game_data: &nc_data::CoreGameData| -> Vec<_> {
-        game_data
-            .fleets
-            .iter()
-            .filter(|fleet| fleet.owner.0 == 1)
-            .map(|fleet| fleet.crippled.cruisers.turns)
-            .collect()
-    };
-    assert!(
-        counted_down(&game_data)
-            .iter()
-            .all(|turns| *turns == [2, 0])
-    );
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    let events = run_maintenance_turn(&mut game_data).expect("second maintenance should succeed");
     assert_eq!(events.fleet_defection_events.len(), 1);
-    let remaining = counted_down(&game_data);
+    let remaining: Vec<_> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 1)
+        .map(|fleet| fleet.crippled.cruisers.turns)
+        .collect();
     assert!(!remaining.is_empty());
     assert!(
-        remaining.iter().all(|turns| *turns == [0, 0]),
-        "recovered on schedule"
+        remaining.iter().all(|turns| *turns == [2, 0]),
+        "counted down one turn, as a recovery step does"
     );
 }

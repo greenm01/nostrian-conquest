@@ -307,7 +307,11 @@ fn move_report_names_mover_shifted_by_civil_disorder_defection() {
             fleet.ships.etacs = 0;
         }
     }
-    run_maintenance_turn(&mut game_data).expect("collapse turn should succeed");
+    // Empire 1 is in civil disorder and has just lost its last world; the
+    // count the last run saved still reads 1, so the next run does not turn
+    // it into a rogue and one of its fleets defects.
+    game_data.players[0].mode = nc_data::PlayerMode::CivilDisorder;
+    game_data.players[0].planet_count = 1;
 
     let mover_idx = game_data
         .fleets

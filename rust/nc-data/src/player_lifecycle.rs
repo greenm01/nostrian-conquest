@@ -31,12 +31,30 @@ pub fn empire_has_recovery_path(game_data: &CoreGameData, empire: u8) -> bool {
     })
 }
 
+const CIVIL_DISORDER_NAME: &str = "In Civil Disorder";
+const ROGUE_NAME: &str = "Rogues";
+
 /// Returns the empire to civil disorder as ECUTIL and ECMAINT do: mode 0, a
 /// blank handle, and the name "In Civil Disorder". Every other field stays.
 pub fn set_civil_disorder(player: &mut Player) {
     player.mode = PlayerMode::CivilDisorder;
     player.handle.clear();
-    set_empire_name(player, "In Civil Disorder");
+    set_empire_name(player, CIVIL_DISORDER_NAME);
+}
+
+/// Turns a civil-disorder empire into a rogue as ECMAINT's orders pass does
+/// (`24a3:0c2a`): mode 0xFF, the name "In Civil Disorder" becomes "Rogues"
+/// (any other name stays), and the handle goes blank. The stances stay as
+/// they are. `keep_handle` leaves the handle for a former player who is
+/// still owed a final review, which finds the empire by it.
+pub fn set_rogue(player: &mut Player, keep_handle: bool) {
+    player.mode = PlayerMode::Rogue;
+    if !keep_handle {
+        player.handle.clear();
+    }
+    if player.empire_name == CIVIL_DISORDER_NAME {
+        set_empire_name(player, ROGUE_NAME);
+    }
 }
 
 /// Joined and rogue empires both contest the campaign; only civil disorder

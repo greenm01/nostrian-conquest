@@ -1,8 +1,8 @@
 mod common;
 
 use common::order_trace::{
-    FleetTurnExpectation, TARGET_PLANET_IDX, TRACE_SPEED, TRACE_START, TRACE_TARGET, TraceCase,
-    TraceRun, assert_mission_event, build_blitz_world_trace, build_bombard_world_trace,
+    FleetTurnExpectation, TARGET_PLANET_IDX, TRACE_HOME, TRACE_SPEED, TRACE_START, TRACE_TARGET,
+    TraceCase, TraceRun, assert_mission_event, build_blitz_world_trace, build_bombard_world_trace,
     build_colonize_world_trace, build_guard_blockade_world_trace, build_guard_starbase_trace,
     build_invade_world_trace, build_join_chase_trace, build_join_merge_trace,
     build_move_only_trace, build_patrol_sector_trace, build_rendezvous_merge_trace,
@@ -578,8 +578,8 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
             turns_to_run: 1,
             expectations: &[FleetTurnExpectation {
                 turn: 0,
-                coords: [10, 10],
-                target: [10, 10],
+                coords: TRACE_HOME,
+                target: TRACE_HOME,
                 order: Order::JoinAnotherFleet,
                 speed: 0,
                 ready_flag: Some(0x81),
@@ -636,8 +636,8 @@ fn merge_and_pursuit_orders_trace_speed_and_completion() {
             turns_to_run: 1,
             expectations: &[FleetTurnExpectation {
                 turn: 0,
-                coords: TRACE_TARGET,
-                target: TRACE_TARGET,
+                coords: TRACE_HOME,
+                target: TRACE_HOME,
                 order: Order::RendezvousSector,
                 speed: 0,
                 ready_flag: Some(0x81),
@@ -826,8 +826,8 @@ fn check_join_merge_trace(run: &TraceRun) {
             .any(|event| { event.kind == Mission::JoinAnotherFleet && !event.survivor_side })
     );
     // The merged fleet belongs to a rogue empire, whose orders pass then
-    // sends it home from deep space.
-    assert_eq!(run.states[1].fleets[0].order, Order::SeekHome);
+    // has it guard the world it sits over.
+    assert_eq!(run.states[1].fleets[0].order, Order::GuardBlockadeWorld);
 }
 
 fn check_rendezvous_travel_trace(run: &TraceRun) {
@@ -846,9 +846,9 @@ fn check_rendezvous_merge_trace(run: &TraceRun) {
             .iter()
             .any(|event| { event.kind == Mission::RendezvousSector && !event.survivor_side })
     );
-    // The rogue empire's orders pass then sends the merged fleet home.
+    // The rogue empire's orders pass then has the merged fleet guard the
+    // world it sits over.
     let survivor = &run.states[1].fleets[0];
-    assert_eq!(survivor.order, Order::SeekHome);
-    assert_ne!(survivor.target.to_array(), TRACE_TARGET);
+    assert_eq!(survivor.order, Order::GuardBlockadeWorld);
     assert_eq!(survivor.max_speed, 3);
 }

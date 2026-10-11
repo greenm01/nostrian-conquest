@@ -8,6 +8,8 @@ use nc_engine::run_maintenance_turn;
 pub const TRACE_START: [u8; 2] = [8, 8];
 pub const TRACE_TARGET: [u8; 2] = [11, 8];
 pub const TRACE_SPEED: u8 = 3;
+/// Empire 1's home world, where the merge traces stage their rogue fleets.
+pub const TRACE_HOME: [u8; 2] = [16, 13];
 pub const TARGET_PLANET_IDX: usize = 4;
 
 #[derive(Clone, Copy)]
@@ -361,9 +363,10 @@ pub fn build_join_chase_trace() -> CoreGameData {
 pub fn build_join_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
     game_data.players[0].mode = PlayerMode::Rogue;
-    // A rogue empire's orders pass reads the saved planet count.
+    // A rogue empire's orders pass reads the saved planet count, and its merge
+    // pass joins only the fleets in orbit of its own worlds.
     game_data.players[0].planet_count = 1;
-    let coords = [10, 10];
+    let coords = TRACE_HOME;
 
     let host = &mut game_data.fleets[0];
     configure_cruiser_fleet(host);
@@ -401,13 +404,13 @@ pub fn build_rendezvous_merge_trace() -> CoreGameData {
     let slow = &mut game_data.fleets[0];
     configure_cruiser_fleet(slow);
     slow.max_speed = 6;
-    arm_stationary_order(slow, Order::RendezvousSector, TRACE_TARGET);
+    arm_stationary_order(slow, Order::RendezvousSector, TRACE_HOME);
 
     let fast = &mut game_data.fleets[1];
     configure_etac_fleet(fast);
     fast.owner.0 = 1;
     fast.max_speed = 3;
-    arm_stationary_order(fast, Order::RendezvousSector, TRACE_TARGET);
+    arm_stationary_order(fast, Order::RendezvousSector, TRACE_HOME);
 
     game_data
 }

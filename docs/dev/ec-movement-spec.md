@@ -198,6 +198,35 @@ owns a world. An autopilot empire gets the fleet orders only. [C][P: a rogue
 empire that owned its home world but had a saved count of 0 disbanded its
 unarmed fleet and put the others on patrol.]
 
+**Planetless civil disorder.** At the start of the orders pass,
+`24a3:0c2a` turns every civil-disorder empire whose saved planet count is
+zero into a rogue. It changes the default name "In Civil Disorder" to
+"Rogues", preserves any other name and the existing diplomatic stances,
+and clears the handle. The same pass gives it the patrol orders below.
+Rust keeps an eliminated player's handle and terminal lifecycle state so
+that player's final review still works; the empire remains Defeated in
+player-facing status. A civil-disorder empire with a world is unchanged.
+[P: `civil`, three years, with and without fleets; the no-fleet base stays,
+while an empire with fleets disbands its unarmed fleets and bases.]
+
+**Merge pass.** Before new fleet orders, `24a3:216f` merges fleets only in
+the orbital layer (`Z >= 0.5`) of the empire's own worlds. The saved planet
+count must be nonzero. Worlds and fleets are visited in record order. A
+rogue fleet can host or be absorbed regardless of order and speed. An
+autopilot host must be at speed zero on Hold, Guard/Blockade or Guard
+Starbase; its donors must be at speed zero on Hold or Guard/Blockade. A
+Guard Starbase host must name a base at its target sector and target layer.
+Each pair must fit the 3000-ship limit (`2895:3057`); an absorbed fleet is
+removed before any later merge can use it. The host keeps its ROE and
+combines ships and recovery cohorts. [P: `mergeplace`, `mergeauto`,
+`mergeguard`, `mergecap`.]
+
+Rust corrects one classic bug by owner approval (t099): a Guard Starbase
+fleet naming no base cannot host. Classic leaves its base-rest test in a
+stale local, so a previous fleet can decide its eligibility. Missing-base
+cases deliberately differ; a rogue guard may still be absorbed by another
+eligible host, while an autopilot Guard Starbase fleet is never a donor.
+
 **Fleet orders.** Fleets go in unit-table order, each empire's fleet chain.
 
 - A rogue empire's fleets all get new orders, whatever their order; an
@@ -291,8 +320,12 @@ starbase. [P: an ETAC-only fleet on Guard/Blockade took a base at ROE 0 under
 a rogue empire and under an autopilot one, and was still on Guard Starbase
 after three years; the rogue pass freed the base each later year and the
 autopilot did not.] For a human empire not on autopilot the check stays: such
-a fleet goes home or to Hold, and its ROE becomes 0. [P: the same fleet of a
-human empire held at ROE 0.]
+a fleet goes home or to Hold, and its ROE becomes 0. Hold keeps its current
+sector and depth, with target depth `Round(Z)`, rather than requesting a
+climb out of orbit. [P: the same fleet of a human empire held at ROE 0.]
+The broader abort policy is NC's: with another owned world it can Seek
+Home, whereas classic's pre-maintenance invalid-order check holds in place.
+This task corrects Hold's depth, not that destination policy.
 
 ### Hostile Missions
 

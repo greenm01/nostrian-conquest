@@ -315,11 +315,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         ..TurnFleetRefs::default()
     };
 
-    // Merge co-located friendly fleets BEFORE movement.
-    // Confirmed from econ fixture: the Bombard fleet (at 16,13 pre-move) is
-    // included in the merge even though it moves to (15,13) this turn.
-    // The merge runs before movement resolution, absorbing all same-position
-    // fleets for flagged players (PLAYER raw[0x00]==0xff).
+    // The merge pass of the empires ECMAINT plays (`24a3:216f`): rogue
+    // empires and autopilot ones join the fleets in orbit of their own
+    // worlds, before the orders pass and the year's movement. Confirmed from
+    // the econ fixture: the Bombard fleet in orbit of its rogue empire's
+    // world (16,13) is merged even though it moves to (15,13) this year.
     let (merge_events, consolidation_remap) = merging::process_fleet_merging(game_data)?;
     refs.merge_events.extend(merge_events.iter().copied());
     refs.remap(&consolidation_remap.fleet_indices);
@@ -338,8 +338,11 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     // Orders for the empires ECMAINT plays (rogue and autopilot), before the
     // planet pass and the ticks so their fleets can start moving this turn.
-    // A rogue empire with no world disbands its unarmed fleets.
-    if let Some(remap) = economics::process_home_orders(game_data, campaign_seed)? {
+    // A civil-disorder empire with no world becomes a rogue first, and a
+    // rogue empire with no world disbands its unarmed fleets.
+    if let Some(remap) =
+        economics::process_home_orders(game_data, campaign_seed, player_lifecycle_states)?
+    {
         refs.remap(&remap.fleet_indices);
         refs.destroyed_join_host_fleet_numbers
             .extend(remap.destroyed_join_host_fleet_numbers.clone());
@@ -883,6 +886,35 @@ fn apply_fleet_removal_remap(
         }
     };
 
+    // A removed link skips to its next surviving neighbour instead of
+    // cutting the owner's chain. A merge may absorb the chain's head.
+    let remap_link = |mut old_id: u16, forward: bool| -> u16 {
+        for _ in 0..fleet_count {
+            if old_id == 0 {
+                return 0;
+            }
+            let idx = usize::from(old_id) - 1;
+            let Some(fleet) = game_data.fleets.get(idx) else {
+                return 0;
+            };
+            if !to_remove[idx] {
+                return remap_id(old_id);
+            }
+            old_id = if forward { fleet.next.0 } else { fleet.prev.0 };
+        }
+        0
+    };
+    let remapped_heads: Vec<_> = game_data
+        .players
+        .iter()
+        .map(|player| {
+            (
+                remap_link(player.fleets_first.0, true),
+                remap_link(player.fleets_last.0, false),
+            )
+        })
+        .collect();
+
     // Surviving local fleet numbers stay unchanged. Only global linkage IDs
     // compress. A Join order names its host by fleet number, so it needs no
     // remap; it is zeroed only when the host itself was removed.
@@ -898,8 +930,8 @@ fn apply_fleet_removal_remap(
         let mut remapped = fleet.clone();
         let new_fleet_id = remap_id(fleet.record.0);
         remapped.record.0 = new_fleet_id;
-        remapped.next.0 = remap_id(fleet.next.0);
-        remapped.prev.0 = remap_id(fleet.prev.0);
+        remapped.next.0 = remap_link(fleet.next.0, true);
+        remapped.prev.0 = remap_link(fleet.prev.0, false);
         if fleet.order == Order::JoinAnotherFleet {
             let prior_host_number = fleet.mission_target;
             if prior_host_number != 0
@@ -920,10 +952,7 @@ fn apply_fleet_removal_remap(
 
     for player_idx in 0..game_data.players.len() {
         let owner = (player_idx + 1) as u8;
-        let first_id = game_data.players[player_idx].fleets_first.0;
-        let last_id = game_data.players[player_idx].fleets_last.0;
-        let new_first = remap_id(first_id);
-        let new_last = remap_id(last_id);
+        let (new_first, new_last) = remapped_heads[player_idx];
         game_data.players[player_idx].fleets_first.0 = new_first;
         game_data.players[player_idx].fleets_last.0 = if new_last == 0 && new_first != 0 {
             let mut max_new_id: u16 = new_first;

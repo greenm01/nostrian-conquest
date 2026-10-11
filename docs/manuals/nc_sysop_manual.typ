@@ -669,6 +669,13 @@ For direct DB-only campaigns, the default inactivity autopilot threshold is
 player counts as active for the year by either reaching the live `nc-game`
 menus or successfully applying a `submit-turn` file.
 
+
+A defeated player retains one final review-only login. If the empire has
+no planets, the next maintenance turns it into a computer-controlled rogue
+empire. The former player's identity and final-review state remain in the
+store; this does not reopen the seat or restore orders. A planetless rogue
+patrols with its warships and does not contend for the throne.
+
 == Reserving Seats
 
 To reserve empire slots for specific BBS users, edit the per-game BBS
