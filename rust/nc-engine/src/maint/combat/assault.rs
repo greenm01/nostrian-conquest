@@ -229,11 +229,16 @@ fn stardock_summary_diff(
     }
 }
 
-/// Suppression damage: hits only go through stardock and batteries.
-/// Armies, stored goods, and factories are shielded.
-fn apply_planet_suppression_damage(planet: &mut nc_data::Planet, hits: u32) {
-    let hits = reduce_stardock(planet, hits);
-    apply_battery_hits(planet, hits);
+/// Suppression damage. Batteries shield the stardock (combat decision 5): an
+/// exchange that begins with batteries standing hits them only, and the hits
+/// beyond what destroys them expire. Once none stand, the exchange hits the
+/// stardock. Armies, stored goods, and factories are shielded either way.
+pub(super) fn apply_planet_suppression_damage(planet: &mut nc_data::Planet, hits: u32) {
+    if planet.ground_batteries > 0 {
+        apply_battery_hits(planet, hits);
+    } else {
+        reduce_stardock(planet, hits);
+    }
 }
 
 fn apply_capped_invasion_soften_damage(
@@ -253,12 +258,12 @@ fn apply_capped_invasion_soften_damage(
     army_loss
 }
 
-/// Full bombardment cascade: stardock -> batteries -> armies -> stored goods -> factories.
+/// The breakthrough exchange, which only an exchange that begins with no
+/// batteries standing can be: stardock -> armies -> stored goods -> factories.
 /// Units cost their DS in hits; hits reaching goods and factories are scaled
 /// down from the 10x combat scale before the per-unit conversion.
-fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
-    let hits = reduce_stardock(planet, hits);
-    let mut hits = apply_battery_hits(planet, hits);
+pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
+    let mut hits = reduce_stardock(planet, hits);
 
     let army_loss =
         (hits / GROUND_DS_ARMY).min(u8::try_from(planet.armies).unwrap_or(u8::MAX) as u32);

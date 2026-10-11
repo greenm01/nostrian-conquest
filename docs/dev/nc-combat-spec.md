@@ -278,17 +278,26 @@ This creates a deadly synergy where heavy ships suppress the enemy line, while l
 
 Each bombardment turn resolves three sequential exchanges (rounds). Ground
 batteries act as the planet's shield wall --- while they stand, they draw
-orbital fire and shoot back, protecting armies, production, and industry.
+orbital fire and shoot back, protecting the stardock, armies, production, and
+industry.
 
-1. **Round 1 (Suppression):** Attacker fires at stardock contents, then
-   batteries. Batteries fire back. Armies, goods, and factories are shielded.
-2. **Round 2 (Suppression):** Same targeting. Batteries fire back again with
-   whatever survives round 1.
+**Batteries shield the stardock.** An exchange that begins with batteries
+standing hits batteries only, and the hits beyond what destroys them expire.
+Docked ships are exposed from the next exchange, the first one that begins
+with no batteries standing
+([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md)).
+
+1. **Round 1 (Suppression):** If batteries stand, the attacker's hits go to
+   batteries only; otherwise they go to the stardock. Batteries fire back.
+   Armies, goods, and factories are shielded.
+2. **Round 2 (Suppression):** Same targeting by the batteries standing at the
+   start of the round. Batteries fire back again with whatever survives
+   round 1.
 3. **Round 3 (Breakthrough or continued suppression):** If batteries reached
-   zero before this round, attacker hits cascade into armies, stored goods,
-   and factories. If batteries still remain, this round is another suppression
-   exchange --- batteries continue to shield everything behind them and fire
-   back.
+   zero before this round, attacker hits go to the stardock first and then
+   cascade into armies, stored goods, and factories. If batteries still
+   remain, this round is another suppression exchange --- batteries continue
+   to shield everything behind them and fire back.
 
 #### Planetary Hit Costs
 Orbital hits are on the same 10x scale as fleet combat, so each target costs
@@ -302,9 +311,10 @@ its defense strength:
 | Stored goods / factories | Remaining hits ÷ 10, then 100 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
-over between rounds. Hits too few to destroy the next docked item move on to
-the following stardock slot. Invasion suppression and blitz cover fire pay the
-same battery cost.
+over between rounds. Once the stardock is exposed, hits too few to destroy the
+next docked item move on to the following stardock slot. Invasion suppression
+and blitz cover fire pay the same battery cost, and neither reaches the
+stardock.
 
 Blitz landing fire is one CRT exchange of surviving battery AS against the
 escorts' bombardment AS. It is focus fire aimed at the descending transports
@@ -331,6 +341,15 @@ same turn.
 
 Invade supplies its own softening once suppression has cleared the batteries,
 so a separate Bombard order is not required first.
+
+#### Failure Is Not Defeat
+A fleet whose landing fails, or whose Invade is blocked because batteries
+survive suppression, keeps its survivors in orbit on Hold and files a failure
+report. A blocked Invade lands nothing and its armies stay aboard. The fleet
+does not blockade the world automatically and is subject to ordinary
+encounters like any fleet in orbit. A fleet beaten in the orbital battle
+leaves under the ordinary withdrawal rules (see Simultaneous Arrival at a
+Planet), with no extra battery volley.
 
 ## Fleet Combat Sequence
 
@@ -399,10 +418,11 @@ does for a starbase blocking its path: a fleet unwilling to take on the
 owner's combined strength aborts to Seek Home without a shot. Only the
 holder of the field strikes, in the same tick. A beaten attacker has
 retreated with its battle, or died in it, and its mission report says the
-orbital defence repelled it. A second attacker of the same empire finds the
-orbit the first cleared empty and strikes without refighting anyone; rival
-attackers of different empires strike in the year's unit order, each
-against whatever holds the orbit when its turn comes. A transport-only
+orbital defence repelled it. The world's batteries take no part in the gate
+and fire only on a fleet that strikes. A second attacker of the same empire
+finds the orbit the first cleared empty and strikes without refighting
+anyone; rival attackers of different empires strike in the year's unit
+order, each against whatever holds the orbit when its turn comes. A transport-only
 Blitz brings no warships and can fight nobody: it lands only when the owner
 has nothing in orbit, and a fleet of his without warships does not stop it.
 

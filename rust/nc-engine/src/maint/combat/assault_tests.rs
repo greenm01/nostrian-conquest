@@ -1,12 +1,18 @@
-//! The landing battle.
+//! The landing battle and the battery shield.
 //!
 //! Inline rather than in tests/: maintenance rolls seeded dice, so these
-//! tests script the landing battle's dice to pin the arithmetic exactly. Scripted rolls: 0 is
+//! tests script the landing battle's dice and call the planet-damage
+//! functions directly to pin the arithmetic exactly. Scripted rolls: 0 is
 //! 25% of the side's armies, 3 is 50%, 6 is 100%. The expected values come
 //! from `tools/combat-model/ground_calibration.py` (`Shared(EOTS_X4, 4,
 //! first=True)`), the model combat decision 4 was measured with.
 
-use super::assault::{resolve_landing_battle, resolve_seeded_landing};
+use nc_data::{Planet, Real48};
+
+use super::assault::{
+    apply_planet_bombardment_damage, apply_planet_suppression_damage, resolve_landing_battle,
+    resolve_seeded_landing,
+};
 use super::exchange::{COMBAT_KIND_BLITZ_GROUND, COMBAT_KIND_GROUND, landing_volley};
 
 const ATTACKER: u8 = 1;
@@ -199,4 +205,60 @@ fn seeded_landings_match_the_model() {
             }
         }
     }
+}
+
+// Combat decision 5: batteries shield the stardock.
+
+/// A world with `batteries` standing, `armies`, and `battleships` docked.
+fn world(batteries: u16, armies: u16, destroyers: u32, battleships: u32) -> Planet {
+    let mut planet = Planet {
+        ground_batteries: batteries,
+        armies,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(500),
+        ..Planet::default()
+    };
+    planet.stardock.destroyers = destroyers;
+    planet.stardock.battleships = battleships;
+    planet
+}
+
+#[test]
+fn standing_batteries_take_every_hit_and_the_excess_expires() {
+    let mut planet = world(2, 10, 0, 1);
+
+    // 200 hits against two batteries: 40 destroy them, 160 expire, and the
+    // docked battleship (DS 100) would have died of the 160.
+    apply_planet_suppression_damage(&mut planet, 200);
+    assert_eq!(planet.ground_batteries, 0);
+    assert_eq!(planet.stardock.battleships, 1);
+    assert_eq!(planet.armies, 10);
+
+    // The next exchange begins with no batteries: the dock is exposed.
+    apply_planet_suppression_damage(&mut planet, 200);
+    assert_eq!(planet.stardock.battleships, 0);
+    // Suppression never reaches the armies.
+    assert_eq!(planet.armies, 10);
+}
+
+#[test]
+fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
+    let mut planet = world(3, 0, 5, 0);
+
+    // 39 hits destroy one battery; the other 19 expire. Spilled onto the
+    // dock they would have destroyed three of the five docked destroyers.
+    apply_planet_suppression_damage(&mut planet, 39);
+    assert_eq!(planet.ground_batteries, 2);
+    assert_eq!(planet.stardock.destroyers, 5);
+}
+
+#[test]
+fn an_unshielded_dock_takes_the_hits_before_the_armies_behind_it() {
+    let mut planet = world(0, 20, 0, 1);
+
+    // The round-3 breakthrough: 120 hits, 100 for the docked battleship and
+    // 20 for two armies.
+    apply_planet_bombardment_damage(&mut planet, 120);
+    assert_eq!(planet.stardock.battleships, 0);
+    assert_eq!(planet.armies, 18);
 }
