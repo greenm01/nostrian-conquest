@@ -525,7 +525,11 @@ pub struct MissionEvent {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum EncounterDispositionReason {
     RoeDeclined,
+    /// The fleet broke off a battle because its ROE no longer accepted the
+    /// odds.
     RoeWithdrawal,
+    /// The fleet broke off a battle because it had no armed ship left.
+    UnarmedEscape,
     /// The fleet meant to attack but the intercept roll failed: "We are
     /// unable to intercept the enemy."
     InterceptFailed,
@@ -566,9 +570,8 @@ pub enum EncounterDispositionEvent {
         /// Week of year (1–52) when this event occurred; None until canonicalized.
         stardate_week: Option<u8>,
     },
-    /// Pursuit fire when withdrawing fleet is intercepted by guard/blockade.
-    /// Per spec: withdrawing fleet attempts to disengage but guard fires one
-    /// exchange at CER 0.50 before the withdrawer escapes.
+    /// The fleet broke off a battle and the enemy caught it in a pursuit
+    /// exchange before it got away.
     PursuitFire {
         fleet_idx: usize,
         owner_empire: u8,

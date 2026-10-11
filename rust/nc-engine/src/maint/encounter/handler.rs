@@ -15,9 +15,9 @@ use super::rules::{
 use super::{Awareness, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
-    AssaultEvents, BattleSide, ContactObserver, FleetBattlePhaseEvents, fight_encounter,
-    mission_kind_for_order, nearest_friendly_world, push_fleet_contact, push_no_engagement,
-    resolve_strike,
+    AssaultEvents, BattleSide, ContactObserver, FleetBattle, FleetBattlePhaseEvents,
+    fight_encounter, mission_kind_for_order, nearest_friendly_world, push_fleet_contact,
+    push_no_engagement, resolve_strike,
 };
 use crate::maint::movement::{BaseStep, TickEnd, YearMovement};
 use crate::maint::{MissionEvent, MissionOutcome};
@@ -98,10 +98,13 @@ impl Year<'_> {
     /// world's owner has in orbit fights it, sighted or not. That is his
     /// starbases there and his fleets there with warships, less any fleet
     /// already leaving on Seek Home (beaten earlier, or recalled). ROE
-    /// decides as for a base blocking the path, and a fleet unwilling to
-    /// fight them aborts as it does before a base, without a shot: classic's
-    /// gate runs the base decision (`1b05:1277`) itself. Only the holder of
-    /// the field assaults; a beaten attacker has retreated with its battle.
+    /// decides as for a base blocking the path, weighing the attacker's
+    /// attack strength against the defenders' (a starbase at 100), and a
+    /// fleet unwilling to fight them aborts as it does before a base,
+    /// without a shot: classic's gate runs the base decision (`1b05:1277`)
+    /// itself. Only the holder of the field assaults: a beaten attacker has
+    /// retreated with its battle, and a battle the round cap left
+    /// unresolved gives no permission either.
     fn holds_orbit(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) -> bool {
         let Unit {
             index: fleet_idx,
@@ -146,7 +149,7 @@ impl Year<'_> {
                     strength(&self.fleet_facts(game_data, self.units[defender].index))
                 }
             })
-            .fold(0u16, u16::wrapping_add);
+            .sum::<u32>();
         if !roe_permits(facts.roe, strength(&facts), defence) {
             self.abort_mission(game_data, fleet_idx, AbortFallback::Hold, Some(tick));
             self.movement.reload(fleet_idx);
@@ -171,20 +174,22 @@ impl Year<'_> {
             }
         }
         let battle_key = ORBITAL_GATE_BATTLE | u64::from(tick) | (unit as u64) << 8;
-        self.fight(game_data, tick, battle_key, sector, &attacker, &defender);
+        let held_by = self.fight(game_data, tick, battle_key, sector, &attacker, &defender);
         let fleet = &game_data.fleets[fleet_idx];
-        has_any_force(fleet) && fleet.order == order
+        held_by == Some(owner) && has_any_force(fleet) && fleet.order == order
     }
 
     /// Move fleet unit `unit`'s table entry to where its record now is; a
-    /// unit that changes sector or layer is forgotten by every empire.
-    fn follow_fleet(&mut self, game_data: &CoreGameData, unit: usize) {
-        let fleet = &game_data.fleets[self.units[unit].index];
+    /// unit that changes sector or layer is forgotten by every empire, and
+    /// its escape from a battle there, if it was making one, is over.
+    fn follow_fleet(&mut self, game_data: &mut CoreGameData, unit: usize) {
+        let fleet = &mut game_data.fleets[self.units[unit].index];
         let (sector, layer) = (fleet.sector.to_array(), layer_of(fleet.depth));
         let entry = &mut self.units[unit];
         if (entry.sector, entry.layer) != (sector, layer) {
             entry.sector = sector;
             entry.layer = layer;
+            fleet.escape = None;
             self.awareness.forget(unit);
         }
     }
@@ -192,7 +197,7 @@ impl Year<'_> {
     /// The table after a starbase's step: the base and the escort it
     /// carried move, both are forgotten when the base changed sector or
     /// layer, and guards merged into the escort leave play.
-    fn follow_base_step(&mut self, game_data: &CoreGameData, unit: usize, step: &BaseStep) {
+    fn follow_base_step(&mut self, game_data: &mut CoreGameData, unit: usize, step: &BaseStep) {
         let base = &game_data.bases[self.units[unit].index];
         let entry = &mut self.units[unit];
         entry.sector = base.sector.to_array();
@@ -201,11 +206,12 @@ impl Year<'_> {
             self.awareness.forget(unit);
         }
         if let Some(escort) = step.escort.and_then(|fleet_idx| self.fleet_unit(fleet_idx)) {
-            let fleet = &game_data.fleets[self.units[escort].index];
+            let fleet = &mut game_data.fleets[self.units[escort].index];
             let entry = &mut self.units[escort];
             entry.sector = fleet.sector.to_array();
             entry.layer = layer_of(fleet.depth);
             if step.moved_cell {
+                fleet.escape = None;
                 self.awareness.forget(escort);
             }
         }
@@ -248,6 +254,7 @@ impl Year<'_> {
             transports: troop_transports(fleet),
             etacs: fleet.ships.etacs,
             scouts: fleet.ships.scouts,
+            escaping: fleet.escape.is_some(),
         }
     }
 
@@ -302,18 +309,18 @@ impl Year<'_> {
             self.awareness.raise(owner, target, 2);
             match unit.kind {
                 UnitKind::Fleet => {
-                let alert =
-                    self.base_alert(game_data, owner, &self.fleet_facts(game_data, unit.index));
-                push_fleet_contact(
-                    &mut self.events.scout_contact_events,
-                    &mut self.events.planet_intel_events,
-                    game_data,
-                    ContactObserver::Base(base_idx, alert),
-                    unit.index,
-                    sector,
-                    tick,
-                );
-            }
+                    let alert =
+                        self.base_alert(game_data, owner, &self.fleet_facts(game_data, unit.index));
+                    push_fleet_contact(
+                        &mut self.events.scout_contact_events,
+                        &mut self.events.planet_intel_events,
+                        game_data,
+                        ContactObserver::Base(base_idx, alert),
+                        unit.index,
+                        sector,
+                        tick,
+                    );
+                }
                 UnitKind::Base => {
                     let target_base = &game_data.bases[unit.index];
                     let alerting = self.declared_enemy(game_data, owner, unit.owner);
@@ -415,6 +422,14 @@ impl Year<'_> {
                         closing = false;
                     }
                     self.awareness.raise(owner, target, level);
+                    // A fleet escaping from a battle here that this empire
+                    // has already caught once has got away from it.
+                    if game_data.fleets[unit.index]
+                        .escape
+                        .is_some_and(|escape| escape.pursued_by(owner))
+                    {
+                        continue;
+                    }
                     let Some(mode) = mode else {
                         continue;
                     };
@@ -579,7 +594,8 @@ impl Year<'_> {
 
     /// Fight `attacker` against `defender` at `sector` and put the result on
     /// the books: the events dated to the tick, the fighters' records
-    /// reloaded, and destroyed units out of play.
+    /// reloaded, and destroyed units out of play. Returns who held the
+    /// field.
     fn fight(
         &mut self,
         game_data: &mut CoreGameData,
@@ -588,8 +604,11 @@ impl Year<'_> {
         sector: [u8; 2],
         attacker: &BattleSide,
         defender: &BattleSide,
-    ) {
-        let mut events = fight_encounter(
+    ) -> Option<u8> {
+        let FleetBattle {
+            mut events,
+            held_by,
+        } = fight_encounter(
             game_data,
             self.campaign_seed,
             battle_key,
@@ -608,6 +627,7 @@ impl Year<'_> {
                 UnitKind::Base => game_data.bases[unit.index].base_id.0 != 0,
             };
         }
+        held_by
     }
 
     /// ROE forbids fighting a force that blocks the mission: the fleet heads

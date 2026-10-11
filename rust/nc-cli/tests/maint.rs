@@ -3152,11 +3152,16 @@ fn maint_rust_battle_abort_scout_report_mentions_retreat_destination() {
     assert!(text.contains("the ") && text.contains(" Fleet of "));
     assert!(text.contains("Fleet of \""));
     assert!(text.contains("(Empire #"));
+    // Unarmed, the scouts escape after the first exchange and the report
+    // says where they withdrew to.
     assert!(
         text.contains("seeking safety")
             || text.contains("seek safety")
+            || text.contains("we withdrew toward")
+            || text.contains("withdrawing toward")
             || text.contains("holding position")
-            || text.contains("ALERT: Fleet contact lost!")
+            || text.contains("ALERT: Fleet contact lost!"),
+        "{text}"
     );
     assert!(text.contains("planet \"") || text.contains("System("));
 

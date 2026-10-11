@@ -185,4 +185,39 @@ pub struct Fleet {
     pub rules_of_engagement: u8,
     /// 0x26: ships aboard.
     pub ships: ShipCounts,
+    /// The escape the fleet is making from a battle, if any. Not a classic
+    /// field: an export drops it.
+    pub escape: Option<EscapeEpisode>,
+}
+
+/// A fleet's escape from a battle: it broke off in `sector` and `layer`
+/// and is leaving. Each opposing empire catches it in at most one pursuit
+/// exchange while the episode lasts, and an empire that has had its
+/// exchange cannot attack the fleet again there. The episode ends when the
+/// fleet leaves the sector or layer or receives a new order, and it
+/// outlives the year.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct EscapeEpisode {
+    pub sector: Coords,
+    /// 1 inside the world's system, 0 in deep space.
+    pub layer: u8,
+    /// Bit `empire - 1` is set once that empire has had its pursuit
+    /// exchange.
+    pub pursuers: u32,
+}
+
+impl EscapeEpisode {
+    pub fn pursued_by(&self, empire: u8) -> bool {
+        empire_bit(empire).is_some_and(|bit| self.pursuers & bit != 0)
+    }
+
+    pub fn record_pursuit(&mut self, empire: u8) {
+        if let Some(bit) = empire_bit(empire) {
+            self.pursuers |= bit;
+        }
+    }
+}
+
+fn empire_bit(empire: u8) -> Option<u32> {
+    (1..=32).contains(&empire).then(|| 1 << (empire - 1))
 }

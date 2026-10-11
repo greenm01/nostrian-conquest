@@ -99,12 +99,14 @@ fn merged_roe_abort_report_body(
             retreat_target_coords,
             losses_sustained,
             enemy_losses_inflicted,
+            reason,
             ..
         } => format!(
-            "{prefix} We engaged {}. We had {}. The alien force contained {}. In accordance with our ROE, we withdrew toward {} {}. {} {}",
+            "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we withdrew toward {} {}. {} {}",
             classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
             fleet_force_summary(*enemy_initial, 0),
+            withdrawal_reason_clause(*reason),
             nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),
             roe_retreat_loss_clause(*losses_sustained),
             enemy_losses_sentence(*enemy_losses_inflicted),
@@ -119,10 +121,12 @@ fn merged_roe_abort_report_body(
             retreat_target_coords,
             losses_sustained,
             enemy_losses_inflicted,
+            reason,
             ..
         } => format!(
-            "{prefix} We had {}. We attempted to disengage from {} in accordance with our ROE, but suffered pursuit fire from an alien force containing {} while withdrawing toward {} {}. {} {}",
+            "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {} while withdrawing toward {} {}. {} {}",
             fleet_force_summary(*friendly_initial, *friendly_loaded_armies_initial),
+            withdrawal_reason_clause(*reason),
             classic_enemy_reference(game_data, *target_fleet_number, *target_empire),
             fleet_force_summary(*enemy_initial, 0),
             nearest_owned_destination_text(game_data, event.owner_empire, *retreat_target_coords),

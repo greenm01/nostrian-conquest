@@ -1,13 +1,20 @@
-//! Fleet battle resolution: round cap, determinism, and ROE withdrawals.
+//! Fleet battle resolution: unarmed escape, determinism, and ROE
+//! withdrawals.
 
 use nc_compat::classic::encode_fleet;
-use nc_data::{CoreGameData, Order, troop_transports};
+use nc_data::{
+    CoreGameData, EncounterDispositionEvent, EncounterDispositionReason, Order, troop_transports,
+};
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 
 use super::support::{DEEP_SPACE, Ships, diplomacy, empty_board, place_fleet};
 
+/// Transports attacked by a destroyer take the compulsory exchange and
+/// leave. A destroyer (speed 6) catches transports (speed 5) for certain,
+/// so one pursuit exchange follows and no more: two volleys of at most 10
+/// execution hits destroy at most one transport, which costs 20.
 #[test]
-fn battle_reaching_the_round_cap_ends_as_a_stalemate() {
+fn unarmed_survivors_escape_after_one_exchange_and_one_pursuit() {
     let mut game_data = empty_board(4, 0);
     place_fleet(
         &mut game_data,
@@ -38,25 +45,35 @@ fn battle_reaching_the_round_cap_ends_as_a_stalemate() {
 
     let events =
         run_maintenance_turn_with_context_and_seed(&mut game_data, 1, &[], &diplomacy(&[(1, 2)]))
-            .expect("a long battle must not abort maintenance");
+            .expect("maintenance should succeed");
 
     assert_eq!(game_data.fleets[0].ships.destroyers, 1);
-    let transports = troop_transports(&game_data.fleets[4]);
+    assert!(troop_transports(&game_data.fleets[4]) >= 199);
+    assert_eq!(game_data.fleets[4].order, Order::SeekHome);
     assert!(
-        transports > 0 && transports < 200,
-        "survivors keep their ships: {transports}"
+        events
+            .fleet_battle_events
+            .iter()
+            .any(|event| event.reporting_empire == 1 && event.held_field)
     );
     assert!(
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire == 1)
+            .any(|event| event.reporting_empire == 2 && !event.held_field)
     );
     assert!(
         events
-            .fleet_battle_events
+            .encounter_disposition_events
             .iter()
-            .any(|event| event.reporting_empire == 2)
+            .any(|event| matches!(
+                event,
+                EncounterDispositionEvent::PursuitFire {
+                    fleet_idx: 4,
+                    reason: EncounterDispositionReason::UnarmedEscape,
+                    ..
+                }
+            ))
     );
 }
 
@@ -104,9 +121,10 @@ fn equal_roe_battle_resolves_identically_every_run() {
 
 #[test]
 fn withdrawal_resolution_does_not_depend_on_empire_slot_order() {
-    // A committed patrol (ROE 6) that is outgunned breaks off from round 4.
-    // Whether the withdrawing side is empire 1 or empire 2, it takes only the
-    // withdrawal exchange in that round, never also the opponent's full volley.
+    // A patrol (ROE 6) that is outgunned breaks off after the first
+    // exchange. Whether the withdrawing side is empire 1 or empire 2, it
+    // takes at most one pursuit exchange, never also the opponent's next
+    // full volley.
     let escapes = |withdrawing: u8, fighting: u8| {
         let (withdrawing_idx, fighting_idx) = if withdrawing == 1 { (0, 4) } else { (4, 0) };
         let mut escaped_fleets = 0;

@@ -31,6 +31,7 @@ pub fn decode_fleet(bytes: &[u8; FLEET_RECORD_SIZE]) -> Fleet {
             etacs: u16_at(bytes, 0x30),
             scouts: u16_at(bytes, 0x32),
         },
+        escape: None,
     }
 }
 

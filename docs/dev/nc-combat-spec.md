@@ -59,15 +59,18 @@ Fleet combat and orbital fire resolve at the same instant. The landing battle
 is the exception: the defenders fire first.
 
 ### 2. ROE Thresholds
-Rules of Engagement decide whether a fleet attacks (following classic
-ECMAINT; see Contact and Engagement) and, once a battle starts, when it breaks
-off. Inside the battle ROE does not inject randomness.
+Rules of Engagement decide whether a fleet attacks (see Contact and
+Engagement) and, once a battle starts, when it breaks off. Both decisions
+weigh the same yardstick, NC attack strength. Inside the battle ROE does not
+inject randomness.
 
-#### 3-Round Commitment
-Once combat begins, all participating fleets are committed to the engagement
-for a minimum of **three rounds**. ROE-based withdrawals and retreats are
-disabled until **Round 4**. This ensures that fleets trade meaningful blows
-and prevents "bailing" before any attrition occurs.
+#### One Compulsory Exchange
+The first exchange of a battle is compulsory. After it, and after every
+exchange that follows, each side checks its ROE against the odds as they now
+stand and breaks off when they fail. A side whose ships have no attack
+strength left attempts to escape at once, whatever its ROE, including a
+fleet that has just lost its last armed ship. A side that breaks off may be
+pursued (see Fleet Combat Sequence).
 
 ### 3. Aggregate Combat
 EC uses ship counts, not per-hull damage state. The Rust engine uses a
@@ -128,8 +131,17 @@ the decision. In short:
   blockade meets an assault or a colonizer of an unowned world, when two
   fleets race to colonize, or when it guards an assault's target world (the
   assault aborts if its ROE forbids the fight). First identification commits
-  any ROE above 0; later re-checks use classic's strength test. Then an
-  intercept roll decides whether the target gets away.
+  any ROE above 0, unless the fleet is escaping from a battle (see Pursuit
+  and Escape); later re-checks use the ROE strength test. Then an intercept
+  roll decides whether the target gets away.
+- Every ROE test, the decision to attack, the in-battle check, and the
+  orbital gate, weighs effective NC attack strength: each warship at its AS
+  (destroyer 10, cruiser 30, battleship 90), a participating starbase once at
+  100, and scouts, transports, and ETACs at 0. Die bonuses do not inflate it.
+  Classic's 21/7/2 weights and its +30 for a guard at rest with its base are
+  not used; the ROE thresholds, sighting, and intercept are classic's. Once
+  hull damage persists (decision 3), a crippled hull counts at its crippled
+  AS and a crippled starbase at 50.
 - Starbases scan and report but never start a fight. A fleet attacks a
   starbase only as a declared enemy or when the base protects its assault
   target.
@@ -139,9 +151,13 @@ the decision. In short:
 - There is no departure strike: a blockade catches a fleet leaving its world
   only through the rules above, while the fleet is still in orbit.
 
-Rust departs from classic in one place: a sector with no world is nobody's
-system (classic reads a garbage owner there). Rust matches classic's odds, not
-its random sequence.
+Rust departs from classic in two places. A sector with no world is nobody's
+system (classic reads a garbage owner there). And the strength a fleet weighs
+is NC's, so classic decides who may meet whom and when, and NC decides whether
+a fleet agrees to fight
+([decision 2](../notes/decisions/kiswrzos-withdrawal-pursuit-and-one-strength-yardstick.md)):
+encounter parity with classic holds up to that decision. Rust matches
+classic's odds, not its random sequence.
 
 ### Who Takes Part
 Only the two sides of an encounter fight. Only they can hold the field, be
@@ -176,8 +192,9 @@ Die modifiers add to the roll:
 - **+1** for a side with a starbase.
 
 The total is at most **+2**, and a modified roll above 9 reads as 9. The
-withdrawal exchange takes no modifier. An unmodified **9** is a critical hit:
-it destroys one more unit outright, a crippled one first.
+pursuit exchange is an ordinary exchange and takes the same modifiers. An
+unmodified **9** is a critical hit: it destroys one more unit outright, a
+crippled one first.
 
 ### Carried Hits
 
@@ -187,15 +204,16 @@ both steps.
 
 A volley's hits rarely buy a whole number of steps. What a fire pool cannot
 spend stays carried against that side and joins the same pool's hits in the
-side's next exchange of the battle, the withdrawal exchange included.
+side's next exchange of the battle, the pursuit exchange included.
 Suppression and execution hits carry separately. Carried hits buy new steps
 only; they never undo a cripple or a kill.
 
 Carried hits belong to the battle and to the side, not to its fleets. They
-are dropped when the battle ends for any reason: a side destroyed, a
-withdrawal, or the 64-round cap. The next battle starts at zero, even between
-the same fleets in the same tick, so a withdrawal forfeits whatever was
-carried.
+are dropped when the battle ends for any reason: a side destroyed, a side
+breaking off, or the 64-round cap. The next battle starts at zero, even
+between the same fleets in the same tick: a pursuit on a later tick is a new
+encounter, and a fleet that breaks off forfeits whatever was carried against
+its enemy.
 
 ### Landing Battle
 
@@ -372,22 +390,37 @@ Planet), with no extra battery volley.
 1. **Identify Participants**: The two sides of the encounter, each a task
    force, ordered by empire number. The attacker side reports that it
    intercepted the enemy; the other side reports that it was attacked.
-2. **Simultaneous Fire**: Both sides generate and apply hits (Rounds 1-3 mandatory).
-   Withdrawals for a round are declared before any volley resolves: a force
-   breaking off takes only the withdrawal exchange from the opponent it
-   leaves, never that opponent's full volley as well.
-3. **Post-Round ROE**: Survivors check if they can break off (Starting Round 4).
-   A withdrawn force is out of the battle: it is no longer targeted and its
-   strength no longer counts in anyone's ROE odds.
-4. **End State**: Combat ends when one side is destroyed or retreats. A
-   battle still undecided after 64 rounds ends as a stalemate: survivors keep
-   their ships and the normal post-battle rules (retreat of forces that did
-   not hold the field, mission aborts, reports) apply.
-5. **Retreat**: Once the losses are on the fleet records, each surviving
+2. **Compulsory Exchange**: Both sides fire one volley from the same moment,
+   and the hits land together with what each side carried.
+3. **Post-Exchange ROE**: After every exchange, the first included, each side
+   checks its ROE against the odds as they stand, its attack strength
+   against its opponent's. A side whose ROE fails, or whose ships have no
+   attack strength left, breaks off. A side with a starbase never breaks
+   off: the base cannot leave, and its guard fights with it. A withdrawn
+   force is out of the battle: it is no longer targeted and its strength no
+   longer counts in anyone's ROE odds.
+4. **Pursuit**: When one side breaks off and the other stays, the other may
+   pursue. It needs armed ships (a starbase cannot chase), it must not have
+   had its exchange with the fleeing fleet's escape already (see Pursuit
+   and Escape), and it must catch the fleeing side by classic's intercept
+   rule: a pursuer whose ships are faster catches for certain; otherwise the
+   speed roll decides, `100 * sin(pi * u) * pursuer speed / fleeing speed`
+   percent with `u` uniform, each side at the speed of its slowest surviving
+   class. The fleeing side is in contact and running, so the intercept's
+   awareness term does not apply. A catch is one more ordinary exchange,
+   both sides firing with their die modifiers and carried hits. When both
+   sides break off, nobody pursues. The battle then ends.
+5. **End State**: Combat ends when one side is destroyed or breaks off. A
+   battle still undecided after 64 exchanges ends unresolved: survivors keep
+   their ships and their orders, nobody holds the field, nobody retreats, no
+   mission aborts, and an attacker at the orbital gate gains no permission
+   to strike. The next tick's ordinary encounter rules decide whether they
+   fight again; nothing remembers the capped battle.
+6. **Retreat**: Once the losses are on the fleet records, each surviving
    fleet's maximum speed is recomputed from the ships it has left, as
-   classic's `24a3:036b` does. A fleet that did not hold the field, withdrew
-   under its ROE, or lost the ships its mission needs then gets the Seek
-   Home order as the order path writes it: its target is classic's nearest
+   classic's `24a3:036b` does. A fleet that did not hold the field, broke
+   off under its ROE or unarmed, or lost the ships its mission needs then
+   gets the Seek Home order as the order path writes it: its target is classic's nearest
    friendly world (`24a3:0876`, as every classic abort and retreat picks
    it), the owned world nearest by travel distance from the fleet's own
    position and depth, leaving out the world of the system the fleet is in
@@ -398,7 +431,39 @@ Planet), with no extra battery volley.
    matter, not a rule: classic zeroes ROE only on scatter, and ec4x never
    does, so a retreat is not where ROE changes. A fleet whose empire owns
    no other world holds where it is, position and depth untouched. A fleet
-   with no ships left is culled.
+   with no ships left is culled. The mission report of a fleet that broke
+   off says the orbital defence repelled it when the world's owner held the
+   field, or that it lost the ships its mission needs.
+
+### Pursuit and Escape
+
+A fleet that breaks off is escaping: from its retreat order on it is in an
+escape episode bound to the sector and layer it is leaving. The episode ends
+when the fleet actually leaves that sector or layer or receives a new order
+(a player's order, a Join, or the autopilot's), and it outlives the year: it
+is runtime state on the fleet record and in the SQLite store (the
+`escape_*` columns of `snapshot_fleets`), and a classic export, which has
+no field for it, drops it. A fleet that holds in place because its empire
+owns no other world is in no episode.
+
+Each opposing empire gets at most one exchange with the escaping fleet while
+the episode lasts: the pursuit exchange that caught it inside the battle, or
+failing that its next attack on the fleet on a later tick, which is a new
+encounter starting at zero carried hits and whose compulsory exchange is
+that empire's pursuit, so the fleet, breaking off again, is not pursued. An
+empire that has had its exchange cannot attack the fleet again there: the
+fleet has got away from it. An escaping fleet does not volunteer for a fight
+through first identification; only its ROE strength test can make it attack.
+Splitting or merging fleets gives nobody a second pursuit: a detached fleet
+keeps its donor's episode, and a merge keeps every pursuer either fleet had
+recorded.
+
+Screening stays line-first during a pursuit exchange: auxiliaries are not
+exposed because a retreat occurred. The free critical keeps its exception:
+it destroys one more unit in the order DD, SC, TT, ETAC, CA, BB, SB,
+ignoring the screen, so a critical can take an auxiliary while the line
+still stands. That is the one way through the screen, documented here rather
+than called an absolute screen; changing it needs its own approval.
 
 Every collection whose order affects outcomes or event order is ordered, so
 the same seed always produces the same battle. The battle's random draws are
@@ -431,10 +496,12 @@ above, with the attacker as the observer side and the owner's units as the
 target side, so losses, re-rating, retreat, and the awareness both sides
 gain (3, fought) are the battle's. The attacker's ROE decides first, as it
 does for a starbase blocking its path: a fleet unwilling to take on the
-owner's combined strength aborts to Seek Home without a shot. Only the
-holder of the field strikes, in the same tick. A beaten attacker has
-retreated with its battle, or died in it, and its mission report says the
-orbital defence repelled it. The world's batteries take no part in the gate
+owner's combined attack strength (each starbase at 100) aborts to Seek Home
+without a shot. Only the holder of the field strikes, in the same tick. A
+beaten attacker has retreated with its battle, or died in it, and its
+mission report says the orbital defence repelled it. A gate battle the
+64-round cap leaves unresolved gives no permission: the attacker keeps its
+order, and the next tick's gate decides again. The world's batteries take no part in the gate
 and fire only on a fleet that strikes. A second attacker of the same empire
 finds the orbit the first cleared empty and strikes without refighting
 anyone; rival attackers of different empires strike in the year's unit

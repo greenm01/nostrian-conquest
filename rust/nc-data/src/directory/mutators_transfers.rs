@@ -136,6 +136,9 @@ impl CoreGameData {
         new_fleet.ships.loaded_transports = selection.full_transports;
         new_fleet.ships.scouts = selection.scouts;
         new_fleet.ships.etacs = selection.etacs;
+        // Ships detached from an escaping fleet are still escaping: a split
+        // gives nobody a second pursuit.
+        new_fleet.escape = donor.escape;
         recompute_max_speed(&mut new_fleet);
         new_fleet.speed = 0;
         clear_roe_without_warships(&mut new_fleet);

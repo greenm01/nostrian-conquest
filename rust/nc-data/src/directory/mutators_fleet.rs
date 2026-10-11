@@ -143,6 +143,8 @@ impl CoreGameData {
         record.speed = speed;
         record.order = Order::from_code(order_code);
         record.target = Coords::from_array(target);
+        // A new order ends an escape from a battle.
+        record.escape = None;
         // ECGAME writes 0x22 = world-target flag (0 for sector-targeted orders,
         // 1 otherwise) and the 0x23 word = mission id (starbase id for Guard
         // Starbase, host fleet number for Join); explicit aux bytes override
@@ -381,6 +383,7 @@ impl CoreGameData {
         fleet.speed = fleet.max_speed;
         fleet.order = Order::JoinAnotherFleet;
         fleet.target = Coords::from_array(host_coords);
+        fleet.escape = None;
         set_mission_target(fleet, 1, host_fleet_number);
         Ok(())
     }

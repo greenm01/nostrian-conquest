@@ -1,10 +1,12 @@
 //! The decision table (`1b05:1277`, `1b05:1d11`), strength, ROE, and the
-//! observer and visibility factors, checked case by case.
+//! observer and visibility factors, checked case by case. Strength is NC's
+//! one yardstick (combat decision 2): attack strength, not classic's
+//! 21/7/2 weights.
 
 use nc_data::GameRng;
 use nc_engine::maint::encounter::rules::{
-    FleetFacts, Mode, Situation, Verdict, base_factor, decide_vs_base, decide_vs_fleet,
-    fleet_posture, fleet_visibility, order, roe_permits, strength,
+    BASE_STRENGTH, FleetFacts, Mode, Situation, Verdict, base_factor, decide_vs_base,
+    decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, strength,
 };
 
 const HERE: [u8; 2] = [15, 13];
@@ -258,14 +260,20 @@ fn faster_attacker_always_intercepts_and_a_slower_one_may_not() {
 fn starbases_are_attacked_only_as_an_assault_target_or_a_declared_enemy() {
     let mut bomber = at_world(1, order::BOMBARD).roe_set(6);
     bomber.battleships = 2;
-    assert_eq!(decide_vs_base(&bomber, 30, false), Verdict::Engaged);
+    assert_eq!(
+        decide_vs_base(&bomber, BASE_STRENGTH, false),
+        Verdict::Engaged
+    );
     // The base protects the target world: its guard counts too.
-    let guarded = 30 + strength(&at_world(2, order::GUARD_STARBASE)) + 100;
+    let guarded = BASE_STRENGTH + strength(&at_world(2, order::GUARD_STARBASE)) + 100;
     assert_eq!(decide_vs_base(&bomber, guarded, false), Verdict::Aborted);
     let hold = at_world(1, order::HOLD).roe_set(10);
-    assert_eq!(decide_vs_base(&hold, 30, false), Verdict::Ignored);
-    assert_eq!(decide_vs_base(&hold, 30, true), Verdict::Engaged);
-    // A declared enemy weighs the base alone (30), not its guard.
+    assert_eq!(
+        decide_vs_base(&hold, BASE_STRENGTH, false),
+        Verdict::Ignored
+    );
+    assert_eq!(decide_vs_base(&hold, BASE_STRENGTH, true), Verdict::Engaged);
+    // A declared enemy weighs the base alone (100), not its guard.
     let cautious = at_world(1, order::HOLD).roe_set(6);
     assert_eq!(decide_vs_base(&cautious, 1000, true), Verdict::Avoided);
     let mut strong = cautious;
@@ -273,8 +281,10 @@ fn starbases_are_attacked_only_as_an_assault_target_or_a_declared_enemy() {
     assert_eq!(decide_vs_base(&strong, 1000, true), Verdict::Engaged);
 }
 
+/// Decision 2's yardstick: each warship at its attack strength, nothing for
+/// a guard at rest, and a starbase at 100.
 #[test]
-fn strength_counts_warships_and_a_guard_at_rest() {
+fn strength_is_attack_strength() {
     let mut fleet = at_world(1, order::HOLD);
     fleet.battleships = 1;
     fleet.cruisers = 2;
@@ -282,16 +292,66 @@ fn strength_counts_warships_and_a_guard_at_rest() {
     fleet.scouts = 5;
     fleet.transports = 4;
     fleet.etacs = 1;
-    assert_eq!(strength(&fleet), 21 + 14 + 6);
+    assert_eq!(strength(&fleet), 90 + 60 + 30);
     fleet.order = order::GUARD_STARBASE;
-    assert_eq!(strength(&fleet), 41 + 30);
-    fleet.speed = 1;
-    assert_eq!(strength(&fleet), 41);
+    assert_eq!(strength(&fleet), 180);
+    assert_eq!(BASE_STRENGTH, 100);
+}
+
+/// Where the yardstick changes who agrees to fight: three destroyers meet
+/// a cruiser at ROE 6 (30 against 30; classic's weights gave 6 against 7),
+/// and four cruisers take on a lone starbase (120 against 100; classic gave
+/// 28 against 30).
+#[test]
+fn the_yardstick_lets_three_destroyers_fight_a_cruiser_and_four_cruisers_a_base() {
+    let mut destroyers = at_world(1, order::HOLD).roe_set(6);
+    destroyers.layer = 0;
+    destroyers.cruisers = 0;
+    destroyers.destroyers = 3;
+    let mut cruiser = at_world(2, order::HOLD);
+    cruiser.layer = 0;
+    cruiser.cruisers = 1;
+    assert_eq!(
+        verdict(destroyers, cruiser, situation(None, true), Mode::Recheck),
+        Verdict::Engaged
+    );
+    let mut cruisers = at_world(1, order::BOMBARD).roe_set(6);
+    cruisers.cruisers = 4;
+    assert_eq!(
+        decide_vs_base(&cruisers, BASE_STRENGTH, false),
+        Verdict::Engaged
+    );
+    assert_eq!(
+        decide_vs_base(&cruisers, BASE_STRENGTH, true),
+        Verdict::Engaged
+    );
+}
+
+/// A fleet escaping from a battle does not volunteer through first
+/// identification; its ROE test alone decides.
+#[test]
+fn an_escaping_fleet_does_not_volunteer_at_first_identification() {
+    let mut observer = at_world(2, order::HOLD).roe_set(2);
+    observer.layer = 0;
+    observer.escaping = true;
+    let mut enemy = at_world(1, order::HOLD);
+    enemy.layer = 0;
+    enemy.battleships = 10;
+    assert_eq!(
+        verdict(observer, enemy, situation(None, true), Mode::Identify),
+        Verdict::Avoided
+    );
+    enemy.battleships = 0;
+    enemy.cruisers = 0;
+    assert_eq!(
+        verdict(observer, enemy, situation(None, true), Mode::Identify),
+        Verdict::Engaged
+    );
 }
 
 #[test]
 fn roe_thresholds_follow_classic() {
-    let cases: &[(u8, u16, u16, bool)] = &[
+    let cases: &[(u8, u32, u32, bool)] = &[
         (0, 100, 0, false),
         (1, 100, 0, true),
         (1, 100, 1, false),

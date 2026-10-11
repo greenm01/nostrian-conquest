@@ -14,11 +14,18 @@
 //! changes. With no other owned world the fleet holds where it is, position
 //! and depth untouched. A fleet with no ships left holds at rest and is
 //! culled when the next maintenance starts.
+//!
+//! A fleet that broke off is also escaping: it is in an escape episode from
+//! the battle's sector and layer ([`nc_data::EscapeEpisode`]), which notes
+//! the empire that caught it in a pursuit exchange, so that empire gets no
+//! second one while the episode lasts.
 
 use crate::{CoreGameData, Order};
 
 use super::state::TaskForce;
-use nc_data::{Coords, set_fleet_at_rest, set_mission_target, troop_transports};
+use nc_data::{
+    Coords, EscapeEpisode, Real48, has_any_force, set_fleet_at_rest, set_mission_target,
+};
 
 /// Where fleet `fleet_idx` goes when it abandons its mission: ECMAINT's
 /// nearest friendly world (`24a3:0876`, flag 1), which is ECGAME's picker
@@ -81,21 +88,53 @@ pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
 /// until it is culled.
 pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &TaskForce) {
     for &idx in &task_force.fleet_indices {
-        let fleet = &mut game_data.fleets[idx];
-        if fleet.ships.destroyers == 0
-            && fleet.ships.cruisers == 0
-            && fleet.ships.battleships == 0
-            && fleet.ships.scouts == 0
-            && troop_transports(fleet) == 0
-            && fleet.ships.etacs == 0
-        {
-            set_fleet_to_hold_current_position(fleet);
-            fleet.rules_of_engagement = 0;
+        if !has_any_force(&game_data.fleets[idx]) {
+            hold_until_culled(&mut game_data.fleets[idx]);
             continue;
         }
-
         retreat_fleet(game_data, idx);
     }
+}
+
+/// Send a side that broke off home from the battle at `coords` and record
+/// its escape: each fleet with ships retreats and is in an escape episode
+/// from `coords` and its layer, continuing the one it was already in (a
+/// fleet's episode is always from the cell it is in, since leaving the cell
+/// ends it), with `pursuer` noted as having had its pursuit exchange. A
+/// fleet with nowhere to go holds where it is and is in no episode; one
+/// with no ships holds at rest until it is culled.
+pub(super) fn escape_task_force(
+    game_data: &mut CoreGameData,
+    task_force: &TaskForce,
+    coords: [u8; 2],
+    pursuer: Option<u8>,
+) {
+    for &idx in &task_force.fleet_indices {
+        if !has_any_force(&game_data.fleets[idx]) {
+            hold_until_culled(&mut game_data.fleets[idx]);
+            continue;
+        }
+        let home = nearest_friendly_world(game_data, idx);
+        let fleet = &mut game_data.fleets[idx];
+        abort_mission_to_seek_home_or_hold(fleet, home);
+        fleet.escape = home.map(|_| {
+            let mut episode = fleet.escape.unwrap_or(EscapeEpisode {
+                sector: Coords::from_array(coords),
+                layer: u8::from(fleet.depth >= Real48::HALF),
+                pursuers: 0,
+            });
+            if let Some(pursuer) = pursuer {
+                episode.record_pursuit(pursuer);
+            }
+            episode
+        });
+    }
+}
+
+fn hold_until_culled(fleet: &mut nc_data::Fleet) {
+    set_fleet_to_hold_current_position(fleet);
+    fleet.rules_of_engagement = 0;
+    fleet.escape = None;
 }
 
 pub(super) fn dominant_empire_after_battle(
@@ -108,7 +147,7 @@ pub(super) fn dominant_empire_after_battle(
 
     let mut surviving_empires = task_forces
         .iter()
-        .filter(|tf| tf.engaged_in_battle && tf.state.has_units() && !tf.withdrew_under_roe)
+        .filter(|tf| tf.engaged_in_battle && tf.state.has_units() && tf.withdrew.is_none())
         .map(|tf| tf.empire)
         .collect::<Vec<_>>();
     surviving_empires.sort_unstable();

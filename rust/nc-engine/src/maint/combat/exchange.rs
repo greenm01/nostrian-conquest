@@ -1,3 +1,4 @@
+use crate::maint::encounter::rules::speed_roll_catches;
 use crate::{GameRng, RNG_TAG_COMBAT};
 
 use super::state::{
@@ -18,7 +19,7 @@ const COLUMN_ADVANTAGED: usize = 3;
 const COLUMN_OVERWHELMING: usize = 4;
 
 pub(super) const COMBAT_KIND_FLEET: u64 = 1;
-pub(super) const COMBAT_KIND_WITHDRAWAL: u64 = 2;
+pub(super) const COMBAT_KIND_PURSUIT: u64 = 2;
 pub(super) const COMBAT_KIND_BOMBARD: u64 = 3;
 pub(super) const COMBAT_KIND_INVASION_SUPPRESSION: u64 = 4;
 pub(super) const COMBAT_KIND_INVASION_SOFTEN: u64 = 5;
@@ -26,6 +27,7 @@ pub(super) const COMBAT_KIND_GROUND: u64 = 6;
 pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
+pub(super) const COMBAT_KIND_PURSUIT_CATCH: u64 = 10;
 
 /// Planetary combat's ratio CRT, multipliers in quarters: one row per d10
 /// value and one column per force-ratio band.
@@ -46,19 +48,6 @@ const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
 /// modified d10: 0-2 give 25%, 3-5 give 50%, 6-9 give 100%.
 const FLEET_EFFECTIVENESS_X4: [u8; 10] = [1, 1, 1, 2, 2, 2, 4, 4, 4, 4];
 const FLEET_DIE_MODIFIER_CAP: u8 = 2;
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum RoundActionKind {
-    Fight,
-    Withdraw,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct RoundAction {
-    pub(super) empire: u8,
-    pub(super) target_empire: u8,
-    pub(super) kind: RoundActionKind,
-}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct ExchangeResolution {
@@ -112,22 +101,6 @@ fn apply_destroyed_hits_to_fleet_classes(
     progress
 }
 
-pub(super) fn rule_threshold_satisfied(roe: u8, friendly_as: u32, enemy_as: u32) -> bool {
-    match roe {
-        0 => false,
-        1 => enemy_as == 0,
-        2 => friendly_as >= enemy_as.saturating_mul(4),
-        3 => friendly_as >= enemy_as.saturating_mul(3),
-        4 => friendly_as >= enemy_as.saturating_mul(2),
-        5 => friendly_as.saturating_mul(2) >= enemy_as.saturating_mul(3),
-        6 => friendly_as >= enemy_as,
-        7 => friendly_as.saturating_mul(3) >= enemy_as.saturating_mul(2),
-        8 => friendly_as.saturating_mul(2) >= enemy_as,
-        9 => friendly_as.saturating_mul(3) >= enemy_as,
-        _ => true,
-    }
-}
-
 fn base_combat_column(our_as: u32, enemy_as: u32) -> usize {
     if enemy_as == 0 || our_as >= enemy_as.saturating_mul(3) {
         COLUMN_OVERWHELMING
@@ -148,6 +121,65 @@ fn shifted_combat_column(base_column: usize, shift: i32) -> usize {
 
 fn hits_from_multiplier(as_total: u32, multiplier_x4: u8) -> u32 {
     (as_total.saturating_mul(multiplier_x4 as u32)).div_ceil(4)
+}
+
+/// A fleet battle's luck: one d10 per side and exchange, and the draws of a
+/// pursuit. Maintenance seeds them from the battle context; tests script
+/// them.
+pub(super) trait BattleDice {
+    fn d10(&self, kind: u64, round: u32, acting_empire: u8, target_empire: u8) -> u8;
+    /// Two draws in [0, 1) for `pursuer`'s chase of `fleeing` in `round`:
+    /// the intercept arc, then the roll against it.
+    fn pursuit(&self, kind: u64, round: u32, pursuer: u8, fleeing: u8) -> (f64, f64);
+}
+
+/// The dice of a maintenance battle: every draw is keyed by the campaign
+/// seed and the battle context, so a seed always replays the same battle.
+pub(super) struct SeededDice {
+    pub(super) campaign_seed: u64,
+    pub(super) game_year: u16,
+    pub(super) coords: [u8; 2],
+}
+
+impl SeededDice {
+    fn rng(&self, kind: u64, round: u32, acting: u8, target: u8) -> GameRng {
+        GameRng::from_context(
+            self.campaign_seed,
+            RNG_TAG_COMBAT,
+            &[
+                self.game_year as u64,
+                self.coords[0] as u64,
+                self.coords[1] as u64,
+                kind,
+                round as u64,
+                acting as u64,
+                target as u64,
+            ],
+        )
+    }
+}
+
+impl BattleDice for SeededDice {
+    fn d10(&self, kind: u64, round: u32, acting_empire: u8, target_empire: u8) -> u8 {
+        self.rng(kind, round, acting_empire, target_empire)
+            .roll_d10()
+    }
+
+    fn pursuit(&self, kind: u64, round: u32, pursuer: u8, fleeing: u8) -> (f64, f64) {
+        let mut rng = self.rng(kind, round, pursuer, fleeing);
+        let arc = rng.next_real();
+        (arc, rng.next_real())
+    }
+}
+
+/// Whether a pursuer whose ships make `pursuer_speed` catches a side
+/// fleeing at `fleeing_speed`, by classic's intercept rule (`1b05:03b1`): a
+/// faster pursuer catches for certain, otherwise the speed roll decides.
+/// The fleeing side is in contact and running, so the intercept's
+/// awareness branch does not apply.
+pub(super) fn pursuit_catches(pursuer_speed: u8, fleeing_speed: u8, draws: (f64, f64)) -> bool {
+    pursuer_speed > fleeing_speed
+        || speed_roll_catches(pursuer_speed, fleeing_speed, draws.0, draws.1)
 }
 
 /// The d10 for one side's volley. The battle context keys it, so a seed
@@ -218,7 +250,7 @@ pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> Exchang
 }
 
 /// A fleet battle side's die modifier: +1 for a mixed fleet and +1 for a
-/// starbase, at most +2. The withdrawal exchange takes none.
+/// starbase, at most +2.
 pub(super) fn fleet_die_modifier(state: &FleetCombatState) -> u8 {
     let modifier = u8::from(state.is_mixed()) + u8::from(state.counts[IDX_SB] > 0);
     modifier.min(FLEET_DIE_MODIFIER_CAP)
@@ -437,10 +469,6 @@ pub(super) fn apply_landing_fire_to_fleet(
     {
         state.counts[idx] -= 1;
     }
-}
-
-pub(super) fn fleet_state_changed(before: &FleetCombatState, after: &FleetCombatState) -> bool {
-    before.counts != after.counts || before.crippled != after.crippled
 }
 
 pub(super) fn scalar_hits_with_critical(resolution: ExchangeResolution) -> u32 {

@@ -98,8 +98,40 @@ will differ wherever ROE decides engagement; that difference is a recorded
 NC deviation, not a bug. No campaign measure of how often decisions flip
 exists yet.
 
-Implementation is pending: the engine, the combat spec, the manual's combat
-and ROE chapters, and reports (the reason a fleet left and where it went).
+## Implementation (t065)
+
+The engine fights one compulsory exchange, then every side checks its ROE
+after every exchange; a side whose ships have no attack strength left
+escapes at once. A side with a starbase never breaks off (the base cannot
+leave, and its guard fights with it until decision 6 restructures sides).
+When one side breaks off and the other stays, the other pursues if it has
+armed ships, has not had its exchange with this escape, and catches the
+fleeing side: a pursuer whose slowest surviving class is faster catches for
+certain, otherwise the intercept's speed roll decides, without the awareness
+term, since the fleeing side is in contact and running. The pursuit exchange
+is an ordinary exchange with die modifiers and carried hits; when both sides
+break off nobody pursues. The 64-round cap ends the battle unresolved: no
+winner, no retreats, no mission aborts, and no strike at the orbital gate.
+
+The escape episode is `Fleet::escape` (`EscapeEpisode`: departure sector,
+layer, and a bit set of the empires that have had their exchange), stored in
+the `escape_*` columns of `snapshot_fleets`, hashed into the state hash when
+present, dropped by the classic export, cleared when the fleet changes
+sector or layer or gets a player, Join, or autopilot order, kept by a
+detached fleet, and unioned by a merge. An attack on an escaping fleet by
+an empire that has not had its exchange is that empire's pursuit: a new
+encounter at zero carry whose compulsory exchange is the one it gets. An
+empire that has had it cannot attack the fleet again there, and the
+escaping fleet does not volunteer through first identification.
+
+The yardstick is `encounter::rules::strength`, now the fleet's NC attack
+strength, shared by the attack decision, the intercept's "fights anyway"
+test, the orbital gate (each base at 100), and the in-battle check. Reports
+say why a fleet left (its ROE, or no warships left: `UnarmedEscape`) and
+whether it was caught (`PursuitFire`); a mission abort names the orbital
+defence when the world's owner held the field, else the ships the mission
+lost. Of the encounter tests only the two strength unit tests changed;
+every classic-parity scenario kept its expectation under the new weights.
 
 ## Acceptance and connections
 

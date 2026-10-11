@@ -1,5 +1,5 @@
-use crate::{CoreGameData, Order, ShipLosses};
-use nc_data::troop_transports;
+use crate::{CoreGameData, EncounterDispositionReason, Order, ShipLosses};
+use nc_data::{ShipCounts, slowest_speed, troop_transports};
 
 pub(super) const IDX_DD: usize = 0;
 pub(super) const IDX_CA: usize = 1;
@@ -16,6 +16,10 @@ const AS_SB: u32 = 100;
 const AS_SC: u32 = 0;
 const AS_TT: u32 = 0;
 const AS_ET: u32 = 0;
+
+/// A starbase's attack strength, which is also what it counts for in the
+/// decision to fight.
+pub(crate) const STARBASE_ATTACK_STRENGTH: u32 = AS_SB;
 
 const DS_DD: u32 = 8;
 const DS_CA: u32 = 30;
@@ -47,17 +51,24 @@ pub(super) struct CarriedHits {
     pub(super) execution: u32,
 }
 
+/// How a side left the battle.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct Withdrawal {
+    /// Its ROE failed, or it had no armed ship left.
+    pub(super) reason: EncounterDispositionReason,
+    /// The other side caught it in a pursuit exchange.
+    pub(super) pursued: bool,
+}
+
 #[derive(Clone, Debug)]
 pub(super) struct TaskForce {
     pub(super) empire: u8,
     pub(super) fleet_indices: Vec<usize>,
     pub(super) state: FleetCombatState,
     pub(super) role: BattleRole,
-    pub(super) withdrew_under_roe: bool,
+    /// Set once the side has broken off: it is out of the battle.
+    pub(super) withdrew: Option<Withdrawal>,
     pub(super) engaged_in_battle: bool,
-    /// Guards/blockades get one free hold when ROE threshold fails (per spec).
-    /// Set to true once this free hold has been used.
-    pub(super) free_hold_used: bool,
     /// Hits carried against this side from earlier exchanges of this
     /// battle. They belong to the side, not to its fleets: a fleet that
     /// leaves takes none with them, and the battle's end drops them.
@@ -110,6 +121,36 @@ impl FleetCombatState {
     pub(super) fn nominal_count(&self, idx: usize) -> u32 {
         self.counts[idx].saturating_sub(self.crippled[idx])
     }
+
+    /// The side has ships, as opposed to starbases only.
+    pub(super) fn has_ships(&self) -> bool {
+        self.counts
+            .iter()
+            .enumerate()
+            .any(|(idx, &count)| idx != IDX_SB && count > 0)
+    }
+
+    /// The speed the side's ships can make together: that of the slowest
+    /// class still present, as the fleet's maximum speed is recomputed
+    /// after the battle.
+    pub(super) fn ship_speed(&self) -> u8 {
+        let count = |idx: usize| self.counts[idx].min(u32::from(u16::MAX)) as u16;
+        slowest_speed(&ShipCounts {
+            battleships: count(IDX_BB),
+            cruisers: count(IDX_CA),
+            destroyers: count(IDX_DD),
+            empty_transports: count(IDX_TT),
+            loaded_transports: 0,
+            etacs: count(IDX_ET),
+            scouts: count(IDX_SC),
+        })
+    }
+}
+
+/// The attack strength of a fleet's warships at full strength: the
+/// yardstick the decision to fight shares with the battle.
+pub(crate) fn warship_attack_strength(destroyers: u16, cruisers: u16, battleships: u16) -> u32 {
+    u32::from(destroyers) * AS_DD + u32::from(cruisers) * AS_CA + u32::from(battleships) * AS_BB
 }
 
 fn crippled_as(as_value: u32) -> u32 {
@@ -223,9 +264,8 @@ pub(super) fn new_task_force(
         fleet_indices,
         state,
         role,
-        withdrew_under_roe: false,
+        withdrew: None,
         engaged_in_battle: false,
-        free_hold_used: false,
         carried_hits: CarriedHits::default(),
     }
 }

@@ -1,9 +1,13 @@
 use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
-use crate::model::{Coords, EmpireId, Fleet, FleetId, Order, RecordNumber, ShipCounts};
+use crate::model::{
+    Coords, EmpireId, EscapeEpisode, Fleet, FleetId, Order, RecordNumber, ShipCounts,
+};
 
-/// One row per FLEETS.DAT record.
+/// One row per FLEETS.DAT record, plus the escape episode the fleet is in
+/// (NULL when it is in none): the sector and layer it is escaping from and
+/// the bit set of empires that have had their pursuit exchange.
 pub(super) const SCHEMA: &str = "
     CREATE TABLE IF NOT EXISTS snapshot_fleets (
         snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
@@ -33,6 +37,10 @@ pub(super) const SCHEMA: &str = "
         loaded_transports INTEGER NOT NULL,
         etacs INTEGER NOT NULL,
         scouts INTEGER NOT NULL,
+        escape_sector_x INTEGER,
+        escape_sector_y INTEGER,
+        escape_layer INTEGER,
+        escape_pursuers INTEGER,
         PRIMARY KEY(snapshot_id, record_index)
     );";
 
@@ -74,6 +82,10 @@ pub(super) fn write(
                 ":loaded_transports": ships.loaded_transports,
                 ":etacs": ships.etacs,
                 ":scouts": ships.scouts,
+                ":escape_sector_x": fleet.escape.map(|escape| escape.sector.x),
+                ":escape_sector_y": fleet.escape.map(|escape| escape.sector.y),
+                ":escape_layer": fleet.escape.map(|escape| escape.layer),
+                ":escape_pursuers": fleet.escape.map(|escape| escape.pursuers),
             },
         )?;
     }
@@ -93,6 +105,14 @@ pub(super) fn load(
 }
 
 fn fleet_from_row(row: &Row<'_>) -> rusqlite::Result<Fleet> {
+    let escape = match row.get::<_, Option<u8>>("escape_sector_x")? {
+        Some(x) => Some(EscapeEpisode {
+            sector: Coords::new(x, row.get("escape_sector_y")?),
+            layer: row.get("escape_layer")?,
+            pursuers: row.get("escape_pursuers")?,
+        }),
+        None => None,
+    };
     Ok(Fleet {
         fleet_number: FleetId(row.get("fleet_number")?),
         owner: EmpireId(row.get("owner")?),
@@ -119,5 +139,6 @@ fn fleet_from_row(row: &Row<'_>) -> rusqlite::Result<Fleet> {
             etacs: row.get("etacs")?,
             scouts: row.get("scouts")?,
         },
+        escape,
     })
 }
