@@ -11,8 +11,7 @@
 //! nothing here heals a ship or resets a counter.
 
 use crate::{
-    Composition, CrippledShips, Fleet, FleetDetachSelection, HullClass, ShipCategory,
-    crippled_by_category,
+    Composition, CrippledShips, Fleet, FleetDetachSelection, ShipCategory, crippled_by_category,
 };
 
 /// A request for more crippled ships than a category has.
@@ -78,13 +77,9 @@ pub fn resolve_selection(
 
     let mut remaining = fleet.crippled;
     let mut moved = CrippledShips::default();
-    for class in HullClass::ALL {
-        let crippled_taken = ShipCategory::ALL
-            .into_iter()
-            .filter(|category| category.hull_class() == class)
-            .map(|category| groups[category.index()].1)
-            .sum();
-        *moved.get_mut(class) = remaining.get_mut(class).take(crippled_taken);
+    for category in ShipCategory::ALL {
+        let class = category.hull_class();
+        *moved.get_mut(class) = remaining.get_mut(class).take(groups[category.index()].1);
     }
     Ok(ResolvedSelection {
         groups,

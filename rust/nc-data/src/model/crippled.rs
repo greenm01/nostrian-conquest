@@ -19,18 +19,23 @@ pub enum HullClass {
     Cruiser,
     Battleship,
     Scout,
-    /// Troop transports, empty and loaded.
-    Transport,
+    /// Troop transports carrying an army. Loaded and empty transports each
+    /// keep their own counter, so the record says which transports are
+    /// crippled.
+    LoadedTransport,
+    /// Troop transports without an army.
+    EmptyTransport,
     Etac,
 }
 
 impl HullClass {
-    pub const ALL: [HullClass; 6] = [
+    pub const ALL: [HullClass; 7] = [
         HullClass::Destroyer,
         HullClass::Cruiser,
         HullClass::Battleship,
         HullClass::Scout,
-        HullClass::Transport,
+        HullClass::LoadedTransport,
+        HullClass::EmptyTransport,
         HullClass::Etac,
     ];
 
@@ -41,8 +46,9 @@ impl HullClass {
             Self::Cruiser => 1,
             Self::Battleship => 2,
             Self::Scout => 3,
-            Self::Transport => 4,
-            Self::Etac => 5,
+            Self::LoadedTransport => 4,
+            Self::EmptyTransport => 5,
+            Self::Etac => 6,
         }
     }
 
@@ -111,6 +117,23 @@ impl CrippledHulls {
         taken
     }
 
+    /// Removes up to `count` hulls and returns them, the ones nearest to
+    /// recovery first: the fewest turns left, and the hulls crippled this
+    /// pass last. Loading armies onto crippled transports takes them in this
+    /// order, so the armies ride the hulls that are soonest whole.
+    pub fn take_nearest(&mut self, count: u32) -> CrippledHulls {
+        let mut taken = CrippledHulls::default();
+        let mut left = count;
+        for i in 0..RECOVERY_TURNS {
+            taken.turns[i] = left.min(self.turns[i]);
+            self.turns[i] -= taken.turns[i];
+            left -= taken.turns[i];
+        }
+        taken.fresh = left.min(self.fresh);
+        self.fresh -= taken.fresh;
+        taken
+    }
+
     /// The hulls of `self` (an assisted set, `fresh` ignored) that `present`
     /// still has: for each turns-left count, the smaller of the two. Hulls
     /// that were never assisted are lost first, so a battle or a merge costs
@@ -161,7 +184,8 @@ pub struct CrippledShips {
     pub cruisers: CrippledHulls,
     pub battleships: CrippledHulls,
     pub scouts: CrippledHulls,
-    pub transports: CrippledHulls,
+    pub loaded_transports: CrippledHulls,
+    pub empty_transports: CrippledHulls,
     pub etacs: CrippledHulls,
 }
 
@@ -172,7 +196,8 @@ impl CrippledShips {
             HullClass::Cruiser => &self.cruisers,
             HullClass::Battleship => &self.battleships,
             HullClass::Scout => &self.scouts,
-            HullClass::Transport => &self.transports,
+            HullClass::LoadedTransport => &self.loaded_transports,
+            HullClass::EmptyTransport => &self.empty_transports,
             HullClass::Etac => &self.etacs,
         }
     }
@@ -183,7 +208,8 @@ impl CrippledShips {
             HullClass::Cruiser => &mut self.cruisers,
             HullClass::Battleship => &mut self.battleships,
             HullClass::Scout => &mut self.scouts,
-            HullClass::Transport => &mut self.transports,
+            HullClass::LoadedTransport => &mut self.loaded_transports,
+            HullClass::EmptyTransport => &mut self.empty_transports,
             HullClass::Etac => &mut self.etacs,
         }
     }

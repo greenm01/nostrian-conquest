@@ -21,12 +21,43 @@ pub fn set_troop_transports(fleet: &mut Fleet, total: u16) {
 }
 
 /// Loads or unloads armies, one per transport, moving transports between
-/// the empty and loaded counts. The transport total grows if it cannot
-/// hold `armies`.
+/// the empty and loaded counts with their recovery state. The transport
+/// total grows if it cannot hold `armies`.
 pub fn set_armies_aboard(fleet: &mut Fleet, armies: u16) {
-    let total = troop_transports(fleet);
-    fleet.ships.loaded_transports = armies;
-    fleet.ships.empty_transports = total.saturating_sub(armies);
+    let loaded = fleet.ships.loaded_transports;
+    if armies > loaded {
+        load_transports(fleet, armies - loaded);
+    } else {
+        unload_transports(fleet, loaded - armies);
+    }
+}
+
+/// `count` transports take an army aboard: healthy empty transports first,
+/// and crippled ones only when no healthy empty transport is left, those
+/// nearest to recovery first. Transports the fleet does not have are added
+/// loaded and whole. The order is a default awaiting the owner's
+/// confirmation (t096); it lives here alone.
+fn load_transports(fleet: &mut Fleet, count: u16) {
+    let empty = fleet.ships.empty_transports;
+    let moved = count.min(empty);
+    let healthy = u32::from(empty).saturating_sub(fleet.crippled.empty_transports.total());
+    let crippled = u32::from(moved).saturating_sub(healthy);
+    let cohorts = fleet.crippled.empty_transports.take_nearest(crippled);
+    fleet.crippled.loaded_transports.add(&cohorts);
+    fleet.ships.empty_transports = empty - moved;
+    fleet.ships.loaded_transports += count;
+}
+
+/// `count` loaded transports put their army ashore, unloading or landing:
+/// crippled ones first, the most turns remaining first, then healthy ones.
+/// The order is a default awaiting the owner's confirmation (t096); it
+/// lives here alone.
+fn unload_transports(fleet: &mut Fleet, count: u16) {
+    let crippled = u32::from(count).min(fleet.crippled.loaded_transports.total());
+    let cohorts = fleet.crippled.loaded_transports.take(crippled);
+    fleet.crippled.empty_transports.add(&cohorts);
+    fleet.ships.loaded_transports -= count;
+    fleet.ships.empty_transports = fleet.ships.empty_transports.saturating_add(count);
 }
 
 /// Every ship in the fleet.
@@ -111,7 +142,8 @@ pub fn hull_count(fleet: &Fleet, class: HullClass) -> u32 {
         HullClass::Cruiser => ships.cruisers,
         HullClass::Battleship => ships.battleships,
         HullClass::Scout => ships.scouts,
-        HullClass::Transport => troop_transports(fleet),
+        HullClass::LoadedTransport => ships.loaded_transports,
+        HullClass::EmptyTransport => ships.empty_transports,
         HullClass::Etac => ships.etacs,
     })
 }

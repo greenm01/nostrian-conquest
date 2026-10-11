@@ -78,7 +78,8 @@ impl ShipCategory {
             Self::Battleships => HullClass::Battleship,
             Self::Cruisers => HullClass::Cruiser,
             Self::Destroyers => HullClass::Destroyer,
-            Self::FullTransports | Self::EmptyTransports => HullClass::Transport,
+            Self::FullTransports => HullClass::LoadedTransport,
+            Self::EmptyTransports => HullClass::EmptyTransport,
             Self::Etacs => HullClass::Etac,
         }
     }
@@ -114,26 +115,15 @@ pub fn join_tokens(tokens: impl IntoIterator<Item = Option<String>>) -> String {
 }
 
 /// A fleet's crippled ships per category, indexed like [`ShipCategory::ALL`].
-///
-/// A fleet keeps one crippled counter for all its troop transports, loaded
-/// or empty, so the counter alone cannot say which transports are crippled.
-/// The rule is the one the engine already follows for transports lost in a
-/// battle: loaded transports come first. Every screen, every selection, and
-/// every preview reads the split from this function, so what a player sees
-/// is what a detach or transfer takes.
+/// Every category has its own counter, loaded and empty transports each
+/// theirs, so this is the record's state, capped at the ships the category
+/// has. Every screen, every selection, and every preview reads it, so what a
+/// player sees is what a detach or transfer takes.
 pub fn crippled_by_category(fleet: &Fleet) -> [u32; ShipCategory::COUNT] {
     let mut crippled = [0; ShipCategory::COUNT];
     for category in ShipCategory::ALL {
-        let ships = category.ships_in(fleet);
         let hulls = fleet.crippled.get(category.hull_class()).total();
-        crippled[category.index()] = match category {
-            ShipCategory::FullTransports => hulls.min(ships),
-            ShipCategory::EmptyTransports => {
-                let loaded = ShipCategory::FullTransports.ships_in(fleet);
-                hulls.saturating_sub(loaded).min(ships)
-            }
-            _ => hulls.min(ships),
-        };
+        crippled[category.index()] = hulls.min(category.ships_in(fleet));
     }
     crippled
 }

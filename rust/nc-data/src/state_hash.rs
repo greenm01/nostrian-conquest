@@ -14,7 +14,7 @@ use crate::rng::splitmix64;
 use crate::{CoreGameData, Real48};
 
 /// The tag a starbase's crippled hull hashes under, after the fleet classes'.
-const STARBASE_TAG: u8 = 6;
+const STARBASE_TAG: u8 = 7;
 
 pub(crate) struct StateHash(u64);
 

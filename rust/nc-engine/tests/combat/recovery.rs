@@ -222,6 +222,67 @@ fn a_fleet_that_merges_in_late_cannot_pass_its_hulls_off_as_assisted() {
     assert_eq!(host.crippled.cruisers, hulls(2, 0, 0));
 }
 
+/// Loaded and empty transports recover on their own counters, with the
+/// starbase's extra turn and this pass's cohort entering at RT on each.
+#[test]
+fn loaded_and_empty_transports_recover_on_their_own_counters() {
+    let mut game_data = resting_host(CrippledHulls::default());
+    place_starbase(&mut game_data, 2, SYSTEM);
+    let host = &mut game_data.fleets[HOST];
+    nc_data::set_troop_transports(host, 4);
+    nc_data::set_armies_aboard(host, 2);
+    host.crippled.loaded_transports = hulls(1, 1, 0);
+    host.crippled.empty_transports = hulls(0, 1, 1);
+
+    let events = run_neutral(&mut game_data);
+
+    let event = recovered_by(&events, host_number(&game_data)).expect("ships recovered");
+    // The loaded hull with a turn left recovers either way; the two with
+    // two turns left, one loaded and one empty, come back a pass early.
+    assert_eq!((event.hulls, event.early), (3, 2));
+    let host = &game_data.fleets[HOST];
+    assert_eq!(
+        (host.ships.loaded_transports, host.ships.empty_transports),
+        (2, 2)
+    );
+    assert!(host.crippled.loaded_transports.is_empty());
+    assert_eq!(host.crippled.empty_transports, hulls(0, 1, 0));
+}
+
+/// A merge adds each cargo state's cohorts to the host's own.
+#[test]
+fn a_merge_carries_each_cargo_states_own_cohorts() {
+    let mut game_data = resting_host(CrippledHulls::default());
+    let host = &mut game_data.fleets[HOST];
+    nc_data::set_troop_transports(host, 3);
+    nc_data::set_armies_aboard(host, 2);
+    host.crippled.loaded_transports = hulls(0, 2, 0);
+    host.crippled.empty_transports = hulls(0, 1, 0);
+    rest_in_orbit(&mut game_data, JOINER, 0);
+    let joiner = &mut game_data.fleets[JOINER];
+    nc_data::set_troop_transports(joiner, 2);
+    joiner.crippled.empty_transports = hulls(1, 1, 0);
+    joiner.order = Order::JoinAnotherFleet;
+    joiner.target_depth = 1;
+    let host_number = game_data.fleets[HOST].fleet_number.0;
+    set_mission_target(&mut game_data.fleets[JOINER], 1, host_number);
+
+    let events = run_neutral(&mut game_data);
+
+    let host = &game_data.fleets[HOST];
+    assert_eq!(
+        (host.ships.loaded_transports, host.ships.empty_transports),
+        (2, 3),
+        "the joiner merged into the host"
+    );
+    // After the merge, the pass's recovery step: the joiner's one-turn hull
+    // recovers, and every other hull steps down a turn on its own counter.
+    let event = recovered_by(&events, host_number).expect("a hull recovered");
+    assert_eq!((event.hulls, event.early), (1, 0));
+    assert_eq!(host.crippled.loaded_transports, hulls(2, 0, 0));
+    assert_eq!(host.crippled.empty_transports, hulls(2, 0, 0));
+}
+
 #[test]
 fn a_starbase_does_not_assist_its_own_recovery() {
     let mut game_data = resting_host(CrippledHulls::default());

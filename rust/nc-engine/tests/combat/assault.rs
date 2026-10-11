@@ -2,8 +2,8 @@
 //! costs.
 
 use nc_data::{
-    Coords, CoreGameData, MaintenanceEvents, Mission, MissionAbortReason, MissionOutcome, Order,
-    Real48, has_any_force, set_fleet_at_rest,
+    Coords, CoreGameData, CrippledHulls, MaintenanceEvents, Mission, MissionAbortReason,
+    MissionOutcome, Order, Real48, has_any_force, set_fleet_at_rest,
 };
 use nc_engine::{
     run_maintenance_turn, run_maintenance_turn_with_context,
@@ -386,6 +386,46 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
     assert_eq!(bombard.attacker_empire, 3);
     assert_eq!(bombard.defender_empire, 1);
     assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
+}
+
+/// Landing empties the crippled loaded transports first, each cohort moving
+/// to the empty counter with its hull. Four loaded transports, two of them
+/// crippled, take an undefended world: all four land, and the pass's
+/// recovery step then counts the cripples down as empty transports.
+#[test]
+fn landing_moves_the_crippled_transports_cohorts_to_the_empty_counter() {
+    let mut game_data = assault_on_system(
+        Order::InvadeWorld,
+        Ships {
+            dd: 1,
+            tt: 4,
+            armies: 4,
+            ..Ships::default()
+        },
+        0,
+        0,
+    );
+    game_data.fleets[0].crippled.loaded_transports = CrippledHulls {
+        turns: [1, 1],
+        fresh: 0,
+    };
+
+    let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+    assert_eq!(events.ownership_change_events[0].new_owner_empire, 1);
+    let fleet = &game_data.fleets[0];
+    assert_eq!(
+        (fleet.ships.loaded_transports, fleet.ships.empty_transports),
+        (0, 4)
+    );
+    assert!(fleet.crippled.loaded_transports.is_empty());
+    assert_eq!(
+        fleet.crippled.empty_transports,
+        CrippledHulls {
+            turns: [1, 0],
+            fresh: 0,
+        }
+    );
 }
 
 #[test]

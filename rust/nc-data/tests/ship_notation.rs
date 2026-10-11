@@ -69,37 +69,31 @@ fn damage_stays_with_its_own_class() {
 fn loaded_transports_keep_their_star_and_damage_is_a_separate_mark() {
     let mut transports = fleet(0, 0, 0, 0, 4, 5, 0);
     assert_eq!(fleet_notation(&transports), "TT*4 TT5");
-    // One shared crippled counter covers both; the loaded ones come first,
-    // as they do when transports are lost in a battle.
-    transports.crippled.transports = hulls(1);
-    assert_eq!(
-        crippled_by_category(&transports)[ShipCategory::FullTransports.index()],
-        1
-    );
-    assert_eq!(
-        crippled_by_category(&transports)[ShipCategory::EmptyTransports.index()],
-        0
-    );
+    // Loaded and empty transports each have their own crippled counter, so
+    // the notation shows the record's state, not a split of a shared total.
+    transports.crippled.loaded_transports = hulls(1);
     assert_eq!(fleet_notation(&transports), "TT*4!1 TT5");
-    // Past the loaded ones, the empty ones are the rest.
-    transports.crippled.transports = hulls(6);
-    assert_eq!(fleet_notation(&transports), "TT*4!4 TT5!2");
-    // Nine transports, six crippled: the split never counts a hull twice.
+    transports.crippled.empty_transports = hulls(2);
+    assert_eq!(fleet_notation(&transports), "TT*4!1 TT5!2");
     let by_category = crippled_by_category(&transports);
-    assert_eq!(
-        by_category[ShipCategory::FullTransports.index()]
-            + by_category[ShipCategory::EmptyTransports.index()],
-        6
-    );
+    assert_eq!(by_category[ShipCategory::FullTransports.index()], 1);
+    assert_eq!(by_category[ShipCategory::EmptyTransports.index()], 2);
 }
 
 #[test]
 fn transport_damage_follows_the_cargo_state() {
     let mut transports = fleet(0, 0, 0, 0, 0, 3, 0);
-    transports.crippled.transports = hulls(2);
+    transports.crippled.empty_transports = hulls(2);
     assert_eq!(fleet_notation(&transports), "TT3!2");
+    // Loading takes the healthy transport first and the crippled ones only
+    // when no healthy one is left; unloading puts the crippled ones ashore
+    // first.
+    set_armies_aboard(&mut transports, 1);
+    assert_eq!(fleet_notation(&transports), "TT*1 TT2!2");
     set_armies_aboard(&mut transports, 3);
     assert_eq!(fleet_notation(&transports), "TT*3!2");
+    set_armies_aboard(&mut transports, 1);
+    assert_eq!(fleet_notation(&transports), "TT*1 TT2!2");
 }
 
 #[test]
