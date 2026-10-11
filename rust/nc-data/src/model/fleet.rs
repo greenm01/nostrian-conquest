@@ -1,6 +1,6 @@
 use crate::Real48;
 
-use super::{Coords, EmpireId, FleetId, RecordNumber};
+use super::{Coords, CrippledShips, EmpireId, FleetId, RecordNumber};
 
 /// A fleet's standing order, FLEETS.DAT 0x1F.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -185,6 +185,9 @@ pub struct Fleet {
     pub rules_of_engagement: u8,
     /// 0x26: ships aboard.
     pub ships: ShipCounts,
+    /// The ships among `ships` that battle has crippled, and how long each
+    /// needs to recover. Not a classic field: an export writes whole hulls.
+    pub crippled: CrippledShips,
     /// The escape the fleet is making from a battle, if any. Not a classic
     /// field: an export drops it.
     pub escape: Option<EscapeEpisode>,

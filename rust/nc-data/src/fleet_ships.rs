@@ -2,7 +2,7 @@
 //! armies aboard them, the top speed its slowest ship allows, and the
 //! composition labels the screens and reports show.
 
-use crate::{Fleet, ShipCounts};
+use crate::{CoreGameData, Fleet, HullClass, ShipCounts};
 
 /// All troop transports, empty and loaded.
 pub fn troop_transports(fleet: &Fleet) -> u16 {
@@ -139,4 +139,53 @@ pub fn ship_composition_table_summary(fleet: &Fleet) -> String {
     .collect();
     assert!(!parts.is_empty(), "empty fleet record is not a fleet");
     parts.join(" ")
+}
+
+/// The ships of one class in the fleet.
+pub fn hull_count(fleet: &Fleet, class: HullClass) -> u32 {
+    let ships = &fleet.ships;
+    u32::from(match class {
+        HullClass::Destroyer => ships.destroyers,
+        HullClass::Cruiser => ships.cruisers,
+        HullClass::Battleship => ships.battleships,
+        HullClass::Scout => ships.scouts,
+        HullClass::Transport => troop_transports(fleet),
+        HullClass::Etac => ships.etacs,
+    })
+}
+
+/// The fleet's crippled ships as the fleet detail view shows them, by
+/// class: `BB 2DD`. Empty when none are crippled.
+pub fn damaged_ships_table_summary(fleet: &Fleet) -> String {
+    [
+        ("SC", HullClass::Scout),
+        ("BB", HullClass::Battleship),
+        ("CA", HullClass::Cruiser),
+        ("DD", HullClass::Destroyer),
+        ("TT", HullClass::Transport),
+        ("ET", HullClass::Etac),
+    ]
+    .into_iter()
+    .filter_map(|(label, class)| match fleet.crippled.get(class).total() {
+        0 => None,
+        1 => Some(label.to_string()),
+        count => Some(format!("{count}{label}")),
+    })
+    .collect::<Vec<_>>()
+    .join(" ")
+}
+
+/// Every crippled hull in the game, fleets and starbases together.
+pub fn crippled_hull_count(game_data: &CoreGameData) -> u32 {
+    let ships: u32 = game_data
+        .fleets
+        .iter()
+        .map(|fleet| fleet.crippled.total())
+        .sum();
+    ships
+        + game_data
+            .bases
+            .iter()
+            .map(|base| base.crippled.total())
+            .sum::<u32>()
 }

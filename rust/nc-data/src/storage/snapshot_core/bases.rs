@@ -1,7 +1,7 @@
 use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
-use crate::model::{Coords, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
+use crate::model::{Coords, CrippledHulls, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
 
 /// One row per BASES.DAT record.
 pub(super) const SCHEMA: &str = "
@@ -86,5 +86,6 @@ fn base_from_row(row: &Row<'_>) -> rusqlite::Result<Starbase> {
         moving: row.get("moving")?,
         target: Coords::new(row.get("target_x")?, row.get("target_y")?),
         target_depth: row.get("target_depth")?,
+        crippled: CrippledHulls::default(),
     })
 }

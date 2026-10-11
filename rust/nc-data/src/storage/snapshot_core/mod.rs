@@ -1,6 +1,7 @@
 //! The core game state's snapshot tables: one typed column per model field,
 //! and a child table for each array the model holds. Rows load straight into
 //! the model structs; no classic record bytes pass through the store.
+//! The crippled hulls of fleets and starbases have their own child tables.
 
 use rusqlite::{Connection, Row, ToSql, Transaction};
 
@@ -10,6 +11,7 @@ use crate::{CoreGameData, Real48};
 
 mod bases;
 mod conquest;
+mod crippled;
 mod fleets;
 mod ipbms;
 mod planets;
@@ -22,6 +24,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), CampaignStoreError>
         planets::SCHEMA,
         fleets::SCHEMA,
         bases::SCHEMA,
+        crippled::SCHEMA,
         ipbms::SCHEMA,
         setup::SCHEMA,
         conquest::SCHEMA,
@@ -40,6 +43,8 @@ pub(super) fn write_snapshot_core_rows(
     planets::write(tx, snapshot_id, &game_data.planets)?;
     fleets::write(tx, snapshot_id, &game_data.fleets)?;
     bases::write(tx, snapshot_id, &game_data.bases)?;
+    crippled::write_fleets(tx, snapshot_id, &game_data.fleets)?;
+    crippled::write_bases(tx, snapshot_id, &game_data.bases)?;
     ipbms::write(tx, snapshot_id, &game_data.ipbms)?;
     setup::write(tx, snapshot_id, &game_data.setup)?;
     conquest::write(tx, snapshot_id, &game_data.conquest)?;
@@ -50,11 +55,15 @@ pub(super) fn load_snapshot_game_data(
     conn: &mut Connection,
     snapshot_id: i64,
 ) -> Result<CoreGameData, CampaignStoreError> {
+    let mut fleets = fleets::load(conn, snapshot_id)?;
+    crippled::load_fleets(conn, snapshot_id, &mut fleets)?;
+    let mut bases = bases::load(conn, snapshot_id)?;
+    crippled::load_bases(conn, snapshot_id, &mut bases)?;
     Ok(CoreGameData {
         players: players::load(conn, snapshot_id)?,
         planets: planets::load(conn, snapshot_id)?,
-        fleets: fleets::load(conn, snapshot_id)?,
-        bases: bases::load(conn, snapshot_id)?,
+        fleets,
+        bases,
         ipbms: ipbms::load(conn, snapshot_id)?,
         setup: setup::load(conn, snapshot_id)?,
         conquest: conquest::load(conn, snapshot_id)?,

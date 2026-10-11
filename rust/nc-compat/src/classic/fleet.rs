@@ -1,6 +1,6 @@
 use super::FLEET_RECORD_SIZE;
 use nc_classic::ParseError;
-use nc_data::{Coords, EmpireId, Fleet, FleetId, Order, RecordNumber, ShipCounts};
+use nc_data::{Coords, CrippledShips, EmpireId, Fleet, FleetId, Order, RecordNumber, ShipCounts};
 
 use super::{put_real, put_u16, real_at, u16_at};
 
@@ -31,6 +31,7 @@ pub fn decode_fleet(bytes: &[u8; FLEET_RECORD_SIZE]) -> Fleet {
             etacs: u16_at(bytes, 0x30),
             scouts: u16_at(bytes, 0x32),
         },
+        crippled: CrippledShips::default(),
         escape: None,
     }
 }

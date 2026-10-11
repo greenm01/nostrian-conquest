@@ -10,8 +10,8 @@ use nc_compat::{
     import_directory_snapshot_with_seed, load_classic_core_files,
 };
 use nc_data::{
-    CampaignStore, CampaignStoreError, Coords, DEFAULT_CAMPAIGN_DB_NAME, EscapeEpisode,
-    SeatBindSource, set_empire_name,
+    CampaignStore, CampaignStoreError, Coords, CrippledHulls, CrippledShips,
+    DEFAULT_CAMPAIGN_DB_NAME, EscapeEpisode, HullClass, SeatBindSource, set_empire_name,
 };
 use rusqlite::Connection;
 
@@ -261,6 +261,86 @@ fn sqlite_store_round_trips_escape_episodes_and_classic_export_drops_them() {
     assert_eq!(exported_game.fleets[0].escape, None);
 }
 
+/// Crippled hulls are runtime state: the store keeps every class's counts by
+/// turns left and the separate count for this pass, a classic export writes
+/// whole hulls (the ship counts are untouched) and drops the damage, and a
+/// classic import starts with nothing crippled.
+#[test]
+fn sqlite_store_round_trips_crippled_hulls_and_classic_export_writes_whole_hulls() {
+    let source = repo_root().join("fixtures/ecmaint-starbase-lift-post/v1.5");
+    let imported = temp_dir("nc-data-storage-crippled");
+    let exported = temp_dir("nc-data-storage-crippled-export");
+    let reimported = temp_dir("nc-data-storage-crippled-reimport");
+    copy_dir_all(&source, &imported);
+
+    let store = CampaignStore::open(imported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    assert!(
+        state.game_data.fleets[0].crippled.is_empty(),
+        "import: none"
+    );
+    assert!(state.game_data.bases[0].crippled.is_empty(), "import: none");
+
+    let mut crippled = CrippledShips::default();
+    for (n, class) in HullClass::ALL.into_iter().enumerate() {
+        let n = n as u32;
+        *crippled.get_mut(class) = CrippledHulls {
+            turns: [n + 1, 2 * n],
+            fresh: 3 - n.min(3),
+        };
+    }
+    state.game_data.fleets[0].crippled = crippled;
+    let base_damage = CrippledHulls {
+        turns: [0, 1],
+        fresh: 0,
+    };
+    state.game_data.bases[0].crippled = base_damage;
+    let ships = state.game_data.fleets[0].ships;
+    store
+        .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+
+    let runtime_game = store
+        .load_latest_runtime_game_data()
+        .expect("load latest runtime game data");
+    assert_eq!(runtime_game.fleets[0].crippled, crippled);
+    assert_eq!(runtime_game.bases[0].crippled, base_damage);
+    assert_eq!(runtime_game.fleets[0].ships, ships);
+
+    export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
+    let exported_game = load_classic_core_files(&exported).expect("load exported directory");
+    assert_eq!(exported_game.fleets[0].ships, ships, "whole hulls");
+    assert!(exported_game.fleets[0].crippled.is_empty());
+    assert!(exported_game.bases[0].crippled.is_empty());
+    assert_eq!(
+        store
+            .load_latest_runtime_game_data()
+            .expect("the store is unchanged")
+            .fleets[0]
+            .crippled,
+        crippled
+    );
+
+    copy_dir_all(&exported, &reimported);
+    let fresh_store =
+        CampaignStore::open(reimported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&fresh_store, &reimported).expect("import export");
+    let again = fresh_store
+        .load_latest_runtime_game_data()
+        .expect("load reimported game data");
+    assert!(again.fleets[0].crippled.is_empty());
+    assert!(again.bases[0].crippled.is_empty());
+}
+
 #[test]
 fn sqlite_store_persists_explicit_campaign_seed() {
     let source = repo_root().join("fixtures/ecutil-init/v1.5");
@@ -430,10 +510,12 @@ fn sqlite_store_schema_has_no_blob_columns_or_compat_files_table() {
     assert_eq!(
         core_tables,
         [
+            "snapshot_base_crippled",
             "snapshot_bases",
             "snapshot_conquest",
             "snapshot_conquest_maintenance_days",
             "snapshot_conquest_previous_rankings",
+            "snapshot_fleet_crippled",
             "snapshot_fleets",
             "snapshot_ipbms",
             "snapshot_planet_build_slots",
