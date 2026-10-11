@@ -59,6 +59,51 @@ fn build_menu_renders_compact_queue_and_stardock_counts() {
 }
 
 #[test]
+fn abort_confirmation_says_cancelling_releases_only_unpaid_points() {
+    let mut screen = PlanetBuildScreen::new();
+    let view = PlanetBuildMenuView {
+        row: EmpirePlanetEconomyRow {
+            planet_record_index_1_based: 1,
+            coords: [6, 5],
+            planet_name: "Not Named Yet".to_string(),
+            present_production: 100,
+            potential_production: 100,
+            stored_production_points: 50,
+            yearly_tax_revenue: 50,
+            yearly_growth_delta: 0,
+            build_capacity: 100,
+            has_friendly_starbase: false,
+            armies: 10,
+            ground_batteries: 4,
+            is_homeworld_seed: true,
+        },
+        committed_points: 45,
+        budget: 50,
+        points_left: 5,
+        building_count: 1,
+        docked_count: 0,
+    };
+    let orders = [PlanetBuildOrder {
+        kind: ProductionItemKind::Battleship,
+        points_remaining: 45,
+    }];
+
+    let buffer = screen
+        .render_abort_confirm(&view, &orders)
+        .expect("render abort confirm");
+
+    let line = buffer.plain_line(12);
+    assert_eq!(
+        line,
+        " Cancelling releases 45 unpaid points. Points already spent are not refunded."
+    );
+    assert!(
+        line.chars().count() <= 80,
+        "the line fits the 80-column screen"
+    );
+}
+
+#[test]
 fn build_list_renders_queue_columns_without_dock() {
     let mut screen = PlanetBuildScreen::new();
     let view = PlanetBuildMenuView {

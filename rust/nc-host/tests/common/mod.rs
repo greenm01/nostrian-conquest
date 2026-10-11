@@ -146,7 +146,6 @@ pub fn seed_runtime_snapshot(
         .save_runtime_state_structured_with_intel(
             game_data.conquest.game_year,
             &game_data,
-            &std::collections::BTreeSet::new(),
             report_block_rows,
             queued_mail,
             &intel_by_viewer,

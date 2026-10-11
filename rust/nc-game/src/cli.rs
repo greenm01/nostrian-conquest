@@ -1011,7 +1011,7 @@ mod tests {
     use nc_data::{
         BbsGameConfig, CampaignStore, STALE_SESSION_MESSAGE, SeatBindSource, SeatReservation,
     };
-    use std::collections::{BTreeSet, VecDeque};
+    use std::collections::VecDeque;
     use std::fs;
     use std::io;
     use std::path::PathBuf;
@@ -1110,13 +1110,7 @@ mod tests {
             .expect("join player");
         nc_data::set_player_handle(&mut data.players[player - 1], alias);
         store
-            .save_runtime_state_structured(
-                data.conquest.game_year,
-                &data,
-                &BTreeSet::new(),
-                &[],
-                &[],
-            )
+            .save_runtime_state_structured(data.conquest.game_year, &data, &[], &[])
             .expect("save runtime state");
     }
 
@@ -1792,7 +1786,6 @@ mod tests {
             .save_runtime_state_structured(
                 state.game_year,
                 &state.game_data,
-                &state.planet_scorch_orders,
                 &state.report_block_rows,
                 &state.queued_mail,
             )

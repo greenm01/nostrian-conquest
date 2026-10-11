@@ -39,14 +39,29 @@ pub struct PlanetTurnBlock {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlanetTurnAction {
-    Rename { name: String },
+    Rename {
+        name: String,
+    },
     ClearBuildQueue,
-    ClearBuildKind { kind: u8 },
-    RemoveBuild { qty: u16, kind: u8 },
-    Build { points_remaining: u32, kind: u8 },
-    Commission { slot_0_based: usize },
+    ClearBuildKind {
+        kind: u8,
+    },
+    RemoveBuild {
+        qty: u16,
+        kind: u8,
+    },
+    Build {
+        points_remaining: u32,
+        kind: u8,
+    },
+    Commission {
+        slot_0_based: usize,
+    },
     AutoCommission,
+    /// Set the Scorch-Earth order.
     Scorch,
+    /// Rescind the Scorch-Earth order.
+    RescindScorch,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

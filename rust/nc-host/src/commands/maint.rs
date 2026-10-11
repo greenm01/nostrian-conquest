@@ -7,7 +7,7 @@ use nc_data::{
     apply_inactivity_autopilot_policy, merge_player_intel_from_runtime,
     reset_player_slot_to_baseline,
 };
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::PathBuf;
 
 const SANDBOX_MAX_OCCUPANT_TURNS: u16 = 10;
@@ -150,7 +150,6 @@ fn run_maintenance(
     campaign_store.save_runtime_state_structured_with_intel_and_activity(
         loaded_year,
         &game_data,
-        &BTreeSet::new(),
         &[],
         &[],
         &intel_by_viewer,

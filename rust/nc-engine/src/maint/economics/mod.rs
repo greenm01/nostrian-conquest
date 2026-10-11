@@ -24,10 +24,16 @@ pub(super) fn process_build_completion(
 
 pub(super) fn process_planet_economics(
     game_data: &mut CoreGameData,
+    campaign_seed: u64,
     planets_with_builds: &[usize],
     starbase_planets: &[usize],
-) -> Result<(), Box<dyn std::error::Error>> {
-    planets::process_planet_economics(game_data, planets_with_builds, starbase_planets)
+) -> Result<Vec<nc_data::PlanetScorchEvent>, Box<dyn std::error::Error>> {
+    planets::process_planet_economics(
+        game_data,
+        campaign_seed,
+        planets_with_builds,
+        starbase_planets,
+    )
 }
 
 pub(super) fn recompute_player_planet_stats(game_data: &mut CoreGameData) {

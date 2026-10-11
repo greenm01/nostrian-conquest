@@ -207,7 +207,11 @@ fn popup_layout<'a>(
                 app,
                 TableFooter::CommandPrompt {
                     label: "COMMAND",
-                    prompt: "Are you sure? Y/[N] ->",
+                    prompt: if scorch_in_force(app) {
+                        "Rescind Scorch-Earth? Y/[N] ->"
+                    } else {
+                        "Are you sure? Y/[N] ->"
+                    },
                 },
             ),
         ),
@@ -357,12 +361,29 @@ fn scorch_lines(app: &DashApp) -> Vec<String> {
             )
         })
         .unwrap_or_else(|| String::from("Selected planet unavailable."));
+    if scorch_in_force(app) {
+        return vec![
+            planet,
+            String::new(),
+            String::from(
+                "Scorch-Earth is in force here. Rescinding it ends the yearly decay at the next maintenance.",
+            ),
+            String::from("Production and stored points already lost are not restored."),
+        ];
+    }
     vec![
         planet,
         String::new(),
         String::from("Scorch-Earth destroys anything useful to an invading force."),
-        String::from("Factories, treasury, and surface infrastructure will be ruined."),
+        String::from(
+            "From the next maintenance, and every year until you rescind it, production falls to about a third and stored points to a tenth or less. The planet neither grows nor earns tax. Potential is not lost.",
+        ),
     ]
+}
+
+fn scorch_in_force(app: &DashApp) -> bool {
+    app.owned_planet_record()
+        .is_some_and(|planet| planet.scorch_earth)
 }
 
 fn wrap_plain_lines(lines: &[String], width: usize) -> Vec<String> {

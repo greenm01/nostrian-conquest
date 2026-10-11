@@ -1114,7 +1114,7 @@ mod tests {
     use crate::dashboard::geometry::ScreenGeometry;
     use crate::dashboard::theme;
     use nc_data::{GameStateBuilder, ProductionItemKind};
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -1131,7 +1131,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1339,7 +1338,6 @@ mod tests {
             PathBuf::from("."),
             game_data,
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1366,7 +1364,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1396,7 +1393,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1432,7 +1428,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1468,7 +1463,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

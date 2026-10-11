@@ -286,7 +286,7 @@ mod tests {
         CELL_WIDTH, MAP_LEFT_PADDING, MAP_RIGHT_PADDING, MAP_VERTICAL_PADDING, ROW_LABEL_COLS,
     };
     use nc_data::GameStateBuilder;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -463,7 +463,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -165,13 +165,7 @@ fn runtime_store_persists_war_stats_rows() {
         .build_initialized_baseline()
         .expect("baseline");
     store
-        .save_runtime_state_structured(
-            game_data.conquest.game_year,
-            &game_data,
-            &BTreeSet::new(),
-            &[],
-            &[],
-        )
+        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("initial save");
 
     let initial = store
@@ -201,7 +195,6 @@ fn runtime_store_persists_war_stats_rows() {
         .save_runtime_state_structured_with_intel_activity_and_war_stats(
             game_data.conquest.game_year,
             &game_data,
-            &BTreeSet::new(),
             &[],
             &[],
             &intel,

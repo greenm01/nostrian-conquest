@@ -402,7 +402,7 @@ impl PlanetBuildScreen {
             12,
             LEFT_WINDOW_PAD_COL,
             &format!(
-                "All {} committed points will be fully refunded.",
+                "Cancelling releases {} unpaid points. Points already spent are not refunded.",
                 view.committed_points
             ),
             classic::prompt_hotkey_style(),

@@ -53,7 +53,12 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
         ) {
         app.selected_planet_scorch_name_and_coords()
             .map(|(name, coords)| {
-                format!("Scorch \"{}\" at {}.", name, format_sector_coords(coords))
+                let verb = if app.selected_planet_scorched() {
+                    "Rescind Scorch-Earth on"
+                } else {
+                    "Scorch"
+                };
+                format!("{verb} \"{}\" at {}.", name, format_sector_coords(coords))
             })
     } else {
         None
@@ -359,7 +364,6 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             app.planet
                 .info_selected
                 .ok_or("planet info detail not selected")?,
-            &app.planet_scorch_orders,
             app.command_return_menu,
         ),
         _ => unreachable!("planet views called for non-planet screen"),

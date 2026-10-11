@@ -6,7 +6,7 @@ use common::production::{
 };
 use nc_data::{
     Coords, CoreGameData, EmpireProductionRankingSort, PlayerMode, ProductionItemKind, Real48,
-    present_production_points, set_planet_name, starbase_growth_bonus_percent, stardock_slot_kind,
+    present_production_points, set_planet_name, starbase_growth_bonus, stardock_slot_kind,
     stored_production_points,
 };
 use nc_engine::{build_seeded_initialized_game, build_seeded_new_game, run_maintenance_turn};
@@ -52,7 +52,9 @@ fn empire_economy_helpers_use_classic_production_terms() {
     assert_eq!(economy.owned_planets, 2);
     assert_eq!(economy.present_production, 125);
     assert_eq!(economy.potential_production, 150);
-    assert_eq!(economy.total_available_points, 62);
+    // Next pass's revenue: 50 from the full world, and 14 from the 25-production
+    // world, which grows to 28.1 first.
+    assert_eq!(economy.total_available_points, 64);
     assert!((economy.efficiency_percent - 83.333).abs() < 0.01);
     assert_eq!(economy.rank_by_planets, 1);
     assert_eq!(economy.rank_by_present_production, 2);
@@ -149,7 +151,9 @@ fn maintenance_adds_tax_revenue_and_grows_planets_faster_under_lower_tax() {
 
     let low_planet = &low_game.planets[0];
     let high_planet = &high_game.planets[0];
-    assert_eq!(stored_production_points(low_planet), 10);
+    // Production 25 grows to 39.06 at 25% tax and earns 9.77, a fraction kept
+    // in the treasury of which 9 whole points can be spent.
+    assert_eq!(stored_production_points(low_planet), 9);
     assert_eq!(stored_production_points(high_planet), 22);
     assert!(present_production_points(low_planet) > present_production_points(high_planet));
 }
@@ -214,13 +218,13 @@ fn maintenance_high_tax_above_65_can_reduce_present_production() {
 }
 
 #[test]
-fn starbase_growth_bonus_tapers_out_by_tax_65() {
-    assert_eq!(starbase_growth_bonus_percent(25), 50);
-    assert_eq!(starbase_growth_bonus_percent(50), 50);
-    assert_eq!(starbase_growth_bonus_percent(60), 16);
-    assert_eq!(starbase_growth_bonus_percent(64), 3);
-    assert_eq!(starbase_growth_bonus_percent(65), 0);
-    assert_eq!(starbase_growth_bonus_percent(70), 0);
+fn starbase_growth_bonus_fades_in_a_line_from_50_to_65() {
+    assert_eq!(starbase_growth_bonus(25), 0.5);
+    assert_eq!(starbase_growth_bonus(50), 0.5);
+    assert!((starbase_growth_bonus(60) - 1.0 / 6.0).abs() < 1e-12);
+    assert!((starbase_growth_bonus(64) - 1.0 / 30.0).abs() < 1e-12);
+    assert_eq!(starbase_growth_bonus(65), 0.0);
+    assert_eq!(starbase_growth_bonus(70), 0.0);
 }
 
 #[test]
@@ -292,10 +296,11 @@ fn maintenance_starbases_still_help_at_moderate_tax_rates() {
     run_maintenance_turn(&mut with_base).expect("maintenance should succeed");
     run_maintenance_turn(&mut without_base).expect("maintenance should succeed");
 
-    assert_eq!(stored_production_points(&with_base.planets[0]), 30);
+    // From 50 at 50% tax: 6.25 of growth, and half again with a base.
+    assert_eq!(stored_production_points(&with_base.planets[0]), 29);
     assert_eq!(stored_production_points(&without_base.planets[0]), 28);
-    assert_eq!(present_production_points(&without_base.planets[0]), 57);
-    assert_eq!(present_production_points(&with_base.planets[0]), 61);
+    assert_eq!(present_production_points(&without_base.planets[0]), 56);
+    assert_eq!(present_production_points(&with_base.planets[0]), 59);
 }
 
 #[test]

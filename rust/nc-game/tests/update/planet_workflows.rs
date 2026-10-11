@@ -2369,9 +2369,14 @@ fn planet_menu_tax_prompt_stays_inline_for_errors_and_returns_to_menu_on_success
             .iter()
             .any(|line| line.contains("PLANET COMMAND <- Empire tax rate"))
     );
+    let revenue = app
+        .game_data
+        .empire_available_production_points(app.player.record_index_1_based);
     assert!(
-        line_containing(&terminal, "Notice: ").contains("Empire tax rate set to 65%."),
-        "expected command-menu success notice after saving tax"
+        line_containing(&terminal, "Notice: ").contains(&format!(
+            "Empire tax rate set to 65%. Revenue next year: {revenue}."
+        )),
+        "expected command-menu success notice with the new Empire Revenue after saving tax"
     );
 }
 
@@ -2511,6 +2516,7 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
         .name
         .trim()
         .to_string();
+    let before_planet = app.game_data.planets[expected_record_index].clone();
 
     assert_eq!(
         apply_action(&mut app, Action::Planet(PlanetAction::SubmitScorchPrompt)),
@@ -2551,84 +2557,111 @@ fn planet_menu_scorch_three_confirms_persist_order_and_update_planet_info_status
         apply_action(&mut app, Action::Planet(PlanetAction::SubmitScorchPrompt)),
         AppOutcome::Continue
     );
-    assert!(
-        app.planet_scorch_orders
-            .contains(&(expected_record_index + 1))
-    );
+    assert!(app.game_data.planets[expected_record_index].scorch_earth);
 
     terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("render succeeds");
     assert!(
-        line_containing(&terminal, "Notice: ")
-            .contains(&format!("Planet \"{expected_name}\" is scorched!")),
+        line_containing(&terminal, "Notice: ").contains(&format!(
+            "Planet \"{expected_name}\" will be scorched at maintenance."
+        )),
         "expected success notice after final confirmation"
     );
 
-    let scorched_planet = &app.game_data.planets[expected_record_index];
+    // The order wipes nothing at once: the yearly pass decays the world.
+    let ordered_planet = &app.game_data.planets[expected_record_index];
     assert_eq!(
-        Some(nc_data::present_production_points(&scorched_planet)),
-        Some(0)
-    );
-    assert_eq!(u16::from(scorched_planet.potential_production), 0);
-    assert_eq!(nc_data::stored_production_points(&scorched_planet), 0);
-    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].points_owed == 0));
-    assert!((0..10).all(|slot| scorched_planet.build_queue[slot].kind.code() == 0));
-    assert!(
-        (0..nc_data::STARDOCK_SLOT_COUNT)
-            .all(|slot| (scorched_planet.stardock[slot].min(u32::from(u16::MAX)) as u16) == 0)
-    );
-    assert!(
-        (0..nc_data::STARDOCK_SLOT_COUNT).all(|slot| nc_data::stardock_slot_kind(
-            &scorched_planet,
-            slot
-        )
-        .code()
-            == 0)
+        before_planet,
+        {
+            let mut unflagged = ordered_planet.clone();
+            unflagged.scorch_earth = false;
+            unflagged
+        },
+        "the order changes only the flag"
     );
 
     let reloaded = latest_runtime_state(&fixture_dir);
-    assert!(
-        reloaded
-            .planet_scorch_orders
-            .contains(&(expected_record_index + 1))
-    );
-    let reloaded_planet = &reloaded.game_data.planets[expected_record_index];
-    assert_eq!(
-        Some(nc_data::present_production_points(&reloaded_planet)),
-        Some(0)
-    );
-    assert_eq!(u16::from(reloaded_planet.potential_production), 0);
-    assert_eq!(nc_data::stored_production_points(&reloaded_planet), 0);
+    assert!(reloaded.game_data.planets[expected_record_index].scorch_earth);
 
     app.open_planet_info_detail_at_coords(expected_coords, Some(ScreenId::PlanetMenu))
         .expect("open planet info detail");
     terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("render succeeds");
     assert!(
-        line_containing(&terminal, "Production").contains('0'),
-        "production line should show zero"
-    );
-    assert!(
-        line_containing(&terminal, "Potential Production").contains('0'),
-        "potential production line should show zero"
-    );
-    assert!(
-        line_containing(&terminal, "Treasury").contains('0'),
-        "stored points line should show zero"
-    );
-    let build_queue_line = line_containing(&terminal, "Building");
-    let stardock_line = line_containing(&terminal, "Docked");
-    assert!(build_queue_line.contains("Nothing"));
-    assert!(stardock_line.contains("Nothing"));
-    assert_eq!(
-        build_queue_line.find(':'),
-        stardock_line.find(':'),
-        "build queue and stardock separators should line up"
-    );
-    assert!(
         line_containing(&terminal, "Planet is scorched!").contains("Planet is scorched!"),
         "status line should report the scorched planet"
     );
+}
+
+#[test]
+fn the_same_scorch_command_rescinds_the_order_after_one_confirmation() {
+    let fixture_dir = temp_game_copy();
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    let mut terminal = CaptureTerminal::new();
+
+    advance_to_main_menu(&mut app);
+    assert_eq!(
+        apply_action(&mut app, Action::Planet(PlanetAction::OpenMenu)),
+        AppOutcome::Continue
+    );
+    let record_index = app
+        .game_data
+        .planets
+        .iter()
+        .position(|planet| planet.owner.0 as usize == app.player.record_index_1_based)
+        .expect("owned planet exists");
+    app.game_data.planets[record_index].scorch_earth = true;
+    let name = app.game_data.planets[record_index].name.trim().to_string();
+    let coords = app.game_data.planets[record_index].sector.to_array();
+
+    // Choose the world by coordinates: the prompt's default is another one.
+    assert_eq!(
+        apply_action(&mut app, Action::Planet(PlanetAction::OpenScorchPrompt)),
+        AppOutcome::Continue
+    );
+    for ch in format!("{},{}", coords[0], coords[1]).chars() {
+        assert_eq!(
+            apply_action(
+                &mut app,
+                Action::Planet(PlanetAction::AppendScorchPromptChar(ch))
+            ),
+            AppOutcome::Continue
+        );
+    }
+    assert_eq!(
+        apply_action(&mut app, Action::Planet(PlanetAction::SubmitScorchPrompt)),
+        AppOutcome::Continue
+    );
+    app.render(&mut terminal).expect("render succeeds");
+    assert!(
+        line_containing(&terminal, "Rescind Scorch-Earth? Y/[N] ->")
+            .contains("Rescind Scorch-Earth? Y/[N] ->"),
+        "a scorched world asks one short confirmation"
+    );
+
+    assert_eq!(
+        apply_action(&mut app, Action::Planet(PlanetAction::SubmitScorchPrompt)),
+        AppOutcome::Continue
+    );
+    assert!(!app.game_data.planets[record_index].scorch_earth);
+    assert!(app.planet.scorch_prompt_mode.is_none());
+    terminal = CaptureTerminal::new();
+    app.render(&mut terminal).expect("render succeeds");
+    assert!(
+        line_containing(&terminal, "Notice: ")
+            .contains(&format!("Scorch-Earth rescinded on planet \"{name}\".")),
+        "expected the rescind confirmation"
+    );
+    let reloaded = latest_runtime_state(&fixture_dir);
+    assert!(!reloaded.game_data.planets[record_index].scorch_earth);
 }
 
 #[test]
@@ -2665,7 +2698,12 @@ fn planet_menu_scorch_confirm_enter_honors_default_no_and_bails() {
     assert_eq!(apply_action(&mut app, enter_action), AppOutcome::Continue);
     assert_eq!(app.current_screen, ScreenId::PlanetMenu);
     assert!(app.planet.scorch_prompt_mode.is_none());
-    assert!(app.planet_scorch_orders.is_empty());
+    assert!(
+        app.game_data
+            .planets
+            .iter()
+            .all(|planet| !planet.scorch_earth)
+    );
 }
 
 #[test]

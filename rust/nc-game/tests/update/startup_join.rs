@@ -1512,10 +1512,7 @@ fn first_time_join_flow_updates_player_and_homeworld_then_enters_main_menu() {
     assert_eq!(homeworld.name.clone(), "Codex Prime");
     assert_eq!(
         nc_data::stored_production_points(&homeworld),
-        yearly_tax_revenue(
-            nc_data::present_production_points(&homeworld),
-            player.tax_rate,
-        )
+        nc_data::tax_income(homeworld.production.to_f64(), player.tax_rate) as u32
     );
 }
 
@@ -2075,7 +2072,6 @@ fn defeated_player_with_pending_reports_uses_returning_review_flow() {
         .save_runtime_state_structured_with_intel_activity_and_lifecycle(
             state.game_data.conquest.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
             &planet_intel_by_viewer,
@@ -2144,7 +2140,6 @@ fn first_time_join_does_not_offer_spent_civil_disorder_seats() {
         .save_runtime_state_structured_with_intel_and_activity(
             state.game_data.conquest.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
             &planet_intel_by_viewer,

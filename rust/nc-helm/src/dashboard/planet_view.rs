@@ -7,7 +7,6 @@ use nc_data::{
     format_build_queue_summary as shared_build_queue_summary,
     format_owned_orbit_summary as shared_owned_orbit_summary,
     format_stardock_summary as shared_stardock_summary, owned_orbit_presence, owned_planet_status,
-    yearly_tax_revenue,
 };
 
 use crate::dashboard::app::panel_cache::CachedSectorDetails;
@@ -68,12 +67,6 @@ fn owned_planet_detail(
     let coords = planet.sector.to_array();
     let present = nc_data::present_production_points(&planet);
     let potential = u16::from(planet.potential_production);
-    let tax_rate = app
-        .game_data
-        .players
-        .get(app.player_record_index_1_based.saturating_sub(1))
-        .map(|player| player.tax_rate)
-        .unwrap_or(0);
     let owned_since = app
         .owned_planet_years
         .get(&(planet_index_0_based + 1))
@@ -101,7 +94,7 @@ fn owned_planet_detail(
         detail_line("Efficiency", owned_efficiency_label(present, potential)),
         detail_line(
             "Expected Revenue",
-            format!("{} points", yearly_tax_revenue(present, tax_rate)),
+            format!("{} points", app.game_data.planet_forecast_revenue(planet)),
         ),
         detail_line(
             "Armies",
@@ -709,7 +702,6 @@ fn owned_status_widget_label(
         &app.game_data,
         app.player_record_index_1_based as u8,
         planet_index_0_based,
-        &app.planet_scorch_orders,
     ) {
         OwnedPlanetStatus::Scorched => String::from("Scorched"),
         OwnedPlanetStatus::Homeworld => String::from("Homeworld"),
@@ -729,7 +721,6 @@ fn owned_status_detail_label(
         &app.game_data,
         app.player_record_index_1_based as u8,
         planet_index_0_based,
-        &app.planet_scorch_orders,
     ) {
         OwnedPlanetStatus::Scorched => String::from("Planet is scorched!"),
         OwnedPlanetStatus::Homeworld => String::from("Homeworld - fully developed"),
@@ -756,7 +747,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            std::collections::BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -841,7 +831,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            std::collections::BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -868,7 +857,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            std::collections::BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

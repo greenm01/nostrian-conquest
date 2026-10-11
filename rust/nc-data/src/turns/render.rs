@@ -70,6 +70,7 @@ fn render_planet_block(out: &mut String, planet: &PlanetTurnBlock) {
             }
             PlanetTurnAction::AutoCommission => out.push_str("  auto_commission\n"),
             PlanetTurnAction::Scorch => out.push_str("  scorch\n"),
+            PlanetTurnAction::RescindScorch => out.push_str("  rescind_scorch\n"),
         }
     }
     out.push_str("}\n");

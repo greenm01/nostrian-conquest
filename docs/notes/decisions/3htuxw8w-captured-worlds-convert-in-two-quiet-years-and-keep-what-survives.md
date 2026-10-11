@@ -47,9 +47,17 @@ The owner approved Claude and Codex's joint recommendation on 2026-10-10.
 
 A captured world holding 50 goods finishes a cruiser that still owes 12 in
 the next pass; with no goods it finishes in N+4 (N+3 under the half-income
-option). Implementation is pending, with the economy work (t084): capture
-keeps surviving assets and queue progress, the inherited-assets lines in
-capture reports, and the cancel-screen wording.
+option).
+
+## Implementation
+
+The cancel-build screen is done in t084: it now reads "Cancelling releases N
+unpaid points. Points already spent are not refunded." The quiet years were
+already the pass's rule (a world with status below 2 neither grows nor earns),
+and the Revenue forecast now shows 0 for such a world. Capture inheritance is
+in `maint/combat/assault.rs`: goods, production, dock, and queue pass intact,
+and debt is not forgiven. The capture report's inherited-assets line shows
+the whole points the new owner can spend, while the world keeps the fraction.
 
 ## Acceptance and connections
 

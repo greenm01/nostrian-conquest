@@ -1,7 +1,6 @@
 //! The store's typed snapshot tables carry the whole core game state: what
 //! goes in comes back out with the same classic encoding, bit for bit.
 
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -67,13 +66,7 @@ fn classic_files(game_data: &CoreGameData) -> [Vec<u8>; 7] {
 
 fn store_round_trip(store: &CampaignStore, game_data: &CoreGameData) -> CoreGameData {
     let snapshot_id = store
-        .save_runtime_state_structured(
-            game_data.conquest.game_year,
-            game_data,
-            &BTreeSet::new(),
-            &[],
-            &[],
-        )
+        .save_runtime_state_structured(game_data.conquest.game_year, game_data, &[], &[])
         .expect("save snapshot");
     store
         .load_snapshot_game_data(snapshot_id)

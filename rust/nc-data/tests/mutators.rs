@@ -9,10 +9,10 @@ use nc_compat::classic::{
 use nc_compat::load_classic_core_files;
 use nc_data::*;
 use nc_data::{
-    Coords, PlayerMode, ProductionItemKind, Real48, present_production_points, recompute_max_speed,
-    set_armies_aboard, set_empire_name, set_fleet_at_rest, set_login_reviewables_present,
-    set_mission_target, set_planet_name, set_player_handle, set_starbase_at_rest,
-    set_troop_transports, stardock_slot_kind, stored_production_points, troop_transports,
+    Coords, PlayerMode, ProductionItemKind, Real48, recompute_max_speed, set_armies_aboard,
+    set_empire_name, set_fleet_at_rest, set_login_reviewables_present, set_mission_target,
+    set_planet_name, set_player_handle, set_starbase_at_rest, set_troop_transports,
+    stardock_slot_kind, stored_production_points, troop_transports,
 };
 
 #[test]
@@ -1969,7 +1969,7 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
 }
 
 #[test]
-fn scorch_planet_surface_clears_economy_queue_and_stardock_immediately() {
+fn the_scorch_order_sets_and_rescinds_a_flag_and_changes_nothing_else() {
     let mut data = CoreGameData {
         players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
         planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
@@ -1989,19 +1989,16 @@ fn scorch_planet_surface_clears_economy_queue_and_stardock_immediately() {
     planet.stardock.transports = 2;
     planet.armies = 9;
     planet.ground_batteries = 4;
+    let before = data.planets[14].clone();
 
-    data.scorch_planet_surface(15).unwrap();
+    data.set_planet_scorch_earth(15, true).unwrap();
+    assert!(data.planets[14].scorch_earth);
+    let mut ordered = data.planets[14].clone();
+    ordered.scorch_earth = false;
+    assert_eq!(ordered, before, "the order wipes nothing at once");
 
-    let planet = &data.planets[14];
-    assert_eq!(present_production_points(planet), 0);
-    assert_eq!(u16::from(planet.potential_production), 0);
-    assert_eq!(stored_production_points(planet), 0);
-    assert!((0..10).all(|slot| planet.build_queue[slot].points_owed == 0));
-    assert!((0..10).all(|slot| planet.build_queue[slot].kind.code() == 0));
-    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| planet.stardock[slot] == 0));
-    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| stardock_slot_kind(planet, slot).code() == 0));
-    assert_eq!(planet.armies, 9);
-    assert_eq!(planet.ground_batteries, 4);
+    data.set_planet_scorch_earth(15, false).unwrap();
+    assert_eq!(data.planets[14], before);
 }
 
 #[test]

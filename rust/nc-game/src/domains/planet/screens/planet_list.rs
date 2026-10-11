@@ -108,6 +108,8 @@ pub(crate) const PLANET_LIST_SCORCH_REALLY_CONFIRM_PROMPT: &str =
     "Scorch Planet: Are you really sure? Y/[N] -> ";
 pub(crate) const PLANET_LIST_SCORCH_LAST_CONFIRM_PROMPT: &str =
     "Scorch Planet: Are you sure-sure? Y/[N] -> ";
+pub(crate) const PLANET_LIST_SCORCH_RESCIND_PROMPT: &str =
+    "Rescind Scorch-Earth: Are you sure? Y/[N] -> ";
 const PLANET_LIST_MAX_QTY_DEFAULT: &str = "255";
 
 fn filter_prompt_dismiss_prompt(message: &str) -> String {
@@ -716,6 +718,10 @@ fn planet_list_footer_floor(frame: &ScreenFrame<'_>, mode: PlanetListMode) -> us
                 table_footer_scaffold_width(TableFooter::CommandPrompt {
                     label: "COMMAND",
                     prompt: PLANET_LIST_SCORCH_LAST_CONFIRM_PROMPT,
+                }),
+                table_footer_scaffold_width(TableFooter::CommandPrompt {
+                    label: "COMMAND",
+                    prompt: PLANET_LIST_SCORCH_RESCIND_PROMPT,
                 }),
                 table_footer_scaffold_width(TableFooter::CommandInput {
                     label: "SORT",

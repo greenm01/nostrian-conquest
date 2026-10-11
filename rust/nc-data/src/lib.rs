@@ -64,8 +64,9 @@ pub use directory::{
     PlayerDiplomacyValidationError, SeekHomeTarget,
 };
 pub use economy::{
-    build_capacity, present_production_points, starbase_growth_bonus_percent,
-    stored_production_points, yearly_growth_delta, yearly_high_tax_penalty, yearly_tax_revenue,
+    NextPass, build_capacity, next_pass, next_production, present_production_points,
+    starbase_growth_bonus, stored_production_points, tax_income, whole_points, yearly_growth,
+    yearly_high_tax_penalty,
 };
 pub use fleet_orders::{order_summary, set_mission_target};
 pub use fleet_ships::{
@@ -88,9 +89,9 @@ pub use maintenance_types::{
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InheritedAssets,
     InvalidPlayerStateEvent, JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission,
     MissionAbortReason, MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent,
-    PlanetIntelSource, PlanetOwnershipChangeEvent, SalvageResolvedEvent, ScoutContactEvent,
-    ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
-    StarbaseSightingEvent,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetScorchEvent, SalvageResolvedEvent,
+    ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport,
+    StarbaseReportEvent, StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{
@@ -137,8 +138,8 @@ pub use report_blocks::{
     delete_report_blocks_for_viewer,
 };
 pub use rng::{
-    GameRng, RNG_TAG_COMBAT, RNG_TAG_ENCOUNTER, RNG_TAG_MAPGEN, derive_campaign_seed_from_runtime,
-    generate_campaign_seed, mix_seed,
+    GameRng, RNG_TAG_COMBAT, RNG_TAG_ECONOMY, RNG_TAG_ENCOUNTER, RNG_TAG_MAPGEN,
+    derive_campaign_seed_from_runtime, generate_campaign_seed, mix_seed,
 };
 pub use runtime_reports::{
     InboxItem, InboxItemSource, InboxItemType, ReportSummaryBucket, ReportsPreview, ReviewBlock,

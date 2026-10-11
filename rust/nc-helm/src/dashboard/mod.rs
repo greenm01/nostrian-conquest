@@ -282,7 +282,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

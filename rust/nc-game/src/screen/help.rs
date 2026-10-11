@@ -107,7 +107,7 @@ const PLANET_LINES: [&str; 14] = [
     "<L> - load transport fleets with armies from the selected planet",
     "<P> - display a brief list of your planets",
     "<Q> - quit Planet Command and return to the Main Menu",
-    "<S> - scorch your own planets as a last-resort denial order",
+    "<S> - set or rescind a planet's scorch-earth denial order",
     "<T> - set the empire-wide tax rate used for yearly revenue",
     "<U> - unload transport fleets with armies at a planet",
     "<V> - display a partial starmap centered where you choose",

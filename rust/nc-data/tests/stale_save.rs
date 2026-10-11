@@ -2,7 +2,6 @@
 //! the caller loaded, so a long-lived session cannot write into a snapshot the
 //! store no longer reads.
 
-use std::collections::BTreeSet;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -36,7 +35,7 @@ fn store_at_year_3000() -> TempStore {
     let store = CampaignStore::open_default_in_dir(&dir).expect("open store");
     let data = build_seeded_initialized_game(4, 3000, 1515).expect("seeded game");
     store
-        .save_runtime_state_structured(data.conquest.game_year, &data, &BTreeSet::new(), &[], &[])
+        .save_runtime_state_structured(data.conquest.game_year, &data, &[], &[])
         .expect("seed store");
     TempStore { dir, store }
 }
@@ -56,7 +55,6 @@ fn run_maintenance(store: &CampaignStore) -> Result<i64, CampaignStoreError> {
     store.save_runtime_state_structured(
         state.game_year,
         &state.game_data,
-        &state.planet_scorch_orders,
         &state.report_block_rows,
         &state.queued_mail,
     )
@@ -69,7 +67,6 @@ fn save_as_session(
     store.save_runtime_state_structured(
         session.game_year,
         &session.game_data,
-        &session.planet_scorch_orders,
         &session.report_block_rows,
         &session.queued_mail,
     )

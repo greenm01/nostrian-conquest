@@ -28,6 +28,25 @@ fn load_fixture(name: &str) -> CoreGameData {
         .unwrap_or_else(|e| panic!("Failed to load fixture {}: {}", name, e))
 }
 
+/// ECMAINT's post-maintenance fixture, with the one deliberate difference: a
+/// new colony starts at production `min(3, potential)` here, where ECMAINT
+/// starts it at 1.0 (colony head start, ADR ubnjcchu). The planet's owner
+/// counts its production in the PLAYER record's production score.
+fn load_post_fixture_with_colony_head_start(name: &str, pre: &CoreGameData) -> CoreGameData {
+    let mut post = load_fixture(name);
+    for (idx, before) in pre.planets.iter().enumerate() {
+        let planet = &mut post.planets[idx];
+        if before.owner.0 != 0 || planet.owner.0 == 0 {
+            continue;
+        }
+        let head_start = u16::from(planet.potential_production).min(3);
+        planet.production = Real48::from_f64(f64::from(head_start));
+        let player = &mut post.players[usize::from(planet.owner.0) - 1];
+        player.production = player.production - 1 + head_start;
+    }
+    post
+}
+
 fn configured_delayed_hostile_arrival_state(
     order: Order,
     ships: (u16, u16, u16, u16, u16, u16, u16),
@@ -126,7 +145,7 @@ fn test_fleet_movement_and_colonization_planets_dat() {
     // After one maintenance turn, PLANETS.DAT should match the post-fixture.
     // This validates planet colonization (fleet 0 ColonizeWorld to (15,13)).
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let post_data = load_fixture("ecmaint-fleet-post");
+    let post_data = load_post_fixture_with_colony_head_start("ecmaint-fleet-post", &game_data);
 
     run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
@@ -142,7 +161,7 @@ fn test_fleet_movement_and_colonization_player_dat() {
     // After one maintenance turn, PLAYER.DAT should match the post-fixture.
     // This validates planet count and economic updates after colonization.
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    let post_data = load_fixture("ecmaint-fleet-post");
+    let post_data = load_post_fixture_with_colony_head_start("ecmaint-fleet-post", &game_data);
 
     run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 

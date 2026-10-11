@@ -6,7 +6,7 @@ use common::production::{
 };
 use nc_data::{
     Coords, CoreGameData, PlayerMode, ProductionItemKind, present_production_points,
-    stardock_slot_kind, stored_production_points, yearly_tax_revenue,
+    stardock_slot_kind, stored_production_points,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -139,27 +139,23 @@ fn multi_turn_empire_economy_tracks_growth_and_revenue_across_owned_planets() {
     let colony = owned_planet_with_present_production(1, 100, 25, 0, 1, 0);
     let mut game = multi_planet_game(player, vec![homeworld, colony], vec![]);
 
-    assert_eq!(game.empire_available_production_points(1), 62);
+    // Empire Revenue forecasts the next pass: the colony grows 25 -> 34.375
+    // and pays 17.19, so 50 + 17.
+    assert_eq!(game.empire_available_production_points(1), 67);
 
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
     assert_eq!(stored_production_points(&game.planets[0]), 50);
     assert_eq!(stored_production_points(&game.planets[1]), 17);
-    assert_eq!(present_production_points(&game.planets[1]), 35);
-    assert_eq!(
-        game.empire_available_production_points(1),
-        yearly_tax_revenue(100, 50) + yearly_tax_revenue(35, 50)
-    );
-    assert_eq!(game.empire_available_production_points(1), 67);
+    assert_eq!(present_production_points(&game.planets[1]), 34);
+    // Next: the colony grows 34.375 -> 42.578 and pays 21.29, so 50 + 21.
+    assert_eq!(game.empire_available_production_points(1), 71);
 
     run_maintenance_turn(&mut game).expect("second maintenance should succeed");
     assert_eq!(stored_production_points(&game.planets[0]), 100);
-    assert_eq!(stored_production_points(&game.planets[1]), 39);
-    assert_eq!(present_production_points(&game.planets[1]), 44);
-    assert_eq!(
-        game.empire_available_production_points(1),
-        yearly_tax_revenue(100, 50) + yearly_tax_revenue(44, 50)
-    );
-    assert_eq!(game.empire_available_production_points(1), 72);
+    // 17.1875 + 21.2890625 = 38.4765625 carried as a fraction.
+    assert_eq!(stored_production_points(&game.planets[1]), 38);
+    assert_eq!(present_production_points(&game.planets[1]), 43);
+    assert_eq!(game.empire_available_production_points(1), 75);
 }
 
 #[test]
@@ -188,14 +184,16 @@ fn commissioned_starbase_changes_multi_turn_growth_and_build_capacity_but_not_re
     let with_base_planet = &with_base.planets[0];
     let without_base_planet = &without_base.planets[0];
 
-    assert_eq!(with_base.empire_available_production_points(1), 30);
-    assert_eq!(without_base.empire_available_production_points(1), 28);
-    assert_eq!(stored_production_points(with_base_planet), 30);
+    // From 50 at 50% tax: 59.375 with the base and 56.25 without. Revenue is
+    // the next pass's: 59.375 grows to 66.99, 56.25 to 61.72.
+    assert_eq!(with_base.empire_available_production_points(1), 33);
+    assert_eq!(without_base.empire_available_production_points(1), 31);
+    assert_eq!(stored_production_points(with_base_planet), 29);
     assert_eq!(stored_production_points(without_base_planet), 178);
     assert_eq!(with_base_planet.build_queue[0].points_owed, 0);
     assert_eq!(without_base_planet.build_queue[0].points_owed, 150);
-    assert_eq!(present_production_points(with_base_planet), 61);
-    assert_eq!(present_production_points(without_base_planet), 57);
+    assert_eq!(present_production_points(with_base_planet), 59);
+    assert_eq!(present_production_points(without_base_planet), 56);
 }
 
 #[test]
@@ -269,6 +267,6 @@ fn rogue_empire_planets_collect_revenue_and_grow() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     let planet = &game.planets[0];
-    assert_eq!(present_production_points(planet), 57);
+    assert_eq!(present_production_points(planet), 56);
     assert_eq!(stored_production_points(planet), 28);
 }

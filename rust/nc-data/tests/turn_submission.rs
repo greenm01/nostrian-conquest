@@ -678,7 +678,6 @@ fn turn_submission_runtime_helper_clears_inactivity_auto_enabled_autopilot() {
         .save_runtime_state_structured_with_intel_and_activity(
             state.game_data.conquest.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
             &planet_intel_by_viewer,

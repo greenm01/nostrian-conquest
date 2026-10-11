@@ -6,8 +6,6 @@ use nc_data::{
     format_owned_orbit_summary as shared_owned_orbit_summary,
     format_stardock_summary as shared_stardock_summary, owned_orbit_presence, owned_planet_status,
 };
-use nc_engine::yearly_tax_revenue;
-use std::collections::BTreeSet;
 
 use crate::app::Action;
 use crate::domains::planet::{KnownOwnerLabelStyle, known_owner_label};
@@ -28,7 +26,6 @@ impl PlanetInfoScreen {
         &mut self,
         frame: &ScreenFrame<'_>,
         planet_idx: usize,
-        planet_scorch_orders: &BTreeSet<usize>,
         _menu: CommandMenu,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let planet = frame
@@ -56,8 +53,7 @@ impl PlanetInfoScreen {
         } else {
             (present as f64 / potential as f64) * 100.0
         };
-        let tax_rate = frame.game_data.players[frame.player.record_index_1_based - 1].tax_rate;
-        let expected_revenue = yearly_tax_revenue(present, tax_rate);
+        let expected_revenue = frame.game_data.planet_forecast_revenue(planet);
         let budget = frame
             .game_data
             .empire_planet_economy_rows(frame.player.record_index_1_based)
@@ -177,7 +173,7 @@ impl PlanetInfoScreen {
             16,
             info_label_width,
             "Status",
-            &owned_status_summary(frame, planet_idx, [x, y], planet_scorch_orders),
+            &owned_status_summary(frame, planet_idx, [x, y]),
         );
         draw_aligned_detail_line(
             &mut buffer,
@@ -391,18 +387,12 @@ fn format_owned_orbit_summary(frame: &ScreenFrame<'_>, coords: [u8; 2]) -> Strin
     ))
 }
 
-fn owned_status_summary(
-    frame: &ScreenFrame<'_>,
-    planet_idx: usize,
-    coords: [u8; 2],
-    planet_scorch_orders: &BTreeSet<usize>,
-) -> String {
+fn owned_status_summary(frame: &ScreenFrame<'_>, planet_idx: usize, coords: [u8; 2]) -> String {
     let _ = coords;
     match owned_planet_status(
         frame.game_data,
         frame.player.record_index_1_based as u8,
         planet_idx,
-        planet_scorch_orders,
     ) {
         OwnedPlanetStatus::Scorched => "Planet is scorched!".to_string(),
         OwnedPlanetStatus::Homeworld => "Homeworld - fully developed".to_string(),

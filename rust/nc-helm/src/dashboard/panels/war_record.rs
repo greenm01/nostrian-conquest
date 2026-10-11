@@ -96,7 +96,7 @@ mod tests {
     use crate::dashboard::app::state::DashApp;
     use crate::dashboard::geometry::ScreenGeometry;
     use nc_data::GameStateBuilder;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -108,7 +108,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

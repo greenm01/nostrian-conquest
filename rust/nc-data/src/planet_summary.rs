@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 
 use crate::homeworld_seed::is_named_homeworld_seed;
 use crate::{
@@ -194,12 +194,11 @@ pub fn owned_planet_status(
     game_data: &CoreGameData,
     owner_empire_id: u8,
     planet_index_0_based: usize,
-    scorch_orders: &BTreeSet<usize>,
 ) -> OwnedPlanetStatus {
-    if scorch_orders.contains(&(planet_index_0_based + 1)) {
+    let planet = &game_data.planets[planet_index_0_based];
+    if planet.scorch_earth {
         return OwnedPlanetStatus::Scorched;
     }
-    let planet = &game_data.planets[planet_index_0_based];
     if is_homeworld_seed_ignoring_name(planet) {
         return OwnedPlanetStatus::Homeworld;
     }

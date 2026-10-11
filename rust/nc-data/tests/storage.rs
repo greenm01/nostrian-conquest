@@ -1,7 +1,6 @@
 mod common;
 
 use nc_compat::classic::{ClassicFile, without_ignored_bytes};
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -138,7 +137,6 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
         .save_runtime_state_structured(
             state.game_data.conquest.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
         )
@@ -189,7 +187,6 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
         .save_runtime_state_structured(
             state.game_data.conquest.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
         )
@@ -237,7 +234,6 @@ fn sqlite_store_persists_explicit_campaign_seed() {
         .save_runtime_state_structured(
             initial.game_data.conquest.game_year,
             &initial.game_data,
-            &initial.planet_scorch_orders,
             &initial.report_block_rows,
             &initial.queued_mail,
         )
@@ -269,7 +265,6 @@ fn sqlite_store_generates_and_reuses_campaign_seed() {
         .save_runtime_state_structured(
             initial.game_data.conquest.game_year,
             &initial.game_data,
-            &initial.planet_scorch_orders,
             &initial.report_block_rows,
             &initial.queued_mail,
         )
@@ -283,7 +278,7 @@ fn sqlite_store_generates_and_reuses_campaign_seed() {
 }
 
 #[test]
-fn sqlite_store_persists_planet_scorch_orders() {
+fn sqlite_store_persists_the_planet_scorch_flag() {
     let source = repo_root().join("fixtures/ecutil-init/v1.5");
     let imported = temp_dir("nc-data-storage-scorch");
     copy_dir_all(&source, &imported);
@@ -295,13 +290,13 @@ fn sqlite_store_persists_planet_scorch_orders() {
         .load_latest_runtime_state()
         .expect("load runtime state")
         .expect("runtime snapshot");
-    initial.planet_scorch_orders = BTreeSet::from([3usize, 7usize]);
+    initial.game_data.planets[2].scorch_earth = true;
+    initial.game_data.planets[6].scorch_earth = true;
 
     store
         .save_runtime_state_structured(
             initial.game_data.conquest.game_year,
             &initial.game_data,
-            &initial.planet_scorch_orders,
             &initial.report_block_rows,
             &initial.queued_mail,
         )
@@ -311,10 +306,15 @@ fn sqlite_store_persists_planet_scorch_orders() {
         .load_latest_runtime_state()
         .expect("reload runtime state")
         .expect("runtime snapshot");
-    assert_eq!(
-        reloaded.planet_scorch_orders,
-        BTreeSet::from([3usize, 7usize])
-    );
+    let scorched: Vec<usize> = reloaded
+        .game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(_, planet)| planet.scorch_earth)
+        .map(|(index, _)| index)
+        .collect();
+    assert_eq!(scorched, vec![2, 6]);
 }
 
 #[test]

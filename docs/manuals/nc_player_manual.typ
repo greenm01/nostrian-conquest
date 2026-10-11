@@ -343,21 +343,26 @@ Your empire runs on production. Every owned planet generates tax revenue each ma
 
 == Key Terms
 
-Every planet has a *Potential Production* --- the maximum productive capacity it can ever reach --- and a *Production*, which is what it can deliver right now. Production grows toward Potential over time. Your empire's *Empire Revenue* is the sum of tax revenue across all your planets. Any revenue a planet does not spend accumulates on it as its *Treasury* --- the reserve of saved production points available to fund future builds. Each turn, how much of that treasury a planet can actually spend is limited by its *build capacity*; that per-turn spending limit is the planet's *Budget*.
+Every planet has a *Potential Production* --- the maximum productive capacity it can ever reach --- and a *Production*, which is what it can deliver right now. Production grows toward Potential over time. A planet's *Revenue* is the tax it will add to its Treasury at the next maintenance, assuming your tax rate, the planet's owner, and its starbase stay as they are. Your empire's *Empire Revenue* is the sum of that revenue across all your planets. Any revenue a planet does not spend accumulates on it as its *Treasury* --- the reserve of saved production points available to fund future builds. Each turn, how much of that treasury a planet can actually spend is limited by its *build capacity*; that per-turn spending limit is the planet's *Budget*.
 
 == Tax Revenue
 
 The tax rate is empire-wide: you set one rate for all your planets. Revenue per
 planet per year is a fixed percentage of Production, and your empire's
-Empire Revenue is the sum of that revenue across all owned planets. See
-@appendix-economy for the exact formula.
+Empire Revenue is the sum of that revenue across all owned planets. The screens
+show next year's revenue, rounded to the nearest whole point, and setting the
+tax rate reports the new Empire Revenue. Production and the Treasury keep their
+fractions from year to year; only what you read and spend is a whole number.
+See @appendix-economy for the exact formula.
 
 == Growth Toward Potential
 
 Each maintenance turn, every owned planet grows toward its Potential. Lower
 taxes grow faster. A planet at 30% tax develops far faster than one at 60%.
-Growth also slows as the planet nears its ceiling. Even at punishing tax
-rates, a planet below Potential still gains at least 1 point per year.
+Growth also slows as the planet nears its ceiling: each year a planet closes
+a share of its gap to Potential, so it comes close to Potential without
+reaching it on a fixed date. Every point of tax costs growth, and there is no
+free yearly minimum.
 
 Growth is based on the gap to Potential and the remaining tax headroom. See
 @appendix-economy for the exact formula.
@@ -366,7 +371,7 @@ Growth is based on the gap to Potential and the remaining tax headroom. See
 
 #admonition("WARNING")[Setting taxes above *65%* can directly _reduce_ Production on your planets, not just slow growth.]
 
-Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
+Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production, and a mature planet settles below its Potential: a Potential-100 world taxed at 70% settles at Production 88 and earns 62 a year, and at 71% it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
 
 The recommended early-game rate is around 50--65%. Drop taxes on new colonies to accelerate their development.
 See @appendix-economy for the exact penalty and yearly update formulas.
@@ -375,28 +380,38 @@ See @appendix-economy for the exact penalty and yearly update formulas.
 
 A commissioned starbase in orbit provides two major benefits. First, the
 planet's yearly production growth gets a strong boost when taxes are modest ---
-the full bonus applies at *50% tax or lower*, then tapers away as taxes climb
-toward *65%*. This means underdeveloped planets with starbases catch up
+half again as fast at *50% tax or lower*, fading steadily to nothing as taxes
+climb toward *65%*. This means underdeveloped planets with starbases catch up
 significantly faster when you are managing them sensibly, but the bonus is not
-meant to offset punitive taxes. Second, the planet gains a *build capacity
+meant to offset punitive taxes. A planet already at its Potential gains
+nothing from it. Second, the planet gains a *build capacity
 multiplier* --- it can spend up to *5x* its Production on builds in a
 single turn, drawing from its treasury. Without a starbase, a
 planet can only spend up to 1x its Production per turn. See
-@appendix-economy for the exact bonus taper and build-capacity formulas.
+@appendix-economy for the exact bonus fade and build-capacity formulas.
 
-#admonition("NOTE")[These bonuses require an active, commissioned starbase in orbit --- not an uncommissioned starbase sitting in stardock.]
+More starbases at one world add defense, not growth or capacity. A starbase
+that is crippled in battle but survives keeps both bonuses.
+
+#admonition("NOTE")[These bonuses require an active, commissioned starbase in orbit --- not an uncommissioned starbase sitting in stardock. The growth bonus needs a starbase of yours at rest in orbit of your world. The build-capacity bonus counts a starbase of yours in orbit, or on its way down to the planet's orbit, so a starbase arriving at a world can raise its budget a year before it raises its growth. A starbase of another empire counts for neither.]
 
 == Treasury <treasury>
 
-Tax revenue that a planet does not spend accumulates in its *Treasury* --- the planet's savings reserve. The treasury is what allows starbase worlds to execute large builds: up to 5x Production in a single turn. Each turn, a planet's *Budget* is the lesser of its treasury and its build capacity. That is what the build screen shows as *BUDGET* --- how many production points remain uncommitted this turn. When maintenance processes a build queue, only the points actually spent that year are deducted from the treasury; unfinished builds keep their remaining cost for later turns.
+Tax revenue that a planet does not spend accumulates in its *Treasury* --- the planet's savings reserve. The treasury is what allows starbase worlds to execute large builds: up to 5x Production in a single turn. Each turn, a planet's *Budget* is the lesser of its treasury and its build capacity. That is what the build screen shows as *BUDGET* --- how many production points remain uncommitted this turn. When maintenance processes a build queue, only the points actually spent that year are deducted from the treasury; unfinished builds keep their remaining cost for later turns. You spend whole points. The treasury keeps any fraction, and it can carry a debt: a negative treasury stays negative, buys nothing, and later revenue pays it down.
 
 == Newly Colonized Planets
 
-A freshly colonized planet starts with Production far below its Potential and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on the next maintenance turn. Each year growth is applied first and tax revenue is then credited on the grown Production, so at moderate tax rates most colonies have a small budget after their first full turn. Very small worlds, or colonies under low taxes, can still sit at zero budget for a turn or more because their revenue rounds down to zero. Low taxes still develop new colonies fastest; they just fill the treasury more slowly at first.
+A freshly colonized planet starts at Production 3 (or at its Potential, if that is lower) and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on the next maintenance turn. Each year growth is applied first and tax revenue is then credited on the grown Production, so at moderate tax rates most colonies have a small budget after their first full turn. Very small worlds, or colonies under low taxes, can still sit at zero budget for a turn or more, because the treasury only counts whole points. The head start comes only with founding, never with capture, recapture, or recovery, and does not depend on the tax rate. Low taxes still develop new colonies fastest; they just fill the treasury more slowly at first.
 
 == Conquered Planets
 
-When you capture an enemy planet by invasion or blitz, the planet's industry needs approximately *two turns* before it is fully converted and begins producing tax revenue for your empire. Plan your logistics around this delay.
+When you capture an enemy planet by invasion or blitz, the planet's industry needs *two quiet years* before it is converted. It pays no revenue and does not grow in the next two maintenance turns, and it pays full revenue from the third. Its Revenue reads 0 until then. Plan your logistics around this delay.
+
+== Scorch Earth <scorch-earth>
+
+Scorch Earth denies a world to an invader. The *Scorch* command sets the order, and the same command rescinds it. Setting it asks three confirmations; rescinding it asks one. The order changes nothing at once. It stays in force until you rescind it or the world is captured, and it first takes effect at the next maintenance, before the year's fighting, so it is already in force when an assault strikes that year.
+
+Each year the order is in force, the planet's Production falls to between 30% and 49% of itself, never below 1, and its stored points fall to a tenth, or to their square root if that is smaller. The planet neither grows nor pays revenue, and its Revenue reads 0. Debt is left as it is. Potential Production is not touched, so a world that is not captured recovers by the normal growth rules once you rescind the order. Your maintenance report tells you each year what the order cost the planet.
 
 #pagebreak()
 
@@ -755,7 +770,7 @@ blocked from further play.
 
 == Planet Command
 
-Planet Command controls your economy and ground operations. Tax (*T*) sets the empire-wide tax rate. From the main Planet Command menu, Scorch Earth (*S*) destroys your own industry to deny it to an invader. Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) assigns newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase currently waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
+Planet Command controls your economy and ground operations. Tax (*T*) sets the empire-wide tax rate. From the main Planet Command menu, Scorch Earth (*S*) sets or rescinds the order that wears down your own industry to deny it to an invader (see @scorch-earth). Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) assigns newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase currently waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
 
 The *Planet List* is the fast row-centric operations screen for owned worlds. Once you open it, the highlighted planet becomes the working row for the most common actions: Build (*B*), Display Queue (*D*), Abort Builds (*A*), Mass Commission (*M*), Commission (*C*), Load / Unload armies (*L* / *U*), and Scorch Earth (*X*). On that screen, *S* is reserved for *Sort*, while *I* or *Enter* opens planet information for the selected row. Owned-planet information includes the planet's *Budget* as well as its *Treasury*.
 
@@ -775,7 +790,9 @@ highlighted fleet.
 
 Each planet keeps a build queue, and your *budget* is the only limit on it: you may order any number of units of any kind, so long as the budget covers them. During maintenance, a planet processes as many queued build points as its current per-turn build capacity allows. Small orders may finish in one maintenance turn, while larger ones can stay queued across multiple years until the remaining cost reaches zero. As enough points are applied to complete individual units, ships and starbases move to *Stardock* --- a holding area on the planet where they sit idle and vulnerable until commissioned --- even if other units from the same order remain queued. Ships are commissioned into numbered fleets, while starbases are commissioned individually and managed through their own Starbase Command submenu. Armies and ground batteries, by contrast, deploy directly to the planet surface and do not pass through stardock.
 
-A planet without a starbase can spend up to its Production in a single turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET* --- your treasury capped by build capacity, minus what you have already committed this turn.
+Aborting the queue releases the points still unpaid. Points already spent on a part-built unit are not returned.
+
+A planet without a starbase can spend up to its Production, rounded to the nearest point, in a single turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET* --- your treasury capped by build capacity, minus what you have already committed this turn.
 
 #admonition("NOTE")[The build queue, stardock, and treasury are all linked. If stardock is full for a given unit type, that order stops drawing points. Blocked orders do not drain your treasury --- but they also do not free capacity for other work. Commission your ships promptly to keep the pipeline moving.]
 
@@ -839,15 +856,19 @@ This appendix collects the exact economy formulas in one place.
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[revenue = floor(present_production \* tax_rate / 100)]],
+    [#text(font: "IBM Plex Mono")[revenue = present_production \* tax_rate / 100]],
   )
 ]
 
-Your empire's Empire Revenue is the sum of this value across all owned
-planets. Maintenance credits revenue after the year's growth and any high-tax
-penalty, so `present_production` here is the updated value.
+Maintenance credits this revenue to the planet's treasury after the year's
+growth and any high-tax penalty, so `present_production` here is the updated
+value. Nothing is rounded: production and the treasury keep their fractions.
+The Revenue shown on the planet and empire screens is next year's figure,
+rounded to the nearest whole point, on the assumption that the tax rate, the
+owner, and the starbase stay as they are. Empire Revenue is the sum of those
+figures over all owned planets.
 
-== Base Growth Toward Potential
+== Yearly Growth
 
 #align(left)[
   #stack(
@@ -855,12 +876,11 @@ penalty, so `present_production` here is the updated value.
     spacing: 0.45em,
     [#text(font: "IBM Plex Mono")[gap = potential_production - present_production]],
     [#text(font: "IBM Plex Mono")[tax_headroom = 100 - min(tax_rate, 95)]],
-    [#text(font: "IBM Plex Mono")[base_growth = ceil(gap \* tax_headroom / 400)]],
+    [#text(font: "IBM Plex Mono")[growth = gap \* tax_headroom / 400]],
   )
 ]
 
-Then clamp the result so a planet below Potential always grows by at least `1`
-and never grows by more than the remaining `gap`.
+Growth never exceeds the gap, and there is no yearly minimum.
 
 == High-Tax Penalty Above 65%
 
@@ -869,7 +889,7 @@ and never grows by more than the remaining `gap`.
     dir: ttb,
     spacing: 0.45em,
     [#text(font: "IBM Plex Mono")[if tax_rate > 65:]],
-    [#text(font: "IBM Plex Mono")[  penalty = ceil(present_production \* (tax_rate - 65) / 500)]],
+    [#text(font: "IBM Plex Mono")[  penalty = present_production \* (tax_rate - 65) / 500]],
   )
 ]
 
@@ -879,27 +899,36 @@ Final yearly Production is:
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[present_production = min(potential_production, present_production + growth) - penalty]],
+    [#text(font: "IBM Plex Mono")[present_production = present_production + growth - penalty]],
   )
 ]
 
+and never more than Potential. At a steady tax rate above 65%, Production settles
+at `potential * a / (a + b)`, where `a = tax_headroom / 400` and
+`b = (tax_rate - 65) / 500`. For Potential 100 that is 88.2 at 70% tax (income
+61.8) and 85.8 at 71% (income 60.9). Settled income is highest at 65% and falls
+with every point above it.
+
 == Starbase Growth Bonus
 
-A commissioned starbase boosts growth at low and moderate tax rates, but the
-bonus tapers away completely by `65%`. Only a base of yours resting in orbit
-over the world when the year begins counts. A base under way, even one that
-arrives during the year, gives no bonus, nor does a base in deep space.
+A commissioned starbase boosts growth at low and moderate tax rates, and the
+bonus fades to nothing by `65%`. Only a base of yours resting in orbit over the
+world when the year begins counts. A base under way, even one that arrives
+during the year, gives no growth bonus, nor does a base in deep space. More
+than one base does not add to the bonus.
 
 #align(left)[
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[bonus_percent = 50 if tax_rate <= 50]],
-    [#text(font: "IBM Plex Mono")[bonus_percent = floor((65 - tax_rate) \* 50 / 15) if 50 < tax_rate < 65]],
-    [#text(font: "IBM Plex Mono")[bonus_percent = 0 if tax_rate >= 65]],
-    [#text(font: "IBM Plex Mono")[growth = base_growth + ceil(base_growth \* bonus_percent / 100)]],
+    [#text(font: "IBM Plex Mono")[bonus = 0.5 if tax_rate <= 50]],
+    [#text(font: "IBM Plex Mono")[bonus = (65 - tax_rate) / 30 if 50 < tax_rate < 65]],
+    [#text(font: "IBM Plex Mono")[bonus = 0 if tax_rate >= 65]],
+    [#text(font: "IBM Plex Mono")[growth = gap \* tax_headroom / 400 \* (1 + bonus)]],
   )
 ]
+
+The bonus does not change the high-tax penalty.
 
 == Build Capacity, Treasury, and Budget
 
@@ -909,29 +938,59 @@ Per-turn build capacity is:
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[build_capacity = present_production without starbase]],
-    [#text(font: "IBM Plex Mono")[build_capacity = present_production \* 5 with starbase]],
+    [#text(font: "IBM Plex Mono")[build_capacity = round(present_production) without starbase]],
+    [#text(font: "IBM Plex Mono")[build_capacity = round(present_production) \* 5 with starbase]],
   )
 ]
 
-Here "with starbase" means one of your bases in orbit over the world and bound
-there. A base ordered elsewhere, or one in deep space, does not count.
+Production is rounded to the nearest whole point. Here "with starbase" means
+one of your bases in orbit over the world and bound there, or descending to it.
+A base ordered elsewhere, or one in deep space, does not count. One base is
+enough; more add nothing.
 
-A planet's *treasury* accumulates unspent production points across turns.
-Each turn, the *budget* is capped by build capacity:
+A planet's *treasury* accumulates unspent production points across turns, with
+their fractions. You can spend only its whole points:
 
 #align(left)[
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[budget = min(treasury, build_capacity)]],
+    [#text(font: "IBM Plex Mono")[spendable = floor(max(0, treasury))]],
+    [#text(font: "IBM Plex Mono")[budget = min(spendable, build_capacity)]],
   )
 ]
+
+A negative treasury is a debt. It stays negative, and later revenue pays it
+down.
 
 The BUDGET field on the build screen shows how many points remain after
 committed queue entries are subtracted. Maintenance deducts only the build
 points actually processed that year; any remaining build cost stays queued for
-later turns, and blocked builds do not consume the treasury.
+later turns, and blocked builds do not consume the treasury. Aborting the
+queue releases the points still unpaid, not points already spent.
+
+== New Colonies
+
+A colony starts with `present_production = min(3, potential_production)` and no
+treasury. This applies only when the colony is founded.
+
+== Scorch Earth
+
+While a planet's Scorch Earth order is in force, each yearly pass, after the
+build queue and in place of growth and revenue, does this:
+
+#align(left)[
+  #stack(
+    dir: ttb,
+    spacing: 0.45em,
+    [#text(font: "IBM Plex Mono")[present_production = max(1, present_production \* (0.30 + Random(20) / 100))]],
+    [#text(font: "IBM Plex Mono")[treasury = min(treasury / 10, sqrt(treasury)) if treasury > 0]],
+  )
+]
+
+`Random(20)` is a whole number from 0 to 19. A planet with Potential 0 stays at
+Production 0. A debt (a negative treasury) is left as it is. Potential
+Production is unchanged, and the planet's Revenue reads 0.
 
 #pagebreak()
 

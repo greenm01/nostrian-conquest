@@ -503,7 +503,7 @@ mod tests {
     use crate::dashboard::panels::{diplomacy, war_record};
     use nc_data::GameStateBuilder;
     use nc_engine::build_seeded_initialized_game;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -515,7 +515,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -554,7 +553,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -581,7 +579,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -604,7 +601,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -633,7 +629,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -663,7 +658,6 @@ mod tests {
             PathBuf::from("."),
             build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -686,7 +680,6 @@ mod tests {
             PathBuf::from("."),
             build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

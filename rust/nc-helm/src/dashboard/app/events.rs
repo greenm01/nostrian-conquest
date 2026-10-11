@@ -477,7 +477,12 @@ impl DashApp {
         self.stage_hosted_tax_rate(tax_rate);
         self.save_and_refresh_runtime()?;
         self.close_active_popup();
-        self.command_line_toast_message = Some(format!("Empire tax rate set to {tax_rate}%."));
+        let revenue = self
+            .game_data
+            .empire_available_production_points(self.player_record_index_1_based);
+        self.command_line_toast_message = Some(format!(
+            "Empire tax rate set to {tax_rate}%. Revenue next year: {revenue}."
+        ));
         self.command_line_toast_deadline = Some(Instant::now() + COMMAND_LINE_TOAST_STEP);
         Ok(())
     }

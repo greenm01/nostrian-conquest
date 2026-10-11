@@ -907,7 +907,6 @@ pub struct DashApp {
     pub hosted_turn_draft: Option<TurnSubmission>,
     pub game_data: CoreGameData,
     pub owned_planet_years: BTreeMap<usize, u16>,
-    pub planet_scorch_orders: BTreeSet<usize>,
     pub report_block_rows: Vec<ReportBlockRow>,
     pub queued_mail: Vec<QueuedPlayerMail>,
     pub planet_intel_snapshots: Vec<PlanetIntelSnapshot>,
@@ -985,7 +984,6 @@ impl Clone for DashApp {
             hosted_turn_draft: self.hosted_turn_draft.clone(),
             game_data: self.game_data.clone(),
             owned_planet_years: self.owned_planet_years.clone(),
-            planet_scorch_orders: self.planet_scorch_orders.clone(),
             report_block_rows: self.report_block_rows.clone(),
             queued_mail: self.queued_mail.clone(),
             planet_intel_snapshots: self.planet_intel_snapshots.clone(),
@@ -1047,7 +1045,6 @@ impl DashApp {
         campaign_store: Option<CampaignStore>,
         game_data: CoreGameData,
         owned_planet_years: BTreeMap<usize, u16>,
-        planet_scorch_orders: BTreeSet<usize>,
         report_block_rows: Vec<ReportBlockRow>,
         queued_mail: Vec<QueuedPlayerMail>,
         planet_intel_snapshots: Vec<PlanetIntelSnapshot>,
@@ -1075,7 +1072,6 @@ impl DashApp {
             hosted_turn_draft: None,
             game_data,
             owned_planet_years,
-            planet_scorch_orders,
             report_block_rows,
             queued_mail,
             planet_intel_snapshots,
@@ -1135,7 +1131,6 @@ impl DashApp {
         game_dir: std::path::PathBuf,
         game_data: CoreGameData,
         owned_planet_years: BTreeMap<usize, u16>,
-        planet_scorch_orders: BTreeSet<usize>,
         report_block_rows: Vec<ReportBlockRow>,
         queued_mail: Vec<QueuedPlayerMail>,
         planet_intel_snapshots: Vec<PlanetIntelSnapshot>,
@@ -1148,7 +1143,6 @@ impl DashApp {
             None,
             game_data,
             owned_planet_years,
-            planet_scorch_orders,
             report_block_rows,
             queued_mail,
             planet_intel_snapshots,
@@ -1171,7 +1165,6 @@ impl DashApp {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -1248,7 +1241,7 @@ mod tests {
     use super::{DashApp, PanelFocus};
     use crate::dashboard::geometry::ScreenGeometry;
     use nc_data::GameStateBuilder;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -1268,7 +1261,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

@@ -44,23 +44,24 @@ fn present_after_one_year(bases: Vec<Starbase>) -> Option<u16> {
 #[test]
 fn a_base_at_rest_in_orbit_speeds_growth() {
     let plain = present_after_one_year(vec![]);
-    assert_eq!(plain, Some(57));
+    // From 50 at 50% tax: 56.25, and 59.375 with a base.
+    assert_eq!(plain, Some(56));
     assert_eq!(
         present_after_one_year(vec![commissioned_starbase(1, WORLD)]),
-        Some(61)
+        Some(59)
     );
 }
 
 #[test]
 fn a_base_in_deep_space_gives_no_growth_bonus() {
-    assert_eq!(present_after_one_year(vec![deep_space_base()]), Some(57));
+    assert_eq!(present_after_one_year(vec![deep_space_base()]), Some(56));
 }
 
 #[test]
 fn a_base_at_depth_one_half_counts_as_in_orbit() {
     let mut base = commissioned_starbase(1, WORLD);
     base.depth = Real48::HALF;
-    assert_eq!(present_after_one_year(vec![base]), Some(61));
+    assert_eq!(present_after_one_year(vec![base]), Some(59));
 }
 
 #[test]
@@ -72,7 +73,7 @@ fn a_moving_base_gives_no_growth_bonus_even_when_it_ends_the_year_at_rest() {
     let mut game = colony_game(vec![base]);
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
     assert!(!game.bases[0].moving);
-    assert_eq!(present_production_points(&game.planets[0]), 57);
+    assert_eq!(present_production_points(&game.planets[0]), 56);
 }
 
 #[test]

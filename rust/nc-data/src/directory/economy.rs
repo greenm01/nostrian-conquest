@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
-    Player, ProductionItemKind, Real48, build_capacity, is_homeworld_seed_ignoring_name,
-    present_production_points, stardock_slot_kind, stored_production_points, troop_transports,
-    yearly_growth_delta, yearly_tax_revenue,
+    Planet, Player, ProductionItemKind, Real48, build_capacity, is_homeworld_seed_ignoring_name,
+    next_pass, present_production_points, stardock_slot_kind, stored_production_points,
+    troop_transports, whole_points,
 };
 
 impl CoreGameData {
@@ -72,18 +72,33 @@ impl CoreGameData {
             .sum()
     }
 
+    /// Empire Revenue: next pass's tax revenue over the empire's worlds,
+    /// each as the whole number its screens show.
     pub fn empire_available_production_points(&self, player_record_index_1_based: usize) -> u32 {
-        let tax_rate = self
-            .players
-            .get(player_record_index_1_based - 1)
-            .map(|record| record.tax_rate)
-            .unwrap_or(0);
-
         self.planets
             .iter()
             .filter(|record| record.owner.0 as usize == player_record_index_1_based)
-            .map(|record| yearly_tax_revenue(present_production_points(record), tax_rate))
+            .map(|record| self.planet_forecast_revenue(record))
             .sum()
+    }
+
+    /// Next pass's tax revenue at `planet`, assuming its owner's tax rate and
+    /// starbase stay as they are, to the nearest whole point.
+    pub fn planet_forecast_revenue(&self, planet: &Planet) -> u32 {
+        let (tax_rate, has_starbase) = self.planet_forecast_inputs(planet);
+        whole_points(next_pass(planet, tax_rate, has_starbase).revenue)
+    }
+
+    fn planet_forecast_inputs(&self, planet: &Planet) -> (u8, bool) {
+        let owner = planet.owner.0;
+        let tax_rate = self
+            .players
+            .get(usize::from(owner).saturating_sub(1))
+            .map_or(0, |player| player.tax_rate);
+        (
+            tax_rate,
+            self.planet_has_friendly_starbase(owner, planet.sector.to_array()),
+        )
     }
 
     pub fn empire_efficiency_percent(&self, player_record_index_1_based: usize) -> f64 {
@@ -265,15 +280,8 @@ impl CoreGameData {
             .filter(|(_, record)| record.owner.0 as usize == player_record_index_1_based)
             .map(|(idx, record)| {
                 let present_production = present_production_points(record);
-                let tax_rate = self
-                    .players
-                    .get(player_record_index_1_based - 1)
-                    .map(|player| player.tax_rate)
-                    .unwrap_or(0);
-                let has_friendly_starbase = self.planet_has_friendly_starbase(
-                    player_record_index_1_based as u8,
-                    record.sector.to_array(),
-                );
+                let (tax_rate, has_friendly_starbase) = self.planet_forecast_inputs(record);
+                let forecast = next_pass(record, tax_rate, has_friendly_starbase);
                 EmpirePlanetEconomyRow {
                     planet_record_index_1_based: idx + 1,
                     coords: record.sector.to_array(),
@@ -281,13 +289,9 @@ impl CoreGameData {
                     present_production,
                     potential_production: u16::from(record.potential_production),
                     stored_production_points: stored_production_points(record),
-                    yearly_tax_revenue: yearly_tax_revenue(present_production, tax_rate),
-                    yearly_growth_delta: yearly_growth_delta(
-                        present_production,
-                        u16::from(record.potential_production),
-                        tax_rate,
-                        has_friendly_starbase,
-                    ),
+                    yearly_tax_revenue: whole_points(forecast.revenue),
+                    yearly_growth_delta: whole_points(forecast.growth).min(u32::from(u16::MAX))
+                        as u16,
                     build_capacity: build_capacity(present_production, has_friendly_starbase),
                     has_friendly_starbase,
                     armies: u8::try_from(record.armies).unwrap_or(u8::MAX),

@@ -1,6 +1,6 @@
 use super::super::{Mission, MissionEvent, MissionOutcome, MovementEvents, SalvageResolvedEvent};
 use crate::CoreGameData;
-use nc_data::{Real48, has_any_force, stored_production_points};
+use nc_data::{Real48, has_any_force};
 
 /// A Salvage fleet reached its world. The per-tick home-world check
 /// (`YearMovement::check_home_world`) has already made sure the world is its
@@ -58,9 +58,8 @@ fn resolve_salvage_arrival(
     // The yield joins the world's stored goods and each loaded transport
     // lands its army (`0b5d:4d65`).
     let planet = &mut game_data.planets[planet_idx];
-    let current_stored = stored_production_points(planet);
     planet.stored_goods =
-        Real48::from_f64(f64::from(current_stored.saturating_add(recovered_points)));
+        Real48::from_f64(planet.stored_goods.to_f64() + f64::from(recovered_points));
     planet.armies = planet.armies.saturating_add(armies_landed);
 
     SalvageResolvedEvent::Succeeded {

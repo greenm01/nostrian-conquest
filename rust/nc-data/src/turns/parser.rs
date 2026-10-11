@@ -101,6 +101,7 @@ fn parse_planet_block(node: &::kdl::KdlNode) -> Result<PlanetTurnBlock, TurnSubm
             }),
             "auto_commission" => actions.push(PlanetTurnAction::AutoCommission),
             "scorch" => actions.push(PlanetTurnAction::Scorch),
+            "rescind_scorch" => actions.push(PlanetTurnAction::RescindScorch),
             other => {
                 return Err(TurnSubmissionError::Parse(format!(
                     "unknown planet action: {other}"

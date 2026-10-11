@@ -43,7 +43,6 @@ impl DashApp {
         store.save_runtime_state_structured_with_intel_activity_and_lifecycle(
             self.game_data.conquest.game_year,
             &self.game_data,
-            &self.planet_scorch_orders,
             &self.report_block_rows,
             &self.queued_mail,
             &planet_intel_by_viewer,
@@ -58,7 +57,6 @@ impl DashApp {
         self.game_data = runtime_state.game_data;
         self.report_block_rows = runtime_state.report_block_rows;
         self.queued_mail = runtime_state.queued_mail;
-        self.planet_scorch_orders = runtime_state.planet_scorch_orders;
         self.winner_state = runtime_state.winner_state;
         self.player_activity_states =
             store.latest_player_activity_states(self.game_data.conquest.player_count)?;

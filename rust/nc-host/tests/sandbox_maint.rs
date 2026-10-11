@@ -5,7 +5,6 @@ use nc_data::hosted::{
     GameTier, RecruitingMode, RosterStore, record_player_joined, upsert_player_seen,
 };
 use nc_data::{CampaignStore, PlayerActivityState, ReportBlockRow};
-use std::collections::BTreeSet;
 
 fn seed_runtime_with_activity(
     game_dir: &std::path::Path,
@@ -26,7 +25,6 @@ fn seed_runtime_with_activity(
         .save_runtime_state_structured_with_intel_and_activity(
             game_data.conquest.game_year,
             &game_data,
-            &BTreeSet::new(),
             &[] as &[ReportBlockRow],
             &[],
             &intel_by_viewer,

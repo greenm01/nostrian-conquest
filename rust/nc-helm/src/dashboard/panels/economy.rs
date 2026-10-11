@@ -1,7 +1,7 @@
 //! Left panel: Treasury, production, revenue, and generated PP growth.
 
 use crate::dashboard::buffer::{CellStyle, PlayfieldBuffer};
-use nc_data::yearly_growth_delta;
+use nc_data::{whole_points, yearly_growth};
 
 use crate::dashboard::app::state::DashApp;
 use crate::dashboard::layout::{self, PanelWidgetFrame};
@@ -46,7 +46,12 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
         .empire_economy_summary(app.player_record_index_1_based);
 
     let growth: i32 = if total_present < total_potential {
-        yearly_growth_delta(total_present as u16, total_potential as u16, tax, false) as i32
+        whole_points(yearly_growth(
+            f64::from(total_present),
+            f64::from(total_potential),
+            tax,
+            false,
+        )) as i32
     } else {
         0
     };
@@ -139,7 +144,7 @@ mod tests {
     use crate::dashboard::app::state::DashApp;
     use crate::dashboard::geometry::ScreenGeometry;
     use nc_data::GameStateBuilder;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -156,7 +161,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

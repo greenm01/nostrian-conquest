@@ -116,7 +116,6 @@ pub fn run_rust_maintenance_with_options(
     let mut winner_state = runtime_state.winner_state;
     let start_year = game_data.conquest.game_year;
     let queued_mail = runtime_state.queued_mail;
-    let planet_scorch_orders = runtime_state.planet_scorch_orders;
     let mut player_activity_states =
         campaign_store.latest_player_activity_states(game_data.conquest.player_count)?;
     let mut player_lifecycle_states =
@@ -290,7 +289,6 @@ pub fn run_rust_maintenance_with_options(
     campaign_store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
         start_year,
         &game_data,
-        &planet_scorch_orders,
         &report_block_rows,
         &queued_mail,
         &planet_intel_by_viewer,

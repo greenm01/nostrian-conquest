@@ -58,7 +58,8 @@ pub struct BombardEvent {
 /// What a captured world passed to its new owner, as the capture left it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct InheritedAssets {
-    /// Stored goods, in whole points; debt is not an asset.
+    /// Stored goods the new owner can spend, in whole points (the planet
+    /// keeps the fraction); debt is not an asset.
     pub stored_goods: u32,
     /// Ships and starbases waiting in the stardock.
     pub docked: EmpireUnitSummary,
@@ -750,6 +751,21 @@ pub enum ColonizationResolvedEvent {
     },
 }
 
+/// A world under Scorch-Earth, after the year's planet pass decayed it.
+/// Amounts are the whole numbers a report shows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct PlanetScorchEvent {
+    /// Planet index (into PLANETS.DAT records) that was scorched.
+    pub planet_idx: usize,
+    /// Owner of the world (1-based player index).
+    pub owner_empire: u8,
+    pub production_before: u16,
+    pub production_after: u16,
+    /// Spendable stored points; a debt reads as 0.
+    pub goods_before: u32,
+    pub goods_after: u32,
+}
+
 /// Events produced by a single maintenance turn, for use by callers
 /// (e.g. DATABASE.DAT regeneration in the CLI layer).
 #[derive(Debug, Default)]
@@ -804,4 +820,6 @@ pub struct MaintenanceEvents {
     pub empire_elimination_events: Vec<EmpireEliminationEvent>,
     /// A civil-disorder empire lost another fleet to defection.
     pub fleet_defection_events: Vec<FleetDefectionEvent>,
+    /// Worlds the yearly pass decayed under Scorch-Earth.
+    pub planet_scorch_events: Vec<PlanetScorchEvent>,
 }
