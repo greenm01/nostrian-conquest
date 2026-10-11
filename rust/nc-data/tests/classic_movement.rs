@@ -9,8 +9,8 @@
 //! then Rust's post-strike state: at rest in orbit at the target with
 //! speed 0, still on Bombard, or holding after Invade or Blitz.
 
+use nc_compat::classic::{decode_fleet, encode_fleet};
 use nc_compat::load_classic_core_files;
-use nc_data::classic::{decode_fleet, encode_fleet};
 use nc_data::{
     Coords, CoreGameData, MaintenanceEvents, Mission, Order, Starbase, recompute_max_speed,
     set_armies_aboard, set_mission_target, set_starbase_at_rest, set_troop_transports,

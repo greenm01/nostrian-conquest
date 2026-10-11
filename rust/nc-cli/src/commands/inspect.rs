@@ -2,8 +2,8 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::runtime::load_runtime_game_data;
+use nc_compat::classic::encode_planet;
 use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
-use nc_data::classic::encode_planet;
 use nc_data::{
     Conquest, CoreGameData, Planet, PlayerMode, Setup, is_named_homeworld_seed, order_summary,
     ownership_summary, planet_derived_summary, ship_composition_summary,

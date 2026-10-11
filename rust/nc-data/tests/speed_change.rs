@@ -3,8 +3,8 @@
 
 use std::path::PathBuf;
 
+use nc_compat::classic::encode_fleet;
 use nc_compat::load_classic_core_files;
-use nc_data::classic::encode_fleet;
 use nc_data::{
     Coords, CoreGameData, GameStateMutationError, Order, TurnSubmission, set_mission_target,
 };

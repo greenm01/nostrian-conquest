@@ -5,16 +5,17 @@
 use std::fs;
 use std::path::PathBuf;
 
-use nc_data::classic::{
+use nc_compat::classic::PLANET_RECORD_SIZE;
+use nc_compat::classic::{
     ClassicFile, decode_planet, encode_planet, ignored_bytes, parse_bases_dat, parse_conquest_dat,
     parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat, parse_setup_dat,
     serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
     serialize_planets_dat, serialize_player_dat, serialize_setup_dat, without_ignored_bytes,
 };
+use nc_data::Real48;
 use nc_data::model::{
     BuildSlot, DiplomaticRelation, Order, Planet, PlayerMode, ProductionItemKind,
 };
-use nc_data::{PLANET_RECORD_SIZE, Real48};
 
 fn repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..")

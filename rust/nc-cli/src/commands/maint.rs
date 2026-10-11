@@ -5,9 +5,8 @@ use std::process::Command;
 
 use crate::support::paths::{default_fixture_dir, repo_root, resolve_repo_path};
 use crate::usage::print_maintenance_usage;
+use nc_compat::classic::{CONQUEST_DAT_SIZE, decode_conquest};
 use nc_compat::import_directory_snapshot;
-use nc_data::CONQUEST_DAT_SIZE;
-use nc_data::classic::decode_conquest;
 use nc_data::{
     CampaignStore, CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents,
     PlanetIntelSnapshot, apply_inactivity_autopilot_policy,

@@ -4,7 +4,7 @@ use common::{
     cleanup_dir, export_campaign_db, repo_root, run_nc_cli_in_dir, unique_temp_dir,
     without_unread_bytes,
 };
-use nc_data::classic::parse_fleets_dat;
+use nc_compat::classic::parse_fleets_dat;
 use std::fs;
 
 #[test]

@@ -7,10 +7,10 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use nc_compat::classic::{encode_base, parse_bases_dat, serialize_bases_dat};
 use nc_compat::{
     export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
 };
-use nc_data::classic::{encode_base, parse_bases_dat, serialize_bases_dat};
 use nc_data::{CampaignStore, Coords, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Real48, Starbase};
 use nc_engine::run_maintenance_turn;
 

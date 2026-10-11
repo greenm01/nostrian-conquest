@@ -1,4 +1,4 @@
-use nc_data::classic::encode_player;
+use nc_compat::classic::encode_player;
 use nc_data::{ClassicResultsChain, Player, has_results_chain, results_chain, set_results_chain};
 
 #[test]

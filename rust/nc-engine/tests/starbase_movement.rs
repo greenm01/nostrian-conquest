@@ -3,10 +3,10 @@
 //! (`docs/dev/ec-starbase-spec.md`). The fixtures and the probe bytes below
 //! come from classic ECMAINT.
 
-use nc_compat::load_classic_core_files;
-use nc_data::classic::{
+use nc_compat::classic::{
     encode_fleet, encode_player, serialize_bases_dat, serialize_fleets_dat, serialize_player_dat,
 };
+use nc_compat::load_classic_core_files;
 use nc_data::{
     Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation, FleetMergeEvent,
     LostWorldResponse, MaintenanceEvents, Mission, MissionOutcome, Order, Real48, StarbaseReport,

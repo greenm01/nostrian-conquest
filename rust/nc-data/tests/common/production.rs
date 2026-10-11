@@ -1,15 +1,17 @@
-use nc_data::classic::{parse_conquest_dat, parse_setup_dat};
+use nc_compat::classic::{parse_conquest_dat, parse_setup_dat};
 use nc_data::{
     Conquest, Coords, CoreGameData, GameStateBuilder, Planet, Player, PlayerMode, Real48, Setup,
     Starbase, set_empire_name, set_planet_name, set_starbase_at_rest,
 };
 
 pub fn zeroed_setup() -> Setup {
-    parse_setup_dat(&vec![0; nc_data::SETUP_DAT_SIZE]).expect("zeroed setup should parse")
+    parse_setup_dat(&vec![0; nc_compat::classic::SETUP_DAT_SIZE])
+        .expect("zeroed setup should parse")
 }
 
 pub fn zeroed_conquest() -> Conquest {
-    parse_conquest_dat(&vec![0; nc_data::CONQUEST_DAT_SIZE]).expect("zeroed conquest should parse")
+    parse_conquest_dat(&vec![0; nc_compat::classic::CONQUEST_DAT_SIZE])
+        .expect("zeroed conquest should parse")
 }
 
 pub fn configured_conquest(player_count: u8) -> Conquest {

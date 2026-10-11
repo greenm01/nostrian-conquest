@@ -1,7 +1,7 @@
 mod common;
 
 use common::*;
-use nc_data::classic::{parse_fleets_dat, parse_planets_dat};
+use nc_compat::classic::{PLANET_RECORD_SIZE, parse_fleets_dat, parse_planets_dat};
 use nc_data::*;
 
 #[test]

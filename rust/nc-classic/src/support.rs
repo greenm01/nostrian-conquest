@@ -39,6 +39,22 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
+pub fn expect_size(
+    data: &[u8],
+    expected: usize,
+    file_type: &'static str,
+) -> Result<(), ParseError> {
+    if data.len() == expected {
+        Ok(())
+    } else {
+        Err(ParseError::WrongSize {
+            file_type,
+            expected,
+            actual: data.len(),
+        })
+    }
+}
+
 pub fn copy_array<const N: usize>(data: &[u8]) -> [u8; N] {
     let mut out = [0u8; N];
     out.copy_from_slice(data);

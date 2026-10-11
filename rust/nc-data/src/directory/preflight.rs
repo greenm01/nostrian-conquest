@@ -28,7 +28,7 @@ impl CoreGameData {
         errors.extend(self.unchained_base_errors());
 
         // PLAYER ipbm_count ↔ IPBM.DAT length
-        errors.extend(self.ipbm_count_length_errors_current_known());
+        errors.extend(self.ipbm_count_errors_current_known());
 
         // Fleet owner validation
         errors.extend(self.fleet_owner_errors());

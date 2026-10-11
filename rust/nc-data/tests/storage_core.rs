@@ -6,11 +6,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_compat::load_classic_core_files;
-use nc_data::classic::{
+use nc_compat::classic::{
     serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
     serialize_planets_dat, serialize_player_dat, serialize_setup_dat,
 };
+use nc_compat::load_classic_core_files;
 use nc_data::model::{BuildSlot, DiplomaticRelation, ProductionItemKind};
 use nc_data::{CampaignStore, CoreGameData, Real48};
 

@@ -1,12 +1,12 @@
 mod common;
 
+use nc_compat::classic::{ClassicFile, INITIALIZED_FLEET_RECORD_COUNT, without_ignored_bytes};
 use nc_compat::{load_classic_core_files, save_classic_core_files};
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use common::*;
-use nc_data::classic::{
+use nc_compat::classic::{
     encode_planet, parse_conquest_dat, parse_fleets_dat, parse_planets_dat, parse_player_dat,
     parse_setup_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_planets_dat,
     serialize_player_dat, serialize_setup_dat,

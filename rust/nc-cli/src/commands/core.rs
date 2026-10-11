@@ -1,15 +1,13 @@
 use std::fs;
 use std::path::Path;
 
+use nc_compat::classic::{FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE};
 use nc_compat::{
     core_file_diff_counts, core_file_diff_offsets, core_file_exact_match_errors,
     current_known_baseline_diff_counts, current_known_baseline_diff_offsets,
     ensure_classic_auxiliary_files, load_classic_core_files, save_classic_core_files,
 };
-use nc_data::{
-    FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE, order_summary,
-    planet_derived_summary,
-};
+use nc_data::{order_summary, planet_derived_summary};
 
 use crate::commands::runtime::{
     load_runtime_game_data, with_runtime_game_mut_and_export, with_runtime_game_mut_and_export_core,

@@ -1,5 +1,4 @@
 use super::*;
-use crate::classic::serialize_ipbm_dat;
 
 impl CoreGameData {
     pub fn planet_build_errors_current_known(
@@ -338,25 +337,15 @@ impl CoreGameData {
         errors
     }
 
-    pub fn ipbm_count_length_errors_current_known(&self) -> Vec<String> {
+    pub fn ipbm_count_errors_current_known(&self) -> Vec<String> {
         let expected_count = self.player1_ipbm_count_current_known();
         let actual_count = self.ipbms.len();
-        let expected_size = expected_count * crate::IPBM_RECORD_SIZE;
-        let actual_size = serialize_ipbm_dat(&self.ipbms).len();
-
-        let mut errors = Vec::new();
-        if actual_count != expected_count {
-            errors.push(format!(
-                "IPBM record count expected {}, got {}",
-                expected_count, actual_count
-            ));
+        if actual_count == expected_count {
+            return Vec::new();
         }
-        if actual_size != expected_size {
-            errors.push(format!(
-                "IPBM.DAT size expected {}, got {}",
-                expected_size, actual_size
-            ));
-        }
-        errors
+        vec![format!(
+            "IPBM record count expected {}, got {}",
+            expected_count, actual_count
+        )]
     }
 }

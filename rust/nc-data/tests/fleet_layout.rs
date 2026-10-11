@@ -6,11 +6,11 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use nc_compat::classic::{ClassicFile, without_ignored_bytes};
+use nc_compat::classic::{decode_fleet, encode_fleet, parse_fleets_dat};
 use nc_compat::{
     export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
 };
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
-use nc_data::classic::{decode_fleet, encode_fleet, parse_fleets_dat};
 use nc_data::{
     CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Fleet, FleetDetachSelection, Mission,
     Order, PlayerMode, recompute_max_speed, set_armies_aboard, set_mission_target,

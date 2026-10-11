@@ -5,8 +5,8 @@
 
 mod common;
 
+use nc_compat::classic::{serialize_fleets_dat, serialize_planets_dat, serialize_player_dat};
 use nc_compat::load_classic_core_files;
-use nc_data::classic::{serialize_fleets_dat, serialize_planets_dat, serialize_player_dat};
 use nc_data::{
     ColonizationResolvedEvent, Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation,
     FleetOrderValidationError, GameStateBuilder, JoinMissionHostEvent, Mission, MissionAbortReason,

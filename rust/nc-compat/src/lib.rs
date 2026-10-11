@@ -2,14 +2,15 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
+pub mod classic;
 mod core_diff;
 mod core_files;
 mod database_projection;
 mod intel;
 
+use classic::{parse_conquest_dat, parse_planets_dat};
 use database_projection::build_database_dat;
 use nc_classic::decode_report_blocks;
-use nc_data::classic::{parse_conquest_dat, parse_planets_dat};
 use nc_data::{
     CLASSIC_RESULTS_RECORD_SIZE, CampaignStore, CampaignStoreError, CoreGameData,
     MaintenanceEvents, QueuedPlayerMail, ReportBlockRow, classic_results_header_viewers,
@@ -249,8 +250,10 @@ pub fn regenerate_database_dat_from_directory(
     dir: &Path,
     template_path: Option<&Path>,
 ) -> Result<(), CampaignStoreError> {
-    let planets = parse_planets_dat(&read_required_path(dir.join("PLANETS.DAT"))?)?;
-    let conquest = parse_conquest_dat(&read_required_path(dir.join("CONQUEST.DAT"))?)?;
+    let planets = parse_planets_dat(&read_required_path(dir.join("PLANETS.DAT"))?)
+        .map_err(classic_parse_error)?;
+    let conquest = parse_conquest_dat(&read_required_path(dir.join("CONQUEST.DAT"))?)
+        .map_err(classic_parse_error)?;
     let template = match template_path {
         Some(path) => Some(
             DatabaseDat::parse(&read_required_path(path.to_path_buf())?)
@@ -276,7 +279,7 @@ fn read_optional_path(path: PathBuf) -> Result<Vec<u8>, CampaignStoreError> {
     }
 }
 
-fn classic_parse_error(err: nc_classic::ParseError) -> CampaignStoreError {
+pub(crate) fn classic_parse_error(err: nc_classic::ParseError) -> CampaignStoreError {
     let parse = match err {
         nc_classic::ParseError::WrongSize {
             file_type,

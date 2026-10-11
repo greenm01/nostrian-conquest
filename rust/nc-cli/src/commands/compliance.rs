@@ -35,7 +35,7 @@ pub(crate) fn print_compliance_report(dir: &Path) -> Result<(), Box<dyn std::err
     println!(
         "{} ipbm-count-length{}",
         if status.ipbm { "OK  " } else { "FAIL" },
-        render_errors_suffix(&data.ipbm_count_length_errors_current_known())
+        render_errors_suffix(&data.ipbm_count_errors_current_known())
     );
     println!();
     println!(

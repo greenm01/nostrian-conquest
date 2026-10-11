@@ -1,5 +1,6 @@
-//! Codecs between the typed model and the classic `.DAT` byte layouts
-//! mapped in `docs/dev/ec-file-formats.md`. Every byte a classic program
+//! Codecs between the typed model in `nc_data` and the classic `.DAT`
+//! byte layouts mapped in `docs/dev/ec-file-formats.md`, with the record
+//! and file sizes. Every byte a classic program
 //! reads round-trips; the bytes none reads (see [`ignored_bytes`]) are not
 //! carried, and `encode` writes zeros or the documented constant there.
 
@@ -13,9 +14,18 @@ mod setup;
 
 use std::ops::Range;
 
-use crate::Real48;
-use crate::support::copy_array;
-use crate::{FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE};
+pub const PLAYER_RECORD_SIZE: usize = 110;
+pub const PLANET_RECORD_SIZE: usize = 97;
+pub const FLEET_RECORD_SIZE: usize = 54;
+pub const INITIALIZED_FLEET_RECORD_COUNT: usize = 16;
+pub const INITIALIZED_FLEETS_DAT_SIZE: usize = FLEET_RECORD_SIZE * INITIALIZED_FLEET_RECORD_COUNT;
+pub const BASE_RECORD_SIZE: usize = 35;
+pub const IPBM_RECORD_SIZE: usize = 32;
+pub const SETUP_DAT_SIZE: usize = 522;
+pub const CONQUEST_DAT_SIZE: usize = 2085;
+
+use nc_classic::copy_array;
+use nc_data::Real48;
 
 pub use base::{decode_base, encode_base, parse_bases_dat, serialize_bases_dat};
 pub use conquest::{decode_conquest, encode_conquest, parse_conquest_dat, serialize_conquest_dat};

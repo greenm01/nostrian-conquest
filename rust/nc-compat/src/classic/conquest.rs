@@ -1,6 +1,6 @@
-use crate::CONQUEST_DAT_SIZE;
-use crate::model::{Conquest, MaintenanceDays};
-use crate::support::{ParseError, copy_array, expect_size};
+use super::CONQUEST_DAT_SIZE;
+use nc_classic::{ParseError, copy_array, expect_size};
+use nc_data::{Conquest, MaintenanceDays};
 
 use super::{put_u16, u16_at};
 

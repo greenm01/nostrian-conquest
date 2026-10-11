@@ -1,14 +1,15 @@
 use std::path::Path;
 
+use nc_compat::classic::IPBM_RECORD_SIZE;
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, IPBM_RECORD_SIZE};
+use nc_data::CoreGameData;
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, load_runtime_game_data, with_runtime_game_mut,
 };
 use crate::support::paths::display_repo_path;
 use crate::workspace::copy_init_files;
-use nc_data::classic::serialize_ipbm_dat;
+use nc_compat::classic::serialize_ipbm_dat;
 
 pub(crate) fn print_ipbm_report(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
@@ -87,7 +88,7 @@ pub(crate) fn validate_ipbm(dir: &Path) -> Result<(), Box<dyn std::error::Error>
     let data = load_classic_core_files(dir)?;
     let ipbm_bytes = serialize_ipbm_dat(&data.ipbms);
 
-    let errors = data.ipbm_count_length_errors_current_known();
+    let errors = data.ipbm_count_errors_current_known();
 
     if errors.is_empty() {
         let expected_count = data.player1_ipbm_count_current_known();
@@ -122,7 +123,7 @@ pub(crate) fn apply_ipbm_scenario(dir: &Path) -> Result<(), Box<dyn std::error::
 }
 
 pub(crate) fn validate_ipbm_data(data: &CoreGameData) -> Result<(), Box<dyn std::error::Error>> {
-    let errors = data.ipbm_count_length_errors_current_known();
+    let errors = data.ipbm_count_errors_current_known();
     if errors.is_empty() {
         Ok(())
     } else {

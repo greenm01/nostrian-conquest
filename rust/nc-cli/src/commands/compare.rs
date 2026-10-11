@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::scenario::KnownScenario;
-use nc_data::classic::{
+use nc_compat::classic::{
     encode_fleet, encode_planet, encode_player, parse_fleets_dat, parse_planets_dat,
     parse_player_dat,
 };

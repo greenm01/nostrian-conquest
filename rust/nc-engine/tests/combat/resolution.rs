@@ -1,6 +1,6 @@
 //! Fleet battle resolution: round cap, determinism, and ROE withdrawals.
 
-use nc_data::classic::encode_fleet;
+use nc_compat::classic::encode_fleet;
 use nc_data::{CoreGameData, Order, troop_transports};
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 

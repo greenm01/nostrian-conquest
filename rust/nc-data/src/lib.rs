@@ -1,16 +1,3 @@
-pub const PLAYER_RECORD_SIZE: usize = 110;
-
-pub const PLANET_RECORD_SIZE: usize = 97;
-
-pub const FLEET_RECORD_SIZE: usize = 54;
-pub const INITIALIZED_FLEET_RECORD_COUNT: usize = 16;
-pub const INITIALIZED_FLEETS_DAT_SIZE: usize = FLEET_RECORD_SIZE * INITIALIZED_FLEET_RECORD_COUNT;
-pub const BASE_RECORD_SIZE: usize = 35;
-pub const IPBM_RECORD_SIZE: usize = 32;
-
-pub const SETUP_DAT_SIZE: usize = 522;
-pub const CONQUEST_DAT_SIZE: usize = 2085;
-pub const DATABASE_RECORD_SIZE: usize = 100;
 /// ROE of a fleet that detach or commissioning creates while it has a
 /// battleship, cruiser, or destroyer; one without gets 0. ECGAME's default,
 /// which its ROE prompt offers.
@@ -18,7 +5,6 @@ pub const NEW_FLEET_DEFAULT_ROE: u8 = 6;
 
 mod bbs_config;
 mod builder;
-pub mod classic;
 mod classic_results;
 mod config;
 mod diplomacy;

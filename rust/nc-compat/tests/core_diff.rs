@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
+use nc_compat::classic::PLANET_RECORD_SIZE;
 use nc_compat::{
     core_file_exact_match_errors, current_known_baseline_diff_counts,
     current_known_baseline_diff_offsets, load_classic_core_files,
 };
-use nc_data::{CoreGameData, PLANET_RECORD_SIZE, Real48};
+use nc_data::{CoreGameData, Real48};
 
 fn fixture(relative: &str) -> CoreGameData {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))

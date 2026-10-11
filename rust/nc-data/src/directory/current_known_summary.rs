@@ -12,7 +12,7 @@ impl CoreGameData {
             guard_starbase: self
                 .guard_starbase_linkage_errors_for_guarding_fleets_current_known(1)
                 .is_empty(),
-            ipbm: self.ipbm_count_length_errors_current_known().is_empty(),
+            ipbm: self.ipbm_count_errors_current_known().is_empty(),
         }
     }
 

@@ -1,6 +1,6 @@
 mod common;
 
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
+use nc_compat::classic::{ClassicFile, without_ignored_bytes};
 use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;

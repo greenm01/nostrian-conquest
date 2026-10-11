@@ -3,12 +3,12 @@
 //! Bytes no classic program reads are masked: a canonical fixture carries
 //! ECMAINT's garbage there and the model writes zeros.
 
-use nc_data::CoreGameData;
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
-use nc_data::classic::{
+use crate::classic::{ClassicFile, without_ignored_bytes};
+use crate::classic::{
     serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
     serialize_planets_dat, serialize_player_dat, serialize_setup_dat,
 };
+use nc_data::CoreGameData;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreFileDiffCount {

@@ -1,6 +1,6 @@
 //! Game state as plain typed structs with named fields. Every field carries
 //! the classic file offset it came from; the byte layouts themselves live in
-//! [`crate::classic`].
+//! the `nc-compat` codecs.
 
 mod conquest;
 mod fleet;

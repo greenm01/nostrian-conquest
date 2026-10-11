@@ -7,13 +7,16 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use nc_data::classic::{
+use crate::classic::{
     parse_bases_dat, parse_conquest_dat, parse_fleets_dat, parse_ipbm_dat, parse_planets_dat,
     parse_player_dat, parse_setup_dat, serialize_bases_dat, serialize_conquest_dat,
     serialize_fleets_dat, serialize_ipbm_dat, serialize_planets_dat, serialize_player_dat,
     serialize_setup_dat,
 };
-use nc_data::{CampaignStoreError, CoreGameData, ParseError};
+use nc_classic::ParseError;
+use nc_data::{CampaignStoreError, CoreGameData};
+
+use crate::classic_parse_error;
 
 #[derive(Debug)]
 pub enum GameDirectoryError {
@@ -49,7 +52,7 @@ impl From<GameDirectoryError> for CampaignStoreError {
     fn from(value: GameDirectoryError) -> Self {
         match value {
             GameDirectoryError::Io { path, source } => Self::Io { path, source },
-            GameDirectoryError::Parse { source, .. } => Self::Parse(source),
+            GameDirectoryError::Parse { source, .. } => classic_parse_error(source),
         }
     }
 }

@@ -1,12 +1,12 @@
 mod common;
 
 use common::*;
-use nc_compat::load_classic_core_files;
-use nc_data::classic::{
-    encode_base, encode_ipbm, encode_planet, encode_setup, parse_bases_dat, parse_conquest_dat,
-    parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat, parse_setup_dat,
-    serialize_ipbm_dat,
+use nc_compat::classic::{
+    IPBM_RECORD_SIZE, encode_base, encode_ipbm, encode_planet, encode_setup, parse_bases_dat,
+    parse_conquest_dat, parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat,
+    parse_setup_dat, serialize_ipbm_dat,
 };
+use nc_compat::load_classic_core_files;
 use nc_data::*;
 use nc_data::{
     Coords, PlayerMode, ProductionItemKind, Real48, present_production_points, recompute_max_speed,
@@ -2400,11 +2400,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
-    assert!(
-        post_data
-            .ipbm_count_length_errors_current_known()
-            .is_empty()
-    );
+    assert!(post_data.ipbm_count_errors_current_known().is_empty());
     assert!(
         post_data
             .guarding_fleet_record_indexes_current_known()
