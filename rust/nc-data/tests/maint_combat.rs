@@ -1206,12 +1206,13 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
     // both batteries survive and fire 180 AS on the landing. Each transport
     // costs 20 hits, so 15 sink; 25 armies land, win, and pass the batteries
-    // to the victor.
+    // to the victor. The three defenders fire first on this seed and kill one
+    // attacker before the rest wipe them out.
     assert_eq!(target.ground_batteries, 2);
-    assert_eq!(target.armies, 22);
+    assert_eq!(target.armies, 24);
     assert_eq!(events.ownership_change_events.len(), 1);
     assert_eq!(events.assault_report_events.len(), 1);
-    assert_eq!(events.assault_report_events[0].attacker_army_losses, 3);
+    assert_eq!(events.assault_report_events[0].attacker_army_losses, 1);
     assert_eq!(events.assault_report_events[0].transport_army_losses, 15);
     assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 3);

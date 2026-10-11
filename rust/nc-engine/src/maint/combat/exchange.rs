@@ -224,6 +224,14 @@ pub(super) fn fleet_die_modifier(state: &FleetCombatState) -> u8 {
     modifier.min(FLEET_DIE_MODIFIER_CAP)
 }
 
+/// One side's volley in the landing battle: its armies fire on the shared
+/// flat table, unmodified, and the result is in quarter armies of damage
+/// (an army has AS 10 and DS 10, so a quarter is 2.5 hits). There is no
+/// critical.
+pub(super) fn landing_volley(roll: u8, armies: u32) -> u32 {
+    armies * u32::from(FLEET_EFFECTIVENESS_X4[usize::from(roll)])
+}
+
 /// Planetary combat's ratio-CRT exchange for orbital fire: bombardment,
 /// invasion suppression and return fire, and blitz landing fire.
 pub(super) fn resolve_orbital_exchange(
@@ -256,6 +264,9 @@ pub(super) fn resolve_orbital_exchange(
     )
 }
 
+/// Planetary combat's ratio-CRT exchange for fire at the garrison: blitz
+/// cover fire and invasion softening. The landing battle itself is
+/// [`landing_volley`].
 pub(super) fn resolve_ground_exchange(
     campaign_seed: u64,
     game_year: u16,
@@ -266,9 +277,8 @@ pub(super) fn resolve_ground_exchange(
     target_empire: u8,
     our_as: u32,
     enemy_as: u32,
-    bonus_shift: i32,
 ) -> ExchangeResolution {
-    let column = shifted_combat_column(base_combat_column(our_as, enemy_as), bonus_shift);
+    let column = base_combat_column(our_as, enemy_as);
     seeded_exchange_resolution(
         campaign_seed,
         game_year,

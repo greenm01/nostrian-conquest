@@ -5,12 +5,12 @@ use crate::{
 };
 
 use super::exchange::{
-    COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND,
-    COMBAT_KIND_BLITZ_LANDING, COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND,
-    COMBAT_KIND_INVASION_SOFTEN, COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution,
-    GROUND_AS_ARMY, GROUND_AS_BATTERY, GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet,
-    apply_landing_fire_to_fleet, resolve_ground_exchange, resolve_orbital_exchange,
-    scalar_hits_with_critical,
+    COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND, COMBAT_KIND_BLITZ_LANDING,
+    COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
+    COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
+    GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, apply_landing_fire_to_fleet,
+    landing_volley, resolve_ground_exchange, resolve_orbital_exchange, scalar_hits_with_critical,
+    seeded_combat_roll,
 };
 use super::reporting::{preferred_reporting_fleet_number, push_planet_intel};
 use super::retreat::set_fleet_to_hold_current_position;
@@ -20,8 +20,8 @@ use super::state::{
     ship_losses_from_states,
 };
 use nc_data::{
-    Real48, has_any_force, present_production_points, set_armies_aboard, stardock_slot_kind,
-    stored_production_points,
+    InheritedAssets, Real48, has_any_force, present_production_points, set_armies_aboard,
+    stardock_slot_kind, stored_production_points,
 };
 
 #[derive(Debug, Default)]
@@ -151,6 +151,10 @@ fn stardock_item_ds(kind: ProductionItemKind) -> u32 {
     }
 }
 
+/// Stored goods one point of bombardment reaching industry destroys, beside
+/// the one point of production it destroys.
+const GOODS_DESTROYED_PER_POINT: u32 = 25;
+
 /// Each docked item costs its own DS in hits. Hits too few to destroy the
 /// next item move on to the following slot; partial hits never carry over.
 fn reduce_stardock(planet: &mut nc_data::Planet, mut hits: u32) -> u32 {
@@ -229,11 +233,16 @@ fn stardock_summary_diff(
     }
 }
 
-/// Suppression damage: hits only go through stardock and batteries.
-/// Armies, stored goods, and factories are shielded.
-fn apply_planet_suppression_damage(planet: &mut nc_data::Planet, hits: u32) {
-    let hits = reduce_stardock(planet, hits);
-    apply_battery_hits(planet, hits);
+/// Suppression damage. Batteries shield the stardock (combat decision 5): an
+/// exchange that begins with batteries standing hits them only, and the hits
+/// beyond what destroys them expire. Once none stand, the exchange hits the
+/// stardock. Armies, stored goods, and factories are shielded either way.
+pub(super) fn apply_planet_suppression_damage(planet: &mut nc_data::Planet, hits: u32) {
+    if planet.ground_batteries > 0 {
+        apply_battery_hits(planet, hits);
+    } else {
+        reduce_stardock(planet, hits);
+    }
 }
 
 fn apply_capped_invasion_soften_damage(
@@ -253,12 +262,12 @@ fn apply_capped_invasion_soften_damage(
     army_loss
 }
 
-/// Full bombardment cascade: stardock -> batteries -> armies -> stored goods -> factories.
+/// The breakthrough exchange, which only an exchange that begins with no
+/// batteries standing can be: stardock -> armies -> stored goods -> factories.
 /// Units cost their DS in hits; hits reaching goods and factories are scaled
 /// down from the 10x combat scale before the per-unit conversion.
-fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
-    let hits = reduce_stardock(planet, hits);
-    let mut hits = apply_battery_hits(planet, hits);
+pub(super) fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
+    let mut hits = reduce_stardock(planet, hits);
 
     let army_loss =
         (hits / GROUND_DS_ARMY).min(u8::try_from(planet.armies).unwrap_or(u8::MAX) as u32);
@@ -267,7 +276,7 @@ fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
 
     let hits = hits / 10;
     if hits > 0 {
-        let goods_loss = hits.saturating_mul(100);
+        let goods_loss = hits.saturating_mul(GOODS_DESTROYED_PER_POINT);
         planet.stored_goods = Real48::from_f64(f64::from(
             stored_production_points(planet).saturating_sub(goods_loss),
         ));
@@ -276,6 +285,55 @@ fn apply_planet_bombardment_damage(planet: &mut nc_data::Planet, hits: u32) {
         let factories = present_production_points(planet);
         let loss = hits.min(u32::from(factories)) as u16;
         planet.production = Real48::from_f64(f64::from(factories.saturating_sub(loss)));
+    }
+}
+
+/// A scorched world that falls (ECMAINT `110a:6e6a..6f02`): the defenders
+/// halve its production and its positive goods, empty the dock, and lift the
+/// order, and production never ends below 1.0. Debt is untouched, and a world
+/// with no potential stays at production 0.
+fn apply_scorch_on_capture(planet: &mut nc_data::Planet) {
+    if !planet.scorch_earth {
+        return;
+    }
+    let goods = planet.stored_goods.to_f64();
+    if goods > 0.0 {
+        planet.stored_goods = Real48::from_f64(goods / 2.0);
+    }
+    let production = planet.production.to_f64() / 2.0;
+    planet.production = if planet.potential_production > 0 {
+        Real48::from_f64(production.max(1.0))
+    } else {
+        Real48::from_f64(production)
+    };
+    planet.stardock = nc_data::Stardock::default();
+    planet.scorch_earth = false;
+}
+
+/// The world passes to `new_owner` with `garrison` armies and `batteries`.
+/// Everything else the fight left stands: goods, production, docked ships,
+/// and the build queue pass intact, with no capture bonus and no forgiven
+/// debt, unless the defenders had scorched it. Returns what the new owner
+/// finds, for the capture report.
+fn capture_planet(
+    planet: &mut nc_data::Planet,
+    new_owner: u8,
+    garrison: u32,
+    batteries: u16,
+) -> InheritedAssets {
+    let scorched = planet.scorch_earth;
+    planet.owner.0 = new_owner;
+    // Just captured: no income until the yearly pass has stepped the status
+    // to 2, as ECMAINT does.
+    planet.years_under_owner = 0;
+    planet.armies = u16::from(garrison.min(255) as u8);
+    planet.ground_batteries = batteries;
+    apply_scorch_on_capture(planet);
+    InheritedAssets {
+        stored_goods: stored_production_points(planet),
+        docked: stardock_summary(planet),
+        queued_work: planet.build_queue.iter().map(|slot| slot.points_owed).sum(),
+        scorched,
     }
 }
 
@@ -317,7 +375,6 @@ fn blitz_cover_exchange(
         target_empire,
         bombard_attack_as(state).max(1),
         battery_as.max(1),
-        0,
     )
 }
 
@@ -369,85 +426,77 @@ fn apply_blitz_landing_fire(
     )
 }
 
-fn resolve_ground_battle_to_destruction(
+/// The landing battle (combat decision 4), fought to the last army of one
+/// side. Each round the defenders fire first and the attackers they leave
+/// reply. Every volley rolls once on the shared flat table, unmodified: the
+/// roll `roll(round, acting_empire, target_empire)` gives the d10, and the
+/// side's armies deal `armies x effectiveness` damage in quarter armies.
+/// Damage short of an army carries, in quarters, into the next round of this
+/// landing and is dropped when it ends. There is no defender modifier and no
+/// critical, and the attackers fire only with what survives, so both sides
+/// cannot be destroyed. Each round costs the attackers at least a quarter
+/// army per defending army, so the battle ends within `4 x attackers` rounds.
+/// Returns the armies each side has left; at most one is not zero.
+pub(super) fn resolve_landing_battle(
+    attacker_empire: u8,
+    defender_empire: u8,
+    mut attackers: u32,
+    mut defenders: u32,
+    roll: &mut dyn FnMut(u32, u8, u8) -> u8,
+) -> (u32, u32) {
+    let mut attackers_carry = 0;
+    let mut defenders_carry = 0;
+    for round in 1.. {
+        if attackers == 0 || defenders == 0 {
+            break;
+        }
+        let damage = attackers_carry
+            + landing_volley(roll(round, defender_empire, attacker_empire), defenders);
+        attackers = attackers.saturating_sub(damage / 4);
+        attackers_carry = damage % 4;
+        if attackers == 0 {
+            break;
+        }
+        let damage = defenders_carry
+            + landing_volley(roll(round, attacker_empire, defender_empire), attackers);
+        defenders = defenders.saturating_sub(damage / 4);
+        defenders_carry = damage % 4;
+    }
+    (attackers, defenders)
+}
+
+/// The landing battle with the campaign's seeded dice: the roll depends only
+/// on the year, the world, the battle kind (an invasion's or a blitz's), the
+/// round, and the two empires.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn resolve_seeded_landing(
     campaign_seed: u64,
     game_year: u16,
     coords: [u8; 2],
     combat_kind: u64,
     attacker_empire: u8,
     defender_empire: u8,
-    attacker_armies: u32,
-    defender_armies: u32,
-    defender_bonus_shift: i32,
+    attackers: u32,
+    defenders: u32,
 ) -> (u32, u32) {
-    let mut attacker_survivors = attacker_armies;
-    let mut defender_survivors = defender_armies;
-
-    for round in 1..=COMBAT_GUARDRAIL_MAX_ROUNDS {
-        if attacker_survivors == 0 || defender_survivors == 0 {
-            return (attacker_survivors, defender_survivors);
-        }
-
-        let attacker_before_round = attacker_survivors;
-        let defender_before_round = defender_survivors;
-
-        let attacker_ground = resolve_ground_exchange(
+    let mut roll = |round, acting_empire, target_empire| {
+        seeded_combat_roll(
             campaign_seed,
             game_year,
             coords,
             combat_kind,
             round,
-            attacker_empire,
-            defender_empire,
-            attacker_survivors,
-            defender_survivors,
-            0,
-        );
-        let defender_ground = resolve_ground_exchange(
-            campaign_seed,
-            game_year,
-            coords,
-            combat_kind,
-            round,
-            defender_empire,
-            attacker_empire,
-            defender_survivors,
-            attacker_survivors,
-            defender_bonus_shift,
-        );
-
-        let attacker_losses = scalar_hits_with_critical(defender_ground).min(attacker_survivors);
-        let defender_losses = scalar_hits_with_critical(attacker_ground).min(defender_survivors);
-
-        attacker_survivors = attacker_survivors.saturating_sub(attacker_losses);
-        defender_survivors = defender_survivors.saturating_sub(defender_losses);
-
-        // Ground combat must resolve with one side broken and the other still
-        // holding the field. If a simultaneous exchange would annihilate both
-        // sides, the larger force entering that exchange survives with a
-        // remnant army; exact equality favors the defender.
-        if attacker_survivors == 0 && defender_survivors == 0 {
-            if attacker_before_round > defender_before_round {
-                attacker_survivors = 1;
-            } else {
-                defender_survivors = 1;
-            }
-            return (attacker_survivors, defender_survivors);
-        }
-    }
-
-    settle_ground_battle_at_cap(attacker_survivors, defender_survivors)
-}
-
-/// Ground combat cannot end in a draw. If the round cap is reached with both
-/// sides standing, the larger remaining force holds the field and the other is
-/// broken; exact equality favors the defender.
-fn settle_ground_battle_at_cap(attacker_survivors: u32, defender_survivors: u32) -> (u32, u32) {
-    if attacker_survivors > defender_survivors {
-        (attacker_survivors, 0)
-    } else {
-        (0, defender_survivors)
-    }
+            acting_empire,
+            target_empire,
+        )
+    };
+    resolve_landing_battle(
+        attacker_empire,
+        defender_empire,
+        attackers,
+        defenders,
+        &mut roll,
+    )
 }
 
 /// Resolve the planetary attack of fleet `fleet_idx`, whose strike test
@@ -706,7 +755,6 @@ pub(crate) fn resolve_strike(
                     bombard_attack_as(&after),
                     u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX) as u32
                         * GROUND_AS_ARMY,
-                    0,
                 );
                 // Soften targets armies only — factories and stored goods are
                 // preserved so the captured planet retains its production value.
@@ -722,7 +770,7 @@ pub(crate) fn resolve_strike(
                     .sum();
                 let defender_armies =
                     u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX) as u32;
-                let (attacker_survivors, defender_survivors) = resolve_ground_battle_to_destruction(
+                let (attacker_survivors, defender_survivors) = resolve_seeded_landing(
                     campaign_seed,
                     battle_year,
                     coords,
@@ -731,7 +779,6 @@ pub(crate) fn resolve_strike(
                     previous_owner,
                     attacking_armies,
                     defender_armies,
-                    1,
                 );
                 let defender_battery_losses = pre_batteries.saturating_sub(
                     u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX),
@@ -743,13 +790,12 @@ pub(crate) fn resolve_strike(
                     set_armies_aboard(&mut game_data.fleets[idx], 0);
                 }
                 if attacker_survivors > 0 && defender_survivors == 0 {
-                    let planet = &mut game_data.planets[planet_idx];
-                    planet.owner.0 = empire;
-                    // Just captured: no income until the yearly pass has
-                    // stepped the status to 2, as ECMAINT does.
-                    planet.years_under_owner = 0;
-                    planet.armies = u16::from(attacker_survivors.min(255) as u8);
-                    planet.ground_batteries = 0;
+                    let inherited = capture_planet(
+                        &mut game_data.planets[planet_idx],
+                        empire,
+                        attacker_survivors,
+                        0,
+                    );
                     events
                         .ownership_change_events
                         .push(PlanetOwnershipChangeEvent {
@@ -778,6 +824,7 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
+                        inherited: Some(inherited),
                         outcome: MissionOutcome::Succeeded,
                         stardate_week: None,
                     });
@@ -818,6 +865,7 @@ pub(crate) fn resolve_strike(
                         defender_battery_losses,
                         defender_army_losses_softening: soften_army_losses,
                         defender_army_losses,
+                        inherited: None,
                         outcome: MissionOutcome::Failed,
                         stardate_week: None,
                     });
@@ -862,6 +910,7 @@ pub(crate) fn resolve_strike(
                     ),
                     defender_army_losses_softening: 0,
                     defender_army_losses: 0,
+                    inherited: None,
                     outcome: MissionOutcome::Aborted,
                     stardate_week: None,
                 });
@@ -950,7 +999,7 @@ pub(crate) fn resolve_strike(
             let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
             let defender_armies =
                 u8::try_from(game_data.planets[planet_idx].armies).unwrap_or(u8::MAX) as u32;
-            let (attacker_survivors, defender_survivors) = resolve_ground_battle_to_destruction(
+            let (attacker_survivors, defender_survivors) = resolve_seeded_landing(
                 campaign_seed,
                 battle_year,
                 coords,
@@ -959,7 +1008,6 @@ pub(crate) fn resolve_strike(
                 previous_owner,
                 armies_after_landing,
                 defender_armies,
-                1,
             );
             let defender_battery_losses = pre_batteries.saturating_sub(
                 u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX),
@@ -970,15 +1018,13 @@ pub(crate) fn resolve_strike(
                 set_armies_aboard(&mut game_data.fleets[idx], 0);
             }
             if attacker_survivors > 0 && defender_survivors == 0 {
-                let batteries =
-                    u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
-                let planet = &mut game_data.planets[planet_idx];
-                planet.owner.0 = empire;
-                // Just captured: no income until the yearly pass has
-                // stepped the status to 2, as ECMAINT does.
-                planet.years_under_owner = 0;
-                planet.armies = u16::from(attacker_survivors.min(255) as u8);
-                planet.ground_batteries = u16::from(batteries);
+                let batteries = game_data.planets[planet_idx].ground_batteries;
+                let inherited = capture_planet(
+                    &mut game_data.planets[planet_idx],
+                    empire,
+                    attacker_survivors,
+                    batteries,
+                );
                 events
                     .ownership_change_events
                     .push(PlanetOwnershipChangeEvent {
@@ -1007,6 +1053,7 @@ pub(crate) fn resolve_strike(
                     defender_battery_losses,
                     defender_army_losses_softening: 0,
                     defender_army_losses,
+                    inherited: Some(inherited),
                     outcome: MissionOutcome::Succeeded,
                     stardate_week: None,
                 });
@@ -1046,6 +1093,7 @@ pub(crate) fn resolve_strike(
                     defender_battery_losses,
                     defender_army_losses_softening: 0,
                     defender_army_losses,
+                    inherited: None,
                     outcome: MissionOutcome::Failed,
                     stardate_week: None,
                 });
@@ -1097,18 +1145,4 @@ pub(crate) fn resolve_strike(
     }
 
     events
-}
-
-// The 64-round ground-combat cap is not reachable through the public API
-// with real dice, so its tie-break is pinned here on the private helper.
-#[cfg(test)]
-mod tests {
-    use super::settle_ground_battle_at_cap;
-
-    #[test]
-    fn ground_battle_cap_never_ends_in_a_draw() {
-        assert_eq!(settle_ground_battle_at_cap(7, 3), (7, 0));
-        assert_eq!(settle_ground_battle_at_cap(3, 7), (0, 7));
-        assert_eq!(settle_ground_battle_at_cap(5, 5), (0, 5));
-    }
 }

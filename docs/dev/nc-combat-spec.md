@@ -55,7 +55,8 @@ The canonical EC combat model:
 ## Core Principles
 
 ### 1. Simultaneous Resolution
-Fleet combat, orbital fire, and ground battles resolve at the same instant.
+Fleet combat and orbital fire resolve at the same instant. The landing battle
+is the exception: the defenders fire first.
 
 ### 2. ROE Thresholds
 Rules of Engagement decide whether a fleet attacks (following classic
@@ -73,8 +74,11 @@ EC uses ship counts, not per-hull damage state. The Rust engine uses a
 **Nominal -> Crippled -> Destroyed** step-loss model during a battle. Only
 destroyed hulls are written back to the save file.
 
-### 4. Defender Wins Ties
-If a tie occurs and no side has a clear edge, the defender wins.
+### 4. Defenders Fire First on the Ground
+In the landing battle the defenders fire before the attackers. That is the
+defender's whole advantage: there is no defender modifier, no homeworld
+bonus, and no tie rule, because the attackers fire only with what survives
+and both sides cannot be destroyed.
 
 ### 5. Combined Arms
 The model rewards mixed fleets (**DD/CA/BB**) with a small effectiveness bonus
@@ -147,10 +151,13 @@ fleets in the sector are untouched.
 ## Seeded Resolution
 
 Combat derives its results from the `campaign_seed` plus battle context. Each
-side's volley rolls a `d10`. Fleet battles read the roll on a flat
-effectiveness table; planetary combat reads it on the ratio Combat Results
-Table (CRT). [Combat decision 1](../notes/decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md)
-records the fleet rule.
+side's volley rolls a `d10`. Fleet battles and the landing battle read the
+roll on a flat effectiveness table; planetary support fire reads it on the
+ratio Combat Results Table (CRT).
+[Combat decision 1](../notes/decisions/ld2f252j-flat-combat-effectiveness-with-battle-local-carry.md)
+records the fleet rule and
+[decision 4](../notes/decisions/59v787ut-defender-first-ground-combat-on-the-shared-table.md)
+the landing battle.
 
 ### Fleet Battle Effectiveness
 
@@ -190,21 +197,68 @@ withdrawal, or the 64-round cap. The next battle starts at zero, even between
 the same fleets in the same tick, so a withdrawal forfeits whatever was
 carried.
 
-### Planetary Combat CRT
+### Landing Battle
 
-Bombardment, invasion suppression and return fire, softening, blitz cover and
-landing fire, and ground combat use the ratio CRT. The column comes from the
-force ratio:
+The armies that land fight on the same table as fleets, one army against one
+army, AS 10 and DS 10 each. A round has two volleys, the defenders' first:
+
+1. The defenders roll once: unmodified `d10` 0-2 gives 25%, 3-5 gives 50%,
+   6-9 gives 100% of their armies' AS. The attackers' losses come off.
+2. The surviving attackers roll once and fire back the same way; the
+   defenders' losses come off.
+3. Rounds repeat until one side has no armies.
+
+Damage is counted in quarter armies: a side with `n` armies deals `n × 1`,
+`n × 2`, or `n × 4` quarters on a roll of 25%, 50%, or 100%, and four
+quarters destroy one army. Damage short of an army carries, per side, into the
+next round of the same landing, and is lost when the landing ends. Nothing
+carries from one landing to the next. The quarters are exact, with no
+rounding up.
+
+There is no die modifier for either side, no homeworld bonus, and no critical.
+The attackers fire only with what survives their opponents' volley, so both
+sides cannot be destroyed and no tie rule is needed. Each round costs the
+attackers at least a quarter army for every defending army, so a landing is
+over within four rounds per landed army; it has no round cap. The surviving
+attackers of a won landing become the new garrison.
+
+Reports show whole armies lost and remaining. The carried quarters are not
+reported.
+
+Capture odds (the armies that land against the armies that defend, after any
+softening; exact enumeration in `tools/combat-model/ground_calibration.py`,
+checked against sampled engine landings):
+
+| Attackers vs defenders | Capture |
+| --- | ---: |
+| 1 vs 1 | 33.6% |
+| 2 vs 1 | 85.1% |
+| 3 vs 2 | 55.6% |
+| 3 vs 1 | 99.4% |
+| 5 vs 5 | 22.6% |
+| 10 vs 10 | 19.9% |
+| 11 vs 10 | 27.6% |
+| 15 vs 10 | 56.1% |
+| 20 vs 10 | 91.8% |
+| 20 vs 20 | 19.0% |
+| 40 vs 20 | 92.3% |
+
+Capture odds follow the force ratio and are roughly the same at every scale.
+Overwhelming ratios still guarantee victory.
+
+### Planetary Support Fire CRT
+
+Bombardment, invasion suppression and return fire, softening, and blitz cover
+and landing fire use the ratio CRT. The column comes from the force ratio:
 - **Disadvantaged**: Ratio < 0.5
 - **Pressed**: Ratio 0.5 – 1.0
 - **Even**: Ratio 1.0 – 1.5
 - **Advantaged**: Ratio 1.5 – 3.0
 - **Overwhelming**: Ratio >= 3.0
 
-Modifiers shift the column: **+1** for a mixed fleet in bombardment and
-invasion suppression, and **+1** for the defender in ground combat. An
-unmodified **9** is a critical hit, forcing at least one real loss. Planetary
-hits do not carry (see Planetary Hit Costs).
+A mixed fleet in bombardment and invasion suppression shifts the column by
+**+1**. An unmodified **9** is a critical hit, forcing at least one real loss.
+Planetary support hits do not carry (see Planetary Hit Costs).
 
 ## Hit Allocation
 
@@ -224,17 +278,26 @@ This creates a deadly synergy where heavy ships suppress the enemy line, while l
 
 Each bombardment turn resolves three sequential exchanges (rounds). Ground
 batteries act as the planet's shield wall --- while they stand, they draw
-orbital fire and shoot back, protecting armies, production, and industry.
+orbital fire and shoot back, protecting the stardock, armies, production, and
+industry.
 
-1. **Round 1 (Suppression):** Attacker fires at stardock contents, then
-   batteries. Batteries fire back. Armies, goods, and factories are shielded.
-2. **Round 2 (Suppression):** Same targeting. Batteries fire back again with
-   whatever survives round 1.
+**Batteries shield the stardock.** An exchange that begins with batteries
+standing hits batteries only, and the hits beyond what destroys them expire.
+Docked ships are exposed from the next exchange, the first one that begins
+with no batteries standing
+([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md)).
+
+1. **Round 1 (Suppression):** If batteries stand, the attacker's hits go to
+   batteries only; otherwise they go to the stardock. Batteries fire back.
+   Armies, goods, and factories are shielded.
+2. **Round 2 (Suppression):** Same targeting by the batteries standing at the
+   start of the round. Batteries fire back again with whatever survives
+   round 1.
 3. **Round 3 (Breakthrough or continued suppression):** If batteries reached
-   zero before this round, attacker hits cascade into armies, stored goods,
-   and factories. If batteries still remain, this round is another suppression
-   exchange --- batteries continue to shield everything behind them and fire
-   back.
+   zero before this round, attacker hits go to the stardock first and then
+   cascade into armies, stored goods, and factories. If batteries still
+   remain, this round is another suppression exchange --- batteries continue
+   to shield everything behind them and fire back.
 
 #### Planetary Hit Costs
 Orbital hits are on the same 10x scale as fleet combat, so each target costs
@@ -245,12 +308,13 @@ its defense strength:
 | Ground battery | 20 |
 | Army | 10 |
 | Docked ship (stardock) | Its fleet DS (DD 5, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
-| Stored goods / factories | Remaining hits ÷ 10, then 100 goods and 1 factory per point |
+| Stored goods / factories | Remaining hits ÷ 10, then 25 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
-over between rounds. Hits too few to destroy the next docked item move on to
-the following stardock slot. Invasion suppression and blitz cover fire pay the
-same battery cost.
+over between rounds. Once the stardock is exposed, hits too few to destroy the
+next docked item move on to the following stardock slot. Invasion suppression
+and blitz cover fire pay the same battery cost, and neither reaches the
+stardock.
 
 Blitz landing fire is one CRT exchange of surviving battery AS against the
 escorts' bombardment AS. It is focus fire aimed at the descending transports
@@ -271,13 +335,37 @@ same turn.
    bombardment AS against the garrison's strength on the same scale (armies x
    army AS 10), and each army destroyed costs 10 hits. Softening may destroy at
    most half of the defender's starting armies.
-3. **Landing battle:** Armies fight in repeated simultaneous rounds until one
-   side is destroyed. The defender receives a **+1** column bonus in ground
-   combat. Ground combat cannot end in a draw: if a simultaneous exchange
-   would annihilate both sides, the larger force entering that exchange holds
-   the field with a remnant army; exact equality favors the defender. If the
-   64-round cap is reached with both sides standing, the larger remaining force
-   holds the field, again with ties to the defender.
+3. **Landing battle:** The armies fight the Landing Battle above, defenders
+   first, until one side has no armies. Capture requires destroying every
+   defending army; the surviving attackers become the new garrison.
+
+Invade supplies its own softening once suppression has cleared the batteries,
+so a separate Bombard order is not required first.
+
+#### Capture
+A world that falls passes to the new owner with what the fight left standing:
+stored goods, production, docked ships, and queued build work. There is no
+capture bonus, no loss by mission, and no forgiven debt. An Invade capture
+leaves no batteries; a Blitz capture keeps the surviving ones. The status
+resets to 0, the start of conversion.
+
+A world whose owner had set Scorch Earth is halved as it falls
+(`110a:6e6a..6f02`): production and positive goods are halved, the stardock
+is emptied, the order is lifted, and production is raised to at least 1.0.
+Debt is untouched, and a world with no potential stays at production 0. The
+build queue is not burned. A failed assault leaves the order set.
+
+The attacker's capture report lists the goods, docked ships, and queued work
+the world passed on, and says when the defenders had scorched it.
+
+#### Failure Is Not Defeat
+A fleet whose landing fails, or whose Invade is blocked because batteries
+survive suppression, keeps its survivors in orbit on Hold and files a failure
+report. A blocked Invade lands nothing and its armies stay aboard. The fleet
+does not blockade the world automatically and is subject to ordinary
+encounters like any fleet in orbit. A fleet beaten in the orbital battle
+leaves under the ordinary withdrawal rules (see Simultaneous Arrival at a
+Planet), with no extra battery volley.
 
 ## Fleet Combat Sequence
 
@@ -346,10 +434,11 @@ does for a starbase blocking its path: a fleet unwilling to take on the
 owner's combined strength aborts to Seek Home without a shot. Only the
 holder of the field strikes, in the same tick. A beaten attacker has
 retreated with its battle, or died in it, and its mission report says the
-orbital defence repelled it. A second attacker of the same empire finds the
-orbit the first cleared empty and strikes without refighting anyone; rival
-attackers of different empires strike in the year's unit order, each
-against whatever holds the orbit when its turn comes. A transport-only
+orbital defence repelled it. The world's batteries take no part in the gate
+and fire only on a fleet that strikes. A second attacker of the same empire
+finds the orbit the first cleared empty and strikes without refighting
+anyone; rival attackers of different empires strike in the year's unit
+order, each against whatever holds the orbit when its turn comes. A transport-only
 Blitz brings no warships and can fight nobody: it lands only when the owner
 has nothing in orbit, and a fleet of his without warships does not stop it.
 

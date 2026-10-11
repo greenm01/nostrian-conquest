@@ -55,6 +55,19 @@ pub struct BombardEvent {
     pub stardate_week: Option<u8>,
 }
 
+/// What a captured world passed to its new owner, as the capture left it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub struct InheritedAssets {
+    /// Stored goods, in whole points; debt is not an asset.
+    pub stored_goods: u32,
+    /// Ships and starbases waiting in the stardock.
+    pub docked: EmpireUnitSummary,
+    /// Production points still owed on the build queue.
+    pub queued_work: u32,
+    /// The defenders had set Scorch Earth, so the capture halved the world.
+    pub scorched: bool,
+}
+
 /// A ground-assault event for invade/blitz mission reporting.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AssaultReportEvent {
@@ -88,6 +101,8 @@ pub struct AssaultReportEvent {
     pub defender_army_losses_softening: u8,
     /// Defender army losses.
     pub defender_army_losses: u8,
+    /// What the attacker inherited, when the assault took the world.
+    pub inherited: Option<InheritedAssets>,
     /// Final mission outcome.
     pub outcome: MissionOutcome,
     /// Week of year (1–52) when this event occurred; None until canonicalized.
