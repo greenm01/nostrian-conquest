@@ -1038,13 +1038,16 @@ impl DashApp {
     }
 
     fn handle_inbox_overlay_key(&mut self, key: KeyEvent) {
-        if self.inbox_overlay.prompt_mode != state::InboxPromptMode::None {
-            self.handle_inbox_prompt_key(key);
-            return;
-        }
         if self.inbox_overlay.delete_confirm {
             match key.code {
                 KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
+                    if self.inbox_overlay.prompt_mode == state::InboxPromptMode::Outbox {
+                        self.inbox_overlay.delete_confirm = false;
+                        if let Err(err) = self.delete_selected_outbox_message() {
+                            self.inbox_overlay.prompt_status = Some(err.to_string());
+                        }
+                        return;
+                    }
                     delete_selected_inbox_item(self);
                     if let Err(err) = self.save_and_refresh_runtime() {
                         self.command_line_toast_message = Some(err.to_string());
@@ -1067,6 +1070,10 @@ impl DashApp {
                 }
                 _ => {}
             }
+            return;
+        }
+        if self.inbox_overlay.prompt_mode != state::InboxPromptMode::None {
+            self.handle_inbox_prompt_key(key);
             return;
         }
 
@@ -1303,8 +1310,11 @@ impl DashApp {
                         self.inbox_overlay.outbox_focus = state::InboxFocus::Preview;
                     }
                     KeyCode::Char('d') | KeyCode::Char('D') => {
-                        if let Err(err) = self.delete_selected_outbox_message() {
-                            self.inbox_overlay.prompt_status = Some(err.to_string());
+                        if inbox::staged_outbox_messages(self).is_empty() {
+                            self.inbox_overlay.prompt_status =
+                                Some("No outbox message selected.".to_string());
+                        } else {
+                            self.inbox_overlay.delete_confirm = true;
                         }
                     }
                     KeyCode::Up | KeyCode::Char('k') => {
