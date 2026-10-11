@@ -1,0 +1,14 @@
+{
+  "map_seed": 1515, "seed": 1, "trials": 20000, "years": 6,
+  "cases": [
+    {"case": "10 CA vs 10 CA", "trials": 20000, "battles": 19998, "years_per_battle": 1.2097, "counts": {"left": 9944, "right": 9961, "mutual": 93, "stalemate": 0}, "loss_left": 93.2921, "loss_right": 93.8186},
+    {"case": "11 CA vs 10 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.1988, "counts": {"left": 13157, "right": 6757, "mutual": 86, "stalemate": 0}, "loss_left": 79.0447, "loss_right": 112.9613},
+    {"case": "15 CA vs 10 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.1667, "counts": {"left": 19367, "right": 621, "mutual": 12, "stalemate": 0}, "loss_left": 24.4635, "loss_right": 147.3233},
+    {"case": "20 CA vs 10 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.1381, "counts": {"left": 20000, "right": 0, "mutual": 0, "stalemate": 0}, "loss_left": 4.0282, "loss_right": 150.0000},
+    {"case": "30 DD vs 10 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.1667, "counts": {"left": 6276, "right": 13608, "mutual": 116, "stalemate": 0}, "loss_left": 115.9578, "loss_right": 99.2490},
+    {"case": "90 DD vs 10 BB", "trials": 20000, "battles": 20000, "years_per_battle": 1.0573, "counts": {"left": 4843, "right": 15072, "mutual": 85, "stalemate": 0}, "loss_left": 376.7415, "loss_right": 271.6178},
+    {"case": "30 CA vs 10 BB", "trials": 20000, "battles": 20000, "years_per_battle": 1.0821, "counts": {"left": 8067, "right": 11880, "mutual": 53, "stalemate": 0}, "loss_left": 317.8710, "loss_right": 242.4892},
+    {"case": "29 CA + 3 DD vs 30 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.0480, "counts": {"left": 11662, "right": 8330, "mutual": 8, "stalemate": 0}, "loss_left": 245.8000, "loss_right": 317.4112},
+    {"case": "10 CA ROE 6 vs 15 CA", "trials": 20000, "battles": 20000, "years_per_battle": 1.1681, "counts": {"left": 0, "right": 20000, "mutual": 0, "stalemate": 0}, "loss_left": 64.4963, "loss_right": 4.2765}
+  ]
+}

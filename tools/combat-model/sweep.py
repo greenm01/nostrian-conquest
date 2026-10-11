@@ -289,7 +289,8 @@ def compare_engine(path, battles, cases, ruleset='current'):
     within LOSS_TOLERANCE of its starting build points."""
     with open(path) as handle:
         engine = json.load(handle)
-    current = {r['case']: r for r in battles if r['ruleset'] == ruleset and r['units'] == 'baseline'}
+    unit_name = R.RULESETS.get(ruleset, {}).get('default_units', 'baseline')
+    current = {r['case']: r for r in battles if r['ruleset'] == ruleset and r['units'] == unit_name}
     engine_cases = {case['case']: case for case in engine['cases']}
     names = list(engine_cases) + [case[0] for case in cases
                                   if 'engine' in case[4].split() and case[0] not in engine_cases]
@@ -378,12 +379,13 @@ def main():
 
     battles = []
     for name, rules in rulesets.items():
-        for variant in variants:
+        selected_variants = [rules['default_units']] if args.units == 'all' and 'default_units' in rules else variants
+        for variant in selected_variants:
             units = R.load_units(variant)
             R.apply_overrides(rules, units, unit_overrides)
             model = Model(rules, units)
             for case in cases:
-                if variant != 'baseline' and args.units == 'all' and 'dd' not in case[4].split():
+                if variant != 'baseline' and args.units == 'all' and 'default_units' not in rules and 'dd' not in case[4].split():
                     continue
                 record = run_case(model, name, variant, case, args.trials, args.seed, args.exact_limit)
                 battles.append(record)

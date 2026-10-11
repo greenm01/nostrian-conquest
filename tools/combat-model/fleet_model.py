@@ -328,6 +328,8 @@ class Model:
 
     # ----- the battle step ------------------------------------------
     def wants_withdrawal(self, side, enemy_as, roe):
+        if self.rules.get('base_cannot_withdraw') and side[0][self.sb]:
+            return False
         strength = self.side_as(side)
         if strength == 0:
             return bool(any(side[0]) and self.rules.get('unarmed_escape', False))
@@ -380,16 +382,38 @@ class Model:
             return [(1.0, 0, ('state', a, b, r + 1))]
         return self._leave(a, b, fail_a, fail_b, 0, exchange)
 
+    def pursuit_probability(self, pursuer, fleeing):
+        speeds = self.rules['ship_speeds']
+        def speed(side):
+            return min((speeds[c] for i,c in enumerate(CLASSES)
+                        if c in speeds and side[0][i]), default=0)
+        p, f = speed(pursuer), speed(fleeing)
+        if not p or not self.side_as(pursuer):
+            return 0.0
+        if p > f or f == 0:
+            return 1.0
+        # Engine: U2 <= sin(pi*U1)*p/f for two independent uniforms.
+        # Since p<=f, integrate the unclipped sine over [0,1].
+        return 2*p/(math.pi*f)
+
     def _leave(self, a, b, wd_a, wd_b, fought, exchange):
         mode = self.rules['withdrawal']
         if mode == 'none' or (wd_a and wd_b and not self.rules.get('mutual_withdrawal_exchange', False)):
             return [(1.0, fought, ('terminal', a, b, wd_a, wd_b))]
+        chance = 1.0
+        if mode == 'speed-pursuit':
+            chance = self.pursuit_probability(b, a) if wd_a else self.pursuit_probability(a, b)
+            if chance == 0:
+                return [(1.0, fought, ('terminal', a, b, wd_a, wd_b))]
         conditional = self.rules['screen'] == 'conditional'
         if mode == 'pressed':
             branches = exchange(a, b, pressed=True)
         else:
             branches = exchange(a, b, expose_a=wd_a and conditional, expose_b=wd_b and conditional)
-        return [(p, fought + 1, ('terminal', a2, b2, wd_a, wd_b)) for p, (a2, b2) in branches]
+        out = [(p * chance, fought + 1, ('terminal', a2, b2, wd_a, wd_b)) for p, (a2, b2) in branches]
+        if chance < 1:
+            out.append((1-chance, fought, ('terminal', a, b, wd_a, wd_b)))
+        return out
 
     # ----- results --------------------------------------------------
     def terminal(self, a0, b0, a, b, wd_a, wd_b):

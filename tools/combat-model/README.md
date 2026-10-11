@@ -460,3 +460,29 @@ a fixed battle roster. Splitting or merging can shift a rounding loss by one
 hull per allocation; this is not a bound on its later combat consequences. See the
 [decision-6 note](../../docs/notes/investigations/m1h272uh-joined-participation-surprise-and-allocation-fairness.md)
 for pending contract details and the separately approved surprise ADR.
+
+## Implemented t065 pursuit preset
+
+`engine-t065` uses after-first-exchange ROE, automatic unarmed escape and
+speed-gated pursuit, with `dd-10-8-5` as its default unit variant. It retains
+t060 effectiveness/carry/criticals and ordinary screening. Faster pursuers
+catch certainly; equal/slower speeds integrate the engine's two-uniform
+intercept roll to `2 * pursuer_speed / (pi * fleeing_speed)`. Speeds use the
+slowest surviving ship class. A base alone cannot chase; a side containing
+a base cannot withdraw in this implementation. The preset models one fresh
+contact and episode, not persisted pursuit allowances or a moving chase.
+Direct `Model` callers should use `load_units(rules['default_units'])`.
+
+```sh
+python3 tools/combat-model/sweep.py --rules engine-t065 --cases engine --trials 20000 --exact-limit 0 --no-ground --engine tools/combat-model/nc_engine_odds_t065.json --engine-rules engine-t065 --json tools/combat-model/nc_t065_comparison.json --markdown tools/combat-model/nc_t065_comparison.md
+```
+
+The corrected input has20,000 trials at main7c31f736. Files named
+`*_before_harness_fix` retain the earlier4,000-trial input and comparison:
+its harness omitted caught withdrawal from classification. The corrected
+comparison passes8/9 cases; rare mutual destruction in the mixed case still
+fails. `nc_t065_mixed_probe` retains the independent100,000-trial follow-up.
+See [t091's review](../../docs/notes/investigations/l5usd3l3-engine-t065-pursuit-and-odds-comparison.md)
+for numbers, hashes, reproduction, casualty-tolerance limits and the harness
+issue with matching disposition events to a particular battle. Older CRT
+and t060 files are unchanged.

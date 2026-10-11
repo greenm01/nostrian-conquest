@@ -135,6 +135,16 @@ RULESETS = {
     'vbam-carry-half-ds': variant(VBAM_FLAT, 'vbam-carry-half-ds', remainder='carry', crippled_ds='half'),
 }
 
+# t065/t078 implementation. Speeds refer to surviving ships, not current
+# movement speed; this preset models one fresh-contact escape episode.
+RULESETS['engine-t065'] = variant(
+    RULESETS['engine-t060'], 'engine-t065', roe='after1',
+    withdrawal='speed-pursuit', mutual_withdrawal_exchange=False,
+    unarmed_escape=True, base_cannot_withdraw=True,
+    default_units='dd-10-8-5',
+    ship_speeds=dict(DD=6, CA=5, BB=4, SC=6, TT=5, ET=3),
+)
+
 # Hull variants: unit-table overrides by name.
 UNIT_VARIANTS = {
     'baseline': {},

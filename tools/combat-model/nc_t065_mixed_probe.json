@@ -1,0 +1,248 @@
+{
+  "seed": 20261011,
+  "trials": 100000,
+  "exact_limit": 0,
+  "rulesets": {
+    "engine-t065": {
+      "name": "engine-t065",
+      "effect": {
+        "kind": "flat",
+        "rows": [
+          1,
+          1,
+          1,
+          2,
+          2,
+          2,
+          4,
+          4,
+          4,
+          4
+        ],
+        "unit": 4
+      },
+      "mixed_shift": 1,
+      "base_shift": 1,
+      "base_condition": "present",
+      "shift_cap": 2,
+      "execution_classes": [
+        "DD",
+        "SB"
+      ],
+      "crippled_ds": "full",
+      "remainder": "carry",
+      "critical": "free-kill",
+      "screen": "absolute",
+      "roe": "after1",
+      "withdrawal": "speed-pursuit",
+      "round_cap": 64,
+      "mutual_withdrawal_exchange": false,
+      "critical_order": [
+        "DD",
+        "SC",
+        "TT",
+        "ET",
+        "CA",
+        "BB",
+        "SB"
+      ],
+      "unarmed_escape": true,
+      "base_cannot_withdraw": true,
+      "default_units": "dd-10-8-5",
+      "ship_speeds": {
+        "DD": 6,
+        "CA": 5,
+        "BB": 4,
+        "SC": 6,
+        "TT": 5,
+        "ET": 3
+      }
+    }
+  },
+  "unit_variants": {
+    "baseline": {
+      "DD": {
+        "AS": 10,
+        "DS": 5,
+        "cost": 5,
+        "fire": "execution",
+        "line": true
+      },
+      "CA": {
+        "AS": 30,
+        "DS": 30,
+        "cost": 15,
+        "fire": "suppression",
+        "line": true
+      },
+      "BB": {
+        "AS": 90,
+        "DS": 100,
+        "cost": 45,
+        "fire": "suppression",
+        "line": true
+      },
+      "SB": {
+        "AS": 100,
+        "DS": 120,
+        "cost": 50,
+        "fire": "execution",
+        "line": true
+      },
+      "SC": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 15,
+        "fire": null,
+        "line": false
+      },
+      "TT": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 5,
+        "fire": null,
+        "line": false
+      },
+      "ET": {
+        "AS": 0,
+        "DS": 20,
+        "cost": 20,
+        "fire": null,
+        "line": false
+      }
+    },
+    "dd-10-8-5": {
+      "DD": {
+        "AS": 10,
+        "DS": 8,
+        "cost": 5,
+        "fire": "execution",
+        "line": true
+      },
+      "CA": {
+        "AS": 30,
+        "DS": 30,
+        "cost": 15,
+        "fire": "suppression",
+        "line": true
+      },
+      "BB": {
+        "AS": 90,
+        "DS": 100,
+        "cost": 45,
+        "fire": "suppression",
+        "line": true
+      },
+      "SB": {
+        "AS": 100,
+        "DS": 120,
+        "cost": 50,
+        "fire": "execution",
+        "line": true
+      },
+      "SC": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 15,
+        "fire": null,
+        "line": false
+      },
+      "TT": {
+        "AS": 0,
+        "DS": 10,
+        "cost": 5,
+        "fire": null,
+        "line": false
+      },
+      "ET": {
+        "AS": 0,
+        "DS": 20,
+        "cost": 20,
+        "fire": null,
+        "line": false
+      }
+    }
+  },
+  "unit_overrides": [],
+  "battles": [
+    {
+      "ruleset": "engine-t065",
+      "units": "dd-10-8-5",
+      "case": "29 CA + 3 DD vs 30 CA",
+      "left": {
+        "CA": 29,
+        "DD": 3
+      },
+      "right": {
+        "CA": 30
+      },
+      "roe": [
+        10,
+        10
+      ],
+      "method": "sampled",
+      "trials": 100000,
+      "counts": {
+        "A": 58330,
+        "B": 41567,
+        "mutual": 103,
+        "stalemate": 0
+      },
+      "ci": {
+        "A": [
+          0.580241191570476,
+          0.5863524088049678
+        ],
+        "B": [
+          0.4126187161890045,
+          0.41872776256656385
+        ],
+        "mutual": [
+          0.000849436855289773,
+          0.0012488971262813457
+        ],
+        "stalemate": [
+          0.0,
+          3.841311258303962e-05
+        ]
+      },
+      "ci_method": "Wilson",
+      "p": {
+        "A": 0.5833,
+        "B": 0.41567,
+        "mutual": 0.00103,
+        "stalemate": 0.0
+      },
+      "rounds": 4.71268,
+      "loss_left": 247.1423,
+      "loss_right": 317.52855,
+      "crippled_left": 170.61505,
+      "crippled_right": 116.9772,
+      "withdrew_left": 0.0,
+      "withdrew_right": 0.0,
+      "lost_left": {
+        "DD": 2.27482,
+        "CA": 15.71788,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "lost_right": {
+        "DD": 0.0,
+        "CA": 21.16857,
+        "BB": 0.0,
+        "SB": 0.0,
+        "SC": 0.0,
+        "TT": 0.0,
+        "ET": 0.0
+      },
+      "surviving_left": 0.0,
+      "surviving_right": 0.0,
+      "viable_left": 1.0,
+      "viable_right": 1.0,
+      "seconds": 11.12
+    }
+  ]
+}
