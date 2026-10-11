@@ -304,10 +304,8 @@ impl PlanetBuildScreen {
             .get(cursor)
             .map(|row| {
                 format!(
-                    "Delete how many {}? <A>ll or 1-{} <Q> -> {}",
-                    build_kind_name(row.kind),
-                    row.queue_qty,
-                    delete_qty_input
+                    "Delete <A> or 1-{} <Q> -> {}",
+                    row.queue_qty, delete_qty_input
                 )
             })
             .unwrap_or_else(|| "? D <Q> -> ".to_string());
@@ -332,12 +330,8 @@ impl PlanetBuildScreen {
                 prompt: "? D <Q> -> ",
             }
         };
-        let columns = fit_table_columns_for_widget(
-            &BUILD_LIST_COLUMNS,
-            &table_rows,
-            Some(&title),
-            Some(footer),
-        );
+        let columns =
+            fit_table_columns_for_widget(&BUILD_LIST_COLUMNS, &table_rows, Some(&title), None);
 
         let selected = if rows.is_empty() { None } else { Some(cursor) };
         let metrics = write_table_window_with_cursor(
@@ -656,7 +650,7 @@ impl PlanetBuildScreen {
             }
             KeyCode::PageUp => Action::Planet(PlanetAction::MoveBuildList(-8)),
             KeyCode::PageDown => Action::Planet(PlanetAction::MoveBuildList(8)),
-            KeyCode::Char('d') | KeyCode::Char('D') | KeyCode::Delete | KeyCode::Enter => {
+            KeyCode::Char('d') | KeyCode::Char('D') => {
                 Action::Planet(PlanetAction::DeleteBuildSlotRequest)
             }
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {

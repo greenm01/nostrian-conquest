@@ -52,7 +52,7 @@ BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2
 Short legend:
 
 ```text
-!n = crippled ships included in total; TT* = loaded transports
+! = crippled; * = loaded
 ```
 
 A lone `!` beside a fleet label means that fleet contains at least one

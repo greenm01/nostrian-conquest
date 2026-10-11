@@ -532,7 +532,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.transfer_status =
-                                Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
+                                Some("Choose a listed class, C, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_transfer_available_for_class(class) == 0 {
@@ -656,7 +656,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.detach_status =
-                                Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
+                                Some("Choose a listed class, C, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_detach_available_for_class(class) == 0 {
@@ -791,7 +791,12 @@ impl App {
             .unwrap_or(1);
         match self.fleet.detach_mode {
             FleetDetachMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
+                class_prompt(
+                    ShipCategory::ALL
+                        .into_iter()
+                        .filter(|class| self.fleet_detach_available_for_class((*class).into()) > 0)
+                        .map(ShipCategory::code),
+                ),
                 String::new(),
             ),
             FleetDetachMode::EnteringQuantity(class) => (
@@ -1107,7 +1112,14 @@ impl App {
     pub(crate) fn fleet_transfer_prompt_and_default(&self) -> (String, String) {
         match self.fleet.transfer_mode {
             FleetTransferMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
+                class_prompt(
+                    ShipCategory::ALL
+                        .into_iter()
+                        .filter(|class| {
+                            self.fleet_transfer_available_for_class((*class).into()) > 0
+                        })
+                        .map(ShipCategory::code),
+                ),
                 String::new(),
             ),
             FleetTransferMode::EnteringQuantity(class) => (
@@ -1453,4 +1465,15 @@ pub(super) fn fleet_eta_label(game_data: &CoreGameData, fleet_idx: usize) -> Str
 
 pub(super) fn fleet_list_eta_label(game_data: &CoreGameData, fleet_idx: usize) -> String {
     engine_fleet_list_eta_label(game_data, fleet_idx)
+}
+
+/// Ship-class choices that the current staging action can actually accept.
+/// Commission/transfer and cancel are separate actions, not ship classes.
+fn class_prompt(codes: impl IntoIterator<Item = &'static str>) -> String {
+    let codes = codes.into_iter().collect::<Vec<_>>();
+    if codes.is_empty() {
+        "No more ships to stage ".to_string()
+    } else {
+        format!("Class <{}> ", codes.join(","))
+    }
 }

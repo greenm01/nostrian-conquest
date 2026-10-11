@@ -2,7 +2,7 @@
 //! notation: `CA12!3` is twelve cruisers, three of them crippled. The fleet
 //! list shows it in the Ships cell and, when a damaged fleet's composition
 //! must be cut, ends the cell in `+!` so the damage stays visible; the review
-//! screen repeats the notation and adds a legend in the row below it. The
+//! screen repeats the notation and separates its compact legend by a blank row. The
 //! tables keep their columns and rows, and there is no recovery-time column.
 
 use nc_game::screen::{
@@ -104,18 +104,15 @@ fn the_review_screen_shows_the_notation_and_a_legend_in_a_free_row() {
     let plain = review(&row("BB3 DD3", 0));
     let damaged = review(&row("BB3!1 DD3!2", 3));
     assert!(damaged.plain_line(9).contains("Composition: BB3!1 DD3!2"));
-    assert!(
-        damaged
-            .plain_line(10)
-            .contains("!n = crippled ships included in total; TT* = loaded transports")
-    );
+    assert!(damaged.plain_line(11).contains("! = crippled; * = loaded"));
     assert_eq!(plain.plain_line(10).trim(), "");
     assert!(plain.plain_line(9).contains("Composition: BB3 DD3"));
-    // Nothing else moves: the prompt is on the row it was, every other line
-    // is the same, and the widths are the same.
+    assert_eq!(damaged.plain_line(10).trim(), "");
+    assert!(damaged.plain_line(13).contains("slap a key"));
+    // Only the composition, legend and dismiss prompt differ.
     let (plain_lines, damaged_lines) = (lines(&plain), lines(&damaged));
     for (y, (a, b)) in plain_lines.iter().zip(&damaged_lines).enumerate() {
-        if y != 9 && y != 10 {
+        if y != 9 && y != 11 && y != 13 {
             assert_eq!(a, b, "row {y}");
         }
     }

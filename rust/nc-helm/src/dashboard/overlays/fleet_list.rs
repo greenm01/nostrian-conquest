@@ -725,6 +725,7 @@ fn draw_fleet_transfer_prompt(buf: &mut PlayfieldBuffer, app: &DashApp) {
     }
     if app.fleet_overlay.prompt_mode == FleetOverlayPromptMode::TransferStage {
         lines.push(format!("Staged: {}", app.fleet_transfer_staged_summary()));
+        lines.push("<C> Transfer, <X> Cancel".to_string());
     }
     let parent = overlay_parent_rect(app);
     let wrapped = wrapped_prompt_blocks(parent, &lines);
@@ -1143,6 +1144,7 @@ fn fleet_transfer_popup_rect(app: &DashApp) -> Rect {
     }
     if app.fleet_overlay.prompt_mode == FleetOverlayPromptMode::TransferStage {
         lines.push(format!("Staged: {}", app.fleet_transfer_staged_summary()));
+        lines.push("<C> Transfer, <X> Cancel".to_string());
     }
     let parent = overlay_parent_rect(app);
     let wrapped = wrapped_prompt_blocks(parent, &lines);

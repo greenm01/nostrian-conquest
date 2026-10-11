@@ -56,10 +56,7 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
                 ),
                 ("L", "load armies from selected fleet"),
                 ("U", "unload armies from selected fleet"),
-                (
-                    "Ships",
-                    "CA12!3 = 12 cruisers, 3 crippled; TT* = loaded transports",
-                ),
+                ("Ships", nc_data::NOTATION_LEGEND),
                 ("+!", "a cut-short Ships cell: the fleet has crippled ships"),
                 ("Q", "return"),
                 ("Esc", "return"),
@@ -109,10 +106,7 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
                 ("Type", "use the prompt value shown on the command line"),
                 ("3", "stage three ships, healthy ones first"),
                 ("3!", "stage exactly three crippled ships"),
-                (
-                    "Ships",
-                    "CA3!1 = 3 cruisers, 1 crippled; TT* = loaded transports",
-                ),
+                ("Ships", nc_data::NOTATION_LEGEND),
                 ("Q", "return"),
                 ("Esc", "return"),
                 ("?", "open this helper"),
@@ -142,7 +136,6 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
             "PLANET COMMANDS",
             &[
                 ("D", "delete highlighted build order"),
-                ("Enter", "delete highlighted build order"),
                 ("Q", "return"),
                 ("Esc", "return"),
                 ("?", "open this helper"),

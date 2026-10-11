@@ -1082,10 +1082,13 @@ impl FleetReviewScreen {
         );
         draw_status_line(&mut buffer, 7, "Standing Order: ", &row.order_label);
         draw_status_line(&mut buffer, 9, "Composition: ", &row.table_ships_label);
-        if row.damaged_ships > 0 {
-            draw_status_line(&mut buffer, 10, "", nc_data::NOTATION_LEGEND);
-        }
-        draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(9));
+        let last_content_row = if row.damaged_ships > 0 {
+            draw_status_line(&mut buffer, 11, "", nc_data::NOTATION_LEGEND);
+            11
+        } else {
+            9
+        };
+        draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(last_content_row));
         Ok(buffer)
     }
 

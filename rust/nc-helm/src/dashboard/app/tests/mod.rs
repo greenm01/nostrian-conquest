@@ -5635,3 +5635,5 @@ fn mouse_wheel_starmap_pan_requests_redraw() {
 
     assert!(changed, "wheel pan on starmap should request redraw");
 }
+
+mod fleet_class_choices;

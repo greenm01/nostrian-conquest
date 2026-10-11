@@ -352,7 +352,7 @@ fn etac_is_the_class_code_and_et_still_works() {
         game_data.fleets[0].ships.etacs = 2;
     });
     let terminal = screen(&mut app);
-    assert!(line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>").contains("<Q> ->"));
+    assert!(line_containing(&terminal, "Class <SC,CA,ETAC>").contains("<Q> ->"));
     detach_stage(&mut app, "etac", "1");
     assert!(detach_staged(&mut app).ends_with("ETAC1"));
     detach_stage(&mut app, "et", "1");
@@ -427,7 +427,7 @@ fn damage_changes_no_row_and_no_prompt_position() {
         terminal
             .lines
             .iter()
-            .position(|line| line.contains("Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>"))
+            .position(|line| line.contains("Class <SC,CA>"))
             .expect("class prompt")
     };
     assert_eq!(prompt_row(&healthy), prompt_row(&damaged));
@@ -463,8 +463,7 @@ fn the_fleet_list_help_repeats_the_notation_legend() {
     let (mut app, _root) = app_with(twelve_cruisers);
     app.current_screen = ScreenId::FleetList;
     let terminal = help_screen(app);
-    assert!(line_containing(&terminal, "CA12!3 = 12 cruisers, 3 crippled").contains("Ships"));
-    assert!(line_containing(&terminal, "TT* = loaded transports").contains("Ships"));
+    assert!(line_containing(&terminal, "! = crippled; * = loaded").contains("Ships"));
     assert!(line_containing(&terminal, "cut-short Ships cell").contains("+!"));
 }
 
@@ -476,6 +475,31 @@ fn the_detach_and_transfer_help_explain_n_bang_and_the_notation() {
         let terminal = help_screen(app);
         assert!(line_containing(&terminal, "stage exactly three crippled ships").contains("3!"));
         assert!(line_containing(&terminal, "healthy ones first").contains('3'));
-        assert!(line_containing(&terminal, "CA3!1 = 3 cruisers, 1 crippled").contains("Ships"));
+        assert!(line_containing(&terminal, "! = crippled; * = loaded").contains("Ships"));
     }
+}
+
+#[test]
+fn detach_choices_follow_staging_and_cancel_restores_them() {
+    let (mut app, _root) = detach_app(|data| {
+        arrange(&mut data.fleets[0], 1, 2, 1, 1);
+    });
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA,TT*,TT>").contains("<Q>"));
+    detach_stage(&mut app, "tt*", "1");
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA,TT>").contains("<Q>"));
+    detach_stage(&mut app, "tt", "1");
+    detach_stage(&mut app, "ca", "2");
+    assert!(line_containing(&screen(&mut app), "No more ships to stage").contains("<Q>"));
+    apply_action(&mut app, Action::Fleet(FleetAction::ClearDetachSelection));
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA,TT*,TT>").contains("<Q>"));
+}
+
+#[test]
+fn transfer_choices_omit_classes_not_available_from_the_donor() {
+    let (mut app, _root) = transfer_app(twelve_cruisers);
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA>").contains("<Q>"));
+    transfer_stage(&mut app, "ca", "12");
+    assert!(line_containing(&screen(&mut app), "No more ships to stage").contains("<Q>"));
+    apply_action(&mut app, Action::Fleet(FleetAction::ClearTransferSelection));
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA>").contains("<Q>"));
 }

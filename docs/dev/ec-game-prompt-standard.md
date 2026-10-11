@@ -96,14 +96,14 @@ COMMAND <- Change <R>OE, <I>D, or <S>peed [R] <Q> ->
 ### Freeform input with command choices and no default
 
 ```text
-LABEL <- Prompt text <BB,CA,DD,TT*,TT,SC,ET,C,X> <Q> ->
+LABEL <- Prompt text <available choices> <Q> ->
 ```
 
 Examples:
 
 ```text
-COMMAND <- Class <BB,CA,DD,TT*,TT,SC,ET,C,X> <Q> ->
-COMMAND <- Class <BB,CA,DD,TT*,TT,SC,ET,C,X> <Q> ->
+COMMAND <- Class <BB,DD> <Q> ->
+COMMAND <- Class <BB,DD> <Q> ->
 ```
 
 The repeated fleet examples are intentional: detach and transfer should follow
@@ -190,7 +190,7 @@ COMMAND <- Load Fleet # [3] <Q> ->
 COMMAND <- How many armies to load? [2] <Q> ->
 COMMAND <- Unload Fleet # [2] <Q> ->
 COMMAND <- How many armies to unload? [2] <Q> ->
-COMMAND <- Class <BB,CA,DD,TT*,TT,SC,ET,C,X> <Q> ->
+COMMAND <- Class <BB,DD> <Q> ->
 ```
 
 Startup / naming:
@@ -215,7 +215,7 @@ COMMAND <- Qty for Destroyers [00] <Q> ->
 COMMAND <- How many new destroyers to build [1] <Q> ->
 COMMAND <- <ENTER> commissions the drafted fleet. <Q> ->
 COMMAND <- <ENTER> commissions the highlighted starbase. <Q> ->
-COMMAND <- Delete how many Destroyers? <A>ll or 1-2 <Q> ->
+COMMAND <- Delete <A> or 1-2 <Q> ->
 ```
 
 ## Command Rail Examples
@@ -229,3 +229,13 @@ COMMANDS <- ? <Q> [03,03] ->
 
 This document also covers terse table submenu rails such as
 `SORT <- ? C L M <Q> ->` and `FILTER <- ? A R E M <Q> ->`.
+
+The build queue starts deletion only with `D`. Enter has no action on the
+queue list; it still submits a typed deletion quantity. Quantity and
+confirmation prompts do not resize the queue table.
+
+Ship-class staging prompts show only classes available from the current donor,
+after subtracting staged ships and applying the action's limits. Keep the
+composition's class order. Commission/transfer and cancel stay on their
+separate action line. With no further ships available, show
+`COMMAND <- No more ships to stage <Q> ->` instead of an empty class list.

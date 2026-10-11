@@ -13,7 +13,7 @@ use crate::{AutoCommissionFleetEntry, Fleet, HullClass};
 pub const STARBASE_CODE: &str = "SB";
 
 /// The short legend the door's help and detail screens repeat.
-pub const NOTATION_LEGEND: &str = "!n = crippled ships included in total; TT* = loaded transports";
+pub const NOTATION_LEGEND: &str = "! = crippled; * = loaded";
 
 /// A kind of ship a fleet list, a detach, or a transfer tells apart. Loaded
 /// and empty transports are separate categories, as in every composition.

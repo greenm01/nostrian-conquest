@@ -249,3 +249,19 @@ columns and cells. `docs/dev/ship-notation.md` says both. Four
 expectations moved with the text: the picker render test (`│02│04│`), the
 nc-cli scout report test (`we detected DD2.`), the nc-sysop runtime intel
 test and the engine's stardock phase-order test (`DD2`).
+
+
+## t103
+
+The owner requested a shorter fleet-review legend with a blank line between
+composition and legend. Use `! = crippled; * = loaded`. Keep the full grammar
+in the manual and [notation reference](../../dev/ship-notation.md). On damaged
+fleet reviews, move the dismiss prompt below the separated legend.
+
+Use the same shared legend in fleet list, detach and transfer popup help.
+The full notation examples remain in the manual; menu legends stay compact.
+
+Validation: 1,319 nc-data and nc-game tests passed, including review spacing
+and the shared legend on fleet list, detach and transfer help. The player
+manual PDF rebuilt successfully. The legend is a shared nc-data constant,
+so these screens cannot drift to different wording.

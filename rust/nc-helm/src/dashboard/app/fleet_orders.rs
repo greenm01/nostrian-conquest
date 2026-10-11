@@ -1079,7 +1079,7 @@ impl DashApp {
                     let raw = self.fleet_overlay.aux_input.trim().to_ascii_uppercase();
                     if raw.is_empty() {
                         self.fleet_overlay.aux_status =
-                            Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
+                            Some("Choose a listed class, C, X, or Q.".to_string());
                         return Ok(());
                     }
                     match raw.as_str() {
@@ -1096,9 +1096,8 @@ impl DashApp {
                         }
                         _ => {
                             let Some(class) = self.parse_fleet_transfer_class_code(&raw) else {
-                                self.fleet_overlay.aux_status = Some(
-                                    "Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string(),
-                                );
+                                self.fleet_overlay.aux_status =
+                                    Some("Choose a listed class, C, X, or Q.".to_string());
                                 return Ok(());
                             };
                             let available = self.fleet_transfer_available_for_class(class);
@@ -2013,10 +2012,27 @@ impl DashApp {
 
     pub(crate) fn fleet_transfer_prompt_and_default(&self) -> (String, String) {
         match self.fleet_overlay.transfer_mode {
-            FleetOverlayTransferMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
-                String::new(),
-            ),
+            FleetOverlayTransferMode::ChoosingClass => {
+                let codes = [
+                    FleetOverlayTransferClass::Scouts,
+                    FleetOverlayTransferClass::Battleships,
+                    FleetOverlayTransferClass::Cruisers,
+                    FleetOverlayTransferClass::Destroyers,
+                    FleetOverlayTransferClass::FullTransports,
+                    FleetOverlayTransferClass::EmptyTransports,
+                    FleetOverlayTransferClass::Etacs,
+                ]
+                .into_iter()
+                .filter(|class| self.fleet_transfer_available_for_class(*class) > 0)
+                .map(|class| self.fleet_transfer_class_label(class))
+                .collect::<Vec<_>>();
+                let prompt = if codes.is_empty() {
+                    "No more ships to stage ".to_string()
+                } else {
+                    format!("Class <{}> ", codes.join(","))
+                };
+                (prompt, String::new())
+            }
             FleetOverlayTransferMode::EnteringQuantity(class) => (
                 format!(
                     "{} to stage (max {}) ",

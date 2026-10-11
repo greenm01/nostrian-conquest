@@ -13,6 +13,8 @@ mod fleet_crippled_ships;
 mod fleet_damage_display;
 #[path = "update/fleet_detach.rs"]
 mod fleet_detach;
+#[path = "update/fleet_list_identity.rs"]
+mod fleet_list_identity;
 #[path = "update/fleet_menu_transport.rs"]
 mod fleet_menu_transport;
 #[path = "update/fleet_orders.rs"]

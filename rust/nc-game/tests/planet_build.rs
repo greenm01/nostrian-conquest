@@ -303,27 +303,38 @@ fn empty_build_list_keeps_table_frame_and_shows_notice_below_command_row() {
 }
 
 #[test]
-fn build_list_enter_uses_delete_as_default_action() {
+fn build_list_deletion_requires_d() {
     let screen = PlanetBuildScreen::new();
-
+    for code in [KeyCode::Enter, KeyCode::Delete] {
+        assert_eq!(
+            screen.handle_list_key(KeyEvent::new(code, KeyModifiers::NONE), false, false),
+            Action::Noop
+        );
+    }
+    for code in [KeyCode::Char('d'), KeyCode::Char('D')] {
+        assert_eq!(
+            screen.handle_list_key(KeyEvent::new(code, KeyModifiers::NONE), false, false),
+            Action::Planet(PlanetAction::DeleteBuildSlotRequest)
+        );
+    }
     assert_eq!(
         screen.handle_list_key(
             KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE),
             false,
-            false
+            true
         ),
-        Action::Planet(PlanetAction::DeleteBuildSlotRequest)
+        Action::Planet(PlanetAction::SubmitDeleteBuildQty)
     );
 }
 
 #[test]
-fn build_list_delete_qty_prompt_renders_all_as_default() {
+fn build_list_delete_prompts_keep_table_width_stable() {
     let mut screen = PlanetBuildScreen::new();
     let view = PlanetBuildMenuView {
         row: EmpirePlanetEconomyRow {
             planet_record_index_1_based: 1,
-            coords: [6, 5],
-            planet_name: "Not Named Yet".to_string(),
+            coords: [21, 21],
+            planet_name: "Pillar".to_string(),
             present_production: 100,
             potential_production: 100,
             stored_production_points: 50,
@@ -363,11 +374,27 @@ fn build_list_delete_qty_prompt_renders_all_as_default() {
         )
         .expect("render build list delete quantity prompt");
 
-    assert!((0..25).any(|row| {
-        buffer
-            .plain_line(row)
-            .contains("Delete how many Destroyers? <A>ll or 1-2 <Q> ->")
-    }));
+    assert!((0..25).any(|row| { buffer.plain_line(row).contains("Delete <A> or 1-2 <Q> ->") }));
+    for (confirming, editing, input) in [(false, false, ""), (false, true, "2"), (true, false, "")]
+    {
+        let other = screen
+            .render_list(
+                ScreenGeometry::for_door(Some(24)),
+                &view,
+                &rows,
+                0,
+                0,
+                confirming,
+                editing,
+                input,
+                None,
+                Some(2),
+            )
+            .expect("render queue deletion state");
+        for line in 1..=5 {
+            assert_eq!(buffer.plain_line(line), other.plain_line(line));
+        }
+    }
 }
 
 #[test]

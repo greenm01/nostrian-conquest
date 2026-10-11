@@ -1377,6 +1377,7 @@ impl App {
         let ScreenId::FleetList = self.current_screen else {
             return;
         };
+        self.clear_fleet_list_input();
         let total = self.fleet_list_rows().len();
         if total == 0 {
             self.fleet.cursor = 0;
@@ -1853,7 +1854,14 @@ impl App {
         else {
             return false;
         };
-        self.fleet.cursor = matched.index;
+        // Actions resolve an exact typed ID, so highlight that same fleet even
+        // when a longer ID with this prefix sorts before it. Keep the prefix
+        // input until it is complete, so typing 1 can still continue to 14.
+        self.fleet.cursor = raw_input
+            .parse::<u16>()
+            .ok()
+            .and_then(|number| rows.iter().position(|row| row.fleet_number == number))
+            .unwrap_or(matched.index);
         let visible_rows = self.fleet_list_visible_rows();
         sync_scroll_to_cursor(
             &mut self.fleet.scroll_offset,

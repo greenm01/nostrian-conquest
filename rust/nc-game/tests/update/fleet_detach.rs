@@ -53,8 +53,8 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert!(!terminal.line(10).contains("AR="));
     assert_eq!(terminal.line(12).trim_end(), "<C>ommission, <X> Cancel");
     assert!(
-        line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>")
-            .contains("Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>")
+        line_containing(&terminal, "Class <SC,CA,DD,TT*>")
+            .contains("Class <SC,CA,DD,TT*>")
     );
     assert!(
         !terminal
@@ -245,7 +245,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
         .expect("render empty commission warning with pinned message");
     assert_eq!(
         app.fleet.detach_status.as_deref(),
-        Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.")
+        Some("Choose a listed class, C, X, or Q.")
     );
     assert!(
         terminal

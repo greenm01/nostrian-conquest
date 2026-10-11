@@ -22,8 +22,8 @@ powers can do the same. Some systems will join your banner willingly. Others
 will require persuasion from orbit.
 
 Each maintenance marks the passage of a year. In that span, fleets cross the
-dark between stars, colonies grow or starve, alliances turn cold, and wars are
-decided by distance, industry, mathematics, and will.
+dark between stars, colonies grow or starve, alliances turn cold, and victory is
+decided by industry, cunning, and will.
 
 NC preserves the yearly-turn campaign rhythm, the reports, the maps, and the
 old-school pressure of the original game. The engine is modern Rust. Campaigns

@@ -383,7 +383,7 @@ const INTRO_ACCENT_PHRASES: &[&str] = &[
     "Star Masters",
     "persuasion from orbit",
     "maintenance",
-    "mathematics, and will",
+    "industry, cunning, and will",
 ];
 
 pub fn render_game_intro_page(
@@ -768,8 +768,8 @@ const INTRO_PAGE_1: [&str; 13] = [
     "will require persuasion from orbit.",
     "",
     "Each maintenance marks the passage of a year. In that span, fleets cross the",
-    "dark between stars, colonies grow or starve, alliances turn cold, and wars are",
-    "decided by distance, industry, mathematics, and will.",
+    "dark between stars, colonies grow or starve, alliances turn cold, and victory",
+    "is decided by industry, cunning, and will.",
 ];
 
 const INTRO_PAGES: [&[&str]; 1] = [&INTRO_PAGE_1];
