@@ -258,6 +258,68 @@ impl Herald {
     }
 }
 
+use std::sync::Arc;
+use axum::{
+    extract::{Json, State},
+    http::StatusCode,
+    response::{IntoResponse, Response},
+    routing::{get, post},
+    Router,
+};
+
+/// Create an Axum router for the Herald listener daemon.
+pub fn create_listener_router(herald: Arc<Herald>) -> Router {
+    Router::new()
+        .route("/health", get(health_handler))
+        .route("/events", post(receive_event_handler))
+        .route("/broadcast", post(receive_broadcast_handler))
+        .with_state(herald)
+}
+
+async fn health_handler() -> Response {
+    axum::response::Json(serde_json::json!({
+        "status": "ok",
+        "service": "nc-herald",
+    }))
+    .into_response()
+}
+
+async fn receive_event_handler(
+    State(herald): State<Arc<Herald>>,
+    Json(event): Json<InGameEvent>,
+) -> Response {
+    info!(player = %event.player, node = event.node, "Received incoming event dispatch");
+    match herald.dispatch_event(&event).await {
+        Ok(_) => (
+            StatusCode::OK,
+            axum::response::Json(serde_json::json!({ "status": "dispatched" })),
+        )
+            .into_response(),
+        Err(e) => {
+            error!("Failed to dispatch event: {e}");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
+async fn receive_broadcast_handler(
+    State(herald): State<Arc<Herald>>,
+    Json(announcement): Json<TurnAnnouncement>,
+) -> Response {
+    info!(campaign = %announcement.campaign_name, year = announcement.year, "Received incoming turn broadcast");
+    match herald.broadcast_turn(&announcement).await {
+        Ok(_) => (
+            StatusCode::OK,
+            axum::response::Json(serde_json::json!({ "status": "broadcast_sent" })),
+        )
+            .into_response(),
+        Err(e) => {
+            error!("Failed to broadcast turn: {e}");
+            (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()).into_response()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

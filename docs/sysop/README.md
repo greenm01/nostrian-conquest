@@ -20,6 +20,9 @@ Use these docs in roughly this order:
 - [door-kdl-spec.md](door-kdl-spec.md)
   - modern KDL-based dropfile specification for chat rooms, WebSockets, and
     contemporary BBS doors
+- [discord-bridge-runbook.md](discord-bridge-runbook.md)
+  - deployment and operational runbook for running `nc-bridge` and `nc-herald`
+    under systemd with Cloudflare Tunnel and Discord Activities
 - [rust/campaign-settings.md](rust/campaign-settings.md)
   - non-BBS campaign settings and raw `nc-sysop settings show` reference
 - [rust/turn-kdl.md](rust/turn-kdl.md)
