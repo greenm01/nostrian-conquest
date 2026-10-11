@@ -81,3 +81,24 @@ a **rejected paid-repair alternative**. They are not selected NC mechanics.
 The owner instead approved [automatic RT recovery](../../docs/notes/decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md).
 The optional repair arguments in `campaign.py` support that historical comparison;
 the default peaceful campaign is unchanged.
+
+## Accounting and development controls (t083)
+
+`python3 tools/economy-model/accounting_review.py` writes
+`accounting_review_results.json`. Five deterministic candidates separate
+income carry from smooth production/penalty arithmetic and the minimum-growth
+rule, including a one-point floor strictly below65% tax. Boundary and
+repeatable emergency/recovery-cycle controls expose the cost of that gate.
+Calculations use exact fractions, rounded only in JSON presentation.
+All integer tax rates are enumerated at selected horizons; no Monte Carlo
+or engine/oracle validation is claimed. Local order dates are not deliveries.
+Candidate spending floors goods and retains nearest-whole production capacity.
+Run the existing unittest discovery command, which includes
+`test_accounting_review.py`. See the [joint accounting/development review](../../docs/notes/investigations/1e8xu4w6-fractional-economy-accounting-and-tax-development-controls.md)
+for the formulas, small-world pacing cost, forecast scope and open choices.
+
+The same t083 results also compare smooth colonies starting at1 and
+`min(potential,3)`. This changes initial conditions only. The tables preserve
+small-world order dates, decade income, low-tax investment controls and the
+exact decay of the initial advantage; it does not restore every current
+order date and is not an approved rule.
