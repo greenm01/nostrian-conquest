@@ -3382,7 +3382,7 @@ fn fleet_transfer_uses_two_inline_fleet_prompts_before_quantity_entry() {
             .any(|line| line.contains("Ships: ") && line.contains("TT*"))
     );
     assert!(terminal.lines.iter().all(|line| !line.contains("AR=")));
-    assert!(line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ET,C,X>").contains("<Q> ->"));
+    assert!(line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>").contains("<Q> ->"));
     assert!(
         terminal
             .lines

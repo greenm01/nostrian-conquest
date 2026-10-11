@@ -2,7 +2,9 @@
 
 use crate::dashboard::app::state::DashApp;
 use crate::dashboard::buffer::{CellStyle, PlayfieldBuffer};
-use crate::dashboard::inbox::{DashInboxItemType, ReportSummaryBucket, project_inbox_items};
+use crate::dashboard::inbox::{
+    DashInboxItemType, ReportSummaryBucket, latest_delivered_year, project_inbox_items,
+};
 use crate::dashboard::layout::{self, PanelWidgetFrame};
 use crate::dashboard::theme;
 
@@ -38,7 +40,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     for item in items {
         if item.item_type == DashInboxItemType::Message {
             unread_msgs += 1;
-        } else if item.year == current_year {
+        } else if item.year == latest_delivered_year(item.item_type, current_year) {
             match item.report_bucket {
                 Some(ReportSummaryBucket::Combat) => unread_combat += 1,
                 Some(ReportSummaryBucket::Intel) => unread_intel += 1,

@@ -183,7 +183,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
     assert!(joined.contains("Invasion mission report"));
     assert!(joined.contains("In accordance with our ROE"));
     assert!(joined.contains("abort the invasion"));
-    assert!(joined.contains("We had 1CA, 2TT*."));
+    assert!(joined.contains("We had CA1 TT*2."));
 }
 
 #[test]
@@ -379,7 +379,7 @@ fn destroyed_fleet_telemetry_reports_starbase_only_opponent() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("1SB"));
+    assert!(text.contains("SB1"));
     assert!(!text.contains("no ships"));
 }
 
@@ -414,7 +414,7 @@ fn no_engagement_report_includes_reporting_fleet_composition() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("We had 1CA, 1DD."));
+    assert!(text.contains("We had CA1 DD1."));
     assert!(text.contains("Their fleet contains"));
 }
 
@@ -445,7 +445,7 @@ fn fleet_contact_report_includes_reporting_fleet_composition() {
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
         .join(" ")
         .replace('\n', " ");
-    assert!(text.contains("We had 1SC."));
+    assert!(text.contains("We had SC1."));
     assert!(text.contains("Their fleet contains"));
 }
 

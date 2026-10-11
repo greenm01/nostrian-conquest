@@ -3037,6 +3037,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nc-bridge"
+version = "1.0.0-beta.3"
+dependencies = [
+ "nc-dropfile",
+ "nc-log",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "nc-classic"
 version = "1.0.0-beta.3"
 
@@ -3131,6 +3141,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nc-dropfile"
+version = "1.0.0-beta.3"
+dependencies = [
+ "kdl 6.5.0",
+ "serde",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "nc-engine"
 version = "1.0.0-beta.3"
 dependencies = [
@@ -3197,6 +3216,17 @@ dependencies = [
  "tracing-subscriber",
  "wgpu",
  "winit 0.30.13",
+]
+
+[[package]]
+name = "nc-herald"
+version = "1.0.0-beta.3"
+dependencies = [
+ "nc-dropfile",
+ "nc-log",
+ "serde",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

@@ -14,7 +14,7 @@ fn structured_combat_report_round_trips_through_reports_screen_and_delete() {
             "Bombardment report",
             "",
             "Target world: planet \"red\"",
-            "Our forces: 2BB, 4CA, 6DD",
+            "Our forces: BB2 CA4 DD6",
             "World defenses: 10 ground batteries and 34 armies",
             "",
             "We have concluded our bombing run and are awaiting new orders.",

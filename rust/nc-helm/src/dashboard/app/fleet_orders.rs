@@ -1079,7 +1079,7 @@ impl DashApp {
                     let raw = self.fleet_overlay.aux_input.trim().to_ascii_uppercase();
                     if raw.is_empty() {
                         self.fleet_overlay.aux_status =
-                            Some("Use BB, CA, DD, TT*, TT, SC, ET, C, X, or Q.".to_string());
+                            Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
                         return Ok(());
                     }
                     match raw.as_str() {
@@ -1097,7 +1097,7 @@ impl DashApp {
                         _ => {
                             let Some(class) = self.parse_fleet_transfer_class_code(&raw) else {
                                 self.fleet_overlay.aux_status = Some(
-                                    "Use BB, CA, DD, TT*, TT, SC, ET, C, X, or Q.".to_string(),
+                                    "Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string(),
                                 );
                                 return Ok(());
                             };
@@ -1956,7 +1956,7 @@ impl DashApp {
             "TT*" => Some(FleetOverlayTransferClass::FullTransports),
             "TT" => Some(FleetOverlayTransferClass::EmptyTransports),
             "SC" => Some(FleetOverlayTransferClass::Scouts),
-            "ET" => Some(FleetOverlayTransferClass::Etacs),
+            "ET" | "ETAC" => Some(FleetOverlayTransferClass::Etacs),
             _ => None,
         }
     }
@@ -1969,7 +1969,7 @@ impl DashApp {
             FleetOverlayTransferClass::FullTransports => "TT*",
             FleetOverlayTransferClass::EmptyTransports => "TT",
             FleetOverlayTransferClass::Scouts => "SC",
-            FleetOverlayTransferClass::Etacs => "ET",
+            FleetOverlayTransferClass::Etacs => "ETAC",
         }
     }
 
@@ -2014,7 +2014,7 @@ impl DashApp {
     pub(crate) fn fleet_transfer_prompt_and_default(&self) -> (String, String) {
         match self.fleet_overlay.transfer_mode {
             FleetOverlayTransferMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ET,C,X> ".to_string(),
+                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
                 String::new(),
             ),
             FleetOverlayTransferMode::EnteringQuantity(class) => (
@@ -2048,26 +2048,14 @@ impl DashApp {
             })
     }
 
+    /// The staged ships in ship notation, resolved the way the transfer
+    /// itself takes them.
     fn format_transfer_summary_from_selection(&self, selection: FleetDetachSelection) -> String {
-        let mut parts = Vec::new();
-        for (label, count) in [
-            ("SC", selection.scouts),
-            ("BB", selection.battleships),
-            ("CA", selection.cruisers),
-            ("DD", selection.destroyers),
-            ("TT*", selection.full_transports),
-            ("TT", selection.empty_transports),
-            ("ET", selection.etacs),
-        ] {
-            if count > 0 {
-                parts.push(format!("{label}={count}"));
-            }
-        }
-        if parts.is_empty() {
-            "none".to_string()
-        } else {
-            parts.join(" ")
-        }
+        self.fleet_overlay
+            .transfer_donor_record_index_1_based
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
+            .and_then(|donor| nc_data::resolve_selection(donor, &selection).ok())
+            .map_or_else(|| "none".to_string(), |resolved| resolved.notation())
     }
 
     pub(crate) fn fleet_transfer_staged_summary(&self) -> String {

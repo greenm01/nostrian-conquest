@@ -2210,10 +2210,8 @@ fn fleet_table_zero_pads_numbers_to_current_max_width() {
             rules_of_engagement: 6,
             loaded_armies: 0,
             order_label: "Hold".to_string(),
-            composition_label: "CA=1".to_string(),
-            table_ships_label: "CA".to_string(),
+            table_ships_label: "CA1".to_string(),
             damaged_ships: 0,
-            damaged_label: String::new(),
             join_host_fleet_number: None,
         },
         FleetRow {
@@ -2229,10 +2227,8 @@ fn fleet_table_zero_pads_numbers_to_current_max_width() {
             rules_of_engagement: 6,
             loaded_armies: 0,
             order_label: "Hold".to_string(),
-            composition_label: "DD=1".to_string(),
-            table_ships_label: "DD".to_string(),
+            table_ships_label: "DD1".to_string(),
             damaged_ships: 0,
-            damaged_label: String::new(),
             join_host_fleet_number: None,
         },
         FleetRow {
@@ -2248,10 +2244,8 @@ fn fleet_table_zero_pads_numbers_to_current_max_width() {
             rules_of_engagement: 6,
             loaded_armies: 0,
             order_label: "Hold".to_string(),
-            composition_label: "BB=1".to_string(),
-            table_ships_label: "BB".to_string(),
+            table_ships_label: "BB1".to_string(),
             damaged_ships: 0,
-            damaged_label: String::new(),
             join_host_fleet_number: None,
         },
     ];
@@ -2296,10 +2290,8 @@ fn fleet_list_table_uses_order_target_eta_columns_and_current_speed() {
         rules_of_engagement: 6,
         loaded_armies: 3,
         order_label: "Guard/blockade world in System (16,13)".to_string(),
-        composition_label: "DD=1".to_string(),
-        table_ships_label: "DD".to_string(),
+        table_ships_label: "DD1".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
 
@@ -2349,7 +2341,7 @@ fn fleet_list_table_uses_order_target_eta_columns_and_current_speed() {
 }
 
 #[test]
-fn fleet_list_ships_column_shows_sparse_counted_tokens() {
+fn fleet_list_ships_column_shows_ship_notation_with_every_total() {
     let mut screen = nc_game::screen::FleetListScreen::new();
     let rows = vec![FleetRow {
         fleet_record_index_1_based: 1,
@@ -2364,10 +2356,8 @@ fn fleet_list_ships_column_shows_sparse_counted_tokens() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Guard/blockade world in System (16,13)".to_string(),
-        composition_label: "SC=2 BB=1 DD=4 AR=2 ET=1".to_string(),
-        table_ships_label: "2SC BB 4DD 2TT* ET".to_string(),
+        table_ships_label: "SC2 BB1 DD4 TT*2".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
 
@@ -2390,7 +2380,7 @@ fn fleet_list_ships_column_shows_sparse_counted_tokens() {
         )
         .expect("fleet list renders");
 
-    assert!(buffer.plain_line(4).contains("2SC BB 4DD 2TT* ET"));
+    assert!(buffer.plain_line(4).contains("SC2 BB1 DD4 TT*2"));
 }
 
 #[test]
@@ -2409,10 +2399,8 @@ fn fleet_list_ships_column_truncates_by_whole_token_with_plus_marker() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Guard/blockade world in System (16,13)".to_string(),
-        composition_label: "SC=2 BB=4 CA=3 DD=5 TT=5 AR=2 ET=1".to_string(),
-        table_ships_label: "2SC 4BB 3CA 5DD 2TT* 3TT ET".to_string(),
+        table_ships_label: "SC2 BB4 CA3 DD5 TT*2 TT3 ETAC1".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
 
@@ -2437,9 +2425,9 @@ fn fleet_list_ships_column_truncates_by_whole_token_with_plus_marker() {
 
     let ships_cell = buffer.plain_line(4);
     assert!(ships_cell.contains("+"));
-    assert!(ships_cell.contains("2SC"));
-    assert!(!ships_cell.contains("3TT"));
-    assert!(!ships_cell.contains(" ET"));
+    assert!(ships_cell.contains("SC2"));
+    assert!(!ships_cell.contains("TT3"));
+    assert!(!ships_cell.contains("ETAC"));
 }
 
 #[test]
@@ -2523,10 +2511,8 @@ fn fleet_list_table_renders_x_for_unreachable_eta_label() {
         rules_of_engagement: 6,
         loaded_armies: 0,
         order_label: "Move fleet to Sector (0,0)".to_string(),
-        composition_label: "DD=1".to_string(),
-        table_ships_label: "DD".to_string(),
+        table_ships_label: "DD1".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
 
@@ -2704,10 +2690,8 @@ fn fleet_list_load_quantity_prompt_keeps_scrollbar_gutter() {
             rules_of_engagement: 6,
             loaded_armies: 0,
             order_label: "Hold".to_string(),
-            composition_label: "TT".to_string(),
-            table_ships_label: "TT".to_string(),
+            table_ships_label: "TT1".to_string(),
             damaged_ships: 0,
-            damaged_label: String::new(),
             join_host_fleet_number: None,
         })
         .collect::<Vec<_>>();
@@ -2824,10 +2808,8 @@ fn fleet_review_screen_splits_loaded_and_empty_transports() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Move fleet to Sector (19,13)".to_string(),
-        composition_label: "CA=1 TT=5 AR=2".to_string(),
-        table_ships_label: "CA 2TT* 3TT".to_string(),
+        table_ships_label: "CA1 TT*2 TT3".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     };
 
@@ -2835,7 +2817,7 @@ fn fleet_review_screen_splits_loaded_and_empty_transports() {
         .render(&row, 0, 1, false)
         .expect("fleet review screen renders");
 
-    assert!(buffer.plain_line(9).contains("Composition: CA 2TT* 3TT"));
+    assert!(buffer.plain_line(9).contains("Composition: CA1 TT*2 TT3"));
     assert!(!buffer.plain_line(9).contains("AR="));
 }
 
@@ -2855,10 +2837,8 @@ fn fleet_eta_screen_renders_bottom_line_prompt() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Move fleet to Sector (19,13)".to_string(),
-        composition_label: "CA=1 TT=5 AR=2".to_string(),
-        table_ships_label: "CA 2TT* 3TT".to_string(),
+        table_ships_label: "CA1 TT*2 TT3".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     };
 
@@ -2877,7 +2857,7 @@ fn fleet_eta_screen_renders_bottom_line_prompt() {
     assert_eq!(buffer.plain_line(2).trim_end(), " Fleet ID: 7");
     assert_eq!(buffer.plain_line(4).trim_end(), " Location: (16,13)");
     assert_eq!(buffer.plain_line(8).trim_end(), " Target: (19,13)");
-    assert!(buffer.plain_line(10).contains("Ships: CA 2TT* 3TT"));
+    assert!(buffer.plain_line(10).contains("Ships: CA1 TT*2 TT3"));
     assert!(!buffer.plain_line(10).contains("AR="));
     assert!(
         buffer

@@ -95,11 +95,11 @@ mod tests {
                 vec![
                     StructuredBodyItem::Label {
                         label: "Our forces:".to_string(),
-                        value: "1BB".to_string(),
+                        value: "BB1".to_string(),
                     },
                     StructuredBodyItem::Label {
                         label: "Alien forces:".to_string(),
-                        value: "9BB, 1CA, 12TT*, 1TT".to_string(),
+                        value: "BB9 CA1 TT*12 TT1".to_string(),
                     },
                 ],
                 vec![StructuredBodyItem::Label {

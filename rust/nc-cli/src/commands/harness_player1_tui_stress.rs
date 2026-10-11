@@ -466,6 +466,7 @@ fn configure_player_one_fleets(
             empty_transports: empty_tt + full_tt,
             scouts,
             etacs,
+            ..FleetDetachSelection::default()
         };
         let result = game_data.detach_ships_to_new_fleet(1, 1, selection, Some(3), roe)?;
         let fleet_record_index_1_based = result.new_fleet_record_index_1_based;
@@ -527,6 +528,7 @@ fn configure_other_player_fleets(
                 empty_transports: empty_tt,
                 scouts,
                 etacs,
+                ..FleetDetachSelection::default()
             };
             let result = game_data.detach_ships_to_new_fleet(
                 player,

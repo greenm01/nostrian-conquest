@@ -6,7 +6,7 @@ use nc_compat::classic::encode_planet;
 use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
 use nc_data::{
     Conquest, CoreGameData, Planet, PlayerMode, Setup, is_named_homeworld_seed, order_summary,
-    ownership_summary, planet_derived_summary, ship_composition_summary,
+    ownership_summary, planet_derived_summary, ship_composition_table_summary,
 };
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, plan_route};
 
@@ -100,7 +100,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             record.speed,
             record.max_speed,
             record.rules_of_engagement,
-            ship_composition_summary(record),
+            ship_composition_table_summary(record),
             record.sector.to_array(),
             record.order.as_str(),
             record.order.code(),
@@ -141,7 +141,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
                     "    id={} slot={} ships={} max_spd={} order={} summary='{}'",
                     record.record.0,
                     record.fleet_number.0 as u8,
-                    ship_composition_summary(record),
+                    ship_composition_table_summary(record),
                     record.max_speed,
                     record.order.as_str(),
                     order_summary(record)

@@ -3,7 +3,7 @@ use std::fs;
 use nc_data::{
     CampaignRuntimeState, Fleet, PlayerStarmapProjection, PlayerStarmapWorld, ProductionItemKind,
     build_player_starmap_projection_from_snapshots, order_summary, present_production_points,
-    ship_composition_summary, stardock_slot_kind, stored_production_points, troop_transports,
+    ship_composition_table_summary, stardock_slot_kind, stored_production_points, troop_transports,
 };
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta_to_destination};
 
@@ -329,7 +329,7 @@ fn render_player_bundle_readme(
             "- record `{}` / fleet_id `{}` at `({x},{y})`: ships `{}` speed `{}` / max `{}` roe `{}` order `{}`\n",
             idx + 1,
             fleet.record.0,
-            ship_composition_summary(fleet),
+            ship_composition_table_summary(fleet),
             fleet.speed,
             fleet.max_speed,
             fleet.rules_of_engagement,

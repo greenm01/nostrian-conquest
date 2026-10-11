@@ -1370,9 +1370,10 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<FleetOverlayRow> {
                 fleet_list_eta_label(&app.game_data, idx),
                 fleet.rules_of_engagement.to_string(),
                 fleet.ships.loaded_transports.to_string(),
-                truncate(
+                nc_data::fit_notation(
                     &nc_data::ship_composition_table_summary(&fleet),
                     COLUMNS[9].width,
+                    !fleet.crippled.is_empty(),
                 ),
             ],
         });
@@ -1470,10 +1471,6 @@ fn format_target(coords: [u8; 2]) -> String {
     } else {
         format_coords(coords)
     }
-}
-
-fn truncate(value: &str, width: usize) -> String {
-    value.chars().take(width).collect()
 }
 
 pub(crate) fn sync_cursor_to_jump_input(app: &mut DashApp) -> bool {
@@ -1910,6 +1907,56 @@ mod tests {
                 .iter()
                 .any(|line| line.contains("You have no active fleets."))
         );
+    }
+
+    #[test]
+    fn fleet_table_rows_show_ship_notation_and_keep_a_cut_bang() {
+        let mut app = dash_app();
+        let fleet_number;
+        let fleet = app
+            .game_data
+            .fleets
+            .iter_mut()
+            .find(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
+            .expect("owned fleet");
+        fleet_number = fleet.fleet_number.0.to_string();
+        fleet.ships.scouts = 0;
+        fleet.ships.battleships = 0;
+        fleet.ships.cruisers = 12;
+        fleet.ships.destroyers = 0;
+        fleet.ships.etacs = 0;
+        nc_data::set_troop_transports(fleet, 0);
+        nc_data::recompute_max_speed(fleet);
+        fleet.crippled = nc_data::CrippledShips::default();
+        fleet.crippled.cruisers.fresh = 3;
+        let cell = |app: &DashApp| {
+            table_rows(app)
+                .into_iter()
+                .find(|row| {
+                    matches!(row.key, FleetOverlayRowKey::Fleet(_)) && row.id_label == fleet_number
+                })
+                .expect("fleet row")
+                .cells[9]
+                .clone()
+        };
+        assert_eq!(cell(&app), "CA12!3");
+
+        let fleet = app
+            .game_data
+            .fleets
+            .iter_mut()
+            .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0.to_string() == fleet_number)
+            .expect("owned fleet");
+        fleet.ships.scouts = 1;
+        fleet.ships.battleships = 2;
+        fleet.ships.destroyers = 8;
+        fleet.ships.etacs = 2;
+        nc_data::set_troop_transports(fleet, 9);
+        nc_data::set_armies_aboard(fleet, 4);
+        nc_data::recompute_max_speed(fleet);
+        let cut = cell(&app);
+        assert!(cut.ends_with(" +!"), "{cut}");
+        assert!(cut.chars().count() <= super::COLUMNS[9].width, "{cut}");
     }
 
     #[test]

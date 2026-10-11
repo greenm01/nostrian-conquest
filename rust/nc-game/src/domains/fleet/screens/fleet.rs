@@ -76,55 +76,11 @@ fn filter_prompt_dismiss_prompt(message: &str) -> String {
     format!("{message} (slap a key)")
 }
 
-fn fit_fleet_table_ships_summary(summary: &str, width: usize) -> String {
-    if summary.chars().count() <= width {
-        return summary.to_string();
-    }
-    if width == 0 {
-        return String::new();
-    }
-
-    let mut kept = Vec::new();
-    let mut used_width = 0usize;
-    for token in summary.split_whitespace() {
-        let token_width = token.chars().count();
-        let separator_width = usize::from(!kept.is_empty());
-        if used_width + separator_width + token_width > width {
-            break;
-        }
-        used_width += separator_width + token_width;
-        kept.push(token);
-    }
-
-    if kept.is_empty() {
-        return "+".to_string();
-    }
-
-    while !kept.is_empty() {
-        let joined = kept.join(" ");
-        if joined.chars().count() + 2 <= width {
-            return format!("{joined} +");
-        }
-        kept.pop();
-    }
-
-    "+".to_string()
-}
-
-/// The Ships cell of a fleet table row: the composition, and `N damaged`
-/// after it only when the whole composition and the note fit the column.
-/// Otherwise the cell is what it was before ships could be damaged.
+/// The Ships cell of a fleet table row: the composition in ship notation,
+/// which shows each damaged class as `CA12!3`. When it has to be cut and the
+/// fleet has crippled ships, the cell ends in `+!` so the damage stays visible.
 fn fleet_table_ships_cell(row: &FleetRow, width: usize) -> String {
-    let ships = fit_fleet_table_ships_summary(&row.table_ships_label, width);
-    if row.damaged_ships == 0 || ships != row.table_ships_label {
-        return ships;
-    }
-    let with_note = format!("{ships} {} damaged", row.damaged_ships);
-    if with_note.chars().count() <= width {
-        with_note
-    } else {
-        ships
-    }
+    nc_data::fit_notation(&row.table_ships_label, width, row.damaged_ships > 0)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -141,13 +97,11 @@ pub struct FleetRow {
     pub rules_of_engagement: u8,
     pub loaded_armies: u16,
     pub order_label: String,
-    pub composition_label: String,
+    /// The fleet's ships in ship notation (`SC1 CA12!3 TT*4`).
     pub table_ships_label: String,
-    /// Crippled ships in the fleet, for the list's "N damaged" where it fits.
+    /// Crippled ships in the fleet: the list's `!` marker and the review
+    /// screen's legend appear only when this is not zero.
     pub damaged_ships: u32,
-    /// The crippled ships by class (`BB 2DD`) for the review screen; empty
-    /// when none.
-    pub damaged_label: String,
     pub join_host_fleet_number: Option<u16>,
 }
 
@@ -1128,8 +1082,8 @@ impl FleetReviewScreen {
         );
         draw_status_line(&mut buffer, 7, "Standing Order: ", &row.order_label);
         draw_status_line(&mut buffer, 9, "Composition: ", &row.table_ships_label);
-        if !row.damaged_label.is_empty() {
-            draw_status_line(&mut buffer, 10, "Damaged: ", &row.damaged_label);
+        if row.damaged_ships > 0 {
+            draw_status_line(&mut buffer, 10, "", nc_data::NOTATION_LEGEND);
         }
         draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(9));
         Ok(buffer)

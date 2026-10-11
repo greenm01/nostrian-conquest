@@ -315,7 +315,7 @@ fn bombardment_defender_report_uses_first_person_loss_wording() {
     assert!(bombard.contains("Attacker:"));
     assert!(bombard.contains("The 9th Fleet of"));
     assert!(bombard.contains("Attacking force:"));
-    assert!(bombard.contains("1DD"));
+    assert!(bombard.contains("DD1"));
     assert!(bombard.contains("Our defenses:"));
     assert!(bombard.contains("9 armies"));
     assert!(!bombard.contains("0 ground battery(ies)"));
@@ -368,7 +368,7 @@ fn blitz_report_distinguishes_total_army_losses_from_transport_losses() {
 
     assert!(blitz.contains("From your 4th Fleet"));
     assert!(blitz.contains("Our forces:"));
-    assert!(blitz.contains("1CA"));
+    assert!(blitz.contains("CA1"));
     assert!(blitz.contains("Our losses:"));
     assert!(blitz.contains("3 armies"));
     assert!(blitz.contains("Enemy losses:"));
@@ -467,7 +467,7 @@ fn blitz_report_for_undefended_world_includes_attacker_force_and_no_battery_text
     assert!(blitz.contains("ALERT: Blitz assault successful!"));
     assert!(blitz.contains("We have seized planet \"dog\" in a fast assault."));
     assert!(blitz.contains("Our forces:"));
-    assert!(blitz.contains("2CA, 2TT*"));
+    assert!(blitz.contains("CA2 TT*2"));
     assert!(blitz.contains("World defenses:"));
     assert!(blitz.contains("undefended"));
     assert!(!blitz.contains("failed to suppress the defending batteries"));
@@ -518,7 +518,7 @@ fn invasion_report_includes_attacker_force_and_undefended_world_wording() {
     assert!(invasion.contains("ALERT: Planetary invasion successful!"));
     assert!(!invasion.contains("Our armies have captured planet \"dog\"."));
     assert!(invasion.contains("Our forces:"));
-    assert!(invasion.contains("1BB, 2TT*"));
+    assert!(invasion.contains("BB1 TT*2"));
     assert!(invasion.contains("World defenses:"));
     assert!(invasion.contains("undefended"));
     assert!(invasion.contains("Enemy losses:"));
@@ -587,7 +587,7 @@ fn capture_report_lists_the_goods_ships_and_work_the_world_passed_on() {
     assert!(scorched.contains("The defenders scorched the world before it fell."));
     assert!(scorched.contains("Inherited:"));
     assert!(
-        scorched.contains("200 stored production; docked 1BB, 3DD, 1SB; 60 points of queued work")
+        scorched.contains("200 stored production; docked BB1 DD3 SB1; 60 points of queued work")
     );
 
     let empty = report(InheritedAssets::default());
@@ -642,7 +642,7 @@ fn invasion_report_lists_ship_and_ground_army_losses() {
     assert!(invasion.contains("ALERT: Planetary invasion successful!"));
     assert!(!invasion.contains("Our armies have captured planet \"red\"."));
     assert!(invasion.contains("Our losses:"));
-    assert!(invasion.contains("15CA and 7 armies"));
+    assert!(invasion.contains("CA15 and 7 armies"));
     assert!(invasion.contains("Enemy losses:"));
     assert!(invasion.contains("10 ground batteries and 34 armies"));
     assert!(invasion.contains("Enemy orbital softening losses:"));
@@ -698,13 +698,13 @@ fn defender_receives_repulsed_invasion_report() {
 
     assert!(invasion.contains("ALERT: Enemy invasion repulsed!"));
     assert!(invasion.contains("Attacking force:"));
-    assert!(invasion.contains("2BB, 12TT*"));
+    assert!(invasion.contains("BB2 TT*12"));
     assert!(invasion.contains("Our defenses:"));
     assert!(invasion.contains("4 ground batteries and 16 armies"));
     assert!(invasion.contains("The invaders were thrown back."));
     assert!(invasion.contains("Defensive losses: 4 ground batteries and 13 armies."));
     assert!(invasion.contains("Enemy losses:"));
-    assert!(invasion.contains("1CA and 5 armies"));
+    assert!(invasion.contains("CA1 and 5 armies"));
     assert!(invasion.contains("Our orbital softening losses: 8 armies"));
     assert!(invasion.contains("Our ground battle losses: 5 armies"));
 }
@@ -757,7 +757,7 @@ fn defender_receives_blocked_invasion_report() {
     assert!(invasion.contains("Our batteries prevented an enemy landing."));
     assert!(invasion.contains("Defensive losses: 3 ground batteries."));
     assert!(invasion.contains("Enemy losses:"));
-    assert!(invasion.contains("1DD and 8 armies"));
+    assert!(invasion.contains("DD1 and 8 armies"));
     assert!(!invasion.contains("Our orbital softening losses:"));
     assert!(!invasion.contains("Our ground battle losses:"));
 }
@@ -815,7 +815,7 @@ fn ownership_change_report_uses_assault_context_for_defender() {
     assert!(!text.contains("Planet seized in a blitz assault by"));
     assert!(!text.contains("captured by \"Player1\", (Empire #1) from"));
     assert!(text.contains("Attacking force:"));
-    assert!(text.contains("1CA"));
+    assert!(text.contains("CA1"));
     assert!(text.contains("Our defenses:"));
     assert!(text.contains("2 ground batteries and 5 armies"));
     assert!(text.contains("All planetary defenses were destroyed."));
@@ -869,7 +869,7 @@ fn defender_receives_repulsed_blitz_report() {
         .replace('\n', " ");
     assert!(text.contains("ALERT: Enemy blitz repulsed!"));
     assert!(text.contains("Attacking force:"));
-    assert!(text.contains("1CA, 6TT*"));
+    assert!(text.contains("CA1 TT*6"));
     assert!(text.contains("Cover fire:"));
     assert!(text.contains("briefly suppressed"));
     assert!(text.contains("The blitz assault was repulsed."));
@@ -929,7 +929,7 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
         .join(" ")
         .replace('\n', " ");
     assert!(text.contains("ALERT: Orbital bombardment underway!"));
-    assert!(text.contains("Our forces:       10BB, 11CA, 14TT*, 7TT"));
+    assert!(text.contains("Our forces:       BB10 CA11 TT*14 TT7"));
     assert!(text.contains("World defenses:   undefended"));
     assert!(text.contains("Bombing damage: 336 points of industry destroyed."));
     assert!(text.contains("Bombing damage: 25 stored production destroyed."));
@@ -1049,7 +1049,7 @@ fn bombardment_defender_report_uses_no_defenses_for_zero_counts() {
         .join(" ")
         .replace('\n', " ");
     assert!(text.contains("Attacking force:"));
-    assert!(text.contains("10BB, 11CA, 14TT*, 7TT"));
+    assert!(text.contains("BB10 CA11 TT*14 TT7"));
     assert!(text.contains("Our defenses:"));
     assert!(text.contains("none"));
     assert!(text.contains("Local damage: 336 points of industry destroyed."));
@@ -1299,8 +1299,8 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
     assert!(
         joined.contains("This forced us to abort the invasion before the landing could begin.")
     );
-    assert!(joined.contains("We had 1CA, 2TT*."));
-    assert!(joined.contains("The alien force contained 2CA, 3TT."));
+    assert!(joined.contains("We had CA1 TT*2."));
+    assert!(joined.contains("The alien force contained CA2 TT3."));
     assert!(!joined.contains("Hostile action stripped us of our invasion capability"));
 }
 
@@ -1464,7 +1464,7 @@ fn starbase_only_defender_report_uses_command_center_source() {
     let text = viewer_report_texts(2, &rows).join(" ");
     assert!(text.contains("From your Fleet Command Center:"));
     assert!(text.contains("Our defenses:"));
-    assert!(text.contains("1SB"));
+    assert!(text.contains("SB1"));
     assert!(!text.contains("From your fleet"));
 
     assert!(!text.contains("Our force contained no ships."));
@@ -1510,7 +1510,7 @@ fn attacker_report_mentions_destroyed_lone_starbase() {
     let rows = build_results_report_blocks(&game_data, &events);
     let text = viewer_report_texts(1, &rows).join(" ");
     assert!(text.contains("Alien forces:"));
-    assert!(text.contains("1SB"));
+    assert!(text.contains("SB1"));
     assert!(text.contains("The aliens were completely destroyed."));
 
     assert!(!text.contains("We were unable to inflict any losses."));
@@ -1780,7 +1780,7 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
     assert!(before_forces.ends_with("\n\n"), "{:?}", texts[0]);
     assert!(texts[0].contains("Last contact:     destroyed by"));
     assert!(texts[0].contains("ALERT: Starbase contact lost!"));
-    assert!(texts[0].contains("Alien forces:     1BB, 3CA, 11TT*, 3TT"));
+    assert!(texts[0].contains("Alien forces:     BB1 CA3 TT*11 TT3"));
 }
 
 #[test]
