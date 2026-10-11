@@ -198,18 +198,7 @@ fn order_name(order_code: u8) -> &'static str {
 }
 
 fn production_kind_name(kind: u8) -> &'static str {
-    match ProductionItemKind::from_code(kind) {
-        ProductionItemKind::Destroyer => "destroyer",
-        ProductionItemKind::Cruiser => "cruiser",
-        ProductionItemKind::Battleship => "battleship",
-        ProductionItemKind::Scout => "scout",
-        ProductionItemKind::Transport => "transport",
-        ProductionItemKind::Etac => "etac",
-        ProductionItemKind::GroundBattery => "ground_battery",
-        ProductionItemKind::Army => "army",
-        ProductionItemKind::Starbase => "starbase",
-        ProductionItemKind::Unknown(_) => "unknown",
-    }
+    ProductionItemKind::from_code(kind).name()
 }
 
 fn kdl_escape(value: &str) -> String {

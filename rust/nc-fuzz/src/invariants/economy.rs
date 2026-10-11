@@ -105,7 +105,7 @@ fn runs_ai(state: &CoreGameData, empire: u8) -> bool {
 fn committed_points(state: &CoreGameData, record: usize) -> u32 {
     let planet = &state.planets[record - 1];
     (0..10)
-        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
+        .map(|slot| planet.build_queue[slot].points_owed)
         .sum()
 }
 

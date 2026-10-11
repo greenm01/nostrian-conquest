@@ -12,6 +12,13 @@ pub enum ParseError {
         record_size: usize,
         actual: usize,
     },
+    /// A PLANETS.DAT world with units ordered in build slot 8, which classic
+    /// reserves and Rust has no unit for.
+    ReservedBuildSlot {
+        planet: String,
+        sector: [u8; 2],
+        units: u16,
+    },
 }
 
 impl fmt::Display for ParseError {
@@ -32,6 +39,15 @@ impl fmt::Display for ParseError {
             } => write!(
                 f,
                 "{file_type} had wrong size: expected a multiple of {record_size} bytes, got {actual}"
+            ),
+            Self::ReservedBuildSlot {
+                planet,
+                sector,
+                units,
+            } => write!(
+                f,
+                "planet \"{planet}\" at {},{} has {units} units ordered in reserved build slot 8, which Rust has no unit for; clear the slot to import",
+                sector[0], sector[1]
             ),
         }
     }

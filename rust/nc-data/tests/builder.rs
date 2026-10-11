@@ -1,4 +1,6 @@
-use nc_data::{GameStateBuilder, present_production_points, stored_production_points};
+use nc_data::{
+    GameStateBuilder, ProductionItemKind, present_production_points, stored_production_points,
+};
 
 #[test]
 fn builder_creates_valid_gamestate() {
@@ -35,13 +37,13 @@ fn builder_with_fleet_order() {
 #[test]
 fn builder_with_planet_build() {
     let data = GameStateBuilder::new()
-        .with_planet_build(15, 0x03, 0x01)
+        .with_planet_build(15, 3, ProductionItemKind::Destroyer)
         .build_initialized_baseline()
         .expect("Should build successfully");
 
     let planet = &data.planets[14]; // 15 is 1-based, so index 14
-    assert_eq!(planet.build_queue[0].points_owed, 0x03);
-    assert_eq!(planet.build_queue[0].kind.code(), 0x01);
+    assert_eq!(planet.build_queue[0].points_owed, 15);
+    assert_eq!(planet.build_queue[0].kind, ProductionItemKind::Destroyer);
 }
 
 #[test]

@@ -13,9 +13,9 @@ pub(super) fn process_build_completion(
 
         let mut had_builds = false;
         for slot in 0..10 {
-            let build_count = game_data.planets[planet_idx].build_queue[slot].points_owed;
+            let owed = game_data.planets[planet_idx].build_queue[slot].points_owed;
 
-            if build_count == 0 {
+            if owed == 0 {
                 continue;
             }
             had_builds = true;
@@ -25,9 +25,9 @@ pub(super) fn process_build_completion(
 
             let build_kind = game_data.planets[planet_idx].build_queue[slot].kind.code();
             let build_item_kind = ProductionItemKind::from_code(build_kind);
-            let decrement = u32::from(build_count).min(remaining_spend_capacity);
-            let new_count = u32::from(build_count).saturating_sub(decrement) as u8;
-            let completed_qty = completed_unit_count(build_item_kind, build_count, new_count);
+            let decrement = owed.min(remaining_spend_capacity);
+            let new_owed = owed - decrement;
+            let completed_qty = completed_unit_count(build_item_kind, owed, new_owed);
 
             match build_item_kind {
                 ProductionItemKind::Army => {
@@ -52,7 +52,7 @@ pub(super) fn process_build_completion(
             let current_stored = stored_production_points(&game_data.planets[planet_idx]);
             game_data.planets[planet_idx].stored_goods =
                 Real48::from_f64(f64::from(current_stored.saturating_sub(decrement)));
-            game_data.planets[planet_idx].build_queue[slot].points_owed = new_count;
+            game_data.planets[planet_idx].build_queue[slot].points_owed = new_owed;
             remaining_spend_capacity = remaining_spend_capacity.saturating_sub(decrement);
 
             match build_item_kind {
@@ -78,7 +78,7 @@ pub(super) fn process_build_completion(
                 _ => {}
             }
 
-            if new_count == 0 {
+            if new_owed == 0 {
                 game_data.planets[planet_idx].build_queue[slot].kind =
                     ProductionItemKind::Unknown(0);
             }
@@ -92,20 +92,11 @@ pub(super) fn process_build_completion(
     Ok(planets_with_builds)
 }
 
-fn completed_unit_count(kind: ProductionItemKind, old_remaining: u8, new_remaining: u8) -> u32 {
+fn completed_unit_count(kind: ProductionItemKind, old_remaining: u32, new_remaining: u32) -> u32 {
     let Some(cost) = kind.build_cost() else {
         return 0;
     };
-    ceil_div(u32::from(old_remaining), cost)
-        .saturating_sub(ceil_div(u32::from(new_remaining), cost))
-}
-
-fn ceil_div(value: u32, divisor: u32) -> u32 {
-    if value == 0 {
-        0
-    } else {
-        ((value - 1) / divisor) + 1
-    }
+    old_remaining.div_ceil(cost) - new_remaining.div_ceil(cost)
 }
 
 /// Completed ships and starbases wait in their type's stardock slot.

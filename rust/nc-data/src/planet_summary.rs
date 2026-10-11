@@ -60,7 +60,7 @@ pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
 pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
-        let points = u32::from(planet.build_queue[slot].points_owed);
+        let points = planet.build_queue[slot].points_owed;
         let kind_code = planet.build_queue[slot].kind.code();
         if points == 0 || kind_code == 0 {
             continue;
@@ -287,7 +287,7 @@ fn unit_words(kind: ProductionItemKind, count: u32) -> &'static str {
 }
 
 /// One planet record for inspection output: sector, name, and whatever of
-/// the first build slot, owner, armies, and batteries is set.
+/// the build queue, owner, armies, and batteries is set.
 pub fn planet_derived_summary(planet: &Planet) -> String {
     let text = planet.name.trim();
     let mut parts = vec![format!(
@@ -297,12 +297,11 @@ pub fn planet_derived_summary(planet: &Planet) -> String {
     if is_named_homeworld_seed(planet) {
         parts.push("likely_homeworld_seed".to_string());
     }
-    let first_slot = planet.build_queue[0];
-    if first_slot.points_owed != 0 || first_slot.kind.code() != 0 {
+    let queued = build_queue_unit_counts(planet);
+    if !queued.is_empty() {
         parts.push(format!(
-            "build_raw={:02x}/{:02x}",
-            first_slot.points_owed,
-            first_slot.kind.code()
+            "build={}",
+            format_unit_counts(&queued, CompactUnitSummaryStyle::JoinedCodes)
         ));
     }
     if planet.owner.0 != 0 {

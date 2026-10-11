@@ -57,7 +57,7 @@ diplomacy to=2 relation="enemy"
 planet record=16 {
   rename name="New Aurora"
   clear_build_queue
-  build points=4 kind="scout"
+  build points=15 kind="scout"
   build points=8 kind="army"
   commission slot=1
 }
@@ -100,7 +100,7 @@ diplomacy to=2 relation="enemy"
 planet record=16 {
   rename name="New Aurora"
   clear_build_queue
-  build points=4 kind="scout"
+  build points=15 kind="scout"
   commission slot=1
 }
 ```
@@ -109,7 +109,9 @@ Supported child actions:
 
 - `rename name="..."`
 - `clear_build_queue`
-- `build points=<u8> kind="<unit>"`
+- `build points=<points> kind="<unit>"`: `points` must be a multiple of the
+  unit's cost (a scout costs 15, an army 2), and the planet's remaining budget
+  is the only limit on it
 - `commission slot=<1-based stardock slot>`
 
 Build `kind` values:

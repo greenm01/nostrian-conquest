@@ -1,4 +1,4 @@
-use nc_data::{EmpirePlanetEconomyRow, GameStateMutationError, ProductionItemKind};
+use nc_data::{EmpirePlanetEconomyRow, ProductionItemKind};
 use nc_engine::{
     BUILD_UNITS, build_unit_spec_by_kind, planet_build_max_quantity, planet_build_orders,
     planet_build_specify_entries, planet_build_unavailable_message, planet_build_view,
@@ -100,7 +100,7 @@ impl DashApp {
         };
         if max_qty == 0 {
             self.planet_overlay.build_unit_status =
-                Some(self.planet_build_selection_unavailable_message(kind));
+                Some(self.planet_build_unavailable_message(kind));
             return;
         }
 
@@ -241,7 +241,7 @@ impl DashApp {
         let max_qty = self.planet_build_max_quantity_for(kind)?;
         if max_qty == 0 {
             self.planet_overlay.build_unit_status =
-                Some(self.planet_build_selection_unavailable_message(kind));
+                Some(self.planet_build_unavailable_message(kind));
             return Ok(());
         }
         self.queue_planet_build_units(kind, 1, Some(max_qty))?;
@@ -510,33 +510,6 @@ impl DashApp {
         self.planet_overlay.build_selected_kind = Some(entry.kind);
     }
 
-    fn planet_build_selection_unavailable_message(&self, kind: ProductionItemKind) -> String {
-        let Some(planet_record_index_1_based) = self.planet_build_planet_record_index_1_based()
-        else {
-            return "No build budget available.".to_string();
-        };
-        let Some(view) = self.planet_build_view() else {
-            return "No build budget available.".to_string();
-        };
-        if view.points_left == 0 {
-            return self.planet_build_unavailable_message(kind);
-        }
-        let needs_stardock = !matches!(
-            kind,
-            ProductionItemKind::Army | ProductionItemKind::GroundBattery
-        );
-        if needs_stardock
-            && self
-                .game_data
-                .planet_additional_build_points_capacity(planet_record_index_1_based, kind)
-                .unwrap_or(0)
-                == 0
-        {
-            return "Stardock is full -- commission ships first to free space.".to_string();
-        }
-        self.planet_build_unavailable_message(kind)
-    }
-
     fn queue_planet_build_units(
         &mut self,
         kind: ProductionItemKind,
@@ -559,43 +532,18 @@ impl DashApp {
             }
         }
 
-        let needs_stardock = !matches!(
-            kind,
-            ProductionItemKind::Army | ProductionItemKind::GroundBattery
-        );
-        if needs_stardock {
-            let capacity = self
-                .game_data
-                .planet_additional_build_points_capacity(planet_record_index_1_based, kind)?;
-            if capacity == 0 {
-                self.planet_overlay.build_quantity_status =
-                    Some("Stardock is full -- commission ships first to free space.".to_string());
-                return Ok(());
-            }
-        }
-
         let points = qty.saturating_mul(unit.cost);
-        match self.game_data.append_planet_build_order(
+        self.game_data.append_planet_build_order(
             planet_record_index_1_based,
             points,
             production_item_kind_code(kind),
-        ) {
-            Ok(()) => {}
-            Err(GameStateMutationError::PlanetBuildQueueFull { .. }) => {
-                self.planet_overlay.build_quantity_status =
-                    Some("Build queue is full for this planet.".to_string());
-                return Ok(());
-            }
-            Err(err) => return Err(err.into()),
-        }
+        )?;
 
-        if let Ok(points_remaining) = u8::try_from(points) {
-            self.stage_hosted_planet_build(
-                planet_record_index_1_based,
-                points_remaining,
-                production_item_kind_code(kind),
-            );
-        }
+        self.stage_hosted_planet_build(
+            planet_record_index_1_based,
+            points,
+            production_item_kind_code(kind),
+        );
         self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
         self.planet_overlay.build_unit_status = None;

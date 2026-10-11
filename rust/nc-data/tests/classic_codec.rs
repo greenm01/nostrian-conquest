@@ -231,38 +231,245 @@ fn shipped_fleets_planets_and_bases_read_as_the_byte_maps_say() {
     assert!(parse_ipbm_dat(&data).unwrap().is_empty());
 }
 
-#[test]
-fn ecmaint_build_fixture_queue_and_dock_use_classic_kind_slots() {
-    let pre = fs::read(repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT")).unwrap();
-    let post = fs::read(repo_root().join("fixtures/ecmaint-build-post/v1.5/PLANETS.DAT")).unwrap();
+/// One PLANETS.DAT record with the given name and sector, and nothing queued.
+fn queue_record(name: &str, sector: [u8; 2], queue: &[(usize, u16)]) -> [u8; PLANET_RECORD_SIZE] {
+    let mut planet = Planet::default();
+    planet.sector = nc_data::Coords::from_array(sector);
+    planet.name = name.to_string();
+    let mut bytes = encode_planet(&planet);
     // Classic's queue is ten u16 counts by kind at 0x24 + 2 * (kind - 1).
-    // The model holds Rust's build slots there until t056 translates.
-    let queue_word = |bytes: &[u8], kind: usize| {
-        let at = 14 * PLANET_RECORD_SIZE + 0x22 + 2 * kind;
-        u16::from_le_bytes([bytes[at], bytes[at + 1]])
-    };
-    assert_eq!(queue_word(&pre, 1), 3);
-    assert_eq!(queue_word(&pre, 6), 1);
-    assert!((1..=10).all(|kind| queue_word(&post, kind) == 0));
-    let post = &parse_planets_dat(&post).unwrap()[14];
-    assert_eq!(post.stardock.destroyers, 3);
-    assert_eq!(post.stardock.etacs, 1);
+    for (kind, count) in queue {
+        let at = 0x24 + 2 * (kind - 1);
+        bytes[at..at + 2].copy_from_slice(&count.to_le_bytes());
+    }
+    bytes
 }
 
 #[test]
-fn planet_build_slots_keep_rust_slot_bytes() {
+fn ecmaint_build_fixture_imports_counts_as_owed_points_and_round_trips() {
+    let pre_bytes =
+        fs::read(repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT")).unwrap();
+    let post_bytes =
+        fs::read(repo_root().join("fixtures/ecmaint-build-post/v1.5/PLANETS.DAT")).unwrap();
+    let pre = parse_planets_dat(&pre_bytes).unwrap();
+    let post = parse_planets_dat(&post_bytes).unwrap();
+
+    // 3 destroyers and 1 ETAC are owed 15 and 20 points. Neither side has
+    // charged for them, so the treasury stays at the file's 35.
+    let planet = &pre[14];
+    assert_eq!(
+        planet.build_queue[..2],
+        [
+            BuildSlot {
+                points_owed: 15,
+                kind: ProductionItemKind::Destroyer
+            },
+            BuildSlot {
+                points_owed: 20,
+                kind: ProductionItemKind::Etac
+            }
+        ]
+    );
+    assert!(
+        planet.build_queue[2..]
+            .iter()
+            .all(|slot| *slot == BuildSlot::EMPTY)
+    );
+    assert_eq!(planet.stored_goods.to_f64(), 35.0);
+
+    // Whole units owed, so export writes the counts back, credits nothing,
+    // and the whole file comes back byte for byte outside the ignored bytes.
+    let exported = serialize_planets_dat(&pre);
+    assert_eq!(
+        without_ignored_bytes(ClassicFile::Planets, &exported),
+        without_ignored_bytes(ClassicFile::Planets, &pre_bytes)
+    );
+
+    assert!(
+        post[14]
+            .build_queue
+            .iter()
+            .all(|slot| *slot == BuildSlot::EMPTY)
+    );
+    assert_eq!(post[14].stardock.destroyers, 3);
+    assert_eq!(post[14].stardock.etacs, 1);
+}
+
+#[test]
+fn classic_queue_kinds_map_to_rust_kinds_by_name() {
+    // Classic kinds 1..7 are the ships and the starbase, 9 the army, 10 the
+    // battery; Rust codes the battery 7, the army 8, and the starbase 9.
+    let bytes = queue_record(
+        "Names",
+        [3, 4],
+        &[
+            (1, 1),
+            (2, 2),
+            (3, 3),
+            (4, 4),
+            (5, 5),
+            (6, 6),
+            (7, 7),
+            (9, 9),
+            (10, 10),
+        ],
+    );
+    let planet = decode_planet(&bytes).unwrap();
+    let queue = planet
+        .build_queue
+        .iter()
+        .filter(|slot| slot.points_owed != 0)
+        .map(|slot| (slot.kind, slot.points_owed))
+        .collect::<Vec<_>>();
+    assert_eq!(
+        queue,
+        vec![
+            (ProductionItemKind::Destroyer, 5),
+            (ProductionItemKind::Cruiser, 30),
+            (ProductionItemKind::Battleship, 135),
+            (ProductionItemKind::Scout, 60),
+            (ProductionItemKind::Transport, 25),
+            (ProductionItemKind::Etac, 120),
+            (ProductionItemKind::Starbase, 350),
+            (ProductionItemKind::Army, 18),
+            (ProductionItemKind::GroundBattery, 200),
+        ]
+    );
+    assert_eq!(encode_planet(&planet), bytes);
+}
+
+#[test]
+fn a_queue_past_255_points_exports_all_its_units() {
+    // 128 armies are 256 points, one past what a byte held; 13 batteries
+    // are 260.
+    let bytes = queue_record("Garrison", [1, 1], &[(9, 128), (10, 13), (7, 1_000)]);
+    let planet = decode_planet(&bytes).unwrap();
+    assert_eq!(planet.build_queue[0].points_owed, 50_000);
+    assert_eq!(planet.build_queue[1].points_owed, 256);
+    assert_eq!(planet.build_queue[2].points_owed, 260);
+    assert_eq!(encode_planet(&planet), bytes);
+}
+
+#[test]
+fn slot_8_orders_are_refused_naming_the_planet() {
+    let bytes = queue_record("Dust Bowl", [16, 13], &[(8, 2)]);
+    let error = decode_planet(&bytes).unwrap_err().to_string();
+    assert!(error.contains("planet \"Dust Bowl\" at 16,13"), "{error}");
+    assert!(error.contains("2 units"), "{error}");
+    assert!(error.contains("reserved build slot 8"), "{error}");
+
+    // A whole file refuses the same way.
+    let mut file = encode_planet(&Planet::default()).to_vec();
+    file.extend_from_slice(&bytes);
+    assert_eq!(parse_planets_dat(&file).unwrap_err().to_string(), error);
+}
+
+#[test]
+fn export_credits_the_paid_part_of_a_part_paid_unit_to_stored_goods() {
     let mut planet = Planet::default();
+    planet.stored_goods = Real48::from_int(10);
+    // 100 points of battleship (45 each) is three units with 35 paid; 3 and
+    // 4 points of destroyer (5 each) are one unit each with 2 and 1 paid.
     planet.build_queue[0] = BuildSlot {
-        points_owed: 15,
-        kind: ProductionItemKind::Cruiser,
+        points_owed: 100,
+        kind: ProductionItemKind::Battleship,
     };
+    planet.build_queue[1] = BuildSlot {
+        points_owed: 3,
+        kind: ProductionItemKind::Destroyer,
+    };
+    planet.build_queue[2] = BuildSlot {
+        points_owed: 4,
+        kind: ProductionItemKind::Destroyer,
+    };
+    let exported = decode_planet(&encode_planet(&planet)).unwrap();
+    // Two destroyers and three battleships come back whole (classic keeps
+    // destroyers first), with the three paid parts, 2, 1, and 35, added to
+    // the treasury.
+    assert_eq!(
+        exported.build_queue[..2],
+        [
+            BuildSlot {
+                points_owed: 10,
+                kind: ProductionItemKind::Destroyer
+            },
+            BuildSlot {
+                points_owed: 135,
+                kind: ProductionItemKind::Battleship
+            }
+        ]
+    );
+    assert_eq!(exported.stored_goods.to_f64(), 10.0 + 35.0 + 2.0 + 1.0);
+}
+
+#[test]
+fn export_leaves_the_treasury_less_the_queue_where_rust_would() {
+    // Rust charges the points owed; ECMAINT charges whole units from the
+    // exported treasury. Both end at G - sum(owed) because export credits
+    // the paid part of each part-paid unit.
+    let mut planet = Planet::default();
+    planet.stored_goods = Real48::from_int(500);
+    for (slot, (points, kind)) in [
+        (100, ProductionItemKind::Battleship),
+        (3, ProductionItemKind::Destroyer),
+        (7, ProductionItemKind::Destroyer),
+        (19, ProductionItemKind::Army),
+        (21, ProductionItemKind::GroundBattery),
+        (1, ProductionItemKind::Starbase),
+        (28, ProductionItemKind::Scout),
+    ]
+    .into_iter()
+    .enumerate()
+    {
+        planet.build_queue[slot] = BuildSlot {
+            points_owed: points,
+            kind,
+        };
+    }
+    let owed = |planet: &Planet| {
+        planet
+            .build_queue
+            .iter()
+            .map(|s| s.points_owed)
+            .sum::<u32>()
+    };
+
+    let exported = decode_planet(&encode_planet(&planet)).unwrap();
+    assert_eq!(
+        exported.stored_goods.to_f64() - f64::from(owed(&exported)),
+        planet.stored_goods.to_f64() - f64::from(owed(&planet))
+    );
+}
+
+#[test]
+fn whole_unit_orders_leave_stored_goods_bits_alone() {
+    let mut planet = Planet::default();
+    planet.stored_goods = Real48::from_bytes([0x86, 0x12, 0x34, 0x56, 0x78, 0x0C]);
+    planet.build_queue[0] = BuildSlot {
+        points_owed: 90,
+        kind: ProductionItemKind::Battleship,
+    };
+    assert_eq!(
+        decode_planet(&encode_planet(&planet)).unwrap().stored_goods,
+        planet.stored_goods
+    );
+}
+
+#[test]
+fn a_negative_classic_balance_is_carried_in_stored_goods() {
+    let mut planet = Planet::default();
+    planet.stored_goods = Real48::from_int(-12);
+    let decoded = decode_planet(&encode_planet(&planet)).unwrap();
+    assert_eq!(decoded.stored_goods.to_f64(), -12.0);
+}
+
+#[test]
+fn rust_only_queue_slots_have_no_classic_form() {
+    let mut planet = Planet::default();
     planet.build_queue[9] = BuildSlot {
         points_owed: 4,
         kind: ProductionItemKind::Unknown(0xAB),
     };
-    let bytes = encode_planet(&planet);
-    assert_eq!((bytes[0x24], bytes[0x2E]), (15, 2));
-    assert_eq!((bytes[0x2D], bytes[0x37]), (4, 0xAB));
-    assert_eq!(decode_planet(&bytes), planet);
+    assert_eq!(encode_planet(&planet)[0x24..0x38], [0; 20]);
     assert_eq!(Planet::default().build_queue, [BuildSlot::EMPTY; 10]);
 }

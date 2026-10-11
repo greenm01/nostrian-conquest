@@ -60,7 +60,8 @@ pub use directory::{
     EmpirePlanetEconomyRow, EmpireProductionRankingRow, EmpireProductionRankingSort,
     EmpireUnitSummary, FleetDetachResult, FleetDetachSelection, FleetOrderValidationError,
     FleetPlayerInputValidationError, FleetTransferResult, GameStateMutationError,
-    PlanetPlayerInputValidationError, PlayerDiplomacyValidationError, SeekHomeTarget,
+    PLANET_BUILD_CURRENT_KNOWN_ORDERS, PlanetPlayerInputValidationError,
+    PlayerDiplomacyValidationError, SeekHomeTarget,
 };
 pub use economy::{
     build_capacity, present_production_points, starbase_growth_bonus_percent,
