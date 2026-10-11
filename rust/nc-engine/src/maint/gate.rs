@@ -10,7 +10,7 @@
 
 use std::path::Path;
 
-use crate::{CONQUEST_DAT_SIZE, Conquest};
+use crate::Conquest;
 
 /// Result of a maintenance schedule gate check.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,15 +73,4 @@ pub fn create_maintenance_token(dir: &Path) -> std::io::Result<()> {
 /// Remove the maintenance coordination token file after a successful run.
 pub fn remove_maintenance_token(dir: &Path) {
     let _ = std::fs::remove_file(dir.join("Main.Tok"));
-}
-
-/// Parse a raw CONQUEST.DAT byte slice into a `Conquest` for gate checks.
-/// Returns an error if the data is the wrong size.
-pub fn check_gate_conquest(raw: &[u8]) -> Result<Conquest, &'static str> {
-    if raw.len() < CONQUEST_DAT_SIZE {
-        return Err("CONQUEST.DAT too small for gate check");
-    }
-    let mut buf = [0u8; CONQUEST_DAT_SIZE];
-    buf.copy_from_slice(&raw[..CONQUEST_DAT_SIZE]);
-    Ok(Conquest::from_raw(buf))
 }

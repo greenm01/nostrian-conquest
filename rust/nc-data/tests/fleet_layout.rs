@@ -9,8 +9,8 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use nc_compat::{
     export_latest_snapshot_to_dir, import_directory_snapshot, load_classic_core_files,
 };
-use nc_data::classic::parse_fleets_dat;
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
+use nc_data::classic::{decode_fleet, encode_fleet, parse_fleets_dat};
 use nc_data::{
     CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Fleet, FleetDetachSelection, Mission,
     Order, PlayerMode, recompute_max_speed, set_armies_aboard, set_mission_target,
@@ -117,7 +117,7 @@ fn fleet_accessors_use_the_classic_offsets() {
 
     // The dead 0x34 word encodes as zero.
     assert_eq!(
-        &fleet.to_bytes()[0x23..0x36],
+        &encode_fleet(&fleet)[0x23..0x36],
         &[
             0x03, 0x02, 4, 0x05, 0x04, 0x07, 0x06, 0x09, 0x08, 0x0b, 0x0a, 0x0d, 0x0c, 0x0f, 0x0e,
             0x11, 0x10, 0, 0,
@@ -138,7 +138,7 @@ fn mission_target_writes_the_whole_mission_id_word() {
         ..Fleet::default()
     };
     set_mission_target(&mut fleet, 1, 3);
-    assert_eq!(&fleet.to_bytes()[0x22..0x25], &[1, 3, 0]);
+    assert_eq!(&encode_fleet(&fleet)[0x22..0x25], &[1, 3, 0]);
 }
 
 #[test]
@@ -243,7 +243,7 @@ fn join_merges_into_a_host_whose_number_exceeds_one_byte() {
     let joiner = &mut game_data.fleets[1];
     joiner.order = Order::JoinAnotherFleet;
     set_mission_target(joiner, 1, 299);
-    assert_eq!(&joiner.to_bytes()[0x23..0x25], &[0x2b, 0x01]);
+    assert_eq!(&encode_fleet(joiner)[0x23..0x25], &[0x2b, 0x01]);
     let joiner_cruisers = joiner.ships.cruisers;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance");
@@ -268,12 +268,12 @@ fn fleet_chain_links_are_words() {
     // t038: ECGAME and ECMAINT read and write 0x03, 0x05, and 0x07 as words.
     let mut bytes = [0u8; 54];
     bytes[0x03..0x09].copy_from_slice(&[0x2c, 0x01, 0x2d, 0x01, 0x2b, 0x01]);
-    let mut fleet = Fleet::from_raw(bytes);
+    let mut fleet = decode_fleet(&bytes);
     assert_eq!(fleet.next.0, 300);
     assert_eq!(fleet.record.0, 301);
     assert_eq!(fleet.prev.0, 299);
     fleet.prev.0 = 0x0203;
-    assert_eq!(&fleet.to_bytes()[0x07..0x09], &[0x03, 0x02]);
+    assert_eq!(&encode_fleet(&fleet)[0x07..0x09], &[0x03, 0x02]);
 
     // The invade pre-fixture's byte 0x08 (an old tool's "invasion armies")
     // is the previous-fleet word's high byte.

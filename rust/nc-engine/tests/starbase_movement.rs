@@ -4,7 +4,9 @@
 //! come from classic ECMAINT.
 
 use nc_compat::load_classic_core_files;
-use nc_data::classic::{serialize_bases_dat, serialize_fleets_dat, serialize_player_dat};
+use nc_data::classic::{
+    encode_fleet, encode_player, serialize_bases_dat, serialize_fleets_dat, serialize_player_dat,
+};
 use nc_data::{
     Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation, FleetMergeEvent,
     LostWorldResponse, MaintenanceEvents, Mission, MissionOutcome, Order, Real48, StarbaseReport,
@@ -102,12 +104,12 @@ fn the_moving_base_matches_classic_year_by_year() {
             "{label} BASES.DAT"
         );
         assert_eq!(
-            &game_data.fleets[0].to_bytes()[..],
+            &encode_fleet(&game_data.fleets[0])[..],
             &hex(escort)[..],
             "{label} fleet 1"
         );
         assert_eq!(
-            game_data.players[0].to_bytes()[0x40..0x48],
+            encode_player(&game_data.players[0])[0x40..0x48],
             hex("0100040001000100")[..],
             "{label} PLAYER.DAT"
         );
@@ -133,8 +135,8 @@ fn a_base_whose_world_changes_hands_lifts_off_with_its_escort() {
     );
     assert_eq!(game_data.fleets[0], expected.fleets[0]);
     assert_eq!(
-        game_data.players[0].to_bytes()[0x44..0x48],
-        expected.players[0].to_bytes()[0x44..0x48]
+        encode_player(&game_data.players[0])[0x44..0x48],
+        encode_player(&expected.players[0])[0x44..0x48]
     );
 
     let reports: Vec<_> = events

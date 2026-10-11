@@ -42,7 +42,6 @@ mod player_mail;
 mod player_war_stats;
 mod rankings;
 mod real48;
-mod records;
 mod report_blocks;
 mod rng;
 mod runtime_reports;

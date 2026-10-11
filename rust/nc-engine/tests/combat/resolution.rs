@@ -1,5 +1,6 @@
 //! Fleet battle resolution: round cap, determinism, and ROE withdrawals.
 
+use nc_data::classic::encode_fleet;
 use nc_data::{CoreGameData, Order, troop_transports};
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 
@@ -83,8 +84,8 @@ fn equal_roe_battle_resolves_identically_every_run() {
         let events = run_maintenance_turn_with_context_and_seed(&mut game_data, 7, &[], &overrides)
             .expect("maintenance should succeed");
         (
-            game_data.fleets[0].to_bytes().to_vec(),
-            game_data.fleets[4].to_bytes().to_vec(),
+            encode_fleet(&game_data.fleets[0]).to_vec(),
+            encode_fleet(&game_data.fleets[4]).to_vec(),
             format!("{:?}", events.encounter_disposition_events),
             format!("{:?}", events.fleet_battle_events),
             format!("{:?}", events.mission_events),

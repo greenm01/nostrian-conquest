@@ -2,7 +2,10 @@ use std::fs;
 use std::path::Path;
 
 use crate::commands::scenario::KnownScenario;
-use nc_data::classic::{parse_fleets_dat, parse_planets_dat, parse_player_dat};
+use nc_data::classic::{
+    encode_fleet, encode_planet, encode_player, parse_fleets_dat, parse_planets_dat,
+    parse_player_dat,
+};
 
 pub(crate) fn compare_preserved_scenario(
     dir: &Path,
@@ -67,7 +70,7 @@ fn compare_player(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
     let right = parse_player_dat(&fs::read(right_dir.join("PLAYER.DAT"))?)?;
     println!("PLAYER.DAT:");
     for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
-        let count = diff_count(&a.to_bytes(), &b.to_bytes());
+        let count = diff_count(&encode_player(a), &encode_player(b));
         if count == 0 {
             continue;
         }
@@ -87,7 +90,7 @@ fn compare_planets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std:
     let right = parse_planets_dat(&fs::read(right_dir.join("PLANETS.DAT"))?)?;
     println!("PLANETS.DAT:");
     for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
-        let count = diff_count(&a.to_bytes(), &b.to_bytes());
+        let count = diff_count(&encode_planet(a), &encode_planet(b));
         if count == 0 {
             continue;
         }
@@ -116,7 +119,7 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
     let right = parse_fleets_dat(&right_bytes);
     if let (Ok(left), Ok(right)) = (left, right) {
         for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
-            let count = diff_count(&a.to_bytes(), &b.to_bytes());
+            let count = diff_count(&encode_fleet(a), &encode_fleet(b));
             if count == 0 {
                 continue;
             }

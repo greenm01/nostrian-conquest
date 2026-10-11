@@ -3,6 +3,7 @@ use std::path::Path;
 
 use crate::commands::runtime::load_runtime_game_data;
 use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
+use nc_data::classic::encode_planet;
 use nc_data::{
     Conquest, CoreGameData, Planet, PlayerMode, Setup, is_named_homeworld_seed, order_summary,
     ownership_summary, planet_derived_summary, ship_composition_summary,
@@ -47,7 +48,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     println!("Planets:");
     for (idx, record) in data.planets.iter().enumerate().take(5) {
-        let bytes = record.to_bytes();
+        let bytes = encode_planet(record);
         println!(
             "  planet {:02}: coords={:?} hdr={:02x?} len={} text='{}' tail58={:02x?} fact_word={:04x} summary='{}'",
             idx + 1,

@@ -3,8 +3,9 @@ mod common;
 use common::*;
 use nc_compat::load_classic_core_files;
 use nc_data::classic::{
-    parse_bases_dat, parse_conquest_dat, parse_fleets_dat, parse_ipbm_dat, parse_planets_dat,
-    parse_player_dat, parse_setup_dat, serialize_ipbm_dat,
+    encode_base, encode_ipbm, encode_planet, encode_setup, parse_bases_dat, parse_conquest_dat,
+    parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat, parse_setup_dat,
+    serialize_ipbm_dat,
 };
 use nc_data::*;
 use nc_data::{
@@ -44,7 +45,7 @@ fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
     assert_eq!(record.target_depth, 1);
 
     assert_eq!(
-        record.to_bytes(),
+        encode_base(&record),
         [
             0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x10, 0x0D, 0x80,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x81, 0x00, 0x00,
@@ -361,7 +362,7 @@ fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
     assert_eq!(stardock_slot_kind(&planet, 3).to_raw(), 4);
     assert_eq!(stardock_slot_kind(&planet, 6).to_raw(), 9);
 
-    let bytes = planet.to_bytes();
+    let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x38..0x3C], [1, 0, 0, 0]);
     assert_eq!(bytes[0x44..0x48], [2, 1, 0, 0]);
     assert_eq!(bytes[0x50..0x54], 70_000u32.to_le_bytes());
@@ -780,7 +781,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     // A new base as ECMAINT 2000:6642 creates one: no escort, at rest in
     // orbit, target = its own sector.
     assert_eq!(
-        base.to_bytes(),
+        encode_base(&base),
         [
             0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 6, 5, 0x80, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0x81,
             0, 0, 0, 0, 0, 0, 6, 5, 1,
@@ -1051,7 +1052,7 @@ fn ipbm_record_setters_round_trip_chain_fields() {
     assert_eq!(record.owner.0, 0x02);
     assert_eq!(record.next.0, 0x4567);
     assert_eq!(record.record.0, 0x89ab);
-    let bytes = record.to_bytes();
+    let bytes = encode_ipbm(&record);
     assert_eq!(&bytes[..7], &[0x34, 0x12, 0x02, 0x67, 0x45, 0xab, 0x89]);
 }
 
@@ -1070,7 +1071,7 @@ fn ipbm_record_setters_round_trip_position_and_target() {
     assert_eq!(record.sector.to_array(), [0x11, 0x22]);
     assert_eq!(record.target.to_array(), [0xAA, 0xBB]);
     assert_eq!(record.target_depth, 0xCC);
-    let bytes = record.to_bytes();
+    let bytes = encode_ipbm(&record);
     assert_eq!(&bytes[0x09..0x0B], &[0x11, 0x22]);
     assert_eq!(&bytes[0x0B..0x11], &[1, 2, 3, 4, 5, 6]);
     assert_eq!(&bytes[0x11..0x17], &[7, 8, 9, 10, 11, 12]);
@@ -1099,7 +1100,7 @@ fn can_toggle_snoop_enabled() {
     assert!(setup.snoop);
     setup.snoop = false;
     assert!(!setup.snoop);
-    assert_eq!(setup.to_bytes()[512], 0);
+    assert_eq!(encode_setup(&setup)[512], 0);
 }
 
 #[test]
@@ -1131,7 +1132,7 @@ fn can_set_purge_after_turns_raw() {
     assert_eq!(setup.purge_after_turns, 0);
     setup.purge_after_turns = 1;
     assert_eq!(setup.purge_after_turns, 1);
-    assert_eq!(setup.to_bytes()[518], 1);
+    assert_eq!(encode_setup(&setup)[518], 1);
 }
 
 #[test]
@@ -1141,7 +1142,7 @@ fn planet_status_prefix_setter_stores_the_name() {
 
     assert_eq!(record.name.chars().count() as u8, 7);
     assert_eq!(record.name.trim().to_string(), "Unowned");
-    assert_eq!(&record.to_bytes()[0x0F..0x17], b"\x07Unowned");
+    assert_eq!(&encode_planet(&record)[0x0F..0x17], b"\x07Unowned");
 }
 
 #[test]

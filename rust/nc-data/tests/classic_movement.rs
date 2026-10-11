@@ -10,8 +10,9 @@
 //! speed 0, still on Bombard, or holding after Invade or Blitz.
 
 use nc_compat::load_classic_core_files;
+use nc_data::classic::{decode_fleet, encode_fleet};
 use nc_data::{
-    Coords, CoreGameData, Fleet, MaintenanceEvents, Mission, Order, Starbase, recompute_max_speed,
+    Coords, CoreGameData, MaintenanceEvents, Mission, Order, Starbase, recompute_max_speed,
     set_armies_aboard, set_mission_target, set_starbase_at_rest, set_troop_transports,
 };
 use nc_engine::run_maintenance_turn;
@@ -97,7 +98,7 @@ fn scenario(case: &Case) -> CoreGameData {
         game_data.bases = vec![base];
         game_data.players[0].bases_first.0 = 1;
     }
-    let mut fleet = Fleet::from_raw(start[..].try_into().expect("a fleet record"));
+    let mut fleet = decode_fleet(&start[..].try_into().expect("a fleet record"));
     if matches!(mission, 10 | 11) {
         // Classic counts the lone scout at 0x32, Rust at 0x24.
         fleet.ships.scouts = 1;
@@ -146,7 +147,7 @@ fn run_cases(cases: &[Case]) {
             match expected {
                 Year::State(speed, order, motion) => {
                     assert_eq!(
-                        fleet.to_bytes()[0x0b..=0x1e],
+                        encode_fleet(fleet)[0x0b..=0x1e],
                         hex(motion)[..],
                         "{} year {year} motion",
                         case.name
@@ -180,7 +181,7 @@ fn run_cases(cases: &[Case]) {
                         target[0], target[1]
                     );
                     assert_eq!(
-                        fleet.to_bytes()[0x0b..=0x1e],
+                        encode_fleet(fleet)[0x0b..=0x1e],
                         hex(&at_rest)[..],
                         "{} year {year} in orbit",
                         case.name

@@ -329,52 +329,32 @@ fn apply_game_config_overrides(
     let s = &mut game_data.setup;
     let mut changed = false;
 
-    macro_rules! apply_bool {
-        ($getter:ident, $setter:ident, $value:expr) => {
-            if s.$getter() != $value {
-                s.$setter($value);
-                changed = true;
-            }
-        };
-    }
-    macro_rules! apply_u8 {
-        ($getter:ident, $setter:ident, $value:expr) => {
-            if s.$getter() != $value {
-                s.$setter($value);
+    macro_rules! apply {
+        ($field:ident, $value:expr) => {
+            if s.$field != $value {
+                s.$field = $value;
                 changed = true;
             }
         };
     }
 
     if let Some(value) = cfg.setup_overrides.snoop_enabled {
-        apply_bool!(snoop_enabled, set_snoop_enabled, value);
+        apply!(snoop, value);
     }
     if let Some(value) = cfg.setup_overrides.session_local_timeout {
-        apply_bool!(local_timeout_enabled, set_local_timeout_enabled, value);
+        apply!(local_timeout, value);
     }
     if let Some(value) = cfg.setup_overrides.session_remote_timeout {
-        apply_bool!(remote_timeout_enabled, set_remote_timeout_enabled, value);
+        apply!(remote_timeout, value);
     }
     if let Some(value) = cfg.setup_overrides.session_max_idle_minutes {
-        apply_u8!(
-            max_time_between_keys_minutes_raw,
-            set_max_time_between_keys_minutes_raw,
-            value
-        );
+        apply!(max_key_gap_minutes, u16::from(value));
     }
     if let Some(value) = cfg.setup_overrides.session_minimum_time_minutes {
-        apply_u8!(
-            minimum_time_granted_minutes_raw,
-            set_minimum_time_granted_minutes_raw,
-            value
-        );
+        apply!(minimum_time_minutes, value);
     }
     if let Some(value) = cfg.setup_overrides.inactivity_autopilot_after_turns {
-        apply_u8!(
-            autopilot_inactive_turns_raw,
-            set_autopilot_inactive_turns_raw,
-            value
-        );
+        apply!(autopilot_after_turns, u16::from(value));
     }
 
     let snapshot_id = if changed {

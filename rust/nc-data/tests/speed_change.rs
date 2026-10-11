@@ -4,6 +4,7 @@
 use std::path::PathBuf;
 
 use nc_compat::load_classic_core_files;
+use nc_data::classic::encode_fleet;
 use nc_data::{
     Coords, CoreGameData, GameStateMutationError, Order, TurnSubmission, set_mission_target,
 };
@@ -27,9 +28,9 @@ fn moving_fleet_3(data: &mut CoreGameData) {
 fn a_speed_change_writes_only_the_speed_bytes() {
     let mut data = ecmaint_post();
     moving_fleet_3(&mut data);
-    let before = data.fleets[2].to_bytes();
+    let before = encode_fleet(&data.fleets[2]);
     assert_eq!(data.set_fleet_speed(1, 3, 2), Ok(2));
-    let after = data.fleets[2].to_bytes();
+    let after = encode_fleet(&data.fleets[2]);
     let changed = (0..before.len())
         .filter(|&offset| before[offset] != after[offset])
         .collect::<Vec<_>>();

@@ -6,6 +6,8 @@ use std::process::Command;
 use crate::support::paths::{default_fixture_dir, repo_root, resolve_repo_path};
 use crate::usage::print_maintenance_usage;
 use nc_compat::import_directory_snapshot;
+use nc_data::CONQUEST_DAT_SIZE;
+use nc_data::classic::decode_conquest;
 use nc_data::{
     CampaignStore, CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents,
     PlanetIntelSnapshot, apply_inactivity_autopilot_policy,
@@ -75,7 +77,8 @@ pub fn run_rust_maintenance_with_options(
         let gate_conquest_path = dir.join("CONQUEST.DAT");
         if gate_conquest_path.exists() {
             let raw = fs::read(&gate_conquest_path)?;
-            if let Ok(conquest) = nc_engine::maint::gate::check_gate_conquest(&raw) {
+            if let Some(conquest) = raw.get(..CONQUEST_DAT_SIZE) {
+                let conquest = decode_conquest(conquest.try_into()?);
                 match nc_engine::maint::gate::check_maintenance_schedule(&conquest) {
                     nc_engine::maint::gate::GateResult::Allowed => {}
                     nc_engine::maint::gate::GateResult::NotScheduled { day_name } => {

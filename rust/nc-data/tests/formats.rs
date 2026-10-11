@@ -7,8 +7,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use common::*;
 use nc_data::classic::{
-    parse_conquest_dat, parse_fleets_dat, parse_planets_dat, parse_player_dat, parse_setup_dat,
-    serialize_fleets_dat, serialize_planets_dat, serialize_player_dat,
+    encode_planet, parse_conquest_dat, parse_fleets_dat, parse_planets_dat, parse_player_dat,
+    parse_setup_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_planets_dat,
+    serialize_player_dat, serialize_setup_dat,
 };
 use nc_data::*;
 use nc_data::{
@@ -96,7 +97,7 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
     assert_eq!(planet.stardock.cruisers, 1);
     assert_eq!(stardock_slot_kind(&planet, 1).to_raw(), 2);
     assert_eq!(planet.stardock.ipbms, 300);
-    let bytes = planet.to_bytes();
+    let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x3C], 1);
     assert_eq!(bytes[0x54], 44);
     assert_eq!(bytes[0x55], 1);
@@ -106,7 +107,7 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
 fn round_trip_setup_dat() {
     let bytes = read_fixture("SETUP.DAT");
     let parsed = parse_setup_dat(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
+    assert_eq!(serialize_setup_dat(&parsed), bytes);
     assert_eq!(&parsed.version_tag, b"EC151");
     assert_eq!(parsed.com_irq, [4, 3, 4, 3]);
     assert_eq!(parsed.com_hw_flow_control, [true; 4]);
@@ -134,7 +135,7 @@ fn round_trip_conquest_dat() {
     // Ranking slots past the player count hold ECMAINT's garbage; the
     // model does not carry them.
     assert_eq!(
-        without_ignored_bytes(ClassicFile::Conquest, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Conquest, &serialize_conquest_dat(&parsed)),
         without_ignored_bytes(ClassicFile::Conquest, &bytes)
     );
     assert_eq!(parsed.game_year, 3022);
