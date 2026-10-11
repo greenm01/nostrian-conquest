@@ -198,7 +198,13 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         (player_count, seed.unwrap_or_else(generate_campaign_seed))
     };
     let game_data = build_seeded_new_game(player_count, 3000, seed)?;
-    store.save_runtime_state_structured(&game_data, &BTreeSet::new(), &[], &[])?;
+    store.save_runtime_state_structured(
+        game_data.conquest.game_year,
+        &game_data,
+        &BTreeSet::new(),
+        &[],
+        &[],
+    )?;
     store.save_campaign_settings(&CampaignSettings::new(&slug, &game_name))?;
     println!(
         "Initialized new game at: {} (name={}, players={}, year=3000, seed={})",
@@ -513,6 +519,7 @@ fn run_maintenance_for_dir(
     apply_results_reviewable_flags(&mut game_data, &report_block_rows);
     apply_maintenance_events_to_player_war_stats(&mut player_war_stats, &all_events);
     store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
+        start_year,
         &game_data,
         &runtime_state.planet_scorch_orders,
         &report_block_rows,

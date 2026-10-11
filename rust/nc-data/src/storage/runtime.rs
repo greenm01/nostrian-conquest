@@ -64,14 +64,23 @@ impl CampaignStore {
         }))
     }
 
+    /// Save a runtime snapshot for `game_data`'s year.
+    ///
+    /// Every `save_runtime_state_*` method takes `loaded_year`, the game year
+    /// the caller loaded its state from (the year being written when it
+    /// creates state from nothing). If a newer snapshot exists, nothing is
+    /// written and the save fails with [`CampaignStoreError::StaleSnapshot`].
+    /// Maintenance loads year Y and writes Y + 1, so it is never refused.
     pub fn save_runtime_state_structured(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
         queued_mail: &[QueuedPlayerMail],
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -87,6 +96,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -94,6 +104,7 @@ impl CampaignStore {
         planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_structured_with_intel_and_seed(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -105,6 +116,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel_and_seed(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -113,6 +125,7 @@ impl CampaignStore {
         campaign_seed: Option<u64>,
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -128,6 +141,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel_and_activity(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -136,6 +150,7 @@ impl CampaignStore {
         player_activity_states: &[PlayerActivityState],
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -151,6 +166,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel_activity_and_war_stats(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -160,6 +176,7 @@ impl CampaignStore {
         player_war_stats: &[PlayerWarStatsState],
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -175,6 +192,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -186,6 +204,7 @@ impl CampaignStore {
         winner_state: WinnerState,
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -201,6 +220,7 @@ impl CampaignStore {
 
     pub fn save_runtime_state_structured_with_intel_activity_and_lifecycle(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -211,6 +231,7 @@ impl CampaignStore {
         winner_state: WinnerState,
     ) -> Result<i64, CampaignStoreError> {
         self.save_runtime_state_internal(
+            loaded_year,
             game_data,
             planet_scorch_orders,
             report_block_rows,
@@ -226,6 +247,7 @@ impl CampaignStore {
 
     fn save_runtime_state_internal(
         &self,
+        loaded_year: u16,
         game_data: &CoreGameData,
         planet_scorch_orders: &BTreeSet<usize>,
         report_block_rows: &[ReportBlockRow],
@@ -240,6 +262,7 @@ impl CampaignStore {
         let year = game_data.conquest.game_year;
         let mut conn = self.connection()?;
         let tx = conn.transaction()?;
+        refuse_if_superseded(&tx, loaded_year)?;
         let snapshot_id = save_runtime_state_internal_tx(
             &tx,
             game_data,
@@ -256,6 +279,27 @@ impl CampaignStore {
         )?;
         tx.commit()?;
         Ok(snapshot_id)
+    }
+}
+
+/// Refuse a save when a snapshot newer than `loaded_year` exists: maintenance
+/// has written a later year since the caller loaded its state, and the store
+/// reads the highest year, so the write would never be seen.
+fn refuse_if_superseded(
+    tx: &rusqlite::Transaction<'_>,
+    loaded_year: u16,
+) -> Result<(), CampaignStoreError> {
+    let latest_year = tx
+        .query_row("SELECT MAX(game_year) FROM snapshots", [], |row| {
+            row.get::<_, Option<i64>>(0)
+        })?
+        .and_then(|year| u16::try_from(year).ok());
+    match latest_year {
+        Some(latest_year) if latest_year > loaded_year => Err(CampaignStoreError::StaleSnapshot {
+            loaded_year,
+            latest_year,
+        }),
+        _ => Ok(()),
     }
 }
 

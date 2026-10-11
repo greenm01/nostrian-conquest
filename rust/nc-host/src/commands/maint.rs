@@ -79,6 +79,7 @@ fn run_maintenance(
 
     let campaign_store = crate::support::runtime::open_existing_campaign_store(game_dir)?;
     let mut game_data = campaign_store.load_latest_runtime_game_data()?;
+    let loaded_year = game_data.conquest.game_year;
     let mut player_activity_states =
         campaign_store.latest_player_activity_states(game_data.conquest.player_count)?;
 
@@ -147,6 +148,7 @@ fn run_maintenance(
         .map(|viewer_id| merge_player_intel_from_runtime(&game_data, viewer_id, year, None, None))
         .collect();
     campaign_store.save_runtime_state_structured_with_intel_and_activity(
+        loaded_year,
         &game_data,
         &BTreeSet::new(),
         &[],

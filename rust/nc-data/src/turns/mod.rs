@@ -3,8 +3,8 @@ use std::fs;
 use std::path::Path;
 
 use crate::{
-    CampaignStoreError, CoreGameData, DiplomaticRelation, FleetDetachSelection,
-    GameStateMutationError, QueuedPlayerMail,
+    CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData, DiplomaticRelation,
+    FleetDetachSelection, GameStateMutationError, QueuedPlayerMail,
 };
 
 mod apply;
@@ -190,5 +190,17 @@ impl TurnSubmission {
         check_only: bool,
     ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
         runtime::submit_turn_kdl_file(dir, player_record_index_1_based, file, check_only)
+    }
+
+    /// Apply this submission to runtime state the caller already loaded and
+    /// save it. If maintenance has written a newer year since `state` was
+    /// loaded, nothing is saved and the error is
+    /// [`CampaignStoreError::StaleSnapshot`].
+    pub fn submit_to_runtime_state(
+        &self,
+        store: &CampaignStore,
+        state: CampaignRuntimeState,
+    ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
+        runtime::submit_to_runtime_state(store, state, self)
     }
 }

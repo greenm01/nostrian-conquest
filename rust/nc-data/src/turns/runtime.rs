@@ -2,9 +2,10 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 use crate::{
-    CampaignStore, CampaignStoreError, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot,
-    PlayerAccessMode, TurnSubmission, TurnSubmissionError, TurnSubmissionReport,
-    merge_player_intel_from_runtime, player_access_mode, record_submitted_turn_participation,
+    CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData,
+    DEFAULT_CAMPAIGN_DB_NAME, PlanetIntelSnapshot, PlayerAccessMode, TurnSubmission,
+    TurnSubmissionError, TurnSubmissionReport, merge_player_intel_from_runtime, player_access_mode,
+    record_submitted_turn_participation,
 };
 
 pub(super) fn submit_turn_kdl_file(
@@ -28,7 +29,18 @@ pub(super) fn submit_turn_kdl_file(
     if check_only {
         return submission.apply_to(&mut state.game_data, &mut state.queued_mail);
     }
+    submit_to_runtime_state(&store, state, &submission)
+}
 
+/// Apply `submission` to `state` and save it, refusing the save with
+/// [`CampaignStoreError::StaleSnapshot`] if a newer year has been written
+/// since `state` was loaded.
+pub(super) fn submit_to_runtime_state(
+    store: &CampaignStore,
+    mut state: CampaignRuntimeState,
+    submission: &TurnSubmission,
+) -> Result<TurnSubmissionReport, TurnSubmissionError> {
+    let player_record_index_1_based = submission.player_record_index_1_based;
     let player_lifecycle_states =
         store.latest_player_lifecycle_states(state.game_data.conquest.player_count)?;
     let access_mode = player_access_mode(
@@ -51,7 +63,7 @@ pub(super) fn submit_turn_kdl_file(
         }));
     }
     let report = submission.apply_to(&mut state.game_data, &mut state.queued_mail)?;
-    let planet_intel_by_viewer = load_runtime_intel_by_viewer(&store, &state.game_data)?;
+    let planet_intel_by_viewer = load_runtime_intel_by_viewer(store, &state.game_data)?;
     let mut player_activity_states =
         store.latest_player_activity_states(state.game_data.conquest.player_count)?;
     record_submitted_turn_participation(
@@ -61,6 +73,7 @@ pub(super) fn submit_turn_kdl_file(
         &mut player_activity_states,
     );
     store.save_runtime_state_structured_with_intel_and_activity(
+        state.game_year,
         &state.game_data,
         &state.planet_scorch_orders,
         &state.report_block_rows,

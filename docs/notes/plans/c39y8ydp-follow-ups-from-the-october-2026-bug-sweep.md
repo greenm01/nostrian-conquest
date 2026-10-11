@@ -518,6 +518,33 @@ silently lost. Detect a newer snapshot before saving, refuse the stale
 write, and tell the player that maintenance has run and the session must
 reload.
 
+Result (2026-10-10): every `save_runtime_state_*` now takes `loaded_year`,
+the year the caller loaded. Inside the save transaction, before any write, the
+store compares it with the highest stored year and returns
+`CampaignStoreError::StaleSnapshot { loaded_year, latest_year }` when a newer
+snapshot exists, leaving the store untouched. Maintenance (`nc-cli maint`,
+`nc-sysop maint`, `nc-host maint`) passes the year it loaded and writes the
+next one, so it still saves; a second maintenance run from the same year is
+now refused too. Code that creates state from nothing (init, import, harness
+builders) passes the year it writes. An import that is older than the stored
+year is refused as well; `nc-cli scenario-init-replayable` did exactly that
+(it imported the year-3000 replay context under the year-3001 init files,
+where nothing read it) and no longer refreshes the store after copying the
+context.
+
+`nc-game` marks the session stale on the first refusal and never saves again.
+After the action that tried to save, it shows "Maintenance has run; your last
+change was not saved. Log in again." as the main-menu notice, so each
+screen's own "try again" text cannot hide it. In a BBS door the loop then
+ends through the time-limit exit path (`SessionEnd::Stale`), printing the
+same line; a local session stays open. `nc-helm` shows the message in the
+status line of whichever prompt saved, since every site already prints the
+error's text, and each later save is refused the same way.
+`TurnSubmission::submit_to_runtime_state` splits the apply-and-save step out of
+`submit-turn` so the stale case can be tested; the CLI fails with the same
+message. The line is shorter than the example in the first note so it fits one
+80-column notice row.
+
 ### t077
 
 `nc-helm`'s "current year only" inbox filter keeps items whose year equals

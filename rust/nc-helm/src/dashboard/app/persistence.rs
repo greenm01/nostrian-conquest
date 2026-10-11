@@ -41,6 +41,7 @@ impl DashApp {
         let planet_intel_by_viewer =
             planet_intel_by_viewer(&store, self.game_data.conquest.player_count)?;
         store.save_runtime_state_structured_with_intel_activity_and_lifecycle(
+            self.game_data.conquest.game_year,
             &self.game_data,
             &self.planet_scorch_orders,
             &self.report_block_rows,

@@ -97,6 +97,10 @@ pub fn copy_current_known_core_files(
     copy_named_files(source, target, CURRENT_KNOWN_CORE_FILES)
 }
 
+/// Copy the replay context's classic files over `target`. The store is not
+/// refreshed: the context is year 3000 and the store already holds the later
+/// year from the init files, which it reads in preference, so importing the
+/// older year would only be refused.
 pub fn copy_pre_maint_replay_context_files(
     target: &Path,
 ) -> Result<(), Box<dyn std::error::Error>> {
@@ -104,8 +108,7 @@ pub fn copy_pre_maint_replay_context_files(
         &pre_maint_replay_context_fixture_dir(),
         target,
         PRE_MAINT_REPLAY_CONTEXT_FILES,
-    )?;
-    refresh_runtime_store(target)
+    )
 }
 
 pub fn refresh_runtime_store(target: &Path) -> Result<(), Box<dyn std::error::Error>> {

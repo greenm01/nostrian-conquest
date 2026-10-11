@@ -1,0 +1,4710 @@
+{
+  "method": "Exact rational arithmetic; approved smooth growth/P3, price50, nonstacking presence. Imposed delays, no engine/DOS runs or campaign odds.",
+  "growth": [
+    {
+      "k": 10,
+      "start": 3,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 8.2684901,
+          "production_without": 7.11582161,
+          "extra_income": 1.70326909,
+          "net_after_base_cost": -48.29673091
+        },
+        "10": {
+          "production": 9.57169621,
+          "production_without": 8.811645,
+          "extra_income": 3.34712542,
+          "net_after_base_cost": -46.65287458
+        },
+        "20": {
+          "production": 9.97379369,
+          "production_without": 9.79825891,
+          "extra_income": 4.6901885,
+          "net_after_base_cost": -45.3098115
+        },
+        "40": {
+          "production": 9.99990189,
+          "production_without": 9.99418579,
+          "extra_income": 5.01525962,
+          "net_after_base_cost": -44.98474038
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 9.99999517,
+          "extra_income": 5.02563232,
+          "net_after_base_cost": -44.97436768
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 5.02564103
+    },
+    {
+      "k": 10,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 7.52135181,
+          "production_without": 6.40963745,
+          "extra_income": 2.13746881,
+          "net_after_base_cost": -47.86253119
+        },
+        "10": {
+          "production": 9.12232902,
+          "production_without": 8.15847097,
+          "extra_income": 4.78960216,
+          "net_after_base_cost": -45.21039784
+        },
+        "20": {
+          "production": 9.88995624,
+          "production_without": 9.51553869,
+          "extra_income": 7.8761469,
+          "net_after_base_cost": -42.1238531
+        },
+        "40": {
+          "production": 9.99827005,
+          "production_without": 9.96647103,
+          "extra_income": 9.21973017,
+          "net_after_base_cost": -40.78026983
+        },
+        "80": {
+          "production": 9.99999957,
+          "production_without": 9.9998394,
+          "extra_income": 9.33277216,
+          "net_after_base_cost": -40.66722784
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 9.33333333
+    },
+    {
+      "k": 10,
+      "start": 3,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 6.23538008,
+          "production_without": 5.86657,
+          "extra_income": 0.7816085,
+          "net_after_base_cost": -49.2183915
+        },
+        "10": {
+          "production": 7.97537669,
+          "production_without": 7.55925092,
+          "extra_income": 2.01752942,
+          "net_after_base_cost": -47.98247058
+        },
+        "20": {
+          "production": 9.41441435,
+          "production_without": 9.14896342,
+          "extra_income": 4.0646344,
+          "net_after_base_cost": -45.9353656
+        },
+        "40": {
+          "production": 9.95101278,
+          "production_without": 9.89653382,
+          "extra_income": 5.66382457,
+          "net_after_base_cost": -44.33617543
+        },
+        "80": {
+          "production": 9.99965718,
+          "production_without": 9.99847068,
+          "extra_income": 5.99329905,
+          "net_after_base_cost": -44.00670095
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 6.0
+    },
+    {
+      "k": 10,
+      "start": 3,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 5.5714413,
+          "production_without": 5.5714413,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 7.19826683,
+          "production_without": 7.19826683,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 8.87861304,
+          "production_without": 8.87861304,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 9.8203559,
+          "production_without": 9.8203559,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 9.99538971,
+          "production_without": 9.99538971,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 3,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 5.08851963,
+          "production_without": 5.08851963,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 6.42802368,
+          "production_without": 6.42802368,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 7.8381394,
+          "production_without": 7.8381394,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 8.65679316,
+          "production_without": 8.65679316,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 8.81875551,
+          "production_without": 8.81875551,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 5.0,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 8.76320722,
+          "production_without": 7.93987258,
+          "extra_income": 1.21662078,
+          "net_after_base_cost": -48.78337922
+        },
+        "10": {
+          "production": 9.69406872,
+          "production_without": 9.151175,
+          "extra_income": 2.39080387,
+          "net_after_base_cost": -47.60919613
+        },
+        "20": {
+          "production": 9.98128121,
+          "production_without": 9.85589922,
+          "extra_income": 3.35013465,
+          "net_after_base_cost": -46.64986535
+        },
+        "40": {
+          "production": 9.99992992,
+          "production_without": 9.99584699,
+          "extra_income": 3.5823283,
+          "net_after_base_cost": -46.4176717
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 9.99999655,
+          "extra_income": 3.58973737,
+          "net_after_base_cost": -46.41026263
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 3.58974359
+    },
+    {
+      "k": 10,
+      "start": 5.0,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 8.22953701,
+          "production_without": 7.43545532,
+          "extra_income": 1.52676344,
+          "net_after_base_cost": -48.47323656
+        },
+        "10": {
+          "production": 9.37309216,
+          "production_without": 8.68462212,
+          "extra_income": 3.4211444,
+          "net_after_base_cost": -46.5788556
+        },
+        "20": {
+          "production": 9.92139731,
+          "production_without": 9.65395621,
+          "extra_income": 5.62581921,
+          "net_after_base_cost": -44.37418079
+        },
+        "40": {
+          "production": 9.99876432,
+          "production_without": 9.97605074,
+          "extra_income": 6.58552155,
+          "net_after_base_cost": -43.41447845
+        },
+        "80": {
+          "production": 9.99999969,
+          "production_without": 9.99988529,
+          "extra_income": 6.66626583,
+          "net_after_base_cost": -43.33373417
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 6.66666667
+    },
+    {
+      "k": 10,
+      "start": 5.0,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 7.31098577,
+          "production_without": 7.04755,
+          "extra_income": 0.55829179,
+          "net_after_base_cost": -49.44170821
+        },
+        "10": {
+          "production": 8.55384049,
+          "production_without": 8.2566078,
+          "extra_income": 1.44109244,
+          "net_after_base_cost": -48.55890756
+        },
+        "20": {
+          "production": 9.58172454,
+          "production_without": 9.39211673,
+          "extra_income": 2.90331029,
+          "net_after_base_cost": -47.09668971
+        },
+        "40": {
+          "production": 9.96500913,
+          "production_without": 9.92609559,
+          "extra_income": 4.04558898,
+          "net_after_base_cost": -45.95441102
+        },
+        "80": {
+          "production": 9.99975513,
+          "production_without": 9.99890763,
+          "extra_income": 4.28092789,
+          "net_after_base_cost": -45.71907211
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 4.28571429
+    },
+    {
+      "k": 10,
+      "start": 5.0,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 6.83674379,
+          "production_without": 6.83674379,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 7.99876202,
+          "production_without": 7.99876202,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 9.19900931,
+          "production_without": 9.19900931,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 9.87168278,
+          "production_without": 9.87168278,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 9.99670694,
+          "production_without": 9.99670694,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 5.0,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 6.37125026,
+          "production_without": 6.37125026,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 7.25072262,
+          "production_without": 7.25072262,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 8.17655617,
+          "production_without": 8.17655617,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 8.71405611,
+          "production_without": 8.71405611,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 8.82039503,
+          "production_without": 8.82039503,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 10.0,
+          "production_without": 10.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 9.57807684,
+          "production_without": 9.57807684,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 9.30746996,
+          "production_without": 9.30746996,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 9.0225981,
+          "production_without": 9.0225981,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 8.8572135,
+          "production_without": 8.8572135,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 8.82449384,
+          "production_without": 8.82449384,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 3,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 15.79490454,
+          "production_without": 12.99556677,
+          "extra_income": 4.13651064,
+          "net_after_base_cost": -45.86348936
+        },
+        "10": {
+          "production": 18.95983365,
+          "production_without": 17.113995,
+          "extra_income": 8.12873316,
+          "net_after_base_cost": -41.87126684
+        },
+        "20": {
+          "production": 19.93635612,
+          "production_without": 19.51005736,
+          "extra_income": 11.39045779,
+          "net_after_base_cost": -38.60954221
+        },
+        "40": {
+          "production": 19.99976173,
+          "production_without": 19.98587978,
+          "extra_income": 12.17991623,
+          "net_after_base_cost": -37.82008377
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 19.99998827,
+          "extra_income": 12.20510705,
+          "net_after_base_cost": -37.79489295
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 12.20512821
+    },
+    {
+      "k": 20,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 13.98042583,
+          "production_without": 11.2805481,
+          "extra_income": 5.19099569,
+          "net_after_base_cost": -44.80900431
+        },
+        "10": {
+          "production": 17.86851335,
+          "production_without": 15.52771521,
+          "extra_income": 11.63189097,
+          "net_after_base_cost": -38.36810903
+        },
+        "20": {
+          "production": 19.73275086,
+          "production_without": 18.8234511,
+          "extra_income": 19.12778532,
+          "net_after_base_cost": -30.87221468
+        },
+        "40": {
+          "production": 19.9957987,
+          "production_without": 19.91857251,
+          "extra_income": 22.39077327,
+          "net_after_base_cost": -27.60922673
+        },
+        "80": {
+          "production": 19.99999896,
+          "production_without": 19.99960997,
+          "extra_income": 22.66530383,
+          "net_after_base_cost": -27.33469617
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 22.66666667
+    },
+    {
+      "k": 20,
+      "start": 3,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 10.85735162,
+          "production_without": 9.96167,
+          "extra_income": 1.89819207,
+          "net_after_base_cost": -48.10180793
+        },
+        "10": {
+          "production": 15.08305768,
+          "production_without": 14.07246652,
+          "extra_income": 4.8997143,
+          "net_after_base_cost": -45.1002857
+        },
+        "20": {
+          "production": 18.57786343,
+          "production_without": 17.93319687,
+          "extra_income": 9.87125498,
+          "net_after_base_cost": -40.12874502
+        },
+        "40": {
+          "production": 19.88103103,
+          "production_without": 19.74872499,
+          "extra_income": 13.75500254,
+          "net_after_base_cost": -36.24499746
+        },
+        "80": {
+          "production": 19.99916743,
+          "production_without": 19.99628593,
+          "extra_income": 14.55515484,
+          "net_after_base_cost": -35.44484516
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 14.57142857
+    },
+    {
+      "k": 20,
+      "start": 3,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 9.24492887,
+          "production_without": 9.24492887,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 13.19579088,
+          "production_without": 13.19579088,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 17.27663166,
+          "production_without": 17.27663166,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 19.56372146,
+          "production_without": 19.56372146,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 19.98880359,
+          "production_without": 19.98880359,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 3,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 8.25294331,
+          "production_without": 8.25294331,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 11.62199896,
+          "production_without": 11.62199896,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 15.16865365,
+          "production_without": 15.16865365,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 17.22769189,
+          "production_without": 17.22769189,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 17.63505173,
+          "production_without": 17.63505173,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 10.0,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 17.52641443,
+          "production_without": 15.87974516,
+          "extra_income": 2.43324155,
+          "net_after_base_cost": -47.56675845
+        },
+        "10": {
+          "production": 19.38813744,
+          "production_without": 18.30235,
+          "extra_income": 4.78160774,
+          "net_after_base_cost": -45.21839226
+        },
+        "20": {
+          "production": 19.96256242,
+          "production_without": 19.71179845,
+          "extra_income": 6.70026929,
+          "net_after_base_cost": -43.29973071
+        },
+        "40": {
+          "production": 19.99985984,
+          "production_without": 19.99169399,
+          "extra_income": 7.16465661,
+          "net_after_base_cost": -42.83534339
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 19.9999931,
+          "extra_income": 7.17947474,
+          "net_after_base_cost": -42.82052526
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 7.17948718
+    },
+    {
+      "k": 20,
+      "start": 10.0,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 16.45907402,
+          "production_without": 14.87091064,
+          "extra_income": 3.05352688,
+          "net_after_base_cost": -46.94647312
+        },
+        "10": {
+          "production": 18.74618432,
+          "production_without": 17.36924424,
+          "extra_income": 6.84228881,
+          "net_after_base_cost": -43.15771119
+        },
+        "20": {
+          "production": 19.84279462,
+          "production_without": 19.30791241,
+          "extra_income": 11.25163842,
+          "net_after_base_cost": -38.74836158
+        },
+        "40": {
+          "production": 19.99752865,
+          "production_without": 19.95210148,
+          "extra_income": 13.1710431,
+          "net_after_base_cost": -36.8289569
+        },
+        "80": {
+          "production": 19.99999939,
+          "production_without": 19.99977057,
+          "extra_income": 13.33253166,
+          "net_after_base_cost": -36.66746834
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 13.33333333
+    },
+    {
+      "k": 20,
+      "start": 10.0,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 14.62197154,
+          "production_without": 14.0951,
+          "extra_income": 1.11658357,
+          "net_after_base_cost": -48.88341643
+        },
+        "10": {
+          "production": 17.10768099,
+          "production_without": 16.5132156,
+          "extra_income": 2.88218488,
+          "net_after_base_cost": -47.11781512
+        },
+        "20": {
+          "production": 19.16344907,
+          "production_without": 18.78423345,
+          "extra_income": 5.80662057,
+          "net_after_base_cost": -44.19337943
+        },
+        "40": {
+          "production": 19.93001825,
+          "production_without": 19.85219117,
+          "extra_income": 8.09117796,
+          "net_after_base_cost": -41.90882204
+        },
+        "80": {
+          "production": 19.99951026,
+          "production_without": 19.99781525,
+          "extra_income": 8.56185579,
+          "net_after_base_cost": -41.43814421
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 8.57142857
+    },
+    {
+      "k": 20,
+      "start": 10.0,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 13.67348757,
+          "production_without": 13.67348757,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 15.99752405,
+          "production_without": 15.99752405,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 18.39801863,
+          "production_without": 18.39801863,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 19.74336557,
+          "production_without": 19.74336557,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 19.99341388,
+          "production_without": 19.99341388,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 10.0,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 12.74250052,
+          "production_without": 12.74250052,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 14.50144524,
+          "production_without": 14.50144524,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 16.35311235,
+          "production_without": 16.35311235,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 17.42811223,
+          "production_without": 17.42811223,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 17.64079006,
+          "production_without": 17.64079006,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 20,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 20,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 20,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 20,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 20.0,
+          "production_without": 20.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 20,
+      "start": 20,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 19.15615368,
+          "production_without": 19.15615368,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 18.61493993,
+          "production_without": 18.61493993,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 18.0451962,
+          "production_without": 18.0451962,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 17.71442701,
+          "production_without": 17.71442701,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 17.64898767,
+          "production_without": 17.64898767,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 3,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 38.37414783,
+          "production_without": 30.63480224,
+          "extra_income": 11.4362353,
+          "net_after_base_cost": -38.5637647
+        },
+        "10": {
+          "production": 47.12424599,
+          "production_without": 42.02104501,
+          "extra_income": 22.47355639,
+          "net_after_base_cost": -27.52644361
+        },
+        "20": {
+          "production": 49.82404338,
+          "production_without": 48.64545271,
+          "extra_income": 31.49126566,
+          "net_after_base_cost": -18.50873434
+        },
+        "40": {
+          "production": 49.99934126,
+          "production_without": 49.96096174,
+          "extra_income": 33.67388605,
+          "net_after_base_cost": -16.32611395
+        },
+        "80": {
+          "production": 49.99999999,
+          "production_without": 49.99996757,
+          "extra_income": 33.74353126,
+          "net_after_base_cost": -16.25646874
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 33.74358974
+    },
+    {
+      "k": 50,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 33.3576479,
+          "production_without": 25.89328003,
+          "extra_income": 14.35157633,
+          "net_after_base_cost": -35.64842367
+        },
+        "10": {
+          "production": 44.10706631,
+          "production_without": 37.63544792,
+          "extra_income": 32.15875739,
+          "net_after_base_cost": -17.84124261
+        },
+        "20": {
+          "production": 49.26113473,
+          "production_without": 46.74718834,
+          "extra_income": 52.88270059,
+          "net_after_base_cost": 2.88270059
+        },
+        "40": {
+          "production": 49.98838464,
+          "production_without": 49.77487694,
+          "extra_income": 61.90390258,
+          "net_after_base_cost": 11.90390258
+        },
+        "80": {
+          "production": 49.99999713,
+          "production_without": 49.99892169,
+          "extra_income": 62.66289881,
+          "net_after_base_cost": 12.66289881
+        }
+      },
+      "payback_pass": 18,
+      "lifetime_extra_income": 62.66666667
+    },
+    {
+      "k": 50,
+      "start": 3,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 24.72326624,
+          "production_without": 22.24697,
+          "extra_income": 5.24794279,
+          "net_after_base_cost": -44.75205721
+        },
+        "10": {
+          "production": 36.40610065,
+          "production_without": 33.61211332,
+          "extra_income": 13.54626896,
+          "net_after_base_cost": -36.45373104
+        },
+        "20": {
+          "production": 46.06821065,
+          "production_without": 44.28589723,
+          "extra_income": 27.2911167,
+          "net_after_base_cost": -22.7088833
+        },
+        "40": {
+          "production": 49.6710858,
+          "production_without": 49.3052985,
+          "extra_income": 38.02853643,
+          "net_after_base_cost": -11.97146357
+        },
+        "80": {
+          "production": 49.9976982,
+          "production_without": 49.9897317,
+          "extra_income": 40.2407222,
+          "net_after_base_cost": -9.7592778
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 40.28571429
+    },
+    {
+      "k": 50,
+      "start": 3,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 20.26539158,
+          "production_without": 20.26539158,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 31.18836302,
+          "production_without": 31.18836302,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 42.47068754,
+          "production_without": 42.47068754,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 48.79381817,
+          "production_without": 48.79381817,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 49.96904522,
+          "production_without": 49.96904522,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 3,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 17.74621436,
+          "production_without": 17.74621436,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 27.20392479,
+          "production_without": 27.20392479,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 37.16019639,
+          "production_without": 37.16019639,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 42.94038806,
+          "production_without": 42.94038806,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 44.08394039,
+          "production_without": 44.08394039,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 25.0,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 43.81603608,
+          "production_without": 39.69936289,
+          "extra_income": 6.08310388,
+          "net_after_base_cost": -43.91689612
+        },
+        "10": {
+          "production": 48.47034361,
+          "production_without": 45.75587501,
+          "extra_income": 11.95401936,
+          "net_after_base_cost": -38.04598064
+        },
+        "20": {
+          "production": 49.90640605,
+          "production_without": 49.27949612,
+          "extra_income": 16.75067323,
+          "net_after_base_cost": -33.24932677
+        },
+        "40": {
+          "production": 49.99964961,
+          "production_without": 49.97923497,
+          "extra_income": 17.91164151,
+          "net_after_base_cost": -32.08835849
+        },
+        "80": {
+          "production": 50.0,
+          "production_without": 49.99998275,
+          "extra_income": 17.94868684,
+          "net_after_base_cost": -32.05131316
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 17.94871795
+    },
+    {
+      "k": 50,
+      "start": 25.0,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 41.14768505,
+          "production_without": 37.17727661,
+          "extra_income": 7.6338172,
+          "net_after_base_cost": -42.3661828
+        },
+        "10": {
+          "production": 46.8654608,
+          "production_without": 43.4231106,
+          "extra_income": 17.10572202,
+          "net_after_base_cost": -32.89427798
+        },
+        "20": {
+          "production": 49.60698656,
+          "production_without": 48.26978103,
+          "extra_income": 28.12909606,
+          "net_after_base_cost": -21.87090394
+        },
+        "40": {
+          "production": 49.99382162,
+          "production_without": 49.88025369,
+          "extra_income": 32.92760775,
+          "net_after_base_cost": -17.07239225
+        },
+        "80": {
+          "production": 49.99999847,
+          "production_without": 49.99942643,
+          "extra_income": 33.33132916,
+          "net_after_base_cost": -16.66867084
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 33.33333333
+    },
+    {
+      "k": 50,
+      "start": 25.0,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 36.55492885,
+          "production_without": 35.23775,
+          "extra_income": 2.79145893,
+          "net_after_base_cost": -47.20854107
+        },
+        "10": {
+          "production": 42.76920247,
+          "production_without": 41.283039,
+          "extra_income": 7.20546221,
+          "net_after_base_cost": -42.79453779
+        },
+        "20": {
+          "production": 47.90862268,
+          "production_without": 46.96058364,
+          "extra_income": 14.51655143,
+          "net_after_base_cost": -35.48344857
+        },
+        "40": {
+          "production": 49.82504564,
+          "production_without": 49.63047793,
+          "extra_income": 20.22794491,
+          "net_after_base_cost": -29.77205509
+        },
+        "80": {
+          "production": 49.99877564,
+          "production_without": 49.99453814,
+          "extra_income": 21.40463947,
+          "net_after_base_cost": -28.59536053
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 21.42857143
+    },
+    {
+      "k": 50,
+      "start": 25.0,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 34.18371893,
+          "production_without": 34.18371893,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 39.99381012,
+          "production_without": 39.99381012,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 45.99504656,
+          "production_without": 45.99504656,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 49.35841392,
+          "production_without": 49.35841392,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 49.98353469,
+          "production_without": 49.98353469,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 25.0,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 31.85625131,
+          "production_without": 31.85625131,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 36.2536131,
+          "production_without": 36.2536131,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 40.88278087,
+          "production_without": 40.88278087,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 43.57028057,
+          "production_without": 43.57028057,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 44.10197515,
+          "production_without": 44.10197515,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 50,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 50,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 50,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 50,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 50.0,
+          "production_without": 50.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 50,
+      "start": 50,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 47.89038421,
+          "production_without": 47.89038421,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 46.53734982,
+          "production_without": 46.53734982,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 45.1129905,
+          "production_without": 45.1129905,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 44.28606752,
+          "production_without": 44.28606752,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 44.12246919,
+          "production_without": 44.12246919,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 76.00621999,
+          "production_without": 60.03352802,
+          "extra_income": 23.60244307,
+          "net_after_base_cost": -26.39755693
+        },
+        "10": {
+          "production": 94.06493321,
+          "production_without": 83.53279503,
+          "extra_income": 46.3815951,
+          "net_after_base_cost": -3.6184049
+        },
+        "20": {
+          "production": 99.63685549,
+          "production_without": 97.20444495,
+          "extra_income": 64.99261212,
+          "net_after_base_cost": 14.99261212
+        },
+        "40": {
+          "production": 99.99864047,
+          "production_without": 99.91943167,
+          "extra_income": 69.49716907,
+          "net_after_base_cost": 19.49716907
+        },
+        "80": {
+          "production": 99.99999998,
+          "production_without": 99.99993308,
+          "extra_income": 69.64090495,
+          "net_after_base_cost": 19.64090495
+        }
+      },
+      "payback_pass": 12,
+      "lifetime_extra_income": 69.64102564
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 65.653018,
+          "production_without": 50.24783325,
+          "extra_income": 29.61921072,
+          "net_after_base_cost": -20.38078928
+        },
+        "10": {
+          "production": 87.83798791,
+          "production_without": 74.48166911,
+          "extra_income": 66.37020142,
+          "net_after_base_cost": 16.37020142
+        },
+        "20": {
+          "production": 98.47510786,
+          "production_without": 93.2867504,
+          "extra_income": 109.14089271,
+          "net_after_base_cost": 59.14089271
+        },
+        "40": {
+          "production": 99.97602788,
+          "production_without": 99.53538433,
+          "extra_income": 127.75911808,
+          "net_after_base_cost": 77.75911808
+        },
+        "80": {
+          "production": 99.99999408,
+          "production_without": 99.99777456,
+          "extra_income": 129.32555713,
+          "net_after_base_cost": 79.32555713
+        }
+      },
+      "payback_pass": 8,
+      "lifetime_extra_income": 129.33333333
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 47.83312394,
+          "production_without": 42.72247,
+          "extra_income": 10.83086065,
+          "net_after_base_cost": -39.16913935
+        },
+        "10": {
+          "production": 71.94450559,
+          "production_without": 66.17819131,
+          "extra_income": 27.95719338,
+          "net_after_base_cost": -22.04280662
+        },
+        "20": {
+          "production": 91.88545602,
+          "production_without": 88.2070645,
+          "extra_income": 56.32421956,
+          "net_after_base_cost": 6.32421956
+        },
+        "40": {
+          "production": 99.32117707,
+          "production_without": 98.56625435,
+          "extra_income": 78.48442625,
+          "net_after_base_cost": 28.48442625
+        },
+        "80": {
+          "production": 99.99524948,
+          "production_without": 99.97880797,
+          "extra_income": 83.05000114,
+          "net_after_base_cost": 33.05000114
+        }
+      },
+      "payback_pass": 18,
+      "lifetime_extra_income": 83.14285714
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 38.63282943,
+          "production_without": 38.63282943,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 61.17598326,
+          "production_without": 61.17598326,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 84.46078066,
+          "production_without": 84.46078066,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 97.510646,
+          "production_without": 97.510646,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 99.9361146,
+          "production_without": 99.9361146,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 33.56833277,
+          "production_without": 33.56833277,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 53.17380117,
+          "production_without": 53.17380117,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 73.81276762,
+          "production_without": 73.81276762,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 85.7948817,
+          "production_without": 85.7948817,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 88.1654215,
+          "production_without": 88.1654215,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 50.0,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 87.63207216,
+          "production_without": 79.39872578,
+          "extra_income": 12.16620777,
+          "net_after_base_cost": -37.83379223
+        },
+        "10": {
+          "production": 96.94068722,
+          "production_without": 91.51175001,
+          "extra_income": 23.90803871,
+          "net_after_base_cost": -26.09196129
+        },
+        "20": {
+          "production": 99.81281211,
+          "production_without": 98.55899224,
+          "extra_income": 33.50134645,
+          "net_after_base_cost": -16.49865355
+        },
+        "40": {
+          "production": 99.99929921,
+          "production_without": 99.95846993,
+          "extra_income": 35.82328303,
+          "net_after_base_cost": -14.17671697
+        },
+        "80": {
+          "production": 99.99999999,
+          "production_without": 99.99996551,
+          "extra_income": 35.89737368,
+          "net_after_base_cost": -14.10262632
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 35.8974359
+    },
+    {
+      "k": 100,
+      "start": 50.0,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 82.2953701,
+          "production_without": 74.35455322,
+          "extra_income": 15.26763439,
+          "net_after_base_cost": -34.73236561
+        },
+        "10": {
+          "production": 93.7309216,
+          "production_without": 86.84622119,
+          "extra_income": 34.21144403,
+          "net_after_base_cost": -15.78855597
+        },
+        "20": {
+          "production": 99.21397312,
+          "production_without": 96.53956206,
+          "extra_income": 56.25819212,
+          "net_after_base_cost": 6.25819212
+        },
+        "40": {
+          "production": 99.98764323,
+          "production_without": 99.76050739,
+          "extra_income": 65.85521551,
+          "net_after_base_cost": 15.85521551
+        },
+        "80": {
+          "production": 99.99999695,
+          "production_without": 99.99885287,
+          "extra_income": 66.66265831,
+          "net_after_base_cost": 16.66265831
+        }
+      },
+      "payback_pass": 17,
+      "lifetime_extra_income": 66.66666667
+    },
+    {
+      "k": 100,
+      "start": 50.0,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 73.1098577,
+          "production_without": 70.4755,
+          "extra_income": 5.58291786,
+          "net_after_base_cost": -44.41708214
+        },
+        "10": {
+          "production": 85.53840495,
+          "production_without": 82.566078,
+          "extra_income": 14.41092442,
+          "net_after_base_cost": -35.58907558
+        },
+        "20": {
+          "production": 95.81724537,
+          "production_without": 93.92116727,
+          "extra_income": 29.03310287,
+          "net_after_base_cost": -20.96689713
+        },
+        "40": {
+          "production": 99.65009127,
+          "production_without": 99.26095585,
+          "extra_income": 40.45588982,
+          "net_after_base_cost": -9.54411018
+        },
+        "80": {
+          "production": 99.99755128,
+          "production_without": 99.98907627,
+          "extra_income": 42.80927894,
+          "net_after_base_cost": -7.19072106
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 42.85714286
+    },
+    {
+      "k": 100,
+      "start": 50.0,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 68.36743785,
+          "production_without": 68.36743785,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 79.98762024,
+          "production_without": 79.98762024,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 91.99009313,
+          "production_without": 91.99009313,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 98.71682784,
+          "production_without": 98.71682784,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 99.96706938,
+          "production_without": 99.96706938,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 50.0,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 63.71250262,
+          "production_without": 63.71250262,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 72.5072262,
+          "production_without": 72.5072262,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 81.76556174,
+          "production_without": 81.76556174,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 87.14056115,
+          "production_without": 87.14056115,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 88.2039503,
+          "production_without": 88.2039503,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 100.0,
+          "production_without": 100.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 95.78076842,
+          "production_without": 95.78076842,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 93.07469963,
+          "production_without": 93.07469963,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 90.225981,
+          "production_without": 90.225981,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 88.57213503,
+          "production_without": 88.57213503,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 88.24493837,
+          "production_without": 88.24493837,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 3,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 113.63829216,
+          "production_without": 89.43225381,
+          "extra_income": 35.76865083,
+          "net_after_base_cost": -14.23134917
+        },
+        "10": {
+          "production": 141.00562043,
+          "production_without": 125.04454504,
+          "extra_income": 70.28963381,
+          "net_after_base_cost": 20.28963381
+        },
+        "20": {
+          "production": 149.44966759,
+          "production_without": 145.7634372,
+          "extra_income": 98.49395857,
+          "net_after_base_cost": 48.49395857
+        },
+        "40": {
+          "production": 149.99793969,
+          "production_without": 149.8779016,
+          "extra_income": 105.3204521,
+          "net_after_base_cost": 55.3204521
+        },
+        "80": {
+          "production": 149.99999997,
+          "production_without": 149.99989858,
+          "extra_income": 105.53827863,
+          "net_after_base_cost": 55.53827863
+        }
+      },
+      "payback_pass": 7,
+      "lifetime_extra_income": 105.53846154
+    },
+    {
+      "k": 150,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 97.9483881,
+          "production_without": 74.60238647,
+          "extra_income": 44.88684511,
+          "net_after_base_cost": -5.11315489
+        },
+        "10": {
+          "production": 131.56890951,
+          "production_without": 111.3278903,
+          "extra_income": 100.58164545,
+          "net_after_base_cost": 50.58164545
+        },
+        "20": {
+          "production": 147.68908098,
+          "production_without": 139.82631246,
+          "extra_income": 165.39908483,
+          "net_after_base_cost": 115.39908483
+        },
+        "40": {
+          "production": 149.96367111,
+          "production_without": 149.29589171,
+          "extra_income": 193.61433359,
+          "net_after_base_cost": 143.61433359
+        },
+        "80": {
+          "production": 149.99999102,
+          "production_without": 149.99662743,
+          "extra_income": 195.98821544,
+          "net_after_base_cost": 145.98821544
+        }
+      },
+      "payback_pass": 6,
+      "lifetime_extra_income": 196.0
+    },
+    {
+      "k": 150,
+      "start": 3,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 70.94298165,
+          "production_without": 63.19797,
+          "extra_income": 16.41377852,
+          "net_after_base_cost": -33.58622148
+        },
+        "10": {
+          "production": 107.48291054,
+          "production_without": 98.74426931,
+          "extra_income": 42.3681178,
+          "net_after_base_cost": -7.6318822
+        },
+        "20": {
+          "production": 137.70270139,
+          "production_without": 132.12823178,
+          "extra_income": 85.35732243,
+          "net_after_base_cost": 35.35732243
+        },
+        "40": {
+          "production": 148.97126835,
+          "production_without": 147.82721021,
+          "extra_income": 118.94031607,
+          "net_after_base_cost": 68.94031607
+        },
+        "80": {
+          "production": 149.99280076,
+          "production_without": 149.96788425,
+          "extra_income": 125.85928008,
+          "net_after_base_cost": 75.85928008
+        }
+      },
+      "payback_pass": 12,
+      "lifetime_extra_income": 126.0
+    },
+    {
+      "k": 150,
+      "start": 3,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 57.00026728,
+          "production_without": 57.00026728,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 91.1636035,
+          "production_without": 91.1636035,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 126.45087379,
+          "production_without": 126.45087379,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 146.22747384,
+          "production_without": 146.22747384,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 149.90318399,
+          "production_without": 149.90318399,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 3,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 49.39045117,
+          "production_without": 49.39045117,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 79.14367755,
+          "production_without": 79.14367755,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 110.46533886,
+          "production_without": 110.46533886,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 128.64937533,
+          "production_without": 128.64937533,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 132.24690261,
+          "production_without": 132.24690261,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 75.0,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 131.44810824,
+          "production_without": 119.09808868,
+          "extra_income": 18.24931165,
+          "net_after_base_cost": -31.75068835
+        },
+        "10": {
+          "production": 145.41103083,
+          "production_without": 137.26762502,
+          "extra_income": 35.86205807,
+          "net_after_base_cost": -14.13794193
+        },
+        "20": {
+          "production": 149.71921816,
+          "production_without": 147.83848837,
+          "extra_income": 50.25201968,
+          "net_after_base_cost": 0.25201968
+        },
+        "40": {
+          "production": 149.99894882,
+          "production_without": 149.9377049,
+          "extra_income": 53.73492454,
+          "net_after_base_cost": 3.73492454
+        },
+        "80": {
+          "production": 149.99999999,
+          "production_without": 149.99994826,
+          "extra_income": 53.84606053,
+          "net_after_base_cost": 3.84606053
+        }
+      },
+      "payback_pass": 20,
+      "lifetime_extra_income": 53.84615385
+    },
+    {
+      "k": 150,
+      "start": 75.0,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 123.44305515,
+          "production_without": 111.53182983,
+          "extra_income": 22.90145159,
+          "net_after_base_cost": -27.09854841
+        },
+        "10": {
+          "production": 140.59638241,
+          "production_without": 130.26933179,
+          "extra_income": 51.31716605,
+          "net_after_base_cost": 1.31716605
+        },
+        "20": {
+          "production": 148.82095968,
+          "production_without": 144.80934309,
+          "extra_income": 84.38728818,
+          "net_after_base_cost": 34.38728818
+        },
+        "40": {
+          "production": 149.98146485,
+          "production_without": 149.64076108,
+          "extra_income": 98.78282326,
+          "net_after_base_cost": 48.78282326
+        },
+        "80": {
+          "production": 149.99999542,
+          "production_without": 149.9982793,
+          "extra_income": 99.99398747,
+          "net_after_base_cost": 49.99398747
+        }
+      },
+      "payback_pass": 10,
+      "lifetime_extra_income": 100.0
+    },
+    {
+      "k": 150,
+      "start": 75.0,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 109.66478655,
+          "production_without": 105.71325,
+          "extra_income": 8.37437679,
+          "net_after_base_cost": -41.62562321
+        },
+        "10": {
+          "production": 128.30760742,
+          "production_without": 123.84911699,
+          "extra_income": 21.61638663,
+          "net_after_base_cost": -28.38361337
+        },
+        "20": {
+          "production": 143.72586805,
+          "production_without": 140.88175091,
+          "extra_income": 43.5496543,
+          "net_after_base_cost": -6.4503457
+        },
+        "40": {
+          "production": 149.47513691,
+          "production_without": 148.89143378,
+          "extra_income": 60.68383473,
+          "net_after_base_cost": 10.68383473
+        },
+        "80": {
+          "production": 149.99632692,
+          "production_without": 149.98361441,
+          "extra_income": 64.21391841,
+          "net_after_base_cost": 14.21391841
+        }
+      },
+      "payback_pass": 25,
+      "lifetime_extra_income": 64.28571429
+    },
+    {
+      "k": 150,
+      "start": 75.0,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 102.55115678,
+          "production_without": 102.55115678,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 119.98143036,
+          "production_without": 119.98143036,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 137.98513969,
+          "production_without": 137.98513969,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 148.07524176,
+          "production_without": 148.07524176,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 149.95060408,
+          "production_without": 149.95060408,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 75.0,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 95.56875393,
+          "production_without": 95.56875393,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 108.7608393,
+          "production_without": 108.7608393,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 122.6483426,
+          "production_without": 122.6483426,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 130.71084172,
+          "production_without": 130.71084172,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 132.30592544,
+          "production_without": 132.30592544,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 150,
+      "tax": 35,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 150,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 150,
+      "tax": 60,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 150,
+      "tax": 65,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 150.0,
+          "production_without": 150.0,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 150,
+      "start": 150,
+      "tax": 70,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 143.67115264,
+          "production_without": 143.67115264,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 139.61204945,
+          "production_without": 139.61204945,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 135.33897151,
+          "production_without": 135.33897151,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 132.85820255,
+          "production_without": 132.85820255,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 132.36740756,
+          "production_without": 132.36740756,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    }
+  ],
+  "delays": [
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 65.653018,
+          "production_without": 50.24783325,
+          "extra_income": 29.61921072,
+          "net_after_base_cost": -20.38078928
+        },
+        "10": {
+          "production": 87.83798791,
+          "production_without": 74.48166911,
+          "extra_income": 66.37020142,
+          "net_after_base_cost": 16.37020142
+        },
+        "20": {
+          "production": 98.47510786,
+          "production_without": 93.2867504,
+          "extra_income": 109.14089271,
+          "net_after_base_cost": 59.14089271
+        },
+        "40": {
+          "production": 99.97602788,
+          "production_without": 99.53538433,
+          "extra_income": 127.75911808,
+          "net_after_base_cost": 77.75911808
+        },
+        "80": {
+          "production": 99.99999408,
+          "production_without": 99.99777456,
+          "extra_income": 129.32555713,
+          "net_after_base_cost": 79.32555713
+        }
+      },
+      "payback_pass": 8,
+      "lifetime_extra_income": 129.33333333
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 2,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 60.16563034,
+          "production_without": 50.24783325,
+          "extra_income": 11.19605064,
+          "net_after_base_cost": -38.80394936
+        },
+        "10": {
+          "production": 85.89494456,
+          "production_without": 74.48166911,
+          "extra_income": 40.26762868,
+          "net_after_base_cost": -9.73237132
+        },
+        "20": {
+          "production": 98.23148603,
+          "production_without": 93.2867504,
+          "extra_income": 79.35623999,
+          "net_after_base_cost": 29.35623999
+        },
+        "40": {
+          "production": 99.97219801,
+          "production_without": 99.53538433,
+          "extra_income": 97.45491613,
+          "net_after_base_cost": 47.45491613
+        },
+        "80": {
+          "production": 99.99999313,
+          "production_without": 99.99777456,
+          "extra_income": 99.01305918,
+          "net_after_base_cost": 49.01305918
+        }
+      },
+      "payback_pass": 12,
+      "lifetime_extra_income": 99.02083333
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 5,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.24783325,
+          "production_without": 50.24783325,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 82.38312602,
+          "production_without": 74.48166911,
+          "extra_income": 15.19195784,
+          "net_after_base_cost": -34.80804216
+        },
+        "20": {
+          "production": 97.79116872,
+          "production_without": 93.2867504,
+          "extra_income": 47.62564984,
+          "net_after_base_cost": -2.37435016
+        },
+        "40": {
+          "production": 99.96527598,
+          "production_without": 99.53538433,
+          "extra_income": 64.78530284,
+          "net_after_base_cost": 14.78530284
+        },
+        "80": {
+          "production": 99.99999142,
+          "production_without": 99.99777456,
+          "extra_income": 66.32845188,
+          "net_after_base_cost": 16.32845188
+        }
+      },
+      "payback_pass": 22,
+      "lifetime_extra_income": 66.33622233
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 10,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 50.24783325,
+          "production_without": 50.24783325,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 74.48166911,
+          "production_without": 74.48166911,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 96.80047166,
+          "production_without": 93.2867504,
+          "extra_income": 17.46037898,
+          "net_after_base_cost": -32.53962102
+        },
+        "40": {
+          "production": 99.94970169,
+          "production_without": 99.53538433,
+          "extra_income": 32.50726599,
+          "net_after_base_cost": -17.49273401
+        },
+        "80": {
+          "production": 99.99998757,
+          "production_without": 99.99777456,
+          "extra_income": 34.01667908,
+          "net_after_base_cost": -15.98332092
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 34.02444118
+    }
+  ],
+  "bonus_candidates": [
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.0,
+      "at": {
+        "5": {
+          "production": 50.24783325,
+          "production_without": 50.24783325,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "10": {
+          "production": 74.48166911,
+          "production_without": 74.48166911,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 93.2867504,
+          "production_without": 93.2867504,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 99.53538433,
+          "production_without": 99.53538433,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "80": {
+          "production": 99.99777456,
+          "production_without": 99.99777456,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      },
+      "payback_pass": null,
+      "lifetime_extra_income": 0.0
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.25,
+      "at": {
+        "5": {
+          "production": 58.51981702,
+          "production_without": 50.24783325,
+          "extra_income": 15.46391042,
+          "net_after_base_cost": -34.53608958
+        },
+        "10": {
+          "production": 82.26179815,
+          "production_without": 74.48166911,
+          "extra_income": 36.17898689,
+          "net_after_base_cost": -13.82101311
+        },
+        "20": {
+          "production": 96.75624943,
+          "production_without": 93.2867504,
+          "extra_income": 62.86175293,
+          "net_after_base_cost": 12.86175293
+        },
+        "40": {
+          "production": 99.89152662,
+          "production_without": 99.53538433,
+          "extra_income": 76.26672327,
+          "net_after_base_cost": 26.26672327
+        },
+        "80": {
+          "production": 99.9998787,
+          "production_without": 99.99777456,
+          "extra_income": 77.59253848,
+          "net_after_base_cost": 27.59253848
+        }
+      },
+      "payback_pass": 15,
+      "lifetime_extra_income": 77.6
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 0.5,
+      "at": {
+        "5": {
+          "production": 65.653018,
+          "production_without": 50.24783325,
+          "extra_income": 29.61921072,
+          "net_after_base_cost": -20.38078928
+        },
+        "10": {
+          "production": 87.83798791,
+          "production_without": 74.48166911,
+          "extra_income": 66.37020142,
+          "net_after_base_cost": 16.37020142
+        },
+        "20": {
+          "production": 98.47510786,
+          "production_without": 93.2867504,
+          "extra_income": 109.14089271,
+          "net_after_base_cost": 59.14089271
+        },
+        "40": {
+          "production": 99.97602788,
+          "production_without": 99.53538433,
+          "extra_income": 127.75911808,
+          "net_after_base_cost": 77.75911808
+        },
+        "80": {
+          "production": 99.99999408,
+          "production_without": 99.99777456,
+          "extra_income": 129.32555713,
+          "net_after_base_cost": 79.32555713
+        }
+      },
+      "payback_pass": 8,
+      "lifetime_extra_income": 129.33333333
+    },
+    {
+      "k": 100,
+      "start": 3,
+      "tax": 50,
+      "delay": 0,
+      "peak": 1.0,
+      "at": {
+        "5": {
+          "production": 76.98144531,
+          "production_without": 50.24783325,
+          "extra_income": 54.39524841,
+          "net_after_base_cost": 4.39524841
+        },
+        "10": {
+          "production": 94.53758907,
+          "production_without": 74.48166911,
+          "extra_income": 112.87945828,
+          "net_after_base_cost": 62.87945828
+        },
+        "20": {
+          "production": 99.69239244,
+          "production_without": 93.2867504,
+          "extra_income": 170.96503773,
+          "net_after_base_cost": 120.96503773
+        },
+        "40": {
+          "production": 99.99902451,
+          "production_without": 99.53538433,
+          "extra_income": 192.37530838,
+          "net_after_base_cost": 142.37530838
+        },
+        "80": {
+          "production": 99.99999999,
+          "production_without": 99.99777456,
+          "extra_income": 193.99221097,
+          "net_after_base_cost": 143.99221097
+        }
+      },
+      "payback_pass": 5,
+      "lifetime_extra_income": 194.0
+    }
+  ],
+  "local_build": [
+    {
+      "k": 10,
+      "tax": 35,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 8.811645,
+          "goods": 24.51668652,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 9.79825891,
+          "goods": 57.7369868,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 9.99418579,
+          "goods": 127.38356486,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 9.99983243,
+          "goods": 197.37337919,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "tax": 50,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 8.15847097,
+          "goods": 31.94535162,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 9.51553869,
+          "goods": 77.19561459,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 9.96647103,
+          "goods": 175.61735138,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 9.9976795,
+          "goods": 275.50812174,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "tax": 60,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 7.55925092,
+          "goods": 35.38004504,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 9.14896342,
+          "goods": 86.79559754,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 9.89653382,
+          "goods": 202.75871738,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 9.98742093,
+          "goods": 322.26792699,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "tax": 65,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 7.19826683,
+          "goods": 36.54174839,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 8.87861304,
+          "goods": 90.15140162,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 9.8203559,
+          "goods": 213.76773038,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 9.97122135,
+          "goods": 342.74507814,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "tax": 35,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 17.113995,
+          "goods": 44.5405244,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 19.51005736,
+          "goods": 110.21839653,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 19.98587978,
+          "goods": 249.36008609,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 19.99959305,
+          "goods": 389.33534945,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "tax": 50,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 15.52771521,
+          "goods": 56.15299678,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 18.8234511,
+          "goods": 144.61792115,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 19.91857251,
+          "goods": 340.78499621,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 19.9943645,
+          "goods": 540.51972423,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "tax": 60,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 14.07246652,
+          "goods": 60.2086808,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 17.93319687,
+          "goods": 159.36073689,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 19.74872499,
+          "goods": 389.55688505,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 19.96945082,
+          "goods": 628.36496555,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "tax": 65,
+      "order_pass": null,
+      "completion_pass": null,
+      "first_bonus_pass": null,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 13.19579088,
+          "goods": 60.88710324,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 17.27663166,
+          "goods": 163.22483252,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 19.56372146,
+          "goods": 407.72163093,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 19.93010899,
+          "goods": 665.23804691,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        }
+      }
+    },
+    {
+      "k": 50,
+      "tax": 35,
+      "order_pass": 26,
+      "completion_pass": 27,
+      "first_bonus_pass": 28,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 42.02104501,
+          "goods": 104.61203803,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 48.64545271,
+          "goods": 267.66262569,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 49.98964052,
+          "goods": 565.51152862,
+          "extra_income": 0.22187883,
+          "net_after_base_cost": -49.77812117
+        },
+        "60": {
+          "production": 49.99996122,
+          "goods": 915.50032141,
+          "extra_income": 0.27906115,
+          "net_after_base_cost": -49.72093885
+        }
+      }
+    },
+    {
+      "k": 50,
+      "tax": 50,
+      "order_pass": 35,
+      "completion_pass": 36,
+      "first_bonus_pass": 37,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 37.63544792,
+          "goods": 128.77593228,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 46.74718834,
+          "goods": 346.88484082,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 49.8326286,
+          "goods": 786.37470469,
+          "extra_income": 0.08677399,
+          "net_after_base_cost": -49.91322601
+        },
+        "60": {
+          "production": 49.99736883,
+          "goods": 1286.01776753,
+          "extra_income": 0.46323582,
+          "net_after_base_cost": -49.53676418
+        }
+      }
+    },
+    {
+      "k": 50,
+      "tax": 60,
+      "order_pass": 44,
+      "completion_pass": 45,
+      "first_bonus_pass": 46,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 33.61211332,
+          "goods": 134.6945881,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 44.28589723,
+          "goods": 377.05615494,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 49.3052985,
+          "goods": 949.95138809,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 49.93619127,
+          "goods": 1496.84148617,
+          "extra_income": 0.18540496,
+          "net_after_base_cost": -49.81459504
+        }
+      }
+    },
+    {
+      "k": 50,
+      "tax": 65,
+      "order_pass": 50,
+      "completion_pass": 51,
+      "first_bonus_pass": 52,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 31.18836302,
+          "goods": 133.92316779,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "20": {
+          "production": 42.47068754,
+          "goods": 382.44512519,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "40": {
+          "production": 48.79381817,
+          "goods": 989.58333257,
+          "extra_income": 0.0,
+          "net_after_base_cost": 0.0
+        },
+        "60": {
+          "production": 49.80677192,
+          "goods": 1582.71695322,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "tax": 35,
+      "order_pass": 4,
+      "completion_pass": 5,
+      "first_bonus_pass": 6,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 90.11395117,
+          "goods": 164.45603547,
+          "extra_income": 9.72480803,
+          "net_after_base_cost": -40.27519197
+        },
+        "20": {
+          "production": 99.39510969,
+          "goods": 504.37764923,
+          "extra_income": 24.30797493,
+          "net_after_base_cost": -25.69202507
+        },
+        "40": {
+          "production": 99.99773544,
+          "goods": 1203.72325948,
+          "extra_income": 28.55100353,
+          "net_after_base_cost": -21.44899647
+        },
+        "60": {
+          "production": 99.99999152,
+          "goods": 1903.7208096,
+          "extra_income": 28.68969801,
+          "net_after_base_cost": -21.31030199
+        }
+      }
+    },
+    {
+      "k": 100,
+      "tax": 50,
+      "order_pass": 5,
+      "completion_pass": 6,
+      "first_bonus_pass": 7,
+      "payback_pass": 27,
+      "at": {
+        "10": {
+          "production": 81.02798187,
+          "goods": 209.65023382,
+          "extra_income": 9.83607571,
+          "net_after_base_cost": -40.16392429
+        },
+        "20": {
+          "production": 97.62125862,
+          "goods": 673.6981342,
+          "extra_income": 39.70176059,
+          "net_after_base_cost": -10.29823941
+        },
+        "40": {
+          "production": 99.96260491,
+          "goods": 1668.62521724,
+          "extra_income": 56.49906239,
+          "net_after_base_cost": 6.49906239
+        },
+        "60": {
+          "production": 99.99941213,
+          "goods": 2668.54546826,
+          "extra_income": 57.9329241,
+          "net_after_base_cost": 7.9329241
+        }
+      }
+    },
+    {
+      "k": 100,
+      "tax": 60,
+      "order_pass": 7,
+      "completion_pass": 8,
+      "first_bonus_pass": 9,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 67.41925219,
+          "goods": 209.99995665,
+          "extra_income": 1.16218972,
+          "net_after_base_cost": -48.83781028
+        },
+        "20": {
+          "production": 90.57660837,
+          "goods": 704.79939571,
+          "extra_income": 14.91754404,
+          "net_after_base_cost": -35.08245596
+        },
+        "40": {
+          "production": 99.2116853,
+          "goods": 1865.57147481,
+          "extra_income": 31.62924832,
+          "net_after_base_cost": -18.37075168
+        },
+        "60": {
+          "production": 99.93405346,
+          "goods": 3062.28985945,
+          "extra_income": 35.14858546,
+          "net_after_base_cost": -14.85141454
+        }
+      }
+    },
+    {
+      "k": 100,
+      "tax": 65,
+      "order_pass": 8,
+      "completion_pass": 9,
+      "first_bonus_pass": 10,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 61.17598326,
+          "goods": 205.64994204,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 84.46078066,
+          "goods": 697.81227965,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 97.510646,
+          "goods": 1909.3528353,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "60": {
+          "production": 99.60121013,
+          "goods": 3195.18179707,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      }
+    },
+    {
+      "k": 150,
+      "tax": 35,
+      "order_pass": 4,
+      "completion_pass": 5,
+      "first_bonus_pass": 6,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 135.01804972,
+          "goods": 269.58801251,
+          "extra_income": 14.73759568,
+          "net_after_base_cost": -35.26240432
+        },
+        "20": {
+          "production": 149.08331056,
+          "goods": 779.31458183,
+          "extra_income": 36.83785892,
+          "net_after_base_cost": -13.16214108
+        },
+        "40": {
+          "production": 149.99656814,
+          "goods": 1828.32287777,
+          "extra_income": 43.26801566,
+          "net_after_base_cost": -6.73198434
+        },
+        "60": {
+          "production": 149.99998715,
+          "goods": 2878.31916507,
+          "extra_income": 43.47820214,
+          "net_after_base_cost": -6.52179786
+        }
+      }
+    },
+    {
+      "k": 150,
+      "tax": 50,
+      "order_pass": 3,
+      "completion_pass": 4,
+      "first_bonus_pass": 5,
+      "payback_pass": 13,
+      "at": {
+        "10": {
+          "production": 125.20924435,
+          "goods": 354.10490547,
+          "extra_income": 33.25252153,
+          "net_after_base_cost": -16.74747847
+        },
+        "20": {
+          "production": 146.89169619,
+          "goods": 1057.12625983,
+          "extra_income": 86.01835344,
+          "net_after_base_cost": 36.01835344
+        },
+        "40": {
+          "production": 149.95113579,
+          "goods": 2550.49747401,
+          "extra_income": 112.53309501,
+          "net_after_base_cost": 62.53309501
+        },
+        "60": {
+          "production": 149.99923183,
+          "goods": 4050.39326593,
+          "extra_income": 114.72270932,
+          "net_after_base_cost": 64.72270932
+        }
+      }
+    },
+    {
+      "k": 150,
+      "tax": 60,
+      "order_pass": 4,
+      "completion_pass": 5,
+      "first_bonus_pass": 6,
+      "payback_pass": 25,
+      "at": {
+        "10": {
+          "production": 103.31762123,
+          "goods": 342.67311783,
+          "extra_income": 9.69217208,
+          "net_after_base_cost": -40.30782792
+        },
+        "20": {
+          "production": 136.49796684,
+          "goods": 1091.93954778,
+          "extra_income": 39.23199936,
+          "net_after_base_cost": -10.76800064
+        },
+        "40": {
+          "production": 148.87048617,
+          "goods": 2835.73295999,
+          "extra_income": 67.79989511,
+          "net_after_base_cost": 17.79989511
+        },
+        "60": {
+          "production": 149.90551042,
+          "goods": 4631.03099268,
+          "extra_income": 73.40452591,
+          "net_after_base_cost": 23.40452591
+        }
+      }
+    },
+    {
+      "k": 150,
+      "tax": 65,
+      "order_pass": 5,
+      "completion_pass": 6,
+      "first_bonus_pass": 7,
+      "payback_pass": null,
+      "at": {
+        "10": {
+          "production": 91.1636035,
+          "goods": 327.37671628,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "20": {
+          "production": 126.45087379,
+          "goods": 1063.17943411,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "40": {
+          "production": 146.22747384,
+          "goods": 2879.12233803,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        },
+        "60": {
+          "production": 149.39564834,
+          "goods": 4807.64664092,
+          "extra_income": 0.0,
+          "net_after_base_cost": -50.0
+        }
+      }
+    }
+  ],
+  "surge": [
+    {
+      "initial_goods": 50,
+      "bases": 0,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 2,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 3,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 4,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 5,
+          "spent": 50,
+          "goods": 50.0
+        }
+      ]
+    },
+    {
+      "initial_goods": 50,
+      "bases": 1,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 2,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 3,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 4,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 5,
+          "spent": 50,
+          "goods": 50.0
+        }
+      ]
+    },
+    {
+      "initial_goods": 50,
+      "bases": 3,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 2,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 3,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 4,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 5,
+          "spent": 50,
+          "goods": 50.0
+        }
+      ]
+    },
+    {
+      "initial_goods": 500,
+      "bases": 0,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 100,
+          "goods": 450.0
+        },
+        {
+          "year": 2,
+          "spent": 100,
+          "goods": 400.0
+        },
+        {
+          "year": 3,
+          "spent": 100,
+          "goods": 350.0
+        },
+        {
+          "year": 4,
+          "spent": 100,
+          "goods": 300.0
+        },
+        {
+          "year": 5,
+          "spent": 100,
+          "goods": 250.0
+        }
+      ]
+    },
+    {
+      "initial_goods": 500,
+      "bases": 1,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 500,
+          "goods": 50.0
+        },
+        {
+          "year": 2,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 3,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 4,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 5,
+          "spent": 50,
+          "goods": 50.0
+        }
+      ]
+    },
+    {
+      "initial_goods": 500,
+      "bases": 3,
+      "passes": [
+        {
+          "year": 1,
+          "spent": 500,
+          "goods": 50.0
+        },
+        {
+          "year": 2,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 3,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 4,
+          "spent": 50,
+          "goods": 50.0
+        },
+        {
+          "year": 5,
+          "spent": 50,
+          "goods": 50.0
+        }
+      ]
+    }
+  ],
+  "tax_cycles": [
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 60.3547125,
+            "income": 113.838366
+          },
+          "constant65": {
+            "production": 62.01005859,
+            "income": 113.58895996
+          },
+          "extra_income": 0.24940604
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 82.19162778,
+            "income": 708.48342274
+          },
+          "constant65": {
+            "production": 87.33914307,
+            "income": 721.89395163
+          },
+          "extra_income": -13.41052889
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 92.92829945,
+            "income": 3444.52408446
+          },
+          "constant65": {
+            "production": 99.79443821,
+            "income": 3562.46484385
+          },
+          "extra_income": -117.94075939
+        }
+      ],
+      "steady_cycle_start": 93.10543641,
+      "steady_mean_income": 62.49807796,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 60.61567912,
+            "income": 114.09730464
+          },
+          "constant65": {
+            "production": 62.01005859,
+            "income": 113.58895996
+          },
+          "extra_income": 0.50834468
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 82.68587003,
+            "income": 712.17291883
+          },
+          "constant65": {
+            "production": 87.33914307,
+            "income": 721.89395163
+          },
+          "extra_income": -9.7210328
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.1346248,
+            "income": 3457.39425477
+          },
+          "constant65": {
+            "production": 99.79443821,
+            "income": 3562.46484385
+          },
+          "extra_income": -105.07058908
+        }
+      ],
+      "steady_cycle_start": 93.29051028,
+      "steady_mean_income": 62.61819638,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 57.4575,
+            "income": 74.0478
+          },
+          "constant65": {
+            "production": 58.3671875,
+            "income": 73.28242187
+          },
+          "extra_income": 0.76537813
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 76.72701273,
+            "income": 444.28521169
+          },
+          "constant65": {
+            "production": 79.98762024,
+            "income": 446.72677425
+          },
+          "extra_income": -2.44156255
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.41884434,
+            "income": 2222.30356571
+          },
+          "constant65": {
+            "production": 98.71682784,
+            "income": 2269.76950273
+          },
+          "extra_income": -47.46593702
+        }
+      ],
+      "steady_cycle_start": 94.56229459,
+      "steady_mean_income": 63.16850911,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 50,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 57.59775,
+            "income": 74.13756
+          },
+          "constant65": {
+            "production": 58.3671875,
+            "income": 73.28242187
+          },
+          "extra_income": 0.85513812
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 77.08296976,
+            "income": 445.80840692
+          },
+          "constant65": {
+            "production": 79.98762024,
+            "income": 446.72677425
+          },
+          "extra_income": -0.91836733
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.59478119,
+            "income": 2229.15221168
+          },
+          "constant65": {
+            "production": 98.71682784,
+            "income": 2269.76950273
+          },
+          "extra_income": -40.61729105
+        }
+      ],
+      "steady_cycle_start": 94.66768571,
+      "steady_mean_income": 63.23598577,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 98.3438,
+            "income": 199.275232
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 195.0
+          },
+          "extra_income": 4.275232
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 94.85106188,
+            "income": 974.09695757
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 975.0
+          },
+          "extra_income": -0.90304243
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.13376885,
+            "income": 3798.72603525
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 3900.0
+          },
+          "extra_income": -101.27396475
+        }
+      ],
+      "steady_cycle_start": 93.10543641,
+      "steady_mean_income": 62.49807796,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        75,
+        64,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 98.354702,
+            "income": 199.28604928
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 195.0
+          },
+          "extra_income": 4.28604928
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 94.93409739,
+            "income": 974.4706204
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 975.0
+          },
+          "extra_income": -0.5293796
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 93.31467058,
+            "income": 3803.5411658
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 3900.0
+          },
+          "extra_income": -96.4588342
+        }
+      ],
+      "steady_cycle_start": 93.29051028,
+      "steady_mean_income": 62.61819638,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 0,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 99.09,
+            "income": 132.7176
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 130.0
+          },
+          "extra_income": 2.7176
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 96.73864142,
+            "income": 654.55252529
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 650.0
+          },
+          "extra_income": 4.55252529
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 94.70182389,
+            "income": 2563.8892062
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 2600.0
+          },
+          "extra_income": -36.1107938
+        }
+      ],
+      "steady_cycle_start": 94.56229459,
+      "steady_mean_income": 63.16850911,
+      "steady65_mean_income": 65.0
+    },
+    {
+      "start": 100,
+      "k": 100,
+      "taxes": [
+        70,
+        64
+      ],
+      "bases": 1,
+      "comparisons": [
+        {
+          "cycles": 1,
+          "cycle": {
+            "production": 99.093,
+            "income": 132.71952
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 130.0
+          },
+          "extra_income": 2.71952
+        },
+        {
+          "cycles": 5,
+          "cycle": {
+            "production": 96.76690421,
+            "income": 654.62989371
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 650.0
+          },
+          "extra_income": 4.62989371
+        },
+        {
+          "cycles": 20,
+          "cycle": {
+            "production": 94.79576631,
+            "income": 2565.28695259
+          },
+          "constant65": {
+            "production": 100.0,
+            "income": 2600.0
+          },
+          "extra_income": -34.71304741
+        }
+      ],
+      "steady_cycle_start": 94.66768571,
+      "steady_mean_income": 63.23598577,
+      "steady65_mean_income": 65.0
+    }
+  ],
+  "anti_stack": [
+    {
+      "bases": 0,
+      "production_after_one_pass": 15.125,
+      "capacity": 100
+    },
+    {
+      "bases": 1,
+      "production_after_one_pass": 21.1875,
+      "capacity": 500
+    },
+    {
+      "bases": 2,
+      "production_after_one_pass": 21.1875,
+      "capacity": 500
+    },
+    {
+      "bases": 5,
+      "production_after_one_pass": 21.1875,
+      "capacity": 500
+    }
+  ]
+}

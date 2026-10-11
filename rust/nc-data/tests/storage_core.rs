@@ -67,7 +67,13 @@ fn classic_files(game_data: &CoreGameData) -> [Vec<u8>; 7] {
 
 fn store_round_trip(store: &CampaignStore, game_data: &CoreGameData) -> CoreGameData {
     let snapshot_id = store
-        .save_runtime_state_structured(game_data, &BTreeSet::new(), &[], &[])
+        .save_runtime_state_structured(
+            game_data.conquest.game_year,
+            game_data,
+            &BTreeSet::new(),
+            &[],
+            &[],
+        )
         .expect("save snapshot");
     store
         .load_snapshot_game_data(snapshot_id)
@@ -93,10 +99,13 @@ fn every_fixture_game_round_trips_through_the_store() {
         "expected the fixture tree, found {}",
         dirs.len()
     );
-    let store = temp_store("nc-data-storage-core-fixtures");
+    // The fixtures span several game years, and a store refuses a save older
+    // than its newest snapshot, so each fixture gets a store of its own.
     for dir in dirs {
+        let store = temp_store("nc-data-storage-core-fixtures");
         let game_data = load_classic_core_files(&dir).expect("load fixture");
         assert_round_trips(&store, &game_data, &dir);
+        let _ = fs::remove_dir_all(store.path().parent().expect("store dir"));
     }
 }
 

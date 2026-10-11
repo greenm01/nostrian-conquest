@@ -136,6 +136,7 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
     set_empire_name(&mut state.game_data.players[0], "Runtime Empire");
     store
         .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
             &state.game_data,
             &state.planet_scorch_orders,
             &state.report_block_rows,
@@ -186,6 +187,7 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
     );
     store
         .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
             &state.game_data,
             &state.planet_scorch_orders,
             &state.report_block_rows,
@@ -233,6 +235,7 @@ fn sqlite_store_persists_explicit_campaign_seed() {
 
     store
         .save_runtime_state_structured(
+            initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.planet_scorch_orders,
             &initial.report_block_rows,
@@ -264,6 +267,7 @@ fn sqlite_store_generates_and_reuses_campaign_seed() {
 
     store
         .save_runtime_state_structured(
+            initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.planet_scorch_orders,
             &initial.report_block_rows,
@@ -295,6 +299,7 @@ fn sqlite_store_persists_planet_scorch_orders() {
 
     store
         .save_runtime_state_structured(
+            initial.game_data.conquest.game_year,
             &initial.game_data,
             &initial.planet_scorch_orders,
             &initial.report_block_rows,

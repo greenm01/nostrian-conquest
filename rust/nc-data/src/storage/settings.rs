@@ -293,6 +293,7 @@ impl CampaignStore {
         }
         if changed {
             self.save_runtime_state_structured(
+                runtime_state.game_year,
                 &game_data,
                 &runtime_state.planet_scorch_orders,
                 &runtime_state.report_block_rows,

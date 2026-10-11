@@ -274,6 +274,7 @@ pub(crate) fn save_runtime_state_with_intel_and_activity(
     CampaignStore::open_default_in_dir(root)
         .expect("open campaign store")
         .save_runtime_state_structured_with_intel_and_activity(
+            state.game_data.conquest.game_year,
             &state.game_data,
             &state.planet_scorch_orders,
             &state.report_block_rows,

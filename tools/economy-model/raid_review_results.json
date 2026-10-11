@@ -1,0 +1,5254 @@
+{
+  "method": "t087 staged raid controls: orbital battle followed by bombardment.\n\nFixed contact, fresh nominal fleets, no surprise; ROE10 on both sides.\nApproved fleet rules/DD8, carried crippled steps, battery execution fire\non unchanged support CRT, delayed battery shield and third-round breakthrough.\nNo movement/detection/return-trip simulation; travel priced separately.\n",
+  "rules": {
+    "name": "approved-raid-control",
+    "effect": {
+      "kind": "flat",
+      "rows": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4
+      ],
+      "unit": 4
+    },
+    "mixed_shift": 1,
+    "base_shift": 1,
+    "base_condition": "present",
+    "shift_cap": 2,
+    "execution_classes": [
+      "DD",
+      "SB"
+    ],
+    "crippled_ds": "full",
+    "remainder": "carry",
+    "critical": "free-kill",
+    "screen": "absolute",
+    "roe": "after1",
+    "withdrawal": "none",
+    "round_cap": 64,
+    "mutual_withdrawal_exchange": false,
+    "critical_order": [
+      "DD",
+      "SC",
+      "TT",
+      "ET",
+      "CA",
+      "BB",
+      "SB"
+    ],
+    "unarmed_escape": true
+  },
+  "units": {
+    "DD": {
+      "AS": 10,
+      "DS": 8,
+      "cost": 5,
+      "fire": "execution",
+      "line": true
+    },
+    "CA": {
+      "AS": 30,
+      "DS": 30,
+      "cost": 15,
+      "fire": "suppression",
+      "line": true
+    },
+    "BB": {
+      "AS": 90,
+      "DS": 100,
+      "cost": 45,
+      "fire": "suppression",
+      "line": true
+    },
+    "SB": {
+      "AS": 100,
+      "DS": 120,
+      "cost": 50,
+      "fire": "execution",
+      "line": true
+    },
+    "SC": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 15,
+      "fire": null,
+      "line": false
+    },
+    "TT": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 5,
+      "fire": null,
+      "line": false
+    },
+    "ET": {
+      "AS": 0,
+      "DS": 20,
+      "cost": 20,
+      "fire": null,
+      "line": false
+    }
+  },
+  "rows": [
+    {
+      "case": "DD-open",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 40.36,
+        "production_destroyed": 0.4036,
+        "industry_hit": 0.4036
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          39.39833860214293,
+          41.32166139785707
+        ],
+        "production_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "industry_hit": [
+          0.39402283617454287,
+          0.41325119871132354
+        ]
+      }
+    },
+    {
+      "case": "DD-open",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 10.09,
+        "production_destroyed": 0.4036,
+        "industry_hit": 0.4036
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          9.849584650535732,
+          10.330415349464268
+        ],
+        "production_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "industry_hit": [
+          0.39402283617454287,
+          0.41325119871132354
+        ]
+      }
+    },
+    {
+      "case": "DD-open",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 4.036,
+        "production_destroyed": 0.4036,
+        "industry_hit": 0.4036
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          3.939833860214293,
+          4.132166139785706
+        ],
+        "production_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "industry_hit": [
+          0.39402283617454287,
+          0.41325119871132354
+        ]
+      }
+    },
+    {
+      "case": "CA-open",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 440.68,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          439.1238330725894,
+          442.23616692741064
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "CA-open",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 122.7725,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          122.13747641995455,
+          123.40752358004544
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "CA-open",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 49.109,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          48.85499056798183,
+          49.363009432018174
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "BB-open",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 500.0,
+        "production_destroyed": 22.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          500.0,
+          500.0
+        ],
+        "production_destroyed": [
+          22.83970382398669,
+          23.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "BB-open",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 473.2,
+        "production_destroyed": 22.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          472.08291436781644,
+          474.31708563218353
+        ],
+        "production_destroyed": [
+          22.83970382398669,
+          23.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "BB-open",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 229.493,
+        "production_destroyed": 22.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          228.39703823986684,
+          230.58896176013315
+        ],
+        "production_destroyed": [
+          22.83970382398669,
+          23.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "DD-army1",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        1,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.4036,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "DD-army1",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        1,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.4036,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "DD-army1",
+      "attack": {
+        "DD": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        1,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 5,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.4036,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.3939833860214293,
+          0.41321661397857073
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "CA-army10",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 4.9109,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "CA-army10",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 4.9109,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "CA-army10",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 4.9109,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "BB-army10",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 10.0,
+        "goods_destroyed": 480.4,
+        "production_destroyed": 12.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          10.0,
+          10.0
+        ],
+        "goods_destroyed": [
+          479.2344683012401,
+          481.56553169875986
+        ],
+        "production_destroyed": [
+          12.839703823986685,
+          13.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "BB-army10",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 10.0,
+        "goods_destroyed": 316.195,
+        "production_destroyed": 12.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          10.0,
+          10.0
+        ],
+        "goods_destroyed": [
+          313.69556974710736,
+          318.69443025289263
+        ],
+        "production_destroyed": [
+          12.839703823986685,
+          13.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "BB-army10",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 10.0,
+        "goods_destroyed": 129.493,
+        "production_destroyed": 12.9493,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          10.0,
+          10.0
+        ],
+        "goods_destroyed": [
+          128.39703823986684,
+          130.58896176013315
+        ],
+        "production_destroyed": [
+          12.839703823986685,
+          13.058896176013313
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "CA-battery1",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 15.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 15.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 1.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.3967,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9996160016293233,
+          1.0
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.38711095073095414,
+          0.40628904926904585
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "CA-battery1",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 15.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 15.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 1.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.3967,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9996160016293233,
+          1.0
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.38711095073095414,
+          0.40628904926904585
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "CA-battery1",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 15.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 15.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 1.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.3967,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 0.0,
+        "production_destroyed": 0.0,
+        "industry_hit": 0.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          15.0,
+          15.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9996160016293233,
+          1.0
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.38711095073095414,
+          0.40628904926904585
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          0.0,
+          0.0
+        ],
+        "production_destroyed": [
+          0.0,
+          0.0
+        ],
+        "industry_hit": [
+          0.0,
+          0.00038399837067659557
+        ]
+      }
+    },
+    {
+      "case": "BB-battery1",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 4.3875,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 4.3875,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 451.25,
+        "production_destroyed": 20.745,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          448.3428080685148,
+          454.1571919314852
+        ],
+        "production_destroyed": [
+          20.575134718669823,
+          20.91486528133018
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "BB-battery1",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 4.3875,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 4.3875,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 426.9725,
+        "production_destroyed": 20.745,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          424.0248132251185,
+          429.92018677488153
+        ],
+        "production_destroyed": [
+          20.575134718669823,
+          20.91486528133018
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "BB-battery1",
+      "attack": {
+        "BB": 1
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 4.3875,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 4.3875,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 207.45,
+        "production_destroyed": 20.745,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          4.1258527261663325,
+          4.649147273833668
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          205.7513471866982,
+          209.14865281330177
+        ],
+        "production_destroyed": [
+          20.575134718669823,
+          20.91486528133018
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "CA3-battery1",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 19.41,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 19.41,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 7.4545,
+        "goods_destroyed": 106.0,
+        "production_destroyed": 1.2288,
+        "industry_hit": 0.3349
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          7.391092935769432,
+          7.5179070642305685
+        ],
+        "goods_destroyed": [
+          102.63022723364769,
+          109.36977276635231
+        ],
+        "production_destroyed": [
+          1.1847677580520513,
+          1.2728322419479485
+        ],
+        "industry_hit": [
+          0.32571479928769936,
+          0.34421199697429794
+        ]
+      }
+    },
+    {
+      "case": "CA3-battery1",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 19.41,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 19.41,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 7.4545,
+        "goods_destroyed": 30.72,
+        "production_destroyed": 1.2288,
+        "industry_hit": 0.3349
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          7.391092935769432,
+          7.5179070642305685
+        ],
+        "goods_destroyed": [
+          29.61919395130128,
+          31.820806048698717
+        ],
+        "production_destroyed": [
+          1.1847677580520513,
+          1.2728322419479485
+        ],
+        "industry_hit": [
+          0.32571479928769936,
+          0.34421199697429794
+        ]
+      }
+    },
+    {
+      "case": "CA3-battery1",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {},
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 19.41,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 19.41,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 1.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 7.4545,
+        "goods_destroyed": 12.288,
+        "production_destroyed": 1.2288,
+        "industry_hit": 0.3349
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          19.18003539081818,
+          19.63996460918182
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          1.0,
+          1.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          7.391092935769432,
+          7.5179070642305685
+        ],
+        "goods_destroyed": [
+          11.847677580520513,
+          12.728322419479488
+        ],
+        "production_destroyed": [
+          1.1847677580520513,
+          1.2728322419479485
+        ],
+        "industry_hit": [
+          0.32571479928769936,
+          0.34421199697429794
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.6675,
+        "goods_destroyed": 44.47,
+        "production_destroyed": 0.6002,
+        "industry_hit": 0.1208
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.5925608011028065,
+          2.7424391988971935
+        ],
+        "goods_destroyed": [
+          41.903736932411405,
+          47.03626306758859
+        ],
+        "production_destroyed": [
+          0.5618082895070164,
+          0.6385917104929835
+        ],
+        "industry_hit": [
+          0.1145577599530106,
+          0.12733346441131055
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.6675,
+        "goods_destroyed": 15.005,
+        "production_destroyed": 0.6002,
+        "industry_hit": 0.1208
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.5925608011028065,
+          2.7424391988971935
+        ],
+        "goods_destroyed": [
+          14.045207237675413,
+          15.964792762324588
+        ],
+        "production_destroyed": [
+          0.5618082895070164,
+          0.6385917104929835
+        ],
+        "industry_hit": [
+          0.1145577599530106,
+          0.12733346441131055
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.6675,
+        "goods_destroyed": 6.002,
+        "production_destroyed": 0.6002,
+        "industry_hit": 0.1208
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.5925608011028065,
+          2.7424391988971935
+        ],
+        "goods_destroyed": [
+          5.618082895070165,
+          6.385917104929835
+        ],
+        "production_destroyed": [
+          0.5618082895070164,
+          0.6385917104929835
+        ],
+        "industry_hit": [
+          0.1145577599530106,
+          0.12733346441131055
+        ]
+      }
+    },
+    {
+      "case": "BB3-battery3",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 40.311,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 40.311,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 3.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 9.025,
+        "goods_destroyed": 451.25,
+        "production_destroyed": 39.7825,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          3.0,
+          3.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.966856161370297,
+          9.083143838629704
+        ],
+        "goods_destroyed": [
+          448.3428080685148,
+          454.1571919314852
+        ],
+        "production_destroyed": [
+          39.376252963057574,
+          40.188747036942424
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "BB3-battery3",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 40.311,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 40.311,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 3.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 9.025,
+        "goods_destroyed": 446.9975,
+        "production_destroyed": 39.7825,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          3.0,
+          3.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.966856161370297,
+          9.083143838629704
+        ],
+        "goods_destroyed": [
+          444.09783508990125,
+          449.89716491009875
+        ],
+        "production_destroyed": [
+          39.376252963057574,
+          40.188747036942424
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "BB3-battery3",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {},
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 40.311,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 40.311,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0975,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 3.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 9.025,
+        "goods_destroyed": 357.069,
+        "production_destroyed": 39.7825,
+        "industry_hit": 0.9025
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          39.58453487542872,
+          41.03746512457128
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.09183963499210104,
+          0.10346948369629362
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          3.0,
+          3.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.966856161370297,
+          9.083143838629704
+        ],
+        "goods_destroyed": [
+          354.0766602224031,
+          360.0613397775969
+        ],
+        "production_destroyed": [
+          39.376252963057574,
+          40.188747036942424
+        ],
+        "industry_hit": [
+          0.8965305163037064,
+          0.9081603650078989
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3-dockBB",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 7.587,
+        "armies_destroyed": 2.4157,
+        "goods_destroyed": 36.73,
+        "production_destroyed": 0.503,
+        "industry_hit": 0.0972
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          7.256764242610668,
+          7.9172357573893315
+        ],
+        "armies_destroyed": [
+          2.3451590886022893,
+          2.486240911397711
+        ],
+        "goods_destroyed": [
+          34.35206041893383,
+          39.10793958106616
+        ],
+        "production_destroyed": [
+          0.46718331302218746,
+          0.5388166869778126
+        ],
+        "industry_hit": [
+          0.0915477295054097,
+          0.10316161958200736
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3-dockBB",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 7.587,
+        "armies_destroyed": 2.4157,
+        "goods_destroyed": 12.575,
+        "production_destroyed": 0.503,
+        "industry_hit": 0.0972
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          7.256764242610668,
+          7.9172357573893315
+        ],
+        "armies_destroyed": [
+          2.3451590886022893,
+          2.486240911397711
+        ],
+        "goods_destroyed": [
+          11.679582825554686,
+          13.470417174445313
+        ],
+        "production_destroyed": [
+          0.46718331302218746,
+          0.5388166869778126
+        ],
+        "industry_hit": [
+          0.0915477295054097,
+          0.10316161958200736
+        ]
+      }
+    },
+    {
+      "case": "CA6-battery3-dockBB",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {},
+      "world": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 80.235,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 80.235,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.6307,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 2.9238,
+        "dock_destroyed": 7.587,
+        "armies_destroyed": 2.4157,
+        "goods_destroyed": 5.03,
+        "production_destroyed": 0.503,
+        "industry_hit": 0.0972
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          79.9439998500469,
+          80.5260001499531
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.6211924088500752,
+          0.64010721397583
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          2.91859951016547,
+          2.92900048983453
+        ],
+        "dock_destroyed": [
+          7.256764242610668,
+          7.9172357573893315
+        ],
+        "armies_destroyed": [
+          2.3451590886022893,
+          2.486240911397711
+        ],
+        "goods_destroyed": [
+          4.6718331302218745,
+          5.388166869778126
+        ],
+        "production_destroyed": [
+          0.46718331302218746,
+          0.5388166869778126
+        ],
+        "industry_hit": [
+          0.0915477295054097,
+          0.10316161958200736
+        ]
+      }
+    },
+    {
+      "case": "CA-guardCA",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {
+        "CA": 1
+      },
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.4344,
+        "attacker_destroyed": 8.484,
+        "orbital_attacker_destroyed": 8.484,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 3.897,
+        "attacker_wiped": 0.5656,
+        "guard_destroyed": 8.382,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 134.45,
+        "production_destroyed": 1.4309,
+        "industry_hit": 0.4344
+      },
+      "ci95": {
+        "gate_pass": [
+          0.424711913606458,
+          0.4441384669797747
+        ],
+        "attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "orbital_attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          3.768067275483277,
+          4.025932724516722
+        ],
+        "attacker_wiped": [
+          0.5558615330202252,
+          0.575288086393542
+        ],
+        "guard_destroyed": [
+          8.236012726771973,
+          8.527987273228026
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          130.99765597607566,
+          137.90234402392431
+        ],
+        "production_destroyed": [
+          1.3924489657200991,
+          1.469351034279901
+        ],
+        "industry_hit": [
+          0.424711913606458,
+          0.4441384669797747
+        ]
+      }
+    },
+    {
+      "case": "CA-guardCA",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {
+        "CA": 1
+      },
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.4344,
+        "attacker_destroyed": 8.484,
+        "orbital_attacker_destroyed": 8.484,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 3.897,
+        "attacker_wiped": 0.5656,
+        "guard_destroyed": 8.382,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 35.7725,
+        "production_destroyed": 1.4309,
+        "industry_hit": 0.4344
+      },
+      "ci95": {
+        "gate_pass": [
+          0.424711913606458,
+          0.4441384669797747
+        ],
+        "attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "orbital_attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          3.768067275483277,
+          4.025932724516722
+        ],
+        "attacker_wiped": [
+          0.5558615330202252,
+          0.575288086393542
+        ],
+        "guard_destroyed": [
+          8.236012726771973,
+          8.527987273228026
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          34.81122414300248,
+          36.733775856997525
+        ],
+        "production_destroyed": [
+          1.3924489657200991,
+          1.469351034279901
+        ],
+        "industry_hit": [
+          0.424711913606458,
+          0.4441384669797747
+        ]
+      }
+    },
+    {
+      "case": "CA-guardCA",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {
+        "CA": 1
+      },
+      "world": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.4344,
+        "attacker_destroyed": 8.484,
+        "orbital_attacker_destroyed": 8.484,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 3.897,
+        "attacker_wiped": 0.5656,
+        "guard_destroyed": 8.382,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 14.309,
+        "production_destroyed": 1.4309,
+        "industry_hit": 0.4344
+      },
+      "ci95": {
+        "gate_pass": [
+          0.424711913606458,
+          0.4441384669797747
+        ],
+        "attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "orbital_attacker_destroyed": [
+          8.338263392756284,
+          8.629736607243716
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          3.768067275483277,
+          4.025932724516722
+        ],
+        "attacker_wiped": [
+          0.5558615330202252,
+          0.575288086393542
+        ],
+        "guard_destroyed": [
+          8.236012726771973,
+          8.527987273228026
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          13.92448965720099,
+          14.693510342799009
+        ],
+        "production_destroyed": [
+          1.3924489657200991,
+          1.469351034279901
+        ],
+        "industry_hit": [
+          0.424711913606458,
+          0.4441384669797747
+        ]
+      }
+    },
+    {
+      "case": "CA3-guardCA2",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {
+        "CA": 2
+      },
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9113,
+        "attacker_destroyed": 37.62,
+        "orbital_attacker_destroyed": 8.691,
+        "battery_attacker_destroyed": 28.929,
+        "attacker_crippled": 0.147,
+        "attacker_wiped": 0.6233,
+        "guard_destroyed": 28.293,
+        "batteries_destroyed": 0.7454,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.2766,
+        "goods_destroyed": 14.13,
+        "production_destroyed": 0.156,
+        "industry_hit": 0.0486
+      },
+      "ci95": {
+        "gate_pass": [
+          0.905568515030284,
+          0.9167156079099974
+        ],
+        "attacker_destroyed": [
+          37.41227991416474,
+          37.82772008583525
+        ],
+        "orbital_attacker_destroyed": [
+          8.413238468671652,
+          8.968761531328349
+        ],
+        "battery_attacker_destroyed": [
+          28.656928822912125,
+          29.201071177087872
+        ],
+        "attacker_crippled": [
+          0.1180369999465316,
+          0.17596300005346838
+        ],
+        "attacker_wiped": [
+          0.613757183058976,
+          0.632748122942815
+        ],
+        "guard_destroyed": [
+          28.16775886178084,
+          28.41824113821916
+        ],
+        "batteries_destroyed": [
+          0.7368611048462084,
+          0.7539388951537915
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.2123282325919154,
+          2.340871767408085
+        ],
+        "goods_destroyed": [
+          12.767859776713577,
+          15.492140223286425
+        ],
+        "production_destroyed": [
+          0.13956245402951667,
+          0.17243754597048333
+        ],
+        "industry_hit": [
+          0.04455606550831664,
+          0.05299060822073017
+        ]
+      }
+    },
+    {
+      "case": "CA3-guardCA2",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {
+        "CA": 2
+      },
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9113,
+        "attacker_destroyed": 37.62,
+        "orbital_attacker_destroyed": 8.691,
+        "battery_attacker_destroyed": 28.929,
+        "attacker_crippled": 0.147,
+        "attacker_wiped": 0.6233,
+        "guard_destroyed": 28.293,
+        "batteries_destroyed": 0.7454,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.2766,
+        "goods_destroyed": 3.9,
+        "production_destroyed": 0.156,
+        "industry_hit": 0.0486
+      },
+      "ci95": {
+        "gate_pass": [
+          0.905568515030284,
+          0.9167156079099974
+        ],
+        "attacker_destroyed": [
+          37.41227991416474,
+          37.82772008583525
+        ],
+        "orbital_attacker_destroyed": [
+          8.413238468671652,
+          8.968761531328349
+        ],
+        "battery_attacker_destroyed": [
+          28.656928822912125,
+          29.201071177087872
+        ],
+        "attacker_crippled": [
+          0.1180369999465316,
+          0.17596300005346838
+        ],
+        "attacker_wiped": [
+          0.613757183058976,
+          0.632748122942815
+        ],
+        "guard_destroyed": [
+          28.16775886178084,
+          28.41824113821916
+        ],
+        "batteries_destroyed": [
+          0.7368611048462084,
+          0.7539388951537915
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.2123282325919154,
+          2.340871767408085
+        ],
+        "goods_destroyed": [
+          3.4890613507379165,
+          4.310938649262083
+        ],
+        "production_destroyed": [
+          0.13956245402951667,
+          0.17243754597048333
+        ],
+        "industry_hit": [
+          0.04455606550831664,
+          0.05299060822073017
+        ]
+      }
+    },
+    {
+      "case": "CA3-guardCA2",
+      "attack": {
+        "CA": 3
+      },
+      "guard": {
+        "CA": 2
+      },
+      "world": [
+        1,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 45,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9113,
+        "attacker_destroyed": 37.62,
+        "orbital_attacker_destroyed": 8.691,
+        "battery_attacker_destroyed": 28.929,
+        "attacker_crippled": 0.147,
+        "attacker_wiped": 0.6233,
+        "guard_destroyed": 28.293,
+        "batteries_destroyed": 0.7454,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 2.2766,
+        "goods_destroyed": 1.56,
+        "production_destroyed": 0.156,
+        "industry_hit": 0.0486
+      },
+      "ci95": {
+        "gate_pass": [
+          0.905568515030284,
+          0.9167156079099974
+        ],
+        "attacker_destroyed": [
+          37.41227991416474,
+          37.82772008583525
+        ],
+        "orbital_attacker_destroyed": [
+          8.413238468671652,
+          8.968761531328349
+        ],
+        "battery_attacker_destroyed": [
+          28.656928822912125,
+          29.201071177087872
+        ],
+        "attacker_crippled": [
+          0.1180369999465316,
+          0.17596300005346838
+        ],
+        "attacker_wiped": [
+          0.613757183058976,
+          0.632748122942815
+        ],
+        "guard_destroyed": [
+          28.16775886178084,
+          28.41824113821916
+        ],
+        "batteries_destroyed": [
+          0.7368611048462084,
+          0.7539388951537915
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          2.2123282325919154,
+          2.340871767408085
+        ],
+        "goods_destroyed": [
+          1.3956245402951666,
+          1.7243754597048335
+        ],
+        "production_destroyed": [
+          0.13956245402951667,
+          0.17243754597048333
+        ],
+        "industry_hit": [
+          0.04455606550831664,
+          0.05299060822073017
+        ]
+      }
+    },
+    {
+      "case": "CA6-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9205,
+        "attacker_destroyed": 88.0455,
+        "orbital_attacker_destroyed": 37.5405,
+        "battery_attacker_destroyed": 50.505,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.9109,
+        "guard_destroyed": 47.135,
+        "batteries_destroyed": 2.0259,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.5891,
+        "goods_destroyed": 5.7,
+        "production_destroyed": 0.0667,
+        "industry_hit": 0.0183
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9150350413652582,
+          0.9256420160050027
+        ],
+        "attacker_destroyed": [
+          87.91047011619752,
+          88.18052988380249
+        ],
+        "orbital_attacker_destroyed": [
+          37.0656145840338,
+          38.0153854159662
+        ],
+        "battery_attacker_destroyed": [
+          50.053391983490044,
+          50.95660801650996
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9051573551064755,
+          0.9163270750325024
+        ],
+        "guard_destroyed": [
+          46.90722195767007,
+          47.36277804232993
+        ],
+        "batteries_destroyed": [
+          2.0020896156463044,
+          2.0497103843536957
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.5494436703513988,
+          0.6287563296486011
+        ],
+        "goods_destroyed": [
+          4.80101990115364,
+          6.5989800988463605
+        ],
+        "production_destroyed": [
+          0.05502381758702039,
+          0.0783761824129796
+        ],
+        "industry_hit": [
+          0.0158519532884049,
+          0.021117990741904933
+        ]
+      }
+    },
+    {
+      "case": "CA6-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9205,
+        "attacker_destroyed": 88.0455,
+        "orbital_attacker_destroyed": 37.5405,
+        "battery_attacker_destroyed": 50.505,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.9109,
+        "guard_destroyed": 47.135,
+        "batteries_destroyed": 2.0259,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.5891,
+        "goods_destroyed": 1.6675,
+        "production_destroyed": 0.0667,
+        "industry_hit": 0.0183
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9150350413652582,
+          0.9256420160050027
+        ],
+        "attacker_destroyed": [
+          87.91047011619752,
+          88.18052988380249
+        ],
+        "orbital_attacker_destroyed": [
+          37.0656145840338,
+          38.0153854159662
+        ],
+        "battery_attacker_destroyed": [
+          50.053391983490044,
+          50.95660801650996
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9051573551064755,
+          0.9163270750325024
+        ],
+        "guard_destroyed": [
+          46.90722195767007,
+          47.36277804232993
+        ],
+        "batteries_destroyed": [
+          2.0020896156463044,
+          2.0497103843536957
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.5494436703513988,
+          0.6287563296486011
+        ],
+        "goods_destroyed": [
+          1.37559543967551,
+          1.95940456032449
+        ],
+        "production_destroyed": [
+          0.05502381758702039,
+          0.0783761824129796
+        ],
+        "industry_hit": [
+          0.0158519532884049,
+          0.021117990741904933
+        ]
+      }
+    },
+    {
+      "case": "CA6-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9205,
+        "attacker_destroyed": 88.0455,
+        "orbital_attacker_destroyed": 37.5405,
+        "battery_attacker_destroyed": 50.505,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.9109,
+        "guard_destroyed": 47.135,
+        "batteries_destroyed": 2.0259,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.5891,
+        "goods_destroyed": 0.667,
+        "production_destroyed": 0.0667,
+        "industry_hit": 0.0183
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9150350413652582,
+          0.9256420160050027
+        ],
+        "attacker_destroyed": [
+          87.91047011619752,
+          88.18052988380249
+        ],
+        "orbital_attacker_destroyed": [
+          37.0656145840338,
+          38.0153854159662
+        ],
+        "battery_attacker_destroyed": [
+          50.053391983490044,
+          50.95660801650996
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9051573551064755,
+          0.9163270750325024
+        ],
+        "guard_destroyed": [
+          46.90722195767007,
+          47.36277804232993
+        ],
+        "batteries_destroyed": [
+          2.0020896156463044,
+          2.0497103843536957
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.5494436703513988,
+          0.6287563296486011
+        ],
+        "goods_destroyed": [
+          0.5502381758702041,
+          0.783761824129796
+        ],
+        "production_destroyed": [
+          0.05502381758702039,
+          0.0783761824129796
+        ],
+        "industry_hit": [
+          0.0158519532884049,
+          0.021117990741904933
+        ]
+      }
+    },
+    {
+      "case": "BB3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9902,
+        "attacker_destroyed": 57.4875,
+        "orbital_attacker_destroyed": 14.4315,
+        "battery_attacker_destroyed": 43.056,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.1902,
+        "guard_destroyed": 49.87,
+        "batteries_destroyed": 2.9624,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 8.098,
+        "goods_destroyed": 402.28,
+        "production_destroyed": 31.8812,
+        "industry_hit": 0.8098
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9880722440525997,
+          0.9919512839447888
+        ],
+        "attacker_destroyed": [
+          56.59071931424967,
+          58.384280685750326
+        ],
+        "orbital_attacker_destroyed": [
+          13.896388107645723,
+          14.966611892354276
+        ],
+        "battery_attacker_destroyed": [
+          42.35994828761587,
+          43.75205171238412
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.18262746727444681,
+          0.19801045811602438
+        ],
+        "guard_destroyed": [
+          49.820092117098824,
+          49.91990788290117
+        ],
+        "batteries_destroyed": [
+          2.9561036526177924,
+          2.968696347382208
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.021074216253714,
+          8.174925783746287
+        ],
+        "goods_destroyed": [
+          398.4327714001575,
+          406.12722859984245
+        ],
+        "production_destroyed": [
+          31.421883208671435,
+          32.34051679132857
+        ],
+        "industry_hit": [
+          0.8019895418839756,
+          0.8173725327255531
+        ]
+      }
+    },
+    {
+      "case": "BB3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9902,
+        "attacker_destroyed": 57.4875,
+        "orbital_attacker_destroyed": 14.4315,
+        "battery_attacker_destroyed": 43.056,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.1902,
+        "guard_destroyed": 49.87,
+        "batteries_destroyed": 2.9624,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 8.098,
+        "goods_destroyed": 378.88,
+        "production_destroyed": 31.8812,
+        "industry_hit": 0.8098
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9880722440525997,
+          0.9919512839447888
+        ],
+        "attacker_destroyed": [
+          56.59071931424967,
+          58.384280685750326
+        ],
+        "orbital_attacker_destroyed": [
+          13.896388107645723,
+          14.966611892354276
+        ],
+        "battery_attacker_destroyed": [
+          42.35994828761587,
+          43.75205171238412
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.18262746727444681,
+          0.19801045811602438
+        ],
+        "guard_destroyed": [
+          49.820092117098824,
+          49.91990788290117
+        ],
+        "batteries_destroyed": [
+          2.9561036526177924,
+          2.968696347382208
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.021074216253714,
+          8.174925783746287
+        ],
+        "goods_destroyed": [
+          374.99503231685435,
+          382.76496768314564
+        ],
+        "production_destroyed": [
+          31.421883208671435,
+          32.34051679132857
+        ],
+        "industry_hit": [
+          0.8019895418839756,
+          0.8173725327255531
+        ]
+      }
+    },
+    {
+      "case": "BB3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.9902,
+        "attacker_destroyed": 57.4875,
+        "orbital_attacker_destroyed": 14.4315,
+        "battery_attacker_destroyed": 43.056,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.1902,
+        "guard_destroyed": 49.87,
+        "batteries_destroyed": 2.9624,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 8.098,
+        "goods_destroyed": 286.473,
+        "production_destroyed": 31.8812,
+        "industry_hit": 0.8098
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9880722440525997,
+          0.9919512839447888
+        ],
+        "attacker_destroyed": [
+          56.59071931424967,
+          58.384280685750326
+        ],
+        "orbital_attacker_destroyed": [
+          13.896388107645723,
+          14.966611892354276
+        ],
+        "battery_attacker_destroyed": [
+          42.35994828761587,
+          43.75205171238412
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.18262746727444681,
+          0.19801045811602438
+        ],
+        "guard_destroyed": [
+          49.820092117098824,
+          49.91990788290117
+        ],
+        "batteries_destroyed": [
+          2.9561036526177924,
+          2.968696347382208
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          8.021074216253714,
+          8.174925783746287
+        ],
+        "goods_destroyed": [
+          282.83110360231865,
+          290.1148963976814
+        ],
+        "production_destroyed": [
+          31.421883208671435,
+          32.34051679132857
+        ],
+        "industry_hit": [
+          0.8019895418839756,
+          0.8173725327255531
+        ]
+      }
+    },
+    {
+      "case": "CA6-guardCA3-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.2344,
+        "attacker_destroyed": 89.886,
+        "orbital_attacker_destroyed": 81.2205,
+        "battery_attacker_destroyed": 8.6655,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.994,
+        "guard_destroyed": 36.7865,
+        "batteries_destroyed": 0.3489,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0356,
+        "goods_destroyed": 0.16,
+        "production_destroyed": 0.0016,
+        "industry_hit": 0.0005
+      },
+      "ci95": {
+        "gate_pass": [
+          0.22620009504377087,
+          0.2428038848907325
+        ],
+        "attacker_destroyed": [
+          89.85552691158493,
+          89.91647308841506
+        ],
+        "orbital_attacker_destroyed": [
+          80.86556641850976,
+          81.57543358149024
+        ],
+        "battery_attacker_destroyed": [
+          8.31672832659521,
+          9.014271673404789
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9922851325032213,
+          0.9953354771065502
+        ],
+        "guard_destroyed": [
+          36.032668140491474,
+          37.54033185950852
+        ],
+        "batteries_destroyed": [
+          0.332068603030087,
+          0.36573139696991297
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.026018896580420725,
+          0.045181103419579274
+        ],
+        "goods_destroyed": [
+          0.005693595237737908,
+          0.3143064047622621
+        ],
+        "production_destroyed": [
+          5.6935952377379145e-05,
+          0.0031430640476226212
+        ],
+        "industry_hit": [
+          0.0002135884261638257,
+          0.0011700259461420932
+        ]
+      }
+    },
+    {
+      "case": "CA6-guardCA3-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.2344,
+        "attacker_destroyed": 89.886,
+        "orbital_attacker_destroyed": 81.2205,
+        "battery_attacker_destroyed": 8.6655,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.994,
+        "guard_destroyed": 36.7865,
+        "batteries_destroyed": 0.3489,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0356,
+        "goods_destroyed": 0.04,
+        "production_destroyed": 0.0016,
+        "industry_hit": 0.0005
+      },
+      "ci95": {
+        "gate_pass": [
+          0.22620009504377087,
+          0.2428038848907325
+        ],
+        "attacker_destroyed": [
+          89.85552691158493,
+          89.91647308841506
+        ],
+        "orbital_attacker_destroyed": [
+          80.86556641850976,
+          81.57543358149024
+        ],
+        "battery_attacker_destroyed": [
+          8.31672832659521,
+          9.014271673404789
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9922851325032213,
+          0.9953354771065502
+        ],
+        "guard_destroyed": [
+          36.032668140491474,
+          37.54033185950852
+        ],
+        "batteries_destroyed": [
+          0.332068603030087,
+          0.36573139696991297
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.026018896580420725,
+          0.045181103419579274
+        ],
+        "goods_destroyed": [
+          0.001423398809434477,
+          0.07857660119056553
+        ],
+        "production_destroyed": [
+          5.6935952377379145e-05,
+          0.0031430640476226212
+        ],
+        "industry_hit": [
+          0.0002135884261638257,
+          0.0011700259461420932
+        ]
+      }
+    },
+    {
+      "case": "CA6-guardCA3-base",
+      "attack": {
+        "CA": 6
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 90,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.2344,
+        "attacker_destroyed": 89.886,
+        "orbital_attacker_destroyed": 81.2205,
+        "battery_attacker_destroyed": 8.6655,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.994,
+        "guard_destroyed": 36.7865,
+        "batteries_destroyed": 0.3489,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0356,
+        "goods_destroyed": 0.016,
+        "production_destroyed": 0.0016,
+        "industry_hit": 0.0005
+      },
+      "ci95": {
+        "gate_pass": [
+          0.22620009504377087,
+          0.2428038848907325
+        ],
+        "attacker_destroyed": [
+          89.85552691158493,
+          89.91647308841506
+        ],
+        "orbital_attacker_destroyed": [
+          80.86556641850976,
+          81.57543358149024
+        ],
+        "battery_attacker_destroyed": [
+          8.31672832659521,
+          9.014271673404789
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.9922851325032213,
+          0.9953354771065502
+        ],
+        "guard_destroyed": [
+          36.032668140491474,
+          37.54033185950852
+        ],
+        "batteries_destroyed": [
+          0.332068603030087,
+          0.36573139696991297
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.026018896580420725,
+          0.045181103419579274
+        ],
+        "goods_destroyed": [
+          0.0005693595237737901,
+          0.03143064047622621
+        ],
+        "production_destroyed": [
+          5.6935952377379145e-05,
+          0.0031430640476226212
+        ],
+        "industry_hit": [
+          0.0002135884261638257,
+          0.0011700259461420932
+        ]
+      }
+    },
+    {
+      "case": "BB3-guardCA3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.8914,
+        "attacker_destroyed": 85.752,
+        "orbital_attacker_destroyed": 44.172,
+        "battery_attacker_destroyed": 41.58,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.4065,
+        "guard_destroyed": 89.793,
+        "batteries_destroyed": 2.642,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 5.935,
+        "goods_destroyed": 292.79,
+        "production_destroyed": 19.2804,
+        "industry_hit": 0.5935
+      },
+      "ci95": {
+        "gate_pass": [
+          0.8851508547195078,
+          0.8973485513559264
+        ],
+        "attacker_destroyed": [
+          84.81400565155053,
+          86.68999434844946
+        ],
+        "orbital_attacker_destroyed": [
+          43.30218579516907,
+          45.04181420483092
+        ],
+        "battery_attacker_destroyed": [
+          40.943200808498446,
+          42.21679919150155
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.3969107351738438,
+          0.4161610725214726
+        ],
+        "guard_destroyed": [
+          89.43207460238656,
+          90.15392539761345
+        ],
+        "batteries_destroyed": [
+          2.623252238917285,
+          2.660747761082715
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          5.838723914535003,
+          6.031276085464996
+        ],
+        "goods_destroyed": [
+          288.009569860423,
+          297.570430139577
+        ],
+        "production_destroyed": [
+          18.84511427145237,
+          19.71568572854763
+        ],
+        "industry_hit": [
+          0.5838389274785274,
+          0.6030892648261561
+        ]
+      }
+    },
+    {
+      "case": "BB3-guardCA3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.8914,
+        "attacker_destroyed": 85.752,
+        "orbital_attacker_destroyed": 44.172,
+        "battery_attacker_destroyed": 41.58,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.4065,
+        "guard_destroyed": 89.793,
+        "batteries_destroyed": 2.642,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 5.935,
+        "goods_destroyed": 256.5675,
+        "production_destroyed": 19.2804,
+        "industry_hit": 0.5935
+      },
+      "ci95": {
+        "gate_pass": [
+          0.8851508547195078,
+          0.8973485513559264
+        ],
+        "attacker_destroyed": [
+          84.81400565155053,
+          86.68999434844946
+        ],
+        "orbital_attacker_destroyed": [
+          43.30218579516907,
+          45.04181420483092
+        ],
+        "battery_attacker_destroyed": [
+          40.943200808498446,
+          42.21679919150155
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.3969107351738438,
+          0.4161610725214726
+        ],
+        "guard_destroyed": [
+          89.43207460238656,
+          90.15392539761345
+        ],
+        "batteries_destroyed": [
+          2.623252238917285,
+          2.660747761082715
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          5.838723914535003,
+          6.031276085464996
+        ],
+        "goods_destroyed": [
+          252.0599860080628,
+          261.0750139919372
+        ],
+        "production_destroyed": [
+          18.84511427145237,
+          19.71568572854763
+        ],
+        "industry_hit": [
+          0.5838389274785274,
+          0.6030892648261561
+        ]
+      }
+    },
+    {
+      "case": "BB3-guardCA3-base",
+      "attack": {
+        "BB": 3
+      },
+      "guard": {
+        "CA": 3,
+        "SB": 1
+      },
+      "world": [
+        3,
+        [],
+        10,
+        500,
+        100
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 135,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 0.8914,
+        "attacker_destroyed": 85.752,
+        "orbital_attacker_destroyed": 44.172,
+        "battery_attacker_destroyed": 41.58,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.4065,
+        "guard_destroyed": 89.793,
+        "batteries_destroyed": 2.642,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 5.935,
+        "goods_destroyed": 176.721,
+        "production_destroyed": 19.2804,
+        "industry_hit": 0.5935
+      },
+      "ci95": {
+        "gate_pass": [
+          0.8851508547195078,
+          0.8973485513559264
+        ],
+        "attacker_destroyed": [
+          84.81400565155053,
+          86.68999434844946
+        ],
+        "orbital_attacker_destroyed": [
+          43.30218579516907,
+          45.04181420483092
+        ],
+        "battery_attacker_destroyed": [
+          40.943200808498446,
+          42.21679919150155
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.3969107351738438,
+          0.4161610725214726
+        ],
+        "guard_destroyed": [
+          89.43207460238656,
+          90.15392539761345
+        ],
+        "batteries_destroyed": [
+          2.623252238917285,
+          2.660747761082715
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          5.838723914535003,
+          6.031276085464996
+        ],
+        "goods_destroyed": [
+          173.03775740462794,
+          180.40424259537207
+        ],
+        "production_destroyed": [
+          18.84511427145237,
+          19.71568572854763
+        ],
+        "industry_hit": [
+          0.5838389274785274,
+          0.6030892648261561
+        ]
+      }
+    },
+    {
+      "case": "CA-smallworld",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        50,
+        10
+      ],
+      "goods_per_ten_hits": 100,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 50.0,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          50.0,
+          50.0
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "CA-smallworld",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        50,
+        10
+      ],
+      "goods_per_ten_hits": 25,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 50.0,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          50.0,
+          50.0
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    },
+    {
+      "case": "CA-smallworld",
+      "attack": {
+        "CA": 1
+      },
+      "guard": {},
+      "world": [
+        0,
+        [],
+        0,
+        50,
+        10
+      ],
+      "goods_per_ten_hits": 10,
+      "committed": 15,
+      "trials": 10000,
+      "seed": 870001,
+      "mean": {
+        "gate_pass": 1.0,
+        "attacker_destroyed": 0.0,
+        "orbital_attacker_destroyed": 0.0,
+        "battery_attacker_destroyed": 0.0,
+        "attacker_crippled": 0.0,
+        "attacker_wiped": 0.0,
+        "guard_destroyed": 0.0,
+        "batteries_destroyed": 0.0,
+        "dock_destroyed": 0.0,
+        "armies_destroyed": 0.0,
+        "goods_destroyed": 44.068,
+        "production_destroyed": 4.9109,
+        "industry_hit": 1.0
+      },
+      "ci95": {
+        "gate_pass": [
+          0.9996160016293233,
+          1.0
+        ],
+        "attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "orbital_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "battery_attacker_destroyed": [
+          0.0,
+          0.0
+        ],
+        "attacker_crippled": [
+          0.0,
+          0.0
+        ],
+        "attacker_wiped": [
+          0.0,
+          0.00038399837067659557
+        ],
+        "guard_destroyed": [
+          0.0,
+          0.0
+        ],
+        "batteries_destroyed": [
+          0.0,
+          0.0
+        ],
+        "dock_destroyed": [
+          0.0,
+          0.0
+        ],
+        "armies_destroyed": [
+          0.0,
+          0.0
+        ],
+        "goods_destroyed": [
+          43.912383307258935,
+          44.22361669274106
+        ],
+        "production_destroyed": [
+          4.885499056798182,
+          4.936300943201817
+        ],
+        "industry_hit": [
+          0.9996160016293233,
+          1.0
+        ]
+      }
+    }
+  ],
+  "repeated": [
+    {
+      "attack": {
+        "DD": 1
+      },
+      "initial_armies": 1,
+      "goods_per_ten_hits": 100,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 109.33,
+        "final_goods": 590.1206100585938,
+        "final_production": 99.0636685546875,
+        "armies_left": 0.0777
+      }
+    },
+    {
+      "attack": {
+        "DD": 1
+      },
+      "initial_armies": 1,
+      "goods_per_ten_hits": 25,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 27.3325,
+        "final_goods": 672.1181100585937,
+        "final_production": 99.0636685546875,
+        "armies_left": 0.0777
+      }
+    },
+    {
+      "attack": {
+        "DD": 1
+      },
+      "initial_armies": 1,
+      "goods_per_ten_hits": 10,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 10.933,
+        "final_goods": 688.5176100585937,
+        "final_production": 99.0636685546875,
+        "armies_left": 0.0777
+      }
+    },
+    {
+      "attack": {
+        "CA": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 100,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 693.4404099609375,
+        "final_goods": 0.2969375,
+        "final_production": 87.247229296875,
+        "armies_left": 0.0
+      }
+    },
+    {
+      "attack": {
+        "CA": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 25,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 363.5525,
+        "final_goods": 330.1848474609375,
+        "final_production": 87.247229296875,
+        "armies_left": 0.0
+      }
+    },
+    {
+      "attack": {
+        "CA": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 10,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 145.421,
+        "final_goods": 548.3163474609375,
+        "final_production": 87.247229296875,
+        "armies_left": 0.0
+      }
+    },
+    {
+      "attack": {
+        "BB": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 100,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 625.8060797119141,
+        "final_goods": 0.0,
+        "final_production": 16.70120380859375,
+        "armies_left": 0.0
+      }
+    },
+    {
+      "attack": {
+        "BB": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 25,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 625.8060797119141,
+        "final_goods": 0.0,
+        "final_production": 16.70120380859375,
+        "armies_left": 0.0
+      }
+    },
+    {
+      "attack": {
+        "BB": 1
+      },
+      "initial_armies": 10,
+      "goods_per_ten_hits": 10,
+      "trials": 10000,
+      "years": 5,
+      "mean": {
+        "goods_destroyed": 625.7797149169921,
+        "final_goods": 0.026364794921875,
+        "final_production": 16.70120380859375,
+        "armies_left": 0.0
+      }
+    }
+  ]
+}

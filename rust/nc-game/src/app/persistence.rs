@@ -1,9 +1,12 @@
 use std::collections::BTreeMap;
 
-use nc_data::{PlayerAccessMode, ReportBlockRow, player_access_mode};
+use nc_data::{
+    CampaignStoreError, PlayerAccessMode, ReportBlockRow, STALE_SESSION_MESSAGE, player_access_mode,
+};
 
 use super::state::App;
 use crate::reports::has_visible_runtime_reports;
+use crate::screen::CommandMenu;
 
 impl App {
     pub(crate) fn bind_player_record_index_1_based(
@@ -100,9 +103,14 @@ impl App {
         });
     }
 
-    pub(crate) fn save_game_data(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
-            return Err("campaign state is read-only in the current access mode".into());
+    /// Save the in-memory state over the snapshot of the year this session
+    /// loaded. If maintenance has since written a newer year the store
+    /// refuses; the session is then marked stale and never saves again (the
+    /// refusal is reported once the current action finishes).
+    fn persist_runtime_snapshot(&mut self) -> Result<i64, Box<dyn std::error::Error>> {
+        if self.session_stale {
+            self.stale_notice_due = true;
+            return Err(STALE_SESSION_MESSAGE.into());
         }
         let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count)
             .map(|viewer_empire_id| {
@@ -117,10 +125,11 @@ impl App {
                     })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let new_snapshot_id = self
+        let saved = self
             .planet
             .campaign_store
             .save_runtime_state_structured_with_intel_activity_and_lifecycle(
+                self.game_data.conquest.game_year,
                 &self.game_data,
                 &self.planet_scorch_orders,
                 &self.report_block_rows,
@@ -129,8 +138,37 @@ impl App {
                 &self.player_activity_states,
                 &self.player_lifecycle_states,
                 self.winner_state,
-            )?;
-        self.snapshot_id = new_snapshot_id;
+            );
+        match saved {
+            Ok(snapshot_id) => Ok(snapshot_id),
+            Err(err @ CampaignStoreError::StaleSnapshot { .. }) => {
+                tracing::warn!(
+                    player = self.player.record_index_1_based,
+                    error = ?err,
+                    "save refused: maintenance has run since this session loaded"
+                );
+                self.session_stale = true;
+                self.stale_notice_due = true;
+                Err(err.into())
+            }
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    /// Once an action that tried to save has finished, tell the player in the
+    /// menu notice line that the save was refused. Errors from the save are
+    /// reported by each caller in its own prompt, so this runs after them.
+    pub(crate) fn show_stale_session_notice_if_due(&mut self) {
+        if std::mem::take(&mut self.stale_notice_due) {
+            self.show_command_menu_notice(CommandMenu::Main, STALE_SESSION_MESSAGE);
+        }
+    }
+
+    pub(crate) fn save_game_data(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
+            return Err("campaign state is read-only in the current access mode".into());
+        }
+        self.snapshot_id = self.persist_runtime_snapshot()?;
         self.planet_intel_snapshots = self
             .planet
             .campaign_store
@@ -160,33 +198,7 @@ impl App {
     }
 
     pub(crate) fn save_terminal_access_state(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count)
-            .map(|viewer_empire_id| {
-                self.planet
-                    .campaign_store
-                    .latest_planet_intel_for_viewer(viewer_empire_id)
-                    .map(|snapshots| {
-                        snapshots
-                            .into_iter()
-                            .map(|snapshot| (snapshot.planet_record_index_1_based, snapshot))
-                            .collect::<BTreeMap<_, _>>()
-                    })
-            })
-            .collect::<Result<Vec<_>, _>>()?;
-        let new_snapshot_id = self
-            .planet
-            .campaign_store
-            .save_runtime_state_structured_with_intel_activity_and_lifecycle(
-                &self.game_data,
-                &self.planet_scorch_orders,
-                &self.report_block_rows,
-                &self.queued_mail,
-                &planet_intel_by_viewer,
-                &self.player_activity_states,
-                &self.player_lifecycle_states,
-                self.winner_state,
-            )?;
-        self.snapshot_id = new_snapshot_id;
+        self.snapshot_id = self.persist_runtime_snapshot()?;
         Ok(())
     }
 

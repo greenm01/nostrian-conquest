@@ -29,6 +29,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+mod stale_session;
+
 #[test]
 fn wrap_prev_goes_from_first_to_last() {
     assert_eq!(wrap_prev_index(0, 4), 3);
@@ -4184,6 +4186,7 @@ fn dash_app_with_starbase_store() -> DashApp {
         .expect("default player lifecycle");
     store
         .save_runtime_state_structured_with_intel_and_activity(
+            game_data.conquest.game_year,
             &game_data,
             &BTreeSet::new(),
             &[],
@@ -4237,6 +4240,7 @@ fn dash_app_with_store() -> DashApp {
         .expect("default player lifecycle");
     store
         .save_runtime_state_structured_with_intel_and_activity(
+            game_data.conquest.game_year,
             &game_data,
             &BTreeSet::new(),
             &[],

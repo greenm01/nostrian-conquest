@@ -28,6 +28,10 @@ a task does not deliberately change classic behaviour.
 These three touch disjoint files except nc-data's model, where t056 owns
 the planet build slots and the others do not edit the model.
 
+**t084** (economy decisions 1-2: fractional accounting, smooth growth, the
+colony head start) follows t056 in the same lane, because whole-point
+spending from fractional goods changes the build pass t056 rewrites.
+
 ## Wave B: combat (two parallel lanes)
 
 - **Fleet lane, in order:** t078 (DD 10/8, the unit table), t065 (decision

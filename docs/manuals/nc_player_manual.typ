@@ -194,6 +194,11 @@ log off. The sysop or schedule decides when maintenance runs. When it does, the
 game resolves every empire at once, advances the year, and writes your next set
 of reports.
 
+If maintenance runs while you are logged in, the game cannot save your next
+change. It says so on the menu notice line: "Maintenance has run; your last
+change was not saved. Log in again." Log in again to carry on. In a BBS door
+the session ends and returns you to the BBS.
+
 == Assets You Can Build
 
 The table below lists everything your planets can produce. *AS* is Attack Strength (firepower) and *DS* is Defense Strength (hull/shields).
