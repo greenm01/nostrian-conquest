@@ -603,6 +603,7 @@ fn build_assault_preview(
             0
         },
         defender_army_losses,
+        inherited: None,
         outcome,
         stardate_week: week,
     });
@@ -1072,6 +1073,7 @@ fn build_ownership_change_preview(
             0
         },
         defender_army_losses: defense_armies,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: week,
     });

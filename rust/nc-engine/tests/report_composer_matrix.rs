@@ -851,6 +851,7 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         defender_battery_losses: 4,
         defender_army_losses_softening: 8,
         defender_army_losses: 16,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -886,6 +887,7 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         defender_battery_losses: 6,
         defender_army_losses_softening: 10,
         defender_army_losses: 16,
+        inherited: None,
         outcome: MissionOutcome::Failed,
         stardate_week: Some(3),
     });
@@ -915,6 +917,7 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         defender_battery_losses: 3,
         defender_army_losses_softening: 0,
         defender_army_losses: 0,
+        inherited: None,
         outcome: MissionOutcome::Aborted,
         stardate_week: Some(3),
     });
@@ -946,6 +949,7 @@ fn blitz_reports_cover_both_viewers_for_success_and_failure() {
         defender_battery_losses: 2,
         defender_army_losses_softening: 0,
         defender_army_losses: 5,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -981,6 +985,7 @@ fn blitz_reports_cover_both_viewers_for_success_and_failure() {
         defender_battery_losses: 1,
         defender_army_losses_softening: 0,
         defender_army_losses: 2,
+        inherited: None,
         outcome: MissionOutcome::Failed,
         stardate_week: Some(3),
     });

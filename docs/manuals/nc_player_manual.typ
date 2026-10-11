@@ -550,17 +550,35 @@ A fleet that retreats, or aborts a mission its ROE will not let it fight for, se
 
 == Planetary Combat
 
-When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Planetary combat reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
+When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
 
-Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. Hits land on stardock contents first, then batteries, but armies, stored goods, and factories are shielded. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
+Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only, and hits beyond what destroys them are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
 
 Planetary targets have defense strength just like ships. Destroying a ground battery takes 20 hits, an army 10 hits, and a ship in the stardock as many hits as its own DS. A lone cruiser cannot level a fortified world in a single volley.
 
 This means a well-defended planet takes sustained bombardment over multiple turns before you touch its production. Build batteries to buy time; bring heavy fleets to break through faster.
 
 See @missions for the detailed mechanics of bombardment, invasion, and blitz missions. The exact bombardment weights, batteries-only return-fire rule, and combat tables are in @appendix-combat.
+
+=== The Landing Battle
+
+Armies that land fight on the same table as fleets, army against army, with no force-ratio columns. Each round the *defenders fire first*. Each side rolls one `d10` for its whole army: 0--2 deals 25%, 3--5 deals 50%, and 6--9 deals 100% of its armies' strength. The attackers' losses come off, and the attackers who survive fire back the same way. Rounds repeat until one side has no armies left.
+
+Damage short of a whole army carries into the next round of the same landing and is lost when the landing ends. There is no defender bonus, no homeworld bonus, and no critical hit; firing first is the defender's advantage. The attackers fire only with what survives, so both sides are never destroyed together. Your reports show whole armies lost and remaining; the carried fractions stay hidden.
+
+Capture odds follow the ratio of landed armies to defending armies, roughly the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. Appendix B gives the table.
+
+=== Captured Worlds
+
+A world that falls passes to you with what the fight left standing: its stored goods, production, docked ships, and queued build work. There is no capture bonus, no loss for the kind of attack, and no forgiveness of debt. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+
+A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
+
+=== Failed Assaults
+
+Failure is not defeat. A fleet whose landing fails, or whose Invade is blocked because batteries survived suppression, keeps its survivors in orbit on Hold and receives a failure report. A blocked Invade lands nothing and its armies stay aboard. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
 
 #pagebreak()
 
@@ -661,13 +679,13 @@ answer yes to "Include time to enter system?"
 
 #admonition("IMPORTANT")[A hostile fleet attacks during the maintenance in which it reaches orbit (see @movement). The fleet stops in orbit. Bombardment repeats each year until you change the order. An invasion or blitz is a single assault: whether it takes the world, loses its armies, or is called off because the batteries survived, the surviving ships hold position in orbit, and you must order any new attack. A fleet told to attack the world it already orbits attacks at the next maintenance.]
 
-A fleet in orbit on a hostile mission has entered the owner's solar system, and it is twenty times easier to see there, so his fleets in orbit are likely to attack it. Before it attacks, it must get past whatever the owner keeps in orbit: his starbase and his fleets there with warships fight it the week it reaches orbit, spotted or not. If its ROE will not take them on, it turns for home without a shot; if it loses, it is driven off. Only a fleet that holds the orbit attacks, in that same week. Each fleet attacks on its own as it arrives, so two of your fleets at one world strike one after the other, and the second need not fight defenders the first has beaten.
+A fleet in orbit on a hostile mission has entered the owner's solar system, and it is twenty times easier to see there, so his fleets in orbit are likely to attack it. Before it attacks, it must get past whatever the owner keeps in orbit: his starbase and his fleets there with warships fight it the week it reaches orbit, spotted or not. If its ROE will not take them on, it turns for home without a shot; if it loses, it is driven off, and his batteries do not fire on it as it goes. Only a fleet that holds the orbit attacks, in that same week. Each fleet attacks on its own as it arrives, so two of your fleets at one world strike one after the other, and the second need not fight defenders the first has beaten.
 
-*Mission 6: Bombard a World.* Only destroyers, cruisers, and battleships contribute bombardment firepower --- scouts, transports, and ETACs do not. Each turn your fleet bombards, the engine runs three rounds of fire. In rounds 1 and 2, your ships exchange fire with ground batteries --- hits destroy stardock contents first, then batteries, but armies, stored goods, and industry are shielded behind the battery wall. Each battery takes 20 hits to destroy, each army 10, and each docked ship its own DS. In round 3, if batteries have been eliminated, your firepower breaks through to armies, stored goods, and finally industry. If batteries still stand after round 2, round 3 is another suppression exchange and the planet's production survives. Bombardment persists each turn until you issue new orders. Use it to grind down a world's defenses before invasion, or to deny resources to an enemy over time.
+*Mission 6: Bombard a World.* Only destroyers, cruisers, and battleships contribute bombardment firepower --- scouts, transports, and ETACs do not. Each turn your fleet bombards, the engine runs three rounds of fire. In rounds 1 and 2, your ships exchange fire with ground batteries --- while batteries stand, your hits destroy batteries only and the excess is wasted, and armies, stored goods, and industry are shielded behind the battery wall. Each battery takes 20 hits to destroy, each army 10, and each docked ship its own DS. Docked ships are exposed from the first round that begins with no batteries standing. In round 3, if batteries have been eliminated, your firepower breaks through to the stardock, then armies, stored goods, and finally industry. If batteries still stand after round 2, round 3 is another suppression exchange and the planet's production survives. Bombardment persists each turn until you issue new orders. Use it to grind down a world's defenses before invasion, or to deny resources to an enemy over time.
 
-*Mission 7: Invade a World.* A three-stage deliberate assault. First, combat ships exchange fire with ground batteries in orbital suppression --- transports cannot land until all batteries are destroyed. Once batteries are gone, surviving combat ships fire on the defending armies to soften resistance before landing. Softening fire is matched against the garrison's full strength (10 AS per army), and each army destroyed takes 10 hits. Unlike bombardment, invasion softening targets armies only --- industry and stored goods are preserved because the goal is to capture the planet with its production intact. However, orbital softening can destroy at most *half* of the defending army stack; at least half of the original defenders must still be fought on the ground. Finally, transports land their armies and the ground battle continues in repeated simultaneous rounds until one side is wiped out. The defender fights from cover with a defensive edge, and ground combat cannot end in a draw --- if a final exchange would wipe out both sides, the larger force entering that exchange is treated as the winner, with exact equality favoring the defender. Capture requires destroying all defending armies, after which your surviving armies become the new garrison. If the batteries survive suppression, no troops land and the armies stay aboard. Win, lose, or called off, the fleet then holds position in orbit. Conquered planets need approximately two turns before they are fully converted to your production.
+*Mission 7: Invade a World.* A three-stage deliberate assault. First, combat ships exchange fire with ground batteries in orbital suppression --- transports cannot land until all batteries are destroyed. Once batteries are gone, surviving combat ships fire on the defending armies to soften resistance before landing. Softening fire is matched against the garrison's full strength (10 AS per army), and each army destroyed takes 10 hits. Unlike bombardment, invasion softening targets armies only --- industry and stored goods are preserved because the goal is to capture the planet with its production intact. However, orbital softening can destroy at most *half* of the defending army stack; at least half of the original defenders must still be fought on the ground. Finally, transports land their armies and the landing battle runs in rounds until one side is wiped out. The defenders fire first in every round, and one side always survives. Capture requires destroying all defending armies, after which your surviving armies become the new garrison. If the batteries survive suppression, no troops land and the armies stay aboard. Win, lose, or called off, the fleet then holds position in orbit. Conquered planets need approximately two turns before they are fully converted to your production.
 
-*Mission 8: Blitz a World.* Transports drop armies immediately in a fast assault that bypasses the full orbital suppression sequence. Escorting combat ships provide brief cover fire, but surviving batteries fire directly on descending transports, causing heavy losses. A fleet of loaded `TT*` may attempt a blitz even without escorting warships, but then it brings no orbital firepower of its own. The owner's ships without warships do not prevent that attempt, but his starbase or any fleet of his with warships in orbit stops it: with nothing to fight them, the transports turn for home. Once on the surface, armies fight in repeated simultaneous rounds until one side is wiped out, and the defender receives a defensive bonus throughout the ground battle. If you take the planet, surviving ground batteries transfer intact to your control. The blitz preserves industry but carries high risk to your armies and transports --- a 2:1 army advantage or better is recommended. Win or lose, the fleet then holds position in orbit. Choose blitz when the planet has few or no batteries and you want to preserve its industry, or when speed matters more than casualties.
+*Mission 8: Blitz a World.* Transports drop armies immediately in a fast assault that bypasses the full orbital suppression sequence. Escorting combat ships provide brief cover fire, but surviving batteries fire directly on descending transports, causing heavy losses. A fleet of loaded `TT*` may attempt a blitz even without escorting warships, but then it brings no orbital firepower of its own. The owner's ships without warships do not prevent that attempt, but his starbase or any fleet of his with warships in orbit stops it: with nothing to fight them, the transports turn for home. Once on the surface, armies fight the same landing battle as an invasion, defenders first, until one side is wiped out. If you take the planet, surviving ground batteries transfer intact to your control. The blitz preserves industry but carries high risk to your armies and transports --- a 2:1 army advantage or better is recommended. Win or lose, the fleet then holds position in orbit. Choose blitz when the planet has few or no batteries and you want to preserve its industry, or when speed matters more than casualties.
 
 #pagebreak()
 
@@ -1022,8 +1040,9 @@ outright, a crippled ship first.
 
 == Planetary Force Ratio to CRT Column
 
-Bombardment, invasion, blitz, and ground combat read the `d10` on the ratio
-CRT below.
+Bombardment, invasion suppression and softening, and blitz cover and landing
+fire read the `d10` on the ratio CRT below. The landing battle between armies
+does not; see Landing Battle.
 
 #figure(
   table(
@@ -1068,7 +1087,6 @@ CRT below.
 
 - Mixed `DD/CA/BB` fleet in bombardment or invasion suppression: `+1` CRT
   column
-- Defender in ground combat: `+1` CRT column
 - Final columns are clamped to the table bounds
 
 #align(left)[
@@ -1112,37 +1130,79 @@ Orbital hits on a world pay each target's DS on the same 10x scale:
 - Ship in the stardock: its own DS from the unit table (docked batteries `20`,
   armies `10`)
 - Stored goods and factories: remaining hits are divided by `10`, and each
-  point then destroys `100` stored goods and `1` factory
+  point then destroys `25` stored goods and `1` factory
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
-over to the next round. Hits too few for the next docked item pass on to the
-next stardock entry. Invasion suppression and blitz cover fire pay the same
-battery cost.
+over to the next round. Once the stardock is exposed, hits too few for the next
+docked item pass on to the next stardock entry. Invasion suppression and blitz
+cover fire pay the same battery cost and never reach the stardock.
 
 Blitz landing fire is one exchange of the surviving batteries' AS against the
 escorts' bombardment AS. It is focus fire aimed at the descending transports
 first: each transport destroyed costs `20` hits (2x its DS) and takes its army
 with it, and any hits left over fall on the escorts.
 
-Each bombardment turn runs three rounds:
-- *Rounds 1--2 (Suppression):* Attacker hits target stardock contents, then
-  batteries. Batteries fire back each round. Armies, stored goods, and
-  industry is shielded.
+Each bombardment turn runs three rounds. Batteries shield the stardock: an
+exchange that begins with batteries standing hits batteries only, and hits
+beyond what destroys them expire. Docked ships are exposed from the next
+exchange.
+- *Rounds 1--2 (Suppression):* While batteries stand at the start of the
+  round, attacker hits go to batteries only; with none standing, they go to
+  the stardock. Batteries fire back each round. Armies, stored goods, and
+  industry are shielded.
 - *Round 3 (Breakthrough):* If batteries reached zero before this round,
-  attacker hits cascade into armies, stored goods, and industry. If batteries
-  still stand, round 3 is another suppression exchange.
+  attacker hits go to the stardock, then cascade into armies, stored goods,
+  and industry. If batteries still stand, round 3 is another suppression
+  exchange.
 
 Invasion uses one suppression exchange against batteries. If batteries are
 cleared, the softening pass targets armies only --- industry and stored goods
 are not damaged during invasion. Its CRT column compares bombardment AS
 against `armies x 10`. Orbital softening may destroy at most half of
 the defender's starting armies, ensuring a meaningful landing battle whenever a
-world began the assault with a garrison. Once armies land, ground combat in
-invasion and blitz proceeds in repeated simultaneous CRT rounds until one side
-is destroyed. The defender receives a `+1` column bonus in those ground rounds,
-and a final exchange cannot produce a draw: the larger force entering that
-exchange survives with a remnant army, with exact equality favoring the
-defender.
+world began the assault with a garrison. Once armies land, the landing battle
+in invasion and blitz is fought as described next.
+
+A fleet whose landing fails, or whose Invade is blocked by surviving batteries,
+holds in orbit on Hold with a failure report. It does not blockade the world
+automatically.
+
+== Landing Battle
+
+Armies (AS 10, DS 10) fight on the same table as fleet battles, unmodified, in
+rounds. In each round the defenders roll and fire first, the attackers' losses
+come off, and the surviving attackers roll and fire back. A side with `n`
+armies deals `n x 1`, `n x 2`, or `n x 4` quarters of an army on a roll of
+`0`--`2`, `3`--`5`, or `6`--`9`; four quarters destroy one army. Damage short
+of an army carries into the next round of the same landing and is lost when the
+landing ends. There is no defender modifier, homeworld bonus, or critical hit,
+and one side always survives. Rounds repeat until one side has no armies.
+
+#figure(
+  table(
+    columns: (auto, auto),
+    align: (left, right),
+    inset: 6pt,
+    table.header(
+      [Attackers vs defenders], [Capture],
+    ),
+    [1 vs 1],   [33.6%],
+    [2 vs 1],   [85.1%],
+    [3 vs 2],   [55.6%],
+    [3 vs 1],   [99.4%],
+    [5 vs 5],   [22.6%],
+    [10 vs 10], [19.9%],
+    [11 vs 10], [27.6%],
+    [15 vs 10], [56.1%],
+    [20 vs 10], [91.8%],
+    [20 vs 20], [19.0%],
+    [40 vs 20], [92.3%],
+  ),
+)
+
+The armies that land are those left after blitz landing fire, and the
+defenders are those left after invasion softening. Capture odds follow that
+ratio at every scale; overwhelming ratios still win every time.
 
 #pagebreak()
 

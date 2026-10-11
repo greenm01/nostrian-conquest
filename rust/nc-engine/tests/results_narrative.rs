@@ -1,11 +1,12 @@
 use nc_compat::load_classic_core_files;
 use nc_data::{
     AssaultReportEvent, BombardEvent, ContactReportSource, Coords, EmpireEliminationCause,
-    EmpireEliminationEvent, EncounterDispositionEvent, EncounterDispositionReason,
-    FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError, GameStateBuilder,
-    GameVictoryNoticeEvent, InvalidPlayerStateEvent, MaintenanceEvents, Mission, MissionEvent,
-    MissionOutcome, Planet, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent,
-    Real48, ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseSightingEvent, set_planet_name,
+    EmpireEliminationEvent, EmpireUnitSummary, EncounterDispositionEvent,
+    EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError,
+    GameStateBuilder, GameVictoryNoticeEvent, InheritedAssets, InvalidPlayerStateEvent,
+    MaintenanceEvents, Mission, MissionEvent, MissionOutcome, Planet, PlanetIntelEvent,
+    PlanetIntelSource, PlanetOwnershipChangeEvent, Real48, ScoutContactEvent, ShipLosses,
+    StarbaseAlert, StarbaseSightingEvent, set_planet_name,
 };
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, maint::FleetBattlePerspective,
@@ -355,6 +356,7 @@ fn blitz_report_distinguishes_total_army_losses_from_transport_losses() {
         defender_battery_losses: 2,
         defender_army_losses_softening: 0,
         defender_army_losses: 5,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -407,6 +409,7 @@ fn blitz_report_includes_transport_and_ground_army_losses_in_total_losses() {
         defender_battery_losses: 2,
         defender_army_losses_softening: 0,
         defender_army_losses: 5,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -451,6 +454,7 @@ fn blitz_report_for_undefended_world_includes_attacker_force_and_no_battery_text
         defender_battery_losses: 0,
         defender_army_losses_softening: 0,
         defender_army_losses: 0,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -501,6 +505,7 @@ fn invasion_report_includes_attacker_force_and_undefended_world_wording() {
         defender_battery_losses: 0,
         defender_army_losses_softening: 0,
         defender_army_losses: 0,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -518,6 +523,75 @@ fn invasion_report_includes_attacker_force_and_undefended_world_wording() {
     assert!(invasion.contains("none"));
     assert!(!invasion.contains("Orbital softening losses:"));
     assert!(!invasion.contains("Ground battle losses:"));
+}
+
+#[test]
+fn capture_report_lists_the_goods_ships_and_work_the_world_passed_on() {
+    let mut game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3017)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let coords = [6, 7];
+    seed_target_world(&mut game_data, coords, "dog");
+
+    let capture = |inherited| AssaultReportEvent {
+        kind: Mission::InvadeWorld,
+        attacker_fleet_number: Some(10),
+        planet_idx: 0,
+        attacker_empire: 1,
+        defender_empire: 0,
+        attacker_initial: ShipLosses {
+            battleships: 1,
+            transports: 2,
+            ..ShipLosses::default()
+        },
+        attacker_loaded_armies_initial: 2,
+        defender_batteries_initial: 0,
+        defender_armies_initial: 0,
+        attacker_ship_losses: ShipLosses::default(),
+        attacker_army_losses: 0,
+        transport_army_losses: 0,
+        defender_battery_losses: 0,
+        defender_army_losses_softening: 0,
+        defender_army_losses: 0,
+        inherited: Some(inherited),
+        outcome: MissionOutcome::Succeeded,
+        stardate_week: Some(3),
+    };
+    let report = |inherited| {
+        let mut events = MaintenanceEvents::default();
+        events.assault_report_events.push(capture(inherited));
+        let rows = build_results_report_blocks(&game_data, &events);
+        // Long rows wrap in the report; read them as one line.
+        viewer_report_texts(1, &rows)
+            .join(" ")
+            .split_whitespace()
+            .collect::<Vec<_>>()
+            .join(" ")
+    };
+
+    let scorched = report(InheritedAssets {
+        stored_goods: 200,
+        docked: EmpireUnitSummary {
+            destroyers: 3,
+            battleships: 1,
+            starbases: 1,
+            ..EmpireUnitSummary::default()
+        },
+        queued_work: 60,
+        scorched: true,
+    });
+    assert!(scorched.contains("The defenders scorched the world before it fell."));
+    assert!(scorched.contains("Inherited:"));
+    assert!(
+        scorched.contains("200 stored production; docked 1BB, 3DD, 1SB; 60 points of queued work")
+    );
+
+    let empty = report(InheritedAssets::default());
+    assert!(empty.contains("Inherited:"));
+    assert!(empty.contains("nothing"));
+    assert!(!empty.contains("scorched"));
 }
 
 #[test]
@@ -555,6 +629,7 @@ fn invasion_report_lists_ship_and_ground_army_losses() {
         defender_battery_losses: 10,
         defender_army_losses_softening: 17,
         defender_army_losses: 34,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -610,6 +685,7 @@ fn defender_receives_repulsed_invasion_report() {
         defender_battery_losses: 4,
         defender_army_losses_softening: 8,
         defender_army_losses: 13,
+        inherited: None,
         outcome: MissionOutcome::Failed,
         stardate_week: Some(3),
     });
@@ -666,6 +742,7 @@ fn defender_receives_blocked_invasion_report() {
         defender_battery_losses: 3,
         defender_army_losses_softening: 0,
         defender_army_losses: 0,
+        inherited: None,
         outcome: MissionOutcome::Aborted,
         stardate_week: Some(3),
     });
@@ -716,6 +793,7 @@ fn ownership_change_report_uses_assault_context_for_defender() {
         defender_battery_losses: 2,
         defender_army_losses_softening: 0,
         defender_army_losses: 5,
+        inherited: None,
         outcome: MissionOutcome::Succeeded,
         stardate_week: Some(3),
     });
@@ -779,6 +857,7 @@ fn defender_receives_repulsed_blitz_report() {
         defender_battery_losses: 1,
         defender_army_losses_softening: 0,
         defender_army_losses: 2,
+        inherited: None,
         outcome: MissionOutcome::Failed,
         stardate_week: Some(3),
     });

@@ -84,9 +84,21 @@ needs a few more armies and loses fewer. The ratio property holds for the
 ground battle, not the whole mission: support fire still uses the
 planetary CRT (10 against 10 after 3 CA of softening captures 82.4%).
 
-Implementation is pending: the engine's landing battle (blitz included),
-the combat spec, the manual's Planetary Combat chapter and Appendix B, and
-the ground-odds tables.
+## Implementation (t071)
+
+The engine's landing battle, invasion and blitz alike, follows the rounds
+above. Damage is counted in quarter armies: a side with `n` armies deals
+`n x 1`, `n x 2`, or `n x 4` quarters on the 25/50/100 table and four
+quarters destroy an army, so carry is exact. The seeded roll derivation is
+unchanged (same year, world, combat kind, round, and empires), and the 64-round
+cap is gone because a landing ends within four rounds per landed army. Softening,
+cover fire, and landing fire still read the ratio CRT. A sampled check of
+20,000 landings per row through the production dice matches the model's exact
+capture rate and mean survivors within 4.5 standard errors for 1 v 1, 3 v 2,
+10 v 10, 15 v 10, and 20 v 10 (for example 20.0%, 56.5%, and 91.4% against
+19.9%, 56.1%, and 91.8%), and 400 whole-year invasions and blitzes per row
+agree too. The combat spec, the manual's Planetary Combat chapter, and
+Appendix B describe the rule and carry the odds table.
 
 ## Acceptance and connections
 

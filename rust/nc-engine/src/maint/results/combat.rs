@@ -243,6 +243,38 @@ pub fn blitz_cover_value(event: &nc_data::AssaultReportEvent) -> Option<String> 
     }
 }
 
+/// What a captured world passed on: stored production, docked ships, and
+/// queued work, in whole points and ships.
+pub fn inherited_assets_value(inherited: &nc_data::InheritedAssets) -> String {
+    let docked = inherited.docked;
+    let ships = ShipLosses {
+        destroyers: docked.destroyers,
+        cruisers: docked.cruisers,
+        battleships: docked.battleships,
+        scouts: docked.scouts,
+        transports: docked.transports,
+        etacs: docked.etacs,
+    };
+    let mut parts = Vec::new();
+    if inherited.stored_goods > 0 {
+        parts.push(format!("{} stored production", inherited.stored_goods));
+    }
+    if ships != ShipLosses::default() || docked.starbases > 0 {
+        parts.push(format!(
+            "docked {}",
+            fleet_force_summary_with_starbases(ships, 0, docked.starbases)
+        ));
+    }
+    if inherited.queued_work > 0 {
+        parts.push(format!("{} points of queued work", inherited.queued_work));
+    }
+    if parts.is_empty() {
+        "nothing".to_string()
+    } else {
+        parts.join("; ")
+    }
+}
+
 pub fn transport_loss_value(event: &nc_data::AssaultReportEvent) -> String {
     if event.transport_army_losses > 0 {
         format!(

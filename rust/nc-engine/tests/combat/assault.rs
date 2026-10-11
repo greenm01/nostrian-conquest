@@ -158,7 +158,7 @@ fn breakthrough_hits_reach_industry_on_the_ten_times_scale() {
         "a destroyer deals at most 14 hits, one factory on the 10x scale: {}",
         bombard.factories_destroyed
     );
-    assert!(bombard.stored_goods_destroyed <= 100);
+    assert!(bombard.stored_goods_destroyed <= 25);
 }
 
 #[test]

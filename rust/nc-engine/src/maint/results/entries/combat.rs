@@ -469,6 +469,17 @@ pub fn push_combat_entries(
                 value: transport_loss_value(event),
             });
         }
+        if let Some(inherited) = &event.inherited {
+            if inherited.scorched {
+                outcome_rows.push(StructuredBodyItem::Text(
+                    "The defenders scorched the world before it fell.".to_string(),
+                ));
+            }
+            outcome_rows.push(StructuredBodyItem::Label {
+                label: LABEL_INHERITED.to_string(),
+                value: inherited_assets_value(inherited),
+            });
+        }
         let items = structured_combat_body(
             structured_assault_alert(event.kind, event.outcome),
             context_rows,

@@ -94,6 +94,7 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
         defender_battery_losses: 1,
         defender_army_losses_softening: 1,
         defender_army_losses: 2,
+        inherited: None,
         outcome: MissionOutcome::Failed,
         stardate_week: Some(16),
     });

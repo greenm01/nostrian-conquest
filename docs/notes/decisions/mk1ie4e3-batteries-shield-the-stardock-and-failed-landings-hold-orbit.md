@@ -61,9 +61,22 @@ The owner approved Claude and Codex's joint recommendation on 2026-10-10.
 Docked ships are much safer while batteries stand, and destroying batteries
 first is the only way to reach them. Bombard remains the order that damages
 a world's economy; Invade and Blitz capture it intact. A fleet that fails a
-landing stays where it is, and the player decides its next move. Engine
-implementation, the combat spec, and the manual's Planetary Combat chapter
-are pending.
+landing stays where it is, and the player decides its next move.
+
+## Implementation (t074)
+
+A bombardment exchange now hits batteries only while any stood at its start,
+and the excess expires; the first exchange that begins with none standing
+reaches the stardock, and the round-3 breakthrough pays the dock before the
+armies. Invasion suppression and blitz cover fire never reached the stardock.
+The engine's mean losses for the 6 CA against 3 batteries and a docked BB case
+over 1,000 whole-year trials (80.7 ship points, 7.1 dock points, 2.92
+batteries, 2.33 armies, 0.48 production) match the model's shield order in
+`tools/combat-model/assault_collateral.py` (80.2, 7.6, 2.93, 2.44, 0.49). The
+failure rules needed no new code beyond tests: the orbital gate never involved
+the batteries, and a failed landing or blocked Invade already ended on Hold
+with its report. Bombard's industrial rates are unchanged here; the economy
+task changes them.
 
 ## Acceptance and connections
 
