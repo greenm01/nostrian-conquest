@@ -199,8 +199,8 @@ any other class. The campaign store's `RUNTIME_SCHEMA_VERSION` is 17, with
 no migration.
 
 Loading and unloading move cohorts between the counters with their hulls.
-The order is a default chosen so that armies ride the soundest hulls, and
-it awaits the owner's confirmation: loading takes healthy empty transports
+Armies ride the soundest hulls (proposed as a default in t096, approved by
+the owner on 2026-10-11): loading takes healthy empty transports
 first and crippled ones only when none is left, the nearest to recovery
 first; unloading and landing empty the crippled loaded transports first,
 the most turns left first, then the healthy ones. Each order lives in one

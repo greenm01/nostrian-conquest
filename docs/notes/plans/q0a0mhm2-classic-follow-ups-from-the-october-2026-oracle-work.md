@@ -656,10 +656,19 @@ Classic differences t094 found while reading, none changed there:
 3. **Planetless civil disorder.** Classic's `24a3:0c2a` turns a
    civil-disorder empire with no planets into a rogue, which then patrols.
    NC's campaign rules eliminate a defeated empire into civil disorder, with
-   a final review login, so copying this would bring eliminated empires back
-   as computer rogues. Needs the owner's ruling before any change.
+   a final review login. The owner ruled (2026-10-11) to copy classic: such
+   an empire becomes a rogue, and its warships patrol under the computer.
+   Keep the eliminated player's final report and review login, and the
+   rogue rules t094 set (never eliminated, a contender only while it holds a
+   world, every human empire its enemy). Find where classic's conversion
+   runs in the year and match it.
 
 Not a gap: classic's battle scatter frees a guard's base before its world
 pick, so a guard with no other world keeps Guard Starbase; Rust's guard holds
 in place, as every NC retreat does without a world to go to (NC combat is
 NC's own design), and the base is freed too.
+
+Owner rulings after t094 (2026-10-11): a planetless rogue empire is not a
+contender for the throne (t094's rule stands, over counting it while any
+fleet survives); a planetless civil-disorder empire becomes a rogue, as in
+classic (t099 item 3).

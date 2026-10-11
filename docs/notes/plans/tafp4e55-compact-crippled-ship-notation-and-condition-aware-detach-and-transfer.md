@@ -212,8 +212,9 @@ lone fleet's change the same way.
 transports first and crippled ones only when none is left, the nearest to
 recovery first; `unload_transports`, which landing also uses, empties the
 crippled loaded transports first, the most turns left first, then the
-healthy ones. A cohort moves to the other counter with its hull. Both
-orders are a default awaiting the owner's confirmation; each lives in one
+healthy ones. A cohort moves to the other counter with its hull. The
+owner approved both orders on 2026-10-11 (armies ride the soundest hulls,
+over crippled-first or a player's choice at the prompt); each lives in one
 helper in `nc-data/src/fleet_ships.rs`, and the
 [recovery ADR](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md#transports-by-cargo-state-t096)
 records it.
