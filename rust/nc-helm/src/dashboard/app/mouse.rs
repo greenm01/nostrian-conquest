@@ -407,7 +407,7 @@ impl DashApp {
             .game_data
             .planets
             .get(detail.planet_record_index_1_based.saturating_sub(1))
-            .map(|planet| planet.owner_empire_slot_raw())
+            .map(|planet| planet.owner.0)
             .unwrap_or(0);
         if owner == self.player_record_index_1_based as u8 {
             self.open_owned_planet_popup(detail.planet_record_index_1_based);
@@ -461,7 +461,7 @@ impl DashApp {
     }
 
     fn pan_starmap_viewport(&mut self, dx_cells: i32, dy_cells: i32) {
-        let map_size = nc_data::map_size_for_player_count(self.game_data.conquest.player_count());
+        let map_size = nc_data::map_size_for_player_count(self.game_data.conquest.player_count);
         let frame = crate::dashboard::layout::dashboard_layout(self)
             .widgets
             .center_map;
@@ -484,9 +484,9 @@ impl DashApp {
     fn player_has_fleets_at(&self, coords: [u8; 2]) -> bool {
         let owner_slot = self.player_record_index_1_based as u8;
         self.game_data.fleets.iter().any(|fleet| {
-            fleet.owner_empire_raw() == owner_slot
-                && fleet.has_any_force()
-                && fleet.current_location_coords_raw() == coords
+            fleet.owner.0 == owner_slot
+                && nc_data::has_any_force(&fleet)
+                && fleet.sector.to_array() == coords
         })
     }
 

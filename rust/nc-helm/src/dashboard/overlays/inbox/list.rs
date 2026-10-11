@@ -527,7 +527,7 @@ pub fn hit_test_inbox_pane(
 
 pub fn inbox_items(app: &DashApp) -> Vec<DashInboxItem> {
     let viewer = app.player_record_index_1_based as u8;
-    let current_year = app.game_data.conquest.game_year();
+    let current_year = app.game_data.conquest.game_year;
     project_inbox_items(
         &app.game_data,
         viewer,
@@ -803,7 +803,7 @@ fn outbox_rows(
     game_data: &nc_data::CoreGameData,
     messages: &[nc_data::TurnMessage],
 ) -> Vec<Vec<String>> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     if messages.is_empty() {
         return vec![vec![
             String::new(),
@@ -834,8 +834,8 @@ fn app_compose_empire_name(game_data: &nc_data::CoreGameData, empire_id: u8) -> 
     let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire {empire_id:02}");
     };
-    let name = player.controlled_empire_name_summary();
-    let fallback = player.legacy_status_name_summary();
+    let name = player.empire_name.trim().to_string();
+    let fallback = player.empire_name.trim().to_string();
     if !name.is_empty() {
         name
     } else if !fallback.is_empty() {
@@ -1042,7 +1042,7 @@ mod tests {
     #[test]
     fn outbox_overlay_renders_recipient_empire_name() {
         let mut app = inbox_test_app();
-        app.game_data.players[1].set_controlled_empire_name_raw("Rigel Empire");
+        nc_data::set_empire_name(&mut app.game_data.players[1], "Rigel Empire");
         app.initialize_hosted_turn_draft();
         app.hosted_turn_draft
             .as_mut()

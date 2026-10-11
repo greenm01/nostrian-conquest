@@ -33,8 +33,8 @@ impl DashApp {
         self.game_data
             .planets
             .iter()
-            .find(|planet| planet.owner_empire_slot_raw() == 1 && planet.coords_raw() != [0, 0])
-            .map(|planet| planet.coords_raw())
+            .find(|planet| planet.owner.0 == 1 && planet.sector.to_array() != [0, 0])
+            .map(|planet| planet.sector.to_array())
     }
 
     pub(crate) fn apply_planet_overlay_filter(&mut self, filter: PlanetOverlayFilter) {

@@ -770,11 +770,8 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<PlanetOverlayRow> {
         .game_data
         .bases
         .iter()
-        .filter(|base| {
-            base.owner_empire_raw() == app.player_record_index_1_based as u8
-                && base.base_id_raw() != 0
-        })
-        .map(|base| base.coords_raw())
+        .filter(|base| base.owner.0 == app.player_record_index_1_based as u8 && base.base_id.0 != 0)
+        .map(|base| base.sector.to_array())
         .collect::<std::collections::BTreeSet<_>>();
 
     let mut rows = app
@@ -896,7 +893,7 @@ fn format_planet_row_cells(
     planet: &Planet,
     has_starbase: bool,
 ) -> PlanetOverlayRow {
-    let coords = planet.coords_raw();
+    let coords = planet.sector.to_array();
     let (stored, budget) = effective_points_left(game_data, row);
     let queue = build_queue_total(planet);
     let docked = docked_total(planet);
@@ -915,8 +912,8 @@ fn format_planet_row_cells(
         build_queue: queue,
         has_starbase,
         docked,
-        armies: planet.army_count_raw(),
-        batteries: planet.ground_batteries_raw(),
+        armies: (planet.armies.min(u16::from(u8::MAX)) as u8),
+        batteries: (planet.ground_batteries.min(u16::from(u8::MAX)) as u8),
         cells: vec![
             format_sector_coords_table(coords),
             truncate(&row.planet_name, 13),
@@ -929,8 +926,8 @@ fn format_planet_row_cells(
             queue.to_string(),
             docked.to_string(),
             u8::from(has_starbase).to_string(),
-            planet.army_count_raw().to_string(),
-            planet.ground_batteries_raw().to_string(),
+            (planet.armies.min(u16::from(u8::MAX)) as u8).to_string(),
+            (planet.ground_batteries.min(u16::from(u8::MAX)) as u8).to_string(),
         ],
     }
 }
@@ -952,8 +949,8 @@ fn effective_points_left(
 fn build_queue_total(planet: &Planet) -> u32 {
     (0..10)
         .map(|slot| {
-            let points = u32::from(planet.build_count_raw(slot));
-            let kind = ProductionItemKind::from_raw(planet.build_kind_raw(slot));
+            let points = u32::from(planet.build_queue[slot].points_owed);
+            let kind = planet.build_queue[slot].kind;
             let Some(cost) = kind.build_cost() else {
                 return 0;
             };
@@ -964,7 +961,7 @@ fn build_queue_total(planet: &Planet) -> u32 {
 
 fn docked_total(planet: &Planet) -> u32 {
     (0..STARDOCK_SLOT_COUNT)
-        .map(|slot| u32::from(planet.stardock_count_raw(slot)))
+        .map(|slot| planet.stardock[slot].min(u32::from(u16::MAX)))
         .sum()
 }
 
@@ -1332,11 +1329,11 @@ mod tests {
             .build_initialized_baseline()
             .expect("baseline");
         let planet = &mut game_data.planets[0];
-        planet.set_stored_production_points(165);
-        planet.set_build_kind_raw(0, 1);
-        planet.set_build_count_raw(0, 5);
-        planet.set_build_kind_raw(1, 6);
-        planet.set_build_count_raw(1, 40);
+        planet.stored_goods = nc_data::Real48::from_f64(f64::from(165));
+        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+        planet.build_queue[0].points_owed = 5;
+        planet.build_queue[1].kind = nc_data::ProductionItemKind::from_raw(6);
+        planet.build_queue[1].points_owed = 40;
 
         let app = DashApp::new_for_tests(
             PathBuf::from("."),
@@ -1378,7 +1375,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets[0].set_stored_production_points(80);
+        app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
         app.open_planet_build_specify();
 
         let browse_rect = build_specify_popup_rect(&app);
@@ -1408,7 +1405,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets[0].set_stored_production_points(80);
+        app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
         app.open_planet_build_specify();
 
         let mut buf = PlayfieldBuffer::new(160, 45, theme::body_style());
@@ -1444,7 +1441,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets[0].set_stored_production_points(80);
+        app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
         app.open_planet_build_specify();
         app.planet_overlay.build_unit_input.push('1');
         app.submit_planet_build_browse_input()
@@ -1480,7 +1477,7 @@ mod tests {
             1,
         );
         app.overlay = ActiveOverlay::PlanetList;
-        app.game_data.planets[0].set_stored_production_points(80);
+        app.game_data.planets[0].stored_goods = nc_data::Real48::from_f64(f64::from(80));
         app.open_planet_build_specify();
 
         let popup = build_specify_popup_rect(&app);

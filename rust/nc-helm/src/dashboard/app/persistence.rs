@@ -39,7 +39,7 @@ impl DashApp {
         }
 
         let planet_intel_by_viewer =
-            planet_intel_by_viewer(&store, self.game_data.conquest.player_count())?;
+            planet_intel_by_viewer(&store, self.game_data.conquest.player_count)?;
         store.save_runtime_state_structured_with_intel_activity_and_lifecycle(
             &self.game_data,
             &self.planet_scorch_orders,
@@ -60,15 +60,15 @@ impl DashApp {
         self.planet_scorch_orders = runtime_state.planet_scorch_orders;
         self.winner_state = runtime_state.winner_state;
         self.player_activity_states =
-            store.latest_player_activity_states(self.game_data.conquest.player_count())?;
+            store.latest_player_activity_states(self.game_data.conquest.player_count)?;
         self.player_lifecycle_states =
-            store.latest_player_lifecycle_states(self.game_data.conquest.player_count())?;
+            store.latest_player_lifecycle_states(self.game_data.conquest.player_count)?;
         self.owned_planet_years =
             store.latest_owned_planet_years_for_empire(self.player_record_index_1_based as u8)?;
         self.planet_intel_snapshots =
             store.latest_planet_intel_for_viewer(self.player_record_index_1_based as u8)?;
         self.player_war_stats = store
-            .latest_player_war_stats(self.game_data.conquest.player_count())?
+            .latest_player_war_stats(self.game_data.conquest.player_count)?
             .get(self.player_record_index_1_based.saturating_sub(1))
             .copied()
             .unwrap_or_else(|| {

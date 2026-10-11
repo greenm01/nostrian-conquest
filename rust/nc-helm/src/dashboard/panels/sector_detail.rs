@@ -140,7 +140,7 @@ mod tests {
             .game_data
             .planets
             .iter()
-            .map(|planet| planet.coords_raw())
+            .map(|planet| planet.sector.to_array())
             .collect::<std::collections::BTreeSet<_>>();
         let empty = (1..=18)
             .flat_map(|y| (1..=18).map(move |x| [x, y]))

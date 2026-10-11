@@ -351,9 +351,9 @@ fn scorch_lines(app: &DashApp) -> Vec<String> {
         .map(|planet| {
             format!(
                 "Planet \"{}\" at ({:02},{:02}).",
-                planet.status_or_name_summary(),
-                planet.coords_raw()[0],
-                planet.coords_raw()[1]
+                planet.name.trim().to_string(),
+                planet.sector.to_array()[0],
+                planet.sector.to_array()[1]
             )
         })
         .unwrap_or_else(|| String::from("Selected planet unavailable."));

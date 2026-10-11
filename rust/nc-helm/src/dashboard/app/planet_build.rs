@@ -376,8 +376,8 @@ impl DashApp {
         };
         format!(
             "{} {}",
-            record.status_or_name_summary(),
-            format_sector_coords_table(record.coords_raw())
+            record.name.trim().to_string(),
+            format_sector_coords_table(record.sector.to_array())
         )
     }
 

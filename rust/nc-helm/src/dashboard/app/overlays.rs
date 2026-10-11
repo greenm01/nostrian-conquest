@@ -1022,7 +1022,7 @@ impl DashApp {
             .game_data
             .planets
             .get(row.planet_record_index_1_based.saturating_sub(1))
-            .map(|planet| planet.owner_empire_slot_raw())
+            .map(|planet| planet.owner.0)
             .unwrap_or(0);
         if owner == self.player_record_index_1_based as u8 {
             self.open_owned_planet_popup(row.planet_record_index_1_based);
@@ -1547,7 +1547,7 @@ impl DashApp {
             self.inbox_overlay.prompt_status = Some("Enter an empire number.".to_string());
             return;
         };
-        let max_empire = self.game_data.conquest.player_count();
+        let max_empire = self.game_data.conquest.player_count;
         if recipient == 0 || recipient > max_empire {
             self.inbox_overlay.prompt_status =
                 Some(format!("Enter an empire number in 1..={max_empire}."));
@@ -1589,15 +1589,15 @@ impl DashApp {
             &self.queued_mail,
             self.player_record_index_1_based as u8,
             recipient,
-            self.game_data.conquest.game_year(),
-            self.game_data.conquest.player_count(),
+            self.game_data.conquest.game_year,
+            self.game_data.conquest.player_count,
             &self.inbox_overlay.compose_subject,
             &self.inbox_overlay.compose_body,
         )?;
         self.queued_mail.push(nc_data::QueuedPlayerMail {
             sender_empire_id: self.player_record_index_1_based as u8,
             recipient_empire_id: recipient,
-            year: self.game_data.conquest.game_year(),
+            year: self.game_data.conquest.game_year,
             subject: subject.clone(),
             body: body.clone(),
             recipient_deleted: false,
@@ -2090,7 +2090,7 @@ pub(super) fn scroll_selected(selected: usize, lines: i32, total: usize) -> usiz
 fn delete_selected_inbox_item(app: &mut DashApp) {
     let viewer = app.player_record_index_1_based as u8;
     let state = &app.inbox_overlay;
-    let current_year = app.game_data.conquest.game_year();
+    let current_year = app.game_data.conquest.game_year;
     let items = project_inbox_items(
         &app.game_data,
         viewer,
@@ -2122,7 +2122,7 @@ fn delete_selected_inbox_item(app: &mut DashApp) {
 }
 
 fn first_message_recipient_default(app: &DashApp) -> String {
-    (1..=app.game_data.conquest.player_count())
+    (1..=app.game_data.conquest.player_count)
         .find(|empire| *empire as usize != app.player_record_index_1_based)
         .map(|empire| empire.to_string())
         .unwrap_or_default()
@@ -2130,7 +2130,7 @@ fn first_message_recipient_default(app: &DashApp) -> String {
 
 fn remove_preview_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
     let sender = app.player_record_index_1_based as u8;
-    let year = app.game_data.conquest.game_year();
+    let year = app.game_data.conquest.game_year;
     if let Some(index) = app.queued_mail.iter().position(|mail| {
         mail.sender_empire_id == sender
             && mail.recipient_empire_id == message.recipient_empire_raw

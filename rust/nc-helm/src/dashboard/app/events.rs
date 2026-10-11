@@ -375,7 +375,7 @@ impl DashApp {
             Action::MoveCrosshairUp => {
                 // Up arrow → higher Y (row 18 at top of screen).
                 let map_size =
-                    nc_data::map_size_for_player_count(self.game_data.conquest.player_count());
+                    nc_data::map_size_for_player_count(self.game_data.conquest.player_count);
                 if self.crosshair_y < map_size {
                     self.crosshair_y += 1;
                     starmap::advance_starmap_viewport(self);
@@ -396,7 +396,7 @@ impl DashApp {
             }
             Action::MoveCrosshairRight => {
                 let map_size =
-                    nc_data::map_size_for_player_count(self.game_data.conquest.player_count());
+                    nc_data::map_size_for_player_count(self.game_data.conquest.player_count);
                 if self.crosshair_x < map_size {
                     self.crosshair_x += 1;
                     starmap::advance_starmap_viewport(self);
@@ -463,7 +463,7 @@ impl DashApp {
             self.game_data
                 .players
                 .get(self.player_record_index_1_based.saturating_sub(1))
-                .map(|player| player.tax_rate())
+                .map(|player| player.tax_rate)
                 .unwrap_or(0)
         } else {
             raw.parse::<u8>()

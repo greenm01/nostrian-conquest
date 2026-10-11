@@ -9,7 +9,7 @@ impl DashApp {
     pub(crate) fn initialize_hosted_turn_draft(&mut self) {
         self.hosted_turn_draft = Some(TurnSubmission {
             player_record_index_1_based: self.player_record_index_1_based,
-            year: self.game_data.conquest.game_year(),
+            year: self.game_data.conquest.game_year,
             tax_rate: None,
             diplomacy: Vec::new(),
             planets: Vec::new(),
