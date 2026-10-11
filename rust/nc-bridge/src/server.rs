@@ -1,9 +1,10 @@
 use crate::proxy::bridge_session;
-use crate::NodeManager;
+use crate::{NodeEventPayload, NodeManager};
 use axum::extract::ws::{WebSocket, WebSocketUpgrade};
-use axum::extract::{Query, State};
+use axum::extract::{Json, Path, Query, State};
+use axum::http::{HeaderMap, StatusCode};
 use axum::response::{IntoResponse, Response};
-use axum::routing::get;
+use axum::routing::{get, post};
 use axum::Router;
 use nc_dropfile::{CallerInfo, CallerRole, PlatformInfo};
 use serde::Deserialize;
@@ -28,6 +29,7 @@ pub fn create_router(manager: Arc<NodeManager>) -> Router {
     Router::new()
         .route("/health", get(health_handler))
         .route("/ws/connect", get(ws_connect_handler))
+        .route("/internal/events/{node}", post(internal_event_handler))
         .fallback_service(serve_dir)
         .with_state(manager)
 }
@@ -41,6 +43,64 @@ async fn health_handler(State(manager): State<Arc<NodeManager>>) -> Response {
         "max_nodes": manager.config().max_nodes,
     }))
     .into_response()
+}
+
+async fn internal_event_handler(
+    Path(node): Path<usize>,
+    headers: HeaderMap,
+    State(manager): State<Arc<NodeManager>>,
+    Json(payload): Json<NodeEventPayload>,
+) -> Response {
+    let token = headers
+        .get("authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|h| h.strip_prefix("Bearer "))
+        .or_else(|| {
+            headers
+                .get("x-node-token")
+                .and_then(|h| h.to_str().ok())
+        });
+
+    let Some(token) = token else {
+        warn!(node = node, "Rejected internal event: missing authorization token");
+        return (StatusCode::UNAUTHORIZED, "Missing token").into_response();
+    };
+
+    let Some(active) = manager.verify_node_token(node, token).await else {
+        warn!(node = node, "Rejected internal event: invalid node token");
+        return (StatusCode::FORBIDDEN, "Invalid token").into_response();
+    };
+
+    info!(
+        node = node,
+        player = %active.caller_handle,
+        summary = %payload.summary,
+        "Received internal in-game tactical event from nc-door"
+    );
+
+    if let Some(forward_url) = &manager.config().event_forward_url {
+        let forward_url = forward_url.clone();
+        let payload_json = serde_json::json!({
+            "node": node,
+            "player": payload.player.unwrap_or(active.caller_handle),
+            "seat": payload.seat.unwrap_or(0),
+            "event_type": payload.event_type.unwrap_or_else(|| "tactical_alert".to_string()),
+            "summary": payload.summary,
+        });
+
+        tokio::spawn(async move {
+            let client = reqwest::Client::new();
+            if let Err(e) = client.post(&forward_url).json(&payload_json).send().await {
+                error!("Failed to forward event to {forward_url}: {e}");
+            }
+        });
+    }
+
+    (
+        StatusCode::OK,
+        axum::response::Json(serde_json::json!({ "status": "event_received" })),
+    )
+        .into_response()
 }
 
 async fn ws_connect_handler(

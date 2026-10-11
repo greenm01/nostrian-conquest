@@ -6,7 +6,8 @@
 pub mod proxy;
 pub mod server;
 
-use nc_dropfile::{CallerInfo, DoorKdl, PlatformInfo, SessionInfo, TerminalInfo, TransportInfo, TransportMode};
+use nc_dropfile::{CallbacksInfo, CallerInfo, DoorKdl, PlatformInfo, SessionInfo, TerminalInfo, TransportInfo, TransportMode};
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -23,6 +24,7 @@ pub struct BridgeConfig {
     pub session_timeout_seconds: u32,
     pub node_base_dir: PathBuf,
     pub static_dir: PathBuf,
+    pub event_forward_url: Option<String>,
 }
 
 impl Default for BridgeConfig {
@@ -36,6 +38,7 @@ impl Default for BridgeConfig {
             session_timeout_seconds: 1800,
             node_base_dir: PathBuf::from("/tmp/nc-nodes"),
             static_dir: PathBuf::from("static"),
+            event_forward_url: None,
         }
     }
 }
@@ -48,6 +51,16 @@ pub struct ActiveNode {
     pub platform_id: String,
     pub loopback_port: u16,
     pub dropfile_path: PathBuf,
+    pub callback_token: String,
+}
+
+/// Payload sent by an in-game door process to the internal event webhook.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct NodeEventPayload {
+    pub player: Option<String>,
+    pub seat: Option<usize>,
+    pub event_type: Option<String>,
+    pub summary: String,
 }
 
 /// State of a virtual node slot.
@@ -99,6 +112,15 @@ impl NodeManager {
         let node_dir = self.config.node_base_dir.join(format!("node_{node_index}"));
         std::fs::create_dir_all(&node_dir)?;
         let dropfile_path = node_dir.join("door.kdl");
+        let callback_token = format!("tok_node_{node_index}_{loopback_port}");
+
+        let callbacks = Some(CallbacksInfo {
+            event_webhook: Some(format!(
+                "http://{}:{}/internal/events/{}",
+                self.config.bind_host, self.config.bind_port, node_index
+            )),
+            secret: Some(callback_token.clone()),
+        });
 
         let dropfile = DoorKdl {
             version: 1,
@@ -116,7 +138,7 @@ impl NodeManager {
                 },
             },
             terminal: TerminalInfo::default(),
-            callbacks: None,
+            callbacks,
         };
 
         std::fs::write(&dropfile_path, dropfile.to_kdl_string())?;
@@ -127,12 +149,24 @@ impl NodeManager {
             platform_id: caller.platform_id,
             loopback_port,
             dropfile_path,
+            callback_token,
         };
 
         let mut nodes = self.active_nodes.lock().await;
         nodes.insert(node_index, NodeSlot::Active(active.clone()));
 
         Ok(active)
+    }
+
+    /// Verify that an incoming callback request is from a legitimate active node session.
+    pub async fn verify_node_token(&self, node_index: usize, token: &str) -> Option<ActiveNode> {
+        let nodes = self.active_nodes.lock().await;
+        if let Some(NodeSlot::Active(active)) = nodes.get(&node_index) {
+            if active.callback_token == token {
+                return Some(active.clone());
+            }
+        }
+        None
     }
 
     /// Release a virtual node upon session completion.
@@ -189,6 +223,12 @@ mod tests {
         let loaded_kdl = DoorKdl::load_from_file(&session1.dropfile_path).expect("valid KDL on disk");
         assert_eq!(loaded_kdl.caller.handle, "vorn");
         assert_eq!(loaded_kdl.session.node, 1);
+        assert!(loaded_kdl.callbacks.is_some());
+
+        // Verify callback token authentication
+        assert!(manager.verify_node_token(n1, &session1.callback_token).await.is_some());
+        assert!(manager.verify_node_token(n1, "invalid_secret").await.is_none());
+        assert!(manager.verify_node_token(99, &session1.callback_token).await.is_none());
 
         // Allocate node 2
         let n2 = manager.allocate_node().await.expect("should allocate node 2");
