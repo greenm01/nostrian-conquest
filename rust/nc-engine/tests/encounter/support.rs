@@ -3,7 +3,9 @@
 
 use nc_compat::load_classic_core_files;
 use nc_data::{
-    CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents, Order, Real48,
+    Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation, EmpireId, MaintenanceEvents,
+    Order, Planet, Real48, set_armies_aboard, set_mission_target, set_starbase_at_rest,
+    set_troop_transports,
 };
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 use std::path::Path;
@@ -108,7 +110,7 @@ pub fn board() -> CoreGameData {
         .join("ecmaint-post")
         .join("v1.5");
     let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
-    game_data.bases.records.clear();
+    game_data.bases.clear();
     game_data
 }
 
@@ -118,48 +120,51 @@ pub const WORLD: [u8; 2] = [15, 13];
 /// `board()` with `WORLD` given to empire 2.
 pub fn board_with_world() -> CoreGameData {
     let mut game_data = board();
-    game_data.planets.records[13].set_as_owned_target_world(
-        WORLD,
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        4,
-        0,
-        2,
-        2,
-    );
+    game_data.planets[13] = Planet {
+        sector: Coords::from_array(WORLD),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: 4,
+        ground_batteries: 0,
+        years_under_owner: 2,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     game_data
 }
 
 /// Replace fleet record `idx` (owned by `fleet.owner` in the fixture:
 /// records 0-3 empire 1, 4-7 empire 2, 8-11 empire 3, 12-15 empire 4).
 pub fn put(game_data: &mut CoreGameData, idx: usize, fleet: Fleet) {
-    let record = &mut game_data.fleets.records[idx];
-    assert_eq!(record.owner_empire_raw(), fleet.owner, "fleet {idx} owner");
-    record.set_current_location_coords_raw(fleet.at);
-    record.set_x_fraction(Real48::HALF);
-    record.set_y_fraction(Real48::HALF);
-    record.set_depth(if fleet.in_system {
+    let record = &mut game_data.fleets[idx];
+    assert_eq!(record.owner.0, fleet.owner, "fleet {idx} owner");
+    record.sector = Coords::from_array(fleet.at);
+    record.x_fraction = Real48::HALF;
+    record.y_fraction = Real48::HALF;
+    record.depth = if fleet.in_system {
         Real48::ONE
     } else {
         Real48::ZERO
-    });
-    record.set_standing_order_kind(fleet.order);
-    record.set_standing_order_target_coords_raw(fleet.target);
-    record.set_mission_aux_bytes([u8::from(fleet.target_in_system), fleet.mission_id]);
-    record.set_battleship_count(fleet.ships.bb);
-    record.set_cruiser_count(fleet.ships.ca);
-    record.set_destroyer_count(fleet.ships.dd);
-    record.set_scout_count(u16::from(fleet.ships.sc));
-    record.set_troop_transport_count(fleet.ships.tt);
-    record.set_army_count(0);
-    record.set_etac_count(fleet.ships.et);
-    record.set_rules_of_engagement(fleet.roe);
-    record.set_max_speed(fleet.max_speed);
-    record.set_current_speed(fleet.speed);
+    };
+    record.order = fleet.order;
+    record.target = Coords::from_array(fleet.target);
+    set_mission_target(
+        record,
+        u8::from(fleet.target_in_system),
+        u16::from(fleet.mission_id),
+    );
+    record.ships.battleships = fleet.ships.bb;
+    record.ships.cruisers = fleet.ships.ca;
+    record.ships.destroyers = fleet.ships.dd;
+    record.ships.scouts = u16::from(fleet.ships.sc);
+    set_troop_transports(record, fleet.ships.tt);
+    set_armies_aboard(record, 0);
+    record.ships.etacs = fleet.ships.et;
+    record.rules_of_engagement = fleet.roe;
+    record.max_speed = fleet.max_speed;
+    record.speed = fleet.speed;
 }
 
 /// A starbase of `owner` at `coords`, in orbit (depth 1) or deep space.
@@ -170,18 +175,18 @@ pub fn add_starbase(
     coords: [u8; 2],
     in_system: bool,
 ) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
-    base.set_base_id_raw(u16::from(id));
-    base.set_record_number_raw(1);
-    base.set_coords_raw(coords);
-    base.set_target_coords_raw(coords);
-    base.set_owner_empire_raw(owner);
-    base.set_at_rest_motion();
+    let mut base = nc_data::Starbase::default();
+    base.base_id.0 = u16::from(id);
+    base.record.0 = 1;
+    base.sector = Coords::from_array(coords);
+    base.target = Coords::from_array(coords);
+    base.owner.0 = owner;
+    set_starbase_at_rest(&mut base);
     if !in_system {
-        base.set_depth(nc_data::Real48::ZERO);
+        base.depth = nc_data::Real48::ZERO;
     }
-    base.set_target_depth_raw(u8::from(in_system));
-    game_data.bases.records.push(base);
+    base.target_depth = u8::from(in_system);
+    game_data.bases.push(base);
 }
 
 /// Diplomacy among empires 1-4: `(from, to)` means `from` has declared `to`

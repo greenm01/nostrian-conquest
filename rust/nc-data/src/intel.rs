@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
 use crate::storage::{IntelTier, PlanetIntelSnapshot};
-use crate::{CoreGameData, PlanetIntelEvent, PlanetIntelSource};
+use crate::{
+    CoreGameData, PlanetIntelEvent, PlanetIntelSource, has_any_force, present_production_points,
+    stored_production_points,
+};
 
 pub fn merge_player_intel_from_runtime(
     game_data: &CoreGameData,
@@ -12,7 +15,6 @@ pub fn merge_player_intel_from_runtime(
 ) -> BTreeMap<usize, PlanetIntelSnapshot> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .map(|(planet_index, planet)| {
@@ -65,7 +67,7 @@ pub fn merge_player_intel_from_runtime(
             }
             if current_turn_grant.is_none()
                 && previous_snapshot.is_some()
-                && viewer_has_fleet_presence(game_data, viewer_empire_id, planet.coords_raw())
+                && viewer_has_fleet_presence(game_data, viewer_empire_id, planet.sector.to_array())
             {
                 merged_snapshot = refresh_visible_snapshot_from_runtime(
                     game_data,
@@ -86,7 +88,7 @@ pub fn build_runtime_planet_intel_snapshot(
     planet_idx: usize,
     source: PlanetIntelSource,
 ) -> Option<PlanetIntelSnapshot> {
-    let planet = game_data.planets.records.get(planet_idx)?;
+    let planet = game_data.planets.get(planet_idx)?;
     Some(snapshot_from_runtime_grant(
         PlanetIntelSnapshot {
             planet_record_index_1_based: planet_idx + 1,
@@ -166,14 +168,14 @@ pub fn active_starbase_count_at(game_data: &CoreGameData, coords: [u8; 2]) -> u8
 fn snapshot_from_runtime(
     planet_record_index_1_based: usize,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     viewer_empire_id: u8,
     year: u16,
     current_turn_grant: Option<&PlanetIntelEvent>,
 ) -> PlanetIntelSnapshot {
-    let owner_empire_id = planet.owner_empire_slot_raw();
+    let owner_empire_id = planet.owner.0;
     if owner_empire_id == viewer_empire_id {
-        let starbase_count = active_starbase_count_at(game_data, planet.coords_raw());
+        let starbase_count = active_starbase_count_at(game_data, planet.sector.to_array());
         return PlanetIntelSnapshot {
             planet_record_index_1_based,
             intel_tier: IntelTier::Owned,
@@ -181,17 +183,16 @@ fn snapshot_from_runtime(
             last_intel_year: None,
             seen_year: None,
             scout_year: None,
-            known_name: Some(planet.status_or_name_summary()),
+            known_name: Some(planet.name.trim().to_string()),
             known_owner_empire_id: Some(viewer_empire_id),
-            known_potential_production: Some(planet.potential_production_points()),
-            known_armies: Some(planet.army_count_raw()),
-            known_ground_batteries: Some(planet.ground_batteries_raw()),
+            known_potential_production: Some(u16::from(planet.potential_production)),
+            known_armies: Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+            known_ground_batteries: Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
             known_starbase_count: Some(starbase_count),
-            known_current_production: planet
-                .present_production_points()
+            known_current_production: Some(present_production_points(planet))
                 .map(|value| value.min(u16::from(u8::MAX)) as u8),
             known_stored_points: Some(
-                planet.stored_production_points().min(u32::from(u16::MAX)) as u16
+                stored_production_points(planet).min(u32::from(u16::MAX)) as u16
             ),
             known_docked_summary: None,
             known_orbit_summary: None,
@@ -231,7 +232,7 @@ fn snapshot_from_runtime(
 fn snapshot_from_turn_grant(
     snapshot: PlanetIntelSnapshot,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     viewer_empire_id: u8,
     year: u16,
     grant: &PlanetIntelEvent,
@@ -256,7 +257,7 @@ fn snapshot_from_turn_grant(
 fn snapshot_from_runtime_grant(
     mut snapshot: PlanetIntelSnapshot,
     game_data: &CoreGameData,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     source: PlanetIntelSource,
     viewer_empire_id: u8,
     year: u16,
@@ -265,18 +266,18 @@ fn snapshot_from_runtime_grant(
 
     match source {
         PlanetIntelSource::ScoutSolarSystem => {
-            snapshot.known_name = Some(planet.status_or_name_summary());
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-            snapshot.known_potential_production = Some(planet.potential_production_points());
-            let orbit_presence = orbit_presence(game_data, planet.coords_raw());
-            snapshot.known_armies = Some(planet.army_count_raw());
-            snapshot.known_ground_batteries = Some(planet.ground_batteries_raw());
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
+            let orbit_presence = orbit_presence(game_data, planet.sector.to_array());
+            snapshot.known_armies = Some(u8::try_from(planet.armies).unwrap_or(u8::MAX));
+            snapshot.known_ground_batteries =
+                Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
             snapshot.known_starbase_count = Some(orbit_presence.starbase_count);
-            snapshot.known_current_production = planet
-                .present_production_points()
+            snapshot.known_current_production = Some(present_production_points(planet))
                 .map(|value| value.min(u16::from(u8::MAX)) as u8);
             snapshot.known_stored_points =
-                Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16);
+                Some(stored_production_points(planet).min(u32::from(u16::MAX)) as u16);
             snapshot.known_docked_summary = Some(crate::format_stardock_summary(
                 planet,
                 crate::CompactUnitSummaryStyle::Words,
@@ -288,41 +289,42 @@ fn snapshot_from_runtime_grant(
             snapshot.scout_year = Some(compat_year);
         }
         PlanetIntelSource::AssaultSuccess => {
-            snapshot.known_name = Some(planet.status_or_name_summary());
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-            snapshot.known_potential_production = Some(planet.potential_production_points());
-            snapshot.known_armies = Some(planet.army_count_raw());
-            snapshot.known_ground_batteries = Some(planet.ground_batteries_raw());
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
+            snapshot.known_armies = Some(u8::try_from(planet.armies).unwrap_or(u8::MAX));
+            snapshot.known_ground_batteries =
+                Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
             snapshot.last_intel_year = Some(compat_year);
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
         PlanetIntelSource::ViewWorld => {
-            snapshot.known_name = Some(planet.status_or_name_summary());
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-            snapshot.known_potential_production = Some(planet.potential_production_points());
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
             snapshot.last_intel_year = Some(compat_year);
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
         PlanetIntelSource::ColonizeBlockedByOwner => {
-            snapshot.known_name = Some(planet.status_or_name_summary());
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-            snapshot.known_potential_production = Some(planet.potential_production_points());
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
             snapshot.last_intel_year = Some(compat_year);
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
         PlanetIntelSource::CivilDisorderContact => {
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
             snapshot.last_intel_year = Some(compat_year);
             snapshot.seen_year = Some(compat_year);
             snapshot.scout_year = Some(compat_year);
         }
         PlanetIntelSource::AssaultFailure => {
-            snapshot.known_name = Some(planet.status_or_name_summary());
-            snapshot.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-            snapshot.known_potential_production = Some(planet.potential_production_points());
+            snapshot.known_name = Some(planet.name.trim().to_string());
+            snapshot.known_owner_empire_id = Some(planet.owner.0);
+            snapshot.known_potential_production = Some(u16::from(planet.potential_production));
             snapshot.last_intel_year = Some(year);
             snapshot.seen_year = Some(year);
             snapshot.scout_year = Some(0);
@@ -433,17 +435,17 @@ fn viewer_has_fleet_presence(
     viewer_empire_id: u8,
     coords: [u8; 2],
 ) -> bool {
-    game_data.fleets.records.iter().any(|fleet| {
-        fleet.owner_empire_raw() == viewer_empire_id
-            && fleet.current_location_coords_raw() == coords
-            && fleet.has_any_force()
+    game_data.fleets.iter().any(|fleet| {
+        fleet.owner.0 == viewer_empire_id
+            && fleet.sector.to_array() == coords
+            && has_any_force(fleet)
     })
 }
 
 fn refresh_visible_snapshot_from_runtime(
     game_data: &CoreGameData,
     snapshot: &PlanetIntelSnapshot,
-    planet: &crate::PlanetRecord,
+    planet: &crate::Planet,
     year: u16,
 ) -> PlanetIntelSnapshot {
     if matches!(snapshot.intel_tier, IntelTier::Unknown | IntelTier::Owned) {
@@ -457,20 +459,20 @@ fn refresh_visible_snapshot_from_runtime(
     if snapshot.scout_year.is_some() && snapshot.scout_year != Some(0) {
         refreshed.scout_year = Some(compat_year);
     }
-    refreshed.known_name = Some(planet.status_or_name_summary());
-    refreshed.known_owner_empire_id = Some(planet.owner_empire_slot_raw());
-    refreshed.known_potential_production = Some(planet.potential_production_points());
+    refreshed.known_name = Some(planet.name.trim().to_string());
+    refreshed.known_owner_empire_id = Some(planet.owner.0);
+    refreshed.known_potential_production = Some(u16::from(planet.potential_production));
 
     if refreshed.intel_tier == IntelTier::Full {
-        let orbit_presence = orbit_presence(game_data, planet.coords_raw());
-        refreshed.known_armies = Some(planet.army_count_raw());
-        refreshed.known_ground_batteries = Some(planet.ground_batteries_raw());
+        let orbit_presence = orbit_presence(game_data, planet.sector.to_array());
+        refreshed.known_armies = Some(u8::try_from(planet.armies).unwrap_or(u8::MAX));
+        refreshed.known_ground_batteries =
+            Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
         refreshed.known_starbase_count = Some(orbit_presence.starbase_count);
-        refreshed.known_current_production = planet
-            .present_production_points()
+        refreshed.known_current_production = Some(present_production_points(planet))
             .map(|value| value.min(u16::from(u8::MAX)) as u8);
         refreshed.known_stored_points =
-            Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16);
+            Some(stored_production_points(planet).min(u32::from(u16::MAX)) as u16);
         refreshed.known_docked_summary = Some(crate::format_stardock_summary(
             planet,
             crate::CompactUnitSummaryStyle::Words,
@@ -502,15 +504,13 @@ fn snapshot_fingerprint_matches(left: &PlanetIntelSnapshot, right: &PlanetIntelS
 fn orbit_presence(game_data: &CoreGameData, coords: [u8; 2]) -> OrbitPresence {
     let fleet_count = game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.current_location_coords_raw() == coords && fleet.has_any_force())
+        .filter(|fleet| fleet.sector.to_array() == coords && has_any_force(fleet))
         .count() as u32;
     let starbase_count = game_data
         .bases
-        .records
         .iter()
-        .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
+        .filter(|base| base.sector.to_array() == coords && base.base_id.0 != 0)
         .count()
         .min(usize::from(u8::MAX)) as u8;
 

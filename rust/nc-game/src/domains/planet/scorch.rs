@@ -185,8 +185,10 @@ impl App {
                     .planet
                     .scorch_selected_planet_record
                     .ok_or_else(|| "Choose one of your planets first.".to_string())?;
-                let planet_name = self.game_data.planets.records[planet_record_index - 1]
-                    .status_or_name_summary();
+                let planet_name = self.game_data.planets[planet_record_index - 1]
+                    .name
+                    .trim()
+                    .to_string();
                 self.game_data
                     .scorch_planet_surface(planet_record_index)
                     .map_err(|err| err.to_string())?;
@@ -290,13 +292,11 @@ impl App {
         let Some((record_index, planet)) =
             self.game_data
                 .planets
-                .records
                 .iter()
                 .enumerate()
                 .find(|(_, planet)| {
-                    planet.coords_raw() == coords
-                        && planet.owner_empire_slot_raw() as usize
-                            == self.player.record_index_1_based
+                    planet.sector.to_array() == coords
+                        && planet.owner.0 as usize == self.player.record_index_1_based
                 })
         else {
             return Err(format!(
@@ -307,7 +307,7 @@ impl App {
         if self.planet_scorch_orders.contains(&(record_index + 1)) {
             return Err(format!(
                 "Planet \"{}\" is already scorched.",
-                planet.status_or_name_summary()
+                planet.name.trim().to_string()
             ));
         }
         Ok(record_index + 1)
@@ -315,7 +315,7 @@ impl App {
 
     pub(crate) fn selected_planet_scorch_name_and_coords(&self) -> Option<(String, [u8; 2])> {
         let record_index = self.planet.scorch_selected_planet_record?;
-        let planet = self.game_data.planets.records.get(record_index - 1)?;
-        Some((planet.status_or_name_summary(), planet.coords_raw()))
+        let planet = self.game_data.planets.get(record_index - 1)?;
+        Some((planet.name.trim().to_string(), planet.sector.to_array()))
     }
 }

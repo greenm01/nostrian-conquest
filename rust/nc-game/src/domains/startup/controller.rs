@@ -29,16 +29,15 @@ impl App {
             return Ok(());
         }
         let player_idx = self.player.record_index_1_based.saturating_sub(1);
-        let current_year = self.game_data.conquest.game_year();
+        let current_year = self.game_data.conquest.game_year;
         let Some(activity_state) = self.player_activity_states.get(player_idx).copied() else {
             return Ok(());
         };
         let last_run_year = self
             .game_data
-            .player
-            .records
+            .players
             .get(player_idx)
-            .map(|player| player.last_run_year_raw())
+            .map(|player| player.last_year_on)
             .unwrap_or(0);
         if last_run_year == current_year
             && activity_state.last_participation_year == current_year
@@ -148,7 +147,7 @@ impl App {
             if let Some(row_idx) = row_idx {
                 delete_report_block_for_viewer(
                     &mut self.report_block_rows,
-                    &self.game_data.player.records,
+                    &self.game_data.players,
                     row_idx,
                     self.player.record_index_1_based as u8,
                 );
@@ -418,7 +417,7 @@ impl App {
                 "report",
                 "reports",
                 "Reports",
-                self.game_data.conquest.game_year(),
+                self.game_data.conquest.game_year,
                 &mut self.startup_state.results_review_history_rows,
             )
         } else {
@@ -429,7 +428,7 @@ impl App {
                 "message",
                 "messages",
                 "Messages",
-                self.game_data.conquest.game_year(),
+                self.game_data.conquest.game_year,
                 &mut self.startup_state.messages_review_history_rows,
             )
         };
@@ -1236,15 +1235,14 @@ impl App {
 
     pub(crate) fn first_time_empire_rows(&self) -> Vec<String> {
         self.game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .map(|(idx, player)| {
                 let slot = idx + 1;
-                if player.occupied_flag() != 0 {
-                    let handle = player.assigned_player_handle_summary();
-                    let empire = player.controlled_empire_name_summary();
+                if player.mode.to_raw() != 0 {
+                    let handle = player.handle.trim().to_string();
+                    let empire = player.empire_name.trim().to_string();
                     format!(
                         "Empire {:>2}: JOINED  {}{}",
                         slot,
@@ -1276,23 +1274,19 @@ impl App {
     ) -> Result<([u8; 2], u16, u16), Box<dyn std::error::Error>> {
         let planet_index = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
             .ok_or("player record missing for homeworld prompt")?
-            .homeworld_planet_index_1_based_raw() as usize;
+            .homeworld as usize;
         let planet = self
             .game_data
             .planets
-            .records
             .get(planet_index.saturating_sub(1))
             .ok_or("homeworld planet missing for first-time prompt")?;
         Ok((
-            planet.coords_raw(),
-            planet
-                .present_production_points()
-                .unwrap_or(planet.potential_production_points()),
-            planet.potential_production_points(),
+            planet.sector.to_array(),
+            nc_data::present_production_points(planet),
+            u16::from(planet.potential_production),
         ))
     }
 
@@ -1307,15 +1301,12 @@ impl App {
         let planet = self
             .game_data
             .planets
-            .records
             .get(planet_index - 1)
             .ok_or("colony world missing for naming prompt")?;
         Ok((
-            planet.coords_raw(),
-            planet
-                .present_production_points()
-                .unwrap_or(planet.potential_production_points()),
-            planet.potential_production_points(),
+            planet.sector.to_array(),
+            nc_data::present_production_points(planet),
+            u16::from(planet.potential_production),
         ))
     }
 
@@ -1330,8 +1321,7 @@ impl App {
                 )?;
             let player_record_index_1_based = runtime_state
                 .game_data
-                .player
-                .records
+                .players
                 .iter()
                 .enumerate()
                 .find_map(|(idx, _)| {
@@ -1358,11 +1348,10 @@ impl App {
         if let Some(alias) = self.startup_state.caller_alias.as_deref() {
             if let Some(player) = self
                 .game_data
-                .player
-                .records
+                .players
                 .get_mut(self.player.record_index_1_based - 1)
             {
-                player.set_assigned_player_handle_raw(alias);
+                nc_data::set_player_handle(player, alias);
             }
         }
         self.startup_state.unbound_bbs_caller = false;
@@ -1394,15 +1383,14 @@ impl App {
         let seat = self.player.record_index_1_based;
         let player = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(seat - 1)
             .ok_or("player record missing for handle binding")?;
-        if !player.assigned_player_handle_matches(handle) {
+        if !nc_data::player_handle_matches(player, handle) {
             if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
                 return Ok(false);
             }
-            player.set_assigned_player_handle_raw(handle);
+            nc_data::set_player_handle(player, handle);
             self.save_game_data()?;
             self.refresh_player_context()?;
         }
@@ -1443,11 +1431,10 @@ impl App {
     fn complete_preloaded_empire_rename(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         let player = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(self.player.record_index_1_based - 1)
             .ok_or("player record missing for pre-loaded rename")?;
-        player.set_controlled_empire_name_raw(&self.startup_state.first_time_empire_name);
+        nc_data::set_empire_name(player, &self.startup_state.first_time_empire_name);
         self.save_game_data()?;
         self.refresh_player_context()?;
         Ok(())
@@ -1483,7 +1470,7 @@ impl App {
             has_visible_runtime_messages(
                 self.player.record_index_1_based as u8,
                 &self.queued_mail,
-                self.game_data.conquest.game_year(),
+                self.game_data.conquest.game_year,
             ),
         );
         let startup_summary = StartupSummary::from_reports(
@@ -1519,23 +1506,23 @@ impl App {
     fn sync_player_review_flags(&mut self) {
         let has_results = self.has_active_report_blocks();
         let results_chain =
-            layout_classic_results(&self.game_data.player.records, &self.report_block_rows)
+            layout_classic_results(&self.game_data.players, &self.report_block_rows)
                 .chain_for(self.player.record_index_1_based as u8);
         if let Some(player) = self
             .game_data
-            .player
-            .records
+            .players
             .get_mut(self.player.record_index_1_based - 1)
         {
-            player.set_classic_login_reviewables_present(
+            nc_data::set_login_reviewables_present(
+                player,
                 has_results
                     || has_visible_runtime_messages(
                         self.player.record_index_1_based as u8,
                         &self.queued_mail,
-                        self.game_data.conquest.game_year(),
+                        self.game_data.conquest.game_year,
                     ),
             );
-            player.set_classic_results_chain(results_chain);
+            nc_data::set_results_chain(player, results_chain);
         }
     }
 
@@ -1620,22 +1607,20 @@ impl App {
     fn pending_naming_screen(&self) -> Option<ScreenId> {
         let Some(player) = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
         else {
             return None;
         };
-        let planet_index = player.homeworld_planet_index_1_based_raw() as usize;
+        let planet_index = player.homeworld as usize;
         if planet_index == 0 {
             return self.pending_colony_world_naming_screen();
         }
         if self
             .game_data
             .planets
-            .records
             .get(planet_index - 1)
-            .filter(|planet| planet.is_named_homeworld_seed())
+            .filter(|planet| nc_data::is_named_homeworld_seed(&planet))
             .is_some()
         {
             return Some(ScreenId::FirstTimeHomeworldName);
@@ -1689,19 +1674,17 @@ impl App {
         let player_empire = self.player.record_index_1_based as u8;
         let homeworld_index = self
             .game_data
-            .player
-            .records
+            .players
             .get(self.player.record_index_1_based - 1)
-            .map(|player| player.homeworld_planet_index_1_based_raw() as usize)
+            .map(|player| player.homeworld as usize)
             .unwrap_or(0);
         self.game_data
             .planets
-            .records
             .iter()
             .enumerate()
             .find(|(idx, planet)| {
-                planet.owner_empire_slot_raw() == player_empire
-                    && planet.planet_name() == "Not Named Yet"
+                planet.owner.0 == player_empire
+                    && planet.name.clone() == "Not Named Yet"
                     && *idx + 1 != homeworld_index
             })
             .map(|(idx, _)| idx + 1)

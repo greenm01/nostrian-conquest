@@ -3,8 +3,8 @@
 //! random sequence, so these check rates with binomial tolerances.
 
 use nc_data::{
-    ContactReportSource, EncounterDispositionEvent, EncounterDispositionReason, Order,
-    StarbaseAlert,
+    ContactReportSource, Coords, EmpireId, EncounterDispositionEvent, EncounterDispositionReason,
+    Order, Planet, Real48, StarbaseAlert,
 };
 
 use super::support::{
@@ -268,19 +268,18 @@ fn starbases_sight_at_classic_odds_and_never_attack() {
         let mut scenario = board();
         if in_system {
             // A base stays in orbit only over a world of its owner's.
-            scenario.planets.records[13].set_as_owned_target_world(
-                sector,
-                [0x64, 0x87],
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-                0x04,
-                0x0b,
-                *b"TargetPrimeet",
-                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-                0,
-                0,
-                2,
-                1,
-            );
+            scenario.planets[13] = Planet {
+                sector: Coords::from_array(sector),
+                potential_production: 100,
+                production: Real48::from_int(100),
+                stored_goods: Real48::from_int(66),
+                name: "TargetPrime".to_string(),
+                armies: 0,
+                ground_batteries: 0,
+                years_under_owner: 2,
+                owner: EmpireId(1),
+                ..Planet::default()
+            };
         }
         add_starbase(&mut scenario, 1, 1, sector, in_system);
         put(
@@ -387,8 +386,8 @@ fn an_attacker_loses_the_ticks_movement() {
         .max_speed(5)
         .heading(Order::MoveOnly, [12, row], false, 1);
     let x_of = |game_data: &nc_data::CoreGameData| {
-        let fleet = &game_data.fleets.records[0];
-        f64::from(fleet.current_location_coords_raw()[0]) + fleet.x_fraction().to_f64()
+        let fleet = &game_data.fleets[0];
+        f64::from(fleet.sector.to_array()[0]) + fleet.x_fraction.to_f64()
     };
     let mut alone = board();
     put(&mut alone, 0, mover);
@@ -487,19 +486,18 @@ fn a_starbase_reports_what_it_makes_of_the_fleet() {
     ] {
         let mut scenario = board();
         if in_system {
-            scenario.planets.records[13].set_as_owned_target_world(
-                sector,
-                [0x64, 0x87],
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-                0x04,
-                0x0b,
-                *b"TargetPrimeet",
-                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-                0,
-                0,
-                2,
-                1,
-            );
+            scenario.planets[13] = Planet {
+                sector: Coords::from_array(sector),
+                potential_production: 100,
+                production: Real48::from_int(100),
+                stored_goods: Real48::from_int(66),
+                name: "TargetPrime".to_string(),
+                armies: 0,
+                ground_batteries: 0,
+                years_under_owner: 2,
+                owner: EmpireId(1),
+                ..Planet::default()
+            };
         }
         add_starbase(&mut scenario, 1, 1, sector, in_system);
         put(
@@ -632,8 +630,8 @@ fn a_holding_fleets_speed_is_zeroed_by_its_dispatch() {
     let (game_data, _) = years(&scenario, &declared(&[]), 0..1)
         .next()
         .expect("one year");
-    let fleet = &game_data.fleets.records[0];
-    assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(fleet.current_speed(), 0);
-    assert_eq!(fleet.current_location_coords_raw(), sector);
+    let fleet = &game_data.fleets[0];
+    assert_eq!(fleet.order, Order::HoldPosition);
+    assert_eq!(fleet.speed, 0);
+    assert_eq!(fleet.sector.to_array(), sector);
 }

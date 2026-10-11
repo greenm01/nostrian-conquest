@@ -497,7 +497,7 @@ fn preloaded_first_login_can_rename_empire_before_homeworld_naming() {
 
     let runtime = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        runtime.game_data.player.records[0].controlled_empire_name_summary(),
+        runtime.game_data.players[0].empire_name.trim().to_string(),
         "Codex Dominion"
     );
 }
@@ -691,18 +691,16 @@ fn preloaded_empire_rename_failure_returns_to_name_entry_with_status() {
 fn returning_player_with_owned_unnamed_colony_is_routed_to_colony_naming() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     let colony = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .expect("need a non-homeworld planet for colony naming test");
-    colony.1.set_owner_empire_slot_raw(1);
-    colony.1.set_planet_name("Not Named Yet");
+    colony.1.owner.0 = 1;
+    nc_data::set_planet_name(colony.1, "Not Named Yet");
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -728,18 +726,16 @@ fn returning_player_with_owned_unnamed_colony_is_routed_to_colony_naming() {
 fn colony_world_naming_updates_planet_and_enters_main_menu() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     let colony_index = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .map(|(idx, planet)| {
-            planet.set_owner_empire_slot_raw(1);
-            planet.set_planet_name("Not Named Yet");
+            planet.owner.0 = 1;
+            nc_data::set_planet_name(planet, "Not Named Yet");
             idx + 1
         })
         .expect("need a non-homeworld planet for colony naming test");
@@ -791,7 +787,7 @@ fn colony_world_naming_updates_planet_and_enters_main_menu() {
 
     let runtime = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        runtime.game_data.planets.records[colony_index - 1].planet_name(),
+        runtime.game_data.planets[colony_index - 1].name.clone(),
         "New Horizon"
     );
 }
@@ -800,18 +796,16 @@ fn colony_world_naming_updates_planet_and_enters_main_menu() {
 fn colony_world_name_failure_returns_to_name_entry_with_status() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .map(|(_, planet)| {
-            planet.set_owner_empire_slot_raw(1);
-            planet.set_planet_name("Not Named Yet");
+            planet.owner.0 = 1;
+            nc_data::set_planet_name(planet, "Not Named Yet");
         })
         .expect("need a non-homeworld planet for colony naming test");
     save_runtime_state(&fixture_dir, &state);
@@ -874,28 +868,28 @@ fn colony_world_name_failure_returns_to_name_entry_with_status() {
 fn colony_world_naming_cannot_be_escaped_to_main_menu() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .expect("need a non-homeworld planet for colony naming test")
         .1
-        .set_owner_empire_slot_raw(1);
-    state
-        .game_data
-        .planets
-        .records
-        .iter_mut()
-        .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() == 1)
-        .expect("need owned unnamed colony")
-        .1
-        .set_planet_name("Not Named Yet");
+        .owner
+        .0 = 1;
+    nc_data::set_planet_name(
+        &mut state
+            .game_data
+            .planets
+            .iter_mut()
+            .enumerate()
+            .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 == 1)
+            .expect("need owned unnamed colony")
+            .1,
+        "Not Named Yet",
+    );
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -940,28 +934,28 @@ fn colony_world_naming_cannot_be_escaped_to_main_menu() {
 fn colony_world_name_prompt_shows_esc_without_redundant_instruction() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .expect("need a non-homeworld planet for colony naming test")
         .1
-        .set_owner_empire_slot_raw(1);
-    state
-        .game_data
-        .planets
-        .records
-        .iter_mut()
-        .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() == 1)
-        .expect("need owned unnamed colony")
-        .1
-        .set_planet_name("Not Named Yet");
+        .owner
+        .0 = 1;
+    nc_data::set_planet_name(
+        &mut state
+            .game_data
+            .planets
+            .iter_mut()
+            .enumerate()
+            .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 == 1)
+            .expect("need owned unnamed colony")
+            .1,
+        "Not Named Yet",
+    );
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -994,18 +988,16 @@ fn colony_world_name_prompt_shows_esc_without_redundant_instruction() {
 fn first_time_join_routes_from_homeworld_naming_to_colony_naming_when_needed() {
     let fixture_dir = temp_joined_needs_homeworld_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     let colony_index = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .map(|(idx, planet)| {
-            planet.set_owner_empire_slot_raw(1);
-            planet.set_planet_name("Not Named Yet");
+            planet.owner.0 = 1;
+            nc_data::set_planet_name(planet, "Not Named Yet");
             idx + 1
         })
         .expect("need a non-homeworld planet for colony naming test");
@@ -1109,7 +1101,7 @@ fn first_time_join_routes_from_homeworld_naming_to_colony_naming_when_needed() {
 
     let runtime = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        runtime.game_data.planets.records[colony_index - 1].planet_name(),
+        runtime.game_data.planets[colony_index - 1].name.clone(),
         "New Horizon"
     );
 }
@@ -1118,15 +1110,14 @@ fn first_time_join_routes_from_homeworld_naming_to_colony_naming_when_needed() {
 fn returning_player_with_multiple_unnamed_colonies_is_prompted_for_each_in_turn() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     let mut renamed_targets = Vec::new();
-    for (idx, planet) in state.game_data.planets.records.iter_mut().enumerate() {
-        if idx + 1 == homeworld_index || planet.owner_empire_slot_raw() == 1 {
+    for (idx, planet) in state.game_data.planets.iter_mut().enumerate() {
+        if idx + 1 == homeworld_index || planet.owner.0 == 1 {
             continue;
         }
-        planet.set_owner_empire_slot_raw(1);
-        planet.set_planet_name("Not Named Yet");
+        planet.owner.0 = 1;
+        nc_data::set_planet_name(planet, "Not Named Yet");
         renamed_targets.push(idx + 1);
         if renamed_targets.len() == 2 {
             break;
@@ -1211,11 +1202,15 @@ fn returning_player_with_multiple_unnamed_colonies_is_prompted_for_each_in_turn(
 
     let runtime = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        runtime.game_data.planets.records[renamed_targets[0] - 1].planet_name(),
+        runtime.game_data.planets[renamed_targets[0] - 1]
+            .name
+            .clone(),
         "New Horizon"
     );
     assert_eq!(
-        runtime.game_data.planets.records[renamed_targets[1] - 1].planet_name(),
+        runtime.game_data.planets[renamed_targets[1] - 1]
+            .name
+            .clone(),
         "Second Dawn"
     );
 }
@@ -1315,7 +1310,7 @@ fn escaping_empire_name_does_not_partially_join_player() {
     );
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    assert_eq!(game_data.player.records[0].occupied_flag(), 0);
+    assert_eq!(game_data.players[0].mode.to_raw(), 0);
 }
 
 #[test]
@@ -1508,18 +1503,18 @@ fn first_time_join_flow_updates_player_and_homeworld_then_enters_main_menu() {
     assert_eq!(app.current_screen(), ScreenId::MainMenu);
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    let player = &game_data.player.records[0];
-    assert_eq!(player.occupied_flag(), 1);
-    assert_eq!(player.controlled_empire_name_summary(), "Codex Dominion");
-    assert_eq!(player.autopilot_flag(), 0);
-    let homeworld_index = player.homeworld_planet_index_1_based_raw() as usize;
-    let homeworld = &game_data.planets.records[homeworld_index - 1];
-    assert_eq!(homeworld.planet_name(), "Codex Prime");
+    let player = &game_data.players[0];
+    assert_eq!(player.mode.to_raw(), 1);
+    assert_eq!(player.empire_name.trim().to_string(), "Codex Dominion");
+    assert_eq!(u8::from(player.autopilot), 0);
+    let homeworld_index = player.homeworld as usize;
+    let homeworld = &game_data.planets[homeworld_index - 1];
+    assert_eq!(homeworld.name.clone(), "Codex Prime");
     assert_eq!(
-        homeworld.stored_production_points(),
+        nc_data::stored_production_points(&homeworld),
         yearly_tax_revenue(
-            homeworld.present_production_points().unwrap_or(0),
-            player.tax_rate(),
+            nc_data::present_production_points(&homeworld),
+            player.tax_rate,
         )
     );
 }
@@ -1579,14 +1574,11 @@ fn unbound_bbs_first_time_join_claims_lowest_open_unreserved_seat() {
     assert_eq!(app.player.record_index_1_based, 2);
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    assert_eq!(game_data.player.records[0].occupied_flag(), 0);
-    assert_eq!(game_data.player.records[1].occupied_flag(), 1);
+    assert_eq!(game_data.players[0].mode.to_raw(), 0);
+    assert_eq!(game_data.players[1].mode.to_raw(), 1);
+    assert_eq!(game_data.players[1].handle.trim().to_string(), "RIVAL");
     assert_eq!(
-        game_data.player.records[1].assigned_player_handle_summary(),
-        "RIVAL"
-    );
-    assert_eq!(
-        game_data.player.records[1].controlled_empire_name_summary(),
+        game_data.players[1].empire_name.trim().to_string(),
         "Codex Dominion"
     );
 }
@@ -1922,12 +1914,12 @@ fn reserved_first_time_join_flow_updates_player_and_homeworld_then_enters_main_m
     assert_eq!(app.current_screen(), ScreenId::MainMenu);
 
     let game_data = latest_runtime_state(&fixture_dir).game_data;
-    let player = &game_data.player.records[0];
-    assert_eq!(player.occupied_flag(), 1);
-    assert_eq!(player.controlled_empire_name_summary(), "Codex Dominion");
-    let homeworld_index = player.homeworld_planet_index_1_based_raw() as usize;
-    let homeworld = &game_data.planets.records[homeworld_index - 1];
-    assert_eq!(homeworld.planet_name(), "Codex Prime");
+    let player = &game_data.players[0];
+    assert_eq!(player.mode.to_raw(), 1);
+    assert_eq!(player.empire_name.trim().to_string(), "Codex Dominion");
+    let homeworld_index = player.homeworld as usize;
+    let homeworld = &game_data.planets[homeworld_index - 1];
+    assert_eq!(homeworld.name.clone(), "Codex Prime");
 }
 
 #[test]
@@ -1975,8 +1967,8 @@ fn first_time_join_from_reserved_dropfile_persists_caller_alias() {
         AppOutcome::Continue
     );
 
-    let player = &latest_runtime_state(&fixture_dir).game_data.player.records[0];
-    assert_eq!(player.assigned_player_handle_summary(), "SYSOP");
+    let player = &latest_runtime_state(&fixture_dir).game_data.players[0];
+    assert_eq!(player.handle.trim().to_string(), "SYSOP");
 }
 
 #[test]
@@ -2050,7 +2042,7 @@ fn defeated_player_with_pending_reports_uses_returning_review_flow() {
     let fixture_dir = temp_game_copy();
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.player.records[0].set_owner_empire_raw(0);
+    state.game_data.players[0].mode = nc_data::PlayerMode::from_raw(0);
     state.report_block_rows.push(nc_data::ReportBlockRow {
         viewer_empire_id: 1,
         block_index: 0,
@@ -2060,7 +2052,7 @@ fn defeated_player_with_pending_reports_uses_returning_review_flow() {
         raw_bytes: None,
         recipient_deleted: false,
     });
-    let player_count = state.game_data.conquest.player_count();
+    let player_count = state.game_data.conquest.player_count;
     let planet_intel_by_viewer = (1..=player_count)
         .map(|viewer_empire_id| {
             store
@@ -2124,16 +2116,16 @@ fn first_time_join_does_not_offer_spent_civil_disorder_seats() {
     let fixture_dir = temp_first_time_game_copy();
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
-    for (idx, player) in state.game_data.player.records.iter_mut().enumerate() {
-        player.set_owner_empire_raw(0);
-        player.set_last_run_year_raw(3005 + idx as u16);
-        player.set_planet_count_raw(0);
+    for (idx, player) in state.game_data.players.iter_mut().enumerate() {
+        player.mode = nc_data::PlayerMode::from_raw(0);
+        player.last_year_on = 3005 + idx as u16;
+        player.planet_count = 0;
     }
-    for planet in &mut state.game_data.planets.records {
-        planet.set_owner_empire_slot_raw(0);
-        planet.set_ownership_status_raw(0);
+    for planet in &mut state.game_data.planets {
+        planet.owner.0 = 0;
+        planet.years_under_owner = 0;
     }
-    let player_count = state.game_data.conquest.player_count();
+    let player_count = state.game_data.conquest.player_count;
     let planet_intel_by_viewer = (1..=player_count)
         .map(|viewer_empire_id| {
             store

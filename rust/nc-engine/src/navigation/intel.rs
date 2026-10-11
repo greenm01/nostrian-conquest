@@ -16,10 +16,9 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         build_player_starmap_projection_from_snapshots(game_data, snapshots, viewer_empire_raw);
     let viewer_owned_worlds: HashSet<[u8; 2]> = game_data
         .planets
-        .records
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == viewer_empire_raw)
-        .map(|planet| planet.coords_raw())
+        .filter(|planet| planet.owner.0 == viewer_empire_raw)
+        .map(|planet| planet.sector.to_array())
         .collect();
 
     for world in projection.worlds {
@@ -37,14 +36,14 @@ pub(super) fn visible_hazard_intel_from_snapshots(
         }
     }
 
-    for fleet in &game_data.fleets.records {
-        if fleet.owner_empire_raw() == 0 || fleet.owner_empire_raw() == viewer_empire_raw {
+    for fleet in &game_data.fleets {
+        if fleet.owner.0 == 0 || fleet.owner.0 == viewer_empire_raw {
             continue;
         }
-        if fleet.standing_order_kind() != Order::GuardBlockadeWorld {
+        if fleet.order != Order::GuardBlockadeWorld {
             continue;
         }
-        let coords = fleet.current_location_coords_raw();
+        let coords = fleet.sector.to_array();
         if viewer_owned_worlds.contains(&coords) {
             intel.hostile_blockades.insert(coords);
         }

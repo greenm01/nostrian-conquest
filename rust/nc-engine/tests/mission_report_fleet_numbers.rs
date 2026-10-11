@@ -1,6 +1,6 @@
 use nc_data::{
-    FleetMergeEvent, GameStateBuilder, MaintenanceEvents, Mission, MissionEvent, MissionOutcome,
-    Order,
+    Coords, FleetMergeEvent, GameStateBuilder, MaintenanceEvents, Mission, MissionEvent,
+    MissionOutcome, Order,
 };
 use nc_engine::{build_results_report_blocks, run_maintenance_turn};
 
@@ -24,8 +24,8 @@ fn baseline_game() -> nc_data::CoreGameData {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    for player in &mut game_data.player.records {
-        player.set_autopilot_flag(0);
+    for player in &mut game_data.players {
+        player.autopilot = false;
     }
     game_data
 }
@@ -33,14 +33,14 @@ fn baseline_game() -> nc_data::CoreGameData {
 #[test]
 fn salvage_success_report_names_the_salvaged_fleet() {
     let mut game_data = baseline_game();
-    let target = game_data.planets.records[0].coords_raw();
-    let fleet = &mut game_data.fleets.records[2];
-    assert_eq!(fleet.local_slot_word_raw(), 3);
-    fleet.set_current_location_coords_raw([target[0] + 1, target[1]]);
-    fleet.set_standing_order_kind(Order::Salvage);
-    fleet.set_standing_order_target_coords_raw(target);
+    let target = game_data.planets[0].sector.to_array();
+    let fleet = &mut game_data.fleets[2];
+    assert_eq!(fleet.fleet_number.0, 3);
+    fleet.sector = Coords::new(target[0] + 1, target[1]);
+    fleet.order = Order::Salvage;
+    fleet.target = Coords::from_array(target);
     // Fast enough to reach orbit within the year (climb, one sector, dive).
-    fleet.set_current_speed(6);
+    fleet.speed = 6;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 

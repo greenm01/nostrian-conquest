@@ -120,10 +120,10 @@ pub(crate) fn temp_full_game_copy() -> TempGameDir {
 pub(crate) fn temp_joined_no_assets_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    for planet in &mut state.game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut state.game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
     save_runtime_state(&root, &state);
@@ -133,15 +133,15 @@ pub(crate) fn temp_joined_no_assets_copy() -> TempGameDir {
 pub(crate) fn temp_joined_empty_empire_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    for planet in &mut state.game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut state.game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut state.game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_owner_empire_raw(0);
+    for fleet in &mut state.game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.owner.0 = 0;
         }
     }
     save_runtime_state(&root, &state);
@@ -160,14 +160,13 @@ pub(crate) fn temp_game_with_starbase_copy() -> TempGameDir {
 }
 
 pub(crate) fn first_empty_sector(game_data: &CoreGameData) -> [u8; 2] {
-    let map_size = map_size_for_player_count(game_data.conquest.player_count());
+    let map_size = map_size_for_player_count(game_data.conquest.player_count);
     for x in 1..=map_size {
         for y in 1..=map_size {
             if game_data
                 .planets
-                .records
                 .iter()
-                .all(|planet| planet.coords_raw() != [x, y])
+                .all(|planet| planet.sector.to_array() != [x, y])
             {
                 return [x, y];
             }
@@ -179,9 +178,8 @@ pub(crate) fn first_empty_sector(game_data: &CoreGameData) -> [u8; 2] {
 pub(crate) fn first_other_planet_coords(game_data: &CoreGameData, excluded: [u8; 2]) -> [u8; 2] {
     game_data
         .planets
-        .records
         .iter()
-        .map(|planet| planet.coords_raw())
+        .map(|planet| planet.sector.to_array())
         .find(|coords| *coords != excluded)
         .expect("fixture should contain another planet")
 }
@@ -192,13 +190,12 @@ pub(crate) fn temp_game_with_auto_commission_copy() -> TempGameDir {
     let homeworld = state
         .game_data
         .planets
-        .records
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .find(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    homeworld.set_stardock_count_raw(0, 4);
-    homeworld.set_stardock_count_raw(1, 2);
-    homeworld.set_stardock_count_raw(6, 1);
+    homeworld.stardock[0] = 4;
+    homeworld.stardock[1] = 2;
+    homeworld.stardock[6] = 1;
     save_runtime_state(&root, &state);
     root
 }
@@ -206,10 +203,10 @@ pub(crate) fn temp_game_with_auto_commission_copy() -> TempGameDir {
 pub(crate) fn temp_game_with_same_sector_fleets_copy() -> TempGameDir {
     let root = temp_game_copy();
     let mut state = latest_runtime_state(&root);
-    state.game_data.fleets.records[0].set_current_location_coords_raw([6, 5]);
-    state.game_data.fleets.records[0].set_standing_order_target_coords_raw([6, 5]);
-    state.game_data.fleets.records[1].set_current_location_coords_raw([6, 5]);
-    state.game_data.fleets.records[1].set_standing_order_target_coords_raw([6, 5]);
+    state.game_data.fleets[0].sector = nc_data::Coords::from_array([6, 5]);
+    state.game_data.fleets[0].target = nc_data::Coords::from_array([6, 5]);
+    state.game_data.fleets[1].sector = nc_data::Coords::from_array([6, 5]);
+    state.game_data.fleets[1].target = nc_data::Coords::from_array([6, 5]);
     save_runtime_state(&root, &state);
     root
 }
@@ -236,7 +233,7 @@ pub(crate) fn latest_runtime_state(root: &Path) -> CampaignRuntimeState {
 }
 
 pub(crate) fn save_runtime_state(root: &Path, state: &CampaignRuntimeState) {
-    let player_count = state.game_data.conquest.player_count();
+    let player_count = state.game_data.conquest.player_count;
     let planet_intel_by_viewer = (1..=player_count)
         .map(|viewer_empire_id| {
             CampaignStore::open_default_in_dir(root)
@@ -258,7 +255,7 @@ pub(crate) fn save_runtime_state_with_intel(
 ) {
     let player_activity_states = CampaignStore::open_default_in_dir(root)
         .expect("open campaign store")
-        .latest_player_activity_states(state.game_data.conquest.player_count())
+        .latest_player_activity_states(state.game_data.conquest.player_count)
         .expect("load player activity");
     save_runtime_state_with_intel_and_activity(
         root,
@@ -289,7 +286,7 @@ pub(crate) fn save_runtime_state_with_intel_and_activity(
 
 pub(crate) fn partial_known_world_snapshot(
     planet_record_index_1_based: usize,
-    planet: &nc_data::PlanetRecord,
+    planet: &nc_data::Planet,
     owner_empire_id: u8,
     year: u16,
 ) -> PlanetIntelSnapshot {
@@ -300,9 +297,9 @@ pub(crate) fn partial_known_world_snapshot(
         last_intel_year: Some(year),
         seen_year: Some(year),
         scout_year: Some(year),
-        known_name: Some(planet.status_or_name_summary()),
+        known_name: Some(planet.name.trim().to_string()),
         known_owner_empire_id: Some(owner_empire_id),
-        known_potential_production: Some(planet.potential_production_points()),
+        known_potential_production: Some(u16::from(planet.potential_production)),
         known_armies: None,
         known_ground_batteries: None,
         known_starbase_count: None,
@@ -383,20 +380,20 @@ pub(crate) fn strongest_owned_fleet_number(root: &Path) -> u16 {
     latest_runtime_state(root)
         .game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+        .filter(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
         .max_by_key(|fleet| {
             (
-                fleet.battleship_count(),
-                fleet.cruiser_count(),
-                fleet.destroyer_count(),
-                fleet.troop_transport_count(),
-                fleet.scout_count(),
-                fleet.etac_count(),
-                std::cmp::Reverse(fleet.local_slot_word_raw()),
+                fleet.ships.battleships,
+                fleet.ships.cruisers,
+                fleet.ships.destroyers,
+                nc_data::troop_transports(&fleet),
+                fleet.ships.scouts,
+                fleet.ships.etacs,
+                std::cmp::Reverse(fleet.fleet_number.0),
             )
         })
         .expect("owned fleet exists")
-        .local_slot_word_raw()
+        .fleet_number
+        .0
 }

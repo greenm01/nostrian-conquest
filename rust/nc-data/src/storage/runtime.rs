@@ -237,7 +237,7 @@ impl CampaignStore {
         player_war_stats_override: Option<&[PlayerWarStatsState]>,
         winner_state_override: Option<WinnerState>,
     ) -> Result<i64, CampaignStoreError> {
-        let year = game_data.conquest.game_year();
+        let year = game_data.conquest.game_year;
         let mut conn = self.connection()?;
         let tx = conn.transaction()?;
         let snapshot_id = save_runtime_state_internal_tx(
@@ -331,14 +331,14 @@ pub(super) fn save_runtime_state_internal_tx(
     super::player_lifecycle::write_player_lifecycle_rows(
         &tx,
         snapshot_id,
-        game_data.conquest.player_count(),
+        game_data.conquest.player_count,
         previous_snapshot_id,
         player_lifecycle_override,
     )?;
     super::player_war_stats::write_player_war_stats_rows(
         &tx,
         snapshot_id,
-        game_data.conquest.player_count(),
+        game_data.conquest.player_count,
         previous_snapshot_id,
         player_war_stats_override,
     )?;

@@ -168,7 +168,7 @@ fn runtime_store_persists_war_stats_rows() {
         .expect("initial save");
 
     let initial = store
-        .latest_player_war_stats(game_data.conquest.player_count())
+        .latest_player_war_stats(game_data.conquest.player_count)
         .expect("load initial war stats");
     assert_eq!(
         initial,
@@ -188,8 +188,8 @@ fn runtime_store_persists_war_stats_rows() {
     override_states[1].units_lost.transports = 5;
     override_states[1].attacks_repelled = 1;
 
-    let intel = vec![BTreeMap::new(); game_data.conquest.player_count() as usize];
-    let activity = default_player_activity_states(game_data.conquest.player_count());
+    let intel = vec![BTreeMap::new(); game_data.conquest.player_count as usize];
+    let activity = default_player_activity_states(game_data.conquest.player_count);
     store
         .save_runtime_state_structured_with_intel_activity_and_war_stats(
             &game_data,
@@ -203,7 +203,7 @@ fn runtime_store_persists_war_stats_rows() {
         .expect("save war stats override");
 
     let reloaded = store
-        .latest_player_war_stats(game_data.conquest.player_count())
+        .latest_player_war_stats(game_data.conquest.player_count)
         .expect("reload war stats");
     assert_eq!(reloaded, override_states);
 

@@ -15,7 +15,7 @@ fn repo_root() -> PathBuf {
 fn fixture_game_data() -> CoreGameData {
     let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load fixture");
-    game_data.conquest.set_game_year(3004);
+    game_data.conquest.game_year = 3004;
     game_data
 }
 
@@ -173,7 +173,7 @@ fn message_rows_display_zero_week_stardate() {
 #[test]
 fn runtime_outgoing_inbox_items_list_this_turns_own_mail_newest_first() {
     let game_data = fixture_game_data();
-    let year = game_data.conquest.game_year();
+    let year = game_data.conquest.game_year;
     let queue = [
         visible_mail(1, 2, year, "First", "Hello"),
         visible_mail(2, 1, year - 1, "Incoming", "Hi"),
@@ -212,7 +212,7 @@ fn runtime_outgoing_inbox_items_list_this_turns_own_mail_newest_first() {
 #[test]
 fn recipient_sees_mail_only_after_the_maintenance_that_delivers_it() {
     let mut game_data = fixture_game_data();
-    let year = game_data.conquest.game_year();
+    let year = game_data.conquest.game_year;
     let queue = [visible_mail(2, 1, year, "Truce", "Hold fire")];
 
     // Queued this year: the sender lists it, the recipient has nothing yet.
@@ -223,7 +223,7 @@ fn recipient_sees_mail_only_after_the_maintenance_that_delivers_it() {
     assert!(preview.message_blocks.is_empty());
 
     // Maintenance advances the year and so delivers it.
-    game_data.conquest.set_game_year(year + 1);
+    game_data.conquest.game_year = year + 1;
     assert!(runtime_outgoing_inbox_items(&game_data, 2, &queue).is_empty());
     let items = runtime_inbox_items(&game_data, 1, &[], &queue);
     assert_eq!(items.len(), 1);

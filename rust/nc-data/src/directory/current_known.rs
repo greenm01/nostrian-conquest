@@ -1,5 +1,5 @@
 use super::*;
-use crate::FleetRecord;
+use crate::Fleet;
 
 #[path = "current_known_auxiliary.rs"]
 mod auxiliary;

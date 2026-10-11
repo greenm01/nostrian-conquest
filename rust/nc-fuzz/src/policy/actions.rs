@@ -4,7 +4,7 @@
 
 use nc_data::{
     CoreGameData, DiplomaticRelation, FleetDetachSelection, FleetTurnAction, Order,
-    PlanetTurnAction, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective,
+    PlanetTurnAction, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective, troop_transports,
 };
 use nc_engine::{BUILD_UNITS, FLEET_MISSION_OPTIONS, fleet_record_supports_mission_code};
 
@@ -69,7 +69,7 @@ pub fn order_fleet(
         Order::SeekHome => None,
         order => Some(order_target(state, empire, choices, record, order, aim)?),
     };
-    let max_speed = u32::from(current.max_speed());
+    let max_speed = u32::from(current.max_speed);
     let speed = (max_speed - choices.pick(0, max_speed)) as u8;
     Some(TurnAction::Fleet(
         record,
@@ -91,21 +91,19 @@ fn order_target(
     order: Order,
     aim: Aim,
 ) -> Option<[u8; 2]> {
-    let here = fleet(state, record).current_location_coords_raw();
+    let here = fleet(state, record).sector.to_array();
     let coords_of = |records: Vec<usize>| {
         records
             .into_iter()
-            .map(|record| planet(state, record).coords_raw())
+            .map(|record| planet(state, record).sector.to_array())
             .collect::<Vec<_>>()
     };
     let foreign_worlds = coords_of(planets_where(state, |planet| {
-        planet.owner_empire_slot_raw() != empire && planet.owner_empire_slot_raw() != 0
+        planet.owner.0 != empire && planet.owner.0 != 0
     }));
     let candidates = match order {
         Order::HoldPosition => vec![here],
-        Order::ColonizeWorld => coords_of(planets_where(state, |planet| {
-            planet.owner_empire_slot_raw() == 0
-        })),
+        Order::ColonizeWorld => coords_of(planets_where(state, |planet| planet.owner.0 == 0)),
         Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld => foreign_worlds,
         Order::Salvage => coords_of(owned_planets(state, empire)),
         Order::ViewWorld | Order::ScoutSolarSystem | Order::GuardBlockadeWorld => {
@@ -132,7 +130,7 @@ fn order_target(
 pub fn gathering_points(state: &CoreGameData, empire: u8) -> Vec<[u8; 2]> {
     let mut points = owned_planets(state, empire)
         .into_iter()
-        .map(|record| planet(state, record).coords_raw())
+        .map(|record| planet(state, record).sector.to_array())
         .collect::<Vec<_>>();
     let center = map_size(state).div_ceil(2);
     points.push([center, center]);
@@ -190,11 +188,11 @@ pub fn detach_one(state: &CoreGameData, empire: u8, choices: Choices) -> Option<
     let donor = fleet(state, record);
     let mut kinds = Vec::new();
     for (count, kind) in [
-        (u32::from(donor.destroyer_count()), 0),
-        (u32::from(donor.cruiser_count()), 1),
-        (u32::from(donor.battleship_count()), 2),
-        (u32::from(donor.scout_count()), 3),
-        (u32::from(donor.etac_count()), 4),
+        (u32::from(donor.ships.destroyers), 0),
+        (u32::from(donor.ships.cruisers), 1),
+        (u32::from(donor.ships.battleships), 2),
+        (u32::from(donor.ships.scouts), 3),
+        (u32::from(donor.ships.etacs), 4),
     ] {
         if count > 0 {
             kinds.push(kind);
@@ -221,10 +219,10 @@ pub fn detach_one(state: &CoreGameData, empire: u8, choices: Choices) -> Option<
 pub fn transfer(state: &CoreGameData, empire: u8, choices: Choices) -> Option<TurnAction> {
     let fleets = owned_fleets(state, empire);
     let record = pick_from(choices, &fleets)?;
-    let here = fleet(state, record).current_location_coords_raw();
+    let here = fleet(state, record).sector.to_array();
     let hosts = fleets
         .into_iter()
-        .filter(|&host| host != record && fleet(state, host).current_location_coords_raw() == here)
+        .filter(|&host| host != record && fleet(state, host).sector.to_array() == here)
         .collect::<Vec<_>>();
     let host = pick_from(choices, &hosts)?;
     let selection = pick_selection(state, record, choices);
@@ -239,16 +237,16 @@ pub fn transfer(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tu
 
 fn pick_selection(state: &CoreGameData, record: usize, choices: Choices) -> FleetDetachSelection {
     let donor = fleet(state, record);
-    let full = u32::from(donor.army_count()).min(u32::from(donor.troop_transport_count()));
-    let empty = u32::from(donor.troop_transport_count()).saturating_sub(full);
+    let full = u32::from(donor.ships.loaded_transports).min(u32::from(troop_transports(donor)));
+    let empty = u32::from(troop_transports(donor)).saturating_sub(full);
     FleetDetachSelection {
-        battleships: choices.pick(0, u32::from(donor.battleship_count())) as u16,
-        cruisers: choices.pick(0, u32::from(donor.cruiser_count())) as u16,
-        destroyers: choices.pick(0, u32::from(donor.destroyer_count())) as u16,
+        battleships: choices.pick(0, u32::from(donor.ships.battleships)) as u16,
+        cruisers: choices.pick(0, u32::from(donor.ships.cruisers)) as u16,
+        destroyers: choices.pick(0, u32::from(donor.ships.destroyers)) as u16,
         full_transports: choices.pick(0, full) as u16,
         empty_transports: choices.pick(0, empty) as u16,
-        scouts: choices.pick(0, u32::from(donor.scout_count())) as u16,
-        etacs: choices.pick(0, u32::from(donor.etac_count())) as u16,
+        scouts: choices.pick(0, u32::from(donor.ships.scouts)) as u16,
+        etacs: choices.pick(0, u32::from(donor.ships.etacs)) as u16,
     }
 }
 
@@ -257,10 +255,10 @@ pub fn load_armies(state: &CoreGameData, empire: u8, choices: Choices) -> Option
         .into_iter()
         .filter_map(|record| {
             let carrier = fleet(state, record);
-            let room = u32::from(carrier.troop_transport_count())
-                .saturating_sub(u32::from(carrier.army_count()));
-            let world = owned_planet_at(state, empire, carrier.current_location_coords_raw())?;
-            let armies = u32::from(planet(state, world).army_count_raw());
+            let room = u32::from(troop_transports(carrier))
+                .saturating_sub(u32::from(carrier.ships.loaded_transports));
+            let world = owned_planet_at(state, empire, carrier.sector.to_array())?;
+            let armies = u32::from(u8::try_from(planet(state, world).armies).unwrap_or(u8::MAX));
             (room > 0 && armies > 0).then_some((record, world, room.min(armies)))
         })
         .collect::<Vec<_>>();
@@ -279,8 +277,8 @@ pub fn unload_armies(state: &CoreGameData, empire: u8, choices: Choices) -> Opti
         .into_iter()
         .filter_map(|record| {
             let carrier = fleet(state, record);
-            let world = owned_planet_at(state, empire, carrier.current_location_coords_raw())?;
-            let armies = u32::from(carrier.army_count());
+            let world = owned_planet_at(state, empire, carrier.sector.to_array())?;
+            let armies = u32::from(carrier.ships.loaded_transports);
             (armies > 0).then_some((record, world, armies))
         })
         .collect::<Vec<_>>();
@@ -327,7 +325,7 @@ pub fn commission(state: &CoreGameData, empire: u8, choices: Choices) -> Option<
         .into_iter()
         .flat_map(|world| {
             (0..STARDOCK_SLOT_COUNT)
-                .filter(move |&slot| planet(state, world).stardock_count_raw(slot) > 0)
+                .filter(move |&slot| planet(state, world).stardock[slot] > 0)
                 .map(move |slot| (world, slot))
         })
         .collect::<Vec<_>>();
@@ -358,7 +356,7 @@ pub fn diplomacy(
     choices: Choices,
     hostile: bool,
 ) -> Option<TurnAction> {
-    let others = (1..=state.conquest.player_count())
+    let others = (1..=state.conquest.player_count)
         .filter(|&other| other != empire)
         .collect::<Vec<_>>();
     let to_empire_raw = pick_from(choices, &others)?;

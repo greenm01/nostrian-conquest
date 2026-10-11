@@ -1,6 +1,8 @@
 use std::path::Path;
 
-use nc_data::FleetDetachSelection;
+use nc_data::{
+    Coords, FleetDetachSelection, recompute_max_speed, set_armies_aboard, set_troop_transports,
+};
 
 use crate::commands::runtime::with_runtime_game_mut_and_export;
 
@@ -25,21 +27,20 @@ pub(crate) fn set_fleet_ships(
     with_runtime_game_mut_and_export(dir, |data| {
         let fleet = data
             .fleets
-            .records
             .get_mut(fleet_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("fleet record index out of range: {fleet_record_index_1_based}")
             })?;
-        fleet.set_scout_count(scouts);
-        fleet.set_battleship_count(battleships);
-        fleet.set_cruiser_count(cruisers);
-        fleet.set_destroyer_count(destroyers);
-        fleet.set_troop_transport_count(transports);
-        fleet.set_army_count(armies_loaded);
-        fleet.set_etac_count(etacs);
-        fleet.recompute_max_speed_from_composition();
-        if fleet.current_speed() > fleet.max_speed() {
-            fleet.set_current_speed(fleet.max_speed());
+        fleet.ships.scouts = scouts;
+        fleet.ships.battleships = battleships;
+        fleet.ships.cruisers = cruisers;
+        fleet.ships.destroyers = destroyers;
+        set_troop_transports(fleet, transports);
+        set_armies_aboard(fleet, armies_loaded);
+        fleet.ships.etacs = etacs;
+        recompute_max_speed(fleet);
+        if fleet.speed > fleet.max_speed {
+            fleet.speed = fleet.max_speed;
         }
         Ok(())
     })?;
@@ -67,12 +68,11 @@ pub(crate) fn set_fleet_location(
     with_runtime_game_mut_and_export(dir, |data| {
         let fleet = data
             .fleets
-            .records
             .get_mut(fleet_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("fleet record index out of range: {fleet_record_index_1_based}")
             })?;
-        fleet.set_current_location_coords_raw([x, y]);
+        fleet.sector = Coords::new(x, y);
         Ok(())
     })?;
 

@@ -122,7 +122,7 @@ fn group_fleet_order_prompt_lines(app: &DashApp) -> Vec<String> {
         FleetOverlayPromptMode::OrderConfirm
     ) {
         let mut lines = vec![
-            order_detail_line("Stardate", app.game_data.conquest.game_year().to_string()),
+            order_detail_line("Stardate", app.game_data.conquest.game_year.to_string()),
             order_detail_line("Selected Fleets", selected_summary),
             order_detail_line("New Order", app.fleet_order_new_order_label()),
         ];
@@ -1329,31 +1329,31 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<FleetOverlayRow> {
     let location_filter = app.fleet_overlay.location_filter;
     let mut rows = Vec::new();
 
-    for (idx, fleet) in app.game_data.fleets.records.iter().enumerate() {
-        if fleet.owner_empire_raw() != owner_slot || !fleet.has_any_force() {
+    for (idx, fleet) in app.game_data.fleets.iter().enumerate() {
+        if fleet.owner.0 != owner_slot || !nc_data::has_any_force(&fleet) {
             continue;
         }
-        if location_filter.is_some_and(|coords| fleet.current_location_coords_raw() != coords) {
+        if location_filter.is_some_and(|coords| fleet.sector.to_array() != coords) {
             continue;
         }
         rows.push(FleetOverlayRow {
             key: FleetOverlayRowKey::Fleet(idx + 1),
-            id_number: Some(fleet.local_slot_word_raw()),
+            id_number: Some(fleet.fleet_number.0),
             selected: app
                 .fleet_overlay
                 .selected_fleet_record_indexes
                 .contains(&(idx + 1)),
-            id_label: fleet.local_slot_word_raw().to_string(),
-            coords: fleet.current_location_coords_raw(),
-            target_coords: fleet.standing_order_target_coords_raw(),
-            order: fleet.standing_order_kind(),
-            current_speed: fleet.current_speed(),
+            id_label: fleet.fleet_number.0.to_string(),
+            coords: fleet.sector.to_array(),
+            target_coords: fleet.target.to_array(),
+            order: fleet.order,
+            current_speed: fleet.speed,
             eta_label: fleet_list_eta_label(&app.game_data, idx),
-            roe: fleet.rules_of_engagement(),
-            loaded_armies: fleet.army_count(),
+            roe: fleet.rules_of_engagement,
+            loaded_armies: fleet.ships.loaded_transports,
             strength_key: fleet_strength_key(fleet),
             cells: vec![
-                fleet.local_slot_word_raw().to_string(),
+                fleet.fleet_number.0.to_string(),
                 if app
                     .fleet_overlay
                     .selected_fleet_record_indexes
@@ -1363,14 +1363,17 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<FleetOverlayRow> {
                 } else {
                     String::new()
                 },
-                format_coords(fleet.current_location_coords_raw()),
-                fleet_table_order_label(fleet.standing_order_kind()).to_string(),
-                format_target(fleet.standing_order_target_coords_raw()),
-                fleet.current_speed().to_string(),
+                format_coords(fleet.sector.to_array()),
+                fleet_table_order_label(fleet.order).to_string(),
+                format_target(fleet.target.to_array()),
+                fleet.speed.to_string(),
                 fleet_list_eta_label(&app.game_data, idx),
-                fleet.rules_of_engagement().to_string(),
-                fleet.army_count().to_string(),
-                truncate(&fleet.ship_composition_table_summary(), COLUMNS[9].width),
+                fleet.rules_of_engagement.to_string(),
+                fleet.ships.loaded_transports.to_string(),
+                truncate(
+                    &nc_data::ship_composition_table_summary(&fleet),
+                    COLUMNS[9].width,
+                ),
             ],
         });
     }
@@ -1510,15 +1513,15 @@ fn eta_sort_key(label: &str) -> (u8, u16) {
     }
 }
 
-fn fleet_strength_key(fleet: &nc_data::FleetRecord) -> (u16, u16, u16, u16, u16, u16, u16) {
+fn fleet_strength_key(fleet: &nc_data::Fleet) -> (u16, u16, u16, u16, u16, u16, u16) {
     (
-        fleet.battleship_count(),
-        fleet.cruiser_count(),
-        fleet.destroyer_count(),
-        fleet.troop_transport_count(),
-        fleet.scout_count(),
-        fleet.etac_count(),
-        fleet.local_slot_word_raw(),
+        fleet.ships.battleships,
+        fleet.ships.cruisers,
+        fleet.ships.destroyers,
+        nc_data::troop_transports(&fleet),
+        fleet.ships.scouts,
+        fleet.ships.etacs,
+        fleet.fleet_number.0,
     )
 }
 
@@ -1828,16 +1831,15 @@ mod tests {
         for fleet in app
             .game_data
             .fleets
-            .records
             .iter_mut()
-            .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+            .filter(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
         {
             let fleet_number = match next_other_number {
                 30 => 20,
                 31 => 2,
                 _ => next_other_number,
             };
-            fleet.set_local_slot_word_raw(fleet_number);
+            fleet.fleet_number.0 = fleet_number;
             next_other_number += 1;
         }
         app.overlay = ActiveOverlay::FleetList;
@@ -1857,25 +1859,25 @@ mod tests {
     #[test]
     fn holding_filter_with_visible_rows_does_not_render_empty_state_footer() {
         let mut app = dash_app();
-        for (idx, fleet) in app.game_data.fleets.records.iter_mut().enumerate() {
-            if fleet.owner_empire_raw() != 1 {
+        for (idx, fleet) in app.game_data.fleets.iter_mut().enumerate() {
+            if fleet.owner.0 != 1 {
                 continue;
             }
             if idx == 0 {
-                fleet.set_standing_order_kind(Order::HoldPosition);
-                fleet.set_standing_order_target_coords_raw(fleet.current_location_coords_raw());
-                fleet.set_destroyer_count(1);
-                fleet.recompute_max_speed_from_composition();
+                fleet.order = Order::HoldPosition;
+                fleet.target = nc_data::Coords::from_array(fleet.sector.to_array());
+                fleet.ships.destroyers = 1;
+                nc_data::recompute_max_speed(fleet);
                 continue;
             }
-            fleet.set_scout_count(0);
-            fleet.set_battleship_count(0);
-            fleet.set_cruiser_count(0);
-            fleet.set_destroyer_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
-            fleet.set_etac_count(0);
-            fleet.recompute_max_speed_from_composition();
+            fleet.ships.scouts = 0;
+            fleet.ships.battleships = 0;
+            fleet.ships.cruisers = 0;
+            fleet.ships.destroyers = 0;
+            nc_data::set_troop_transports(fleet, 0);
+            nc_data::set_armies_aboard(fleet, 0);
+            fleet.ships.etacs = 0;
+            nc_data::recompute_max_speed(fleet);
         }
         app.overlay = ActiveOverlay::FleetList;
         app.fleet_overlay.filter = crate::dashboard::app::state::FleetOverlayFilter::Holding;
@@ -1918,15 +1920,14 @@ mod tests {
         let fleet = app
             .game_data
             .fleets
-            .records
             .iter_mut()
-            .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+            .find(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
             .expect("owned fleet");
-        fleet_number = fleet.local_slot_word_raw().to_string();
-        fleet.set_cruiser_count(1);
-        fleet.set_troop_transport_count(5);
-        fleet.set_army_count(2);
-        fleet.recompute_max_speed_from_composition();
+        fleet_number = fleet.fleet_number.0.to_string();
+        fleet.ships.cruisers = 1;
+        nc_data::set_troop_transports(fleet, 5);
+        nc_data::set_armies_aboard(fleet, 2);
+        nc_data::recompute_max_speed(fleet);
 
         let row = table_rows(&app)
             .into_iter()

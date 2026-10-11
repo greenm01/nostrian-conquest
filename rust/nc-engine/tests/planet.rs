@@ -1,4 +1,6 @@
-use nc_data::{GameStateBuilder, ProductionItemKind};
+use nc_data::{
+    Coords, GameStateBuilder, ProductionItemKind, set_armies_aboard, set_troop_transports,
+};
 use nc_engine::{
     ArmyTransportMode, default_fleet_transport_fleet_number,
     planet_build_max_selectable_unit_number, planet_build_specify_entries, planet_build_view,
@@ -27,10 +29,10 @@ fn planet_build_view_counts_queue_and_stardock_units() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[0];
-    planet.set_build_kind_raw(0, 3);
-    planet.set_build_count_raw(0, 90);
-    planet.set_stardock_count_raw(1, 5);
+    let planet = &mut game_data.planets[0];
+    planet.build_queue[0].kind = ProductionItemKind::Battleship;
+    planet.build_queue[0].points_owed = 90;
+    planet.stardock.cruisers = 5;
 
     let row = game_data.empire_planet_economy_rows(1).remove(0);
     let view = planet_build_view(&game_data, &row).expect("view");
@@ -46,9 +48,9 @@ fn planet_build_view_budget_capped_by_treasury_not_revenue() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let planet = &mut game_data.planets.records[0];
-    planet.set_build_kind_raw(0, 6);
-    planet.set_build_count_raw(0, 20);
+    let planet = &mut game_data.planets[0];
+    planet.build_queue[0].kind = ProductionItemKind::Etac;
+    planet.build_queue[0].points_owed = 20;
 
     // treasury=65 < build_capacity=100, so budget = 65 regardless of revenue
     let row = {
@@ -135,19 +137,19 @@ fn default_transport_fleet_prefers_highest_eligible_capacity() {
         .with_player_count(4)
         .build_initialized_baseline()
         .expect("baseline");
-    let homeworld_coords = game_data.planets.records[0].coords_raw();
-    let homeworld = &mut game_data.planets.records[0];
-    homeworld.set_army_count_raw(50);
+    let homeworld_coords = game_data.planets[0].sector.to_array();
+    let homeworld = &mut game_data.planets[0];
+    homeworld.armies = 50;
 
-    for (idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
-        fleet.set_owner_empire_raw(1);
-        fleet.set_local_slot_word_raw((idx + 1) as u16);
-        fleet.set_current_location_coords_raw(homeworld_coords);
-        fleet.set_troop_transport_count(0);
-        fleet.set_army_count(0);
+    for (idx, fleet) in game_data.fleets.iter_mut().enumerate() {
+        fleet.owner.0 = 1;
+        fleet.fleet_number.0 = (idx + 1) as u16;
+        fleet.sector = Coords::from_array(homeworld_coords);
+        set_troop_transports(fleet, 0);
+        set_armies_aboard(fleet, 0);
     }
-    game_data.fleets.records[0].set_troop_transport_count(4);
-    game_data.fleets.records[1].set_troop_transport_count(8);
+    set_troop_transports(&mut game_data.fleets[0], 4);
+    set_troop_transports(&mut game_data.fleets[1], 8);
 
     let rows = game_data.empire_planet_economy_rows(1);
     let fleet_number =

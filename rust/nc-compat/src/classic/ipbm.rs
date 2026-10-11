@@ -1,6 +1,6 @@
-use crate::IPBM_RECORD_SIZE;
-use crate::model::{Coords, EmpireId, Ipbm, RecordNumber};
-use crate::support::ParseError;
+use super::IPBM_RECORD_SIZE;
+use nc_classic::ParseError;
+use nc_data::{Coords, EmpireId, Ipbm, RecordNumber};
 
 use super::{put_real, put_u16, real_at, u16_at};
 

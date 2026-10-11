@@ -1,6 +1,10 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{CoreGameData, PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT};
+use crate::homeworld_seed::is_named_homeworld_seed;
+use crate::{
+    CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT, has_any_force,
+    is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactUnitSummaryStyle {
@@ -40,11 +44,11 @@ pub fn compact_unit_code(kind: ProductionItemKind) -> &'static str {
     }
 }
 
-pub fn stardock_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
+pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..STARDOCK_SLOT_COUNT {
-        let count = u32::from(planet.stardock_count_raw(slot));
-        let kind_raw = planet.stardock_kind_raw(slot);
+        let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
+        let kind_raw = stardock_slot_kind(planet, slot).to_raw();
         if count == 0 || kind_raw == 0 {
             continue;
         }
@@ -53,11 +57,11 @@ pub fn stardock_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
     counts_by_kind
 }
 
-pub fn build_queue_unit_counts(planet: &PlanetRecord) -> BTreeMap<u8, u32> {
+pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
-        let points = u32::from(planet.build_count_raw(slot));
-        let kind_raw = planet.build_kind_raw(slot);
+        let points = u32::from(planet.build_queue[slot].points_owed);
+        let kind_raw = planet.build_queue[slot].kind.to_raw();
         if points == 0 || kind_raw == 0 {
             continue;
         }
@@ -120,11 +124,11 @@ pub fn format_unit_counts(
     }
 }
 
-pub fn format_stardock_summary(planet: &PlanetRecord, style: CompactUnitSummaryStyle) -> String {
+pub fn format_stardock_summary(planet: &Planet, style: CompactUnitSummaryStyle) -> String {
     format_unit_counts(&stardock_unit_counts(planet), style)
 }
 
-pub fn format_build_queue_summary(planet: &PlanetRecord, style: CompactUnitSummaryStyle) -> String {
+pub fn format_build_queue_summary(planet: &Planet, style: CompactUnitSummaryStyle) -> String {
     format_unit_counts(&build_queue_unit_counts(planet), style)
 }
 
@@ -136,22 +140,20 @@ pub fn owned_orbit_presence(
     OrbitPresenceSummary {
         fleets: game_data
             .fleets
-            .records
             .iter()
             .filter(|fleet| {
-                fleet.current_location_coords_raw() == coords
-                    && fleet.owner_empire_raw() == owner_empire_id
-                    && fleet.has_any_force()
+                fleet.sector.to_array() == coords
+                    && fleet.owner.0 == owner_empire_id
+                    && has_any_force(fleet)
             })
             .count(),
         starbases: game_data
             .bases
-            .records
             .iter()
             .filter(|base| {
-                base.coords_raw() == coords
-                    && base.owner_empire_raw() == owner_empire_id
-                    && base.base_id_raw() != 0
+                base.sector.to_array() == coords
+                    && base.owner.0 == owner_empire_id
+                    && base.base_id.0 != 0
             })
             .count(),
     }
@@ -197,15 +199,15 @@ pub fn owned_planet_status(
     if scorch_orders.contains(&(planet_index_0_based + 1)) {
         return OwnedPlanetStatus::Scorched;
     }
-    let planet = &game_data.planets.records[planet_index_0_based];
-    if planet.is_homeworld_seed_ignoring_name() {
+    let planet = &game_data.planets[planet_index_0_based];
+    if is_homeworld_seed_ignoring_name(planet) {
         return OwnedPlanetStatus::Homeworld;
     }
-    if game_data.planet_has_friendly_starbase(owner_empire_id, planet.coords_raw()) {
+    if game_data.planet_has_friendly_starbase(owner_empire_id, planet.sector.to_array()) {
         return OwnedPlanetStatus::StarbasePresent;
     }
-    let present = planet.present_production_points().unwrap_or(0);
-    let potential = planet.potential_production_points();
+    let present = present_production_points(planet);
+    let potential = u16::from(planet.potential_production);
     if present == 0 && potential > 0 {
         OwnedPlanetStatus::FactoriesDestroyed
     } else if present < potential {
@@ -282,4 +284,40 @@ fn unit_words(kind: ProductionItemKind, count: u32) -> &'static str {
         }
         ProductionItemKind::Unknown(_) => "unknown units",
     }
+}
+
+/// One planet record for inspection output: sector, name, and whatever of
+/// the first build slot, owner, armies, and batteries is set.
+pub fn planet_derived_summary(planet: &Planet) -> String {
+    let text = planet.name.trim();
+    let mut parts = vec![format!(
+        "({},{}): {}",
+        planet.sector.x, planet.sector.y, text
+    )];
+    if is_named_homeworld_seed(planet) {
+        parts.push("likely_homeworld_seed".to_string());
+    }
+    let first_slot = planet.build_queue[0];
+    if first_slot.points_owed != 0 || first_slot.kind.to_raw() != 0 {
+        parts.push(format!(
+            "build_raw={:02x}/{:02x}",
+            first_slot.points_owed,
+            first_slot.kind.to_raw()
+        ));
+    }
+    if planet.owner.0 != 0 {
+        parts.push(format!(
+            "owner_slot={} owner_status={:02x}",
+            planet.owner.0, planet.years_under_owner
+        ));
+    }
+    let armies = u8::try_from(planet.armies).unwrap_or(u8::MAX);
+    if armies != 0 {
+        parts.push(format!("armies={armies}"));
+    }
+    let batteries = u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX);
+    if batteries != 0 {
+        parts.push(format!("batteries={batteries}"));
+    }
+    parts.join(" | ")
 }

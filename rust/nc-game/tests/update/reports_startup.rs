@@ -47,8 +47,10 @@ fn delete_reviewables_opens_when_classic_pending_flags_are_set() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     clear_runtime_report_blocks(&mut state);
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -103,14 +105,8 @@ fn delete_reviewables_opens_when_classic_pending_flags_are_set() {
 
     let runtime = latest_runtime_state(&fixture_dir);
     assert!(runtime.report_block_rows.is_empty());
-    assert_eq!(
-        runtime.game_data.player.records[0].classic_messages_pending_flag_raw(),
-        0
-    );
-    assert_eq!(
-        runtime.game_data.player.records[0].classic_reports_pending_flag_raw(),
-        0
-    );
+    assert_eq!((runtime.game_data.players[0].messages_first as u8), 0);
+    assert_eq!((runtime.game_data.players[0].messages_last as u8), 0);
     assert!(!app.messaging.delete_reviewables_prompt_active);
     assert_eq!(app.current_screen(), ScreenId::GeneralMenu);
 }
@@ -119,7 +115,8 @@ fn startup_results_only_pending_flags_do_not_route_into_messages() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     clear_runtime_report_blocks(&mut state);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -243,12 +240,14 @@ fn startup_reviews_results_then_messages_then_enters_main_menu() {
     state.queued_mail.push(incoming_mail(
         2,
         1,
-        state.game_data.conquest.game_year().saturating_sub(1),
+        state.game_data.conquest.game_year.saturating_sub(1),
         "Diplomatic",
         "Diplomatic telegram",
     ));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -302,12 +301,14 @@ fn startup_results_paginate_before_advancing_to_messages() {
     state.queued_mail.push(incoming_mail(
         2,
         1,
-        state.game_data.conquest.game_year().saturating_sub(1),
+        state.game_data.conquest.game_year.saturating_sub(1),
         "Message",
         "Message line 01 is long enough",
     ));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -418,8 +419,10 @@ fn startup_messages_allow_deleting_current_message_then_advancing() {
     state
         .queued_mail
         .push(incoming_mail(3, 1, 2999, "Two", "Body two"));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(0);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 0;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -559,8 +562,10 @@ fn startup_message_review_shows_end_status_after_deleting_last_message() {
     state
         .queued_mail
         .push(incoming_mail(2, 1, 2999, "One", "Body one"));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(0);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 0;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -625,10 +630,7 @@ fn startup_message_review_shows_end_status_after_deleting_last_message() {
     let runtime = latest_runtime_state(&fixture_dir);
     assert_eq!(runtime.queued_mail.len(), 1);
     assert!(runtime.queued_mail[0].recipient_deleted);
-    assert_eq!(
-        runtime.game_data.player.records[0].classic_messages_pending_flag_raw(),
-        0
-    );
+    assert_eq!((runtime.game_data.players[0].messages_first as u8), 0);
 }
 
 #[test]
@@ -639,8 +641,10 @@ fn startup_results_wrap_long_lines_within_the_playfield() {
         &mut state,
         b"This is a deliberately long startup results line that should wrap cleanly within the eighty column playfield instead of overrunning a single row.",
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -705,8 +709,10 @@ fn startup_results_preserve_blank_lines_as_classic_spacers() {
         &mut state,
         classic_chunked_report_bytes("Line one\n\nLine two"),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -759,8 +765,10 @@ fn startup_results_preserve_leading_spaces_from_oracle_style_reports() {
         &mut state,
         classic_chunked_report_bytes("  Stardate 11 / 3003\n    Fleet 7 arrived"),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -814,8 +822,10 @@ fn startup_results_use_the_full_intro_review_page_height() {
             .collect::<Vec<_>>()
             .join("\n"),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -866,8 +876,10 @@ fn startup_results_decode_length_prefixed_lines_as_separate_classic_rows() {
             "<end of transmission>",
         ]),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -932,8 +944,10 @@ fn startup_results_continue_prompt_preserves_blank_spacing_without_rule() {
         &mut state,
         classic_chunked_report_blocks(&["From Alpha\nBody one", "From Beta\nBody two"]),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -994,8 +1008,10 @@ fn startup_results_second_block_does_not_reinsert_roll_header() {
         &mut state,
         classic_chunked_report_blocks(&["From Alpha\nBody one", "From Beta\nBody two"]),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1057,7 +1073,8 @@ fn reports_screen_preserves_blank_separator_lines() {
         &mut state,
         classic_chunked_report_bytes("Line one\n\nLine two"),
     );
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1099,7 +1116,8 @@ fn reports_screen_wraps_long_lines_within_the_playfield() {
         &mut state,
         b"This is a deliberately long reports review line that should wrap cleanly within the eighty column playfield instead of overrunning a single row.",
     );
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1151,12 +1169,14 @@ fn reports_screen_keeps_both_sections_visible_when_results_are_long() {
     state.queued_mail.push(incoming_mail(
         2,
         1,
-        state.game_data.conquest.game_year().saturating_sub(1),
+        state.game_data.conquest.game_year.saturating_sub(1),
         "Visible",
         "Message line 01 should still remain visible",
     ));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1194,7 +1214,8 @@ fn reports_screen_shows_explicit_truncation_cue_when_wrapped_rows_overflow() {
             .collect::<Vec<_>>()
             .join("\n"),
     );
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1241,12 +1262,14 @@ fn preloaded_first_login_reviews_reports_before_homeworld_naming() {
     state.queued_mail.push(incoming_mail(
         2,
         1,
-        state.game_data.conquest.game_year().saturating_sub(1),
+        state.game_data.conquest.game_year.saturating_sub(1),
         "Diplomatic",
         "Diplomatic telegram",
     ));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -1286,28 +1309,28 @@ fn preloaded_first_login_reviews_reports_before_homeworld_naming() {
 fn returning_player_reviews_reports_before_colony_naming() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    let homeworld_index =
-        state.game_data.player.records[0].homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = state.game_data.players[0].homeworld as usize;
     let colony = state
         .game_data
         .planets
-        .records
         .iter_mut()
         .enumerate()
-        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner_empire_slot_raw() != 1)
+        .find(|(idx, planet)| *idx + 1 != homeworld_index && planet.owner.0 != 1)
         .expect("need a non-homeworld planet for colony naming test");
-    colony.1.set_owner_empire_slot_raw(1);
-    colony.1.set_planet_name("Not Named Yet");
+    colony.1.owner.0 = 1;
+    nc_data::set_planet_name(colony.1, "Not Named Yet");
     set_runtime_report_blocks(&mut state, b"Scout report");
     state.queued_mail.push(incoming_mail(
         2,
         1,
-        state.game_data.conquest.game_year().saturating_sub(1),
+        state.game_data.conquest.game_year.saturating_sub(1),
         "Command",
         "Command mail",
     ));
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 1;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {

@@ -1,6 +1,6 @@
-use crate::BASE_RECORD_SIZE;
-use crate::model::{Coords, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
-use crate::support::ParseError;
+use super::BASE_RECORD_SIZE;
+use nc_classic::ParseError;
+use nc_data::{Coords, EmpireId, FleetId, RecordNumber, Starbase, StarbaseId};
 
 use super::{put_real, put_u16, real_at, u16_at};
 

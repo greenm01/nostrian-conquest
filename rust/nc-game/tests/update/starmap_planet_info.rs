@@ -86,24 +86,23 @@ fn partial_starmap_colors_viewer_and_known_enemy_worlds_by_empire_slot() {
     let enemy_idx = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() != 1)
+        .find(|(_, planet)| planet.owner.0 != 1)
         .map(|(idx, _)| idx)
         .expect("fixture should contain a non-player world");
-    let enemy = &mut app.game_data.planets.records[enemy_idx];
-    enemy.set_owner_empire_slot_raw(2);
-    let enemy_coords = enemy.coords_raw();
-    let enemy_name = enemy.status_or_name_summary();
+    let enemy = &mut app.game_data.planets[enemy_idx];
+    enemy.owner.0 = 2;
+    let enemy_coords = enemy.sector.to_array();
+    let enemy_name = enemy.name.trim().to_string();
     app.planet_intel_snapshots.insert(
         enemy_idx + 1,
         PlanetIntelSnapshot {
             planet_record_index_1_based: enemy_idx + 1,
             intel_tier: IntelTier::Partial,
             compat_is_orbit_seed: false,
-            last_intel_year: Some(app.game_data.conquest.game_year()),
-            seen_year: Some(app.game_data.conquest.game_year()),
+            last_intel_year: Some(app.game_data.conquest.game_year),
+            seen_year: Some(app.game_data.conquest.game_year),
             scout_year: None,
             known_name: Some(enemy_name),
             known_owner_empire_id: Some(2),
@@ -140,11 +139,10 @@ fn partial_starmap_colors_viewer_and_known_enemy_worlds_by_empire_slot() {
     let homeworld = app
         .game_data
         .planets
-        .records
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .find(|planet| planet.owner.0 == 1)
         .expect("fixture should contain player homeworld");
-    let home_cell = partial_starmap_cell(&buffer, homeworld.coords_raw());
+    let home_cell = partial_starmap_cell(&buffer, homeworld.sector.to_array());
     let enemy_cell = partial_starmap_cell(&buffer, enemy_coords);
 
     assert_eq!(home_cell.ch, 'O');
@@ -341,7 +339,7 @@ fn partial_starmap_large_map_anchors_axes_and_clamps_crosshair_near_edges() {
     })
     .expect("app should load");
     advance_to_main_menu(&mut app);
-    app.game_data.conquest.set_player_count(5);
+    app.game_data.conquest.player_count = 5;
 
     assert_eq!(
         apply_action(
@@ -516,13 +514,10 @@ fn planet_info_intel_detail_shows_last_intel_and_tier() {
     let (planet_idx, coords) = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() as usize != app.player.record_index_1_based
-        })
-        .map(|(idx, planet)| (idx, planet.coords_raw()))
+        .find(|(_, planet)| planet.owner.0 as usize != app.player.record_index_1_based)
+        .map(|(idx, planet)| (idx, planet.sector.to_array()))
         .expect("fixture should contain a non-owned world");
 
     app.planet_intel_snapshots.insert(
@@ -589,13 +584,10 @@ fn planet_info_intel_detail_shows_unowned_for_known_zero_owner() {
     let (planet_idx, coords) = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() as usize != app.player.record_index_1_based
-        })
-        .map(|(idx, planet)| (idx, planet.coords_raw()))
+        .find(|(_, planet)| planet.owner.0 as usize != app.player.record_index_1_based)
+        .map(|(idx, planet)| (idx, planet.sector.to_array()))
         .expect("fixture should contain a non-owned world");
 
     app.planet_intel_snapshots.insert(
@@ -656,12 +648,9 @@ fn owned_planet_info_detail_shows_owned_since_year() {
     let owned_idx = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .find(|(_, planet)| {
-            planet.owner_empire_slot_raw() as usize == app.player.record_index_1_based
-        })
+        .find(|(_, planet)| planet.owner.0 as usize == app.player.record_index_1_based)
         .map(|(idx, _)| idx)
         .expect("fixture should contain an owned world");
     app.current_screen = ScreenId::PlanetInfoDetail;
@@ -838,10 +827,10 @@ fn build_menu_review_shortcut_opens_owned_planet_info_with_build_queue_and_retur
         .game_data
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
-    let planet = &mut app.game_data.planets.records[planet_idx];
-    planet.set_build_count_raw(0, 5);
-    planet.set_build_kind_raw(0, 1);
-    planet.set_stardock_count_raw(0, 2);
+    let planet = &mut app.game_data.planets[planet_idx];
+    planet.build_queue[0].points_owed = 5;
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.stardock[0] = 2;
 
     assert_eq!(
         apply_action(
@@ -889,9 +878,9 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
         .game_data
         .planet_record_index_at_coords([16, 13])
         .expect("current build planet should exist");
-    let planet = &mut app.game_data.planets.records[planet_idx];
+    let planet = &mut app.game_data.planets[planet_idx];
 
-    for (slot, (points, kind_raw)) in [
+    for (slot, (points, kind_code)) in [
         (50u8, 1u8),
         (120, 2),
         (225, 3),
@@ -905,11 +894,11 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
     .into_iter()
     .enumerate()
     {
-        planet.set_build_count_raw(slot, points);
-        planet.set_build_kind_raw(slot, kind_raw);
+        planet.build_queue[slot].points_owed = points;
+        planet.build_queue[slot].kind = nc_data::ProductionItemKind::from_raw(kind_code);
     }
 
-    for (count, kind_raw) in [
+    for (count, kind_code) in [
         (1u8, 1u8),
         (2u8, 2u8),
         (3u8, 3u8),
@@ -917,8 +906,8 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
         (5u8, 5u8),
         (6u8, 9u8),
     ] {
-        let slot = nc_data::stardock_slot_for_kind(kind_raw).expect("stardock kind");
-        planet.set_stardock_count_raw(slot, u16::from(count));
+        let slot = nc_data::stardock_slot_for_kind(kind_code).expect("stardock kind");
+        planet.stardock[slot] = u32::from(u16::from(count));
     }
 
     assert_eq!(

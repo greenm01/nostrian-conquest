@@ -370,15 +370,14 @@ impl DashApp {
         let Some(record) = self
             .game_data
             .planets
-            .records
             .get(planet_record_index_1_based.saturating_sub(1))
         else {
             return "Unknown".to_string();
         };
         format!(
             "{} {}",
-            record.status_or_name_summary(),
-            format_sector_coords_table(record.coords_raw())
+            record.name.trim().to_string(),
+            format_sector_coords_table(record.sector.to_array())
         )
     }
 
@@ -401,7 +400,6 @@ impl DashApp {
         if self
             .game_data
             .planets
-            .records
             .get(planet_record_index_1_based.saturating_sub(1))
             .is_none()
         {
@@ -613,7 +611,6 @@ fn planet_build_orders_for_dash(app: &DashApp) -> Vec<nc_engine::PlanetBuildOrde
     let Some(record) = app
         .game_data
         .planets
-        .records
         .get(planet_record_index_1_based.saturating_sub(1))
     else {
         return Vec::new();

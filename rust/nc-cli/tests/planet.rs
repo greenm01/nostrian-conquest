@@ -248,17 +248,14 @@ fn planet_init_original_updates_runtime_store_for_db_export() {
     );
     let exported_data =
         load_classic_core_files(&exported).expect("exported original-sample topology should load");
-    assert_eq!(exported_data.planets.records[0].coords_raw(), [0x06, 0x01]);
-    assert_eq!(exported_data.planets.records[0].owner_empire_slot_raw(), 0);
-    assert_eq!(exported_data.planets.records[4].coords_raw(), [0x07, 0x04]);
-    assert_eq!(exported_data.planets.records[4].owner_empire_slot_raw(), 4);
-    assert_eq!(
-        exported_data.planets.records[4].planet_name(),
-        "Not Named Yet"
-    );
-    assert_eq!(exported_data.planets.records[15].coords_raw(), [0x10, 0x0D]);
-    assert_eq!(exported_data.planets.records[15].owner_empire_slot_raw(), 1);
-    assert_eq!(exported_data.planets.records[15].planet_name(), "Dust Bowl");
+    assert_eq!(exported_data.planets[0].sector.to_array(), [0x06, 0x01]);
+    assert_eq!(exported_data.planets[0].owner.0, 0);
+    assert_eq!(exported_data.planets[4].sector.to_array(), [0x07, 0x04]);
+    assert_eq!(exported_data.planets[4].owner.0, 4);
+    assert_eq!(exported_data.planets[4].name.clone(), "Not Named Yet");
+    assert_eq!(exported_data.planets[15].sector.to_array(), [0x10, 0x0D]);
+    assert_eq!(exported_data.planets[15].owner.0, 1);
+    assert_eq!(exported_data.planets[15].name.clone(), "Dust Bowl");
 
     cleanup_dir(&source);
     cleanup_dir(&exported);

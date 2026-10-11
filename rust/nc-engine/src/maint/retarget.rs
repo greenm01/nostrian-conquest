@@ -1,29 +1,29 @@
 use super::{Mission, MissionRetargetEvent};
 use crate::navigation::sector_distance_sq;
 use crate::{CoreGameData, Order};
+use nc_data::{Coords, troop_transports};
 
 pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
     let owned_planets: Vec<(u8, [u8; 2])> = game_data
         .planets
-        .records
         .iter()
-        .map(|planet| (planet.owner_empire_slot_raw(), planet.coords_raw()))
+        .map(|planet| (planet.owner.0, planet.sector.to_array()))
         .collect();
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
-        if fleet.standing_order_kind() != Order::SeekHome {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
+        if fleet.order != Order::SeekHome {
             continue;
         }
-        let previous_target_coords = fleet.standing_order_target_coords_raw();
-        let current_coords = fleet.current_location_coords_raw();
-        let owner_empire_raw = fleet.owner_empire_raw();
-        let reporting_fleet_number = Some(fleet.local_slot_word_raw() as u8);
+        let previous_target_coords = fleet.target.to_array();
+        let current_coords = fleet.sector.to_array();
+        let owner_empire_raw = fleet.owner.0;
+        let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
         let Some(new_target_coords) =
             nearest_owned_planet_target_from_list(&owned_planets, owner_empire_raw, current_coords)
         else {
-            fleet.set_standing_order_kind(Order::HoldPosition);
-            fleet.set_current_speed(0);
-            fleet.set_standing_order_target_coords_raw(current_coords);
+            fleet.order = Order::HoldPosition;
+            fleet.speed = 0;
+            fleet.target = Coords::from_array(current_coords);
             events.push(MissionRetargetEvent::Abandoned {
                 fleet_idx,
                 reporting_fleet_number,
@@ -35,7 +35,7 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
             continue;
         };
         if new_target_coords != previous_target_coords {
-            fleet.set_standing_order_target_coords_raw(new_target_coords);
+            fleet.target = Coords::from_array(new_target_coords);
             events.push(MissionRetargetEvent::Retargeted {
                 fleet_idx,
                 reporting_fleet_number,
@@ -54,44 +54,39 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
 pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<MissionRetargetEvent> {
     let current_host_viability: std::collections::HashMap<(u8, u16), bool> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
-            let viable = fleet.destroyer_count() > 0
-                || fleet.cruiser_count() > 0
-                || fleet.battleship_count() > 0
-                || fleet.scout_count() > 0
-                || fleet.troop_transport_count() > 0
-                || fleet.etac_count() > 0;
-            (
-                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
-                viable,
-            )
+            let viable = fleet.ships.destroyers > 0
+                || fleet.ships.cruisers > 0
+                || fleet.ships.battleships > 0
+                || fleet.ships.scouts > 0
+                || troop_transports(fleet) > 0
+                || fleet.ships.etacs > 0;
+            ((fleet.owner.0, fleet.fleet_number.0), viable)
         })
         .collect();
     let current_fleet_coords: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .fleets
-        .records
         .iter()
         .map(|fleet| {
             (
-                (fleet.owner_empire_raw(), fleet.local_slot_word_raw()),
-                fleet.current_location_coords_raw(),
+                (fleet.owner.0, fleet.fleet_number.0),
+                fleet.sector.to_array(),
             )
         })
         .collect();
 
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
-        if fleet.standing_order_kind() != Order::JoinAnotherFleet {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
+        if fleet.order != Order::JoinAnotherFleet {
             continue;
         }
 
-        let host_number = fleet.join_host_fleet_id_raw();
-        if host_number == 0 || host_number == fleet.local_slot_word_raw() {
+        let host_number = fleet.mission_target;
+        if host_number == 0 || host_number == fleet.fleet_number.0 {
             continue;
         }
-        let host_key = (fleet.owner_empire_raw(), host_number);
+        let host_key = (fleet.owner.0, host_number);
 
         if !current_host_viability
             .get(&host_key)
@@ -102,15 +97,15 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
         }
 
         if let Some(coords) = current_fleet_coords.get(&host_key).copied() {
-            let previous_target_coords = fleet.standing_order_target_coords_raw();
+            let previous_target_coords = fleet.target.to_array();
             if coords != previous_target_coords {
-                let current_coords = fleet.current_location_coords_raw();
-                let reporting_fleet_number = Some(fleet.local_slot_word_raw() as u8);
-                fleet.set_standing_order_target_coords_raw(coords);
+                let current_coords = fleet.sector.to_array();
+                let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
+                fleet.target = Coords::from_array(coords);
                 events.push(MissionRetargetEvent::Retargeted {
                     fleet_idx,
                     reporting_fleet_number,
-                    owner_empire_raw: fleet.owner_empire_raw(),
+                    owner_empire_raw: fleet.owner.0,
                     mission: Mission::JoinAnotherFleet,
                     current_coords,
                     previous_target_coords,
@@ -127,33 +122,26 @@ pub(super) fn refresh_guard_starbase_targets(
 ) -> Vec<MissionRetargetEvent> {
     let active_bases_by_id: std::collections::HashMap<(u8, u16), [u8; 2]> = game_data
         .bases
-        .records
         .iter()
-        .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
-        .map(|base| {
-            (
-                (base.owner_empire_raw(), base.base_id_raw()),
-                base.coords_raw(),
-            )
-        })
+        .filter(|base| base.base_id.0 != 0 && base.owner.0 != 0)
+        .map(|base| ((base.owner.0, base.base_id.0), base.sector.to_array()))
         .collect();
     let active_base_coords: std::collections::HashSet<(u8, [u8; 2])> = game_data
         .bases
-        .records
         .iter()
-        .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() != 0)
-        .map(|base| (base.owner_empire_raw(), base.coords_raw()))
+        .filter(|base| base.base_id.0 != 0 && base.owner.0 != 0)
+        .map(|base| (base.owner.0, base.sector.to_array()))
         .collect();
     let mut events = Vec::new();
-    for (fleet_idx, fleet) in game_data.fleets.records.iter_mut().enumerate() {
-        if fleet.standing_order_kind() != Order::GuardStarbase {
+    for (fleet_idx, fleet) in game_data.fleets.iter_mut().enumerate() {
+        if fleet.order != Order::GuardStarbase {
             continue;
         }
-        let previous_target_coords = fleet.standing_order_target_coords_raw();
-        let current_coords = fleet.current_location_coords_raw();
-        let owner_empire_raw = fleet.owner_empire_raw();
-        let reporting_fleet_number = Some(fleet.local_slot_word_raw() as u8);
-        let base_id = fleet.guard_starbase_index_raw();
+        let previous_target_coords = fleet.target.to_array();
+        let current_coords = fleet.sector.to_array();
+        let owner_empire_raw = fleet.owner.0;
+        let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
+        let base_id = fleet.mission_target;
         let new_target_coords = active_bases_by_id
             .get(&(owner_empire_raw, base_id))
             .copied()
@@ -163,9 +151,9 @@ pub(super) fn refresh_guard_starbase_targets(
                     .then_some(previous_target_coords)
             });
         let Some(new_target_coords) = new_target_coords else {
-            fleet.set_standing_order_kind(Order::HoldPosition);
-            fleet.set_current_speed(0);
-            fleet.set_standing_order_target_coords_raw(current_coords);
+            fleet.order = Order::HoldPosition;
+            fleet.speed = 0;
+            fleet.target = Coords::from_array(current_coords);
             events.push(MissionRetargetEvent::Abandoned {
                 fleet_idx,
                 reporting_fleet_number,
@@ -177,7 +165,7 @@ pub(super) fn refresh_guard_starbase_targets(
             continue;
         };
         if new_target_coords != previous_target_coords {
-            fleet.set_standing_order_target_coords_raw(new_target_coords);
+            fleet.target = Coords::from_array(new_target_coords);
             events.push(MissionRetargetEvent::Retargeted {
                 fleet_idx,
                 reporting_fleet_number,

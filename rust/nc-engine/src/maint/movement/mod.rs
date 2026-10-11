@@ -33,15 +33,14 @@ impl<'a> YearMovement<'a> {
         game_data: &CoreGameData,
         visible_hazards_by_empire: &'a [VisibleHazardIntel],
     ) -> Self {
-        let fleet_count = game_data.fleets.records.len();
+        let fleet_count = game_data.fleets.len();
         Self {
             visible_hazards_by_empire,
             tracks: vec![FleetTrack::default(); fleet_count],
             start: game_data
                 .fleets
-                .records
                 .iter()
-                .map(|fleet| fleet.current_location_coords_raw())
+                .map(|fleet| fleet.sector.to_array())
                 .collect(),
             entered_target: vec![false; fleet_count],
             to_remove: vec![false; fleet_count],
@@ -72,18 +71,18 @@ impl<'a> YearMovement<'a> {
         tick: u8,
     ) -> Result<TickEnd, Box<dyn std::error::Error>> {
         let (target, order_kind, owner_empire, sector) = {
-            let fleet = &game_data.fleets.records[fleet_idx];
+            let fleet = &game_data.fleets[fleet_idx];
             (
-                fleet.standing_order_target_coords_raw(),
-                fleet.standing_order_kind(),
-                fleet.owner_empire_raw(),
-                fleet.current_location_coords_raw(),
+                fleet.target.to_array(),
+                fleet.order,
+                fleet.owner.0,
+                fleet.sector.to_array(),
             )
         };
         if order_kind == Order::HoldPosition {
             // Classic's Hold action zeroes the speed, so a holding fleet's
             // visibility loses its speed term after its first tick.
-            game_data.fleets.records[fleet_idx].set_current_speed(0);
+            game_data.fleets[fleet_idx].speed = 0;
             return Ok(TickEnd::Underway);
         }
         let marks = EventMarks::of(&self.events);
@@ -128,7 +127,7 @@ impl<'a> YearMovement<'a> {
         game_data: &CoreGameData,
         fleet_idx: usize,
     ) -> (Order, u8) {
-        self.tracks[fleet_idx].effective_order(&game_data.fleets.records[fleet_idx])
+        self.tracks[fleet_idx].effective_order(&game_data.fleets[fleet_idx])
     }
 
     /// The record's position was changed outside movement.
@@ -138,7 +137,7 @@ impl<'a> YearMovement<'a> {
 
     /// Undo fleet `fleet_idx`'s step this tick.
     pub(super) fn undo_step(&mut self, game_data: &mut CoreGameData, fleet_idx: usize) {
-        self.tracks[fleet_idx].undo_step(&mut game_data.fleets.records[fleet_idx]);
+        self.tracks[fleet_idx].undo_step(&mut game_data.fleets[fleet_idx]);
     }
 
     pub(super) fn finish(
@@ -146,7 +145,7 @@ impl<'a> YearMovement<'a> {
         game_data: &mut CoreGameData,
     ) -> (MovementEvents, FleetRemovalRemapInfo) {
         for (idx, track) in self.tracks.iter().enumerate() {
-            track.finish(&mut game_data.fleets.records[idx]);
+            track.finish(&mut game_data.fleets[idx]);
             self.events.fleet_travel_speeds[idx] = track.travel_speed;
         }
         let remap_info = if self.to_remove.iter().any(|remove| *remove) {
@@ -211,6 +210,6 @@ impl EventMarks {
     }
 }
 
-pub(super) fn complete_view_world(fleet: &mut nc_data::FleetRecord) -> bool {
+pub(super) fn complete_view_world(fleet: &mut nc_data::Fleet) -> bool {
     arrivals::complete_view_world(fleet)
 }

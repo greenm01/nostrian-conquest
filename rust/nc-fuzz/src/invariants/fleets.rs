@@ -12,7 +12,7 @@
 //! sector on the same order all year; that fleet was never anywhere else.
 
 use nc_data::{
-    ColonizationResolvedEvent, CoreGameData, EncounterDispositionEvent, FleetRecord,
+    ColonizationResolvedEvent, CoreGameData, EncounterDispositionEvent, Fleet,
     InvalidPlayerStateEvent, JoinMissionHostEvent, MissionRetargetEvent, Order,
     SalvageResolvedEvent,
 };
@@ -46,7 +46,7 @@ impl FleetClaim {
         }
     }
 
-    fn mismatch(&self, fleets: &[FleetRecord], before: &[FleetRecord]) -> Option<String> {
+    fn mismatch(&self, fleets: &[Fleet], before: &[Fleet]) -> Option<String> {
         if self.fleet_idx == REMOVED_FLEET_IDX {
             return None;
         }
@@ -57,13 +57,11 @@ impl FleetClaim {
                 fleets.len()
             ));
         };
-        let number = fleet.local_slot_word_raw();
-        if fleet.owner_empire_raw() != self.owner {
+        let number = fleet.fleet_number.0;
+        if fleet.owner.0 != self.owner {
             return Some(format!(
                 "index {} is empire {} fleet {number}, not an empire {} fleet",
-                self.fleet_idx,
-                fleet.owner_empire_raw(),
-                self.owner
+                self.fleet_idx, fleet.owner.0, self.owner
             ));
         }
         if let Some(expected) = self.fleet_number
@@ -75,15 +73,12 @@ impl FleetClaim {
             ));
         }
         if let Some(coords) = self.coords {
-            let at = fleet.current_location_coords_raw();
+            let at = fleet.sector.to_array();
             let held_all_year = before
                 .iter()
-                .find(|start| {
-                    start.owner_empire_raw() == self.owner && start.local_slot_word_raw() == number
-                })
+                .find(|start| start.owner.0 == self.owner && start.fleet_number.0 == number)
                 .is_some_and(|start| {
-                    start.current_location_coords_raw() == at
-                        && standing_order(start) == standing_order(fleet)
+                    start.sector.to_array() == at && standing_order(start) == standing_order(fleet)
                 });
             if at != coords && held_all_year {
                 return Some(format!(
@@ -96,11 +91,8 @@ impl FleetClaim {
     }
 }
 
-fn standing_order(fleet: &FleetRecord) -> (Order, [u8; 2]) {
-    (
-        fleet.standing_order_kind(),
-        fleet.standing_order_target_coords_raw(),
-    )
+fn standing_order(fleet: &Fleet) -> (Order, [u8; 2]) {
+    (fleet.order, fleet.target.to_array())
 }
 
 pub fn check(observation: &TurnObservation) -> Vec<Violation> {
@@ -242,12 +234,12 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         .into_iter()
         .filter_map(|(event, claim)| {
             claim
-                .mismatch(&after.fleets.records, &observation.before.fleets.records)
+                .mismatch(&after.fleets, &observation.before.fleets)
                 .map(|detail| Violation::FleetIdentity { event, detail })
         })
         .collect()
 }
 
 fn planet_coords(state: &CoreGameData, planet_idx: usize) -> [u8; 2] {
-    state.planets.records[planet_idx].coords_raw()
+    state.planets[planet_idx].sector.to_array()
 }

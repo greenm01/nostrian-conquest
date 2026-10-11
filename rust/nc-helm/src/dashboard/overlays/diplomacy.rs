@@ -171,18 +171,14 @@ pub(crate) struct DiplomacyRow {
 pub(crate) fn table_rows(app: &DashApp) -> Vec<DiplomacyRow> {
     let player_idx = app.player_record_index_1_based.saturating_sub(1);
     let viewer_slot = app.player_record_index_1_based as u8;
-    let viewer = app.game_data.player.records.get(player_idx);
+    let viewer = app.game_data.players.get(player_idx);
     app.game_data
         .empire_production_ranking_rows(EmpireProductionRankingSort::Production)
         .into_iter()
         .enumerate()
         .filter_map(|(rank_idx, ranking)| {
             let slot = ranking.empire_id;
-            let player = app
-                .game_data
-                .player
-                .records
-                .get(slot.saturating_sub(1) as usize)?;
+            let player = app.game_data.players.get(slot.saturating_sub(1) as usize)?;
             let name = display_name(player, slot);
             let (state, state_style) = state_label_and_style(
                 &app.game_data,

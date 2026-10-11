@@ -1,6 +1,6 @@
 use std::time::Instant;
 
-use nc_data::CoreGameData;
+use nc_data::{CoreGameData, troop_transports};
 
 use crate::build::{BuiltScenario, ScenarioBuildReport, apply_turn_files, build_scenario};
 use crate::error::HarnessError;
@@ -93,9 +93,9 @@ pub fn run_combat_scenario(spec: &CombatScenarioSpec) -> Result<CombatRun, Harne
 
     let elapsed_millis = started.elapsed().as_millis();
     let built = play.built;
-    let final_year = built.game_data.conquest.game_year();
+    let final_year = built.game_data.conquest.game_year;
     let after = snapshot_empire_summaries(&built.game_data);
-    let empires = (1..=built.game_data.conquest.player_count())
+    let empires = (1..=built.game_data.conquest.player_count)
         .map(|empire_raw| EmpireCombatSummary {
             empire_raw,
             planets_before: before[(empire_raw - 1) as usize].0,
@@ -173,25 +173,22 @@ pub fn run_combat_sweep(spec: &CombatSweepSpec) -> Result<CombatSweepReport, Har
 }
 
 fn snapshot_empire_summaries(game_data: &CoreGameData) -> Vec<(usize, usize, u32)> {
-    (1..=game_data.conquest.player_count())
+    (1..=game_data.conquest.player_count)
         .map(|empire_raw| {
             let planets = game_data
                 .planets
-                .records
                 .iter()
-                .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
+                .filter(|planet| planet.owner.0 == empire_raw)
                 .count();
             let fleets = game_data
                 .fleets
-                .records
                 .iter()
-                .filter(|fleet| fleet.owner_empire_raw() == empire_raw && fleet_has_units(fleet))
+                .filter(|fleet| fleet.owner.0 == empire_raw && fleet_has_units(fleet))
                 .count();
             let ships = game_data
                 .fleets
-                .records
                 .iter()
-                .filter(|fleet| fleet.owner_empire_raw() == empire_raw)
+                .filter(|fleet| fleet.owner.0 == empire_raw)
                 .map(total_fleet_units)
                 .sum::<u32>();
             (planets, fleets, ships)
@@ -199,17 +196,17 @@ fn snapshot_empire_summaries(game_data: &CoreGameData) -> Vec<(usize, usize, u32
         .collect()
 }
 
-fn fleet_has_units(fleet: &nc_data::FleetRecord) -> bool {
+fn fleet_has_units(fleet: &nc_data::Fleet) -> bool {
     total_fleet_units(fleet) > 0
 }
 
-fn total_fleet_units(fleet: &nc_data::FleetRecord) -> u32 {
-    u32::from(fleet.battleship_count())
-        + u32::from(fleet.cruiser_count())
-        + u32::from(fleet.destroyer_count())
-        + u32::from(fleet.scout_count())
-        + u32::from(fleet.troop_transport_count())
-        + u32::from(fleet.etac_count())
+fn total_fleet_units(fleet: &nc_data::Fleet) -> u32 {
+    u32::from(fleet.ships.battleships)
+        + u32::from(fleet.ships.cruisers)
+        + u32::from(fleet.ships.destroyers)
+        + u32::from(fleet.ships.scouts)
+        + u32::from(troop_transports(fleet))
+        + u32::from(fleet.ships.etacs)
 }
 
 fn percentile(values: &[u128], percentile: usize) -> u128 {

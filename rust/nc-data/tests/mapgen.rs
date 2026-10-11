@@ -60,23 +60,19 @@ fn seeded_new_game_populates_documented_planet_count_for_player_count() {
     let data = build_seeded_new_game(3, 3000, 99).expect("seeded game should build");
     let populated = data
         .planets
-        .records
         .iter()
-        .filter(|planet| planet.coords_raw() != [0, 0])
+        .filter(|planet| planet.sector.to_array() != [0, 0])
         .count();
     assert_eq!(populated, 15);
 
     for idx in 0..3 {
-        assert_eq!(data.player.records[idx].owner_mode_raw(), 0);
-        assert_eq!(data.player.records[idx].autopilot_flag(), 1);
-        assert_eq!(
-            data.planets.records[idx].owner_empire_slot_raw(),
-            (idx + 1) as u8
-        );
-        assert_eq!(data.planets.records[idx].planet_name(), "Not Named Yet");
-        assert_eq!(data.planets.records[idx].army_count_raw(), 10);
-        assert_eq!(data.planets.records[idx].ground_batteries_raw(), 4);
-        assert_eq!(data.planets.records[idx].potential_production_points(), 100);
+        assert_eq!(data.players[idx].mode.to_raw(), 0);
+        assert!(data.players[idx].autopilot);
+        assert_eq!(data.planets[idx].owner.0, (idx + 1) as u8);
+        assert_eq!(data.planets[idx].name.clone(), "Not Named Yet");
+        assert_eq!(data.planets[idx].armies, 10);
+        assert_eq!(data.planets[idx].ground_batteries, 4);
+        assert_eq!(u16::from(data.planets[idx].potential_production), 100);
     }
 }
 
@@ -148,9 +144,9 @@ fn nine_player_maps_keep_edge_ring_neutral_worlds_uncommon() {
 #[test]
 fn seeded_new_game_supports_nine_player_manual_tier() {
     let data = build_seeded_new_game(9, 3000, 2025).expect("9-player seeded game should build");
-    assert_eq!(data.player.records.len(), 9);
-    assert_eq!(data.planets.records.len(), 45);
-    assert_eq!(data.fleets.records.len(), 36);
+    assert_eq!(data.players.len(), 9);
+    assert_eq!(data.planets.len(), 45);
+    assert_eq!(data.fleets.len(), 36);
     assert!(data.ecmaint_preflight_errors().is_empty());
 }
 
@@ -158,15 +154,10 @@ fn seeded_new_game_supports_nine_player_manual_tier() {
 fn seeded_initialized_game_retains_active_campaign_builder_semantics() {
     let data =
         build_seeded_initialized_game(4, 3000, 1515).expect("initialized seeded game should build");
-    assert!(
-        data.player
-            .records
-            .iter()
-            .all(|player| player.owner_mode_raw() == 1)
-    );
-    assert_eq!(data.player.records[0].autopilot_flag(), 1);
-    assert_eq!(data.planets.records[0].owner_empire_slot_raw(), 1);
-    assert_eq!(data.planets.records[0].planet_name(), "Player 1 HW");
+    assert!(data.players.iter().all(|player| player.mode.to_raw() == 1));
+    assert!(data.players[0].autopilot);
+    assert_eq!(data.planets[0].owner.0, 1);
+    assert_eq!(data.planets[0].name.clone(), "Player 1 HW");
     assert!(data.ecmaint_preflight_errors().is_empty());
 }
 

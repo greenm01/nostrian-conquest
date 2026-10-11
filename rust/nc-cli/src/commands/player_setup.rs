@@ -1,6 +1,6 @@
 use std::path::Path;
 
-use nc_data::CoreGameData;
+use nc_data::{CoreGameData, PlayerMode, set_empire_name, set_player_handle};
 
 use crate::commands::runtime::{with_runtime_game_mut, with_runtime_game_mut_and_export};
 
@@ -12,16 +12,15 @@ pub(crate) fn set_player_name(
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut_and_export(dir, |data| {
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
             })?;
-        player.set_player_mode_raw(0x01);
-        player.set_assigned_player_handle_raw(handle);
-        player.set_controlled_empire_name_raw(empire_name);
-        player.set_autopilot_flag(0);
+        player.mode = PlayerMode::Human;
+        set_player_handle(player, handle);
+        set_empire_name(player, empire_name);
+        player.autopilot = false;
         Ok(())
     })?;
 
@@ -42,14 +41,13 @@ pub(crate) fn join_player(
     with_runtime_game_mut_and_export(dir, |data| {
         data.join_player(player_record_index_1_based, empire_name)?;
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
             })?;
-        player.set_assigned_player_handle_raw(caller_alias);
-        player.set_autopilot_flag(0);
+        set_player_handle(player, caller_alias);
+        player.autopilot = false;
         if let Some(homeworld_name) = homeworld_name {
             data.rename_player_homeworld(player_record_index_1_based, homeworld_name)?;
         }
@@ -79,18 +77,17 @@ pub(crate) fn prepare_classic_login(
 
     with_runtime_game_mut_and_export(dir, |data| {
         let player = data
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
             })?;
-        player.set_player_mode_raw(0x01);
-        player.set_assigned_player_handle_raw(caller_alias);
+        player.mode = PlayerMode::Human;
+        set_player_handle(player, caller_alias);
         if let Some(empire_name) = empire_name_override {
-            player.set_controlled_empire_name_raw(empire_name);
+            set_empire_name(player, empire_name);
         }
-        player.set_autopilot_flag(0);
+        player.autopilot = false;
         Ok(())
     })?;
 
@@ -107,12 +104,11 @@ fn current_empire_name(
 ) -> Result<String, Box<dyn std::error::Error>> {
     with_runtime_game_mut(dir, |data: &mut CoreGameData| {
         let player = data
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .ok_or_else(|| {
                 format!("player record index out of range: {player_record_index_1_based}")
             })?;
-        Ok(player.controlled_empire_name_summary())
+        Ok(player.empire_name.trim().to_string())
     })
 }

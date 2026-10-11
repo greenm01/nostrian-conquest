@@ -27,7 +27,7 @@ fn round_trip(
     dir: &std::path::Path,
 ) -> Result<Option<String>, String> {
     let game_data = &play.built.game_data;
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
     fs::create_dir_all(dir).map_err(|err| err.to_string())?;
     let store = CampaignStore::open_default_in_dir(dir).map_err(|err| err.to_string())?;
     store
@@ -50,7 +50,7 @@ fn round_trip(
         .latest_player_lifecycle_states(player_count)
         .map_err(|err| format!("lifecycle load failed: {err}"))?;
 
-    let difference = if loaded.game_data.player != game_data.player {
+    let difference = if loaded.game_data.players != game_data.players {
         Some("player records")
     } else if loaded.game_data.planets != game_data.planets {
         Some("planet records")

@@ -1,6 +1,6 @@
-use crate::PLANET_RECORD_SIZE;
-use crate::model::{BuildSlot, Coords, EmpireId, Planet, ProductionItemKind, Stardock};
-use crate::support::ParseError;
+use super::PLANET_RECORD_SIZE;
+use nc_classic::ParseError;
+use nc_data::{BuildSlot, Coords, EmpireId, Planet, ProductionItemKind, Stardock};
 
 use super::{
     pascal_string, put_pascal_string, put_real, put_u16, put_u32, real_at, u16_at, u32_at,

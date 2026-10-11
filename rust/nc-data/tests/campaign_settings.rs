@@ -66,18 +66,12 @@ fn campaign_settings_round_trip_and_update_runtime_policy_bytes() {
         .load_latest_runtime_state()
         .expect("load runtime")
         .expect("runtime snapshot");
-    assert!(!runtime.game_data.setup.snoop_enabled());
-    assert_eq!(
-        runtime.game_data.setup.max_time_between_keys_minutes_raw(),
-        7
-    );
-    assert_eq!(
-        runtime.game_data.setup.minimum_time_granted_minutes_raw(),
-        9
-    );
-    assert!(runtime.game_data.setup.local_timeout_enabled());
-    assert!(!runtime.game_data.setup.remote_timeout_enabled());
-    assert_eq!(runtime.game_data.setup.autopilot_inactive_turns_raw(), 3);
+    assert!(!runtime.game_data.setup.snoop);
+    assert_eq!(runtime.game_data.setup.max_key_gap_minutes, 7);
+    assert_eq!(runtime.game_data.setup.minimum_time_minutes, 9);
+    assert!(runtime.game_data.setup.local_timeout);
+    assert!(!runtime.game_data.setup.remote_timeout);
+    assert_eq!(runtime.game_data.setup.autopilot_after_turns, 3);
 
     let _ = fs::remove_dir_all(root);
 }
@@ -123,7 +117,7 @@ fn campaign_settings_new_defaults_inactivity_autopilot_to_three_turns() {
 #[test]
 fn latest_player_activity_states_derives_from_last_run_year_when_sidecar_missing() {
     let (root, store, mut game_data) = seeded_store("nc-data-settings-activity-derive");
-    game_data.player.records[0].set_last_run_year_raw(2998);
+    game_data.players[0].last_year_on = 2998;
     store
         .save_runtime_state_structured(&game_data, &BTreeSet::new(), &[], &[])
         .expect("save runtime state");
@@ -133,7 +127,7 @@ fn latest_player_activity_states_derives_from_last_run_year_when_sidecar_missing
         .expect("delete player activity");
 
     let activity = store
-        .latest_player_activity_states(game_data.conquest.player_count())
+        .latest_player_activity_states(game_data.conquest.player_count)
         .expect("load player activity");
     assert_eq!(activity[0].last_participation_year, 2998);
     assert!(!activity[0].inactivity_autopilot_pending_clear);

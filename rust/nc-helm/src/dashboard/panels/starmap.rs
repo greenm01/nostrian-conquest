@@ -69,7 +69,7 @@ struct SectorRect {
 }
 
 pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, frame: MapWidgetFrame) {
-    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count());
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count);
 
     let player_empire = app.player_record_index_1_based as u8;
     // Cache hit: no projection clone, no BTreeMap/BTreeSet rebuild.
@@ -168,7 +168,7 @@ pub(crate) fn apply_selection_overlay(
     app: &DashApp,
     frame: MapWidgetFrame,
 ) {
-    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count());
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count);
     let projected = projected_map_geometry(app, frame, map_size);
     apply_selection_overlay_from_projected(buf, app, &projected, frame);
 }
@@ -252,7 +252,7 @@ struct ProjectionBounds {
 /// Advance the starmap viewport so the crosshair stays within the dead-zone
 /// margin of the viewport edges.  Called after every crosshair move.
 pub fn advance_starmap_viewport(app: &mut DashApp) {
-    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count());
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count);
     let frame = crate::dashboard::layout::dashboard_layout(app)
         .widgets
         .center_map;
@@ -468,7 +468,7 @@ pub(crate) fn screen_sector_at_point(
     col: usize,
     row: usize,
 ) -> Option<[u8; 2]> {
-    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count());
+    let map_size = nc_data::map_size_for_player_count(app.game_data.conquest.player_count);
     let projected = projected_map_geometry(app, frame, map_size);
     if col < projected.cell_area_col
         || col > projected.grid_right_col
@@ -619,10 +619,9 @@ fn world_index_for_projection(projection: &PlayerStarmapProjection) -> BTreeMap<
 fn viewer_fleet_sector_coords_fast(app: &DashApp, viewer_empire_id: u8) -> BTreeSet<[u8; 2]> {
     app.game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == viewer_empire_id && fleet.has_any_force())
-        .map(|fleet| fleet.current_location_coords_raw())
+        .filter(|fleet| fleet.owner.0 == viewer_empire_id && nc_data::has_any_force(&fleet))
+        .map(|fleet| fleet.sector.to_array())
         .collect()
 }
 
@@ -744,20 +743,19 @@ pub(crate) fn marker_kind_for_world(
         Some(owner) => {
             let is_icd = app
                 .game_data
-                .player
-                .records
+                .players
                 .get(owner.saturating_sub(1) as usize)
-                .map(|player| player.is_civil_disorder_player())
+                .map(|player| player.mode == nc_data::PlayerMode::CivilDisorder)
                 .unwrap_or(false);
             if is_icd {
                 StarmapMarkerKind::Icd
             } else {
                 let viewer = app
                     .game_data
-                    .player
-                    .records
+                    .players
                     .get(viewer_empire_id.saturating_sub(1) as usize);
-                let is_enemy = viewer.and_then(|viewer| viewer.diplomatic_relation_toward(owner))
+                let is_enemy = viewer
+                    .and_then(|viewer| nc_data::diplomatic_relation_toward(viewer, owner))
                     == Some(DiplomaticRelation::Enemy);
                 if is_enemy {
                     StarmapMarkerKind::Enemy
@@ -887,7 +885,7 @@ mod tests {
             .with_year(3006)
             .build_initialized_baseline()
             .expect("baseline game data");
-        game_data.player.records[2].set_player_mode_raw(0x00);
+        game_data.players[2].mode = nc_data::PlayerMode::from_raw(0x00);
 
         assert_eq!(owner_label(&game_data, Some(0)), "Unowned");
         assert_eq!(owner_label(&game_data, Some(3)), "ICD");
@@ -1967,10 +1965,10 @@ mod tests {
     }
 
     fn place_viewer_fleet_at_record(app: &mut DashApp, fleet_idx: usize, coords: [u8; 2]) {
-        let fleet = &mut app.game_data.fleets.records[fleet_idx];
-        fleet.set_owner_empire_raw(app.player_record_index_1_based as u8);
-        fleet.set_current_location_coords_raw(coords);
-        fleet.set_destroyer_count(1);
+        let fleet = &mut app.game_data.fleets[fleet_idx];
+        fleet.owner.0 = app.player_record_index_1_based as u8;
+        fleet.sector = nc_data::Coords::from_array(coords);
+        fleet.ships.destroyers = 1;
         app.game_data_revision += 1;
     }
 
@@ -2070,11 +2068,10 @@ fn owner_label(game_data: &CoreGameData, known_owner_empire_id: Option<u8>) -> S
     match known_owner_empire_id {
         Some(0) => String::from("Unowned"),
         Some(owner) => game_data
-            .player
-            .records
+            .players
             .get(owner.saturating_sub(1) as usize)
             .map(|player| {
-                if player.is_civil_disorder_player() {
+                if player.mode == nc_data::PlayerMode::CivilDisorder {
                     String::from("ICD")
                 } else {
                     format!("#{owner}")

@@ -2,7 +2,7 @@ use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use nc_data::{CampaignSettings, CampaignStore};
+use nc_data::{CampaignSettings, CampaignStore, set_player_handle};
 use nc_engine::{build_seeded_new_game, map_size_for_player_count};
 
 use crate::commands::harness_player1_tui_stress::seed_player1_tui_stress;
@@ -236,14 +236,13 @@ fn join_helm_lab_empires(dir: &Path, player_count: u8) -> Result<(), Box<dyn std
                 &homeworld_name(player_record_index_1_based, empire_name),
             )?;
             let player = game_data
-                .player
-                .records
+                .players
                 .get_mut(player_record_index_1_based - 1)
                 .ok_or_else(|| {
                     format!("player record index out of range: {player_record_index_1_based}")
                 })?;
-            player.set_assigned_player_handle_raw(&format!("p{player_record_index_1_based:02}"));
-            player.set_autopilot_flag(0);
+            set_player_handle(player, &format!("p{player_record_index_1_based:02}"));
+            player.autopilot = false;
         }
         Ok(())
     })?;

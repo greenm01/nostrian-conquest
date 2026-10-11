@@ -23,22 +23,22 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, frame: PanelWidgetFrame) {
 
 pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let player_idx = app.player_record_index_1_based.saturating_sub(1);
-    let Some(player) = app.game_data.player.records.get(player_idx) else {
+    let Some(player) = app.game_data.players.get(player_idx) else {
         return Vec::new();
     };
-    let tax = player.tax_rate();
+    let tax = player.tax_rate;
     let owner_slot = app.player_record_index_1_based as u8;
 
     let mut total_treasury: u32 = 0;
     let mut total_present: u32 = 0;
     let mut total_potential: u32 = 0;
-    for planet in &app.game_data.planets.records {
-        if planet.owner_empire_slot_raw() != owner_slot {
+    for planet in &app.game_data.planets {
+        if planet.owner.0 != owner_slot {
             continue;
         }
-        total_treasury += planet.stored_production_points();
-        total_present += planet.present_production_points().unwrap_or(0) as u32;
-        total_potential += planet.potential_production_points() as u32;
+        total_treasury += nc_data::stored_production_points(&planet);
+        total_present += nc_data::present_production_points(&planet) as u32;
+        total_potential += u16::from(planet.potential_production) as u32;
     }
 
     let economy = app

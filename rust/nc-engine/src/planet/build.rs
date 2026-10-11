@@ -1,8 +1,8 @@
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CommissionFleetDraft, CoreGameData, EmpirePlanetEconomyRow, GameStateMutationError,
-    PlanetRecord, ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts,
+    CommissionFleetDraft, CoreGameData, EmpirePlanetEconomyRow, GameStateMutationError, Planet,
+    ProductionItemKind, STARDOCK_SLOT_COUNT, build_queue_unit_counts, stardock_slot_kind,
 };
 
 use crate::{BUILD_UNITS, build_quantity_from_points, build_unit_spec_by_kind, max_quantity};
@@ -65,33 +65,33 @@ pub fn production_item_kind_raw(kind: ProductionItemKind) -> u8 {
     kind.to_raw()
 }
 
-pub fn planet_build_committed_points(planet: &PlanetRecord) -> u32 {
+pub fn planet_build_committed_points(planet: &Planet) -> u32 {
     (0..10)
-        .map(|slot| u32::from(planet.build_count_raw(slot)))
+        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
         .sum::<u32>()
 }
 
-pub fn planet_building_unit_count(planet: &PlanetRecord) -> u32 {
+pub fn planet_building_unit_count(planet: &Planet) -> u32 {
     (0..10)
         .map(|slot| {
-            let points = u32::from(planet.build_count_raw(slot));
-            let kind = ProductionItemKind::from_raw(planet.build_kind_raw(slot));
+            let points = u32::from(planet.build_queue[slot].points_owed);
+            let kind = planet.build_queue[slot].kind;
             build_quantity_from_points(kind, points)
         })
         .sum::<u32>()
 }
 
-pub fn planet_docked_unit_count(planet: &PlanetRecord) -> u32 {
+pub fn planet_docked_unit_count(planet: &Planet) -> u32 {
     (0..STARDOCK_SLOT_COUNT)
-        .map(|slot| u32::from(planet.stardock_count_raw(slot)))
+        .map(|slot| u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX)))
         .sum::<u32>()
 }
 
-pub fn planet_build_orders(planet: &PlanetRecord) -> Vec<PlanetBuildOrderLine> {
+pub fn planet_build_orders(planet: &Planet) -> Vec<PlanetBuildOrderLine> {
     (0..10)
         .filter_map(|slot| {
-            let points = planet.build_count_raw(slot);
-            let kind_raw = planet.build_kind_raw(slot);
+            let points = planet.build_queue[slot].points_owed;
+            let kind_raw = planet.build_queue[slot].kind.to_raw();
             if points == 0 || kind_raw == 0 {
                 None
             } else {
@@ -110,7 +110,6 @@ pub fn planet_build_view(
 ) -> Result<PlanetBuildViewStats, GameStateMutationError> {
     let planet = game_data
         .planets
-        .records
         .get(row.planet_record_index_1_based - 1)
         .ok_or(GameStateMutationError::MissingPlanetRecord {
             index_1_based: row.planet_record_index_1_based,
@@ -182,7 +181,7 @@ pub fn planet_build_unavailable_message(
     }
 }
 
-pub fn planet_build_list_entries(planet: &PlanetRecord) -> Vec<PlanetBuildListEntry> {
+pub fn planet_build_list_entries(planet: &Planet) -> Vec<PlanetBuildListEntry> {
     let queue_qty_by_kind = build_queue_unit_counts(planet);
     ordered_kind_raws(&queue_qty_by_kind)
         .into_iter()
@@ -240,11 +239,11 @@ pub fn planet_build_max_selectable_unit_number(entries: &[PlanetBuildSpecifyEntr
         .unwrap_or(0)
 }
 
-pub fn planet_commission_slot_entries(planet: &PlanetRecord) -> Vec<PlanetCommissionSlotEntry> {
+pub fn planet_commission_slot_entries(planet: &Planet) -> Vec<PlanetCommissionSlotEntry> {
     (0..STARDOCK_SLOT_COUNT)
         .filter_map(|slot| {
-            let qty = u32::from(planet.stardock_count_raw(slot));
-            let kind = ProductionItemKind::from_raw(planet.stardock_kind_raw(slot));
+            let qty = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
+            let kind = stardock_slot_kind(planet, slot);
             (qty != 0 && kind.requires_stardock()).then_some(PlanetCommissionSlotEntry {
                 slot_0_based: slot,
                 kind,

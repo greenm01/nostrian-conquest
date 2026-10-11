@@ -7,23 +7,23 @@ use super::{FleetEtaEstimate, plan_route, plan_route_to_destination};
 const ETA_YEAR_LIMIT: u16 = 1000;
 
 pub(super) fn estimate_fleet_eta(game_data: &CoreGameData, fleet_idx: usize) -> FleetEtaEstimate {
-    let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
-    let order = fleet.standing_order_kind();
+    let order = fleet.order;
     let max_speed = if order == Order::HoldPosition {
         0
     } else {
-        fleet.max_speed()
+        fleet.max_speed
     };
     estimate_eta(
         plan_route(game_data, fleet_idx).is_some(),
         Motion::of_fleet(fleet),
-        fleet.current_speed(),
+        fleet.speed,
         max_speed,
         order,
-        fleet.standing_order_target_coords_raw(),
-        target_depth(fleet.world_target_flag_raw()),
+        fleet.target.to_array(),
+        target_depth(fleet.target_depth),
     )
 }
 
@@ -34,19 +34,19 @@ pub(super) fn estimate_fleet_eta_to_destination(
     include_system: bool,
     use_max_speed_if_stopped: bool,
 ) -> FleetEtaEstimate {
-    let Some(fleet) = game_data.fleets.records.get(fleet_idx) else {
+    let Some(fleet) = game_data.fleets.get(fleet_idx) else {
         return FleetEtaEstimate::Unreachable;
     };
-    if fleet.current_location_coords_raw() == destination {
+    if fleet.sector.to_array() == destination {
         return FleetEtaEstimate::Arrived;
     }
-    let speed = if fleet.current_speed() == 0 && use_max_speed_if_stopped {
-        fleet.max_speed().max(1)
+    let speed = if fleet.speed == 0 && use_max_speed_if_stopped {
+        fleet.max_speed.max(1)
     } else {
-        fleet.current_speed()
+        fleet.speed
     };
     let max_speed = if use_max_speed_if_stopped {
-        fleet.max_speed()
+        fleet.max_speed
     } else {
         0
     };

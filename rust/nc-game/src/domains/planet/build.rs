@@ -697,23 +697,19 @@ impl App {
                 let fleet = self
                     .game_data
                     .fleets
-                    .records
                     .get(fleet_record_index_1_based - 1)
                     .ok_or("commissioned fleet record missing")?;
                 let max_fleet_number = self
                     .game_data
                     .fleets
-                    .records
                     .iter()
-                    .filter(|fleet| {
-                        fleet.owner_empire_raw() as usize == self.player.record_index_1_based
-                    })
-                    .map(|fleet| fleet.local_slot_word_raw())
+                    .filter(|fleet| fleet.owner.0 as usize == self.player.record_index_1_based)
+                    .map(|fleet| fleet.fleet_number.0)
                     .max()
-                    .unwrap_or(fleet.local_slot_word_raw());
+                    .unwrap_or(fleet.fleet_number.0);
                 format!(
                     "Fleet {} Commissioned",
-                    format_fleet_number(fleet.local_slot_word_raw(), max_fleet_number)
+                    format_fleet_number(fleet.fleet_number.0, max_fleet_number)
                 )
             }
             CommissionResult::Starbase {
@@ -722,10 +718,9 @@ impl App {
                 let base = self
                     .game_data
                     .bases
-                    .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
-                format!("Commissioned Starbase {:02}.", base.base_id_raw())
+                format!("Commissioned Starbase {:02}.", base.base_id.0)
             }
         };
         self.planet.commission_status = None;
@@ -782,10 +777,9 @@ impl App {
                 let base = self
                     .game_data
                     .bases
-                    .records
                     .get(base_record_index_1_based - 1)
                     .ok_or("commissioned starbase record missing")?;
-                format!("Commissioned Starbase {:02}.", base.base_id_raw())
+                format!("Commissioned Starbase {:02}.", base.base_id.0)
             }
         };
 
@@ -955,10 +949,9 @@ impl App {
         let max_fleet_number = self
             .game_data
             .fleets
-            .records
             .iter()
-            .filter(|fleet| fleet.owner_empire_raw() as usize == self.player.record_index_1_based)
-            .map(|fleet| fleet.local_slot_word_raw())
+            .filter(|fleet| fleet.owner.0 as usize == self.player.record_index_1_based)
+            .map(|fleet| fleet.fleet_number.0)
             .max()
             .unwrap_or(1);
 
@@ -1363,12 +1356,13 @@ impl App {
             .filter(|row| {
                 self.game_data
                     .planets
-                    .records
                     .get(row.planet_record_index_1_based - 1)
                     .map(|record| {
                         (0..STARDOCK_SLOT_COUNT).any(|slot| {
-                            let count = record.stardock_count_raw(slot);
-                            let kind = ProductionItemKind::from_raw(record.stardock_kind_raw(slot));
+                            let count = record.stardock[slot].min(u32::from(u16::MAX)) as u16;
+                            let kind = ProductionItemKind::from_raw(
+                                nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                            );
                             count > 0 && kind.requires_stardock()
                         })
                     })
@@ -1384,7 +1378,6 @@ impl App {
                 let record = self
                     .game_data
                     .planets
-                    .records
                     .get(row.planet_record_index_1_based - 1)?;
                 let mut destroyers = 0u32;
                 let mut cruisers = 0u32;
@@ -1394,11 +1387,13 @@ impl App {
                 let mut etacs = 0u32;
                 let mut starbases = 0u32;
                 for slot in 0..STARDOCK_SLOT_COUNT {
-                    let count = u32::from(record.stardock_count_raw(slot));
+                    let count = u32::from(record.stardock[slot].min(u32::from(u16::MAX)) as u16);
                     if count == 0 {
                         continue;
                     }
-                    match ProductionItemKind::from_raw(record.stardock_kind_raw(slot)) {
+                    match ProductionItemKind::from_raw(
+                        nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                    ) {
                         ProductionItemKind::Destroyer => {
                             destroyers = destroyers.saturating_add(count)
                         }
@@ -1463,12 +1458,7 @@ impl App {
         &self,
         planet_record_index_1_based: usize,
     ) -> Vec<PlanetCommissionRow> {
-        let Some(record) = self
-            .game_data
-            .planets
-            .records
-            .get(planet_record_index_1_based - 1)
-        else {
+        let Some(record) = self.game_data.planets.get(planet_record_index_1_based - 1) else {
             return vec![];
         };
         planet_commission_slot_entries(record)
@@ -1624,33 +1614,30 @@ impl App {
         let fleet = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .ok_or("commissioned fleet record missing")?;
         let max_fleet_number = self
             .game_data
             .fleets
-            .records
             .iter()
-            .filter(|fleet| fleet.owner_empire_raw() as usize == self.player.record_index_1_based)
-            .map(|fleet| fleet.local_slot_word_raw())
+            .filter(|fleet| fleet.owner.0 as usize == self.player.record_index_1_based)
+            .map(|fleet| fleet.fleet_number.0)
             .max()
-            .unwrap_or(fleet.local_slot_word_raw());
+            .unwrap_or(fleet.fleet_number.0);
         Ok(format!(
             "Fleet {} Commissioned",
-            format_fleet_number(fleet.local_slot_word_raw(), max_fleet_number)
+            format_fleet_number(fleet.fleet_number.0, max_fleet_number)
         ))
     }
 
     fn owned_fleet_record_index_by_local_slot(&self, fleet_number: u16) -> Option<usize> {
         self.game_data
             .fleets
-            .records
             .iter()
             .enumerate()
             .find(|(_, fleet)| {
-                fleet.owner_empire_raw() as usize == self.player.record_index_1_based
-                    && fleet.local_slot_word_raw() == fleet_number
+                fleet.owner.0 as usize == self.player.record_index_1_based
+                    && fleet.fleet_number.0 == fleet_number
             })
             .map(|(idx, _)| idx + 1)
     }
@@ -1705,7 +1692,6 @@ impl App {
         let Some(record) = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based - 1)
         else {
             return vec![];
@@ -1767,7 +1753,6 @@ impl App {
         let record = self
             .game_data
             .planets
-            .records
             .get(planet_record_index_1_based - 1)
             .ok_or("planet record missing")?;
         Ok(planet_build_committed_points(record))
@@ -1832,7 +1817,6 @@ impl App {
         let Some(record) = self
             .game_data
             .planets
-            .records
             .get(row.planet_record_index_1_based - 1)
         else {
             return vec![];

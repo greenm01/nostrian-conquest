@@ -23,7 +23,7 @@ fn derived_seed_is_pinned_for_the_init_fixture() {
 fn derived_seed_changes_with_a_single_field() {
     let game_data = init_fixture();
     let mut changed = game_data.clone();
-    changed.fleets.records[0].fleet.rules_of_engagement += 1;
+    changed.fleets[0].rules_of_engagement += 1;
 
     assert_ne!(
         derive_campaign_seed_from_runtime(&game_data, &[], &[]),

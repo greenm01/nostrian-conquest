@@ -57,7 +57,7 @@ fn recipient_sees_a_message_only_after_the_maintenance_that_delivers_it() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     clear_runtime_report_blocks(&mut runtime);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     runtime
         .queued_mail
         .push(incoming_mail(2, 1, year, "Truce", "Hold fire"));
@@ -109,7 +109,7 @@ fn recipient_sees_a_message_only_after_the_maintenance_that_delivers_it() {
 fn delete_all_reviewables_leaves_undelivered_mail_for_its_recipient() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     set_runtime_report_blocks(&mut runtime, b"Fleet battle report");
     runtime
         .queued_mail

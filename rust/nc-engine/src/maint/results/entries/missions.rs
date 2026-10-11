@@ -1,6 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use nc_data::{CoreGameData, MaintenanceEvents, Mission, MissionAbortReason, MissionOutcome};
+use nc_data::{
+    CoreGameData, MaintenanceEvents, Mission, MissionAbortReason, MissionOutcome,
+    present_production_points, stored_production_points,
+};
 
 use crate::maint::results::combat::*;
 use crate::maint::results::compose::{
@@ -184,14 +187,14 @@ pub fn push_mission_entries(
             if matching_roe_abort_disposition_index(events, event).is_some() {
                 continue;
             }
-            let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+            let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
                 continue;
             };
             let coords = event
                 .location_coords
-                .unwrap_or_else(|| fleet.current_location_coords_raw());
+                .unwrap_or_else(|| fleet.sector.to_array());
             let disposition = fleet_abort_disposition(fleet);
-            let fleet_number = fleet.local_slot_word_raw() as u8;
+            let fleet_number = fleet.fleet_number.0 as u8;
             let label = mission_short_label(event.kind);
             groups
                 .entry((event.owner_empire_raw, coords, disposition))
@@ -254,12 +257,12 @@ pub fn push_mission_entries(
         if batched_abort_indices.contains(&ev_idx) {
             continue;
         }
-        let Some(fleet) = game_data.fleets.records.get(event.fleet_idx) else {
+        let Some(fleet) = game_data.fleets.get(event.fleet_idx) else {
             continue;
         };
         let coords = event
             .location_coords
-            .unwrap_or_else(|| fleet.current_location_coords_raw());
+            .unwrap_or_else(|| fleet.sector.to_array());
         let [x, y] = coords;
         let mission_location = mission_location_phrase(event.kind, coords);
         let source_clause =
@@ -327,14 +330,13 @@ pub fn push_mission_entries(
             (Mission::GuardStarbase, MissionOutcome::Arrived) => {
                 let starbase_text = game_data
                     .bases
-                    .records
                     .iter()
                     .find(|base| {
-                        base.coords_raw() == coords
-                            && base.owner_empire_raw() == event.owner_empire_raw
-                            && base.base_id_raw() != 0
+                        base.sector.to_array() == coords
+                            && base.owner.0 == event.owner_empire_raw
+                            && base.base_id.0 != 0
                     })
-                    .map(|base| format!("Starbase {}", base.base_id_raw()))
+                    .map(|base| format!("Starbase {}", base.base_id.0))
                     .unwrap_or_else(|| "the assigned starbase".to_string());
                 (
                     0x05,
@@ -348,22 +350,21 @@ pub fn push_mission_entries(
             (Mission::GuardStarbase, MissionOutcome::Failed) => {
                 // A guard already at the base would pass the ship limit if
                 // this one merged into it.
-                let guard_label = fleet.guard_starbase_index_raw();
+                let guard_label = fleet.mission_target;
                 let partner = game_data
                     .fleets
-                    .records
                     .iter()
                     .enumerate()
                     .find(|(idx, other)| {
                         *idx != event.fleet_idx
-                            && other.owner_empire_raw() == event.owner_empire_raw
-                            && other.current_location_coords_raw() == coords
-                            && other.standing_order_kind() == nc_data::Order::GuardStarbase
-                            && other.guard_starbase_index_raw() == guard_label
+                            && other.owner.0 == event.owner_empire_raw
+                            && other.sector.to_array() == coords
+                            && other.order == nc_data::Order::GuardStarbase
+                            && other.mission_target == guard_label
                     })
                     .map_or_else(
                         || "a fleet".to_string(),
-                        |(_, other)| format!("the {}", fleet_label(other.local_slot_word_raw() as u8)),
+                        |(_, other)| format!("the {}", fleet_label(other.fleet_number.0 as u8)),
                     );
                 (
                     0x05,
@@ -377,10 +378,10 @@ pub fn push_mission_entries(
             }
             (Mission::GuardBlockadeWorld, MissionOutcome::Arrived) => {
                 let body = if let Some(planet_idx) = event.planet_idx {
-                    if let Some(planet) = game_data.planets.records.get(planet_idx) {
+                    if let Some(planet) = game_data.planets.get(planet_idx) {
                         format!(
                             " Guard/Blockade World mission report: We have arrived at planet \"{}\" in Sector({x},{y}) and are beginning our guarding/blockading assignment.",
-                            planet.planet_name(),
+                            planet.name.clone(),
                         )
                     } else {
                         " Guard/Blockade World mission report: We have arrived at our assigned world and are beginning our guarding/blockading assignment.".to_string()
@@ -439,7 +440,7 @@ pub fn push_mission_entries(
                 ),
             ),
             (Mission::MoveOnly, MissionOutcome::Aborted) => {
-                let destination = fleet.standing_order_target_coords_raw();
+                let destination = fleet.target.to_array();
                 let [dx, dy] = destination;
                 (
                     0x05,
@@ -468,21 +469,21 @@ pub fn push_mission_entries(
                             snapshot.known_potential_production.unwrap_or(0),
                         )
                     } else if let Some(planet_idx) = event.planet_idx {
-                        if let Some(planet) = game_data.planets.records.get(planet_idx) {
-                            let owner_clause = if planet.owner_empire_slot_raw() == 0 {
+                        if let Some(planet) = game_data.planets.get(planet_idx) {
+                            let owner_clause = if planet.owner.0 == 0 {
                                 "unowned".to_string()
                             } else {
                                 format!(
                                     "owned by {}",
                                     classic_empire_clause(
                                         game_data,
-                                        planet.owner_empire_slot_raw(),
+                                        planet.owner.0,
                                     )
                                 )
                             };
                             format!(
                                 " Viewing mission report: We have entered System({x},{y}) and have completed a long range viewing analysis of the world found within. The world is {owner_clause} and has a potential of {} points. Until ordered otherwise, we will be moving out of the solar system.",
-                                planet.potential_production_points_current_known(),
+                                u16::from(planet.potential_production),
                             )
                         } else {
                             format!(" Viewing mission report: We have entered System({x},{y}) and completed a long range viewing analysis.")
@@ -527,10 +528,10 @@ pub fn push_mission_entries(
                 let bombard_force_destroyed =
                     mission_event_has_fleet_destroyed(game_data, events, event);
                 let body = if let Some(planet_idx) = event.planet_idx {
-                    if let Some(planet) = game_data.planets.records.get(planet_idx) {
+                    if let Some(planet) = game_data.planets.get(planet_idx) {
                         let context_rows = vec![StructuredBodyItem::Label {
                             label: LABEL_TARGET_WORLD.to_string(),
-                            value: format!("planet \"{}\"", planet.planet_name()),
+                            value: format!("planet \"{}\"", planet.name.clone()),
                         }];
                         let force_rows = vec![
                             StructuredBodyItem::Label {
@@ -560,7 +561,7 @@ pub fn push_mission_entries(
                         let mut outcome_rows = vec![
                             StructuredBodyItem::Text(format!(
                                 "We have just concluded a bombing run against planet \"{}\".",
-                                planet.planet_name()
+                                planet.name.clone()
                             )),
                             StructuredBodyItem::Label {
                                 label: LABEL_OUR_LOSSES.to_string(),
@@ -706,30 +707,27 @@ pub fn push_mission_entries(
                         )
                     } else if let Some(planet) = game_data
                         .planets
-                        .records
                         .iter()
-                        .find(|planet| planet.coords_raw() == [x, y])
+                        .find(|planet| planet.sector.to_array() == [x, y])
                     {
-                        let owner = if planet.owner_empire_slot_raw() == 0 {
+                        let owner = if planet.owner.0 == 0 {
                             "Unowned world".to_string()
                         } else {
-                            classic_empire_clause(game_data, planet.owner_empire_slot_raw())
+                            classic_empire_clause(game_data, planet.owner.0)
                         };
                         let stardock_summary = stardock_scan_summary(planet);
                         let body = scouted_world_report_body(
-                            &planet.planet_name(),
+                            &planet.name.clone(),
                             [
                                 owner,
-                                format!("{} points", planet.potential_production_points()),
+                                format!("{} points", u16::from(planet.potential_production)),
                                 format!(
                                     "{} points",
-                                    planet
-                                        .present_production_points_current_known()
-                                        .unwrap_or_else(|| planet.potential_production_points())
+                                    present_production_points(planet)
                                 ),
-                                format!("{} points", planet.stored_production_points()),
-                                planet.army_count_raw().to_string(),
-                                planet.ground_batteries_raw().to_string(),
+                                format!("{} points", stored_production_points(planet)),
+                                u8::try_from(planet.armies).unwrap_or(u8::MAX).to_string(),
+                                u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX).to_string(),
                             ],
                             &stardock_summary,
                         );

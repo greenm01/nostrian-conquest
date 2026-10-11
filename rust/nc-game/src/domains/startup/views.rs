@@ -41,7 +41,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             &app.startup_state.messages_review_history_rows,
             app.startup_state.results_deleted_any,
             app.startup_state.messages_deleted_any,
-            app.game_data.conquest.game_year(),
+            app.game_data.conquest.game_year,
         ),
         ScreenId::FirstTimeMenu => app.first_time_menu.render(
             app.startup_state.first_time_status.as_deref(),
@@ -88,7 +88,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
         ScreenId::FirstTimeJoinSummary => render_first_time_join_summary(
             &app.startup_state.first_time_empire_name,
             app.player.record_index_1_based,
-            app.game_data.conquest.game_year(),
+            app.game_data.conquest.game_year,
         ),
         ScreenId::FirstTimeJoinNoPending => render_first_time_join_no_pending(),
         ScreenId::FirstTimeHomeworldName => {
@@ -163,7 +163,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             &app.messaging.inbox_year_input,
             app.messaging.inbox_prompt_mode,
             app.messaging.inbox_feedback.as_ref(),
-            app.game_data.conquest.game_year(),
+            app.game_data.conquest.game_year,
         ),
         _ => unreachable!("startup views called for non-startup screen"),
     }

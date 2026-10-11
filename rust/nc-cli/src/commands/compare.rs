@@ -1,9 +1,11 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{FleetDat, PlanetDat, PlayerDat};
-
 use crate::commands::scenario::KnownScenario;
+use nc_compat::classic::{
+    encode_fleet, encode_planet, encode_player, parse_fleets_dat, parse_planets_dat,
+    parse_player_dat,
+};
 
 pub(crate) fn compare_preserved_scenario(
     dir: &Path,
@@ -64,11 +66,11 @@ pub(crate) fn compare_raw_file(
 }
 
 fn compare_player(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let left = PlayerDat::parse(&fs::read(left_dir.join("PLAYER.DAT"))?)?;
-    let right = PlayerDat::parse(&fs::read(right_dir.join("PLAYER.DAT"))?)?;
+    let left = parse_player_dat(&fs::read(left_dir.join("PLAYER.DAT"))?)?;
+    let right = parse_player_dat(&fs::read(right_dir.join("PLAYER.DAT"))?)?;
     println!("PLAYER.DAT:");
-    for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-        let count = diff_count(&a.to_bytes(), &b.to_bytes());
+    for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
+        let count = diff_count(&encode_player(a), &encode_player(b));
         if count == 0 {
             continue;
         }
@@ -76,19 +78,19 @@ fn compare_player(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
             "  record {}: {} differing bytes, tax {} -> {}",
             idx + 1,
             count,
-            a.tax_rate(),
-            b.tax_rate()
+            a.tax_rate,
+            b.tax_rate
         );
     }
     Ok(())
 }
 
 fn compare_planets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    let left = PlanetDat::parse(&fs::read(left_dir.join("PLANETS.DAT"))?)?;
-    let right = PlanetDat::parse(&fs::read(right_dir.join("PLANETS.DAT"))?)?;
+    let left = parse_planets_dat(&fs::read(left_dir.join("PLANETS.DAT"))?)?;
+    let right = parse_planets_dat(&fs::read(right_dir.join("PLANETS.DAT"))?)?;
     println!("PLANETS.DAT:");
-    for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-        let count = diff_count(&a.to_bytes(), &b.to_bytes());
+    for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
+        let count = diff_count(&encode_planet(a), &encode_planet(b));
         if count == 0 {
             continue;
         }
@@ -96,8 +98,8 @@ fn compare_planets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std:
             "  record {:02}: {} differing bytes, text '{}' -> '{}'",
             idx + 1,
             count,
-            ascii_trim(a.status_or_name_bytes()),
-            ascii_trim(b.status_or_name_bytes())
+            ascii_trim(a.name.as_bytes()),
+            ascii_trim(b.name.as_bytes())
         );
     }
     Ok(())
@@ -113,11 +115,11 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
         diff_count(&left_bytes, &right_bytes)
     );
 
-    let left = FleetDat::parse(&left_bytes);
-    let right = FleetDat::parse(&right_bytes);
+    let left = parse_fleets_dat(&left_bytes);
+    let right = parse_fleets_dat(&right_bytes);
     if let (Ok(left), Ok(right)) = (left, right) {
-        for (idx, (a, b)) in left.records.iter().zip(right.records.iter()).enumerate() {
-            let count = diff_count(&a.to_bytes(), &b.to_bytes());
+        for (idx, (a, b)) in left.iter().zip(right.iter()).enumerate() {
+            let count = diff_count(&encode_fleet(a), &encode_fleet(b));
             if count == 0 {
                 continue;
             }
@@ -125,10 +127,10 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
                 "  record {:02}: {} differing bytes, current speed {} -> {}, params {:02x?} -> {:02x?}",
                 idx + 1,
                 count,
-                a.current_speed(),
-                b.current_speed(),
-                a.mission_param_bytes(),
-                b.mission_param_bytes()
+                a.speed,
+                b.speed,
+                [a.order.to_raw(), a.target.x, a.target.y],
+                [b.order.to_raw(), b.target.x, b.target.y]
             );
         }
     }

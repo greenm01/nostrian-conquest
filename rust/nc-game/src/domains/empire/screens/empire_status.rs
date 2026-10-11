@@ -19,8 +19,8 @@ impl EmpireStatusScreen {
         menu: CommandMenu,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let player_idx = frame.player.record_index_1_based;
-        let player = &frame.game_data.player.records[player_idx - 1];
-        let empire_raw = player_idx as u8;
+        let player = &frame.game_data.players[player_idx - 1];
+        let empire_id = player_idx as u8;
         let label_width = aligned_label_width([
             "Empire",
             "Handle",
@@ -54,21 +54,21 @@ impl EmpireStatusScreen {
             4,
             label_width,
             "Year",
-            &frame.game_data.conquest.game_year().to_string(),
+            &frame.game_data.conquest.game_year.to_string(),
         );
         draw_aligned_status_line(
             &mut buffer,
             5,
             label_width,
             "Campaign state",
-            campaign_state_label(frame.game_data.empire_campaign_state(empire_raw)),
+            campaign_state_label(frame.game_data.empire_campaign_state(empire_id)),
         );
         draw_aligned_status_line(
             &mut buffer,
             7,
             label_width,
             "Tax rate",
-            &format!("{}%", player.tax_rate()),
+            &format!("{}%", player.tax_rate),
         );
         draw_aligned_status_line(
             &mut buffer,
@@ -105,7 +105,7 @@ impl EmpireStatusScreen {
             11,
             label_width,
             "Autopilot",
-            if player.autopilot_flag() != 0 {
+            if u8::from(player.autopilot) != 0 {
                 "ON"
             } else {
                 "OFF"

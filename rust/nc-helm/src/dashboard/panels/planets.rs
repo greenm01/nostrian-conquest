@@ -46,31 +46,30 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
     let starbase_coords: std::collections::HashSet<[u8; 2]> = app
         .game_data
         .bases
-        .records
         .iter()
-        .filter(|b| b.owner_empire_raw() == owner_slot && b.base_id_raw() != 0)
-        .map(|b| b.coords_raw())
+        .filter(|b| b.owner.0 == owner_slot && b.base_id.0 != 0)
+        .map(|b| b.sector.to_array())
         .collect();
 
-    for planet in &app.game_data.planets.records {
-        if planet.owner_empire_slot_raw() != owner_slot {
+    for planet in &app.game_data.planets {
+        if planet.owner.0 != owner_slot {
             continue;
         }
         owned_count += 1;
 
-        let coords = planet.coords_raw();
+        let coords = planet.sector.to_array();
         if starbase_coords.contains(&coords) {
             starbases_built += 1;
         }
 
-        let armies = planet.army_count_raw();
+        let armies = planet.armies.min(u16::from(u8::MAX)) as u8;
         armies_mustered += armies as u32;
 
-        let batteries = planet.ground_batteries_raw();
+        let batteries = planet.ground_batteries.min(u16::from(u8::MAX)) as u8;
         ground_batteries += batteries as u32;
 
-        for (kind_raw, qty) in build_queue_unit_counts(planet) {
-            let kind = ProductionItemKind::from_raw(kind_raw);
+        for (kind_code, qty) in build_queue_unit_counts(planet) {
+            let kind = ProductionItemKind::from_raw(kind_code);
             building += qty;
             match kind {
                 ProductionItemKind::Battleship => build_bbs += qty,
@@ -88,13 +87,13 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
             vulnerable_worlds += 1;
         }
 
-        let has_stardock_units = planet.stardock_count_raw(0) > 0
-            || planet.stardock_count_raw(1) > 0
-            || planet.stardock_count_raw(2) > 0
-            || planet.stardock_count_raw(3) > 0
-            || planet.stardock_count_raw(4) > 0
-            || planet.stardock_count_raw(5) > 0
-            || planet.stardock_count_raw(6) > 0;
+        let has_stardock_units = (planet.stardock[0].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[1].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[2].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[3].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[4].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[5].min(u32::from(u16::MAX)) as u16) > 0
+            || (planet.stardock[6].min(u32::from(u16::MAX)) as u16) > 0;
 
         if has_stardock_units {
             stardocks_active += 1;
@@ -207,9 +206,9 @@ mod tests {
             ScreenGeometry::new(0, 0),
             1,
         );
-        let homeworld = &mut app.game_data.planets.records[0];
-        homeworld.set_build_kind_raw(0, 3);
-        homeworld.set_build_count_raw(0, 90);
+        let homeworld = &mut app.game_data.planets[0];
+        homeworld.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+        homeworld.build_queue[0].points_owed = 90;
 
         assert!(
             body_rows(&app)

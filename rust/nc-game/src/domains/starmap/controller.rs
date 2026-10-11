@@ -29,7 +29,7 @@ impl App {
     }
 
     pub fn move_partial_starmap(&mut self, dx: i8, dy: i8) {
-        let map_size = map_size_for_player_count(self.game_data.conquest.player_count());
+        let map_size = map_size_for_player_count(self.game_data.conquest.player_count);
         self.starmap_state.partial_center[0] = self.starmap_state.partial_center[0]
             .saturating_add_signed(dx)
             .clamp(1, map_size);
@@ -53,8 +53,7 @@ impl App {
         std::fs::create_dir_all(&self.export_root)?;
         let filename = format!(
             "ECMAP-P{}-Y{}.TXT",
-            self.player.record_index_1_based,
-            self.game_data.conquest.game_year()
+            self.player.record_index_1_based, self.game_data.conquest.game_year
         );
         let export_path = self.export_root.join(&filename);
         let csv_path = self.export_root.join(filename.replace(".TXT", ".CSV"));

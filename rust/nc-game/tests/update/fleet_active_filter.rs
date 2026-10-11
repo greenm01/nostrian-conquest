@@ -1,27 +1,23 @@
 use crate::support::*;
 
-fn owned_fleet_mut(
-    state: &mut CampaignRuntimeState,
-    fleet_number: u16,
-) -> &mut nc_data::FleetRecord {
+fn owned_fleet_mut(state: &mut CampaignRuntimeState, fleet_number: u16) -> &mut nc_data::Fleet {
     state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == fleet_number)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == fleet_number)
         .unwrap_or_else(|| panic!("fleet #{fleet_number} should exist"))
 }
 
-fn clear_fleet_force(fleet: &mut nc_data::FleetRecord) {
-    fleet.set_scout_count(0);
-    fleet.set_battleship_count(0);
-    fleet.set_cruiser_count(0);
-    fleet.set_destroyer_count(0);
-    fleet.set_troop_transport_count(0);
-    fleet.set_army_count(0);
-    fleet.set_etac_count(0);
-    fleet.recompute_max_speed_from_composition();
+fn clear_fleet_force(fleet: &mut nc_data::Fleet) {
+    fleet.ships.scouts = 0;
+    fleet.ships.battleships = 0;
+    fleet.ships.cruisers = 0;
+    fleet.ships.destroyers = 0;
+    nc_data::set_troop_transports(fleet, 0);
+    nc_data::set_armies_aboard(fleet, 0);
+    fleet.ships.etacs = 0;
+    nc_data::recompute_max_speed(fleet);
 }
 
 #[test]
@@ -31,9 +27,8 @@ fn fleet_menu_shows_no_active_fleets_when_owned_slots_are_empty() {
     for fleet in state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
         clear_fleet_force(fleet);
     }
@@ -94,15 +89,15 @@ fn fleet_menu_defaults_and_review_list_skip_empty_owned_slots() {
     {
         let empty_fleet = owned_fleet_mut(&mut state, 2);
         clear_fleet_force(empty_fleet);
-        empty_fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        empty_fleet.set_standing_order_target_coords_raw([0, 0]);
+        empty_fleet.order = nc_data::Order::HoldPosition;
+        empty_fleet.target = nc_data::Coords::from_array([0, 0]);
     }
     {
         let active_fleet = owned_fleet_mut(&mut state, 1);
-        active_fleet.set_destroyer_count(1);
-        active_fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        active_fleet.set_standing_order_target_coords_raw([0, 0]);
-        active_fleet.recompute_max_speed_from_composition();
+        active_fleet.ships.destroyers = 1;
+        active_fleet.order = nc_data::Order::HoldPosition;
+        active_fleet.target = nc_data::Coords::from_array([0, 0]);
+        nc_data::recompute_max_speed(active_fleet);
     }
     save_runtime_state(&fixture_dir, &state);
 
@@ -213,26 +208,24 @@ fn fleet_list_action_clamps_stale_cursor_before_using_visible_hold_row() {
     let held_fleet_number = state
         .game_data
         .fleets
-        .records
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1)
-        .map(|fleet| fleet.local_slot_word_raw())
+        .find(|fleet| fleet.owner.0 == 1)
+        .map(|fleet| fleet.fleet_number.0)
         .expect("owned fleet");
     for fleet in state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
     {
         clear_fleet_force(fleet);
     }
     {
         let held_fleet = owned_fleet_mut(&mut state, held_fleet_number);
-        held_fleet.set_battleship_count(4);
-        held_fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        held_fleet.set_standing_order_target_coords_raw(held_fleet.current_location_coords_raw());
-        held_fleet.recompute_max_speed_from_composition();
+        held_fleet.ships.battleships = 4;
+        held_fleet.order = nc_data::Order::HoldPosition;
+        held_fleet.target = nc_data::Coords::from_array(held_fleet.sector.to_array());
+        nc_data::recompute_max_speed(held_fleet);
     }
     save_runtime_state(&fixture_dir, &state);
 

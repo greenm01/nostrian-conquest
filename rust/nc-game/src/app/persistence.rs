@@ -28,11 +28,11 @@ impl App {
         self.player_activity_states = self
             .planet
             .campaign_store
-            .latest_player_activity_states(self.game_data.conquest.player_count())?;
+            .latest_player_activity_states(self.game_data.conquest.player_count)?;
         self.player_lifecycle_states = self
             .planet
             .campaign_store
-            .latest_player_lifecycle_states(self.game_data.conquest.player_count())?;
+            .latest_player_lifecycle_states(self.game_data.conquest.player_count)?;
         self.player_access_mode = player_access_mode(
             player_record_index_1_based,
             &self.player_lifecycle_states,
@@ -67,11 +67,11 @@ impl App {
         self.player_activity_states = self
             .planet
             .campaign_store
-            .latest_player_activity_states(self.game_data.conquest.player_count())?;
+            .latest_player_activity_states(self.game_data.conquest.player_count)?;
         self.player_lifecycle_states = self
             .planet
             .campaign_store
-            .latest_player_lifecycle_states(self.game_data.conquest.player_count())?;
+            .latest_player_lifecycle_states(self.game_data.conquest.player_count)?;
         Ok(())
     }
 
@@ -104,7 +104,7 @@ impl App {
         if !matches!(self.player_access_mode, PlayerAccessMode::Normal) {
             return Err("campaign state is read-only in the current access mode".into());
         }
-        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count())
+        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count)
             .map(|viewer_empire_id| {
                 self.planet
                     .campaign_store
@@ -146,11 +146,11 @@ impl App {
         self.player_activity_states = self
             .planet
             .campaign_store
-            .latest_player_activity_states(self.game_data.conquest.player_count())?;
+            .latest_player_activity_states(self.game_data.conquest.player_count)?;
         self.player_lifecycle_states = self
             .planet
             .campaign_store
-            .latest_player_lifecycle_states(self.game_data.conquest.player_count())?;
+            .latest_player_lifecycle_states(self.game_data.conquest.player_count)?;
         self.player_access_mode = player_access_mode(
             self.player.record_index_1_based,
             &self.player_lifecycle_states,
@@ -160,7 +160,7 @@ impl App {
     }
 
     pub(crate) fn save_terminal_access_state(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count())
+        let planet_intel_by_viewer = (1..=self.game_data.conquest.player_count)
             .map(|viewer_empire_id| {
                 self.planet
                     .campaign_store

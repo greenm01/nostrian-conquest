@@ -34,17 +34,16 @@ pub(super) fn write_player_activity_rows(
     let mut states = if let Some(states) = override_states {
         normalize_activity_states(states, game_data)
     } else if let Some(previous_snapshot_id) = previous_snapshot_id {
-        load_player_activity_rows(tx, previous_snapshot_id, game_data.conquest.player_count())?
+        load_player_activity_rows(tx, previous_snapshot_id, game_data.conquest.player_count)?
     } else {
-        default_player_activity_states(game_data.conquest.player_count())
+        default_player_activity_states(game_data.conquest.player_count)
     };
 
     for state in &mut states {
         let current_last_run_year = game_data
-            .player
-            .records
+            .players
             .get(state.player_record_index_1_based.saturating_sub(1))
-            .map(|player| player.last_run_year_raw())
+            .map(|player| player.last_year_on)
             .unwrap_or(0);
         if current_last_run_year > state.last_participation_year {
             state.last_participation_year = current_last_run_year;
@@ -140,7 +139,7 @@ fn normalize_activity_states(
     states: &[PlayerActivityState],
     game_data: &CoreGameData,
 ) -> Vec<PlayerActivityState> {
-    let player_count = game_data.player.records.len() as u8;
+    let player_count = game_data.players.len() as u8;
     let mut normalized = default_player_activity_states(player_count);
     for state in states {
         if let Some(slot) = normalized.get_mut(state.player_record_index_1_based.saturating_sub(1))
@@ -150,10 +149,9 @@ fn normalize_activity_states(
     }
     for state in &mut normalized {
         let current_last_run_year = game_data
-            .player
-            .records
+            .players
             .get(state.player_record_index_1_based.saturating_sub(1))
-            .map(|player| player.last_run_year_raw())
+            .map(|player| player.last_year_on)
             .unwrap_or(0);
         if current_last_run_year > state.last_participation_year {
             state.last_participation_year = current_last_run_year;

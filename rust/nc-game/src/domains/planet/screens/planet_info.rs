@@ -34,31 +34,29 @@ impl PlanetInfoScreen {
         let planet = frame
             .game_data
             .planets
-            .records
             .get(planet_idx)
             .ok_or("planet detail missing")?;
-        if planet.owner_empire_slot_raw() as usize != frame.player.record_index_1_based {
+        if planet.owner.0 as usize != frame.player.record_index_1_based {
             return self.render_intel_detail(frame, planet_idx);
         }
 
-        let [x, y] = planet.coords_raw();
-        let owner_empire_raw = planet.owner_empire_slot_raw();
-        let owner_label = owner_summary(frame, owner_empire_raw);
-        let state_label = owner_state_summary(frame, owner_empire_raw);
+        let [x, y] = planet.sector.to_array();
+        let owner_empire_id = planet.owner.0;
+        let owner_label = owner_summary(frame, owner_empire_id);
+        let state_label = owner_state_summary(frame, owner_empire_id);
         let owned_since_label = frame
             .owned_planet_years
             .get(&(planet_idx + 1))
             .map(|year| format!("Y{year}"))
             .unwrap_or_else(|| "?".to_string());
-        let present = planet.present_production_points().unwrap_or(0);
-        let potential = planet.potential_production_points();
+        let present = nc_data::present_production_points(&planet);
+        let potential = u16::from(planet.potential_production);
         let efficiency = if potential == 0 {
             0.0
         } else {
             (present as f64 / potential as f64) * 100.0
         };
-        let tax_rate =
-            frame.game_data.player.records[frame.player.record_index_1_based - 1].tax_rate();
+        let tax_rate = frame.game_data.players[frame.player.record_index_1_based - 1].tax_rate;
         let expected_revenue = yearly_tax_revenue(present, tax_rate);
         let budget = frame
             .game_data
@@ -66,7 +64,7 @@ impl PlanetInfoScreen {
             .into_iter()
             .find(|row| row.planet_record_index_1_based == planet_idx + 1)
             .map(|row| u32::from(row.build_capacity).min(row.stored_production_points))
-            .unwrap_or_else(|| planet.stored_production_points().min(u32::from(present)));
+            .unwrap_or_else(|| nc_data::stored_production_points(&planet).min(u32::from(present)));
         let info_label_width = aligned_label_width([
             "Coordinates",
             "Planet",
@@ -100,7 +98,7 @@ impl PlanetInfoScreen {
             3,
             info_label_width,
             "Planet",
-            &planet.status_or_name_summary(),
+            &planet.name.trim().to_string(),
         );
         draw_aligned_status_line(&mut buffer, 4, info_label_width, "Owner", &owner_label);
         draw_aligned_status_line(&mut buffer, 5, info_label_width, "State", &state_label);
@@ -130,7 +128,7 @@ impl PlanetInfoScreen {
             9,
             info_label_width,
             "Treasury",
-            &planet.stored_production_points().to_string(),
+            &nc_data::stored_production_points(&planet).to_string(),
         );
         draw_aligned_status_line(
             &mut buffer,
@@ -158,14 +156,14 @@ impl PlanetInfoScreen {
             13,
             info_label_width,
             "Armies",
-            &planet.army_count_raw().to_string(),
+            &(planet.armies.min(u16::from(u8::MAX)) as u8).to_string(),
         );
         draw_aligned_status_line(
             &mut buffer,
             14,
             info_label_width,
             "Ground Batteries",
-            &planet.ground_batteries_raw().to_string(),
+            &(planet.ground_batteries.min(u16::from(u8::MAX)) as u8).to_string(),
         );
         draw_aligned_status_line(
             &mut buffer,
@@ -377,11 +375,11 @@ fn intel_efficiency_label(current: Option<u8>, potential: Option<u16>) -> String
     }
 }
 
-fn format_stardock_summary(planet: &nc_data::PlanetRecord) -> String {
+fn format_stardock_summary(planet: &nc_data::Planet) -> String {
     shared_stardock_summary(planet, CompactUnitSummaryStyle::DashedCodes)
 }
 
-fn format_build_queue_summary(planet: &nc_data::PlanetRecord) -> String {
+fn format_build_queue_summary(planet: &nc_data::Planet) -> String {
     shared_build_queue_summary(planet, CompactUnitSummaryStyle::DashedCodes)
 }
 
@@ -415,36 +413,36 @@ fn owned_status_summary(
     }
 }
 
-fn owner_summary(frame: &ScreenFrame<'_>, owner_empire_raw: u8) -> String {
-    if owner_empire_raw == 0 {
+fn owner_summary(frame: &ScreenFrame<'_>, owner_empire_id: u8) -> String {
+    if owner_empire_id == 0 {
         return "Unowned".to_string();
     }
 
-    let idx = owner_empire_raw as usize - 1;
-    let Some(player) = frame.game_data.player.records.get(idx) else {
-        return format!("Empire #{owner_empire_raw}");
+    let idx = owner_empire_id as usize - 1;
+    let Some(player) = frame.game_data.players.get(idx) else {
+        return format!("Empire #{owner_empire_id}");
     };
 
-    let empire_name = player.controlled_empire_name_summary();
-    let legacy_name = player.legacy_status_name_summary();
+    let empire_name = player.empire_name.trim().to_string();
+    let legacy_name = player.empire_name.trim().to_string();
     if !empire_name.is_empty() && !legacy_name.starts_with("In Civil Disorder") {
-        format!("Empire #{owner_empire_raw} ({empire_name})")
+        format!("Empire #{owner_empire_id} ({empire_name})")
     } else if !legacy_name.is_empty() {
-        format!("Empire #{owner_empire_raw} ({legacy_name})")
+        format!("Empire #{owner_empire_id} ({legacy_name})")
     } else {
-        format!("Empire #{owner_empire_raw}")
+        format!("Empire #{owner_empire_id}")
     }
 }
 
-fn owner_state_summary(frame: &ScreenFrame<'_>, owner_empire_raw: u8) -> String {
-    match frame.game_data.empire_campaign_state(owner_empire_raw) {
+fn owner_state_summary(frame: &ScreenFrame<'_>, owner_empire_id: u8) -> String {
+    match frame.game_data.empire_campaign_state(owner_empire_id) {
         Some(nc_data::CampaignState::Stable) => "Stable".to_string(),
         Some(nc_data::CampaignState::MarginalExistence) => "Marginal Existence".to_string(),
         Some(nc_data::CampaignState::DefectionRisk) => "Defection Risk".to_string(),
         Some(nc_data::CampaignState::Defeated) => "Defeated".to_string(),
         Some(nc_data::CampaignState::CivilDisorder) => "In Civil Disorder".to_string(),
         Some(nc_data::CampaignState::Rogue) => "Rogue".to_string(),
-        None if owner_empire_raw == 0 => "Unowned".to_string(),
+        None if owner_empire_id == 0 => "Unowned".to_string(),
         None => "Unknown".to_string(),
     }
 }

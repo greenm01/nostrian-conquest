@@ -7,7 +7,7 @@
 //! (`step`, ECMAINT 0824:01c0). After each tick the order's arrival test runs
 //! (dispatcher 0b5d:5581); the first tick that passes resolves the order.
 
-use nc_data::{BaseRecord, FleetRecord, Order, Real48};
+use nc_data::{Coords, Fleet, Order, Real48, Starbase};
 
 pub(crate) const TICKS_PER_YEAR: u8 = 52;
 
@@ -19,21 +19,21 @@ pub(crate) struct Motion {
 }
 
 impl Motion {
-    pub(crate) fn of_fleet(fleet: &FleetRecord) -> Self {
-        let [x, y] = fleet.current_location_coords_raw();
+    pub(crate) fn of_fleet(fleet: &Fleet) -> Self {
+        let [x, y] = fleet.sector.to_array();
         Self {
-            x: Real48::from_int(i32::from(x)) + fleet.x_fraction(),
-            y: Real48::from_int(i32::from(y)) + fleet.y_fraction(),
-            z: fleet.depth(),
+            x: Real48::from_int(i32::from(x)) + fleet.x_fraction,
+            y: Real48::from_int(i32::from(y)) + fleet.y_fraction,
+            z: fleet.depth,
         }
     }
 
-    pub(crate) fn of_base(base: &BaseRecord) -> Self {
-        let [x, y] = base.coords_raw();
+    pub(crate) fn of_base(base: &Starbase) -> Self {
+        let [x, y] = base.sector.to_array();
         Self {
-            x: Real48::from_int(i32::from(x)) + base.x_fraction(),
-            y: Real48::from_int(i32::from(y)) + base.y_fraction(),
-            z: base.depth(),
+            x: Real48::from_int(i32::from(x)) + base.x_fraction,
+            y: Real48::from_int(i32::from(y)) + base.y_fraction,
+            z: base.depth,
         }
     }
 
@@ -50,20 +50,20 @@ impl Motion {
         [self.x.trunc() as u8, self.y.trunc() as u8]
     }
 
-    pub(crate) fn write_to(self, fleet: &mut FleetRecord) {
+    pub(crate) fn write_to(self, fleet: &mut Fleet) {
         let [x, y] = self.sector();
-        fleet.set_current_location_coords_raw([x, y]);
-        fleet.set_x_fraction(self.x - Real48::from_int(i32::from(x)));
-        fleet.set_y_fraction(self.y - Real48::from_int(i32::from(y)));
-        fleet.set_depth(self.z);
+        fleet.sector = Coords::new(x, y);
+        fleet.x_fraction = self.x - Real48::from_int(i32::from(x));
+        fleet.y_fraction = self.y - Real48::from_int(i32::from(y));
+        fleet.depth = self.z;
     }
 
-    pub(crate) fn write_to_base(self, base: &mut BaseRecord) {
+    pub(crate) fn write_to_base(self, base: &mut Starbase) {
         let [x, y] = self.sector();
-        base.set_coords_raw([x, y]);
-        base.set_x_fraction(self.x - Real48::from_int(i32::from(x)));
-        base.set_y_fraction(self.y - Real48::from_int(i32::from(y)));
-        base.set_depth(self.z);
+        base.sector = Coords::new(x, y);
+        base.x_fraction = self.x - Real48::from_int(i32::from(x));
+        base.y_fraction = self.y - Real48::from_int(i32::from(y));
+        base.depth = self.z;
     }
 
     /// The sector and depth layer (1 at depth 0.5 or more), which the unit

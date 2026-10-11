@@ -12,13 +12,13 @@ fn test_year_advancement_single_turn() {
 
     // Load initial state
     let mut game_data = load_classic_core_files(&fixture_dir).expect("Failed to load fixture");
-    let initial_year = game_data.conquest.game_year();
+    let initial_year = game_data.conquest.game_year;
 
     // Run one turn of maintenance
     run_maintenance_turn(&mut game_data).expect("Maintenance failed");
 
     // Verify year advanced by exactly 1
-    let final_year = game_data.conquest.game_year();
+    let final_year = game_data.conquest.game_year;
     assert_eq!(
         final_year,
         initial_year + 1,
@@ -34,14 +34,14 @@ fn test_year_advancement_multiple_turns() {
         Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fixtures/ecmaint-fleet-pre/v1.5");
 
     let mut game_data = load_classic_core_files(&fixture_dir).expect("Failed to load fixture");
-    let initial_year = game_data.conquest.game_year();
+    let initial_year = game_data.conquest.game_year;
 
     // Run 3 turns
     for i in 0..3 {
         run_maintenance_turn(&mut game_data).expect(&format!("Maintenance turn {} failed", i));
     }
 
-    let final_year = game_data.conquest.game_year();
+    let final_year = game_data.conquest.game_year;
     assert_eq!(
         final_year,
         initial_year + 3,
@@ -63,8 +63,7 @@ fn test_fleet_fixture_year_matches_post() {
     // Load and verify pre state
     let mut game_data = load_classic_core_files(&pre_dir).expect("Failed to load pre fixture");
     assert_eq!(
-        game_data.conquest.game_year(),
-        3000,
+        game_data.conquest.game_year, 3000,
         "Pre fixture should be at year 3000"
     );
 
@@ -74,10 +73,8 @@ fn test_fleet_fixture_year_matches_post() {
     // Load post fixture and compare year
     let post_data = load_classic_core_files(&post_dir).expect("Failed to load post fixture");
     assert_eq!(
-        game_data.conquest.game_year(),
-        post_data.conquest.game_year(),
+        game_data.conquest.game_year, post_data.conquest.game_year,
         "Year should match post fixture: {} vs {}",
-        game_data.conquest.game_year(),
-        post_data.conquest.game_year()
+        game_data.conquest.game_year, post_data.conquest.game_year
     );
 }

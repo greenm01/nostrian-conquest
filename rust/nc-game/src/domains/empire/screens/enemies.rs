@@ -42,15 +42,14 @@ impl EnemiesScreen {
         let viewer_empire = frame.player.record_index_1_based as u8;
         let mut others = frame
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx + 1 != frame.player.record_index_1_based)
             .map(|(idx, player)| {
                 let empire_id = (idx + 1) as u8;
-                let name = player.controlled_empire_name_summary();
-                let fallback = player.legacy_status_name_summary();
+                let name = player.empire_name.trim().to_string();
+                let fallback = player.empire_name.trim().to_string();
                 let display = if !name.is_empty() { name } else { fallback };
                 let relation = frame
                     .game_data

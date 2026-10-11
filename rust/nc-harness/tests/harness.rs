@@ -2,6 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
 
+use nc_data::PlayerMode;
 use nc_harness::{
     CombatScenarioSpec, CombatSweepSpec, ReportPreviewQuery, ScenarioSpec, build_scenario,
     list_report_preview_families, run_combat_scenario, run_combat_sweep, run_report_preview,
@@ -67,22 +68,19 @@ messages-block player=1 "Incoming traffic\nStand by."
     let spec = ScenarioSpec::load_kdl(&scenario_path).unwrap();
     let built = build_scenario(&spec).unwrap();
 
-    assert_eq!(built.game_data.player.records[0].tax_rate(), 35);
+    assert_eq!(built.game_data.players[0].tax_rate, 35);
     assert_eq!(
-        built.game_data.player.records[0].assigned_player_handle_summary(),
+        built.game_data.players[0].handle.trim().to_string(),
         "SYSOP"
     );
     assert_eq!(
-        built.game_data.player.records[0].controlled_empire_name_summary(),
+        built.game_data.players[0].empire_name.trim().to_string(),
         "Aurora"
     );
-    assert_eq!(built.game_data.fleets.records.len(), 17);
+    assert_eq!(built.game_data.fleets.len(), 17);
     assert_eq!(built.queued_mail.len(), 2);
     assert_eq!(built.report_block_rows.len(), 1);
-    assert!(
-        built.game_data.player.records[0].has_classic_results_review_state()
-            || built.game_data.player.records[0].classic_reports_pending_flag_raw() != 0
-    );
+    assert!(built.game_data.players[0].messages_last != 0);
 }
 
 #[test]
@@ -195,14 +193,14 @@ turn-file path="turn-1.kdl"
 
     let spec = CombatScenarioSpec::load_kdl(&combat_path).unwrap();
     let built = build_scenario(&spec.scenario).unwrap();
-    assert_eq!(built.game_data.player.records[1].tax_rate(), 40);
-    assert!(built.game_data.player.records[1].is_active_human_player());
-    assert_eq!(built.game_data.player.records[0].autopilot_flag(), 1);
-    assert_eq!(built.game_data.player.records[1].autopilot_flag(), 0);
+    assert_eq!(built.game_data.players[1].tax_rate, 40);
+    assert_eq!(built.game_data.players[1].mode, PlayerMode::Human);
+    assert!(built.game_data.players[0].autopilot);
+    assert!(!built.game_data.players[1].autopilot);
 
     let run = run_combat_scenario(&spec).unwrap();
     assert_eq!(run.report.final_year, 3002);
-    assert_eq!(run.built.game_data.player.records[1].tax_rate(), 60);
+    assert_eq!(run.built.game_data.players[1].tax_rate, 60);
 }
 
 #[test]

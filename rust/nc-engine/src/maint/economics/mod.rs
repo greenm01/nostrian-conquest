@@ -41,18 +41,17 @@ pub(super) fn recompute_player_planet_stats(game_data: &mut CoreGameData) {
 pub(super) fn starbase_planets(game_data: &CoreGameData) -> Vec<usize> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
         .filter(|(_, planet)| {
-            let owner = planet.owner_empire_slot_raw();
+            let owner = planet.owner.0;
             owner != 0
-                && game_data.bases.records.iter().any(|base| {
-                    base.owner_empire_raw() == owner
-                        && base.base_id_raw() != 0
-                        && base.coords_raw() == planet.coords_raw()
-                        && base.depth() >= nc_data::Real48::HALF
-                        && base.moving_flag_raw() == 0
+                && game_data.bases.iter().any(|base| {
+                    base.owner.0 == owner
+                        && base.base_id.0 != 0
+                        && base.sector == planet.sector
+                        && base.depth >= nc_data::Real48::HALF
+                        && !base.moving
                 })
         })
         .map(|(idx, _)| idx)

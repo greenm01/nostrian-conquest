@@ -30,7 +30,7 @@ pub(super) fn submit_turn_kdl_file(
     }
 
     let player_lifecycle_states =
-        store.latest_player_lifecycle_states(state.game_data.conquest.player_count())?;
+        store.latest_player_lifecycle_states(state.game_data.conquest.player_count)?;
     let access_mode = player_access_mode(
         player_record_index_1_based,
         &player_lifecycle_states,
@@ -53,7 +53,7 @@ pub(super) fn submit_turn_kdl_file(
     let report = submission.apply_to(&mut state.game_data, &mut state.queued_mail)?;
     let planet_intel_by_viewer = load_runtime_intel_by_viewer(&store, &state.game_data)?;
     let mut player_activity_states =
-        store.latest_player_activity_states(state.game_data.conquest.player_count())?;
+        store.latest_player_activity_states(state.game_data.conquest.player_count)?;
     record_submitted_turn_participation(
         &mut state.game_data,
         player_record_index_1_based,
@@ -90,7 +90,7 @@ fn load_runtime_intel_by_viewer(
     campaign_store: &CampaignStore,
     game_data: &CoreGameData,
 ) -> Result<Vec<BTreeMap<usize, PlanetIntelSnapshot>>, CampaignStoreError> {
-    (1..=game_data.conquest.player_count())
+    (1..=game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             let previous = campaign_store
                 .latest_planet_intel_for_viewer(viewer_empire_id)?
@@ -100,7 +100,7 @@ fn load_runtime_intel_by_viewer(
             Ok(merge_player_intel_from_runtime(
                 game_data,
                 viewer_empire_id,
-                game_data.conquest.game_year(),
+                game_data.conquest.game_year,
                 Some(&previous),
                 None,
             ))

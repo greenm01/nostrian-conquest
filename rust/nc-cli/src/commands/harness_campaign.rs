@@ -321,7 +321,7 @@ fn initialize_campaign(
         campaign_dir: campaign_dir.to_path_buf(),
         workspace_root: default_workspace_root(game_id),
         bundle_profile,
-        initial_year: built.game_data.conquest.game_year(),
+        initial_year: built.game_data.conquest.game_year,
         last_completed_turn: 0,
         players,
     };
@@ -334,7 +334,7 @@ fn open_turn_internal(
     manifest: &CampaignManifest,
 ) -> Result<OpenTurnReport, Box<dyn std::error::Error>> {
     let state = load_campaign_runtime_state(&manifest.campaign_dir)?;
-    let year = state.game_data.conquest.game_year();
+    let year = state.game_data.conquest.game_year;
     let turn = turn_index_for_year(manifest.initial_year, year)?;
 
     fs::create_dir_all(manifest.workspace_root.join("campaign")).map_err(|err| {
@@ -373,7 +373,7 @@ fn claim_turn_internal(
     player_record_index_1_based: usize,
 ) -> Result<ClaimTurnReport, Box<dyn std::error::Error>> {
     let state = load_campaign_runtime_state(&manifest.campaign_dir)?;
-    let year = state.game_data.conquest.game_year();
+    let year = state.game_data.conquest.game_year;
     let turn = turn_index_for_year(manifest.initial_year, year)?;
     let assignment = manifest
         .players
@@ -427,7 +427,7 @@ fn scan_turn_internal(
     manifest: &CampaignManifest,
 ) -> Result<ScanTurnReport, Box<dyn std::error::Error>> {
     let state = load_campaign_runtime_state(&manifest.campaign_dir)?;
-    let year = state.game_data.conquest.game_year();
+    let year = state.game_data.conquest.game_year;
     let turn = turn_index_for_year(manifest.initial_year, year)?;
     let mut report = ScanTurnReport {
         turn_index_1_based: turn,
@@ -483,7 +483,7 @@ fn apply_turn_batch_internal(
     manifest: &CampaignManifest,
 ) -> Result<ApplyTurnBatchReport, Box<dyn std::error::Error>> {
     let state = load_campaign_runtime_state(&manifest.campaign_dir)?;
-    let year = state.game_data.conquest.game_year();
+    let year = state.game_data.conquest.game_year;
     let turn = turn_index_for_year(manifest.initial_year, year)?;
 
     let mut statuses = Vec::new();
@@ -645,7 +645,7 @@ fn current_campaign_year(campaign_dir: &Path) -> Result<u16, Box<dyn std::error:
     Ok(load_campaign_runtime_state(campaign_dir)?
         .game_data
         .conquest
-        .game_year())
+        .game_year)
 }
 
 fn default_player_assignments(
@@ -654,19 +654,18 @@ fn default_player_assignments(
     game_id: &str,
 ) -> Vec<PlayerAssignment> {
     let mut players = game_data
-        .player
-        .records
+        .players
         .iter()
         .enumerate()
         .filter(|(_, record)| {
-            record.assigned_player_flag_raw() != 0
-                || !record.assigned_player_handle_summary().is_empty()
-                || !record.controlled_empire_name_summary().is_empty()
+            record.mode.to_raw() != 0
+                || !record.handle.trim().to_string().is_empty()
+                || !record.empire_name.trim().to_string().is_empty()
         })
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
     if players.is_empty() {
-        players.extend(1..=game_data.conquest.player_count() as usize);
+        players.extend(1..=game_data.conquest.player_count as usize);
     }
     let doctrines = shuffled_doctrines(scenario_seed, game_id);
     players

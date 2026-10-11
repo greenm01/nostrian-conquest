@@ -439,16 +439,16 @@ fn run_maintenance_for_dir(
     let mut game_data = runtime_state.game_data;
     let campaign_seed = runtime_state.campaign_seed;
     let mut winner_state = runtime_state.winner_state;
-    let start_year = game_data.conquest.game_year();
+    let start_year = game_data.conquest.game_year;
     let mut planet_intel_by_viewer = store.load_snapshot_planet_intel_by_viewer(
         runtime_state.snapshot_id,
-        game_data.conquest.player_count(),
+        game_data.conquest.player_count,
     )?;
     let mut player_activity_states =
-        store.latest_player_activity_states(game_data.conquest.player_count())?;
+        store.latest_player_activity_states(game_data.conquest.player_count)?;
     let mut player_lifecycle_states =
-        store.latest_player_lifecycle_states(game_data.conquest.player_count())?;
-    let mut player_war_stats = store.latest_player_war_stats(game_data.conquest.player_count())?;
+        store.latest_player_lifecycle_states(game_data.conquest.player_count)?;
+    let mut player_war_stats = store.latest_player_war_stats(game_data.conquest.player_count)?;
     let mut all_events = MaintenanceEvents::default();
 
     if winner_state.winner_empire_raw.is_some() {
@@ -456,7 +456,8 @@ fn run_maintenance_for_dir(
     }
 
     for turn in 1..=turns {
-        let inactivity_threshold = game_data.setup.autopilot_inactive_turns_raw();
+        let inactivity_threshold =
+            u8::try_from(game_data.setup.autopilot_after_turns).unwrap_or(u8::MAX);
         apply_inactivity_autopilot_policy(
             &mut game_data,
             inactivity_threshold,
@@ -482,13 +483,13 @@ fn run_maintenance_for_dir(
                 &mut winner_state,
             )?
         };
-        let planet_intel_grants_by_viewer = (1..=game_data.conquest.player_count())
+        let planet_intel_grants_by_viewer = (1..=game_data.conquest.player_count)
             .map(|viewer_empire_id| {
                 latest_planet_intel_grants_for_viewer(&events, viewer_empire_id)
             })
             .collect::<Vec<_>>();
         extend_maintenance_events(&mut all_events, events);
-        for viewer_empire_id in 1..=game_data.conquest.player_count() {
+        for viewer_empire_id in 1..=game_data.conquest.player_count {
             let viewer_idx = viewer_empire_id.saturating_sub(1) as usize;
             let previous = planet_intel_by_viewer
                 .get(viewer_idx)
@@ -497,12 +498,12 @@ fn run_maintenance_for_dir(
             planet_intel_by_viewer[viewer_idx] = merge_player_intel_from_runtime(
                 &game_data,
                 viewer_empire_id,
-                game_data.conquest.game_year(),
+                game_data.conquest.game_year,
                 Some(&previous),
                 planet_intel_grants_by_viewer.get(viewer_idx),
             );
         }
-        println!("  Turn {}: year {}", turn, game_data.conquest.game_year());
+        println!("  Turn {}: year {}", turn, game_data.conquest.game_year);
     }
 
     let report_block_rows = carry_unread_report_blocks(
@@ -535,8 +536,7 @@ fn run_maintenance_for_dir(
 
     println!(
         "  Year advanced: {} -> {}",
-        start_year,
-        game_data.conquest.game_year()
+        start_year, game_data.conquest.game_year
     );
     println!("Rust maintenance complete.");
     Ok(())
@@ -613,7 +613,7 @@ fn visible_hazards_from_snapshots(
     game_data: &nc_data::CoreGameData,
     planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
 ) -> Vec<VisibleHazardIntel> {
-    (1..=game_data.conquest.player_count() as usize)
+    (1..=game_data.conquest.player_count as usize)
         .map(|viewer_idx| {
             let empty = BTreeMap::new();
             visible_hazard_intel_from_snapshots(
@@ -632,8 +632,7 @@ fn validate_reservations_against_runtime(
     let runtime_state = store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    settings
-        .validate_reservations_for_player_count(runtime_state.game_data.player.records.len())?;
+    settings.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
     Ok(())
 }
 
@@ -644,7 +643,7 @@ fn validate_bbs_reservations_against_runtime(
     let runtime_state = store
         .load_latest_runtime_state()?
         .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?;
-    config.validate_reservations_for_player_count(runtime_state.game_data.player.records.len())?;
+    config.validate_reservations_for_player_count(runtime_state.game_data.players.len())?;
     Ok(())
 }
 

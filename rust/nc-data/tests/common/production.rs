@@ -1,30 +1,35 @@
+use nc_compat::classic::{parse_conquest_dat, parse_setup_dat};
 use nc_data::{
-    BaseDat, BaseRecord, ConquestDat, CoreGameData, FleetDat, GameStateBuilder, IpbmDat, PlanetDat,
-    PlanetRecord, PlayerDat, PlayerRecord, SetupDat,
+    Conquest, Coords, CoreGameData, GameStateBuilder, Planet, Player, PlayerMode, Real48, Setup,
+    Starbase, set_empire_name, set_planet_name, set_starbase_at_rest,
 };
 
-pub fn zeroed_setup() -> SetupDat {
-    SetupDat::parse(&vec![0; nc_data::SETUP_DAT_SIZE]).expect("zeroed setup should parse")
+pub fn zeroed_setup() -> Setup {
+    parse_setup_dat(&vec![0; nc_compat::classic::SETUP_DAT_SIZE])
+        .expect("zeroed setup should parse")
 }
 
-pub fn zeroed_conquest() -> ConquestDat {
-    ConquestDat::parse(&vec![0; nc_data::CONQUEST_DAT_SIZE]).expect("zeroed conquest should parse")
+pub fn zeroed_conquest() -> Conquest {
+    parse_conquest_dat(&vec![0; nc_compat::classic::CONQUEST_DAT_SIZE])
+        .expect("zeroed conquest should parse")
 }
 
-pub fn configured_conquest(player_count: u8) -> ConquestDat {
+pub fn configured_conquest(player_count: u8) -> Conquest {
     let mut conquest = zeroed_conquest();
-    conquest.set_game_year(3000);
-    conquest.set_player_count(player_count);
-    conquest.set_maintenance_schedule_enabled([true; 7]);
+    conquest.game_year = 3000;
+    conquest.player_count = player_count;
+    conquest.maintenance_days.0 = [true; 7];
     conquest
 }
 
-pub fn player_with_empire_name(name: &str, tax_rate: u8, stored_points: u16) -> PlayerRecord {
-    let mut record = PlayerRecord::new_zeroed();
-    record.set_owner_empire_raw(1);
-    record.set_tax_rate_raw(tax_rate);
-    record.set_last_run_year_raw(stored_points);
-    record.set_controlled_empire_name_raw(name);
+pub fn player_with_empire_name(name: &str, tax_rate: u8, stored_points: u16) -> Player {
+    let mut record = Player {
+        mode: PlayerMode::Human,
+        tax_rate,
+        last_year_on: stored_points,
+        ..Player::default()
+    };
+    set_empire_name(&mut record, name);
     record
 }
 
@@ -35,16 +40,16 @@ pub fn owned_planet(
     stored_points: u32,
     armies: u8,
     batteries: u8,
-) -> PlanetRecord {
-    let mut record = PlanetRecord::new_zeroed();
-    record.set_owner_empire_slot_raw(owner_empire_slot);
+) -> Planet {
+    let mut record = Planet::default();
+    record.owner.0 = owner_empire_slot;
     // A regular world, not one just captured.
-    record.set_ownership_status_raw(2);
-    record.set_potential_production_points(potential_production);
-    record.set_present_production(present_production);
-    record.set_stored_production_points(stored_points);
-    record.set_army_count_raw(armies);
-    record.set_ground_batteries_raw(batteries);
+    record.years_under_owner = 2;
+    record.potential_production = potential_production;
+    record.production = Real48::from_f64(present_production);
+    record.stored_goods = Real48::from_f64(f64::from(stored_points));
+    record.armies = u16::from(armies);
+    record.ground_batteries = u16::from(batteries);
     record
 }
 
@@ -55,7 +60,7 @@ pub fn owned_planet_with_present_production(
     stored_points: u32,
     armies: u8,
     batteries: u8,
-) -> PlanetRecord {
+) -> Planet {
     owned_planet(
         owner_empire_slot,
         potential_production,
@@ -72,7 +77,7 @@ pub fn owned_homeworld_seed(
     present_production: f64,
     armies: u8,
     batteries: u8,
-) -> PlanetRecord {
+) -> Planet {
     let mut record = owned_planet(
         owner_empire_slot,
         potential_production,
@@ -81,36 +86,32 @@ pub fn owned_homeworld_seed(
         armies,
         batteries,
     );
-    record.set_ownership_status_raw(2);
-    record.set_planet_name("Not Named Yet");
+    record.years_under_owner = 2;
+    set_planet_name(&mut record, "Not Named Yet");
     record
 }
 
-pub fn single_planet_game(player: PlayerRecord, planet: PlanetRecord) -> CoreGameData {
+pub fn single_planet_game(player: Player, planet: Planet) -> CoreGameData {
     CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
     }
 }
 
-pub fn commissioned_starbase(owner_empire_raw: u8, coords: [u8; 2]) -> BaseRecord {
-    let mut base = BaseRecord::new_zeroed();
-    base.set_base_id_raw(1);
-    base.set_owner_empire_raw(owner_empire_raw);
-    base.set_coords_raw(coords);
+pub fn commissioned_starbase(owner_empire_raw: u8, coords: [u8; 2]) -> Starbase {
+    let mut base = Starbase::default();
+    base.base_id.0 = 1;
+    base.owner.0 = owner_empire_raw;
+    base.sector = Coords::from_array(coords);
     // At rest in orbit, as a commissioned base starts.
-    base.set_at_rest_motion();
-    base.set_target_coords_raw(coords);
-    base.set_target_depth_raw(1);
+    set_starbase_at_rest(&mut base);
+    base.target = Coords::from_array(coords);
+    base.target_depth = 1;
     base
 }
 

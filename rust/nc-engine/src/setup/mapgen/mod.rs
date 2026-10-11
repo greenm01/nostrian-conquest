@@ -3,8 +3,8 @@ mod placement;
 mod scoring;
 
 use nc_data::{
-    CoreGameData, GameRng, GameStateBuilder, GameStateMutationError, PlanetRecord, RNG_TAG_MAPGEN,
-    is_valid_player_count, map_size_for_player_count,
+    Coords, CoreGameData, GameRng, GameStateBuilder, GameStateMutationError, Planet,
+    RNG_TAG_MAPGEN, is_valid_player_count, map_size_for_player_count, set_planet_name,
 };
 use placement::{generate_homeworlds, generate_neutral_worlds};
 use scoring::{all_systems_unique, score_map};
@@ -62,7 +62,7 @@ pub fn build_seeded_new_game(
 
     for (idx, world) in generated.neutral_worlds.iter().enumerate() {
         let record_index = player_count as usize + idx;
-        if let Some(planet) = data.planets.records.get_mut(record_index) {
+        if let Some(planet) = data.planets.get_mut(record_index) {
             seed_unowned_world(planet, *world, record_index + 1);
         }
     }
@@ -85,7 +85,7 @@ pub fn build_seeded_initialized_game(
 
     for (idx, world) in generated.neutral_worlds.iter().enumerate() {
         let record_index = player_count as usize + idx;
-        if let Some(planet) = data.planets.records.get_mut(record_index) {
+        if let Some(planet) = data.planets.get_mut(record_index) {
             seed_unowned_world(planet, *world, record_index + 1);
         }
     }
@@ -149,15 +149,11 @@ fn reroll_rng(player_count: u8, seed: u64, reroll: usize) -> GameRng {
     )
 }
 
-fn seed_unowned_world(
-    planet: &mut PlanetRecord,
-    world: GeneratedWorld,
-    world_index_1_based: usize,
-) {
-    *planet = PlanetRecord::new_zeroed();
-    planet.set_coords_raw(world.coords);
-    planet.set_potential_production_points(world.potential_production);
-    planet.set_planet_name(&format!("World {:02}", world_index_1_based));
+fn seed_unowned_world(planet: &mut Planet, world: GeneratedWorld, world_index_1_based: usize) {
+    *planet = Planet::default();
+    planet.sector = Coords::from_array(world.coords);
+    planet.potential_production = world.potential_production;
+    set_planet_name(planet, &format!("World {:02}", world_index_1_based));
 }
 
 // Inline rather than in tests/: the sweep checks single reroll candidates,

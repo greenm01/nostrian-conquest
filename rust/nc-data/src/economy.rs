@@ -1,3 +1,5 @@
+use crate::Planet;
+
 pub fn yearly_tax_revenue(present_production: u16, empire_tax_rate: u8) -> u32 {
     (u32::from(present_production) * u32::from(empire_tax_rate)) / 100
 }
@@ -55,4 +57,22 @@ pub fn build_capacity(present_production: u16, has_friendly_starbase: bool) -> u
     } else {
         present_production
     }
+}
+
+/// Present production rounded to whole points.
+pub fn present_production_points(planet: &Planet) -> u16 {
+    planet
+        .production
+        .to_f64()
+        .round()
+        .clamp(0.0, f64::from(u16::MAX)) as u16
+}
+
+/// Stored goods rounded to whole points.
+pub fn stored_production_points(planet: &Planet) -> u32 {
+    planet
+        .stored_goods
+        .to_f64()
+        .round()
+        .clamp(0.0, f64::from(u32::MAX)) as u32
 }

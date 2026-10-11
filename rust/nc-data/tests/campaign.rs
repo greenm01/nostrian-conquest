@@ -1,4 +1,7 @@
-use nc_data::{CampaignOutcome, CampaignOutlook, CampaignState, GameStateBuilder};
+use nc_data::{
+    CampaignOutcome, CampaignOutlook, CampaignState, GameStateBuilder, PlayerMode,
+    set_armies_aboard, set_troop_transports,
+};
 use nc_engine::run_maintenance_turn;
 
 fn baseline_game() -> nc_data::CoreGameData {
@@ -23,10 +26,10 @@ fn owned_planets_mean_stable_campaign_state() {
 #[test]
 fn no_planets_but_etac_means_marginal_existence() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
 
@@ -39,31 +42,30 @@ fn no_planets_but_etac_means_marginal_existence() {
 #[test]
 fn no_planets_but_loaded_transports_mean_marginal_existence() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
-            fleet.set_cruiser_count(0);
-            fleet.set_destroyer_count(0);
-            fleet.set_battleship_count(0);
-            fleet.set_scout_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+            fleet.ships.cruisers = 0;
+            fleet.ships.destroyers = 0;
+            fleet.ships.battleships = 0;
+            fleet.ships.scouts = 0;
+            set_troop_transports(fleet, 0);
+            set_armies_aboard(fleet, 0);
         }
     }
     let fleet = game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1)
         .expect("player 1 fleet");
-    fleet.set_troop_transport_count(2);
-    fleet.set_army_count(2);
+    set_troop_transports(fleet, 2);
+    set_armies_aboard(fleet, 2);
 
     assert_eq!(
         game_data.empire_campaign_state(1),
@@ -74,17 +76,17 @@ fn no_planets_but_loaded_transports_mean_marginal_existence() {
 #[test]
 fn no_planets_and_no_recovery_path_means_defection_risk() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+            set_troop_transports(fleet, 0);
+            set_armies_aboard(fleet, 0);
         }
     }
 
@@ -97,21 +99,21 @@ fn no_planets_and_no_recovery_path_means_defection_risk() {
 #[test]
 fn no_planets_and_no_fleet_presence_means_defeated() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
-            fleet.set_destroyer_count(0);
-            fleet.set_cruiser_count(0);
-            fleet.set_battleship_count(0);
-            fleet.set_scout_count(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+            set_troop_transports(fleet, 0);
+            set_armies_aboard(fleet, 0);
+            fleet.ships.destroyers = 0;
+            fleet.ships.cruisers = 0;
+            fleet.ships.battleships = 0;
+            fleet.ships.scouts = 0;
         }
     }
 
@@ -124,8 +126,8 @@ fn no_planets_and_no_fleet_presence_means_defeated() {
 #[test]
 fn rogue_and_civil_disorder_states_are_preserved() {
     let mut game_data = baseline_game();
-    game_data.player.records[0].set_owner_empire_raw(0xff);
-    game_data.player.records[1].set_owner_empire_raw(0x00);
+    game_data.players[0].mode = PlayerMode::Rogue;
+    game_data.players[1].mode = PlayerMode::CivilDisorder;
 
     assert_eq!(
         game_data.empire_campaign_state(1),
@@ -141,21 +143,21 @@ fn rogue_and_civil_disorder_states_are_preserved() {
 fn empty_rogue_empire_is_not_a_campaign_contender() {
     let mut game_data = baseline_game();
     for empire_raw in 2..=4u8 {
-        for planet in &mut game_data.planets.records {
-            if planet.owner_empire_slot_raw() == empire_raw {
-                planet.set_owner_empire_slot_raw(0);
-                planet.set_ownership_status_raw(0);
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == empire_raw {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
             }
         }
-        for fleet in &mut game_data.fleets.records {
-            if fleet.owner_empire_raw() == empire_raw {
-                fleet.set_etac_count(0);
-                fleet.set_troop_transport_count(0);
-                fleet.set_army_count(0);
+        for fleet in &mut game_data.fleets {
+            if fleet.owner.0 == empire_raw {
+                fleet.ships.etacs = 0;
+                set_troop_transports(fleet, 0);
+                set_armies_aboard(fleet, 0);
             }
         }
     }
-    game_data.player.records[1].set_player_mode_raw(0xff);
+    game_data.players[1].mode = PlayerMode::Rogue;
 
     assert_eq!(
         game_data.empire_campaign_state(2),
@@ -171,25 +173,25 @@ fn empty_rogue_empire_is_not_a_campaign_contender() {
 #[test]
 fn maintenance_marks_empire_without_recovery_path_defeated() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+            set_troop_transports(fleet, 0);
+            set_armies_aboard(fleet, 0);
         }
     }
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    let player = &game_data.player.records[0];
-    assert_eq!(player.owner_mode_raw(), 0x00);
-    assert_eq!(player.legacy_status_name_summary(), "");
+    let player = &game_data.players[0];
+    assert_eq!(player.mode.to_raw(), 0x00);
+    assert_eq!(player.empire_name.trim().to_string(), "");
     assert_eq!(events.civil_disorder_events.len(), 0);
     assert_eq!(events.empire_elimination_events.len(), 1);
     assert_eq!(events.empire_elimination_events[0].defeated_empire_raw, 1);
@@ -203,21 +205,21 @@ fn maintenance_marks_empire_without_recovery_path_defeated() {
 fn sole_contender_is_reported_when_only_one_empire_can_still_contest() {
     let mut game_data = baseline_game();
     for empire_raw in 2..=4u8 {
-        for planet in &mut game_data.planets.records {
-            if planet.owner_empire_slot_raw() == empire_raw {
-                planet.set_owner_empire_slot_raw(0);
-                planet.set_ownership_status_raw(0);
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == empire_raw {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
             }
         }
-        for fleet in &mut game_data.fleets.records {
-            if fleet.owner_empire_raw() == empire_raw {
-                fleet.set_etac_count(0);
-                fleet.set_troop_transport_count(0);
-                fleet.set_army_count(0);
-                fleet.set_destroyer_count(0);
-                fleet.set_cruiser_count(0);
-                fleet.set_battleship_count(0);
-                fleet.set_scout_count(0);
+        for fleet in &mut game_data.fleets {
+            if fleet.owner.0 == empire_raw {
+                fleet.ships.etacs = 0;
+                set_troop_transports(fleet, 0);
+                set_armies_aboard(fleet, 0);
+                fleet.ships.destroyers = 0;
+                fleet.ships.cruisers = 0;
+                fleet.ships.battleships = 0;
+                fleet.ships.scouts = 0;
             }
         }
     }
@@ -238,21 +240,21 @@ fn sole_contender_is_reported_when_only_one_empire_can_still_contest() {
 fn maintenance_emits_campaign_outlook_event_when_one_contender_remains() {
     let mut game_data = baseline_game();
     for empire_raw in 2..=4u8 {
-        for planet in &mut game_data.planets.records {
-            if planet.owner_empire_slot_raw() == empire_raw {
-                planet.set_owner_empire_slot_raw(0);
-                planet.set_ownership_status_raw(0);
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == empire_raw {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
             }
         }
-        for fleet in &mut game_data.fleets.records {
-            if fleet.owner_empire_raw() == empire_raw {
-                fleet.set_etac_count(0);
-                fleet.set_troop_transport_count(0);
-                fleet.set_army_count(0);
-                fleet.set_destroyer_count(0);
-                fleet.set_cruiser_count(0);
-                fleet.set_battleship_count(0);
-                fleet.set_scout_count(0);
+        for fleet in &mut game_data.fleets {
+            if fleet.owner.0 == empire_raw {
+                fleet.ships.etacs = 0;
+                set_troop_transports(fleet, 0);
+                set_armies_aboard(fleet, 0);
+                fleet.ships.destroyers = 0;
+                fleet.ships.cruisers = 0;
+                fleet.ships.battleships = 0;
+                fleet.ships.scouts = 0;
             }
         }
     }
@@ -277,21 +279,21 @@ fn multiple_contenders_keep_campaign_outlook_contested() {
 fn maintenance_emits_campaign_outcome_when_last_stable_contender_remains() {
     let mut game_data = baseline_game();
     for empire_raw in 2..=4u8 {
-        for planet in &mut game_data.planets.records {
-            if planet.owner_empire_slot_raw() == empire_raw {
-                planet.set_owner_empire_slot_raw(0);
-                planet.set_ownership_status_raw(0);
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == empire_raw {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
             }
         }
-        for fleet in &mut game_data.fleets.records {
-            if fleet.owner_empire_raw() == empire_raw {
-                fleet.set_etac_count(0);
-                fleet.set_troop_transport_count(0);
-                fleet.set_army_count(0);
-                fleet.set_destroyer_count(0);
-                fleet.set_cruiser_count(0);
-                fleet.set_battleship_count(0);
-                fleet.set_scout_count(0);
+        for fleet in &mut game_data.fleets {
+            if fleet.owner.0 == empire_raw {
+                fleet.ships.etacs = 0;
+                set_troop_transports(fleet, 0);
+                set_armies_aboard(fleet, 0);
+                fleet.ships.destroyers = 0;
+                fleet.ships.cruisers = 0;
+                fleet.ships.battleships = 0;
+                fleet.ships.scouts = 0;
             }
         }
     }
@@ -309,17 +311,17 @@ fn maintenance_emits_campaign_outcome_when_last_stable_contender_remains() {
 #[test]
 fn civil_disorder_empire_loses_one_fleet_to_defection_each_turn() {
     let mut game_data = baseline_game();
-    for planet in &mut game_data.planets.records {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+    for planet in &mut game_data.planets {
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
-            fleet.set_troop_transport_count(0);
-            fleet.set_army_count(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
+            set_troop_transports(fleet, 0);
+            set_armies_aboard(fleet, 0);
         }
     }
 
@@ -329,18 +331,16 @@ fn civil_disorder_empire_loses_one_fleet_to_defection_each_turn() {
     assert_eq!(first_events.empire_elimination_events.len(), 1);
     let fleet_count_after_collapse = game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
         .count();
 
     let second_events =
         run_maintenance_turn(&mut game_data).expect("second maintenance should succeed");
     let fleet_count_after_defection = game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
         .count();
 
     assert_eq!(second_events.fleet_defection_events.len(), 1);

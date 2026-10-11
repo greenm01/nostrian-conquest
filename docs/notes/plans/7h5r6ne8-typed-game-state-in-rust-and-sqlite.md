@@ -324,6 +324,35 @@ gone. Tests that poke `.raw` (e.g. `nc-cli/tests/maint.rs` 126,
 Extend `nc-data/tests/source_policy.rs` and `nc-engine/tests/source_policy.rs`
 to forbid classic record types outside nc-classic/nc-compat.
 
+## Phase 5 result (policy slice, 2026-10-10)
+
+At `2c1d32b4`, `CoreGameData` holds `Player`, `Planet`, `Fleet`, `Starbase`,
+`Ipbm`, `Setup` and `Conquest` directly from `nc-data/src/model/`. Callers
+read and write named fields. Operations with logic use focused free functions,
+including fleet ships, orders, motion, names, rankings and planet summaries.
+The `records/` transitional methods went at `382527e3`, and the core codecs
+moved to `nc-compat/src/classic/` at `cd880dad`.
+
+The new `nc-data/tests/classic_boundary.rs` scans all seven runtime/shared
+source trees named in the architecture policy. It rejects core codec symbols,
+classic codec namespaces and raw-record indexing. UI theme namespaces remain
+allowed. It separately checks that nc-engine, nc-game, nc-helm, nc-host and
+nc-session have no nc-compat or nc-classic runtime dependencies; test-only
+imports remain allowed. Target-specific sections and package aliases are
+covered. This adds no dependency or production code.
+
+The target location for the seven core codecs is `nc-compat/src/classic/`,
+next to the directory import/export boundary. The source assertion is expected
+to fail before that move. The requested cargo-slot command ran at `2c1d32b4`: two tests pass and
+`core_classic_codecs_stay_out_of_runtime_sources` fails as intended. Its
+17 offending files are the eight `classic/` files, seven `records/` files,
+`lib.rs` and `directory/current_known_auxiliary.rs`. No other scanned crate
+fails. After the move, `nc-compat/src/classic/{mod,base,conquest,fleet,ipbm,planet,player,setup}.rs`
+hold the codecs, `ClassicFile`, the ignored-byte map, and the record and
+file sizes; nc-classic lends `ParseError`, `copy_array`, and `expect_size`;
+nc-data keeps the typed model only. All three boundary tests and the full
+workspace suite pass.
+
 ## Phase 6 — docs and tracking
 
 `rust-architecture.md` (current state), `ec-file-formats.md` linked from the

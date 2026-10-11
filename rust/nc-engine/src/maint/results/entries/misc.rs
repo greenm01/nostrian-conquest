@@ -33,10 +33,10 @@ pub fn push_misc_entries(
             } => (planet_idx, colonizer_empire_raw, stardate_week),
             nc_data::ColonizationResolvedEvent::Aborted { .. } => continue,
         };
-        let Some(planet) = game_data.planets.records.get(planet_idx) else {
+        let Some(planet) = game_data.planets.get(planet_idx) else {
             continue;
         };
-        let [x, y] = planet.coords_raw();
+        let [x, y] = planet.sector.to_array();
         let fleet_idx = match *event {
             nc_data::ColonizationResolvedEvent::Succeeded { fleet_idx, .. } => fleet_idx,
             nc_data::ColonizationResolvedEvent::BlockedByOwner { fleet_idx, .. } => fleet_idx,
@@ -52,7 +52,7 @@ pub fn push_misc_entries(
             nc_data::ColonizationResolvedEvent::BlockedByOwner { owner_empire_raw, .. } => format!(
                 " Colonization mission report: We have entered System({x},{y}) and have determined that aliens are already living on the world found within! We have gone ahead and performed a long range viewing analysis and have determined that the world is owned by {} and has a potential of {} points. We are aborting our mission and are leaving the alien solar system.",
                 classic_empire_clause(game_data, owner_empire_raw),
-                planet.potential_production_points_current_known(),
+                u16::from(planet.potential_production),
             ),
             nc_data::ColonizationResolvedEvent::Aborted { .. } => continue,
         };
@@ -249,9 +249,8 @@ pub fn push_misc_entries(
                 let [x, y] = coords;
                 let planet_name = game_data
                     .planets
-                    .records
                     .get(planet_idx)
-                    .map(|planet| planet.planet_name())
+                    .map(|planet| planet.name.clone())
                     .unwrap_or_else(|| "the target world".to_string());
                 (
                     owner_empire_raw,
@@ -274,9 +273,8 @@ pub fn push_misc_entries(
                 let [x, y] = coords;
                 let planet_name = game_data
                     .planets
-                    .records
                     .get(planet_idx)
-                    .map(|planet| planet.planet_name())
+                    .map(|planet| planet.name.clone())
                     .unwrap_or_else(|| "the target world".to_string());
                 (
                     owner_empire_raw,

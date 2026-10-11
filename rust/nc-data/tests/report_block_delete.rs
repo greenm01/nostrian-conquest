@@ -1,16 +1,15 @@
 use nc_data::{
-    PlayerRecord, ReportBlockRow, delete_report_block_for_viewer, delete_report_blocks_for_viewer,
-    layout_classic_results,
+    Player, PlayerMode, ReportBlockRow, delete_report_block_for_viewer,
+    delete_report_blocks_for_viewer, layout_classic_results,
 };
 
 /// Empires 1 and 2 are active humans; empire 3 is rogue.
-fn players() -> Vec<PlayerRecord> {
+fn players() -> Vec<Player> {
     [0x01, 0x01, 0xff]
         .into_iter()
-        .map(|mode| {
-            let mut player = PlayerRecord::new_zeroed();
-            player.set_player_mode_raw(mode);
-            player
+        .map(|mode| Player {
+            mode: PlayerMode::from_raw(mode),
+            ..Player::default()
         })
         .collect()
 }

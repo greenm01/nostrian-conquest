@@ -24,15 +24,15 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         }
     }
 
-    let before = &observation.before.planets.records;
-    let after = &observation.after.planets.records;
+    let before = &observation.before.planets;
+    let after = &observation.after.planets;
     before
         .iter()
         .zip(after)
         .enumerate()
         .filter_map(|(idx, (was, now))| {
-            let from = was.owner_empire_slot_raw();
-            let to = now.owner_empire_slot_raw();
+            let from = was.owner.0;
+            let to = now.owner.0;
             (from != to && explained.get(&idx) != Some(&to)).then_some(
                 Violation::UnexplainedOwnershipChange {
                     planet_record: idx + 1,

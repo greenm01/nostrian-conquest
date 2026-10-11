@@ -5,7 +5,7 @@ use crate::screen::layout::PromptFeedback;
 use crate::screen::{
     CommandMenu, FleetDetachClass, FleetDetachMode, FleetRow, FleetTransferMode, ScreenId,
 };
-use nc_data::{CoreGameData, FleetDetachSelection, FleetRecord, NEW_FLEET_DEFAULT_ROE};
+use nc_data::{CoreGameData, Fleet, FleetDetachSelection, NEW_FLEET_DEFAULT_ROE};
 use nc_engine::{
     fleet_eta_label as engine_fleet_eta_label, fleet_list_eta_label as engine_fleet_list_eta_label,
     fleet_record_supports_mission_code, fleet_target_eta_message, resolve_checked_fleet_merge_plan,
@@ -597,7 +597,6 @@ impl App {
         if self
             .game_data
             .fleets
-            .records
             .get(donor_record_index_1_based - 1)
             .is_none()
         {
@@ -820,15 +819,14 @@ impl App {
     fn current_fleet_detach_ship_total(&self, fleet_record_index_1_based: usize) -> u32 {
         self.game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)
             .map(|fleet| {
-                u32::from(fleet.battleship_count())
-                    + u32::from(fleet.cruiser_count())
-                    + u32::from(fleet.destroyer_count())
-                    + u32::from(fleet.troop_transport_count())
-                    + u32::from(fleet.scout_count())
-                    + u32::from(fleet.etac_count())
+                u32::from(fleet.ships.battleships)
+                    + u32::from(fleet.ships.cruisers)
+                    + u32::from(fleet.ships.destroyers)
+                    + u32::from(nc_data::troop_transports(&fleet))
+                    + u32::from(fleet.ships.scouts)
+                    + u32::from(fleet.ships.etacs)
             })
             .unwrap_or(0)
     }
@@ -852,36 +850,36 @@ impl App {
         let Some(fleet_record_index_1_based) = self.fleet.detach_donor_record_index_1_based else {
             return 0;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return 0;
         };
         let class_available = match class {
             FleetDetachClass::Battleships => fleet
-                .battleship_count()
+                .ships
+                .battleships
                 .saturating_sub(self.fleet.detach_selection.battleships),
             FleetDetachClass::Cruisers => fleet
-                .cruiser_count()
+                .ships
+                .cruisers
                 .saturating_sub(self.fleet.detach_selection.cruisers),
             FleetDetachClass::Destroyers => fleet
-                .destroyer_count()
+                .ships
+                .destroyers
                 .saturating_sub(self.fleet.detach_selection.destroyers),
             FleetDetachClass::FullTransports => fleet
-                .army_count()
+                .ships
+                .loaded_transports
                 .saturating_sub(self.fleet.detach_selection.full_transports),
-            FleetDetachClass::EmptyTransports => fleet
-                .troop_transport_count()
-                .saturating_sub(fleet.army_count())
+            FleetDetachClass::EmptyTransports => nc_data::troop_transports(&fleet)
+                .saturating_sub(fleet.ships.loaded_transports)
                 .saturating_sub(self.fleet.detach_selection.empty_transports),
             FleetDetachClass::Scouts => fleet
-                .scout_count()
+                .ships
+                .scouts
                 .saturating_sub(self.fleet.detach_selection.scouts),
             FleetDetachClass::Etacs => fleet
-                .etac_count()
+                .ships
+                .etacs
                 .saturating_sub(self.fleet.detach_selection.etacs),
         };
         let total_limit = self
@@ -940,63 +938,57 @@ impl App {
         }
     }
 
-    fn format_fleet_detach_summary_from_record(&self, record: &FleetRecord) -> String {
-        let empty_transports = record
-            .troop_transport_count()
-            .saturating_sub(record.army_count());
+    fn format_fleet_detach_summary_from_record(&self, record: &Fleet) -> String {
+        let empty_transports =
+            nc_data::troop_transports(&record).saturating_sub(record.ships.loaded_transports);
         self.format_fleet_detach_summary_from_selection(FleetDetachSelection {
-            battleships: record.battleship_count(),
-            cruisers: record.cruiser_count(),
-            destroyers: record.destroyer_count(),
-            full_transports: record.army_count(),
+            battleships: record.ships.battleships,
+            cruisers: record.ships.cruisers,
+            destroyers: record.ships.destroyers,
+            full_transports: record.ships.loaded_transports,
             empty_transports,
-            scouts: record.scout_count(),
-            etacs: record.etac_count(),
+            scouts: record.ships.scouts,
+            etacs: record.ships.etacs,
         })
     }
 
-    fn fleet_detach_donor_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_detach_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.detach_donor_record_index_1_based?;
         let mut donor_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
-        donor_after.set_battleship_count(
-            donor_after
-                .battleship_count()
-                .saturating_sub(self.fleet.detach_selection.battleships),
-        );
-        donor_after.set_cruiser_count(
-            donor_after
-                .cruiser_count()
-                .saturating_sub(self.fleet.detach_selection.cruisers),
-        );
-        donor_after.set_destroyer_count(
-            donor_after
-                .destroyer_count()
-                .saturating_sub(self.fleet.detach_selection.destroyers),
-        );
-        donor_after.set_troop_transport_count(donor_after.troop_transport_count().saturating_sub(
+        donor_after.ships.battleships = donor_after
+            .ships
+            .battleships
+            .saturating_sub(self.fleet.detach_selection.battleships);
+        donor_after.ships.cruisers = donor_after
+            .ships
+            .cruisers
+            .saturating_sub(self.fleet.detach_selection.cruisers);
+        donor_after.ships.destroyers = donor_after
+            .ships
+            .destroyers
+            .saturating_sub(self.fleet.detach_selection.destroyers);
+        let transports = nc_data::troop_transports(&donor_after).saturating_sub(
             self.fleet.detach_selection.full_transports
                 + self.fleet.detach_selection.empty_transports,
-        ));
-        donor_after.set_army_count(
-            donor_after
-                .army_count()
-                .saturating_sub(self.fleet.detach_selection.full_transports),
         );
-        donor_after.set_scout_count(
-            donor_after
-                .scout_count()
-                .saturating_sub(self.fleet.detach_selection.scouts),
-        );
-        donor_after.set_etac_count(
-            donor_after
-                .etac_count()
-                .saturating_sub(self.fleet.detach_selection.etacs),
-        );
+        nc_data::set_troop_transports(&mut donor_after, transports);
+        let armies = donor_after
+            .ships
+            .loaded_transports
+            .saturating_sub(self.fleet.detach_selection.full_transports);
+        nc_data::set_armies_aboard(&mut donor_after, armies);
+        donor_after.ships.scouts = donor_after
+            .ships
+            .scouts
+            .saturating_sub(self.fleet.detach_selection.scouts);
+        donor_after.ships.etacs = donor_after
+            .ships
+            .etacs
+            .saturating_sub(self.fleet.detach_selection.etacs);
         Some(donor_after)
     }
 
@@ -1004,31 +996,25 @@ impl App {
         let Some(fleet_record_index_1_based) = self.fleet.detach_donor_record_index_1_based else {
             return false;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return false;
         };
         let Some(mut donor_after) = self.fleet_detach_donor_after_selection_record() else {
             return false;
         };
-        donor_after.recompute_max_speed_from_composition();
-        if !fleet_record_supports_mission_code(&donor_after, donor_after.standing_order_code_raw())
-        {
+        nc_data::recompute_max_speed(&mut donor_after);
+        if !fleet_record_supports_mission_code(&donor_after, donor_after.order.to_raw()) {
             return false;
         }
-        donor_after.max_speed() > 0 && fleet.current_speed() > donor_after.max_speed()
+        donor_after.max_speed > 0 && fleet.speed > donor_after.max_speed
     }
 
     fn fleet_detach_donor_default_speed(&self) -> u8 {
         let Some(mut donor_after) = self.fleet_detach_donor_after_selection_record() else {
             return 1;
         };
-        donor_after.recompute_max_speed_from_composition();
-        donor_after.max_speed().max(1)
+        nc_data::recompute_max_speed(&mut donor_after);
+        donor_after.max_speed.max(1)
     }
 
     fn commit_fleet_detach_staged_selection(
@@ -1087,9 +1073,8 @@ impl App {
     pub(crate) fn fleet_number_for_record_index(&self, record_index_1_based: usize) -> Option<u16> {
         self.game_data
             .fleets
-            .records
             .get(record_index_1_based - 1)
-            .map(|fleet| fleet.local_slot_word_raw())
+            .map(|fleet| fleet.fleet_number.0)
     }
 
     pub(crate) fn fleet_transfer_donor_row(&self) -> Option<crate::screen::FleetRow> {
@@ -1107,7 +1092,7 @@ impl App {
     pub(crate) fn fleet_transfer_source_summary(&self) -> String {
         self.fleet
             .transfer_donor_record_index_1_based
-            .and_then(|idx| self.game_data.fleets.records.get(idx - 1))
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
             .map(|fleet| self.format_fleet_detach_summary_from_record(fleet))
             .unwrap_or_else(|| "none".to_string())
     }
@@ -1115,7 +1100,7 @@ impl App {
     pub(crate) fn fleet_transfer_destination_summary(&self) -> String {
         self.fleet
             .transfer_host_record_index_1_based
-            .and_then(|idx| self.game_data.fleets.records.get(idx - 1))
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
             .map(|fleet| self.format_fleet_detach_summary_from_record(fleet))
             .unwrap_or_else(|| "none".to_string())
     }
@@ -1256,36 +1241,36 @@ impl App {
         else {
             return 0;
         };
-        let Some(fleet) = self
-            .game_data
-            .fleets
-            .records
-            .get(fleet_record_index_1_based - 1)
-        else {
+        let Some(fleet) = self.game_data.fleets.get(fleet_record_index_1_based - 1) else {
             return 0;
         };
         let class_available = match class {
             FleetDetachClass::Battleships => fleet
-                .battleship_count()
+                .ships
+                .battleships
                 .saturating_sub(self.fleet.transfer_selection.battleships),
             FleetDetachClass::Cruisers => fleet
-                .cruiser_count()
+                .ships
+                .cruisers
                 .saturating_sub(self.fleet.transfer_selection.cruisers),
             FleetDetachClass::Destroyers => fleet
-                .destroyer_count()
+                .ships
+                .destroyers
                 .saturating_sub(self.fleet.transfer_selection.destroyers),
             FleetDetachClass::FullTransports => fleet
-                .army_count()
+                .ships
+                .loaded_transports
                 .saturating_sub(self.fleet.transfer_selection.full_transports),
-            FleetDetachClass::EmptyTransports => fleet
-                .troop_transport_count()
-                .saturating_sub(fleet.army_count())
+            FleetDetachClass::EmptyTransports => nc_data::troop_transports(&fleet)
+                .saturating_sub(fleet.ships.loaded_transports)
                 .saturating_sub(self.fleet.transfer_selection.empty_transports),
             FleetDetachClass::Scouts => fleet
-                .scout_count()
+                .ships
+                .scouts
                 .saturating_sub(self.fleet.transfer_selection.scouts),
             FleetDetachClass::Etacs => fleet
-                .etac_count()
+                .ships
+                .etacs
                 .saturating_sub(self.fleet.transfer_selection.etacs),
         };
         let total_limit = self
@@ -1294,93 +1279,83 @@ impl App {
         class_available.min(total_limit as u16)
     }
 
-    fn fleet_transfer_donor_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_transfer_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.transfer_donor_record_index_1_based?;
         let mut donor_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
-        donor_after.set_battleship_count(
-            donor_after
-                .battleship_count()
-                .saturating_sub(self.fleet.transfer_selection.battleships),
-        );
-        donor_after.set_cruiser_count(
-            donor_after
-                .cruiser_count()
-                .saturating_sub(self.fleet.transfer_selection.cruisers),
-        );
-        donor_after.set_destroyer_count(
-            donor_after
-                .destroyer_count()
-                .saturating_sub(self.fleet.transfer_selection.destroyers),
-        );
-        donor_after.set_troop_transport_count(donor_after.troop_transport_count().saturating_sub(
+        donor_after.ships.battleships = donor_after
+            .ships
+            .battleships
+            .saturating_sub(self.fleet.transfer_selection.battleships);
+        donor_after.ships.cruisers = donor_after
+            .ships
+            .cruisers
+            .saturating_sub(self.fleet.transfer_selection.cruisers);
+        donor_after.ships.destroyers = donor_after
+            .ships
+            .destroyers
+            .saturating_sub(self.fleet.transfer_selection.destroyers);
+        let transports = nc_data::troop_transports(&donor_after).saturating_sub(
             self.fleet.transfer_selection.full_transports
                 + self.fleet.transfer_selection.empty_transports,
-        ));
-        donor_after.set_army_count(
-            donor_after
-                .army_count()
-                .saturating_sub(self.fleet.transfer_selection.full_transports),
         );
-        donor_after.set_scout_count(
-            donor_after
-                .scout_count()
-                .saturating_sub(self.fleet.transfer_selection.scouts),
-        );
-        donor_after.set_etac_count(
-            donor_after
-                .etac_count()
-                .saturating_sub(self.fleet.transfer_selection.etacs),
-        );
+        nc_data::set_troop_transports(&mut donor_after, transports);
+        let armies = donor_after
+            .ships
+            .loaded_transports
+            .saturating_sub(self.fleet.transfer_selection.full_transports);
+        nc_data::set_armies_aboard(&mut donor_after, armies);
+        donor_after.ships.scouts = donor_after
+            .ships
+            .scouts
+            .saturating_sub(self.fleet.transfer_selection.scouts);
+        donor_after.ships.etacs = donor_after
+            .ships
+            .etacs
+            .saturating_sub(self.fleet.transfer_selection.etacs);
         Some(donor_after)
     }
 
-    fn fleet_transfer_host_after_selection_record(&self) -> Option<FleetRecord> {
+    fn fleet_transfer_host_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.transfer_host_record_index_1_based?;
         let mut host_after = self
             .game_data
             .fleets
-            .records
             .get(fleet_record_index_1_based - 1)?
             .clone();
-        host_after.set_battleship_count(
-            host_after
-                .battleship_count()
-                .saturating_add(self.fleet.transfer_selection.battleships),
-        );
-        host_after.set_cruiser_count(
-            host_after
-                .cruiser_count()
-                .saturating_add(self.fleet.transfer_selection.cruisers),
-        );
-        host_after.set_destroyer_count(
-            host_after
-                .destroyer_count()
-                .saturating_add(self.fleet.transfer_selection.destroyers),
-        );
-        host_after.set_troop_transport_count(host_after.troop_transport_count().saturating_add(
+        host_after.ships.battleships = host_after
+            .ships
+            .battleships
+            .saturating_add(self.fleet.transfer_selection.battleships);
+        host_after.ships.cruisers = host_after
+            .ships
+            .cruisers
+            .saturating_add(self.fleet.transfer_selection.cruisers);
+        host_after.ships.destroyers = host_after
+            .ships
+            .destroyers
+            .saturating_add(self.fleet.transfer_selection.destroyers);
+        let transports = nc_data::troop_transports(&host_after).saturating_add(
             self.fleet.transfer_selection.full_transports
                 + self.fleet.transfer_selection.empty_transports,
-        ));
-        host_after.set_army_count(
-            host_after
-                .army_count()
-                .saturating_add(self.fleet.transfer_selection.full_transports),
         );
-        host_after.set_scout_count(
-            host_after
-                .scout_count()
-                .saturating_add(self.fleet.transfer_selection.scouts),
-        );
-        host_after.set_etac_count(
-            host_after
-                .etac_count()
-                .saturating_add(self.fleet.transfer_selection.etacs),
-        );
+        nc_data::set_troop_transports(&mut host_after, transports);
+        let armies = host_after
+            .ships
+            .loaded_transports
+            .saturating_add(self.fleet.transfer_selection.full_transports);
+        nc_data::set_armies_aboard(&mut host_after, armies);
+        host_after.ships.scouts = host_after
+            .ships
+            .scouts
+            .saturating_add(self.fleet.transfer_selection.scouts);
+        host_after.ships.etacs = host_after
+            .ships
+            .etacs
+            .saturating_add(self.fleet.transfer_selection.etacs);
         Some(host_after)
     }
 

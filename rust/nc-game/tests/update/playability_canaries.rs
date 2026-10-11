@@ -22,8 +22,10 @@ fn structured_combat_report_round_trips_through_reports_screen_and_delete() {
             "<end of transmission>",
         ]),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let runtime = latest_runtime_state(&fixture_dir);
@@ -151,8 +153,10 @@ fn join_summary_report_stays_compact_in_reports_preview() {
             "<end of transmission>",
         ]),
     );
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {

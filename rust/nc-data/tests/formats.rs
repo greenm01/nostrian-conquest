@@ -1,20 +1,30 @@
 mod common;
 
+use nc_compat::classic::{ClassicFile, INITIALIZED_FLEET_RECORD_COUNT, without_ignored_bytes};
 use nc_compat::{load_classic_core_files, save_classic_core_files};
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use std::fs;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use common::*;
+use nc_compat::classic::{
+    encode_planet, parse_conquest_dat, parse_fleets_dat, parse_planets_dat, parse_player_dat,
+    parse_setup_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_planets_dat,
+    serialize_player_dat, serialize_setup_dat,
+};
 use nc_data::*;
+use nc_data::{
+    has_any_force, is_named_homeworld_seed, order_summary, ownership_summary, set_armies_aboard,
+    set_troop_transports, ship_composition_summary, ship_composition_table_summary,
+    stardock_slot_kind,
+};
 
 #[test]
 fn round_trip_player_dat() {
     let bytes = read_fixture("PLAYER.DAT");
-    let parsed = PlayerDat::parse(&bytes).unwrap();
+    let parsed = parse_player_dat(&bytes).unwrap();
     // Name tails and diplomacy slots past the player count are not carried.
     assert_eq!(
-        without_ignored_bytes(ClassicFile::Player, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Player, &serialize_player_dat(&parsed)),
         without_ignored_bytes(ClassicFile::Player, &bytes)
     );
 }
@@ -22,10 +32,10 @@ fn round_trip_player_dat() {
 #[test]
 fn round_trip_planets_dat() {
     let bytes = read_fixture("PLANETS.DAT");
-    let parsed = PlanetDat::parse(&bytes).unwrap();
+    let parsed = parse_planets_dat(&bytes).unwrap();
     // The stale name tails are not carried; everything classic reads is.
     assert_eq!(
-        without_ignored_bytes(ClassicFile::Planets, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Planets, &serialize_planets_dat(&parsed)),
         without_ignored_bytes(ClassicFile::Planets, &bytes)
     );
 }
@@ -33,17 +43,16 @@ fn round_trip_planets_dat() {
 #[test]
 fn initialized_planets_expose_named_homeworld_seeds() {
     let bytes = read_initialized_fixture("PLANETS.DAT");
-    let parsed = PlanetDat::parse(&bytes).unwrap();
+    let parsed = parse_planets_dat(&bytes).unwrap();
     let seeds = parsed
-        .records
         .iter()
         .enumerate()
-        .filter(|(_, record)| record.is_named_homeworld_seed())
+        .filter(|(_, record)| is_named_homeworld_seed(record))
         .map(|(idx, record)| {
             (
                 idx + 1,
-                record.coords_raw(),
-                record.potential_production_points(),
+                record.sector.to_array(),
+                u16::from(record.potential_production),
             )
         })
         .collect::<Vec<_>>();
@@ -61,34 +70,34 @@ fn initialized_planets_expose_named_homeworld_seeds() {
 
 #[test]
 fn planet_tail_fields_expose_owner_slot_army_and_battery_fields() {
-    let init = PlanetDat::parse(&read_initialized_fixture("PLANETS.DAT")).unwrap();
-    assert_eq!(init.records[12].owner_empire_slot_raw(), 2);
-    assert_eq!(init.records[12].ownership_status_raw(), 2);
-    assert_eq!(init.records[12].army_count_raw(), 10);
-    assert_eq!(init.records[12].ground_batteries_raw(), 4);
+    let init = parse_planets_dat(&read_initialized_fixture("PLANETS.DAT")).unwrap();
+    assert_eq!(init[12].owner.0, 2);
+    assert_eq!(init[12].years_under_owner, 2);
+    assert_eq!(init[12].armies, 10);
+    assert_eq!(init[12].ground_batteries, 4);
 
-    assert_eq!(init.records[14].owner_empire_slot_raw(), 1);
-    assert_eq!(init.records[14].ownership_status_raw(), 2);
-    assert_eq!(init.records[14].army_count_raw(), 10);
-    assert_eq!(init.records[14].ground_batteries_raw(), 4);
+    assert_eq!(init[14].owner.0, 1);
+    assert_eq!(init[14].years_under_owner, 2);
+    assert_eq!(init[14].armies, 10);
+    assert_eq!(init[14].ground_batteries, 4);
 
-    let fleet_post = PlanetDat::parse(&read_ecmaint_fleet_post_fixture("PLANETS.DAT")).unwrap();
-    assert_eq!(fleet_post.records[13].owner_empire_slot_raw(), 1);
-    assert_eq!(fleet_post.records[13].ownership_status_raw(), 2);
-    assert_eq!(fleet_post.records[13].army_count_raw(), 1);
-    assert_eq!(fleet_post.records[13].ground_batteries_raw(), 0);
+    let fleet_post = parse_planets_dat(&read_ecmaint_fleet_post_fixture("PLANETS.DAT")).unwrap();
+    assert_eq!(fleet_post[13].owner.0, 1);
+    assert_eq!(fleet_post[13].years_under_owner, 2);
+    assert_eq!(fleet_post[13].armies, 1);
+    assert_eq!(fleet_post[13].ground_batteries, 0);
 }
 
 #[test]
 fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_stardock_count_raw(1, 1);
-    planet.set_stardock_count_raw(7, 300);
+    let mut planet = Planet::default();
+    planet.stardock.cruisers = 1;
+    planet.stardock.ipbms = 300;
 
-    assert_eq!(planet.stardock_count_raw(1), 1);
-    assert_eq!(planet.stardock_kind_raw(1), 2);
-    assert_eq!(planet.stardock_count_raw(7), 300);
-    let bytes = planet.to_bytes();
+    assert_eq!(planet.stardock.cruisers, 1);
+    assert_eq!(stardock_slot_kind(&planet, 1).to_raw(), 2);
+    assert_eq!(planet.stardock.ipbms, 300);
+    let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x3C], 1);
     assert_eq!(bytes[0x54], 44);
     assert_eq!(bytes[0x55], 1);
@@ -97,69 +106,67 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
 #[test]
 fn round_trip_setup_dat() {
     let bytes = read_fixture("SETUP.DAT");
-    let parsed = SetupDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
-    assert_eq!(parsed.version_tag(), b"EC151");
-    assert_eq!(parsed.option_prefix(), [4, 3, 4, 3, 1, 1, 1, 1]);
-    assert_eq!(parsed.com_irq_raw(0), Some(4));
-    assert_eq!(parsed.com_irq_raw(1), Some(3));
-    assert_eq!(parsed.com_irq_raw(2), Some(4));
-    assert_eq!(parsed.com_irq_raw(3), Some(3));
-    assert_eq!(parsed.com_hardware_flow_control_enabled(0), Some(true));
-    assert_eq!(parsed.com_hardware_flow_control_enabled(1), Some(true));
-    assert_eq!(parsed.com_hardware_flow_control_enabled(2), Some(true));
-    assert_eq!(parsed.com_hardware_flow_control_enabled(3), Some(true));
-    assert!(parsed.snoop_enabled());
-    assert_eq!(parsed.max_time_between_keys_minutes_raw(), 10);
-    assert!(parsed.remote_timeout_enabled());
-    assert!(!parsed.local_timeout_enabled());
-    assert_eq!(parsed.minimum_time_granted_minutes_raw(), 0);
-    assert_eq!(parsed.purge_after_turns_raw(), 0);
-    assert_eq!(parsed.autopilot_inactive_turns_raw(), 0);
+    let parsed = parse_setup_dat(&bytes).unwrap();
+    assert_eq!(serialize_setup_dat(&parsed), bytes);
+    assert_eq!(&parsed.version_tag, b"EC151");
+    assert_eq!(parsed.com_irq, [4, 3, 4, 3]);
+    assert_eq!(parsed.com_hw_flow_control, [true; 4]);
+    assert_eq!(parsed.com_irq.first().copied(), Some(4));
+    assert_eq!(parsed.com_irq.get(1).copied(), Some(3));
+    assert_eq!(parsed.com_irq.get(2).copied(), Some(4));
+    assert_eq!(parsed.com_irq.get(3).copied(), Some(3));
+    assert_eq!(parsed.com_hw_flow_control.first().copied(), Some(true));
+    assert_eq!(parsed.com_hw_flow_control.get(1).copied(), Some(true));
+    assert_eq!(parsed.com_hw_flow_control.get(2).copied(), Some(true));
+    assert_eq!(parsed.com_hw_flow_control.get(3).copied(), Some(true));
+    assert!(parsed.snoop);
+    assert_eq!(parsed.max_key_gap_minutes, 10);
+    assert!(parsed.remote_timeout);
+    assert!(!parsed.local_timeout);
+    assert_eq!(parsed.minimum_time_minutes, 0);
+    assert_eq!(parsed.purge_after_turns, 0);
+    assert_eq!(parsed.autopilot_after_turns, 0);
 }
 
 #[test]
 fn round_trip_conquest_dat() {
     let bytes = read_fixture("CONQUEST.DAT");
-    let parsed = ConquestDat::parse(&bytes).unwrap();
+    let parsed = parse_conquest_dat(&bytes).unwrap();
     // Ranking slots past the player count hold ECMAINT's garbage; the
     // model does not carry them.
     assert_eq!(
-        without_ignored_bytes(ClassicFile::Conquest, &parsed.to_bytes()),
+        without_ignored_bytes(ClassicFile::Conquest, &serialize_conquest_dat(&parsed)),
         without_ignored_bytes(ClassicFile::Conquest, &bytes)
     );
-    assert_eq!(parsed.game_year(), 3022);
-    assert_eq!(parsed.player_count(), 4);
-    assert_eq!(parsed.previous_production()[..4], [100; 4]);
-    assert_eq!(parsed.previous_planet_count()[..4], [1; 4]);
+    assert_eq!(parsed.game_year, 3022);
+    assert_eq!(parsed.player_count, 4);
+    assert_eq!(parsed.previous_production[..4], [100; 4]);
+    assert_eq!(parsed.previous_planet_count[..4], [1; 4]);
 }
 
 #[test]
 fn player_tax_rate_matches_current_notes() {
     let bytes = read_fixture("PLAYER.DAT");
-    let parsed = PlayerDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.records[0].tax_rate(), 65);
+    let parsed = parse_player_dat(&bytes).unwrap();
+    assert_eq!(parsed[0].tax_rate, 65);
 }
 
 #[test]
 fn f3_owner_fixture_exposes_rogue_and_player_controlled_empire_summaries() {
     let bytes = read_f3_owner_fixture("PLAYER.DAT");
-    let parsed = PlayerDat::parse(&bytes).unwrap();
+    let parsed = parse_player_dat(&bytes).unwrap();
 
-    assert_eq!(parsed.records[0].owner_mode_raw(), 0xff);
-    assert_eq!(parsed.records[0].legacy_status_name_len_raw(), 6);
-    assert_eq!(parsed.records[0].legacy_status_name_summary(), "Rogues");
-    assert_eq!(
-        parsed.records[0].ownership_summary(),
-        "rogue label='Rogues'"
-    );
+    assert_eq!(parsed[0].mode.to_raw(), 0xff);
+    assert_eq!(parsed[0].empire_name.chars().count() as u8, 6);
+    assert_eq!(parsed[0].empire_name.trim().to_string(), "Rogues");
+    assert_eq!(ownership_summary(&parsed[0]), "rogue label='Rogues'");
 
-    assert_eq!(parsed.records[1].assigned_player_flag_raw(), 1);
-    assert_eq!(parsed.records[1].assigned_player_handle_summary(), "FOO");
-    assert_eq!(parsed.records[1].controlled_empire_name_len_raw(), 3);
-    assert_eq!(parsed.records[1].controlled_empire_name_summary(), "foo");
+    assert_eq!(parsed[1].mode.to_raw(), 1);
+    assert_eq!(parsed[1].handle.trim().to_string(), "FOO");
+    assert_eq!(parsed[1].empire_name.chars().count() as u8, 3);
+    assert_eq!(parsed[1].empire_name.trim().to_string(), "foo");
     assert_eq!(
-        parsed.records[1].ownership_summary(),
+        ownership_summary(&parsed[1]),
         "player handle='FOO' empire='foo'"
     );
 }
@@ -167,153 +174,129 @@ fn f3_owner_fixture_exposes_rogue_and_player_controlled_empire_summaries() {
 #[test]
 fn shipped_fleets_dat_uses_a_variable_record_count() {
     let bytes = read_fixture("FLEETS.DAT");
-    let parsed = FleetDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.records.len(), 13);
+    let parsed = parse_fleets_dat(&bytes).unwrap();
+    assert_eq!(parsed.len(), 13);
 }
 
 #[test]
 fn round_trip_initialized_fleets_dat() {
     let bytes = read_initialized_fixture("FLEETS.DAT");
-    let parsed = FleetDat::parse(&bytes).unwrap();
-    assert_eq!(parsed.to_bytes(), bytes);
-    assert_eq!(parsed.records.len(), INITIALIZED_FLEET_RECORD_COUNT);
-    assert_eq!(parsed.records[0].fleet_id(), 1);
-    assert_eq!(parsed.records[0].local_slot(), 1);
-    assert_eq!(parsed.records[0].next_fleet_id(), 2);
-    assert_eq!(parsed.records[0].previous_fleet_id(), 0);
-    assert_eq!(parsed.records[0].max_speed(), 3);
-    assert_eq!(parsed.records[0].rules_of_engagement(), 6);
-    assert_eq!(parsed.records[0].cruiser_count(), 1);
-    assert_eq!(parsed.records[0].destroyer_count(), 0);
-    assert_eq!(parsed.records[0].etac_count(), 1);
-    assert_eq!(parsed.records[0].standing_order_code_raw(), 5);
+    let parsed = parse_fleets_dat(&bytes).unwrap();
+    assert_eq!(serialize_fleets_dat(&parsed), bytes);
+    assert_eq!(parsed.len(), INITIALIZED_FLEET_RECORD_COUNT);
+    assert_eq!(parsed[0].record.0, 1);
+    assert_eq!(parsed[0].fleet_number.0, 1);
+    assert_eq!(parsed[0].next.0, 2);
+    assert_eq!(parsed[0].prev.0, 0);
+    assert_eq!(parsed[0].max_speed, 3);
+    assert_eq!(parsed[0].rules_of_engagement, 6);
+    assert_eq!(parsed[0].ships.cruisers, 1);
+    assert_eq!(parsed[0].ships.destroyers, 0);
+    assert_eq!(parsed[0].ships.etacs, 1);
+    assert_eq!(parsed[0].order.to_raw(), 5);
+    assert_eq!(parsed[0].order, Order::GuardBlockadeWorld);
+    assert_eq!(parsed[0].target.to_array(), [16, 13]);
     assert_eq!(
-        parsed.records[0].standing_order_kind(),
-        Order::GuardBlockadeWorld
-    );
-    assert_eq!(
-        parsed.records[0].standing_order_target_coords_raw(),
-        [16, 13]
-    );
-    assert_eq!(
-        parsed.records[0].standing_order_summary(),
+        order_summary(&parsed[0]),
         "Guard/blockade world in System (16,13)"
     );
-    assert_eq!(parsed.records[0].ship_composition_summary(), "CA=1 ET=1");
-    assert_eq!(parsed.records[0].ship_composition_table_summary(), "CA ET");
+    assert_eq!(ship_composition_summary(&parsed[0]), "CA=1 ET=1");
+    assert_eq!(ship_composition_table_summary(&parsed[0]), "CA ET");
 
-    assert_eq!(parsed.records[2].fleet_id(), 3);
-    assert_eq!(parsed.records[2].local_slot(), 3);
-    assert_eq!(parsed.records[2].next_fleet_id(), 4);
-    assert_eq!(parsed.records[2].previous_fleet_id(), 2);
-    assert_eq!(parsed.records[2].max_speed(), 6);
-    assert_eq!(parsed.records[2].rules_of_engagement(), 6);
-    assert_eq!(parsed.records[2].cruiser_count(), 0);
-    assert_eq!(parsed.records[2].destroyer_count(), 1);
-    assert_eq!(parsed.records[2].etac_count(), 0);
-    assert_eq!(parsed.records[2].standing_order_code_raw(), 5);
+    assert_eq!(parsed[2].record.0, 3);
+    assert_eq!(parsed[2].fleet_number.0, 3);
+    assert_eq!(parsed[2].next.0, 4);
+    assert_eq!(parsed[2].prev.0, 2);
+    assert_eq!(parsed[2].max_speed, 6);
+    assert_eq!(parsed[2].rules_of_engagement, 6);
+    assert_eq!(parsed[2].ships.cruisers, 0);
+    assert_eq!(parsed[2].ships.destroyers, 1);
+    assert_eq!(parsed[2].ships.etacs, 0);
+    assert_eq!(parsed[2].order.to_raw(), 5);
+    assert_eq!(parsed[2].order, Order::GuardBlockadeWorld);
+    assert_eq!(parsed[2].target.to_array(), [16, 13]);
     assert_eq!(
-        parsed.records[2].standing_order_kind(),
-        Order::GuardBlockadeWorld
-    );
-    assert_eq!(
-        parsed.records[2].standing_order_target_coords_raw(),
-        [16, 13]
-    );
-    assert_eq!(
-        parsed.records[2].standing_order_summary(),
+        order_summary(&parsed[2]),
         "Guard/blockade world in System (16,13)"
     );
-    assert_eq!(parsed.records[2].ship_composition_summary(), "DD=1");
-    assert_eq!(parsed.records[2].ship_composition_table_summary(), "DD");
+    assert_eq!(ship_composition_summary(&parsed[2]), "DD=1");
+    assert_eq!(ship_composition_table_summary(&parsed[2]), "DD");
 }
 
 #[test]
 fn fleet_has_any_force_tracks_ship_transport_army_and_etac_presence() {
-    let mut record = FleetRecord::new_zeroed();
-    assert!(!record.has_any_force());
+    let mut record = Fleet::default();
+    assert!(!has_any_force(&record));
 
-    record.set_army_count(1);
-    assert!(record.has_any_force());
-    record.set_army_count(0);
+    set_armies_aboard(&mut record, 1);
+    assert!(has_any_force(&record));
+    set_armies_aboard(&mut record, 0);
 
-    record.set_troop_transport_count(1);
-    assert!(record.has_any_force());
-    record.set_troop_transport_count(0);
+    set_troop_transports(&mut record, 1);
+    assert!(has_any_force(&record));
+    set_troop_transports(&mut record, 0);
 
-    record.set_etac_count(1);
-    assert!(record.has_any_force());
+    record.ships.etacs = 1;
+    assert!(has_any_force(&record));
 }
 
 #[test]
 #[should_panic(expected = "empty fleet record is not a fleet")]
 fn empty_fleet_record_panics_when_rendering_ship_composition() {
-    let mut record = FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT"))
-        .unwrap()
-        .records[0]
-        .clone();
-    record.set_scout_count(0);
-    record.set_battleship_count(0);
-    record.set_cruiser_count(0);
-    record.set_destroyer_count(0);
-    record.set_troop_transport_count(0);
-    record.set_army_count(0);
-    record.set_etac_count(0);
-    let _ = record.ship_composition_table_summary();
+    let mut record = parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap()[0].clone();
+    record.ships.scouts = 0;
+    record.ships.battleships = 0;
+    record.ships.cruisers = 0;
+    record.ships.destroyers = 0;
+    set_troop_transports(&mut record, 0);
+    set_armies_aboard(&mut record, 0);
+    record.ships.etacs = 0;
+    let _ = ship_composition_table_summary(&record);
 }
 
 #[test]
 fn fleet_table_summary_uses_tt_star_for_loaded_transports_only() {
-    let mut record = FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT"))
-        .unwrap()
-        .records[0]
-        .clone();
-    record.set_scout_count(0);
-    record.set_battleship_count(0);
-    record.set_cruiser_count(0);
-    record.set_destroyer_count(0);
-    record.set_etac_count(0);
-    record.set_troop_transport_count(2);
-    record.set_army_count(0);
-    assert_eq!(record.ship_composition_table_summary(), "2TT");
+    let mut record = parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap()[0].clone();
+    record.ships.scouts = 0;
+    record.ships.battleships = 0;
+    record.ships.cruisers = 0;
+    record.ships.destroyers = 0;
+    record.ships.etacs = 0;
+    set_troop_transports(&mut record, 2);
+    set_armies_aboard(&mut record, 0);
+    assert_eq!(ship_composition_table_summary(&record), "2TT");
 
-    record.set_army_count(2);
-    assert_eq!(record.ship_composition_table_summary(), "2TT*");
-    assert!(!record.ship_composition_table_summary().contains("TT "));
+    set_armies_aboard(&mut record, 2);
+    assert_eq!(ship_composition_table_summary(&record), "2TT*");
+    assert!(!ship_composition_table_summary(&record).contains("TT "));
 }
 
 #[test]
 fn fleet_list_summary_shows_counts_only_when_greater_than_one() {
-    let mut record = FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT"))
-        .unwrap()
-        .records[0]
-        .clone();
-    record.set_scout_count(2);
-    record.set_battleship_count(1);
-    record.set_cruiser_count(0);
-    record.set_destroyer_count(4);
-    record.set_troop_transport_count(0);
-    record.set_army_count(0);
-    record.set_etac_count(1);
+    let mut record = parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap()[0].clone();
+    record.ships.scouts = 2;
+    record.ships.battleships = 1;
+    record.ships.cruisers = 0;
+    record.ships.destroyers = 4;
+    set_troop_transports(&mut record, 0);
+    set_armies_aboard(&mut record, 0);
+    record.ships.etacs = 1;
 
-    assert_eq!(record.ship_composition_table_summary(), "2SC BB 4DD ET");
+    assert_eq!(ship_composition_table_summary(&record), "2SC BB 4DD ET");
 }
 
 #[test]
 fn fleet_list_summary_splits_loaded_and_empty_transports() {
-    let mut record = FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT"))
-        .unwrap()
-        .records[0]
-        .clone();
-    record.set_scout_count(0);
-    record.set_battleship_count(0);
-    record.set_cruiser_count(0);
-    record.set_destroyer_count(0);
-    record.set_troop_transport_count(5);
-    record.set_army_count(2);
-    record.set_etac_count(0);
+    let mut record = parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap()[0].clone();
+    record.ships.scouts = 0;
+    record.ships.battleships = 0;
+    record.ships.cruisers = 0;
+    record.ships.destroyers = 0;
+    set_troop_transports(&mut record, 5);
+    set_armies_aboard(&mut record, 2);
+    record.ships.etacs = 0;
 
-    assert_eq!(record.ship_composition_table_summary(), "2TT* 3TT");
+    assert_eq!(ship_composition_table_summary(&record), "2TT* 3TT");
 }
 
 #[test]
@@ -347,22 +330,22 @@ fn post_maintenance_matches_init_for_core_state_but_not_global_summaries() {
 
 #[test]
 fn preserved_conquest_year_progression_matches_docs() {
-    let original = ConquestDat::parse(&read_fixture("CONQUEST.DAT")).unwrap();
-    let initialized = ConquestDat::parse(&read_initialized_fixture("CONQUEST.DAT")).unwrap();
-    let post_maint = ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
+    let original = parse_conquest_dat(&read_fixture("CONQUEST.DAT")).unwrap();
+    let initialized = parse_conquest_dat(&read_initialized_fixture("CONQUEST.DAT")).unwrap();
+    let post_maint = parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
 
-    assert_eq!(initialized.game_year(), 3000);
-    assert_eq!(post_maint.game_year(), 3001);
-    assert_eq!(original.game_year(), 3022);
-    assert_eq!(initialized.player_count(), 4);
-    assert_eq!(post_maint.player_count(), 4);
-    assert_eq!(original.player_count(), 4);
+    assert_eq!(initialized.game_year, 3000);
+    assert_eq!(post_maint.game_year, 3001);
+    assert_eq!(original.game_year, 3022);
+    assert_eq!(initialized.player_count, 4);
+    assert_eq!(post_maint.player_count, 4);
+    assert_eq!(original.player_count, 4);
 }
 
 #[test]
 fn post_maintenance_fixture_exposes_known_schedule_bytes() {
-    let post_maint = ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
-    assert_eq!(post_maint.maintenance_schedule_bytes(), [0x01; 7]);
+    let post_maint = parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
+    assert_eq!(post_maint.maintenance_days.0.map(u8::from), [0x01; 7]);
 }
 
 #[test]

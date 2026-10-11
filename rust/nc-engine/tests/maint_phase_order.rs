@@ -6,8 +6,8 @@
 mod support;
 
 use nc_data::{
-    CompactUnitSummaryStyle, Mission, MissionOutcome, Order, PlanetIntelSource, Real48,
-    format_stardock_summary,
+    CompactUnitSummaryStyle, Mission, MissionOutcome, Order, PlanetIntelSource, ProductionItemKind,
+    Real48, format_stardock_summary,
 };
 use support::{Fleet, Ships, WORLD, board_with_world, put, years};
 
@@ -17,13 +17,13 @@ use support::{Fleet, Ships, WORLD, board_with_world, put, years};
 fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
     let mut scenario = board_with_world();
     let planet_idx = 13;
-    let planet = &mut scenario.planets.records[planet_idx];
-    assert_eq!(planet.coords_raw(), WORLD);
+    let planet = &mut scenario.planets[planet_idx];
+    assert_eq!(planet.sector.to_array(), WORLD);
     assert_eq!(format_stardock_summary(planet, CompactUnitSummaryStyle::Words), "Nothing");
     // Two destroyers (5 points each), well inside the world's budget.
-    planet.set_build_count_raw(0, 10);
-    planet.set_build_kind_raw(0, 1);
-    planet.set_stored_production_points(200);
+    planet.build_queue[0].points_owed = 10;
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
+    planet.stored_goods = Real48::from_f64(200.0);
 
     // Empire 1's scout sits at the sector centre, a tick's dive short of
     // orbit, so its Scout Solar System order resolves in tick 1.
@@ -34,12 +34,12 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
             .max_speed(5)
             .heading(Order::ScoutSolarSystem, WORLD, true, 5),
     );
-    scenario.fleets.records[0].set_depth(Real48::from_f64(0.95));
+    scenario.fleets[0].depth = Real48::from_f64(0.95);
 
     let (game_data, events) = years(&scenario, &[], 0..1).next().expect("one year");
 
     let dock_after = format_stardock_summary(
-        &game_data.planets.records[planet_idx],
+        &game_data.planets[planet_idx],
         CompactUnitSummaryStyle::Words,
     );
     assert_eq!(dock_after, "2 destroyers");

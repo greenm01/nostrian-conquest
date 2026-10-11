@@ -1,6 +1,6 @@
 //! Shared launch/session helpers for nc-game and other clients.
 
-use nc_data::{CoreGameData, SeatReservation};
+use nc_data::{CoreGameData, SeatReservation, player_handle_matches};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LaunchPlayerBindingSource {
@@ -52,7 +52,7 @@ pub struct LaunchBindingRequest<'a> {
 pub fn resolve_launch_player_binding(
     request: LaunchBindingRequest<'_>,
 ) -> Result<LaunchPlayerBinding, String> {
-    let player_count = request.game_data.player.records.len();
+    let player_count = request.game_data.players.len();
 
     if let Some(explicit_player) = request.explicit_player_record_index_1_based {
         if explicit_player > player_count {
@@ -92,15 +92,13 @@ pub fn resolve_launch_player_binding(
     {
         let matching_players = request
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| !request.skip_stored_handle_seats.contains(&(idx + 1)))
             .filter_map(|(idx, player)| {
-                let handle = player.assigned_player_handle_summary();
-                (!handle.is_empty() && player.assigned_player_handle_matches(alias))
-                    .then_some(idx + 1)
+                let handle = player.handle.trim().to_string();
+                (!handle.is_empty() && player_handle_matches(player, alias)).then_some(idx + 1)
             })
             .collect::<Vec<_>>();
 
@@ -174,10 +172,9 @@ pub fn validate_reserved_seat_runtime(
     reservations: &[SeatReservation],
     reservation: &SeatReservation,
 ) -> Result<(), String> {
-    validate_reservations_for_player_count(reservations, game_data.player.records.len())?;
+    validate_reservations_for_player_count(reservations, game_data.players.len())?;
     let player = game_data
-        .player
-        .records
+        .players
         .get(reservation.player_record_index_1_based - 1)
         .ok_or_else(|| {
             format!(
@@ -185,8 +182,8 @@ pub fn validate_reserved_seat_runtime(
                 reservation.player_record_index_1_based
             )
         })?;
-    let handle = player.assigned_player_handle_summary();
-    if !handle.is_empty() && !player.assigned_player_handle_matches(&reservation.alias) {
+    let handle = player.handle.trim().to_string();
+    if !handle.is_empty() && !player_handle_matches(player, &reservation.alias) {
         return Err(format!(
             "reserved alias '{}' conflicts with stored player handle '{}' for seat {}; reconcile ncgame.db settings or the campaign state",
             reservation.alias, handle, reservation.player_record_index_1_based

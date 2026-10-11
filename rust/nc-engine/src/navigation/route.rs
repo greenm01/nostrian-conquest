@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 use std::collections::{BinaryHeap, HashMap};
 
-use nc_data::{CoreGameData, FleetRecord, Order, map_size_for_player_count};
+use nc_data::{CoreGameData, Fleet, Order, map_size_for_player_count};
 
 use super::{PlannedRoute, RouteStep, VisibleHazardIntel};
 
@@ -46,21 +46,21 @@ pub(super) fn plan_route_with_intel(
     fleet_idx: usize,
     intel: &VisibleHazardIntel,
 ) -> Option<PlannedRoute> {
-    let fleet = game_data.fleets.records.get(fleet_idx)?;
-    let order = fleet.standing_order_kind();
+    let fleet = game_data.fleets.get(fleet_idx)?;
+    let order = fleet.order;
     if !order_uses_pathfinding(order) {
         return None;
     }
 
-    let start = fleet.current_location_coords_raw();
-    let goal = fleet.standing_order_target_coords_raw();
+    let start = fleet.sector.to_array();
+    let goal = fleet.target.to_array();
     if start == goal {
         return Some(PlannedRoute {
             steps: vec![RouteStep { coords: start }],
         });
     }
 
-    let map_size = map_size_for_player_count(game_data.conquest.player_count());
+    let map_size = map_size_for_player_count(game_data.conquest.player_count);
     let mut frontier = BinaryHeap::new();
     frontier.push(FrontierNode {
         estimated_total_cost: heuristic_cost(start, goal),
@@ -154,7 +154,7 @@ fn neighbors(coords: [u8; 2], map_size: u8) -> impl Iterator<Item = [u8; 2]> {
 }
 
 fn sector_cost(
-    _fleet: &FleetRecord,
+    _fleet: &Fleet,
     order: Order,
     final_goal: [u8; 2],
     coords: [u8; 2],

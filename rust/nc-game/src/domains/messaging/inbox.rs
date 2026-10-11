@@ -168,7 +168,7 @@ impl App {
             return;
         }
         let year = if self.messaging.inbox_year_input.trim().is_empty() {
-            self.game_data.conquest.game_year()
+            self.game_data.conquest.game_year
         } else {
             let Ok(year) = self.messaging.inbox_year_input.trim().parse::<u16>() else {
                 self.messaging.inbox_feedback =
@@ -325,7 +325,7 @@ impl App {
             }
             InboxItemSource::ReportBlock(index) => delete_report_block_for_viewer(
                 &mut self.report_block_rows,
-                &self.game_data.player.records,
+                &self.game_data.players,
                 index,
                 self.player.record_index_1_based as u8,
             ),

@@ -1,7 +1,6 @@
 use rusqlite::{Connection, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, position_of};
-use crate::SetupDat;
 use crate::model::Setup;
 
 /// The SETUP.DAT settings; `snapshot_setup_com_ports` holds the IRQ and
@@ -29,9 +28,8 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &SetupDat,
+    setup: &Setup,
 ) -> Result<(), CampaignStoreError> {
-    let setup = &data.setup;
     // One character per tag byte, as classic text maps them.
     let version_tag: String = setup.version_tag.iter().map(|&b| char::from(b)).collect();
     insert_row(
@@ -69,10 +67,7 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(
-    conn: &mut Connection,
-    snapshot_id: i64,
-) -> Result<SetupDat, CampaignStoreError> {
+pub(super) fn load(conn: &mut Connection, snapshot_id: i64) -> Result<Setup, CampaignStoreError> {
     let (version_tag, mut setup) = conn.query_row(
         "SELECT * FROM snapshot_setup WHERE snapshot_id = ?1",
         params![snapshot_id],
@@ -121,5 +116,5 @@ pub(super) fn load(
         setup.com_irq[port] = irq;
         setup.com_hw_flow_control[port] = flow_control;
     }
-    Ok(SetupDat { setup })
+    Ok(setup)
 }

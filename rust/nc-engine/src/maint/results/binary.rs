@@ -1,5 +1,5 @@
 use super::format::empire_label;
-use nc_data::{CoreGameData, is_classic_text_char};
+use nc_data::{CoreGameData, is_classic_text_char, set_login_reviewables_present};
 
 pub const RESULTS_RECORD_SIZE: usize = 84;
 pub const RESULTS_TEXT_SIZE: usize = 72;
@@ -220,11 +220,10 @@ pub fn push_routed_message_chunked(
         text
     );
     if let Some(player) = game_data
-        .player
-        .records
+        .players
         .get_mut(recipient_empire_raw.saturating_sub(1) as usize)
     {
-        player.set_classic_login_reviewables_present(true);
+        set_login_reviewables_present(player, true);
     }
     push_routed_message_legacy_chunked(data, kind, tail, &routed);
 }

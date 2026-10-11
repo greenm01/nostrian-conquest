@@ -11,7 +11,8 @@ from code only. Fleet movement, which starbases share, is in
 [ec-encounter-spec.md](ec-encounter-spec.md).
 
 Rust reads and writes every field below
-([base.rs](../../rust/nc-data/src/records/base.rs)) and moves starbases by
+([starbase.rs](../../rust/nc-data/src/model/starbase.rs),
+[base.rs](../../rust/nc-compat/src/classic/base.rs)) and moves starbases by
 the rules below
 ([starbase.rs](../../rust/nc-engine/src/maint/movement/starbase.rs),
 [guard.rs](../../rust/nc-engine/src/maint/movement/guard.rs)). Where

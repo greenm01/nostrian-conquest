@@ -4,7 +4,7 @@ use common::{
     cleanup_dir, export_campaign_db, repo_root, run_nc_cli_in_dir, unique_temp_dir,
     without_unread_bytes,
 };
-use nc_data::FleetDat;
+use nc_compat::classic::parse_fleets_dat;
 use std::fs;
 
 #[test]
@@ -19,8 +19,8 @@ fn scenario_invade_recreates_known_valid_pre_fixture() {
     assert!(stdout.contains("Applied scenario: invade"));
 
     export_campaign_db(&target, &target);
-    let fleets = FleetDat::parse(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets.records[2].standing_order_code_raw(), 0x07);
+    let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
+    assert_eq!(fleets[2].order.to_raw(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();
@@ -58,8 +58,8 @@ fn scenario_init_replayable_invade_uses_documented_order_code() {
     );
     assert!(stdout.contains("Replayable scenario directory initialized at"));
 
-    let fleets = FleetDat::parse(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets.records[2].standing_order_code_raw(), 0x07);
+    let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
+    assert_eq!(fleets[2].order.to_raw(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     for name in ["PLANETS.DAT", "SETUP.DAT"] {
@@ -100,8 +100,8 @@ fn invade_init_uses_documented_order_code() {
     assert!(stdout.contains("Invade directory initialized at"));
 
     export_campaign_db(&target, &target);
-    let fleets = FleetDat::parse(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
-    assert_eq!(fleets.records[2].standing_order_code_raw(), 0x07);
+    let fleets = parse_fleets_dat(&fs::read(target.join("FLEETS.DAT")).unwrap()).unwrap();
+    assert_eq!(fleets[2].order.to_raw(), 0x07);
 
     let fixture_pre = repo_root().join("fixtures/ecmaint-invade-pre/v1.5");
     let expected_planets = fs::read(fixture_pre.join("PLANETS.DAT")).unwrap();

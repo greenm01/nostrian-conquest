@@ -1,6 +1,6 @@
-use crate::SETUP_DAT_SIZE;
-use crate::model::Setup;
-use crate::support::{ParseError, copy_array, expect_size};
+use super::SETUP_DAT_SIZE;
+use nc_classic::{ParseError, copy_array, expect_size};
+use nc_data::Setup;
 
 use super::{put_u16, u16_at};
 

@@ -7,7 +7,7 @@
 mod handler;
 pub mod rules;
 
-use nc_data::{DiplomacyOverride, GameRng, RNG_TAG_ENCOUNTER, Real48};
+use nc_data::{DiplomacyOverride, GameRng, RNG_TAG_ENCOUNTER, Real48, has_any_force};
 
 use super::combat::{AssaultEvents, FleetBattlePhaseEvents};
 use super::movement::YearMovement;
@@ -73,29 +73,27 @@ fn layer_of(depth: Real48) -> u8 {
 fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
     let fleets = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .map(|(index, fleet)| Unit {
             kind: UnitKind::Fleet,
             index,
-            owner: fleet.owner_empire_raw(),
-            sector: fleet.current_location_coords_raw(),
-            layer: layer_of(fleet.depth()),
-            active: fleet.has_any_force(),
+            owner: fleet.owner.0,
+            sector: fleet.sector.to_array(),
+            layer: layer_of(fleet.depth),
+            active: has_any_force(fleet),
         });
     let bases = game_data
         .bases
-        .records
         .iter()
         .enumerate()
         .map(|(index, base)| Unit {
             kind: UnitKind::Base,
             index,
-            owner: base.owner_empire_raw(),
-            sector: base.coords_raw(),
-            layer: layer_of(base.depth()),
-            active: base.base_id_raw() != 0,
+            owner: base.owner.0,
+            sector: base.sector.to_array(),
+            layer: layer_of(base.depth),
+            active: base.base_id.0 != 0,
         });
     fleets.chain(bases).collect()
 }
@@ -120,7 +118,7 @@ pub(super) fn run_year(
     let mut rng = GameRng::from_context(
         campaign_seed,
         RNG_TAG_ENCOUNTER,
-        &[u64::from(game_data.conquest.game_year())],
+        &[u64::from(game_data.conquest.game_year)],
     );
     let units = build_units(game_data);
     // The order is drawn once per year: a Random(0xFFDC) key per unit,

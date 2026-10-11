@@ -10,7 +10,7 @@
 
 use std::path::Path;
 
-use crate::{CONQUEST_DAT_SIZE, ConquestDat};
+use crate::Conquest;
 
 /// Result of a maintenance schedule gate check.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -48,8 +48,8 @@ const DAY_NAMES: [&str; 7] = [
 ///
 /// `conquest.maintenance_schedule_enabled()` returns a 7-element array indexed
 /// `[Sun, Mon, Tue, Wed, Thu, Fri, Sat]`.
-pub fn check_maintenance_schedule(conquest: &ConquestDat) -> GateResult {
-    let schedule = conquest.maintenance_schedule_enabled();
+pub fn check_maintenance_schedule(conquest: &Conquest) -> GateResult {
+    let schedule = conquest.maintenance_days.0;
     let today = today_weekday() as usize;
     if schedule[today] {
         GateResult::Allowed
@@ -73,15 +73,4 @@ pub fn create_maintenance_token(dir: &Path) -> std::io::Result<()> {
 /// Remove the maintenance coordination token file after a successful run.
 pub fn remove_maintenance_token(dir: &Path) {
     let _ = std::fs::remove_file(dir.join("Main.Tok"));
-}
-
-/// Parse a raw CONQUEST.DAT byte slice into a `ConquestDat` for gate checks.
-/// Returns an error if the data is the wrong size.
-pub fn check_gate_conquest(raw: &[u8]) -> Result<ConquestDat, &'static str> {
-    if raw.len() < CONQUEST_DAT_SIZE {
-        return Err("CONQUEST.DAT too small for gate check");
-    }
-    let mut buf = [0u8; CONQUEST_DAT_SIZE];
-    buf.copy_from_slice(&raw[..CONQUEST_DAT_SIZE]);
-    Ok(ConquestDat::from_raw(buf))
 }

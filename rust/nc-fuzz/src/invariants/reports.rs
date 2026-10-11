@@ -8,7 +8,7 @@
 //! end of the turn, or when it has a terminal outcome (defeat, loss, or win)
 //! that its former player reviews.
 
-use nc_data::{CoreGameData, TerminalOutcome};
+use nc_data::{CoreGameData, PlayerMode, TerminalOutcome};
 
 use super::{TurnObservation, Violation};
 
@@ -21,10 +21,9 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     let mut violations = Vec::new();
     let active = |state: &CoreGameData, viewer: u8| {
         state
-            .player
-            .records
+            .players
             .get(usize::from(viewer).wrapping_sub(1))
-            .is_some_and(|player| player.is_active_human_player())
+            .is_some_and(|player| player.mode == PlayerMode::Human)
     };
     let entitled = |viewer: u8| {
         active(observation.before, viewer)
@@ -63,16 +62,14 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     }
 
     if !observation.events.campaign_outlook_events.is_empty() {
-        for (idx, player) in observation.flagged.player.records.iter().enumerate() {
+        for (idx, player) in observation.flagged.players.iter().enumerate() {
             let empire = (idx + 1) as u8;
             let heard = observation.report_rows.iter().any(|row| {
                 row.viewer_empire_id == empire
                     && !row.recipient_deleted
                     && row.decoded_text.contains(OUTLOOK_TEXT)
             });
-            if player.is_active_human_player()
-                && (!heard || !player.has_classic_results_review_state())
-            {
+            if player.mode == PlayerMode::Human && (!heard || player.messages_last == 0) {
                 violations.push(Violation::OutlookMissed { empire });
             }
         }

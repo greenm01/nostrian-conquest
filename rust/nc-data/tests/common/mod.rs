@@ -3,7 +3,7 @@
 pub mod order_trace;
 pub mod production;
 
-use nc_data::FleetRecord;
+use nc_data::Fleet;
 use std::fs;
 use std::path::PathBuf;
 
@@ -134,9 +134,9 @@ pub fn read_ecmaint_bombard_heavy_post_fixture(name: &str) -> Vec<u8> {
 /// A contact stalled where it stands: with no speed and no maximum speed the
 /// dispatcher prelude has nothing to restore, so it ends the year in place
 /// whatever its order and target.
-pub fn stall_in_place(fleet: &mut FleetRecord) {
-    fleet.set_current_speed(0);
-    fleet.set_max_speed(0);
+pub fn stall_in_place(fleet: &mut Fleet) {
+    fleet.speed = 0;
+    fleet.max_speed = 0;
 }
 
 /// The first seeded year of `game_data` whose events satisfy `wanted`.
@@ -167,9 +167,9 @@ pub fn battle(_: &nc_data::CoreGameData, events: &nc_data::MaintenanceEvents) ->
 /// Set every fleet of `empire` to ROE 0, so its fleets never start a fight
 /// (they still defend themselves if attacked).
 pub fn hold_fire(game_data: &mut nc_data::CoreGameData, empire: u8) {
-    for fleet in &mut game_data.fleets.records {
-        if fleet.owner_empire_raw() == empire {
-            fleet.set_rules_of_engagement(0);
+    for fleet in &mut game_data.fleets {
+        if fleet.owner.0 == empire {
+            fleet.rules_of_engagement = 0;
         }
     }
 }

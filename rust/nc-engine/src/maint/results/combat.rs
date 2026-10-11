@@ -1,5 +1,5 @@
 use super::format::{join_report_parts, ship_loss_summary, unit_count_text};
-use nc_data::{MaintenanceEvents, Mission, MissionOutcome, ShipLosses};
+use nc_data::{MaintenanceEvents, Mission, MissionOutcome, ShipLosses, stardock_slot_kind};
 
 pub fn enemy_losses_sentence(losses: ShipLosses) -> String {
     let summary = ship_loss_summary(losses);
@@ -374,16 +374,16 @@ pub fn roe_retreat_loss_clause(losses: ShipLosses) -> String {
     }
 }
 
-pub fn stardock_scan_summary(planet: &nc_data::PlanetRecord) -> String {
+pub fn stardock_scan_summary(planet: &nc_data::Planet) -> String {
     use nc_data::ProductionItemKind;
 
     let mut parts = Vec::new();
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        let count = planet.stardock_count_raw(slot);
+        let count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
         if count == 0 {
             continue;
         }
-        let kind = ProductionItemKind::from_raw(planet.stardock_kind_raw(slot));
+        let kind = stardock_slot_kind(planet, slot);
         let name = match kind {
             ProductionItemKind::Destroyer => format!("{}DD", count),
             ProductionItemKind::Cruiser => format!("{}CA", count),

@@ -1,5 +1,8 @@
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, DiplomacyOverride, DiplomaticRelation, Order};
+use nc_data::{
+    Coords, CoreGameData, DiplomacyOverride, DiplomaticRelation, EmpireId, Order, Planet, Real48,
+    set_armies_aboard, set_fleet_at_rest, set_starbase_at_rest, set_troop_transports,
+};
 use std::path::Path;
 
 /// Owned world at (15,13) used as the defended system in these scenarios.
@@ -28,20 +31,19 @@ pub fn empty_board(armies: u8, batteries: u8) -> CoreGameData {
         .join("ecmaint-post")
         .join("v1.5");
     let mut game_data = load_classic_core_files(&dir).expect("fixture should load");
-    game_data.bases.records.clear();
-    game_data.planets.records[SYSTEM_PLANET_IDX].set_as_owned_target_world(
-        SYSTEM,
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        armies,
-        batteries,
-        2,
-        2,
-    );
+    game_data.bases.clear();
+    game_data.planets[SYSTEM_PLANET_IDX] = Planet {
+        sector: Coords::from_array(SYSTEM),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: u16::from(armies),
+        ground_batteries: u16::from(batteries),
+        years_under_owner: 2,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     game_data
 }
 
@@ -57,47 +59,47 @@ pub fn place_fleet(
     ships: Ships,
     roe: u8,
 ) {
-    let fleet = &mut game_data.fleets.records[idx];
-    fleet.set_owner_empire_raw(owner);
-    fleet.set_current_location_coords_raw(coords);
-    fleet.set_standing_order_kind(order);
-    fleet.set_standing_order_target_coords_raw(target);
-    fleet.set_current_speed(0);
-    fleet.set_destroyer_count(ships.dd);
-    fleet.set_cruiser_count(ships.ca);
-    fleet.set_battleship_count(ships.bb);
-    fleet.set_scout_count(ships.sc);
-    fleet.set_troop_transport_count(ships.tt);
-    fleet.set_army_count(ships.armies);
-    fleet.set_etac_count(0);
-    fleet.set_rules_of_engagement(roe);
+    let fleet = &mut game_data.fleets[idx];
+    fleet.owner.0 = owner;
+    fleet.sector = Coords::from_array(coords);
+    fleet.order = order;
+    fleet.target = Coords::from_array(target);
+    fleet.speed = 0;
+    fleet.ships.destroyers = ships.dd;
+    fleet.ships.cruisers = ships.ca;
+    fleet.ships.battleships = ships.bb;
+    fleet.ships.scouts = ships.sc;
+    set_troop_transports(fleet, ships.tt);
+    set_armies_aboard(fleet, ships.armies);
+    fleet.ships.etacs = 0;
+    fleet.rules_of_engagement = roe;
     if target != coords {
         // A contact stalled in transit: with no maximum speed the dispatcher
         // prelude has no speed to restore, so it ends the year here.
-        fleet.set_max_speed(0);
+        fleet.max_speed = 0;
     }
 }
 
 /// A starbase of `owner` at rest in orbit (depth 1.0) over `coords`.
 pub fn place_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2]) {
-    let mut base = nc_data::BaseRecord::new_zeroed();
-    base.set_base_id_raw(1);
-    base.set_record_number_raw(1);
-    base.set_coords_raw(coords);
-    base.set_target_coords_raw(coords);
-    base.set_owner_empire_raw(owner);
-    base.set_at_rest_motion();
-    base.set_target_depth_raw(1);
-    game_data.bases.records.push(base);
+    let mut base = nc_data::Starbase::default();
+    base.base_id.0 = 1;
+    base.record.0 = 1;
+    base.sector = Coords::from_array(coords);
+    base.target = Coords::from_array(coords);
+    base.owner.0 = owner;
+    set_starbase_at_rest(&mut base);
+    base.target_depth = 1;
+    game_data.bases.push(base);
 }
 
 /// Settle a fleet that already sits at its hostile-mission target at rest in
 /// orbit (depth 1.0), so its strike test passes on the first tick.
 pub fn mark_arrived(game_data: &mut CoreGameData, idx: usize) {
-    let fleet = &mut game_data.fleets.records[idx];
-    fleet.set_current_speed(3);
-    fleet.set_mission_target(1, fleet.mission_id_raw());
-    fleet.set_at_rest_motion();
+    let fleet = &mut game_data.fleets[idx];
+    fleet.speed = 3;
+    fleet.target_depth = 1;
+    set_fleet_at_rest(fleet);
 }
 
 /// Explicit diplomacy among empires 1-4: the listed pairs are mutual enemies,

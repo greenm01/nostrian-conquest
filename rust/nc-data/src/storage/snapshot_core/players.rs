@@ -2,7 +2,6 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, position_of};
 use crate::model::{DiplomaticRelation, Player, PlayerMode, RecordNumber};
-use crate::{PlayerDat, PlayerRecord};
 
 /// One row per PLAYER.DAT record; `snapshot_player_diplomacy` holds each
 /// empire's stance toward empires 1 to 25, by their number.
@@ -43,10 +42,9 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &PlayerDat,
+    players: &[Player],
 ) -> Result<(), CampaignStoreError> {
-    for (index, record) in data.records.iter().enumerate() {
-        let player = &record.player;
+    for (index, player) in players.iter().enumerate() {
         let record_index = index + 1;
         insert_row(
             tx,
@@ -95,12 +93,11 @@ pub(super) fn write(
 pub(super) fn load(
     conn: &mut Connection,
     snapshot_id: i64,
-) -> Result<PlayerDat, CampaignStoreError> {
+) -> Result<Vec<Player>, CampaignStoreError> {
     let mut stmt = conn
         .prepare("SELECT * FROM snapshot_players WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let mut records = stmt
         .query_map(params![snapshot_id], player_from_row)?
-        .map(|player| player.map(|player| PlayerRecord { player }))
         .collect::<Result<Vec<_>, _>>()?;
 
     let mut stmt = conn.prepare(
@@ -119,9 +116,9 @@ pub(super) fn load(
         let (record_index, toward_empire, relation) = row?;
         let record = position_of(record_index, records.len(), "player record")?;
         let slot = position_of(toward_empire, 25, "diplomacy empire")?;
-        records[record].player.diplomacy[slot] = DiplomaticRelation::from_raw(relation);
+        records[record].diplomacy[slot] = DiplomaticRelation::from_raw(relation);
     }
-    Ok(PlayerDat { records })
+    Ok(records)
 }
 
 fn player_from_row(row: &Row<'_>) -> rusqlite::Result<Player> {

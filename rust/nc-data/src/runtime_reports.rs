@@ -109,7 +109,7 @@ pub fn runtime_inbox_items(
     report_blocks: &[ReportBlockRow],
     queued_mail: &[QueuedPlayerMail],
 ) -> Vec<InboxItem> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     let mut items = report_blocks
         .iter()
         .enumerate()
@@ -134,7 +134,7 @@ pub fn runtime_outgoing_inbox_items(
     sender_empire_id: u8,
     queued_mail: &[QueuedPlayerMail],
 ) -> Vec<InboxItem> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     queued_mail
         .iter()
         .enumerate()
@@ -237,7 +237,7 @@ fn runtime_message_blocks(
     viewer_empire_id: u8,
     queued_mail: &[QueuedPlayerMail],
 ) -> Vec<ReviewBlock> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     queued_mail
         .iter()
         .enumerate()
@@ -497,18 +497,14 @@ fn decode_text_lines(text: &str) -> Vec<String> {
 }
 
 fn empire_label(game_data: &CoreGameData, empire_id: u8) -> String {
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_id.saturating_sub(1) as usize)
-    else {
+    let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Empire #{empire_id}");
     };
-    let controlled = player.controlled_empire_name_summary();
+    let controlled = player.empire_name.trim().to_string();
     if !controlled.is_empty() {
         return controlled;
     }
-    let legacy = player.legacy_status_name_summary();
+    let legacy = player.empire_name.trim().to_string();
     if !legacy.is_empty() {
         return legacy;
     }

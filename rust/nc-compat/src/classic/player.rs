@@ -1,6 +1,6 @@
-use crate::PLAYER_RECORD_SIZE;
-use crate::model::{DiplomaticRelation, Player, PlayerMode, RecordNumber};
-use crate::support::ParseError;
+use super::PLAYER_RECORD_SIZE;
+use nc_classic::ParseError;
+use nc_data::{DiplomaticRelation, Player, PlayerMode, RecordNumber};
 
 use super::{
     i32_at, padded_text, pascal_string, put_i32, put_padded_text, put_pascal_string, put_u16,

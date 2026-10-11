@@ -1,46 +1,48 @@
 use std::path::Path;
 
+use nc_compat::classic::IPBM_RECORD_SIZE;
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, IPBM_RECORD_SIZE};
+use nc_data::CoreGameData;
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, load_runtime_game_data, with_runtime_game_mut,
 };
 use crate::support::paths::display_repo_path;
 use crate::workspace::copy_init_files;
+use nc_compat::classic::serialize_ipbm_dat;
 
 pub(crate) fn print_ipbm_report(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_runtime_game_data(dir)?;
-    let ipbm_bytes = data.ipbm.to_bytes();
+    let ipbm_bytes = serialize_ipbm_dat(&data.ipbms);
 
     println!("IPBM Report");
     println!("  dir={}", dir.display());
     println!(
         "  player[1].ipbm_chain_head={}",
-        data.player.records[0].ipbm_chain_head_raw()
+        data.players[0].ipbms_first.0
     );
-    println!("  file_record_count={}", data.ipbm.records.len());
+    println!("  file_record_count={}", data.ipbms.len());
     println!("  file_size={}", ipbm_bytes.len());
     println!(
         "  expected_size_from_player1={}",
-        data.player.records[0].ipbm_chain_head_raw() as usize * IPBM_RECORD_SIZE
+        data.players[0].ipbms_first.0 as usize * IPBM_RECORD_SIZE
     );
 
-    for (idx, record) in data.ipbm.records.iter().enumerate() {
+    for (idx, record) in data.ipbms.iter().enumerate() {
         println!(
             "  record {}: primary={:#06x} owner={} gate={:#06x} follow_on={:#06x} sector={:?} target={:?} target_depth={}",
             idx + 1,
-            record.ipbm_number_raw(),
-            record.owner_empire_raw(),
-            record.next_ipbm_link_raw(),
-            record.record_number_raw(),
-            record.coords_raw(),
-            record.target_coords_raw(),
-            record.target_depth_raw()
+            record.ipbm_number,
+            record.owner.0,
+            record.next.0,
+            record.record.0,
+            record.sector.to_array(),
+            record.target.to_array(),
+            record.target_depth
         );
-        println!("    x_fraction={:02x?}", record.x_fraction().to_bytes());
-        println!("    y_fraction={:02x?}", record.y_fraction().to_bytes());
-        println!("    depth={:02x?}", record.depth().to_bytes());
+        println!("    x_fraction={:02x?}", record.x_fraction.to_bytes());
+        println!("    y_fraction={:02x?}", record.y_fraction.to_bytes());
+        println!("    depth={:02x?}", record.depth.to_bytes());
     }
 
     Ok(())
@@ -84,13 +86,13 @@ pub(crate) fn set_ipbm_record_prefix(
 
 pub(crate) fn validate_ipbm(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let data = load_classic_core_files(dir)?;
-    let ipbm_bytes = data.ipbm.to_bytes();
+    let ipbm_bytes = serialize_ipbm_dat(&data.ipbms);
 
-    let errors = data.ipbm_count_length_errors_current_known();
+    let errors = data.ipbm_count_errors_current_known();
 
     if errors.is_empty() {
         let expected_count = data.player1_ipbm_count_current_known();
-        let actual_count = data.ipbm.records.len();
+        let actual_count = data.ipbms.len();
         println!("Valid IPBM count/length state");
         println!("  player[1].ipbm_chain_head = {}", expected_count);
         println!("  IPBM.DAT size = {}", ipbm_bytes.len());
@@ -121,7 +123,7 @@ pub(crate) fn apply_ipbm_scenario(dir: &Path) -> Result<(), Box<dyn std::error::
 }
 
 pub(crate) fn validate_ipbm_data(data: &CoreGameData) -> Result<(), Box<dyn std::error::Error>> {
-    let errors = data.ipbm_count_length_errors_current_known();
+    let errors = data.ipbm_count_errors_current_known();
     if errors.is_empty() {
         Ok(())
     } else {

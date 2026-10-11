@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
+use nc_compat::classic::{ClassicFile, without_ignored_bytes};
 use nc_compat::{
     import_directory_snapshot_with_seed, load_classic_core_files, save_classic_core_files,
 };
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use nc_data::{CampaignStore, DEFAULT_CAMPAIGN_DB_NAME, DiplomaticRelation};
 use std::fs;
 use std::path::{Path, PathBuf};

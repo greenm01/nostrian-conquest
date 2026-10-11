@@ -157,11 +157,10 @@ pub fn draw_header(buf: &mut PlayfieldBuffer, app: &DashApp, layout: &DashboardL
     // Empire name centered.
     let empire_name = app
         .game_data
-        .player
-        .records
+        .players
         .get(app.player_record_index_1_based.saturating_sub(1))
         .map(|p| {
-            String::from_utf8_lossy(p.empire_name_bytes())
+            String::from_utf8_lossy(p.empire_name.as_bytes())
                 .trim_end_matches('\0')
                 .to_string()
         })
@@ -183,11 +182,10 @@ pub fn draw_header(buf: &mut PlayfieldBuffer, app: &DashApp, layout: &DashboardL
     // Right-justified stats.
     let player = app
         .game_data
-        .player
-        .records
+        .players
         .get(app.player_record_index_1_based.saturating_sub(1));
-    let year = app.game_data.conquest.game_year();
-    let tax = player.map(|p| p.tax_rate()).unwrap_or(0);
+    let year = app.game_data.conquest.game_year;
+    let tax = player.map(|p| p.tax_rate).unwrap_or(0);
     let right_str = format!("Y{year}                  Tax:{tax}% ");
     let right_col = (ox + fw).saturating_sub(right_str.len() + 1);
     write_strict_span(

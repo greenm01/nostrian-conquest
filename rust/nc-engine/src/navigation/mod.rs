@@ -6,7 +6,7 @@ mod route;
 
 use std::collections::{BTreeMap, HashSet};
 
-use nc_data::{CoreGameData, Order, PlanetIntelSnapshot};
+use nc_data::{Coords, CoreGameData, Order, PlanetIntelSnapshot};
 
 pub(crate) use geometry::{sector_distance_sq, visible_hazard_intel_is_empty};
 
@@ -96,8 +96,8 @@ pub(crate) fn plan_route_to_destination(
     destination: [u8; 2],
 ) -> Option<PlannedRoute> {
     let mut game_data = game_data.clone();
-    let fleet = game_data.fleets.records.get_mut(fleet_idx)?;
-    fleet.set_standing_order_kind(Order::MoveOnly);
-    fleet.set_standing_order_target_coords_raw(destination);
+    let fleet = game_data.fleets.get_mut(fleet_idx)?;
+    fleet.order = Order::MoveOnly;
+    fleet.target = Coords::from_array(destination);
     route::plan_route(&game_data, fleet_idx)
 }

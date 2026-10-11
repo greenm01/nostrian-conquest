@@ -1,40 +1,51 @@
 mod common;
 
 use common::*;
+use nc_compat::classic::{
+    IPBM_RECORD_SIZE, encode_base, encode_ipbm, encode_planet, encode_setup, parse_bases_dat,
+    parse_conquest_dat, parse_fleets_dat, parse_ipbm_dat, parse_planets_dat, parse_player_dat,
+    parse_setup_dat, serialize_ipbm_dat,
+};
 use nc_compat::load_classic_core_files;
 use nc_data::*;
+use nc_data::{
+    Coords, PlayerMode, ProductionItemKind, Real48, present_production_points, recompute_max_speed,
+    set_armies_aboard, set_empire_name, set_fleet_at_rest, set_login_reviewables_present,
+    set_mission_target, set_planet_name, set_player_handle, set_starbase_at_rest,
+    set_troop_transports, stardock_slot_kind, stored_production_points, troop_transports,
+};
 
 #[test]
 fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
-    let mut record = BaseRecord::new_zeroed();
-    record.set_escort_fleet_slot_raw(0x0001);
-    record.set_base_id_raw(0x0001);
-    record.set_owner_empire_raw(0x01);
-    record.set_next_base_link_raw(0x0000);
-    record.set_record_number_raw(0x0001);
-    record.set_previous_base_link_raw(0x0000);
-    record.set_coords_raw([0x10, 0x0D]);
-    record.set_at_rest_motion();
-    record.set_moving_flag_raw(0);
-    record.set_target_coords_raw([0x10, 0x0D]);
-    record.set_target_depth_raw(1);
+    let mut record = Starbase::default();
+    record.escort.0 = 0x0001;
+    record.base_id.0 = 0x0001;
+    record.owner.0 = 0x01;
+    record.next.0 = 0x0000;
+    record.record.0 = 0x0001;
+    record.prev.0 = 0x0000;
+    record.sector = Coords::new(0x10, 0x0D);
+    set_starbase_at_rest(&mut record);
+    record.moving = false;
+    record.target = Coords::new(0x10, 0x0D);
+    record.target_depth = 1;
 
-    assert_eq!(record.escort_fleet_slot_raw(), 0x0001);
-    assert_eq!(record.base_id_raw(), 0x0001);
-    assert_eq!(record.owner_empire_raw(), 0x01);
-    assert_eq!(record.next_base_link_raw(), 0x0000);
-    assert_eq!(record.record_number_raw(), 0x0001);
-    assert_eq!(record.previous_base_link_raw(), 0x0000);
-    assert_eq!(record.coords_raw(), [0x10, 0x0D]);
-    assert_eq!(record.x_fraction(), Real48::HALF);
-    assert_eq!(record.y_fraction(), Real48::HALF);
-    assert_eq!(record.depth(), Real48::ONE);
-    assert_eq!(record.moving_flag_raw(), 0);
-    assert_eq!(record.target_coords_raw(), [0x10, 0x0D]);
-    assert_eq!(record.target_depth_raw(), 1);
+    assert_eq!(record.escort.0, 0x0001);
+    assert_eq!(record.base_id.0, 0x0001);
+    assert_eq!(record.owner.0, 0x01);
+    assert_eq!(record.next.0, 0x0000);
+    assert_eq!(record.record.0, 0x0001);
+    assert_eq!(record.prev.0, 0x0000);
+    assert_eq!(record.sector.to_array(), [0x10, 0x0D]);
+    assert_eq!(record.x_fraction, Real48::HALF);
+    assert_eq!(record.y_fraction, Real48::HALF);
+    assert_eq!(record.depth, Real48::ONE);
+    assert!(!record.moving);
+    assert_eq!(record.target.to_array(), [0x10, 0x0D]);
+    assert_eq!(record.target_depth, 1);
 
     assert_eq!(
-        record.to_bytes(),
+        encode_base(&record),
         [
             0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x10, 0x0D, 0x80,
             0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x81, 0x00, 0x00,
@@ -45,25 +56,25 @@ fn base_record_setters_can_recreate_known_valid_guard_starbase_record() {
 
 #[test]
 fn guard_starbase_related_accessors_expose_linkage_words() {
-    let player = PlayerDat::parse(&read_fixture("PLAYER.DAT")).unwrap();
-    assert_eq!(player.records[0].fleet_chain_head_raw(), 1);
-    assert_eq!(player.records[0].ipbm_chain_head_raw(), 0);
+    let player = parse_player_dat(&read_fixture("PLAYER.DAT")).unwrap();
+    assert_eq!(player[0].fleets_first.0, 1);
+    assert_eq!(player[0].ipbms_first.0, 0);
 
     let fleet_bytes = read_ecmaint_starbase_pre_fixture("FLEETS.DAT");
-    let fleets = FleetDat::parse(&fleet_bytes).unwrap();
-    let fleet = &fleets.records[0];
-    assert_eq!(fleet.local_slot_word_raw(), 1);
-    assert_eq!(fleet.next_fleet_link_word_raw(), 2);
-    assert_eq!(fleet.fleet_id_word_raw(), 1);
-    assert_eq!(fleet.world_target_flag_raw(), 1);
-    assert_eq!(fleet.guard_starbase_index_raw(), 1);
+    let fleets = parse_fleets_dat(&fleet_bytes).unwrap();
+    let fleet = &fleets[0];
+    assert_eq!(fleet.fleet_number.0, 1);
+    assert_eq!(fleet.next.0, 2);
+    assert_eq!(fleet.record.0, 1);
+    assert_eq!(fleet.target_depth, 1);
+    assert_eq!(fleet.mission_target, 1);
 
     let base_bytes = read_ecmaint_starbase_pre_fixture("BASES.DAT");
-    let bases = BaseDat::parse(&base_bytes).unwrap();
-    let base = &bases.records[0];
-    assert_eq!(base.escort_fleet_slot_raw(), fleet.local_slot_word_raw());
-    assert_eq!(base.base_id_raw(), fleet.guard_starbase_index_raw());
-    assert_eq!(base.record_number_raw(), 1);
+    let bases = parse_bases_dat(&base_bytes).unwrap();
+    let base = &bases[0];
+    assert_eq!(base.escort.0, fleet.fleet_number.0);
+    assert_eq!(base.base_id.0, fleet.mission_target);
+    assert_eq!(base.record.0, 1);
 }
 
 #[test]
@@ -77,22 +88,18 @@ fn set_starbase_destination_writes_what_ecgame_move_writes() {
     data.set_starbase_destination(1, 1, [2, 12])
         .expect("owned starbase destination should update");
 
-    let base = &data.bases.records[0];
-    assert_eq!(base.coords_raw(), [16, 13]);
-    assert_eq!(base.target_coords_raw(), [2, 12]);
-    assert_eq!(base.moving_flag_raw(), 1);
-    assert_eq!(base.target_depth_raw(), 0, "no world of empire 1 at (2,12)");
+    let base = &data.bases[0];
+    assert_eq!(base.sector.to_array(), [16, 13]);
+    assert_eq!(base.target.to_array(), [2, 12]);
+    assert!(base.moving);
+    assert_eq!(base.target_depth, 0, "no world of empire 1 at (2,12)");
 
-    let home = data.planets.records[0].coords_raw();
-    assert_eq!(data.planets.records[0].owner_empire_slot_raw(), 1);
+    let home = data.planets[0].sector.to_array();
+    assert_eq!(data.planets[0].owner.0, 1);
     data.set_starbase_destination(1, 1, home)
         .expect("owned starbase destination should update");
-    assert_eq!(data.bases.records[0].target_coords_raw(), home);
-    assert_eq!(
-        data.bases.records[0].target_depth_raw(),
-        1,
-        "own world: orbit"
-    );
+    assert_eq!(data.bases[0].target.to_array(), home);
+    assert_eq!(data.bases[0].target_depth, 1, "own world: orbit");
 }
 
 #[test]
@@ -104,110 +111,105 @@ fn halt_starbase_writes_what_ecgame_halt_writes() {
         .expect("baseline should build");
     data.set_starbase_destination(1, 1, [2, 12]).unwrap();
     // Part way through the climb out of orbit.
-    data.bases.records[0].set_depth(Real48::from_bytes([0x80, 0x00, 0x00, 0x00, 0x00, 0x40]));
+    data.bases[0].depth = Real48::from_bytes([0x80, 0x00, 0x00, 0x00, 0x00, 0x40]);
 
     data.halt_starbase(1, 1)
         .expect("owned starbase halt should succeed");
 
-    let base = &data.bases.records[0];
-    assert_eq!(base.coords_raw(), [16, 13]);
-    assert_eq!(base.target_coords_raw(), [16, 13]);
-    assert_eq!(base.moving_flag_raw(), 0);
-    assert_eq!(base.target_depth_raw(), 1, "Round(0.75) = 1");
-    assert_eq!(
-        base.depth().to_bytes(),
-        [0x80, 0x00, 0x00, 0x00, 0x00, 0x40]
-    );
+    let base = &data.bases[0];
+    assert_eq!(base.sector.to_array(), [16, 13]);
+    assert_eq!(base.target.to_array(), [16, 13]);
+    assert!(!base.moving);
+    assert_eq!(base.target_depth, 1, "Round(0.75) = 1");
+    assert_eq!(base.depth.to_bytes(), [0x80, 0x00, 0x00, 0x00, 0x00, 0x40]);
 }
 
 #[test]
 fn fleet_owner_empire_accessor_round_trips() {
-    let mut record = FleetRecord::new_zeroed();
-    record.set_owner_empire_raw(0x03);
-    assert_eq!(record.owner_empire_raw(), 0x03);
+    let mut record = Fleet::default();
+    record.owner.0 = 0x03;
+    assert_eq!(record.owner.0, 0x03);
 }
 
 #[test]
 fn fleet_recompute_max_speed_uses_slowest_member() {
-    let mut record = FleetRecord::new_zeroed();
-    record.set_destroyer_count(10);
-    record.set_etac_count(1);
-    record.set_current_speed(6);
-    record.recompute_max_speed_from_composition();
-    assert_eq!(record.max_speed(), 3);
-    assert_eq!(record.current_speed(), 3);
+    let mut record = Fleet::default();
+    record.ships.destroyers = 10;
+    record.ships.etacs = 1;
+    record.speed = 6;
+    recompute_max_speed(&mut record);
+    assert_eq!(record.max_speed, 3);
+    assert_eq!(record.speed, 3);
 }
 
 #[test]
 fn player_fleet_chain_head_accessor_round_trips() {
-    let mut record = PlayerRecord::new_zeroed();
-    record.set_fleet_chain_head_raw(0x1234);
-    assert_eq!(record.fleet_chain_head_raw(), 0x1234);
+    let mut record = Player::default();
+    record.fleets_first.0 = 0x1234;
+    assert_eq!(record.fleets_first.0, 0x1234);
 }
 
 #[test]
 fn controlled_empire_name_setter_does_not_clobber_later_player_fields() {
-    let mut record = PlayerRecord::new_zeroed();
-    record.set_homeworld_planet_index_1_based_raw(7);
-    record.set_tax_rate_raw(50);
-    record.set_ipbm_chain_head_raw(3);
-    record.set_classic_messages_pending_flag_raw(1);
-    record.set_classic_reports_pending_flag_raw(1);
+    let mut record = Player {
+        homeworld: 7,
+        tax_rate: 50,
+        ..Player::default()
+    };
+    record.ipbms_first.0 = 3;
+    record.messages_first = 1;
+    record.messages_last = 1;
 
-    record.set_controlled_empire_name_raw("Codex Dominion");
+    set_empire_name(&mut record, "Codex Dominion");
 
-    assert_eq!(record.controlled_empire_name_summary(), "Codex Dominion");
-    assert_eq!(record.homeworld_planet_index_1_based_raw(), 7);
-    assert_eq!(record.tax_rate(), 50);
-    assert_eq!(record.ipbm_chain_head_raw(), 3);
-    assert_eq!(record.classic_messages_pending_flag_raw(), 1);
-    assert_eq!(record.classic_reports_pending_flag_raw(), 1);
+    assert_eq!(record.empire_name.trim().to_string(), "Codex Dominion");
+    assert_eq!(record.homeworld, 7);
+    assert_eq!(record.tax_rate, 50);
+    assert_eq!(record.ipbms_first.0, 3);
+    assert_eq!(record.messages_first, 1);
+    assert_eq!(record.messages_last, 1);
 }
 
 #[test]
 fn classic_login_reviewables_helper_mirrors_both_review_families() {
-    let mut record = PlayerRecord::new_zeroed();
+    let mut record = Player::default();
 
-    record.set_classic_login_reviewables_present(true);
-    assert_eq!(record.classic_message_review_word_raw(), 1);
-    assert_eq!(record.classic_message_review_carry_word_raw(), 0);
-    assert_eq!(record.classic_results_review_word_raw(), 1);
-    assert_eq!(record.classic_results_review_carry_word_raw(), 0);
-    assert!(record.has_classic_messages_review_state());
-    assert!(record.has_classic_results_review_state());
-    assert!(record.has_any_classic_review_state());
+    set_login_reviewables_present(&mut record, true);
+    assert_eq!(record.messages_first, 1);
+    assert_eq!((record.messages_first >> 16) as u16, 0);
+    assert_eq!(record.messages_last, 1);
+    assert_eq!((record.messages_last >> 16) as u16, 0);
+    assert!(record.messages_first != 0);
+    assert!(record.messages_last != 0);
+    assert!((record.messages_first != 0 || record.messages_last != 0));
 
-    record.set_classic_login_reviewables_present(false);
-    assert_eq!(record.classic_message_review_word_raw(), 0);
-    assert_eq!(record.classic_message_review_carry_word_raw(), 0);
-    assert_eq!(record.classic_results_review_word_raw(), 0);
-    assert_eq!(record.classic_results_review_carry_word_raw(), 0);
-    assert!(!record.has_any_classic_review_state());
+    set_login_reviewables_present(&mut record, false);
+    assert_eq!(record.messages_first, 0);
+    assert_eq!((record.messages_first >> 16) as u16, 0);
+    assert_eq!(record.messages_last, 0);
+    assert_eq!((record.messages_last >> 16) as u16, 0);
+    assert!(!(record.messages_first != 0 || record.messages_last != 0));
 }
 
 #[test]
 fn rename_owned_planet_updates_name_for_matching_owner() {
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_planet_name("Not Named Yet");
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    set_planet_name(&mut planet, "Not Named Yet");
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![PlayerRecord::new_zeroed()],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![Player::default()],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
-    data.player.records[0].set_owner_empire_raw(1);
+    data.players[0].mode = PlayerMode::Human;
 
     data.rename_owned_planet(1, 1, "New Horizon").unwrap();
-    assert_eq!(data.planets.records[0].planet_name(), "New Horizon");
+    assert_eq!(data.planets[0].name.clone(), "New Horizon");
 }
 
 #[test]
@@ -218,12 +220,11 @@ fn rename_owned_planet_rejects_non_printable_ascii_names() {
         .expect("baseline should build");
     let planet_record_index_1_based = data
         .planets
-        .records
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
-    let before = data.planets.records[planet_record_index_1_based - 1].planet_name();
+    let before = data.planets[planet_record_index_1_based - 1].name.clone();
 
     for name in [
         "\u{1F600}\u{1F600}\u{1F600}\u{1F600}",
@@ -244,22 +245,22 @@ fn rename_owned_planet_rejects_non_printable_ascii_names() {
         );
     }
     assert_eq!(
-        data.planets.records[planet_record_index_1_based - 1].planet_name(),
+        data.planets[planet_record_index_1_based - 1].name.clone(),
         before
     );
 }
 
 #[test]
 fn set_planet_name_stores_classic_text_up_to_twenty_chars() {
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_planet_name("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
-    assert_eq!(planet.planet_name(), "????");
+    let mut planet = Planet::default();
+    set_planet_name(&mut planet, "\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.name.clone(), "????");
 
-    planet.set_planet_name("Fourteen Chars");
-    assert_eq!(planet.planet_name(), "Fourteen Chars");
+    set_planet_name(&mut planet, "Fourteen Chars");
+    assert_eq!(planet.name.clone(), "Fourteen Chars");
 
-    planet.set_planet_name("Twenty-one characters");
-    assert_eq!(planet.planet_name(), "Twenty-one character");
+    set_planet_name(&mut planet, "Twenty-one characters");
+    assert_eq!(planet.name.clone(), "Twenty-one character");
 }
 
 #[test]
@@ -269,14 +270,14 @@ fn join_player_normalizes_zero_tax_slots_to_seeded_opening_tax_rate() {
         .build_joinable_new_game_baseline()
         .expect("joinable baseline should build");
 
-    data.player.records[0].set_tax_rate_raw(0);
-    data.planets.records[0].set_stored_production_points(0);
+    data.players[0].tax_rate = 0;
+    data.planets[0].stored_goods = Real48::ZERO;
 
     data.join_player(1, "Codex Dominion")
         .expect("join player should succeed");
 
-    assert_eq!(data.player.records[0].tax_rate(), 50);
-    assert_eq!(data.planets.records[0].stored_production_points(), 50);
+    assert_eq!(data.players[0].tax_rate, 50);
+    assert_eq!(stored_production_points(&data.planets[0]), 50);
 }
 
 #[test]
@@ -302,10 +303,10 @@ fn join_player_rejects_civil_disorder_seat_that_was_already_used() {
         .build_joinable_new_game_baseline()
         .expect("joinable baseline should build");
 
-    data.player.records[0].set_last_run_year_raw(3004);
-    data.planets.records[0].set_owner_empire_slot_raw(0);
-    data.planets.records[0].set_ownership_status_raw(0);
-    data.player.records[0].set_planet_count_raw(0);
+    data.players[0].last_year_on = 3004;
+    data.planets[0].owner.0 = 0;
+    data.planets[0].years_under_owner = 0;
+    data.players[0].planet_count = 0;
 
     assert!(!data.player_slot_is_open_for_first_join(1));
     assert_eq!(
@@ -334,34 +335,34 @@ fn join_player_rejects_non_printable_ascii_empire_names() {
 
 #[test]
 fn classic_text_setters_store_question_marks_for_other_characters() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_controlled_empire_name_raw("\u{C6}gir Dominion");
-    assert_eq!(player.controlled_empire_name_summary(), "?gir Dominion");
-    player.set_assigned_player_handle_raw("Bj\u{F6}rn\u{1F600}");
-    assert_eq!(player.assigned_player_handle_summary(), "Bj?rn?");
+    let mut player = Player::default();
+    set_empire_name(&mut player, "\u{C6}gir Dominion");
+    assert_eq!(player.empire_name.trim().to_string(), "?gir Dominion");
+    set_player_handle(&mut player, "Bj\u{F6}rn\u{1F600}");
+    assert_eq!(player.handle.trim().to_string(), "Bj?rn?");
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_status_or_name_summary_raw("\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
-    assert_eq!(planet.planet_name(), "????");
+    let mut planet = Planet::default();
+    set_planet_name(&mut planet, "\u{1F600}\u{1F600}\u{1F600}\u{1F600}");
+    assert_eq!(planet.name.clone(), "????");
 }
 
 #[test]
 fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
-    let mut planet = PlanetRecord::new_zeroed();
+    let mut planet = Planet::default();
 
-    planet.set_stardock_count_raw(0, 1);
-    planet.set_stardock_count_raw(3, 258);
-    planet.set_stardock_count(6, 70_000);
+    planet.stardock.destroyers = 1;
+    planet.stardock.scouts = 258;
+    planet.stardock.starbases = 70_000;
 
-    assert_eq!(planet.stardock_count_raw(0), 1);
-    assert_eq!(planet.stardock_count_raw(3), 258);
-    assert_eq!(planet.stardock_count(6), 70_000);
-    assert_eq!(planet.stardock_kind_raw(0), 1);
-    assert_eq!(planet.stardock_kind_raw(1), 0);
-    assert_eq!(planet.stardock_kind_raw(3), 4);
-    assert_eq!(planet.stardock_kind_raw(6), 9);
+    assert_eq!(planet.stardock.destroyers, 1);
+    assert_eq!(planet.stardock.scouts, 258);
+    assert_eq!(planet.stardock.starbases, 70_000);
+    assert_eq!(stardock_slot_kind(&planet, 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(&planet, 1).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&planet, 3).to_raw(), 4);
+    assert_eq!(stardock_slot_kind(&planet, 6).to_raw(), 9);
 
-    let bytes = planet.to_bytes();
+    let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x38..0x3C], [1, 0, 0, 0]);
     assert_eq!(bytes[0x44..0x48], [2, 1, 0, 0]);
     assert_eq!(bytes[0x50..0x54], 70_000u32.to_le_bytes());
@@ -369,26 +370,24 @@ fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
 
 #[test]
 fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(0, 2);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.destroyers = 2;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 0).unwrap();
@@ -398,42 +397,40 @@ fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
             fleet_record_index_1_based: 1
         }
     );
-    assert_eq!(data.planets.records[0].stardock_kind_raw(0), 0);
-    assert_eq!(data.planets.records[0].stardock_count_raw(0), 0);
-    assert_eq!(data.player.records[0].fleet_chain_head_raw(), 1);
-    assert_eq!(data.fleets.records.len(), 1);
-    let fleet = &data.fleets.records[0];
-    assert_eq!(fleet.owner_empire_raw(), 1);
-    assert_eq!(fleet.fleet_id_word_raw(), 1);
-    assert_eq!(fleet.local_slot(), 1);
-    assert_eq!(fleet.destroyer_count(), 2);
-    assert_eq!(fleet.current_location_coords_raw(), [6, 5]);
-    assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(fleet.rules_of_engagement(), 6);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 0).to_raw(), 0);
+    assert_eq!(data.planets[0].stardock.destroyers, 0);
+    assert_eq!(data.players[0].fleets_first.0, 1);
+    assert_eq!(data.fleets.len(), 1);
+    let fleet = &data.fleets[0];
+    assert_eq!(fleet.owner.0, 1);
+    assert_eq!(fleet.record.0, 1);
+    assert_eq!(fleet.fleet_number.0, 1);
+    assert_eq!(fleet.ships.destroyers, 2);
+    assert_eq!(fleet.sector.to_array(), [6, 5]);
+    assert_eq!(fleet.order, Order::HoldPosition);
+    assert_eq!(fleet.rules_of_engagement, 6);
 }
 
 #[test]
 fn commission_support_only_fleet_starts_at_roe_zero() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(3, 2);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.scouts = 2;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 3).unwrap();
@@ -443,131 +440,123 @@ fn commission_support_only_fleet_starts_at_roe_zero() {
             fleet_record_index_1_based: 1
         }
     );
-    let fleet = &data.fleets.records[0];
-    assert_eq!(fleet.scout_count(), 2);
-    assert_eq!(fleet.rules_of_engagement(), 0);
+    let fleet = &data.fleets[0];
+    assert_eq!(fleet.ships.scouts, 2);
+    assert_eq!(fleet.rules_of_engagement, 0);
 }
 
 #[test]
 fn append_planet_build_order_still_uses_all_ten_queue_slots() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
     for slot in 0..9 {
-        planet.set_build_count_raw(slot, 1);
-        planet.set_build_kind_raw(slot, 1);
+        planet.build_queue[slot].points_owed = 1;
+        planet.build_queue[slot].kind = ProductionItemKind::Destroyer;
     }
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.append_planet_build_order(1, 15, 4).unwrap();
 
-    assert_eq!(data.planets.records[0].build_count_raw(9), 15);
-    assert_eq!(data.planets.records[0].build_kind_raw(9), 4);
+    assert_eq!(data.planets[0].build_queue[9].points_owed, 15);
+    assert_eq!(data.planets[0].build_queue[9].kind.to_raw(), 4);
 }
 
 #[test]
 fn append_planet_build_order_merges_into_matching_kind_before_using_empty_slot() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_build_count_raw(0, 10);
-    planet.set_build_kind_raw(0, 1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.build_queue[0].points_owed = 10;
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.append_planet_build_order(1, 15, 1).unwrap();
 
-    assert_eq!(data.planets.records[0].build_count_raw(0), 25);
-    assert_eq!(data.planets.records[0].build_kind_raw(0), 1);
-    assert!((1..10).all(|slot| data.planets.records[0].build_count_raw(slot) == 0));
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 25);
+    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 1);
+    assert!((1..10).all(|slot| data.planets[0].build_queue[slot].points_owed == 0));
 }
 
 #[test]
 fn append_planet_build_order_spills_same_kind_across_records_without_truncation() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_build_count_raw(0, 250);
-    planet.set_build_kind_raw(0, 1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.build_queue[0].points_owed = 250;
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.append_planet_build_order(1, 20, 1).unwrap();
 
-    assert_eq!(data.planets.records[0].build_count_raw(0), u8::MAX);
-    assert_eq!(data.planets.records[0].build_kind_raw(0), 1);
-    assert_eq!(data.planets.records[0].build_count_raw(1), 15);
-    assert_eq!(data.planets.records[0].build_kind_raw(1), 1);
+    assert_eq!(data.planets[0].build_queue[0].points_owed, u8::MAX);
+    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 1);
+    assert_eq!(data.planets[0].build_queue[1].points_owed, 15);
+    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 1);
 }
 
 #[test]
 fn append_planet_build_order_does_not_partially_write_when_capacity_is_exhausted() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
     for slot in 0..10 {
-        planet.set_build_count_raw(slot, u8::MAX);
-        planet.set_build_kind_raw(slot, 1);
+        planet.build_queue[slot].points_owed = u8::MAX;
+        planet.build_queue[slot].kind = ProductionItemKind::Destroyer;
     }
 
     let original = planet.clone();
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let error = data.append_planet_build_order(1, 2, 8).unwrap_err();
@@ -576,29 +565,27 @@ fn append_planet_build_order_does_not_partially_write_when_capacity_is_exhausted
         error,
         GameStateMutationError::PlanetBuildQueueFull { index_1_based: 1 }
     );
-    assert_eq!(data.planets.records[0], original);
+    assert_eq!(data.planets[0], original);
 }
 
 #[test]
 fn append_planet_build_order_rejects_non_multiple_ship_points() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let error = data.append_planet_build_order(1, 14, 4).unwrap_err();
@@ -616,74 +603,68 @@ fn append_planet_build_order_rejects_non_multiple_ship_points() {
 
 #[test]
 fn append_planet_build_order_spills_starbases_one_per_queue_slot() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.append_planet_build_order(1, 150, 9).unwrap();
 
-    assert_eq!(data.planets.records[0].build_count_raw(0), 50);
-    assert_eq!(data.planets.records[0].build_kind_raw(0), 9);
-    assert_eq!(data.planets.records[0].build_count_raw(1), 50);
-    assert_eq!(data.planets.records[0].build_kind_raw(1), 9);
-    assert_eq!(data.planets.records[0].build_count_raw(2), 50);
-    assert_eq!(data.planets.records[0].build_kind_raw(2), 9);
-    assert!((3..10).all(|slot| data.planets.records[0].build_count_raw(slot) == 0));
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 50);
+    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 9);
+    assert_eq!(data.planets[0].build_queue[1].points_owed, 50);
+    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 9);
+    assert_eq!(data.planets[0].build_queue[2].points_owed, 50);
+    assert_eq!(data.planets[0].build_queue[2].kind.to_raw(), 9);
+    assert!((3..10).all(|slot| data.planets[0].build_queue[slot].points_owed == 0));
 }
 
 #[test]
 fn commission_ship_reuses_lowest_available_owned_fleet_number() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(0, 1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.destroyers = 1;
 
-    let mut fleet_a = FleetRecord::new_zeroed();
-    fleet_a.set_owner_empire_raw(1);
-    fleet_a.set_fleet_id_word_raw(1);
-    fleet_a.set_local_slot_word_raw(1);
-    fleet_a.set_next_fleet_link_word_raw(2);
+    let mut fleet_a = Fleet::default();
+    fleet_a.owner.0 = 1;
+    fleet_a.record.0 = 1;
+    fleet_a.fleet_number.0 = 1;
+    fleet_a.next.0 = 2;
 
-    let mut fleet_b = FleetRecord::new_zeroed();
-    fleet_b.set_owner_empire_raw(1);
-    fleet_b.set_fleet_id_word_raw(2);
-    fleet_b.set_local_slot_word_raw(3);
-    fleet_b.set_previous_fleet_id(1);
+    let mut fleet_b = Fleet::default();
+    fleet_b.owner.0 = 1;
+    fleet_b.record.0 = 2;
+    fleet_b.fleet_number.0 = 3;
+    fleet_b.prev.0 = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat {
-            records: vec![fleet_a, fleet_b],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![fleet_a, fleet_b],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     // ECGAME appends fleet #2 as record 3 (id 3), then sorts the chain by
@@ -696,44 +677,42 @@ fn commission_ship_reuses_lowest_available_owned_fleet_number() {
             fleet_record_index_1_based: 2
         }
     );
-    assert_eq!(data.player.records[0].fleet_chain_head_raw(), 1);
-    assert_eq!(data.fleets.records[0].next_fleet_link_word_raw(), 2);
-    let fleet = &data.fleets.records[1];
-    assert_eq!(fleet.local_slot_word_raw(), 2);
-    assert_eq!(fleet.destroyer_count(), 1);
-    assert_eq!(fleet.fleet_id_word_raw(), 2);
-    assert_eq!(fleet.previous_fleet_id(), 1);
-    assert_eq!(fleet.next_fleet_link_word_raw(), 3);
-    let moved = &data.fleets.records[2];
-    assert_eq!(moved.local_slot_word_raw(), 3);
-    assert_eq!(moved.fleet_id_word_raw(), 3);
-    assert_eq!(moved.previous_fleet_id(), 2);
-    assert_eq!(moved.next_fleet_link_word_raw(), 0);
+    assert_eq!(data.players[0].fleets_first.0, 1);
+    assert_eq!(data.fleets[0].next.0, 2);
+    let fleet = &data.fleets[1];
+    assert_eq!(fleet.fleet_number.0, 2);
+    assert_eq!(fleet.ships.destroyers, 1);
+    assert_eq!(fleet.record.0, 2);
+    assert_eq!(fleet.prev.0, 1);
+    assert_eq!(fleet.next.0, 3);
+    let moved = &data.fleets[2];
+    assert_eq!(moved.fleet_number.0, 3);
+    assert_eq!(moved.record.0, 3);
+    assert_eq!(moved.prev.0, 2);
+    assert_eq!(moved.next.0, 0);
 }
 
 #[test]
 fn commission_ship_draft_can_split_selected_stardock_rows() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(0, 5);
-    planet.set_stardock_count_raw(2, 3);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.destroyers = 5;
+    planet.stardock.battleships = 3;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data
@@ -754,36 +733,34 @@ fn commission_ship_draft_can_split_selected_stardock_rows() {
             fleet_record_index_1_based: 1
         }
     );
-    assert_eq!(data.planets.records[0].stardock_count_raw(0), 3);
-    assert_eq!(data.planets.records[0].stardock_count_raw(2), 2);
-    let fleet = &data.fleets.records[0];
-    assert_eq!(fleet.destroyer_count(), 2);
-    assert_eq!(fleet.battleship_count(), 1);
-    assert_eq!(fleet.current_location_coords_raw(), [6, 5]);
+    assert_eq!(data.planets[0].stardock.destroyers, 3);
+    assert_eq!(data.planets[0].stardock.battleships, 2);
+    let fleet = &data.fleets[0];
+    assert_eq!(fleet.ships.destroyers, 2);
+    assert_eq!(fleet.ships.battleships, 1);
+    assert_eq!(fleet.sector.to_array(), [6, 5]);
 }
 
 #[test]
 fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(6, 1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.starbases = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 6).unwrap();
@@ -793,18 +770,18 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
             base_record_index_1_based: 1
         }
     );
-    assert_eq!(data.planets.records[0].stardock_kind_raw(6), 0);
-    assert_eq!(data.planets.records[0].stardock_count_raw(6), 0);
-    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.bases.records.len(), 1);
-    let base = &data.bases.records[0];
-    assert_eq!(base.base_id_raw(), 1);
-    assert_eq!(base.coords_raw(), [6, 5]);
-    assert_eq!(base.owner_empire_raw(), 1);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 6).to_raw(), 0);
+    assert_eq!(data.planets[0].stardock.starbases, 0);
+    assert_eq!(data.players[0].bases_first.0, 1);
+    assert_eq!(data.bases.len(), 1);
+    let base = &data.bases[0];
+    assert_eq!(base.base_id.0, 1);
+    assert_eq!(base.sector.to_array(), [6, 5]);
+    assert_eq!(base.owner.0, 1);
     // A new base as ECMAINT 2000:6642 creates one: no escort, at rest in
     // orbit, target = its own sector.
     assert_eq!(
-        base.to_bytes(),
+        encode_base(base),
         [
             0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 6, 5, 0x80, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0x81,
             0, 0, 0, 0, 0, 0, 6, 5, 1,
@@ -812,40 +789,38 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     );
 
     // A second base takes the next id and joins the end of the chain.
-    data.planets.records[0].set_stardock_count_raw(6, 1);
+    data.planets[0].stardock.starbases = 1;
     data.commission_planet_stardock_slot(1, 1, 6).unwrap();
-    let [first, second] = &data.bases.records[..] else {
+    let [first, second] = &data.bases[..] else {
         panic!("expected two bases");
     };
-    assert_eq!(first.next_base_link_raw(), 2);
-    assert_eq!(second.base_id_raw(), 2);
-    assert_eq!(second.record_number_raw(), 2);
-    assert_eq!(second.previous_base_link_raw(), 1);
-    assert_eq!(second.next_base_link_raw(), 0);
+    assert_eq!(first.next.0, 2);
+    assert_eq!(second.base_id.0, 2);
+    assert_eq!(second.record.0, 2);
+    assert_eq!(second.prev.0, 1);
+    assert_eq!(second.next.0, 0);
 }
 
 #[test]
 fn commission_rejects_foreign_owned_planet() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(2);
-    planet.set_coords_raw([6, 5]);
-    planet.set_stardock_count_raw(0, 2);
+    let mut planet = Planet::default();
+    planet.owner.0 = 2;
+    planet.sector = Coords::new(6, 5);
+    planet.stardock.destroyers = 2;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let err = data.commission_planet_stardock_slot(1, 1, 0).unwrap_err();
@@ -860,41 +835,39 @@ fn commission_rejects_foreign_owned_planet() {
 
 #[test]
 fn auto_commission_all_stardock_units_creates_fleets_and_bases() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet_one = PlanetRecord::new_zeroed();
-    planet_one.set_owner_empire_slot_raw(1);
-    planet_one.set_planet_name("Aurora Prime");
-    planet_one.set_coords_raw([6, 5]);
-    planet_one.set_stardock_count_raw(0, 2);
-    planet_one.set_stardock_count_raw(3, 3);
-    planet_one.set_stardock_count_raw(6, 1);
+    let mut planet_one = Planet::default();
+    planet_one.owner.0 = 1;
+    set_planet_name(&mut planet_one, "Aurora Prime");
+    planet_one.sector = Coords::new(6, 5);
+    planet_one.stardock.destroyers = 2;
+    planet_one.stardock.scouts = 3;
+    planet_one.stardock.starbases = 1;
 
-    let mut planet_two = PlanetRecord::new_zeroed();
-    planet_two.set_owner_empire_slot_raw(1);
-    planet_two.set_planet_name("Bastion Reach");
-    planet_two.set_coords_raw([7, 6]);
-    planet_two.set_stardock_count_raw(1, 1);
+    let mut planet_two = Planet::default();
+    planet_two.owner.0 = 1;
+    set_planet_name(&mut planet_two, "Bastion Reach");
+    planet_two.sector = Coords::new(7, 6);
+    planet_two.stardock.cruisers = 1;
 
-    let mut planet_three = PlanetRecord::new_zeroed();
-    planet_three.set_owner_empire_slot_raw(1);
-    planet_three.set_planet_name("Signal Keep");
-    planet_three.set_coords_raw([8, 7]);
-    planet_three.set_stardock_count_raw(6, 1);
+    let mut planet_three = Planet::default();
+    planet_three.owner.0 = 1;
+    set_planet_name(&mut planet_three, "Signal Keep");
+    planet_three.sector = Coords::new(8, 7);
+    planet_three.stardock.starbases = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet_one, planet_two, planet_three],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet_one, planet_two, planet_three],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let report = data.auto_commission_all_stardock_units(1).unwrap();
@@ -941,129 +914,117 @@ fn auto_commission_all_stardock_units_creates_fleets_and_bases() {
             ],
         }
     );
-    assert_eq!(data.fleets.records.len(), 2);
-    assert_eq!(data.planets.records[0].stardock_kind_raw(0), 0);
-    assert_eq!(data.planets.records[0].stardock_kind_raw(1), 0);
-    assert_eq!(data.planets.records[0].stardock_kind_raw(2), 0);
-    assert_eq!(data.planets.records[0].stardock_count_raw(2), 0);
-    assert_eq!(data.planets.records[1].stardock_kind_raw(0), 0);
-    assert_eq!(data.planets.records[2].stardock_kind_raw(0), 0);
-    assert_eq!(data.planets.records[2].stardock_count_raw(0), 0);
-    assert_eq!(data.bases.records.len(), 2);
+    assert_eq!(data.fleets.len(), 2);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 0).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 1).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 2).to_raw(), 0);
+    assert_eq!(data.planets[0].stardock.battleships, 0);
+    assert_eq!(stardock_slot_kind(&data.planets[1], 0).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[2], 0).to_raw(), 0);
+    assert_eq!(data.planets[2].stardock.destroyers, 0);
+    assert_eq!(data.bases.len(), 2);
 }
 
 #[test]
 fn load_planet_armies_onto_fleet_moves_armies_into_transports() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_army_count_raw(10);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.armies = 10;
 
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.set_owner_empire_raw(1);
-    fleet.set_current_location_coords_raw([6, 5]);
-    fleet.set_troop_transport_count(4);
-    fleet.set_army_count(1);
+    let mut fleet = Fleet::default();
+    fleet.owner.0 = 1;
+    fleet.sector = Coords::new(6, 5);
+    set_troop_transports(&mut fleet, 4);
+    set_armies_aboard(&mut fleet, 1);
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat {
-            records: vec![fleet],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![fleet],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.load_planet_armies_onto_fleet(1, 1, 1, 3).unwrap();
-    assert_eq!(data.planets.records[0].army_count_raw(), 7);
-    assert_eq!(data.fleets.records[0].army_count(), 4);
+    assert_eq!(data.planets[0].armies, 7);
+    assert_eq!(data.fleets[0].ships.loaded_transports, 4);
     // Each loaded army moves one transport from 0x2c (empty) to 0x2e (loaded).
-    assert_eq!(data.fleets.records[0].empty_transport_count(), 0);
-    assert_eq!(data.fleets.records[0].loaded_transport_count(), 4);
-    assert_eq!(data.fleets.records[0].troop_transport_count(), 4);
+    assert_eq!(data.fleets[0].ships.empty_transports, 0);
+    assert_eq!(data.fleets[0].ships.loaded_transports, 4);
+    assert_eq!(troop_transports(&data.fleets[0]), 4);
 }
 
 #[test]
 fn unload_fleet_armies_to_planet_moves_armies_back_to_planet() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_army_count_raw(4);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.armies = 4;
 
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.set_owner_empire_raw(1);
-    fleet.set_current_location_coords_raw([6, 5]);
-    fleet.set_troop_transport_count(4);
-    fleet.set_army_count(3);
+    let mut fleet = Fleet::default();
+    fleet.owner.0 = 1;
+    fleet.sector = Coords::new(6, 5);
+    set_troop_transports(&mut fleet, 4);
+    set_armies_aboard(&mut fleet, 3);
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat {
-            records: vec![fleet],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![fleet],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.unload_fleet_armies_to_planet(1, 1, 1, 2).unwrap();
-    assert_eq!(data.planets.records[0].army_count_raw(), 6);
-    assert_eq!(data.fleets.records[0].army_count(), 1);
+    assert_eq!(data.planets[0].armies, 6);
+    assert_eq!(data.fleets[0].ships.loaded_transports, 1);
     // Each unloaded army moves one transport from 0x2e back to 0x2c.
-    assert_eq!(data.fleets.records[0].empty_transport_count(), 3);
-    assert_eq!(data.fleets.records[0].loaded_transport_count(), 1);
-    assert_eq!(data.fleets.records[0].troop_transport_count(), 4);
+    assert_eq!(data.fleets[0].ships.empty_transports, 3);
+    assert_eq!(data.fleets[0].ships.loaded_transports, 1);
+    assert_eq!(troop_transports(&data.fleets[0]), 4);
 }
 
 #[test]
 fn unload_fleet_armies_to_planet_rejects_planet_overflow() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([6, 5]);
-    planet.set_army_count_raw(255);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(6, 5);
+    planet.armies = 255;
 
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.set_owner_empire_raw(1);
-    fleet.set_current_location_coords_raw([6, 5]);
-    fleet.set_troop_transport_count(4);
-    fleet.set_army_count(3);
+    let mut fleet = Fleet::default();
+    fleet.owner.0 = 1;
+    fleet.sector = Coords::new(6, 5);
+    set_troop_transports(&mut fleet, 4);
+    set_armies_aboard(&mut fleet, 3);
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat {
-            records: vec![fleet],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![fleet],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let err = data.unload_fleet_armies_to_planet(1, 1, 1, 1).unwrap_err();
@@ -1079,34 +1040,38 @@ fn unload_fleet_armies_to_planet_rejects_planet_overflow() {
 
 #[test]
 fn ipbm_record_setters_round_trip_chain_fields() {
-    let mut record = IpbmRecord::new_zeroed();
-    record.set_ipbm_number_raw(0x1234);
-    record.set_owner_empire_raw(0x02);
-    record.set_next_ipbm_link_raw(0x4567);
-    record.set_record_number_raw(0x89ab);
+    let mut record = Ipbm {
+        ipbm_number: 0x1234,
+        ..Ipbm::default()
+    };
+    record.owner.0 = 0x02;
+    record.next.0 = 0x4567;
+    record.record.0 = 0x89ab;
 
-    assert_eq!(record.ipbm_number_raw(), 0x1234);
-    assert_eq!(record.owner_empire_raw(), 0x02);
-    assert_eq!(record.next_ipbm_link_raw(), 0x4567);
-    assert_eq!(record.record_number_raw(), 0x89ab);
-    let bytes = record.to_bytes();
+    assert_eq!(record.ipbm_number, 0x1234);
+    assert_eq!(record.owner.0, 0x02);
+    assert_eq!(record.next.0, 0x4567);
+    assert_eq!(record.record.0, 0x89ab);
+    let bytes = encode_ipbm(&record);
     assert_eq!(&bytes[..7], &[0x34, 0x12, 0x02, 0x67, 0x45, 0xab, 0x89]);
 }
 
 #[test]
 fn ipbm_record_setters_round_trip_position_and_target() {
-    let mut record = IpbmRecord::new_zeroed();
-    record.set_coords_raw([0x11, 0x22]);
-    record.set_x_fraction(Real48::from_bytes([1, 2, 3, 4, 5, 6]));
-    record.set_y_fraction(Real48::from_bytes([7, 8, 9, 10, 11, 12]));
-    record.set_depth(Real48::from_bytes([13, 14, 15, 16, 17, 18]));
-    record.set_target_coords_raw([0xAA, 0xBB]);
-    record.set_target_depth_raw(0xCC);
+    let record = Ipbm {
+        sector: Coords::new(0x11, 0x22),
+        x_fraction: Real48::from_bytes([1, 2, 3, 4, 5, 6]),
+        y_fraction: Real48::from_bytes([7, 8, 9, 10, 11, 12]),
+        depth: Real48::from_bytes([13, 14, 15, 16, 17, 18]),
+        target: Coords::new(0xAA, 0xBB),
+        target_depth: 0xCC,
+        ..Ipbm::default()
+    };
 
-    assert_eq!(record.coords_raw(), [0x11, 0x22]);
-    assert_eq!(record.target_coords_raw(), [0xAA, 0xBB]);
-    assert_eq!(record.target_depth_raw(), 0xCC);
-    let bytes = record.to_bytes();
+    assert_eq!(record.sector.to_array(), [0x11, 0x22]);
+    assert_eq!(record.target.to_array(), [0xAA, 0xBB]);
+    assert_eq!(record.target_depth, 0xCC);
+    let bytes = encode_ipbm(&record);
     assert_eq!(&bytes[0x09..0x0B], &[0x11, 0x22]);
     assert_eq!(&bytes[0x0B..0x11], &[1, 2, 3, 4, 5, 6]);
     assert_eq!(&bytes[0x11..0x17], &[7, 8, 9, 10, 11, 12]);
@@ -1116,100 +1081,89 @@ fn ipbm_record_setters_round_trip_position_and_target() {
 
 #[test]
 fn can_set_maintenance_schedule_from_enabled_days() {
-    let mut post_maint = ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
-    post_maint.set_maintenance_schedule_enabled([true, false, true, false, true, false, true]);
+    let mut post_maint = parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap();
+    post_maint.maintenance_days.0 = [true, false, true, false, true, false, true];
     // ECUTIL writes 0 or 1; ECMAINT tests only for nonzero.
     assert_eq!(
-        post_maint.maintenance_schedule_bytes(),
+        post_maint.maintenance_days.0.map(u8::from),
         [0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01]
     );
     assert_eq!(
-        post_maint.maintenance_schedule_enabled(),
+        post_maint.maintenance_days.0,
         [true, false, true, false, true, false, true]
     );
 }
 
 #[test]
 fn can_toggle_snoop_enabled() {
-    let mut setup = SetupDat::parse(&read_fixture("SETUP.DAT")).unwrap();
-    assert!(setup.snoop_enabled());
-    setup.set_snoop_enabled(false);
-    assert!(!setup.snoop_enabled());
-    assert_eq!(setup.to_bytes()[512], 0);
+    let mut setup = parse_setup_dat(&read_fixture("SETUP.DAT")).unwrap();
+    assert!(setup.snoop);
+    setup.snoop = false;
+    assert!(!setup.snoop);
+    assert_eq!(encode_setup(&setup)[512], 0);
 }
 
 #[test]
 fn can_set_other_setup_program_fields() {
-    let mut setup = SetupDat::parse(&read_fixture("SETUP.DAT")).unwrap();
-    assert!(setup.set_com_hardware_flow_control_enabled(0, false));
-    assert!(setup.set_com_hardware_flow_control_enabled(1, false));
-    assert!(setup.set_com_hardware_flow_control_enabled(2, false));
-    assert!(setup.set_com_hardware_flow_control_enabled(3, false));
-    setup.set_max_time_between_keys_minutes_raw(15);
-    setup.set_remote_timeout_enabled(false);
-    setup.set_local_timeout_enabled(true);
-    setup.set_minimum_time_granted_minutes_raw(69);
-    setup.set_purge_after_turns_raw(10);
-    setup.set_autopilot_inactive_turns_raw(3);
+    let mut setup = parse_setup_dat(&read_fixture("SETUP.DAT")).unwrap();
+    setup.com_hw_flow_control = [false; 4];
+    setup.max_key_gap_minutes = 15;
+    setup.remote_timeout = false;
+    setup.local_timeout = true;
+    setup.minimum_time_minutes = 69;
+    setup.purge_after_turns = 10;
+    setup.autopilot_after_turns = 3;
 
-    assert_eq!(setup.max_time_between_keys_minutes_raw(), 15);
-    assert!(!setup.remote_timeout_enabled());
-    assert!(setup.local_timeout_enabled());
-    assert_eq!(setup.minimum_time_granted_minutes_raw(), 69);
-    assert_eq!(setup.purge_after_turns_raw(), 10);
-    assert_eq!(setup.autopilot_inactive_turns_raw(), 3);
-    assert_eq!(setup.com_hardware_flow_control_enabled(0), Some(false));
-    assert_eq!(setup.com_hardware_flow_control_enabled(1), Some(false));
-    assert_eq!(setup.com_hardware_flow_control_enabled(2), Some(false));
-    assert_eq!(setup.com_hardware_flow_control_enabled(3), Some(false));
+    assert_eq!(setup.max_key_gap_minutes, 15);
+    assert!(!setup.remote_timeout);
+    assert!(setup.local_timeout);
+    assert_eq!(setup.minimum_time_minutes, 69);
+    assert_eq!(setup.purge_after_turns, 10);
+    assert_eq!(setup.autopilot_after_turns, 3);
+    assert_eq!(setup.com_hw_flow_control.first().copied(), Some(false));
+    assert_eq!(setup.com_hw_flow_control.get(1).copied(), Some(false));
+    assert_eq!(setup.com_hw_flow_control.get(2).copied(), Some(false));
+    assert_eq!(setup.com_hw_flow_control.get(3).copied(), Some(false));
 }
 
 #[test]
 fn can_set_purge_after_turns_raw() {
-    let mut setup = SetupDat::parse(&read_fixture("SETUP.DAT")).unwrap();
-    assert_eq!(setup.purge_after_turns_raw(), 0);
-    setup.set_purge_after_turns_raw(1);
-    assert_eq!(setup.purge_after_turns_raw(), 1);
-    assert_eq!(setup.to_bytes()[518], 1);
+    let mut setup = parse_setup_dat(&read_fixture("SETUP.DAT")).unwrap();
+    assert_eq!(setup.purge_after_turns, 0);
+    setup.purge_after_turns = 1;
+    assert_eq!(setup.purge_after_turns, 1);
+    assert_eq!(encode_setup(&setup)[518], 1);
 }
 
 #[test]
 fn planet_status_prefix_setter_stores_the_name() {
-    let mut record = PlanetRecord::new_zeroed();
-    record.set_status_or_name_prefix_raw("Unowned");
+    let mut record = Planet::default();
+    set_planet_name(&mut record, "Unowned");
 
-    assert_eq!(record.string_len(), 7);
-    assert_eq!(record.status_or_name_summary(), "Unowned");
-    assert_eq!(&record.to_bytes()[0x0F..0x17], b"\x07Unowned");
+    assert_eq!(record.name.chars().count() as u8, 7);
+    assert_eq!(record.name.trim().to_string(), "Unowned");
+    assert_eq!(&encode_planet(&record)[0x0F..0x17], b"\x07Unowned");
 }
 
 #[test]
 fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
-    let mut base1 = BaseRecord::new_zeroed();
-    base1.set_owner_empire_raw(1);
-    base1.set_base_id_raw(1);
-    let mut base2 = BaseRecord::new_zeroed();
-    base2.set_owner_empire_raw(1);
-    base2.set_base_id_raw(2);
-    let mut base3 = BaseRecord::new_zeroed();
-    base3.set_owner_empire_raw(2);
-    base3.set_base_id_raw(1);
+    let mut base1 = Starbase::default();
+    base1.owner.0 = 1;
+    base1.base_id.0 = 1;
+    let mut base2 = Starbase::default();
+    base2.owner.0 = 1;
+    base2.base_id.0 = 2;
+    let mut base3 = Starbase::default();
+    base3.owner.0 = 2;
+    base3.base_id.0 = 1;
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat {
-            records: vec![base1, base2, base3],
-        },
-        ipbm: IpbmDat {
-            records: vec![
-                IpbmRecord::new_zeroed(),
-                IpbmRecord::new_zeroed(),
-                IpbmRecord::new_zeroed(),
-            ],
-        },
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: vec![base1, base2, base3],
+        ipbms: vec![Ipbm::default(), Ipbm::default(), Ipbm::default()],
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
     assert_eq!(data.player1_starbase_count_current_known(), 0);
     assert_eq!(
@@ -1242,28 +1196,19 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
             .contains(&"IPBM.DAT expected empty auxiliary baseline, got 3 records".to_string())
     );
 
-    let player2_starbase_before = data.player.records[1].first_base_record_raw();
-    let player3_starbase_before = data.player.records[2].first_base_record_raw();
-    let player4_starbase_before = data.player.records[3].first_base_record_raw();
+    let player2_starbase_before = data.players[1].bases_first.0;
+    let player3_starbase_before = data.players[2].bases_first.0;
+    let player4_starbase_before = data.players[3].bases_first.0;
     data.sync_player1_current_known_counts();
 
     // Player 1's chain now runs from record 1 (Starbase 1) to record 2.
-    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.bases.records[0].next_base_link_raw(), 2);
-    assert_eq!(data.bases.records[1].previous_base_link_raw(), 1);
-    assert_eq!(
-        data.player.records[1].first_base_record_raw(),
-        player2_starbase_before
-    );
-    assert_eq!(
-        data.player.records[2].first_base_record_raw(),
-        player3_starbase_before
-    );
-    assert_eq!(
-        data.player.records[3].first_base_record_raw(),
-        player4_starbase_before
-    );
-    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 3);
+    assert_eq!(data.players[0].bases_first.0, 1);
+    assert_eq!(data.bases[0].next.0, 2);
+    assert_eq!(data.bases[1].prev.0, 1);
+    assert_eq!(data.players[1].bases_first.0, player2_starbase_before);
+    assert_eq!(data.players[2].bases_first.0, player3_starbase_before);
+    assert_eq!(data.players[3].bases_first.0, player4_starbase_before);
+    assert_eq!(data.players[0].ipbms_first.0, 3);
     assert_eq!(data.player1_starbase_count_current_known(), 2);
     assert_eq!(
         data.player_owned_planet_counts_current_known(),
@@ -1288,13 +1233,13 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
 #[test]
 fn core_game_data_initialized_fleet_block_helpers_match_known_fixtures() {
     let data = CoreGameData {
-        player: PlayerDat::parse(&read_initialized_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_initialized_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_initialized_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_initialized_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_initialized_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_initialized_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_initialized_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_initialized_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_initialized_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_initialized_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_initialized_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_initialized_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_initialized_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_initialized_fixture("CONQUEST.DAT")).unwrap(),
     };
 
     assert!(data.looks_like_initialized_fleet_blocks_current_known());
@@ -1339,16 +1284,16 @@ fn core_game_data_initialized_fleet_block_helpers_match_known_fixtures() {
 #[test]
 fn core_game_data_initialized_fleet_block_errors_catch_broken_local_chain() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[1].set_next_fleet_link_word_raw(9);
+    data.fleets[1].next.0 = 9;
 
     assert_eq!(
         data.current_known_initialized_fleet_block_errors(),
@@ -1359,16 +1304,16 @@ fn core_game_data_initialized_fleet_block_errors_catch_broken_local_chain() {
 #[test]
 fn core_game_data_initialized_fleet_payload_errors_catch_broken_slot_pattern() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[2].set_max_speed(3);
+    data.fleets[2].max_speed = 3;
 
     assert_eq!(
         data.current_known_initialized_fleet_payload_errors(),
@@ -1379,16 +1324,16 @@ fn core_game_data_initialized_fleet_payload_errors_catch_broken_slot_pattern() {
 #[test]
 fn core_game_data_initialized_fleet_payload_errors_catch_missing_tuple_markers() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[0].set_x_fraction(Real48::ZERO);
+    data.fleets[0].x_fraction = Real48::ZERO;
 
     assert_eq!(
         data.current_known_initialized_fleet_payload_errors(),
@@ -1399,16 +1344,16 @@ fn core_game_data_initialized_fleet_payload_errors_catch_missing_tuple_markers()
 #[test]
 fn core_game_data_initialized_fleet_mission_errors_catch_wrong_order_code() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[0].set_standing_order_kind(crate::Order::GuardStarbase);
+    data.fleets[0].order = crate::Order::GuardStarbase;
 
     assert_eq!(
         data.current_known_initialized_fleet_mission_errors(),
@@ -1419,16 +1364,16 @@ fn core_game_data_initialized_fleet_mission_errors_catch_wrong_order_code() {
 #[test]
 fn core_game_data_initialized_fleet_mission_errors_catch_wrong_aux_bytes() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records[0].set_mission_aux_bytes([0, 1]);
+    set_mission_target(&mut data.fleets[0], 0, 1);
 
     assert_eq!(
         data.current_known_initialized_fleet_mission_errors(),
@@ -1441,20 +1386,18 @@ fn core_game_data_initialized_fleet_mission_errors_catch_wrong_aux_bytes() {
 #[test]
 fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat {
-            records: vec![BaseRecord::new_zeroed()],
-        },
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: vec![Starbase::default()],
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].set_owner_empire_slot_raw(9);
-    data.bases.records[0].set_base_id_raw(1);
-    data.bases.records[0].set_owner_empire_raw(0);
+    data.planets[0].owner.0 = 9;
+    data.bases[0].base_id.0 = 1;
+    data.bases[0].owner.0 = 0;
 
     assert_eq!(
         data.current_known_planet_owner_slot_errors(),
@@ -1465,24 +1408,24 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
         vec!["BASES[1].owner_empire expected 1..=4, got 0".to_string()]
     );
 
-    data.bases.records[0].set_base_id_raw(0);
+    data.bases[0].base_id.0 = 0;
     assert!(data.current_known_base_owner_empire_errors().is_empty());
 }
 
 #[test]
 fn core_game_data_homeworld_alignment_errors_catch_misaligned_fleet_block() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    let [_, target_y] = data.fleets.records[4].standing_order_target_coords_raw();
-    data.fleets.records[4].set_standing_order_target_coords_raw([9, target_y]);
+    let [_, target_y] = data.fleets[4].target.to_array();
+    data.fleets[4].target = Coords::new(9, target_y);
 
     assert_eq!(
         data.current_known_initialized_homeworld_alignment_errors(),
@@ -1493,16 +1436,16 @@ fn core_game_data_homeworld_alignment_errors_catch_misaligned_fleet_block() {
 #[test]
 fn core_game_data_initialized_planet_ownership_errors_catch_non_homeworld_owner() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].set_owner_empire_slot_raw(2);
+    data.planets[0].owner.0 = 2;
 
     assert_eq!(
         data.current_known_initialized_planet_ownership_errors(),
@@ -1516,16 +1459,16 @@ fn core_game_data_initialized_planet_ownership_errors_catch_non_homeworld_owner(
 #[test]
 fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].set_ground_batteries_raw(1);
+    data.planets[14].ground_batteries = 1;
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1536,16 +1479,16 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
 #[test]
 fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].set_stored_goods(34.75);
+    data.planets[14].stored_goods = Real48::from_f64(34.75);
 
     assert_eq!(
         data.current_known_homeworld_seed_payload_errors(),
@@ -1556,16 +1499,16 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
 #[test]
 fn core_game_data_unowned_planet_payload_errors_catch_owned_marker() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].set_ground_batteries_raw(1);
+    data.planets[0].ground_batteries = 1;
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
@@ -1576,16 +1519,16 @@ fn core_game_data_unowned_planet_payload_errors_catch_owned_marker() {
 #[test]
 fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[0].set_stored_goods(1.0);
+    data.planets[0].stored_goods = Real48::from_f64(1.0);
 
     assert_eq!(
         data.current_known_unowned_planet_payload_errors(),
@@ -1596,16 +1539,16 @@ fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
 #[test]
 fn core_game_data_empty_auxiliary_state_errors_catch_starbase_record() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.bases.records.push(BaseRecord::new_zeroed());
+    data.bases.push(Starbase::default());
 
     assert_eq!(
         data.current_known_empty_auxiliary_state_errors(),
@@ -1616,16 +1559,16 @@ fn core_game_data_empty_auxiliary_state_errors_catch_starbase_record() {
 #[test]
 fn core_game_data_setup_baseline_errors_catch_changed_timeout_flag() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.setup.set_remote_timeout_enabled(false);
+    data.setup.remote_timeout = false;
 
     assert_eq!(
         data.current_known_setup_baseline_errors(),
@@ -1636,16 +1579,16 @@ fn core_game_data_setup_baseline_errors_catch_changed_timeout_flag() {
 #[test]
 fn core_game_data_conquest_baseline_errors_catch_changed_year() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.conquest.set_game_year(2999);
+    data.conquest.game_year = 2999;
 
     assert_eq!(
         data.current_known_conquest_baseline_errors(),
@@ -1655,35 +1598,31 @@ fn core_game_data_conquest_baseline_errors_catch_changed_year() {
 
 #[test]
 fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutated_fields() {
-    let mut base1 = BaseRecord::new_zeroed();
-    base1.set_owner_empire_raw(1);
-    base1.set_base_id_raw(1);
+    let mut base1 = Starbase::default();
+    base1.owner.0 = 1;
+    base1.base_id.0 = 1;
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat {
-            records: vec![base1],
-        },
-        ipbm: IpbmDat {
-            records: vec![IpbmRecord::new_zeroed()],
-        },
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: vec![base1],
+        ipbms: vec![Ipbm::default()],
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.player.records[0].set_first_base_record_raw(9);
-    data.player.records[0].set_ipbm_chain_head_raw(9);
-    data.setup.set_version_tag(b"BAD!!");
-    data.setup.set_remote_timeout_enabled(false);
-    data.conquest.set_game_year(2999);
-    data.conquest.set_player_count(9);
-    data.conquest.set_maintenance_schedule_enabled([false; 7]);
+    data.players[0].bases_first.0 = 9;
+    data.players[0].ipbms_first.0 = 9;
+    data.setup.version_tag = *b"BAD!!";
+    data.setup.remote_timeout = false;
+    data.conquest.game_year = 2999;
+    data.conquest.player_count = 9;
+    data.conquest.maintenance_days.0 = [false; 7];
 
     data.sync_current_known_baseline_controls_and_counts();
 
-    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 1);
+    assert_eq!(data.players[0].bases_first.0, 1);
+    assert_eq!(data.players[0].ipbms_first.0, 1);
     assert!(data.current_known_setup_baseline_errors().is_empty());
     assert!(data.current_known_conquest_baseline_errors().is_empty());
 }
@@ -1691,17 +1630,17 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
 #[test]
 fn core_game_data_sync_current_known_initialized_fleet_baseline_repairs_mutated_fleets() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.fleets.records.clear();
-    data.fleets.records.push(FleetRecord::new_zeroed());
+    data.fleets.clear();
+    data.fleets.push(Fleet::default());
 
     data.sync_current_known_initialized_fleet_baseline();
 
@@ -1723,18 +1662,18 @@ fn core_game_data_sync_current_known_initialized_fleet_baseline_repairs_mutated_
 #[test]
 fn core_game_data_sync_current_known_initialized_planet_payloads_repairs_mutated_planets() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.planets.records[14].set_stored_goods(3.0);
-    data.planets.records[0].set_status_or_name_summary_raw("Broken");
-    data.planets.records[0].set_army_count_raw(9);
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
+    set_planet_name(&mut data.planets[0], "Broken");
+    data.planets[0].armies = 9;
 
     data.sync_current_known_initialized_planet_payloads();
 
@@ -1751,24 +1690,24 @@ fn core_game_data_sync_current_known_initialized_planet_payloads_repairs_mutated
 #[test]
 fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_combined_state() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    data.player.records[0].set_first_base_record_raw(7);
-    data.player.records[0].set_ipbm_chain_head_raw(4);
-    data.setup.set_version_tag(b"BAD!!");
-    data.bases.records.push(BaseRecord::new_zeroed());
-    data.ipbm.records.push(IpbmRecord::new_zeroed());
-    data.fleets.records.clear();
-    data.fleets.records.push(FleetRecord::new_zeroed());
-    data.planets.records[14].set_stored_goods(3.0);
-    data.planets.records[0].set_status_or_name_summary_raw("Broken");
+    data.players[0].bases_first.0 = 7;
+    data.players[0].ipbms_first.0 = 4;
+    data.setup.version_tag = *b"BAD!!";
+    data.bases.push(Starbase::default());
+    data.ipbms.push(Ipbm::default());
+    data.fleets.clear();
+    data.fleets.push(Fleet::default());
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
+    set_planet_name(&mut data.planets[0], "Broken");
 
     data.sync_current_known_initialized_post_maint_baseline();
 
@@ -1804,87 +1743,87 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
 #[test]
 fn core_game_data_can_apply_current_known_scenario_mutations() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
     let aux = data
         .set_fleet_order(1, 0x03, 0x0C, [0x0F, 0x0D], None, None)
         .unwrap();
-    assert_eq!(data.fleets.records[0].current_speed(), 0x03);
-    assert_eq!(data.fleets.records[0].standing_order_code_raw(), 0x0C);
+    assert_eq!(data.fleets[0].speed, 0x03);
+    assert_eq!(data.fleets[0].order.to_raw(), 0x0C);
+    assert_eq!(data.fleets[0].target.to_array(), [0x0F, 0x0D]);
     assert_eq!(
-        data.fleets.records[0].standing_order_target_coords_raw(),
-        [0x0F, 0x0D]
+        aux,
+        [
+            data.fleets[0].target_depth,
+            data.fleets[0].mission_target as u8
+        ]
     );
-    assert_eq!(aux, data.fleets.records[0].mission_aux_bytes());
 
     data.set_planet_build(15, 0x03, 0x01).unwrap();
-    assert_eq!(data.planets.records[14].build_count_raw(0), 0x03);
-    assert_eq!(data.planets.records[14].build_kind_raw(0), 0x01);
+    assert_eq!(data.planets[14].build_queue[0].points_owed, 0x03);
+    assert_eq!(data.planets[14].build_queue[0].kind.to_raw(), 0x01);
 
     data.clear_planet_build_queue(15).unwrap();
-    assert!((0..10).all(|slot| data.planets.records[14].build_count_raw(slot) == 0));
-    assert!((0..10).all(|slot| data.planets.records[14].build_kind_raw(slot) == 0));
+    assert!((0..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
+    assert!((0..10).all(|slot| data.planets[14].build_queue[slot].kind.to_raw() == 0));
 
     data.replace_planet_build_queue_with_single_order(15, 0x05, 0x08)
         .unwrap();
-    assert_eq!(data.planets.records[14].build_count_raw(0), 0x05);
-    assert_eq!(data.planets.records[14].build_kind_raw(0), 0x08);
-    assert!((1..10).all(|slot| data.planets.records[14].build_count_raw(slot) == 0));
-    assert!((1..10).all(|slot| data.planets.records[14].build_kind_raw(slot) == 0));
+    assert_eq!(data.planets[14].build_queue[0].points_owed, 0x05);
+    assert_eq!(data.planets[14].build_queue[0].kind.to_raw(), 0x08);
+    assert!((1..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
+    assert!((1..10).all(|slot| data.planets[14].build_queue[slot].kind.to_raw() == 0));
 
     data.set_guard_starbase(1, 1, [0x10, 0x0D], 1, 1).unwrap();
-    assert_eq!(data.player.records[0].first_base_record_raw(), 1);
-    assert_eq!(data.fleets.records[0].standing_order_code_raw(), 0x04);
+    assert_eq!(data.players[0].bases_first.0, 1);
+    assert_eq!(data.fleets[0].order.to_raw(), 0x04);
+    assert_eq!(data.fleets[0].target.to_array(), [0x10, 0x0D]);
     assert_eq!(
-        data.fleets.records[0].standing_order_target_coords_raw(),
-        [0x10, 0x0D]
+        [
+            data.fleets[0].target_depth,
+            data.fleets[0].mission_target as u8
+        ],
+        [0x01, 0x01]
     );
-    assert_eq!(data.fleets.records[0].mission_aux_bytes(), [0x01, 0x01]);
-    assert_eq!(data.bases.records.len(), 1);
-    assert_eq!(
-        data.bases.records[0].escort_fleet_slot_raw(),
-        data.fleets.records[0].local_slot_word_raw()
-    );
-    assert_eq!(
-        data.bases.records[0].record_number_raw(),
-        data.fleets.records[0].fleet_id_word_raw()
-    );
-    assert_eq!(data.bases.records[0].coords_raw(), [0x10, 0x0D]);
+    assert_eq!(data.bases.len(), 1);
+    assert_eq!(data.bases[0].escort.0, data.fleets[0].fleet_number.0);
+    assert_eq!(data.bases[0].record.0, data.fleets[0].record.0);
+    assert_eq!(data.bases[0].sector.to_array(), [0x10, 0x0D]);
 
     data.set_ipbm_zero_records(2);
-    assert_eq!(data.player.records[0].ipbm_chain_head_raw(), 2);
-    assert_eq!(data.ipbm.records.len(), 2);
-    assert_eq!(data.ipbm.to_bytes().len(), 2 * IPBM_RECORD_SIZE);
+    assert_eq!(data.players[0].ipbms_first.0, 2);
+    assert_eq!(data.ipbms.len(), 2);
+    assert_eq!(serialize_ipbm_dat(&data.ipbms).len(), 2 * IPBM_RECORD_SIZE);
 
     data.set_ipbm_record_prefix(2, 0x1234, 0x02, 0x4567, 0x89ab)
         .unwrap();
-    let ipbm = &data.ipbm.records[1];
-    assert_eq!(ipbm.ipbm_number_raw(), 0x1234);
-    assert_eq!(ipbm.owner_empire_raw(), 0x02);
-    assert_eq!(ipbm.next_ipbm_link_raw(), 0x4567);
-    assert_eq!(ipbm.record_number_raw(), 0x89ab);
+    let ipbm = &data.ipbms[1];
+    assert_eq!(ipbm.ipbm_number, 0x1234);
+    assert_eq!(ipbm.owner.0, 0x02);
+    assert_eq!(ipbm.next.0, 0x4567);
+    assert_eq!(ipbm.record.0, 0x89ab);
 }
 
 #[test]
 fn set_fleet_order_rejects_speed_above_current_maximum() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    let max_speed = data.fleets.records[0].max_speed();
+    let max_speed = data.fleets[0].max_speed;
     let error = data
         .set_fleet_order(
             1,
@@ -1914,15 +1853,14 @@ fn set_fleet_order_rejects_duplicate_friendly_colonize_target() {
         .expect("baseline should build");
     let target = data
         .planets
-        .records
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() == 0)
-        .map(|planet| planet.coords_raw())
+        .find(|planet| planet.owner.0 == 0)
+        .map(|planet| planet.sector.to_array())
         .expect("baseline should have an unowned planet");
-    let first_speed = data.fleets.records[0].current_speed();
-    let second_speed = data.fleets.records[1].current_speed();
-    data.fleets.records[0].set_etac_count(1);
-    data.fleets.records[1].set_etac_count(1);
+    let first_speed = data.fleets[0].speed;
+    let second_speed = data.fleets[1].speed;
+    data.fleets[0].ships.etacs = 1;
+    data.fleets[1].ships.etacs = 1;
 
     data.set_fleet_order(
         1,
@@ -1964,26 +1902,26 @@ fn configure_on_station_hostile_order_state() -> (CoreGameData, [u8; 2]) {
         .build_initialized_baseline()
         .expect("baseline should build");
     let target = [25, 25];
-    let target_world = &mut data.planets.records[4];
-    target_world.set_coords_raw(target);
-    target_world.set_owner_empire_slot_raw(2);
-    target_world.set_ownership_status_raw(2);
-    target_world.set_planet_name("Target");
-    target_world.set_army_count_raw(10);
-    target_world.set_ground_batteries_raw(4);
+    let target_world = &mut data.planets[4];
+    target_world.sector = Coords::from_array(target);
+    target_world.owner.0 = 2;
+    target_world.years_under_owner = 2;
+    set_planet_name(target_world, "Target");
+    target_world.armies = 10;
+    target_world.ground_batteries = 4;
 
-    let fleet = &mut data.fleets.records[0];
-    fleet.set_current_location_coords_raw(target);
-    fleet.set_battleship_count(1);
-    fleet.set_cruiser_count(0);
-    fleet.set_destroyer_count(1);
-    fleet.set_troop_transport_count(2);
-    fleet.set_army_count(6);
-    fleet.set_scout_count(0);
-    fleet.set_etac_count(0);
-    fleet.recompute_max_speed_from_composition();
-    fleet.set_current_speed(fleet.max_speed());
-    fleet.set_depth(Real48::ONE);
+    let fleet = &mut data.fleets[0];
+    fleet.sector = Coords::from_array(target);
+    fleet.ships.battleships = 1;
+    fleet.ships.cruisers = 0;
+    fleet.ships.destroyers = 1;
+    set_troop_transports(fleet, 2);
+    set_armies_aboard(fleet, 6);
+    fleet.ships.scouts = 0;
+    fleet.ships.etacs = 0;
+    recompute_max_speed(fleet);
+    fleet.speed = fleet.max_speed;
+    fleet.depth = Real48::ONE;
 
     (data, target)
 }
@@ -1995,7 +1933,7 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
 
         data.set_fleet_order(
             1,
-            data.fleets.records[0].max_speed(),
+            data.fleets[0].max_speed,
             order.to_raw(),
             target,
             None,
@@ -2003,15 +1941,15 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
         )
         .expect("hostile order should be accepted");
 
-        let fleet = &data.fleets.records[0];
-        assert_eq!(fleet.standing_order_kind(), order);
-        assert_eq!(fleet.standing_order_target_coords_raw(), target);
-        assert_eq!(fleet.current_location_coords_raw(), target);
+        let fleet = &data.fleets[0];
+        assert_eq!(fleet.order, order);
+        assert_eq!(fleet.target.to_array(), target);
+        assert_eq!(fleet.sector.to_array(), target);
         // Like ECGAME, the order keeps the fleet's stored motion: at rest in
         // orbit, so its strike test passes on the next maintenance's first tick.
-        assert_eq!(fleet.current_speed(), fleet.max_speed());
+        assert_eq!(fleet.speed, fleet.max_speed);
         assert_eq!(
-            fleet.depth(),
+            fleet.depth,
             Real48::ONE,
             "{order:?} keeps its at-rest depth"
         );
@@ -2021,58 +1959,58 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
 #[test]
 fn scorch_planet_surface_clears_economy_queue_and_stardock_immediately() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    let planet = &mut data.planets.records[14];
-    let _ = planet.set_present_production_points(42);
-    planet.set_potential_production_points(77);
-    planet.set_stored_production_points(1234);
-    planet.set_build_count_raw(0, 5);
-    planet.set_build_kind_raw(0, 3);
-    planet.set_stardock_count_raw(4, 2);
-    planet.set_army_count_raw(9);
-    planet.set_ground_batteries_raw(4);
+    let planet = &mut data.planets[14];
+    planet.production = Real48::from_f64(42.0);
+    planet.potential_production = 77;
+    planet.stored_goods = Real48::from_f64(1234.0);
+    planet.build_queue[0].points_owed = 5;
+    planet.build_queue[0].kind = ProductionItemKind::Battleship;
+    planet.stardock.transports = 2;
+    planet.armies = 9;
+    planet.ground_batteries = 4;
 
     data.scorch_planet_surface(15).unwrap();
 
-    let planet = &data.planets.records[14];
-    assert_eq!(planet.present_production_points(), Some(0));
-    assert_eq!(planet.potential_production_points(), 0);
-    assert_eq!(planet.stored_production_points(), 0);
-    assert!((0..10).all(|slot| planet.build_count_raw(slot) == 0));
-    assert!((0..10).all(|slot| planet.build_kind_raw(slot) == 0));
-    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| planet.stardock_count_raw(slot) == 0));
-    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| planet.stardock_kind_raw(slot) == 0));
-    assert_eq!(planet.army_count_raw(), 9);
-    assert_eq!(planet.ground_batteries_raw(), 4);
+    let planet = &data.planets[14];
+    assert_eq!(present_production_points(planet), 0);
+    assert_eq!(u16::from(planet.potential_production), 0);
+    assert_eq!(stored_production_points(planet), 0);
+    assert!((0..10).all(|slot| planet.build_queue[slot].points_owed == 0));
+    assert!((0..10).all(|slot| planet.build_queue[slot].kind.to_raw() == 0));
+    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| planet.stardock[slot] == 0));
+    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| stardock_slot_kind(planet, slot).to_raw() == 0));
+    assert_eq!(planet.armies, 9);
+    assert_eq!(planet.ground_batteries, 4);
 }
 
 #[test]
 fn set_fleet_rules_of_engagement_rejects_non_combat_value() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
-    let fleet = &mut data.fleets.records[0];
-    fleet.set_destroyer_count(0);
-    fleet.set_cruiser_count(0);
-    fleet.set_battleship_count(0);
-    fleet.set_scout_count(1);
-    fleet.set_troop_transport_count(0);
-    fleet.set_army_count(0);
-    fleet.set_etac_count(0);
+    let fleet = &mut data.fleets[0];
+    fleet.ships.destroyers = 0;
+    fleet.ships.cruisers = 0;
+    fleet.ships.battleships = 0;
+    fleet.ships.scouts = 1;
+    set_troop_transports(fleet, 0);
+    set_armies_aboard(fleet, 0);
+    fleet.ships.etacs = 0;
 
     let error = data.set_fleet_rules_of_engagement(1, 1, 6).unwrap_err();
     assert_eq!(
@@ -2087,38 +2025,38 @@ fn set_fleet_rules_of_engagement_rejects_non_combat_value() {
 #[test]
 fn set_fleet_rules_of_engagement_allows_mixed_fleet_value() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
-    let fleet = &mut data.fleets.records[0];
-    fleet.set_destroyer_count(1);
-    fleet.set_cruiser_count(0);
-    fleet.set_battleship_count(0);
-    fleet.set_scout_count(1);
-    fleet.set_troop_transport_count(0);
-    fleet.set_army_count(0);
-    fleet.set_etac_count(0);
+    let fleet = &mut data.fleets[0];
+    fleet.ships.destroyers = 1;
+    fleet.ships.cruisers = 0;
+    fleet.ships.battleships = 0;
+    fleet.ships.scouts = 1;
+    set_troop_transports(fleet, 0);
+    set_armies_aboard(fleet, 0);
+    fleet.ships.etacs = 0;
 
     data.set_fleet_rules_of_engagement(1, 1, 6).unwrap();
 
-    assert_eq!(data.fleets.records[0].rules_of_engagement(), 6);
+    assert_eq!(data.fleets[0].rules_of_engagement, 6);
 }
 
 #[test]
 fn set_stored_diplomatic_relation_rejects_self_target() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
     let error = data
@@ -2136,34 +2074,34 @@ fn set_stored_diplomatic_relation_rejects_self_target() {
 #[test]
 fn clear_planet_build_orders_by_kind_removes_matching_slots_only() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
-    let planet = &mut data.planets.records[0];
-    planet.set_build_count_raw(0, 4);
-    planet.set_build_kind_raw(0, 1);
-    planet.set_build_count_raw(1, 7);
-    planet.set_build_kind_raw(1, 1);
-    planet.set_build_count_raw(2, 5);
-    planet.set_build_kind_raw(2, 7);
+    let planet = &mut data.planets[0];
+    planet.build_queue[0].points_owed = 4;
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
+    planet.build_queue[1].points_owed = 7;
+    planet.build_queue[1].kind = ProductionItemKind::Destroyer;
+    planet.build_queue[2].points_owed = 5;
+    planet.build_queue[2].kind = ProductionItemKind::GroundBattery;
 
     let cleared = data
         .clear_planet_build_orders_by_kind(1, ProductionItemKind::Destroyer)
         .unwrap();
 
     assert_eq!(cleared, 2);
-    assert_eq!(data.planets.records[0].build_count_raw(0), 0);
-    assert_eq!(data.planets.records[0].build_kind_raw(0), 0);
-    assert_eq!(data.planets.records[0].build_count_raw(1), 0);
-    assert_eq!(data.planets.records[0].build_kind_raw(1), 0);
-    assert_eq!(data.planets.records[0].build_count_raw(2), 5);
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 0);
+    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 0);
+    assert_eq!(data.planets[0].build_queue[1].points_owed, 0);
+    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 0);
+    assert_eq!(data.planets[0].build_queue[2].points_owed, 5);
     assert_eq!(
-        ProductionItemKind::from_raw(data.planets.records[0].build_kind_raw(2)),
+        ProductionItemKind::from_raw(data.planets[0].build_queue[2].kind.to_raw()),
         ProductionItemKind::GroundBattery
     );
 }
@@ -2171,67 +2109,57 @@ fn clear_planet_build_orders_by_kind_removes_matching_slots_only() {
 #[test]
 fn set_join_fleet_order_targets_host_fleet_and_records_host_id() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    let host_coords = data.fleets.records[0].current_location_coords_raw();
-    let host_fleet_id = data.fleets.records[0].fleet_id_word_raw();
+    let host_coords = data.fleets[0].sector.to_array();
+    let host_fleet_id = data.fleets[0].record.0;
 
     data.set_join_fleet_order(1, 2, 1).unwrap();
 
-    assert_eq!(
-        data.fleets.records[1].standing_order_kind(),
-        crate::Order::JoinAnotherFleet
-    );
-    assert_eq!(
-        data.fleets.records[1].standing_order_target_coords_raw(),
-        host_coords
-    );
-    assert_eq!(
-        data.fleets.records[1].join_host_fleet_id_raw(),
-        host_fleet_id
-    );
+    assert_eq!(data.fleets[1].order, crate::Order::JoinAnotherFleet);
+    assert_eq!(data.fleets[1].target.to_array(), host_coords);
+    assert_eq!(data.fleets[1].mission_target, host_fleet_id);
 }
 
 #[test]
 fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
     data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
-    let base = data.bases.records[0].clone();
-    let host_id = data.fleets.records[0].fleet_id() as u8;
-    let owner = data.fleets.records[1].owner_empire_raw();
+    let base = data.bases[0].clone();
+    let host_id = data.fleets[0].record.0 as u8;
+    let owner = data.fleets[1].owner.0;
     let planet_coords = |predicate: &dyn Fn(u8) -> bool| {
         data.planets
-            .records
             .iter()
-            .find(|planet| predicate(planet.owner_empire_slot_raw()))
-            .map(|planet| planet.coords_raw())
+            .find(|planet| predicate(planet.owner.0))
+            .map(|planet| planet.sector.to_array())
             .expect("fixture planet")
     };
     let owned = planet_coords(&|planet_owner| planet_owner == owner);
     let foreign = planet_coords(&|planet_owner| planet_owner != 0 && planet_owner != owner);
     let sector = [1, 1];
     {
-        let fleet = &mut data.fleets.records[1];
-        fleet.set_scout_count(1);
-        fleet.set_destroyer_count(1);
-        fleet.set_troop_transport_count(1);
-        fleet.set_army_count(1);
-        fleet.set_etac_count(1);
+        let fleet = &mut data.fleets[1];
+        fleet.ships.scouts = 1;
+        fleet.ships.destroyers = 1;
+        set_troop_transports(fleet, 1);
+        set_armies_aboard(fleet, 1);
+        fleet.ships.etacs = 1;
     }
 
     let cases = [
@@ -2241,9 +2169,9 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
         (Order::PatrolSector, sector, None, [0, 0]),
         (
             Order::GuardStarbase,
-            base.coords_raw(),
-            Some(base.base_id_raw() as u8),
-            [1, base.base_id_raw() as u8],
+            base.sector.to_array(),
+            Some(base.base_id.0 as u8),
+            [1, base.base_id.0 as u8],
         ),
         (Order::GuardBlockadeWorld, owned, None, [1, 0]),
         (Order::BombardWorld, foreign, None, [1, 0]),
@@ -2259,13 +2187,16 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
     ];
     assert_eq!(cases.len(), 16);
     for (order, target, aux1, expected) in cases {
-        data.fleets.records[1].set_mission_aux_bytes([0xfe, 0xfe]);
+        set_mission_target(&mut data.fleets[1], 0xfe, 0xfe);
         let aux = data
             .set_fleet_order(2, 1, order.to_raw(), target, None, aux1)
             .unwrap_or_else(|err| panic!("{order:?}: {err}"));
         assert_eq!(aux, expected, "{order:?}");
         assert_eq!(
-            data.fleets.records[1].mission_aux_bytes(),
+            [
+                data.fleets[1].target_depth,
+                data.fleets[1].mission_target as u8
+            ],
             expected,
             "{order:?}"
         );
@@ -2276,98 +2207,86 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
 #[test]
 fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
     data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
-    let base = data.bases.records[0].clone();
-    let current_speed = data.fleets.records[1].current_speed();
-    data.fleets.records[1].set_standing_order_kind(Order::HoldPosition);
-    data.fleets.records[1].set_standing_order_target_coords_raw([0, 0]);
-    data.fleets.records[1].set_mission_aux_bytes([0, 0]);
+    let base = data.bases[0].clone();
+    let current_speed = data.fleets[1].speed;
+    data.fleets[1].order = Order::HoldPosition;
+    data.fleets[1].target = Coords::new(0, 0);
+    set_mission_target(&mut data.fleets[1], 0, 0);
 
     data.set_fleet_order(
         2,
         current_speed,
         Order::GuardStarbase.to_raw(),
-        base.coords_raw(),
+        base.sector.to_array(),
         Some(1),
-        Some(base.base_id_raw() as u8),
+        Some(base.base_id.0 as u8),
     )
     .unwrap();
 
+    assert_eq!(data.fleets[1].order, Order::GuardStarbase);
+    assert_eq!(data.fleets[1].target.to_array(), base.sector.to_array());
     assert_eq!(
-        data.fleets.records[1].standing_order_kind(),
-        Order::GuardStarbase
-    );
-    assert_eq!(
-        data.fleets.records[1].standing_order_target_coords_raw(),
-        base.coords_raw()
-    );
-    assert_eq!(
-        data.fleets.records[1].mission_aux_bytes(),
-        [1, base.base_id_raw() as u8]
+        [
+            data.fleets[1].target_depth,
+            data.fleets[1].mission_target as u8
+        ],
+        [1, base.base_id.0 as u8]
     );
 }
 
 #[test]
 fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
     let mut data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
 
-    let host = data.fleets.records[0].clone();
-    let current_speed = data.fleets.records[1].current_speed();
-    data.fleets.records[1].set_standing_order_kind(Order::HoldPosition);
-    data.fleets.records[1].set_standing_order_target_coords_raw([0, 0]);
-    data.fleets.records[1].set_mission_aux_bytes([0, 0]);
+    let host = data.fleets[0].clone();
+    let current_speed = data.fleets[1].speed;
+    data.fleets[1].order = Order::HoldPosition;
+    data.fleets[1].target = Coords::new(0, 0);
+    set_mission_target(&mut data.fleets[1], 0, 0);
 
     data.set_fleet_order(
         2,
         current_speed,
         Order::JoinAnotherFleet.to_raw(),
-        host.current_location_coords_raw(),
+        host.sector.to_array(),
         None,
-        Some(host.fleet_id() as u8),
+        Some(host.record.0 as u8),
     )
     .unwrap();
 
-    assert_eq!(
-        data.fleets.records[1].standing_order_kind(),
-        Order::JoinAnotherFleet
-    );
-    assert_eq!(
-        data.fleets.records[1].standing_order_target_coords_raw(),
-        host.current_location_coords_raw()
-    );
-    assert_eq!(
-        data.fleets.records[1].join_host_fleet_id_raw(),
-        host.fleet_id_word_raw()
-    );
+    assert_eq!(data.fleets[1].order, Order::JoinAnotherFleet);
+    assert_eq!(data.fleets[1].target.to_array(), host.sector.to_array());
+    assert_eq!(data.fleets[1].mission_target, host.record.0);
 }
 
 #[test]
 fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     let fleet_data = CoreGameData {
-        player: PlayerDat::parse(&read_ecmaint_fleet_pre_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_ecmaint_fleet_pre_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_ecmaint_fleet_pre_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_ecmaint_fleet_pre_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_ecmaint_fleet_pre_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_ecmaint_fleet_pre_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_ecmaint_fleet_pre_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_ecmaint_fleet_pre_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_ecmaint_fleet_pre_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_ecmaint_fleet_pre_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_ecmaint_fleet_pre_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_ecmaint_fleet_pre_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_ecmaint_fleet_pre_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_ecmaint_fleet_pre_fixture("CONQUEST.DAT")).unwrap(),
     };
     assert!(
         fleet_data
@@ -2376,13 +2295,13 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     );
 
     let build_data = CoreGameData {
-        player: PlayerDat::parse(&read_ecmaint_build_pre_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_ecmaint_build_pre_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_ecmaint_build_pre_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_ecmaint_build_pre_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_ecmaint_build_pre_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_ecmaint_build_pre_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_ecmaint_build_pre_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_ecmaint_build_pre_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_ecmaint_build_pre_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_ecmaint_build_pre_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_ecmaint_build_pre_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_ecmaint_build_pre_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_ecmaint_build_pre_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_ecmaint_build_pre_fixture("CONQUEST.DAT")).unwrap(),
     };
     assert!(
         build_data
@@ -2391,13 +2310,13 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     );
 
     let starbase_data = CoreGameData {
-        player: PlayerDat::parse(&read_ecmaint_starbase_pre_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_ecmaint_starbase_pre_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_ecmaint_starbase_pre_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_ecmaint_starbase_pre_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_ecmaint_starbase_pre_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_ecmaint_starbase_pre_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_ecmaint_starbase_pre_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_ecmaint_starbase_pre_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_ecmaint_starbase_pre_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_ecmaint_starbase_pre_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_ecmaint_starbase_pre_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_ecmaint_starbase_pre_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_ecmaint_starbase_pre_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_ecmaint_starbase_pre_fixture("CONQUEST.DAT")).unwrap(),
     };
     assert!(
         starbase_data
@@ -2473,19 +2392,15 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
     );
 
     let post_data = CoreGameData {
-        player: PlayerDat::parse(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
-        planets: PlanetDat::parse(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
-        fleets: FleetDat::parse(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
-        bases: BaseDat::parse(&read_post_maint_fixture("BASES.DAT")).unwrap(),
-        ipbm: IpbmDat::parse(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
-        setup: SetupDat::parse(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
-        conquest: ConquestDat::parse(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        players: parse_player_dat(&read_post_maint_fixture("PLAYER.DAT")).unwrap(),
+        planets: parse_planets_dat(&read_post_maint_fixture("PLANETS.DAT")).unwrap(),
+        fleets: parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap(),
+        bases: parse_bases_dat(&read_post_maint_fixture("BASES.DAT")).unwrap(),
+        ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
+        setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
+        conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
     };
-    assert!(
-        post_data
-            .ipbm_count_length_errors_current_known()
-            .is_empty()
-    );
+    assert!(post_data.ipbm_count_errors_current_known().is_empty());
     assert!(
         post_data
             .guarding_fleet_record_indexes_current_known()
@@ -2510,39 +2425,37 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
 
 #[test]
 fn detach_ships_creates_new_fleet_and_preserves_donor_order() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_at_rest_motion();
-    donor.set_standing_order_kind(Order::GuardBlockadeWorld);
-    donor.set_standing_order_target_coords_raw([25, 12]);
-    donor.set_destroyer_count(2);
-    donor.set_cruiser_count(1);
-    donor.set_troop_transport_count(2);
-    donor.set_army_count(1);
-    donor.set_etac_count(1);
-    donor.set_rules_of_engagement(6);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(5);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    set_fleet_at_rest(&mut donor);
+    donor.order = Order::GuardBlockadeWorld;
+    donor.target = Coords::new(25, 12);
+    donor.ships.destroyers = 2;
+    donor.ships.cruisers = 1;
+    set_troop_transports(&mut donor, 2);
+    set_armies_aboard(&mut donor, 1);
+    donor.ships.etacs = 1;
+    donor.rules_of_engagement = 6;
+    recompute_max_speed(&mut donor);
+    donor.speed = 5;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data
@@ -2567,60 +2480,58 @@ fn detach_ships_creates_new_fleet_and_preserves_donor_order() {
             new_fleet_record_index_1_based: 2,
         }
     );
-    let donor = &data.fleets.records[0];
-    assert_eq!(donor.destroyer_count(), 1);
-    assert_eq!(donor.cruiser_count(), 1);
-    assert_eq!(donor.troop_transport_count(), 1);
-    assert_eq!(donor.army_count(), 0);
-    assert_eq!(donor.etac_count(), 0);
-    assert_eq!(donor.standing_order_kind(), Order::GuardBlockadeWorld);
-    assert_eq!(donor.standing_order_target_coords_raw(), [25, 12]);
+    let donor = &data.fleets[0];
+    assert_eq!(donor.ships.destroyers, 1);
+    assert_eq!(donor.ships.cruisers, 1);
+    assert_eq!(troop_transports(donor), 1);
+    assert_eq!(donor.ships.loaded_transports, 0);
+    assert_eq!(donor.ships.etacs, 0);
+    assert_eq!(donor.order, Order::GuardBlockadeWorld);
+    assert_eq!(donor.target.to_array(), [25, 12]);
 
-    let detached = &data.fleets.records[1];
-    assert_eq!(detached.local_slot_word_raw(), 2);
-    assert_eq!(detached.fleet_id_word_raw(), 2);
-    assert_eq!(detached.current_location_coords_raw(), [24, 14]);
-    assert_eq!(detached.destroyer_count(), 1);
-    assert_eq!(detached.troop_transport_count(), 1);
-    assert_eq!(detached.army_count(), 1);
-    assert_eq!(detached.etac_count(), 1);
-    assert_eq!(detached.rules_of_engagement(), 4);
-    assert_eq!(detached.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(detached.current_speed(), 0);
-    assert_eq!(data.player.records[0].fleet_chain_head_raw(), 1);
+    let detached = &data.fleets[1];
+    assert_eq!(detached.fleet_number.0, 2);
+    assert_eq!(detached.record.0, 2);
+    assert_eq!(detached.sector.to_array(), [24, 14]);
+    assert_eq!(detached.ships.destroyers, 1);
+    assert_eq!(troop_transports(detached), 1);
+    assert_eq!(detached.ships.loaded_transports, 1);
+    assert_eq!(detached.ships.etacs, 1);
+    assert_eq!(detached.rules_of_engagement, 4);
+    assert_eq!(detached.order, Order::HoldPosition);
+    assert_eq!(detached.speed, 0);
+    assert_eq!(data.players[0].fleets_first.0, 1);
 }
 
 #[test]
 fn detach_ships_clamps_support_only_new_fleet_to_roe_zero() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_destroyer_count(1);
-    donor.set_troop_transport_count(1);
-    donor.set_army_count(1);
-    donor.set_scout_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(3);
-    donor.set_rules_of_engagement(6);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    donor.ships.destroyers = 1;
+    set_troop_transports(&mut donor, 1);
+    set_armies_aboard(&mut donor, 1);
+    donor.ships.scouts = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 3;
+    donor.rules_of_engagement = 6;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data
@@ -2637,38 +2548,36 @@ fn detach_ships_clamps_support_only_new_fleet_to_roe_zero() {
         .unwrap();
 
     assert_eq!(result.new_fleet_record_index_1_based, 2);
-    assert_eq!(data.fleets.records[0].rules_of_engagement(), 6);
-    assert_eq!(data.fleets.records[1].scout_count(), 1);
-    assert_eq!(data.fleets.records[1].rules_of_engagement(), 0);
+    assert_eq!(data.fleets[0].rules_of_engagement, 6);
+    assert_eq!(data.fleets[1].ships.scouts, 1);
+    assert_eq!(data.fleets[1].rules_of_engagement, 0);
 }
 
 #[test]
 fn detach_ships_requires_valid_post_split_donor_speed() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_destroyer_count(1);
-    donor.set_cruiser_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(6);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.ships.destroyers = 1;
+    donor.ships.cruisers = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 6;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let error = data
@@ -2696,35 +2605,33 @@ fn detach_ships_requires_valid_post_split_donor_speed() {
 
 #[test]
 fn detach_ships_invalidated_donor_colonize_order_falls_back_to_local_hold() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_standing_order_kind(Order::ColonizeWorld);
-    donor.set_standing_order_target_coords_raw([25, 12]);
-    donor.set_mission_aux_bytes([7, 9]);
-    donor.set_cruiser_count(1);
-    donor.set_etac_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(3);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    donor.order = Order::ColonizeWorld;
+    donor.target = Coords::new(25, 12);
+    set_mission_target(&mut donor, 7, 9);
+    donor.ships.cruisers = 1;
+    donor.ships.etacs = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 3;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.detach_ships_to_new_fleet(
@@ -2739,53 +2646,51 @@ fn detach_ships_invalidated_donor_colonize_order_falls_back_to_local_hold() {
     )
     .unwrap();
 
-    let donor = &data.fleets.records[0];
-    assert_eq!(donor.etac_count(), 0);
-    assert_eq!(donor.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(donor.current_speed(), 0);
-    assert_eq!(donor.standing_order_target_coords_raw(), [24, 14]);
-    assert_eq!(donor.mission_aux_bytes(), [0, 0]);
+    let donor = &data.fleets[0];
+    assert_eq!(donor.ships.etacs, 0);
+    assert_eq!(donor.order, Order::HoldPosition);
+    assert_eq!(donor.speed, 0);
+    assert_eq!(donor.target.to_array(), [24, 14]);
+    assert_eq!([donor.target_depth, donor.mission_target as u8], [0, 0]);
 }
 
 #[test]
 fn transfer_ships_between_fleets_moves_counts_and_preserves_both_fleets() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_destroyer_count(2);
-    donor.set_troop_transport_count(2);
-    donor.set_army_count(1);
-    donor.set_etac_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(5);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    donor.ships.destroyers = 2;
+    set_troop_transports(&mut donor, 2);
+    set_armies_aboard(&mut donor, 1);
+    donor.ships.etacs = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 5;
 
-    let mut host = FleetRecord::new_zeroed();
-    host.set_owner_empire_raw(1);
-    host.set_local_slot_word_raw(2);
-    host.set_fleet_id_word_raw(2);
-    host.set_current_location_coords_raw([24, 14]);
-    host.set_cruiser_count(1);
-    host.recompute_max_speed_from_composition();
-    host.set_current_speed(5);
+    let mut host = Fleet::default();
+    host.owner.0 = 1;
+    host.fleet_number.0 = 2;
+    host.record.0 = 2;
+    host.sector = Coords::new(24, 14);
+    host.ships.cruisers = 1;
+    recompute_max_speed(&mut host);
+    host.speed = 5;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor, host],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor, host],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     let result = data
@@ -2804,57 +2709,55 @@ fn transfer_ships_between_fleets_moves_counts_and_preserves_both_fleets() {
     assert_eq!(result.donor_fleet_record_index_1_based, 1);
     assert_eq!(result.host_fleet_record_index_1_based, 2);
 
-    let donor = &data.fleets.records[0];
-    assert_eq!(donor.destroyer_count(), 1);
-    assert_eq!(donor.troop_transport_count(), 1);
-    assert_eq!(donor.army_count(), 0);
+    let donor = &data.fleets[0];
+    assert_eq!(donor.ships.destroyers, 1);
+    assert_eq!(troop_transports(donor), 1);
+    assert_eq!(donor.ships.loaded_transports, 0);
 
-    let host = &data.fleets.records[1];
-    assert_eq!(host.cruiser_count(), 1);
-    assert_eq!(host.destroyer_count(), 1);
-    assert_eq!(host.troop_transport_count(), 1);
-    assert_eq!(host.army_count(), 1);
+    let host = &data.fleets[1];
+    assert_eq!(host.ships.cruisers, 1);
+    assert_eq!(host.ships.destroyers, 1);
+    assert_eq!(troop_transports(host), 1);
+    assert_eq!(host.ships.loaded_transports, 1);
 }
 
 #[test]
 fn transfer_ships_invalidated_donor_scout_order_falls_back_to_local_hold() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_standing_order_kind(Order::ScoutSector);
-    donor.set_standing_order_target_coords_raw([25, 12]);
-    donor.set_scout_count(1);
-    donor.set_destroyer_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(6);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    donor.order = Order::ScoutSector;
+    donor.target = Coords::new(25, 12);
+    donor.ships.scouts = 1;
+    donor.ships.destroyers = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 6;
 
-    let mut host = FleetRecord::new_zeroed();
-    host.set_owner_empire_raw(1);
-    host.set_local_slot_word_raw(2);
-    host.set_fleet_id_word_raw(2);
-    host.set_current_location_coords_raw([24, 14]);
-    host.set_cruiser_count(1);
-    host.recompute_max_speed_from_composition();
-    host.set_current_speed(5);
+    let mut host = Fleet::default();
+    host.owner.0 = 1;
+    host.fleet_number.0 = 2;
+    host.record.0 = 2;
+    host.sector = Coords::new(24, 14);
+    host.ships.cruisers = 1;
+    recompute_max_speed(&mut host);
+    host.speed = 5;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor, host],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor, host],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.transfer_ships_between_fleets(
@@ -2868,52 +2771,50 @@ fn transfer_ships_invalidated_donor_scout_order_falls_back_to_local_hold() {
     )
     .unwrap();
 
-    let donor = &data.fleets.records[0];
-    assert_eq!(donor.scout_count(), 0);
-    assert_eq!(donor.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(donor.current_speed(), 0);
-    assert_eq!(donor.standing_order_target_coords_raw(), [24, 14]);
+    let donor = &data.fleets[0];
+    assert_eq!(donor.ships.scouts, 0);
+    assert_eq!(donor.order, Order::HoldPosition);
+    assert_eq!(donor.speed, 0);
+    assert_eq!(donor.target.to_array(), [24, 14]);
 }
 
 #[test]
 fn transfer_ships_clamps_support_only_resulting_fleet_to_roe_zero() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
-    player.set_fleet_chain_head_raw(1);
+    let mut player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
+    player.fleets_first.0 = 1;
 
-    let mut donor = FleetRecord::new_zeroed();
-    donor.set_owner_empire_raw(1);
-    donor.set_local_slot_word_raw(1);
-    donor.set_fleet_id_word_raw(1);
-    donor.set_current_location_coords_raw([24, 14]);
-    donor.set_destroyer_count(1);
-    donor.set_scout_count(1);
-    donor.recompute_max_speed_from_composition();
-    donor.set_current_speed(3);
-    donor.set_rules_of_engagement(6);
+    let mut donor = Fleet::default();
+    donor.owner.0 = 1;
+    donor.fleet_number.0 = 1;
+    donor.record.0 = 1;
+    donor.sector = Coords::new(24, 14);
+    donor.ships.destroyers = 1;
+    donor.ships.scouts = 1;
+    recompute_max_speed(&mut donor);
+    donor.speed = 3;
+    donor.rules_of_engagement = 6;
 
-    let mut host = FleetRecord::new_zeroed();
-    host.set_owner_empire_raw(1);
-    host.set_local_slot_word_raw(2);
-    host.set_fleet_id_word_raw(2);
-    host.set_current_location_coords_raw([24, 14]);
-    host.set_destroyer_count(1);
-    host.recompute_max_speed_from_composition();
-    host.set_current_speed(6);
-    host.set_rules_of_engagement(6);
+    let mut host = Fleet::default();
+    host.owner.0 = 1;
+    host.fleet_number.0 = 2;
+    host.record.0 = 2;
+    host.sector = Coords::new(24, 14);
+    host.ships.destroyers = 1;
+    recompute_max_speed(&mut host);
+    host.speed = 6;
+    host.rules_of_engagement = 6;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat { records: vec![] },
-        fleets: FleetDat {
-            records: vec![donor, host],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![],
+        fleets: vec![donor, host],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.transfer_ships_between_fleets(
@@ -2927,80 +2828,74 @@ fn transfer_ships_clamps_support_only_resulting_fleet_to_roe_zero() {
     )
     .unwrap();
 
-    assert_eq!(data.fleets.records[0].scout_count(), 1);
-    assert_eq!(data.fleets.records[0].rules_of_engagement(), 0);
-    assert_eq!(data.fleets.records[1].destroyer_count(), 2);
-    assert_eq!(data.fleets.records[1].rules_of_engagement(), 6);
+    assert_eq!(data.fleets[0].ships.scouts, 1);
+    assert_eq!(data.fleets[0].rules_of_engagement, 0);
+    assert_eq!(data.fleets[1].ships.destroyers, 2);
+    assert_eq!(data.fleets[1].rules_of_engagement, 6);
 }
 
 #[test]
 fn unload_armies_invalidated_invade_order_falls_back_to_local_hold() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_coords_raw([24, 14]);
-    planet.set_army_count_raw(0);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
+    planet.sector = Coords::new(24, 14);
+    planet.armies = 0;
 
-    let mut fleet = FleetRecord::new_zeroed();
-    fleet.set_owner_empire_raw(1);
-    fleet.set_local_slot_word_raw(1);
-    fleet.set_fleet_id_word_raw(1);
-    fleet.set_current_location_coords_raw([24, 14]);
-    fleet.set_standing_order_kind(Order::InvadeWorld);
-    fleet.set_standing_order_target_coords_raw([25, 12]);
-    fleet.set_destroyer_count(1);
-    fleet.set_troop_transport_count(1);
-    fleet.set_army_count(1);
-    fleet.recompute_max_speed_from_composition();
-    fleet.set_current_speed(5);
+    let mut fleet = Fleet::default();
+    fleet.owner.0 = 1;
+    fleet.fleet_number.0 = 1;
+    fleet.record.0 = 1;
+    fleet.sector = Coords::new(24, 14);
+    fleet.order = Order::InvadeWorld;
+    fleet.target = Coords::new(25, 12);
+    fleet.ships.destroyers = 1;
+    set_troop_transports(&mut fleet, 1);
+    set_armies_aboard(&mut fleet, 1);
+    recompute_max_speed(&mut fleet);
+    fleet.speed = 5;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat {
-            records: vec![fleet],
-        },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![fleet],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     data.unload_fleet_armies_to_planet(1, 1, 1, 1).unwrap();
 
-    let fleet = &data.fleets.records[0];
-    assert_eq!(fleet.army_count(), 0);
-    assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(fleet.current_speed(), 0);
-    assert_eq!(fleet.standing_order_target_coords_raw(), [24, 14]);
+    let fleet = &data.fleets[0];
+    assert_eq!(fleet.ships.loaded_transports, 0);
+    assert_eq!(fleet.order, Order::HoldPosition);
+    assert_eq!(fleet.speed, 0);
+    assert_eq!(fleet.target.to_array(), [24, 14]);
 }
 
 #[test]
 fn append_planet_build_order_rejects_non_multiple_surface_points() {
-    let mut player = PlayerRecord::new_zeroed();
-    player.set_owner_empire_raw(1);
+    let player = Player {
+        mode: PlayerMode::Human,
+        ..Player::default()
+    };
 
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_owner_empire_slot_raw(1);
+    let mut planet = Planet::default();
+    planet.owner.0 = 1;
 
     let mut data = CoreGameData {
-        player: PlayerDat {
-            records: vec![player],
-        },
-        planets: PlanetDat {
-            records: vec![planet],
-        },
-        fleets: FleetDat { records: vec![] },
-        bases: BaseDat { records: vec![] },
-        ipbm: IpbmDat { records: vec![] },
-        setup: SetupDat::parse(&vec![0; SETUP_DAT_SIZE]).unwrap(),
-        conquest: ConquestDat::parse(&vec![0; CONQUEST_DAT_SIZE]).unwrap(),
+        players: vec![player],
+        planets: vec![planet],
+        fleets: vec![],
+        bases: vec![],
+        ipbms: vec![],
+        setup: Setup::default(),
+        conquest: Conquest::default(),
     };
 
     for (points, kind_raw) in [(1, 7), (21, 7), (1, 8), (3, 8)] {
@@ -3018,7 +2913,7 @@ fn append_planet_build_order_rejects_non_multiple_surface_points() {
             }
         );
     }
-    assert_eq!(data.planets.records[0].build_count_raw(0), 0);
+    assert_eq!(data.planets[0].build_queue[0].points_owed, 0);
 
     data.append_planet_build_order(1, 40, 7).unwrap();
     data.append_planet_build_order(1, 4, 8).unwrap();
@@ -3033,14 +2928,14 @@ fn renumbering_a_fleet_retargets_the_join_orders_that_name_it() {
     data.set_join_fleet_order(1, 2, 3).expect("join order");
     data.set_join_fleet_order(2, 6, 7)
         .expect("empire 2 join order");
-    assert_eq!(data.fleets.records[1].join_host_fleet_id_raw(), 3);
-    assert_eq!(data.fleets.records[5].join_host_fleet_id_raw(), 3);
+    assert_eq!(data.fleets[1].mission_target, 3);
+    assert_eq!(data.fleets[5].mission_target, 3);
 
     data.set_fleet_local_slot(1, 3, 12)
         .expect("renumber fleet 3");
 
-    assert_eq!(data.fleets.records[2].local_slot_word_raw(), 12);
-    assert_eq!(data.fleets.records[1].join_host_fleet_id_raw(), 12);
+    assert_eq!(data.fleets[2].fleet_number.0, 12);
+    assert_eq!(data.fleets[1].mission_target, 12);
     // Empire 2's join names its own fleet 3, which kept its number.
-    assert_eq!(data.fleets.records[5].join_host_fleet_id_raw(), 3);
+    assert_eq!(data.fleets[5].mission_target, 3);
 }

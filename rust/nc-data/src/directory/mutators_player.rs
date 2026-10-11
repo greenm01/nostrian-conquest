@@ -1,28 +1,32 @@
 use super::*;
-use crate::is_classic_text_char;
+use crate::{
+    PlayerMode, Real48, diplomatic_relation_toward, is_classic_text_char,
+    is_homeworld_seed_ignoring_name, present_production_points, set_diplomatic_relation_toward,
+    set_empire_name, set_planet_name, stored_diplomatic_relation,
+};
 
 const DEFAULT_JOIN_TAX_RATE: u8 = 50;
 
 impl CoreGameData {
     pub fn player_slot_is_open_for_first_join(&self, player_record_index_1_based: usize) -> bool {
-        let Some(player) = self.player.records.get(player_record_index_1_based - 1) else {
+        let Some(player) = self.players.get(player_record_index_1_based - 1) else {
             return false;
         };
-        if !player.is_civil_disorder_player() || player.last_run_year_raw() != 0 {
+        if player.mode != PlayerMode::CivilDisorder || player.last_year_on != 0 {
             return false;
         }
-        self.planets.records.iter().any(|planet| {
-            planet.owner_empire_slot_raw() as usize == player_record_index_1_based
-                && planet.is_homeworld_seed_ignoring_name()
+        self.planets.iter().any(|planet| {
+            planet.owner.0 as usize == player_record_index_1_based
+                && is_homeworld_seed_ignoring_name(planet)
         })
     }
 
     pub fn has_open_first_join_slot(&self) -> bool {
-        (1..=self.player.records.len()).any(|idx| self.player_slot_is_open_for_first_join(idx))
+        (1..=self.players.len()).any(|idx| self.player_slot_is_open_for_first_join(idx))
     }
 
     pub fn first_open_first_join_slot(&self) -> Option<usize> {
-        (1..=self.player.records.len()).find(|&idx| self.player_slot_is_open_for_first_join(idx))
+        (1..=self.players.len()).find(|&idx| self.player_slot_is_open_for_first_join(idx))
     }
 
     pub fn join_player(
@@ -31,38 +35,34 @@ impl CoreGameData {
         empire_name: &str,
     ) -> Result<(), GameStateMutationError> {
         let (ipbm_count, homeworld_planet_index_1_based) = {
-            let player = self
-                .player
-                .records
-                .get(player_record_index_1_based - 1)
-                .ok_or(GameStateMutationError::MissingPlayerRecord {
+            let player = self.players.get(player_record_index_1_based - 1).ok_or(
+                GameStateMutationError::MissingPlayerRecord {
                     index_1_based: player_record_index_1_based,
-                })?;
-            let homeworld_planet_index_1_based =
-                if player.homeworld_planet_index_1_based_raw() as usize != 0 {
-                    player.homeworld_planet_index_1_based_raw() as usize
-                } else {
-                    self.planets
-                        .records
-                        .iter()
-                        .position(|planet| {
-                            planet.owner_empire_slot_raw() as usize == player_record_index_1_based
-                                && planet.is_homeworld_seed_ignoring_name()
-                        })
-                        .map(|idx| idx + 1)
-                        .unwrap_or(0)
-                };
-            (player.ipbm_chain_head_raw(), homeworld_planet_index_1_based)
+                },
+            )?;
+            let homeworld_planet_index_1_based = if player.homeworld as usize != 0 {
+                player.homeworld as usize
+            } else {
+                self.planets
+                    .iter()
+                    .position(|planet| {
+                        planet.owner.0 as usize == player_record_index_1_based
+                            && is_homeworld_seed_ignoring_name(planet)
+                    })
+                    .map(|idx| idx + 1)
+                    .unwrap_or(0)
+            };
+            (player.ipbms_first.0, homeworld_planet_index_1_based)
         };
         let tax_rate = DEFAULT_JOIN_TAX_RATE;
         let already_joined = self
-            .player
-            .records
+            .players
             .get(player_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_record_index_1_based,
             })?
-            .is_active_human_player();
+            .mode
+            == PlayerMode::Human;
         if already_joined {
             return Err(GameStateMutationError::PlayerAlreadyJoined {
                 index_1_based: player_record_index_1_based,
@@ -79,20 +79,19 @@ impl CoreGameData {
             });
         }
         let player = self
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_record_index_1_based,
             })?;
-        player.set_player_mode_raw(0x01);
-        player.set_controlled_empire_name_raw(empire_name);
-        player.set_tax_rate_raw(tax_rate);
-        player.set_ipbm_chain_head_raw(ipbm_count);
-        player.set_autopilot_flag(0);
-        player.set_last_run_year_raw(self.conquest.game_year());
+        player.mode = PlayerMode::Human;
+        set_empire_name(player, empire_name);
+        player.tax_rate = tax_rate;
+        player.ipbms_first.0 = ipbm_count;
+        player.autopilot = false;
+        player.last_year_on = self.conquest.game_year;
         if homeworld_planet_index_1_based != 0 {
-            player.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_1_based as u8);
+            player.homeworld = homeworld_planet_index_1_based as u8;
             self.seed_first_turn_treasury(homeworld_planet_index_1_based, tax_rate);
         }
         Ok(())
@@ -104,16 +103,9 @@ impl CoreGameData {
         homeworld_planet_index_1_based: usize,
         tax_rate: u8,
     ) {
-        if let Some(planet) = self
-            .planets
-            .records
-            .get_mut(homeworld_planet_index_1_based - 1)
-        {
-            let revenue = crate::yearly_tax_revenue(
-                planet.present_production_points().unwrap_or(0),
-                tax_rate,
-            );
-            planet.set_stored_production_points(revenue);
+        if let Some(planet) = self.planets.get_mut(homeworld_planet_index_1_based - 1) {
+            let revenue = crate::yearly_tax_revenue(present_production_points(planet), tax_rate);
+            planet.stored_goods = Real48::from_f64(f64::from(revenue));
         }
     }
 
@@ -122,30 +114,27 @@ impl CoreGameData {
         player_record_index_1_based: usize,
         homeworld_name: &str,
     ) -> Result<usize, GameStateMutationError> {
-        let raw_homeworld_planet_index_1_based =
-            self.player
-                .records
-                .get(player_record_index_1_based - 1)
-                .ok_or(GameStateMutationError::MissingPlayerRecord {
-                    index_1_based: player_record_index_1_based,
-                })?
-                .homeworld_planet_index_1_based_raw() as usize;
+        let raw_homeworld_planet_index_1_based = self
+            .players
+            .get(player_record_index_1_based - 1)
+            .ok_or(GameStateMutationError::MissingPlayerRecord {
+                index_1_based: player_record_index_1_based,
+            })?
+            .homeworld as usize;
         let homeworld_planet_index_1_based = if raw_homeworld_planet_index_1_based != 0 {
             raw_homeworld_planet_index_1_based
         } else {
             self.planets
-                .records
                 .iter()
                 .position(|planet| {
-                    planet.owner_empire_slot_raw() as usize == player_record_index_1_based
-                        && planet.is_homeworld_seed_ignoring_name()
+                    planet.owner.0 as usize == player_record_index_1_based
+                        && is_homeworld_seed_ignoring_name(planet)
                 })
                 .map(|idx| idx + 1)
                 .ok_or(GameStateMutationError::MissingPlanetRecord { index_1_based: 0 })?
         };
         let planet = self
             .planets
-            .records
             .get_mut(homeworld_planet_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: homeworld_planet_index_1_based,
@@ -155,7 +144,7 @@ impl CoreGameData {
                 planet_index_1_based: homeworld_planet_index_1_based,
             });
         }
-        planet.set_planet_name(homeworld_name);
+        set_planet_name(planet, homeworld_name);
         Ok(homeworld_planet_index_1_based)
     }
 
@@ -168,12 +157,11 @@ impl CoreGameData {
         let owner_empire = player_record_index_1_based as u8;
         let planet = self
             .planets
-            .records
             .get_mut(planet_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlanetRecord {
                 index_1_based: planet_record_index_1_based,
             })?;
-        if planet.owner_empire_slot_raw() != owner_empire {
+        if planet.owner.0 != owner_empire {
             return Err(GameStateMutationError::PlanetOwnershipMismatch {
                 player_index_1_based: player_record_index_1_based,
                 planet_index_1_based: planet_record_index_1_based,
@@ -184,7 +172,7 @@ impl CoreGameData {
                 planet_index_1_based: planet_record_index_1_based,
             });
         }
-        planet.set_planet_name(planet_name);
+        set_planet_name(planet, planet_name);
         Ok(())
     }
     pub fn validate_player_diplomacy_inputs(
@@ -192,15 +180,14 @@ impl CoreGameData {
         player_index_1_based: usize,
     ) -> Vec<PlayerDiplomacyValidationError> {
         let mut errors = Vec::new();
-        let Some(player) = self.player.records.get(player_index_1_based - 1) else {
+        let Some(player) = self.players.get(player_index_1_based - 1) else {
             return errors;
         };
         let empire_raw = player_index_1_based as u8;
-        let player_count = self.player.records.len() as u8;
+        let player_count = self.players.len() as u8;
         for target_empire_raw in 1..=player_count {
-            let raw = player
-                .diplomatic_relation_byte_raw(target_empire_raw)
-                .unwrap_or(0);
+            let raw = stored_diplomatic_relation(player, target_empire_raw)
+                .map_or(0, DiplomaticRelation::to_raw);
             if target_empire_raw == empire_raw {
                 if raw != 0 {
                     errors.push(PlayerDiplomacyValidationError::SelfTarget { empire_raw });
@@ -228,13 +215,12 @@ impl CoreGameData {
             });
         }
         let record = self
-            .player
-            .records
+            .players
             .get_mut(player_record_index_1_based - 1)
             .ok_or(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: player_record_index_1_based,
             })?;
-        record.set_tax_rate_raw(tax_rate);
+        record.tax_rate = tax_rate;
         Ok(())
     }
 
@@ -246,10 +232,9 @@ impl CoreGameData {
         if from_empire_raw == 0 || to_empire_raw == 0 || from_empire_raw == to_empire_raw {
             return None;
         }
-        self.player
-            .records
+        self.players
             .get(from_empire_raw.saturating_sub(1) as usize)
-            .and_then(|record| record.diplomatic_relation_toward(to_empire_raw))
+            .and_then(|record| diplomatic_relation_toward(record, to_empire_raw))
     }
 
     pub fn set_stored_diplomatic_relation(
@@ -258,7 +243,7 @@ impl CoreGameData {
         to_empire_raw: u8,
         relation: DiplomaticRelation,
     ) -> Result<bool, GameStateMutationError> {
-        let player_count = self.player.records.len() as u8;
+        let player_count = self.players.len() as u8;
         if to_empire_raw == 0 || to_empire_raw > player_count {
             return Err(GameStateMutationError::InvalidDiplomacyInput {
                 player_index_1_based: from_empire_raw as usize,
@@ -281,14 +266,17 @@ impl CoreGameData {
             });
         }
         let Some(record) = self
-            .player
-            .records
+            .players
             .get_mut(from_empire_raw.saturating_sub(1) as usize)
         else {
             return Err(GameStateMutationError::MissingPlayerRecord {
                 index_1_based: from_empire_raw as usize,
             });
         };
-        Ok(record.set_diplomatic_relation_toward(to_empire_raw, relation))
+        Ok(set_diplomatic_relation_toward(
+            record,
+            to_empire_raw,
+            relation,
+        ))
     }
 }

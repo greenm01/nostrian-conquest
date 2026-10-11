@@ -3,7 +3,7 @@ use std::collections::BTreeSet;
 
 use nc_data::{
     CoreGameData, PlanetIntelSnapshot, PlayerStarmapWorld,
-    build_player_starmap_projection_from_snapshots,
+    build_player_starmap_projection_from_snapshots, has_any_force,
 };
 
 use crate::navigation::sector_distance_sq;
@@ -31,18 +31,17 @@ pub struct OwnedStarbaseTarget {
 pub fn owned_fleet_targets(game_data: &CoreGameData, owner_empire_id: u8) -> Vec<OwnedFleetTarget> {
     let mut rows = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
-        .filter(|(_, fleet)| fleet.owner_empire_raw() == owner_empire_id && fleet.has_any_force())
+        .filter(|(_, fleet)| fleet.owner.0 == owner_empire_id && has_any_force(fleet))
         .map(|(idx, fleet)| OwnedFleetTarget {
             fleet_record_index_1_based: idx + 1,
-            fleet_number: fleet.local_slot_word_raw(),
-            coords: fleet.current_location_coords_raw(),
-            target_coords: fleet.standing_order_target_coords_raw(),
-            order_code: fleet.standing_order_code_raw(),
-            current_speed: fleet.current_speed(),
-            max_speed: fleet.max_speed(),
+            fleet_number: fleet.fleet_number.0,
+            coords: fleet.sector.to_array(),
+            target_coords: fleet.target.to_array(),
+            order_code: fleet.order.to_raw(),
+            current_speed: fleet.speed,
+            max_speed: fleet.max_speed,
         })
         .collect::<Vec<_>>();
     rows.sort_by_key(|row| row.fleet_number);
@@ -55,15 +54,14 @@ pub fn owned_starbase_targets(
 ) -> Vec<OwnedStarbaseTarget> {
     let mut rows = game_data
         .bases
-        .records
         .iter()
         .enumerate()
-        .filter(|(_, base)| base.owner_empire_raw() == owner_empire_id && base.base_id_raw() != 0)
+        .filter(|(_, base)| base.owner.0 == owner_empire_id && base.base_id.0 != 0)
         .map(|(idx, base)| OwnedStarbaseTarget {
             base_record_index_1_based: idx + 1,
-            base_id: base.base_id_raw(),
-            coords: base.coords_raw(),
-            destination_coords: base.target_coords_raw(),
+            base_id: base.base_id.0,
+            coords: base.sector.to_array(),
+            destination_coords: base.target.to_array(),
         })
         .collect::<Vec<_>>();
     rows.sort_by_key(|row| row.base_id);
@@ -266,12 +264,11 @@ pub fn automatic_order_targets(
             let Some(&first) = fleet_records.first() else {
                 return Ok(None);
             };
-            let owner = game_data.fleets.records[first - 1].owner_empire_raw();
+            let owner = game_data.fleets[first - 1].owner.0;
             let owned = game_data
                 .planets
-                .records
                 .iter()
-                .filter(|planet| planet.owner_empire_slot_raw() == owner)
+                .filter(|planet| planet.owner.0 == owner)
                 .count();
             match owned {
                 0 => Err(NO_OWNED_WORLD_MESSAGE.to_string()),
@@ -330,7 +327,7 @@ pub fn seek_next_closest_question(
 
 /// ECGAME's "The 3rd" before "fleet" in its order messages.
 fn fleet_title(game_data: &CoreGameData, record: usize) -> String {
-    let number = game_data.fleets.records[record - 1].local_slot_word_raw();
+    let number = game_data.fleets[record - 1].fleet_number.0;
     format!(
         "The {}",
         super::starbase::ordinal_number(usize::from(number))
@@ -381,16 +378,11 @@ fn friendly_target_claimed_elsewhere(
     coords: [u8; 2],
     selected_records: &BTreeSet<usize>,
 ) -> bool {
-    game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .any(|(idx, fleet)| {
-            fleet.owner_empire_raw() == viewer_empire_id
-                && !selected_records.contains(&(idx + 1))
-                && fleet.standing_order_target_coords_raw() == coords
-        })
+    game_data.fleets.iter().enumerate().any(|(idx, fleet)| {
+        fleet.owner.0 == viewer_empire_id
+            && !selected_records.contains(&(idx + 1))
+            && fleet.target.to_array() == coords
+    })
 }
 
 fn friendly_scout_target_claimed_elsewhere(
@@ -399,21 +391,16 @@ fn friendly_scout_target_claimed_elsewhere(
     coords: [u8; 2],
     selected_records: &BTreeSet<usize>,
 ) -> bool {
-    game_data
-        .fleets
-        .records
-        .iter()
-        .enumerate()
-        .any(|(idx, fleet)| {
-            fleet.owner_empire_raw() == viewer_empire_id
-                && !selected_records.contains(&(idx + 1))
-                && fleet.scout_count() > 0
-                && matches!(
-                    fleet.standing_order_kind(),
-                    nc_data::Order::ScoutSector | nc_data::Order::ScoutSolarSystem
-                )
-                && fleet.standing_order_target_coords_raw() == coords
-        })
+    game_data.fleets.iter().enumerate().any(|(idx, fleet)| {
+        fleet.owner.0 == viewer_empire_id
+            && !selected_records.contains(&(idx + 1))
+            && fleet.ships.scouts > 0
+            && matches!(
+                fleet.order,
+                nc_data::Order::ScoutSector | nc_data::Order::ScoutSolarSystem
+            )
+            && fleet.target.to_array() == coords
+    })
 }
 
 fn view_world_target_candidates_from(
@@ -525,15 +512,14 @@ fn rendezvous_target_candidates_from(
 ) -> Vec<[u8; 2]> {
     let mut coords = game_data
         .fleets
-        .records
         .iter()
         .enumerate()
         .filter(|(idx, fleet)| {
-            fleet.owner_empire_raw() == viewer_empire_id
+            fleet.owner.0 == viewer_empire_id
                 && !selected_records.contains(&(idx + 1))
-                && fleet.standing_order_kind() == nc_data::Order::RendezvousSector
+                && fleet.order == nc_data::Order::RendezvousSector
         })
-        .map(|(_, fleet)| fleet.standing_order_target_coords_raw())
+        .map(|(_, fleet)| fleet.target.to_array())
         .collect::<Vec<_>>();
     sort_unique_coords_by_distance(anchor, &mut coords);
     if coords.is_empty() {
@@ -552,10 +538,9 @@ fn owned_worlds_nearest_first(
 ) -> Vec<[u8; 2]> {
     let mut coords = game_data
         .planets
-        .records
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == viewer_empire_id)
-        .map(|planet| planet.coords_raw())
+        .filter(|planet| planet.owner.0 == viewer_empire_id)
+        .map(|planet| planet.sector.to_array())
         .collect::<Vec<_>>();
     if let Some(nearest) = selected_records
         .first()
@@ -599,9 +584,10 @@ fn coords_are_owned_system(
     viewer_empire_id: u8,
     coords: [u8; 2],
 ) -> bool {
-    game_data.planets.records.iter().any(|planet| {
-        planet.coords_raw() == coords && planet.owner_empire_slot_raw() == viewer_empire_id
-    })
+    game_data
+        .planets
+        .iter()
+        .any(|planet| planet.sector.to_array() == coords && planet.owner.0 == viewer_empire_id)
 }
 
 fn sort_unique_coords_by_distance(anchor: [u8; 2], coords: &mut Vec<[u8; 2]>) {

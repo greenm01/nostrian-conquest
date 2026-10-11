@@ -2,7 +2,9 @@ mod common;
 
 use common::create_test_game;
 use common::seed_runtime_snapshot;
-use nc_data::{CampaignStore, QueuedPlayerMail, ReportBlockRow};
+use nc_data::{
+    CampaignStore, PlayerMode, QueuedPlayerMail, ReportBlockRow, stored_production_points,
+};
 use nc_host::game::effects::GameEffects;
 use nc_host::game::worker::GameWorker;
 use nc_nostr::first_join::{FirstJoinSetupRequest, FirstJoinSetupResult, FirstJoinSetupStatus};
@@ -413,29 +415,23 @@ async fn first_hosted_state_request_initializes_claimed_seat_once_without_leakin
         .load_latest_runtime_state()
         .expect("runtime state")
         .expect("seeded runtime");
-    assert!(state.game_data.player.records[0].is_active_human_player());
+    assert_eq!(state.game_data.players[0].mode, PlayerMode::Human);
     assert_eq!(
-        state.game_data.player.records[0].assigned_player_handle_summary(),
+        state.game_data.players[0].handle.trim().to_string(),
         "pilot"
     );
     assert_eq!(
-        state.game_data.player.records[0].controlled_empire_name_summary(),
+        state.game_data.players[0].empire_name.trim().to_string(),
         "In Civil Disorder"
     );
-    assert_eq!(state.game_data.player.records[0].tax_rate(), 50);
-    assert_eq!(state.game_data.player.records[0].last_run_year_raw(), 3000);
-    assert_eq!(
-        state.game_data.planets.records[0].stored_production_points(),
-        50
-    );
+    assert_eq!(state.game_data.players[0].tax_rate, 50);
+    assert_eq!(state.game_data.players[0].last_year_on, 3000);
+    assert_eq!(stored_production_points(&state.game_data.planets[0]), 50);
     assert!(
-        !state.game_data.player.records[1].is_active_human_player(),
+        state.game_data.players[1].mode != PlayerMode::Human,
         "other seats should remain unjoined"
     );
-    assert_eq!(
-        state.game_data.player.records[1].assigned_player_handle_summary(),
-        ""
-    );
+    assert_eq!(state.game_data.players[1].handle.trim().to_string(), "");
 
     worker
         .handle_effect(GameEffects::HandleStateRequest { request })
@@ -445,12 +441,9 @@ async fn first_hosted_state_request_initializes_claimed_seat_once_without_leakin
         .load_latest_runtime_state()
         .expect("runtime state")
         .expect("seeded runtime");
+    assert_eq!(stored_production_points(&state.game_data.planets[0]), 50);
     assert_eq!(
-        state.game_data.planets.records[0].stored_production_points(),
-        50
-    );
-    assert_eq!(
-        state.game_data.player.records[0].assigned_player_handle_summary(),
+        state.game_data.players[0].handle.trim().to_string(),
         "pilot"
     );
 }
@@ -530,8 +523,8 @@ async fn first_join_setup_renames_empire_and_homeworld_and_returns_updated_state
         .expect("runtime state")
         .expect("seeded runtime");
     assert_eq!(
-        state.game_data.player.records[0].controlled_empire_name_summary(),
+        state.game_data.players[0].empire_name.trim().to_string(),
         "Terran Union"
     );
-    assert_eq!(state.game_data.planets.records[0].planet_name(), "Sol");
+    assert_eq!(state.game_data.planets[0].name, "Sol");
 }

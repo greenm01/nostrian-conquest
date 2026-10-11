@@ -1,6 +1,7 @@
 //! Fleet battle resolution: round cap, determinism, and ROE withdrawals.
 
-use nc_data::{CoreGameData, Order};
+use nc_compat::classic::encode_fleet;
+use nc_data::{CoreGameData, Order, troop_transports};
 use nc_engine::run_maintenance_turn_with_context_and_seed;
 
 use super::support::{DEEP_SPACE, Ships, diplomacy, empty_board, place_fleet};
@@ -39,8 +40,8 @@ fn battle_reaching_the_round_cap_ends_as_a_stalemate() {
         run_maintenance_turn_with_context_and_seed(&mut game_data, 1, &[], &diplomacy(&[(1, 2)]))
             .expect("a long battle must not abort maintenance");
 
-    assert_eq!(game_data.fleets.records[0].destroyer_count(), 1);
-    let transports = game_data.fleets.records[4].troop_transport_count();
+    assert_eq!(game_data.fleets[0].ships.destroyers, 1);
+    let transports = troop_transports(&game_data.fleets[4]);
     assert!(
         transports > 0 && transports < 200,
         "survivors keep their ships: {transports}"
@@ -83,8 +84,8 @@ fn equal_roe_battle_resolves_identically_every_run() {
         let events = run_maintenance_turn_with_context_and_seed(&mut game_data, 7, &[], &overrides)
             .expect("maintenance should succeed");
         (
-            game_data.fleets.records[0].to_bytes().to_vec(),
-            game_data.fleets.records[4].to_bytes().to_vec(),
+            encode_fleet(&game_data.fleets[0]).to_vec(),
+            encode_fleet(&game_data.fleets[4]).to_vec(),
             format!("{:?}", events.encounter_disposition_events),
             format!("{:?}", events.fleet_battle_events),
             format!("{:?}", events.mission_events),
@@ -145,10 +146,10 @@ fn withdrawal_resolution_does_not_depend_on_empire_slot_order() {
                 &diplomacy(&[(1, 2)]),
             )
             .expect("maintenance should succeed");
-            let fleet = &game_data.fleets.records[withdrawing_idx];
-            if fleet.standing_order_kind() == Order::SeekHome {
+            let fleet = &game_data.fleets[withdrawing_idx];
+            if fleet.order == Order::SeekHome {
                 escaped_fleets += 1;
-                escaped_ships += fleet.battleship_count();
+                escaped_ships += fleet.ships.battleships;
             }
         }
         (escaped_fleets, escaped_ships)

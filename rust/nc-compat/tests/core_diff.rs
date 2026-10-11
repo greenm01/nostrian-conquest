@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
+use nc_compat::classic::PLANET_RECORD_SIZE;
 use nc_compat::{
     core_file_exact_match_errors, current_known_baseline_diff_counts,
     current_known_baseline_diff_offsets, load_classic_core_files,
 };
-use nc_data::{CoreGameData, PLANET_RECORD_SIZE};
+use nc_data::{CoreGameData, Real48};
 
 fn fixture(relative: &str) -> CoreGameData {
     let dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -85,8 +86,8 @@ fn current_known_baseline_diff_counts_detect_mutated_files() {
         .differing_bytes;
     assert_eq!(clean_setup, 0);
 
-    data.setup.set_version_tag(b"BAD!!");
-    data.planets.records[14].set_stored_goods(3.0);
+    data.setup.version_tag = *b"BAD!!";
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
 
     let diffs = current_known_baseline_diff_counts(&data);
     assert!(
@@ -119,8 +120,8 @@ fn current_known_baseline_diff_offsets_pinpoint_mutated_bytes() {
         .differing_offsets
         .clone();
 
-    data.setup.set_version_tag(b"BAD!!");
-    data.planets.records[14].set_stored_goods(3.0);
+    data.setup.version_tag = *b"BAD!!";
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
 
     let diffs = current_known_baseline_diff_offsets(&data);
     let setup_offsets = &diffs

@@ -1,12 +1,9 @@
 use crate::{
-    BaseDat, ConquestDat, CoreGameData, FleetDat, FleetRecord, GameStateMutationError, IpbmDat,
-    IpbmRecord, PlanetDat, PlanetRecord, PlayerDat, PlayerRecord, SetupDat,
+    Conquest, Coords, CoreGameData, EmpireId, Fleet, GameStateMutationError, Ipbm, Planet, Player,
+    PlayerMode, Real48, Setup, set_armies_aboard, set_empire_name, set_fleet_at_rest,
+    set_mission_target, set_player_handle, set_troop_transports,
 };
 
-/// Present production 100 (bytes `+0x04..+0x08`) and the stored-goods
-/// exponent (`+0x09`); with `HOMEWORLD_GOODS_HIGH_BYTE` the goods read 35.
-const HOMEWORLD_PRESENT_PRODUCTION_RAW: [u8; 6] = [0, 0, 0, 0, 72, 134];
-const HOMEWORLD_GOODS_HIGH_BYTE: u8 = 12;
 const DEFAULT_EMPIRE_TAX_RATE: u8 = 50;
 
 /// Builder for creating arbitrary ECMAINT-compliant gamestate directories.
@@ -83,13 +80,12 @@ impl Default for GameStateBuilder {
 
 impl GameStateBuilder {
     /// Generate a name buffer for a player's homeworld.
-    fn name_buffer_for_player(player_idx: usize) -> [u8; 13] {
-        let name = format!("Player {} HW", player_idx + 1);
-        let bytes = name.as_bytes();
-        let mut buffer = [0u8; 13];
-        let len = bytes.len().min(13);
-        buffer[..len].copy_from_slice(&bytes[..len]);
-        buffer
+    /// "Player N HW", cut to the 11 characters of "Player 1 HW".
+    fn homeworld_name_for_player(player_idx: usize) -> String {
+        format!("Player {} HW", player_idx + 1)
+            .chars()
+            .take(11)
+            .collect()
     }
 
     /// Create a new builder with default settings.
@@ -182,61 +178,50 @@ impl GameStateBuilder {
     /// - Empty auxiliary files (BASES.DAT, IPBM.DAT)
     pub fn build_initialized_baseline(&self) -> Result<CoreGameData, GameStateMutationError> {
         let player_records = (0..self.player_count as usize)
-            .map(|_| PlayerRecord::new_zeroed())
+            .map(|_| Player::default())
             .collect();
         let planet_records = (0..planet_record_count_for_players(self.player_count))
-            .map(|_| PlanetRecord::new_zeroed())
+            .map(|_| Planet::default())
             .collect();
 
         let mut data = CoreGameData {
-            player: PlayerDat {
-                records: player_records,
-            },
-            planets: PlanetDat {
-                records: planet_records,
-            },
-            fleets: FleetDat { records: vec![] },
-            bases: BaseDat { records: vec![] },
-            ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat::new_zeroed(),
-            conquest: ConquestDat::new_zeroed(),
+            players: player_records,
+            planets: planet_records,
+            fleets: vec![],
+            bases: vec![],
+            ipbms: vec![],
+            setup: Setup::default(),
+            conquest: Conquest::default(),
         };
 
         // Configure conquest header
-        data.conquest.set_game_year(self.game_year);
-        data.conquest.set_player_count(self.player_count);
+        data.conquest.game_year = self.game_year;
+        data.conquest.player_count = self.player_count;
 
         // Configure setup header
-        data.setup.set_version_tag(b"EC151");
-        data.setup.set_option_prefix(&[4, 3, 4, 3, 1, 1, 1, 1]);
-        data.setup.set_snoop_enabled(true);
-        data.setup.set_max_time_between_keys_minutes_raw(10);
-        data.setup.set_remote_timeout_enabled(true);
-        data.setup.set_local_timeout_enabled(false);
+        data.setup.version_tag = *b"EC151";
+        data.setup.com_irq = [4, 3, 4, 3];
+        data.setup.com_hw_flow_control = [true; 4];
+        data.setup.snoop = true;
+        data.setup.max_key_gap_minutes = 10;
+        data.setup.remote_timeout = true;
+        data.setup.local_timeout = false;
 
         // Configure player records
-        for (idx, player) in data.player.records.iter_mut().enumerate() {
-            player.set_player_mode_raw(0x01);
-            player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-            player.set_ipbm_chain_head_raw(self.ipbm_count);
-            player.set_autopilot_flag(if idx == 0 { 1 } else { 0 });
+        for (idx, player) in data.players.iter_mut().enumerate() {
+            player.mode = PlayerMode::Human;
+            player.tax_rate = DEFAULT_EMPIRE_TAX_RATE;
+            player.ipbms_first.0 = self.ipbm_count;
+            player.autopilot = idx == 0;
         }
 
         // Configure homeworld planets
         for (player_idx, coords) in self.homeworld_coords.iter().enumerate() {
-            if let Some(planet) = data.planets.records.get_mut(player_idx) {
-                planet.set_as_owned_target_world(
+            if let Some(planet) = data.planets.get_mut(player_idx) {
+                *planet = seeded_homeworld(
                     *coords,
-                    [100, 135],                       // potential_production (default)
-                    HOMEWORLD_PRESENT_PRODUCTION_RAW, // current production = 100
-                    HOMEWORLD_GOODS_HIGH_BYTE,        // stored goods = 35
-                    b"Player 1 HW".len() as u8,
-                    Self::name_buffer_for_player(player_idx),
-                    [0; 7],                 // name_suffix_raw
-                    10,                     // army_count
-                    4,                      // ground_batteries
-                    2,                      // ownership_status
-                    (player_idx + 1) as u8, // owner_empire_slot
+                    Self::homeworld_name_for_player(player_idx),
+                    (player_idx + 1) as u8,
                 );
             }
             // Pre-joined empires get the treasury joining would have set.
@@ -247,13 +232,9 @@ impl GameStateBuilder {
         self.build_fleet_blocks(&mut data)?;
 
         // Setup empty auxiliary state
-        data.bases = BaseDat { records: vec![] };
+        data.bases = vec![];
         if self.ipbm_count > 0 {
-            data.ipbm = IpbmDat {
-                records: (0..self.ipbm_count)
-                    .map(|_| IpbmRecord::new_zeroed())
-                    .collect(),
-            };
+            data.ipbms = (0..self.ipbm_count).map(|_| Ipbm::default()).collect();
         }
 
         // Apply any additional orders
@@ -271,42 +252,39 @@ impl GameStateBuilder {
     /// - fleet blocks already exist at the seeded homeworld coords
     pub fn build_joinable_new_game_baseline(&self) -> Result<CoreGameData, GameStateMutationError> {
         let player_records = (0..self.player_count as usize)
-            .map(|_| PlayerRecord::new_zeroed())
+            .map(|_| Player::default())
             .collect();
         let planet_records = (0..planet_record_count_for_players(self.player_count))
-            .map(|_| PlanetRecord::new_zeroed())
+            .map(|_| Planet::default())
             .collect();
 
         let mut data = CoreGameData {
-            player: PlayerDat {
-                records: player_records,
-            },
-            planets: PlanetDat {
-                records: planet_records,
-            },
-            fleets: FleetDat { records: vec![] },
-            bases: BaseDat { records: vec![] },
-            ipbm: IpbmDat { records: vec![] },
-            setup: SetupDat::new_zeroed(),
-            conquest: ConquestDat::new_zeroed(),
+            players: player_records,
+            planets: planet_records,
+            fleets: vec![],
+            bases: vec![],
+            ipbms: vec![],
+            setup: Setup::default(),
+            conquest: Conquest::default(),
         };
 
         // ECUTIL F1 enables every day and writes 100 and 1 to all 25
         // ranking slots.
-        data.conquest.set_game_year(self.game_year);
-        data.conquest.set_player_count(self.player_count);
-        data.conquest.set_maintenance_schedule_enabled([true; 7]);
-        data.conquest.conquest.previous_production = [100; 25];
-        data.conquest.conquest.previous_planet_count = [1; 25];
+        data.conquest.game_year = self.game_year;
+        data.conquest.player_count = self.player_count;
+        data.conquest.maintenance_days.0 = [true; 7];
+        data.conquest.previous_production = [100; 25];
+        data.conquest.previous_planet_count = [1; 25];
 
-        data.setup.set_version_tag(b"EC151");
-        data.setup.set_option_prefix(&[4, 3, 4, 3, 1, 1, 1, 1]);
-        data.setup.set_snoop_enabled(true);
-        data.setup.set_max_time_between_keys_minutes_raw(10);
-        data.setup.set_remote_timeout_enabled(true);
-        data.setup.set_local_timeout_enabled(false);
+        data.setup.version_tag = *b"EC151";
+        data.setup.com_irq = [4, 3, 4, 3];
+        data.setup.com_hw_flow_control = [true; 4];
+        data.setup.snoop = true;
+        data.setup.max_key_gap_minutes = 10;
+        data.setup.remote_timeout = true;
+        data.setup.local_timeout = false;
 
-        for (idx, player) in data.player.records.iter_mut().enumerate() {
+        for (idx, player) in data.players.iter_mut().enumerate() {
             let homeworld_planet_index_1_based = idx + 1;
             let fleet_start = idx * 4 + 1;
             let fleet_end = fleet_start + 3;
@@ -320,7 +298,7 @@ impl GameStateBuilder {
         }
 
         for (player_idx, coords) in self.homeworld_coords.iter().enumerate() {
-            if let Some(planet) = data.planets.records.get_mut(player_idx) {
+            if let Some(planet) = data.planets.get_mut(player_idx) {
                 seed_unjoined_homeworld_seed(planet, *coords, (player_idx + 1) as u8);
             }
         }
@@ -347,39 +325,39 @@ impl GameStateBuilder {
 
             for slot_idx in 0..4 {
                 let fleet_record_index_1_based = block_idx * 4 + slot_idx + 1;
-                let mut record = FleetRecord::new_zeroed();
+                let mut record = Fleet::default();
                 let fleet_id = fleet_record_index_1_based as u16;
                 let local_slot = (slot_idx + 1) as u16;
                 let owner_empire = (block_idx + 1) as u8;
                 let prev = if slot_idx == 0 { 0 } else { fleet_id - 1 };
                 let next = if slot_idx == 3 { 0 } else { fleet_id + 1 };
 
-                record.set_local_slot_word_raw(local_slot);
-                record.set_owner_empire_raw(owner_empire);
-                record.set_next_fleet_link_word_raw(next);
-                record.set_fleet_id_word_raw(fleet_id);
-                record.set_previous_fleet_id(prev);
-                record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
-                record.set_current_speed(0);
-                record.set_current_location_coords_raw(coords);
-                record.set_at_rest_motion();
-                record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
-                record.set_standing_order_target_coords_raw(coords);
-                record.set_mission_aux_bytes([1, 0]);
-                record.set_scout_count(0);
-                record.set_rules_of_engagement(6);
-                record.set_battleship_count(0);
-                record.set_cruiser_count(if slot_idx < 2 { 1 } else { 0 });
-                record.set_destroyer_count(if slot_idx < 2 { 0 } else { 1 });
-                record.set_troop_transport_count(0);
-                record.set_army_count(0);
-                record.set_etac_count(if slot_idx < 2 { 1 } else { 0 });
+                record.fleet_number.0 = local_slot;
+                record.owner.0 = owner_empire;
+                record.next.0 = next;
+                record.record.0 = fleet_id;
+                record.prev.0 = prev;
+                record.max_speed = if slot_idx < 2 { 3 } else { 6 };
+                record.speed = 0;
+                record.sector = Coords::from_array(coords);
+                set_fleet_at_rest(&mut record);
+                record.order = crate::Order::GuardBlockadeWorld;
+                record.target = Coords::from_array(coords);
+                set_mission_target(&mut record, 1, 0);
+                record.ships.scouts = 0;
+                record.rules_of_engagement = 6;
+                record.ships.battleships = 0;
+                record.ships.cruisers = if slot_idx < 2 { 1 } else { 0 };
+                record.ships.destroyers = if slot_idx < 2 { 0 } else { 1 };
+                set_troop_transports(&mut record, 0);
+                set_armies_aboard(&mut record, 0);
+                record.ships.etacs = if slot_idx < 2 { 1 } else { 0 };
 
                 records.push(record);
             }
         }
 
-        data.fleets = FleetDat { records };
+        data.fleets = records;
         Ok(())
     }
 
@@ -431,7 +409,7 @@ pub fn reset_player_slot_to_baseline(
     data: &mut CoreGameData,
     player_index_1_based: usize,
 ) -> Result<(), GameStateMutationError> {
-    if player_index_1_based == 0 || player_index_1_based > data.player.records.len() {
+    if player_index_1_based == 0 || player_index_1_based > data.players.len() {
         return Err(GameStateMutationError::MissingPlayerRecord {
             index_1_based: player_index_1_based,
         });
@@ -445,19 +423,17 @@ pub fn reset_player_slot_to_baseline(
     // Capture homeworld coords before touching planet records.
     let homeworld_coords = data
         .planets
-        .records
         .get(player_idx)
-        .map(|p| p.coords_raw())
+        .map(|p| p.sector.to_array())
         .unwrap_or([0, 0]);
 
     // Reset the player record.
     let ipbm_count = data
-        .player
-        .records
+        .players
         .get(player_idx)
-        .map(|p| p.ipbm_chain_head_raw())
+        .map(|p| p.ipbms_first.0)
         .unwrap_or(0);
-    if let Some(player) = data.player.records.get_mut(player_idx) {
+    if let Some(player) = data.players.get_mut(player_idx) {
         seed_unjoined_player_slot(
             player,
             fleet_start as u16,
@@ -468,30 +444,30 @@ pub fn reset_player_slot_to_baseline(
     }
 
     // Reset the homeworld planet.
-    if let Some(planet) = data.planets.records.get_mut(player_idx) {
+    if let Some(planet) = data.planets.get_mut(player_idx) {
         seed_unjoined_homeworld_seed(planet, homeworld_coords, player_index_1_based as u8);
     }
 
     // Release all other planets owned by this empire to neutral.
-    for (planet_idx, planet) in data.planets.records.iter_mut().enumerate() {
+    for (planet_idx, planet) in data.planets.iter_mut().enumerate() {
         if planet_idx == player_idx {
             continue; // homeworld already handled
         }
-        if planet.owner_empire_slot_raw() == player_index_1_based as u8 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_army_count_raw(0);
-            planet.set_ground_batteries_raw(0);
-            planet.set_ownership_status_raw(0);
+        if planet.owner.0 == player_index_1_based as u8 {
+            planet.owner.0 = 0;
+            planet.armies = 0;
+            planet.ground_batteries = 0;
+            planet.years_under_owner = 0;
         }
     }
 
     // Zero all fleet records beyond the starter block that belong to this empire.
     let empire_id = player_index_1_based as u8;
-    for (fleet_idx, fleet) in data.fleets.records.iter_mut().enumerate() {
+    for (fleet_idx, fleet) in data.fleets.iter_mut().enumerate() {
         let fleet_id = fleet_idx + 1; // 1-based
         let in_starter_block = fleet_id >= fleet_start && fleet_id <= fleet_end;
-        if !in_starter_block && fleet.owner_empire_raw() == empire_id {
-            *fleet = FleetRecord::new_zeroed();
+        if !in_starter_block && fleet.owner.0 == empire_id {
+            *fleet = Fleet::default();
         }
     }
 
@@ -499,33 +475,33 @@ pub fn reset_player_slot_to_baseline(
     for slot_idx in 0..4 {
         let fleet_record_index_1_based = fleet_start + slot_idx;
         let fleet_array_idx = fleet_record_index_1_based - 1;
-        if let Some(record) = data.fleets.records.get_mut(fleet_array_idx) {
+        if let Some(record) = data.fleets.get_mut(fleet_array_idx) {
             let fleet_id = fleet_record_index_1_based as u16;
             let local_slot = (slot_idx + 1) as u16;
             let prev = if slot_idx == 0 { 0 } else { fleet_id - 1 };
             let next = if slot_idx == 3 { 0 } else { fleet_id + 1 };
 
-            *record = FleetRecord::new_zeroed();
-            record.set_local_slot_word_raw(local_slot);
-            record.set_owner_empire_raw(empire_id);
-            record.set_next_fleet_link_word_raw(next);
-            record.set_fleet_id_word_raw(fleet_id);
-            record.set_previous_fleet_id(prev);
-            record.set_max_speed(if slot_idx < 2 { 3 } else { 6 });
-            record.set_current_speed(0);
-            record.set_current_location_coords_raw(homeworld_coords);
-            record.set_at_rest_motion();
-            record.set_standing_order_kind(crate::Order::GuardBlockadeWorld);
-            record.set_standing_order_target_coords_raw(homeworld_coords);
-            record.set_mission_aux_bytes([1, 0]);
-            record.set_scout_count(0);
-            record.set_rules_of_engagement(6);
-            record.set_battleship_count(0);
-            record.set_cruiser_count(if slot_idx < 2 { 1 } else { 0 });
-            record.set_destroyer_count(if slot_idx < 2 { 0 } else { 1 });
-            record.set_troop_transport_count(0);
-            record.set_army_count(0);
-            record.set_etac_count(if slot_idx < 2 { 1 } else { 0 });
+            *record = Fleet::default();
+            record.fleet_number.0 = local_slot;
+            record.owner.0 = empire_id;
+            record.next.0 = next;
+            record.record.0 = fleet_id;
+            record.prev.0 = prev;
+            record.max_speed = if slot_idx < 2 { 3 } else { 6 };
+            record.speed = 0;
+            record.sector = Coords::from_array(homeworld_coords);
+            set_fleet_at_rest(record);
+            record.order = crate::Order::GuardBlockadeWorld;
+            record.target = Coords::from_array(homeworld_coords);
+            set_mission_target(record, 1, 0);
+            record.ships.scouts = 0;
+            record.rules_of_engagement = 6;
+            record.ships.battleships = 0;
+            record.ships.cruisers = if slot_idx < 2 { 1 } else { 0 };
+            record.ships.destroyers = if slot_idx < 2 { 0 } else { 1 };
+            set_troop_transports(record, 0);
+            set_armies_aboard(record, 0);
+            record.ships.etacs = if slot_idx < 2 { 1 } else { 0 };
         }
     }
 
@@ -540,20 +516,18 @@ fn ensure_planet_target_for_order(data: &mut CoreGameData, order_code: u8, coord
     if !fleet_order_requires_planet_target(order_code)
         || data
             .planets
-            .records
             .iter()
-            .any(|planet| planet.coords_raw() == coords)
+            .any(|planet| planet.sector.to_array() == coords)
     {
         return;
     }
 
     if let Some(target) = data
         .planets
-        .records
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 0 && planet.coords_raw() == [0, 0])
+        .find(|planet| planet.owner.0 == 0 && planet.sector.to_array() == [0, 0])
     {
-        target.set_coords_raw(coords);
+        target.sector = Coords::from_array(coords);
     }
 }
 
@@ -562,44 +536,45 @@ fn planet_record_count_for_players(player_count: u8) -> usize {
 }
 
 fn seed_unjoined_player_slot(
-    player: &mut PlayerRecord,
+    player: &mut Player,
     fleet_start: u16,
     fleet_end: u16,
     homeworld_planet_index_1_based: u8,
     ipbm_count: u16,
 ) {
-    *player = PlayerRecord::new_zeroed();
-    player.set_player_mode_raw(0x00);
-    player.set_assigned_player_handle_raw("");
+    *player = Player::default();
+    player.mode = PlayerMode::CivilDisorder;
+    set_player_handle(player, "");
     // ECUTIL F1 writes 24 lines per screen.
-    player.set_page_lines(24);
-    player.set_controlled_empire_name_raw("In Civil Disorder");
-    player.set_fleet_chain_head_raw(fleet_start);
-    player.set_fleet_chain_tail_raw(fleet_end);
-    player.set_homeworld_planet_index_1_based_raw(homeworld_planet_index_1_based);
-    player.set_planet_count_raw(0x01);
-    player.set_production_score_raw(100);
-    player.set_tax_rate_raw(DEFAULT_EMPIRE_TAX_RATE);
-    player.set_ipbm_chain_head_raw(ipbm_count);
-    player.set_autopilot_flag(1);
+    player.page_lines = 24;
+    set_empire_name(player, "In Civil Disorder");
+    player.fleets_first.0 = fleet_start;
+    player.fleets_last.0 = fleet_end;
+    player.homeworld = homeworld_planet_index_1_based;
+    player.planet_count = 0x01;
+    player.production = 100;
+    player.tax_rate = DEFAULT_EMPIRE_TAX_RATE;
+    player.ipbms_first.0 = ipbm_count;
+    player.autopilot = true;
 }
 
-fn seed_unjoined_homeworld_seed(planet: &mut PlanetRecord, coords: [u8; 2], owner_empire_slot: u8) {
-    planet.set_as_owned_target_world(
-        coords,
-        [100, 135],
-        HOMEWORLD_PRESENT_PRODUCTION_RAW,
-        HOMEWORLD_GOODS_HIGH_BYTE,
-        13,
-        {
-            let mut name = [0u8; 13];
-            name.copy_from_slice(b"Not Named Yet");
-            name
-        },
-        [0; 7],
-        10,
-        4,
-        2,
-        owner_empire_slot,
-    );
+fn seed_unjoined_homeworld_seed(planet: &mut Planet, coords: [u8; 2], owner_empire_slot: u8) {
+    *planet = seeded_homeworld(coords, "Not Named Yet".to_string(), owner_empire_slot);
+}
+
+/// An owned homeworld as ECUTIL seeds one: potential and present production
+/// 100, 35 stored goods, 10 armies, 4 ground batteries, fully owned.
+fn seeded_homeworld(coords: [u8; 2], name: String, owner_empire_slot: u8) -> Planet {
+    Planet {
+        sector: Coords::from_array(coords),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(35),
+        name,
+        armies: 10,
+        ground_batteries: 4,
+        years_under_owner: 2,
+        owner: EmpireId(owner_empire_slot),
+        ..Planet::default()
+    }
 }

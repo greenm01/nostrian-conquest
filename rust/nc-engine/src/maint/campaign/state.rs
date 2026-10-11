@@ -4,8 +4,8 @@ use super::super::{
 };
 use crate::{CoreGameData, DiplomaticRelation};
 use nc_data::{
-    CampaignOutcome, CampaignOutlook, PlayerLifecycleState, TerminalOutcome, WinnerState,
-    empire_has_recovery_path, is_campaign_contender, is_contesting_empire,
+    CampaignOutcome, CampaignOutlook, PlayerLifecycleState, PlayerMode, TerminalOutcome,
+    WinnerState, empire_has_recovery_path, is_campaign_contender, is_contesting_empire,
 };
 
 const RECOVERY_WINDOW_TURNS: u8 = 3;
@@ -28,7 +28,7 @@ pub(super) fn capture_empire_turn_start_states(
     game_data: &CoreGameData,
     _player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Vec<EmpireTurnStartState> {
-    (1..=game_data.player.records.len())
+    (1..=game_data.players.len())
         .map(|empire_idx| EmpireTurnStartState {
             owned_planets: owned_planet_count(game_data, empire_idx as u8),
         })
@@ -76,11 +76,11 @@ pub(super) fn apply_campaign_state_transitions(
     initial_outcome: CampaignOutcome,
 ) -> CampaignTransitionEvents {
     let mut events = CampaignTransitionEvents::default();
-    let player_count = game_data.player.records.len();
+    let player_count = game_data.players.len();
 
     for empire_idx in 1..=player_count {
         let empire_raw = empire_idx as u8;
-        let Some(player) = game_data.player.records.get(empire_idx - 1) else {
+        let Some(player) = game_data.players.get(empire_idx - 1) else {
             continue;
         };
         let lifecycle = player_lifecycle_states
@@ -173,7 +173,7 @@ pub(super) fn apply_campaign_state_transitions(
             unreachable!();
         };
         winner_state.winner_empire_raw = Some(emperor_empire_raw);
-        winner_state.winner_declared_year = Some(game_data.conquest.game_year());
+        winner_state.winner_declared_year = Some(game_data.conquest.game_year);
         if let Some(lifecycle) = player_lifecycle_states.get_mut(emperor_empire_raw as usize - 1) {
             lifecycle.terminal_outcome = TerminalOutcome::Winner;
             lifecycle.terminal_review_consumed = false;
@@ -197,7 +197,7 @@ pub(super) fn apply_campaign_state_transitions(
             if !matches!(lifecycle.terminal_outcome, TerminalOutcome::None) {
                 continue;
             }
-            if is_joined_empire(&game_data.player.records[empire_idx - 1]) {
+            if is_joined_empire(&game_data.players[empire_idx - 1]) {
                 lifecycle.terminal_outcome = TerminalOutcome::LostGame;
                 lifecycle.terminal_review_consumed = false;
                 events
@@ -223,18 +223,14 @@ pub(super) fn apply_civil_disorder_fleet_defections(
     game_data: &mut CoreGameData,
     newly_defeated: &[EmpireEliminationEvent],
 ) -> Result<Vec<FleetDefectionEvent>, Box<dyn std::error::Error>> {
-    let mut to_remove = vec![false; game_data.fleets.records.len()];
+    let mut to_remove = vec![false; game_data.fleets.len()];
     let mut events = Vec::new();
 
-    for empire_raw in 1..=game_data.player.records.len() as u8 {
-        let Some(player) = game_data
-            .player
-            .records
-            .get(empire_raw.saturating_sub(1) as usize)
-        else {
+    for empire_raw in 1..=game_data.players.len() as u8 {
+        let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
             continue;
         };
-        if player.owner_mode_raw() != 0x00 {
+        if player.mode.to_raw() != 0x00 {
             continue;
         }
         if newly_defeated
@@ -245,28 +241,26 @@ pub(super) fn apply_civil_disorder_fleet_defections(
         }
         if game_data
             .planets
-            .records
             .iter()
-            .any(|planet| planet.owner_empire_slot_raw() == empire_raw)
+            .any(|planet| planet.owner.0 == empire_raw)
         {
             continue;
         }
 
         let candidate = game_data
             .fleets
-            .records
             .iter()
             .enumerate()
             .filter(|(_, fleet)| {
-                fleet.owner_empire_raw() == empire_raw && super::super::fleet_has_presence(fleet)
+                fleet.owner.0 == empire_raw && super::super::fleet_has_presence(fleet)
             })
-            .max_by_key(|(_, fleet)| fleet.fleet_id());
+            .max_by_key(|(_, fleet)| fleet.record.0);
 
         if let Some((fleet_idx, fleet)) = candidate {
             to_remove[fleet_idx] = true;
             events.push(FleetDefectionEvent {
                 reporting_empire_raw: empire_raw,
-                fleet_number: fleet.local_slot_word_raw() as u8,
+                fleet_number: fleet.fleet_number.0 as u8,
                 stardate_week: None,
             });
         }
@@ -325,11 +319,10 @@ fn defeat_empire(
     lifecycle.terminal_outcome = TerminalOutcome::Defeated;
     lifecycle.terminal_review_consumed = false;
     if let Some(player) = game_data
-        .player
-        .records
+        .players
         .get_mut(empire_raw.saturating_sub(1) as usize)
     {
-        player.set_owner_empire_raw(0x00);
+        player.mode = PlayerMode::CivilDisorder;
     }
     let (victor_empire_raw, planet_idx, coords) = context.unwrap_or((None, None, None));
     events.push(EmpireEliminationEvent {
@@ -357,9 +350,8 @@ fn elimination_context(
             .map(|event| {
                 let coords = game_data
                     .planets
-                    .records
                     .get(event.planet_idx)
-                    .map(|planet| planet.coords_raw());
+                    .map(|planet| planet.sector.to_array());
                 (
                     Some(event.new_owner_empire_raw),
                     Some(event.planet_idx),
@@ -379,7 +371,7 @@ fn sole_contender(
     game_data: &CoreGameData,
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> Option<u8> {
-    let contenders = (1..=game_data.player.records.len() as u8)
+    let contenders = (1..=game_data.players.len() as u8)
         .filter(|&empire_raw| is_campaign_contender(game_data, empire_raw, player_lifecycle_states))
         .collect::<Vec<_>>();
     if contenders.len() == 1 {
@@ -396,21 +388,19 @@ fn owns_any_planets(game_data: &CoreGameData, empire_raw: u8) -> bool {
 fn owned_planet_count(game_data: &CoreGameData, empire_raw: u8) -> usize {
     game_data
         .planets
-        .records
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == empire_raw)
+        .filter(|planet| planet.owner.0 == empire_raw)
         .count()
 }
 
-fn is_joined_empire(player: &nc_data::PlayerRecord) -> bool {
-    !matches!(player.owner_mode_raw(), 0x00 | 0xff)
+fn is_joined_empire(player: &nc_data::Player) -> bool {
+    !matches!(player.mode.to_raw(), 0x00 | 0xff)
 }
 
 fn is_rogue_empire(game_data: &CoreGameData, empire_raw: u8) -> bool {
     game_data
-        .player
-        .records
+        .players
         .get(empire_raw.saturating_sub(1) as usize)
-        .map(|player| player.owner_mode_raw() == 0xff)
+        .map(|player| player.mode.to_raw() == 0xff)
         .unwrap_or(false)
 }

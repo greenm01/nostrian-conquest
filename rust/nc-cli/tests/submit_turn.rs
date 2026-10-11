@@ -94,7 +94,7 @@ message to=2 subject="Scout" body="Watch the lane."
 
     let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.player.records[0].tax_rate(), 37);
+    assert_eq!(state.game_data.players[0].tax_rate, 37);
     assert_eq!(state.queued_mail.len(), 1);
     assert_eq!(state.queued_mail[0].sender_empire_id, 1);
     assert_eq!(state.queued_mail[0].recipient_empire_id, 2);
@@ -139,7 +139,7 @@ message to=2 subject="Scout" body="Watch the lane."
         .load_latest_runtime_state()
         .unwrap()
         .unwrap();
-    let year = queued.game_data.conquest.game_year();
+    let year = queued.game_data.conquest.game_year;
     assert_eq!(year, 3000);
     assert_eq!(
         runtime_outgoing_inbox_items(&queued.game_data, 1, &queued.queued_mail).len(),
@@ -160,7 +160,7 @@ message to=2 subject="Scout" body="Watch the lane."
         .load_latest_runtime_state()
         .unwrap()
         .unwrap();
-    assert_eq!(delivered.game_data.conquest.game_year(), year + 1);
+    assert_eq!(delivered.game_data.conquest.game_year, year + 1);
     assert_eq!(delivered.queued_mail, queued.queued_mail);
     assert!(
         runtime_outgoing_inbox_items(&delivered.game_data, 1, &delivered.queued_mail).is_empty()

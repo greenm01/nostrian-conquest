@@ -2,7 +2,6 @@ use rusqlite::{Connection, Row, Transaction, named_params, params};
 
 use super::{CampaignStoreError, insert_row, real48_at, real48_column};
 use crate::model::{Coords, EmpireId, Ipbm, RecordNumber};
-use crate::{IpbmDat, IpbmRecord};
 
 /// One row per IPBM.DAT record.
 pub(super) const SCHEMA: &str = "
@@ -28,10 +27,9 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &IpbmDat,
+    ipbms: &[Ipbm],
 ) -> Result<(), CampaignStoreError> {
-    for (index, record) in data.records.iter().enumerate() {
-        let ipbm = &record.ipbm;
+    for (index, ipbm) in ipbms.iter().enumerate() {
         insert_row(
             tx,
             "snapshot_ipbms",
@@ -57,14 +55,16 @@ pub(super) fn write(
     Ok(())
 }
 
-pub(super) fn load(conn: &mut Connection, snapshot_id: i64) -> Result<IpbmDat, CampaignStoreError> {
+pub(super) fn load(
+    conn: &mut Connection,
+    snapshot_id: i64,
+) -> Result<Vec<Ipbm>, CampaignStoreError> {
     let mut stmt =
         conn.prepare("SELECT * FROM snapshot_ipbms WHERE snapshot_id = ?1 ORDER BY record_index")?;
     let records = stmt
         .query_map(params![snapshot_id], ipbm_from_row)?
-        .map(|ipbm| ipbm.map(|ipbm| IpbmRecord { ipbm }))
         .collect::<Result<Vec<_>, _>>()?;
-    Ok(IpbmDat { records })
+    Ok(records)
 }
 
 fn ipbm_from_row(row: &Row<'_>) -> rusqlite::Result<Ipbm> {

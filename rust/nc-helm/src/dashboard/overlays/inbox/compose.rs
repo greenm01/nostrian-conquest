@@ -141,15 +141,14 @@ fn draw_prompt_overlay(buf: &mut PlayfieldBuffer, app: &DashApp) {
 
 pub fn recipient_rows(app: &DashApp) -> Vec<Vec<String>> {
     app.game_data
-        .player
-        .records
+        .players
         .iter()
         .enumerate()
         .filter(|(idx, _)| *idx + 1 != app.player_record_index_1_based)
         .map(|(idx, player)| {
             let empire_id = idx + 1;
-            let name = player.controlled_empire_name_summary();
-            let fallback = player.legacy_status_name_summary();
+            let name = player.empire_name.trim().to_string();
+            let fallback = player.empire_name.trim().to_string();
             let display = if !name.is_empty() { name } else { fallback };
             vec![format!("{:>2}", empire_id), display]
         })
@@ -252,14 +251,13 @@ fn prompt_overlay_lines(app: &DashApp, parent: Rect) -> Vec<String> {
 fn compose_empire_name(app: &DashApp, empire_id: u8) -> String {
     let Some(player) = app
         .game_data
-        .player
-        .records
+        .players
         .get(empire_id.saturating_sub(1) as usize)
     else {
         return format!("Empire {empire_id:02}");
     };
-    let name = player.controlled_empire_name_summary();
-    let fallback = player.legacy_status_name_summary();
+    let name = player.empire_name.trim().to_string();
+    let fallback = player.empire_name.trim().to_string();
     if !name.is_empty() {
         name
     } else if !fallback.is_empty() {
@@ -323,7 +321,7 @@ mod tests {
             ScreenGeometry::new(108, 26),
             1,
         );
-        app.game_data.player.records[1].set_controlled_empire_name_raw("Rigel Empire");
+        nc_data::set_empire_name(&mut app.game_data.players[1], "Rigel Empire");
         app.inbox_overlay.prompt_mode = InboxPromptMode::ComposeRecipient;
 
         assert!(

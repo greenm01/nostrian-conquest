@@ -1,7 +1,7 @@
 //! The shared fuzz core: fixed choice lists play clean games, a written
 //! scenario replays to the same state, and the invariants catch tampering.
 
-use nc_data::{CoreGameData, MaintenanceEvents, default_player_lifecycle_states};
+use nc_data::{Coords, CoreGameData, MaintenanceEvents, default_player_lifecycle_states};
 use nc_engine::build_seeded_initialized_game;
 use nc_fuzz::{
     CaseRun, ChoiceTape, FuzzConfig, TurnObservation, Violation, check_turn, run_case,
@@ -75,7 +75,7 @@ fn written_scenario_replays_to_the_same_state() {
 }
 
 fn observe(before: &CoreGameData, after: &CoreGameData) -> Vec<Violation> {
-    let lifecycle = default_player_lifecycle_states(after.conquest.player_count());
+    let lifecycle = default_player_lifecycle_states(after.conquest.player_count);
     check_turn(&TurnObservation {
         before,
         after,
@@ -100,15 +100,15 @@ fn untouched_state_has_no_violations() {
 
 #[test]
 fn invariants_catch_tampering() {
-    let off_map = tampered(|state| state.fleets.records[0].set_current_location_coords_raw([0, 5]));
+    let off_map = tampered(|state| state.fleets[0].sector = Coords::new(0, 5));
     assert!(
         matches!(off_map.as_slice(), [Violation::CoordinateOutOfMap { .. }]),
         "{off_map:?}"
     );
 
     let shared = tampered(|state| {
-        let coords = state.planets.records[0].coords_raw();
-        state.planets.records[1].set_coords_raw(coords);
+        let coords = state.planets[0].sector.to_array();
+        state.planets[1].sector = Coords::from_array(coords);
     });
     assert!(
         shared
@@ -118,15 +118,15 @@ fn invariants_catch_tampering() {
     );
 
     let lost = tampered(|state| {
-        let fleet = &mut state.fleets.records[2];
-        fleet.set_destroyer_count(fleet.destroyer_count() - 1);
+        let fleet = &mut state.fleets[2];
+        fleet.ships.destroyers -= 1;
     });
     assert!(
         matches!(lost.as_slice(), [Violation::ShipConservation { .. }]),
         "{lost:?}"
     );
 
-    let seized = tampered(|state| state.planets.records[1].set_owner_empire_slot_raw(1));
+    let seized = tampered(|state| state.planets[1].owner.0 = 1);
     assert!(
         matches!(
             seized.as_slice(),

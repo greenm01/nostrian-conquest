@@ -4,7 +4,9 @@ use std::path::Path;
 
 use nc_compat::{encode_report_block_rows, export_latest_snapshot_to_dir};
 use nc_data::{
-    CampaignStore, CoreGameData, QueuedPlayerMail, ReportBlockRow, layout_classic_results,
+    CampaignStore, Coords, CoreGameData, QueuedPlayerMail, Real48, ReportBlockRow,
+    layout_classic_results, recompute_max_speed, results_chain, set_armies_aboard, set_empire_name,
+    set_login_reviewables_present, set_planet_name, set_player_handle, set_troop_transports,
 };
 use nc_engine::{build_seeded_initialized_game, build_seeded_new_game};
 
@@ -60,7 +62,7 @@ pub fn build_scenario(spec: &ScenarioSpec) -> Result<BuiltScenario, HarnessError
     let mut queued_mail = Vec::new();
     apply_turn_files(spec, 1, &mut game_data, &mut queued_mail)?;
     apply_queued_mail(spec, &mut queued_mail);
-    apply_message_blocks(spec, &mut queued_mail, game_data.conquest.player_count());
+    apply_message_blocks(spec, &mut queued_mail, game_data.conquest.player_count);
 
     let report_block_rows = build_report_block_rows(&spec.results_blocks);
     sync_review_flags(&mut game_data, &report_block_rows, &spec.message_blocks);
@@ -70,8 +72,8 @@ pub fn build_scenario(spec: &ScenarioSpec) -> Result<BuiltScenario, HarnessError
             label: spec.metadata.label.clone(),
             player_count: spec.metadata.player_count,
             year: spec.metadata.year,
-            planet_records: game_data.planets.records.len(),
-            fleet_records: game_data.fleets.records.len(),
+            planet_records: game_data.planets.len(),
+            fleet_records: game_data.fleets.len(),
             queue_mail_count: queued_mail.len(),
             results_blocks: spec.results_blocks.len(),
             message_blocks: spec.message_blocks.len(),
@@ -109,9 +111,7 @@ fn apply_house_specs(
     game_data: &mut CoreGameData,
 ) -> Result<(), HarnessError> {
     for house in &spec.houses {
-        if house.record_index_1_based == 0
-            || house.record_index_1_based > game_data.player.records.len()
-        {
+        if house.record_index_1_based == 0 || house.record_index_1_based > game_data.players.len() {
             return Err(HarnessError::Validation(format!(
                 "house record out of range: {}",
                 house.record_index_1_based
@@ -133,8 +133,7 @@ fn apply_house_specs(
         }
 
         let player = game_data
-            .player
-            .records
+            .players
             .get_mut(house.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -142,12 +141,12 @@ fn apply_house_specs(
                     house.record_index_1_based
                 ))
             })?;
-        player.set_autopilot_flag(u8::from(house.autopilot));
+        player.autopilot = house.autopilot;
         if let Some(handle) = &house.handle {
-            player.set_assigned_player_handle_raw(handle);
+            set_player_handle(player, handle);
         }
         if let Some(empire_name) = &house.empire_name {
-            player.set_controlled_empire_name_raw(empire_name);
+            set_empire_name(player, empire_name);
         }
         if let Some(tax_rate) = house.tax_rate {
             game_data.set_player_tax_rate(house.record_index_1_based, tax_rate)?;
@@ -177,7 +176,6 @@ fn apply_planet_specs(
     for planet_spec in &spec.planets {
         let planet = game_data
             .planets
-            .records
             .get_mut(planet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -186,38 +184,33 @@ fn apply_planet_specs(
                 ))
             })?;
         if let Some(coords) = planet_spec.coords {
-            planet.set_coords_raw(coords);
+            planet.sector = Coords::from_array(coords);
         }
         if let Some(owner_empire_raw) = planet_spec.owner_empire_raw {
-            planet.set_owner_empire_slot_raw(owner_empire_raw);
-            planet.set_ownership_status_raw(if owner_empire_raw == 0 { 0 } else { 2 });
+            planet.owner.0 = owner_empire_raw;
+            planet.years_under_owner = if owner_empire_raw == 0 { 0 } else { 2 };
         }
         if let Some(name) = &planet_spec.name {
-            planet.set_planet_name(name);
+            set_planet_name(planet, name);
         }
         if let Some(potential) = planet_spec.potential_production {
-            planet.set_potential_production_points(potential.min(u16::from(u8::MAX)) as u8);
+            planet.potential_production = potential.min(u16::from(u8::MAX)) as u8;
         }
         if let Some(present) = planet_spec.present_production {
-            if !planet.set_present_production_points(present) {
-                return Err(HarnessError::Validation(format!(
-                    "planet {} present production could not be encoded",
-                    planet_spec.record_index_1_based
-                )));
-            }
+            planet.production = Real48::from_f64(f64::from(present));
         }
         if let Some(stored) = planet_spec.stored_production {
-            planet.set_stored_production_points(stored);
+            planet.stored_goods = Real48::from_f64(f64::from(stored));
         }
         if let Some(armies) = planet_spec.armies {
-            planet.set_army_count_raw(armies);
+            planet.armies = u16::from(armies);
         }
         if let Some(ground_batteries) = planet_spec.ground_batteries {
-            planet.set_ground_batteries_raw(ground_batteries);
+            planet.ground_batteries = u16::from(ground_batteries);
         }
         if !planet_spec.stardock.is_empty() {
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-                planet.set_stardock_count_raw(slot, 0);
+                planet.stardock[slot] = 0;
             }
             for slot in &planet_spec.stardock {
                 // Each item type has its own stardock slot.
@@ -229,7 +222,7 @@ fn apply_planet_specs(
                         slot.kind_raw
                     )));
                 }
-                planet.set_stardock_count_raw(slot.slot_0_based, slot.count);
+                planet.stardock[slot.slot_0_based] = u32::from(slot.count);
             }
         }
     }
@@ -246,7 +239,6 @@ fn apply_commissions(
         }
         let owner_empire = game_data
             .planets
-            .records
             .get(planet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -254,7 +246,8 @@ fn apply_commissions(
                     planet_spec.record_index_1_based
                 ))
             })?
-            .owner_empire_slot_raw();
+            .owner
+            .0;
         if owner_empire == 0 {
             return Err(HarnessError::Validation(format!(
                 "planet {} must be owned before commissioning stardock units",
@@ -279,7 +272,6 @@ fn apply_fleet_specs(
     for fleet_spec in &spec.fleets {
         let fleet = game_data
             .fleets
-            .records
             .get_mut(fleet_spec.record_index_1_based - 1)
             .ok_or_else(|| {
                 HarnessError::Validation(format!(
@@ -288,50 +280,45 @@ fn apply_fleet_specs(
                 ))
             })?;
         if let Some(owner_empire_raw) = fleet_spec.owner_empire_raw {
-            if owner_empire_raw != fleet.owner_empire_raw() {
+            if owner_empire_raw != fleet.owner.0 {
                 return Err(HarnessError::Validation(format!(
                     "fleet {} owner reassignment is not supported; existing owner is {}",
-                    fleet_spec.record_index_1_based,
-                    fleet.owner_empire_raw()
+                    fleet_spec.record_index_1_based, fleet.owner.0
                 )));
             }
         }
         if let Some(coords) = fleet_spec.coords {
-            fleet.set_current_location_coords_raw(coords);
+            fleet.sector = Coords::from_array(coords);
             if fleet_spec.order.is_none() {
-                fleet.set_standing_order_target_coords_raw(coords);
+                fleet.target = Coords::from_array(coords);
             }
         }
         if let Some(ships) = &fleet_spec.ships {
-            fleet.set_battleship_count(ships.battleships);
-            fleet.set_cruiser_count(ships.cruisers);
-            fleet.set_destroyer_count(ships.destroyers);
-            fleet.set_scout_count(ships.scouts);
-            fleet.set_troop_transport_count(ships.transports);
-            fleet.set_army_count(ships.loaded_armies);
-            fleet.set_etac_count(ships.etacs);
-            fleet.recompute_max_speed_from_composition();
+            fleet.ships.battleships = ships.battleships;
+            fleet.ships.cruisers = ships.cruisers;
+            fleet.ships.destroyers = ships.destroyers;
+            fleet.ships.scouts = ships.scouts;
+            set_troop_transports(fleet, ships.transports);
+            set_armies_aboard(fleet, ships.loaded_armies);
+            fleet.ships.etacs = ships.etacs;
+            recompute_max_speed(fleet);
         }
         if let Some(invasion_armies) = fleet_spec.invasion_armies {
             // An early tool wrote this byte (0x08) as invasion armies; classic
             // reads it as the high byte of the previous-fleet word.
-            fleet.set_previous_fleet_id(
-                (fleet.previous_fleet_id() & 0x00FF) | (u16::from(invasion_armies) << 8),
-            );
+            fleet.prev.0 = (fleet.prev.0 & 0x00FF) | (u16::from(invasion_armies) << 8);
         }
         if let Some(rules_of_engagement) = fleet_spec.rules_of_engagement {
-            fleet.set_rules_of_engagement(rules_of_engagement);
+            fleet.rules_of_engagement = rules_of_engagement;
         }
         if let Some(current_speed) = fleet_spec.current_speed {
-            if current_speed > fleet.max_speed() {
+            if current_speed > fleet.max_speed {
                 return Err(HarnessError::Validation(format!(
                     "fleet {} speed {} exceeds max speed {}",
-                    fleet_spec.record_index_1_based,
-                    current_speed,
-                    fleet.max_speed()
+                    fleet_spec.record_index_1_based, current_speed, fleet.max_speed
                 )));
             }
-            fleet.set_current_speed(current_speed);
+            fleet.speed = current_speed;
         }
         if let Some(order) = &fleet_spec.order {
             game_data.set_fleet_order(
@@ -404,15 +391,13 @@ fn sync_review_flags(
     report_block_rows: &[ReportBlockRow],
     message_blocks: &[ReviewBlockSpec],
 ) {
-    for player in &mut game_data.player.records {
-        player.set_classic_login_reviewables_present(false);
-        player.set_classic_reports_pending_flag_raw(0);
-        player.set_classic_messages_pending_flag_raw(0);
+    for player in &mut game_data.players {
+        set_login_reviewables_present(player, false);
     }
-    layout_classic_results(&game_data.player.records, report_block_rows)
-        .apply_to_players(&mut game_data.player.records);
+    layout_classic_results(&game_data.players, report_block_rows)
+        .apply_to_players(&mut game_data.players);
 
-    let mut message_counts = vec![0usize; game_data.player.records.len()];
+    let mut message_counts = vec![0usize; game_data.players.len()];
     for block in message_blocks {
         if let Some(player) = block.player_record_index_1_based {
             if let Some(count) = message_counts.get_mut(player - 1) {
@@ -421,14 +406,12 @@ fn sync_review_flags(
         }
     }
 
-    for (idx, player) in game_data.player.records.iter_mut().enumerate() {
-        if player.classic_results_chain().is_some() {
-            player.set_classic_results_review_state_present(true);
-            player.set_classic_reports_pending_flag_raw(1);
+    for (idx, player) in game_data.players.iter_mut().enumerate() {
+        if results_chain(player).is_some() {
+            player.messages_last = 1;
         }
         if message_counts[idx] > 0 {
-            player.set_classic_messages_review_state_present(true);
-            player.set_classic_messages_pending_flag_raw(1);
+            player.messages_first = 1;
         }
     }
 }

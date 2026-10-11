@@ -2,8 +2,10 @@ use std::collections::BTreeMap;
 
 use nc_compat::{DatabaseDat, merge_player_intel_from_compat};
 use nc_data::{
-    PlanetIntelEvent, PlanetIntelSource, build_player_starmap_projection_from_snapshots,
-    latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
+    Coords, PlanetIntelEvent, PlanetIntelSource, Real48,
+    build_player_starmap_projection_from_snapshots, latest_planet_intel_grants_for_viewer,
+    merge_player_intel_from_runtime, set_armies_aboard, set_civil_disorder, set_planet_name,
+    set_troop_transports,
 };
 use nc_engine::{GameStateBuilder, run_maintenance_turn, visible_hazard_intel_from_snapshots};
 
@@ -14,13 +16,13 @@ fn sqlite_style_intel_persists_when_compat_database_row_disappears() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[4].set_coords_raw([4, 2]);
-    game_data.planets.records[4].set_owner_empire_slot_raw(2);
-    game_data.planets.records[4].set_ownership_status_raw(2);
+    game_data.planets[4].sector = Coords::new(4, 2);
+    game_data.planets[4].owner.0 = 2;
+    game_data.planets[4].years_under_owner = 2;
 
-    let planet_count = game_data.planets.records.len();
+    let planet_count = game_data.planets.len();
     let mut observed_database =
-        DatabaseDat::new_zeroed((game_data.conquest.player_count() as usize) * planet_count);
+        DatabaseDat::new_zeroed((game_data.conquest.player_count as usize) * planet_count);
     let record = observed_database.record_mut(4, 0, planet_count);
     record.set_planet_name("Prime");
     record.raw[0x15] = 2;
@@ -38,7 +40,7 @@ fn sqlite_style_intel_persists_when_compat_database_row_disappears() {
     assert_eq!(known_world.last_intel_year, Some(3000));
 
     let blank_database =
-        DatabaseDat::new_zeroed((game_data.conquest.player_count() as usize) * planet_count);
+        DatabaseDat::new_zeroed((game_data.conquest.player_count as usize) * planet_count);
     let persisted =
         merge_player_intel_from_compat(&game_data, &blank_database, 1, 3001, Some(&known));
     let persisted_world = persisted
@@ -72,9 +74,9 @@ fn runtime_projection_keeps_owned_worlds_visible_without_snapshot_rows() {
         .with_year(3000)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[0].set_coords_raw([5, 2]);
-    game_data.planets.records[0].set_owner_empire_slot_raw(1);
-    game_data.planets.records[0].set_planet_name("Home");
+    game_data.planets[0].sector = Coords::new(5, 2);
+    game_data.planets[0].owner.0 = 1;
+    set_planet_name(&mut game_data.planets[0], "Home");
     game_data
         .set_guard_starbase(1, 1, [5, 2], 1, 1)
         .expect("guard starbase should seed");
@@ -91,7 +93,7 @@ fn runtime_projection_keeps_owned_worlds_visible_without_snapshot_rows() {
     assert_eq!(home.known_name.as_deref(), Some("Home"));
     assert_eq!(
         home.known_potential_production,
-        Some(game_data.planets.records[0].potential_production_points())
+        Some(u16::from(game_data.planets[0].potential_production))
     );
     assert_eq!(home.known_starbase_count, Some(1));
 }
@@ -106,15 +108,14 @@ fn generated_database_defaults_to_classic_unknown_sentinels() {
     let database = DatabaseDat::generate_from_planets_and_year(
         &game_data
             .planets
-            .records
             .iter()
-            .map(|planet| planet.planet_name())
+            .map(|planet| planet.name.clone())
             .collect::<Vec<_>>(),
-        game_data.conquest.game_year(),
-        game_data.conquest.player_count() as usize,
+        game_data.conquest.game_year,
+        game_data.conquest.player_count as usize,
         None,
     );
-    let record = database.record(0, 0, game_data.planets.records.len());
+    let record = database.record(0, 0, game_data.planets.len());
     assert_eq!(record.planet_name_bytes(), b"UNKNOWN");
     for offset in [
         0x15usize, 0x1c, 0x1d, 0x1e, 0x1f, 0x20, 0x23, 0x24, 0x25, 0x26,
@@ -133,15 +134,15 @@ fn runtime_intel_merges_scouted_worlds_without_compat_database() {
         .with_year(3003)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[4].set_coords_raw([9, 2]);
-    game_data.planets.records[4].set_owner_empire_slot_raw(4);
-    game_data.planets.records[4].set_ownership_status_raw(2);
-    game_data.planets.records[4].set_planet_name("Helios Prime");
-    game_data.planets.records[4].set_potential_production_points(136);
-    game_data.planets.records[4].set_present_production_points(136);
-    game_data.planets.records[4].set_stored_production_points(35);
-    game_data.planets.records[4].set_army_count_raw(10);
-    game_data.planets.records[4].set_ground_batteries_raw(6);
+    game_data.planets[4].sector = Coords::new(9, 2);
+    game_data.planets[4].owner.0 = 4;
+    game_data.planets[4].years_under_owner = 2;
+    set_planet_name(&mut game_data.planets[4], "Helios Prime");
+    game_data.planets[4].potential_production = 136;
+    game_data.planets[4].production = Real48::from_f64(136.0);
+    game_data.planets[4].stored_goods = Real48::from_f64(35.0);
+    game_data.planets[4].armies = 10;
+    game_data.planets[4].ground_batteries = 6;
     game_data
         .set_guard_starbase(1, 4, [9, 2], 1, 1)
         .expect("guard starbase should seed");
@@ -179,11 +180,11 @@ fn blocked_colonization_intel_reveals_owner_and_potential() {
         .with_year(3003)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.planets.records[4].set_coords_raw([9, 2]);
-    game_data.planets.records[4].set_owner_empire_slot_raw(4);
-    game_data.planets.records[4].set_ownership_status_raw(2);
-    game_data.planets.records[4].set_planet_name("Helios Prime");
-    game_data.planets.records[4].set_potential_production_points(136);
+    game_data.planets[4].sector = Coords::new(9, 2);
+    game_data.planets[4].owner.0 = 4;
+    game_data.planets[4].years_under_owner = 2;
+    set_planet_name(&mut game_data.planets[4], "Helios Prime");
+    game_data.planets[4].potential_production = 136;
 
     let grants = BTreeMap::from([(
         5usize,
@@ -217,12 +218,12 @@ fn civil_disorder_contact_intel_only_reveals_owner() {
         .with_year(3003)
         .build_initialized_baseline()
         .expect("baseline should build");
-    game_data.player.records[1].set_civil_disorder_mode();
-    game_data.planets.records[4].set_coords_raw([9, 2]);
-    game_data.planets.records[4].set_owner_empire_slot_raw(2);
-    game_data.planets.records[4].set_ownership_status_raw(2);
-    game_data.planets.records[4].set_planet_name("Not Named Yet");
-    game_data.planets.records[4].set_potential_production_points(100);
+    set_civil_disorder(&mut game_data.players[1]);
+    game_data.planets[4].sector = Coords::new(9, 2);
+    game_data.planets[4].owner.0 = 2;
+    game_data.planets[4].years_under_owner = 2;
+    set_planet_name(&mut game_data.planets[4], "Not Named Yet");
+    game_data.planets[4].potential_production = 100;
 
     let grants = BTreeMap::from([(
         5usize,
@@ -254,39 +255,39 @@ fn identified_civil_disorder_contact_emits_owner_only_intel() {
         .with_year(3003)
         .build_initialized_baseline()
         .expect("baseline should build");
-    for fleet in &mut game_data.fleets.records {
-        let coords = fleet.current_location_coords_raw();
-        fleet.set_current_speed(0);
-        fleet.set_standing_order_kind(nc_data::Order::HoldPosition);
-        fleet.set_standing_order_target_coords_raw(coords);
-        fleet.set_destroyer_count(0);
-        fleet.set_cruiser_count(0);
-        fleet.set_battleship_count(0);
-        fleet.set_scout_count(0);
-        fleet.set_troop_transport_count(0);
-        fleet.set_etac_count(0);
-        fleet.set_army_count(0);
-        fleet.set_rules_of_engagement(0);
+    for fleet in &mut game_data.fleets {
+        let coords = fleet.sector.to_array();
+        fleet.speed = 0;
+        fleet.order = nc_data::Order::HoldPosition;
+        fleet.target = Coords::from_array(coords);
+        fleet.ships.destroyers = 0;
+        fleet.ships.cruisers = 0;
+        fleet.ships.battleships = 0;
+        fleet.ships.scouts = 0;
+        set_troop_transports(fleet, 0);
+        fleet.ships.etacs = 0;
+        set_armies_aboard(fleet, 0);
+        fleet.rules_of_engagement = 0;
     }
 
-    game_data.player.records[1].set_civil_disorder_mode();
-    game_data.planets.records[4].set_coords_raw([9, 2]);
-    game_data.planets.records[4].set_owner_empire_slot_raw(2);
-    game_data.planets.records[4].set_ownership_status_raw(2);
-    game_data.planets.records[4].set_planet_name("Not Named Yet");
+    set_civil_disorder(&mut game_data.players[1]);
+    game_data.planets[4].sector = Coords::new(9, 2);
+    game_data.planets[4].owner.0 = 2;
+    game_data.planets[4].years_under_owner = 2;
+    set_planet_name(&mut game_data.planets[4], "Not Named Yet");
 
-    let scout = &mut game_data.fleets.records[0];
-    scout.set_owner_empire_raw(1);
-    scout.set_current_location_coords_raw([9, 2]);
-    scout.set_standing_order_kind(nc_data::Order::ScoutSector);
-    scout.set_standing_order_target_coords_raw([9, 2]);
-    scout.set_scout_count(1);
+    let scout = &mut game_data.fleets[0];
+    scout.owner.0 = 1;
+    scout.sector = Coords::new(9, 2);
+    scout.order = nc_data::Order::ScoutSector;
+    scout.target = Coords::new(9, 2);
+    scout.ships.scouts = 1;
 
-    let enemy = &mut game_data.fleets.records[1];
-    enemy.set_owner_empire_raw(2);
-    enemy.set_current_location_coords_raw([9, 2]);
-    enemy.set_standing_order_kind(nc_data::Order::HoldPosition);
-    enemy.set_destroyer_count(1);
+    let enemy = &mut game_data.fleets[1];
+    enemy.owner.0 = 2;
+    enemy.sector = Coords::new(9, 2);
+    enemy.order = nc_data::Order::HoldPosition;
+    enemy.ships.destroyers = 1;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     let grants = latest_planet_intel_grants_for_viewer(&events, 1);

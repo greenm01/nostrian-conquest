@@ -31,8 +31,10 @@ fn two_empire_game(rows: Vec<ReportBlockRow>) -> TempGameDir {
         .expect("join empire 2");
     state.report_block_rows = rows;
     state.queued_mail.clear();
-    state.game_data.player.records[0].set_classic_messages_pending_flag_raw(0);
-    state.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    state.game_data.players[0].messages_first =
+        (state.game_data.players[0].messages_first & !0xff) | 0;
+    state.game_data.players[0].messages_last =
+        (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
     fixture_dir
 }
@@ -73,7 +75,7 @@ fn assert_broadcast_kept_only_for_empire_two(fixture_dir: &Path) {
     assert!(mentions(&empire_two, BROADCAST), "{empire_two:?}");
     assert!(mentions(&empire_two, EMPIRE_TWO), "{empire_two:?}");
 
-    let mut players = state.game_data.player.records.clone();
+    let mut players = state.game_data.players.clone();
     let layout = layout_classic_results(&players, &state.report_block_rows);
     assert_eq!(layout.chain_for(1), None);
     assert!(layout.chain_for(2).is_some());

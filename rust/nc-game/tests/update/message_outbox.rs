@@ -38,7 +38,7 @@ fn own_mail(recipient: u8, year: u16, subject: &str) -> QueuedPlayerMail {
 
 fn queue_own_messages(fixture_dir: &Path, subjects: &[&str]) {
     let mut runtime = latest_runtime_state(fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     for subject in subjects {
         runtime.queued_mail.push(own_mail(2, year, subject));
     }
@@ -169,7 +169,7 @@ fn outbox_d_prompt_defaults_to_yes_and_n_keeps_the_message() {
 fn outbox_lists_only_this_turns_messages_so_delivered_ones_cannot_be_deleted() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     runtime.queued_mail.push(own_mail(2, year - 1, "Delivered"));
     runtime.queued_mail.push(own_mail(3, year, "Queued"));
     save_runtime_state(&fixture_dir, &runtime);
@@ -202,7 +202,7 @@ fn outbox_lists_only_this_turns_messages_so_delivered_ones_cannot_be_deleted() {
 fn outbox_read_view_scrolls_a_long_message_with_the_inbox_preview_keys() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     let body = (1..=40)
         .map(|line| format!("Line {line:02}"))
         .collect::<Vec<_>>()
@@ -317,7 +317,7 @@ fn send_confirmation_points_to_d_on_the_recipient_list() {
 fn outbox_list_and_read_view_fit_80x25_and_24_row_doors() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     let long_body = format!("{} {}", "word ".repeat(150), "x".repeat(200));
     for idx in 0..12 {
         runtime.queued_mail.push(incoming_mail(
@@ -415,7 +415,7 @@ fn sent_message_appears_in_review_inbox_until_cancelled() {
 fn review_inbox_lists_this_turns_outgoing_first_and_keeps_ids_after_cancel() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    let year = runtime.game_data.conquest.game_year();
+    let year = runtime.game_data.conquest.game_year;
     set_runtime_report_blocks(
         &mut runtime,
         classic_chunked_report_blocks(&["Stardate: 03/3003\nFleet contact report"]),

@@ -229,16 +229,15 @@ fn fleet_list_typed_jump_accepts_leading_zero_fleet_ids() {
     for fleet in app
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .filter(|fleet| fleet.owner_empire_raw() == 1 && fleet.has_any_force())
+        .filter(|fleet| fleet.owner.0 == 1 && nc_data::has_any_force(&fleet))
     {
         let fleet_number = match next_other_number {
             30 => 20,
             31 => 2,
             _ => next_other_number,
         };
-        fleet.set_local_slot_word_raw(fleet_number);
+        fleet.fleet_number.0 = fleet_number;
         next_other_number += 1;
     }
     advance_to_main_menu(&mut app);
@@ -637,20 +636,18 @@ fn stale_fleet_filter_clause_resets_to_all_after_rows_change() {
     let owned_fleet_indexes = app
         .game_data
         .fleets
-        .records
         .iter()
         .enumerate()
-        .filter_map(|(idx, fleet)| (fleet.owner_empire_raw() == 1).then_some(idx))
+        .filter_map(|(idx, fleet)| (fleet.owner.0 == 1).then_some(idx))
         .collect::<Vec<_>>();
     assert!(
         !owned_fleet_indexes.is_empty(),
         "fixture should have owned fleets"
     );
     for &idx in &owned_fleet_indexes {
-        app.game_data.fleets.records[idx].set_standing_order_kind(nc_data::Order::SeekHome);
+        app.game_data.fleets[idx].order = nc_data::Order::SeekHome;
     }
-    app.game_data.fleets.records[owned_fleet_indexes[0]]
-        .set_standing_order_kind(nc_data::Order::HoldPosition);
+    app.game_data.fleets[owned_fleet_indexes[0]].order = nc_data::Order::HoldPosition;
 
     app.open_fleet_list();
     assert_eq!(
@@ -678,8 +675,7 @@ fn stale_fleet_filter_clause_resets_to_all_after_rows_change() {
     assert_eq!(apply_action(&mut app, action), AppOutcome::Continue);
     assert!(app.fleet.list_filter_clause.is_some());
 
-    app.game_data.fleets.records[owned_fleet_indexes[0]]
-        .set_standing_order_kind(nc_data::Order::SeekHome);
+    app.game_data.fleets[owned_fleet_indexes[0]].order = nc_data::Order::SeekHome;
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("fleet list should render");
@@ -710,16 +706,15 @@ fn stale_planet_list_filter_clause_resets_to_all_after_rows_change() {
     let owned_planet_indexes = app
         .game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .filter_map(|(idx, planet)| (planet.owner_empire_slot_raw() == 1).then_some(idx))
+        .filter_map(|(idx, planet)| (planet.owner.0 == 1).then_some(idx))
         .collect::<Vec<_>>();
     let target_planet_idx = *owned_planet_indexes.first().expect("owned planet exists");
     for &idx in &owned_planet_indexes {
-        app.game_data.planets.records[idx].set_army_count_raw(0);
+        app.game_data.planets[idx].armies = 0;
     }
-    app.game_data.planets.records[target_planet_idx].set_army_count_raw(5);
+    app.game_data.planets[target_planet_idx].armies = 5;
 
     app.open_planet_menu();
     app.submit_planet_list_sort(PlanetListMode::Brief, PlanetListSort::Location);
@@ -744,7 +739,7 @@ fn stale_planet_list_filter_clause_resets_to_all_after_rows_change() {
     assert_eq!(apply_action(&mut app, action), AppOutcome::Continue);
     assert!(app.planet.list_filter_clause.is_some());
 
-    app.game_data.planets.records[target_planet_idx].set_army_count_raw(0);
+    app.game_data.planets[target_planet_idx].armies = 0;
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
@@ -773,17 +768,16 @@ fn stale_database_filter_clause_resets_to_all_after_rows_change() {
     let mut app = App::load(config).expect("load app");
     advance_to_main_menu(&mut app);
 
-    for planet in &mut app.game_data.planets.records {
-        planet.set_army_count_raw(0);
+    for planet in &mut app.game_data.planets {
+        planet.armies = 0;
     }
     let target_planet_idx = app
         .game_data
         .planets
-        .records
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    app.game_data.planets.records[target_planet_idx].set_army_count_raw(7);
+    app.game_data.planets[target_planet_idx].armies = 7;
 
     app.open_planet_database();
     assert_eq!(
@@ -807,7 +801,7 @@ fn stale_database_filter_clause_resets_to_all_after_rows_change() {
     assert_eq!(apply_action(&mut app, action), AppOutcome::Continue);
     assert!(app.planet.database_filter_clause.is_some());
 
-    app.game_data.planets.records[target_planet_idx].set_army_count_raw(0);
+    app.game_data.planets[target_planet_idx].armies = 0;
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
@@ -1074,11 +1068,10 @@ fn planet_list_build_hotkey_shows_notice_when_selected_planet_has_no_build_budge
     let homeworld = runtime
         .game_data
         .planets
-        .records
         .iter_mut()
-        .find(|planet| planet.owner_empire_slot_raw() == 1)
+        .find(|planet| planet.owner.0 == 1)
         .expect("owned planet exists");
-    homeworld.set_stored_production_points(1);
+    homeworld.stored_goods = nc_data::Real48::from_f64(f64::from(1));
     save_runtime_state(&fixture_dir, &runtime);
 
     let config = AppConfig {
@@ -1530,39 +1523,50 @@ fn app_load_persists_all_setup_backed_config_fields_into_runtime_snapshot() {
         game_config: config.clone(),
     })
     .expect("app should load and persist config");
+    assert_ne!(before_setup.snoop, first.game_data.setup.snoop);
     assert_ne!(
-        before_setup.snoop_enabled(),
-        first.game_data.setup.snoop_enabled()
+        (before_setup.max_key_gap_minutes.min(u16::from(u8::MAX)) as u8),
+        (first
+            .game_data
+            .setup
+            .max_key_gap_minutes
+            .min(u16::from(u8::MAX)) as u8)
     );
     assert_ne!(
-        before_setup.max_time_between_keys_minutes_raw(),
-        first.game_data.setup.max_time_between_keys_minutes_raw()
+        before_setup.minimum_time_minutes,
+        first.game_data.setup.minimum_time_minutes
     );
     assert_ne!(
-        before_setup.minimum_time_granted_minutes_raw(),
-        first.game_data.setup.minimum_time_granted_minutes_raw()
+        before_setup.local_timeout,
+        first.game_data.setup.local_timeout
     );
     assert_ne!(
-        before_setup.local_timeout_enabled(),
-        first.game_data.setup.local_timeout_enabled()
+        before_setup.remote_timeout,
+        first.game_data.setup.remote_timeout
     );
     assert_ne!(
-        before_setup.remote_timeout_enabled(),
-        first.game_data.setup.remote_timeout_enabled()
-    );
-    assert_ne!(
-        before_setup.autopilot_inactive_turns_raw(),
-        first.game_data.setup.autopilot_inactive_turns_raw()
+        (before_setup.autopilot_after_turns.min(u16::from(u8::MAX)) as u8),
+        (first
+            .game_data
+            .setup
+            .autopilot_after_turns
+            .min(u16::from(u8::MAX)) as u8)
     );
 
     let persisted = latest_runtime_state(&fixture_dir);
     let setup = &persisted.game_data.setup;
-    assert!(!setup.snoop_enabled());
-    assert_eq!(setup.max_time_between_keys_minutes_raw(), 19);
-    assert_eq!(setup.minimum_time_granted_minutes_raw(), 7);
-    assert!(setup.local_timeout_enabled());
-    assert!(!setup.remote_timeout_enabled());
-    assert_eq!(setup.autopilot_inactive_turns_raw(), 5);
+    assert!(!setup.snoop);
+    assert_eq!(
+        (setup.max_key_gap_minutes.min(u16::from(u8::MAX)) as u8),
+        19
+    );
+    assert_eq!(setup.minimum_time_minutes, 7);
+    assert!(setup.local_timeout);
+    assert!(!setup.remote_timeout);
+    assert_eq!(
+        (setup.autopilot_after_turns.min(u16::from(u8::MAX)) as u8),
+        5
+    );
 
     let second = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -2214,10 +2218,12 @@ fn starbase_review_matches_verified_v15_review_content() {
 fn starbase_list_and_review_ignore_stale_escort_linkage_without_live_guard_orders() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.fleets.records[0].set_standing_order_kind(nc_data::Order::HoldPosition);
-    runtime.game_data.fleets.records[0].set_standing_order_target_coords_raw([6, 5]);
-    runtime.game_data.fleets.records[0].set_mission_aux_bytes([0, 0]);
-    runtime.game_data.fleets.records[0].set_current_location_coords_raw([6, 5]);
+    runtime.game_data.fleets[0].order = nc_data::Order::HoldPosition;
+    runtime.game_data.fleets[0].target = nc_data::Coords::from_array([6, 5]);
+    runtime.game_data.fleets[0].target_depth = 0;
+    runtime.game_data.fleets[0].mission_target =
+        (runtime.game_data.fleets[0].mission_target & 0xff00) | 0;
+    runtime.game_data.fleets[0].sector = nc_data::Coords::from_array([6, 5]);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -2262,10 +2268,12 @@ fn starbase_list_and_review_ignore_stale_escort_linkage_without_live_guard_order
 fn starbase_list_summarizes_multiple_live_guard_fleets_and_review_lists_them() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.fleets.records[1].set_current_location_coords_raw([6, 5]);
-    runtime.game_data.fleets.records[1].set_standing_order_kind(nc_data::Order::GuardStarbase);
-    runtime.game_data.fleets.records[1].set_standing_order_target_coords_raw([6, 5]);
-    runtime.game_data.fleets.records[1].set_mission_aux_bytes([1, 1]);
+    runtime.game_data.fleets[1].sector = nc_data::Coords::from_array([6, 5]);
+    runtime.game_data.fleets[1].order = nc_data::Order::GuardStarbase;
+    runtime.game_data.fleets[1].target = nc_data::Coords::from_array([6, 5]);
+    runtime.game_data.fleets[1].target_depth = 1;
+    runtime.game_data.fleets[1].mission_target =
+        (runtime.game_data.fleets[1].mission_target & 0xff00) | 1;
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -2314,12 +2322,12 @@ fn starbase_list_wraps_selection_from_top_to_bottom_and_bottom_to_top() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     {
-        let mut base = runtime.game_data.bases.records[0].clone();
-        base.set_base_id_raw(2);
-        base.set_owner_empire_raw(1);
-        base.set_coords_raw([9, 9]);
-        base.set_target_coords_raw([9, 9]);
-        runtime.game_data.bases.records.push(base);
+        let mut base = runtime.game_data.bases[0].clone();
+        base.base_id.0 = 2;
+        base.owner.0 = 1;
+        base.sector = nc_data::Coords::from_array([9, 9]);
+        base.target = nc_data::Coords::from_array([9, 9]);
+        runtime.game_data.bases.push(base);
     }
     save_runtime_state(&fixture_dir, &runtime);
 
@@ -2360,8 +2368,8 @@ fn starbase_list_wraps_selection_from_top_to_bottom_and_bottom_to_top() {
 fn starbase_list_and_review_show_numeric_transit_eta() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.bases.records[0].set_coords_raw([15, 13]);
-    runtime.game_data.bases.records[0].set_target_coords_raw([2, 12]);
+    runtime.game_data.bases[0].sector = nc_data::Coords::from_array([15, 13]);
+    runtime.game_data.bases[0].target = nc_data::Coords::from_array([2, 12]);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -2415,10 +2423,12 @@ fn starbase_list_and_review_show_numeric_transit_eta() {
 fn starbase_move_prompt_accepts_non_planet_sector_and_persists_report() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.fleets.records[1].set_current_location_coords_raw([6, 5]);
-    runtime.game_data.fleets.records[1].set_standing_order_kind(nc_data::Order::GuardStarbase);
-    runtime.game_data.fleets.records[1].set_standing_order_target_coords_raw([6, 5]);
-    runtime.game_data.fleets.records[1].set_mission_aux_bytes([1, 1]);
+    runtime.game_data.fleets[1].sector = nc_data::Coords::from_array([6, 5]);
+    runtime.game_data.fleets[1].order = nc_data::Order::GuardStarbase;
+    runtime.game_data.fleets[1].target = nc_data::Coords::from_array([6, 5]);
+    runtime.game_data.fleets[1].target_depth = 1;
+    runtime.game_data.fleets[1].mission_target =
+        (runtime.game_data.fleets[1].mission_target & 0xff00) | 1;
     save_runtime_state(&fixture_dir, &runtime);
     let destination = first_empty_sector(&runtime.game_data);
 
@@ -2480,14 +2490,11 @@ fn starbase_move_prompt_accepts_non_planet_sector_and_persists_report() {
 
     let persisted = latest_runtime_state(&fixture_dir);
     assert_eq!(
-        persisted.game_data.bases.records[0].coords_raw(),
+        persisted.game_data.bases[0].sector.to_array(),
         [6, 5],
         "live base location should stay unchanged until movement execution exists"
     );
-    assert_eq!(
-        persisted.game_data.bases.records[0].target_coords_raw(),
-        destination
-    );
+    assert_eq!(persisted.game_data.bases[0].target.to_array(), destination);
     let latest_report = persisted
         .report_block_rows
         .last()
@@ -2936,33 +2943,31 @@ fn fleet_list_transfer_cancel_stays_in_fleet_flow() {
     let donor = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    donor.set_battleship_count(0);
-    donor.set_cruiser_count(0);
-    donor.set_destroyer_count(0);
-    donor.set_troop_transport_count(2);
-    donor.set_army_count(0);
-    donor.set_scout_count(0);
-    donor.set_etac_count(0);
-    donor.recompute_max_speed_from_composition();
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 0;
+    nc_data::set_troop_transports(donor, 2);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 0;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
     let host = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    host.set_battleship_count(0);
-    host.set_cruiser_count(0);
-    host.set_destroyer_count(1);
-    host.set_troop_transport_count(0);
-    host.set_army_count(0);
-    host.set_scout_count(0);
-    host.set_etac_count(0);
-    host.recompute_max_speed_from_composition();
+    host.ships.battleships = 0;
+    host.ships.cruisers = 0;
+    host.ships.destroyers = 1;
+    nc_data::set_troop_transports(host, 0);
+    nc_data::set_armies_aboard(host, 0);
+    host.ships.scouts = 0;
+    host.ships.etacs = 0;
+    nc_data::recompute_max_speed(host);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3036,33 +3041,31 @@ fn fleet_list_transfer_host_error_uses_slap_a_key_latch_and_preserves_prompt() {
     let donor = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    donor.set_battleship_count(0);
-    donor.set_cruiser_count(0);
-    donor.set_destroyer_count(0);
-    donor.set_troop_transport_count(2);
-    donor.set_army_count(0);
-    donor.set_scout_count(0);
-    donor.set_etac_count(0);
-    donor.recompute_max_speed_from_composition();
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 0;
+    nc_data::set_troop_transports(donor, 2);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 0;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
     let host = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 3)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 3)
         .expect("fleet #3 should exist");
-    host.set_battleship_count(0);
-    host.set_cruiser_count(0);
-    host.set_destroyer_count(1);
-    host.set_troop_transport_count(0);
-    host.set_army_count(0);
-    host.set_scout_count(0);
-    host.set_etac_count(0);
-    host.recompute_max_speed_from_composition();
+    host.ships.battleships = 0;
+    host.ships.cruisers = 0;
+    host.ships.destroyers = 1;
+    nc_data::set_troop_transports(host, 0);
+    nc_data::set_armies_aboard(host, 0);
+    host.ships.scouts = 0;
+    host.ships.etacs = 0;
+    nc_data::recompute_max_speed(host);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3124,18 +3127,17 @@ fn fleet_list_transfer_donor_validation_uses_short_footer_notice_for_one_ship_fl
     let donor = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    donor.set_battleship_count(0);
-    donor.set_cruiser_count(0);
-    donor.set_destroyer_count(0);
-    donor.set_troop_transport_count(0);
-    donor.set_army_count(0);
-    donor.set_scout_count(1);
-    donor.set_etac_count(0);
-    donor.recompute_max_speed_from_composition();
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 0;
+    nc_data::set_troop_transports(donor, 0);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 1;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3182,20 +3184,19 @@ fn fleet_list_transfer_donor_validation_uses_short_footer_notice_without_host_fl
     let donor = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    donor.set_current_location_coords_raw([1, 1]);
-    donor.set_standing_order_target_coords_raw([1, 1]);
-    donor.set_battleship_count(0);
-    donor.set_cruiser_count(0);
-    donor.set_destroyer_count(0);
-    donor.set_troop_transport_count(2);
-    donor.set_army_count(0);
-    donor.set_scout_count(0);
-    donor.set_etac_count(0);
-    donor.recompute_max_speed_from_composition();
+    donor.sector = nc_data::Coords::from_array([1, 1]);
+    donor.target = nc_data::Coords::from_array([1, 1]);
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 0;
+    nc_data::set_troop_transports(donor, 2);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 0;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3273,7 +3274,7 @@ fn starbase_move_prompt_errors_hang_directly_under_command_line() {
 fn starbase_halt_prompt_resets_destination_to_live_location() {
     let fixture_dir = temp_game_with_starbase_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
-    runtime.game_data.bases.records[0].set_target_coords_raw([2, 12]);
+    runtime.game_data.bases[0].target = nc_data::Coords::from_array([2, 12]);
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -3306,10 +3307,7 @@ fn starbase_halt_prompt_resets_destination_to_live_location() {
 
     apply_action(&mut app, Action::Starbase(StarbaseAction::SubmitMovePrompt));
     let persisted = latest_runtime_state(&fixture_dir);
-    assert_eq!(
-        persisted.game_data.bases.records[0].target_coords_raw(),
-        [6, 5]
-    );
+    assert_eq!(persisted.game_data.bases[0].target.to_array(), [6, 5]);
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
@@ -3321,12 +3319,12 @@ fn starbase_halt_prompt_resets_destination_to_live_location() {
 fn fleet_transfer_uses_two_inline_fleet_prompts_before_quantity_entry() {
     let fixture_dir = temp_game_with_same_sector_fleets_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[0].set_troop_transport_count(2);
-    state.game_data.fleets.records[0].set_army_count(2);
-    state.game_data.fleets.records[0].recompute_max_speed_from_composition();
-    state.game_data.fleets.records[1].set_troop_transport_count(1);
-    state.game_data.fleets.records[1].set_army_count(1);
-    state.game_data.fleets.records[1].recompute_max_speed_from_composition();
+    nc_data::set_troop_transports(&mut state.game_data.fleets[0], 2);
+    nc_data::set_armies_aboard(&mut state.game_data.fleets[0], 2);
+    nc_data::recompute_max_speed(&mut state.game_data.fleets[0]);
+    nc_data::set_troop_transports(&mut state.game_data.fleets[1], 1);
+    nc_data::set_armies_aboard(&mut state.game_data.fleets[1], 1);
+    nc_data::recompute_max_speed(&mut state.game_data.fleets[1]);
     save_runtime_state(&fixture_dir, &state);
     let mut app = App::load(AppConfig {
         game_dir: fixture_dir.clone(),
@@ -3397,13 +3395,13 @@ fn fleet_transfer_uses_two_inline_fleet_prompts_before_quantity_entry() {
 fn fleet_transfer_source_prompt_defaults_to_largest_eligible_fleet() {
     let fixture_dir = temp_game_with_same_sector_fleets_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[0].set_battleship_count(1);
-    state.game_data.fleets.records[0].set_cruiser_count(1);
-    state.game_data.fleets.records[0].set_destroyer_count(1);
-    state.game_data.fleets.records[1].set_battleship_count(0);
-    state.game_data.fleets.records[1].set_cruiser_count(0);
-    state.game_data.fleets.records[1].set_destroyer_count(0);
-    state.game_data.fleets.records[1].set_scout_count(1);
+    state.game_data.fleets[0].ships.battleships = 1;
+    state.game_data.fleets[0].ships.cruisers = 1;
+    state.game_data.fleets[0].ships.destroyers = 1;
+    state.game_data.fleets[1].ships.battleships = 0;
+    state.game_data.fleets[1].ships.cruisers = 0;
+    state.game_data.fleets[1].ships.destroyers = 0;
+    state.game_data.fleets[1].ships.scouts = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3437,15 +3435,15 @@ fn fleet_transfer_source_prompt_defaults_to_largest_eligible_fleet() {
 fn fleet_transfer_source_prompt_rejects_one_ship_fleet() {
     let fixture_dir = temp_game_with_same_sector_fleets_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[0].set_battleship_count(0);
-    state.game_data.fleets.records[0].set_cruiser_count(0);
-    state.game_data.fleets.records[0].set_destroyer_count(0);
-    state.game_data.fleets.records[0].set_troop_transport_count(0);
-    state.game_data.fleets.records[0].set_scout_count(1);
-    state.game_data.fleets.records[0].set_etac_count(0);
-    state.game_data.fleets.records[0].recompute_max_speed_from_composition();
-    state.game_data.fleets.records[1].set_scout_count(2);
-    state.game_data.fleets.records[1].recompute_max_speed_from_composition();
+    state.game_data.fleets[0].ships.battleships = 0;
+    state.game_data.fleets[0].ships.cruisers = 0;
+    state.game_data.fleets[0].ships.destroyers = 0;
+    nc_data::set_troop_transports(&mut state.game_data.fleets[0], 0);
+    state.game_data.fleets[0].ships.scouts = 1;
+    state.game_data.fleets[0].ships.etacs = 0;
+    nc_data::recompute_max_speed(&mut state.game_data.fleets[0]);
+    state.game_data.fleets[1].ships.scouts = 2;
+    nc_data::recompute_max_speed(&mut state.game_data.fleets[1]);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3483,18 +3481,17 @@ fn fleet_list_detach_single_ship_uses_short_footer_notice() {
     let donor = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    donor.set_battleship_count(0);
-    donor.set_cruiser_count(0);
-    donor.set_destroyer_count(0);
-    donor.set_troop_transport_count(0);
-    donor.set_army_count(0);
-    donor.set_scout_count(1);
-    donor.set_etac_count(0);
-    donor.recompute_max_speed_from_composition();
+    donor.ships.battleships = 0;
+    donor.ships.cruisers = 0;
+    donor.ships.destroyers = 0;
+    nc_data::set_troop_transports(donor, 0);
+    nc_data::set_armies_aboard(donor, 0);
+    donor.ships.scouts = 1;
+    donor.ships.etacs = 0;
+    nc_data::recompute_max_speed(donor);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3531,29 +3528,27 @@ fn fleet_list_transfer_uses_typed_fleet_number_for_single_scout_validation() {
     let typed_target = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    typed_target.set_battleship_count(0);
-    typed_target.set_cruiser_count(0);
-    typed_target.set_destroyer_count(0);
-    typed_target.set_troop_transport_count(0);
-    typed_target.set_army_count(0);
-    typed_target.set_scout_count(1);
-    typed_target.set_etac_count(0);
-    typed_target.recompute_max_speed_from_composition();
+    typed_target.ships.battleships = 0;
+    typed_target.ships.cruisers = 0;
+    typed_target.ships.destroyers = 0;
+    nc_data::set_troop_transports(typed_target, 0);
+    nc_data::set_armies_aboard(typed_target, 0);
+    typed_target.ships.scouts = 1;
+    typed_target.ships.etacs = 0;
+    nc_data::recompute_max_speed(typed_target);
     let cursor_row = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    cursor_row.set_troop_transport_count(2);
-    cursor_row.set_scout_count(0);
-    cursor_row.set_etac_count(0);
-    cursor_row.recompute_max_speed_from_composition();
+    nc_data::set_troop_transports(cursor_row, 2);
+    cursor_row.ships.scouts = 0;
+    cursor_row.ships.etacs = 0;
+    nc_data::recompute_max_speed(cursor_row);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3590,29 +3585,27 @@ fn fleet_list_detach_uses_typed_fleet_number_for_single_scout_validation() {
     let typed_target = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 1)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 1)
         .expect("fleet #1 should exist");
-    typed_target.set_battleship_count(0);
-    typed_target.set_cruiser_count(0);
-    typed_target.set_destroyer_count(0);
-    typed_target.set_troop_transport_count(0);
-    typed_target.set_army_count(0);
-    typed_target.set_scout_count(1);
-    typed_target.set_etac_count(0);
-    typed_target.recompute_max_speed_from_composition();
+    typed_target.ships.battleships = 0;
+    typed_target.ships.cruisers = 0;
+    typed_target.ships.destroyers = 0;
+    nc_data::set_troop_transports(typed_target, 0);
+    nc_data::set_armies_aboard(typed_target, 0);
+    typed_target.ships.scouts = 1;
+    typed_target.ships.etacs = 0;
+    nc_data::recompute_max_speed(typed_target);
     let cursor_row = state
         .game_data
         .fleets
-        .records
         .iter_mut()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 4)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 4)
         .expect("fleet #4 should exist");
-    cursor_row.set_troop_transport_count(2);
-    cursor_row.set_scout_count(0);
-    cursor_row.set_etac_count(0);
-    cursor_row.recompute_max_speed_from_composition();
+    nc_data::set_troop_transports(cursor_row, 2);
+    cursor_row.ships.scouts = 0;
+    cursor_row.ships.etacs = 0;
+    nc_data::recompute_max_speed(cursor_row);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3646,12 +3639,12 @@ fn fleet_list_detach_uses_typed_fleet_number_for_single_scout_validation() {
 fn fleet_transfer_destination_prompt_defaults_to_smallest_colocated_fleet() {
     let fixture_dir = temp_game_with_same_sector_fleets_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[0].set_battleship_count(1);
-    state.game_data.fleets.records[0].set_cruiser_count(1);
-    state.game_data.fleets.records[0].set_destroyer_count(2);
-    state.game_data.fleets.records[1].set_battleship_count(0);
-    state.game_data.fleets.records[1].set_cruiser_count(0);
-    state.game_data.fleets.records[1].set_destroyer_count(1);
+    state.game_data.fleets[0].ships.battleships = 1;
+    state.game_data.fleets[0].ships.cruisers = 1;
+    state.game_data.fleets[0].ships.destroyers = 2;
+    state.game_data.fleets[1].ships.battleships = 0;
+    state.game_data.fleets[1].ships.cruisers = 0;
+    state.game_data.fleets[1].ships.destroyers = 1;
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3680,8 +3673,8 @@ fn fleet_transfer_destination_prompt_defaults_to_smallest_colocated_fleet() {
 fn fleet_transfer_destination_prompt_rejects_non_colocated_fleet() {
     let fixture_dir = temp_game_with_same_sector_fleets_copy();
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.fleets.records[2].set_current_location_coords_raw([1, 1]);
-    state.game_data.fleets.records[2].set_standing_order_target_coords_raw([1, 1]);
+    state.game_data.fleets[2].sector = nc_data::Coords::from_array([1, 1]);
+    state.game_data.fleets[2].target = nc_data::Coords::from_array([1, 1]);
     save_runtime_state(&fixture_dir, &state);
 
     let mut app = App::load(AppConfig {
@@ -3815,9 +3808,9 @@ fn returning_login_clears_only_inactivity_auto_enabled_autopilot() {
     let fixture_dir = temp_game_copy();
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.player.records[0].set_autopilot_flag(1);
-    state.game_data.player.records[0].set_last_run_year_raw(2997);
-    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
+    state.game_data.players[0].autopilot = true;
+    state.game_data.players[0].last_year_on = 2997;
+    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             store
                 .latest_planet_intel_for_viewer(viewer_empire_id)
@@ -3828,7 +3821,7 @@ fn returning_login_clears_only_inactivity_auto_enabled_autopilot() {
         })
         .collect::<Vec<_>>();
     let mut player_activity_states = store
-        .latest_player_activity_states(state.game_data.conquest.player_count())
+        .latest_player_activity_states(state.game_data.conquest.player_count)
         .expect("load player activity");
     player_activity_states[0].last_participation_year = 2997;
     player_activity_states[0].inactivity_autopilot_pending_clear = true;
@@ -3853,13 +3846,10 @@ fn returning_login_clears_only_inactivity_auto_enabled_autopilot() {
     assert_eq!(app.current_autopilot_flag(), 0);
 
     let reloaded = latest_runtime_state(&fixture_dir);
-    assert_eq!(
-        reloaded.game_data.player.records[0].last_run_year_raw(),
-        3000
-    );
+    assert_eq!(reloaded.game_data.players[0].last_year_on, 3000);
     let activity = CampaignStore::open_default_in_dir(&fixture_dir)
         .expect("open campaign store")
-        .latest_player_activity_states(reloaded.game_data.conquest.player_count())
+        .latest_player_activity_states(reloaded.game_data.conquest.player_count)
         .expect("load player activity");
     assert_eq!(activity[0].last_participation_year, 3000);
     assert!(!activity[0].inactivity_autopilot_pending_clear);
@@ -3870,9 +3860,9 @@ fn returning_login_preserves_manual_autopilot() {
     let fixture_dir = temp_game_copy();
     let store = CampaignStore::open_default_in_dir(&fixture_dir).expect("open campaign store");
     let mut state = latest_runtime_state(&fixture_dir);
-    state.game_data.player.records[0].set_autopilot_flag(1);
-    state.game_data.player.records[0].set_last_run_year_raw(2997);
-    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
+    state.game_data.players[0].autopilot = true;
+    state.game_data.players[0].last_year_on = 2997;
+    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             store
                 .latest_planet_intel_for_viewer(viewer_empire_id)
@@ -3883,7 +3873,7 @@ fn returning_login_preserves_manual_autopilot() {
         })
         .collect::<Vec<_>>();
     let mut player_activity_states = store
-        .latest_player_activity_states(state.game_data.conquest.player_count())
+        .latest_player_activity_states(state.game_data.conquest.player_count)
         .expect("load player activity");
     player_activity_states[0].last_participation_year = 2997;
     player_activity_states[0].inactivity_autopilot_pending_clear = false;
@@ -3908,13 +3898,10 @@ fn returning_login_preserves_manual_autopilot() {
     assert_eq!(app.current_autopilot_flag(), 1);
 
     let reloaded = latest_runtime_state(&fixture_dir);
-    assert_eq!(
-        reloaded.game_data.player.records[0].last_run_year_raw(),
-        3000
-    );
+    assert_eq!(reloaded.game_data.players[0].last_year_on, 3000);
     let activity = CampaignStore::open_default_in_dir(&fixture_dir)
         .expect("open campaign store")
-        .latest_player_activity_states(reloaded.game_data.conquest.player_count())
+        .latest_player_activity_states(reloaded.game_data.conquest.player_count)
         .expect("load player activity");
     assert_eq!(activity[0].last_participation_year, 3000);
     assert!(!activity[0].inactivity_autopilot_pending_clear);
@@ -3989,12 +3976,14 @@ fn apply_action_deletes_reviewables() {
     runtime.queued_mail.push(incoming_mail(
         2,
         1,
-        runtime.game_data.conquest.game_year().saturating_sub(1),
+        runtime.game_data.conquest.game_year.saturating_sub(1),
         "Orders",
         "test messages",
     ));
-    runtime.game_data.player.records[0].set_classic_messages_pending_flag_raw(1);
-    runtime.game_data.player.records[0].set_classic_reports_pending_flag_raw(1);
+    runtime.game_data.players[0].messages_first =
+        (runtime.game_data.players[0].messages_first & !0xff) | 1;
+    runtime.game_data.players[0].messages_last =
+        (runtime.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = App::load(AppConfig {
@@ -4034,13 +4023,7 @@ fn apply_action_deletes_reviewables() {
     );
     assert_eq!(runtime.queued_mail.len(), 1);
     assert!(runtime.queued_mail[0].recipient_deleted);
-    assert_eq!(
-        runtime.game_data.player.records[0].classic_messages_pending_flag_raw(),
-        0
-    );
-    assert_eq!(
-        runtime.game_data.player.records[0].classic_reports_pending_flag_raw(),
-        0
-    );
+    assert_eq!((runtime.game_data.players[0].messages_first as u8), 0);
+    assert_eq!((runtime.game_data.players[0].messages_last as u8), 0);
     assert!(!app.messaging.delete_reviewables_prompt_active);
 }

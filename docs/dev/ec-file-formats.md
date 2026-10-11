@@ -1,6 +1,6 @@
 # EC Classic File Formats
 
-Every byte of the classic data files, as ECMAINT, ECGAME, and ECUTIL use them. The Rust codecs in `rust/nc-data/src/classic/` follow this.
+Every byte of the classic data files, as ECMAINT, ECGAME, and ECUTIL use them. The Rust codecs in `rust/nc-compat/src/classic/` follow this.
 
 ## CONQUEST.DAT
 

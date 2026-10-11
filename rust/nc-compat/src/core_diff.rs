@@ -3,8 +3,12 @@
 //! Bytes no classic program reads are masked: a canonical fixture carries
 //! ECMAINT's garbage there and the model writes zeros.
 
+use crate::classic::{ClassicFile, without_ignored_bytes};
+use crate::classic::{
+    serialize_bases_dat, serialize_conquest_dat, serialize_fleets_dat, serialize_ipbm_dat,
+    serialize_planets_dat, serialize_player_dat, serialize_setup_dat,
+};
 use nc_data::CoreGameData;
-use nc_data::classic::{ClassicFile, without_ignored_bytes};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CoreFileDiffCount {
@@ -95,38 +99,38 @@ fn core_file_bytes(
     [
         masked(
             ClassicFile::Player,
-            left.player.to_bytes(),
-            right.player.to_bytes(),
+            serialize_player_dat(&left.players),
+            serialize_player_dat(&right.players),
         ),
         masked(
             ClassicFile::Planets,
-            left.planets.to_bytes(),
-            right.planets.to_bytes(),
+            serialize_planets_dat(&left.planets),
+            serialize_planets_dat(&right.planets),
         ),
         masked(
             ClassicFile::Fleets,
-            left.fleets.to_bytes(),
-            right.fleets.to_bytes(),
+            serialize_fleets_dat(&left.fleets),
+            serialize_fleets_dat(&right.fleets),
         ),
         masked(
             ClassicFile::Bases,
-            left.bases.to_bytes(),
-            right.bases.to_bytes(),
+            serialize_bases_dat(&left.bases),
+            serialize_bases_dat(&right.bases),
         ),
         masked(
             ClassicFile::Ipbm,
-            left.ipbm.to_bytes(),
-            right.ipbm.to_bytes(),
+            serialize_ipbm_dat(&left.ipbms),
+            serialize_ipbm_dat(&right.ipbms),
         ),
         masked(
             ClassicFile::Setup,
-            left.setup.to_bytes(),
-            right.setup.to_bytes(),
+            serialize_setup_dat(&left.setup),
+            serialize_setup_dat(&right.setup),
         ),
         masked(
             ClassicFile::Conquest,
-            left.conquest.to_bytes(),
-            right.conquest.to_bytes(),
+            serialize_conquest_dat(&left.conquest),
+            serialize_conquest_dat(&right.conquest),
         ),
     ]
 }

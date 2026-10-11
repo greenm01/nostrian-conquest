@@ -1,6 +1,7 @@
+use crate::names::set_empire_name;
 use crate::{
-    CoreGameData, PlayerActivityState, PlayerLifecycleState, PlayerRecord, TerminalOutcome,
-    WinnerState,
+    CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, PlayerMode, TerminalOutcome,
+    WinnerState, troop_transports,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -19,25 +20,29 @@ pub enum PlayerAccessMode {
 }
 
 pub fn empire_has_recovery_path(game_data: &CoreGameData, empire_raw: u8) -> bool {
-    let unowned_planet_exists = game_data
-        .planets
-        .records
-        .iter()
-        .any(|planet| planet.owner_empire_slot_raw() == 0);
+    let unowned_planet_exists = game_data.planets.iter().any(|planet| planet.owner.0 == 0);
 
-    game_data.fleets.records.iter().any(|fleet| {
-        if fleet.owner_empire_raw() != empire_raw {
+    game_data.fleets.iter().any(|fleet| {
+        if fleet.owner.0 != empire_raw {
             return false;
         }
-        (fleet.troop_transport_count() > 0 && fleet.army_count() > 0)
-            || (unowned_planet_exists && fleet.etac_count() > 0)
+        (troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0)
+            || (unowned_planet_exists && fleet.ships.etacs > 0)
     })
+}
+
+/// Returns the empire to civil disorder as ECUTIL and ECMAINT do: mode 0, a
+/// blank handle, and the name "In Civil Disorder". Every other field stays.
+pub fn set_civil_disorder(player: &mut Player) {
+    player.mode = PlayerMode::CivilDisorder;
+    player.handle.clear();
+    set_empire_name(player, "In Civil Disorder");
 }
 
 /// Joined and rogue empires both contest the campaign and can be eliminated;
 /// only civil disorder (0x00) is out of it.
-pub fn is_contesting_empire(player: &PlayerRecord) -> bool {
-    player.owner_mode_raw() != 0x00
+pub fn is_contesting_empire(player: &Player) -> bool {
+    player.mode.to_raw() != 0x00
 }
 
 /// A contesting empire still contends for the throne while it holds a world,
@@ -48,11 +53,7 @@ pub fn is_campaign_contender(
     empire_raw: u8,
     player_lifecycle_states: &[PlayerLifecycleState],
 ) -> bool {
-    let Some(player) = game_data
-        .player
-        .records
-        .get(empire_raw.saturating_sub(1) as usize)
-    else {
+    let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
         return false;
     };
     let lifecycle = player_lifecycle_states
@@ -64,9 +65,8 @@ pub fn is_campaign_contender(
     }
     let owns_any_planets = game_data
         .planets
-        .records
         .iter()
-        .any(|planet| planet.owner_empire_slot_raw() == empire_raw);
+        .any(|planet| planet.owner.0 == empire_raw);
     is_contesting_empire(player)
         && (owns_any_planets
             || lifecycle.recovery_window_turns_remaining > 0
@@ -105,10 +105,9 @@ pub fn player_public_status(
             inactivity_autopilot_pending_clear: false,
         });
     let autopilot_active = game_data
-        .player
-        .records
+        .players
         .get(player_record_index_1_based.saturating_sub(1))
-        .map(|player| player.autopilot_flag() != 0)
+        .map(|player| player.autopilot)
         .unwrap_or(false);
     if autopilot_active && activity.inactivity_autopilot_pending_clear {
         PublicEmpireStatus::Mia

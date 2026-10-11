@@ -1,5 +1,8 @@
 use nc_compat::load_classic_core_files;
-use nc_data::{BaseDat, BaseRecord, GameStateBuilder, Order};
+use nc_data::{
+    Coords, GameStateBuilder, Order, Starbase, recompute_max_speed, set_fleet_at_rest,
+    set_mission_target, set_planet_name, set_starbase_at_rest, set_troop_transports,
+};
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, run_maintenance_turn};
 use std::path::Path;
 
@@ -93,9 +96,9 @@ fn move_only_traces_match_current_classic_oracle_cases() {
         );
 
         for (turn, expected_coords) in case.expected_positions.iter().enumerate() {
-            let fleet = &game_data.fleets.records[0];
+            let fleet = &game_data.fleets[0];
             assert_eq!(
-                fleet.current_location_coords_raw(),
+                fleet.sector.to_array(),
                 *expected_coords,
                 "{} turn {} position",
                 case.name,
@@ -140,7 +143,7 @@ fn move_orders_complete_in_the_classic_oracle_year() {
             "speed {speed} to {target:?} ETA"
         );
         let mut year = 0;
-        while game_data.fleets.records[0].standing_order_kind() == Order::MoveOnly {
+        while game_data.fleets[0].order == Order::MoveOnly {
             year += 1;
             assert!(year <= 10, "speed {speed} to {target:?} never completed");
             run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -149,10 +152,7 @@ fn move_orders_complete_in_the_classic_oracle_year() {
             year, classic_year,
             "speed {speed} to {target:?} completion year"
         );
-        assert_eq!(
-            game_data.fleets.records[0].current_location_coords_raw(),
-            target
-        );
+        assert_eq!(game_data.fleets[0].sector.to_array(), target);
     }
 }
 
@@ -189,9 +189,9 @@ fn persistent_standing_traces_match_current_classic_oracle_cases() {
         let mut game_data = build_persistent_probe(case);
 
         for (turn, expected_coords) in case.expected_positions.iter().enumerate() {
-            let fleet = &game_data.fleets.records[0];
+            let fleet = &game_data.fleets[0];
             assert_eq!(
-                fleet.current_location_coords_raw(),
+                fleet.sector.to_array(),
                 *expected_coords,
                 "{} turn {} position",
                 case.name,
@@ -199,20 +199,16 @@ fn persistent_standing_traces_match_current_classic_oracle_cases() {
             );
 
             assert_eq!(
-                fleet.standing_order_kind(),
-                case.order,
+                fleet.order, case.order,
                 "{} order on turn {}",
-                case.name,
-                turn
+                case.name, turn
             );
 
             let expected_speed = if turn < 2 { 3 } else { 0 };
             assert_eq!(
-                fleet.current_speed(),
-                expected_speed,
+                fleet.speed, expected_speed,
                 "{} speed on turn {}",
-                case.name,
-                turn
+                case.name, turn
             );
 
             if turn + 1 < case.expected_positions.len() {
@@ -226,17 +222,17 @@ fn persistent_standing_traces_match_current_classic_oracle_cases() {
 fn build_move_only_probe(start: [u8; 2], target: [u8; 2], speed: u8) -> nc_data::CoreGameData {
     let mut game_data = load_fixture("ecmaint-post");
 
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_battleship_count(0);
-    fleet.set_cruiser_count(0);
-    fleet.set_destroyer_count(0);
-    fleet.set_troop_transport_count(0);
-    fleet.set_etac_count(0);
-    fleet.set_scout_count(1);
-    fleet.set_rules_of_engagement(0);
-    fleet.recompute_max_speed_from_composition();
-    fleet.set_current_location_coords_raw(start);
-    fleet.set_mission_aux_bytes([1, 0]);
+    let fleet = &mut game_data.fleets[0];
+    fleet.ships.battleships = 0;
+    fleet.ships.cruisers = 0;
+    fleet.ships.destroyers = 0;
+    set_troop_transports(fleet, 0);
+    fleet.ships.etacs = 0;
+    fleet.ships.scouts = 1;
+    fleet.rules_of_engagement = 0;
+    recompute_max_speed(fleet);
+    fleet.sector = Coords::from_array(start);
+    set_mission_target(fleet, 1, 0);
 
     game_data
         .set_fleet_order(1, speed, Order::MoveOnly.to_raw(), target, None, None)
@@ -252,50 +248,48 @@ fn build_persistent_probe(case: PersistentMovementCase) -> nc_data::CoreGameData
         .build_initialized_baseline()
         .expect("baseline should build");
 
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_battleship_count(0);
-    fleet.set_cruiser_count(1);
-    fleet.set_destroyer_count(0);
-    fleet.set_troop_transport_count(0);
-    fleet.set_etac_count(0);
-    fleet.set_scout_count(0);
-    fleet.set_rules_of_engagement(0);
-    fleet.recompute_max_speed_from_composition();
-    fleet.set_current_location_coords_raw(case.start);
-    fleet.set_current_speed(3);
-    fleet.set_standing_order_kind(case.order);
-    fleet.set_standing_order_target_coords_raw(case.target);
-    fleet.set_at_rest_motion();
+    let fleet = &mut game_data.fleets[0];
+    fleet.ships.battleships = 0;
+    fleet.ships.cruisers = 1;
+    fleet.ships.destroyers = 0;
+    set_troop_transports(fleet, 0);
+    fleet.ships.etacs = 0;
+    fleet.ships.scouts = 0;
+    fleet.rules_of_engagement = 0;
+    recompute_max_speed(fleet);
+    fleet.sector = Coords::from_array(case.start);
+    fleet.speed = 3;
+    fleet.order = case.order;
+    fleet.target = Coords::from_array(case.target);
+    set_fleet_at_rest(fleet);
 
     match case.setup {
         PersistentProbeSetup::Patrol => {
-            fleet.set_mission_aux_bytes([1, 0]);
+            set_mission_target(fleet, 1, 0);
         }
         PersistentProbeSetup::GuardStarbase => {
             // Base id 2: the baseline homeworld completes a starbase that
             // takes id 1 during the trace.
-            fleet.set_mission_aux_bytes([1, 2]);
-            let mut base = BaseRecord::new_zeroed();
-            base.set_base_id_raw(2);
-            base.set_owner_empire_raw(1);
-            base.set_record_number_raw(1);
-            base.set_coords_raw(case.target);
+            set_mission_target(fleet, 1, 2);
+            let mut base = Starbase::default();
+            base.base_id.0 = 2;
+            base.owner.0 = 1;
+            base.record.0 = 1;
+            base.sector = Coords::from_array(case.target);
             // At rest in orbit, as ECGAME leaves a base that is not moving.
-            base.set_at_rest_motion();
-            base.set_target_coords_raw(case.target);
-            base.set_target_depth_raw(1);
-            game_data.bases = BaseDat {
-                records: vec![base],
-            };
-            game_data.player.records[0].set_first_base_record_raw(1);
+            set_starbase_at_rest(&mut base);
+            base.target = Coords::from_array(case.target);
+            base.target_depth = 1;
+            game_data.bases = vec![base];
+            game_data.players[0].bases_first.0 = 1;
         }
         PersistentProbeSetup::GuardBlockade => {
-            fleet.set_mission_aux_bytes([1, 0]);
-            let target_world = &mut game_data.planets.records[4];
-            target_world.set_coords_raw(case.target);
-            target_world.set_owner_empire_slot_raw(2);
-            target_world.set_ownership_status_raw(2);
-            target_world.set_planet_name("Target");
+            set_mission_target(fleet, 1, 0);
+            let target_world = &mut game_data.planets[4];
+            target_world.sector = Coords::from_array(case.target);
+            target_world.owner.0 = 2;
+            target_world.years_under_owner = 2;
+            set_planet_name(target_world, "Target");
         }
     }
 

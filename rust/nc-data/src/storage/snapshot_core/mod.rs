@@ -36,11 +36,11 @@ pub(super) fn write_snapshot_core_rows(
     snapshot_id: i64,
     game_data: &CoreGameData,
 ) -> Result<(), CampaignStoreError> {
-    players::write(tx, snapshot_id, &game_data.player)?;
+    players::write(tx, snapshot_id, &game_data.players)?;
     planets::write(tx, snapshot_id, &game_data.planets)?;
     fleets::write(tx, snapshot_id, &game_data.fleets)?;
     bases::write(tx, snapshot_id, &game_data.bases)?;
-    ipbms::write(tx, snapshot_id, &game_data.ipbm)?;
+    ipbms::write(tx, snapshot_id, &game_data.ipbms)?;
     setup::write(tx, snapshot_id, &game_data.setup)?;
     conquest::write(tx, snapshot_id, &game_data.conquest)?;
     Ok(())
@@ -51,11 +51,11 @@ pub(super) fn load_snapshot_game_data(
     snapshot_id: i64,
 ) -> Result<CoreGameData, CampaignStoreError> {
     Ok(CoreGameData {
-        player: players::load(conn, snapshot_id)?,
+        players: players::load(conn, snapshot_id)?,
         planets: planets::load(conn, snapshot_id)?,
         fleets: fleets::load(conn, snapshot_id)?,
         bases: bases::load(conn, snapshot_id)?,
-        ipbm: ipbms::load(conn, snapshot_id)?,
+        ipbms: ipbms::load(conn, snapshot_id)?,
         setup: setup::load(conn, snapshot_id)?,
         conquest: conquest::load(conn, snapshot_id)?,
     })

@@ -1,4 +1,5 @@
 use crate::{CoreGameData, Order, ShipLosses};
+use nc_data::troop_transports;
 
 pub(super) const IDX_DD: usize = 0;
 pub(super) const IDX_CA: usize = 1;
@@ -122,13 +123,13 @@ pub(super) fn fleet_state_from_records(
 ) -> FleetCombatState {
     let mut state = FleetCombatState::default();
     for &idx in fleet_indices {
-        let fleet = &game_data.fleets.records[idx];
-        state.counts[IDX_DD] += fleet.destroyer_count() as u32;
-        state.counts[IDX_CA] += fleet.cruiser_count() as u32;
-        state.counts[IDX_BB] += fleet.battleship_count() as u32;
-        state.counts[IDX_SC] += fleet.scout_count() as u32;
-        state.counts[IDX_TT] += fleet.troop_transport_count() as u32;
-        state.counts[IDX_ET] += fleet.etac_count() as u32;
+        let fleet = &game_data.fleets[idx];
+        state.counts[IDX_DD] += fleet.ships.destroyers as u32;
+        state.counts[IDX_CA] += fleet.ships.cruisers as u32;
+        state.counts[IDX_BB] += fleet.ships.battleships as u32;
+        state.counts[IDX_SC] += fleet.ships.scouts as u32;
+        state.counts[IDX_TT] += troop_transports(fleet) as u32;
+        state.counts[IDX_ET] += fleet.ships.etacs as u32;
     }
     state.counts[IDX_SB] = starbases;
     state
@@ -186,17 +187,16 @@ fn task_force_role(
 ) -> BattleRole {
     if let Some(planet) = game_data
         .planets
-        .records
         .iter()
-        .find(|p| p.coords_raw() == coords)
+        .find(|p| p.sector.to_array() == coords)
     {
-        if planet.owner_empire_slot_raw() == empire {
+        if planet.owner.0 == empire {
             return BattleRole::IncumbentDefender;
         }
     }
     let guarding = fleet_indices.iter().any(|&idx| {
         matches!(
-            game_data.fleets.records[idx].standing_order_kind(),
+            game_data.fleets[idx].order,
             Order::GuardStarbase | Order::GuardBlockadeWorld
         )
     });
@@ -262,7 +262,6 @@ pub(super) fn tf_has_any_units(tf: &TaskForce) -> bool {
 pub(super) fn planet_idx_at_coords(game_data: &CoreGameData, coords: [u8; 2]) -> Option<usize> {
     game_data
         .planets
-        .records
         .iter()
-        .position(|planet| planet.coords_raw() == coords)
+        .position(|planet| planet.sector.to_array() == coords)
 }

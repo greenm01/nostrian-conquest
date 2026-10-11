@@ -5,6 +5,7 @@ use std::process::Command;
 
 use crate::support::paths::{default_fixture_dir, repo_root, resolve_repo_path};
 use crate::usage::print_maintenance_usage;
+use nc_compat::classic::{CONQUEST_DAT_SIZE, decode_conquest};
 use nc_compat::import_directory_snapshot;
 use nc_data::{
     CampaignStore, CoreGameData, DiplomacyOverride, DiplomaticRelation, MaintenanceEvents,
@@ -75,7 +76,8 @@ pub fn run_rust_maintenance_with_options(
         let gate_conquest_path = dir.join("CONQUEST.DAT");
         if gate_conquest_path.exists() {
             let raw = fs::read(&gate_conquest_path)?;
-            if let Ok(conquest) = nc_engine::maint::gate::check_gate_conquest(&raw) {
+            if let Some(conquest) = raw.get(..CONQUEST_DAT_SIZE) {
+                let conquest = decode_conquest(conquest.try_into()?);
                 match nc_engine::maint::gate::check_maintenance_schedule(&conquest) {
                     nc_engine::maint::gate::GateResult::Allowed => {}
                     nc_engine::maint::gate::GateResult::NotScheduled { day_name } => {
@@ -112,15 +114,15 @@ pub fn run_rust_maintenance_with_options(
     let mut game_data = runtime_state.game_data;
     let campaign_seed = runtime_state.campaign_seed;
     let mut winner_state = runtime_state.winner_state;
-    let start_year = game_data.conquest.game_year();
+    let start_year = game_data.conquest.game_year;
     let queued_mail = runtime_state.queued_mail;
     let planet_scorch_orders = runtime_state.planet_scorch_orders;
     let mut player_activity_states =
-        campaign_store.latest_player_activity_states(game_data.conquest.player_count())?;
+        campaign_store.latest_player_activity_states(game_data.conquest.player_count)?;
     let mut player_lifecycle_states =
-        campaign_store.latest_player_lifecycle_states(game_data.conquest.player_count())?;
+        campaign_store.latest_player_lifecycle_states(game_data.conquest.player_count)?;
     let mut player_war_stats =
-        campaign_store.latest_player_war_stats(game_data.conquest.player_count())?;
+        campaign_store.latest_player_war_stats(game_data.conquest.player_count)?;
     let mut diplomacy_overrides = load_diplomacy_overrides_if_present(dir, &game_data)?;
     let mut planet_intel_by_viewer = load_runtime_intel_by_viewer(&campaign_store, &game_data)?;
     absorb_persistable_diplomacy_overrides(&mut game_data, &mut diplomacy_overrides)?;
@@ -148,7 +150,8 @@ pub fn run_rust_maintenance_with_options(
     // Run maintenance logic for specified turns, accumulating events across all turns.
     let mut all_events = MaintenanceEvents::default();
     for turn in 1..=turns {
-        let inactivity_threshold = game_data.setup.autopilot_inactive_turns_raw();
+        let inactivity_threshold =
+            u8::try_from(game_data.setup.autopilot_after_turns).unwrap_or(u8::MAX);
         apply_inactivity_autopilot_policy(
             &mut game_data,
             inactivity_threshold,
@@ -183,7 +186,7 @@ pub fn run_rust_maintenance_with_options(
                 &mut winner_state,
             )?
         };
-        let planet_intel_grants_by_viewer = (1..=game_data.conquest.player_count())
+        let planet_intel_grants_by_viewer = (1..=game_data.conquest.player_count)
             .map(|viewer_empire_id| {
                 latest_planet_intel_grants_for_viewer(&events, viewer_empire_id)
             })
@@ -255,7 +258,7 @@ pub fn run_rust_maintenance_with_options(
 
         apply_diplomatic_escalations(&mut game_data, &mut diplomacy_overrides, &all_events)?;
 
-        for viewer_empire_id in 1..=game_data.conquest.player_count() {
+        for viewer_empire_id in 1..=game_data.conquest.player_count {
             let viewer_idx = viewer_empire_id.saturating_sub(1) as usize;
             let previous = planet_intel_by_viewer
                 .get(viewer_idx)
@@ -264,19 +267,18 @@ pub fn run_rust_maintenance_with_options(
             planet_intel_by_viewer[viewer_idx] = merge_player_intel_from_runtime(
                 &game_data,
                 viewer_empire_id,
-                game_data.conquest.game_year(),
+                game_data.conquest.game_year,
                 Some(&previous),
                 planet_intel_grants_by_viewer.get(viewer_idx),
             );
         }
 
-        println!("  Turn {}: year {}", turn, game_data.conquest.game_year());
+        println!("  Turn {}: year {}", turn, game_data.conquest.game_year);
     }
 
     println!(
         "  Year advanced: {} -> {}",
-        start_year,
-        game_data.conquest.game_year()
+        start_year, game_data.conquest.game_year
     );
 
     let report_block_rows = carry_unread_report_blocks(
@@ -299,11 +301,7 @@ pub fn run_rust_maintenance_with_options(
 
     let rankings_text = build_rankings_text(&game_data);
     fs::write(dir.join("RANKINGS.TXT"), rankings_text.as_bytes())?;
-    save_diplomacy_overrides_if_needed(
-        dir,
-        game_data.conquest.player_count(),
-        &diplomacy_overrides,
-    )?;
+    save_diplomacy_overrides_if_needed(dir, game_data.conquest.player_count, &diplomacy_overrides)?;
 
     // Remove Move.Tok crash marker after successful run.
     nc_engine::maint::recovery::remove_crash_marker(dir);
@@ -470,7 +468,7 @@ fn load_diplomacy_overrides_if_present(
     }
 
     let config = DiplomacyConfig::load_kdl(&path)?
-        .validate_for_player_count(game_data.player.records.len() as u8)?;
+        .validate_for_player_count(game_data.players.len() as u8)?;
     Ok(config
         .directives
         .into_iter()
@@ -612,7 +610,7 @@ fn visible_hazards_from_snapshots(
     game_data: &CoreGameData,
     planet_intel_by_viewer: &[BTreeMap<usize, PlanetIntelSnapshot>],
 ) -> Vec<VisibleHazardIntel> {
-    (1..=game_data.conquest.player_count() as usize)
+    (1..=game_data.conquest.player_count as usize)
         .map(|viewer_idx| {
             let empty = BTreeMap::new();
             visible_hazard_intel_from_snapshots(

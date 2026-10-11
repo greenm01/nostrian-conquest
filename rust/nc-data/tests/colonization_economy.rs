@@ -1,7 +1,10 @@
 mod common;
 
 use common::production::joinable_single_player_game;
-use nc_data::{ColonizationResolvedEvent, CoreGameData, Order};
+use nc_data::{
+    ColonizationResolvedEvent, Coords, CoreGameData, Order, present_production_points,
+    stored_production_points,
+};
 use nc_engine::run_maintenance_turn;
 
 fn colonization_probe() -> (CoreGameData, usize) {
@@ -11,24 +14,22 @@ fn colonization_probe() -> (CoreGameData, usize) {
 
     let target_idx = game
         .planets
-        .records
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 0)
+        .position(|planet| planet.owner.0 == 0)
         .expect("baseline should have an unowned planet");
-    let target_coords = game.planets.records[target_idx].coords_raw();
+    let target_coords = game.planets[target_idx].sector.to_array();
 
     let fleet_idx = game
         .fleets
-        .records
         .iter()
-        .position(|fleet| fleet.owner_empire_raw() == 1 && fleet.etac_count() > 0)
+        .position(|fleet| fleet.owner.0 == 1 && fleet.ships.etacs > 0)
         .expect("joined player should have an ETAC fleet");
     let staging_coords = if target_coords[0] > 1 {
         [target_coords[0] - 1, target_coords[1]]
     } else {
         [target_coords[0] + 1, target_coords[1]]
     };
-    game.fleets.records[fleet_idx].set_current_location_coords_raw(staging_coords);
+    game.fleets[fleet_idx].sector = Coords::from_array(staging_coords);
     game.set_fleet_order(
         fleet_idx + 1,
         3,
@@ -58,8 +59,8 @@ fn newly_colonized_active_planets_skip_same_turn_economics() {
         )
     }));
 
-    let colony = &game.planets.records[target_idx];
-    assert_eq!(colony.owner_empire_slot_raw(), 1);
-    assert_eq!(colony.stored_production_points(), 0);
-    assert_eq!(colony.present_production_points().unwrap_or(0), 1);
+    let colony = &game.planets[target_idx];
+    assert_eq!(colony.owner.0, 1);
+    assert_eq!(stored_production_points(colony), 0);
+    assert_eq!(present_production_points(colony), 1);
 }

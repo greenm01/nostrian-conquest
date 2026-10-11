@@ -1,7 +1,6 @@
 use rusqlite::{Connection, Transaction, named_params, params};
 
 use super::{CampaignStoreError, index_below, insert_row, position_of};
-use crate::ConquestDat;
 use crate::model::Conquest;
 
 /// The CONQUEST.DAT game clock. `snapshot_conquest_maintenance_days` holds
@@ -31,9 +30,8 @@ pub(super) const SCHEMA: &str = "
 pub(super) fn write(
     tx: &Transaction<'_>,
     snapshot_id: i64,
-    data: &ConquestDat,
+    conquest: &Conquest,
 ) -> Result<(), CampaignStoreError> {
-    let conquest = &data.conquest;
     insert_row(
         tx,
         "snapshot_conquest",
@@ -77,7 +75,7 @@ pub(super) fn write(
 pub(super) fn load(
     conn: &mut Connection,
     snapshot_id: i64,
-) -> Result<ConquestDat, CampaignStoreError> {
+) -> Result<Conquest, CampaignStoreError> {
     let mut conquest = conn.query_row(
         "SELECT game_year, player_count FROM snapshot_conquest WHERE snapshot_id = ?1",
         params![snapshot_id],
@@ -125,5 +123,5 @@ pub(super) fn load(
         conquest.previous_production[slot] = production;
         conquest.previous_planet_count[slot] = planet_count;
     }
-    Ok(ConquestDat { conquest })
+    Ok(conquest)
 }

@@ -2,10 +2,12 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 
 use nc_data::{
-    CampaignSettings, CampaignStore, CoreGameData, DiplomaticRelation, PlanetIntelSnapshot,
-    PlayerRecord, ProductionItemKind, QueuedPlayerMail, ReportBlockRow, STARDOCK_SLOT_COUNT,
+    CampaignSettings, CampaignStore, CoreGameData, DiplomaticRelation, PlanetIntelSnapshot, Player,
+    PlayerMode, ProductionItemKind, QueuedPlayerMail, ReportBlockRow, STARDOCK_SLOT_COUNT,
     active_starbase_count_at, build_player_starmap_projection_from_snapshots,
-    merge_player_intel_from_runtime,
+    diplomatic_relation_toward, has_any_force, merge_player_intel_from_runtime, order_summary,
+    present_production_points, ship_composition_table_summary, stardock_slot_kind, starship_count,
+    stored_production_points, troop_transports,
 };
 use nc_nostr::state_sync::{
     GameState, HostedDiplomacyState, HostedFleetShips, HostedOwnedFleet, HostedOwnedPlanet,
@@ -57,8 +59,7 @@ pub fn build_game_state_payload(
     let snapshot = load_player_runtime_snapshot(game_dir, viewer_empire_id)?;
     let player = snapshot
         .game_data
-        .player
-        .records
+        .players
         .get(viewer_empire_id as usize - 1)
         .ok_or_else(|| format!("missing player record for seat {}", player_seat))?;
 
@@ -125,7 +126,7 @@ fn load_player_runtime_snapshot(
         intel
     };
     Ok(PlayerRuntimeSnapshot {
-        turn: runtime.game_data.conquest.game_year().saturating_sub(3000) as u32,
+        turn: runtime.game_data.conquest.game_year.saturating_sub(3000) as u32,
         game_year: runtime.game_year,
         game_data: runtime.game_data,
         queued_mail: runtime.queued_mail,
@@ -135,48 +136,44 @@ fn load_player_runtime_snapshot(
 }
 
 fn player_state(
-    player: &PlayerRecord,
+    player: &Player,
     game_data: &CoreGameData,
     viewer_empire_id: u8,
 ) -> HostedPlayerState {
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
     let diplomacy = (1..=player_count)
         .filter(|empire_id| *empire_id != viewer_empire_id)
         .filter_map(|empire_id| {
-            player
-                .diplomatic_relation_toward(empire_id)
-                .map(|relation| HostedDiplomacyState {
-                    empire_id,
-                    relation: diplomacy_label(relation).to_string(),
-                })
+            diplomatic_relation_toward(player, empire_id).map(|relation| HostedDiplomacyState {
+                empire_id,
+                relation: diplomacy_label(relation).to_string(),
+            })
         })
         .collect::<Vec<_>>();
 
     HostedPlayerState {
         seat: viewer_empire_id,
         empire_name: display_player_name(player, u32::from(viewer_empire_id)),
-        handle: blank_to_null(player.assigned_player_handle_summary()),
+        handle: blank_to_null(player.handle.trim().to_string()),
         mode: player_mode_label(player).to_string(),
-        tax_rate: player.tax_rate(),
-        planet_count: player.planet_count_raw(),
+        tax_rate: player.tax_rate,
+        planet_count: player.planet_count,
         starbase_count: game_data
             .bases
-            .records
             .iter()
-            .filter(|base| base.base_id_raw() != 0 && base.owner_empire_raw() == viewer_empire_id)
+            .filter(|base| base.base_id.0 != 0 && base.owner.0 == viewer_empire_id)
             .count()
             .min(usize::from(u8::MAX)) as u8,
-        homeworld_planet_index: u16::from(player.homeworld_planet_index_1_based_raw()),
-        last_run_year: player.last_run_year_raw(),
+        homeworld_planet_index: u16::from(player.homeworld),
+        last_run_year: player.last_year_on,
         diplomacy,
     }
 }
 
 fn roster_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedPlayerRosterEntry> {
-    let player_count = usize::from(game_data.conquest.player_count());
+    let player_count = usize::from(game_data.conquest.player_count);
     game_data
-        .player
-        .records
+        .players
         .iter()
         .take(player_count)
         .enumerate()
@@ -225,35 +222,30 @@ fn starmap_state(projection: &nc_data::PlayerStarmapProjection) -> HostedStarmap
 fn owned_planets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedOwnedPlanet> {
     game_data
         .planets
-        .records
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == viewer_empire_id)
+        .filter(|(_, planet)| planet.owner.0 == viewer_empire_id)
         .map(|(planet_index, planet)| {
             let stardock = (0..STARDOCK_SLOT_COUNT)
                 .filter_map(|slot| {
-                    let count = planet.stardock_count_raw(slot);
+                    let count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
                     (count > 0).then(|| HostedStardockSlot {
                         slot: slot + 1,
-                        kind: production_kind_label(planet.stardock_item_kind_current_known(slot))
-                            .to_string(),
+                        kind: production_kind_label(stardock_slot_kind(planet, slot)).to_string(),
                         count,
                     })
                 })
                 .collect::<Vec<_>>();
             HostedOwnedPlanet {
                 planet_index: planet_index + 1,
-                name: planet.status_or_name_summary(),
-                coords: planet.coords_raw(),
-                potential_production: planet.potential_production_points(),
-                current_production: planet
-                    .present_production_points()
-                    .unwrap_or(0)
-                    .min(u16::from(u8::MAX)) as u8,
-                stored_points: planet.stored_production_points().min(u32::from(u16::MAX)) as u16,
-                armies: planet.army_count_raw(),
-                ground_batteries: planet.ground_batteries_raw(),
-                starbase_count: active_starbase_count_at(game_data, planet.coords_raw()),
+                name: planet.name.trim().to_string(),
+                coords: planet.sector.to_array(),
+                potential_production: u16::from(planet.potential_production),
+                current_production: present_production_points(planet).min(u16::from(u8::MAX)) as u8,
+                stored_points: stored_production_points(planet).min(u32::from(u16::MAX)) as u16,
+                armies: u8::try_from(planet.armies).unwrap_or(u8::MAX),
+                ground_batteries: u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX),
+                starbase_count: active_starbase_count_at(game_data, planet.sector.to_array()),
                 stardock,
             }
         })
@@ -263,29 +255,28 @@ fn owned_planets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<Ho
 fn owned_fleets_state(game_data: &CoreGameData, viewer_empire_id: u8) -> Vec<HostedOwnedFleet> {
     game_data
         .fleets
-        .records
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == viewer_empire_id && fleet.has_any_force())
+        .filter(|fleet| fleet.owner.0 == viewer_empire_id && has_any_force(fleet))
         .map(|fleet| HostedOwnedFleet {
-            fleet_id: fleet.fleet_id(),
-            local_slot: fleet.local_slot(),
-            coords: fleet.current_location_coords_raw(),
-            target_coords: fleet.standing_order_target_coords_raw(),
-            order: fleet.standing_order_kind().as_str().to_string(),
-            order_summary: fleet.standing_order_summary(),
-            rules_of_engagement: fleet.rules_of_engagement(),
-            current_speed: fleet.current_speed(),
-            max_speed: fleet.max_speed(),
+            fleet_id: fleet.record.0,
+            local_slot: fleet.fleet_number.0 as u8,
+            coords: fleet.sector.to_array(),
+            target_coords: fleet.target.to_array(),
+            order: fleet.order.as_str().to_string(),
+            order_summary: order_summary(fleet),
+            rules_of_engagement: fleet.rules_of_engagement,
+            current_speed: fleet.speed,
+            max_speed: fleet.max_speed,
             ships: HostedFleetShips {
-                scout: fleet.scout_count(),
-                battleship: fleet.battleship_count(),
-                cruiser: fleet.cruiser_count(),
-                destroyer: fleet.destroyer_count(),
-                transport: fleet.troop_transport_count(),
-                army: fleet.army_count(),
-                etac: fleet.etac_count(),
-                total_starships: fleet.total_starships().min(u32::from(u16::MAX)) as u16,
-                summary: fleet.ship_composition_table_summary(),
+                scout: fleet.ships.scouts,
+                battleship: fleet.ships.battleships,
+                cruiser: fleet.ships.cruisers,
+                destroyer: fleet.ships.destroyers,
+                transport: troop_transports(fleet),
+                army: fleet.ships.loaded_transports,
+                etac: fleet.ships.etacs,
+                total_starships: starship_count(fleet).min(u32::from(u16::MAX)) as u16,
+                summary: ship_composition_table_summary(fleet),
             },
         })
         .collect()
@@ -324,8 +315,8 @@ fn visible_report_blocks(
         .collect()
 }
 
-fn display_player_name(player: &PlayerRecord, player_seat: u32) -> String {
-    let empire_name = player.controlled_empire_name_summary();
+fn display_player_name(player: &Player, player_seat: u32) -> String {
+    let empire_name = player.empire_name.trim().to_string();
     if !empire_name.is_empty() {
         empire_name
     } else {
@@ -333,10 +324,10 @@ fn display_player_name(player: &PlayerRecord, player_seat: u32) -> String {
     }
 }
 
-fn player_mode_label(player: &PlayerRecord) -> &'static str {
-    if player.is_active_human_player() {
+fn player_mode_label(player: &Player) -> &'static str {
+    if player.mode == PlayerMode::Human {
         "active"
-    } else if player.is_rogue_player() {
+    } else if player.mode == PlayerMode::Rogue {
         "rogue"
     } else {
         "civil_disorder"

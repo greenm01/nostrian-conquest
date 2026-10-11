@@ -7,7 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::{PlayerRecord, ReportBlockRow};
+use crate::{Player, PlayerMode, ReportBlockRow};
 
 pub const CLASSIC_RESULTS_RECORD_SIZE: usize = 84;
 const CHAIN_ID_OFFSET: usize = 74;
@@ -19,6 +19,50 @@ const NEXT_CHAIN_ID_OFFSET: usize = 78;
 pub struct ClassicResultsChain {
     pub first_header: u16,
     pub last_header: u16,
+}
+
+/// This empire's chain in the shared `RESULTS.DAT`: original `ECMAINT`
+/// output (two- and three-human oracle runs, see `fixtures/ecmaint-results-*`)
+/// stores the 1-based record indexes of its first and last report headers in
+/// `PLAYER.DAT`, or 0 when it has none.
+pub fn results_chain(player: &Player) -> Option<ClassicResultsChain> {
+    let first_header = player.results_first as u16;
+    (first_header != 0).then_some(ClassicResultsChain {
+        first_header,
+        last_header: player.results_last as u16,
+    })
+}
+
+/// Point this empire at its chain in the shared `RESULTS.DAT`. Lay the file
+/// out with [`layout_classic_results`] to get the chain.
+pub fn set_results_chain(player: &mut Player, chain: Option<ClassicResultsChain>) {
+    let chain = chain.unwrap_or(ClassicResultsChain {
+        first_header: 0,
+        last_header: 0,
+    });
+    player.results_first = i32::from(chain.first_header);
+    player.results_last = i32::from(chain.last_header);
+}
+
+/// Whether either end of this empire's results chain is set.
+pub fn has_results_chain(player: &Player) -> bool {
+    player.results_first != 0 || player.results_last != 0
+}
+
+/// Advertise login-time reviewables to classic ECGAME.
+///
+/// Current compatibility rule:
+/// - classic delivery/review probes use both message records together
+///   for unread mail
+/// - results-only startup probing does not become reviewable when only
+///   the results-side record is set
+///
+/// Until a stricter family split is proven in classic login flow, keep the
+/// mirrored advertisement here and route all startup-review producers
+/// through this helper.
+pub fn set_login_reviewables_present(player: &mut Player, present: bool) {
+    player.messages_first = i32::from(present);
+    player.messages_last = i32::from(present);
 }
 
 /// A laid-out shared `RESULTS.DAT` and the chain of every empire in it.
@@ -34,9 +78,9 @@ impl ClassicResultsLayout {
     }
 
     /// Point every `PLAYER.DAT` record at its chain in this file.
-    pub fn apply_to_players(&self, players: &mut [PlayerRecord]) {
+    pub fn apply_to_players(&self, players: &mut [Player]) {
         for (idx, player) in players.iter_mut().enumerate() {
-            player.set_classic_results_chain(self.chain_for((idx + 1) as u8));
+            set_results_chain(player, self.chain_for((idx + 1) as u8));
         }
     }
 }
@@ -49,14 +93,11 @@ impl ClassicResultsLayout {
 /// into the chain of every active human empire, because a classic header
 /// belongs to exactly one chain. Deleted rows and rows without classic record
 /// bytes are left out.
-pub fn layout_classic_results(
-    players: &[PlayerRecord],
-    rows: &[ReportBlockRow],
-) -> ClassicResultsLayout {
+pub fn layout_classic_results(players: &[Player], rows: &[ReportBlockRow]) -> ClassicResultsLayout {
     let broadcast_viewers = players
         .iter()
         .enumerate()
-        .filter(|(_, player)| player.is_active_human_player())
+        .filter(|(_, player)| player.mode == PlayerMode::Human)
         .map(|(idx, _)| (idx + 1) as u8)
         .collect::<BTreeSet<_>>();
     let laid_out_rows = rows
@@ -128,11 +169,11 @@ pub fn layout_classic_results(
 ///
 /// Keys are 1-based header record indexes. Headers no chain reaches are
 /// absent.
-pub fn classic_results_header_viewers(players: &[PlayerRecord], bytes: &[u8]) -> BTreeMap<u16, u8> {
+pub fn classic_results_header_viewers(players: &[Player], bytes: &[u8]) -> BTreeMap<u16, u8> {
     let record_count = bytes.len() / CLASSIC_RESULTS_RECORD_SIZE;
     let mut viewers = BTreeMap::new();
     for (idx, player) in players.iter().enumerate() {
-        let Some(chain) = player.classic_results_chain() else {
+        let Some(chain) = results_chain(player) else {
             continue;
         };
         let mut header = chain.first_header;

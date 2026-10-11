@@ -153,6 +153,41 @@ impl Stardock {
     }
 }
 
+/// A stardock count by slot, 0 to 7 in classic's kind order.
+impl std::ops::Index<usize> for Stardock {
+    type Output = u32;
+
+    fn index(&self, slot: usize) -> &u32 {
+        match slot {
+            0 => &self.destroyers,
+            1 => &self.cruisers,
+            2 => &self.battleships,
+            3 => &self.scouts,
+            4 => &self.transports,
+            5 => &self.etacs,
+            6 => &self.starbases,
+            7 => &self.ipbms,
+            _ => panic!("stardock slot {slot} out of range"),
+        }
+    }
+}
+
+impl std::ops::IndexMut<usize> for Stardock {
+    fn index_mut(&mut self, slot: usize) -> &mut u32 {
+        match slot {
+            0 => &mut self.destroyers,
+            1 => &mut self.cruisers,
+            2 => &mut self.battleships,
+            3 => &mut self.scouts,
+            4 => &mut self.transports,
+            5 => &mut self.etacs,
+            6 => &mut self.starbases,
+            7 => &mut self.ipbms,
+            _ => panic!("stardock slot {slot} out of range"),
+        }
+    }
+}
+
 /// One PLANETS.DAT record, in map order.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Planet {

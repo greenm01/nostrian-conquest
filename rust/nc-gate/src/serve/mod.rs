@@ -164,21 +164,24 @@ pub async fn run_serve(config: &GateConfig, keys: &Keys) -> Result<(), Box<dyn s
                         return Ok(false);
                     }
                     match event.kind.as_u16() {
-                        30510 => match claim::parse_seat_claim_request(shared_keys.secret_key(), &event) {
-                            Ok(req) => {
-                                let span = info_span!(
-                                    "claim_request",
-                                    player_npub = short_log_id(&req.player_pubkey),
-                                    nonce = short_log_id(&req.nonce),
-                                );
-                                handle_claim_request(req, shared_keys, client_clone)
-                                    .instrument(span)
-                                    .await;
+                        30510 => {
+                            match claim::parse_seat_claim_request(shared_keys.secret_key(), &event)
+                            {
+                                Ok(req) => {
+                                    let span = info_span!(
+                                        "claim_request",
+                                        player_npub = short_log_id(&req.player_pubkey),
+                                        nonce = short_log_id(&req.nonce),
+                                    );
+                                    handle_claim_request(req, shared_keys, client_clone)
+                                        .instrument(span)
+                                        .await;
+                                }
+                                Err(e) => {
+                                    debug!(error = %e, "rejected seat-claim event");
+                                }
                             }
-                            Err(e) => {
-                                debug!(error = %e, "rejected seat-claim event");
-                            }
-                        },
+                        }
                         30501 => match request::parse_session_request(&event) {
                             Ok(req) => {
                                 let span = info_span!(
@@ -894,8 +897,7 @@ fn player_name_for_seat(
     let store = CampaignStore::open_default_in_dir(game_dir)?;
     let game_data = store.load_latest_runtime_game_data()?;
     Ok(game_data
-        .player
-        .records
+        .players
         .get(player_index_1_based.saturating_sub(1))
         .map(|record| record.controlled_empire_name_summary())
         .unwrap_or_default())

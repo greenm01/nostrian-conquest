@@ -39,22 +39,6 @@ impl fmt::Display for ParseError {
 
 impl std::error::Error for ParseError {}
 
-pub fn expect_size(
-    data: &[u8],
-    expected: usize,
-    file_type: &'static str,
-) -> Result<(), ParseError> {
-    if data.len() == expected {
-        Ok(())
-    } else {
-        Err(ParseError::WrongSize {
-            file_type,
-            expected,
-            actual: data.len(),
-        })
-    }
-}
-
 /// Classic text fields (planet names, `RESULTS.DAT` lines) hold printable
 /// ASCII only: space through `~`.
 pub fn is_classic_text_char(ch: char) -> bool {

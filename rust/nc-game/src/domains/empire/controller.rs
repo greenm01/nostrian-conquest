@@ -49,7 +49,7 @@ impl App {
         if self.current_screen != ScreenId::Enemies {
             return;
         }
-        let total = self.game_data.player.records.len().saturating_sub(1);
+        let total = self.game_data.players.len().saturating_sub(1);
         let max_offset = total.saturating_sub(self.enemies_visible_rows());
         self.empire.enemies_scroll_offset = self
             .empire
@@ -63,7 +63,7 @@ impl App {
             return;
         }
         // Total rows = all empires minus self.
-        let total = self.game_data.player.records.len().saturating_sub(1);
+        let total = self.game_data.players.len().saturating_sub(1);
         if total == 0 {
             return;
         }
@@ -78,9 +78,8 @@ impl App {
     }
 
     pub fn toggle_autopilot(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        let player = &mut self.game_data.player.records[self.player.record_index_1_based - 1];
-        let next = if player.autopilot_flag() == 0 { 1 } else { 0 };
-        player.set_autopilot_flag(next);
+        let player = &mut self.game_data.players[self.player.record_index_1_based - 1];
+        player.autopilot = !player.autopilot;
         nc_data::clear_inactivity_autopilot_pending(
             self.player.record_index_1_based,
             &mut self.player_activity_states,
@@ -110,8 +109,7 @@ impl App {
         let empire_id = if self.empire.enemies_input.trim().is_empty() {
             let mut ids: Vec<u8> = self
                 .game_data
-                .player
-                .records
+                .players
                 .iter()
                 .enumerate()
                 .filter(|(idx, _)| *idx + 1 != self.player.record_index_1_based)
@@ -134,7 +132,7 @@ impl App {
                 }
             }
         };
-        let max_empire = self.game_data.conquest.player_count();
+        let max_empire = self.game_data.conquest.player_count;
         if !(1..=max_empire).contains(&empire_id) {
             self.empire.enemies_status =
                 Some(format!("Enter an empire number in 1..={max_empire}."));
@@ -166,7 +164,7 @@ impl App {
     }
 
     pub fn current_autopilot_flag(&self) -> u8 {
-        self.game_data.player.records[self.player.record_index_1_based - 1].autopilot_flag()
+        u8::from(self.game_data.players[self.player.record_index_1_based - 1].autopilot)
     }
 
     pub fn current_relation_to(&self, empire_id: u8) -> Option<nc_data::DiplomaticRelation> {
@@ -181,8 +179,7 @@ impl App {
     fn sync_enemies_cursor_to_input(&mut self) {
         let ids = self
             .game_data
-            .player
-            .records
+            .players
             .iter()
             .enumerate()
             .filter(|(idx, _)| *idx + 1 != self.player.record_index_1_based)

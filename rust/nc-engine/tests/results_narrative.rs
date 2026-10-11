@@ -1,11 +1,11 @@
 use nc_compat::load_classic_core_files;
 use nc_data::{
-    AssaultReportEvent, BombardEvent, ContactReportSource, EmpireEliminationCause,
+    AssaultReportEvent, BombardEvent, ContactReportSource, Coords, EmpireEliminationCause,
     EmpireEliminationEvent, EncounterDispositionEvent, EncounterDispositionReason,
     FleetBattleEvent, FleetDestroyedEvent, FleetOrderValidationError, GameStateBuilder,
     GameVictoryNoticeEvent, InvalidPlayerStateEvent, MaintenanceEvents, Mission, MissionEvent,
-    MissionOutcome, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent, PlanetRecord,
-    ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseSightingEvent,
+    MissionOutcome, Planet, PlanetIntelEvent, PlanetIntelSource, PlanetOwnershipChangeEvent,
+    Real48, ScoutContactEvent, ShipLosses, StarbaseAlert, StarbaseSightingEvent, set_planet_name,
 };
 use nc_engine::{
     apply_results_reviewable_flags, build_results_report_blocks, maint::FleetBattlePerspective,
@@ -21,13 +21,15 @@ fn viewer_report_texts(viewer_empire_id: u8, rows: &[nc_data::ReportBlockRow]) -
 }
 
 fn seed_target_world(game_data: &mut nc_data::CoreGameData, coords: [u8; 2], name: &str) {
-    let mut planet = PlanetRecord::new_zeroed();
-    planet.set_coords_raw(coords);
-    planet.set_planet_name(name);
-    planet.set_owner_empire_slot_raw(1);
-    planet.set_ownership_status_raw(2);
-    planet.set_potential_production_points(100);
-    game_data.planets.records[0] = planet;
+    let mut planet = Planet {
+        sector: Coords::from_array(coords),
+        ..Planet::default()
+    };
+    set_planet_name(&mut planet, name);
+    planet.owner.0 = 1;
+    planet.years_under_owner = 2;
+    planet.potential_production = 100;
+    game_data.planets[0] = planet;
 }
 
 fn load_fixture(name: &str) -> nc_data::CoreGameData {
@@ -329,8 +331,8 @@ fn blitz_report_distinguishes_total_army_losses_from_transport_losses() {
         .expect("baseline should build");
     let coords = [8, 2];
     seed_target_world(&mut game_data, coords, "half");
-    game_data.planets.records[0].set_ground_batteries_raw(2);
-    game_data.planets.records[0].set_army_count_raw(5);
+    game_data.planets[0].ground_batteries = 2;
+    game_data.planets[0].armies = 5;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -381,8 +383,8 @@ fn blitz_report_includes_transport_and_ground_army_losses_in_total_losses() {
         .expect("baseline should build");
     let coords = [8, 2];
     seed_target_world(&mut game_data, coords, "half");
-    game_data.planets.records[0].set_ground_batteries_raw(2);
-    game_data.planets.records[0].set_army_count_raw(5);
+    game_data.planets[0].ground_batteries = 2;
+    game_data.planets[0].armies = 5;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -582,7 +584,7 @@ fn defender_receives_repulsed_invasion_report() {
         .expect("baseline should build");
     let coords = [6, 7];
     seed_target_world(&mut game_data, coords, "red");
-    game_data.planets.records[0].set_owner_empire_slot_raw(2);
+    game_data.planets[0].owner.0 = 2;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -638,7 +640,7 @@ fn defender_receives_blocked_invasion_report() {
         .expect("baseline should build");
     let coords = [6, 7];
     seed_target_world(&mut game_data, coords, "red");
-    game_data.planets.records[0].set_owner_empire_slot_raw(2);
+    game_data.planets[0].owner.0 = 2;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -690,9 +692,9 @@ fn ownership_change_report_uses_assault_context_for_defender() {
         .expect("baseline should build");
     let coords = [8, 2];
     seed_target_world(&mut game_data, coords, "half");
-    game_data.planets.records[0].set_owner_empire_slot_raw(2);
-    game_data.planets.records[0].set_ground_batteries_raw(2);
-    game_data.planets.records[0].set_army_count_raw(5);
+    game_data.planets[0].owner.0 = 2;
+    game_data.planets[0].ground_batteries = 2;
+    game_data.planets[0].armies = 5;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -752,9 +754,9 @@ fn defender_receives_repulsed_blitz_report() {
         .expect("baseline should build");
     let coords = [8, 2];
     seed_target_world(&mut game_data, coords, "half");
-    game_data.planets.records[0].set_owner_empire_slot_raw(2);
-    game_data.planets.records[0].set_ground_batteries_raw(2);
-    game_data.planets.records[0].set_army_count_raw(5);
+    game_data.planets[0].owner.0 = 2;
+    game_data.planets[0].ground_batteries = 2;
+    game_data.planets[0].armies = 5;
 
     let mut events = MaintenanceEvents::default();
     events.assault_report_events.push(AssaultReportEvent {
@@ -869,9 +871,9 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
         .expect("baseline should build");
     let coords = [1, 9];
     seed_target_world(&mut game_data, coords, "biggy");
-    game_data.fleets.records[0].set_owner_empire_raw(1);
-    game_data.fleets.records[0].set_local_slot_word_raw(10);
-    game_data.fleets.records[0].set_current_location_coords_raw(coords);
+    game_data.fleets[0].owner.0 = 1;
+    game_data.fleets[0].fleet_number.0 = 10;
+    game_data.fleets[0].sector = Coords::from_array(coords);
 
     let mut events = MaintenanceEvents::default();
     events.mission_events.push(MissionEvent {
@@ -987,16 +989,16 @@ fn scout_system_report_uses_estimated_production_not_present_production() {
         .expect("baseline should build");
     let coords = [6, 14];
     seed_target_world(&mut game_data, coords, "spyglass");
-    let planet = &mut game_data.planets.records[0];
-    let _ = planet.set_present_production_points(73);
-    planet.set_stored_production_points(41);
-    planet.set_army_count_raw(7);
-    planet.set_ground_batteries_raw(2);
+    let planet = &mut game_data.planets[0];
+    planet.production = Real48::from_f64(73.0);
+    planet.stored_goods = Real48::from_f64(41.0);
+    planet.armies = 7;
+    planet.ground_batteries = 2;
 
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_owner_empire_raw(1);
-    fleet.set_local_slot_word_raw(4);
-    fleet.set_current_location_coords_raw(coords);
+    let fleet = &mut game_data.fleets[0];
+    fleet.owner.0 = 1;
+    fleet.fleet_number.0 = 4;
+    fleet.sector = Coords::from_array(coords);
 
     let mut events = MaintenanceEvents::default();
     events.planet_intel_events.push(PlanetIntelEvent {
@@ -1036,12 +1038,12 @@ fn scout_system_report_aligns_its_fact_rows() {
         .expect("baseline should build");
     let coords = [6, 14];
     seed_target_world(&mut game_data, coords, "spyglass");
-    game_data.planets.records[0].set_army_count_raw(7);
+    game_data.planets[0].armies = 7;
 
-    let fleet = &mut game_data.fleets.records[0];
-    fleet.set_owner_empire_raw(1);
-    fleet.set_local_slot_word_raw(4);
-    fleet.set_current_location_coords_raw(coords);
+    let fleet = &mut game_data.fleets[0];
+    fleet.owner.0 = 1;
+    fleet.fleet_number.0 = 4;
+    fleet.sector = Coords::from_array(coords);
 
     let mut events = MaintenanceEvents::default();
     events.planet_intel_events.push(PlanetIntelEvent {
@@ -1138,7 +1140,7 @@ fn results_reports_named_hostile_fleet_with_empire_local_slot() {
 #[test]
 fn results_report_invalid_capability_loss_as_aborted_seek_home_mission() {
     let mut game_data = load_fixture("ecmaint-fleet-pre");
-    game_data.fleets.records[0].set_etac_count(0);
+    game_data.fleets[0].ships.etacs = 0;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     let rows = build_results_report_blocks(&mut game_data, &events);
@@ -1967,22 +1969,20 @@ fn results_projection_is_pure_until_reviewable_flags_are_applied() {
     let rows = build_results_report_blocks(&game_data, &events);
     assert!(
         game_data
-            .player
-            .records
+            .players
             .iter()
-            .all(|player| !player.has_classic_results_review_state()),
+            .all(|player| !(player.messages_last != 0)),
         "report projection should not mutate reviewable flags"
     );
 
     apply_results_reviewable_flags(&mut game_data, &rows);
-    assert!(game_data.player.records[0].has_classic_results_review_state());
+    assert!(game_data.players[0].messages_last != 0);
     assert!(
         game_data
-            .player
-            .records
+            .players
             .iter()
             .skip(1)
-            .all(|player| !player.has_classic_results_review_state())
+            .all(|player| !(player.messages_last != 0))
     );
 }
 

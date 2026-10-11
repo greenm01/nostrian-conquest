@@ -15,7 +15,7 @@ fn repo_root() -> PathBuf {
 fn fixture_game_data() -> CoreGameData {
     let mut game_data = load_classic_core_files(&repo_root().join("fixtures/ecutil-init/v1.5"))
         .expect("load fixture");
-    game_data.conquest.set_game_year(3004);
+    game_data.conquest.game_year = 3004;
     game_data
 }
 
@@ -374,7 +374,7 @@ fn reports_screen_uses_themed_scrollbar_thumb_style() {
             "",
             InboxPromptMode::Normal,
             None,
-            game_data.conquest.game_year(),
+            game_data.conquest.game_year,
         )
         .expect("inbox render");
     let thumb = (0..25)
