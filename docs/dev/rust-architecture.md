@@ -56,18 +56,10 @@ It is responsible for:
 - the typed game state under `model/`: `Player`, `Planet`, `Fleet`,
   `Starbase`, `Ipbm`, `Setup`, and `Conquest`, plain structs with `pub`
   fields named by meaning; each field's doc comment gives its classic offset
-- the classic `.DAT` codecs under `classic/`: `decode_*` and `encode_*` per
-  record and parse/serialize per file, following
-  [ec-file-formats.md](ec-file-formats.md). `classic::ignored_bytes` lists
-  the bytes no classic program reads; the model does not carry them, and
-  `encode` writes zeros or the documented constant there. The codecs stay in
-  nc-data while the record shims' `parse` and `to_bytes` call them; they move
-  to `nc-classic`, which nc-data cannot depend on, when the shims go
-- the `*Record` shims under `records/`: thin wrappers over the model that
-  keep the accessor API call sites still use. They go in t039 phase 5;
-  shims that only exist for that are marked `// t039: remove in phase 5`
-- `CoreGameData` and the semantics shared across its files; nc-data reads
-  and writes no classic directory
+- `CoreGameData`, whose collections hold the model structs directly, and
+  the semantics shared across them; callers read and write named fields
+- focused free functions for operations that need logic, including ship
+  composition, orders, motion, names, rankings, and planet summaries
 - semantic SQLite runtime persistence and snapshot/history loading
 - shared validators, normalizers, report/mail/intel state, and typed helpers
   used by more than one frontend
@@ -81,7 +73,7 @@ Operationally:
 - snapshot storage should prefer explicit typed columns over opaque grouped
   residue
 - classic byte layouts belong in the codecs, not in normal gameplay code;
-  a byte comparison against a classic file masks `classic::ignored_bytes`
+  compatibility tests mask the documented ignored bytes at the codec edge
 
 ### `nc-engine`
 
@@ -121,6 +113,8 @@ It should stay small and dumb:
 
 It is responsible for:
 
+- the seven core `.DAT` codecs: record decode/encode, file parse/serialize,
+  and the ignored-byte map defined by [ec-file-formats.md](ec-file-formats.md)
 - importing classic directories into normalized SQLite runtime state
 - exporting normalized SQLite snapshots back to classic `.DAT` directories
 - reading and writing a directory's seven core `.DAT` files
@@ -131,7 +125,10 @@ It is responsible for:
 - keeping classic file handling out of normal engine/client code
 
 This is the only layer that should need to think in terms of classic
-directories as a workflow boundary.
+directories as a workflow boundary. Phase 5 moves the core codecs from
+`nc-data/src/classic/` to `nc-compat/src/classic/` after removing their last
+transitional accessor callers. That move is pending on the policy worktree
+at `2c1d32b4`; the boundary test deliberately rejects its current placement.
 
 ### `nc-sysop`
 
@@ -222,7 +219,7 @@ helpers, and a rule it needs belongs in those crates.
 
 ## Current Structural Direction
 
-The current workspace shape is:
+The phase-5 destination layout is:
 
 ```text
 rust/
@@ -230,13 +227,12 @@ rust/
 │   └── src/          # low-level classic record/codecs
 ├── nc-data
 │   ├── src/model/     # typed game state
-│   ├── src/classic/   # .DAT codecs (moving to nc-classic)
-│   ├── src/records/   # accessor shims over the model (pending removal)
 │   ├── src/storage/   # SQLite campaign store + snapshot bridge modules
 │   └── shared runtime/support modules
 ├── nc-engine
 │   └── src/          # public engine/rules surface
 ├── nc-compat
+│   ├── src/classic/  # seven core .DAT codecs after the phase-5 move
 │   └── src/          # classic import/export and compat projections
 ├── nc-sysop
 │   └── src/          # public sysop/admin/maintenance workflows
@@ -367,9 +363,9 @@ Use it when the code needs:
 - reusable scenario/setup/report helpers
 - plain shared event/result payloads
 
-If a transform expresses shared game-directory/runtime-store semantics rather
-than one frontend's interaction policy, it should live on `CoreGameData` or in
-a closely related `nc-data` helper module.
+If a transform expresses shared runtime/store semantics rather than one
+frontend's interaction policy, put it in a focused `nc-data` free function
+that operates on the typed state.
 
 Examples:
 
@@ -377,7 +373,7 @@ Examples:
 - build/fleet/player input validation
 - maintenance events
 - shared report/intel projections
-- raw record-layout helpers such as fleet motion scratch-field access/reset
+- typed motion helpers that update position, speed and movement state
 
 The CLI and client should orchestrate those helpers, not replace them.
 
@@ -466,6 +462,19 @@ Testing rules:
 - after meaningful Rust changes, run `cargo test -q` from `rust/`
 - for maint-sensitive behavior, keep using the oracle sweep and Rust maint sweep
   documented in [next-session.md](next-session.md)
+
+`nc-data/tests/classic_boundary.rs` walks `src/` in nc-data, nc-engine,
+nc-game, nc-helm, nc-host, nc-session and nc-sysop. It rejects core codec
+identifiers, codec namespace imports and direct `.raw[` indexing. The UI
+`theme::classic` style namespace is unrelated and remains allowed. A second
+check rejects nc-compat/nc-classic runtime dependencies in nc-engine,
+nc-game, nc-helm, nc-host and nc-session, while allowing dev-dependencies.
+It also checks target-specific dependency sections and renamed packages.
+These are lexical policy checks, not a Rust or TOML parser.
+
+Run the boundary checks from `rust/` with
+`cargo-slot nostrian-conquest cargo test -p nc-data -p nc-engine --test classic_boundary`.
+The source check stays red until the phase-5 codec move lands.
 
 The test split should mirror the code split. If a feature area deserves its own
 module, it usually deserves its own test surface too.
