@@ -243,6 +243,7 @@ pub fn push_misc_entries(
                 planet_idx,
                 coords,
                 recovered_points,
+                armies_landed,
                 stardate_week,
                 ..
             } => {
@@ -257,7 +258,12 @@ pub fn push_misc_entries(
                     stardate_week,
                     owned_fleet_source_clause(Some(fleet_number), &format!("System({x},{y})")),
                     format!(
-                        " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}) and have begun salvaging our fleet. We estimate that our fleet will yield {recovered_points} production point(s)."
+                        " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}) and have begun salvaging our fleet. We estimate that our fleet will yield {recovered_points} production point(s).{}",
+                        match armies_landed {
+                            0 => String::new(),
+                            1 => " In addition, we have transfered the 1 army we were transporting to the planet's surface.".to_string(),
+                            n => format!(" In addition, we have transfered the {n} armies we were transporting to the planet's surface."),
+                        }
                     ),
                 )
             }

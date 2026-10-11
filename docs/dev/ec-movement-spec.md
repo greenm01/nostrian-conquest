@@ -174,9 +174,8 @@ battleship, cruiser, destroyer, empty transport, ETAC, and scout and two
 loaded transports yielded 61 and landed 2 armies.]
 
 Rust still retargets every Seek Home fleet before the year by squared
-distance, lets a Salvage whose world was lost fail on arrival, and credits
-an arriving Salvage with half the fleet's summed cost, counting each army at
-2 and landing none; t064 brings it to this rule.
+distance and lets a Salvage whose world was lost fail on arrival; t064
+brings it to this rule. An arriving Salvage credits and lands as above.
 
 ### Rogue And Autopilot Orders
 

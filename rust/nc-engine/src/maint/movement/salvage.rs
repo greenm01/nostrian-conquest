@@ -3,8 +3,8 @@ use super::super::{
     SalvageResolvedEvent,
 };
 use super::stepper::set_fleet_to_local_hold;
-use crate::{CoreGameData, ProductionItemKind};
-use nc_data::{Real48, has_any_force, stored_production_points, troop_transports};
+use crate::CoreGameData;
+use nc_data::{Real48, has_any_force, stored_production_points};
 
 pub(super) fn queue_salvage_resolution(
     game_data: &mut CoreGameData,
@@ -98,45 +98,39 @@ fn resolve_salvage_arrival(
         });
     }
 
-    let recovered_points = fleet_salvage_value(&game_data.fleets[fleet_idx]);
-    let current_stored = stored_production_points(&game_data.planets[planet_idx]);
-    game_data.planets[planet_idx].stored_goods =
+    // The yield joins the world's stored goods and each loaded transport
+    // lands its army (`0b5d:4d65`).
+    let fleet = &game_data.fleets[fleet_idx];
+    let recovered_points = fleet_salvage_value(fleet);
+    let armies_landed = fleet.ships.loaded_transports;
+    let fleet_number = fleet.fleet_number.0 as u8;
+    let planet = &mut game_data.planets[planet_idx];
+    let current_stored = stored_production_points(planet);
+    planet.stored_goods =
         Real48::from_f64(f64::from(current_stored.saturating_add(recovered_points)));
+    planet.armies = planet.armies.saturating_add(armies_landed);
 
     Ok(SalvageResolvedEvent::Succeeded {
         fleet_idx,
-        fleet_number: game_data.fleets[fleet_idx].fleet_number.0 as u8,
+        fleet_number,
         owner_empire,
         planet_idx,
         coords,
         recovered_points,
+        armies_landed,
         stardate_week: None,
     })
 }
 
+/// What an arriving Salvage fleet yields (`0b5d:4d65`): each ship's half
+/// cost, rounded up. A transport is worth the same empty or loaded.
 fn fleet_salvage_value(fleet: &nc_data::Fleet) -> u32 {
-    let total_cost = u32::from(fleet.ships.destroyers)
-        * purchase_cost(ProductionItemKind::Destroyer)
-        + u32::from(fleet.ships.cruisers) * purchase_cost(ProductionItemKind::Cruiser)
-        + u32::from(fleet.ships.battleships) * purchase_cost(ProductionItemKind::Battleship)
-        + u32::from(fleet.ships.scouts) * purchase_cost(ProductionItemKind::Scout)
-        + u32::from(troop_transports(fleet)) * purchase_cost(ProductionItemKind::Transport)
-        + u32::from(fleet.ships.etacs) * purchase_cost(ProductionItemKind::Etac)
-        + u32::from(fleet.ships.loaded_transports) * purchase_cost(ProductionItemKind::Army);
-    total_cost / 2
-}
-
-fn purchase_cost(kind: ProductionItemKind) -> u32 {
-    match kind {
-        ProductionItemKind::Destroyer => 5,
-        ProductionItemKind::Cruiser => 15,
-        ProductionItemKind::Battleship => 45,
-        ProductionItemKind::Scout => 15,
-        ProductionItemKind::Transport => 5,
-        ProductionItemKind::Etac => 20,
-        ProductionItemKind::GroundBattery => 20,
-        ProductionItemKind::Army => 2,
-        ProductionItemKind::Starbase => 50,
-        ProductionItemKind::Unknown(_) => 0,
-    }
+    let ships = &fleet.ships;
+    let transports = u32::from(ships.empty_transports) + u32::from(ships.loaded_transports);
+    u32::from(ships.battleships) * 23
+        + u32::from(ships.cruisers) * 8
+        + u32::from(ships.destroyers) * 3
+        + transports * 3
+        + u32::from(ships.etacs) * 10
+        + u32::from(ships.scouts) * 8
 }

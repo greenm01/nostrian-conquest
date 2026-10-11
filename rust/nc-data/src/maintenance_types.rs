@@ -612,6 +612,8 @@ pub enum SalvageResolvedEvent {
         planet_idx: usize,
         coords: [u8; 2],
         recovered_points: u32,
+        /// Armies the fleet's loaded transports landed on the world.
+        armies_landed: u16,
         /// Week of year (1–52) when this event occurred; None until canonicalized.
         stardate_week: Option<u8>,
     },

@@ -1752,13 +1752,13 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = String::from_utf8_lossy(&results);
     assert!(text.contains("Salvage mission report"));
-    assert!(text.contains("yield 10 production point(s)"));
+    assert!(text.contains("yield 11 production point(s)"));
 
     let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(game_data.fleets.len(), 15);
     assert_eq!(
         stored_production_points(&game_data.planets[planet_idx]),
-        stored_before + 10
+        stored_before + 11
     );
 
     cleanup_dir(&target);

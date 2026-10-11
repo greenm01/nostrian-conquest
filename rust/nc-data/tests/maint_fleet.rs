@@ -1679,9 +1679,11 @@ fn test_salvage_converts_fleet_value_into_owned_planet_production_and_removes_fl
     let events = run_maintenance_turn(&mut game_data).expect("maintenance turn should succeed");
 
     assert_eq!(game_data.fleets.len(), fleet_count_before - 1);
+    // A destroyer yields 3 points and a cruiser 8: each ship's half cost,
+    // rounded up (`0b5d:4d65`).
     assert_eq!(
         stored_production_points(&game_data.planets[planet_idx]),
-        stored_before + 10,
+        stored_before + 11,
     );
     assert!(events.salvage_events.iter().any(|event| {
         matches!(
@@ -1695,7 +1697,7 @@ fn test_salvage_converts_fleet_value_into_owned_planet_production_and_removes_fl
             } if *owner_empire == 1
                 && *event_planet_idx == planet_idx
                 && *coords == target_coords
-                && *recovered_points == 10
+                && *recovered_points == 11
         )
     }));
 }
