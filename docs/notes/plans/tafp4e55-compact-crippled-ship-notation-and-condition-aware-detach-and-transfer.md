@@ -2,7 +2,7 @@
 id: tafp4e55
 date: 2026-10-11
 kind: plan
-status: planned
+status: implemented
 tags: [plan, door, combat]
 ---
 # Consistent ASCII ship notation and condition-aware detach and transfer
@@ -11,7 +11,7 @@ The owner approved consistent ASCII ship notation for healthy and damaged compos
 
 ## t093
 
-Implement this approved interface follow-up to [Recovery Turns](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md#approved-door-interface-follow-up-2026-10-11). t066 is implemented; this task changes its display and default selection behavior. The owner accepted these rules in the conversation of2026-10-11 and requested documentation and a todo plan. This plan does not claim they are already implemented.
+Implement this approved interface follow-up to [Recovery Turns](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md#approved-door-interface-follow-up-2026-10-11). t066 is implemented; this task changes its display and default selection behavior. The owner accepted these rules in the conversation of2026-10-11 and requested documentation and a todo plan. The Implementation section at the end records what landed.
 
 ## Display contract
 
@@ -81,3 +81,65 @@ Update the player manual's recovery, fleet composition, Detach and Transfer expl
 - [Recovery ADR](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md): damage and recovery state; this follow-up changes only its display and default detach/transfer selection.
 - [Implementation waves](x8arlb3c-implementation-waves-after-t039.md): this is follow-up work after the completed t066, coordinated with other fleet mutations.
 - [Player manual](../../manuals/nc_player_manual.typ): update the existing player explanations when the behavior lands.
+
+## Implementation (t093)
+
+Done in t093. The sections above are the contract; this section records what
+the code settled.
+
+**One formatter.** `nc-data/src/ship_notation.rs` owns the grammar:
+`ship_token`, `join_tokens`, `fleet_notation` (the fleet screens' class order,
+`SC BB CA DD TT* TT ETAC`), `starbase_token`, `fit_notation`, and the
+`NOTATION_LEGEND` text. `fit_notation` cuts between tokens and ends a cut
+damaged fleet in ` +!`, so the lone `!` survives however far the cell is
+cut. `ship_composition_table_summary` is now `fleet_notation` with the empty
+fleet assertion; `ship_composition_summary` (`SC=1 ... AR=2`) and
+`damaged_ships_table_summary` are gone. The grammar is used by the door's fleet
+list and group screens, the review, ETA and order screens' ship rows, Detach and
+Transfer (ship rows, staged, remaining and destination lines), the mass
+commission notice, the helm's fleet list cell, transfer summary and commission
+notice, the hosted state summary, the CLI's inspect and bundle output, and the
+reports' force compositions, stardock scans and starbase counts. The review
+screen's `Damaged:` row and the helm popup's `Damaged` line are replaced by
+the notation itself; the review keeps the legend in that blank row.
+
+**Transports.** A fleet keeps one crippled counter for loaded and empty
+transports together, so the state cannot say which transports are hurt.
+`crippled_by_category` splits the counter loaded first, the order
+`remove_ships` already uses for transports lost in battle, and every
+screen, selection and preview reads that one function. The split never
+changes a ship count or an army: `TT*4!1` only says the one crippled transport
+is counted among the four loaded. `TT 1!` is refused when every crippled
+transport is counted loaded. The alternative, a separate counter per cargo
+state, would have meant new rules in the engine's damage write-back, loading,
+unloading and landing; the owner can ask for it if a loaded-first reading
+ever plays wrong.
+
+**Selection.** `FleetDetachSelection` gains `required_crippled` (per
+category). `resolve_selection` picks the hulls: required crippled first, the
+rest healthy first and then crippled, cohorts in `CrippledHulls::take` order.
+Detach, Transfer and every preview call it, and an `n!` beyond the crippled
+ships is refused by `GameStateMutationError::FleetDetachCrippledExceedsAvailable`
+before anything changes. Plain and crippled quantities add up in any order to
+the same ships. This also changes the shared default: the CLI, the KDL
+turn files, the helm and the fuzzer have no `n!` syntax, so their plain
+quantities now take healthy ships first as well.
+
+**Door input.** The quantity prompt accepts digits and one trailing `!`; a
+class with crippled ships left to stage says `n! = crippled only`. A refused
+`n!` says `Enter a crippled quantity from 1 to N.` or `No crippled CA left to
+stage.` and leaves the prompt open. Class codes show `ETAC`; `ET` still
+works. Help for the fleet list, Detach and Transfer carries the legend and
+the `3!` rule.
+
+**Reports.** Force compositions and stardock scans use the grammar. A loss
+record counts transports without their cargo, so casualty lists write
+lost transports in words (`BB2 CA1 and 3 transports`) rather than give them a
+cargo they may not have had. Reports show no crippled counts: the events
+carry only totals, and an enemy's damage is not known to the reader.
+
+**Left alone.** The helm's planet stardock and build-queue summaries and the
+sector panel sample (`5BB 10CA`, from `planet_summary`) keep their form, and
+so do the CLI's key=value feedback lines (`BB=2 CA=1`). Showing friendly
+crippled counts in battle reports needs the combat events to carry them.
+

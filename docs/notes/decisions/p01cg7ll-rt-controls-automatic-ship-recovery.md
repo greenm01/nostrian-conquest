@@ -182,11 +182,10 @@ within crippled hulls, longest remaining recovery still moves first. All
 recovery state and cargo move intact. Preview the actual selection with the
 same notation in the existing flow, for example `CA3!1`.
 
-Implementation is pending as [t093](../plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
+Implemented in [t093](../plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
 The t066 implementation account below describes the earlier behavior;
-its display and ordinary-quantity selection are superseded by this approved
-follow-up when t093 lands. RT 2, automatic recovery and starbase assistance
-are unchanged.
+its display and ordinary-quantity selection are superseded by this
+follow-up. RT 2, automatic recovery and starbase assistance are unchanged.
 
 ## Implementation (t066)
 
@@ -249,7 +248,8 @@ takes the base's own strength. Bombardment keeps its 5/30/135 weights and
 its 2/15/67 crippled values. The +1 die for a side with a starbase does not
 depend on the base's condition.
 
-**Display.** The BBS fleet list adds `N damaged` after the composition in the
+**Display** (superseded by t093: every composition uses the ship notation,
+and the legend replaces the `Damaged:` row). The BBS fleet list adds `N damaged` after the composition in the
 Ships cell when the whole composition and the note fit, and otherwise draws
 exactly the cell it drew before; the review screen adds a `Damaged:` row
 (crippled ships by class, `BB 2DD`) in the blank row under Composition, only
