@@ -145,8 +145,12 @@ where the formula puts the count between 1,743 and 1,916 (the bounds are a
 tie at the attack's own tick resolved each way).
 
 **Changed expectations.** The store's schema tests expect version 16 (and
-refuse 15), and its table list gains `snapshot_sightings`. Nothing else
-moved: no existing battle test depended on the absence of a surprise.
+refuse 15), and its table list gains `snapshot_sightings`. The nc-cli test
+`maint_rust_dominant_invalidated_invade_report_retreats_after_capability_loss`
+pins a campaign seed where two lone destroyers destroy each other; the
+invader's surprise changes the first exchange's dice, so seed 9 no longer
+does it and the test pins seed 2, the lowest that does. No other existing
+test depended on the absence of a surprise.
 
 ## Acceptance and connections
 

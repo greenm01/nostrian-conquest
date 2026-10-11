@@ -350,7 +350,7 @@ fn db_export_says_the_sighting_memory_is_not_written() {
             exported.to_str().unwrap(),
         ])
     };
-    assert!(!export().contains("sighting"));
+    assert!(!export().contains("Sighting memory"));
 
     let store = CampaignStore::open_default_in_dir(&source).expect("open store");
     let mut state = store
