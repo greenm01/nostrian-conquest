@@ -81,7 +81,7 @@ fn structured_combat_report_round_trips_through_reports_screen_and_delete() {
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("Type: Reports"))
+            .any(|line| line.contains("[Reports ("))
     );
     assert!(
         terminal

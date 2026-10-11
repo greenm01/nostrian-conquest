@@ -79,10 +79,7 @@ fn recipient_sees_a_message_only_after_the_maintenance_that_delivers_it() {
     );
     assert!(!app.messaging.delete_reviewables_prompt_active);
     let menu = render(&mut app);
-    assert!(
-        line_containing(&menu, "currently reviewable")
-            .contains("No messages or results are currently reviewable.")
-    );
+    assert!(line_containing(&menu, "No reports").contains("No reports to delete."));
     open_inbox(&mut app);
     assert_eq!(app.current_screen(), ScreenId::GeneralMenu);
     let menu = render(&mut app);
@@ -106,7 +103,7 @@ fn recipient_sees_a_message_only_after_the_maintenance_that_delivers_it() {
 }
 
 #[test]
-fn delete_all_reviewables_leaves_undelivered_mail_for_its_recipient() {
+fn delete_all_reports_retains_reports_and_leaves_incoming_and_sent_mail_alone() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     let year = runtime.game_data.conquest.game_year;
@@ -117,6 +114,13 @@ fn delete_all_reviewables_leaves_undelivered_mail_for_its_recipient() {
     runtime
         .queued_mail
         .push(incoming_mail(3, 1, year, "Queued", "Not yet"));
+    runtime
+        .queued_mail
+        .push(incoming_mail(1, 2, year - 1, "Sent", "Sent body"));
+    runtime
+        .queued_mail
+        .push(incoming_mail(1, 3, year, "Pending", "Pending body"));
+    let original_mail = runtime.queued_mail.clone();
     save_runtime_state(&fixture_dir, &runtime);
 
     let mut app = load_player_one(&fixture_dir);
@@ -135,16 +139,38 @@ fn delete_all_reviewables_leaves_undelivered_mail_for_its_recipient() {
         );
     }
 
-    let deleted = latest_runtime_state(&fixture_dir)
-        .queued_mail
-        .into_iter()
-        .map(|mail| (mail.subject, mail.recipient_deleted))
-        .collect::<Vec<_>>();
-    assert_eq!(
-        deleted,
-        vec![
-            ("Delivered".to_string(), true),
-            ("Queued".to_string(), false)
-        ]
+    let stored = latest_runtime_state(&fixture_dir);
+    assert_eq!(stored.queued_mail, original_mail);
+    assert!(
+        stored
+            .report_block_rows
+            .iter()
+            .any(|row| row.recipient_deleted && row.decoded_text.contains("Fleet battle report"))
     );
+}
+
+#[test]
+fn cancelled_message_survives_maintenance_without_entering_recipient_inbox() {
+    let fixture_dir = temp_game_copy();
+    let mut runtime = latest_runtime_state(&fixture_dir);
+    clear_runtime_report_blocks(&mut runtime);
+    let mut mail = incoming_mail(
+        2,
+        1,
+        runtime.game_data.conquest.game_year,
+        "Cancelled",
+        "Retain this body",
+    );
+    mail.cancel();
+    runtime.queued_mail = vec![mail.clone()];
+    save_runtime_state(&fixture_dir, &runtime);
+    for _ in 0..2 {
+        run_maintenance(&fixture_dir);
+        let state = latest_runtime_state(&fixture_dir);
+        assert_eq!(state.queued_mail, vec![mail.clone()]);
+        let mut app = load_player_one(&fixture_dir);
+        assert_eq!(login_message_review(&mut app), None);
+        open_inbox(&mut app);
+        assert!(app.filtered_inbox_display_items().is_empty());
+    }
 }

@@ -957,6 +957,8 @@ mod tests {
                 subject: "Long diplomatic subject that also stretches the inbox list width".to_string(),
                 body: "Second very long preview line to keep the selected preview pane wide enough to trigger clamping instead of a panic.".to_string(),
                 recipient_deleted: false,
+                sender_deleted: false,
+                cancelled: false,
             }],
             Vec::new(),
             ScreenGeometry::new(187, 45),
@@ -1072,6 +1074,8 @@ mod tests {
             subject: "Wrap".to_string(),
             body: "alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu nu xi omicron pi rho sigma tau upsilon phi chi psi omega".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         }];
         app.report_block_rows.clear();
         app.overlay = ActiveOverlay::Inbox;
@@ -1140,6 +1144,8 @@ mod tests {
                 subject: "Long diplomatic subject that also stretches the inbox list width".to_string(),
                 body: "Second very long preview line to keep the selected preview pane wide enough to trigger clipping without resizing.".to_string(),
                 recipient_deleted: false,
+                sender_deleted: false,
+                cancelled: false,
             }],
             Vec::new(),
             ScreenGeometry::new(187, 45),

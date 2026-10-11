@@ -22,6 +22,8 @@ pub enum InboxItemType {
     Report,
     /// The viewer's own message, queued this turn and not yet delivered.
     Outgoing,
+    /// A delivered copy retained by its sender.
+    Sent,
 }
 
 impl InboxItemType {
@@ -30,6 +32,7 @@ impl InboxItemType {
             Self::Message => "M",
             Self::Report => "R",
             Self::Outgoing => "OUT",
+            Self::Sent => "SENT",
         }
     }
 }
@@ -54,6 +57,7 @@ pub struct InboxItem {
     pub year: u16,
     pub week: Option<u8>,
     pub subject: String,
+    pub correspondent: String,
     pub body_lines: Vec<String>,
     pub report_bucket: Option<ReportSummaryBucket>,
 }
@@ -146,10 +150,54 @@ pub fn runtime_outgoing_inbox_items(
             year: mail.year,
             week: None,
             subject: inbox_message_subject(mail),
+            correspondent: empire_label(game_data, mail.recipient_empire_id),
             body_lines: runtime_outgoing_message_lines(game_data, mail),
             report_bucket: None,
         })
         .collect()
+}
+
+/// The sender's visible copies, pending first, then newest delivered first.
+pub fn runtime_sent_inbox_items(
+    game_data: &CoreGameData,
+    sender_empire_id: u8,
+    queued_mail: &[QueuedPlayerMail],
+) -> Vec<InboxItem> {
+    let year = game_data.conquest.game_year;
+    let mut items: Vec<_> = queued_mail
+        .iter()
+        .enumerate()
+        .filter(|(_, mail)| mail.is_visible_to_sender(sender_empire_id))
+        .map(|(idx, mail)| {
+            let delivered = mail.is_delivered(year);
+            InboxItem {
+                source: InboxItemSource::QueuedMail(idx),
+                item_type: if delivered {
+                    InboxItemType::Sent
+                } else {
+                    InboxItemType::Outgoing
+                },
+                year: if delivered {
+                    mail.year.saturating_add(1)
+                } else {
+                    mail.year
+                },
+                week: None,
+                subject: inbox_message_subject(mail),
+                correspondent: empire_label(game_data, mail.recipient_empire_id),
+                body_lines: runtime_outgoing_message_lines(game_data, mail),
+                report_bucket: None,
+            }
+        })
+        .collect();
+    items.sort_by_key(|item| {
+        std::cmp::Reverse((
+            item.item_type == InboxItemType::Outgoing,
+            item.year,
+            item.source,
+        ))
+    });
+    items
 }
 
 /// A queued message as its sender reads it: the recipient takes the place
@@ -288,6 +336,7 @@ fn inbox_item_from_mail(
         year: mail.year,
         week: None,
         subject: inbox_message_subject(mail),
+        correspondent: empire_label(game_data, mail.sender_empire_id),
         body_lines: runtime_message_lines(game_data, mail),
         report_bucket: None,
     }
@@ -304,6 +353,7 @@ fn inbox_item_from_report_row(idx: usize, row: &ReportBlockRow, current_year: u1
         year: parsed_year,
         week,
         subject: synthesize_report_subject(&body_lines),
+        correspondent: String::new(),
         body_lines,
         report_bucket: Some(classify_report_bucket(&row.decoded_text)),
     }
@@ -470,7 +520,7 @@ fn inbox_source_index(source: InboxItemSource) -> usize {
 fn inbox_item_type_rank(item_type: InboxItemType) -> u8 {
     match item_type {
         InboxItemType::Report => 1,
-        InboxItemType::Message | InboxItemType::Outgoing => 0,
+        InboxItemType::Message | InboxItemType::Outgoing | InboxItemType::Sent => 0,
     }
 }
 

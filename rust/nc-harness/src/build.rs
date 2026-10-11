@@ -358,6 +358,8 @@ fn apply_queued_mail(spec: &ScenarioSpec, queued_mail: &mut Vec<QueuedPlayerMail
         subject: mail.subject.clone(),
         body: mail.body.clone(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }));
 }
 
@@ -375,6 +377,8 @@ fn apply_message_blocks(
             subject: String::new(),
             body: block.text.clone(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         })
     }));
 }

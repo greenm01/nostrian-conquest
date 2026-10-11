@@ -29,7 +29,7 @@ const ROW_1: [MenuEntry<'static>; 2] = [
 const ROW_2: [MenuEntry<'static>; 3] = [
     MenuEntry::new(CMD_COL_1, "Q", "uit to main menu"),
     MenuEntry::new(CMD_COL_2, "S", "tatus, your"),
-    MenuEntry::new(51, "D", "elete ALL messages/results"),
+    MenuEntry::new(51, "D", "elete ALL reports"),
 ];
 
 const ROW_3: [MenuEntry<'static>; 3] = [

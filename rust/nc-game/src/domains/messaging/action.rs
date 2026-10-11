@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MessagingAction {
-    SetInboxTypeFilterAll,
+    SetInboxFolderSent,
     SetInboxTypeFilterMessages,
     SetInboxTypeFilterReports,
     OpenInboxYearPrompt,

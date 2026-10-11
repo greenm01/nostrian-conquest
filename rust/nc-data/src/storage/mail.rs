@@ -35,6 +35,12 @@ pub(super) fn write_queued_mail_rows(
             &mail.body,
             i64::from(u8::from(mail.recipient_deleted)),
         ])?;
+        if mail.sender_deleted || mail.cancelled {
+            tx.execute(
+                "INSERT INTO mail_sender_state(snapshot_id, queue_index, sender_deleted, cancelled) VALUES (?1, ?2, ?3, ?4)",
+                params![snapshot_id, idx as i64, mail.sender_deleted, mail.cancelled],
+            )?;
+        }
     }
     Ok(())
 }
@@ -44,10 +50,11 @@ pub(super) fn load_queued_mail_rows(
     snapshot_id: i64,
 ) -> Result<Vec<QueuedPlayerMail>, CampaignStoreError> {
     let mut stmt = conn.prepare(
-        "SELECT sender_empire_id, recipient_empire_id, year, subject, body, recipient_deleted
-         FROM queued_mail
-         WHERE snapshot_id = ?1
-         ORDER BY queue_index",
+        "SELECT m.sender_empire_id, m.recipient_empire_id, m.year, m.subject, m.body, m.recipient_deleted,
+                COALESCE(s.sender_deleted, 0), COALESCE(s.cancelled, 0)
+         FROM queued_mail m LEFT JOIN mail_sender_state s USING(snapshot_id, queue_index)
+         WHERE m.snapshot_id = ?1
+         ORDER BY m.queue_index",
     )?;
     let rows = stmt.query_map(params![snapshot_id], |row| {
         Ok(QueuedPlayerMail {
@@ -57,6 +64,8 @@ pub(super) fn load_queued_mail_rows(
             subject: row.get(3)?,
             body: row.get(4)?,
             recipient_deleted: row.get::<_, i64>(5)? != 0,
+            sender_deleted: row.get::<_, i64>(6)? != 0,
+            cancelled: row.get::<_, i64>(7)? != 0,
         })
     })?;
     Ok(rows.collect::<Result<Vec<_>, _>>()?)

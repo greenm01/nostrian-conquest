@@ -690,6 +690,8 @@ fn queued_mail(sender_empire_id: u8, year: u16, subject: &str, body: &str) -> Qu
         subject: subject.to_string(),
         body: body.to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }
 }
 

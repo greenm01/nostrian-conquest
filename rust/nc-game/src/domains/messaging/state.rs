@@ -7,7 +7,9 @@ pub const INBOX_VISIBLE_ROWS: usize = 8;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InboxTypeFilter {
+    /// Internal aggregate for inbox availability checks, never a folder tab.
     All,
+    Sent,
     Messages,
     Reports,
 }
@@ -91,7 +93,7 @@ impl Default for MessagingState {
             compose_outbox_read_scroll: 0,
             compose_sent_status: None,
             delete_reviewables_prompt_active: false,
-            inbox_type_filter: InboxTypeFilter::All,
+            inbox_type_filter: InboxTypeFilter::Reports,
             inbox_year_filter: None,
             inbox_cursor: 0,
             inbox_scroll_offset: 0,

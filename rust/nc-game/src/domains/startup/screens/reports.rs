@@ -5,7 +5,7 @@ use crate::domains::messaging::delete_item_prompt;
 use crate::domains::messaging::state::{
     INBOX_VISIBLE_ROWS, InboxFocus, InboxPromptMode, InboxTypeFilter,
 };
-use crate::reports::InboxDisplayItem;
+use crate::reports::{InboxDisplayItem, InboxItemType};
 use crate::screen::layout::{
     LEFT_WINDOW_PAD_COL, PLAYFIELD_WIDTH, PromptFeedback, ScreenGeometry, command_line_row_for,
     draw_command_line_default_input_padded, draw_command_line_prompt_text_padded,
@@ -45,48 +45,84 @@ impl ReportsScreen {
         prompt_mode: InboxPromptMode,
         feedback: Option<&PromptFeedback>,
         current_year: u16,
+        folder_counts: [usize; 3],
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let mut buffer = new_playfield_for(geometry);
-        buffer.write_spans(
+        let mut col = LEFT_WINDOW_PAD_COL;
+        buffer.write_text(STATUS_ROW, col, "INBOX: ", classic::status_label_style());
+        col += 7;
+        for (idx, (folder, hotkey, name)) in [
+            (InboxTypeFilter::Reports, "R", "Reports"),
+            (InboxTypeFilter::Messages, "M", "Messages"),
+            (InboxTypeFilter::Sent, "S", "Sent"),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let label = if type_filter == folder {
+                format!("[{name} ({})]  ", folder_counts[idx])
+            } else {
+                format!("{hotkey}>{} ({})  ", &name[1..], folder_counts[idx])
+            };
+            buffer.write_text(
+                STATUS_ROW,
+                col,
+                &label,
+                if type_filter == folder {
+                    classic::prompt_hotkey_style()
+                } else {
+                    classic::status_value_style()
+                },
+            );
+            col += label.len();
+        }
+        buffer.write_text(
             STATUS_ROW,
-            LEFT_WINDOW_PAD_COL,
-            &[
-                StyledSpan::new("Type: ", classic::status_label_style()),
-                StyledSpan::new(
-                    type_filter_label(type_filter),
-                    classic::status_value_style(),
-                ),
-                StyledSpan::new(" | ", classic::status_value_style()),
-                StyledSpan::new("Year: ", classic::status_label_style()),
-                StyledSpan::new(
-                    &year_filter
-                        .map(|year| year.to_string())
-                        .unwrap_or_else(|| "All".to_string()),
-                    classic::status_value_style(),
-                ),
-                StyledSpan::new(" | ", classic::status_value_style()),
-                StyledSpan::new("Focus: ", classic::status_label_style()),
-                StyledSpan::new(focus_label(focus), classic::status_value_style()),
-            ],
+            col,
+            &format!(
+                "Year: {}",
+                year_filter
+                    .map(|y| y.to_string())
+                    .unwrap_or_else(|| "All".to_string())
+            ),
+            classic::status_label_style(),
         );
 
+        let sent = type_filter == InboxTypeFilter::Sent;
+        let reports = matches!(type_filter, InboxTypeFilter::Reports | InboxTypeFilter::All);
         let table_rows = items
             .iter()
             .map(|item| {
-                vec![
-                    format!("{:02}", item.display_id),
-                    item.item.item_type.code().to_string(),
-                    item.item.stardate_label(),
-                    item.item.subject.clone(),
-                ]
+                let mut row = vec![format!("{:02}", item.display_id)];
+                row.push(if reports {
+                    item.item.stardate_label()
+                } else if sent && item.item.item_type == InboxItemType::Outgoing {
+                    "Queued".to_string()
+                } else {
+                    item.item.year.to_string()
+                });
+                if !reports {
+                    row.push(item.item.correspondent.clone());
+                }
+                row.push(item.item.subject.clone());
+                row
             })
             .collect::<Vec<_>>();
-        let base_columns = [
-            TableColumn::right("ID", 2),
-            TableColumn::center("Type", 4),
-            TableColumn::right("Stardate", 8),
-            TableColumn::left_flex("Subject", 24, 1),
-        ];
+        let mut base_columns = vec![TableColumn::right("ID", 2)];
+        base_columns.push(TableColumn::right(
+            if reports {
+                "Stardate"
+            } else if sent {
+                "Sent"
+            } else {
+                "Year"
+            },
+            if reports { 8 } else { 6 },
+        ));
+        if !reports {
+            base_columns.push(TableColumn::left(if sent { "To" } else { "From" }, 20));
+        }
+        base_columns.push(TableColumn::left_flex("Subject", 24, 1));
         let visible_rows = items.len().min(INBOX_VISIBLE_ROWS);
         let columns = fit_inbox_columns(&base_columns, &table_rows, items.len() > visible_rows);
         let table_width = table_render_width(&columns);
@@ -168,7 +204,7 @@ impl ReportsScreen {
         match prompt_mode {
             InboxPromptMode::Normal => {
                 let prompt = format!(
-                    "? M R A Y D <TAB> <Q> [{}] -> ",
+                    "? R M S Y D <TAB> <Q> [{}] -> ",
                     selected_id_label(items, cursor)
                 );
                 draw_command_line_prompt_text_padded(
@@ -202,7 +238,17 @@ impl ReportsScreen {
                     &mut buffer,
                     command_line_row,
                     COMMAND_LABEL,
-                    &delete_item_prompt(&selected_id_label(items, cursor)),
+                    &match items.get(cursor).map(|item| item.item.item_type) {
+                        Some(InboxItemType::Outgoing) => format!(
+                            "Cancel queued message {}? [Y]/N -> ",
+                            selected_id_label(items, cursor)
+                        ),
+                        Some(InboxItemType::Sent) => format!(
+                            "Delete sent copy {}? [Y]/N -> ",
+                            selected_id_label(items, cursor)
+                        ),
+                        _ => delete_item_prompt(&selected_id_label(items, cursor)),
+                    },
                 );
             }
         }
@@ -220,7 +266,7 @@ impl Screen for ReportsScreen {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &[],
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -231,6 +277,7 @@ impl Screen for ReportsScreen {
             InboxPromptMode::Normal,
             None,
             0,
+            [0; 3],
         )
     }
 
@@ -280,21 +327,6 @@ fn selected_visible_row(cursor: usize, scroll_offset: usize, visible_rows: usize
         None
     } else {
         Some(cursor - scroll_offset)
-    }
-}
-
-fn type_filter_label(filter: InboxTypeFilter) -> &'static str {
-    match filter {
-        InboxTypeFilter::All => "All",
-        InboxTypeFilter::Messages => "Messages",
-        InboxTypeFilter::Reports => "Reports",
-    }
-}
-
-fn focus_label(focus: InboxFocus) -> &'static str {
-    match focus {
-        InboxFocus::Inbox => "Inbox",
-        InboxFocus::Preview => "Preview",
     }
 }
 

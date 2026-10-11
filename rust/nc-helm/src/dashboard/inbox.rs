@@ -37,7 +37,9 @@ pub fn project_inbox_items(
 pub(crate) fn latest_delivered_year(item_type: DashInboxItemType, current_year: u16) -> u16 {
     match item_type {
         DashInboxItemType::Outgoing => current_year,
-        DashInboxItemType::Message | DashInboxItemType::Report => current_year.saturating_sub(1),
+        DashInboxItemType::Message | DashInboxItemType::Report | DashInboxItemType::Sent => {
+            current_year.saturating_sub(1)
+        }
     }
 }
 

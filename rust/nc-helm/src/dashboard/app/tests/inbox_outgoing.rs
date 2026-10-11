@@ -35,6 +35,8 @@ fn mail(sender: u8, recipient: u8, year: u16, subject: &str) -> QueuedPlayerMail
         subject: subject.to_string(),
         body: "Body".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }
 }
 
@@ -155,7 +157,11 @@ fn inbox_cancel_of_an_outgoing_row_asks_then_removes_it_everywhere() {
     let draft = app.hosted_turn_draft.as_ref().unwrap();
     assert_eq!(draft.messages.len(), 1);
     assert_eq!(draft.messages[0].subject, "One");
-    assert_eq!(app.queued_mail.len(), 1);
+    assert_eq!(app.queued_mail.len(), 2);
+    assert_eq!(
+        app.queued_mail.iter().filter(|mail| mail.cancelled).count(),
+        1
+    );
     let stored = app
         .campaign_store
         .clone()
@@ -163,7 +169,8 @@ fn inbox_cancel_of_an_outgoing_row_asks_then_removes_it_everywhere() {
         .load_latest_runtime_state()
         .expect("load runtime state")
         .expect("runtime state");
-    assert_eq!(stored.queued_mail.len(), 1);
+    assert_eq!(stored.queued_mail.len(), 2);
+    assert!(stored.queued_mail[1].cancelled);
     assert_eq!(stored.queued_mail[0].subject, "One");
 }
 
@@ -203,7 +210,11 @@ fn outbox_cancel_asks_first_and_defaults_to_yes() {
     assert!(!app.inbox_overlay.delete_confirm);
     assert_eq!(app.inbox_overlay.prompt_mode, InboxPromptMode::Outbox);
     assert_eq!(staged(&app), 1);
-    assert_eq!(app.queued_mail.len(), 1);
+    assert_eq!(app.queued_mail.len(), 2);
+    assert_eq!(
+        app.queued_mail.iter().filter(|mail| mail.cancelled).count(),
+        1
+    );
     assert_eq!(
         app.hosted_turn_draft.as_ref().unwrap().messages[0].subject,
         "Two"
@@ -212,7 +223,8 @@ fn outbox_cancel_asks_first_and_defaults_to_yes() {
     app.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
     app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
     assert_eq!(staged(&app), 0);
-    assert!(app.queued_mail.is_empty());
+    assert_eq!(app.queued_mail.len(), 2);
+    assert!(app.queued_mail.iter().all(|mail| mail.cancelled));
 }
 
 #[test]

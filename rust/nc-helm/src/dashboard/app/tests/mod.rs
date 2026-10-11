@@ -4007,15 +4007,21 @@ fn inbox_quick_compose_stages_and_removes_hosted_message() {
     app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
     assert!(app.hosted_turn_draft.as_ref().unwrap().messages.is_empty());
-    assert!(!app.queued_mail.iter().any(|mail| {
-        mail.sender_empire_id == 1 && mail.recipient_empire_id == 2 && mail.subject == "Hi"
+    assert!(app.queued_mail.iter().any(|mail| {
+        mail.sender_empire_id == 1
+            && mail.recipient_empire_id == 2
+            && mail.subject == "Hi"
+            && mail.cancelled
     }));
     let runtime_state = store
         .load_latest_runtime_state()
         .expect("load runtime state")
         .expect("runtime state");
-    assert!(!runtime_state.queued_mail.iter().any(|mail| {
-        mail.sender_empire_id == 1 && mail.recipient_empire_id == 2 && mail.subject == "Hi"
+    assert!(runtime_state.queued_mail.iter().any(|mail| {
+        mail.sender_empire_id == 1
+            && mail.recipient_empire_id == 2
+            && mail.subject == "Hi"
+            && mail.cancelled
     }));
 }
 
@@ -5302,6 +5308,8 @@ fn mouse_wheel_in_inbox_list_moves_selection() {
         subject: "Test subject".to_string(),
         body: "Test body".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }];
     app.overlay = ActiveOverlay::Inbox;
     app.inbox_overlay.selected = 2;
@@ -5352,6 +5360,8 @@ fn mouse_wheel_in_inbox_preview_scrolls_preview() {
         subject: "Test subject".to_string(),
         body: "Test body with enough length to create a preview.".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }];
     app.overlay = ActiveOverlay::Inbox;
     app.inbox_overlay.selected = 0;
@@ -5527,6 +5537,8 @@ fn mouse_wheel_inbox_list_requests_redraw() {
             subject: "Test A".to_string(),
             body: "Body A".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         },
         QueuedPlayerMail {
             sender_empire_id: 2,
@@ -5535,6 +5547,8 @@ fn mouse_wheel_inbox_list_requests_redraw() {
             subject: "Test B".to_string(),
             body: "Body B".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         },
     ];
     app.overlay = ActiveOverlay::Inbox;
@@ -5566,6 +5580,8 @@ fn mouse_wheel_inbox_preview_requests_redraw() {
         subject: "Test subject".to_string(),
         body: "Test body with enough length to create a preview.".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }];
     app.overlay = ActiveOverlay::Inbox;
     app.inbox_overlay.selected = 0;

@@ -43,3 +43,17 @@ reports the same 24 pre-existing notes; all links added here resolve.
 - [Prompt standard](../../dev/ec-game-prompt-standard.md)
 - [Damage notation and staging](tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md)
 - [Available ship-class prompts](knkaambn-show-only-available-ship-classes-in-staging-prompts.md)
+
+### t112
+
+The post-send reminder now points to the inbox: `In your inbox: Enter reads;
+D cancels it before maintenance.` The recipient-list shortcut is still valid,
+but there D opens the outgoing list rather than reading or cancelling an
+individual message. Inbox OUT rows already support Enter to read and D to
+cancel. No input behavior changes. The existing player manual already explains
+both paths. All 682 nc-game tests and the release build pass. The existing
+rendering test checks the reminder and spacing within 80 by 25.
+
+[t113](0wc8ysbt-organize-inbox-into-reports-messages-and-sent.md#t113)
+subsequently places outgoing mail in Sent and shortens the reminder to
+`Inbox > Sent: Enter reads; D cancels before maintenance.`

@@ -164,6 +164,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             app.messaging.inbox_prompt_mode,
             app.messaging.inbox_feedback.as_ref(),
             app.game_data.conquest.game_year,
+            app.inbox_folder_counts(),
         ),
         _ => unreachable!("startup views called for non-startup screen"),
     }

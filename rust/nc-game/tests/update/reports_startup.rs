@@ -38,12 +38,12 @@ fn delete_reviewables_stays_on_general_menu_with_notice_when_nothing_is_reviewab
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("No messages or results are currently reviewable."))
+            .any(|line| line.contains("No reports to delete."))
     );
 }
 
 #[test]
-fn delete_reviewables_opens_when_classic_pending_flags_are_set() {
+fn delete_reports_ignores_classic_message_pending_flags() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     clear_runtime_report_blocks(&mut state);
@@ -76,40 +76,12 @@ fn delete_reviewables_opens_when_classic_pending_flags_are_set() {
         AppOutcome::Continue
     );
     assert_eq!(app.current_screen(), ScreenId::GeneralMenu);
-    assert!(app.messaging.delete_reviewables_prompt_active);
-
-    let mut terminal = CaptureTerminal::new();
-    app.render(&mut terminal)
-        .expect("general menu should render inline delete prompt");
-    assert!(line_containing(&terminal, "COMMAND <-").contains("COMMAND <- Y/[N] ->"));
-    assert!(
-        terminal
-            .lines
-            .iter()
-            .any(|line| line.contains("DELETE ALL MESSAGES / RESULTS:"))
-    );
-    assert!(
-        terminal
-            .lines
-            .iter()
-            .any(|line| line.contains("currently reviewable"))
-    );
-
-    assert_eq!(
-        apply_action(
-            &mut app,
-            Action::Messaging(MessagingAction::ConfirmDeleteReviewables)
-        ),
-        AppOutcome::Continue
-    );
-
-    let runtime = latest_runtime_state(&fixture_dir);
-    assert!(runtime.report_block_rows.is_empty());
-    assert_eq!((runtime.game_data.players[0].messages_first as u8), 0);
-    assert_eq!((runtime.game_data.players[0].messages_last as u8), 0);
     assert!(!app.messaging.delete_reviewables_prompt_active);
-    assert_eq!(app.current_screen(), ScreenId::GeneralMenu);
+    let runtime = latest_runtime_state(&fixture_dir);
+    assert_eq!(runtime.game_data.players[0].messages_first as u8, 1);
+    assert_eq!(runtime.game_data.players[0].messages_last as u8, 1);
 }
+
 #[test]
 fn startup_results_only_pending_flags_do_not_route_into_messages() {
     let fixture_dir = temp_game_copy();
@@ -214,15 +186,11 @@ fn startup_results_only_pending_flags_do_not_route_into_messages() {
     let mut reports_terminal = CaptureTerminal::new();
     app.render(&mut reports_terminal)
         .expect("reports screen should render");
-    assert!(
-        reports_terminal
-            .line(0)
-            .contains("Type: All | Year: All | Focus: Inbox")
-    );
+    assert!(reports_terminal.line(0).contains("INBOX:"));
     assert!(reports_terminal.line(1).starts_with('┌'));
     assert!(reports_terminal.line(2).contains("ID"));
-    assert!(reports_terminal.line(2).contains("Type"));
     assert!(reports_terminal.line(2).contains("Stardate"));
+    assert!(!reports_terminal.line(2).contains("Type"));
     assert!(reports_terminal.line(2).contains("Subject"));
     assert!(reports_terminal.line(5).starts_with('┌'));
     assert!(
@@ -1156,7 +1124,7 @@ fn reports_screen_wraps_long_lines_within_the_playfield() {
 }
 
 #[test]
-fn reports_screen_keeps_both_sections_visible_when_results_are_long() {
+fn reports_screen_separates_messages_from_long_reports() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     set_runtime_report_blocks(
@@ -1199,8 +1167,15 @@ fn reports_screen_keeps_both_sections_visible_when_results_are_long() {
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
         .expect("reports screen should render");
-    assert!(terminal.lines.iter().any(|line| line.contains("│Type│")));
-    assert!(terminal.lines.iter().any(|line| line.contains("Visible")));
+    assert!(!terminal.lines.iter().any(|line| line.contains("│Type│")));
+    assert!(!terminal.lines.iter().any(|line| line.contains("Visible")));
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::SetInboxTypeFilterMessages),
+    );
+    let mut messages = CaptureTerminal::new();
+    app.render(&mut messages).expect("messages folder");
+    assert!(messages.lines.iter().any(|line| line.contains("Visible")));
 }
 
 #[test]
@@ -1238,12 +1213,8 @@ fn reports_screen_shows_explicit_truncation_cue_when_wrapped_rows_overflow() {
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
         .expect("reports screen should render");
-    assert!(
-        terminal
-            .line(0)
-            .contains("Type: All | Year: All | Focus: Inbox")
-    );
-    assert!(terminal.line(24).contains("COMMAND <- ? M"));
+    assert!(terminal.line(0).contains("INBOX:"));
+    assert!(terminal.line(24).contains("COMMAND <- ? R"));
     assert!(terminal.line(24).contains("<TAB>"));
     assert!(terminal.line(24).contains("<Q> [01] ->"));
     assert!(

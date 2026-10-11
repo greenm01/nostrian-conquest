@@ -71,7 +71,7 @@ fn general_menu_matches_verified_v15_command_layout() {
     );
     assert_eq!(
         terminal.line(3).trim_end(),
-        "  Q>uit to main menu      S>tatus, your            D>elete ALL messages/results"
+        "  Q>uit to main menu      S>tatus, your            D>elete ALL reports"
     );
     assert_eq!(
         terminal.line(4).trim_end(),

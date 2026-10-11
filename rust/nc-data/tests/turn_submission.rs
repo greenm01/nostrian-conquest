@@ -721,6 +721,8 @@ fn turn_submission_rejects_fourth_message_to_same_recipient_in_same_year() {
             subject: "One".to_string(),
             body: "Queued".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         },
         nc_data::QueuedPlayerMail {
             sender_empire_id: 1,
@@ -729,6 +731,8 @@ fn turn_submission_rejects_fourth_message_to_same_recipient_in_same_year() {
             subject: "Two".to_string(),
             body: "Queued".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         },
         nc_data::QueuedPlayerMail {
             sender_empire_id: 1,
@@ -737,6 +741,8 @@ fn turn_submission_rejects_fourth_message_to_same_recipient_in_same_year() {
             subject: "Three".to_string(),
             body: "Queued".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         },
     ];
     let submission = TurnSubmission::parse_kdl_str(

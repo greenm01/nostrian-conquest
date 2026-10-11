@@ -56,6 +56,7 @@ fn saved_subjects(fixture_dir: &Path) -> Vec<String> {
     latest_runtime_state(fixture_dir)
         .queued_mail
         .into_iter()
+        .filter(|mail| !mail.cancelled)
         .map(|mail| mail.subject)
         .collect()
 }
@@ -297,7 +298,7 @@ fn outbox_footer_and_help_list_read_and_delete_keys() {
 }
 
 #[test]
-fn send_confirmation_points_to_d_on_the_recipient_list() {
+fn send_confirmation_points_to_inbox_read_and_cancel_keys() {
     let fixture_dir = temp_game_copy();
     let mut app = load_player_one(&fixture_dir);
     send_message(&mut app, "Hi", "Hi");
@@ -306,7 +307,7 @@ fn send_confirmation_points_to_d_on_the_recipient_list() {
     assert!(sent.line(3).contains("Message queued for Empire 2."));
     assert_eq!(
         sent.line(4).trim_end(),
-        "Press D on the recipient list to review or cancel it before maintenance."
+        "Inbox > Sent: Enter reads; D cancels before maintenance."
     );
     assert!(sent.line(5).trim().is_empty());
     assert_eq!(sent.line(6).trim_end(), "(slap a key)");
@@ -383,19 +384,29 @@ fn sent_message_appears_in_review_inbox_until_cancelled() {
     assert_eq!(app.current_screen(), ScreenId::Reports);
     let inbox = render(&mut app);
     let row = line_containing(&inbox, "Truce");
-    assert!(row.contains("│01│OUT │"), "{row}");
+    assert!(row.contains("│01│Queued│"), "{row}");
 
     press(&mut app, KeyCode::Enter);
     assert_eq!(app.messaging.inbox_focus, InboxFocus::Preview);
     let preview = render(&mut app);
-    assert!(line_containing(&preview, "To ").contains("(Empire #2)"));
+    assert!(
+        preview
+            .lines
+            .iter()
+            .any(|line| line.contains("To ") && line.contains("(Empire #2)"))
+    );
     assert!(preview.lines.iter().any(|line| line.contains("Hold fire")));
 
     press(&mut app, KeyCode::Char('D'));
     let prompt = render(&mut app);
-    assert!(prompt.line(24).contains("Delete item 01? [Y]/N ->"));
+    assert!(
+        prompt
+            .line(24)
+            .contains("Cancel queued message 01? [Y]/N ->")
+    );
     press(&mut app, KeyCode::Enter);
-    assert!(app.queued_mail.is_empty());
+    assert_eq!(app.queued_mail.len(), 1);
+    assert!(app.queued_mail[0].cancelled);
     assert!(saved_subjects(&fixture_dir).is_empty());
 
     assert_eq!(
@@ -412,7 +423,7 @@ fn sent_message_appears_in_review_inbox_until_cancelled() {
 }
 
 #[test]
-fn review_inbox_lists_this_turns_outgoing_first_and_keeps_ids_after_cancel() {
+fn sent_folder_lists_queued_before_delivered_and_keeps_ids_after_cancel() {
     let fixture_dir = temp_game_copy();
     let mut runtime = latest_runtime_state(&fixture_dir);
     let year = runtime.game_data.conquest.game_year;
@@ -442,36 +453,47 @@ fn review_inbox_lists_this_turns_outgoing_first_and_keeps_ids_after_cancel() {
             .collect::<Vec<_>>()
     };
 
+    act(&mut app, MessagingAction::SetInboxFolderSent);
     let before = ids(&app);
+    assert_eq!(before.len(), 3);
     assert_eq!(
-        before[0],
-        ("Second".to_string(), 1, InboxItemType::Outgoing)
+        (&*before[0].0, before[0].2),
+        ("Second", InboxItemType::Outgoing)
     );
-    assert_eq!(before[1], ("First".to_string(), 2, InboxItemType::Outgoing));
+    assert_eq!(
+        (&*before[1].0, before[1].2),
+        ("First", InboxItemType::Outgoing)
+    );
+    assert_ne!(before[0].1, before[1].1);
     assert!(
         before[2..]
             .iter()
             .all(|(_, _, item_type)| *item_type != InboxItemType::Outgoing)
     );
-    assert!(!before.iter().any(|(subject, _, _)| subject == "Last year"));
+    assert!(
+        before
+            .iter()
+            .any(|(subject, _, kind)| subject == "Last year" && *kind == InboxItemType::Sent)
+    );
 
     act(&mut app, MessagingAction::SetInboxTypeFilterMessages);
     let messages = ids(&app)
         .into_iter()
         .map(|(subject, _, _)| subject)
         .collect::<Vec<_>>();
-    assert_eq!(messages, vec!["Second", "First", "Incoming"]);
+    assert_eq!(messages, vec!["Incoming"]);
     act(&mut app, MessagingAction::SetInboxTypeFilterReports);
     assert!(
         ids(&app)
             .iter()
             .all(|(_, _, item_type)| *item_type == InboxItemType::Report)
     );
-    act(&mut app, MessagingAction::SetInboxTypeFilterAll);
+    act(&mut app, MessagingAction::SetInboxFolderSent);
 
     // Cancel "First", which sits ahead of the others in the queue.
     act(&mut app, MessagingAction::MoveInboxCursor(1));
-    assert_eq!(app.current_inbox_display_id(), "02");
+    let cancelled_id = format!("{:02}", before[1].1);
+    assert_eq!(app.current_inbox_display_id(), cancelled_id);
     press(&mut app, KeyCode::Char('D'));
     press(&mut app, KeyCode::Char('Y'));
     assert_eq!(
@@ -489,6 +511,6 @@ fn review_inbox_lists_this_turns_outgoing_first_and_keeps_ids_after_cancel() {
         inbox
             .lines
             .iter()
-            .any(|line| line.contains("Deleted item 02."))
+            .any(|line| line.contains(&format!("Deleted item {cancelled_id}.")))
     );
 }

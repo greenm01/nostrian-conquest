@@ -1195,8 +1195,8 @@ pub fn draw_inline_delete_reviewables_prompt(
     draw_inline_confirm_block(
         buffer,
         command_row,
-        "DELETE ALL MESSAGES / RESULTS:",
-        &["This will clear all currently reviewable messages and results."],
+        "DELETE ALL REPORTS:",
+        &["Clear all reports?"],
         notice,
     )
 }
@@ -1210,8 +1210,8 @@ pub fn draw_inline_delete_reviewables_prompt_padded(
     draw_inline_confirm_block_padded(
         buffer,
         command_row,
-        "DELETE ALL MESSAGES / RESULTS:",
-        &["This will clear all currently reviewable messages and results."],
+        "DELETE ALL REPORTS:",
+        &["Clear all reports?"],
         notice,
     )
 }

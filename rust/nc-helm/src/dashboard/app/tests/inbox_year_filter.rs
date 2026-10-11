@@ -6,6 +6,7 @@ use crate::dashboard::inbox::{
 
 fn item(item_type: DashInboxItemType, year: u16) -> DashInboxItem {
     DashInboxItem {
+        correspondent: String::new(),
         source: DashInboxItemSource::QueuedMail(0),
         item_type,
         year,
@@ -76,6 +77,8 @@ fn current_year_overlay_lists_delivered_mail_and_reports() {
         subject: subject.to_string(),
         body: "Body".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     };
     let report = |index: usize, report_year: u16| ReportBlockRow {
         viewer_empire_id: 1,

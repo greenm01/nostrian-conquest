@@ -13,7 +13,12 @@ pub struct QueuedPlayerMail {
     pub year: u16,
     pub subject: String,
     pub body: String,
+    /// Hide from the recipient; the stored message remains intact.
     pub recipient_deleted: bool,
+    /// Hide from the sender without changing the recipient's copy.
+    pub sender_deleted: bool,
+    /// Retain the queued message but never deliver it.
+    pub cancelled: bool,
 }
 
 impl QueuedPlayerMail {
@@ -21,13 +26,15 @@ impl QueuedPlayerMail {
     /// every maintenance advances the game year, so a message from an earlier
     /// year has been delivered and one from the current year has not.
     pub fn is_delivered(&self, current_year: u16) -> bool {
-        self.year < current_year
+        !self.cancelled && self.year < current_year
     }
 
     /// The sender's own message, queued this turn and not yet delivered: the
     /// outbox and the inbox's outgoing rows list it, and it can be cancelled.
     pub fn is_queued_by(&self, sender_empire_id: u8, current_year: u16) -> bool {
-        self.sender_empire_id == sender_empire_id && !self.is_delivered(current_year)
+        self.sender_empire_id == sender_empire_id
+            && !self.cancelled
+            && !self.is_delivered(current_year)
     }
 
     /// Delivered to this recipient and not deleted by them.
@@ -35,6 +42,15 @@ impl QueuedPlayerMail {
         self.recipient_empire_id == recipient_empire_id
             && !self.recipient_deleted
             && self.is_delivered(current_year)
+    }
+
+    pub fn is_visible_to_sender(&self, sender_empire_id: u8) -> bool {
+        self.sender_empire_id == sender_empire_id && !self.sender_deleted && !self.cancelled
+    }
+
+    pub fn cancel(&mut self) {
+        self.cancelled = true;
+        self.sender_deleted = true;
     }
 
     pub fn mark_deleted_by_recipient(&mut self) {
@@ -51,7 +67,8 @@ pub fn queued_message_count_for_sender_recipient_year(
     queue
         .iter()
         .filter(|mail| {
-            mail.sender_empire_id == sender_empire_id
+            !mail.cancelled
+                && mail.sender_empire_id == sender_empire_id
                 && mail.recipient_empire_id == recipient_empire_id
                 && mail.year == year
         })
@@ -132,7 +149,17 @@ pub fn load_mail_queue(dir: &Path) -> Result<Vec<QueuedPlayerMail>, Box<dyn std:
     let mut out = Vec::new();
     for line in text.lines().filter(|line| !line.trim().is_empty()) {
         let parts = line.split('\t').collect::<Vec<_>>();
-        let (sender, recipient, year, subject, body, recipient_deleted) = match parts.as_slice() {
+        let (sender_deleted, cancelled) = if parts.len() == 8 {
+            (parse_deleted_flag(parts[6]), parse_deleted_flag(parts[7]))
+        } else {
+            (false, false)
+        };
+        let legacy = if parts.len() == 8 {
+            &parts[..6]
+        } else {
+            parts.as_slice()
+        };
+        let (sender, recipient, year, subject, body, recipient_deleted) = match legacy {
             [sender, recipient, year, body] => (*sender, *recipient, *year, "", *body, false),
             [sender, recipient, year, subject, body] => {
                 (*sender, *recipient, *year, *subject, *body, false)
@@ -154,6 +181,8 @@ pub fn load_mail_queue(dir: &Path) -> Result<Vec<QueuedPlayerMail>, Box<dyn std:
             subject: unescape_field(subject),
             body: unescape_field(body),
             recipient_deleted,
+            sender_deleted,
+            cancelled,
         });
     }
     Ok(out)
@@ -183,13 +212,15 @@ pub fn save_mail_queue(
     let mut text = String::new();
     for mail in queue {
         text.push_str(&format!(
-            "{}\t{}\t{}\t{}\t{}\t{}\n",
+            "{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             mail.sender_empire_id,
             mail.recipient_empire_id,
             mail.year,
             escape_field(&mail.subject),
             escape_field(&mail.body),
-            u8::from(mail.recipient_deleted)
+            u8::from(mail.recipient_deleted),
+            u8::from(mail.sender_deleted),
+            u8::from(mail.cancelled)
         ));
     }
     fs::write(path, text)?;

@@ -354,6 +354,14 @@ impl CampaignStore {
                  recipient_deleted INTEGER NOT NULL DEFAULT 0,
                  PRIMARY KEY(snapshot_id, queue_index)
              );
+             CREATE TABLE IF NOT EXISTS mail_sender_state (
+                 snapshot_id INTEGER NOT NULL,
+                 queue_index INTEGER NOT NULL,
+                 sender_deleted INTEGER NOT NULL,
+                 cancelled INTEGER NOT NULL,
+                 PRIMARY KEY(snapshot_id, queue_index),
+                 FOREIGN KEY(snapshot_id, queue_index) REFERENCES queued_mail(snapshot_id, queue_index) ON DELETE CASCADE
+             );
              CREATE TABLE IF NOT EXISTS report_blocks (
                  snapshot_id INTEGER NOT NULL REFERENCES snapshots(id) ON DELETE CASCADE,
                  viewer_empire_id INTEGER NOT NULL DEFAULT 0,

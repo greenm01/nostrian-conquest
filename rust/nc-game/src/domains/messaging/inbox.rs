@@ -9,7 +9,7 @@ use crate::domains::messaging::state::{
 };
 use crate::reports::{
     InboxDisplayItem, InboxItem, InboxItemSource, InboxItemType, runtime_inbox_items,
-    runtime_outgoing_inbox_items,
+    runtime_sent_inbox_items,
 };
 use crate::screen::ScreenId;
 use crate::screen::layout::{PromptFeedback, command_line_row_for};
@@ -20,7 +20,14 @@ const INBOX_PREVIEW_PAGE_DELTA: i8 = INBOX_VISIBLE_ROWS as i8;
 impl App {
     pub fn open_reports_inbox(&mut self) {
         self.command_return_menu = self.origin_command_menu();
-        self.messaging.inbox_type_filter = InboxTypeFilter::All;
+        self.messaging.inbox_type_filter = [
+            InboxTypeFilter::Reports,
+            InboxTypeFilter::Messages,
+            InboxTypeFilter::Sent,
+        ]
+        .into_iter()
+        .find(|folder| !self.inbox_items_for_filters(*folder, None).is_empty())
+        .unwrap_or(InboxTypeFilter::Reports);
         self.messaging.inbox_year_filter = None;
         self.messaging.inbox_cursor = 0;
         self.messaging.inbox_scroll_offset = 0;
@@ -65,8 +72,8 @@ impl App {
                     KeyCode::Char('r') | KeyCode::Char('R') => {
                         Action::Messaging(MessagingAction::SetInboxTypeFilterReports)
                     }
-                    KeyCode::Char('a') | KeyCode::Char('A') => {
-                        Action::Messaging(MessagingAction::SetInboxTypeFilterAll)
+                    KeyCode::Char('s') | KeyCode::Char('S') => {
+                        Action::Messaging(MessagingAction::SetInboxFolderSent)
                     }
                     KeyCode::Char('y') | KeyCode::Char('Y') => {
                         if self.messaging.inbox_year_filter.is_some() {
@@ -113,8 +120,9 @@ impl App {
         }
     }
 
-    pub fn set_inbox_type_filter_all(&mut self) {
-        self.messaging.inbox_type_filter = InboxTypeFilter::All;
+    pub fn set_inbox_folder_sent(&mut self) {
+        self.messaging.inbox_type_filter = InboxTypeFilter::Sent;
+        self.messaging.inbox_year_filter = None;
         self.clear_inbox_filter_feedback();
         self.reset_inbox_jump_and_preview();
         self.normalize_inbox_selection();
@@ -122,6 +130,7 @@ impl App {
 
     pub fn set_inbox_type_filter_messages(&mut self) {
         self.messaging.inbox_type_filter = InboxTypeFilter::Messages;
+        self.messaging.inbox_year_filter = None;
         self.clear_inbox_filter_feedback();
         self.reset_inbox_jump_and_preview();
         self.normalize_inbox_selection();
@@ -129,6 +138,7 @@ impl App {
 
     pub fn set_inbox_type_filter_reports(&mut self) {
         self.messaging.inbox_type_filter = InboxTypeFilter::Reports;
+        self.messaging.inbox_year_filter = None;
         self.clear_inbox_filter_feedback();
         self.reset_inbox_jump_and_preview();
         self.normalize_inbox_selection();
@@ -318,6 +328,9 @@ impl App {
             InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Outgoing => {
                 self.cancel_queued_mail(index);
             }
+            InboxItemSource::QueuedMail(index) if item.item_type == InboxItemType::Sent => {
+                self.queued_mail[index].sender_deleted = true;
+            }
             InboxItemSource::QueuedMail(index) => {
                 if let Some(mail) = self.queued_mail.get_mut(index) {
                     mail.mark_deleted_by_recipient();
@@ -347,7 +360,7 @@ impl App {
         year_filter: Option<u16>,
     ) -> Vec<InboxItem> {
         let viewer_empire_id = self.player.record_index_1_based as u8;
-        runtime_outgoing_inbox_items(&self.game_data, viewer_empire_id, &self.queued_mail)
+        runtime_sent_inbox_items(&self.game_data, viewer_empire_id, &self.queued_mail)
             .into_iter()
             .chain(runtime_inbox_items(
                 &self.game_data,
@@ -357,14 +370,24 @@ impl App {
             ))
             .filter(|item| match type_filter {
                 InboxTypeFilter::All => true,
-                InboxTypeFilter::Messages => matches!(
+                InboxTypeFilter::Messages => item.item_type == InboxItemType::Message,
+                InboxTypeFilter::Sent => matches!(
                     item.item_type,
-                    InboxItemType::Message | InboxItemType::Outgoing
+                    InboxItemType::Outgoing | InboxItemType::Sent
                 ),
                 InboxTypeFilter::Reports => item.item_type == InboxItemType::Report,
             })
             .filter(|item| year_filter.is_none_or(|year| item.year == year))
             .collect()
+    }
+
+    pub fn inbox_folder_counts(&self) -> [usize; 3] {
+        [
+            InboxTypeFilter::Reports,
+            InboxTypeFilter::Messages,
+            InboxTypeFilter::Sent,
+        ]
+        .map(|folder| self.inbox_items_for_filters(folder, None).len())
     }
 
     pub fn filtered_inbox_items(&self) -> Vec<InboxItem> {
@@ -478,21 +501,6 @@ impl App {
             self.messaging.inbox_display_ids.insert(item.source, next);
             self.messaging.inbox_next_display_id += 1;
         }
-    }
-
-    /// Keeps session IDs on the same messages after `queued_mail[removed]` is
-    /// removed and the later entries shift down by one.
-    pub(crate) fn shift_inbox_display_ids_after_mail_removal(&mut self, removed: usize) {
-        self.messaging.inbox_display_ids = std::mem::take(&mut self.messaging.inbox_display_ids)
-            .into_iter()
-            .filter_map(|(source, display_id)| match source {
-                InboxItemSource::QueuedMail(index) if index == removed => None,
-                InboxItemSource::QueuedMail(index) if index > removed => {
-                    Some((InboxItemSource::QueuedMail(index - 1), display_id))
-                }
-                _ => Some((source, display_id)),
-            })
-            .collect();
     }
 
     fn reset_inbox_jump_and_preview(&mut self) {

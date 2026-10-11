@@ -52,7 +52,7 @@ const MAIN_DOOR_LINES: [&str; 12] = [
 const GENERAL_LINES: [&str; 14] = [
     "<A> - allow maintenance to issue orders and builds automatically",
     "<C> - type and send messages to other players in the game",
-    "<D> - delete all messages and result reports from your message base",
+    "<D> - clear all reports",
     "<E> - list and declare your enemies",
     "<?> - show General Command Center help",
     "<I> - show intelligence on what you know about any planet",

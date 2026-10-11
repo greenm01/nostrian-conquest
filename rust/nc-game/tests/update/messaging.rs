@@ -213,6 +213,8 @@ fn compose_message_rejects_fourth_message_to_same_recipient_in_same_year() {
             subject: subject.to_string(),
             body: "Queued".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         });
     }
     save_runtime_state(&fixture_dir, &runtime);
@@ -258,6 +260,8 @@ fn apply_action_deletes_queued_message_from_outbox() {
         subject: "Test".to_string(),
         body: "Queued".to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     });
     save_runtime_state(&fixture_dir, &runtime);
 
@@ -303,7 +307,8 @@ fn apply_action_deletes_queued_message_from_outbox() {
     );
 
     let queue = latest_runtime_state(&fixture_dir).queued_mail;
-    assert!(queue.is_empty());
+    assert_eq!(queue.len(), 1);
+    assert!(queue[0].cancelled);
 }
 
 #[test]
@@ -388,7 +393,7 @@ fn reports_inbox_stacks_type_and_year_filters_and_deletes_selected_item() {
         filtered
             .lines
             .iter()
-            .any(|line| line.contains("Type: Messages"))
+            .any(|line| line.contains("[Messages ("))
     );
     assert!(
         filtered
@@ -547,19 +552,19 @@ fn reports_inbox_question_mark_opens_popup_help_with_inbox_commands() {
         popup
             .lines
             .iter()
-            .any(|line| line.contains("M") && line.contains("messages"))
+            .any(|line| line.contains("M") && line.contains("Messages"))
     );
     assert!(
         popup
             .lines
             .iter()
-            .any(|line| line.contains("R") && line.contains("reports"))
+            .any(|line| line.contains("R") && line.contains("Reports"))
     );
     assert!(
         popup
             .lines
             .iter()
-            .any(|line| line.contains("A") && line.contains("all items"))
+            .any(|line| line.contains("S") && line.contains("Sent"))
     );
     assert!(popup.lines.iter().any(|line| line.contains("Tab")));
     assert!(popup.lines.iter().any(|line| line.contains("Digits")));
@@ -659,11 +664,7 @@ fn reports_inbox_typed_id_jump_moves_selection_immediately() {
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("inbox should render");
-    assert!(
-        terminal
-            .line(0)
-            .contains("Type: All | Year: All | Focus: Inbox")
-    );
+    assert!(terminal.line(0).contains("INBOX:"));
     assert!(terminal.line(1).starts_with('┌'));
     assert!(terminal.line(24).contains("<TAB> <Q> [03] ->"));
     assert!(!terminal.line(24).contains("-> 3"));

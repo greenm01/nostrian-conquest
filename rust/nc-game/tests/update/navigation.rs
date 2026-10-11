@@ -4022,8 +4022,8 @@ fn apply_action_deletes_reviewables() {
             .all(|row| row.recipient_deleted)
     );
     assert_eq!(runtime.queued_mail.len(), 1);
-    assert!(runtime.queued_mail[0].recipient_deleted);
-    assert_eq!((runtime.game_data.players[0].messages_first as u8), 0);
-    assert_eq!((runtime.game_data.players[0].messages_last as u8), 0);
+    assert!(!runtime.queued_mail[0].recipient_deleted);
+    assert_eq!((runtime.game_data.players[0].messages_first as u8), 1);
+    assert_eq!((runtime.game_data.players[0].messages_last as u8), 1);
     assert!(!app.messaging.delete_reviewables_prompt_active);
 }

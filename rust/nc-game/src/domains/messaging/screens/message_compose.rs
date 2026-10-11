@@ -439,7 +439,7 @@ impl MessageComposeScreen {
         buffer.write_text_clipped(
             4,
             0,
-            "Press D on the recipient list to review or cancel it before maintenance.",
+            "Inbox > Sent: Enter reads; D cancels before maintenance.",
             classic::status_value_style(),
         );
         draw_dismiss_prompt(&mut buffer, dismiss_prompt_row(4));

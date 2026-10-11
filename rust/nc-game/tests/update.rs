@@ -41,3 +41,6 @@ mod stale_session;
 mod starmap_planet_info;
 #[path = "update/startup_join.rs"]
 mod startup_join;
+
+#[path = "update/inbox_folders.rs"]
+mod inbox_folders;

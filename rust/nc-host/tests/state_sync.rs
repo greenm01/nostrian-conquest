@@ -131,6 +131,8 @@ fn test_build_game_state_payload_uses_runtime_snapshot() {
                 subject: "Scout Note".to_string(),
                 body: "Hostile contact at the rim.".to_string(),
                 recipient_deleted: false,
+                sender_deleted: false,
+                cancelled: false,
             },
             // Queued this year: maintenance has not delivered it yet.
             QueuedPlayerMail {
@@ -140,6 +142,8 @@ fn test_build_game_state_payload_uses_runtime_snapshot() {
                 subject: "Not Yet".to_string(),
                 body: "Still queued.".to_string(),
                 recipient_deleted: false,
+                sender_deleted: false,
+                cancelled: false,
             },
         ],
         &[ReportBlockRow {
@@ -299,6 +303,8 @@ async fn claimed_state_request_returns_delta_when_last_hash_matches_cached_snaps
             subject: "Updated".to_string(),
             body: "Fresh report.".to_string(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         }],
         &[],
     );

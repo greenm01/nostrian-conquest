@@ -325,6 +325,8 @@ pub(crate) fn incoming_mail(
         subject: subject.to_string(),
         body: body.to_string(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }
 }
 

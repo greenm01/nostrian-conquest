@@ -441,6 +441,8 @@ fn queue_message(
         subject,
         body,
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     });
     Ok(())
 }

@@ -523,7 +523,7 @@ fn compose_sent_adds_outbox_hint_above_dismiss_prompt() {
     assert!(row_text(&buffer, 3).starts_with("Message queued for Empire 2."));
     assert_eq!(
         row_text(&buffer, 4).trim_end(),
-        "Press D on the recipient list to review or cancel it before maintenance."
+        "Inbox > Sent: Enter reads; D cancels before maintenance."
     );
     assert!(row_text(&buffer, 5).trim().is_empty());
     assert_eq!(row_text(&buffer, 6).trim_end(), "(slap a key)");
@@ -559,14 +559,11 @@ fn inline_delete_reviewables_prompt_uses_notice_style_and_cursor_gap() {
         classic::prompt_square_delimiter_style()
     );
 
-    let title = "DELETE ALL MESSAGES / RESULTS:";
+    let title = "DELETE ALL REPORTS:";
     let title_col = find_in_row(&buffer, 12, title);
     let row = buffer.row(12);
     assert_eq!(row[title_col].style, classic::notice_style());
-    assert!(
-        row_text(&buffer, 13)
-            .contains("This will clear all currently reviewable messages and results.")
-    );
+    assert!(row_text(&buffer, 13).contains("Clear all reports?"));
 }
 
 #[test]

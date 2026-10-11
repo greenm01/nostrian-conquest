@@ -355,12 +355,12 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
         ScreenId::Reports => Some(prompt_help(
             "INBOX COMMANDS",
             &[
-                ("M", "filter to messages"),
-                ("R", "filter to reports"),
-                ("A", "filter to all items"),
+                ("M", "open received Messages"),
+                ("R", "open Reports"),
+                ("S", "open Sent, including queued messages"),
                 ("Y", "set or clear the year filter"),
                 ("Tab", "switch focus between inbox and preview"),
-                ("D", "delete the selected inbox item when offered"),
+                ("D", "hide this item, or cancel queued mail; asks first"),
                 ("Digits", "jump to the visible inbox ID on the command line"),
                 ("Enter", "toggle preview focus or accept the current prompt"),
                 ("Q", "return"),

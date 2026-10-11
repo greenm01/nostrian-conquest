@@ -109,6 +109,8 @@ impl DashLaunchState {
                 subject: mail.subject.clone(),
                 body: mail.body.clone(),
                 recipient_deleted: false,
+                sender_deleted: false,
+                cancelled: false,
             })
             .collect::<Vec<_>>();
 

@@ -5,7 +5,7 @@ use crate::screen::{CommandMenu, ScreenId};
 
 pub fn update(app: &mut App, action: MessagingAction) {
     match action {
-        MessagingAction::SetInboxTypeFilterAll => app.set_inbox_type_filter_all(),
+        MessagingAction::SetInboxFolderSent => app.set_inbox_folder_sent(),
         MessagingAction::SetInboxTypeFilterMessages => app.set_inbox_type_filter_messages(),
         MessagingAction::SetInboxTypeFilterReports => app.set_inbox_type_filter_reports(),
         MessagingAction::OpenInboxYearPrompt => app.open_inbox_year_prompt(),

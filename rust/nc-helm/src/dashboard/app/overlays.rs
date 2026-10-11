@@ -1613,6 +1613,8 @@ impl DashApp {
             subject: subject.clone(),
             body: body.clone(),
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         });
         self.stage_hosted_message(recipient, subject, body);
         self.save_and_refresh_runtime()?;
@@ -2149,18 +2151,18 @@ fn first_message_recipient_default(app: &DashApp) -> String {
 
 /// Cancels one of the player's own messages before maintenance delivers it:
 /// the outbox and the inbox's outgoing rows both end here. The message leaves
-/// the local queue and the hosted turn draft.
+/// the visible queue and the hosted turn draft; its local record is retained.
 fn cancel_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
     let sender = app.player_record_index_1_based as u8;
     let year = app.game_data.conquest.game_year;
     if let Some(index) = app.queued_mail.iter().position(|mail| {
-        mail.sender_empire_id == sender
+        mail.is_queued_by(sender, year)
             && mail.recipient_empire_id == message.recipient_empire
             && mail.year == year
             && mail.subject == message.subject
             && mail.body == message.body
     }) {
-        app.queued_mail.remove(index);
+        app.queued_mail[index].cancel();
     }
     let draft_index = app
         .hosted_turn_draft

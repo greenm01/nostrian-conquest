@@ -842,9 +842,24 @@ not autopilot gave it the order. Fleets with any other order are left alone.
 Autopilot does not check your fleets' orders, so a fleet without warships on
 Guard/Blockade or Guard Starbase stays on it.
 Diplomacy (*E*) lets you mark other empires as Neutral or
-Enemy. Messages (*C*) lets you write to other empires. In the message editor, *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark, as it does in name fields. Messages reach their recipients at the next maintenance. Until then, the ones you send this turn sit at the top of your inbox, marked *OUT*; *Enter* reads one and *D* cancels it. *D* on the recipient list opens the same queued messages with the same keys.
+Enemy. Messages (*C*) lets you write to other empires. In the message editor,
+*^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark.
+Messages reach their recipients at the next maintenance. Your *Sent* folder
+shows *Queued* until delivery, then the year sent. *Enter* reads a message;
+*D* asks before cancelling queued mail or removing a delivered copy from your
+view. Removing your sent copy does not affect the recipient's copy. *D* on
+the recipient list also opens your queued messages.
 
-To keep messaging civil, you may send no more than three messages to any single opponent per turn. In a four-player game, for example, that is up to twelve outgoing messages in a turn. Messages and reports are never automatically purged --- they accumulate in your inbox across turns until you remove them yourself. The inbox supports type and year filters to help you find older items, and pressing *D* on a selected item prompts for deletion, defaulting to yes. General Command also offers a bulk delete to clear all messages at once. New reports and messages from the most recent maintenance turn are presented one by one through the scrolling intro review when you log in, giving you another opportunity to read and delete before reaching the main menu.
+You may queue up to three messages to each opponent per turn. The inbox has
+three folders: *R* for Reports, *M* for received Messages, and *S* for Sent.
+*Y* filters the selected folder by year. *D* removes one selected item after
+confirmation. General Command's *Delete ALL reports* clears only Reports;
+it leaves Messages and Sent alone. All reports and messages remain in the
+game database: removal only hides them from your view. Cancelled mail also
+stays stored, but is never delivered.
+
+New reports and messages from the latest maintenance appear in the scrolling
+login review. You can read and remove them there before reaching the main menu.
 
 The empire rankings table shows each joined empire in one of three
 states: *Active*, *MIA*, or *Defeated*. *MIA* means inactivity autopilot is

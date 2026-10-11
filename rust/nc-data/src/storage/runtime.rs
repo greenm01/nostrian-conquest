@@ -28,6 +28,7 @@ impl CampaignStore {
         super::snapshot_core::load_snapshot_game_data(&mut conn, snapshot_id)
     }
 
+    /// Includes hidden reports so a later save preserves their stored history.
     pub fn load_latest_runtime_state(
         &self,
     ) -> Result<Option<CampaignRuntimeState>, CampaignStoreError> {
@@ -39,7 +40,7 @@ impl CampaignStore {
         };
         let game_data = super::snapshot_core::load_snapshot_game_data(&mut conn, snapshot_id)?;
         let report_block_rows =
-            super::report_blocks::load_report_block_rows(&mut conn, snapshot_id)?;
+            super::report_blocks::load_report_block_rows_filtered(&mut conn, snapshot_id, true)?;
         let queued_mail = super::mail::load_queued_mail_rows(&mut conn, snapshot_id)?;
         let winner_state = super::metadata::load_winner_state(&mut conn)?;
         let stored_campaign_seed = super::metadata::load_campaign_seed(&mut conn)?;

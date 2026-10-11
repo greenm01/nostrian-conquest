@@ -27,6 +27,8 @@ fn visible_mail(sender: u8, recipient: u8, year: u16, subject: &str) -> QueuedPl
         subject: subject.to_string(),
         body: String::new(),
         recipient_deleted: false,
+        sender_deleted: false,
+        cancelled: false,
     }
 }
 
@@ -194,7 +196,7 @@ fn reports_screen_themes_status_labels_and_highlights_focused_pane_border() {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &items,
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -205,25 +207,18 @@ fn reports_screen_themes_status_labels_and_highlights_focused_pane_border() {
             InboxPromptMode::Normal,
             None,
             3003,
+            [1, 1, 0],
         )
         .expect("inbox render");
     let status_line = inbox_buffer.plain_line(0);
-    let type_col = status_line.find("Type:").expect("type label");
-    let year_col = status_line.find("Year:").expect("year label");
-    let focus_col = status_line.find("Focus:").expect("focus label");
-    assert_eq!(type_col, 1);
+    let tab_col = status_line.find("[Reports (1)]").expect("active folder");
     assert_eq!(
-        inbox_buffer.row(0)[type_col].style,
-        classic::status_label_style()
+        inbox_buffer.row(0)[tab_col].style,
+        classic::prompt_hotkey_style()
     );
-    assert_eq!(
-        inbox_buffer.row(0)[year_col].style,
-        classic::status_label_style()
-    );
-    assert_eq!(
-        inbox_buffer.row(0)[focus_col].style,
-        classic::status_label_style()
-    );
+    assert!(status_line.contains("M>essages (1)"));
+    assert!(status_line.contains("S>ent (0)"));
+    assert!(!status_line.contains("Type:"));
     assert_eq!(inbox_buffer.row(1)[0].style, classic::notice_style());
     assert_eq!(inbox_buffer.row(3)[0].style, classic::notice_style());
     let separator_cols = inbox_buffer
@@ -242,7 +237,7 @@ fn reports_screen_themes_status_labels_and_highlights_focused_pane_border() {
     assert!(
         inbox_buffer
             .plain_line(24)
-            .contains("COMMAND <- ? M R A Y D")
+            .contains("COMMAND <- ? R M S Y D")
     );
     assert!(inbox_buffer.plain_line(24).contains("<Q> [01] ->"));
     assert!(inbox_buffer.plain_line(24).starts_with(" COMMAND <-"));
@@ -253,7 +248,7 @@ fn reports_screen_themes_status_labels_and_highlights_focused_pane_border() {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &items,
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -264,6 +259,7 @@ fn reports_screen_themes_status_labels_and_highlights_focused_pane_border() {
             InboxPromptMode::Normal,
             None,
             3003,
+            [1, 1, 0],
         )
         .expect("preview render");
     let preview_top_row = 1
@@ -297,7 +293,7 @@ fn reports_screen_pads_year_and_delete_prompts_one_column_right() {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &items,
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -308,6 +304,7 @@ fn reports_screen_pads_year_and_delete_prompts_one_column_right() {
             InboxPromptMode::YearInput,
             None,
             3003,
+            [1, 1, 0],
         )
         .expect("year prompt render");
     assert!(
@@ -321,7 +318,7 @@ fn reports_screen_pads_year_and_delete_prompts_one_column_right() {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &items,
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -332,6 +329,7 @@ fn reports_screen_pads_year_and_delete_prompts_one_column_right() {
             InboxPromptMode::DeleteConfirm,
             None,
             3003,
+            [1, 1, 0],
         )
         .expect("delete confirm render");
     assert!(
@@ -352,6 +350,7 @@ fn reports_screen_uses_themed_scrollbar_thumb_style() {
                 item_type: InboxItemType::Message,
                 year: 3003,
                 week: None,
+                correspondent: "Empire 2".into(),
                 subject: format!("Message {}", idx + 1),
                 body_lines: vec![format!("Body {}", idx + 1)],
                 report_bucket: None,
@@ -364,7 +363,7 @@ fn reports_screen_uses_themed_scrollbar_thumb_style() {
             ScreenGeometry::local_default(),
             CommandMenu::General,
             &items,
-            InboxTypeFilter::All,
+            InboxTypeFilter::Reports,
             None,
             0,
             0,
@@ -375,6 +374,7 @@ fn reports_screen_uses_themed_scrollbar_thumb_style() {
             InboxPromptMode::Normal,
             None,
             game_data.conquest.game_year,
+            [0, 12, 0],
         )
         .expect("inbox render");
     let thumb = (0..25)

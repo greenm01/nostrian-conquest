@@ -112,6 +112,11 @@ pub fn derive_campaign_seed_from_runtime(
         hash.bytes(mail.subject.as_bytes());
         hash.bytes(mail.body.as_bytes());
         hash.u64(u64::from(mail.recipient_deleted));
+        if mail.sender_deleted || mail.cancelled {
+            hash.u64(0x53454e54);
+            hash.u64(u64::from(mail.sender_deleted));
+            hash.u64(u64::from(mail.cancelled));
+        }
     }
 
     mix_seed(hash.finish())

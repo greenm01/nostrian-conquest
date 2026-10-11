@@ -7,8 +7,7 @@ use crate::domains::messaging::screens::message_compose::{
 };
 use crate::domains::messaging::scrolled_preview_offset;
 use crate::domains::messaging::state::OutboxMode;
-use crate::model::{MainMenuSummary, ReviewSummary};
-use crate::reports::{has_visible_runtime_messages, runtime_outgoing_message_lines};
+use crate::reports::runtime_outgoing_message_lines;
 use crate::screen::{CommandMenu, ScreenId};
 use nc_data::{
     CoreGameData, QueuedPlayerMail, delete_report_blocks_for_viewer, validate_queue_message_limit,
@@ -30,22 +29,8 @@ impl App {
     }
 
     pub fn open_delete_reviewables(&mut self) {
-        let summary = MainMenuSummary::from_game_data(
-            &self.game_data,
-            self.player.record_index_1_based,
-            self.has_active_report_blocks(),
-            has_visible_runtime_messages(
-                self.player.record_index_1_based as u8,
-                &self.queued_mail,
-                self.game_data.conquest.game_year,
-            ),
-        );
-        let review_summary = ReviewSummary::from_main_menu(&summary);
-        if !review_summary.reviewable_results && !review_summary.reviewable_messages {
-            self.show_command_menu_notice(
-                CommandMenu::General,
-                "No messages or results are currently reviewable.",
-            );
+        if !self.has_active_report_blocks() {
+            self.show_command_menu_notice(CommandMenu::General, "No reports to delete.");
             return;
         }
         self.clear_command_menu_notice();
@@ -405,6 +390,8 @@ impl App {
             subject: self.messaging.compose_subject.trim().to_string(),
             body,
             recipient_deleted: false,
+            sender_deleted: false,
+            cancelled: false,
         });
         self.save_game_data()?;
         self.messaging.compose_sent_status = Some(format!(
@@ -543,11 +530,9 @@ impl App {
         Ok(())
     }
 
-    /// Removes the player's own queued message outright, as the outbox and the
-    /// inbox both do when it is cancelled before maintenance. The caller saves.
+    /// Retains cancelled mail in history while preventing delivery. The caller saves.
     pub(crate) fn cancel_queued_mail(&mut self, queue_index: usize) {
-        self.queued_mail.remove(queue_index);
-        self.shift_inbox_display_ids_after_mail_removal(queue_index);
+        self.queued_mail[queue_index].cancel();
     }
 
     /// Resolves the typed queue number, or the highlighted row when nothing is
@@ -687,23 +672,24 @@ impl App {
             &self.game_data.players,
             self.player.record_index_1_based as u8,
         );
-        let current_year = self.game_data.conquest.game_year;
-        for mail in &mut self.queued_mail {
-            if mail.is_visible_to_recipient(self.player.record_index_1_based as u8, current_year) {
-                mail.mark_deleted_by_recipient();
-            }
-        }
         if let Some(player) = self
             .game_data
             .players
             .get_mut(self.player.record_index_1_based - 1)
         {
-            nc_data::set_login_reviewables_present(player, false);
+            nc_data::set_login_reviewables_present(
+                player,
+                crate::reports::has_visible_runtime_messages(
+                    self.player.record_index_1_based as u8,
+                    &self.queued_mail,
+                    self.game_data.conquest.game_year,
+                ),
+            );
             nc_data::set_results_chain(player, None);
         }
         self.save_game_data()?;
         self.messaging.delete_reviewables_prompt_active = false;
-        self.show_command_menu_notice(CommandMenu::General, "Messages and results deleted.");
+        self.show_command_menu_notice(CommandMenu::General, "Reports cleared.");
         Ok(())
     }
 
