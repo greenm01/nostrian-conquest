@@ -148,6 +148,12 @@ dashboard edits stage local turn drafts for build, fleet, tax, diplomacy, and
 quick in-game message orders so they survive returning to the lobby and
 reopening the game.
 
+`nc-host` runs the hosted games. `nc-host serve` runs a game's maintenance
+when its schedule is due, and `nc-host maint <dir> [turns]` runs it by hand.
+Both apply the turns players submitted, run the yearly pass `nc-sysop maint`
+runs, and send every claimed seat its new state over the relay, so a hosted
+game plays like a local one.
+
 Try the new client with:
 
 ```bash

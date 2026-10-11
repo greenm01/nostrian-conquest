@@ -17,6 +17,7 @@ const CATALOG_PUBLISH_INTERVAL_SECS: u64 = 300;
 const DECISION_PUBLISH_INTERVAL_SECS: u64 = 5;
 const OUTBOX_PUBLISH_INTERVAL_SECS: u64 = 1;
 const SYSOP_NOTIFICATION_INTERVAL_SECS: u64 = 5;
+const MAINTENANCE_POLL_INTERVAL_SECS: u64 = 60;
 
 pub fn run(args: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     if args.iter().any(|arg| matches!(*arg, "--help" | "-h")) {
@@ -136,6 +137,7 @@ async fn run_async_server(
     let worker_registry = Arc::new(crate::supervisor::worker_registry::WorkerRegistry::new(
         config.games_root.clone(),
     ));
+    let scheduler = crate::supervisor::scheduler::Scheduler::new(config.games_root.clone());
 
     let filter = Filter::new()
         .kind(Kind::Custom(30525))
@@ -167,6 +169,9 @@ async fn run_async_server(
         tokio::time::interval(std::time::Duration::from_secs(OUTBOX_PUBLISH_INTERVAL_SECS));
     let mut sysop_notifications_interval = tokio::time::interval(std::time::Duration::from_secs(
         SYSOP_NOTIFICATION_INTERVAL_SECS,
+    ));
+    let mut maintenance_interval = tokio::time::interval(std::time::Duration::from_secs(
+        MAINTENANCE_POLL_INTERVAL_SECS,
     ));
 
     publish_lobby_catalog(
@@ -201,6 +206,9 @@ async fn run_async_server(
                     &games_root,
                     &config.sysop_contact_npub,
                 ).await;
+            }
+            _ = maintenance_interval.tick() => {
+                crate::supervisor::scheduler::dispatch_due_maintenance(&scheduler, &worker_registry).await;
             }
             _ = tokio::signal::ctrl_c() => {
                 tracing::info!("Shutting down...");

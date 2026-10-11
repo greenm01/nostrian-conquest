@@ -1,11 +1,13 @@
-use nc_data::hosted::HostedStore;
-use std::path::PathBuf;
+//! When hosted maintenance is due. The serve loop polls `check_due_games`
+//! and hands each due game to its worker, which runs the year and moves
+//! the next due time one interval past now.
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ScheduledGame {
-    pub game_id: String,
-    pub due_unix_seconds: i64,
-}
+use crate::game::effects::GameEffects;
+use crate::game::maint::next_due_from_now;
+use crate::game::msg::GameMsg;
+use crate::supervisor::worker_registry::WorkerRegistry;
+use nc_data::hosted::{self, HostedStore};
+use std::path::{Path, PathBuf};
 
 pub struct Scheduler {
     games_root: PathBuf,
@@ -16,6 +18,9 @@ impl Scheduler {
         Self { games_root }
     }
 
+    /// The games whose maintenance is due. A game that has never been
+    /// scheduled is armed one interval from now instead of running at once,
+    /// so a new game gets a full interval before its first year.
     pub fn check_due_games(&self) -> Vec<String> {
         let mut due_games = Vec::new();
 
@@ -38,13 +43,13 @@ impl Scheduler {
         due_games
     }
 
-    fn is_due(&self, game_id: &str, db_path: &PathBuf) -> bool {
+    fn is_due(&self, game_id: &str, db_path: &Path) -> bool {
         let store = match HostedStore::open(db_path) {
             Ok(s) => s,
             Err(_) => return false,
         };
 
-        let settings = match nc_data::hosted::get_settings(store.connection(), game_id) {
+        let mut settings = match hosted::get_settings(store.connection(), game_id) {
             Ok(s) => s,
             Err(_) => return false,
         };
@@ -53,11 +58,16 @@ impl Scheduler {
             return false;
         }
 
-        let now = chrono::Utc::now().timestamp();
-
         match settings.maintenance_next_due_unix_seconds {
-            Some(due) => now >= due,
-            None => true,
+            Some(due) => chrono::Utc::now().timestamp() >= due,
+            None => {
+                settings.maintenance_next_due_unix_seconds =
+                    Some(next_due_from_now(settings.maintenance_interval_minutes));
+                if let Err(err) = hosted::update_settings(store.connection(), game_id, &settings) {
+                    tracing::warn!("Failed to arm maintenance for {}: {}", game_id, err);
+                }
+                false
+            }
         }
     }
 
@@ -67,7 +77,7 @@ impl Scheduler {
             Err(_) => return None,
         };
 
-        let settings = match nc_data::hosted::get_settings(store.connection(), game_id) {
+        let settings = match hosted::get_settings(store.connection(), game_id) {
             Ok(s) => s,
             Err(_) => return None,
         };
@@ -78,10 +88,26 @@ impl Scheduler {
 
         match settings.maintenance_next_due_unix_seconds {
             Some(due) => Some(due),
-            None => {
-                let interval = settings.maintenance_interval_minutes as i64 * 60;
-                Some(chrono::Utc::now().timestamp() + interval)
-            }
+            None => Some(next_due_from_now(settings.maintenance_interval_minutes)),
+        }
+    }
+}
+
+/// Send each due game's maintenance to its worker, so it runs in turn with
+/// that game's other work.
+pub async fn dispatch_due_maintenance(scheduler: &Scheduler, registry: &WorkerRegistry) {
+    for game_id in scheduler.check_due_games() {
+        tracing::info!("Maintenance due for {}", game_id);
+        let worker = registry.get_or_create(game_id.clone()).await;
+        let msg = GameMsg::HandleEffect(GameEffects::RunMaintenance {
+            game_id: game_id.clone(),
+        });
+        if let Err(err) = worker.send(msg).await {
+            tracing::error!(
+                "Failed to send maintenance for {} to its worker: {}",
+                game_id,
+                err
+            );
         }
     }
 }

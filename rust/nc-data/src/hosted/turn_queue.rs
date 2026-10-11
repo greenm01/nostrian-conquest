@@ -72,22 +72,33 @@ pub fn get_pending_turn(
     )?;
 
     let mut rows = stmt.query(params![game_id, turn, player_pubkey])?;
-    if let Some(row) = rows.next()? {
-        Ok(Some(TurnSubmission {
-            id: row.get(0)?,
-            game_id: row.get(1)?,
-            turn: row.get(2)?,
-            player_pubkey: row.get(3)?,
-            commands: row.get(4)?,
-            status: TurnSubmissionStatus::from_str(&row.get::<_, String>(5)?)
-                .unwrap_or(TurnSubmissionStatus::Pending),
-            submitted_at: row.get(6)?,
-            processed_at: row.get(7)?,
-            error_message: row.get(8)?,
-        }))
-    } else {
-        Ok(None)
-    }
+    rows.next()?.map(read_turn_submission).transpose()
+}
+
+pub fn get_turn_submission(conn: &Connection, id: &str) -> SqliteResult<Option<TurnSubmission>> {
+    let mut stmt = conn.prepare(
+        "SELECT id, game_id, turn, player_pubkey, commands, status, submitted_at,
+                processed_at, error_message
+         FROM turn_queue WHERE id = ?1",
+    )?;
+
+    let mut rows = stmt.query(params![id])?;
+    rows.next()?.map(read_turn_submission).transpose()
+}
+
+fn read_turn_submission(row: &rusqlite::Row<'_>) -> SqliteResult<TurnSubmission> {
+    Ok(TurnSubmission {
+        id: row.get(0)?,
+        game_id: row.get(1)?,
+        turn: row.get(2)?,
+        player_pubkey: row.get(3)?,
+        commands: row.get(4)?,
+        status: TurnSubmissionStatus::from_str(&row.get::<_, String>(5)?)
+            .unwrap_or(TurnSubmissionStatus::Pending),
+        submitted_at: row.get(6)?,
+        processed_at: row.get(7)?,
+        error_message: row.get(8)?,
+    })
 }
 
 pub fn list_pending_turns(
@@ -102,20 +113,7 @@ pub fn list_pending_turns(
          ORDER BY submitted_at",
     )?;
 
-    let turns = stmt.query_map(params![game_id, turn], |row| {
-        Ok(TurnSubmission {
-            id: row.get(0)?,
-            game_id: row.get(1)?,
-            turn: row.get(2)?,
-            player_pubkey: row.get(3)?,
-            commands: row.get(4)?,
-            status: TurnSubmissionStatus::from_str(&row.get::<_, String>(5)?)
-                .unwrap_or(TurnSubmissionStatus::Pending),
-            submitted_at: row.get(6)?,
-            processed_at: row.get(7)?,
-            error_message: row.get(8)?,
-        })
-    })?;
+    let turns = stmt.query_map(params![game_id, turn], read_turn_submission)?;
 
     turns.collect()
 }

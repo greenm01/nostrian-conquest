@@ -1,6 +1,7 @@
 //! Maintenance logic for ECMAINT.EXE mechanics.
 
 mod campaign;
+mod campaign_run;
 mod canonicalize;
 mod combat;
 mod economics;
@@ -16,6 +17,7 @@ mod sanitize;
 mod ship_recovery;
 pub mod timing;
 
+pub use campaign_run::CampaignMaintenance;
 pub use nc_data::maintenance_types::*;
 pub use results::{
     apply_results_reviewable_flags, build_rankings_text, build_results_dat,

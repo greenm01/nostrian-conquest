@@ -4,7 +4,8 @@ use std::path::Path;
 
 use crate::{
     CampaignRuntimeState, CampaignStore, CampaignStoreError, CoreGameData, DiplomaticRelation,
-    FleetDetachSelection, GameStateMutationError, QueuedPlayerMail,
+    FleetDetachSelection, GameStateMutationError, PlayerActivityState, PlayerLifecycleState,
+    QueuedPlayerMail, WinnerState,
 };
 
 mod apply;
@@ -205,6 +206,29 @@ impl TurnSubmission {
         check_only: bool,
     ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
         runtime::submit_turn_kdl_file(dir, player_record_index_1_based, file, check_only)
+    }
+
+    /// Apply this submission to runtime state the caller already loaded,
+    /// without saving: an empire without normal access is refused, the
+    /// orders and mail go in, and the player's participation for the year
+    /// is recorded. Hosted maintenance applies staged submissions this way
+    /// before running the year.
+    pub fn apply_to_runtime_state(
+        &self,
+        game_data: &mut CoreGameData,
+        queued_mail: &mut Vec<QueuedPlayerMail>,
+        player_lifecycle_states: &[PlayerLifecycleState],
+        winner_state: WinnerState,
+        player_activity_states: &mut [PlayerActivityState],
+    ) -> Result<TurnSubmissionReport, TurnSubmissionError> {
+        runtime::apply_to_runtime_state(
+            self,
+            game_data,
+            queued_mail,
+            player_lifecycle_states,
+            winner_state,
+            player_activity_states,
+        )
     }
 
     /// Apply this submission to runtime state the caller already loaded and

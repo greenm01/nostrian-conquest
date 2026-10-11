@@ -39,7 +39,7 @@ pub use seats::{
 pub use settings::{
     CatalogState, GameMetadata, GameSettings, GameTier, LobbyVisibility, RecruitingMode,
     clear_catalog_dirty, get_catalog_dirty_since, get_game_metadata, get_settings,
-    mark_catalog_dirty, update_settings,
+    mark_catalog_dirty, set_game_clock, update_settings,
 };
 pub use state_sync::{get_latest_state_snapshot, get_state_snapshot_by_hash, save_state_snapshot};
 pub use store::HostedStore;
@@ -54,5 +54,5 @@ pub use threads::{
 };
 pub use turn_queue::{
     TurnSubmission, TurnSubmissionStatus, accept_turn, count_pending_turns, enqueue_turn,
-    get_pending_turn, list_pending_turns, mark_superseded, reject_turn,
+    get_pending_turn, get_turn_submission, list_pending_turns, mark_superseded, reject_turn,
 };

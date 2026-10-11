@@ -647,6 +647,14 @@ timer. They are not BBS `config.kdl` fields. If you run a direct localhost
 game, you can ignore them and schedule `nc-sysop maint /path/to/mygame`
 yourself.
 
+Hosted games on the `nc-host` path, which is not part of the live workflow
+yet, keep their own schedule in `hosted.db`. `nc-host serve` runs a game's
+maintenance when that schedule is due, and `nc-host maint /path/to/game
+[turns]` runs it by hand. Both apply the turns players submitted over the
+relay, run the same yearly pass as `nc-sysop maint`, and send each claimed
+seat its new state. A game that has never been scheduled is armed one
+interval from the moment the daemon first sees it.
+
 // ─── 11. Player Management ────────────────────────────────────────────────────
 
 = Player Management

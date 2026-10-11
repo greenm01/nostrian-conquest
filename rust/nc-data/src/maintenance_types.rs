@@ -854,3 +854,74 @@ pub struct MaintenanceEvents {
     /// Crippled hulls that recovered when the pass ended.
     pub ship_recovery_events: Vec<ShipsRecoveredEvent>,
 }
+
+impl MaintenanceEvents {
+    /// Append another turn's events, so a multi-turn run reports every
+    /// turn. The destructuring names every field: adding one to the struct
+    /// fails here until it is carried too.
+    pub fn extend(&mut self, other: MaintenanceEvents) {
+        let MaintenanceEvents {
+            bombard_events,
+            planet_intel_events,
+            ownership_change_events,
+            fleet_battle_events,
+            fleet_destroyed_events,
+            starbase_destroyed_events,
+            starbase_report_events,
+            assault_report_events,
+            scout_contact_events,
+            starbase_sighting_events,
+            encounter_disposition_events,
+            invalid_player_state_events,
+            fleet_merge_events,
+            join_host_events,
+            mission_retarget_events,
+            colonization_events,
+            mission_events,
+            salvage_events,
+            diplomatic_escalation_events,
+            civil_disorder_events,
+            campaign_outlook_events,
+            campaign_outcome_events,
+            game_victory_notice_events,
+            empire_elimination_events,
+            fleet_defection_events,
+            planet_scorch_events,
+            ship_recovery_events,
+        } = other;
+        self.bombard_events.extend(bombard_events);
+        self.planet_intel_events.extend(planet_intel_events);
+        self.ownership_change_events.extend(ownership_change_events);
+        self.fleet_battle_events.extend(fleet_battle_events);
+        self.fleet_destroyed_events.extend(fleet_destroyed_events);
+        self.starbase_destroyed_events
+            .extend(starbase_destroyed_events);
+        self.starbase_report_events.extend(starbase_report_events);
+        self.assault_report_events.extend(assault_report_events);
+        self.scout_contact_events.extend(scout_contact_events);
+        self.starbase_sighting_events
+            .extend(starbase_sighting_events);
+        self.encounter_disposition_events
+            .extend(encounter_disposition_events);
+        self.invalid_player_state_events
+            .extend(invalid_player_state_events);
+        self.fleet_merge_events.extend(fleet_merge_events);
+        self.join_host_events.extend(join_host_events);
+        self.mission_retarget_events.extend(mission_retarget_events);
+        self.colonization_events.extend(colonization_events);
+        self.mission_events.extend(mission_events);
+        self.salvage_events.extend(salvage_events);
+        self.diplomatic_escalation_events
+            .extend(diplomatic_escalation_events);
+        self.civil_disorder_events.extend(civil_disorder_events);
+        self.campaign_outlook_events.extend(campaign_outlook_events);
+        self.campaign_outcome_events.extend(campaign_outcome_events);
+        self.game_victory_notice_events
+            .extend(game_victory_notice_events);
+        self.empire_elimination_events
+            .extend(empire_elimination_events);
+        self.fleet_defection_events.extend(fleet_defection_events);
+        self.planet_scorch_events.extend(planet_scorch_events);
+        self.ship_recovery_events.extend(ship_recovery_events);
+    }
+}
