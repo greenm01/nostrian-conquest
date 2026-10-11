@@ -199,6 +199,60 @@ Only the two sides fight. Only they can hold the field, be forced to
 retreat, lose their mission, or receive a battle report. Other fleets in the
 sector are untouched.
 
+### Surprise
+
+Combat decision 6, surprise
+([ADR atdsvb5y](../notes/decisions/atdsvb5y-surprise-uses-local-sighting-memory.md)).
+An attack surprises a defending empire that has not sighted the attacking
+one in the battle's sector and layer. Classic's awareness cannot carry that:
+it is reset every year, so a standoff would hand a fresh surprise to
+whoever sights first each year. Surprise therefore reads a memory of its own.
+
+**Sighting memory.** Each empire keeps, for every sector and depth layer
+where it has a fleet or a starbase, the set of opponent empires it has
+sighted there. A successful sighting roll by any of its fleets or starbases
+there adds the sighted unit's empire, whether or not the sighter went on to
+identify, attack, or decline; a combat there adds the other empire to both
+sides' sets (a fleet battle, and a planetary strike on a world another empire
+holds). The set is shared by all of the empire's fleets and starbases in that
+sector and layer. It is local readiness, not empire-wide knowledge: a scout's
+sighting in another sector adds nothing here. A sighting by the fleet whose
+trigger admission cancelled still counts, though its catch is not inherited.
+
+**Lifetime.** The set is kept across ticks and years while the empire has a
+fleet or starbase in that sector and layer, and cleared when that presence
+ends: its last unit there moves to another sector or layer, is destroyed, or
+leaves play (merged, salvaged). The encounter loop checks after every unit's
+turn, so a gap within a year clears it even when another unit of the empire
+arrives later the same year. The engine also settles the memory against the
+records when a pass begins and after the pass's colonization and defections,
+which covers what happens outside the ticks. An opponent leaving and
+returning does not clear it.
+
+**The bonus.** Before an attack's combat adds anything to anyone's memory,
+the engine asks whether the defending empire's set there includes the
+attacking empire. If not, the attacking side gets **+1** on its die in the
+first exchange of the battle, an ordinary exchange. It counts within the
++2 cap on die modifiers (see Fleet Battle Effectiveness), leaves an
+unmodified natural 9 the only critical, and never applies to a pursuit
+exchange. Only the attacking side can earn it: a defender, hidden or not,
+gets no counter-bonus, because surprise means catching the defending side
+unprepared. It applies at the orbital gate like any other attack. Detection,
+awareness, the ROE tests, and the intercept roll are unchanged. A battle's
+combat then puts each empire in the other's set, so no later battle between
+them there is a surprise while both stay.
+
+**Storage and export.** The sets are typed state, `CoreGameData::sightings`,
+with an SQLite table of their own, `snapshot_sightings` (viewer, sector,
+layer, and the opponents as a bit mask, one row per place), saved and loaded
+with the rest of the state; the campaign seed hashes them only when any
+exist, so a game that has none keeps its seed. The classic files cannot
+hold them: a classic export omits them, says how many places it left out,
+and never alters the store, and a classic import starts with none.
+
+**Reports.** The battle report says "We attacked by surprise." to the
+attacker and "The enemy attacked by surprise." to the defender.
+
 ## Seeded Resolution
 
 Combat derives its results from the `campaign_seed` plus battle context. Each
@@ -225,11 +279,13 @@ Die modifiers add to the roll:
 - **+1** for a mixed fleet: at least two of destroyers, cruisers, and
   battleships.
 - **+1** for a side with a starbase.
+- **+1** for the attacking side's first exchange when it surprises the
+  defending empire (see Surprise).
 
 The total is at most **+2**, and a modified roll above 9 reads as 9. The
-pursuit exchange is an ordinary exchange and takes the same modifiers. An
-unmodified **9** is a critical hit: it destroys one more unit outright, a
-crippled one first.
+pursuit exchange is an ordinary exchange and takes the same modifiers
+except surprise, which it never gets. An unmodified **9** is a critical
+hit: it destroys one more unit outright, a crippled one first.
 
 ### Carried Hits
 
@@ -524,7 +580,8 @@ Planet), with no extra battery volley.
    ordered by empire number. The attacker side reports that it intercepted
    the enemy; the other side reports that it was attacked.
 2. **Compulsory Exchange**: Both sides fire one volley from the same moment,
-   and the hits land together with what each side carried. Each side's
+   and the hits land together with what each side carried; the attacker's
+   die gets surprise's +1 here when it applies (see Surprise). Each side's
    losses are then shared among its fleets (see Sharing Losses).
 3. **Post-Exchange ROE**: After every exchange, the first included, both
    sides drop every fleet whose ROE fails the odds as they stand, its side's

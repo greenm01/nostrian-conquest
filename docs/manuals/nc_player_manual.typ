@@ -425,16 +425,18 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 == The Rules of Battle
 
-There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
+Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
 Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength in every later battle until it recovers on its own: a ship crippled this year fights crippled next year and the year after, and is whole from then on, with no order, payment, or shipyard. A fleet that rests in orbit of your world beside your starbase for a whole year gets its older cripples back a year sooner. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
-Two bonuses add to your die roll. A fleet that mixes at least two of
+Three bonuses add to your die roll. A fleet that mixes at least two of
 destroyers, cruisers, and battleships gets a *combined arms bonus* of +1, so
 mix your composition when you can. A starbase fighting on your side adds
-another +1. The bonuses never add more than +2, and a roll pushed past 9
+another +1. An attack that catches the enemy unprepared adds a third +1 to
+the attacker's first round (see *Surprise* under Who Fights Whom). The
+bonuses never add more than +2, and a roll pushed past 9
 counts as 9. An unmodified 9 is a critical hit that destroys one more enemy
 ship outright. In a draw, the defender wins. See @appendix-combat for the
 exact ROE thresholds, combat values, effectiveness table, and assault
@@ -523,6 +525,30 @@ there, whatever their ROE --- a fleet that is attacked fights, ROE 0 included
 guards. Nobody else joins: not a third empire, not allies, not fleets that
 arrive later in the week. The fleet that started the attack spends the week
 fighting instead of moving. A fight does not change the empires' diplomacy.
+
+*Surprise.* Your empire remembers, in each sector and layer where it has a
+fleet or a starbase, which opposing empires it has spotted there. Whenever any
+of your fleets or starbases there spots an alien unit, its empire goes into
+that memory, and so does the empire of any fleet you fight there. All of your
+fleets and starbases in that sector and layer share it. The memory lasts,
+from week to week and year to year, for as long as you keep a fleet or a
+starbase in that sector and layer; when the last one leaves or is destroyed it
+is gone, and an opponent that leaves and comes back does not erase it. It is
+local readiness, not knowledge of the whole empire: what a scout learned in
+another sector does nothing here.
+
+An attack is a *surprise* when the defending empire's memory there does not
+include the attacker's empire: none of its fleets or starbases there has
+spotted the attacker, and the two have not fought there. The attacking side
+then adds 1 to its die in the first round of the battle. The bonus counts
+within the +2 limit, an unmodified 9 is still the only critical hit, and a
+pursuit round never gets it. Only the attacker can surprise: a defender
+that was hidden earns nothing for it. Spotting is not the same as
+identifying, and a fleet that spots an enemy and declines to attack, because
+of its ROE or because the odds are against it, still remembers. The battle
+report says "We attacked by surprise." or "The enemy attacked by surprise."
+Staying unseen therefore keeps your chance of a surprise, and watching a
+system keeps your defenders ready.
 
 *Starbases* scan, and what they identify every fleet of their empire knows,
 but they never start a fight and never join one to attack. A fleet attacks a
@@ -1128,8 +1154,10 @@ attack strength, a starbase counting 100.
 
 - Mixed fleet (at least two of destroyers, cruisers, and battleships): `+1`
 - Starbase on your side: `+1`
+- Surprise (the defending empire had not spotted the attacker in that sector
+  and layer): `+1` to the attacker, in the first exchange only
 - Total modifier: at most `+2`; a modified roll above `9` counts as `9`
-- Pursuit exchange: the same modifiers
+- Pursuit exchange: the same modifiers, except surprise, which it never gets
 
 #align(left)[
   #stack(
