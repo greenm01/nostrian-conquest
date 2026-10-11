@@ -727,7 +727,7 @@ A fleet always has exactly one standing order. If you issue a new order before m
     table.header(
       [No], [Mission], [Type], [Description],
     ),
-    [00], [None],            [Persistent], [Hold position at current location.],
+    [00], [Hold position],   [Persistent], [Stay at the current position and depth.],
     [01], [Move Fleet],      [One-shot],   [Travel to a specified sector, then revert to Hold.],
     [02], [Seek Home],       [One-shot],   [Return to nearest owned planet; retargets if that planet is captured en route.],
     [03], [Patrol],          [Persistent], [Move within sector deep space to intercept enemies.],
@@ -748,13 +748,28 @@ A fleet always has exactly one standing order. If you issue a new order before m
 
 == Movement and Arrival <movement>
 
-A fleet's speed is the number of sectors it can travel in a year.
+A *sector* is a square on the map, identified by coordinates such as `[21,21]`.
+A *world* is the planet in that sector. Its *system* is the inner layer around
+that world. *Deep space* is the outer layer used for travel between sectors.
+The world and the system are not two different destinations: the world is
+inside the system, and orbit is the end of a fleet's descent toward it.
 
-Movement is 2.5D. Think of the map as a flat board, with each world sitting
-one step below it at the center of its sector. Fleets travel across the board.
-To reach a world, a fleet steps down into its orbit; to leave one, it steps
-back up. Each step costs one sector of movement, and a fleet can be partway
-down.
+The map shows coordinates, not the whole position. A fleet in deep space and
+a starbase inside the system can both be at `[21,21]` without being together.
+They cannot see or fight each other across layers, and the fleet cannot get
+recovery assistance from that base. Fleets count as inside the system once
+at least halfway through their descent, though some missions must reach
+full orbit before acting.
+
+Movement is 2.5D. Think of the map as a flat board, with each world one step
+below its sector. Fleets cross the board in deep space, descend to reach the
+world, and climb out to leave it. A full descent or climb costs one sector
+of movement. Speed is sectors per year, capped by the fleet's slowest ship.
+
+You choose a mission, not a depth number. *Hold keeps the fleet's current
+position.* It neither enters nor leaves a system, even if the fleet stopped
+partway through a climb or descent. Move to Sector followed by Hold is not
+an order to enter orbit.
 
 A fleet never moves across and down at once. It climbs out of orbit, flies
 straight across the map to the center of its target sector, and only then
@@ -765,11 +780,16 @@ When a fleet arrives depends on its mission.
 
 - *Sector missions* (Move, Patrol, Scout Sector, Rendezvous) arrive the year
   the fleet enters the target sector.
-- *World missions* (all the others) continue to the world. Guard/Blockade,
-  View, Scout System, Join, Salvage, Bombard, Invade, and Blitz arrive when
+- *World missions* continue to the world. Guard/Blockade,
+  View, Scout System, Salvage, Bombard, Invade, and Blitz arrive when
   the fleet reaches orbit. Seek Home and Colonize finish at the end of the
-  first year the fleet is at least halfway in. Guard Starbase takes up station
-  once the fleet is halfway in and its starbase is there.
+  first year the fleet is at least halfway in.
+- *Guard Starbase* takes up station when it reaches its base in the same
+  sector and layer, whether deep space or system.
+- *Join Fleet* approaches the host’s sector as a system mission. Once the
+  joining fleet settles at its target depth, it merges into the host and
+  takes the host’s position and orders. It is not a way to park an independent
+  fleet at the host’s coordinates.
 
 A world mission often takes a year longer than a move to the same sector.
 Distance is measured in a straight line, so three sectors on a diagonal is
@@ -777,6 +797,41 @@ about 4.2 sectors of travel.
 
 The *ETA* command shows the year a fleet will arrive. For a world mission,
 answer yes to "Include time to enter system?"
+
+#pagebreak()
+
+=== Where Missions Operate
+
+This is the space where each mission does its work, not a list of every layer
+it crosses in transit. The orders tables describe requirements and duration;
+this table explains positioning.
+
+#include "includes/mission_operating_space.typ"
+
+=== Reaching a Starbase for Recovery
+
+Suppose your world and commissioned starbase are at `[21,21]`. A fleet on Move
+to Sector (1) stops in deep space there. Hold (0) leaves it in deep space;
+matching coordinates does not put it beside the base inside the system.
+
+For a damaged fleet with warships, use Guard Starbase (4) and select your base.
+Let the fleet reach the base inside your owned system. Keep the fleet and base
+at rest there for the whole following turn. You may leave Guard Starbase in
+force, or change to Hold after it reaches the base. Guard fleets may merge
+with an existing escort; check your fleet list after maintenance.
+
+The bonus is automatic, not a Guard Starbase reward: any qualifying fleet
+resting there can receive it. Unarmed fleets cannot use Guard Starbase. Seek
+Home (2) brings a fleet into its nearest owned system and finishes on Hold,
+but the world chosen may not have a base. Guard/Blockade World (5) is another
+way for a combat fleet to enter a particular owned system. View (9) is not a
+parking order; after scanning it climbs back out.
+
+You must keep the world, fleet, and the same assisting base throughout the
+resting turn. The base must remain at rest inside the system too. Arriving or
+merging into position during that turn does not grant an immediate bonus.
+Ships crippled during that turn receive no extra recovery then. Older
+cripples can recover one turn sooner; a starbase cannot speed its own recovery.
 
 == Mission Details
 

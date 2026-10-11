@@ -19,7 +19,10 @@ The published outputs linked from the main README are:
 - [nc_sysop_manual.pdf](nc_sysop_manual.pdf)
 
 Edit the Typst sources first. When a manual changes, regenerate the matching
-PDF so the published output stays in sync.
+PDF so the published output stays in sync. The quick-start and player manual
+share the operating-space table in
+[includes/mission_operating_space.typ](includes/mission_operating_space.typ);
+rebuild both PDFs when that table changes.
 
 ## Writing Style
 

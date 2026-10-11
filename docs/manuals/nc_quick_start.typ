@@ -145,7 +145,7 @@ The legend is `! = crippled; * = loaded`.
 
 Crippled ships fight at half strength but keep their speed. They recover automatically at the end of the second turn after they were damaged. No repair order or payment is needed.
 
-Keep damaged ships at rest in orbit of your world beside your starbase for the whole following turn to recover them one turn sooner. The base must stay there too. The bonus applies to ships damaged in an earlier turn, not fresh damage. Sharing the sector alone is not enough.
+A full turn resting inside your owned system beside your starbase can shorten recovery by one turn. The next section explains how to get there; matching map coordinates alone is not enough.
 
 == Grow Before You Fight
 
@@ -154,6 +154,42 @@ Colonization can take several turns. Once a colony is established, its ETAC can 
 New colonies start at Production 3, or their Potential if lower, and begin growing and earning revenue the following maintenance. The same tax rate applies to your homeworld and every colony. Lowering it favors colony growth over immediate tax revenue across your whole empire. It does not change any world's Potential Production.
 
 A commissioned starbase at rest in orbit boosts growth at taxes below 65% and lets the world spend up to five times its production from saved treasury. More bases add defense, not more economic bonuses. Armies cost 2 points and batteries 20. They deploy to the surface when their builds complete, not when you place the order.
+
+#pagebreak()
+
+= Sectors, Systems, and Starbases
+
+A *sector* is a square on the map. A *world* is the planet in that square.
+The *system* is the inner space around the world; *deep space* is the outer
+travel layer. A fleet and a starbase can share coordinates but occupy different
+layers. They cannot fight together or share recovery assistance across layers.
+
+Travel between sectors takes place in deep space. A world mission takes the
+fleet down into the system. Reaching orbit is the end of that descent. You
+choose a mission, not a depth number. *Hold keeps the position the fleet already
+has* — in deep space, inside a system, or partway between.
+
+== Where Missions Operate
+
+This table shows where a mission does its work, not every layer crossed on the
+way. Deep space and the system can have the same map coordinates.
+
+#include "includes/mission_operating_space.typ"
+
+== Reaching a Starbase for Recovery
+
+Suppose your world and starbase are at `[21,21]`. *Move to Sector* gets a fleet
+to deep space at `[21,21]`; switching to Hold leaves it there, without the bonus.
+For a damaged fleet with warships, choose *Guard Starbase* (4) and select that
+base. Let the fleet reach it inside the system. Then keep both fleet and base
+at rest there for the whole following turn. Guard Starbase can stay in force;
+Hold is not required. If you choose Hold, wait until the fleet has reached the base.
+
+You must own the world and the base throughout that resting turn. Arriving
+partway through the turn is not enough. Only ships damaged in an earlier turn
+receive the bonus. Unarmed fleets cannot use Guard Starbase; *Seek Home* can
+bring them inside an owned system, but chooses the nearest owned world, which
+may not have a base.
 
 #pagebreak()
 
