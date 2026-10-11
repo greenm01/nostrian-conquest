@@ -781,7 +781,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
     // A new base as ECMAINT 2000:6642 creates one: no escort, at rest in
     // orbit, target = its own sector.
     assert_eq!(
-        encode_base(&base),
+        encode_base(base),
         [
             0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 6, 5, 0x80, 0, 0, 0, 0, 0, 0x80, 0, 0, 0, 0, 0, 0x81,
             0, 0, 0, 0, 0, 0, 6, 5, 1,
