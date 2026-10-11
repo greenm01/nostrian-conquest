@@ -3,6 +3,9 @@
 //! Bridges incoming WebSocket connections from Discord Activities, Matrix Widgets,
 //! and standalone browsers to `nc-door` child processes using `DOOR.KDL` dropfiles.
 
+pub mod proxy;
+pub mod server;
+
 use nc_dropfile::{CallerInfo, DoorKdl, PlatformInfo, SessionInfo, TerminalInfo, TransportInfo, TransportMode};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -45,11 +48,18 @@ pub struct ActiveNode {
     pub dropfile_path: PathBuf,
 }
 
+/// State of a virtual node slot.
+#[derive(Debug, Clone)]
+pub enum NodeSlot {
+    Reserved,
+    Active(ActiveNode),
+}
+
 /// Virtual node manager that handles allocation, dropfile generation,
 /// and process lifecycle.
 pub struct NodeManager {
     config: BridgeConfig,
-    active_nodes: Arc<Mutex<HashMap<usize, ActiveNode>>>,
+    active_nodes: Arc<Mutex<HashMap<usize, NodeSlot>>>,
 }
 
 impl NodeManager {
@@ -60,11 +70,16 @@ impl NodeManager {
         }
     }
 
-    /// Allocate the next free virtual node index.
+    pub fn config(&self) -> &BridgeConfig {
+        &self.config
+    }
+
+    /// Allocate the next free virtual node index, immediately reserving the slot.
     pub async fn allocate_node(&self) -> Option<usize> {
-        let active = self.active_nodes.lock().await;
+        let mut active = self.active_nodes.lock().await;
         for i in 1..=self.config.max_nodes {
             if !active.contains_key(&i) {
+                active.insert(i, NodeSlot::Reserved);
                 return Some(i);
             }
         }
@@ -75,10 +90,10 @@ impl NodeManager {
     pub async fn prepare_session(
         &self,
         node_index: usize,
+        loopback_port: u16,
         caller: CallerInfo,
         platform: Option<PlatformInfo>,
     ) -> Result<ActiveNode, Box<dyn std::error::Error + Send + Sync>> {
-        let loopback_port = 5000 + (node_index as u16);
         let node_dir = self.config.node_base_dir.join(format!("node_{node_index}"));
         std::fs::create_dir_all(&node_dir)?;
         let dropfile_path = node_dir.join("door.kdl");
@@ -113,7 +128,7 @@ impl NodeManager {
         };
 
         let mut nodes = self.active_nodes.lock().await;
-        nodes.insert(node_index, active.clone());
+        nodes.insert(node_index, NodeSlot::Active(active.clone()));
 
         Ok(active)
     }
@@ -121,14 +136,72 @@ impl NodeManager {
     /// Release a virtual node upon session completion.
     pub async fn release_node(&self, node_index: usize) {
         let mut nodes = self.active_nodes.lock().await;
-        if let Some(node) = nodes.remove(&node_index) {
-            let _ = std::fs::remove_file(&node.dropfile_path);
+        if let Some(slot) = nodes.remove(&node_index) {
+            if let NodeSlot::Active(node) = slot {
+                let _ = std::fs::remove_file(&node.dropfile_path);
+            }
         }
     }
 
     /// Count current active players.
     pub async fn active_count(&self) -> usize {
         let nodes = self.active_nodes.lock().await;
-        nodes.len()
+        nodes.values().filter(|s| matches!(s, NodeSlot::Active(_))).count()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nc_dropfile::{CallerRole, DoorKdl};
+
+    #[tokio::test]
+    async fn node_manager_lifecycle() {
+        let temp_dir = std::env::temp_dir().join(format!("nc_bridge_test_{}", std::process::id()));
+        let config = BridgeConfig {
+            max_nodes: 2,
+            node_base_dir: temp_dir.clone(),
+            ..BridgeConfig::default()
+        };
+
+        let manager = NodeManager::new(config);
+
+        // Allocate node 1
+        let n1 = manager.allocate_node().await.expect("should allocate node 1");
+        assert_eq!(n1, 1);
+
+        let caller1 = CallerInfo {
+            platform_id: "test_user_1".to_string(),
+            handle: "vorn".to_string(),
+            display_name: Some("Lord Vorn".to_string()),
+            public_key: None,
+            role: CallerRole::Player,
+            locale: Some("en-US".to_string()),
+        };
+
+        let session1 = manager.prepare_session(n1, 5001, caller1, None).await.expect("session prepared");
+        assert_eq!(manager.active_count().await, 1);
+        assert!(session1.dropfile_path.exists());
+
+        // Verify that the generated dropfile is valid and parses with nc-dropfile
+        let loaded_kdl = DoorKdl::load_from_file(&session1.dropfile_path).expect("valid KDL on disk");
+        assert_eq!(loaded_kdl.caller.handle, "vorn");
+        assert_eq!(loaded_kdl.session.node, 1);
+
+        // Allocate node 2
+        let n2 = manager.allocate_node().await.expect("should allocate node 2");
+        assert_eq!(n2, 2);
+
+        // Allocate node 3 should fail because max_nodes = 2
+        let n3 = manager.allocate_node().await;
+        assert!(n3.is_none());
+
+        // Release node 1
+        manager.release_node(n1).await;
+        assert_eq!(manager.active_count().await, 0);
+        assert!(!session1.dropfile_path.exists());
+
+        // Clean up test temp dir
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 }
