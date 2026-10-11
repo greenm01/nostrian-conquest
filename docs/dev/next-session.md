@@ -35,18 +35,26 @@ Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
 ## Next work
 
-Run `zk queue`: t024 is next. Build the Windows nc-sysop x64, x86 and
-Win7+ x86 packages on `ssh bean`, then refresh beta.3's release assets and
-website without changing the version. Windows SSH responds; its checkout
-is `dev/nostrian-conquest` under the SSH user's home. Sync by a git bundle over scp;
-Claude found that remote `git pull` hangs. Check its working tree before
-updating it. Prepare and verify the packages before asking the owner to
-approve uploading/replacing assets and deploying the site.
+Run `zk queue`: t024 is next. All four beta.3 candidates are built from signed
+commit `1b993652` and staged under `releases/`, with a verified signed checksum
+manifest. See the [release plan](../notes/plans/fv6fg33o-release-v1-0-0-beta-3.md)
+for hashes, compilers and acceptance limits. Linux and all three Windows
+packages passed fresh-game creation, two maintenance turns, socket door startup
+and clean disconnect. The Windows candidates passed explicit Defender scans.
+The full workspace passed 3,233 tests, zero failures and 11 ignored; the Rust
+tree has not changed since that run. Five packaging tests pass.
 
-Packaging preflight: `build_release_bundle.py` currently reads binaries
-from `rust/target`, while cargo-slot builds into its selected pool. Make
-that lookup honor the build's target directory before preparing archives;
-do not package a stale binary from a previous build.
+The x86 Defender block was cleared by using source-built standard libraries,
+as the Win7+ target already did. Both x86 release targets now use that method.
+No Defender exclusion or allow rule was added. The packager uses Cargo-reported
+executable paths and records the actual compiler. The quick-start and both
+full manuals are included and verified byte for byte.
+
+Next: obtain the owner's publication approval, upload all four archives and
+the manifest/signature together, then deploy the matching download page and
+verify its links. No release assets or live website files have changed yet.
+Windows builds use a native MSVC host; sync by a git bundle rather than remote
+`git pull`, which has hung before. Check its tree before updating it.
 
 All commits must be signed. A cold GPG/SSH agent cache can block signing or
 pushing; ask the owner to unlock it instead of committing unsigned. Fetch

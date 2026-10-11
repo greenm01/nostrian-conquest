@@ -111,7 +111,26 @@ The release script now uses that method for both x86 targets and records it in
 BUILD-INFO. Five Python tests cover artifact lookup and the build contract.
 Windows x64 and Windows 7+ x86 also passed explicit Defender scans and the same
 runtime smoke test on Windows build 26300. This is not a test on Windows 7 itself.
-Rebuild all four final archives from the packaging-fix commit before signing.
+
+Final candidates were built from signed commit `1b993652`. All four contain the
+same three reviewed PDFs. Linux uses stable Rust 1.98; Windows x64 uses stable
+1.99; both Windows x86 targets use nightly 1.101 with source-built standard
+libraries. The final Windows archives passed explicit Defender scans and the
+runtime smoke checks above. Linux passed the same runtime checks. Windows PE
+machine types and transferred archive hashes match their intended targets.
+The Rust tree is unchanged since the 3,233-test workspace run.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `ecb7a190b493665c4dd7db5f545467d3de17a9bad3b9ab5815171b923909e326` |
+| `windows-x64.zip` | `68322facfa954bb967559da9739018db96d003d2c71293328171e3122c42b814` |
+| `windows-x86.zip` | `fdd56666bb8997e76e36a5f7708cb02bed6240d899fba654486dafb0bdb89c72` |
+| `windows7-x86.zip` | `b7226b73be998b8f6c0044549f735b1e13b9a306b449faf7bfcff7a28561d755` |
+
+All names begin `nc-sysop-v1.0.0-beta.3-`. The complete four-archive manifest
+is signed and verified. Candidates, manifest and detached signature are staged
+under `releases/`. Publication and the matching download-page deployment remain
+pending; no live assets or website files have been changed.
 
 ## Connections
 
