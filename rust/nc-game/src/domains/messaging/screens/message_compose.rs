@@ -2,12 +2,16 @@ use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
 use nc_data::QueuedPlayerMail;
 
 use crate::app::Action;
-use crate::domains::messaging::MessagingAction;
+use crate::domains::messaging::state::{InboxFocus, OutboxMode};
+use crate::domains::messaging::{MessagingAction, delete_item_prompt, delete_prompt_choice};
+use crate::domains::startup::screens::reports::draw_preview_border;
+use crate::reports::runtime_inbox_preview_lines;
 use crate::screen::layout::{
-    LEFT_WINDOW_PAD_COL, ScreenGeometry, command_line_row_for, dismiss_prompt_row,
+    LEFT_WINDOW_PAD_COL, PLAYFIELD_WIDTH, ScreenGeometry, command_line_row_for, dismiss_prompt_row,
     draw_command_line_default_input_with_cancel_at_col, draw_command_line_prompt_text_at,
-    draw_command_prompt_at, draw_dismiss_prompt, draw_prompt_error_after_padded, draw_title_bar,
-    draw_title_bar_padded, new_playfield, new_playfield_for, standard_table_visible_rows_for,
+    draw_command_prompt_at, draw_dismiss_prompt, draw_dismiss_prompt_padded,
+    draw_prompt_error_after_padded, draw_title_bar, draw_title_bar_padded, new_playfield,
+    new_playfield_for, standard_table_visible_rows_for,
 };
 use crate::screen::table::{
     HorizontalAlign, LayoutRect, TableColumn, TableFooter, TableWidthMode, VerticalAlign,
@@ -34,6 +38,14 @@ const OUTBOX_COLUMNS: [TableColumn<'static>; 3] = [
     TableColumn::left("To", 28),
     TableColumn::left("Subject", 34),
 ];
+/// Cell limits that keep the outbox list, scrollbar included, inside 80
+/// columns; the read view shows the whole subject.
+const OUTBOX_RECIPIENT_ROOM: usize = OUTBOX_COLUMNS[1].width;
+const OUTBOX_SUBJECT_ROOM: usize = PLAYFIELD_WIDTH
+    - 1
+    - (OUTBOX_COLUMNS.len() + 1)
+    - OUTBOX_COLUMNS[0].width
+    - OUTBOX_RECIPIENT_ROOM;
 
 impl MessageComposeScreen {
     pub fn new() -> Self {
@@ -281,6 +293,7 @@ impl MessageComposeScreen {
         _status: Option<&str>,
         scroll_offset: usize,
         cursor: usize,
+        mode: OutboxMode,
         game_data: &nc_data::CoreGameData,
     ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
         let mut buffer = new_playfield_for(geometry);
@@ -294,7 +307,11 @@ impl MessageComposeScreen {
                 } else {
                     mail.subject.clone()
                 };
-                vec![format!("{:02}", idx + 1), recipient, subject]
+                vec![
+                    format!("{:02}", idx + 1),
+                    clip(&recipient, OUTBOX_RECIPIENT_ROOM),
+                    clip(&subject, OUTBOX_SUBJECT_ROOM),
+                ]
             })
             .collect::<Vec<_>>();
         let visible_rows = outbox_visible_rows(geometry);
@@ -303,16 +320,27 @@ impl MessageComposeScreen {
         let default_queue_no = format!("{:02}", cursor + 1);
         let footer = if rows.is_empty() {
             TableFooter::CommandBar {
-                hotkeys_markup: "? <Q>",
+                hotkeys_markup: "? D <Q>",
                 default: None,
                 input: "",
             }
         } else {
             TableFooter::CommandBar {
-                hotkeys_markup: "? <Q>",
+                hotkeys_markup: "? D <Q>",
                 default: Some(&default_queue_no),
                 input,
             }
+        };
+        // The delete prompt takes the command bar's row without resizing the
+        // table.
+        let delete_prompt = delete_item_prompt(&default_queue_no);
+        let drawn_footer = if mode == OutboxMode::DeleteConfirm && !rows.is_empty() {
+            TableFooter::CommandPrompt {
+                label: COMMAND_LABEL,
+                prompt: &delete_prompt,
+            }
+        } else {
+            footer
         };
         let columns = resolve_table_columns_for_widget(
             &OUTBOX_COLUMNS,
@@ -359,8 +387,35 @@ impl MessageComposeScreen {
             geometry,
             layout.command_col,
             metrics.bottom_row,
-            footer,
+            drawn_footer,
         );
+        Ok(buffer)
+    }
+
+    /// One queued message, drawn in the inbox's preview box; any key returns
+    /// to the outbox list.
+    pub fn render_outbox_message(
+        &mut self,
+        geometry: ScreenGeometry,
+        message_lines: &[String],
+    ) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
+        let mut buffer = new_playfield_for(geometry);
+        draw_title_bar_padded(&mut buffer, 0, "COMMUNICATE (SEND MESSAGE):");
+        let command_row = command_line_row_for(geometry);
+        let box_top_row = 1;
+        let box_bottom_row = command_row.saturating_sub(1);
+        draw_preview_border(
+            &mut buffer,
+            box_top_row,
+            box_bottom_row,
+            InboxFocus::Preview,
+        );
+        let body_rows = box_bottom_row.saturating_sub(box_top_row + 1);
+        let lines = runtime_inbox_preview_lines(message_lines, PLAYFIELD_WIDTH.saturating_sub(2));
+        for (idx, line) in lines.iter().take(body_rows).enumerate() {
+            buffer.write_text(box_top_row + 1 + idx, 1, line, classic::body_style());
+        }
+        draw_dismiss_prompt_padded(&mut buffer, command_row);
         Ok(buffer)
     }
 
@@ -371,7 +426,13 @@ impl MessageComposeScreen {
         let mut buffer = new_playfield();
         draw_title_bar(&mut buffer, 0, "COMMUNICATE (SEND MESSAGE):");
         buffer.write_text_clipped(3, 0, status, classic::status_value_style());
-        draw_dismiss_prompt(&mut buffer, dismiss_prompt_row(3));
+        buffer.write_text_clipped(
+            4,
+            0,
+            "Press D on the recipient list to review or cancel it before maintenance.",
+            classic::status_value_style(),
+        );
+        draw_dismiss_prompt(&mut buffer, dismiss_prompt_row(4));
         Ok(buffer)
     }
 
@@ -457,7 +518,20 @@ impl MessageComposeScreen {
         }
     }
 
-    pub fn handle_outbox_key(&self, key: KeyEvent) -> Action {
+    pub fn handle_outbox_key(&self, key: KeyEvent, mode: OutboxMode) -> Action {
+        match mode {
+            OutboxMode::List => {}
+            OutboxMode::Read => {
+                return Action::Messaging(MessagingAction::ReturnToComposeOutboxList);
+            }
+            OutboxMode::DeleteConfirm => {
+                return match delete_prompt_choice(key) {
+                    Some(true) => Action::Messaging(MessagingAction::DeleteQueuedComposeMessage),
+                    Some(false) => Action::Messaging(MessagingAction::ReturnToComposeOutboxList),
+                    None => Action::Noop,
+                };
+            }
+        }
         match key.code {
             KeyCode::Up | KeyCode::Char('k') | KeyCode::Char('K') => {
                 Action::Messaging(MessagingAction::MoveComposeOutbox(-1))
@@ -470,7 +544,10 @@ impl MessageComposeScreen {
             KeyCode::Char('q') | KeyCode::Char('Q') | KeyCode::Esc => {
                 Action::Messaging(MessagingAction::OpenComposeRecipient)
             }
-            KeyCode::Enter => Action::Messaging(MessagingAction::DeleteQueuedComposeMessage),
+            KeyCode::Char('d') | KeyCode::Char('D') => {
+                Action::Messaging(MessagingAction::OpenComposeOutboxDeleteConfirm)
+            }
+            KeyCode::Enter => Action::Messaging(MessagingAction::OpenComposeOutboxMessage),
             KeyCode::Backspace => Action::Messaging(MessagingAction::BackspaceComposeOutboxInput),
             KeyCode::Char(ch) if ch.is_ascii_digit() => {
                 Action::Messaging(MessagingAction::AppendComposeOutboxChar(ch))
@@ -667,4 +744,8 @@ fn compose_empire_label(game_data: &nc_data::CoreGameData, empire_id: u8) -> Str
     let fallback = player.legacy_status_name_summary();
     let display = if !name.is_empty() { name } else { fallback };
     format!("{} {}", format_empire_id(empire_id), display)
+}
+
+fn clip(text: &str, max_chars: usize) -> String {
+    text.chars().take(max_chars).collect()
 }

@@ -135,7 +135,8 @@ pub use rng::{
 pub use runtime_reports::{
     InboxItem, InboxItemSource, InboxItemType, ReportSummaryBucket, ReportsPreview, ReviewBlock,
     has_visible_runtime_messages, has_visible_runtime_reports, runtime_inbox_items,
-    runtime_inbox_preview_lines, wrap_review_text_preserving_spacing,
+    runtime_inbox_preview_lines, runtime_outgoing_inbox_items, runtime_outgoing_message_lines,
+    wrap_review_text_preserving_spacing,
 };
 pub use starmap::{
     PlayerStarmapProjection, PlayerStarmapWorld, build_player_starmap_projection_from_snapshots,

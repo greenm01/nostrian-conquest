@@ -1,6 +1,7 @@
 use crossterm::event::KeyEvent;
 
 use crate::app::Action;
+use crate::domains::messaging::delete_item_prompt;
 use crate::domains::messaging::state::{
     INBOX_VISIBLE_ROWS, InboxFocus, InboxPromptMode, InboxTypeFilter,
 };
@@ -201,10 +202,7 @@ impl ReportsScreen {
                     &mut buffer,
                     command_line_row,
                     COMMAND_LABEL,
-                    &format!(
-                        "Delete item {}? [Y]/N -> ",
-                        selected_id_label(items, cursor)
-                    ),
+                    &delete_item_prompt(&selected_id_label(items, cursor)),
                 );
             }
         }
@@ -307,7 +305,7 @@ fn selected_id_label(items: &[InboxDisplayItem], cursor: usize) -> String {
         .unwrap_or_else(|| "00".to_string())
 }
 
-fn draw_preview_border(
+pub(crate) fn draw_preview_border(
     buffer: &mut PlayfieldBuffer,
     top_row: usize,
     bottom_row: usize,

@@ -286,6 +286,14 @@ fn apply_action_deletes_queued_message_from_outbox() {
         ),
         AppOutcome::Continue
     );
+    // t067: deleting now goes through the default-yes D prompt; Enter only reads.
+    assert_eq!(
+        apply_action(
+            &mut app,
+            Action::Messaging(MessagingAction::OpenComposeOutboxDeleteConfirm)
+        ),
+        AppOutcome::Continue
+    );
     assert_eq!(
         apply_action(
             &mut app,

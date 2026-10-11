@@ -4,6 +4,7 @@ use crate::domains::messaging::screens::message_compose::{
     COMPOSE_BODY_WRAP_WIDTH, ComposeCursor, compose_cursor_for_index,
     compose_existing_index_for_cursor, compose_row_end_col, materialize_compose_cursor,
 };
+use crate::domains::messaging::state::OutboxMode;
 use crate::model::{MainMenuSummary, ReviewSummary};
 use crate::reports::has_visible_runtime_messages;
 use crate::screen::{CommandMenu, ScreenId};
@@ -94,6 +95,7 @@ impl App {
         self.messaging.compose_outbox_status = None;
         self.messaging.compose_outbox_scroll_offset = 0;
         self.messaging.compose_outbox_cursor = 0;
+        self.messaging.compose_outbox_mode = OutboxMode::List;
         self.current_screen = ScreenId::ComposeMessageOutbox;
     }
 
@@ -456,35 +458,40 @@ impl App {
         }
     }
 
+    pub fn open_compose_outbox_message(&mut self) {
+        if self.select_compose_outbox_message().is_some() {
+            self.messaging.compose_outbox_mode = OutboxMode::Read;
+        }
+    }
+
+    pub fn open_compose_outbox_delete_confirm(&mut self) {
+        if self.select_compose_outbox_message().is_some() {
+            self.messaging.compose_outbox_mode = OutboxMode::DeleteConfirm;
+        }
+    }
+
+    pub fn return_to_compose_outbox_list(&mut self) {
+        self.messaging.compose_outbox_mode = OutboxMode::List;
+    }
+
     pub fn delete_queued_compose_message(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        if self.current_screen != ScreenId::ComposeMessageOutbox {
+        if self.current_screen != ScreenId::ComposeMessageOutbox
+            || self.messaging.compose_outbox_mode != OutboxMode::DeleteConfirm
+        {
             return Ok(());
         }
-        // If the input box is empty, use the cursor row (1-based queue_no).
-        let queue_no = if self.messaging.compose_outbox_input.trim().is_empty() {
-            self.messaging.compose_outbox_cursor + 1
-        } else {
-            let Ok(n) = self.messaging.compose_outbox_input.parse::<usize>() else {
-                self.messaging.compose_outbox_status =
-                    Some("Enter a queued message number.".to_string());
-                return Ok(());
-            };
-            if n == 0 {
-                self.messaging.compose_outbox_status =
-                    Some("Enter a queued message number.".to_string());
-                return Ok(());
-            }
-            n
-        };
-
+        self.messaging.compose_outbox_mode = OutboxMode::List;
         let sender_empire_id = self.player.record_index_1_based as u8;
-        let mut queue = self.queued_mail.clone();
-        let own_indexes = queue
+        let own_indexes = self
+            .queued_mail
             .iter()
             .enumerate()
             .filter_map(|(idx, mail)| (mail.sender_empire_id == sender_empire_id).then_some(idx))
             .collect::<Vec<_>>();
-        let Some(queue_index) = own_indexes.get(queue_no - 1).copied() else {
+        let Some(queue_index) = own_indexes
+            .get(self.messaging.compose_outbox_cursor)
+            .copied()
+        else {
             self.messaging.compose_outbox_status = Some(format!(
                 "Enter a queued message number in 1..={}.",
                 own_indexes.len()
@@ -492,8 +499,7 @@ impl App {
             return Ok(());
         };
 
-        queue.remove(queue_index);
-        self.queued_mail = queue;
+        self.cancel_queued_mail(queue_index);
         self.save_game_data()?;
         self.messaging.compose_outbox_input.clear();
         self.messaging.compose_outbox_status = None;
@@ -508,6 +514,50 @@ impl App {
         self.messaging.compose_outbox_scroll_offset =
             self.messaging.compose_outbox_scroll_offset.min(max_offset);
         Ok(())
+    }
+
+    /// Removes the player's own queued message outright, as the outbox and the
+    /// inbox both do when it is cancelled before maintenance. The caller saves.
+    pub(crate) fn cancel_queued_mail(&mut self, queue_index: usize) {
+        self.queued_mail.remove(queue_index);
+        self.shift_inbox_display_ids_after_mail_removal(queue_index);
+    }
+
+    /// Resolves the typed queue number, or the highlighted row when nothing is
+    /// typed, to a position in the player's own queue and moves the cursor
+    /// there.
+    fn select_compose_outbox_message(&mut self) -> Option<usize> {
+        if self.current_screen != ScreenId::ComposeMessageOutbox {
+            return None;
+        }
+        let position = if self.messaging.compose_outbox_input.trim().is_empty() {
+            self.messaging.compose_outbox_cursor
+        } else {
+            match self.messaging.compose_outbox_input.parse::<usize>() {
+                Ok(queue_no) if queue_no > 0 => queue_no - 1,
+                _ => {
+                    self.messaging.compose_outbox_status =
+                        Some("Enter a queued message number.".to_string());
+                    return None;
+                }
+            }
+        };
+        let total = self.compose_outbox_queue_len();
+        if position >= total {
+            self.messaging.compose_outbox_status =
+                Some(format!("Enter a queued message number in 1..={total}."));
+            return None;
+        }
+        self.messaging.compose_outbox_input.clear();
+        self.messaging.compose_outbox_status = None;
+        self.messaging.compose_outbox_cursor = position;
+        let visible_rows = self.compose_outbox_visible_rows();
+        sync_scroll_to_cursor(
+            &mut self.messaging.compose_outbox_scroll_offset,
+            self.messaging.compose_outbox_cursor,
+            visible_rows,
+        );
+        Some(position)
     }
 
     fn sync_compose_recipient_cursor_to_input(&mut self) {

@@ -2,8 +2,9 @@ use std::path::PathBuf;
 
 use nc_compat::load_classic_core_files;
 use nc_data::{
-    CoreGameData, InboxItemType, QueuedPlayerMail, ReportBlockRow, ReportSummaryBucket,
-    ReportsPreview, runtime_inbox_items, runtime_inbox_preview_lines,
+    CoreGameData, InboxItemSource, InboxItemType, QueuedPlayerMail, ReportBlockRow,
+    ReportSummaryBucket, ReportsPreview, runtime_inbox_items, runtime_inbox_preview_lines,
+    runtime_outgoing_inbox_items,
 };
 
 fn repo_root() -> PathBuf {
@@ -163,4 +164,43 @@ fn message_rows_display_zero_week_stardate() {
         .find(|item| item.item_type == InboxItemType::Message)
         .expect("message row");
     assert_eq!(message.stardate_label(), "00/3003");
+}
+
+#[test]
+fn runtime_outgoing_inbox_items_list_this_turns_own_mail_newest_first() {
+    let game_data = fixture_game_data();
+    let year = game_data.conquest.game_year();
+    let queue = [
+        visible_mail(1, 2, year, "First", "Hello"),
+        visible_mail(2, 1, year, "Incoming", "Hi"),
+        visible_mail(1, 3, year, "Second", "Line one\nLine two"),
+        visible_mail(1, 2, year - 1, "Delivered", "Old"),
+    ];
+
+    let items = runtime_outgoing_inbox_items(&game_data, 1, &queue);
+    let subjects = items
+        .iter()
+        .map(|item| item.subject.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(subjects, vec!["Second", "First"]);
+    assert!(
+        items
+            .iter()
+            .all(|item| item.item_type == InboxItemType::Outgoing)
+    );
+    assert_eq!(InboxItemType::Outgoing.code(), "OUT");
+    assert_eq!(items[0].source, InboxItemSource::QueuedMail(2));
+    assert_eq!(items[0].stardate_label(), format!("00/{year}"));
+    let lines = &items[0].body_lines;
+    assert!(lines[0].starts_with("To "), "{lines:?}");
+    assert!(lines[0].ends_with("(Empire #3)"), "{lines:?}");
+    assert_eq!(lines[1], "Subject: Second");
+    assert_eq!(lines[2..], ["Line one", "Line two", "<end of message>"]);
+
+    // The recipient-side inbox is unchanged: it never lists the viewer's own mail.
+    assert!(
+        runtime_inbox_items(&game_data, 1, &[], &queue)
+            .iter()
+            .all(|item| item.item_type == InboxItemType::Message && item.subject == "Incoming")
+    );
 }

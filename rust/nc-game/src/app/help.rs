@@ -292,11 +292,22 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
                 ("^G", "open this helper"),
             ],
         )),
-        ScreenId::ComposeMessageRecipient | ScreenId::ComposeMessageOutbox => Some(table_help(
+        ScreenId::ComposeMessageRecipient => Some(table_help(
             "MESSAGE COMMANDS",
             &[
                 ("D", "open queued outgoing messages"),
                 ("Enter", "accept highlighted item"),
+                ("Type", "use the prompt value shown on the command line"),
+                ("Q", "return"),
+                ("Esc", "return"),
+                ("?", "open this helper"),
+            ],
+        )),
+        ScreenId::ComposeMessageOutbox => Some(table_help(
+            "MESSAGE COMMANDS",
+            &[
+                ("Enter", "read the highlighted queued message"),
+                ("D", "delete (cancel) the highlighted queued message"),
                 ("Type", "use the prompt value shown on the command line"),
                 ("Q", "return"),
                 ("Esc", "return"),

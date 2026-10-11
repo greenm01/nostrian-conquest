@@ -333,7 +333,9 @@ impl App {
             ScreenId::ComposeMessageRecipient => self.message_compose.handle_recipient_key(key),
             ScreenId::ComposeMessageSubject => self.message_compose.handle_subject_key(key),
             ScreenId::ComposeMessageBody => self.message_compose.handle_body_key(key),
-            ScreenId::ComposeMessageOutbox => self.message_compose.handle_outbox_key(key),
+            ScreenId::ComposeMessageOutbox => self
+                .message_compose
+                .handle_outbox_key(key, self.messaging.compose_outbox_mode),
             ScreenId::ComposeMessageDiscardConfirm => {
                 self.message_compose.handle_discard_confirm_key(key)
             }
