@@ -212,3 +212,55 @@ JSON/Markdown, before-fix JSON, and review reproduction script are byte
 unchanged from `28814c9d`. No cargo or Rust edits. This completes t062's
 comparison and consultation evidence; RT class tuning and implementation
 of remaining owner choices are separate work.
+
+## Joint decision-2 recommendation
+
+Claude and Codex agree on the following proposal. It awaits owner approval.
+Item 5 is separately approvable from items 1–4.
+
+1. Check each fleet's ROE after one compulsory exchange, then after each
+   exchange. Unarmed survivors automatically attempt escape. Keeping the
+   existing withdrawal exchange fixed, the convoy control improves from
+   1.017 surviving TT with lock3, to 5.773 with after1, to 7.807 when
+   unarmed survivors may escape.
+2. Replace the compulsory withdrawal volley with speed/contact-gated
+   pursuit. Allow at most one successful pursuit exchange per opposing
+   empire per fleeing-fleet episode, bound to its departure sector and
+   layer. End the episode on actual departure or a new order; preserve it
+   across the year boundary. Suppress voluntary first-identification
+   commitment while withdrawing. Neither side pursues if both disengage.
+   Same-encounter pursuit retains its bank; a later encounter starts at zero.
+3. Keep ordinary line-first screening during pursuit; retain and explain
+   the free-critical exception. Certain immediate pursuit leaves 7.831 TT
+   under ordinary screening versus 5.696 with auxiliaries targeted first.
+   These are conditional immediate-catch controls, not full chase odds.
+4. The 64-round cap ends the encounter unresolved, preserves survivors,
+   and grants no assault permission from relative AS. Ordinary encounter
+   rules apply next tick; add no special cap-suppression state. The cap
+   probe found zero exits in 200,000 tested battles, not a proof it can
+   never occur.
+5. Separately approve effective NC combat AS as the common strength measure
+   for attack willingness, in-battle ROE, and the orbital gate. Use actual
+   crippled AS, count each participating base once (100 nominal, 50 crippled),
+   and do not inflate AS with qualitative die bonuses. Remove the classic
+   2/7/21 weights and +30 guard proxy from these tests. Keep ROE thresholds,
+   detection and interception mechanics; this does not join new fleets or
+   remove first-identification commitment outside withdrawal.
+
+Item 5 deliberately changes who agrees to fight. It supersedes the relevant
+willingness clause of [the classic engagement ADR](../decisions/gtkmxw3l-engagement-follows-the-classic-ecmaint-encounter-rule.md)
+if approved; classic encounter-parity tests and mission sweeps must then
+label expected NC differences rather than claim exact parity there.
+Destroyers count a little more against cruisers (1:3 instead of 2:7),
+a base deters a little less (3.33 CA instead of 4.29), and BB:CA remains 3:1.
+Where the ROE ratio test applies, three DD against one CA at ROE 6 change
+from refusing (6 < 7) to accepting (30 = 30); four CA against an unguarded
+base change from refusing (28 < 30) to accepting (120 > 100). Damaged ships
+contribute their actual reduced combat AS. No campaign measurement yet
+establishes how often these entry decisions flip. The battle sweep already
+uses NC AS for in-battle ROE, so it cannot measure that operational change.
+
+No disagreement remains between the reviewers. Separate approval for the
+strength measure keeps this deliberate encounter-rule change explicit.
+
+Decision-7 hull controls: [destroyer durability under withdrawal and recovery](wnwxz2et-destroyer-durability-under-withdrawal-and-recovery.md) tests DD DS 8 with this approved timing and retreat contract, including convoy survival and repeated-contact wipe risk.

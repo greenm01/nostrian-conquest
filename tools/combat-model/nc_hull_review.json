@@ -1,0 +1,5708 @@
+{
+  "seed": 750000,
+  "trials": 20000,
+  "campaign_trials": 5000,
+  "units": {
+    "DD": {
+      "AS": 10,
+      "DS": 5,
+      "cost": 5,
+      "fire": "execution",
+      "line": true
+    },
+    "CA": {
+      "AS": 30,
+      "DS": 30,
+      "cost": 15,
+      "fire": "suppression",
+      "line": true
+    },
+    "BB": {
+      "AS": 90,
+      "DS": 100,
+      "cost": 45,
+      "fire": "suppression",
+      "line": true
+    },
+    "SB": {
+      "AS": 100,
+      "DS": 120,
+      "cost": 50,
+      "fire": "execution",
+      "line": true
+    },
+    "SC": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 15,
+      "fire": null,
+      "line": false
+    },
+    "TT": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 5,
+      "fire": null,
+      "line": false
+    },
+    "ET": {
+      "AS": 0,
+      "DS": 20,
+      "cost": 20,
+      "fire": null,
+      "line": false
+    }
+  },
+  "rules": {
+    "name": "decision2-control",
+    "effect": {
+      "kind": "flat",
+      "rows": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4
+      ],
+      "unit": 4
+    },
+    "mixed_shift": 1,
+    "base_shift": 1,
+    "base_condition": "present",
+    "shift_cap": 2,
+    "execution_classes": [
+      "DD",
+      "SB"
+    ],
+    "crippled_ds": "full",
+    "remainder": "carry",
+    "critical": "free-kill",
+    "screen": "absolute",
+    "roe": "after1",
+    "withdrawal": "none",
+    "round_cap": 64,
+    "mutual_withdrawal_exchange": false,
+    "critical_order": [
+      "DD",
+      "SC",
+      "TT",
+      "ET",
+      "CA",
+      "BB",
+      "SB"
+    ],
+    "unarmed_escape": true
+  },
+  "method": "Seeded sampling, Wilson 95% intervals for binary outcomes. Shared trial seeds across controls. Single imposed contact or four fresh-enemy contacts without replacements. No movement, pursuit geometry, willingness frequency, production, arrival or landing simulation. Transport survival is not delivery.",
+  "battles": [
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.09795,
+      "left_win_ci95": [
+        0.09390732217851616,
+        0.10214709401419755
+      ],
+      "right_win": 0.8962,
+      "mutual": 0.00585,
+      "unresolved": 0.0,
+      "left_lost_cost": 141.69875,
+      "right_lost_cost": 70.94175,
+      "exchanges": 2.2815,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0953,
+      "left_win_ci95": [
+        0.0913079519700874,
+        0.09944748201372366
+      ],
+      "right_win": 0.9031,
+      "mutual": 0.0016,
+      "unresolved": 0.0,
+      "left_lost_cost": 425.71525,
+      "right_lost_cost": 216.62625,
+      "exchanges": 2.35795,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0518,
+      "left_win_ci95": [
+        0.048813677841243325,
+        0.05495846327944886
+      ],
+      "right_win": 0.9447,
+      "mutual": 0.0035,
+      "unresolved": 0.0,
+      "left_lost_cost": 437.48175,
+      "right_lost_cost": 186.3405,
+      "exchanges": 2.2646,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.39635,
+      "left_win_ci95": [
+        0.3895915341626784,
+        0.40314827491175204
+      ],
+      "right_win": 0.60145,
+      "mutual": 0.0022,
+      "unresolved": 0.0,
+      "left_lost_cost": 320.943,
+      "right_lost_cost": 239.56875,
+      "exchanges": 4.95005,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.3009,
+      "left_win_ci95": [
+        0.2945822914054042,
+        0.3072941773521367
+      ],
+      "right_win": 0.69525,
+      "mutual": 0.00385,
+      "unresolved": 0.0,
+      "left_lost_cost": 118.62875,
+      "right_lost_cost": 87.98025,
+      "exchanges": 3.73715,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4643,
+      "left_win_ci95": [
+        0.4573956826323982,
+        0.47121802874200763
+      ],
+      "right_win": 0.51545,
+      "mutual": 0.02025,
+      "unresolved": 0.0,
+      "left_lost_cost": 77.75175,
+      "right_lost_cost": 77.07975,
+      "exchanges": 4.1389,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0628,
+      "left_win_ci95": [
+        0.05952099015657818,
+        0.0662469261708797
+      ],
+      "right_win": 0.8434,
+      "mutual": 0.0938,
+      "unresolved": 0.0,
+      "left_lost_cost": 48.24925,
+      "right_lost_cost": 7.83,
+      "exchanges": 1.5696,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2464,
+      "left_win_ci95": [
+        0.24047701895959211,
+        0.2524203817280641
+      ],
+      "right_win": 0.6645,
+      "mutual": 0.0891,
+      "unresolved": 0.0,
+      "left_lost_cost": 43.25375,
+      "right_lost_cost": 16.775,
+      "exchanges": 2.8524,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.49025,
+      "left_win_ci95": [
+        0.4833243358410497,
+        0.4971794088620443
+      ],
+      "right_win": 0.5038,
+      "mutual": 0.00595,
+      "unresolved": 0.0,
+      "left_lost_cost": 94.50525,
+      "right_lost_cost": 92.99475,
+      "exchanges": 4.57965,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.1654,
+      "left_win_ci95": [
+        0.16031514550577533,
+        0.17061336502296984
+      ],
+      "right_win": 0.82825,
+      "mutual": 0.00635,
+      "unresolved": 0.0,
+      "left_lost_cost": 133.94725,
+      "right_lost_cost": 79.6935,
+      "exchanges": 3.0215,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.1613,
+      "left_win_ci95": [
+        0.156267659772497,
+        0.16646242545190826
+      ],
+      "right_win": 0.8377,
+      "mutual": 0.001,
+      "unresolved": 0.0,
+      "left_lost_cost": 404.14475,
+      "right_lost_cost": 246.56475,
+      "exchanges": 3.18685,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.10635,
+      "left_win_ci95": [
+        0.10215280206103547,
+        0.1106983879259357
+      ],
+      "right_win": 0.88905,
+      "mutual": 0.0046,
+      "unresolved": 0.0,
+      "left_lost_cost": 421.54175,
+      "right_lost_cost": 212.985,
+      "exchanges": 3.05745,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.39635,
+      "left_win_ci95": [
+        0.3895915341626784,
+        0.40314827491175204
+      ],
+      "right_win": 0.60145,
+      "mutual": 0.0022,
+      "unresolved": 0.0,
+      "left_lost_cost": 320.943,
+      "right_lost_cost": 239.56875,
+      "exchanges": 4.95005,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.34325,
+      "left_win_ci95": [
+        0.33670047505016837,
+        0.34985972825342043
+      ],
+      "right_win": 0.65305,
+      "mutual": 0.0037,
+      "unresolved": 0.0,
+      "left_lost_cost": 111.9805,
+      "right_lost_cost": 93.171,
+      "exchanges": 3.9201,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.50035,
+      "left_win_ci95": [
+        0.493421080753583,
+        0.5072787848211776
+      ],
+      "right_win": 0.48115,
+      "mutual": 0.0185,
+      "unresolved": 0.0,
+      "left_lost_cost": 73.49475,
+      "right_lost_cost": 80.64675,
+      "exchanges": 4.1313,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.12445,
+      "left_win_ci95": [
+        0.1199472014538649,
+        0.1290970368278753
+      ],
+      "right_win": 0.78735,
+      "mutual": 0.0882,
+      "unresolved": 0.0,
+      "left_lost_cost": 47.4645,
+      "right_lost_cost": 10.6325,
+      "exchanges": 2.1269,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2464,
+      "left_win_ci95": [
+        0.24047701895959211,
+        0.2524203817280641
+      ],
+      "right_win": 0.6645,
+      "mutual": 0.0891,
+      "unresolved": 0.0,
+      "left_lost_cost": 43.25375,
+      "right_lost_cost": 16.775,
+      "exchanges": 2.85245,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 6,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.49025,
+      "left_win_ci95": [
+        0.4833243358410497,
+        0.4971794088620443
+      ],
+      "right_win": 0.5038,
+      "mutual": 0.00595,
+      "unresolved": 0.0,
+      "left_lost_cost": 94.50525,
+      "right_lost_cost": 92.99475,
+      "exchanges": 4.57965,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.3086,
+      "left_win_ci95": [
+        0.30223555864044516,
+        0.31503795276183166
+      ],
+      "right_win": 0.68435,
+      "mutual": 0.00705,
+      "unresolved": 0.0,
+      "left_lost_cost": 116.581,
+      "right_lost_cost": 98.94825,
+      "exchanges": 3.85345,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.30685,
+      "left_win_ci95": [
+        0.3004959951789213,
+        0.313278188349552
+      ],
+      "right_win": 0.6921,
+      "mutual": 0.00105,
+      "unresolved": 0.0,
+      "left_lost_cost": 349.03725,
+      "right_lost_cost": 301.8345,
+      "exchanges": 4.07885,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.23385,
+      "left_win_ci95": [
+        0.2280352264633736,
+        0.23976699432929086
+      ],
+      "right_win": 0.76035,
+      "mutual": 0.0058,
+      "unresolved": 0.0,
+      "left_lost_cost": 378.752,
+      "right_lost_cost": 269.18775,
+      "exchanges": 3.94235,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.39635,
+      "left_win_ci95": [
+        0.3895915341626784,
+        0.40314827491175204
+      ],
+      "right_win": 0.60145,
+      "mutual": 0.0022,
+      "unresolved": 0.0,
+      "left_lost_cost": 320.943,
+      "right_lost_cost": 239.56875,
+      "exchanges": 4.95005,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4641,
+      "left_win_ci95": [
+        0.45719591995430725,
+        0.4710178682345211
+      ],
+      "right_win": 0.53075,
+      "mutual": 0.00515,
+      "unresolved": 0.0,
+      "left_lost_cost": 97.981,
+      "right_lost_cost": 107.48025,
+      "exchanges": 4.2024,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.563,
+      "left_win_ci95": [
+        0.5561142586414516,
+        0.5698615448154791
+      ],
+      "right_win": 0.41715,
+      "mutual": 0.01985,
+      "unresolved": 0.0,
+      "left_lost_cost": 67.1105,
+      "right_lost_cost": 86.823,
+      "exchanges": 4.2433,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.1805,
+      "left_win_ci95": [
+        0.17523128142008332,
+        0.18589142961976748
+      ],
+      "right_win": 0.7346,
+      "mutual": 0.0849,
+      "unresolved": 0.0,
+      "left_lost_cost": 45.9785,
+      "right_lost_cost": 13.27,
+      "exchanges": 2.59725,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2524,
+      "left_win_ci95": [
+        0.24642771769103508,
+        0.258467378563948
+      ],
+      "right_win": 0.6581,
+      "mutual": 0.0895,
+      "unresolved": 0.0,
+      "left_lost_cost": 42.95825,
+      "right_lost_cost": 17.095,
+      "exchanges": 2.8415,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.49025,
+      "left_win_ci95": [
+        0.4833243358410497,
+        0.4971794088620443
+      ],
+      "right_win": 0.5038,
+      "mutual": 0.00595,
+      "unresolved": 0.0,
+      "left_lost_cost": 94.50525,
+      "right_lost_cost": 92.99475,
+      "exchanges": 4.57965,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4873,
+      "left_win_ci95": [
+        0.4803758201677654,
+        0.4942290575480596
+      ],
+      "right_win": 0.5067,
+      "mutual": 0.006,
+      "unresolved": 0.0,
+      "left_lost_cost": 96.32575,
+      "right_lost_cost": 115.0365,
+      "exchanges": 4.5287,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.49295,
+      "left_win_ci95": [
+        0.4860231887878162,
+        0.49987951892057486
+      ],
+      "right_win": 0.50605,
+      "mutual": 0.001,
+      "unresolved": 0.0,
+      "left_lost_cost": 285.53325,
+      "right_lost_cost": 350.57775,
+      "exchanges": 4.81905,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.3924,
+      "left_win_ci95": [
+        0.38565412085926387,
+        0.3991872053000099
+      ],
+      "right_win": 0.60165,
+      "mutual": 0.00595,
+      "unresolved": 0.0,
+      "left_lost_cost": 324.3905,
+      "right_lost_cost": 320.3775,
+      "exchanges": 4.7718,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.39635,
+      "left_win_ci95": [
+        0.3895915341626784,
+        0.40314827491175204
+      ],
+      "right_win": 0.60145,
+      "mutual": 0.0022,
+      "unresolved": 0.0,
+      "left_lost_cost": 320.943,
+      "right_lost_cost": 239.56875,
+      "exchanges": 4.95005,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.5742,
+      "left_win_ci95": [
+        0.5673336026724192,
+        0.581037899176855
+      ],
+      "right_win": 0.4209,
+      "mutual": 0.0049,
+      "unresolved": 0.0,
+      "left_lost_cost": 83.5955,
+      "right_lost_cost": 117.37125,
+      "exchanges": 4.4262,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.6416,
+      "left_win_ci95": [
+        0.6349275595438935,
+        0.6482180558450176
+      ],
+      "right_win": 0.33955,
+      "mutual": 0.01885,
+      "unresolved": 0.0,
+      "left_lost_cost": 58.90675,
+      "right_lost_cost": 93.42225,
+      "exchanges": 4.2335,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.21125,
+      "left_win_ci95": [
+        0.2056485269946956,
+        0.21696237382770475
+      ],
+      "right_win": 0.7048,
+      "mutual": 0.08395,
+      "unresolved": 0.0,
+      "left_lost_cost": 44.70575,
+      "right_lost_cost": 14.76,
+      "exchanges": 2.80645,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2555,
+      "left_win_ci95": [
+        0.2495028436878054,
+        0.2615910619436298
+      ],
+      "right_win": 0.6552,
+      "mutual": 0.0893,
+      "unresolved": 0.0,
+      "left_lost_cost": 42.8045,
+      "right_lost_cost": 17.24,
+      "exchanges": 2.84065,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 10,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.49025,
+      "left_win_ci95": [
+        0.4833243358410497,
+        0.4971794088620443
+      ],
+      "right_win": 0.5038,
+      "mutual": 0.00595,
+      "unresolved": 0.0,
+      "left_lost_cost": 94.50525,
+      "right_lost_cost": 92.99475,
+      "exchanges": 4.57965,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0827,
+      "left_win_ci95": [
+        0.07896249163341164,
+        0.08659778165901327
+      ],
+      "right_win": 0.9165,
+      "mutual": 0.0008,
+      "unresolved": 0.0,
+      "left_lost_cost": 81.7035,
+      "right_lost_cost": 53.83425,
+      "exchanges": 1.424,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0845,
+      "left_win_ci95": [
+        0.08072463496735581,
+        0.08843494699526713
+      ],
+      "right_win": 0.91235,
+      "mutual": 0.00315,
+      "unresolved": 0.0,
+      "left_lost_cost": 121.66625,
+      "right_lost_cost": 66.414,
+      "exchanges": 1.8897,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.08325,
+      "left_win_ci95": [
+        0.07950086809607855,
+        0.08715919395668466
+      ],
+      "right_win": 0.91655,
+      "mutual": 0.0002,
+      "unresolved": 0.0,
+      "left_lost_cost": 244.09525,
+      "right_lost_cost": 165.3795,
+      "exchanges": 1.45635,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.08355,
+      "left_win_ci95": [
+        0.07979454894604324,
+        0.0874653978850863
+      ],
+      "right_win": 0.9158,
+      "mutual": 0.00065,
+      "unresolved": 0.0,
+      "left_lost_cost": 363.38075,
+      "right_lost_cost": 202.7715,
+      "exchanges": 1.92905,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.04385,
+      "left_win_ci95": [
+        0.04109872368721896,
+        0.046776470806765294
+      ],
+      "right_win": 0.95565,
+      "mutual": 0.0005,
+      "unresolved": 0.0,
+      "left_lost_cost": 220.43225,
+      "right_lost_cost": 137.853,
+      "exchanges": 1.2764,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.04455,
+      "left_win_ci95": [
+        0.04177709193600935,
+        0.047497833707496356
+      ],
+      "right_win": 0.95425,
+      "mutual": 0.0012,
+      "unresolved": 0.0,
+      "left_lost_cost": 364.308,
+      "right_lost_cost": 170.30475,
+      "exchanges": 1.81365,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2659,
+      "left_win_ci95": [
+        0.2598222993920183,
+        0.27206761188945
+      ],
+      "right_win": 0.7341,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 31.863,
+      "right_lost_cost": 126.6885,
+      "exchanges": 2.09285,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.26605,
+      "left_win_ci95": [
+        0.25997116987392965,
+        0.27221868379672176
+      ],
+      "right_win": 0.7339,
+      "mutual": 5e-05,
+      "unresolved": 0.0,
+      "left_lost_cost": 134.187,
+      "right_lost_cost": 145.74375,
+      "exchanges": 2.82695,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2392,
+      "left_win_ci95": [
+        0.2333382410706415,
+        0.24516192493622263
+      ],
+      "right_win": 0.76,
+      "mutual": 0.0008,
+      "unresolved": 0.0,
+      "left_lost_cost": 46.30575,
+      "right_lost_cost": 69.27675,
+      "exchanges": 1.8111,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2392,
+      "left_win_ci95": [
+        0.2333382410706415,
+        0.24516192493622263
+      ],
+      "right_win": 0.75995,
+      "mutual": 0.00085,
+      "unresolved": 0.0,
+      "left_lost_cost": 82.4045,
+      "right_lost_cost": 78.129,
+      "exchanges": 2.5698,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.32815,
+      "left_win_ci95": [
+        0.32167617320009295,
+        0.3346898295923902
+      ],
+      "right_win": 0.66895,
+      "mutual": 0.0029,
+      "unresolved": 0.0,
+      "left_lost_cost": 17.0105,
+      "right_lost_cost": 51.423,
+      "exchanges": 2.037,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.32815,
+      "left_win_ci95": [
+        0.32167617320009295,
+        0.3346898295923902
+      ],
+      "right_win": 0.66895,
+      "mutual": 0.0029,
+      "unresolved": 0.0,
+      "left_lost_cost": 41.373,
+      "right_lost_cost": 56.46075,
+      "exchanges": 2.69975,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.04875,
+      "left_win_ci95": [
+        0.045851211352938966,
+        0.051822101187695466
+      ],
+      "right_win": 0.90055,
+      "mutual": 0.0507,
+      "unresolved": 0.0,
+      "left_lost_cost": 34.86775,
+      "right_lost_cost": 4.9725,
+      "exchanges": 1.0,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.06205,
+      "left_win_ci95": [
+        0.058789923254697125,
+        0.06547828112684491
+      ],
+      "right_win": 0.857,
+      "mutual": 0.08095,
+      "unresolved": 0.0,
+      "left_lost_cost": 46.08925,
+      "right_lost_cost": 7.15,
+      "exchanges": 1.44125,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.09945,
+      "left_win_ci95": [
+        0.0953790762907885,
+        0.10367476379375691
+      ],
+      "right_win": 0.90055,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 14.14625,
+      "right_lost_cost": 4.9725,
+      "exchanges": 1.0,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.16115,
+      "left_win_ci95": [
+        0.15611960299380137,
+        0.1663105398414207
+      ],
+      "right_win": 0.81205,
+      "mutual": 0.0268,
+      "unresolved": 0.0,
+      "left_lost_cost": 31.22375,
+      "right_lost_cost": 9.3975,
+      "exchanges": 1.90055,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.43215,
+      "left_win_ci95": [
+        0.4252982556305233,
+        0.43902780366229005
+      ],
+      "right_win": 0.5659,
+      "mutual": 0.00195,
+      "unresolved": 0.0,
+      "left_lost_cost": 25.05075,
+      "right_lost_cost": 70.407,
+      "exchanges": 2.7785,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4322,
+      "left_win_ci95": [
+        0.42534815118033753,
+        0.43907788890887023
+      ],
+      "right_win": 0.5657,
+      "mutual": 0.0021,
+      "unresolved": 0.0,
+      "left_lost_cost": 55.1265,
+      "right_lost_cost": 75.84225,
+      "exchanges": 3.34155,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 0,
+      "trials": 20000,
+      "left_win": 0.2319,
+      "left_win_ci95": [
+        0.22610267541761503,
+        0.23780029431566824
+      ],
+      "right_win": 0.7649,
+      "mutual": 0.0032,
+      "unresolved": 0.0,
+      "left_lost_cost": 126.54325,
+      "right_lost_cost": 77.93325,
+      "exchanges": 3.7528,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 0,
+      "trials": 20000,
+      "left_win": 0.37215,
+      "left_win_ci95": [
+        0.36547599465632236,
+        0.37887310896322357
+      ],
+      "right_win": 0.6092,
+      "mutual": 0.01865,
+      "unresolved": 0.0,
+      "left_lost_cost": 87.01225,
+      "right_lost_cost": 66.07425,
+      "exchanges": 4.22755,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "convoy-DD",
+      "left": {
+        "DD": 15,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 63.76125,
+      "right_lost_cost": 18.0135,
+      "exchanges": 1.0,
+      "transports_surviving": 7.873,
+      "half_transports_survive": 0.90025
+    },
+    {
+      "case": "convoy-DD",
+      "left": {
+        "DD": 15,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 106.5575,
+      "right_lost_cost": 21.13125,
+      "exchanges": 2.0,
+      "transports_surviving": 3.5162000000000004,
+      "half_transports_survive": 0.3665
+    },
+    {
+      "case": "convoy-CA",
+      "left": {
+        "CA": 5,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 30.9075,
+      "right_lost_cost": 1.49175,
+      "exchanges": 1.0,
+      "transports_surviving": 9.90025,
+      "half_transports_survive": 1.0
+    },
+    {
+      "case": "convoy-CA",
+      "left": {
+        "CA": 5,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 68.53475,
+      "right_lost_cost": 2.38125,
+      "exchanges": 2.0,
+      "transports_surviving": 7.77135,
+      "half_transports_survive": 0.8306
+    },
+    {
+      "case": "convoy-mixed",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 39.9945,
+      "right_lost_cost": 21.021,
+      "exchanges": 1.0,
+      "transports_surviving": 9.90025,
+      "half_transports_survive": 1.0
+    },
+    {
+      "case": "convoy-mixed",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 84.329,
+      "right_lost_cost": 24.35175,
+      "exchanges": 2.0,
+      "transports_surviving": 6.31635,
+      "half_transports_survive": 0.65705
+    },
+    {
+      "case": "6DD-base",
+      "left": {
+        "DD": 6
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.05215,
+      "left_win_ci95": [
+        0.049153826953896446,
+        0.05531817974155647
+      ],
+      "right_win": 0.8535,
+      "mutual": 0.09435,
+      "unresolved": 0.0,
+      "left_lost_cost": 29.452,
+      "right_lost_cost": 7.325,
+      "exchanges": 1.47275,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "15DD-base",
+      "left": {
+        "DD": 15
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.19055,
+      "left_win_ci95": [
+        0.18516669585311932,
+        0.1960521552620038
+      ],
+      "right_win": 0.69255,
+      "mutual": 0.1169,
+      "unresolved": 0.0,
+      "left_lost_cost": 68.66325,
+      "right_lost_cost": 15.3725,
+      "exchanges": 2.27795,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "20DD-base",
+      "left": {
+        "DD": 20
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.44535,
+      "left_win_ci95": [
+        0.43847314513795943,
+        0.45224784440297283
+      ],
+      "right_win": 0.3944,
+      "mutual": 0.16025,
+      "unresolved": 0.0,
+      "left_lost_cost": 80.443,
+      "right_lost_cost": 30.28,
+      "exchanges": 2.434,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "30DD-base",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.9239,
+      "left_win_ci95": [
+        0.9201432116684208,
+        0.9274939801632137
+      ],
+      "right_win": 0.03995,
+      "mutual": 0.03615,
+      "unresolved": 0.0,
+      "left_lost_cost": 68.166,
+      "right_lost_cost": 48.0025,
+      "exchanges": 1.95295,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "10DD-guarded-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1,
+        "CA": 3
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0005,
+      "left_win_ci95": [
+        0.00027162114501557615,
+        0.0009202228750329447
+      ],
+      "right_win": 0.9972,
+      "mutual": 0.0023,
+      "unresolved": 0.0,
+      "left_lost_cost": 49.995,
+      "right_lost_cost": 11.0825,
+      "exchanges": 1.5285,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "20DD-guarded-base",
+      "left": {
+        "DD": 20
+      },
+      "right": {
+        "SB": 1,
+        "CA": 3
+      },
+      "dd_ds": 5,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.12975,
+      "left_win_ci95": [
+        0.12516397834573473,
+        0.1344782243538107
+      ],
+      "right_win": 0.81105,
+      "mutual": 0.0592,
+      "unresolved": 0.0,
+      "left_lost_cost": 95.56075,
+      "right_lost_cost": 40.907,
+      "exchanges": 2.1602,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2305,
+      "left_win_ci95": [
+        0.22471531081844473,
+        0.23638819661579563
+      ],
+      "right_win": 0.7695,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 25.5985,
+      "right_lost_cost": 65.71575,
+      "exchanges": 1.78295,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2318,
+      "left_win_ci95": [
+        0.22600357494489928,
+        0.23769943319559522
+      ],
+      "right_win": 0.7677,
+      "mutual": 0.0005,
+      "unresolved": 0.0,
+      "left_lost_cost": 70.291,
+      "right_lost_cost": 83.24025,
+      "exchanges": 2.55245,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.24305,
+      "left_win_ci95": [
+        0.23715522100434974,
+        0.24904346632488236
+      ],
+      "right_win": 0.75695,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 80.64025,
+      "right_lost_cost": 203.14875,
+      "exchanges": 1.90905,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-large",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "CA": 30
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.24315,
+      "left_win_ci95": [
+        0.2372543720542985,
+        0.2491442768677224
+      ],
+      "right_win": 0.75685,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 210.31825,
+      "right_lost_cost": 257.88,
+      "exchanges": 2.666,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.1837,
+      "left_win_ci95": [
+        0.1783941476942676,
+        0.18912733431482415
+      ],
+      "right_win": 0.8163,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 87.3165,
+      "right_lost_cost": 180.87075,
+      "exchanges": 1.8261,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-BB",
+      "left": {
+        "DD": 90
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.1865,
+      "left_win_ci95": [
+        0.18116215710252395,
+        0.19195824950465362
+      ],
+      "right_win": 0.8132,
+      "mutual": 0.0003,
+      "unresolved": 0.0,
+      "left_lost_cost": 232.32575,
+      "right_lost_cost": 225.198,
+      "exchanges": 2.6424,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.2659,
+      "left_win_ci95": [
+        0.2598222993920183,
+        0.27206761188945
+      ],
+      "right_win": 0.7341,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 31.863,
+      "right_lost_cost": 126.6885,
+      "exchanges": 2.09285,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-BB",
+      "left": {
+        "CA": 30
+      },
+      "right": {
+        "BB": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.26605,
+      "left_win_ci95": [
+        0.25997116987392965,
+        0.27221868379672176
+      ],
+      "right_win": 0.7339,
+      "mutual": 5e-05,
+      "unresolved": 0.0,
+      "left_lost_cost": 134.187,
+      "right_lost_cost": 145.74375,
+      "exchanges": 2.82695,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.35185,
+      "left_win_ci95": [
+        0.345260675973451,
+        0.3584962243099728
+      ],
+      "right_win": 0.6475,
+      "mutual": 0.00065,
+      "unresolved": 0.0,
+      "left_lost_cost": 19.199,
+      "right_lost_cost": 80.25675,
+      "exchanges": 2.12105,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.35195,
+      "left_win_ci95": [
+        0.3453602271064189,
+        0.3585966347697937
+      ],
+      "right_win": 0.64735,
+      "mutual": 0.0007,
+      "unresolved": 0.0,
+      "left_lost_cost": 55.872,
+      "right_lost_cost": 94.659,
+      "exchanges": 2.7672,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4655,
+      "left_win_ci95": [
+        0.45859428215318593,
+        0.47241896833468533
+      ],
+      "right_win": 0.52705,
+      "mutual": 0.00745,
+      "unresolved": 0.0,
+      "left_lost_cost": 18.43525,
+      "right_lost_cost": 65.61825,
+      "exchanges": 2.606,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4655,
+      "left_win_ci95": [
+        0.45859428215318593,
+        0.47241896833468533
+      ],
+      "right_win": 0.52705,
+      "mutual": 0.00745,
+      "unresolved": 0.0,
+      "left_lost_cost": 37.92375,
+      "right_lost_cost": 71.2065,
+      "exchanges": 3.1157,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.09945,
+      "left_win_ci95": [
+        0.0953790762907885,
+        0.10367476379375691
+      ],
+      "right_win": 0.90055,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 21.22725,
+      "right_lost_cost": 4.9725,
+      "exchanges": 1.0,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.16115,
+      "left_win_ci95": [
+        0.15611960299380137,
+        0.1663105398414207
+      ],
+      "right_win": 0.81205,
+      "mutual": 0.0268,
+      "unresolved": 0.0,
+      "left_lost_cost": 37.62125,
+      "right_lost_cost": 9.3975,
+      "exchanges": 1.90055,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.09945,
+      "left_win_ci95": [
+        0.0953790762907885,
+        0.10367476379375691
+      ],
+      "right_win": 0.90055,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 14.14625,
+      "right_lost_cost": 4.9725,
+      "exchanges": 1.0,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "mixed-base",
+      "left": {
+        "DD": 1,
+        "CA": 3
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.16115,
+      "left_win_ci95": [
+        0.15611960299380137,
+        0.1663105398414207
+      ],
+      "right_win": 0.81205,
+      "mutual": 0.0268,
+      "unresolved": 0.0,
+      "left_lost_cost": 29.6915,
+      "right_lost_cost": 9.3975,
+      "exchanges": 1.90055,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.43215,
+      "left_win_ci95": [
+        0.4252982556305233,
+        0.43902780366229005
+      ],
+      "right_win": 0.5659,
+      "mutual": 0.00195,
+      "unresolved": 0.0,
+      "left_lost_cost": 25.05075,
+      "right_lost_cost": 70.407,
+      "exchanges": 2.7785,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "CA-parity",
+      "left": {
+        "CA": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.4322,
+      "left_win_ci95": [
+        0.42534815118033753,
+        0.43907788890887023
+      ],
+      "right_win": 0.5657,
+      "mutual": 0.0021,
+      "unresolved": 0.0,
+      "left_lost_cost": 55.1265,
+      "right_lost_cost": 75.84225,
+      "exchanges": 3.34155,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "DD-CA-mix",
+      "left": {
+        "DD": 15,
+        "CA": 5
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 0,
+      "trials": 20000,
+      "left_win": 0.37275,
+      "left_win_ci95": [
+        0.3660736862322263,
+        0.37947518694405236
+      ],
+      "right_win": 0.6221,
+      "mutual": 0.00515,
+      "unresolved": 0.0,
+      "left_lost_cost": 109.328,
+      "right_lost_cost": 96.438,
+      "exchanges": 4.297,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "three-class",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "right": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 0,
+      "trials": 20000,
+      "left_win": 0.4606,
+      "left_win_ci95": [
+        0.45370025399501973,
+        0.4675148784462014
+      ],
+      "right_win": 0.5209,
+      "mutual": 0.0185,
+      "unresolved": 0.0,
+      "left_lost_cost": 77.72475,
+      "right_lost_cost": 75.81525,
+      "exchanges": 4.4248,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "convoy-DD",
+      "left": {
+        "DD": 15,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 35.451,
+      "right_lost_cost": 18.0135,
+      "exchanges": 1.0,
+      "transports_surviving": 9.90025,
+      "half_transports_survive": 1.0
+    },
+    {
+      "case": "convoy-DD",
+      "left": {
+        "DD": 15,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 85.99275,
+      "right_lost_cost": 26.8845,
+      "exchanges": 2.0,
+      "transports_surviving": 5.99075,
+      "half_transports_survive": 0.6348
+    },
+    {
+      "case": "convoy-CA",
+      "left": {
+        "CA": 5,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 30.9075,
+      "right_lost_cost": 1.49175,
+      "exchanges": 1.0,
+      "transports_surviving": 9.90025,
+      "half_transports_survive": 1.0
+    },
+    {
+      "case": "convoy-CA",
+      "left": {
+        "CA": 5,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 68.53475,
+      "right_lost_cost": 2.38125,
+      "exchanges": 2.0,
+      "transports_surviving": 7.77135,
+      "half_transports_survive": 0.8306
+    },
+    {
+      "case": "convoy-mixed",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 32.422,
+      "right_lost_cost": 21.021,
+      "exchanges": 1.0,
+      "transports_surviving": 9.90025,
+      "half_transports_survive": 1.0
+    },
+    {
+      "case": "convoy-mixed",
+      "left": {
+        "DD": 6,
+        "CA": 3,
+        "TT": 10
+      },
+      "right": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "roe": [
+        6,
+        10
+      ],
+      "catch": "pursuit",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0,
+      "left_win_ci95": [
+        0.0,
+        0.00019203605610462545
+      ],
+      "right_win": 1.0,
+      "mutual": 0.0,
+      "unresolved": 0.0,
+      "left_lost_cost": 73.633,
+      "right_lost_cost": 24.804,
+      "exchanges": 2.0,
+      "transports_surviving": 7.4359,
+      "half_transports_survive": 0.78385
+    },
+    {
+      "case": "6DD-base",
+      "left": {
+        "DD": 6
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.0628,
+      "left_win_ci95": [
+        0.05952099015657818,
+        0.0662469261708797
+      ],
+      "right_win": 0.8437,
+      "mutual": 0.0935,
+      "unresolved": 0.0,
+      "left_lost_cost": 28.91975,
+      "right_lost_cost": 7.815,
+      "exchanges": 1.5696,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "15DD-base",
+      "left": {
+        "DD": 15
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.43885,
+      "left_win_ci95": [
+        0.43198489291347975,
+        0.4457385930961819
+      ],
+      "right_win": 0.4594,
+      "mutual": 0.10175,
+      "unresolved": 0.0,
+      "left_lost_cost": 60.092,
+      "right_lost_cost": 27.03,
+      "exchanges": 3.007,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "20DD-base",
+      "left": {
+        "DD": 20
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.82595,
+      "left_win_ci95": [
+        0.8206328489631649,
+        0.8311419627318604
+      ],
+      "right_win": 0.12425,
+      "mutual": 0.0498,
+      "unresolved": 0.0,
+      "left_lost_cost": 57.57725,
+      "right_lost_cost": 43.7875,
+      "exchanges": 2.75195,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "30DD-base",
+      "left": {
+        "DD": 30
+      },
+      "right": {
+        "SB": 1
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.9994,
+      "left_win_ci95": [
+        0.9989514644540894,
+        0.9996567299330732
+      ],
+      "right_win": 0.0003,
+      "mutual": 0.0003,
+      "unresolved": 0.0,
+      "left_lost_cost": 40.82375,
+      "right_lost_cost": 49.985,
+      "exchanges": 1.91005,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "10DD-guarded-base",
+      "left": {
+        "DD": 10
+      },
+      "right": {
+        "SB": 1,
+        "CA": 3
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.00655,
+      "left_win_ci95": [
+        0.005522897083232833,
+        0.007766623300536823
+      ],
+      "right_win": 0.984,
+      "mutual": 0.00945,
+      "unresolved": 0.0,
+      "left_lost_cost": 49.89325,
+      "right_lost_cost": 15.9575,
+      "exchanges": 1.6658,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    },
+    {
+      "case": "20DD-guarded-base",
+      "left": {
+        "DD": 20
+      },
+      "right": {
+        "SB": 1,
+        "CA": 3
+      },
+      "dd_ds": 8,
+      "roe": [
+        10,
+        10
+      ],
+      "catch": "none",
+      "mixed_shift": 1,
+      "trials": 20000,
+      "left_win": 0.28245,
+      "left_win_ci95": [
+        0.2762530214432011,
+        0.28873053344481003
+      ],
+      "right_win": 0.65675,
+      "mutual": 0.0608,
+      "unresolved": 0.0,
+      "left_lost_cost": 88.1115,
+      "right_lost_cost": 56.8975,
+      "exchanges": 3.0555,
+      "transports_surviving": 0.0,
+      "half_transports_survive": null
+    }
+  ],
+  "campaigns": [
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.554,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8016533753980077
+        },
+        {
+          "year": 0,
+          "alive": 0.19,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0172,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.3436,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9671189604422428
+        },
+        {
+          "year": 0,
+          "alive": 0.0082,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0,
+          "damaged_given_alive": null,
+          "dd_damaged_fraction": null
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9948,
+      "wipe_ci95": [
+        0.9923914507969761,
+        0.9964488313581955
+      ],
+      "loss": 149.622,
+      "dd_lost": 29.9244,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.554,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8016533753980077
+        },
+        {
+          "year": 2,
+          "alive": 0.19,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.0172,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.3436,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9671189604422428
+        },
+        {
+          "year": 2,
+          "alive": 0.0082,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.0,
+          "damaged_given_alive": null,
+          "dd_damaged_fraction": null
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9862,
+      "wipe_ci95": [
+        0.9825729138417101,
+        0.9890805727869164
+      ],
+      "loss": 148.603,
+      "dd_lost": 29.7206,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.554,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8016533753980077
+        },
+        {
+          "year": 4,
+          "alive": 0.19,
+          "damaged_given_alive": 0.28526315789473683,
+          "dd_damaged_fraction": 0.2274458529930078
+        },
+        {
+          "year": 6,
+          "alive": 0.075,
+          "damaged_given_alive": 0.7706666666666667,
+          "dd_damaged_fraction": 0.6233217679891386
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.3436,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9671189604422428
+        },
+        {
+          "year": 4,
+          "alive": 0.0082,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.0,
+          "damaged_given_alive": null,
+          "dd_damaged_fraction": null
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9476,
+      "wipe_ci95": [
+        0.9410727099250614,
+        0.9534400432937236
+      ],
+      "loss": 144.785,
+      "dd_lost": 28.957,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.554,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.2674,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.1244,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9994,
+      "wipe_ci95": [
+        0.9982372939514712,
+        0.9997959253458057
+      ],
+      "loss": 149.966,
+      "dd_lost": 29.9932,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.3436,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.045,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.0042,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9612,
+      "wipe_ci95": [
+        0.9554834301365838,
+        0.9662084415892958
+      ],
+      "loss": 148.602,
+      "dd_lost": 14.9892,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9974,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.553,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.1896,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 15.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.82,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0848,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0028,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": null
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.948,
+      "wipe_ci95": [
+        0.9414946635808875,
+        0.9538174754763412
+      ],
+      "loss": 147.324,
+      "dd_lost": 14.9292,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9974,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.553,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.1896,
+          "damaged_given_alive": 0.630801687763713,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 15.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.82,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.0848,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.0028,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": null
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8776,
+      "wipe_ci95": [
+        0.8682244553587836,
+        0.8863957761323095
+      ],
+      "loss": 142.279,
+      "dd_lost": 14.6828,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9974,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.553,
+          "damaged_given_alive": 0.5088607594936709,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.2778,
+          "damaged_given_alive": 0.7674586033117351,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9996,
+      "wipe_ci95": [
+        0.9985426134985766,
+        0.9998902987179226
+      ],
+      "loss": 149.979,
+      "dd_lost": 15.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.82,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.0848,
+          "damaged_given_alive": 0.39622641509433965,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.0092,
+          "damaged_given_alive": 0.7391304347826086,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.6382,
+      "wipe_ci95": [
+        0.6247794671023615,
+        0.6514083400800247
+      ],
+      "loss": 123.934,
+      "dd_lost": 14.4236,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9974,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.7906,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.554,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9738,
+      "wipe_ci95": [
+        0.9689956418737232,
+        0.9778768837631407
+      ],
+      "loss": 148.207,
+      "dd_lost": 14.9174,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.82,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.3128,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.0898,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8722,
+      "wipe_ci95": [
+        0.8626592517668451,
+        0.8811692709052544
+      ],
+      "loss": 113.701,
+      "dd_lost": 5.9834,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9908,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.7146,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.3512,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9998,
+      "wipe_ci95": [
+        0.9988679109191604,
+        0.9999646942165609
+      ],
+      "loss": 119.991,
+      "dd_lost": 6.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9152,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.2352,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.014,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8216,
+      "wipe_ci95": [
+        0.8107424675304699,
+        0.8319637465784695
+      ],
+      "loss": 110.512,
+      "dd_lost": 5.9618,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9908,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.7146,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.3512,
+          "damaged_given_alive": 0.5375854214123007,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9994,
+      "wipe_ci95": [
+        0.9982372939514712,
+        0.9997959253458057
+      ],
+      "loss": 119.973,
+      "dd_lost": 6.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9152,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.2352,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.014,
+          "damaged_given_alive": 0.9857142857142858,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.6724,
+      "wipe_ci95": [
+        0.6592628202233041,
+        0.6852724761460403
+      ],
+      "loss": 100.521,
+      "dd_lost": 5.9136,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9908,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.7146,
+          "damaged_given_alive": 0.42149454240134343,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.508,
+          "damaged_given_alive": 0.6692913385826772,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.992,
+      "wipe_ci95": [
+        0.9891252630111634,
+        0.9941193182749004
+      ],
+      "loss": 119.596,
+      "dd_lost": 5.999,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9152,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.2352,
+          "damaged_given_alive": 0.6887755102040817,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.0466,
+          "damaged_given_alive": 0.6824034334763949,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.1806,
+      "wipe_ci95": [
+        0.17018371005026753,
+        0.19150669795223502
+      ],
+      "loss": 60.741,
+      "dd_lost": 5.5824,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9908,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.968,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.915,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 5,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.856,
+      "wipe_ci95": [
+        0.8459950637905534,
+        0.8654583324245659
+      ],
+      "loss": 111.264,
+      "dd_lost": 5.9418,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9152,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.5974,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.318,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.959,
+      "wipe_ci95": [
+        0.9531422237269896,
+        0.9641530258874479
+      ],
+      "loss": 148.193,
+      "dd_lost": 29.6386,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8082668237610658
+        },
+        {
+          "year": 0,
+          "alive": 0.7022,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.952769821439454
+        },
+        {
+          "year": 0,
+          "alive": 0.1978,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9957872564507636
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.8868,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9163148714578225
+        },
+        {
+          "year": 0,
+          "alive": 0.0952,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0018,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9092,
+      "wipe_ci95": [
+        0.9009186362296269,
+        0.9168530764985385
+      ],
+      "loss": 144.741,
+      "dd_lost": 28.9482,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 1.0,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8082668237610658
+        },
+        {
+          "year": 2,
+          "alive": 0.7022,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.952769821439454
+        },
+        {
+          "year": 3,
+          "alive": 0.1978,
+          "damaged_given_alive": 0.24974721941354905,
+          "dd_damaged_fraction": 0.2025627523257855
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.8868,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9163148714578225
+        },
+        {
+          "year": 2,
+          "alive": 0.0952,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.0018,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.82,
+      "wipe_ci95": [
+        0.8091066521461393,
+        0.8304020186090241
+      ],
+      "loss": 138.999,
+      "dd_lost": 27.7998,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 1.0,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.8082668237610658
+        },
+        {
+          "year": 4,
+          "alive": 0.7022,
+          "damaged_given_alive": 0.3178581600683566,
+          "dd_damaged_fraction": 0.1907692932740163
+        },
+        {
+          "year": 6,
+          "alive": 0.3962,
+          "damaged_given_alive": 0.8758202927814235,
+          "dd_damaged_fraction": 0.5493305408033511
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 30.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.8868,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9163148714578225
+        },
+        {
+          "year": 4,
+          "alive": 0.0952,
+          "damaged_given_alive": 0.12815126050420167,
+          "dd_damaged_fraction": 0.08102975311247099
+        },
+        {
+          "year": 6,
+          "alive": 0.0136,
+          "damaged_given_alive": 0.9264705882352942,
+          "dd_damaged_fraction": 0.76103500761035
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.4308,
+      "wipe_ci95": [
+        0.41713262715983096,
+        0.4445736227893651
+      ],
+      "loss": 104.8,
+      "dd_lost": 20.96,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.964,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.7904,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA",
+      "start": {
+        "DD": 30
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9726,
+      "wipe_ci95": [
+        0.9676995295137499,
+        0.9767748386077821
+      ],
+      "loss": 148.076,
+      "dd_lost": 29.6152,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.8868,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.3542,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.1008,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.925,
+      "wipe_ci95": [
+        0.9173685383306712,
+        0.9319789150160304
+      ],
+      "loss": 146.627,
+      "dd_lost": 14.9488,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9978,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.968186749728765
+        },
+        {
+          "year": 0,
+          "alive": 0.7078,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.3218,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 15.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9096,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9983076874862892
+        },
+        {
+          "year": 0,
+          "alive": 0.183,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.0066,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8794,
+      "wipe_ci95": [
+        0.8700807796805805,
+        0.8881366880835101
+      ],
+      "loss": 142.481,
+      "dd_lost": 14.7514,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9978,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.968186749728765
+        },
+        {
+          "year": 2,
+          "alive": 0.7078,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.3218,
+          "damaged_given_alive": 0.4536979490366687,
+          "dd_damaged_fraction": 0.0759087669280114
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 1.0,
+      "wipe_ci95": [
+        0.999232298054943,
+        1.0
+      ],
+      "loss": 150.0,
+      "dd_lost": 15.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9096,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9983076874862892
+        },
+        {
+          "year": 2,
+          "alive": 0.183,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.0066,
+          "damaged_given_alive": 0.5151515151515151,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.7424,
+      "wipe_ci95": [
+        0.7300956719874888,
+        0.7543321461095475
+      ],
+      "loss": 132.936,
+      "dd_lost": 14.3838,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9978,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.968186749728765
+        },
+        {
+          "year": 4,
+          "alive": 0.7078,
+          "damaged_given_alive": 0.48064424978807574,
+          "dd_damaged_fraction": 0.03870967741935484
+        },
+        {
+          "year": 6,
+          "alive": 0.5058,
+          "damaged_given_alive": 0.8406484776591538,
+          "dd_damaged_fraction": 0.8640674394099052
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9972,
+      "wipe_ci95": [
+        0.9953052742616264,
+        0.9983313229242089
+      ],
+      "loss": 149.874,
+      "dd_lost": 14.9994,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9096,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 0.9983076874862892
+        },
+        {
+          "year": 4,
+          "alive": 0.183,
+          "damaged_given_alive": 0.4885245901639344,
+          "dd_damaged_fraction": 0.003770739064856712
+        },
+        {
+          "year": 6,
+          "alive": 0.0254,
+          "damaged_given_alive": 0.6220472440944882,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.2252,
+      "wipe_ci95": [
+        0.21383525936724687,
+        0.2369866696217566
+      ],
+      "loss": 81.744,
+      "dd_lost": 11.4498,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9978,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.955,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.8866,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "DD-CA-mix",
+      "start": {
+        "DD": 15,
+        "CA": 5
+      },
+      "enemy": {
+        "CA": 10
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9134,
+      "wipe_ci95": [
+        0.9052835112911011,
+        0.9208817527407257
+      ],
+      "loss": 143.515,
+      "dd_lost": 14.7116,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9096,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.5316,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.2368,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8456,
+      "wipe_ci95": [
+        0.8353195910545952,
+        0.8553497733609814
+      ],
+      "loss": 111.972,
+      "dd_lost": 5.9646,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.979,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.6956,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.3768,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 0,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9998,
+      "wipe_ci95": [
+        0.9988679109191604,
+        0.9999646942165609
+      ],
+      "loss": 119.991,
+      "dd_lost": 6.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 0,
+          "alive": 0.9388,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.2884,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 0,
+          "alive": 0.025,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.785,
+      "wipe_ci95": [
+        0.7733962689751397,
+        0.7961661409161779
+      ],
+      "loss": 107.951,
+      "dd_lost": 5.9188,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.979,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.6956,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.3768,
+          "damaged_given_alive": 0.5201698513800425,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 1,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9994,
+      "wipe_ci95": [
+        0.9982372939514712,
+        0.9997959253458057
+      ],
+      "loss": 119.973,
+      "dd_lost": 6.0,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 1,
+          "alive": 0.9388,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 2,
+          "alive": 0.2884,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 3,
+          "alive": 0.025,
+          "damaged_given_alive": 0.984,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.6582,
+      "wipe_ci95": [
+        0.6449359936498764,
+        0.6712211054547076
+      ],
+      "loss": 98.886,
+      "dd_lost": 5.8752,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.979,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.6956,
+          "damaged_given_alive": 0.4284071305347901,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.5352,
+          "damaged_given_alive": 0.7488789237668162,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 2,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.9868,
+      "wipe_ci95": [
+        0.9832420141879336,
+        0.989610551198359
+      ],
+      "loss": 119.284,
+      "dd_lost": 5.999,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 2,
+          "alive": 0.9388,
+          "damaged_given_alive": 1.0,
+          "dd_damaged_fraction": 1.0
+        },
+        {
+          "year": 4,
+          "alive": 0.2884,
+          "damaged_given_alive": 0.6955617198335645,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.0674,
+          "damaged_given_alive": 0.7002967359050445,
+          "dd_damaged_fraction": 1.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "none",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.2278,
+      "wipe_ci95": [
+        0.2163862348536941,
+        0.23963170208519508
+      ],
+      "loss": 58.087,
+      "dd_lost": 4.9406,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.979,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.9266,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.8572,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    },
+    {
+      "case": "three-class",
+      "start": {
+        "DD": 6,
+        "CA": 3,
+        "BB": 1
+      },
+      "enemy": {
+        "CA": 8
+      },
+      "dd_ds": 8,
+      "gap": 3,
+      "catch": "pursuit",
+      "roe": [
+        6,
+        10
+      ],
+      "rt": 2,
+      "assisted": false,
+      "trials": 5000,
+      "wipe": 0.8236,
+      "wipe_ci95": [
+        0.8127876808410053,
+        0.8339154624601538
+      ],
+      "loss": 109.059,
+      "dd_lost": 5.9112,
+      "entries": [
+        {
+          "year": 0,
+          "alive": 1.0,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 3,
+          "alive": 0.9388,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 6,
+          "alive": 0.6464,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        },
+        {
+          "year": 9,
+          "alive": 0.3584,
+          "damaged_given_alive": 0.0,
+          "dd_damaged_fraction": 0.0
+        }
+      ]
+    }
+  ]
+}

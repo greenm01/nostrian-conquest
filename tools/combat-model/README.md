@@ -371,7 +371,10 @@ it. Shared rolls enumerate every reachable state, including fractional
 army damage; the independent-fire control uses SciPy sparse transitions for
 exactly 64 rounds. The shared candidates prove their longest reachable
 path is within that cap for the listed cases. Probabilities use floating
-point. No sampling or engine-parity claim for these new ground candidates.
+point. This finite-matrix control requires NumPy and SciPy; the `uv --with scipy`
+command supplies both. Its unit test skips when either is absent, so the
+standard-library test command still works. Run the documented uv test command
+to include it. No sampling or engine-parity claim for these new ground candidates.
 
 `invasion_price.py` writes `nc_invasion_price.json`. It separates committed
 build cost from expected casualties at a 90% single-attempt capture threshold.
@@ -393,3 +396,39 @@ full-force destruction and destroyed build points are also reported.
 Uniform 1, uniform 2, class 1/2/3 with SB 2 or 3, and a DD-only RT 1 control
 keep baseline hull AS/DS and prices fixed. These are stress campaigns, not
 measured frequencies of combat on generated maps.
+
+## Assault collateral (t072)
+
+`python3 -B tools/combat-model/assault_collateral.py` writes
+`nc_assault_collateral.json`. It exactly enumerates three-exchange bombardment
+with current dock-first, same-exchange battery-first overflow, and delayed
+battery shielding. A separately labelled flat-support control measures the
+size of changing the planetary CRT too. It retains current economic damage
+and battery execution, excludes the preceding orbital gate, and does not add
+ROE checks inside planetary fire. See the [investigation](../../docs/notes/investigations/twexjjwm-assault-collateral-and-planetary-support-after-the-ground-decision.md)
+for scope, contracts, rates and limits. `test_assault_collateral.py` checks
+round-start protection and a closed-form undefended bombardment.
+
+## Destroyer durability (t075)
+
+`python3 -B tools/combat-model/hull_review.py` writes `nc_hull_review.json`.
+The default is 20,000 trials per battle and 5,000 per repeated-contact cell;
+`--trials`, `--campaign-trials`, and `--seed` override these. It changes DD DS
+only, keeps all prices and other hull values fixed, and applies decisions 1–3.
+It compares equal-cost lines, 75-point convoy escorts, starbases with and
+without a guard, the mixed die modifier, and four contacts with RT 2.
+
+Each side is one aggregated fleet. ROE-10 warship rows match decision 1;
+ROE-6 contacts and unarmed escape exercise decision 2. No-catch and certain
+immediate-catch controls do not simulate speed, contact or episode geometry.
+RT contacts use fresh enemies, no replacements and no base assistance. Gap 0
+is an imposed multiple-contact stress case, not repeated permitted pursuit
+against one fugitive; it assumes separate contacts can legally occur. Every
+new encounter resets carry. Transport survival is not arrival or landing.
+Wilson 95% intervals accompany battle wins and campaign wipe rates.
+
+`test_hull_review.py` checks ROE-10 equivalence, equal escort budgets, cohort
+accounting with altered DS, RT timing and the transport measure. See the
+[investigation](../../docs/notes/investigations/wnwxz2et-destroyer-durability-under-withdrawal-and-recovery.md)
+for the recommendation and its limits. These are design controls, not an
+engine validation of the pending retreat and recovery implementations.
