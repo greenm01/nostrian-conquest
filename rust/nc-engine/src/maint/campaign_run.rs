@@ -1,19 +1,19 @@
 //! One maintenance run against a campaign store.
 //!
-//! `nc-sysop maint` and hosted maintenance both advance a campaign through
-//! this: load the latest snapshot, run one year per `run_turn`, and save
-//! the reports, mail, intel, activity, lifecycle, war stats and winner
-//! state the years produced. Both paths therefore write the same snapshot
-//! for the same game.
+//! `nc-sysop maint`, hosted maintenance and `nc-cli maint-rust` all advance
+//! a campaign through this: load the latest snapshot, run one year per
+//! `run_turn`, and save the reports, mail, intel, activity, lifecycle, war
+//! stats and winner state the years produced. The paths therefore write the
+//! same snapshot for the same game.
 
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CampaignStore, CoreGameData, MaintenanceEvents, PlanetIntelSnapshot, PlayerActivityState,
-    PlayerLifecycleState, PlayerWarStatsState, QueuedPlayerMail, ReportBlockRow, WinnerState,
-    apply_inactivity_autopilot_policy, apply_maintenance_events_to_player_war_stats,
-    carry_unread_report_blocks, latest_planet_intel_grants_for_viewer,
-    merge_player_intel_from_runtime,
+    CampaignStore, CoreGameData, DiplomacyOverride, MaintenanceEvents, PlanetIntelSnapshot,
+    PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState, QueuedPlayerMail,
+    ReportBlockRow, WinnerState, apply_inactivity_autopilot_policy,
+    apply_maintenance_events_to_player_war_stats, carry_unread_report_blocks,
+    latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
 };
 
 use super::{
@@ -71,10 +71,24 @@ impl CampaignMaintenance {
         self.start_year
     }
 
+    /// Every year's events run so far, merged.
+    pub fn events(&self) -> &MaintenanceEvents {
+        &self.events
+    }
+
     /// Advance one year: put inactive empires on autopilot, run the
     /// engine's yearly pass with each empire's known hazards, and fold the
     /// year's intel grants and events into the run.
     pub fn run_turn(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.run_turn_with_diplomacy_overrides(&[])
+    }
+
+    /// `run_turn` under diplomacy directives the stored relations cannot
+    /// hold, which a caller keeps between years.
+    pub fn run_turn_with_diplomacy_overrides(
+        &mut self,
+        diplomacy_overrides: &[DiplomacyOverride],
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let inactivity_threshold =
             u8::try_from(self.game_data.setup.autopilot_after_turns).unwrap_or(u8::MAX);
         apply_inactivity_autopilot_policy(
@@ -88,7 +102,7 @@ impl CampaignMaintenance {
             &mut self.game_data,
             self.campaign_seed,
             &visible_hazards,
-            &[],
+            diplomacy_overrides,
             &mut self.player_lifecycle_states,
             &mut self.winner_state,
         )?;

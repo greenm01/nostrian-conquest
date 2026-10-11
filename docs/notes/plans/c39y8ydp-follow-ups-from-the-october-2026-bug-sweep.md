@@ -488,6 +488,29 @@ same snapshot, reports and mail for the same orders), `turn_intake.rs` and
 starbase, Scorch-Earth and ship-recovery events that the hand-copied merge
 in `nc-sysop` dropped, so those reports now reach local players too.
 
+
+Result (t101, 2026-10-11): `nc-cli maint-rust` now uses
+`CampaignMaintenance` to load, advance and save a campaign. Its shared
+`MaintenanceEvents::extend` carries starbase reports, Scorch-Earth events
+and ship-recovery events that the CLI's hand-written merge dropped. No
+other hand-written merge remains in the workspace. The CLI retains its
+schedule/token gate, `.SAV` handling, initial classic import, rankings file
+and diplomacy sidecar. `run_turn_with_diplomacy_overrides` passes the
+sidecar directives to the same yearly engine call; `run_turn` still passes
+an empty slice for sysop and hosted runs. Collected battle participants
+feed the CLI's existing diplomacy escalation between years.
+
+The three regressions in `nc-cli/tests/maint_events.rs` all failed on the
+old loop and pass on the shared one: a starbase's lost-world and arrival
+reports, two consecutive Scorch-Earth reports, and a ship-recovery report.
+The existing maintenance tests pass without changed expectations (82
+passed, 2 ignored). The mission sweep and escort probe compare fleet and
+planet state, not report text, so these added report lines do not alter
+their comparisons. `ncmaint_oracle.py compare` also compares RESULTS.DAT
+when the preserved fixture includes it; a Rust export can now differ there
+because the previously omitted reports are present. Classic fixtures are
+unchanged. Full workspace suite: 3198 passed, 0 failed, 11 ignored.
+
 ### t067
 
 Reported by the user on 2026-10-10: after sending a message there seemed to
