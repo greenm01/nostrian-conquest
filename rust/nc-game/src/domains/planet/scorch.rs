@@ -3,7 +3,7 @@ use crate::app::state::App;
 use crate::domains::planet::PlanetAction;
 use crate::domains::planet::screens::planet_list::{
     PLANET_LIST_SCORCH_CONFIRM_PROMPT, PLANET_LIST_SCORCH_LAST_CONFIRM_PROMPT,
-    PLANET_LIST_SCORCH_REALLY_CONFIRM_PROMPT,
+    PLANET_LIST_SCORCH_REALLY_CONFIRM_PROMPT, PLANET_LIST_SCORCH_RESCIND_PROMPT,
 };
 use crate::domains::planet::state::PlanetScorchPromptMode;
 use crate::screen::{CommandMenu, ScreenId, format_sector_coords_default};
@@ -166,6 +166,10 @@ impl App {
                     Some(planet_record_index),
                 );
             }
+            PlanetScorchPromptMode::Confirm1 if self.selected_planet_scorched() => {
+                // One confirmation rescinds the order the same command set.
+                return self.finish_planet_scorch(false);
+            }
             PlanetScorchPromptMode::Confirm1 => {
                 self.open_planet_scorch_prompt_mode(
                     PlanetScorchPromptMode::Confirm2,
@@ -180,26 +184,32 @@ impl App {
                     self.planet.scorch_selected_planet_record,
                 );
             }
-            PlanetScorchPromptMode::Confirm3 => {
-                let planet_record_index = self
-                    .planet
-                    .scorch_selected_planet_record
-                    .ok_or_else(|| "Choose one of your planets first.".to_string())?;
-                let planet_name = self.game_data.planets[planet_record_index - 1]
-                    .name
-                    .trim()
-                    .to_string();
-                self.game_data
-                    .scorch_planet_surface(planet_record_index)
-                    .map_err(|err| err.to_string())?;
-                self.planet_scorch_orders.insert(planet_record_index);
-                self.save_game_data().map_err(|err| err.to_string())?;
-                self.clear_planet_scorch_prompt();
-                self.show_planet_context_notice(format!("Planet \"{planet_name}\" is scorched!"));
-                return Ok(());
-            }
+            PlanetScorchPromptMode::Confirm3 => return self.finish_planet_scorch(true),
         }
         self.current_screen = self.planet_context_screen();
+        Ok(())
+    }
+
+    /// Set or rescind the selected planet's Scorch-Earth order and say so.
+    fn finish_planet_scorch(&mut self, scorched: bool) -> Result<(), String> {
+        let planet_record_index = self
+            .planet
+            .scorch_selected_planet_record
+            .ok_or_else(|| "Choose one of your planets first.".to_string())?;
+        let planet_name = self.game_data.planets[planet_record_index - 1]
+            .name
+            .trim()
+            .to_string();
+        self.game_data
+            .set_planet_scorch_earth(planet_record_index, scorched)
+            .map_err(|err| err.to_string())?;
+        self.save_game_data().map_err(|err| err.to_string())?;
+        self.clear_planet_scorch_prompt();
+        self.show_planet_context_notice(if scorched {
+            format!("Planet \"{planet_name}\" will be scorched at maintenance.")
+        } else {
+            format!("Scorch-Earth rescinded on planet \"{planet_name}\".")
+        });
         Ok(())
     }
 
@@ -214,21 +224,32 @@ impl App {
                 )
             })
             .unwrap_or_default();
-        vec![
-            planet_line,
-            String::new(),
-            "Scorch-Earth is a drastic policy in which a planet destroys anything and".to_string(),
-            "everything potentially usable by an invading force. Factories, warehouses,"
-                .to_string(),
-            "etc. are destroyed causing the planet's production level to drop drastically."
-                .to_string(),
-            "Stored spare parts (including \"production points\") are eliminated".to_string(),
-            "as well.".to_string(),
-        ]
+        let text: &[&str] = if self.selected_planet_scorched() {
+            &[
+                "Scorch-Earth is in force here. Rescinding it ends the yearly decay at",
+                "the next maintenance. Production and stored points already lost are not",
+                "restored, but the planet grows toward its potential again and earns tax.",
+            ]
+        } else {
+            &[
+                "Scorch-Earth is a drastic policy in which a planet destroys anything and",
+                "everything potentially usable by an invading force. From the next",
+                "maintenance, and every year until you rescind it, the planet's production",
+                "falls to about a third and its stored points to a tenth or less. It does",
+                "not grow or earn tax while the order stands. Potential production is not",
+                "lost, so the planet recovers once the order is rescinded.",
+            ]
+        };
+        let mut lines = vec![planet_line, String::new()];
+        lines.extend(text.iter().map(|line| line.to_string()));
+        lines
     }
 
     pub(crate) fn planet_scorch_confirm_prompt(&self) -> Option<&'static str> {
         match self.planet.scorch_prompt_mode {
+            Some(PlanetScorchPromptMode::Confirm1) if self.selected_planet_scorched() => {
+                Some("Rescind Scorch-Earth? Y/[N] -> ")
+            }
             Some(PlanetScorchPromptMode::Confirm1) => Some("Are you sure? Y/[N] -> "),
             Some(PlanetScorchPromptMode::Confirm2) => Some("Are you really sure? Y/[N] -> "),
             Some(PlanetScorchPromptMode::Confirm3) => {
@@ -240,6 +261,9 @@ impl App {
 
     pub(crate) fn planet_list_scorch_confirm_prompt(&self) -> Option<&'static str> {
         match self.planet.scorch_prompt_mode {
+            Some(PlanetScorchPromptMode::Confirm1) if self.selected_planet_scorched() => {
+                Some(PLANET_LIST_SCORCH_RESCIND_PROMPT)
+            }
             Some(PlanetScorchPromptMode::Confirm1) => Some(PLANET_LIST_SCORCH_CONFIRM_PROMPT),
             Some(PlanetScorchPromptMode::Confirm2) => {
                 Some(PLANET_LIST_SCORCH_REALLY_CONFIRM_PROMPT)
@@ -289,28 +313,23 @@ impl App {
     }
 
     fn resolve_planet_scorch_record(&self, coords: [u8; 2]) -> Result<usize, String> {
-        let Some((record_index, planet)) =
-            self.game_data
-                .planets
-                .iter()
-                .enumerate()
-                .find(|(_, planet)| {
-                    planet.sector.to_array() == coords
-                        && planet.owner.0 as usize == self.player.record_index_1_based
-                })
-        else {
+        let Some(record_index) = self.game_data.planets.iter().position(|planet| {
+            planet.sector.to_array() == coords
+                && planet.owner.0 as usize == self.player.record_index_1_based
+        }) else {
             return Err(format!(
                 "Planet [{},{}] is not one of your worlds.",
                 coords[0], coords[1]
             ));
         };
-        if self.planet_scorch_orders.contains(&(record_index + 1)) {
-            return Err(format!(
-                "Planet \"{}\" is already scorched.",
-                planet.name.trim().to_string()
-            ));
-        }
         Ok(record_index + 1)
+    }
+
+    pub(crate) fn selected_planet_scorched(&self) -> bool {
+        self.planet
+            .scorch_selected_planet_record
+            .and_then(|record| self.game_data.planets.get(record - 1))
+            .is_some_and(|planet| planet.scorch_earth)
     }
 
     pub(crate) fn selected_planet_scorch_name_and_coords(&self) -> Option<(String, [u8; 2])> {

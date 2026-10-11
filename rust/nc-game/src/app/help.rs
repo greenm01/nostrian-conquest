@@ -144,7 +144,7 @@ pub fn popup_for_screen(screen: ScreenId, door_mode: bool) -> Option<PopupHelp> 
                 ("M", "mass commission ships from stardock to fleets"),
                 ("L", "load armies from planet onto transports"),
                 ("U", "unload armies from transports to planet"),
-                ("X", "scorch earth (destroy industry)"),
+                ("X", "scorch earth (set or rescind)"),
                 ("S", "Sort List"),
                 ("Q", "return"),
                 ("Esc", "return"),

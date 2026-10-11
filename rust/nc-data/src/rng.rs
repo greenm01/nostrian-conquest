@@ -8,6 +8,7 @@ const STREAM_GAMMA: u64 = 0x9E37_79B9_7F4A_7C15;
 pub const RNG_TAG_MAPGEN: u64 = 0xEC15_4D41_5047_454E;
 pub const RNG_TAG_COMBAT: u64 = 0xEC15_434F_4D42_4154;
 pub const RNG_TAG_ENCOUNTER: u64 = 0xEC15_454E_434F_554E;
+pub const RNG_TAG_ECONOMY: u64 = 0xEC15_4543_4F4E_4F4D;
 
 #[derive(Debug, Clone)]
 pub struct GameRng {

@@ -343,7 +343,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // stardock, or on the surface, through every tick that follows.
     let starbase_planets = economics::starbase_planets(game_data);
     let planets_with_builds = economics::process_build_completion(game_data)?;
-    economics::process_planet_economics(game_data, &planets_with_builds, &starbase_planets)?;
+    let planet_scorch_events = economics::process_planet_economics(
+        game_data,
+        campaign_seed,
+        &planets_with_builds,
+        &starbase_planets,
+    )?;
 
     // The year's 52 ticks: every fleet and starbase, in a random order,
     // moves, meets the units sharing its sector and depth layer, and runs
@@ -608,6 +613,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         game_victory_notice_events: campaign_transition_events.game_victory_notice_events,
         empire_elimination_events: campaign_transition_events.empire_elimination_events,
         fleet_defection_events,
+        planet_scorch_events,
     };
 
     campaign::apply_stored_diplomatic_escalations(game_data, &events)?;

@@ -175,13 +175,27 @@ impl DashApp {
         }
     }
 
-    pub(crate) fn stage_hosted_planet_scorch(&mut self, planet_record_index_1_based: usize) {
+    /// Stage the Scorch-Earth order, or its rescinding; the latest wins.
+    pub(crate) fn stage_hosted_planet_scorch(
+        &mut self,
+        planet_record_index_1_based: usize,
+        scorched: bool,
+    ) {
         let Some(submission) = self.hosted_turn_draft.as_mut() else {
             return;
         };
         let actions = planet_actions_mut(submission, planet_record_index_1_based);
-        actions.retain(|action| !matches!(action, PlanetTurnAction::Scorch));
-        actions.push(PlanetTurnAction::Scorch);
+        actions.retain(|action| {
+            !matches!(
+                action,
+                PlanetTurnAction::Scorch | PlanetTurnAction::RescindScorch
+            )
+        });
+        actions.push(if scorched {
+            PlanetTurnAction::Scorch
+        } else {
+            PlanetTurnAction::RescindScorch
+        });
     }
 
     pub(crate) fn stage_hosted_fleet_roe(&mut self, fleet_record_index_1_based: usize, value: u8) {

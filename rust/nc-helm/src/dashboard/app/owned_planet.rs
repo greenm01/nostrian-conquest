@@ -569,12 +569,8 @@ impl DashApp {
     }
 
     pub(crate) fn open_owned_planet_scorch_confirm(&mut self) {
-        let Some(record) = self.owned_planet_popup_record_index_1_based() else {
+        if self.owned_planet_popup_record_index_1_based().is_none() {
             self.close_owned_planet_popup();
-            return;
-        };
-        if self.planet_scorch_orders.contains(&record) {
-            self.show_owned_planet_status("Planet is already scorched.");
             return;
         }
         self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::ScorchConfirm1);
@@ -585,7 +581,16 @@ impl DashApp {
             self.close_owned_planet_popup();
             return Ok(());
         };
+        let scorched = self
+            .game_data
+            .planets
+            .get(record.saturating_sub(1))
+            .is_some_and(|planet| planet.scorch_earth);
         match self.owned_planet_popup.mode {
+            // One confirmation rescinds the order the same command set.
+            OwnedPlanetPopupMode::ScorchConfirm1 if scorched => {
+                self.finish_owned_planet_scorch(record, false)?;
+            }
             OwnedPlanetPopupMode::ScorchConfirm1 => {
                 self.owned_planet_popup.mode = OwnedPlanetPopupMode::ScorchConfirm2;
             }
@@ -593,21 +598,34 @@ impl DashApp {
                 self.owned_planet_popup.mode = OwnedPlanetPopupMode::ScorchConfirm3;
             }
             OwnedPlanetPopupMode::ScorchConfirm3 => {
-                let planet_name = self
-                    .game_data
-                    .planets
-                    .get(record.saturating_sub(1))
-                    .map(|planet| planet.name.trim().to_string())
-                    .unwrap_or_else(|| "Planet".to_string());
-                self.game_data.scorch_planet_surface(record)?;
-                self.planet_scorch_orders.insert(record);
-                self.stage_hosted_planet_scorch(record);
-                self.save_and_refresh_runtime()?;
-                self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::Browse);
-                self.show_owned_planet_status(format!("Planet \"{planet_name}\" is scorched!"));
+                self.finish_owned_planet_scorch(record, true)?;
             }
             _ => {}
         }
+        Ok(())
+    }
+
+    /// Set or rescind the planet's Scorch-Earth order and say so.
+    fn finish_owned_planet_scorch(
+        &mut self,
+        record: usize,
+        scorched: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let planet_name = self
+            .game_data
+            .planets
+            .get(record.saturating_sub(1))
+            .map(|planet| planet.name.trim().to_string())
+            .unwrap_or_else(|| "Planet".to_string());
+        self.game_data.set_planet_scorch_earth(record, scorched)?;
+        self.stage_hosted_planet_scorch(record, scorched);
+        self.save_and_refresh_runtime()?;
+        self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::Browse);
+        self.show_owned_planet_status(if scorched {
+            format!("Planet \"{planet_name}\" will be scorched at maintenance.")
+        } else {
+            format!("Scorch-Earth rescinded on planet \"{planet_name}\".")
+        });
         Ok(())
     }
 

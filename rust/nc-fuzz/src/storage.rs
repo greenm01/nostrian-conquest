@@ -1,6 +1,5 @@
 //! SQLite save/load round trip of the runtime state a fuzz game reached.
 
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -34,7 +33,6 @@ fn round_trip(
         .save_runtime_state_structured_with_intel_activity_and_lifecycle(
             game_data.conquest.game_year,
             game_data,
-            &BTreeSet::new(),
             report_rows,
             &play.built.queued_mail,
             &[],

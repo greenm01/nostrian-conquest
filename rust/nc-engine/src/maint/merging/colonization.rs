@@ -2,6 +2,9 @@ use super::super::{ColonizationEvent, ColonizationResolvedEvent};
 use crate::{CoreGameData, Order};
 use nc_data::{Real48, set_planet_name};
 
+/// Production a new colony starts with, or its potential if that is lower.
+const COLONY_HEAD_START: u16 = 3;
+
 /// Apply colonization events to the in-memory planet and player records.
 ///
 /// When a ColonizeWorld fleet arrives at an unowned planet:
@@ -9,7 +12,8 @@ use nc_data::{Real48, set_planet_name};
 /// - Planet ownership_status set to 2 (owned)
 /// - Planet owner_empire_slot set to colonizing empire
 /// - Planet army_count set to 1 (colonist armies)
-/// - Planet raw[0x03] set to 0x81 (colonization flag in potential_production high byte)
+/// - Planet production set to the colony head start, `min(3, potential)`;
+///   only founding does this, never capture, recapture, or recovery
 /// - Player planet_count incremented
 /// - Player production_score incremented (legacy PLAYER offset 0x52; confirmed from fixture)
 ///
@@ -57,7 +61,8 @@ pub(super) fn process_colonizations(
                 planet.years_under_owner = 2;
                 planet.owner.0 = event.owner_empire;
                 planet.armies = 1;
-                planet.production = Real48::from_f64(1.0);
+                let head_start = u16::from(planet.potential_production).min(COLONY_HEAD_START);
+                planet.production = Real48::from_f64(f64::from(head_start));
 
                 let player_idx = (event.owner_empire as usize).saturating_sub(1);
                 if player_idx < game_data.players.len() {
@@ -65,7 +70,8 @@ pub(super) fn process_colonizations(
                     game_data.players[player_idx].planet_count = current_count.saturating_add(1);
 
                     let current_score = game_data.players[player_idx].production;
-                    game_data.players[player_idx].production = current_score.saturating_add(1);
+                    game_data.players[player_idx].production =
+                        current_score.saturating_add(head_start);
                 }
 
                 resolved.push(ColonizationResolvedEvent::Succeeded {

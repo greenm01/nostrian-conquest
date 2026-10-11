@@ -51,7 +51,7 @@ mod tests {
     use crate::dashboard::planet_view::{DetailLine, MAX_BODY_ROWS};
     use crate::dashboard::theme;
     use nc_data::GameStateBuilder;
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     #[test]
@@ -128,7 +128,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -173,7 +172,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

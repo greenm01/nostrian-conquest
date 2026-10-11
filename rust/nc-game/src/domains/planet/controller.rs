@@ -1468,9 +1468,12 @@ impl App {
             .set_player_tax_rate(self.player.record_index_1_based, parsed)?;
         self.save_game_data()?;
         self.close_planet_tax_prompt();
+        let revenue = self
+            .game_data
+            .empire_available_production_points(self.player.record_index_1_based);
         self.show_command_menu_notice(
             CommandMenu::Planet,
-            format!("Empire tax rate set to {parsed}%."),
+            format!("Empire tax rate set to {parsed}%. Revenue next year: {revenue}."),
         );
         Ok(())
     }

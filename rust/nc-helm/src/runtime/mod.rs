@@ -1716,7 +1716,7 @@ fn minimum_window_size() -> winit::dpi::LogicalSize<f64> {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{BTreeMap, BTreeSet};
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
     use std::time::{Duration, Instant};
 
@@ -2028,7 +2028,6 @@ mod tests {
             PathBuf::from("."),
             build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -2057,7 +2056,6 @@ mod tests {
             PathBuf::from("."),
             build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),
@@ -2451,7 +2449,6 @@ mod tests {
                 .build_initialized_baseline()
                 .expect("baseline"),
             BTreeMap::new(),
-            BTreeSet::new(),
             Vec::new(),
             Vec::new(),
             Vec::new(),

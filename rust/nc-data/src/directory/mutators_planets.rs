@@ -1,7 +1,6 @@
 use super::*;
 use crate::{
-    ProductionItemKind, Real48, present_production_points, stardock_slot_kind,
-    stored_production_points,
+    ProductionItemKind, present_production_points, stardock_slot_kind, stored_production_points,
 };
 
 impl CoreGameData {
@@ -70,28 +69,19 @@ impl CoreGameData {
         Ok(())
     }
 
-    pub fn scorch_planet_surface(
+    /// Set or rescind the planet's Scorch-Earth order. The order changes
+    /// nothing at once: each yearly pass while it is set decays the world.
+    pub fn set_planet_scorch_earth(
         &mut self,
         record_index_1_based: usize,
+        scorched: bool,
     ) -> Result<(), GameStateMutationError> {
         let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
             GameStateMutationError::MissingPlanetRecord {
                 index_1_based: record_index_1_based,
             },
         )?;
-
-        record.potential_production = 0;
-        record.production = Real48::ZERO;
-        record.stored_goods = Real48::ZERO;
-
-        for slot in 0..10 {
-            record.build_queue[slot].points_owed = 0;
-            record.build_queue[slot].kind = ProductionItemKind::Unknown(0);
-        }
-        for slot in 0..crate::STARDOCK_SLOT_COUNT {
-            record.stardock[slot] = 0;
-        }
-
+        record.scorch_earth = scorched;
         Ok(())
     }
 

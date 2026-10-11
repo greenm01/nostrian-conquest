@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -236,13 +235,7 @@ fn submit_turn_keeps_motion_for_on_station_hostile_orders() {
     }
     let depth_before = game_data.fleets[fleet_record_index_1_based - 1].depth;
     store
-        .save_runtime_state_structured(
-            game_data.conquest.game_year,
-            &game_data,
-            &BTreeSet::new(),
-            &[],
-            &[],
-        )
+        .save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])
         .expect("mutated state should save");
 
     fs::write(

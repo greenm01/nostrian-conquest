@@ -215,7 +215,15 @@ fn apply_planet_action(
                 player_record_index_1_based,
                 planet.planet_record_index_1_based,
             )?;
-            game_data.scorch_planet_surface(planet.planet_record_index_1_based)?;
+            game_data.set_planet_scorch_earth(planet.planet_record_index_1_based, true)?;
+        }
+        PlanetTurnAction::RescindScorch => {
+            ensure_player_owns_planet(
+                game_data,
+                player_record_index_1_based,
+                planet.planet_record_index_1_based,
+            )?;
+            game_data.set_planet_scorch_earth(planet.planet_record_index_1_based, false)?;
         }
     }
 

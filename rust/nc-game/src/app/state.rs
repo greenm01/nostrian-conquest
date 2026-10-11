@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 use std::path::PathBuf;
 
@@ -125,7 +125,6 @@ pub struct App {
     pub popup_help: Option<PopupHelp>,
     pub planet_intel_snapshots: BTreeMap<usize, PlanetIntelSnapshot>,
     pub owned_planet_years: BTreeMap<usize, u16>,
-    pub planet_scorch_orders: BTreeSet<usize>,
 }
 
 impl App {
@@ -145,7 +144,6 @@ impl App {
         let campaign_seed = runtime_state.campaign_seed;
         let report_block_rows = runtime_state.report_block_rows;
         let queued_mail = runtime_state.queued_mail;
-        let planet_scorch_orders = runtime_state.planet_scorch_orders;
         let winner_state = runtime_state.winner_state;
 
         // Apply campaign-setting overrides to game_data. Only save a new
@@ -156,7 +154,6 @@ impl App {
             &config.game_config,
             &campaign_store,
             snapshot_id,
-            &planet_scorch_orders,
             &report_block_rows,
             &queued_mail,
         )?;
@@ -296,7 +293,6 @@ impl App {
             popup_help: None,
             planet_intel_snapshots,
             owned_planet_years,
-            planet_scorch_orders,
         })
     }
 }
@@ -334,7 +330,6 @@ fn apply_game_config_overrides(
     cfg: &RuntimeConfig,
     store: &CampaignStore,
     current_snapshot_id: i64,
-    planet_scorch_orders: &BTreeSet<usize>,
     report_block_rows: &[ReportBlockRow],
     queued_mail: &[QueuedPlayerMail],
 ) -> Result<(CoreGameData, i64), Box<dyn std::error::Error>> {
@@ -373,7 +368,6 @@ fn apply_game_config_overrides(
         store.save_runtime_state_structured(
             game_data.conquest.game_year,
             &game_data,
-            planet_scorch_orders,
             report_block_rows,
             queued_mail,
         )?

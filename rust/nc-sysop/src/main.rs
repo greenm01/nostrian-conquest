@@ -1,6 +1,6 @@
 mod usage;
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::env;
 use std::path::{Path, PathBuf};
 
@@ -198,13 +198,7 @@ fn run_new_game(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         (player_count, seed.unwrap_or_else(generate_campaign_seed))
     };
     let game_data = build_seeded_new_game(player_count, 3000, seed)?;
-    store.save_runtime_state_structured(
-        game_data.conquest.game_year,
-        &game_data,
-        &BTreeSet::new(),
-        &[],
-        &[],
-    )?;
+    store.save_runtime_state_structured(game_data.conquest.game_year, &game_data, &[], &[])?;
     store.save_campaign_settings(&CampaignSettings::new(&slug, &game_name))?;
     println!(
         "Initialized new game at: {} (name={}, players={}, year=3000, seed={})",
@@ -521,7 +515,6 @@ fn run_maintenance_for_dir(
     store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
         start_year,
         &game_data,
-        &runtime_state.planet_scorch_orders,
         &report_block_rows,
         &runtime_state.queued_mail,
         &planet_intel_by_viewer,

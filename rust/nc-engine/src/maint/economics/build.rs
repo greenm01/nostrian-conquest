@@ -1,5 +1,5 @@
 use crate::{CoreGameData, ProductionItemKind};
-use nc_data::{Real48, stored_production_points};
+use nc_data::Real48;
 
 pub(super) fn process_build_completion(
     game_data: &mut CoreGameData,
@@ -49,9 +49,11 @@ pub(super) fn process_build_completion(
                 _ => {}
             }
 
-            let current_stored = stored_production_points(&game_data.planets[planet_idx]);
-            game_data.planets[planet_idx].stored_goods =
-                Real48::from_f64(f64::from(current_stored.saturating_sub(decrement)));
+            // Spend whole points; the fraction left in the treasury, and any
+            // debt, carry over.
+            let planet = &mut game_data.planets[planet_idx];
+            planet.stored_goods =
+                Real48::from_f64(planet.stored_goods.to_f64() - f64::from(decrement));
             game_data.planets[planet_idx].build_queue[slot].points_owed = new_owed;
             remaining_spend_capacity = remaining_spend_capacity.saturating_sub(decrement);
 

@@ -1,4 +1,3 @@
-use std::collections::BTreeSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -67,13 +66,7 @@ fn hold_all_fleets_in_place(game_data: &mut CoreGameData) {
 fn seed_runtime_snapshot(dir: &Path, game_data: &CoreGameData) {
     let store = CampaignStore::open_default_in_dir(dir).expect("open campaign store");
     store
-        .save_runtime_state_structured(
-            game_data.conquest.game_year,
-            game_data,
-            &BTreeSet::new(),
-            &[],
-            &[],
-        )
+        .save_runtime_state_structured(game_data.conquest.game_year, game_data, &[], &[])
         .expect("seed runtime snapshot");
 }
 
@@ -222,7 +215,6 @@ fn nc_sysop_maint_keeps_unread_reports_from_earlier_years() {
         .save_runtime_state_structured(
             game_data.conquest.game_year,
             &game_data,
-            &BTreeSet::new(),
             &[
                 last_year(0, "Read last year", true),
                 last_year(1, "Unread last year", false),

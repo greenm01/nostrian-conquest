@@ -16,7 +16,6 @@ fn run_maintenance(store: &CampaignStore) {
         .save_runtime_state_structured(
             state.game_year,
             &state.game_data,
-            &state.planet_scorch_orders,
             &state.report_block_rows,
             &state.queued_mail,
         )
@@ -71,4 +70,19 @@ fn a_save_with_no_maintenance_in_between_goes_through() {
 
     assert_eq!(app.popup, ActivePopup::None);
     assert_eq!(latest(&store).game_data.players[0].tax_rate, 42);
+}
+
+#[test]
+fn setting_the_tax_rate_reports_next_years_empire_revenue() {
+    let mut app = dash_app_with_store();
+
+    enter_tax_rate(&mut app, "42");
+
+    let revenue = app
+        .game_data
+        .empire_available_production_points(app.player_record_index_1_based);
+    assert_eq!(
+        app.command_line_toast_message.as_deref(),
+        Some(format!("Empire tax rate set to 42%. Revenue next year: {revenue}.").as_str())
+    );
 }

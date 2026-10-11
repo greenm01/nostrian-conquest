@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::dashboard::geometry::ScreenGeometry;
@@ -21,7 +21,6 @@ pub struct DashLaunchState {
     pub campaign_store: Option<CampaignStore>,
     pub game_data: CoreGameData,
     pub owned_planet_years: BTreeMap<usize, u16>,
-    pub planet_scorch_orders: BTreeSet<usize>,
     pub report_block_rows: Vec<ReportBlockRow>,
     pub queued_mail: Vec<QueuedPlayerMail>,
     pub planet_intel_snapshots: Vec<PlanetIntelSnapshot>,
@@ -59,7 +58,6 @@ impl DashLaunchState {
             campaign_store: Some(campaign_store),
             game_data: state.game_data,
             owned_planet_years,
-            planet_scorch_orders: state.planet_scorch_orders,
             report_block_rows: state.report_block_rows,
             queued_mail: state.queued_mail,
             planet_intel_snapshots,
@@ -119,7 +117,6 @@ impl DashLaunchState {
             campaign_store: None,
             game_data,
             owned_planet_years,
-            planet_scorch_orders: BTreeSet::new(),
             report_block_rows,
             queued_mail,
             planet_intel_snapshots: build_planet_intel_snapshots(snapshot),
@@ -137,7 +134,6 @@ impl DashLaunchState {
             self.campaign_store,
             self.game_data,
             self.owned_planet_years,
-            self.planet_scorch_orders,
             self.report_block_rows,
             self.queued_mail,
             self.planet_intel_snapshots,

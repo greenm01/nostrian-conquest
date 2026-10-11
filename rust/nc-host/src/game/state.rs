@@ -1,4 +1,4 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 use nc_data::{
@@ -40,7 +40,6 @@ pub fn initialize_runtime_state(
     campaign_store.save_runtime_state_structured_with_intel(
         year,
         &game_data,
-        &BTreeSet::new(),
         &[],
         &[],
         &intel_by_viewer,

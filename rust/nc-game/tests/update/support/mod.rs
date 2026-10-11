@@ -13,7 +13,6 @@ pub(crate) use nc_data::{
     EmpireProductionRankingSort, IntelTier, PlanetIntelSnapshot, ProductionItemKind,
     QueuedPlayerMail, SeatReservation, map_size_for_player_count,
 };
-pub(crate) use nc_engine::yearly_tax_revenue;
 pub(crate) use nc_game::app::{
     Action, App, AppConfig, AppOutcome, RuntimeConfig as GameConfig,
     RuntimeSetupOverrides as GameSetupOverrides, apply_action,

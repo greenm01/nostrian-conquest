@@ -1,8 +1,8 @@
 use super::*;
 use crate::{
     PlayerMode, Real48, diplomatic_relation_toward, is_classic_text_char,
-    is_homeworld_seed_ignoring_name, present_production_points, set_diplomatic_relation_toward,
-    set_empire_name, set_planet_name, stored_diplomatic_relation,
+    is_homeworld_seed_ignoring_name, set_diplomatic_relation_toward, set_empire_name,
+    set_planet_name, stored_diplomatic_relation,
 };
 
 const DEFAULT_JOIN_TAX_RATE: u8 = 50;
@@ -104,8 +104,8 @@ impl CoreGameData {
         tax_rate: u8,
     ) {
         if let Some(planet) = self.planets.get_mut(homeworld_planet_index_1_based - 1) {
-            let revenue = crate::yearly_tax_revenue(present_production_points(planet), tax_rate);
-            planet.stored_goods = Real48::from_f64(f64::from(revenue));
+            let revenue = crate::tax_income(planet.production.to_f64(), tax_rate);
+            planet.stored_goods = Real48::from_f64(revenue);
         }
     }
 

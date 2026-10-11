@@ -113,7 +113,6 @@ fn startup_review_opens_automatically_if_pending() {
             .build_initialized_baseline()
             .unwrap(),
         BTreeMap::new(),
-        BTreeSet::new(),
         report_block_rows.clone(),
         Vec::new(),
         Vec::new(),
@@ -166,7 +165,6 @@ fn startup_review_advances_on_slap() {
             .build_initialized_baseline()
             .unwrap(),
         BTreeMap::new(),
-        BTreeSet::new(),
         report_block_rows.clone(),
         Vec::new(),
         Vec::new(),
@@ -223,7 +221,6 @@ fn startup_review_nonstop_advances_on_idle() {
             .build_initialized_baseline()
             .unwrap(),
         BTreeMap::new(),
-        BTreeSet::new(),
         report_block_rows.clone(),
         Vec::new(),
         Vec::new(),
@@ -3119,6 +3116,48 @@ fn owned_planet_mass_commission_empty_toast_uses_singular_stardock() {
 }
 
 #[test]
+fn owned_planet_scorch_takes_three_confirmations_and_one_rescinds_it() {
+    let mut app = dash_app();
+    app.initialize_hosted_turn_draft();
+    let record = selected_planet_record_index(&app);
+    app.open_owned_planet_popup(record);
+    let scorched = |app: &DashApp| app.game_data.planets[record - 1].scorch_earth;
+    let staged = |app: &DashApp| {
+        app.hosted_turn_draft
+            .as_ref()
+            .expect("draft")
+            .planets
+            .iter()
+            .find(|planet| planet.planet_record_index_1_based == record)
+            .map(|planet| planet.actions.clone())
+    };
+
+    app.open_owned_planet_scorch_confirm();
+    app.submit_owned_planet_scorch().expect("first confirm");
+    app.submit_owned_planet_scorch().expect("second confirm");
+    assert!(!scorched(&app), "two confirmations set nothing");
+    app.submit_owned_planet_scorch().expect("third confirm");
+    assert!(scorched(&app));
+    assert_eq!(staged(&app), Some(vec![PlanetTurnAction::Scorch]));
+
+    // The same command rescinds it after one confirmation.
+    app.open_owned_planet_scorch_confirm();
+    assert_eq!(
+        app.owned_planet_popup.mode,
+        OwnedPlanetPopupMode::ScorchConfirm1
+    );
+    app.submit_owned_planet_scorch().expect("rescind confirm");
+    assert!(!scorched(&app));
+    assert_eq!(staged(&app), Some(vec![PlanetTurnAction::RescindScorch]));
+    assert!(
+        app.owned_planet_popup
+            .status
+            .as_deref()
+            .is_some_and(|status| status.starts_with("Scorch-Earth rescinded"))
+    );
+}
+
+#[test]
 fn planet_list_enter_opens_status_and_escape_returns_to_table() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::PlanetList;
@@ -4105,7 +4144,6 @@ fn dash_app() -> DashApp {
             .build_initialized_baseline()
             .expect("baseline"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -4125,7 +4163,6 @@ fn audit_ready_dash_app() -> DashApp {
             .build_initialized_baseline()
             .expect("baseline"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -4148,7 +4185,6 @@ fn dash_app_with_starbase() -> DashApp {
             .build_initialized_baseline()
             .expect("baseline with starbase"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -4188,7 +4224,6 @@ fn dash_app_with_starbase_store() -> DashApp {
         .save_runtime_state_structured_with_intel_and_activity(
             game_data.conquest.game_year,
             &game_data,
-            &BTreeSet::new(),
             &[],
             &[],
             &planet_intel_by_viewer,
@@ -4201,7 +4236,6 @@ fn dash_app_with_starbase_store() -> DashApp {
         Some(store),
         game_data,
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -4242,7 +4276,6 @@ fn dash_app_with_store() -> DashApp {
         .save_runtime_state_structured_with_intel_and_activity(
             game_data.conquest.game_year,
             &game_data,
-            &BTreeSet::new(),
             &[],
             &[],
             &planet_intel_by_viewer,
@@ -4255,7 +4288,6 @@ fn dash_app_with_store() -> DashApp {
         Some(store),
         game_data,
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -4982,7 +5014,6 @@ fn middle_drag_on_starmap_pans_viewport_without_moving_crosshair() {
         PathBuf::from("."),
         build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -5035,7 +5066,6 @@ fn middle_click_without_drag_recenters_viewport() {
         PathBuf::from("."),
         build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -5101,7 +5131,6 @@ fn mouse_wheel_on_starmap_pans_viewport_without_moving_crosshair() {
         PathBuf::from("."),
         build_seeded_initialized_game(25, 3000, 1515).expect("seeded game"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),
@@ -5149,7 +5178,6 @@ fn mouse_wheel_on_fitting_starmap_does_nothing() {
         PathBuf::from("."),
         build_seeded_initialized_game(10, 3000, 1515).expect("seeded game"),
         BTreeMap::new(),
-        BTreeSet::new(),
         Vec::new(),
         Vec::new(),
         Vec::new(),

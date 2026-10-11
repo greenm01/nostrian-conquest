@@ -66,7 +66,6 @@ impl App {
         self.game_data = runtime_state.game_data;
         self.report_block_rows = runtime_state.report_block_rows;
         self.queued_mail = runtime_state.queued_mail;
-        self.planet_scorch_orders = runtime_state.planet_scorch_orders;
         self.player_activity_states = self
             .planet
             .campaign_store
@@ -131,7 +130,6 @@ impl App {
             .save_runtime_state_structured_with_intel_activity_and_lifecycle(
                 self.game_data.conquest.game_year,
                 &self.game_data,
-                &self.planet_scorch_orders,
                 &self.report_block_rows,
                 &self.queued_mail,
                 &planet_intel_by_viewer,

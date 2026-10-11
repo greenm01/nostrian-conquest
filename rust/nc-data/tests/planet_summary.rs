@@ -1,5 +1,3 @@
-use std::collections::BTreeSet;
-
 use nc_data::{
     CompactUnitSummaryStyle, Coords, GameStateBuilder, OwnedPlanetStatus, ProductionItemKind,
     Real48, Starbase, format_build_queue_summary, format_owned_orbit_summary,
@@ -69,14 +67,13 @@ fn owned_planet_status_distinguishes_damage_and_scorch() {
     planet.potential_production = 10;
     planet.production = Real48::ZERO;
     assert_eq!(
-        owned_planet_status(&game_data, 1, 1, &BTreeSet::new()),
+        owned_planet_status(&game_data, 1, 1),
         OwnedPlanetStatus::FactoriesDestroyed
     );
 
-    let mut scorch = BTreeSet::new();
-    scorch.insert(2);
+    game_data.planets[1].scorch_earth = true;
     assert_eq!(
-        owned_planet_status(&game_data, 1, 1, &scorch),
+        owned_planet_status(&game_data, 1, 1),
         OwnedPlanetStatus::Scorched
     );
 }

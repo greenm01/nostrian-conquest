@@ -69,6 +69,40 @@ pub fn push_misc_entries(
         });
     }
 
+    // ----- Scorch-Earth events -----
+    // The yearly pass runs before the first tick, so these report week 1.
+    for event in &events.planet_scorch_events {
+        let Some(planet) = game_data.planets.get(event.planet_idx) else {
+            continue;
+        };
+        let [x, y] = planet.sector.to_array();
+        let source = format!("From planet \"{}\" in System({x},{y}):", planet.name.trim());
+        let header = report_header(&source, Some(1), year);
+        let stored = if event.goods_before > 0 {
+            format!(
+                " and its stored points from {} to {}",
+                event.goods_before, event.goods_after
+            )
+        } else {
+            String::new()
+        };
+        let body = format!(
+            " Scorch-Earth is in force. Our production fell from {} to {}{stored}, and the world neither grew nor paid tax. The order stays in force, and the decay repeats each year, until you rescind it with the Scorch command.",
+            event.production_before, event.production_after,
+        );
+        entries.push(ReportEntry {
+            text: format!("{header}{body}"),
+            kind: 0x05,
+            tail: RESULTS_TAIL_FLEET,
+            target: ReportTarget::Both {
+                recipient: event.owner_empire,
+            },
+            repeat_next_pointer: false,
+            stardate_week: Some(1),
+            narrative_phase: narrative_phase_for_report_text(&body),
+        });
+    }
+
     // ----- Civil disorder events -----
     for event in &events.civil_disorder_events {
         let source = "From your Fleet Command Center:";

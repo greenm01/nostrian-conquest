@@ -167,7 +167,6 @@ fn save_runtime_state_with_recomputed_intel(
     store.save_runtime_state_structured_with_intel_activity_lifecycle_and_war_stats(
         runtime.game_year,
         &game_data,
-        &runtime.planet_scorch_orders,
         &runtime.report_block_rows,
         &runtime.queued_mail,
         &planet_intel_by_viewer,
