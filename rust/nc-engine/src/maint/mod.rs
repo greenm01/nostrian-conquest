@@ -55,8 +55,9 @@ struct MovementEvents {
     /// Guards merged into another guard of their base; the flag marks an
     /// arriving guard's merge, which it reports.
     guard_merges: Vec<(FleetMergeEvent, bool)>,
-    /// Guards whose base was destroyed during the year.
-    guard_retargets: Vec<MissionRetargetEvent>,
+    /// Guards whose base was destroyed, and Seek Home and Salvage fleets
+    /// that lost their world, during the year.
+    retargets: Vec<MissionRetargetEvent>,
     /// Speed each fleet moved at this turn (0 when it did not move), indexed by fleet.
     fleet_travel_speeds: Vec<u8>,
 }
@@ -328,14 +329,12 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
 
     refs.invalid_player_state_events = sanitize_invalid_player_inputs(game_data);
 
-    refs.mission_retarget_events = retarget::refresh_seek_home_targets(game_data);
-    refs.mission_retarget_events
-        .extend(retarget::refresh_join_host_targets(game_data));
+    refs.mission_retarget_events = retarget::refresh_join_host_targets(game_data);
     refs.mission_retarget_events
         .extend(retarget::refresh_guard_starbase_targets(game_data));
 
-    // Autopilot fleet recall: idle fleets in deep space get SeekHome before
-    // movement so they can start heading home this turn.
+    // Autopilot orders for idle fleets, before the planet pass and the ticks
+    // so they can start moving this turn.
     economics::process_autopilot_fleet_orders(game_data)?;
 
     // ECMAINT's planet pass (`1852:0000`) runs before the year driver
@@ -369,7 +368,7 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
             .map(|(event, _)| *event),
     );
     refs.mission_retarget_events
-        .append(&mut refs.movement_events.guard_retargets);
+        .append(&mut refs.movement_events.retargets);
     refs.remap(&year.movement_remap.fleet_indices);
     refs.destroyed_join_host_fleet_numbers.extend(
         year.movement_remap

@@ -60,7 +60,8 @@ pub use directory::{
     EmpirePlanetEconomyRow, EmpireProductionRankingRow, EmpireProductionRankingSort,
     EmpireUnitSummary, FleetDetachResult, FleetDetachSelection, FleetOrderValidationError,
     FleetPlayerInputValidationError, FleetTransferResult, GameStateMutationError,
-    PlanetPlayerInputValidationError, PlayerDiplomacyValidationError, SeekHomeTarget,
+    PLANET_BUILD_CURRENT_KNOWN_ORDERS, PlanetPlayerInputValidationError,
+    PlayerDiplomacyValidationError, SeekHomeTarget,
 };
 pub use economy::{
     build_capacity, present_production_points, starbase_growth_bonus_percent,
@@ -87,9 +88,8 @@ pub use maintenance_types::{
     FleetDestroyedEvent, FleetMergeEvent, GameVictoryNoticeEvent, InvalidPlayerStateEvent,
     JoinMissionHostEvent, LostWorldResponse, MaintenanceEvents, Mission, MissionAbortReason,
     MissionEvent, MissionOutcome, MissionRetargetEvent, PlanetIntelEvent, PlanetIntelSource,
-    PlanetOwnershipChangeEvent, SalvageFailureReason, SalvageResolvedEvent, ScoutContactEvent,
-    ShipLosses, StarbaseAlert, StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent,
-    StarbaseSightingEvent,
+    PlanetOwnershipChangeEvent, SalvageResolvedEvent, ScoutContactEvent, ShipLosses, StarbaseAlert,
+    StarbaseDestroyedEvent, StarbaseReport, StarbaseReportEvent, StarbaseSightingEvent,
 };
 pub use map_dimensions::{is_valid_player_count, map_size_for_player_count, sector_within_map};
 pub use map_export::{

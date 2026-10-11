@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use nc_data::CoreGameData;
+use nc_data::{CoreGameData, PLANET_BUILD_CURRENT_KNOWN_ORDERS};
 
 use crate::commands::bombard::{apply_bombard_scenario, validate_bombard_data};
 use crate::commands::econ::{apply_econ_scenario, validate_econ_data};
@@ -375,11 +375,12 @@ fn validate_fleet_order_data(data: &CoreGameData) -> Result<(), Box<dyn std::err
 }
 
 fn validate_planet_build_data(data: &CoreGameData) -> Result<(), Box<dyn std::error::Error>> {
-    let errors = data.planet_build_errors_current_known(15, 0x03, 0x01);
+    let errors = data.planet_build_errors_current_known(15, &PLANET_BUILD_CURRENT_KNOWN_ORDERS);
     if errors.is_empty() {
         println!("Valid planet-build scenario");
-        println!("  PLANET[15].build_slot = 0x03");
-        println!("  PLANET[15].build_kind = 0x01");
+        for (kind, quantity) in PLANET_BUILD_CURRENT_KNOWN_ORDERS {
+            println!("  PLANET[15] queues {} {}", quantity, kind.name());
+        }
         Ok(())
     } else {
         Err(errors.join("\n").into())

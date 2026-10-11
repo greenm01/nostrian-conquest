@@ -4,7 +4,7 @@ use nc_game::app::Action;
 use nc_game::domains::planet::PlanetAction;
 use nc_game::screen::table::{TABLE_TEXT_INSET, TableColumn, table_render_width};
 use nc_game::screen::{
-    BuildUnitSpec, PlanetBuildChangeRow, PlanetBuildListRow, PlanetBuildMenuView,
+    BuildUnitSpec, PlanetBuildChangeRow, PlanetBuildListRow, PlanetBuildMenuView, PlanetBuildOrder,
     PlanetBuildScreen, ScreenGeometry,
 };
 
@@ -522,4 +522,84 @@ fn build_quantity_prompt_keeps_points_left_visible_in_title_row() {
         .expect("render quantity prompt");
 
     assert!(buffer.plain_line(0).contains("BUDGET: 30"));
+}
+
+#[test]
+fn build_specify_qty_column_fits_large_queued_counts_in_the_same_table() {
+    let mut screen = PlanetBuildScreen::new();
+    let view = PlanetBuildMenuView {
+        row: EmpirePlanetEconomyRow {
+            planet_record_index_1_based: 1,
+            coords: [6, 5],
+            planet_name: "Not Named Yet".to_string(),
+            present_production: 100,
+            potential_production: 100,
+            stored_production_points: 50,
+            yearly_tax_revenue: 50,
+            yearly_growth_delta: 0,
+            build_capacity: 100,
+            has_friendly_starbase: false,
+            armies: 10,
+            ground_batteries: 4,
+            is_homeworld_seed: true,
+        },
+        committed_points: 0,
+        budget: 50,
+        points_left: 50,
+        building_count: 0,
+        docked_count: 0,
+    };
+    let order = |kind, units: u32| PlanetBuildOrder {
+        kind,
+        points_remaining: units * kind.build_cost().expect("known kind"),
+    };
+
+    let empty = screen
+        .render_specify(&view, &[], "", None, None)
+        .expect("render empty specify table");
+    // Queued counts of 3, 120, 1,000, 32,767, and 100,000: the QTY. column
+    // is five wide, so brackets give way to bare digits and then to ">99k".
+    let orders = [
+        order(ProductionItemKind::Destroyer, 3),
+        order(ProductionItemKind::Cruiser, 120),
+        order(ProductionItemKind::Battleship, 1_000),
+        order(ProductionItemKind::Army, 32_767),
+        order(ProductionItemKind::Transport, 100_000),
+    ];
+    let loaded = screen
+        .render_specify(&view, &orders, "", None, None)
+        .expect("render loaded specify table");
+
+    // The frame, the rules between rows, and the row count do not change.
+    for row in 0..empty.height() {
+        let frame = |text: String| {
+            text.chars()
+                .map(|ch| {
+                    if "┌┬┐├┼┤└┴┘─│".contains(ch) {
+                        ch
+                    } else {
+                        ' '
+                    }
+                })
+                .collect::<String>()
+        };
+        assert_eq!(
+            frame(loaded.plain_line(row)),
+            frame(empty.plain_line(row)),
+            "row {row}"
+        );
+    }
+
+    let find_row = |label: &str| {
+        (0..loaded.height())
+            .map(|row| loaded.plain_line(row))
+            .find(|line| line.contains(label))
+            .unwrap_or_else(|| panic!("row with {label}"))
+    };
+    assert!(find_row("Destroyers").contains("(3)"));
+    assert!(find_row("Cruisers").contains("(120)"));
+    assert!(find_row("Battleships").contains("1000"));
+    assert!(!find_row("Battleships").contains("(1000"));
+    assert!(find_row("Armies").contains("32767"));
+    assert!(find_row("Troop transports").contains(">99k"));
 }

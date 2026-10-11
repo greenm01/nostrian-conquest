@@ -182,7 +182,7 @@ fn apply_planet_action(
             )?;
             let points_left =
                 game_data.planet_build_points_left(planet.planet_record_index_1_based)?;
-            if u32::from(*points_remaining) > points_left {
+            if *points_remaining > points_left {
                 return Err(TurnSubmissionError::Validation(format!(
                     "build of {points_remaining} points exceeds planet {}'s remaining budget of {points_left}",
                     planet.planet_record_index_1_based
@@ -190,7 +190,7 @@ fn apply_planet_action(
             }
             game_data.append_planet_build_order(
                 planet.planet_record_index_1_based,
-                u32::from(*points_remaining),
+                *points_remaining,
                 *kind_code,
             )?;
         }

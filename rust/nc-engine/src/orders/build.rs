@@ -120,14 +120,13 @@ pub fn build_kind_count_label(kind: ProductionItemKind, quantity: u32) -> &'stat
     }
 }
 
-pub fn infer_quantity(kind: ProductionItemKind, points_remaining: u8) -> Option<u32> {
+pub fn infer_quantity(kind: ProductionItemKind, points_remaining: u32) -> Option<u32> {
     let cost = build_unit_spec_by_kind(kind)?.cost;
     if cost == 0 {
         return None;
     }
-    let points = u32::from(points_remaining);
-    if points % cost == 0 {
-        Some(points / cost)
+    if points_remaining % cost == 0 {
+        Some(points_remaining / cost)
     } else {
         None
     }

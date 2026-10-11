@@ -21,7 +21,7 @@ impl DashApp {
     pub(crate) fn stage_hosted_planet_build(
         &mut self,
         planet_record_index_1_based: usize,
-        points_remaining: u8,
+        points_remaining: u32,
         kind: u8,
     ) {
         let Some(submission) = self.hosted_turn_draft.as_mut() else {

@@ -949,7 +949,7 @@ fn effective_points_left(
 fn build_queue_total(planet: &Planet) -> u32 {
     (0..10)
         .map(|slot| {
-            let points = u32::from(planet.build_queue[slot].points_owed);
+            let points = planet.build_queue[slot].points_owed;
             let kind = planet.build_queue[slot].kind;
             let Some(cost) = kind.build_cost() else {
                 return 0;

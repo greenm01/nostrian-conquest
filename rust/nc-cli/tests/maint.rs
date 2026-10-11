@@ -1,18 +1,19 @@
 mod common;
 
 use common::{
-    cleanup_dir, copy_fixture_dir, repo_root, run_classic_ecgame_smoke,
-    run_classic_ecgame_smoke_with_alias, run_maint_rust_failure_after_import,
-    run_maint_rust_with_export, run_maint_rust_with_export_and_seed, run_nc_cli_in_dir,
+    cleanup_dir, copy_fixture_dir, export_campaign_db, import_campaign_db, repo_root,
+    run_classic_ecgame_smoke, run_classic_ecgame_smoke_with_alias,
+    run_maint_rust_failure_after_import, run_maint_rust_with_export,
+    run_maint_rust_with_export_and_seed, run_nc_cli_in_dir, rust_workspace,
     set_mutual_enemy_in_player_dat, unique_temp_dir, write_mutual_enemy_diplomacy,
 };
 use nc_compat::{DatabaseDat, load_classic_core_files, save_classic_core_files};
 use nc_data::{
-    Coords, CoreGameData, DiplomaticRelation, EmpireId, Order, Planet, PlayerMode,
-    ProductionItemKind, Real48, diplomatic_relation_toward, recompute_max_speed, set_armies_aboard,
-    set_diplomatic_relation_toward, set_empire_name, set_fleet_at_rest, set_mission_target,
-    set_planet_name, set_player_handle, set_troop_transports, stored_production_points,
-    troop_transports,
+    BuildSlot, CampaignStore, Coords, CoreGameData, DiplomaticRelation, EmpireId, Order, Planet,
+    PlayerMode, ProductionItemKind, Real48, diplomatic_relation_toward, recompute_max_speed,
+    set_armies_aboard, set_diplomatic_relation_toward, set_empire_name, set_fleet_at_rest,
+    set_mission_target, set_planet_name, set_player_handle, set_troop_transports,
+    stored_production_points, troop_transports,
 };
 use nc_engine::GameStateBuilder;
 use std::fs;
@@ -41,6 +42,40 @@ fn decode_chunked_report(bytes: &[u8]) -> String {
         })
         .map(char::from)
         .collect::<String>()
+}
+
+/// `run_maint_rust_with_export`, with a build slot only Rust can hold planted
+/// in the imported store: classic's counts by kind cannot express a slot of
+/// points under an unknown kind.
+fn run_maint_rust_with_planted_build_slot(
+    target: &std::path::Path,
+    planet_idx: usize,
+    slot: BuildSlot,
+) -> String {
+    import_campaign_db(target);
+    let store = CampaignStore::open_default_in_dir(target).expect("open campaign store");
+    let state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("imported runtime state");
+    let mut game_data = state.game_data;
+    game_data.planets[planet_idx].build_queue[0] = slot;
+    store
+        .save_runtime_state_structured(
+            game_data.conquest.game_year,
+            &game_data,
+            &state.planet_scorch_orders,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save planted state");
+    drop(store);
+    let stdout = run_nc_cli_in_dir(
+        &["maint-rust", target.to_str().unwrap(), "1"],
+        rust_workspace(),
+    );
+    export_campaign_db(target, target);
+    stdout
 }
 
 fn results_records(bytes: &[u8]) -> Vec<&[u8]> {
@@ -1752,13 +1787,13 @@ fn maint_rust_salvage_generates_report_and_removes_fleet() {
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let text = String::from_utf8_lossy(&results);
     assert!(text.contains("Salvage mission report"));
-    assert!(text.contains("yield 10 production point(s)"));
+    assert!(text.contains("yield 11 production point(s)"));
 
     let game_data = load_classic_core_files(&target).expect("maint-rust output should load");
     assert_eq!(game_data.fleets.len(), 15);
     assert_eq!(
         stored_production_points(&game_data.planets[planet_idx]),
-        stored_before + 10
+        stored_before + 11
     );
 
     cleanup_dir(&target);
@@ -2862,12 +2897,17 @@ fn maint_rust_invalid_planet_inputs_generate_admin_report() {
         .iter()
         .position(|planet| planet.owner.0 == 1)
         .expect("fixture should contain owned planet");
-    game_data.planets[planet_idx].build_queue[0].points_owed = 12;
-    game_data.planets[planet_idx].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
     game_data.players[0].tax_rate = 255;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    let stdout = run_maint_rust_with_planted_build_slot(
+        &target,
+        planet_idx,
+        BuildSlot {
+            points_owed: 12,
+            kind: ProductionItemKind::from_code(0xfe),
+        },
+    );
     assert!(stdout.contains("Rust maintenance complete."));
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
@@ -2896,12 +2936,17 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     fleet.rules_of_engagement = 6;
     // Planet record 15 is Empire #1's world; invalid-input reports for
     // unowned planets are not delivered to anyone.
-    game_data.planets[14].build_queue[0].points_owed = 9;
-    game_data.planets[14].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
     game_data.players[0].tax_rate = 255;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
-    let stdout = run_maint_rust_with_export(&target, 1);
+    let stdout = run_maint_rust_with_planted_build_slot(
+        &target,
+        14,
+        BuildSlot {
+            points_owed: 9,
+            kind: ProductionItemKind::from_code(0xfe),
+        },
+    );
     assert!(stdout.contains("Rust maintenance complete."));
 
     let reloaded =
@@ -2946,8 +2991,6 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         set_troop_transports(fleet, 1);
         set_armies_aboard(fleet, 4);
         fleet.rules_of_engagement = 42;
-        game_data.planets[0].build_queue[0].points_owed = 9;
-        game_data.planets[0].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
         game_data.planets[0].stardock.destroyers = 2;
         game_data.players[0].tax_rate = 255;
         save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
@@ -3003,8 +3046,6 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
             fleet.rules_of_engagement = 42;
         }
         if let Some(planet) = game_data.planets.get_mut(0) {
-            planet.build_queue[0].points_owed = 9;
-            planet.build_queue[0].kind = ProductionItemKind::from_code(0xfe);
             planet.stardock.destroyers = 2;
         }
         if let Some(player) = game_data.players.get_mut(0) {

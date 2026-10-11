@@ -81,9 +81,6 @@ fn salvage_week(e: &super::super::SalvageResolvedEvent) -> u8 {
         super::super::SalvageResolvedEvent::Succeeded { stardate_week, .. } => {
             stardate_week.unwrap_or(1)
         }
-        super::super::SalvageResolvedEvent::Failed { stardate_week, .. } => {
-            stardate_week.unwrap_or(1)
-        }
     }
 }
 

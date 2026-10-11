@@ -881,7 +881,7 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
     let planet = &mut app.game_data.planets[planet_idx];
 
     for (slot, (points, kind_code)) in [
-        (50u8, 1u8),
+        (50u32, 1u8),
         (120, 2),
         (225, 3),
         (60, 4),

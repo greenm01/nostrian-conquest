@@ -820,7 +820,7 @@ fn queued_build_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> 
                         nc_data::ProductionItemKind::from_code(
                             planet.build_queue[slot].kind.code(),
                         ),
-                        u32::from(planet.build_queue[slot].points_owed),
+                        planet.build_queue[slot].points_owed,
                     )
                 })
                 .sum()

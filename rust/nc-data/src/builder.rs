@@ -1,7 +1,7 @@
 use crate::{
     Conquest, Coords, CoreGameData, EmpireId, Fleet, GameStateMutationError, Ipbm, Planet, Player,
-    PlayerMode, Real48, Setup, set_armies_aboard, set_empire_name, set_fleet_at_rest,
-    set_mission_target, set_player_handle, set_troop_transports,
+    PlayerMode, ProductionItemKind, Real48, Setup, set_armies_aboard, set_empire_name,
+    set_fleet_at_rest, set_mission_target, set_player_handle, set_troop_transports,
 };
 
 const DEFAULT_EMPIRE_TAX_RATE: u8 = 50;
@@ -42,12 +42,12 @@ pub struct FleetOrderSpec {
     pub aux: [u8; 2],
 }
 
-/// Specification for a planet build order.
+/// Specification for a planet build order: `quantity` units of `kind`.
 #[derive(Debug, Clone)]
 pub struct PlanetBuildSpec {
     pub planet_index_1_based: usize,
-    pub slot: u8,
-    pub kind: u8,
+    pub quantity: u32,
+    pub kind: ProductionItemKind,
 }
 
 /// Specification for a guard starbase order.
@@ -136,11 +136,16 @@ impl GameStateBuilder {
         self
     }
 
-    /// Add a planet build order.
-    pub fn with_planet_build(mut self, planet_index_1_based: usize, slot: u8, kind: u8) -> Self {
+    /// Add a planet build order for `quantity` units of `kind`.
+    pub fn with_planet_build(
+        mut self,
+        planet_index_1_based: usize,
+        quantity: u32,
+        kind: ProductionItemKind,
+    ) -> Self {
         self.planet_builds.push(PlanetBuildSpec {
             planet_index_1_based,
-            slot,
+            quantity,
             kind,
         });
         self
@@ -378,7 +383,7 @@ impl GameStateBuilder {
 
         // Apply planet builds
         for build in &self.planet_builds {
-            data.set_planet_build(build.planet_index_1_based, build.slot, build.kind)?;
+            data.append_planet_build_units(build.planet_index_1_based, build.kind, build.quantity)?;
         }
 
         // Apply guard starbase orders

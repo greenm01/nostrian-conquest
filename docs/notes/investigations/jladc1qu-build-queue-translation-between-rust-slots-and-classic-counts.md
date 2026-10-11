@@ -139,6 +139,70 @@ unfinished unit. I1 needs no model change. Refuse import rather than drop.
    t056 reports back before changing anything.
 5. The army and battery overflow is t063, folded into t056 by decision 2.
 
+## Result
+
+Done in t056, with t063 folded in (2026-10-10).
+
+**Model and engine.** `BuildSlot.points_owed` is a `u32`. Orders of one kind
+share one slot, so ten slots hold the nine kinds, and the budget is the only
+limit on an order: a slot holds 750 points of starbase (15 bases) or 256 of
+army (128 armies) alike. `planet_additional_build_points_capacity` and the
+per-kind slot capacities are gone, along with the "Stardock is full" and
+"Build queue is full" messages that read them; `append_planet_build_order`
+fails with `PlanetBuildQueueFull` only when no slot is free, which only a
+record with repeated kinds can reach. The pass pays the same way and no
+longer splits armies and batteries (128 armies deliver 128, 13 batteries
+13; tests in `nc-data/tests/production.rs`). The planet's own cap of 255
+armies and batteries stays. The turn file's `build points=` and the hosted
+staging in nc-helm are `u32`; the hosted staging used to drop an order past
+255 points without telling anyone. The BBS specify table's QTY. column (five
+wide) shows a queued count in brackets up to 999, as bare digits up to
+99,999, and as `>99k` past that; its frame is unchanged. The other tables
+size their columns to their cells.
+
+**Codec** (`nc-compat/src/classic/planet.rs`). Kinds map by name. Import is
+I1: a count `n` of a kind becomes `n * cost` points owed, slots fill in
+classic's kind order, G is untouched. A slot 8 count fails the import with
+`ParseError::ReservedBuildSlot`, which names the planet, its sector, and the
+count. Export is E1: `ceil(points / cost)` units per kind, summed across
+slots, and the paid part of each part-paid unit is added to G (only when
+there is one, so G's bytes are otherwise untouched). Kinds without a classic
+form (`Unknown`) are not written. The value the export keeps is
+`G - sum(owed)`, the same as Rust's own pass; a test checks it on a mixed
+queue.
+
+**Fixture.** `ecmaint-build-pre` imports as 15 points of destroyer and 20 of
+ETAC with G = 35 and exports back byte for byte outside the ignored bytes
+(`classic_codec.rs`). Rust's pass on it (`ecmaint.rs`) pays both orders,
+docks 3 destroyers and 1 ETAC, and leaves G = 0; PLANETS, PLAYER, FLEETS,
+and CONQUEST match `ecmaint-build-post` outside the ignored bytes. The
+`planet-build` scenario recreates the pre fixture's PLANETS.DAT, and
+`tools/ncmaint_oracle.py prepare-known planet-build` still materializes it.
+ECMAINT itself did not run: the environment has no DOSBox.
+
+**Commands.** `planet-build`, `planet-build-init`, `planet-build-batch-init`
+(`record:quantity:unit`), the scenario, `GameStateBuilder::with_planet_build`,
+and the validator take a quantity and a unit name. `planet-build-report`
+prints the queue by kind. The tests that planted an unknown build kind in a
+classic file now plant it in the imported store, because classic counts
+cannot say it.
+
+**Negative G: not carried.** The codec keeps a negative G as it is, but
+Rust's passes do not hold a balance below zero. `stored_production_points`
+clamps to 0, so the budget is 0 and no build is paid (sensible); the income
+step rewrites G as `stored_production_points + revenue`, which forgives the
+debt: G = -20 with 100 production at 50% tax comes out at 50, where adding
+the income to G, as ECMAINT does, gives 30. Salvage, bombardment losses, and the build pass read G the
+same way. Carrying the debt needs a signed balance in `planets.rs` and in
+the combat and salvage paths, so t056 stopped there for the owner's call.
+
+**Found on the way.** The starbase-move check in `mutators_starbase.rs`
+multiplied `points_owed` by the cost as if it held a count; it now totals the
+points. The old probe scripts `tools/probe_full_stardock_build.py` and
+`tools/probe_u8_unit_limits.py` still read PLANETS 0x2E as a kind byte.
+Rust's AI queues builds at the end of a turn and ECMAINT's queues again
+before its pass; that has not changed.
+
 ## Connections
 
 t056 in [todo.md](../../../todo.md);

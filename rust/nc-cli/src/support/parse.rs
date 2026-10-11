@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use nc_data::ProductionItemKind;
+
 use super::paths::resolve_repo_path;
 
 pub(crate) fn parse_u8_arg(value: &str, label: &str) -> Result<u8, Box<dyn std::error::Error>> {
@@ -187,13 +189,15 @@ pub(crate) fn parse_target_and_fleet_spec(
     }
 }
 
-pub(crate) fn parse_target_and_planet_spec(args: Vec<String>) -> Option<(PathBuf, usize, u8, u8)> {
+pub(crate) fn parse_target_and_planet_spec(
+    args: Vec<String>,
+) -> Option<(PathBuf, usize, u32, ProductionItemKind)> {
     match args.as_slice() {
-        [target, record_index, slot, kind] => Some((
+        [target, record_index, quantity, kind] => Some((
             PathBuf::from(target),
             parse_usize_1_based(record_index, "planet record index").ok()?,
-            parse_u8_arg(slot, "build slot").ok()?,
-            parse_u8_arg(kind, "build kind").ok()?,
+            quantity.parse().ok()?,
+            ProductionItemKind::from_name(kind)?,
         )),
         _ => None,
     }
@@ -637,13 +641,13 @@ pub(crate) fn parse_target_and_econ_spec_list(
     }
 }
 
-pub(crate) fn parse_planet_build_spec(value: &str) -> Option<(usize, u8, u8)> {
+pub(crate) fn parse_planet_build_spec(value: &str) -> Option<(usize, u32, ProductionItemKind)> {
     let parts = value.split(':').collect::<Vec<_>>();
     match parts.as_slice() {
-        [record_index, slot, kind] => Some((
+        [record_index, quantity, kind] => Some((
             parse_usize_1_based(record_index, "planet record index").ok()?,
-            parse_u8_arg(slot, "build slot").ok()?,
-            parse_u8_arg(kind, "build kind").ok()?,
+            quantity.parse().ok()?,
+            ProductionItemKind::from_name(kind)?,
         )),
         _ => None,
     }
@@ -651,7 +655,7 @@ pub(crate) fn parse_planet_build_spec(value: &str) -> Option<(usize, u8, u8)> {
 
 pub(crate) fn parse_target_and_planet_spec_list(
     args: Vec<String>,
-) -> Option<(PathBuf, Vec<(usize, u8, u8)>)> {
+) -> Option<(PathBuf, Vec<(usize, u32, ProductionItemKind)>)> {
     match args.as_slice() {
         [target_root, specs @ ..] if !specs.is_empty() => Some((
             PathBuf::from(target_root),

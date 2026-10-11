@@ -1,4 +1,7 @@
-use nc_data::{Coords, Real48, planet_derived_summary, stardock_slot_kind};
+use nc_data::{
+    CompactUnitSummaryStyle, Coords, PLANET_BUILD_CURRENT_KNOWN_ORDERS, ProductionItemKind, Real48,
+    build_queue_unit_counts, format_unit_counts, planet_derived_summary, stardock_slot_kind,
+};
 use std::fs;
 use std::path::Path;
 
@@ -8,20 +11,22 @@ use crate::commands::runtime::{
 use crate::support::paths::display_repo_path;
 use crate::workspace::copy_init_files;
 
-pub(crate) fn set_planet_build(
+pub(crate) fn order_planet_build(
     dir: &Path,
     record_index_1_based: usize,
-    slot: u8,
-    kind: u8,
+    quantity: u32,
+    kind: ProductionItemKind,
 ) -> Result<(), Box<dyn std::error::Error>> {
     with_runtime_game_mut(dir, |data| {
-        data.set_planet_build(record_index_1_based, slot, kind)
+        data.append_planet_build_units(record_index_1_based, kind, quantity)
             .map_err(|err| err.to_string().into())
     })?;
 
     println!(
-        "Planet record {} updated: build_slot={:#04x} build_kind={:#04x}",
-        record_index_1_based, slot, kind
+        "Planet record {} build ordered: {} {}",
+        record_index_1_based,
+        quantity,
+        kind.name()
     );
     Ok(())
 }
@@ -278,7 +283,9 @@ pub(crate) fn init_planet_original(dir: &Path) -> Result<(), Box<dyn std::error:
 }
 
 pub(crate) fn apply_planet_build_scenario(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
-    set_planet_build(dir, 15, 0x03, 0x01)?;
+    for (kind, quantity) in PLANET_BUILD_CURRENT_KNOWN_ORDERS {
+        order_planet_build(dir, 15, quantity, kind)?;
+    }
     println!("Applied scenario: planet-build");
     Ok(())
 }
@@ -295,8 +302,13 @@ pub(crate) fn print_planet_build_report(
     println!("Planet Build Report");
     println!("  dir={}", dir.display());
     println!("  record={}", record_index_1_based);
-    println!("  build_slot={:#04x}", record.build_queue[0].points_owed);
-    println!("  build_kind={:#04x}", record.build_queue[0].kind.code());
+    println!(
+        "  build_queue={}",
+        format_unit_counts(
+            &build_queue_unit_counts(record),
+            CompactUnitSummaryStyle::Words
+        )
+    );
     println!(
         "  stardock_count={:#04x}",
         u16::try_from(record.stardock.destroyers).unwrap_or(u16::MAX)
@@ -315,11 +327,11 @@ pub(crate) fn init_planet_build_scenario(
     source: &Path,
     target: &Path,
     record_index_1_based: usize,
-    slot: u8,
-    kind: u8,
+    quantity: u32,
+    kind: ProductionItemKind,
 ) -> Result<(), Box<dyn std::error::Error>> {
     copy_init_files(source, target)?;
-    set_planet_build(target, record_index_1_based, slot, kind)?;
+    order_planet_build(target, record_index_1_based, quantity, kind)?;
     export_runtime_snapshot_in_place(target)?;
     println!("Planet-build directory initialized at {}", target.display());
     Ok(())
@@ -328,7 +340,7 @@ pub(crate) fn init_planet_build_scenario(
 pub(crate) fn init_planet_build_batch(
     source: &Path,
     target_root: &Path,
-    specs: &[(usize, u8, u8)],
+    specs: &[(usize, u32, ProductionItemKind)],
 ) -> Result<(), Box<dyn std::error::Error>> {
     fs::create_dir_all(target_root)?;
     let mut manifest = String::new();
@@ -337,14 +349,16 @@ pub(crate) fn init_planet_build_batch(
     manifest.push_str(&format!("target_root={}\n", target_root.display()));
     manifest.push('\n');
 
-    for (record_index, slot, kind) in specs {
-        let name = format!("p{:02}-s{:02x}-k{:02x}", record_index, slot, kind);
+    for (record_index, quantity, kind) in specs {
+        let name = format!("p{:02}-q{}-{}", record_index, quantity, kind.name());
         let scenario_dir = target_root.join(&name);
-        init_planet_build_scenario(source, &scenario_dir, *record_index, *slot, *kind)?;
+        init_planet_build_scenario(source, &scenario_dir, *record_index, *quantity, *kind)?;
         manifest.push_str(&format!("{name}\n"));
         manifest.push_str(&format!(
-            "  spec={}:{:#04x}:{:#04x}\n",
-            record_index, slot, kind
+            "  spec={}:{}:{}\n",
+            record_index,
+            quantity,
+            kind.name()
         ));
         manifest.push_str(&format!("  dir={}\n", scenario_dir.display()));
         manifest.push_str(&format!(

@@ -171,10 +171,8 @@ impl FleetIndexRemap {
         });
         self.remap_mission_events(&mut events.mission_events);
         for event in &mut events.salvage_events {
-            match event {
-                SalvageResolvedEvent::Succeeded { fleet_idx, .. }
-                | SalvageResolvedEvent::Failed { fleet_idx, .. } => self.report_index(fleet_idx),
-            }
+            let SalvageResolvedEvent::Succeeded { fleet_idx, .. } = event;
+            self.report_index(fleet_idx);
         }
         self.compact(&mut events.fleet_travel_speeds);
     }

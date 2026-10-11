@@ -85,7 +85,7 @@ const ROW_4: [MenuEntry<'static>; 3] = [
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlanetBuildOrder {
     pub kind: ProductionItemKind,
-    pub points_remaining: u8,
+    pub points_remaining: u32,
 }
 
 #[derive(Debug, Clone)]
@@ -714,7 +714,7 @@ fn infer_quantity(order: PlanetBuildOrder, cost: u32) -> Option<u32> {
     if cost == 0 {
         return None;
     }
-    let points = u32::from(order.points_remaining);
+    let points = order.points_remaining;
     if points % cost == 0 {
         Some(points / cost)
     } else {
@@ -751,9 +751,7 @@ fn build_abort_order_lines(orders: &[PlanetBuildOrder]) -> Vec<String> {
         };
 
         let aggregate = &mut grouped[index];
-        aggregate.points = aggregate
-            .points
-            .saturating_add(u32::from(order.points_remaining));
+        aggregate.points = aggregate.points.saturating_add(order.points_remaining);
         aggregate.quantity = match (aggregate.quantity, quantity) {
             (Some(total), Some(qty)) => Some(total.saturating_add(qty)),
             _ => None,
@@ -820,7 +818,7 @@ fn draw_specify_table(
                 },
                 left.label.to_string(),
                 format_build_cost(left.cost),
-                format!("({})", left.queued_qty),
+                format_queued_qty(left.queued_qty),
             ],
             right_cells: right
                 .map(|right| {
@@ -832,7 +830,7 @@ fn draw_specify_table(
                         },
                         right.label.to_string(),
                         format_build_cost(right.cost),
-                        format!("({})", right.queued_qty),
+                        format_queued_qty(right.queued_qty),
                     ]
                 })
                 .unwrap_or_else(|| {
@@ -885,6 +883,20 @@ fn draw_specify_table(
 
 fn format_build_cost(cost: u32) -> String {
     format!("{cost:02}")
+}
+
+/// A queued count for the QTY. column: in brackets while they fit, as bare
+/// digits when the count is too big for them, and ">99k" past five digits.
+fn format_queued_qty(quantity: u32) -> String {
+    let width = BUILD_HALF_COLUMNS[3].width;
+    let bracketed = format!("({quantity})");
+    if bracketed.len() <= width {
+        bracketed
+    } else if quantity.to_string().len() <= width {
+        quantity.to_string()
+    } else {
+        ">99k".to_string()
+    }
 }
 
 pub fn build_order_summary(order: PlanetBuildOrder) -> String {

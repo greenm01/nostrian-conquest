@@ -140,13 +140,13 @@ fn home_with_queue(production_exceeded: bool) -> (CoreGameData, usize) {
     let production = present_production_points(&game_data.planets[planet_idx]);
     let planet = &mut game_data.planets[planet_idx];
     planet.build_queue[0].kind = ProductionItemKind::Cruiser;
-    // A cruiser costs 15.
+    // A cruiser costs 15 points.
     let count = if production_exceeded {
-        production / 15 + 1
+        u32::from(production) / 15 + 1
     } else {
         1
     };
-    planet.build_queue[0].points_owed = count as u8;
+    planet.build_queue[0].points_owed = count * 15;
     (game_data, planet_idx)
 }
 
@@ -167,7 +167,7 @@ fn builds_within_the_worlds_production_survive_a_move() {
     game_data
         .set_starbase_destination(1, 1, [18, 13])
         .expect("move");
-    assert_eq!(game_data.planets[planet_idx].build_queue[0].points_owed, 1);
+    assert_eq!(game_data.planets[planet_idx].build_queue[0].points_owed, 15);
 }
 
 #[test]

@@ -1280,37 +1280,12 @@ impl App {
 
         let planet_record = self.current_build_planet_row()?.planet_record_index_1_based;
 
-        // Armies and batteries do not use stardock. For stardock-requiring kinds,
-        // the quantity cap above already accounts for queue and stardock capacity.
-        let needs_stardock = !matches!(
-            kind,
-            ProductionItemKind::Army | ProductionItemKind::GroundBattery
-        );
-        if needs_stardock {
-            let capacity = self
-                .game_data
-                .planet_additional_build_points_capacity(planet_record, kind)?;
-            if capacity == 0 {
-                self.planet.build_quantity_status =
-                    Some("Stardock is full -- commission ships first to free space.".to_string());
-                return Ok(());
-            }
-        }
-
         let points = qty.saturating_mul(unit.cost);
-        match self.game_data.append_planet_build_order(
+        self.game_data.append_planet_build_order(
             planet_record,
             points,
             production_item_kind_code(kind),
-        ) {
-            Ok(()) => {}
-            Err(GameStateMutationError::PlanetBuildQueueFull { .. }) => {
-                self.planet.build_quantity_status =
-                    Some("Build queue is full for this planet.".to_string());
-                return Ok(());
-            }
-            Err(e) => return Err(e.into()),
-        }
+        )?;
         self.save_game_data()?;
         self.planet.build_unit_input.clear();
         self.planet.build_unit_status = None;

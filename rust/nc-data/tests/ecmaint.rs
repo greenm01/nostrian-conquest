@@ -1,29 +1,69 @@
 mod common;
 
 use common::*;
-use nc_compat::classic::{PLANET_RECORD_SIZE, parse_fleets_dat, parse_planets_dat};
+use nc_compat::classic::{
+    ClassicFile, parse_fleets_dat, parse_planets_dat, serialize_conquest_dat, serialize_fleets_dat,
+    serialize_planets_dat, serialize_player_dat, without_ignored_bytes,
+};
+use nc_compat::load_classic_core_files;
 use nc_data::*;
+use nc_engine::run_maintenance_turn;
 
 #[test]
 fn ecmaint_build_scenario_consumes_queue_and_changes_planet_state() {
-    let pre_bytes = read_ecmaint_build_pre_fixture("PLANETS.DAT");
-    let post_bytes = read_ecmaint_build_post_fixture("PLANETS.DAT");
-    let post = parse_planets_dat(&post_bytes).unwrap();
+    let pre = parse_planets_dat(&read_ecmaint_build_pre_fixture("PLANETS.DAT")).unwrap();
+    let post = parse_planets_dat(&read_ecmaint_build_post_fixture("PLANETS.DAT")).unwrap();
 
-    let post_record = &post[14];
+    // The pre-fixture queues 3 destroyers and 1 ETAC; classic's counts come
+    // in as the points they cost.
+    assert_eq!(
+        build_queue_unit_counts(&pre[14]),
+        [(1, 3), (6, 1)].into_iter().collect()
+    );
+    assert_eq!(pre[14].build_queue[0].points_owed, 15);
+    assert_eq!(pre[14].build_queue[1].points_owed, 20);
+    assert!(build_queue_unit_counts(&post[14]).is_empty());
+    assert_eq!(post[14].stardock.destroyers, 3);
+    assert_eq!(post[14].stardock.etacs, 1);
+}
 
-    // Classic queues ten u16 counts by kind (destroyers at 0x24, ETACs at
-    // 0x2E). The model holds Rust's build slots until t056 translates, so
-    // read classic's words from the file.
-    let queue_word = |bytes: &[u8], kind: usize| {
-        let at = 14 * PLANET_RECORD_SIZE + 0x22 + 2 * kind;
-        u16::from_le_bytes([bytes[at], bytes[at + 1]])
+#[test]
+fn rust_pass_on_the_build_fixture_matches_ecmaint_post() {
+    let load = |dir: &str| {
+        load_classic_core_files(&repo_root().join("fixtures").join(dir).join("v1.5")).unwrap()
     };
-    assert_eq!(queue_word(&pre_bytes, 1), 3);
-    assert_eq!(queue_word(&pre_bytes, 6), 1);
-    assert!((1..=10).all(|kind| queue_word(&post_bytes, kind) == 0));
-    assert_eq!(post_record.stardock.destroyers, 3);
-    assert_eq!(post_record.stardock.etacs, 1);
+    let mut game_data = load("ecmaint-build-pre");
+    let post = load("ecmaint-build-post");
+
+    run_maintenance_turn(&mut game_data).expect("maintenance");
+
+    // The Rust pass pays the 15 and 20 points from G = 35 and docks the
+    // units, as ECMAINT does.
+    assert_eq!(game_data.planets[14].stored_goods.to_f64(), 0.0);
+    assert_eq!(
+        serialize_planets_dat(&game_data.planets),
+        serialize_planets_dat(&post.planets)
+    );
+    assert_eq!(
+        serialize_player_dat(&game_data.players),
+        serialize_player_dat(&post.players)
+    );
+    assert_eq!(
+        serialize_fleets_dat(&game_data.fleets),
+        serialize_fleets_dat(&post.fleets)
+    );
+    // ECMAINT fills CONQUEST's ranking slots past the player count with
+    // bytes no classic program reads; outside those the year matches too.
+    assert_eq!(
+        without_ignored_bytes(
+            ClassicFile::Conquest,
+            &serialize_conquest_dat(&game_data.conquest)
+        ),
+        without_ignored_bytes(
+            ClassicFile::Conquest,
+            &serialize_conquest_dat(&post.conquest)
+        )
+    );
 }
 
 #[test]

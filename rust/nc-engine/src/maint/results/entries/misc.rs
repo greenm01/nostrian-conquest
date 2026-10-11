@@ -243,6 +243,7 @@ pub fn push_misc_entries(
                 planet_idx,
                 coords,
                 recovered_points,
+                armies_landed,
                 stardate_week,
                 ..
             } => {
@@ -257,59 +258,15 @@ pub fn push_misc_entries(
                     stardate_week,
                     owned_fleet_source_clause(Some(fleet_number), &format!("System({x},{y})")),
                     format!(
-                        " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}) and have begun salvaging our fleet. We estimate that our fleet will yield {recovered_points} production point(s)."
+                        " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}) and have begun salvaging our fleet. We estimate that our fleet will yield {recovered_points} production point(s).{}",
+                        match armies_landed {
+                            0 => String::new(),
+                            1 => " In addition, we have transfered the 1 army we were transporting to the planet's surface.".to_string(),
+                            n => format!(" In addition, we have transfered the {n} armies we were transporting to the planet's surface."),
+                        }
                     ),
                 )
             }
-            nc_data::SalvageResolvedEvent::Failed {
-                fleet_idx,
-                owner_empire,
-                planet_idx: Some(planet_idx),
-                coords,
-                reason: nc_data::SalvageFailureReason::PlanetNotOwned,
-                stardate_week,
-                ..
-            } => {
-                let [x, y] = coords;
-                let planet_name = game_data
-                    .planets
-                    .get(planet_idx)
-                    .map(|planet| planet.name.clone())
-                    .unwrap_or_else(|| "the target world".to_string());
-                (
-                    owner_empire,
-                    stardate_week,
-                    owned_fleet_source_clause_from_idx(
-                        game_data,
-                        fleet_idx,
-                        &format!("System({x},{y})"),
-                    ),
-                    format!(
-                        " Salvage mission report: We have arrived at planet \"{planet_name}\" in System({x},{y}), but it is not under our control so we cannot salvage our fleet there."
-                    ),
-                )
-            }
-            nc_data::SalvageResolvedEvent::Failed {
-                fleet_idx,
-                owner_empire,
-                coords,
-                reason: nc_data::SalvageFailureReason::NoPlanetAtTarget,
-                stardate_week,
-                ..
-            } => {
-                let [x, y] = coords;
-                (
-                    owner_empire,
-                    stardate_week,
-                    owned_fleet_source_clause_from_idx(
-                        game_data,
-                        fleet_idx,
-                        &format!("System({x},{y})"),
-                    ),
-                    " Salvage mission report: We found no planet to salvage at the assigned destination and are awaiting new orders.".to_string(),
-                )
-            }
-            _ => continue,
         };
         let header = report_header(&source, event_week, year);
         entries.push(ReportEntry {
@@ -501,49 +458,79 @@ pub fn push_misc_entries(
     entries.extend(build_join_summary_entries(game_data, events, year));
 
     // ----- Mission retarget events -----
+    // ECMAINT names a world by the planet at its sector, blank when there is
+    // none.
+    let world_name = |coords: [u8; 2]| {
+        game_data
+            .planets
+            .iter()
+            .find(|planet| planet.sector.to_array() == coords)
+            .map_or("", |planet| planet.name.as_str())
+    };
     for event in &events.mission_retarget_events {
         let source = match *event {
             nc_data::MissionRetargetEvent::Retargeted {
                 reporting_fleet_number,
                 current_coords,
+                in_system,
                 ..
-            } => mission_retarget_source(reporting_fleet_number, current_coords),
+            } => mission_retarget_source(reporting_fleet_number, current_coords, in_system),
             nc_data::MissionRetargetEvent::Abandoned {
                 reporting_fleet_number,
                 coords,
+                in_system,
                 ..
-            } => owned_fleet_source_clause(
-                reporting_fleet_number,
-                &format!("Sector({},{})", coords[0], coords[1]),
-            ),
+            } => mission_retarget_source(reporting_fleet_number, coords, in_system),
         };
         let (recipient, body) = match *event {
             nc_data::MissionRetargetEvent::Retargeted {
                 owner_empire,
                 mission: Mission::SeekHome,
-                previous_target_coords,
-                new_target_coords,
+                previous_target_coords: [px, py],
+                new_target_coords: [nx, ny],
                 ..
             } => (
                 owner_empire,
                 format!(
-                    " Seek-Home mission report: Our original destination at Sector({},{}) was lost. We are seeking refuge at Sector({},{}).",
-                    previous_target_coords[0],
-                    previous_target_coords[1],
-                    new_target_coords[0],
-                    new_target_coords[1]
+                    " Seek-Home mission report: Since we have lost control of planet \"{}\" in System({px},{py}), we are changing course and heading for a different friendly world. Our new destination is planet \"{}\" in System({nx},{ny}).",
+                    world_name([px, py]),
+                    world_name([nx, ny])
                 ),
             ),
             nc_data::MissionRetargetEvent::Abandoned {
                 owner_empire,
                 mission: Mission::SeekHome,
-                coords,
+                previous_target_coords: [px, py],
                 ..
             } => (
                 owner_empire,
                 format!(
-                    " Seek-Home mission report: With no friendly planets remaining, we are holding our position in Sector({},{}) and awaiting orders.",
-                    coords[0], coords[1]
+                    " Seek-Home mission report: Since we have lost control of planet \"{}\" in System({px},{py}), we are holding our current position and awaiting new orders.",
+                    world_name([px, py])
+                ),
+            ),
+            nc_data::MissionRetargetEvent::Retargeted {
+                owner_empire,
+                mission: Mission::Salvage,
+                previous_target_coords: [px, py],
+                new_target_coords: [nx, ny],
+                ..
+            } => (
+                owner_empire,
+                format!(
+                    " Salvage mission report: Since we no longer own the world in System({px},{py}), we are changing course. Until ordered otherwise, we are going to salvage our fleet at a friendly controlled world. Our new destination is planet \"{}\" in System({nx},{ny}).",
+                    world_name([nx, ny])
+                ),
+            ),
+            nc_data::MissionRetargetEvent::Abandoned {
+                owner_empire,
+                mission: Mission::Salvage,
+                previous_target_coords: [px, py],
+                ..
+            } => (
+                owner_empire,
+                format!(
+                    " Salvage mission report: Since we no longer own the world in System({px},{py}), we are aborting our salvage mission. Until ordered otherwise, we are going to hold our current position and await new orders."
                 ),
             ),
             nc_data::MissionRetargetEvent::Retargeted {
@@ -573,14 +560,16 @@ pub fn push_misc_entries(
             ),
             _ => continue,
         };
-        let header = report_header(&source, None, year);
+        let (nc_data::MissionRetargetEvent::Retargeted { stardate_week, .. }
+        | nc_data::MissionRetargetEvent::Abandoned { stardate_week, .. }) = *event;
+        let header = report_header(&source, stardate_week, year);
         entries.push(ReportEntry {
             text: format!("{header}{body}"),
             kind: 0x05,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both { recipient },
             repeat_next_pointer: false,
-            stardate_week: None,
+            stardate_week,
             narrative_phase: narrative_phase_for_report_text(&body),
         });
     }

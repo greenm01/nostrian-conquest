@@ -255,7 +255,7 @@ Blitz fall back to Hold Position in orbit after the assault, win or lose.
     [12], [Colonize world],        [One-shot],   [At least one ETAC],           [Colonizes if unowned; ETAC survives for reuse],
     [13], [Join Fleet],            [Persistent], [Any],                         [Chases host until merge; abandons if host lost],
     [14], [Rendezvous],            [Persistent], [Any],                         [Waits at sector; lowest fleet ID becomes host],
-    [15], [Salvage],               [One-shot],   [Any],                         [Scraps ships for \~50% value, reverts to Hold],
+    [15], [Salvage],               [One-shot],   [Any],                         [Scraps ships for half their build cost],
   ),
 )
 
@@ -605,7 +605,7 @@ A fleet always has exactly one standing order. If you issue a new order before m
     [12], [Colonize],        [One-shot],   [Terraform and claim unowned planet (requires ETAC). ETAC survives for reuse.],
     [13], [Join Fleet],      [Persistent], [Chase and merge with target fleet. Abandons if host is destroyed.],
     [14], [Rendezvous],      [Persistent], [Meet other fleets at sector. Lowest fleet ID becomes host.],
-    [15], [Salvage],         [One-shot],   [Scrap ships at planet for \~50% of build cost.],
+    [15], [Salvage],         [One-shot],   [Scrap ships at planet for half their build cost.],
   ),
 )
 
@@ -647,13 +647,13 @@ answer yes to "Include time to enter system?"
 
 *Mission 1: Move to Sector.* A simple transit order. The fleet travels to the destination sector at the speed of its slowest ship, then stops and reverts to Hold Position. You must issue new orders if you want it to do anything else.
 
-*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. If that planet is captured while the fleet is en route, it automatically redirects to the next nearest friendly planet. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet; no keeps it on the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
+*Mission 2: Seek Home.* The fleet travels to the nearest planet you own. It keeps that planet for as long as you own it, even if another becomes nearer on the way. If you lose the planet while the fleet is en route, the fleet turns at once for the nearest planet you still own, measured from where it is; with none left, it stops and holds where it is. On arrival, it reverts to Hold Position. The game picks the planet; you enter no coordinates. When you order a single fleet that is already in the system of its nearest planet, the game asks "Do you wish this fleet to seek the next closest system?" Yes, the default, sends it to the next closest planet; no keeps it on the planet it is at. If that planet is the only one you own, the game says so and gives no order. In a group order each fleet seeks its own nearest planet without asking.
 
 *Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
 
 *Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster under low taxes. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
 
-*Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for approximately *50%* of the original build cost, returned to that planet's treasury. It reverts to Hold Position after scrapping. The game offers the planet nearest the fleet as the default target; if you own only one planet, it takes that planet without asking. A group salvages at one planet.
+*Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for half their build cost, rounded up ship by ship, returned to that planet's treasury: 23 points for a battleship, 8 for a cruiser, 3 for a destroyer, 3 for a transport (loaded or empty), 10 for an ETAC, and 8 for a scout. Armies aboard loaded transports land on the planet, and the fleet is disbanded. If you lose the planet while the fleet is en route, the fleet salvages at the nearest planet you still own instead; with none left, it stops and holds where it is. The game offers the planet nearest the fleet as the default target; if you own only one planet, it takes that planet without asking. A group salvages at one planet.
 
 === Persistent Standing Missions
 
@@ -707,7 +707,12 @@ computer mind your defenses if you miss turns. By default, autopilot turns on
 after three missed turns. Your first real return that year --- logging into
 `nc-game`, entering through `nc-door`, or submitting a valid turn file ---
 turns that inactivity autopilot back off. Manual autopilot stays on until you
-change it yourself. Diplomacy (*E*) lets you mark other empires as Neutral or
+change it yourself. While autopilot runs, each year it sends every fleet on
+Hold Position to the planet of yours that is best for its distance and
+production. Warships already in orbit there take Guard/Blockade, raising an
+ROE of 0 to 6, and escort a starbase of yours in the same orbit that has no
+escort; fleets with any other order are left alone.
+Diplomacy (*E*) lets you mark other empires as Neutral or
 Enemy. Messages (*C*) lets you write to other empires. In the message editor, *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark, as it does in name fields. Messages reach their recipients at the next maintenance. Until then, the ones you send this turn sit at the top of your inbox, marked *OUT*; *Enter* reads one and *D* cancels it. *D* on the recipient list opens the same queued messages with the same keys.
 
 To keep messaging civil, you may send no more than three messages to any single opponent per turn. In a four-player game, for example, that is up to twelve outgoing messages in a turn. Messages and reports are never automatically purged --- they accumulate in your inbox across turns until you remove them yourself. The inbox supports type and year filters to help you find older items, and pressing *D* on a selected item prompts for deletion, defaulting to yes. General Command also offers a bulk delete to clear all messages at once. New reports and messages from the most recent maintenance turn are presented one by one through the scrolling intro review when you log in, giving you another opportunity to read and delete before reaching the main menu.
@@ -762,11 +767,11 @@ highlighted fleet.
 
 == Building and Commissioning
 
-Each planet has a *10-slot build queue*. During maintenance, a planet processes as many queued build points as its current per-turn build capacity allows. Small orders may finish in one maintenance turn, while larger ones can stay queued across multiple years until the remaining cost reaches zero. As enough points are applied to complete individual units, ships and starbases move to *Stardock* --- a holding area on the planet where they sit idle and vulnerable until commissioned --- even if other units from the same order remain queued. Ships are commissioned into numbered fleets, while starbases are commissioned individually and managed through their own Starbase Command submenu. Armies and ground batteries, by contrast, deploy directly to the planet surface and do not pass through stardock.
+Each planet keeps a build queue, and your *budget* is the only limit on it: you may order any number of units of any kind, so long as the budget covers them. During maintenance, a planet processes as many queued build points as its current per-turn build capacity allows. Small orders may finish in one maintenance turn, while larger ones can stay queued across multiple years until the remaining cost reaches zero. As enough points are applied to complete individual units, ships and starbases move to *Stardock* --- a holding area on the planet where they sit idle and vulnerable until commissioned --- even if other units from the same order remain queued. Ships are commissioned into numbered fleets, while starbases are commissioned individually and managed through their own Starbase Command submenu. Armies and ground batteries, by contrast, deploy directly to the planet surface and do not pass through stardock.
 
 A planet without a starbase can spend up to its Production in a single turn. A planet with an orbiting starbase can spend up to *5x* its Production, drawing from its treasury (see @treasury). The build screen shows *BUDGET* --- your treasury capped by build capacity, minus what you have already committed this turn.
 
-#admonition("NOTE")[The build queue, stardock, and treasury are all linked. If stardock is full for a given unit type, that slot stops drawing points. Blocked slots do not drain your treasury --- but they also do not free capacity for other work. Commission your ships promptly to keep the pipeline moving.]
+#admonition("NOTE")[The build queue, stardock, and treasury are all linked. If stardock is full for a given unit type, that order stops drawing points. Blocked orders do not drain your treasury --- but they also do not free capacity for other work. Commission your ships promptly to keep the pipeline moving.]
 
 #admonition("WARNING")[Troop transports are built empty. You must manually load armies onto them before sending them into battle.]
 

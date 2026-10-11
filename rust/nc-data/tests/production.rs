@@ -426,3 +426,58 @@ fn maintenance_ground_battery_build_waits_at_planet_cap() {
         u8::MAX
     );
 }
+
+#[test]
+fn maintenance_delivers_every_army_of_an_order_past_255_points() {
+    let mut player = player_with_empire_name("Alpha", 50, 0);
+    player.mode = PlayerMode::Human;
+
+    // 128 armies cost 256 points. A slot of 255 points used to split this
+    // into 255 + 1 and deliver 129.
+    let planet = owned_planet(1, 255, 300.0, 300, 0, 0);
+    let mut game = single_planet_game(player, planet);
+    game.append_planet_build_units(1, ProductionItemKind::Army, 128)
+        .expect("order armies");
+    assert_eq!(game.planets[0].build_queue[0].points_owed, 256);
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+
+    let planet = &game.planets[0];
+    assert_eq!(planet.armies, 128);
+    assert_eq!(planet.build_queue[0].points_owed, 0);
+    assert_eq!(planet.build_queue[1].points_owed, 0);
+}
+
+#[test]
+fn maintenance_delivers_every_battery_of_an_order_past_255_points() {
+    let mut player = player_with_empire_name("Alpha", 50, 0);
+    player.mode = PlayerMode::Human;
+
+    // 13 batteries cost 260 points; 255 + 5 used to deliver 14.
+    let planet = owned_planet(1, 255, 300.0, 300, 0, 0);
+    let mut game = single_planet_game(player, planet);
+    game.append_planet_build_units(1, ProductionItemKind::GroundBattery, 13)
+        .expect("order batteries");
+    assert_eq!(game.planets[0].build_queue[0].points_owed, 260);
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+
+    let planet = &game.planets[0];
+    assert_eq!(planet.ground_batteries, 13);
+    assert_eq!(planet.build_queue[0].points_owed, 0);
+    assert_eq!(planet.build_queue[1].points_owed, 0);
+}
+
+#[test]
+fn maintenance_docks_any_number_of_starbases_from_one_slot() {
+    let mut player = player_with_empire_name("Alpha", 50, 0);
+    player.mode = PlayerMode::Human;
+
+    let planet = owned_planet(1, 255, 300.0, 300, 0, 0);
+    let mut game = single_planet_game(player, planet);
+    game.append_planet_build_units(1, ProductionItemKind::Starbase, 5)
+        .expect("order starbases");
+    run_maintenance_turn(&mut game).expect("maintenance should succeed");
+
+    let planet = &game.planets[0];
+    assert_eq!(planet.stardock.starbases, 5);
+    assert_eq!(planet.build_queue[0].points_owed, 0);
+}

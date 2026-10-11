@@ -163,10 +163,10 @@ build semantics are part of its economy and stay (decision of 2026-10-10:
 keep Rust's economy). So the typed model and the SQLite schema store Rust's
 slots, and the classic codec translates: on import, classic counts become
 slots owing `count x cost`; on export, slots become counts of units by kind.
-A slot that is part-paid has no classic form; t056 decides how to export it
-and records the choice. Until t056, the codec carries Rust's slot bytes at
-0x24, so ECMAINT misreads a Rust game's pending builds and Rust misreads a
-classic game's.
+A slot that is part-paid has no classic form; t056 exports its whole units
+and credits the paid part to stored goods, as the Result in
+[the build queue investigation](../investigations/jladc1qu-build-queue-translation-between-rust-slots-and-classic-counts.md#result)
+records.
 
 ## Phase 3 — typed SQLite schema
 

@@ -17,12 +17,16 @@ fn planet_build_recreates_known_valid_build_pre_fixture() {
             "planet-build",
             target.to_str().unwrap(),
             "15",
-            "0x03",
-            "0x01",
+            "3",
+            "destroyer",
         ],
         common::rust_workspace(),
     );
-    assert!(stdout.contains("Planet record 15 updated: build_slot=0x03 build_kind=0x01"));
+    assert!(stdout.contains("Planet record 15 build ordered: 3 destroyer"));
+    run_nc_cli_in_dir(
+        &["planet-build", target.to_str().unwrap(), "15", "1", "etac"],
+        common::rust_workspace(),
+    );
 
     export_campaign_db(&target, &target);
     let expected = repo_root().join("fixtures/ecmaint-build-pre/v1.5/PLANETS.DAT");
@@ -44,8 +48,10 @@ fn planet_build_report_prints_known_fixture_fields() {
     ]);
     assert!(stdout.contains("Planet Build Report"));
     assert!(stdout.contains("record=15"));
-    assert!(stdout.contains("build_slot=0x03"));
-    assert!(stdout.contains("build_kind=0x01"));
+    assert!(
+        stdout.contains("build_queue=3 destroyers, 1 ETAC"),
+        "{stdout}"
+    );
     assert!(stdout.contains("stardock_count=0x00"));
     assert!(stdout.contains("stardock_kind=0x00"));
 }
@@ -59,12 +65,16 @@ fn planet_build_init_materializes_parameterized_directory() {
             "planet-build-init",
             target.to_str().unwrap(),
             "15",
-            "0x03",
-            "0x01",
+            "3",
+            "destroyer",
         ],
         common::rust_workspace(),
     );
     assert!(stdout.contains("Planet-build directory initialized at"));
+    run_nc_cli_in_dir(
+        &["planet-build", target.to_str().unwrap(), "15", "1", "etac"],
+        common::rust_workspace(),
+    );
 
     let validate = run_nc_cli_in_dir(
         &["validate", target.to_str().unwrap(), "planet-build"],
@@ -83,26 +93,26 @@ fn planet_build_batch_init_materializes_multiple_directories() {
         &[
             "planet-build-batch-init",
             target.to_str().unwrap(),
-            "15:0x03:0x01",
-            "12:0x02:0x04",
+            "15:3:destroyer",
+            "12:2:scout",
         ],
         common::rust_workspace(),
     );
     assert!(stdout.contains("Initialized 2 planet-build directories under"));
 
     let manifest = fs::read_to_string(target.join("PLANET_BUILDS.txt")).unwrap();
-    assert!(manifest.contains("p15-s03-k01"));
-    assert!(manifest.contains("p12-s02-k04"));
+    assert!(manifest.contains("p15-q3-destroyer"));
+    assert!(manifest.contains("p12-q2-scout"));
 
-    let validate = run_nc_cli_in_dir(
+    let report = run_nc_cli_in_dir(
         &[
-            "validate",
-            target.join("p15-s03-k01").to_str().unwrap(),
-            "planet-build",
+            "planet-build-report",
+            target.join("p12-q2-scout").to_str().unwrap(),
+            "12",
         ],
         common::rust_workspace(),
     );
-    assert!(validate.contains("Valid planet-build scenario"));
+    assert!(report.contains("build_queue=2 scouts"), "{report}");
 
     cleanup_dir(&target);
 }
@@ -137,7 +147,8 @@ fn validate_planet_build_accepts_known_valid_fixture() {
         "planet-build",
     ]);
     assert!(stdout.contains("Valid planet-build scenario"));
-    assert!(stdout.contains("PLANET[15].build_kind = 0x01"));
+    assert!(stdout.contains("PLANET[15] queues 3 destroyer"), "{stdout}");
+    assert!(stdout.contains("PLANET[15] queues 1 etac"), "{stdout}");
 }
 
 #[test]
@@ -146,8 +157,8 @@ fn validate_planet_build_rejects_post_maint_fixture() {
         &["validate", "fixtures/ecmaint-post/v1.5", "planet-build"],
         common::rust_workspace(),
     );
-    assert!(stderr.contains("PLANET[15].build_slot expected 0x03, got 0x00"));
-    assert!(stderr.contains("PLANET[15].build_kind expected 0x01, got 0x00"));
+    assert!(stderr.contains("PLANET[15] queued Destroyer expected 3, got 0"));
+    assert!(stderr.contains("PLANET[15] queued Etac expected 1, got 0"));
 }
 
 #[test]
