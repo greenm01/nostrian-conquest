@@ -561,3 +561,81 @@ Guard/Blockade fleets; (3) keep a worldless rogue empire alive and patrolling
 (`defeat_empire` must not turn it into civil disorder); (4) end a fleet's
 escape episode when the AI orders pass re-orders it. Verify each against
 classic where the t070 probe tooling can.
+
+Result (2026-10-11): all four items done, each checked against classic.
+
+- **Escort release.** Of the call sites in the encounter and combat code,
+  the decision aborts (`1b05:185e`, `1b05:1f5d`) and the retreat
+  (`1b05:3151`) are reached only by fleets on Bombard, Invade, Blitz,
+  Colonize, or Guard/Blockade (their gates, `1b05:1548`, `1b05:1d65`, and
+  `1b05:2e97..2fe8`, admit no other order), and the planet-assault wrap-ups
+  (`0b5d:c53a`, `0b5d:cb7b`) hold an attacker; none is on Guard Starbase, so
+  the call finds nothing. The scatter (`1b05:25ab`, any order but Seek Home
+  and Salvage) and every fleet delete (`2895:3d46`, from `2895:3d0c`: the
+  battle tail at `1b05:9927` and `9966`, the merge routine `2895:4a6b` that
+  the rogue and autopilot merge pass `24a3:216f` and the tick dispatcher
+  call, salvage, the planetless patrol, and defection) release a guard's
+  base.
+  Rust now calls `release_starbase_escort` in `abort_mission` (the decision
+  aborts, a no-op as in classic), in `abort_mission_to_seek_home_or_hold`
+  (the battle's retreat and escape, and the pre-maintenance check of a human
+  empire's fleet that lost the warships its order needs), at the write-back
+  of a fleet a battle left without ships, and for every fleet
+  `apply_fleet_removal_remap` removes. The planet-assault wrap-ups are left
+  alone. The scatter calls the release before its world pick, so a guard whose
+  empire owns no other world keeps Guard Starbase in classic with the base
+  freed; Rust's guard holds in place, as every Rust retreat does without a
+  world to go to, and the base is freed too.
+- **Unarmed guards.** `sanitize.rs` skips the warship check for Guard/Blockade
+  and Guard Starbase fleets of the empires ECMAINT plays
+  (`Player::played_by_ecmaint`: rogue, or human on autopilot). Guard Starbase
+  is in because the fleet that took a base is on it the next year. Other
+  order errors are still sanitized, and the check stays for human empires
+  (classic held a human ETAC-only Guard/Blockade fleet at ROE 0).
+- **Worldless rogue.** The campaign rules skip rogue empires when they
+  eliminate, so `defeat_empire` never turns one into civil disorder, and a
+  rogue empire contends for the throne only while it holds a world (its
+  patrol cannot take one; otherwise ETACs in a patrolling fleet would hold
+  the campaign open). Classic's `24a3:0c2a` marks every human empire the
+  enemy of a rogue with a count of 0, each year, with or without a fleet; the
+  orders pass now does the same (`declare_humans_enemies`). Classic leaves a
+  rogue with neither world nor fleet alone, its base included (the base lifts
+  from the world it no longer owns like any base); Rust already did.
+- **Escape episodes.** A player's order ends one through
+  `Fleet::end_escape`, now shared: `set_fleet_order`, the Join order, and
+  every order the pass writes (the world pick, the starbase step, the
+  patrol) call it. A fleet the autopilot does not touch keeps its episode.
+- **Probes** (`tools/ncmaint_escort_probe.py`, classic under DOSBox-X on the
+  move fixture, Rust through `nc-cli maint-rust`): `merge` (a rogue Guard
+  Starbase fleet merged into another freed its base, which the merged fleet
+  then took; Rust agreed on every record), `scatter` and `destroy` (10 and 12
+  runs: a guard that scattered, 3 runs, and one deleted, 1 run, left the
+  base's word at 0; a guard that won kept it; the combat itself is NC's, so
+  only the base is compared), `abort` (5 runs, 2 aborted: the base kept the
+  word, which was the fleet's number), `etac` (three years each for rogue,
+  autopilot, and human empires: rogue and autopilot ETAC-only fleets took the
+  base on Guard Starbase at ROE 0 and kept the order, the rogue pass freeing
+  the base from the second year; the human fleet held at ROE 0; Rust agreed
+  except for the autopilot's third-year build and the human fleet's target
+  depth, 0 in Rust and 1 in classic), `worldless` (three years, with and
+  without a fleet: the empire stayed rogue, marked the human enemy from the
+  first year, patrolled with its warship and disbanded the rest; Rust agreed
+  apart from the random patrol targets).
+- **Tests.** New `nc-engine/tests/combat/escort.rs` (4: a guard that leaves a
+  battle goes home or holds and frees its base, one destroyed frees it, one
+  that fights on keeps it), one in `encounter/aborts.rs` (the no-op), and in
+  `nc-data`: `rogue_orders.rs` (6: the merge, the unarmed guard kept for
+  three years, the enemy mark, the last world lost and the patrol that
+  follows, and two escape cases), `home_orders.rs` (5: the autopilot's
+  unarmed guard, the human control, the human guard that lost its warships
+  and its base, and two escape cases), and `campaign.rs` (2: a planetless
+  rogue is neither eliminated nor a contender). Changed expectation:
+  `planetless_rogue_without_recovery_forces_does_not_block_victory` expected
+  the rogue's elimination event; the rogue is now left alone.
+- **Open, found while reading.** Classic's `24a3:0c2a` also turns a
+  civil-disorder empire with no planets into a rogue; Rust leaves it in civil
+  disorder. Classic's merge pass (`24a3:216f`) joins co-located fleets only at
+  the empire's worlds, for rogue empires (any order) and, by the
+  disassembly, for autopilot ones (Hold and Guard/Blockade only); Rust's
+  merges rogue fleets wherever they meet and the autopilot's never. Rust's hold after a pre-maintenance abort
+  sets the target depth to 0 where classic keeps 1.
