@@ -598,12 +598,12 @@ impl DashApp {
                     _ => {}
                 },
                 OwnedPlanetPopupMode::MassCommissionConfirm => match key.code {
-                    KeyCode::Char('y') | KeyCode::Char('Y') => {
+                    KeyCode::Char('y') | KeyCode::Char('Y') | KeyCode::Enter => {
                         if let Err(err) = self.confirm_owned_planet_mass_commission() {
                             self.show_owned_planet_status(err.to_string());
                         }
                     }
-                    KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Enter | KeyCode::Esc => {
+                    KeyCode::Char('n') | KeyCode::Char('N') | KeyCode::Esc => {
                         self.set_owned_planet_popup_mode(OwnedPlanetPopupMode::Browse)
                     }
                     _ => {}

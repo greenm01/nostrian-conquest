@@ -65,7 +65,7 @@ pub fn draw(buf: &mut PlayfieldBuffer, app: &DashApp, _map_frame: MapWidgetFrame
             InboxFocus::Preview => "Preview",
         },
         if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
+            "  Delete this item? [Y]/N"
         } else {
             ""
         }
@@ -223,7 +223,7 @@ pub(crate) fn popup_rect(app: &DashApp, _map_frame: MapWidgetFrame) -> Rect {
             InboxFocus::Preview => "Preview",
         },
         if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
+            "  Delete this item? [Y]/N"
         } else {
             ""
         }
@@ -480,7 +480,7 @@ pub fn hit_test_inbox_pane(
             InboxFocus::Preview => "Preview",
         },
         if app.inbox_overlay.delete_confirm {
-            "  Delete this item? Y/[N]"
+            "  Delete this item? [Y]/N"
         } else {
             ""
         }

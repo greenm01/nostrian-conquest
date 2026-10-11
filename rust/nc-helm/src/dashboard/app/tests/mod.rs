@@ -29,6 +29,7 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::PathBuf;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
+mod confirm_defaults;
 mod inbox_outgoing;
 mod inbox_year_filter;
 mod stale_session;
@@ -3359,8 +3360,8 @@ fn planet_list_mass_commission_uses_all_owned_planets() {
         PlanetOverlayPromptMode::MassCommissionConfirm
     );
     assert!(
-        render_planet_footer_line(&app, "Mass commission? Y/[N] ->")
-            .contains("Mass commission? Y/[N] ->")
+        render_planet_footer_line(&app, "Mass commission? [Y]/N ->")
+            .contains("Mass commission? [Y]/N ->")
     );
 
     app.handle_key(key(KeyCode::Char('y')));
