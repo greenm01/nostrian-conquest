@@ -545,6 +545,8 @@ error's text, and each later save is refused the same way.
 message. The line is shorter than the example in the first note so it fits one
 80-column notice row.
 
+Result for t089 (2026-10-11): `nc-cli db-import` matches `CampaignStoreError::StaleSnapshot` and refuses with its own operator message, naming the store's year and the directory's year and saying to import into a fresh store or export the store first; the player-worded text is unchanged.
+
 ### t077
 
 `nc-helm`'s "current year only" inbox filter keeps items whose year equals
@@ -552,3 +554,5 @@ the current year, but delivered mail and maintenance reports carry an
 earlier year (`report_year = year - 1`), so the filter hides everything.
 Make it show the latest delivered year. The filter is off by default.
 Found by the t067 follow-up.
+
+Result (2026-10-11): `nc-helm`'s "current year only" inbox filter now keeps delivered mail and reports of the year before the current one (the latest delivered year), and an outgoing row (the sender's own queued message, not yet delivered) of the current year.
