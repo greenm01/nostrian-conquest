@@ -420,14 +420,14 @@ planet record={planet_record_index_1_based} {{
                 planet_index_1_based,
                 reason:
                     PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-                        kind_raw,
-                        points_remaining_raw,
+                        kind,
+                        points_remaining,
                     },
             },
         ) => {
             assert_eq!(planet_index_1_based, planet_record_index_1_based);
-            assert_eq!(kind_raw, 4);
-            assert_eq!(points_remaining_raw, 14);
+            assert_eq!(kind, 4);
+            assert_eq!(points_remaining, 14);
         }
         other => panic!("unexpected error: {other:?}"),
     }

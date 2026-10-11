@@ -3703,8 +3703,8 @@ fn hosted_draft_replay_refreshes_planet_status_cache() {
         planets: vec![PlanetTurnBlock {
             planet_record_index_1_based: 1,
             actions: vec![PlanetTurnAction::Build {
-                points_remaining_raw: 5,
-                kind_raw: 1,
+                points_remaining: 5,
+                kind: 1,
             }],
         }],
         fleets: Vec::new(),

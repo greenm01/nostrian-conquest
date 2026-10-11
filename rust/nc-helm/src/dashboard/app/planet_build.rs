@@ -2,7 +2,7 @@ use nc_data::{EmpirePlanetEconomyRow, GameStateMutationError, ProductionItemKind
 use nc_engine::{
     BUILD_UNITS, build_unit_spec_by_kind, planet_build_max_quantity, planet_build_orders,
     planet_build_specify_entries, planet_build_unavailable_message, planet_build_view,
-    production_item_kind_raw,
+    production_item_kind_code,
 };
 
 use crate::dashboard::coords::format_sector_coords_table;
@@ -285,7 +285,7 @@ impl DashApp {
         self.stage_hosted_planet_remove_build(
             planet_record_index_1_based,
             1,
-            production_item_kind_raw(kind),
+            production_item_kind_code(kind),
         );
         self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
@@ -322,7 +322,7 @@ impl DashApp {
             .clear_planet_build_orders_by_kind(planet_record_index_1_based, kind)?;
         self.stage_hosted_planet_clear_build_kind(
             planet_record_index_1_based,
-            production_item_kind_raw(kind),
+            production_item_kind_code(kind),
         );
         self.save_and_refresh_runtime()?;
         self.reselect_planet_overlay_row(planet_record_index_1_based);
@@ -578,7 +578,7 @@ impl DashApp {
         match self.game_data.append_planet_build_order(
             planet_record_index_1_based,
             points,
-            production_item_kind_raw(kind),
+            production_item_kind_code(kind),
         ) {
             Ok(()) => {}
             Err(GameStateMutationError::PlanetBuildQueueFull { .. }) => {
@@ -589,11 +589,11 @@ impl DashApp {
             Err(err) => return Err(err.into()),
         }
 
-        if let Ok(points_remaining_raw) = u8::try_from(points) {
+        if let Ok(points_remaining) = u8::try_from(points) {
             self.stage_hosted_planet_build(
                 planet_record_index_1_based,
-                points_remaining_raw,
-                production_item_kind_raw(kind),
+                points_remaining,
+                production_item_kind_code(kind),
             );
         }
         self.save_and_refresh_runtime()?;

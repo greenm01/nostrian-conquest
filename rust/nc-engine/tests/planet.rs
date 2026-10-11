@@ -4,23 +4,23 @@ use nc_data::{
 use nc_engine::{
     ArmyTransportMode, default_fleet_transport_fleet_number,
     planet_build_max_selectable_unit_number, planet_build_specify_entries, planet_build_view,
-    planet_commission_draft_state, production_item_kind_raw,
+    planet_commission_draft_state, production_item_kind_code,
 };
 
 #[test]
 fn production_item_kind_raw_matches_runtime_codes() {
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Destroyer), 1);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Cruiser), 2);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Battleship), 3);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Scout), 4);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Transport), 5);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Etac), 6);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Destroyer), 1);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Cruiser), 2);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Battleship), 3);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Scout), 4);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Transport), 5);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Etac), 6);
     assert_eq!(
-        production_item_kind_raw(ProductionItemKind::GroundBattery),
+        production_item_kind_code(ProductionItemKind::GroundBattery),
         7
     );
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Army), 8);
-    assert_eq!(production_item_kind_raw(ProductionItemKind::Starbase), 9);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Army), 8);
+    assert_eq!(production_item_kind_code(ProductionItemKind::Starbase), 9);
 }
 
 #[test]

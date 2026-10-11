@@ -568,7 +568,7 @@ pub enum InvalidPlayerStateEvent {
     FleetMission {
         fleet_idx: usize,
         owner_empire: u8,
-        order_code_raw: u8,
+        order_code: u8,
         coords: [u8; 2],
         reason: FleetOrderValidationError,
     },

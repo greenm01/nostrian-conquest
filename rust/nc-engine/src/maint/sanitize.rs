@@ -81,7 +81,7 @@ pub(super) fn sanitize_invalid_player_inputs(
                         events.push(InvalidPlayerStateEvent::FleetMission {
                             fleet_idx,
                             owner_empire,
-                            order_code_raw: order_code,
+                            order_code,
                             coords,
                             reason,
                         });

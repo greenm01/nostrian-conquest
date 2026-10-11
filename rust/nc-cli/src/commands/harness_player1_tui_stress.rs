@@ -262,8 +262,8 @@ fn clear_planet_stardock(planet: &mut Planet) {
 
 fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, u8, u16)]) {
     let total_planets = game_data.planets.len();
-    for (record_index_1_based, kind_raw, count) in specs {
-        let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
+    for (record_index_1_based, kind, count) in specs {
+        let Some(slot) = nc_data::stardock_slot_for_kind(*kind) else {
             continue;
         };
         if *record_index_1_based > total_planets {
@@ -286,12 +286,12 @@ fn apply_player_owned_stardock_specs(
         .filter(|(_, planet)| planet.owner.0 == owner_empire_id)
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
-    for (owned_ordinal_1_based, kind_raw, count) in specs {
+    for (owned_ordinal_1_based, kind, count) in specs {
         let Some(&record_index_1_based) = owned_planet_records.get(owned_ordinal_1_based - 1)
         else {
             continue;
         };
-        let Some(slot) = nc_data::stardock_slot_for_kind(*kind_raw) else {
+        let Some(slot) = nc_data::stardock_slot_for_kind(*kind) else {
             continue;
         };
         let planet = &mut game_data.planets[record_index_1_based - 1];

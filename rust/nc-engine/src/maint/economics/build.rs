@@ -109,8 +109,8 @@ fn ceil_div(value: u32, divisor: u32) -> u32 {
 }
 
 /// Completed ships and starbases wait in their type's stardock slot.
-fn add_to_stardock(planet: &mut nc_data::Planet, kind_raw: u8, qty: u32) {
-    if let Some(slot) = nc_data::stardock_slot_for_kind(kind_raw) {
+fn add_to_stardock(planet: &mut nc_data::Planet, kind: u8, qty: u32) {
+    if let Some(slot) = nc_data::stardock_slot_for_kind(kind) {
         let current = planet.stardock[slot];
         planet.stardock[slot] = current.saturating_add(qty);
     }

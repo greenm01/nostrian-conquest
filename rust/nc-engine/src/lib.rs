@@ -68,7 +68,7 @@ pub use planet::{
     planet_build_max_quantity, planet_build_max_selectable_unit_number, planet_build_orders,
     planet_build_specify_entries, planet_build_unavailable_message, planet_build_view,
     planet_building_unit_count, planet_commission_draft_state, planet_commission_slot_entries,
-    planet_docked_unit_count, planet_has_any_buildable_unit, production_item_kind_raw,
+    planet_docked_unit_count, planet_has_any_buildable_unit, production_item_kind_code,
     resolve_planet_transport_fleet_selection, transport_available_qty,
     transport_fleet_candidates_for_planet, transport_planet_candidates,
 };

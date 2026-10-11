@@ -57,22 +57,22 @@ impl CoreGameData {
     pub fn set_planet_build(
         &mut self,
         record_index_1_based: usize,
-        slot_raw: u8,
-        kind_raw: u8,
+        slot: u8,
+        kind: u8,
     ) -> Result<(), GameStateMutationError> {
-        if kind_raw == 0 {
+        if kind == 0 {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: record_index_1_based,
                 reason: PlanetPlayerInputValidationError::MissingBuildKindForCount,
             });
         }
         if matches!(
-            ProductionItemKind::from_code(kind_raw),
+            ProductionItemKind::from_code(kind),
             ProductionItemKind::Unknown(_)
         ) {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: record_index_1_based,
-                reason: PlanetPlayerInputValidationError::InvalidBuildKind(kind_raw),
+                reason: PlanetPlayerInputValidationError::InvalidBuildKind(kind),
             });
         }
         let record = self.planets.get_mut(record_index_1_based - 1).ok_or(
@@ -80,8 +80,8 @@ impl CoreGameData {
                 index_1_based: record_index_1_based,
             },
         )?;
-        record.build_queue[0].points_owed = slot_raw;
-        record.build_queue[0].kind = ProductionItemKind::from_code(kind_raw);
+        record.build_queue[0].points_owed = slot;
+        record.build_queue[0].kind = ProductionItemKind::from_code(kind);
         Ok(())
     }
 
@@ -277,40 +277,40 @@ impl CoreGameData {
     pub fn append_planet_build_order(
         &mut self,
         record_index_1_based: usize,
-        points_remaining_raw: u32,
-        kind_raw: u8,
+        points_remaining: u32,
+        kind_code: u8,
     ) -> Result<(), GameStateMutationError> {
-        if points_remaining_raw == 0 || kind_raw == 0 {
+        if points_remaining == 0 || kind_code == 0 {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: record_index_1_based,
-                reason: if kind_raw == 0 {
+                reason: if kind_code == 0 {
                     PlanetPlayerInputValidationError::MissingBuildKindForCount
                 } else {
                     PlanetPlayerInputValidationError::MissingBuildCountForKind
                 },
             });
         }
-        let kind = ProductionItemKind::from_code(kind_raw);
+        let kind = ProductionItemKind::from_code(kind_code);
         if matches!(kind, ProductionItemKind::Unknown(_)) {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: record_index_1_based,
-                reason: PlanetPlayerInputValidationError::InvalidBuildKind(kind_raw),
+                reason: PlanetPlayerInputValidationError::InvalidBuildKind(kind_code),
             });
         }
         if let Some(cost) = kind.build_cost() {
-            if points_remaining_raw % cost != 0 {
+            if points_remaining % cost != 0 {
                 return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                     planet_index_1_based: record_index_1_based,
                     reason: PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-                        kind_raw,
-                        points_remaining_raw,
+                        kind: kind_code,
+                        points_remaining,
                     },
                 });
             }
         }
         let total_capacity =
             self.planet_additional_build_points_capacity(record_index_1_based, kind)?;
-        if points_remaining_raw > total_capacity {
+        if points_remaining > total_capacity {
             return Err(GameStateMutationError::PlanetBuildQueueFull {
                 index_1_based: record_index_1_based,
             });
@@ -323,7 +323,7 @@ impl CoreGameData {
             },
         )?;
 
-        let mut remaining = points_remaining_raw;
+        let mut remaining = points_remaining;
         for slot in 0..10 {
             if remaining == 0 || record.build_queue[slot].kind != kind {
                 continue;
@@ -348,7 +348,7 @@ impl CoreGameData {
             }
             let add_here = remaining.min(slot_capacity);
             record.build_queue[slot].points_owed = add_here as u8;
-            record.build_queue[slot].kind = ProductionItemKind::from_code(kind_raw);
+            record.build_queue[slot].kind = ProductionItemKind::from_code(kind_code);
             remaining -= add_here;
         }
         Ok(())
@@ -356,11 +356,11 @@ impl CoreGameData {
     pub fn replace_planet_build_queue_with_single_order(
         &mut self,
         record_index_1_based: usize,
-        points_remaining_raw: u8,
-        kind_raw: u8,
+        points_remaining: u8,
+        kind: u8,
     ) -> Result<(), GameStateMutationError> {
         self.clear_planet_build_queue(record_index_1_based)?;
-        self.set_planet_build(record_index_1_based, points_remaining_raw, kind_raw)
+        self.set_planet_build(record_index_1_based, points_remaining, kind)
     }
 }
 

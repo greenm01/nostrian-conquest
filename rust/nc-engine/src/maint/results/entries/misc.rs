@@ -331,11 +331,11 @@ pub fn push_misc_entries(
             nc_data::InvalidPlayerStateEvent::FleetMission {
                 fleet_idx,
                 owner_empire,
-                order_code_raw,
+                order_code,
                 coords,
                 reason,
             } => {
-                let order_name = nc_data::Order::from_code(order_code_raw)
+                let order_name = nc_data::Order::from_code(order_code)
                     .display_label()
                     .to_lowercase();
                 let body = if capability_loss_invalid_order_reason(reason) {

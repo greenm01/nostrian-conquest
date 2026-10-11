@@ -84,15 +84,15 @@ fn parse_planet_block(node: &::kdl::KdlNode) -> Result<PlanetTurnBlock, TurnSubm
             }),
             "clear_build_queue" => actions.push(PlanetTurnAction::ClearBuildQueue),
             "clear_build_kind" => actions.push(PlanetTurnAction::ClearBuildKind {
-                kind_raw: parse_production_kind_raw(child)?,
+                kind: parse_production_kind_code(child)?,
             }),
             "remove_build" => actions.push(PlanetTurnAction::RemoveBuild {
                 qty: prop_u16(child, "qty")?,
-                kind_raw: parse_production_kind_raw(child)?,
+                kind: parse_production_kind_code(child)?,
             }),
             "build" => actions.push(PlanetTurnAction::Build {
-                points_remaining_raw: prop_u8(child, "points")?,
-                kind_raw: parse_production_kind_raw(child)?,
+                points_remaining: prop_u8(child, "points")?,
+                kind: parse_production_kind_code(child)?,
             }),
             "commission" => actions.push(PlanetTurnAction::Commission {
                 slot_0_based: prop_usize(child, "slot")?.checked_sub(1).ok_or_else(|| {
@@ -273,7 +273,7 @@ fn order_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
     Ok(raw)
 }
 
-fn parse_production_kind_raw(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
+fn parse_production_kind_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
     if let Some(value) = opt_prop_string(node, "kind")? {
         return production_kind_raw_from_name(&value);
     }

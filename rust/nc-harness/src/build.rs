@@ -214,12 +214,12 @@ fn apply_planet_specs(
             }
             for slot in &planet_spec.stardock {
                 // Each item type has its own stardock slot.
-                if nc_data::stardock_slot_for_kind(slot.kind_raw) != Some(slot.slot_0_based) {
+                if nc_data::stardock_slot_for_kind(slot.kind) != Some(slot.slot_0_based) {
                     return Err(HarnessError::Validation(format!(
                         "planet {} stardock slot {} does not hold kind {}",
                         planet_spec.record_index_1_based,
                         slot.slot_0_based + 1,
-                        slot.kind_raw
+                        slot.kind
                     )));
                 }
                 planet.stardock[slot.slot_0_based] = u32::from(slot.count);

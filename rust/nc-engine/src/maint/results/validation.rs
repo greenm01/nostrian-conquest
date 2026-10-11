@@ -86,11 +86,11 @@ pub fn planet_input_validation_reason_text(reason: PlanetPlayerInputValidationEr
             format!("the build queue contains unknown item kind {kind:#04x}")
         }
         PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-            kind_raw,
-            points_remaining_raw,
+            kind,
+            points_remaining,
         } => {
             format!(
-                "the build queue stores invalid points {points_remaining_raw} for item kind {kind_raw:#04x}"
+                "the build queue stores invalid points {points_remaining} for item kind {kind:#04x}"
             )
         }
         PlanetPlayerInputValidationError::MissingBuildKindForCount => {

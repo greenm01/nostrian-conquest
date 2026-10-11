@@ -361,14 +361,14 @@ fn parse_fleet_order(node: &kdl::KdlNode) -> Result<FleetOrderSpec, HarnessError
 }
 
 fn parse_stardock_slot(node: &kdl::KdlNode) -> Result<StardockSlotSpec, HarnessError> {
-    let kind_raw = if let Some(kind_raw) = opt_prop_u8(node, "kind_raw")? {
-        kind_raw
+    let kind = if let Some(kind) = opt_prop_u8(node, "kind_raw")? {
+        kind
     } else {
-        parse_production_kind_raw(&prop_string(node, "kind")?)?
+        parse_production_kind_code(&prop_string(node, "kind")?)?
     };
     Ok(StardockSlotSpec {
         slot_0_based: prop_usize_1_based(node, "slot")? - 1,
-        kind_raw,
+        kind,
         count: prop_u16(node, "count")?,
     })
 }
@@ -488,7 +488,7 @@ fn parse_planet_stat_field(value: &str) -> Result<PlanetStatField, HarnessError>
     }
 }
 
-fn parse_production_kind_raw(value: &str) -> Result<u8, HarnessError> {
+fn parse_production_kind_code(value: &str) -> Result<u8, HarnessError> {
     let kind = match value {
         "destroyer" | "dd" => ProductionItemKind::Destroyer,
         "cruiser" | "ca" => ProductionItemKind::Cruiser,

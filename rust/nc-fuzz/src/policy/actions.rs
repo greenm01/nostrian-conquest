@@ -314,8 +314,8 @@ pub fn build(
     Some(TurnAction::Planet(
         world,
         PlanetTurnAction::Build {
-            points_remaining_raw: (qty * unit.cost) as u8,
-            kind_raw: nc_engine::production_item_kind_raw(unit.kind),
+            points_remaining: (qty * unit.cost) as u8,
+            kind: nc_engine::production_item_kind_code(unit.kind),
         },
     ))
 }

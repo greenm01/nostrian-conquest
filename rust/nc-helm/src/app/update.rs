@@ -1712,8 +1712,8 @@ mod tests {
         assert!(matches!(
             draft.planets[0].actions.as_slice(),
             [PlanetTurnAction::Build {
-                points_remaining_raw: 5,
-                kind_raw: 1
+                points_remaining: 5,
+                kind: 1
             }]
         ));
     }
@@ -2222,8 +2222,8 @@ mod tests {
                 planets: vec![PlanetTurnBlock {
                     planet_record_index_1_based: 1,
                     actions: vec![PlanetTurnAction::Build {
-                        points_remaining_raw: 5,
-                        kind_raw: 1,
+                        points_remaining: 5,
+                        kind: 1,
                     }],
                 }],
                 fleets: Vec::new(),

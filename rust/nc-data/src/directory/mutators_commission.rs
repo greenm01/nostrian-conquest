@@ -48,10 +48,7 @@ impl CoreGameData {
             slot_0_based_list,
         )?;
 
-        let starbase_count = selected
-            .iter()
-            .filter(|(_, kind_raw, _)| *kind_raw == 9)
-            .count();
+        let starbase_count = selected.iter().filter(|(_, kind, _)| *kind == 9).count();
         if starbase_count > 1 || (starbase_count == 1 && selected.len() > 1) {
             return Err(GameStateMutationError::InvalidCommissionSelection);
         }
@@ -129,7 +126,7 @@ impl CoreGameData {
             planet_record_index_1_based,
             slot_0_based_list,
         )?;
-        if selected.iter().any(|(_, kind_raw, _)| *kind_raw == 9) {
+        if selected.iter().any(|(_, kind, _)| *kind == 9) {
             return Err(GameStateMutationError::InvalidCommissionSelection);
         }
 
@@ -398,8 +395,8 @@ fn full_ship_draft_from_selected(
     selected: &[SelectedStardockSlot],
 ) -> Result<CommissionFleetDraft, GameStateMutationError> {
     let mut draft = CommissionFleetDraft::default();
-    for (_, kind_raw, count) in selected {
-        match ProductionItemKind::from_code(*kind_raw) {
+    for (_, kind, count) in selected {
+        match ProductionItemKind::from_code(*kind) {
             ProductionItemKind::Destroyer => {
                 draft.destroyers = draft.destroyers.saturating_add(*count)
             }
@@ -442,8 +439,8 @@ fn decrement_selected_ship_slots(
     let mut remaining_transports = draft.transports;
     let mut remaining_etacs = draft.etacs;
 
-    for (slot_0_based, kind_raw, _) in selected {
-        let remaining_for_kind = match ProductionItemKind::from_code(*kind_raw) {
+    for (slot_0_based, kind, _) in selected {
+        let remaining_for_kind = match ProductionItemKind::from_code(*kind) {
             ProductionItemKind::Destroyer => &mut remaining_destroyers,
             ProductionItemKind::Cruiser => &mut remaining_cruisers,
             ProductionItemKind::Battleship => &mut remaining_battleships,

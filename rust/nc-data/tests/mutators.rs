@@ -594,8 +594,8 @@ fn append_planet_build_order_rejects_non_multiple_ship_points() {
         GameStateMutationError::InvalidPlanetPlayerInput {
             planet_index_1_based: 1,
             reason: PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-                kind_raw: 4,
-                points_remaining_raw: 14,
+                kind: 4,
+                points_remaining: 14,
             },
         }
     );
@@ -2898,17 +2898,15 @@ fn append_planet_build_order_rejects_non_multiple_surface_points() {
         conquest: Conquest::default(),
     };
 
-    for (points, kind_raw) in [(1, 7), (21, 7), (1, 8), (3, 8)] {
-        let error = data
-            .append_planet_build_order(1, points, kind_raw)
-            .unwrap_err();
+    for (points, kind) in [(1, 7), (21, 7), (1, 8), (3, 8)] {
+        let error = data.append_planet_build_order(1, points, kind).unwrap_err();
         assert_eq!(
             error,
             GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: 1,
                 reason: PlanetPlayerInputValidationError::InvalidBuildPointsForKind {
-                    kind_raw,
-                    points_remaining_raw: points,
+                    kind,
+                    points_remaining: points,
                 },
             }
         );

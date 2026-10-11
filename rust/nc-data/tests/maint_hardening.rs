@@ -50,7 +50,7 @@ fn invalid_bombard_order_is_canceled_before_execution() {
             event,
             InvalidPlayerStateEvent::FleetMission {
                 fleet_idx: 0,
-                order_code_raw: 6,
+                order_code: 6,
                 ..
             }
         )
@@ -75,7 +75,7 @@ fn invalid_colonize_order_without_etac_is_canceled() {
             event,
             InvalidPlayerStateEvent::FleetMission {
                 fleet_idx: 0,
-                order_code_raw: 12,
+                order_code: 12,
                 ..
             }
         )

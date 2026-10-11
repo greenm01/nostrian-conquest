@@ -48,22 +48,22 @@ fn render_planet_block(out: &mut String, planet: &PlanetTurnBlock) {
                 out.push_str(&format!("  rename name=\"{}\"\n", kdl_escape(name)));
             }
             PlanetTurnAction::ClearBuildQueue => out.push_str("  clear_build_queue\n"),
-            PlanetTurnAction::ClearBuildKind { kind_raw } => out.push_str(&format!(
+            PlanetTurnAction::ClearBuildKind { kind } => out.push_str(&format!(
                 "  clear_build_kind kind=\"{}\"\n",
-                production_kind_name(*kind_raw)
+                production_kind_name(*kind)
             )),
-            PlanetTurnAction::RemoveBuild { qty, kind_raw } => out.push_str(&format!(
+            PlanetTurnAction::RemoveBuild { qty, kind } => out.push_str(&format!(
                 "  remove_build kind=\"{}\" qty={}\n",
-                production_kind_name(*kind_raw),
+                production_kind_name(*kind),
                 qty
             )),
             PlanetTurnAction::Build {
-                points_remaining_raw,
-                kind_raw,
+                points_remaining,
+                kind,
             } => out.push_str(&format!(
                 "  build points={} kind=\"{}\"\n",
-                points_remaining_raw,
-                production_kind_name(*kind_raw)
+                points_remaining,
+                production_kind_name(*kind)
             )),
             PlanetTurnAction::Commission { slot_0_based } => {
                 out.push_str(&format!("  commission slot={}\n", slot_0_based + 1));
@@ -197,8 +197,8 @@ fn order_name(order_code: u8) -> &'static str {
     Order::from_code(order_code).as_str()
 }
 
-fn production_kind_name(kind_raw: u8) -> &'static str {
-    match ProductionItemKind::from_code(kind_raw) {
+fn production_kind_name(kind: u8) -> &'static str {
+    match ProductionItemKind::from_code(kind) {
         ProductionItemKind::Destroyer => "destroyer",
         ProductionItemKind::Cruiser => "cruiser",
         ProductionItemKind::Battleship => "battleship",

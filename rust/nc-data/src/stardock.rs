@@ -9,13 +9,13 @@ pub const STARDOCK_SLOT_COUNT: usize = 8;
 /// slot has no kind.
 const STARDOCK_SLOT_KINDS: [u8; STARDOCK_SLOT_COUNT] = [1, 2, 3, 4, 5, 6, 9, 0];
 
-/// The stardock slot that holds items of build kind `kind_raw`, if any.
-pub fn stardock_slot_for_kind(kind_raw: u8) -> Option<usize> {
-    (kind_raw != 0)
+/// The stardock slot that holds items of build kind `kind`, if any.
+pub fn stardock_slot_for_kind(kind_code: u8) -> Option<usize> {
+    (kind_code != 0)
         .then(|| {
             STARDOCK_SLOT_KINDS
                 .iter()
-                .position(|&kind| kind == kind_raw)
+                .position(|&kind| kind == kind_code)
         })
         .flatten()
 }

@@ -1,5 +1,5 @@
 use crate::navigation::sector_distance_sq;
-use crate::{CoreGameData, production_item_kind_raw};
+use crate::{CoreGameData, production_item_kind_code};
 use nc_data::{
     Coords, DiplomaticRelation, Order, ProductionItemKind, STARDOCK_SLOT_COUNT,
     build_queue_unit_counts, diplomatic_relation_toward, has_any_force, present_production_points,
@@ -240,7 +240,7 @@ fn autopilot_build_queue(
         let queued = build_queue_unit_counts(planet);
         let queued_qty = |kind: ProductionItemKind| {
             queued
-                .get(&production_item_kind_raw(kind))
+                .get(&production_item_kind_code(kind))
                 .copied()
                 .unwrap_or(0)
         };

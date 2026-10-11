@@ -38,7 +38,7 @@ pub struct DiplomacySpec {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StardockSlotSpec {
     pub slot_0_based: usize,
-    pub kind_raw: u8,
+    pub kind: u8,
     pub count: u16,
 }
 
