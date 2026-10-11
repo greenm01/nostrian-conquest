@@ -642,7 +642,8 @@ Planet), with no extra battery volley.
 A fleet that breaks off is escaping: from its retreat order on it is in an
 escape episode bound to the sector and layer it is leaving. The episode ends
 when the fleet actually leaves that sector or layer or receives a new order
-(a player's order, a Join, or the autopilot's), and it outlives the year: it
+(a player's order, a Join, or an order of ECMAINT's orders pass for a rogue
+or autopilot empire), and it outlives the year: it
 is runtime state on the fleet record and in the SQLite store (the
 `escape_*` columns of `snapshot_fleets`), and a classic export, which has
 no field for it, drops it. A fleet that holds in place because its empire

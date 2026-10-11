@@ -279,8 +279,10 @@ measures a base from offsets of zero), the escort release
 Starbase steps for both kinds of empire, the rogue starbase pick, the
 enemy mark, and the patrol. The patrol targets come from the campaign seed
 (`RNG_TAG_ORDERS`, the year, and the empire), and the deleted fleets leave
-the fleet table with the usual Join host bookkeeping. The campaign rules never
-eliminate a rogue empire, so it is still rogue when the next pass runs.
+the fleet table with the usual Join host bookkeeping. Every order the pass
+gives a fleet ends the fleet's escape from a battle, as a player's order does
+([nc-combat-spec.md](nc-combat-spec.md)). The campaign rules never eliminate
+a rogue empire, so it is still rogue when the next pass runs.
 
 Classic checks none of the orders of these two kinds of empire. Rust's input
 check (`sanitize.rs`) leaves a rogue or autopilot fleet without warships on

@@ -82,6 +82,7 @@ fn fleet_orders(game_data: &mut CoreGameData, owner: u8, governor: Governor) {
 }
 
 fn send_home(fleet: &mut nc_data::Fleet, world: [u8; 2], governor: Governor) {
+    fleet.end_escape();
     fleet.target = Coords::from_array(world);
     fleet.target_depth = 1;
     if fleet.sector.to_array() != world || fleet.depth.round() != 1 {
@@ -129,6 +130,7 @@ fn guard_unescorted_starbase(game_data: &mut CoreGameData, fleet_idx: usize) {
         return;
     };
     base.escort = fleet.fleet_number;
+    fleet.end_escape();
     fleet.order = Order::GuardStarbase;
     fleet.mission_target = base.base_id.0;
 }
@@ -201,6 +203,7 @@ fn patrol_orders(
             disbanded[fleet_idx] = true;
             continue;
         }
+        fleet.end_escape();
         fleet.rules_of_engagement = 10;
         fleet.order = Order::PatrolSector;
         fleet.target_depth = 0;

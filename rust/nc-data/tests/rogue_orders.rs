@@ -696,3 +696,76 @@ fn a_rogue_that_loses_its_last_world_goes_on_patrolling() {
     assert_eq!(fleet.rules_of_engagement, 10);
 }
 
+// ── Escape episodes ─────────────────────────────────────────────────────
+
+fn escaping(sector: [u8; 2], layer: u8) -> Option<EscapeEpisode> {
+    Some(EscapeEpisode {
+        sector: Coords::from_array(sector),
+        layer,
+        pursuers: 1,
+    })
+}
+
+#[test]
+fn an_order_from_the_rogue_pass_ends_an_escape_episode() {
+    // A player's order ends an escape (`Fleet::end_escape`); so does each
+    // order the pass gives, whether it changes the fleet's order (the Move
+    // fleet is sent home), only restates it (the cruiser in orbit stays on
+    // Guard/Blockade), or ends on the starbase step (the third fleet takes
+    // the base).
+    let mut game_data = rogue_scenario();
+    let fleet = rogue(&mut game_data, 0);
+    set_ships(fleet, 0, 1, 0, 0, 0);
+    set_fleet(
+        fleet,
+        [8, 13],
+        Real48::ZERO,
+        Order::MoveOnly,
+        [8, 13],
+        0,
+        0,
+        6,
+    );
+    for (n, sector) in [(1, ROGUE_HOME), (2, NEAR_WORLD)] {
+        let fleet = rogue(&mut game_data, n);
+        set_ships(fleet, 0, 1, 0, 0, 0);
+        set_fleet(
+            fleet,
+            sector,
+            Real48::ONE,
+            Order::GuardBlockadeWorld,
+            sector,
+            1,
+            0,
+            10,
+        );
+    }
+    add_base(&mut game_data, 2, NEAR_WORLD, Real48::ONE, 1, 0);
+    for n in 0..3 {
+        let sector = rogue(&mut game_data, n).sector.to_array();
+        let layer = u8::from(n > 0);
+        rogue(&mut game_data, n).escape = escaping(sector, layer);
+    }
+    run(&mut game_data);
+
+    for n in 0..3 {
+        assert_eq!(rogue(&mut game_data, n).escape, None, "fleet {n}");
+    }
+}
+
+#[test]
+fn a_rogue_patrol_order_ends_an_escape_episode() {
+    // With no speed to set out on, the fleet stays in its sector, so only
+    // the order can end the episode.
+    let mut game_data = worldless_scenario();
+    armed_idle(&mut game_data, 0, [8, 13]);
+    rogue(&mut game_data, 0).max_speed = 0;
+    rogue(&mut game_data, 0).escape = escaping([8, 13], 0);
+
+    run(&mut game_data);
+
+    let fleet = rogue(&mut game_data, 0);
+    assert_eq!(fleet.order, Order::PatrolSector);
+    assert_eq!(fleet.sector.to_array(), [8, 13]);
+    assert_eq!(fleet.escape, None);
+}
