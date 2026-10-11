@@ -466,6 +466,9 @@ maintenance on them. The shipped BBS and localhost paths (`nc-sysop maint`)
 are not affected. Finish the hosted maintenance path (apply submissions,
 compose reports, keep mail and scorch orders) or gate the command until it
 is finished. Found by the t039 phase 4 agent on 2026-10-10.
+The t067 follow-up confirmed the mail side: hosted maintenance saves queued
+mail as empty and `ProcessTurnSubmission` is a stub, so no mail reaches a
+hosted game, and maintenance would wipe it if it did.
 
 ### t067
 
@@ -504,3 +507,21 @@ mail reaches its recipient only after the maintenance that delivers it (its
 year is before the current one) in the inbox, login review, counts, bulk
 delete, nc-helm, and the hosted payload; the outbox read view scrolls with
 the inbox preview's keys.
+
+### t076
+
+Found by the t067 follow-up (2026-10-10): a player session left open
+while maintenance runs keeps saving to the year it loaded. The store keeps
+one snapshot per game year and loads the highest, so anything the session
+saves afterwards (mail, orders) lands in the old year's snapshot and is
+silently lost. Detect a newer snapshot before saving, refuse the stale
+write, and tell the player that maintenance has run and the session must
+reload.
+
+### t077
+
+`nc-helm`'s "current year only" inbox filter keeps items whose year equals
+the current year, but delivered mail and maintenance reports carry an
+earlier year (`report_year = year - 1`), so the filter hides everything.
+Make it show the latest delivered year. The filter is off by default.
+Found by the t067 follow-up.
