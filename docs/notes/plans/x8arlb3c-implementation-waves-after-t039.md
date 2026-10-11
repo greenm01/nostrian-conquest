@@ -50,7 +50,8 @@ prose. Decision 6's participation items (t073) follow when approved.
 
 ### Follow-up after t066
 
-**t093** adds the owner's compact `CA12!3` damage display and `3!`
+**t093** standardizes ASCII ship composition notation (healthy and damaged),
+documents it in the manual/help, and adds `3!`
 crippled-only input to the existing door Detach and Transfer flows. Plain
 quantities become healthy-first; recovery cohorts stay intact. See the
 [approved interface plan](tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).

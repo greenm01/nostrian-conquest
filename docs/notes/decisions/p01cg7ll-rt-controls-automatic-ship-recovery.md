@@ -162,6 +162,12 @@ approval does not authorize a crippled speed penalty or partial AS recovery.
 
 ## Approved door-interface follow-up (2026-10-11)
 
+The owner broadened this to consistent notation for every compact ship
+composition, not only damaged ships. [ASCII ship notation](../../dev/ship-notation.md)
+defines the code/count grammar, `TT*` cargo marker, `!n` damage suffix,
+examples and manual/help documentation required by t093. Full names in
+prose and dedicated numeric columns keep their existing appropriate labels.
+
 The owner approved `CA12!3`: 12 cruisers total, including 3 crippled. Omit
 `!n` when no ships are crippled, and use a lone `!` beside a fleet with any
 damaged hulls. Keep `TT*` for loaded transports. Use this compact notation

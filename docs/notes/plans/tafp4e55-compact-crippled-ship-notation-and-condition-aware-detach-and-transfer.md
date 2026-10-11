@@ -5,15 +5,19 @@ kind: plan
 status: planned
 tags: [plan, door, combat]
 ---
-# Compact crippled ship notation and condition-aware detach and transfer
+# Consistent ASCII ship notation and condition-aware detach and transfer
 
-The owner approved compact damage notation and an optional crippled-only quantity in the door's existing Detach and Transfer commands. Keep automatic RT2 recovery. Let ordinary operations stay simple, while allowing a player to send damaged ships away without a new menu or individual-hull management.
+The owner approved consistent ASCII ship notation for healthy and damaged compositions, plus an optional crippled-only quantity in the door's existing Detach and Transfer commands. Keep automatic RT2 recovery. Let ordinary operations stay simple, while allowing a player to send damaged ships away without a new menu or individual-hull management.
 
 ## t093
 
 Implement this approved interface follow-up to [Recovery Turns](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md#approved-door-interface-follow-up-2026-10-11). t066 is implemented; this task changes its display and default selection behavior. The owner accepted these rules in the conversation of2026-10-11 and requested documentation and a todo plan. This plan does not claim they are already implemented.
 
 ## Display contract
+
+The authoritative formatting contract is [ASCII ship notation](../../dev/ship-notation.md), approved in the owner's follow-up. Apply it consistently to all compact ship compositions, not just damaged fleets: `DD8`, `CA12!3`, `SC1`, `TT5`, `TT*4!1`, `ETAC2`, `SB1!1`. This includes existing lists, details, report compositions and operation previews/summaries. Retain full names in prose and existing labels/numeric cells in dedicated columns. Reuse formatting rather than introducing another screen-specific dialect.
+
+Document that grammar and its legends in the player manual and existing door help as part of rollout. Do not present implementation as complete just because the design reference exists.
 
 - `CA12!3` means12 cruisers total, including3 crippled. `CA12` means all12 are healthy. Never append `!0`.
 - A mixed composition can read `DD8 CA12!3 BB2!1`. Class totals always include crippled ships.
@@ -63,14 +67,16 @@ Update the player manual's recovery, fleet composition, Detach and Transfer expl
 
 ## Acceptance and validation
 
-1. Rendering shows healthy, partly crippled and wholly crippled classes correctly, without counting damaged hulls twice. Fleet markers and legends fit the existing door layouts, including maximum supported counts and mixed-class compositions. `TT*` stays distinguishable.
+1. All compact composition surfaces use the documented code/count grammar, including healthy fleets. Rendering shows healthy, partly crippled and wholly crippled classes correctly, without counting damaged hulls twice. Fleet markers and legends fit the existing door layouts, including maximum supported counts and mixed-class compositions. `TT*` stays distinguishable.
 2. Both commands accept plain quantities and `n!`; invalid or insufficient requests make no mutation. Existing cancellation behavior remains intact.
 3. Preview and mutation agree for healthy-first fallback and crippled-only selection. Longest remaining recovery moves first among crippled hulls.
 4. Counts, recovery cohorts and transport cargo are conserved across detach, transfer, merge and save/reload. Recovery after a move occurs on the same schedule it would otherwise have, subject to the already-approved location-dependent base assistance.
-5. Existing mission/ROE behavior and healthy-only workflows remain correct. Updated manual/help examples match the accepted notation.
+5. Existing mission/ROE behavior and healthy-only workflows remain correct. The manual and existing help document every ship code, totals including crippled counts, loaded `TT*`, fleet `!`, output `CA3!1` versus input `3!`, and matching examples. No hidden enemy damage is exposed. Dedicated numeric columns and prose retain appropriate labels.
 6. Run focused shared-mutation and door-rendering tests, then the affected Rust crate suites through `cargo-slot nostrian-conquest cargo test ...` from `rust/`. Record counts and review representative fixed-width door screens. No tests or Rust builds are required merely to record this plan.
 
 ## Connections
+
+- [ASCII ship notation](../../dev/ship-notation.md): common grammar, code table, examples and usage boundaries.
 
 - [Recovery ADR](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md): damage and recovery state; this follow-up changes only its display and default detach/transfer selection.
 - [Implementation waves](x8arlb3c-implementation-waves-after-t039.md): this is follow-up work after the completed t066, coordinated with other fleet mutations.
