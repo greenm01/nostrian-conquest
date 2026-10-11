@@ -244,7 +244,8 @@ TSVs reproduces the committed results exactly. A separate release-build
 smoke check after merging t099 runs two four-player campaigns for eight
 years with mixed openings and doctrines; its two game and eight seat rows
 pass the same integrity checks. That check does not replace or mix with
-the earlier revision's price matrix.
+the earlier revision's price matrix. The final merged workspace suite
+passes 3212 tests, with 0 failures and 11 ignored.
 
 ## Connections
 

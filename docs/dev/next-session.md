@@ -1,64 +1,58 @@
 # Next Session
 
-Keep this file short. Historical detail belongs in
-[archive/next-session-archive.md](archive/next-session-archive.md), not here.
+Historical handoffs are in
+[archive/next-session-archive.md](archive/next-session-archive.md).
 
-## Handoff from Claude to Codex (2026-10-11)
+## Codex takeover (2026-10-11)
 
-**Heads.** `main` = `origin/main` at this commit; nothing uncommitted on
-main. The last full suite ran on the t061 merge (`a9c2a710`): 3195 passed,
-0 failed, 11 ignored. Commits after it change only the sysop PDF, todo.md and
-this file.
+Claude and her subagents have stood down. The inherited work is merged
+and its worktrees removed. Final merged validation: 3212 Rust tests pass,
+0 fail, 11 ignored; four Python evidence tests pass. The inherited work:
 
-**Live work.** Three Claude subagents were running at handoff. They stop
-when Claude stands down; their work stays in the worktrees. The worktrees
-are in Claude's session scratchpad under `/tmp` (`git worktree list` shows
-the paths), which is on **tmpfs: a reboot loses uncommitted work**. Each
-brief is at `briefs/<task>.md` beside the worktrees.
+- t101: CLI maintenance uses the shared campaign runner and retains
+  starbase, scorch and recovery events. Three failing-first regressions
+  cover the omitted reports. The merged workspace passed 3198 tests.
+- t099: classic AI merge eligibility, planetless civil-disorder conversion
+  and Hold depth. The owner rejected classic's stale missing-base merge
+  flag. Final review survives rogue conversion. Fleet-chain removal and
+  intentional rogue disbanding have regressions. The merged workspace
+  passed 3212 tests, 0 failures, 11 ignored. Both manual PDFs were rebuilt.
+- t090: the 7020-game price matrix and tooling are in
+  [tools/price-campaigns](../../tools/price-campaigns/README.md), with results
+  in [n7fzd2vk](../notes/investigations/n7fzd2vk-unit-prices-on-generated-maps-with-hostile-openings.md).
+  Keep prices and the opening unchanged. This is scripted-policy evidence,
+  not human win odds. Most campaigns did not finish; the attacker protects
+  home and favors colonies. The matrix predates t099, which is explicit in
+  its provenance. Four Python integrity tests pass; a separate current-code
+  release-build smoke run passed.
 
-| Task | Branch, worktree | State at handoff |
-| --- | --- | --- |
-| t099 | `t099`, `wt-t099` (from `7348955f`) | ~20 files uncommitted, no commits |
-| t090 | `t090`, `wt-t090` | `0c1c8f6f` (price campaign driver) + 3 uncommitted; also detached worktrees `variants/{bb30,bb60,etac15,etac25}` |
-| t101 | `t101`, `wt-t101` (from `9a9ca001`) | 1 file uncommitted |
+The initial unfinished files, raw price TSVs and validation logs are saved
+outside tmpfs under the development host's local-state directory:
+`~/.local/state/nostrian-conquest/handoffs/20261011T175210Z/`.
+All 90 TSV hashes match committed provenance. Experimental price worktrees
+and their cargo pools were removed after verifying their source backup.
+Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
-To take one over: read its brief, review the diff, finish, commit signed,
-merge. After t090, remove the four variant worktrees and their cargo pools
-(`~/.cache/cargo-slots/nostrian-conquest@{bb30,bb60,etac15,etac25}`).
+## Next work
 
-**Merge routine.** For each branch: every commit `%G? = G`; `git merge
---no-ff -S`; full suite from `rust/` with `nice -n 10 cargo-slot
-nostrian-conquest cargo test --workspace --no-fail-fast`; if a `.typ`
-changed, `python3 scripts/refresh_manual_revision_date.py --doc
-player|sysop` and commit the PDF; close with `zk tasks -p ls id:tNNN` then
-`zk tasks do N` (re-read the line number after each close), `zk index`;
-`zk list docs/notes --broken-links` reports 22 pre-existing notes; push;
-`git worktree remove` and delete `~/.cache/cargo-slots/nostrian-conquest@wt-tNNN`.
-`zk tasks add` prepends the date itself. The highest task ID is t101.
+Run `zk queue`: t024 is next. Build the Windows nc-sysop x64, x86 and
+Win7+ x86 packages on `ssh bean`, then refresh beta.3's release assets and
+website without changing the version. Windows SSH responds; its checkout
+is `dev/nostrian-conquest` under the SSH user's home. Sync by a git bundle over scp;
+Claude found that remote `git pull` hangs. Check its working tree before
+updating it. Prepare and verify the packages before asking the owner to
+approve uploading/replacing assets and deploying the site.
 
-**Signing.** Every commit is GPG-signed by Mason Green's key; the agent
-cache expires (default 10 min, max 2 h), and a cold cache makes `git
-commit -S` time out at pinentry. The GitHub SSH key sits in the same
-gpg-agent. When either is cold, ask the owner to unlock it in a terminal
-(`echo x | gpg --clearsign >/dev/null`, `ssh -T git@github.com`). Never
-commit unsigned. To sign an agent's unsigned commits, cherry-pick them with
-`-S` onto the branch's base and compare trees; a rebase would also rewrite
-main commits the branch merged.
+Packaging preflight: `build_release_bundle.py` currently reads binaries
+from `rust/target`, while cargo-slot builds into its selected pool. Make
+that lookup honor the build's target directory before preparing archives;
+do not package a stale binary from a previous build.
 
-**Queue after the three tasks.** t024: the Windows nc-sysop packages
-(x64, x86, Win7+ x86, as beta.2 was), built on `ssh bean` (PowerShell;
-sync by git bundle over scp, since `git pull` hangs there), signed and
-uploaded from crunch; ask the owner before uploading. Then the beta.3
-re-release: rebuild and replace its assets and deploy the website, keeping
-the version v1.0.0-beta.3.
+All commits must be signed. A cold GPG/SSH agent cache can block signing or
+pushing; ask the owner to unlock it instead of committing unsigned. Fetch
+before merging: the owner's other agent may push nc-bridge, nc-herald or
+nc-dropfile work. Use cargo-slot from `rust/`; never invent a target dir.
+Task IDs are allocated above all IDs in todo and monthly done files.
 
-**Owner decisions.** None block the queue. For the owner's review:
-t061's choices (a new hosted game arms its timer instead of running at
-once; a host that was down runs one year on return; hosted league games
-put absent players on autopilot after three turns, as local games do), and
-t090's price recommendation when it lands (prices change only with the
-owner's approval). Rulings for t099 are in
-[q0a0mhm2](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t099).
-
-**Other agents.** The owner's own agent pushes signed commits to nc-bridge,
-nc-herald and nc-dropfile; fetch before each merge.
+The broader invalid-order abort differences found by t099 remain outside
+its scope; see [q0a0mhm2](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t099).
