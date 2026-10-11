@@ -260,11 +260,13 @@ fn first_battle(events: &MaintenanceEvents, coords: [u8; 2]) -> Option<(Outcome,
             .find(|event| event.coords == coords && event.reporting_empire == empire)
     };
     let (left, right) = (report(1)?, report(2)?);
+    // A side that broke off, caught in a pursuit exchange or not.
     let withdrew = |empire: u8| {
         events.encounter_disposition_events.iter().any(|event| {
             matches!(
                 event,
                 EncounterDispositionEvent::Retreated { owner_empire, coords: at, .. }
+                | EncounterDispositionEvent::PursuitFire { owner_empire, coords: at, .. }
                     if *owner_empire == empire && *at == coords
             )
         })

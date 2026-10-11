@@ -2,7 +2,7 @@
 //! armies aboard them, the top speed its slowest ship allows, and the
 //! composition labels the screens and reports show.
 
-use crate::Fleet;
+use crate::{Fleet, ShipCounts};
 
 /// All troop transports, empty and loaded.
 pub fn troop_transports(fleet: &Fleet) -> u16 {
@@ -64,23 +64,35 @@ pub fn has_any_force(fleet: &Fleet) -> bool {
 /// over the ship types present (ETAC 3, BB 4, CA 5, transports 5, DD 6,
 /// scouts 6). The current speed drops to the new maximum.
 pub fn recompute_max_speed(fleet: &mut Fleet) {
+    let max_speed = slowest_speed(&fleet.ships);
+    fleet.max_speed = max_speed;
+    if fleet.speed > max_speed {
+        fleet.speed = max_speed;
+    }
+}
+
+/// The speed of the slowest class among `ships`: ETAC 3, battleship 4,
+/// cruiser and transport 5, destroyer and scout 6; 7 with no ships at all.
+pub fn slowest_speed(ships: &ShipCounts) -> u8 {
     let mut max_speed = 7;
     for (count, speed) in [
-        (fleet.ships.etacs, 3),
-        (fleet.ships.battleships, 4),
-        (fleet.ships.cruisers, 5),
-        (troop_transports(fleet), 5),
-        (fleet.ships.destroyers, 6),
-        (fleet.ships.scouts, 6),
+        (ships.etacs, 3),
+        (ships.battleships, 4),
+        (ships.cruisers, 5),
+        (
+            ships
+                .empty_transports
+                .saturating_add(ships.loaded_transports),
+            5,
+        ),
+        (ships.destroyers, 6),
+        (ships.scouts, 6),
     ] {
         if count > 0 {
             max_speed = max_speed.min(speed);
         }
     }
-    fleet.max_speed = max_speed;
-    if fleet.speed > max_speed {
-        fleet.speed = max_speed;
-    }
+    max_speed
 }
 
 /// The fleet's ships as `SC=1 BB=2 ...`, armies counted as `AR`.

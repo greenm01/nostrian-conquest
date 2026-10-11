@@ -85,7 +85,8 @@ fn survivors_move_at_the_speed_of_the_ships_they_have_left() {
 #[test]
 fn losing_the_faster_hull_keeps_the_slower_hull_speed() {
     // A patrol of empire 1 on ROE 0 meets two destroyers of empire 2 on
-    // ROE 10 and breaks off in round 4; its destroyer dies first.
+    // ROE 10 and breaks off after the first exchange; the faster destroyers
+    // catch it for one more, and its own destroyer dies first.
     let mut lost_the_destroyer = 0;
     for seed in 0..16u64 {
         let mut game_data = empty_board(0, 0);
@@ -131,9 +132,9 @@ fn losing_the_faster_hull_keeps_the_slower_hull_speed() {
     assert!(lost_the_destroyer > 0);
 }
 
-/// A toothless guard: one destroyer, which dies in round 1, and scouts
-/// enough to outlast three rounds of fire, so a force on ROE 0 reaches its
-/// round-4 withdrawal with its ships.
+/// A toothless guard: one destroyer, which dies in the first exchange, and
+/// scouts enough to outlast it, so a force on ROE 0 breaks off with its
+/// ships.
 fn toothless() -> Ships {
     Ships {
         dd: 1,
@@ -143,7 +144,7 @@ fn toothless() -> Ships {
 }
 
 /// Six battleships of empire 1 bombarding `SYSTEM` on ROE 0 meet its
-/// toothless guard and withdraw in round 4.
+/// toothless guard and withdraw after the first exchange.
 fn bombardment_withdraws(game_data: &mut CoreGameData, seed: u64) -> MaintenanceEvents {
     place_fleet(
         game_data,
@@ -255,11 +256,17 @@ fn retreat_from_an_enemy_orbit_seeks_the_home_world_and_climbs_out_first() {
         // end: out of the enemy's orbit and flying in deep space.
         assert_ne!(fleet.sector.to_array(), SYSTEM, "seed {seed}");
         assert_eq!(fleet.depth, Real48::ZERO, "seed {seed}");
+        // Repelled by the orbit's guard when it held the field, or left
+        // without the warship the invasion needs when the destroyers sank
+        // each other.
         assert!(
             events.mission_events.iter().any(|event| {
                 event.fleet_idx == 0
                     && event.outcome == MissionOutcome::Aborted
-                    && event.abort_reason == Some(MissionAbortReason::CapabilityLost)
+                    && matches!(
+                        event.abort_reason,
+                        Some(MissionAbortReason::CapabilityLost | MissionAbortReason::OrbitBlocked)
+                    )
                     && event.target_coords == Some(HOME)
             }),
             "the abort names the home world: {:?}",

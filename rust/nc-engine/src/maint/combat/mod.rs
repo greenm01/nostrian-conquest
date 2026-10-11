@@ -20,8 +20,9 @@ mod retreat;
 mod state;
 
 pub(crate) use assault::{AssaultEvents, resolve_strike};
-pub(crate) use fleet_battle::{BattleSide, FleetBattlePhaseEvents, fight_encounter};
+pub(crate) use fleet_battle::{BattleSide, FleetBattle, FleetBattlePhaseEvents, fight_encounter};
 pub(crate) use reporting::{
     ContactObserver, mission_kind_for_order, push_fleet_contact, push_no_engagement,
 };
 pub(crate) use retreat::{abort_mission_to_seek_home_or_hold, nearest_friendly_world};
+pub(crate) use state::{STARBASE_ATTACK_STRENGTH, warship_attack_strength};

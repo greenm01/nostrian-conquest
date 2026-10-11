@@ -121,7 +121,9 @@ pub(super) fn matching_roe_abort_disposition_index(
                 owner_empire,
                 mission: Some(mission),
                 coords: disposition_coords,
-                reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
+                reason:
+                    nc_data::EncounterDispositionReason::RoeWithdrawal
+                    | nc_data::EncounterDispositionReason::UnarmedEscape,
                 ..
             }
             | nc_data::EncounterDispositionEvent::PursuitFire {
@@ -129,7 +131,9 @@ pub(super) fn matching_roe_abort_disposition_index(
                 owner_empire,
                 mission: Some(mission),
                 coords: disposition_coords,
-                reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
+                reason:
+                    nc_data::EncounterDispositionReason::RoeWithdrawal
+                    | nc_data::EncounterDispositionReason::UnarmedEscape,
                 ..
             } => {
                 *fleet_idx == event.fleet_idx

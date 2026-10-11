@@ -83,7 +83,7 @@ fn configured_invade_contact_state(attacker_roe: u8, hostile_roe: u8) -> CoreGam
     hostile.order = Order::MoveOnly;
     hostile.target = Coords::new(8, 13);
     hostile.speed = 0;
-    // Big enough to last into round 4, when ROE withdrawals start.
+    // Big enough to outlast the compulsory exchange and a pursuit.
     hostile.ships.destroyers = 0;
     hostile.ships.cruisers = 8;
     hostile.ships.battleships = 0;
@@ -479,13 +479,38 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
     assert_eq!(game_data.fleets[4].order, Order::MoveOnly);
 }
 
-/// A year in which someone withdrew under ROE; a failed intercept alone
-/// is also a disposition event, but not the one these tests want.
+/// A year in which someone withdrew under ROE, caught in a pursuit
+/// exchange or not; a failed intercept alone is also a disposition event,
+/// but not the one these tests want.
 fn retreated(events: &nc_data::MaintenanceEvents) -> bool {
-    events
-        .encounter_disposition_events
-        .iter()
-        .any(|event| matches!(event, EncounterDispositionEvent::Retreated { .. }))
+    events.encounter_disposition_events.iter().any(|event| {
+        matches!(
+            event,
+            EncounterDispositionEvent::Retreated { .. }
+                | EncounterDispositionEvent::PursuitFire { .. }
+        )
+    })
+}
+
+/// The owner, mission, and reason of a withdrawal event.
+fn withdrawal(
+    event: &EncounterDispositionEvent,
+) -> Option<(u8, Option<Mission>, nc_data::EncounterDispositionReason)> {
+    match *event {
+        EncounterDispositionEvent::Retreated {
+            owner_empire,
+            mission,
+            reason,
+            ..
+        }
+        | EncounterDispositionEvent::PursuitFire {
+            owner_empire,
+            mission,
+            reason,
+            ..
+        } => Some((owner_empire, mission, reason)),
+        _ => None,
+    }
 }
 
 #[test]
@@ -504,28 +529,22 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
 
     assert!(
         events.encounter_disposition_events.iter().any(|event| {
-            matches!(
-                event,
-                EncounterDispositionEvent::Retreated {
-                    owner_empire,
-                    mission: Some(Mission::MoveOnly),
-                    reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
-                    ..
-                } if *owner_empire == 2
-            )
+            withdrawal(event)
+                == Some((
+                    2,
+                    Some(Mission::MoveOnly),
+                    nc_data::EncounterDispositionReason::RoeWithdrawal,
+                ))
         }),
         "{events:?}"
     );
     assert!(!events.encounter_disposition_events.iter().any(|event| {
-        matches!(
-            event,
-            EncounterDispositionEvent::Retreated {
-                owner_empire,
-                mission: Some(Mission::InvadeWorld),
-                reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
-                ..
-            } if *owner_empire == 1
-        )
+        withdrawal(event)
+            == Some((
+                1,
+                Some(Mission::InvadeWorld),
+                nc_data::EncounterDispositionReason::RoeWithdrawal,
+            ))
     }));
     assert!(!events.mission_events.iter().any(|event| {
         event.owner_empire == 1
@@ -559,15 +578,12 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
         common::first_year(&game_data, &diplomacy, |_, events| retreated(events));
 
     assert!(events.encounter_disposition_events.iter().any(|event| {
-        matches!(
-            event,
-            EncounterDispositionEvent::Retreated {
-                owner_empire,
-                mission: Some(Mission::InvadeWorld),
-                reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
-                ..
-            } if *owner_empire == 1
-        )
+        withdrawal(event)
+            == Some((
+                1,
+                Some(Mission::InvadeWorld),
+                nc_data::EncounterDispositionReason::RoeWithdrawal,
+            ))
     }));
     assert!(events.mission_events.iter().any(|event| {
         event.owner_empire == 1
@@ -891,7 +907,20 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
             && event.friendly_losses.cruisers == 1
             && event.friendly_losses.transports == 1
     }));
-    assert!(events.encounter_disposition_events.is_empty());
+    // On ROE 0 the screened fleet broke off after the first exchange: the
+    // transport died in the pursuit exchange that caught it, once its line
+    // was gone, or to a critical hit, which ignores the screen.
+    let caught = events.encounter_disposition_events.iter().any(|event| {
+        matches!(
+            event,
+            EncounterDispositionEvent::PursuitFire { fleet_idx: 0, .. }
+        )
+    });
+    let wiped_out = events
+        .fleet_destroyed_events
+        .iter()
+        .any(|event| event.reporting_empire == 1);
+    assert!(caught || wiped_out, "{events:?}");
 }
 
 #[test]

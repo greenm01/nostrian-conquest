@@ -701,6 +701,7 @@ pub fn push_roe_entries(
                 retreat_target_coords,
                 losses_sustained,
                 enemy_losses_inflicted,
+                reason,
                 stardate_week,
                 ..
             } => (
@@ -715,10 +716,11 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We engaged {}. We had {}. The alien force contained {}. In accordance with our ROE, we withdrew toward System({},{}) {}. {}",
+                        "{prefix} We engaged {}. We had {}. The alien force contained {}. {}, we withdrew toward System({},{}) {}. {}",
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
                         fleet_force_summary(enemy_initial, 0),
+                        withdrawal_reason_clause(reason),
                         retreat_target_coords[0],
                         retreat_target_coords[1],
                         loss_clause,
@@ -739,6 +741,7 @@ pub fn push_roe_entries(
                 retreat_target_coords,
                 losses_sustained,
                 enemy_losses_inflicted,
+                reason,
                 stardate_week,
                 ..
             } => (
@@ -753,8 +756,9 @@ pub fn push_roe_entries(
                     let prefix = mission.map(mission_report_prefix).unwrap_or_default();
                     let loss_clause = roe_retreat_loss_clause(losses_sustained);
                     format!(
-                        "{prefix} We had {}. We attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We withdrew toward System({},{}) {}. {}",
+                        "{prefix} We had {}. {}, we attempted to disengage from {} but suffered pursuit fire from an alien force containing {}. We withdrew toward System({},{}) {}. {}",
                         fleet_force_summary(friendly_initial, friendly_loaded_armies_initial),
+                        withdrawal_reason_clause(reason),
                         classic_enemy_reference(game_data, target_fleet_number, target_empire),
                         fleet_force_summary(enemy_initial, 0),
                         retreat_target_coords[0],

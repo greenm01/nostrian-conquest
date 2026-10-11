@@ -21,6 +21,7 @@ pub(super) fn merge_one_fleet_into_host(
     let loaded_tt = game_data.fleets[donor_idx].ships.loaded_transports;
     let et = game_data.fleets[donor_idx].ships.etacs;
     let sc = game_data.fleets[donor_idx].ships.scouts;
+    let donor_escape = game_data.fleets[donor_idx].escape;
 
     let host = &mut game_data.fleets[host_idx];
     host.ships.battleships = host.ships.battleships.saturating_add(bb);
@@ -32,4 +33,15 @@ pub(super) fn merge_one_fleet_into_host(
     host.ships.scouts = host.ships.scouts.saturating_add(sc);
     // 2895:4a6b leaves the host's ROE alone.
     recompute_max_speed(host);
+    // A merge gives nobody a second pursuit: the host keeps every pursuer
+    // either fleet's escape had recorded.
+    if let Some(donor_escape) = donor_escape {
+        match &mut host.escape {
+            Some(escape) if escape.sector == donor_escape.sector => {
+                escape.pursuers |= donor_escape.pursuers;
+            }
+            Some(_) => {}
+            None => host.escape = Some(donor_escape),
+        }
+    }
 }

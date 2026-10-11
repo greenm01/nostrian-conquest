@@ -1,9 +1,13 @@
 //! Classic ECMAINT's encounter rules as pure functions: sighting, strength,
 //! ROE, intercept, and the attack decision (`docs/dev/ec-encounter-spec.md`
 //! sections 2-4). Randomness comes from the caller's `GameRng`, so Rust
-//! matches classic's odds, not its random sequence.
+//! matches classic's odds, not its random sequence. Strength is the one
+//! place NC departs: a fleet weighs itself and its enemy by NC attack
+//! strength, the yardstick its battle uses, not by classic's 21/7/2.
 
 use nc_data::GameRng;
+
+use crate::maint::combat::{STARBASE_ATTACK_STRENGTH, warship_attack_strength};
 
 /// Order codes as classic stores them in FLEETS.DAT `+0x1f`.
 pub mod order {
@@ -42,6 +46,9 @@ pub struct FleetFacts {
     pub transports: u16,
     pub etacs: u16,
     pub scouts: u16,
+    /// The fleet is escaping from a battle: it does not volunteer for a
+    /// fight through first identification.
+    pub escaping: bool,
 }
 
 impl FleetFacts {
@@ -140,26 +147,22 @@ pub fn roll(rng: &mut GameRng, percent: f64) -> bool {
     rng.next_real() * 100.0 <= percent
 }
 
-/// Classic fleet strength (`24a3:02b4`): `21 BB + 7 CA + 2 DD`, plus 30 for
-/// a Guard Starbase fleet at rest with its base. Other ships count 0.
-pub fn strength(fleet: &FleetFacts) -> u16 {
-    let ships = 21u16
-        .wrapping_mul(fleet.battleships)
-        .wrapping_add(7u16.wrapping_mul(fleet.cruisers))
-        .wrapping_add(2u16.wrapping_mul(fleet.destroyers));
-    if fleet.order == order::GUARD_STARBASE && fleet.speed == 0 {
-        ships.wrapping_add(30)
-    } else {
-        ships
-    }
+/// A fleet's strength for the decision to fight: its NC attack strength,
+/// each warship at its AS (destroyer 10, cruiser 30, battleship 90), the
+/// yardstick the battle itself uses (combat decision 2). Scouts, transports,
+/// and ETACs count 0. Classic weighed `21 BB + 7 CA + 2 DD` plus 30 for a
+/// guard at rest with its base (`24a3:02b4`); NC does not.
+pub fn strength(fleet: &FleetFacts) -> u32 {
+    warship_attack_strength(fleet.destroyers, fleet.cruisers, fleet.battleships)
 }
 
-/// A starbase counts 30, plus its guard fleet.
-pub const BASE_STRENGTH: u16 = 30;
+/// A starbase counts its attack strength, 100, once; its guard fleet adds
+/// its own.
+pub const BASE_STRENGTH: u32 = STARBASE_ATTACK_STRENGTH;
 
 /// The ROE test (`1b05:0706`): would a force of strength `own` take on one of
 /// strength `enemy`? ROE above 10 counts as 10.
-pub fn roe_permits(roe: u8, own: u16, enemy: u16) -> bool {
+pub fn roe_permits(roe: u8, own: u32, enemy: u32) -> bool {
     let (own, enemy) = (f64::from(own), f64::from(enemy));
     let at_least = |ratio: f64| enemy == 0.0 || own / enemy >= ratio;
     let at_most = |ratio: f64| own > 0.0 && enemy / own <= ratio;
@@ -192,15 +195,24 @@ pub fn intercept(
         return true;
     }
     if roll(rng, 100.0 - 33.0 * f64::from(awareness)) {
-        if target.speed == 0 {
-            return true;
-        }
-        let u = rng.next_real();
-        let chance = 100.0 * (std::f64::consts::PI * u).sin() * f64::from(attacker.max_speed)
-            / f64::from(target.speed);
-        return roll(rng, chance);
+        let arc = rng.next_real();
+        let roll = rng.next_real();
+        return speed_roll_catches(attacker.max_speed, target.speed, arc, roll);
     }
     roe_permits(target.roe, strength(target), strength(attacker))
+}
+
+/// The intercept's speed roll, with `arc` and `roll` uniform in [0, 1): a
+/// pursuer of maximum speed `pursuer_max` catches a target running at
+/// `speed` when `roll * 100 <= 100 * sin(pi * arc) * pursuer_max / speed`.
+/// A stopped target is caught.
+pub fn speed_roll_catches(pursuer_max: u8, speed: u8, arc: f64, roll: f64) -> bool {
+    if speed == 0 {
+        return true;
+    }
+    let chance =
+        100.0 * (std::f64::consts::PI * arc).sin() * f64::from(pursuer_max) / f64::from(speed);
+    roll * 100.0 <= chance
 }
 
 /// First identification, or a later re-check of an identified unit.
@@ -258,8 +270,8 @@ fn engage(rng: &mut GameRng, willing: bool, o: &FleetFacts, t: &FleetFacts, aw: 
 }
 
 /// Should observer `o` attack fleet `t` (`1b05:1277`)? At first
-/// identification any ROE above 0 commits; later re-checks need the
-/// strength test.
+/// identification any ROE above 0 commits, unless the observer is escaping
+/// from a battle; later re-checks need the strength test.
 pub fn decide_vs_fleet(
     rng: &mut GameRng,
     o: &FleetFacts,
@@ -267,8 +279,8 @@ pub fn decide_vs_fleet(
     situation: Situation,
     mode: Mode,
 ) -> Verdict {
-    let willing =
-        roe_permits(o.roe, strength(o), strength(t)) || (mode == Mode::Identify && o.roe > 0);
+    let willing = roe_permits(o.roe, strength(o), strength(t))
+        || (mode == Mode::Identify && o.roe > 0 && !o.escaping);
     let aw = situation.target_awareness;
     let unowned_world = situation.world_owner == Some(0);
     // Hostile-mission block: both on world missions at this world.
@@ -320,7 +332,7 @@ pub fn decide_vs_fleet(
 
 /// Should observer `o` attack a starbase (`1b05:1d11`)? `defense` is the
 /// base's strength with its guard fleet. There is no intercept roll.
-pub fn decide_vs_base(o: &FleetFacts, defense: u16, declared_enemy: bool) -> Verdict {
+pub fn decide_vs_base(o: &FleetFacts, defense: u32, declared_enemy: bool) -> Verdict {
     let own = strength(o);
     if o.layer == 1
         && matches!(o.order, order::BOMBARD | order::INVADE | order::BLITZ)

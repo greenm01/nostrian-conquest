@@ -71,6 +71,7 @@ impl YearMovement<'_> {
                 fleet.speed = 0;
                 fleet.target = fleet.sector;
                 fleet.target_depth = fleet.depth.round() as u8;
+                fleet.escape = None;
                 MissionRetargetEvent::Abandoned {
                     fleet_idx,
                     reporting_fleet_number,

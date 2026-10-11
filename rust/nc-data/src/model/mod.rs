@@ -12,7 +12,7 @@ mod setup;
 mod starbase;
 
 pub use conquest::{Conquest, MaintenanceDays};
-pub use fleet::{Fleet, Order, ShipCounts};
+pub use fleet::{EscapeEpisode, Fleet, Order, ShipCounts};
 pub use ids::{Coords, EmpireId, FleetId, RecordNumber, StarbaseId};
 pub use ipbm::Ipbm;
 pub use planet::{BuildSlot, Planet, ProductionItemKind, Stardock};

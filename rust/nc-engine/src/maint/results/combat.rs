@@ -397,6 +397,15 @@ pub fn invasion_ground_battle_losses_label(is_attacker_report: bool) -> &'static
     }
 }
 
+/// Why a fleet broke off a battle, as the clause that opens its report of
+/// the withdrawal.
+pub fn withdrawal_reason_clause(reason: nc_data::EncounterDispositionReason) -> &'static str {
+    match reason {
+        nc_data::EncounterDispositionReason::UnarmedEscape => "With no warships left to fight",
+        _ => "In accordance with our ROE",
+    }
+}
+
 pub fn roe_retreat_loss_clause(losses: ShipLosses) -> String {
     let summary = ship_loss_summary(losses);
     if summary == "no ship losses" {

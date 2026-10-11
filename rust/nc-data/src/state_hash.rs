@@ -211,6 +211,7 @@ impl StateHash {
             mission_target,
             rules_of_engagement,
             ships,
+            escape,
         } = fleet;
         self.u64(u64::from(fleet_number.0));
         self.u64(u64::from(owner.0));
@@ -247,6 +248,13 @@ impl StateHash {
             scouts,
         ] {
             self.u64(u64::from(*count));
+        }
+        // A fleet in no escape adds nothing, so the pinned seeds of the
+        // classic fixtures stand.
+        if let Some(escape) = escape {
+            self.coords(escape.sector);
+            self.u64(u64::from(escape.layer));
+            self.u64(u64::from(escape.pursuers));
         }
     }
 

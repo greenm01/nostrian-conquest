@@ -71,8 +71,8 @@ pub use economy::{
 pub use fleet_orders::{order_summary, set_mission_target};
 pub use fleet_ships::{
     has_any_force, has_combat_ships, is_support_only, recompute_max_speed, set_armies_aboard,
-    set_troop_transports, ship_composition_summary, ship_composition_table_summary, starship_count,
-    troop_transports,
+    set_troop_transports, ship_composition_summary, ship_composition_table_summary, slowest_speed,
+    starship_count, troop_transports,
 };
 pub use homeworld_seed::{
     has_homeworld_seed_production, is_homeworld_seed_ignoring_name, is_named_homeworld_seed,
@@ -99,7 +99,7 @@ pub use map_export::{
     STARMAP_TEXT_FILE_NAME, build_player_map_export_data,
 };
 pub use model::{
-    BuildSlot, Conquest, Coords, DiplomaticRelation, EmpireId, Fleet, FleetId, Ipbm,
+    BuildSlot, Conquest, Coords, DiplomaticRelation, EmpireId, EscapeEpisode, Fleet, FleetId, Ipbm,
     MaintenanceDays, Order, Planet, Player, PlayerMode, ProductionItemKind, RecordNumber, Setup,
     ShipCounts, Starbase, StarbaseId, Stardock,
 };

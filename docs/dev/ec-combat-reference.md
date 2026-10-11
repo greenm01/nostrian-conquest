@@ -35,8 +35,10 @@ declared its owner an enemy; when it sits in one of the observer's own
 systems; when a blockade meets an assault fleet, or a colonizer of an unowned
 world; when two colonizers race for the same world; or when it guards the
 world the observer came to assault. At first identification any ROE above 0
-commits. Later re-checks compare strengths (`21 BB + 7 CA + 2 DD`, plus 30
-for a guarded base) against the ROE table. An assault fleet whose ROE forbids
+commits. Later re-checks compare strengths against the ROE table: NC
+weighs attack strength (DD 10, CA 30, BB 90, a starbase 100), where classic
+weighed `21 BB + 7 CA + 2 DD` plus 30 for a guarded base (combat
+decision 2). An assault fleet whose ROE forbids
 the fight aborts to Seek Home. A starbase is attacked only as a declared
 enemy or when it protects an assault's target world; starbases never start a
 fight.
@@ -185,10 +187,11 @@ matches classic's odds, not its random sequence.
   Classic shooters pick one target and keep it; batteries only ever target
   warships, except in a blitz landing; and the larger side holds part of its
   force back each round.
-- Rounds. NC commits both sides for three rounds, allows ROE withdrawals
-  from round 4, and stops at 64 rounds. Classic checks ROE after every round
-  from round 1, fights across a separation distance with weapon ranges, and
-  has no cap.
+- Rounds. NC fights one compulsory exchange, then checks ROE after every
+  exchange, lets a side that stays pursue one that breaks off when it
+  catches it, and ends an undecided battle unresolved at 64 exchanges.
+  Classic checks ROE after every round from round 1, fights across a
+  separation distance with weapon ranges, and has no cap.
 - Retreat. NC's retreat aborts the mission. Classic's scatter sends the fleet
   home at ROE 0; its retreat aborts only assault, colonize, and guard
   fleets.

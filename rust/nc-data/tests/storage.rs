@@ -10,7 +10,8 @@ use nc_compat::{
     import_directory_snapshot_with_seed, load_classic_core_files,
 };
 use nc_data::{
-    CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, SeatBindSource, set_empire_name,
+    CampaignStore, CampaignStoreError, Coords, DEFAULT_CAMPAIGN_DB_NAME, EscapeEpisode,
+    SeatBindSource, set_empire_name,
 };
 use rusqlite::Connection;
 
@@ -211,6 +212,53 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
         ],
         [1, host_number]
     );
+}
+
+/// A fleet's escape from a battle is runtime state: the store keeps it,
+/// and a classic export, which has no field for it, drops it.
+#[test]
+fn sqlite_store_round_trips_escape_episodes_and_classic_export_drops_them() {
+    let source = repo_root().join("fixtures/ecutil-init/v1.5");
+    let imported = temp_dir("nc-data-storage-escape");
+    let exported = temp_dir("nc-data-storage-escape-export");
+    copy_dir_all(&source, &imported);
+
+    let store = CampaignStore::open(imported.join(DEFAULT_CAMPAIGN_DB_NAME)).expect("open store");
+    import_directory_snapshot(&store, &imported).expect("import directory");
+
+    let mut state = store
+        .load_latest_runtime_state()
+        .expect("load runtime state")
+        .expect("runtime snapshot");
+    let mut episode = EscapeEpisode {
+        sector: Coords::new(8, 9),
+        layer: 1,
+        pursuers: 0,
+    };
+    episode.record_pursuit(2);
+    episode.record_pursuit(3);
+    state.game_data.fleets[0].escape = Some(episode);
+    assert_eq!(state.game_data.fleets[1].escape, None);
+    store
+        .save_runtime_state_structured(
+            state.game_data.conquest.game_year,
+            &state.game_data,
+            &state.report_block_rows,
+            &state.queued_mail,
+        )
+        .expect("save runtime snapshot");
+
+    let runtime_game = store
+        .load_latest_runtime_game_data()
+        .expect("load latest runtime game data");
+    let escape = runtime_game.fleets[0].escape.expect("the escape is kept");
+    assert_eq!(escape, episode);
+    assert!(escape.pursued_by(2) && escape.pursued_by(3) && !escape.pursued_by(1));
+    assert_eq!(runtime_game.fleets[1].escape, None);
+
+    export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
+    let exported_game = load_classic_core_files(&exported).expect("load exported directory");
+    assert_eq!(exported_game.fleets[0].escape, None);
 }
 
 #[test]

@@ -425,7 +425,7 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 == The Rules of Battle
 
-There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed, disengages, or only one hostile force remains.
+There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
 Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed, and surviving crippled ships are repaired automatically after battle. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
@@ -495,9 +495,11 @@ Any other alien fleet is ignored. A sector with no world is nobody's system.
 The first time your fleet identifies a target, any ROE above 0 commits it to
 the attack. Each later week it re-checks a target it already knows, and then
 it attacks only if the ROE odds favor the fight (see @appendix-combat). For
-these odds a battleship counts 21, a cruiser 7, and a destroyer 2; a guard
-fleet at rest with its starbase adds 30. Scouts, transports, and ETACs count
-nothing.
+these odds each warship counts its attack strength --- a destroyer 10, a
+cruiser 30, a battleship 90 --- and a starbase 100, the same values the battle
+fires with. Scouts, transports, and ETACs count nothing. A fleet escaping
+from a battle does not attack on first identification; only its ROE odds can
+make it fight.
 
 *Intercept.* A fleet with a higher maximum speed always catches its target.
 Otherwise the target may notice the attack and run. A stopped target cannot
@@ -547,7 +549,9 @@ You assign an ROE level (0--10) to control when your fleet attacks. ROE 0
 never attacks. Any higher ROE attacks a hostile fleet the first time it
 identifies it, whatever the odds; after that, your fleet attacks a known
 target only when the force ratio meets the ROE threshold (see Who Fights
-Whom). ROE also decides when your fleet breaks off a battle.
+Whom). ROE also decides when your fleet breaks off a battle: after the
+compulsory first exchange it checks the same odds after every exchange and
+leaves as soon as they fail (see Withdrawal and Retreat).
 
 The full ROE threshold table is collected in @appendix-combat.
 
@@ -557,11 +561,29 @@ Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automati
 
 #admonition("IMPORTANT")[Low ROE does not guarantee safety once combat begins.]
 
-If you choose to engage (or are forced to), your fleet is committed to the battle for a minimum of *three rounds*. ROE-based bailing is disabled until Round 4. This ensures that fleets trade meaningful blows before one side loses his nerve.
+Every battle opens with one compulsory exchange: both sides fire once,
+whatever their ROE. After it, and after every exchange that follows, your
+fleet checks its ROE against the odds as they now stand, its attack strength
+against the enemy's, and breaks off as soon as they fail. A fleet with no
+armed ship left, including one that has just lost its last warship, tries to
+escape at once, whatever its ROE. A starbase never breaks off, and a fleet
+guarding one fights beside it.
 
-A fleet that breaks off after Round 3 does not escape cleanly. It suffers a *withdrawal exchange* --- the enemy fires on your retreating fleet, and your fleet fires back, both without die bonuses. Hits carried from earlier rounds still count in this exchange; after it, the battle is over and they are lost. Only after absorbing that exchange does the fleet actually retreat and abort its current mission. After each round of combat from Round 4 onward, surviving fleets re-check their ROE. If the post-loss ratio no longer meets his threshold, the commander attempts to disengage and suffers the withdrawal exchange.
+Breaking off is not always a clean escape. If the enemy stays and still has
+armed ships, he may pursue. A pursuer whose ships are faster than yours
+catches you for certain; otherwise it is a roll, likelier the faster he is
+and the slower you are. A catch is one more exchange, with die bonuses and
+carried hits on both sides, and then the battle is over. When both sides
+break off, nobody pursues. Each enemy empire catches an escaping fleet at
+most once: in the battle it left, or, if that pursuit failed, in one more
+attack while the fleet is still leaving the sector. After that the fleet has
+got away from that empire until it leaves the sector or you give it a new
+order. Your warships still screen your auxiliaries during a pursuit exchange;
+only a critical hit reaches past the line. A battle still undecided after 64
+exchanges simply ends: nobody wins, nobody retreats, and the next week's
+encounter rules decide whether the fleets meet again.
 
-A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector.
+A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left --- its ROE, or no warships left --- and whether it was caught on the way out.
 
 == Planetary Combat
 
@@ -1065,15 +1087,17 @@ lets crippled light ships keep contributing fire.
   ),
 )
 
-Fleet battles, including the withdrawal exchange, read the modified `d10` on
-this table. The force ratio plays no part.
+Fleet battles, the pursuit exchange included, read the modified `d10` on
+this table. The force ratio plays no part in a volley; it decides only
+whether a fleet attacks and whether it stays, as attack strength against
+attack strength, a starbase counting 100.
 
 == Fleet Battle Die Modifiers and Hit Formula
 
 - Mixed fleet (at least two of destroyers, cruisers, and battleships): `+1`
 - Starbase on your side: `+1`
 - Total modifier: at most `+2`; a modified roll above `9` counts as `9`
-- Withdrawal exchange: no modifiers
+- Pursuit exchange: the same modifiers
 
 #align(left)[
   #stack(
@@ -1092,10 +1116,11 @@ outright, a crippled ship first.
 - Finishing a crippled ship costs its full DS again.
 - Execution fire that destroys a nominal ship pays both: `2x DS`.
 - Hits a pool cannot spend carry over, in that pool, to the side's next
-  exchange in the same battle, including the withdrawal exchange.
+  exchange in the same battle, including the pursuit exchange.
 - Suppression and execution hits carry separately.
-- Carried hits are lost when the battle ends: by destruction, by withdrawal,
-  or at the 64-round limit. The next battle starts from zero.
+- Carried hits are lost when the battle ends: by destruction, by a side
+  breaking off, or at the 64-round limit. The next battle starts from zero,
+  a pursuit on a later week included.
 
 == Planetary Force Ratio to CRT Column
 

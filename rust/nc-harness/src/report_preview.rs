@@ -1176,6 +1176,7 @@ impl EncounterPreviewKind {
         let reason = match reason {
             EncounterDispositionReason::RoeDeclined => "roe-declined",
             EncounterDispositionReason::RoeWithdrawal => "roe-withdrawal",
+            EncounterDispositionReason::UnarmedEscape => "unarmed-escape",
             EncounterDispositionReason::InterceptFailed => "intercept-failed",
         };
         match self {
