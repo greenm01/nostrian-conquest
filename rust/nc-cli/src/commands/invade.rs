@@ -190,10 +190,10 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
                     f.speed
                 ));
             }
-            if f.order.to_raw() != 0x07 {
+            if f.order.code() != 0x07 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x07 (InvadeWorld), got {:#04x}",
-                    f.order.to_raw()
+                    f.order.code()
                 ));
             }
             if f.target.to_array() != [0x0f, 0x0d] {

@@ -687,7 +687,7 @@ fn nested_fleet_order_modals_unwind_one_level_at_a_time() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::FleetList;
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::MoveOnly.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::MoveOnly.code().to_string();
     app.submit_fleet_mission_picker();
     assert_eq!(
         app.fleet_overlay.prompt_mode,
@@ -723,7 +723,7 @@ fn empty_coordinate_submissions_accept_defaults() {
     app.overlay = ActiveOverlay::FleetList;
     select_first_fleet_row(&mut app);
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+    app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
     app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
 
     let expected_x = app.fleet_order_target_x_default_value();
@@ -1004,7 +1004,7 @@ fn join_fleet_empty_submission_uses_default_target() {
         FleetOverlayRowKey::Starbase(_) => panic!("expected fleet row"),
     };
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::JoinAnotherFleet.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::JoinAnotherFleet.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1038,7 +1038,7 @@ fn guard_starbase_empty_submission_uses_default_target() {
         FleetOverlayRowKey::Starbase(_) => panic!("expected fleet row"),
     };
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::GuardStarbase.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::GuardStarbase.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1068,7 +1068,7 @@ fn view_world_empty_coordinate_submission_uses_unknown_intel_default() {
     app.overlay = ActiveOverlay::FleetList;
     select_first_fleet_row(&mut app);
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::ViewWorld.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::ViewWorld.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1107,7 +1107,7 @@ fn view_world_falls_back_to_closest_non_owned_world_when_unknowns_are_exhausted(
     app.overlay = ActiveOverlay::FleetList;
     select_first_fleet_row(&mut app);
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::ViewWorld.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::ViewWorld.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1122,7 +1122,7 @@ fn view_world_falls_back_to_closest_non_owned_world_when_unknowns_are_exhausted(
         &app.game_data,
         &snapshots,
         app.player_record_index_1_based as u8,
-        Order::ViewWorld.to_raw(),
+        Order::ViewWorld.code(),
         selected_row.coords,
         &BTreeSet::new(),
     )
@@ -1294,7 +1294,7 @@ fn group_order_success_clears_checked_selection_and_unwinds_prompts() {
     let selected_records = select_first_two_fleet_rows(&mut app);
 
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::MoveOnly.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::MoveOnly.code().to_string();
     app.submit_fleet_mission_picker();
     app.fleet_overlay.order_target_x_input = "10".to_string();
     app.submit_fleet_order().expect("submit x");
@@ -1323,7 +1323,7 @@ fn fleet_order_confirm_y_submits_without_enter() {
         .selected_fleet_order_row()
         .expect("selected fleet row")
         .fleet_record_index_1_based;
-    app.fleet_overlay.mission_picker_input = Order::MoveOnly.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::MoveOnly.code().to_string();
     app.submit_fleet_mission_picker();
     app.fleet_overlay.order_target_x_input = "10".to_string();
     app.submit_fleet_order().expect("submit x");
@@ -1345,7 +1345,7 @@ fn backing_out_of_group_order_keeps_checked_selection() {
     let selected_records = select_first_two_fleet_rows(&mut app);
 
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::MoveOnly.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::MoveOnly.code().to_string();
     app.submit_fleet_mission_picker();
     app.handle_key(key(KeyCode::Esc));
 
@@ -1654,7 +1654,7 @@ fn guard_starbase_mission_reports_specific_unavailable_target_message() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::FleetList;
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::GuardStarbase.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::GuardStarbase.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1670,7 +1670,7 @@ fn join_fleet_mission_reports_specific_unavailable_target_message() {
     app.game_data.fleets.truncate(1);
     app.overlay = ActiveOverlay::FleetList;
     app.open_selected_fleet_order_flow();
-    app.fleet_overlay.mission_picker_input = Order::JoinAnotherFleet.to_raw().to_string();
+    app.fleet_overlay.mission_picker_input = Order::JoinAnotherFleet.code().to_string();
 
     app.submit_fleet_mission_picker();
 
@@ -1685,7 +1685,7 @@ fn fleet_order_default_target_ignores_existing_target_coords_shortcut() {
     let mut baseline = dash_app();
     baseline.overlay = ActiveOverlay::FleetList;
     baseline.open_selected_fleet_order_flow();
-    baseline.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+    baseline.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
     baseline.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
     let baseline_footer = render_fleet_footer_line(&baseline, "COMMAND <- Target XX ");
 
@@ -1699,7 +1699,7 @@ fn fleet_order_default_target_ignores_existing_target_coords_shortcut() {
         nc_data::Coords::from_array([18, 18]);
     stale_target.overlay = ActiveOverlay::FleetList;
     stale_target.open_selected_fleet_order_flow();
-    stale_target.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+    stale_target.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
     stale_target.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
     let stale_footer = render_fleet_footer_line(&stale_target, "COMMAND <- Target XX ");
 
@@ -3577,7 +3577,7 @@ fn popup_launched_build_delete_clears_selected_kind_in_place() {
         .planets
         .get_mut(expected_record.saturating_sub(1))
         .expect("owned planet record");
-    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+    planet.build_queue[0].kind = nc_data::ProductionItemKind::from_code(1);
     planet.build_queue[0].points_owed = 10;
     let (column, row) = screen_point_for_sector(&app, owned_coords);
 
@@ -3673,7 +3673,7 @@ fn keyboard_opening_fleet_list_clears_transient_location_filter() {
 fn owned_planet_popup_browse_uses_popup_record_not_crosshair() {
     let mut app = dash_app();
     let other_coords = app.game_data.planets[1].sector.to_array();
-    app.game_data.planets[0].build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+    app.game_data.planets[0].build_queue[0].kind = nc_data::ProductionItemKind::from_code(3);
     app.game_data.planets[0].build_queue[0].points_owed = 90;
     app.open_owned_planet_popup(1);
     app.crosshair_x = other_coords[0];

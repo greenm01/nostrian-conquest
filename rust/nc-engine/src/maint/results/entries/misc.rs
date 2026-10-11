@@ -335,7 +335,7 @@ pub fn push_misc_entries(
                 coords,
                 reason,
             } => {
-                let order_name = nc_data::Order::from_raw(order_code_raw)
+                let order_name = nc_data::Order::from_code(order_code_raw)
                     .display_label()
                     .to_lowercase();
                 let body = if capability_loss_invalid_order_reason(reason) {

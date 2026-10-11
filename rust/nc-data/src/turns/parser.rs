@@ -216,7 +216,7 @@ fn parse_order_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
         return order_code_from_name(&value);
     }
     let raw = prop_u8_with_aliases(node, &["code", "order_code"])?;
-    match Order::from_raw(raw) {
+    match Order::from_code(raw) {
         Order::Unknown(_) => Err(TurnSubmissionError::Parse(format!(
             "unknown fleet order code: {raw}"
         ))),
@@ -234,7 +234,7 @@ fn parse_order_target(
         (Some(x), Some(y)) => Ok(Some([x, y])),
         (None, None)
             if matches!(
-                Order::from_raw(order_code),
+                Order::from_code(order_code),
                 Order::SeekHome | Order::Salvage
             ) =>
         {
@@ -278,7 +278,7 @@ fn parse_production_kind_raw(node: &::kdl::KdlNode) -> Result<u8, TurnSubmission
         return production_kind_raw_from_name(&value);
     }
     let raw = prop_u8_with_aliases(node, &["kind_raw", "raw"])?;
-    match ProductionItemKind::from_raw(raw) {
+    match ProductionItemKind::from_code(raw) {
         ProductionItemKind::Unknown(_) => Err(TurnSubmissionError::Parse(format!(
             "unknown production kind: {raw}"
         ))),

@@ -62,12 +62,12 @@ fn ecmaint_bombard_scenario_arrival_preserves_attack_order() {
     let arrive_fleet = &arrive[2];
 
     assert_eq!(pre_fleet.speed, 0x03);
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.target.to_array(), [0x0f, 0x0d]);
 
     assert_eq!(arrive_fleet.speed, 0x03);
     assert_eq!(arrive_fleet.sector.to_array(), [0x0f, 0x0d]);
-    assert_eq!(arrive_fleet.order.to_raw(), 0x06);
+    assert_eq!(arrive_fleet.order.code(), 0x06);
     assert_eq!(arrive_fleet.target.to_array(), [0x0f, 0x0d]);
 }
 
@@ -82,12 +82,12 @@ fn ecmaint_bombard_scenario_second_pass_consumes_order_and_kills_attackers() {
     let post_fleet = &post[2];
 
     assert_eq!(arrive_fleet.speed, 0x03);
-    assert_eq!(arrive_fleet.order.to_raw(), 0x06);
+    assert_eq!(arrive_fleet.order.code(), 0x06);
     assert_eq!(arrive_fleet.ships.cruisers, 0x03);
     assert_eq!(arrive_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x02);
     assert_eq!(post_fleet.ships.destroyers, 0x01);
@@ -107,12 +107,12 @@ fn ecmaint_bombard_zero_army_target_changes_planet_without_attacker_losses() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x03);
     assert_eq!(post_fleet.ships.destroyers, 0x05);
@@ -151,8 +151,8 @@ fn ecmaint_bombard_zero_army_zero_dev_target_changes_damage_pattern() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(pre_fleet.order.code(), 0x06);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.speed, 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x03);
@@ -191,12 +191,12 @@ fn ecmaint_bombard_one_army_target_causes_partial_attacker_losses() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x02);
     assert_eq!(post_fleet.ships.destroyers, 0x02);
@@ -235,12 +235,12 @@ fn ecmaint_bombard_one_army_zero_dev_target_changes_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x02);
     assert_eq!(post_fleet.ships.destroyers, 0x04);
@@ -284,12 +284,12 @@ fn ecmaint_bombard_byte_0e_increases_defender_damage_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x03);
     assert_eq!(post_fleet.ships.destroyers, 0x01);
@@ -338,12 +338,12 @@ fn ecmaint_bombard_byte_08_changes_defender_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x01);
     assert_eq!(post_fleet.ships.destroyers, 0x03);
@@ -391,12 +391,12 @@ fn ecmaint_bombard_byte_09_changes_attacker_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.order.code(), 0x06);
     assert_eq!(pre_fleet.ships.cruisers, 0x03);
     assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
     assert_eq!(post_fleet.speed, 0x00);
-    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.order.code(), 0x00);
     assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
     assert_eq!(post_fleet.ships.cruisers, 0x01);
     assert_eq!(post_fleet.ships.destroyers, 0x05);

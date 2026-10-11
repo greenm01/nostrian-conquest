@@ -23,10 +23,8 @@ pub(super) fn process_build_completion(
                 continue;
             }
 
-            let build_kind = game_data.planets[planet_idx].build_queue[slot]
-                .kind
-                .to_raw();
-            let build_item_kind = ProductionItemKind::from_raw(build_kind);
+            let build_kind = game_data.planets[planet_idx].build_queue[slot].kind.code();
+            let build_item_kind = ProductionItemKind::from_code(build_kind);
             let decrement = u32::from(build_count).min(remaining_spend_capacity);
             let new_count = u32::from(build_count).saturating_sub(decrement) as u8;
             let completed_qty = completed_unit_count(build_item_kind, build_count, new_count);

@@ -15,7 +15,7 @@ pub fn merge_player_intel_from_compat(
     let viewer_is_active = game_data
         .players
         .get(viewer_index)
-        .map(|player| player.mode.to_raw() != 0)
+        .map(|player| player.mode.code() != 0)
         .unwrap_or(false);
     compat_worlds(game_data, database, viewer_empire_id)
         .into_iter()

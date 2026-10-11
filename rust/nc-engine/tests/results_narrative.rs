@@ -2000,7 +2000,7 @@ fn invalid_fleet_mission_report_tolerates_removed_fleet_index() {
         .push(InvalidPlayerStateEvent::FleetMission {
             fleet_idx: 99,
             owner_empire_raw: 1,
-            order_code_raw: nc_data::Order::InvadeWorld.to_raw(),
+            order_code_raw: nc_data::Order::InvadeWorld.code(),
             coords: [9, 9],
             reason: FleetOrderValidationError::MissingLoadedTroopTransports,
         });

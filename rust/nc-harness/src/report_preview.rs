@@ -1303,7 +1303,7 @@ fn configure_named_player(
     empire_name: &str,
 ) {
     if let Some(player) = game_data.players.get_mut((empire_raw - 1) as usize) {
-        player.mode = PlayerMode::from_raw(empire_raw);
+        player.mode = PlayerMode::from_code(empire_raw);
         set_player_handle(player, handle);
         set_empire_name(player, empire_name);
     }

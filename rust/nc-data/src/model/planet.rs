@@ -19,7 +19,7 @@ pub enum ProductionItemKind {
 }
 
 impl ProductionItemKind {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_code(raw: u8) -> Self {
         match raw {
             1 => Self::Destroyer,
             2 => Self::Cruiser,
@@ -34,7 +34,7 @@ impl ProductionItemKind {
         }
     }
 
-    pub fn to_raw(self) -> u8 {
+    pub fn code(self) -> u8 {
         match self {
             Self::Destroyer => 1,
             Self::Cruiser => 2,

@@ -17,7 +17,7 @@ pub fn decode_fleet(bytes: &[u8; FLEET_RECORD_SIZE]) -> Fleet {
         x_fraction: real_at(bytes, 0x0D),
         y_fraction: real_at(bytes, 0x13),
         depth: real_at(bytes, 0x19),
-        order: Order::from_raw(bytes[0x1F]),
+        order: Order::from_code(bytes[0x1F]),
         target: Coords::new(bytes[0x20], bytes[0x21]),
         target_depth: bytes[0x22],
         mission_target: u16_at(bytes, 0x23),
@@ -49,7 +49,7 @@ pub fn encode_fleet(fleet: &Fleet) -> [u8; FLEET_RECORD_SIZE] {
     put_real(&mut bytes, 0x0D, fleet.x_fraction);
     put_real(&mut bytes, 0x13, fleet.y_fraction);
     put_real(&mut bytes, 0x19, fleet.depth);
-    bytes[0x1F] = fleet.order.to_raw();
+    bytes[0x1F] = fleet.order.code();
     bytes[0x20] = fleet.target.x;
     bytes[0x21] = fleet.target.y;
     bytes[0x22] = fleet.target_depth;

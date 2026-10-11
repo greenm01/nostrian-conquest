@@ -352,7 +352,7 @@ impl DashApp {
                 return;
             }
             // Each fleet of a group seeks its own nearest world.
-            Ok(Some(_)) if mission_code == Order::SeekHome.to_raw() && records.len() > 1 => {
+            Ok(Some(_)) if mission_code == Order::SeekHome.code() && records.len() > 1 => {
                 if let Err(err) = self.apply_fleet_group_order(mission_code, [0, 0], None, None) {
                     self.fleet_overlay.mission_picker_status = Some(err.to_string());
                 }
@@ -1472,7 +1472,7 @@ impl DashApp {
         {
             return Err("That mission requires one of your owned planets.".to_string());
         }
-        if mission_code == Order::ColonizeWorld.to_raw() {
+        if mission_code == Order::ColonizeWorld.code() {
             let selected_records = self.selected_fleet_order_record_indexes();
             if selected_records.is_empty() {
                 return Err(match self.fleet_overlay.order_scope {
@@ -1563,16 +1563,16 @@ impl DashApp {
             return Ok(());
         }
         // A lone fleet keeps the target its order prompt chose.
-        let seek_home_targets =
-            if mission_code == Order::SeekHome.to_raw() && selected_rows.len() > 1 {
-                let records = selected_rows
-                    .iter()
-                    .map(|row| row.fleet_record_index_1_based)
-                    .collect::<Vec<_>>();
-                automatic_order_targets(&self.game_data, mission_code, &records)?
-            } else {
-                None
-            };
+        let seek_home_targets = if mission_code == Order::SeekHome.code() && selected_rows.len() > 1
+        {
+            let records = selected_rows
+                .iter()
+                .map(|row| row.fleet_record_index_1_based)
+                .collect::<Vec<_>>();
+            automatic_order_targets(&self.game_data, mission_code, &records)?
+        } else {
+            None
+        };
         for (index, row) in selected_rows.iter().enumerate() {
             let target = seek_home_targets
                 .as_ref()

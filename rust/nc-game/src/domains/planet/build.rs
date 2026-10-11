@@ -1360,8 +1360,8 @@ impl App {
                     .map(|record| {
                         (0..STARDOCK_SLOT_COUNT).any(|slot| {
                             let count = record.stardock[slot].min(u32::from(u16::MAX)) as u16;
-                            let kind = ProductionItemKind::from_raw(
-                                nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                            let kind = ProductionItemKind::from_code(
+                                nc_data::stardock_slot_kind(&record, slot).code(),
                             );
                             count > 0 && kind.requires_stardock()
                         })
@@ -1391,8 +1391,8 @@ impl App {
                     if count == 0 {
                         continue;
                     }
-                    match ProductionItemKind::from_raw(
-                        nc_data::stardock_slot_kind(&record, slot).to_raw(),
+                    match ProductionItemKind::from_code(
+                        nc_data::stardock_slot_kind(&record, slot).code(),
                     ) {
                         ProductionItemKind::Destroyer => {
                             destroyers = destroyers.saturating_add(count)

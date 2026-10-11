@@ -277,8 +277,8 @@ fn planet_row_sort_metrics(
             (0..10)
                 .map(|slot| {
                     let points = u32::from(planet.build_queue[slot].points_owed);
-                    let kind = nc_data::ProductionItemKind::from_raw(
-                        planet.build_queue[slot].kind.to_raw(),
+                    let kind = nc_data::ProductionItemKind::from_code(
+                        planet.build_queue[slot].kind.code(),
                     );
                     kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                 })
@@ -345,8 +345,8 @@ fn planet_list_clause_matches(
                     (0..10)
                         .map(|slot| {
                             let points = u32::from(planet.build_queue[slot].points_owed);
-                            let kind = nc_data::ProductionItemKind::from_raw(
-                                planet.build_queue[slot].kind.to_raw(),
+                            let kind = nc_data::ProductionItemKind::from_code(
+                                planet.build_queue[slot].kind.code(),
                             );
                             kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                         })
@@ -1997,8 +1997,8 @@ impl App {
                     (0..10)
                         .map(|slot| {
                             let points = u32::from(planet.build_queue[slot].points_owed);
-                            let kind = nc_data::ProductionItemKind::from_raw(
-                                planet.build_queue[slot].kind.to_raw(),
+                            let kind = nc_data::ProductionItemKind::from_code(
+                                planet.build_queue[slot].kind.code(),
                             );
                             kind.build_cost().map(|cost| points / cost).unwrap_or(0)
                         })

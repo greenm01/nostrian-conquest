@@ -62,7 +62,7 @@ pub struct PlanetCommissionDraftState {
 }
 
 pub fn production_item_kind_raw(kind: ProductionItemKind) -> u8 {
-    kind.to_raw()
+    kind.code()
 }
 
 pub fn planet_build_committed_points(planet: &Planet) -> u32 {
@@ -91,12 +91,12 @@ pub fn planet_build_orders(planet: &Planet) -> Vec<PlanetBuildOrderLine> {
     (0..10)
         .filter_map(|slot| {
             let points = planet.build_queue[slot].points_owed;
-            let kind_raw = planet.build_queue[slot].kind.to_raw();
+            let kind_raw = planet.build_queue[slot].kind.code();
             if points == 0 || kind_raw == 0 {
                 None
             } else {
                 Some(PlanetBuildOrderLine {
-                    kind: ProductionItemKind::from_raw(kind_raw),
+                    kind: ProductionItemKind::from_code(kind_raw),
                     points_remaining: points,
                 })
             }
@@ -190,7 +190,7 @@ pub fn planet_build_list_entries(planet: &Planet) -> Vec<PlanetBuildListEntry> {
             if queue_qty == 0 {
                 return None;
             }
-            let kind = ProductionItemKind::from_raw(kind_raw);
+            let kind = ProductionItemKind::from_code(kind_raw);
             let points = build_unit_spec_by_kind(kind).map(|u| u.cost).unwrap_or(0);
             Some(PlanetBuildListEntry {
                 kind,

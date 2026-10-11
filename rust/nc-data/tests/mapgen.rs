@@ -66,7 +66,7 @@ fn seeded_new_game_populates_documented_planet_count_for_player_count() {
     assert_eq!(populated, 15);
 
     for idx in 0..3 {
-        assert_eq!(data.players[idx].mode.to_raw(), 0);
+        assert_eq!(data.players[idx].mode.code(), 0);
         assert!(data.players[idx].autopilot);
         assert_eq!(data.planets[idx].owner.0, (idx + 1) as u8);
         assert_eq!(data.planets[idx].name.clone(), "Not Named Yet");
@@ -154,7 +154,7 @@ fn seeded_new_game_supports_nine_player_manual_tier() {
 fn seeded_initialized_game_retains_active_campaign_builder_semantics() {
     let data =
         build_seeded_initialized_game(4, 3000, 1515).expect("initialized seeded game should build");
-    assert!(data.players.iter().all(|player| player.mode.to_raw() == 1));
+    assert!(data.players.iter().all(|player| player.mode.code() == 1));
     assert!(data.players[0].autopilot);
     assert_eq!(data.planets[0].owner.0, 1);
     assert_eq!(data.planets[0].name.clone(), "Player 1 HW");

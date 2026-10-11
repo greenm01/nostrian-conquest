@@ -1330,9 +1330,9 @@ mod tests {
             .expect("baseline");
         let planet = &mut game_data.planets[0];
         planet.stored_goods = nc_data::Real48::from_f64(f64::from(165));
-        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(1);
+        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_code(1);
         planet.build_queue[0].points_owed = 5;
-        planet.build_queue[1].kind = nc_data::ProductionItemKind::from_raw(6);
+        planet.build_queue[1].kind = nc_data::ProductionItemKind::from_code(6);
         planet.build_queue[1].points_owed = 40;
 
         let app = DashApp::new_for_tests(

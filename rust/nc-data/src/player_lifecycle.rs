@@ -42,7 +42,7 @@ pub fn set_civil_disorder(player: &mut Player) {
 /// Joined and rogue empires both contest the campaign and can be eliminated;
 /// only civil disorder (0x00) is out of it.
 pub fn is_contesting_empire(player: &Player) -> bool {
-    player.mode.to_raw() != 0x00
+    player.mode.code() != 0x00
 }
 
 /// A contesting empire still contends for the throne while it holds a world,

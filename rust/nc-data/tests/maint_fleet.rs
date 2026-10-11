@@ -182,7 +182,7 @@ fn test_fleet_movement_arrival_state() {
         "Fleet 0 should have speed 0 after arrival"
     );
     assert_eq!(
-        game_data.fleets[0].order.to_raw(),
+        game_data.fleets[0].order.code(),
         0,
         "Fleet 0 order should be cleared to HoldPosition (0) after arrival"
     );
@@ -643,7 +643,7 @@ fn test_merges_that_would_overflow_scout_count_are_refused() {
         (0xff, Order::HoldPosition),
     ] {
         let mut game_data = load_fixture("ecmaint-post");
-        game_data.players[0].mode = PlayerMode::from_raw(consolidation_flag);
+        game_data.players[0].mode = PlayerMode::from_code(consolidation_flag);
         let coords = game_data.fleets[0].sector.to_array();
         let host_number = game_data.fleets[0].fleet_number.0;
         for idx in [0, 1] {
@@ -1303,7 +1303,7 @@ fn test_move_only_horizontal_clears_to_hold_on_exact_arrival() {
     fleet.sector = Coords::new(10, 10);
     set_mission_target(fleet, 1, 0);
     game_data
-        .set_fleet_order(1, 3, Order::MoveOnly.to_raw(), [16, 10], None, None)
+        .set_fleet_order(1, 3, Order::MoveOnly.code(), [16, 10], None, None)
         .expect("move-only order should apply");
     game_data.fleets[0].depth = Real48::ONE;
 
@@ -2422,7 +2422,7 @@ fn test_on_station_hostile_orders_assigned_via_mutator_execute_next_turn() {
             .set_fleet_order(
                 1,
                 game_data.fleets[0].max_speed,
-                order.to_raw(),
+                order.code(),
                 target_coords,
                 None,
                 None,

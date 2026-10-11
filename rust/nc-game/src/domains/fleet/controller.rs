@@ -54,7 +54,7 @@ fn fleet_is_combat_only_fallback_candidate(fleet: &Fleet) -> bool {
 }
 
 fn fleet_matches_filter(row: &FleetRow, filter: FleetListFilter) -> bool {
-    let order = Order::from_raw(row.order_code);
+    let order = Order::from_code(row.order_code);
     match filter {
         FleetListFilter::All => true,
         FleetListFilter::Holding => order == Order::HoldPosition,
@@ -1786,7 +1786,7 @@ impl App {
                     fleet_number: fleet.fleet_number.0,
                     coords: fleet.sector.to_array(),
                     target_coords: fleet.target.to_array(),
-                    order_code: fleet.order.to_raw(),
+                    order_code: fleet.order.code(),
                     current_speed: fleet.speed,
                     max_speed: fleet.max_speed,
                     eta_label: fleet_eta_label(&self.game_data, idx),

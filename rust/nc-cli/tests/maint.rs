@@ -2862,7 +2862,7 @@ fn maint_rust_invalid_planet_inputs_generate_admin_report() {
         .position(|planet| planet.owner.0 == 1)
         .expect("fixture should contain owned planet");
     game_data.planets[planet_idx].build_queue[0].points_owed = 12;
-    game_data.planets[planet_idx].build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+    game_data.planets[planet_idx].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
     game_data.players[0].tax_rate = 255;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
@@ -2896,7 +2896,7 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     // Planet record 15 is Empire #1's world; invalid-input reports for
     // unowned planets are not delivered to anyone.
     game_data.planets[14].build_queue[0].points_owed = 9;
-    game_data.planets[14].build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+    game_data.planets[14].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
     game_data.players[0].tax_rate = 255;
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
@@ -2910,7 +2910,7 @@ fn maint_rust_sanitizes_mixed_invalid_player_inputs_and_exports_loadable_state()
     assert_eq!(reloaded.fleets[0].rules_of_engagement, 0);
     assert_eq!(reloaded.players[0].tax_rate, 100);
     assert_eq!(reloaded.planets[14].build_queue[0].points_owed, 0);
-    assert_eq!(reloaded.planets[14].build_queue[0].kind.to_raw(), 0);
+    assert_eq!(reloaded.planets[14].build_queue[0].kind.code(), 0);
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");
     let result_text = decode_chunked_report(&results);
@@ -2934,7 +2934,7 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         let mut game_data = load_classic_core_files(&target).expect("fixture should load");
         let fleet = &mut game_data.fleets[0];
         fleet.sector = Coords::new(15, 13);
-        fleet.order = Order::from_raw(order_code);
+        fleet.order = Order::from_code(order_code);
         fleet.target = Coords::new(15, 13);
         fleet.speed = 99;
         set_mission_target(fleet, 0xfe, 0xfe);
@@ -2946,7 +2946,7 @@ fn maint_rust_survives_deterministic_malformed_directory_matrix() {
         set_armies_aboard(fleet, 4);
         fleet.rules_of_engagement = 42;
         game_data.planets[0].build_queue[0].points_owed = 9;
-        game_data.planets[0].build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+        game_data.planets[0].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
         game_data.planets[0].stardock.destroyers = 2;
         game_data.players[0].tax_rate = 255;
         save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
@@ -2995,7 +2995,7 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
 
         let mut game_data = load_classic_core_files(&target).expect("fixture should load");
         if let Some(fleet) = game_data.fleets.get_mut(0) {
-            fleet.order = Order::from_raw(0xfe);
+            fleet.order = Order::from_code(0xfe);
             fleet.speed = 99;
             set_troop_transports(fleet, 1);
             set_armies_aboard(fleet, 4);
@@ -3003,13 +3003,13 @@ fn maint_rust_survives_multi_fixture_invalid_input_sweep() {
         }
         if let Some(planet) = game_data.planets.get_mut(0) {
             planet.build_queue[0].points_owed = 9;
-            planet.build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+            planet.build_queue[0].kind = ProductionItemKind::from_code(0xfe);
             planet.stardock.destroyers = 2;
         }
         if let Some(player) = game_data.players.get_mut(0) {
             player.tax_rate = 255;
             set_diplomatic_relation_toward(player, 1, DiplomaticRelation::Enemy);
-            set_diplomatic_relation_toward(player, 2, DiplomaticRelation::from_raw(0xfe));
+            set_diplomatic_relation_toward(player, 2, DiplomaticRelation::from_code(0xfe));
         }
         save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
@@ -3047,7 +3047,7 @@ fn maint_rust_reports_invalid_diplomacy_input_sanitization() {
     set_diplomatic_relation_toward(
         &mut game_data.players[0],
         2,
-        DiplomaticRelation::from_raw(0xfe),
+        DiplomaticRelation::from_code(0xfe),
     );
     save_classic_core_files(&target, &game_data).expect("mutated fixture should save");
 
@@ -3588,7 +3588,7 @@ fn maint_rust_reports_empire_defeat_without_recovery_path() {
     assert!(stdout.contains("Rust maintenance complete."));
 
     let post = load_classic_core_files(&target).expect("maint-rust output should load");
-    assert_eq!(post.players[0].mode.to_raw(), 0x00);
+    assert_eq!(post.players[0].mode.code(), 0x00);
     assert_eq!(post.players[0].empire_name.trim().to_string(), "");
 
     let results = fs::read(target.join("RESULTS.DAT")).expect("RESULTS.DAT should exist");

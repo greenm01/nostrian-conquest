@@ -286,7 +286,7 @@ fn ensure_planet_capacity(game_data: &mut CoreGameData, snapshot: &GameState) {
 fn set_player_records(game_data: &mut CoreGameData, snapshot: &GameState, player_count: u8) {
     for seat in 1..=player_count as usize {
         if let Some(player) = game_data.players.get_mut(seat - 1) {
-            player.mode = nc_data::PlayerMode::from_raw(0x01);
+            player.mode = nc_data::PlayerMode::from_code(0x01);
             nc_data::set_empire_name(player, &format!("Empire {seat}"));
             player.tax_rate = 50;
             player.last_year_on = snapshot.year as u16;

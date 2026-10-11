@@ -234,7 +234,7 @@ impl Year<'_> {
         let (order, target_flag) = self.movement.effective_order(game_data, fleet_idx);
         FleetFacts {
             owner: fleet.owner.0,
-            order: order.to_raw(),
+            order: order.code(),
             sector: fleet.sector.to_array(),
             layer: layer_of(fleet.depth),
             target: fleet.target.to_array(),

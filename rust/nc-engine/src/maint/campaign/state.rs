@@ -230,7 +230,7 @@ pub(super) fn apply_civil_disorder_fleet_defections(
         let Some(player) = game_data.players.get(empire_raw.saturating_sub(1) as usize) else {
             continue;
         };
-        if player.mode.to_raw() != 0x00 {
+        if player.mode.code() != 0x00 {
             continue;
         }
         if newly_defeated
@@ -394,13 +394,13 @@ fn owned_planet_count(game_data: &CoreGameData, empire_raw: u8) -> usize {
 }
 
 fn is_joined_empire(player: &nc_data::Player) -> bool {
-    !matches!(player.mode.to_raw(), 0x00 | 0xff)
+    !matches!(player.mode.code(), 0x00 | 0xff)
 }
 
 fn is_rogue_empire(game_data: &CoreGameData, empire_raw: u8) -> bool {
     game_data
         .players
         .get(empire_raw.saturating_sub(1) as usize)
-        .map(|player| player.mode.to_raw() == 0xff)
+        .map(|player| player.mode.code() == 0xff)
         .unwrap_or(false)
 }

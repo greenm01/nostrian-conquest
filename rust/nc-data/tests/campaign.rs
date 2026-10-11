@@ -190,7 +190,7 @@ fn maintenance_marks_empire_without_recovery_path_defeated() {
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
     let player = &game_data.players[0];
-    assert_eq!(player.mode.to_raw(), 0x00);
+    assert_eq!(player.mode.code(), 0x00);
     assert_eq!(player.empire_name.trim().to_string(), "");
     assert_eq!(events.civil_disorder_events.len(), 0);
     assert_eq!(events.empire_elimination_events.len(), 1);

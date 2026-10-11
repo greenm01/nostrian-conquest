@@ -15,7 +15,7 @@ fn sysop_new_game_default_four_player() {
     assert!(stdout.contains("players=4"));
     assert!(target.join("DATABASE.DAT").exists());
     let game_data = load_classic_core_files(&target).expect("generated game should load");
-    assert_eq!(game_data.players[0].mode.to_raw(), 0);
+    assert_eq!(game_data.players[0].mode.code(), 0);
     assert_eq!(game_data.planets[0].name.clone(), "Not Named Yet");
     assert_eq!(game_data.players[0].tax_rate, 50);
     assert_eq!(present_production_points(&game_data.planets[0]), 100);

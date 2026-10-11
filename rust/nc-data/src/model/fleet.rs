@@ -26,7 +26,7 @@ pub enum Order {
 }
 
 impl Order {
-    pub fn from_raw(raw: u8) -> Self {
+    pub fn from_code(raw: u8) -> Self {
         match raw {
             0 => Self::HoldPosition,
             1 => Self::MoveOnly,
@@ -48,7 +48,7 @@ impl Order {
         }
     }
 
-    pub fn to_raw(self) -> u8 {
+    pub fn code(self) -> u8 {
         match self {
             Self::HoldPosition => 0,
             Self::MoveOnly => 1,

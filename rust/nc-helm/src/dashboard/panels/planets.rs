@@ -69,7 +69,7 @@ pub(crate) fn body_rows(app: &DashApp) -> Vec<(String, CellStyle)> {
         ground_batteries += batteries as u32;
 
         for (kind_code, qty) in build_queue_unit_counts(planet) {
-            let kind = ProductionItemKind::from_raw(kind_code);
+            let kind = ProductionItemKind::from_code(kind_code);
             building += qty;
             match kind {
                 ProductionItemKind::Battleship => build_bbs += qty,
@@ -207,7 +207,7 @@ mod tests {
             1,
         );
         let homeworld = &mut app.game_data.planets[0];
-        homeworld.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+        homeworld.build_queue[0].kind = nc_data::ProductionItemKind::from_code(3);
         homeworld.build_queue[0].points_owed = 90;
 
         assert!(

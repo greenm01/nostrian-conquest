@@ -41,7 +41,7 @@ fn configured_assault_state(order_code: u8) -> CoreGameData {
     // Reuse fleet 1 as the attacker and mark it as already-arrived this turn.
     let attacker = &mut game_data.fleets[0];
     attacker.sector = Coords::new(15, 13);
-    attacker.order = Order::from_raw(order_code);
+    attacker.order = Order::from_code(order_code);
     attacker.target = Coords::new(15, 13);
     attacker.speed = 3;
     // At rest in orbit: the strike test passes on the first tick.
@@ -216,10 +216,7 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
     let attacker = &game_data.fleets[2];
     assert_eq!(attacker.sector.to_array(), [15, 13]);
     // Bombardment persists: fleet keeps BombardWorld order for next turn.
-    assert_eq!(
-        attacker.order.to_raw(),
-        nc_data::Order::BombardWorld.to_raw()
-    );
+    assert_eq!(attacker.order.code(), nc_data::Order::BombardWorld.code());
     // It stops in orbit to bombard again next year.
     assert_eq!(attacker.speed, 0);
     assert_eq!(attacker.depth, nc_data::Real48::ONE);
@@ -260,7 +257,7 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
 
 #[test]
 fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
-    let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
+    let mut game_data = configured_assault_state(Order::BombardWorld.code());
     configure_bombard_target_world(&mut game_data, 0, 6, 0, 0);
 
     let attacker = &mut game_data.fleets[0];
@@ -286,7 +283,7 @@ fn bombardment_armies_without_batteries_do_not_inflict_orbital_losses() {
 
 #[test]
 fn bombardment_batteries_still_inflict_orbital_losses() {
-    let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
+    let mut game_data = configured_assault_state(Order::BombardWorld.code());
     configure_bombard_target_world(&mut game_data, 4, 0, 0, 0);
 
     let attacker = &mut game_data.fleets[0];
@@ -344,7 +341,7 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
 
     let loser_one = &game_data.fleets[0];
     assert_eq!(loser_one.sector.to_array(), [10, 10]);
-    assert_eq!(loser_one.order.to_raw(), 0);
+    assert_eq!(loser_one.order.code(), 0);
     assert_eq!(loser_one.rules_of_engagement, 0);
     assert_eq!(loser_one.ships.battleships, 0);
     assert_eq!(loser_one.ships.cruisers, 0);
@@ -1011,7 +1008,7 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
 
     let attacker = &game_data.fleets[4];
     assert_eq!(attacker.ships.cruisers, 0);
-    assert_eq!(attacker.order.to_raw(), 0);
+    assert_eq!(attacker.order.code(), 0);
     assert_eq!(attacker.rules_of_engagement, 0);
 
     assert_eq!(game_data.bases.len(), 1);
@@ -1021,7 +1018,7 @@ fn canonical_starbase_defender_repels_orbital_attacker() {
 
 #[test]
 fn starbase_only_planet_defender_cannot_concede_the_field() {
-    let mut game_data = configured_assault_state(Order::BombardWorld.to_raw());
+    let mut game_data = configured_assault_state(Order::BombardWorld.code());
     let coords = [15, 13];
 
     for fleet in game_data.fleets.iter_mut().skip(1) {
@@ -1206,7 +1203,7 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
 
     let attacker = &game_data.fleets[0];
     let target = &game_data.planets[13];
-    assert_eq!(attacker.order.to_raw(), 0);
+    assert_eq!(attacker.order.code(), 0);
     assert_eq!(attacker.speed, 0);
     assert_eq!(attacker.ships.loaded_transports, 0);
     assert_eq!(target.owner.0, 1);
@@ -1270,7 +1267,7 @@ fn canonical_blitz_failure_leaves_defender_in_control() {
 
     let attacker = &game_data.fleets[0];
     let target = &game_data.planets[13];
-    assert_eq!(attacker.order.to_raw(), 0);
+    assert_eq!(attacker.order.code(), 0);
     assert_eq!(attacker.speed, 0);
     assert_eq!(attacker.ships.loaded_transports, 0);
     assert_eq!(target.owner.0, 2);

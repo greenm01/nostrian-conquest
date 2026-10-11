@@ -83,7 +83,7 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
     println!("  fleet[1].fleet_id_word_raw={}", fleet1.record.0);
     println!(
         "  fleet[1].order={:#04x} target={:?} guard_index={}",
-        fleet1.order.to_raw(),
+        fleet1.order.code(),
         fleet1.target.to_array(),
         fleet1.mission_target
     );

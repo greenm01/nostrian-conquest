@@ -48,7 +48,7 @@ pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..STARDOCK_SLOT_COUNT {
         let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
-        let kind_raw = stardock_slot_kind(planet, slot).to_raw();
+        let kind_raw = stardock_slot_kind(planet, slot).code();
         if count == 0 || kind_raw == 0 {
             continue;
         }
@@ -61,11 +61,11 @@ pub fn build_queue_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
     let mut counts_by_kind = BTreeMap::<u8, u32>::new();
     for slot in 0..10 {
         let points = u32::from(planet.build_queue[slot].points_owed);
-        let kind_raw = planet.build_queue[slot].kind.to_raw();
+        let kind_raw = planet.build_queue[slot].kind.code();
         if points == 0 || kind_raw == 0 {
             continue;
         }
-        let kind = ProductionItemKind::from_raw(kind_raw);
+        let kind = ProductionItemKind::from_code(kind_raw);
         let qty = kind
             .build_cost()
             .map(|cost| points.div_ceil(cost))
@@ -88,7 +88,7 @@ pub fn ordered_unit_count_entries(
         .into_iter()
         .filter_map(|kind_raw| {
             let count = counts_by_kind.get(&kind_raw).copied().unwrap_or(0);
-            (count != 0).then_some((ProductionItemKind::from_raw(kind_raw), count))
+            (count != 0).then_some((ProductionItemKind::from_code(kind_raw), count))
         })
         .collect()
 }
@@ -298,11 +298,11 @@ pub fn planet_derived_summary(planet: &Planet) -> String {
         parts.push("likely_homeworld_seed".to_string());
     }
     let first_slot = planet.build_queue[0];
-    if first_slot.points_owed != 0 || first_slot.kind.to_raw() != 0 {
+    if first_slot.points_owed != 0 || first_slot.kind.code() != 0 {
         parts.push(format!(
             "build_raw={:02x}/{:02x}",
             first_slot.points_owed,
-            first_slot.kind.to_raw()
+            first_slot.kind.code()
         ));
     }
     if planet.owner.0 != 0 {

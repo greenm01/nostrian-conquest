@@ -1665,7 +1665,7 @@ mod tests {
         );
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.order_target_x_input = "03".to_string();
         app.fleet_overlay.order_target_y_input = "02".to_string();
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderConfirm;
@@ -1694,7 +1694,7 @@ mod tests {
         let mut app = dash_app();
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
 
         let lines = render_lines_for_prompt(&app);
@@ -1716,7 +1716,7 @@ mod tests {
         let mut app = dash_app();
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetY;
 
         let lines = render_lines_for_prompt(&app);
@@ -1752,7 +1752,7 @@ mod tests {
         let mut app = dash_app();
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetY;
         app.fleet_overlay.order_target_x_input = "03".to_string();
 
@@ -1770,7 +1770,7 @@ mod tests {
         let mut app = dash_app();
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
 
         let lines = render_lines_for_prompt(&app);
@@ -1796,14 +1796,14 @@ mod tests {
         let mut x_step = dash_app();
         x_step.overlay = ActiveOverlay::FleetList;
         x_step.open_selected_fleet_order_flow();
-        x_step.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        x_step.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         x_step.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetX;
         let x_rect = order_prompt_popup_rect(&x_step, dashboard_layout(&x_step).widgets.center_map);
 
         let mut y_step = dash_app();
         y_step.overlay = ActiveOverlay::FleetList;
         y_step.open_selected_fleet_order_flow();
-        y_step.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        y_step.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         y_step.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderTargetY;
         let y_rect = order_prompt_popup_rect(&y_step, dashboard_layout(&y_step).widgets.center_map);
 
@@ -2198,7 +2198,7 @@ mod tests {
         app.fleet_overlay.active_row_key = Some(rows[selected_row_indexes[0]].key);
         app.fleet_overlay.order_scope = FleetOrderScope::Group;
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderConfirm;
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.order_target_x_input = "03".to_string();
         app.fleet_overlay.order_target_y_input = "02".to_string();
         app.fleet_overlay.selected_fleet_record_indexes = selected_records.into_iter().collect();
@@ -2256,7 +2256,7 @@ mod tests {
         let mut app = dash_app();
         app.overlay = ActiveOverlay::FleetList;
         app.open_selected_fleet_order_flow();
-        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.to_raw());
+        app.fleet_overlay.order_mission_code = Some(Order::MoveOnly.code());
         app.fleet_overlay.order_target_x_input = "03".to_string();
         app.fleet_overlay.order_target_y_input = "02".to_string();
         app.fleet_overlay.prompt_mode = FleetOverlayPromptMode::OrderConfirm;

@@ -817,8 +817,8 @@ fn queued_build_units(frame: &ScreenFrame<'_>, row: &EmpirePlanetEconomyRow) -> 
             (0..10)
                 .map(|slot| {
                     build_quantity_from_points(
-                        nc_data::ProductionItemKind::from_raw(
-                            planet.build_queue[slot].kind.to_raw(),
+                        nc_data::ProductionItemKind::from_code(
+                            planet.build_queue[slot].kind.code(),
                         ),
                         u32::from(planet.build_queue[slot].points_owed),
                     )

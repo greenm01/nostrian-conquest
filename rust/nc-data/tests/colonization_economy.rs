@@ -33,7 +33,7 @@ fn colonization_probe() -> (CoreGameData, usize) {
     game.set_fleet_order(
         fleet_idx + 1,
         3,
-        Order::ColonizeWorld.to_raw(),
+        Order::ColonizeWorld.code(),
         target_coords,
         None,
         None,

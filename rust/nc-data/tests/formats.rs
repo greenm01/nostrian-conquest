@@ -95,7 +95,7 @@ fn planet_stardock_accessors_cover_eight_typed_u32_slots() {
     planet.stardock.ipbms = 300;
 
     assert_eq!(planet.stardock.cruisers, 1);
-    assert_eq!(stardock_slot_kind(&planet, 1).to_raw(), 2);
+    assert_eq!(stardock_slot_kind(&planet, 1).code(), 2);
     assert_eq!(planet.stardock.ipbms, 300);
     let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x3C], 1);
@@ -156,12 +156,12 @@ fn f3_owner_fixture_exposes_rogue_and_player_controlled_empire_summaries() {
     let bytes = read_f3_owner_fixture("PLAYER.DAT");
     let parsed = parse_player_dat(&bytes).unwrap();
 
-    assert_eq!(parsed[0].mode.to_raw(), 0xff);
+    assert_eq!(parsed[0].mode.code(), 0xff);
     assert_eq!(parsed[0].empire_name.chars().count() as u8, 6);
     assert_eq!(parsed[0].empire_name.trim().to_string(), "Rogues");
     assert_eq!(ownership_summary(&parsed[0]), "rogue label='Rogues'");
 
-    assert_eq!(parsed[1].mode.to_raw(), 1);
+    assert_eq!(parsed[1].mode.code(), 1);
     assert_eq!(parsed[1].handle.trim().to_string(), "FOO");
     assert_eq!(parsed[1].empire_name.chars().count() as u8, 3);
     assert_eq!(parsed[1].empire_name.trim().to_string(), "foo");
@@ -193,7 +193,7 @@ fn round_trip_initialized_fleets_dat() {
     assert_eq!(parsed[0].ships.cruisers, 1);
     assert_eq!(parsed[0].ships.destroyers, 0);
     assert_eq!(parsed[0].ships.etacs, 1);
-    assert_eq!(parsed[0].order.to_raw(), 5);
+    assert_eq!(parsed[0].order.code(), 5);
     assert_eq!(parsed[0].order, Order::GuardBlockadeWorld);
     assert_eq!(parsed[0].target.to_array(), [16, 13]);
     assert_eq!(
@@ -212,7 +212,7 @@ fn round_trip_initialized_fleets_dat() {
     assert_eq!(parsed[2].ships.cruisers, 0);
     assert_eq!(parsed[2].ships.destroyers, 1);
     assert_eq!(parsed[2].ships.etacs, 0);
-    assert_eq!(parsed[2].order.to_raw(), 5);
+    assert_eq!(parsed[2].order.code(), 5);
     assert_eq!(parsed[2].order, Order::GuardBlockadeWorld);
     assert_eq!(parsed[2].target.to_array(), [16, 13]);
     assert_eq!(

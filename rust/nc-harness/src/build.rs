@@ -324,7 +324,7 @@ fn apply_fleet_specs(
             game_data.set_fleet_order(
                 fleet_spec.record_index_1_based,
                 order.speed,
-                order.kind.to_raw(),
+                order.kind.code(),
                 order.target,
                 order.aux0,
                 order.aux1,

@@ -41,7 +41,7 @@ pub fn build_database_dat(
 
     for player in 0..player_count {
         let viewer_empire_raw = (player + 1) as u8;
-        let viewer_is_active = game_data.players[player].mode.to_raw() != 0;
+        let viewer_is_active = game_data.players[player].mode.code() != 0;
         let previous_rows = planet_intel_by_viewer.get(player);
         for planet_idx in 0..planet_count {
             let record_idx = DatabaseDat::record_index(planet_idx, player, planet_count);
@@ -168,7 +168,7 @@ fn preserve_orbit_record(
             && planet_owner > 0
             && planet_owner == player_idx + 1
         {
-            let player_mode = game_data.players[player_idx].mode.to_raw();
+            let player_mode = game_data.players[player_idx].mode.code();
             let autopilot = u8::from(game_data.players[player_idx].autopilot);
             let ai_ran = player_mode == 0xff || (player_mode == 0x01 && autopilot == 0x01);
             if ai_ran {

@@ -125,7 +125,7 @@ pub(crate) fn print_fleet_order_report(
     println!("  dir={}", dir.display());
     println!("  record={}", record_index_1_based);
     println!("  current_speed={}", record.speed);
-    println!("  order={:#04x}", record.order.to_raw());
+    println!("  order={:#04x}", record.order.code());
     println!("  target={:?}", record.target.to_array());
     println!(
         "  mission_aux={:02x?}",

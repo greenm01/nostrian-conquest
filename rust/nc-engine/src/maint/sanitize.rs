@@ -28,7 +28,7 @@ pub(super) fn sanitize_invalid_player_inputs(
         while rescan {
             rescan = false;
             let fleet = &game_data.fleets[fleet_idx];
-            let order_code = fleet.order.to_raw();
+            let order_code = fleet.order.code();
             let target = fleet.target.to_array();
             let owner_empire_raw = fleet.owner.0;
             let coords = fleet.sector.to_array();
@@ -136,11 +136,11 @@ pub(super) fn sanitize_invalid_player_inputs(
             let planet = &mut game_data.planets[planet_idx];
             for slot in 0..10 {
                 let build_count = planet.build_queue[slot].points_owed;
-                let build_kind = planet.build_queue[slot].kind.to_raw();
+                let build_kind = planet.build_queue[slot].kind.code();
                 if build_count == 0 && build_kind != 0
                     || build_count != 0
                         && matches!(
-                            ProductionItemKind::from_raw(build_kind),
+                            ProductionItemKind::from_code(build_kind),
                             ProductionItemKind::Unknown(_)
                         )
                 {
@@ -150,11 +150,11 @@ pub(super) fn sanitize_invalid_player_inputs(
             }
             for slot in 0..crate::STARDOCK_SLOT_COUNT {
                 let stardock_count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
-                let stardock_kind = stardock_slot_kind(planet, slot).to_raw();
+                let stardock_kind = stardock_slot_kind(planet, slot).code();
                 if stardock_count == 0 && stardock_kind != 0
                     || stardock_count != 0
                         && matches!(
-                            ProductionItemKind::from_raw(stardock_kind),
+                            ProductionItemKind::from_code(stardock_kind),
                             ProductionItemKind::Unknown(_)
                         )
                 {
@@ -185,7 +185,7 @@ pub(super) fn sanitize_invalid_player_inputs(
             let reason = {
                 let player = &game_data.players[player_idx];
                 let raw = stored_diplomatic_relation(player, target_empire_raw)
-                    .map_or(0, DiplomaticRelation::to_raw);
+                    .map_or(0, DiplomaticRelation::code);
                 let empire_raw = (player_idx + 1) as u8;
                 if target_empire_raw == empire_raw {
                     (raw != 0).then_some(PlayerDiplomacyValidationError::SelfTarget { empire_raw })

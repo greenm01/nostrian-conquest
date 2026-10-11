@@ -194,11 +194,11 @@ fn relation_name(relation: crate::DiplomaticRelation) -> &'static str {
 }
 
 fn order_name(order_code: u8) -> &'static str {
-    Order::from_raw(order_code).as_str()
+    Order::from_code(order_code).as_str()
 }
 
 fn production_kind_name(kind_raw: u8) -> &'static str {
-    match ProductionItemKind::from_raw(kind_raw) {
+    match ProductionItemKind::from_code(kind_raw) {
         ProductionItemKind::Destroyer => "destroyer",
         ProductionItemKind::Cruiser => "cruiser",
         ProductionItemKind::Battleship => "battleship",

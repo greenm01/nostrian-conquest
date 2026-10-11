@@ -416,10 +416,10 @@ pub(crate) fn validate_fleet_battle_data(
                     f.speed
                 ));
             }
-            if f.order.to_raw() != 0x06 {
+            if f.order.code() != 0x06 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x06 (BombardWorld), got {:#04x}",
-                    f.order.to_raw()
+                    f.order.code()
                 ));
             }
             if f.target.to_array() != [0x0f, 0x0d] {
@@ -456,10 +456,10 @@ pub(crate) fn validate_fleet_battle_data(
                     f.sector.to_array()
                 ));
             }
-            if f.order.to_raw() != 0x03 {
+            if f.order.code() != 0x03 {
                 errors.push(format!(
                     "FLEET[5].order expected 0x03 (PatrolSector), got {:#04x}",
-                    f.order.to_raw()
+                    f.order.code()
                 ));
             }
             if f.target.to_array() != [0x0a, 0x0a] {
@@ -505,10 +505,10 @@ pub(crate) fn validate_fleet_battle_data(
                     f.sector.to_array()
                 ));
             }
-            if f.order.to_raw() != 0x01 {
+            if f.order.code() != 0x01 {
                 errors.push(format!(
                     "FLEET[9].order expected 0x01 (MoveOnly), got {:#04x}",
-                    f.order.to_raw()
+                    f.order.code()
                 ));
             }
             if f.target.to_array() != [0x0a, 0x0a] {

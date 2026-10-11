@@ -96,7 +96,7 @@ fn invalid_planet_build_input_is_cleared_before_processing() {
         .expect("fixture should have owned planet");
     let planet = &mut game_data.planets[planet_idx];
     planet.build_queue[0].points_owed = 12;
-    planet.build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+    planet.build_queue[0].kind = ProductionItemKind::from_code(0xfe);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -108,7 +108,7 @@ fn invalid_planet_build_input_is_cleared_before_processing() {
     }));
     let planet = &game_data.planets[planet_idx];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
 }
 
 #[test]
@@ -203,7 +203,7 @@ fn invalid_diplomacy_bytes_are_reset_before_maintenance() {
     set_diplomatic_relation_toward(
         &mut game_data.players[0],
         2,
-        DiplomaticRelation::from_raw(0xfe),
+        DiplomaticRelation::from_code(0xfe),
     );
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
@@ -230,7 +230,7 @@ fn maintenance_survives_deterministic_invalid_input_matrix() {
         let mut game_data = load_fixture("ecmaint-post");
         let fleet = &mut game_data.fleets[0];
         fleet.sector = Coords::new(15, 13);
-        fleet.order = Order::from_raw(order_code);
+        fleet.order = Order::from_code(order_code);
         fleet.target = Coords::new(15, 13);
         fleet.speed = 3;
         set_mission_target(fleet, 0xfe, 0xfe);
@@ -238,7 +238,7 @@ fn maintenance_survives_deterministic_invalid_input_matrix() {
         set_armies_aboard(fleet, 4);
         fleet.rules_of_engagement = 42;
         game_data.planets[0].build_queue[0].points_owed = 9;
-        game_data.planets[0].build_queue[0].kind = ProductionItemKind::from_raw(0xfe);
+        game_data.planets[0].build_queue[0].kind = ProductionItemKind::from_code(0xfe);
         game_data.planets[0].stardock.destroyers = 2;
         game_data.players[0].tax_rate = 255;
 

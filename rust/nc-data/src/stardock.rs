@@ -26,6 +26,6 @@ pub fn stardock_slot_kind(planet: &Planet, slot: usize) -> ProductionItemKind {
     if planet.stardock[slot] == 0 {
         ProductionItemKind::Unknown(0)
     } else {
-        ProductionItemKind::from_raw(STARDOCK_SLOT_KINDS[slot])
+        ProductionItemKind::from_code(STARDOCK_SLOT_KINDS[slot])
     }
 }

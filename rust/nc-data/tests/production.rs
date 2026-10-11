@@ -314,12 +314,12 @@ fn maintenance_exact_ship_quantities_arrive_in_stardock() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(planet.build_queue[1].points_owed, 0);
-    assert_eq!(planet.build_queue[1].kind.to_raw(), 0);
-    assert_eq!(stardock_slot_kind(planet, 0).to_raw(), 1);
+    assert_eq!(planet.build_queue[1].kind.code(), 0);
+    assert_eq!(stardock_slot_kind(planet, 0).code(), 1);
     assert_eq!(planet.stardock.destroyers, 2);
-    assert_eq!(stardock_slot_kind(planet, 5).to_raw(), 6);
+    assert_eq!(stardock_slot_kind(planet, 5).code(), 6);
     assert_eq!(planet.stardock.etacs, 2);
 }
 
@@ -340,10 +340,10 @@ fn maintenance_starbases_arrive_in_the_starbase_stardock_slot() {
     run_maintenance_turn(&mut game).expect("maintenance should succeed");
 
     let planet = &game.planets[0];
-    assert_eq!(stardock_slot_kind(planet, 6).to_raw(), 9);
+    assert_eq!(stardock_slot_kind(planet, 6).code(), 9);
     assert_eq!(planet.stardock.starbases, 2);
     assert_eq!(planet.build_queue[2].points_owed, 50);
-    assert_eq!(planet.build_queue[2].kind.to_raw(), 9);
+    assert_eq!(planet.build_queue[2].kind.code(), 9);
 }
 
 #[test]
@@ -363,7 +363,7 @@ fn maintenance_army_build_completes_even_when_stardock_is_full() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(planet.armies, 51);
 }
 
@@ -384,7 +384,7 @@ fn maintenance_ground_battery_build_completes_even_when_stardock_is_full() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 0);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].kind.code(), 0);
     assert_eq!(planet.ground_batteries, 5);
 }
 
@@ -402,7 +402,7 @@ fn maintenance_army_build_waits_at_planet_cap() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 100);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 8);
+    assert_eq!(planet.build_queue[0].kind.code(), 8);
     assert_eq!(u8::try_from(planet.armies).unwrap_or(u8::MAX), u8::MAX);
 }
 
@@ -420,7 +420,7 @@ fn maintenance_ground_battery_build_waits_at_planet_cap() {
 
     let planet = &game.planets[0];
     assert_eq!(planet.build_queue[0].points_owed, 100);
-    assert_eq!(planet.build_queue[0].kind.to_raw(), 7);
+    assert_eq!(planet.build_queue[0].kind.code(), 7);
     assert_eq!(
         u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX),
         u8::MAX

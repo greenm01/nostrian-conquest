@@ -39,7 +39,7 @@ pub fn owned_fleet_targets(game_data: &CoreGameData, owner_empire_id: u8) -> Vec
             fleet_number: fleet.fleet_number.0,
             coords: fleet.sector.to_array(),
             target_coords: fleet.target.to_array(),
-            order_code: fleet.order.to_raw(),
+            order_code: fleet.order.code(),
             current_speed: fleet.speed,
             max_speed: fleet.max_speed,
         })
@@ -251,7 +251,7 @@ pub fn automatic_order_targets(
     mission_code: u8,
     fleet_records: &[usize],
 ) -> Result<Option<Vec<[u8; 2]>>, String> {
-    match nc_data::Order::from_raw(mission_code) {
+    match nc_data::Order::from_code(mission_code) {
         nc_data::Order::SeekHome => match game_data.seek_home_targets(fleet_records) {
             Ok(targets) => Ok(Some(targets)),
             Err(nc_data::SeekHomeTarget::AlreadyInOnlySystem) => Err(format!(
@@ -309,7 +309,7 @@ pub fn seek_next_closest_question(
     let [record] = fleet_records else {
         return None;
     };
-    if nc_data::Order::from_raw(mission_code) != nc_data::Order::SeekHome {
+    if nc_data::Order::from_code(mission_code) != nc_data::Order::SeekHome {
         return None;
     }
     let nc_data::SeekHomeTarget::NextClosest(next) = game_data.seek_home_target(*record) else {

@@ -257,7 +257,7 @@ fn planet_stardock_sets_a_stardock_slot() {
 
     export_campaign_db(&target, &target);
     let game_data = load_classic_core_files(&target).unwrap();
-    assert_eq!(stardock_slot_kind(&game_data.planets[0], 0).to_raw(), 1);
+    assert_eq!(stardock_slot_kind(&game_data.planets[0], 0).code(), 1);
     assert_eq!(game_data.planets[0].stardock.destroyers, 2);
 
     cleanup_dir(&target);

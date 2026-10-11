@@ -357,10 +357,10 @@ fn stardock_slots_are_typed_u32_counts_at_classic_offsets() {
     assert_eq!(planet.stardock.destroyers, 1);
     assert_eq!(planet.stardock.scouts, 258);
     assert_eq!(planet.stardock.starbases, 70_000);
-    assert_eq!(stardock_slot_kind(&planet, 0).to_raw(), 1);
-    assert_eq!(stardock_slot_kind(&planet, 1).to_raw(), 0);
-    assert_eq!(stardock_slot_kind(&planet, 3).to_raw(), 4);
-    assert_eq!(stardock_slot_kind(&planet, 6).to_raw(), 9);
+    assert_eq!(stardock_slot_kind(&planet, 0).code(), 1);
+    assert_eq!(stardock_slot_kind(&planet, 1).code(), 0);
+    assert_eq!(stardock_slot_kind(&planet, 3).code(), 4);
+    assert_eq!(stardock_slot_kind(&planet, 6).code(), 9);
 
     let bytes = encode_planet(&planet);
     assert_eq!(bytes[0x38..0x3C], [1, 0, 0, 0]);
@@ -397,7 +397,7 @@ fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
             fleet_record_index_1_based: 1
         }
     );
-    assert_eq!(stardock_slot_kind(&data.planets[0], 0).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 0).code(), 0);
     assert_eq!(data.planets[0].stardock.destroyers, 0);
     assert_eq!(data.players[0].fleets_first.0, 1);
     assert_eq!(data.fleets.len(), 1);
@@ -472,7 +472,7 @@ fn append_planet_build_order_still_uses_all_ten_queue_slots() {
     data.append_planet_build_order(1, 15, 4).unwrap();
 
     assert_eq!(data.planets[0].build_queue[9].points_owed, 15);
-    assert_eq!(data.planets[0].build_queue[9].kind.to_raw(), 4);
+    assert_eq!(data.planets[0].build_queue[9].kind.code(), 4);
 }
 
 #[test]
@@ -500,7 +500,7 @@ fn append_planet_build_order_merges_into_matching_kind_before_using_empty_slot()
     data.append_planet_build_order(1, 15, 1).unwrap();
 
     assert_eq!(data.planets[0].build_queue[0].points_owed, 25);
-    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 1);
+    assert_eq!(data.planets[0].build_queue[0].kind.code(), 1);
     assert!((1..10).all(|slot| data.planets[0].build_queue[slot].points_owed == 0));
 }
 
@@ -529,9 +529,9 @@ fn append_planet_build_order_spills_same_kind_across_records_without_truncation(
     data.append_planet_build_order(1, 20, 1).unwrap();
 
     assert_eq!(data.planets[0].build_queue[0].points_owed, u8::MAX);
-    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 1);
+    assert_eq!(data.planets[0].build_queue[0].kind.code(), 1);
     assert_eq!(data.planets[0].build_queue[1].points_owed, 15);
-    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 1);
+    assert_eq!(data.planets[0].build_queue[1].kind.code(), 1);
 }
 
 #[test]
@@ -624,11 +624,11 @@ fn append_planet_build_order_spills_starbases_one_per_queue_slot() {
     data.append_planet_build_order(1, 150, 9).unwrap();
 
     assert_eq!(data.planets[0].build_queue[0].points_owed, 50);
-    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 9);
+    assert_eq!(data.planets[0].build_queue[0].kind.code(), 9);
     assert_eq!(data.planets[0].build_queue[1].points_owed, 50);
-    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 9);
+    assert_eq!(data.planets[0].build_queue[1].kind.code(), 9);
     assert_eq!(data.planets[0].build_queue[2].points_owed, 50);
-    assert_eq!(data.planets[0].build_queue[2].kind.to_raw(), 9);
+    assert_eq!(data.planets[0].build_queue[2].kind.code(), 9);
     assert!((3..10).all(|slot| data.planets[0].build_queue[slot].points_owed == 0));
 }
 
@@ -770,7 +770,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
             base_record_index_1_based: 1
         }
     );
-    assert_eq!(stardock_slot_kind(&data.planets[0], 6).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 6).code(), 0);
     assert_eq!(data.planets[0].stardock.starbases, 0);
     assert_eq!(data.players[0].bases_first.0, 1);
     assert_eq!(data.bases.len(), 1);
@@ -915,12 +915,12 @@ fn auto_commission_all_stardock_units_creates_fleets_and_bases() {
         }
     );
     assert_eq!(data.fleets.len(), 2);
-    assert_eq!(stardock_slot_kind(&data.planets[0], 0).to_raw(), 0);
-    assert_eq!(stardock_slot_kind(&data.planets[0], 1).to_raw(), 0);
-    assert_eq!(stardock_slot_kind(&data.planets[0], 2).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 0).code(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 1).code(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[0], 2).code(), 0);
     assert_eq!(data.planets[0].stardock.battleships, 0);
-    assert_eq!(stardock_slot_kind(&data.planets[1], 0).to_raw(), 0);
-    assert_eq!(stardock_slot_kind(&data.planets[2], 0).to_raw(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[1], 0).code(), 0);
+    assert_eq!(stardock_slot_kind(&data.planets[2], 0).code(), 0);
     assert_eq!(data.planets[2].stardock.destroyers, 0);
     assert_eq!(data.bases.len(), 2);
 }
@@ -1756,7 +1756,7 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
         .set_fleet_order(1, 0x03, 0x0C, [0x0F, 0x0D], None, None)
         .unwrap();
     assert_eq!(data.fleets[0].speed, 0x03);
-    assert_eq!(data.fleets[0].order.to_raw(), 0x0C);
+    assert_eq!(data.fleets[0].order.code(), 0x0C);
     assert_eq!(data.fleets[0].target.to_array(), [0x0F, 0x0D]);
     assert_eq!(
         aux,
@@ -1768,22 +1768,22 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
 
     data.set_planet_build(15, 0x03, 0x01).unwrap();
     assert_eq!(data.planets[14].build_queue[0].points_owed, 0x03);
-    assert_eq!(data.planets[14].build_queue[0].kind.to_raw(), 0x01);
+    assert_eq!(data.planets[14].build_queue[0].kind.code(), 0x01);
 
     data.clear_planet_build_queue(15).unwrap();
     assert!((0..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
-    assert!((0..10).all(|slot| data.planets[14].build_queue[slot].kind.to_raw() == 0));
+    assert!((0..10).all(|slot| data.planets[14].build_queue[slot].kind.code() == 0));
 
     data.replace_planet_build_queue_with_single_order(15, 0x05, 0x08)
         .unwrap();
     assert_eq!(data.planets[14].build_queue[0].points_owed, 0x05);
-    assert_eq!(data.planets[14].build_queue[0].kind.to_raw(), 0x08);
+    assert_eq!(data.planets[14].build_queue[0].kind.code(), 0x08);
     assert!((1..10).all(|slot| data.planets[14].build_queue[slot].points_owed == 0));
-    assert!((1..10).all(|slot| data.planets[14].build_queue[slot].kind.to_raw() == 0));
+    assert!((1..10).all(|slot| data.planets[14].build_queue[slot].kind.code() == 0));
 
     data.set_guard_starbase(1, 1, [0x10, 0x0D], 1, 1).unwrap();
     assert_eq!(data.players[0].bases_first.0, 1);
-    assert_eq!(data.fleets[0].order.to_raw(), 0x04);
+    assert_eq!(data.fleets[0].order.code(), 0x04);
     assert_eq!(data.fleets[0].target.to_array(), [0x10, 0x0D]);
     assert_eq!(
         [
@@ -1828,7 +1828,7 @@ fn set_fleet_order_rejects_speed_above_current_maximum() {
         .set_fleet_order(
             1,
             max_speed.saturating_add(1),
-            Order::MoveOnly.to_raw(),
+            Order::MoveOnly.code(),
             [0x0F, 0x0D],
             None,
             None,
@@ -1865,7 +1865,7 @@ fn set_fleet_order_rejects_duplicate_friendly_colonize_target() {
     data.set_fleet_order(
         1,
         first_speed,
-        Order::ColonizeWorld.to_raw(),
+        Order::ColonizeWorld.code(),
         target,
         None,
         None,
@@ -1876,7 +1876,7 @@ fn set_fleet_order_rejects_duplicate_friendly_colonize_target() {
         .set_fleet_order(
             2,
             second_speed,
-            Order::ColonizeWorld.to_raw(),
+            Order::ColonizeWorld.code(),
             target,
             None,
             None,
@@ -1934,7 +1934,7 @@ fn set_fleet_order_keeps_on_station_hostile_fleet_motion() {
         data.set_fleet_order(
             1,
             data.fleets[0].max_speed,
-            order.to_raw(),
+            order.code(),
             target,
             None,
             None,
@@ -1985,9 +1985,9 @@ fn scorch_planet_surface_clears_economy_queue_and_stardock_immediately() {
     assert_eq!(u16::from(planet.potential_production), 0);
     assert_eq!(stored_production_points(planet), 0);
     assert!((0..10).all(|slot| planet.build_queue[slot].points_owed == 0));
-    assert!((0..10).all(|slot| planet.build_queue[slot].kind.to_raw() == 0));
+    assert!((0..10).all(|slot| planet.build_queue[slot].kind.code() == 0));
     assert!((0..STARDOCK_SLOT_COUNT).all(|slot| planet.stardock[slot] == 0));
-    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| stardock_slot_kind(planet, slot).to_raw() == 0));
+    assert!((0..STARDOCK_SLOT_COUNT).all(|slot| stardock_slot_kind(planet, slot).code() == 0));
     assert_eq!(planet.armies, 9);
     assert_eq!(planet.ground_batteries, 4);
 }
@@ -2096,12 +2096,12 @@ fn clear_planet_build_orders_by_kind_removes_matching_slots_only() {
 
     assert_eq!(cleared, 2);
     assert_eq!(data.planets[0].build_queue[0].points_owed, 0);
-    assert_eq!(data.planets[0].build_queue[0].kind.to_raw(), 0);
+    assert_eq!(data.planets[0].build_queue[0].kind.code(), 0);
     assert_eq!(data.planets[0].build_queue[1].points_owed, 0);
-    assert_eq!(data.planets[0].build_queue[1].kind.to_raw(), 0);
+    assert_eq!(data.planets[0].build_queue[1].kind.code(), 0);
     assert_eq!(data.planets[0].build_queue[2].points_owed, 5);
     assert_eq!(
-        ProductionItemKind::from_raw(data.planets[0].build_queue[2].kind.to_raw()),
+        ProductionItemKind::from_code(data.planets[0].build_queue[2].kind.code()),
         ProductionItemKind::GroundBattery
     );
 }
@@ -2189,7 +2189,7 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
     for (order, target, aux1, expected) in cases {
         set_mission_target(&mut data.fleets[1], 0xfe, 0xfe);
         let aux = data
-            .set_fleet_order(2, 1, order.to_raw(), target, None, aux1)
+            .set_fleet_order(2, 1, order.code(), target, None, aux1)
             .unwrap_or_else(|err| panic!("{order:?}: {err}"));
         assert_eq!(aux, expected, "{order:?}");
         assert_eq!(
@@ -2226,7 +2226,7 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
     data.set_fleet_order(
         2,
         current_speed,
-        Order::GuardStarbase.to_raw(),
+        Order::GuardStarbase.code(),
         base.sector.to_array(),
         Some(1),
         Some(base.base_id.0 as u8),
@@ -2265,7 +2265,7 @@ fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
     data.set_fleet_order(
         2,
         current_speed,
-        Order::JoinAnotherFleet.to_raw(),
+        Order::JoinAnotherFleet.code(),
         host.sector.to_array(),
         None,
         Some(host.record.0 as u8),

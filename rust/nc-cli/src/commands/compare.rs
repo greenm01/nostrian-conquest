@@ -129,8 +129,8 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
                 count,
                 a.speed,
                 b.speed,
-                [a.order.to_raw(), a.target.x, a.target.y],
-                [b.order.to_raw(), b.target.x, b.target.y]
+                [a.order.code(), a.target.x, a.target.y],
+                [b.order.code(), b.target.x, b.target.y]
             );
         }
     }

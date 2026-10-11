@@ -14,7 +14,7 @@ impl CoreGameData {
         };
         for slot in 0..10 {
             let build_count = planet.build_queue[slot].points_owed;
-            let build_kind = planet.build_queue[slot].kind.to_raw();
+            let build_kind = planet.build_queue[slot].kind.code();
             if build_count == 0 && build_kind != 0 {
                 return Err(PlanetPlayerInputValidationError::MissingBuildCountForKind);
             }
@@ -23,7 +23,7 @@ impl CoreGameData {
             }
             if build_kind != 0
                 && matches!(
-                    ProductionItemKind::from_raw(build_kind),
+                    ProductionItemKind::from_code(build_kind),
                     ProductionItemKind::Unknown(_)
                 )
             {
@@ -34,7 +34,7 @@ impl CoreGameData {
         }
         for slot in 0..crate::STARDOCK_SLOT_COUNT {
             let stardock_count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
-            let stardock_kind = stardock_slot_kind(planet, slot).to_raw();
+            let stardock_kind = stardock_slot_kind(planet, slot).code();
             if stardock_count == 0 && stardock_kind != 0 {
                 return Err(PlanetPlayerInputValidationError::MissingStardockCountForKind);
             }
@@ -43,7 +43,7 @@ impl CoreGameData {
             }
             if stardock_kind != 0
                 && matches!(
-                    ProductionItemKind::from_raw(stardock_kind),
+                    ProductionItemKind::from_code(stardock_kind),
                     ProductionItemKind::Unknown(_)
                 )
             {
@@ -67,7 +67,7 @@ impl CoreGameData {
             });
         }
         if matches!(
-            ProductionItemKind::from_raw(kind_raw),
+            ProductionItemKind::from_code(kind_raw),
             ProductionItemKind::Unknown(_)
         ) {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
@@ -81,7 +81,7 @@ impl CoreGameData {
             },
         )?;
         record.build_queue[0].points_owed = slot_raw;
-        record.build_queue[0].kind = ProductionItemKind::from_raw(kind_raw);
+        record.build_queue[0].kind = ProductionItemKind::from_code(kind_raw);
         Ok(())
     }
 
@@ -237,7 +237,7 @@ impl CoreGameData {
         let empty_slots = (0..10)
             .filter(|&slot| {
                 record.build_queue[slot].points_owed == 0
-                    && record.build_queue[slot].kind.to_raw() == 0
+                    && record.build_queue[slot].kind.code() == 0
             })
             .count() as u32;
         Ok(existing_capacity.saturating_add(empty_slots.saturating_mul(slot_capacity)))
@@ -290,7 +290,7 @@ impl CoreGameData {
                 },
             });
         }
-        let kind = ProductionItemKind::from_raw(kind_raw);
+        let kind = ProductionItemKind::from_code(kind_raw);
         if matches!(kind, ProductionItemKind::Unknown(_)) {
             return Err(GameStateMutationError::InvalidPlanetPlayerInput {
                 planet_index_1_based: record_index_1_based,
@@ -342,13 +342,13 @@ impl CoreGameData {
                 break;
             }
             if record.build_queue[slot].points_owed != 0
-                || record.build_queue[slot].kind.to_raw() != 0
+                || record.build_queue[slot].kind.code() != 0
             {
                 continue;
             }
             let add_here = remaining.min(slot_capacity);
             record.build_queue[slot].points_owed = add_here as u8;
-            record.build_queue[slot].kind = ProductionItemKind::from_raw(kind_raw);
+            record.build_queue[slot].kind = ProductionItemKind::from_code(kind_raw);
             remaining -= add_here;
         }
         Ok(())

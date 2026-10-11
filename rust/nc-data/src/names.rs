@@ -46,7 +46,7 @@ pub fn ownership_summary(player: &Player) -> String {
         format!("rogue label='{name}'")
     } else if name.starts_with("In Civil Disorder") || name == "Unowned" {
         format!("unowned label='{name}'")
-    } else if player.mode.to_raw() != 0 || !handle.is_empty() || !name.is_empty() {
+    } else if player.mode.code() != 0 || !handle.is_empty() || !name.is_empty() {
         format!("player handle='{handle}' empire='{name}'")
     } else {
         format!("unowned label='{name}'")

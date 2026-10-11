@@ -154,7 +154,7 @@ fn run_cases(cases: &[Case]) {
                     );
                     assert_eq!(fleet.speed, *speed, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.order.to_raw(),
+                        fleet.order.code(),
                         *order,
                         "{} year {year} order",
                         case.name
@@ -188,7 +188,7 @@ fn run_cases(cases: &[Case]) {
                     );
                     assert_eq!(fleet.speed, 0, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.order.to_raw(),
+                        fleet.order.code(),
                         if mission == 6 { 6 } else { 0 },
                         "{} year {year} order",
                         case.name

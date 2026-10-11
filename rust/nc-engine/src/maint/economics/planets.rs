@@ -25,7 +25,7 @@ pub(super) fn process_planet_economics(
             continue;
         };
         // Civil disorder (0x00) freezes the economy; rogue empires (0xff) keep it.
-        if player.mode.to_raw() == 0x00 {
+        if player.mode.code() == 0x00 {
             continue;
         }
 

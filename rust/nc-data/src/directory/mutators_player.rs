@@ -187,7 +187,7 @@ impl CoreGameData {
         let player_count = self.players.len() as u8;
         for target_empire_raw in 1..=player_count {
             let raw = stored_diplomatic_relation(player, target_empire_raw)
-                .map_or(0, DiplomaticRelation::to_raw);
+                .map_or(0, DiplomaticRelation::code);
             if target_empire_raw == empire_raw {
                 if raw != 0 {
                     errors.push(PlayerDiplomacyValidationError::SelfTarget { empire_raw });

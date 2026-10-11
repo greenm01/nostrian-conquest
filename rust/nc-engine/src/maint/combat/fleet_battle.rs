@@ -313,7 +313,7 @@ fn abort_invalid_dominant_missions_after_battle(
             let target_coords = game_data.fleets[fleet_idx].target.to_array();
             let validation = game_data.validate_fleet_order_payload(
                 fleet_idx + 1,
-                order.to_raw(),
+                order.code(),
                 target_coords,
                 None,
                 None,

@@ -47,7 +47,7 @@ fn any_order_clears_roe_for_a_fleet_without_combat_ships() {
     fleet.ships.scouts = 1;
     recompute_max_speed(fleet);
     assert_eq!(fleet.rules_of_engagement, 6);
-    data.set_fleet_order(3, 1, Order::ScoutSector.to_raw(), [10, 10], None, None)
+    data.set_fleet_order(3, 1, Order::ScoutSector.code(), [10, 10], None, None)
         .unwrap();
     assert_eq!(data.fleets[2].rules_of_engagement, 0);
 
@@ -55,12 +55,12 @@ fn any_order_clears_roe_for_a_fleet_without_combat_ships() {
     fleet.ships.destroyers = 0;
     fleet.ships.empty_transports = 2;
     recompute_max_speed(fleet);
-    data.set_fleet_order(4, 1, Order::MoveOnly.to_raw(), [10, 10], None, None)
+    data.set_fleet_order(4, 1, Order::MoveOnly.code(), [10, 10], None, None)
         .unwrap();
     assert_eq!(data.fleets[3].rules_of_engagement, 0);
 
     // A cruiser escort keeps the ROE (taskA: CA + ETAC on Colonize).
-    data.set_fleet_order(1, 1, Order::MoveOnly.to_raw(), [10, 10], None, None)
+    data.set_fleet_order(1, 1, Order::MoveOnly.code(), [10, 10], None, None)
         .unwrap();
     assert_eq!(data.fleets[0].rules_of_engagement, 6);
 }
@@ -72,12 +72,12 @@ fn seek_home_heads_for_the_only_owned_world() {
     park_fleet_3(&mut data, [10, 10]);
     assert_eq!(data.nearest_owned_world(3, false), Some([16, 13]));
     assert_eq!(data.seek_home_target(3), SeekHomeTarget::World([16, 13]));
-    data.set_fleet_order(3, 1, Order::SeekHome.to_raw(), [16, 13], None, None)
+    data.set_fleet_order(3, 1, Order::SeekHome.code(), [16, 13], None, None)
         .unwrap();
     assert!(not_nearest(data.set_fleet_order(
         3,
         1,
-        Order::SeekHome.to_raw(),
+        Order::SeekHome.code(),
         [10, 10],
         None,
         None
@@ -126,12 +126,12 @@ fn seek_home_from_a_home_system_takes_the_next_closest_world() {
         data.seek_home_target(3),
         SeekHomeTarget::NextClosest([15, 13])
     );
-    data.set_fleet_order(3, 1, Order::SeekHome.to_raw(), [15, 13], None, None)
+    data.set_fleet_order(3, 1, Order::SeekHome.code(), [15, 13], None, None)
         .unwrap();
     assert!(not_nearest(data.set_fleet_order(
         3,
         1,
-        Order::SeekHome.to_raw(),
+        Order::SeekHome.code(),
         [11, 1],
         None,
         None

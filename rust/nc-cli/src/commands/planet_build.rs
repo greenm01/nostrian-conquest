@@ -296,14 +296,14 @@ pub(crate) fn print_planet_build_report(
     println!("  dir={}", dir.display());
     println!("  record={}", record_index_1_based);
     println!("  build_slot={:#04x}", record.build_queue[0].points_owed);
-    println!("  build_kind={:#04x}", record.build_queue[0].kind.to_raw());
+    println!("  build_kind={:#04x}", record.build_queue[0].kind.code());
     println!(
         "  stardock_count={:#04x}",
         u16::try_from(record.stardock.destroyers).unwrap_or(u16::MAX)
     );
     println!(
         "  stardock_kind={:#04x}",
-        stardock_slot_kind(record, 0).to_raw()
+        stardock_slot_kind(record, 0).code()
     );
     println!("  owner={:#04x}", record.owner.0);
     println!("  coords={:?}", record.sector.to_array());

@@ -386,7 +386,7 @@ impl CoreGameData {
         let player_idx = empire_raw.checked_sub(1)? as usize;
         let player = self.players.get(player_idx)?;
 
-        match player.mode.to_raw() {
+        match player.mode.code() {
             0x00 => return Some(CampaignState::CivilDisorder),
             0xff => return Some(CampaignState::Rogue),
             0x01 => {}

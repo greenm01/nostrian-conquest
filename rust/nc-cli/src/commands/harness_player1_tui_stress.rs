@@ -708,7 +708,7 @@ fn commission_player_one_starbases(
             let planet = &game_data.planets[planet_index_1_based - 1];
             (0..nc_data::STARDOCK_SLOT_COUNT)
                 .filter(|slot| {
-                    stardock_slot_kind(planet, *slot).to_raw() == 9
+                    stardock_slot_kind(planet, *slot).code() == 9
                         && u16::try_from(planet.stardock[*slot]).unwrap_or(u16::MAX) > 0
                 })
                 .collect::<Vec<_>>()

@@ -146,7 +146,7 @@ fn apply_planet_action(
             )?;
             game_data.clear_planet_build_orders_by_kind(
                 planet.planet_record_index_1_based,
-                ProductionItemKind::from_raw(*kind_raw),
+                ProductionItemKind::from_code(*kind_raw),
             )?;
         }
         PlanetTurnAction::RemoveBuild { qty, kind_raw } => {
@@ -155,7 +155,7 @@ fn apply_planet_action(
                 player_record_index_1_based,
                 planet.planet_record_index_1_based,
             )?;
-            let kind = ProductionItemKind::from_raw(*kind_raw);
+            let kind = ProductionItemKind::from_code(*kind_raw);
             let Some(cost) = kind.build_cost() else {
                 return Err(TurnSubmissionError::Validation(format!(
                     "unknown production kind: {kind_raw}"
@@ -395,7 +395,7 @@ fn ensure_order_target_within_map(
     target: [u8; 2],
 ) -> Result<(), TurnSubmissionError> {
     let map_size = crate::map_size_for_player_count(game_data.conquest.player_count);
-    if Order::from_raw(order_code) == Order::HoldPosition
+    if Order::from_code(order_code) == Order::HoldPosition
         || crate::sector_within_map(target, map_size)
     {
         return Ok(());

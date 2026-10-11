@@ -43,13 +43,13 @@ pub fn order_fleet(
         .map(|option| option.code)
         // Guard Starbase needs a starbase id and Join has its own action.
         .filter(|&code| {
-            code != Order::GuardStarbase.to_raw() && code != Order::JoinAnotherFleet.to_raw()
+            code != Order::GuardStarbase.code() && code != Order::JoinAnotherFleet.code()
         })
         .filter(|&code| fleet_record_supports_mission_code(current, code))
         .filter(|&code| match aim {
             Aim::Anywhere => true,
             Aim::Attack => matches!(
-                Order::from_raw(code),
+                Order::from_code(code),
                 Order::BombardWorld
                     | Order::InvadeWorld
                     | Order::BlitzWorld
@@ -57,7 +57,7 @@ pub fn order_fleet(
                     | Order::MoveOnly
             ),
             Aim::Gather => matches!(
-                Order::from_raw(code),
+                Order::from_code(code),
                 Order::RendezvousSector | Order::MoveOnly | Order::HoldPosition
             ),
         })
@@ -65,7 +65,7 @@ pub fn order_fleet(
     // Prefer the strongest mission: the last supported one is the most specific.
     let code = supported[supported.len() - 1 - pick_index(choices, supported.len())?];
     // Seek Home leaves the target to the turn file's nearest-world rule.
-    let target = match Order::from_raw(code) {
+    let target = match Order::from_code(code) {
         Order::SeekHome => None,
         order => Some(order_target(state, empire, choices, record, order, aim)?),
     };

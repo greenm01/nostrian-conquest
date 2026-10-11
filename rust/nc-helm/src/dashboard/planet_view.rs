@@ -824,7 +824,7 @@ mod tests {
     #[test]
     fn compact_unit_summary_uses_tui_style_without_dashes() {
         let mut planet = Planet::default();
-        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_raw(3);
+        planet.build_queue[0].kind = nc_data::ProductionItemKind::from_code(3);
         planet.build_queue[0].points_owed = 90;
         planet.stardock[1] = 5;
 

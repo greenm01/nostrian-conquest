@@ -26,8 +26,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  slot {}: owner_mode={} assigned_player_flag={} tax={} last_run_year={} autopilot={} reports_pending={} messages_pending={} message_review={:04x}/{:04x} results_review={:04x}/{:04x} results_chain={:04x}/{:04x} campaign_state={} summary={}",
             idx + 1,
-            record.mode.to_raw(),
-            record.mode.to_raw(),
+            record.mode.code(),
+            record.mode.code(),
             record.tax_rate,
             record.last_year_on,
             u8::from(record.autopilot),
@@ -103,7 +103,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             ship_composition_summary(record),
             record.sector.to_array(),
             record.order.as_str(),
-            record.order.to_raw(),
+            record.order.code(),
             record.target.to_array(),
             order_summary(record)
         );
@@ -276,7 +276,7 @@ pub(crate) fn inspect_fleet_movement(
         fleet.target.to_array()[1]
     );
     println!("order={}", fleet.order.as_str());
-    println!("order_code={}", fleet.order.to_raw());
+    println!("order_code={}", fleet.order.code());
     println!("current_speed={}", fleet.speed);
     println!("max_speed={}", fleet.max_speed);
     println!("roe={}", fleet.rules_of_engagement);

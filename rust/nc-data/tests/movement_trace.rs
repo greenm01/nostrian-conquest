@@ -235,7 +235,7 @@ fn build_move_only_probe(start: [u8; 2], target: [u8; 2], speed: u8) -> nc_data:
     set_mission_target(fleet, 1, 0);
 
     game_data
-        .set_fleet_order(1, speed, Order::MoveOnly.to_raw(), target, None, None)
+        .set_fleet_order(1, speed, Order::MoveOnly.code(), target, None, None)
         .expect("move-only order should apply");
 
     game_data

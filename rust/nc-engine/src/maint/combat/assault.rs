@@ -132,7 +132,7 @@ fn fleet_still_ready_for_assault(game_data: &CoreGameData, fleet_idx: usize, ord
         return false;
     }
     game_data
-        .validate_fleet_order_payload(fleet_idx + 1, order.to_raw(), target_coords, None, None)
+        .validate_fleet_order_payload(fleet_idx + 1, order.code(), target_coords, None, None)
         .is_ok()
 }
 

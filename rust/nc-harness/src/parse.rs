@@ -344,7 +344,7 @@ fn parse_fleet(node: &kdl::KdlNode) -> Result<FleetSpec, HarnessError> {
 
 fn parse_fleet_order(node: &kdl::KdlNode) -> Result<FleetOrderSpec, HarnessError> {
     let kind = if let Some(raw) = opt_prop_u8(node, "code")? {
-        Order::from_raw(raw)
+        Order::from_code(raw)
     } else {
         parse_order_kind(&prop_string(node, "kind")?)?
     };
