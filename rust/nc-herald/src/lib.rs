@@ -4,6 +4,7 @@
 //! to Discord channels, Matrix rooms, and configured webhooks.
 
 use serde::{Deserialize, Serialize};
+use tracing::{debug, error, info};
 
 /// Target chat platform destination.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -62,6 +63,67 @@ impl TurnAnnouncement {
 
         msg
     }
+
+    /// Construct a Discord-compatible Webhook JSON payload with embeds.
+    pub fn to_discord_payload(&self) -> serde_json::Value {
+        let mut fields = Vec::new();
+
+        if !self.combat_summaries.is_empty() {
+            let val = self.combat_summaries.iter().map(|s| format!("• {s}")).collect::<Vec<_>>().join("\n");
+            fields.push(serde_json::json!({
+                "name": "⚔️ Combat Reports",
+                "value": val,
+                "inline": false
+            }));
+        }
+
+        if !self.planetary_revolts.is_empty() {
+            let val = self.planetary_revolts.iter().map(|s| format!("• {s}")).collect::<Vec<_>>().join("\n");
+            fields.push(serde_json::json!({
+                "name": "🪐 Planetary Status",
+                "value": val,
+                "inline": false
+            }));
+        }
+
+        if !self.standings.is_empty() {
+            let val = self.standings.iter().enumerate()
+                .map(|(i, (name, pts))| format!("{}. **{}** — {} pts", i + 1, name, pts))
+                .collect::<Vec<_>>()
+                .join("\n");
+            fields.push(serde_json::json!({
+                "name": "🏆 Empire Standings",
+                "value": val,
+                "inline": false
+            }));
+        }
+
+        let hours = self.next_turn_seconds / 3600;
+        let mins = (self.next_turn_seconds % 3600) / 60;
+        let footer_text = format!("Orders for Year {} open. Maintenance in {}h {}m.", self.year + 1, hours, mins);
+
+        // Color: Amber/Orange if combat happened, otherwise Green
+        let color = if !self.combat_summaries.is_empty() {
+            0xff9900
+        } else {
+            0x33cc66
+        };
+
+        serde_json::json!({
+            "username": "Galactic Herald",
+            "embeds": [
+                {
+                    "title": format!("📢 GALACTIC GAZETTE — YEAR {}", self.year),
+                    "description": format!("**{}**: *{}*", self.campaign_name, self.headline),
+                    "color": color,
+                    "fields": fields,
+                    "footer": {
+                        "text": footer_text
+                    }
+                }
+            ]
+        })
+    }
 }
 
 /// An in-game real-time event received from `nc-bridge` callbacks.
@@ -72,6 +134,25 @@ pub struct InGameEvent {
     pub seat: usize,
     pub event_type: String,
     pub summary: String,
+}
+
+impl InGameEvent {
+    /// Construct a Discord-compatible Webhook JSON payload for tactical alerts.
+    pub fn to_discord_payload(&self) -> serde_json::Value {
+        serde_json::json!({
+            "username": "Galactic Herald",
+            "embeds": [
+                {
+                    "title": "⚡ Tactical Dispatch",
+                    "description": format!("**{}** (Seat {}): {}", self.player, self.seat, self.summary),
+                    "color": 0x33aaff,
+                    "footer": {
+                        "text": format!("Virtual Node {}", self.node)
+                    }
+                }
+            ]
+        })
+    }
 }
 
 /// Herald dispatcher configuration.
@@ -93,22 +174,42 @@ impl Default for HeraldConfig {
 /// The Herald dispatcher service.
 pub struct Herald {
     config: HeraldConfig,
+    client: reqwest::Client,
 }
 
 impl Herald {
     pub fn new(config: HeraldConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            client: reqwest::Client::new(),
+        }
     }
 
     /// Broadcast a turn announcement to all configured platform targets.
     pub async fn broadcast_turn(&self, announcement: &TurnAnnouncement) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let md = announcement.format_markdown();
         if self.config.dry_run {
+            let md = announcement.format_markdown();
             println!("[HERALD DRY-RUN]\n{md}");
+            let payload = announcement.to_discord_payload();
+            println!("[HERALD DISCORD PAYLOAD]\n{}", serde_json::to_string_pretty(&payload)?);
             return Ok(());
         }
 
-        // Future: iterate over self.config.targets and dispatch HTTP POST
+        for target in &self.config.targets {
+            match target {
+                PlatformTarget::DiscordWebhook { url } => {
+                    let payload = announcement.to_discord_payload();
+                    self.post_discord_webhook(url, &payload).await?;
+                }
+                PlatformTarget::MatrixRoom { .. } => {
+                    debug!("Matrix broadcast not yet configured");
+                }
+                PlatformTarget::GenericWebhook { url, secret } => {
+                    self.post_generic_webhook(url, secret.as_deref(), announcement).await?;
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -116,10 +217,72 @@ impl Herald {
     pub async fn dispatch_event(&self, event: &InGameEvent) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         if self.config.dry_run {
             println!("[HERALD EVENT DRY-RUN] {} (Node {}): {}", event.player, event.node, event.summary);
+            let payload = event.to_discord_payload();
+            println!("[HERALD DISCORD EVENT PAYLOAD]\n{}", serde_json::to_string_pretty(&payload)?);
             return Ok(());
         }
 
-        // Future: HTTP POST to targets
+        for target in &self.config.targets {
+            if let PlatformTarget::DiscordWebhook { url } = target {
+                let payload = event.to_discord_payload();
+                self.post_discord_webhook(url, &payload).await?;
+            }
+        }
+
         Ok(())
+    }
+
+    async fn post_discord_webhook(&self, url: &str, payload: &serde_json::Value) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        info!("Posting webhook dispatch to Discord: {url}");
+        let res = self.client.post(url).json(payload).send().await?;
+        if !res.status().is_success() {
+            let status = res.status();
+            let body = res.text().await.unwrap_or_default();
+            error!("Discord webhook returned error status {status}: {body}");
+            return Err(format!("Discord webhook failed with HTTP {status}: {body}").into());
+        }
+        Ok(())
+    }
+
+    async fn post_generic_webhook(&self, url: &str, secret: Option<&str>, payload: &TurnAnnouncement) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        info!("Posting generic webhook to {url}");
+        let mut req = self.client.post(url).json(payload);
+        if let Some(sec) = secret {
+            req = req.bearer_auth(sec);
+        }
+        let res = req.send().await?;
+        if !res.status().is_success() {
+            return Err(format!("Generic webhook failed with HTTP {}", res.status()).into());
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn discord_payload_formatting() {
+        let announcement = TurnAnnouncement {
+            campaign_name: "Test Cluster".to_string(),
+            year: 2350,
+            headline: "Hostilities erupt in sector 4".to_string(),
+            combat_summaries: vec!["Fleet clash at Capella IV: 2 Cruisers lost.".to_string()],
+            planetary_revolts: vec!["Deneb III declared independence.".to_string()],
+            standings: vec![("Sol Federation".to_string(), 300), ("Vorn".to_string(), 250)],
+            next_turn_seconds: 3600,
+        };
+
+        let payload = announcement.to_discord_payload();
+        let embeds = payload["embeds"].as_array().expect("embeds array");
+        assert_eq!(embeds.len(), 1);
+
+        let embed = &embeds[0];
+        assert_eq!(embed["title"], "📢 GALACTIC GAZETTE — YEAR 2350");
+        assert_eq!(embed["color"], 0xff9900); // Combat color
+
+        let fields = embed["fields"].as_array().expect("fields array");
+        assert_eq!(fields.len(), 3);
     }
 }
