@@ -317,7 +317,7 @@ Wherever the game lists ships in one line, it uses one notation, and always the 
 
 A fleet of `BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2` therefore holds nine transports, five empty and four loaded: the star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `!n = crippled ships included in total; TT* = loaded transports`.
 
-A fleet counts its crippled transports once, whether they carry armies or not. The game lists them against the loaded transports first, the same order in which transports are lost in battle.
+Loaded and empty transports are damaged separately, so `TT*4!1 TT5!2` says exactly which transports are crippled. Loading an army uses your healthy empty transports first and a crippled one only when no healthy one is left; unloading or landing puts the armies aboard crippled transports ashore first. A crippled transport keeps its recovery time either way.
 
 In the Fleet List the Ships cell is narrow. When it cannot hold a damaged fleet's whole composition, it ends in `+!`: the `+` says the line was cut short, and the `!` says the fleet has crippled ships. A lone `!` never means the whole fleet is crippled.
 

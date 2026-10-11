@@ -191,3 +191,36 @@ and nothing else. A producer fills a `Composition` and calls `notation()`.
   `nc-engine/src/maint/results/format.rs` check the report producers. The
   affected expectations moved to the new text. Workspace, with main at 48ab3e7a merged: 3133 passed, 0
   failed, 11 ignored.
+
+## Result (t096)
+
+Loaded and empty transports keep separate crippled counters:
+`CrippledShips::loaded_transports` and `empty_transports`, the classes
+`HullClass::LoadedTransport` and `EmptyTransport`. t093's loaded-first
+reading of one shared counter is gone; `crippled_by_category` reads the
+counters, so `TT*4!1 TT5!2` is the record's state and `TT 1!` is valid
+whenever an empty transport is crippled.
+
+**Combat.** A side's transports are still shared loaded first, but each
+fleet's loaded and empty transports are separate holders in
+`damage::apply_class_change`, so a hull crippled or finished is written to
+the counter of the cargo state it was struck in; nothing is counted twice,
+and no hull moves between the two in combat. `write_back_strike` shares a
+lone fleet's change the same way.
+
+**Loading and unloading.** `load_transports` takes healthy empty
+transports first and crippled ones only when none is left, the nearest to
+recovery first; `unload_transports`, which landing also uses, empties the
+crippled loaded transports first, the most turns left first, then the
+healthy ones. A cohort moves to the other counter with its hull. Both
+orders are a default awaiting the owner's confirmation; each lives in one
+helper in `nc-data/src/fleet_ships.rs`, and the
+[recovery ADR](../decisions/p01cg7ll-rt-controls-automatic-ship-recovery.md#transports-by-cargo-state-t096)
+records it.
+
+**Everything else.** Recovery, starbase assistance, merges, detach and
+transfer, and the store treat the two classes as any other.
+`RUNTIME_SCHEMA_VERSION` is 17 (class codes 4 loaded, 5 empty, 6 ETAC), with
+no migration; the state hash feeds a class only when it has crippled
+hulls, so the pinned fixture seeds stand. A classic import starts with no
+damage, and a classic export writes whole hulls with t066's notice.

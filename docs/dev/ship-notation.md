@@ -80,9 +80,9 @@ countdowns.
 Show only information that the player is entitled to know. Omitted damage
 on incomplete enemy intelligence is not a guarantee that the ships are
 healthy. Never invent per-category damage counts or expose hidden state to
-complete a token. In particular, loaded/empty transport damage must agree
-with the underlying state and with ship selection, not an arbitrary display
-split of a shared transport total.
+complete a token. In particular, loaded and empty transports each keep
+their own crippled counter, and the notation and ship selection read those
+counters; nothing splits a shared transport total for display.
 
 The player manual must explain the grammar beside fleet composition and
 recovery, with the examples and short legend above. Existing door help

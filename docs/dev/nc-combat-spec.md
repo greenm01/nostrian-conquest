@@ -368,11 +368,17 @@ crippled hulls and is refused, with nothing changed, when the class has
 fewer. Crippled hulls leave the donor in the same order as finishing fire
 (this pass's first, then the most turns left) and take their counts with
 them; nothing is reset or sped up. One rule, `resolve_selection`, picks the
-hulls for both the move and the door's preview. A fleet keeps one counter for
-all its transports, so the loaded/empty split of crippled transports is read
-as loaded first, the order transport losses already follow. A fleet that changes owner would keep its counts; the engine has
-no path that moves a fleet between empires (a civil-disorder defection
-removes the fleet).
+hulls for both the move and the door's preview. Loaded and empty transports
+keep separate counters, so a fleet's crippled transports are known by cargo
+state. Loading an army takes healthy empty transports first and crippled
+ones only when no healthy one is left, the nearest to recovery first;
+unloading and landing empty the crippled loaded transports first, the most
+turns left first, then the healthy ones. A cohort moves to the other
+counter with its hull. Both orders are a default that awaits the owner's
+confirmation, each kept in one helper in `nc-data/src/fleet_ships.rs`. A
+fleet that changes owner would keep its counts; the engine has no path that
+moves a fleet between empires (a civil-disorder defection removes the
+fleet).
 
 **Strength sees damage.** The attack decision, the intercept's fallback, the
 orbital gate, and the in-battle ROE check weigh a crippled warship at half
@@ -462,12 +468,13 @@ merging fleets can shift a rounding loss by one hull per allocation.
 Transport losses, crippling included, fall on loaded transports first across
 the side, so moving cargo into another fleet of the side does not shelter it:
 six loaded transports in one fleet and four empty in another lose four
-loaded ones to four losses, as one fleet of ten would. The fleet record keeps
-one crippled count for loaded and empty transports together, so a fleet's
-loaded transports are read as its most damaged ones: the first in the
-finishing order, which is also how a fleet's own losses have always fallen
-on its loaded transports first. Starbases are members of the roster like
-fleets, one hull each, and the base class is shared the same way.
+loaded ones to four losses, as one fleet of ten would. Each fleet's loaded
+and empty transports are separate holders with their own crippled counters,
+so a hull crippled or finished is written to the counter of the cargo state
+it was struck in; nothing is counted twice, and no hull moves between the
+two in combat. A strike on a lone fleet shares its transport change the same
+way. Starbases are members of the roster like fleets, one hull each, and the
+base class is shared the same way.
 
 The allocation happens after every exchange, before the ROE check, so a
 fleet's decision to stay sees its own hulls. Carried hits belong to the
