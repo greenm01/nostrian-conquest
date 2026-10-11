@@ -91,7 +91,7 @@ message to=2 subject="Scout" body="Watch the lane."
 
     let store = CampaignStore::open_default_in_dir(&target).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.players[0].tax_rate(), 37);
+    assert_eq!(state.game_data.players[0].tax_rate, 37);
     assert_eq!(state.queued_mail.len(), 1);
     assert_eq!(state.queued_mail[0].sender_empire_id, 1);
     assert_eq!(state.queued_mail[0].recipient_empire_id, 2);

@@ -205,7 +205,7 @@ message to=2 subject="Alliance?" body="Hold the center while I scout east."
 
     let store = CampaignStore::open_default_in_dir(&campaign_dir).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.conquest.game_year(), 3001);
+    assert_eq!(state.game_data.conquest.game_year, 3001);
     assert_eq!(
         state.game_data.stored_diplomatic_relation(1, 3).unwrap(),
         DiplomaticRelation::Enemy

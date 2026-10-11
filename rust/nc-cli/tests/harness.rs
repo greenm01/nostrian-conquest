@@ -3,7 +3,7 @@ mod common;
 use std::collections::BTreeSet;
 use std::fs;
 
-use nc_data::{CampaignStore, IntelTier};
+use nc_data::{CampaignStore, IntelTier, troop_transports};
 
 use common::{cleanup_dir, run_nc_cli, unique_temp_dir};
 
@@ -50,7 +50,7 @@ results-block player=1 "Ready to launch"
     assert!(stdout.contains("Saved runtime scenario"));
     let store = CampaignStore::open_default_in_dir(&target_dir).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.players[0].tax_rate(), 40);
+    assert_eq!(state.game_data.players[0].tax_rate, 40);
     assert_eq!(state.report_block_rows.len(), 1);
 
     cleanup_dir(&scenario_root);
@@ -192,7 +192,7 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
         .game_data
         .planets
         .iter()
-        .map(|planet| planet.coords_raw())
+        .map(|planet| planet.sector.to_array())
         .collect::<BTreeSet<_>>();
     assert_eq!(state.game_data.planets.len(), 60);
     assert_eq!(unique_coords.len(), 60);
@@ -212,10 +212,10 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
     assert!(state.queued_mail.len() >= 10);
     assert!(
         state.game_data.fleets.iter().any(|fleet| {
-            fleet.owner_empire_raw() == 1
-                && fleet.current_location_coords_raw() == state.game_data.planets[0].coords_raw()
-                && fleet.troop_transport_count() >= 4
-                && fleet.army_count() == 0
+            fleet.owner.0 == 1
+                && fleet.sector == state.game_data.planets[0].sector
+                && troop_transports(fleet) >= 4
+                && fleet.ships.loaded_transports == 0
         }),
         "expected empty troop transports at player 1 homeworld"
     );
@@ -224,7 +224,7 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
             .game_data
             .fleets
             .iter()
-            .any(|fleet| fleet.owner_empire_raw() == 1 && fleet.army_count() > 0),
+            .any(|fleet| fleet.owner.0 == 1 && fleet.ships.loaded_transports > 0),
         "expected at least one loaded player 1 transport fleet"
     );
     assert!(
@@ -232,7 +232,7 @@ fn harness_seed_player1_tui_stress_populates_player1_runtime_backlog_and_intel()
             .game_data
             .bases
             .iter()
-            .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0)
+            .any(|base| base.owner.0 == 1 && base.base_id.0 != 0)
     );
 
     let viewer1 = store.latest_planet_intel_for_viewer(1).unwrap();
@@ -308,25 +308,22 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
         );
         let store = CampaignStore::open_default_in_dir(&dir).unwrap();
         let state = store.load_latest_runtime_state().unwrap().unwrap();
-        assert_eq!(state.game_data.conquest.player_count(), player_count);
+        assert_eq!(state.game_data.conquest.player_count, player_count);
         assert_eq!(state.game_data.planets.len(), player_count as usize * 5);
         assert!(
             state.game_data.planets.iter().all(|planet| {
-                (1..=map_size).contains(&planet.coords_raw()[0])
-                    && (1..=map_size).contains(&planet.coords_raw()[1])
+                (1..=map_size).contains(&planet.sector.to_array()[0])
+                    && (1..=map_size).contains(&planet.sector.to_array()[1])
             }),
             "expected all planet coordinates to fit inside {map_size}x{map_size} for {dir_name}"
         );
         assert!(state.report_block_rows.len() >= 8);
         assert!(state.queued_mail.len() >= 10);
         assert_eq!(
-            state.game_data.players[0].controlled_empire_name_summary(),
+            state.game_data.players[0].empire_name.trim().to_string(),
             "Aurora League"
         );
-        assert_eq!(
-            state.game_data.players[0].assigned_player_handle_summary(),
-            "p01"
-        );
+        assert_eq!(state.game_data.players[0].handle.trim().to_string(), "p01");
         let viewer1 = store.latest_planet_intel_for_viewer(1).unwrap();
         assert!(
             viewer1
@@ -337,7 +334,7 @@ fn harness_seed_nc_helm_lab_creates_one_seeded_campaign_per_map_size_tier() {
             .game_data
             .bases
             .iter()
-            .any(|base| base.owner_empire_raw() == 1 && base.base_id_raw() != 0);
+            .any(|base| base.owner.0 == 1 && base.base_id.0 != 0);
     }
 
     let manifest = fs::read_to_string(root.join("README.txt")).unwrap();

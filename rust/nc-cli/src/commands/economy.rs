@@ -220,7 +220,7 @@ pub(crate) fn print_economy_report(
         "Economy report: dir={} player={} empire=\"{}\"",
         dir.display(),
         player_record_index_1_based,
-        player.empire_name.trim().to_string()
+        player.empire_name.trim()
     );
     println!(
         "  tax_rate={} present={} potential={} available={} last_run_year={}",

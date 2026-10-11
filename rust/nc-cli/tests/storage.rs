@@ -1,6 +1,9 @@
 mod common;
 
-use nc_data::Real48;
+use nc_data::{
+    CampaignStore, Coords, EmpireId, Order, Planet, Real48, is_homeworld_seed_ignoring_name,
+    set_armies_aboard, set_troop_transports,
+};
 use std::fs;
 use std::path::Path;
 
@@ -11,7 +14,6 @@ use common::{
 use nc_compat::{
     DatabaseDat, export_latest_snapshot_to_dir, load_classic_core_files, save_classic_core_files,
 };
-use nc_data::{CampaignStore, Order};
 
 fn setup_classic_probe_players(target: &Path) {
     let player_specs = [
@@ -88,16 +90,16 @@ fn setup_classic_probe_planets(target: &Path) {
     let mut game_data = state.game_data;
     // Keep the foreign-intel storage probe independent of mapgen drift: the
     // scout/view tests below intentionally target planet record 5 at (9,2).
-    game_data.planets[4].set_coords_raw([9, 2]);
+    game_data.planets[4].sector = Coords::new(9, 2);
     // The probe worlds reuse the homeworld-seed marker (potential high byte
     // 135) after being named, so give them full production explicitly.
     for planet in &mut game_data.planets {
-        if planet.is_homeworld_seed_ignoring_name() {
-            let potential = planet.potential_production_points();
-            let _ = planet.set_present_production_points(potential);
+        if is_homeworld_seed_ignoring_name(planet) {
+            let potential = u16::from(planet.potential_production);
+            planet.production = Real48::from_f64(f64::from(potential));
         }
     }
-    let planet_intel_by_viewer = (1..=game_data.conquest.player_count())
+    let planet_intel_by_viewer = (1..=game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             store
                 .latest_planet_intel_for_viewer(viewer_empire_id)
@@ -305,12 +307,9 @@ fn db_export_preserves_classic_player_handle_identity() {
     assert!(export_stdout.contains("Exported year 3000"));
 
     let exported_data = load_classic_core_files(&exported).expect("exported game should load");
+    assert_eq!(exported_data.players[0].handle.trim().to_string(), "SYSOP");
     assert_eq!(
-        exported_data.players[0].assigned_player_handle_summary(),
-        "SYSOP"
-    );
-    assert_eq!(
-        exported_data.players[0].controlled_empire_name_summary(),
+        exported_data.players[0].empire_name.trim().to_string(),
         "Auroran Combine"
     );
 
@@ -915,33 +914,32 @@ fn db_import_export_preserves_assault_failure_enemy_view_row_shape() {
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets[13];
-    target_world.set_as_owned_target_world(
-        [15, 13],
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        40,
-        0,
-        0,
-        2,
-    );
+    *target_world = Planet {
+        sector: Coords::new(15, 13),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: 40,
+        ground_batteries: 0,
+        years_under_owner: 0,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     let attacker = &mut game_data.fleets[0];
-    attacker.set_current_location_coords_raw([15, 13]);
-    attacker.set_standing_order_kind(Order::InvadeWorld);
-    attacker.set_standing_order_target_coords_raw([15, 13]);
-    attacker.set_current_speed(3);
-    attacker.set_depth(Real48::HALF);
-    attacker.set_rules_of_engagement(10);
-    attacker.set_scout_count(0);
-    attacker.set_battleship_count(0);
-    attacker.set_cruiser_count(0);
-    attacker.set_destroyer_count(1);
-    attacker.set_troop_transport_count(2);
-    attacker.set_army_count(2);
-    attacker.set_etac_count(0);
+    attacker.sector = Coords::new(15, 13);
+    attacker.order = Order::InvadeWorld;
+    attacker.target = Coords::new(15, 13);
+    attacker.speed = 3;
+    attacker.depth = Real48::HALF;
+    attacker.rules_of_engagement = 10;
+    attacker.ships.scouts = 0;
+    attacker.ships.battleships = 0;
+    attacker.ships.cruisers = 0;
+    attacker.ships.destroyers = 1;
+    set_troop_transports(attacker, 2);
+    set_armies_aboard(attacker, 2);
+    attacker.ships.etacs = 0;
     save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
@@ -968,33 +966,32 @@ fn db_import_export_assault_failure_enemy_view_directory_reopens_in_classic_ecga
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets[13];
-    target_world.set_as_owned_target_world(
-        [15, 13],
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        40,
-        0,
-        0,
-        2,
-    );
+    *target_world = Planet {
+        sector: Coords::new(15, 13),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: 40,
+        ground_batteries: 0,
+        years_under_owner: 0,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     let attacker = &mut game_data.fleets[0];
-    attacker.set_current_location_coords_raw([15, 13]);
-    attacker.set_standing_order_kind(Order::InvadeWorld);
-    attacker.set_standing_order_target_coords_raw([15, 13]);
-    attacker.set_current_speed(3);
-    attacker.set_depth(Real48::HALF);
-    attacker.set_rules_of_engagement(10);
-    attacker.set_scout_count(0);
-    attacker.set_battleship_count(0);
-    attacker.set_cruiser_count(0);
-    attacker.set_destroyer_count(1);
-    attacker.set_troop_transport_count(2);
-    attacker.set_army_count(2);
-    attacker.set_etac_count(0);
+    attacker.sector = Coords::new(15, 13);
+    attacker.order = Order::InvadeWorld;
+    attacker.target = Coords::new(15, 13);
+    attacker.speed = 3;
+    attacker.depth = Real48::HALF;
+    attacker.rules_of_engagement = 10;
+    attacker.ships.scouts = 0;
+    attacker.ships.battleships = 0;
+    attacker.ships.cruisers = 0;
+    attacker.ships.destroyers = 1;
+    set_troop_transports(attacker, 2);
+    set_armies_aboard(attacker, 2);
+    attacker.ships.etacs = 0;
     save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
@@ -1020,33 +1017,32 @@ fn db_import_export_preserves_assault_success_owned_row_shape() {
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets[13];
-    target_world.set_as_owned_target_world(
-        [15, 13],
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        142,
-        15,
-        0,
-        2,
-    );
+    *target_world = Planet {
+        sector: Coords::new(15, 13),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: 142,
+        ground_batteries: 15,
+        years_under_owner: 0,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     let attacker = &mut game_data.fleets[0];
-    attacker.set_current_location_coords_raw([15, 13]);
-    attacker.set_standing_order_kind(Order::InvadeWorld);
-    attacker.set_standing_order_target_coords_raw([15, 13]);
-    attacker.set_current_speed(3);
-    attacker.set_depth(Real48::HALF);
-    attacker.set_rules_of_engagement(10);
-    attacker.set_scout_count(0);
-    attacker.set_battleship_count(20);
-    attacker.set_cruiser_count(20);
-    attacker.set_destroyer_count(20);
-    attacker.set_troop_transport_count(2);
-    attacker.set_army_count(2);
-    attacker.set_etac_count(0);
+    attacker.sector = Coords::new(15, 13);
+    attacker.order = Order::InvadeWorld;
+    attacker.target = Coords::new(15, 13);
+    attacker.speed = 3;
+    attacker.depth = Real48::HALF;
+    attacker.rules_of_engagement = 10;
+    attacker.ships.scouts = 0;
+    attacker.ships.battleships = 20;
+    attacker.ships.cruisers = 20;
+    attacker.ships.destroyers = 20;
+    set_troop_transports(attacker, 2);
+    set_armies_aboard(attacker, 2);
+    attacker.ships.etacs = 0;
     save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);
@@ -1073,33 +1069,32 @@ fn db_import_export_assault_success_owned_directory_reopens_in_classic_ecgame_sm
 
     let mut game_data = load_classic_core_files(&source).expect("fixture should load");
     let target_world = &mut game_data.planets[13];
-    target_world.set_as_owned_target_world(
-        [15, 13],
-        [0x64, 0x87],
-        [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-        0x04,
-        0x0b,
-        *b"TargetPrimeet",
-        [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-        142,
-        15,
-        0,
-        2,
-    );
+    *target_world = Planet {
+        sector: Coords::new(15, 13),
+        potential_production: 100,
+        production: Real48::from_int(100),
+        stored_goods: Real48::from_int(66),
+        name: "TargetPrime".to_string(),
+        armies: 142,
+        ground_batteries: 15,
+        years_under_owner: 0,
+        owner: EmpireId(2),
+        ..Planet::default()
+    };
     let attacker = &mut game_data.fleets[0];
-    attacker.set_current_location_coords_raw([15, 13]);
-    attacker.set_standing_order_kind(Order::InvadeWorld);
-    attacker.set_standing_order_target_coords_raw([15, 13]);
-    attacker.set_current_speed(3);
-    attacker.set_depth(Real48::HALF);
-    attacker.set_rules_of_engagement(10);
-    attacker.set_scout_count(0);
-    attacker.set_battleship_count(20);
-    attacker.set_cruiser_count(20);
-    attacker.set_destroyer_count(20);
-    attacker.set_troop_transport_count(2);
-    attacker.set_army_count(2);
-    attacker.set_etac_count(0);
+    attacker.sector = Coords::new(15, 13);
+    attacker.order = Order::InvadeWorld;
+    attacker.target = Coords::new(15, 13);
+    attacker.speed = 3;
+    attacker.depth = Real48::HALF;
+    attacker.rules_of_engagement = 10;
+    attacker.ships.scouts = 0;
+    attacker.ships.battleships = 20;
+    attacker.ships.cruisers = 20;
+    attacker.ships.destroyers = 20;
+    set_troop_transports(attacker, 2);
+    set_armies_aboard(attacker, 2);
+    attacker.ships.etacs = 0;
     save_classic_core_files(&source, &game_data).expect("mutated fixture should save");
 
     let maint_stdout = run_nc_cli(&["maint-rust", source.to_str().unwrap(), "1"]);

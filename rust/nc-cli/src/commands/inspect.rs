@@ -58,7 +58,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
                 record.potential_production
             ],
             record.name.chars().count() as u8,
-            record.name.trim().to_string(),
+            record.name.trim(),
             &bytes[0x58..0x61],
             u16::from_le_bytes([bytes[0x08], bytes[0x09]]),
             planet_derived_summary(record)

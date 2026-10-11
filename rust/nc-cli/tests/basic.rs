@@ -2,6 +2,7 @@ mod common;
 
 use common::{cleanup_dir, export_campaign_db, run_nc_cli, run_nc_cli_in_dir, unique_temp_dir};
 use nc_compat::{load_classic_core_files, save_classic_core_files};
+use nc_data::{Real48, present_production_points, stardock_slot_kind, stored_production_points};
 use std::fs;
 
 #[test]
@@ -204,7 +205,7 @@ fn planet_stored_sets_stored_production_points() {
 
     export_campaign_db(&target, &target);
     let game_data = load_classic_core_files(&target).unwrap();
-    assert_eq!(game_data.planets[0].stored_production_points(), 50);
+    assert_eq!(stored_production_points(&game_data.planets[0]), 50);
 
     cleanup_dir(&target);
 }
@@ -219,7 +220,7 @@ fn planet_present_sets_present_production_points() {
 
     export_campaign_db(&target, &target);
     let game_data = load_classic_core_files(&target).unwrap();
-    assert_eq!(game_data.planets[0].present_production_points(), Some(75));
+    assert_eq!(present_production_points(&game_data.planets[0]), 75);
 
     cleanup_dir(&target);
 }
@@ -234,7 +235,7 @@ fn fleet_location_sets_current_coords() {
 
     export_campaign_db(&target, &target);
     let game_data = load_classic_core_files(&target).unwrap();
-    assert_eq!(game_data.fleets[0].current_location_coords_raw(), [9, 2]);
+    assert_eq!(game_data.fleets[0].sector.to_array(), [9, 2]);
 
     cleanup_dir(&target);
 }
@@ -256,8 +257,8 @@ fn planet_stardock_sets_a_stardock_slot() {
 
     export_campaign_db(&target, &target);
     let game_data = load_classic_core_files(&target).unwrap();
-    assert_eq!(game_data.planets[0].stardock_kind_raw(0), 1);
-    assert_eq!(game_data.planets[0].stardock_count_raw(0), 2);
+    assert_eq!(stardock_slot_kind(&game_data.planets[0], 0).to_raw(), 1);
+    assert_eq!(game_data.planets[0].stardock.destroyers, 2);
 
     cleanup_dir(&target);
 }
@@ -496,8 +497,8 @@ fn core_diff_current_known_baseline_reports_mutated_files() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = load_classic_core_files(&target).unwrap();
-    data.setup.set_version_tag(b"BAD!!");
-    data.planets[14].set_stored_goods(3.0);
+    data.setup.version_tag = *b"BAD!!";
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
     save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(
@@ -517,8 +518,8 @@ fn core_diff_current_known_baseline_offsets_reports_mutated_offsets() {
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = load_classic_core_files(&target).unwrap();
-    data.setup.set_version_tag(b"BAD!!");
-    data.planets[14].set_stored_goods(3.0);
+    data.setup.version_tag = *b"BAD!!";
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
     save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(
@@ -569,8 +570,8 @@ fn core_diff_canonical_current_known_baseline_offsets_reports_mutated_offsets() 
     common::copy_fixture_dir("fixtures/ecmaint-post/v1.5", &target);
 
     let mut data = load_classic_core_files(&target).unwrap();
-    data.setup.set_version_tag(b"BAD!!");
-    data.planets[14].set_stored_goods(3.0);
+    data.setup.version_tag = *b"BAD!!";
+    data.planets[14].stored_goods = Real48::from_f64(3.0);
     save_classic_core_files(&target, &data).unwrap();
 
     let stdout = run_nc_cli_in_dir(

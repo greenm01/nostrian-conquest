@@ -611,10 +611,9 @@ fn render_llm_spatial_kdl(
                     push_string_property(
                         &mut out,
                         "owner_empire_name",
-                        &state.game_data.players[owner_empire_id as usize - 1]
+                        state.game_data.players[owner_empire_id as usize - 1]
                             .empire_name
-                            .trim()
-                            .to_string(),
+                            .trim(),
                     );
                 }
             }

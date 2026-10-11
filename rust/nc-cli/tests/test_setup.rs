@@ -2,6 +2,7 @@ mod common;
 
 use common::{cleanup_dir, export_campaign_db, run_nc_cli, unique_temp_dir};
 use nc_compat::load_classic_core_files;
+use nc_data::troop_transports;
 
 #[test]
 fn player_name_updates_handle_and_empire() {
@@ -29,9 +30,9 @@ fn player_name_updates_handle_and_empire() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.players[0].assigned_player_handle_summary(), "tester01");
+    assert_eq!(data.players[0].handle.trim().to_string(), "tester01");
     assert_eq!(
-        data.players[0].controlled_empire_name_summary(),
+        data.players[0].empire_name.trim().to_string(),
         "Auroran_Combine"
     );
 
@@ -72,9 +73,9 @@ fn classic_login_prepare_sets_matching_handle_without_renaming_empire_by_default
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.players[0].assigned_player_handle_summary(), "SYSOP");
+    assert_eq!(data.players[0].handle.trim().to_string(), "SYSOP");
     assert_eq!(
-        data.players[0].controlled_empire_name_summary(),
+        data.players[0].empire_name.trim().to_string(),
         "Auroran_Combine"
     );
 
@@ -106,8 +107,8 @@ fn player_join_seeds_last_run_year_for_returning_player_state() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.players[0].last_run_year_raw(), 3000);
-    assert_eq!(data.players[0].assigned_player_handle_summary(), "SYSOP");
+    assert_eq!(data.players[0].last_year_on, 3000);
+    assert_eq!(data.players[0].handle.trim().to_string(), "SYSOP");
 
     cleanup_dir(&target);
 }
@@ -135,7 +136,7 @@ fn economy_starbase_probe_init_creates_matched_plain_and_starbase_colonies() {
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();
-    assert_eq!(data.players[0].first_base_record_raw(), 1);
+    assert_eq!(data.players[0].bases_first.0, 1);
 
     let rows = data.empire_planet_economy_rows(1);
     let plain = rows
@@ -207,20 +208,20 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
     assert_eq!(data.fleets.len(), 17);
     let donor = &data.fleets[0];
     let new_fleet = &data.fleets[16];
-    assert_eq!(donor.battleship_count(), 7);
-    assert_eq!(donor.cruiser_count(), 8);
-    assert_eq!(donor.destroyer_count(), 11);
-    assert_eq!(donor.troop_transport_count(), 7);
-    assert_eq!(donor.army_count(), 3);
-    assert_eq!(donor.scout_count(), 10);
-    assert_eq!(donor.etac_count(), 1);
-    assert_eq!(new_fleet.battleship_count(), 1);
-    assert_eq!(new_fleet.cruiser_count(), 2);
-    assert_eq!(new_fleet.destroyer_count(), 3);
-    assert_eq!(new_fleet.troop_transport_count(), 2);
-    assert_eq!(new_fleet.army_count(), 1);
-    assert_eq!(new_fleet.scout_count(), 2);
-    assert_eq!(new_fleet.etac_count(), 1);
+    assert_eq!(donor.ships.battleships, 7);
+    assert_eq!(donor.ships.cruisers, 8);
+    assert_eq!(donor.ships.destroyers, 11);
+    assert_eq!(troop_transports(donor), 7);
+    assert_eq!(donor.ships.loaded_transports, 3);
+    assert_eq!(donor.ships.scouts, 10);
+    assert_eq!(donor.ships.etacs, 1);
+    assert_eq!(new_fleet.ships.battleships, 1);
+    assert_eq!(new_fleet.ships.cruisers, 2);
+    assert_eq!(new_fleet.ships.destroyers, 3);
+    assert_eq!(troop_transports(new_fleet), 2);
+    assert_eq!(new_fleet.ships.loaded_transports, 1);
+    assert_eq!(new_fleet.ships.scouts, 2);
+    assert_eq!(new_fleet.ships.etacs, 1);
 
     cleanup_dir(&target);
 }
