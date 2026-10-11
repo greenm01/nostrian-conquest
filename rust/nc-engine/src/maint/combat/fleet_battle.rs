@@ -3,30 +3,31 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use crate::{
     CoreGameData, EncounterDispositionEvent, EncounterDispositionReason, FleetBattleEvent,
     FleetDestroyedEvent, FleetOrderValidationError, MissionAbortReason, MissionEvent,
-    MissionOutcome, Order, PlanetIntelEvent, ScoutContactEvent, ShipLosses, StarbaseDestroyedEvent,
+    MissionOutcome, Order, PlanetIntelEvent, ScoutContactEvent, StarbaseDestroyedEvent,
     StarbaseSightingEvent,
 };
 
 use super::super::FleetBattlePerspective;
-use super::damage::{distribute_fleet_losses, write_back_bases};
+use super::damage::{Holder, apply_class_change, write_back_base, write_back_fleet};
 use super::exchange::{
-    BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_FLEET, COMBAT_KIND_PURSUIT,
-    COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_to_fleet, fleet_die_modifier, fleet_volley,
-    pursuit_catches,
+    BattleDice, COMBAT_GUARDRAIL_MAX_ROUNDS, COMBAT_KIND_ALLOCATION, COMBAT_KIND_FLEET,
+    COMBAT_KIND_PURSUIT, COMBAT_KIND_PURSUIT_CATCH, SeededDice, apply_hits_to_fleet,
+    fleet_die_modifier, fleet_volley, pursuit_catches,
 };
 use super::reporting::{
     loaded_armies_for_fleet_indices, mission_kind_for_order, preferred_reporting_fleet_index,
     single_named_fleet_number,
 };
 use super::retreat::{
-    dominant_empire_after_battle, escape_task_force, retreat_fleet, retreat_task_force,
+    dominant_empire_after_battle, escape_fleet, retreat_fleet, retreat_task_force,
 };
 use super::state::{
-    BattleRole, FleetCombatState, IDX_SB, TaskForce, Withdrawal, new_task_force,
-    planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states, tf_has_any_units,
+    BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Withdrawal,
+    new_task_force, planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states,
+    tf_has_any_units,
 };
 use crate::maint::encounter::rules::roe_permits;
-use nc_data::troop_transports;
+use nc_data::{GameRng, troop_transports};
 
 fn hostile_target_priority(
     our_empire: u8,
@@ -59,19 +60,16 @@ fn defending_starbase_holds_planet(task_force: &TaskForce) -> bool {
 }
 
 fn task_force_can_fire(task_force: &TaskForce) -> bool {
-    task_force.state.has_units()
-        && task_force.state.total_combat_as() > 0
-        && task_force.withdrew.is_none()
+    task_force.state.has_units() && task_force.state.total_combat_as() > 0
 }
 
-/// The live opponents `actor` is fighting: every other side still in the
-/// battle. Withdrawn forces are out of the battle and are never targeted.
+/// The live opponents `actor` is fighting: every other side with a unit
+/// still in the battle. Fleets that broke off are out of it and are never
+/// targeted.
 fn engaged_opponents<'a>(actor: &TaskForce, task_forces: &'a [TaskForce]) -> Vec<&'a TaskForce> {
     task_forces
         .iter()
-        .filter(|other| {
-            other.empire != actor.empire && other.withdrew.is_none() && other.state.has_units()
-        })
+        .filter(|other| other.empire != actor.empire && other.state.has_units())
         .collect()
 }
 
@@ -134,6 +132,9 @@ fn fire_exchange(
         &pending_suppression,
         &pending_execution,
         &pending_criticals,
+        dice,
+        COMBAT_KIND_ALLOCATION | (kind & !0xff),
+        round,
     );
     !engaged.is_empty()
 }
@@ -141,12 +142,15 @@ fn fire_exchange(
 /// Apply one pass of exchanges to every side. A side's carried hits join the
 /// new hits of the same fire pool, and what a pool cannot spend on a damage
 /// step stays carried in that pool for the side's next exchange in this
-/// battle.
+/// battle. What the hits did to the side is then shared among its fleets.
 pub(super) fn apply_pending_hits(
     task_forces: &mut [TaskForce],
     pending_suppression: &HashMap<u8, u32>,
     pending_execution: &HashMap<u8, u32>,
     pending_criticals: &HashMap<u8, u32>,
+    dice: &dyn BattleDice,
+    allocation_kind: u64,
+    round: u32,
 ) {
     for tf in task_forces {
         let sup_hits =
@@ -155,66 +159,178 @@ pub(super) fn apply_pending_hits(
             tf.carried_hits.execution + pending_execution.get(&tf.empire).copied().unwrap_or(0);
         let critical_hits = pending_criticals.get(&tf.empire).copied().unwrap_or(0);
         if sup_hits > 0 || exe_hits > 0 || critical_hits > 0 {
+            let before = tf.state.clone();
             tf.carried_hits = apply_hits_to_fleet(&mut tf.state, sup_hits, exe_hits, critical_hits);
+            let mut rng = dice.allocation(allocation_kind, round, tf.empire);
+            share_losses(tf, &before, &mut rng);
         }
     }
 }
 
-/// The side's ROE: the highest among its fleets with warships.
-fn side_roe(game_data: &CoreGameData, task_force: &TaskForce) -> u8 {
-    task_force
-        .fleet_indices
-        .iter()
-        .filter_map(|&idx| {
-            let fleet = &game_data.fleets[idx];
-            (fleet.ships.destroyers > 0 || fleet.ships.cruisers > 0 || fleet.ships.battleships > 0)
-                .then_some(fleet.rules_of_engagement)
-        })
-        .max()
-        .unwrap_or(0)
+/// Share what an exchange did to the side, `before` to its state now,
+/// among the members still in the battle: class by class, cohort by
+/// cohort, in proportion to each member's eligible hulls (combat decision
+/// 6), with `rng` breaking ties at the cutoff.
+fn share_losses(tf: &mut TaskForce, before: &FleetCombatState, rng: &mut GameRng) {
+    let fighting: Vec<usize> = (0..tf.members.len())
+        .filter(|&m| tf.members[m].fighting())
+        .collect();
+    for idx in 0..7 {
+        let mut holders: Vec<Holder> = fighting
+            .iter()
+            .map(|&m| {
+                let member = &tf.members[m];
+                Holder {
+                    hulls: member.state.counts[idx],
+                    crippled: member.state.crippled[idx],
+                    loaded: if idx == IDX_TT { member.loaded } else { 0 },
+                }
+            })
+            .collect();
+        apply_class_change(
+            &mut holders,
+            (before.counts[idx], &before.crippled[idx]),
+            (tf.state.counts[idx], &tf.state.crippled[idx]),
+            rng,
+        );
+        for (&m, holder) in fighting.iter().zip(holders) {
+            let member = &mut tf.members[m];
+            member.state.counts[idx] = holder.hulls;
+            member.state.crippled[idx] = holder.crippled;
+            if idx == IDX_TT {
+                member.loaded = holder.loaded;
+            }
+        }
+    }
+    debug_assert_eq!(
+        tf.state,
+        {
+            let mut rebuilt = tf.clone();
+            rebuilt.rebuild();
+            rebuilt.state
+        },
+        "the members' hulls add up to the side's"
+    );
 }
 
-/// Why side `idx` breaks off after an exchange, if it does: its ships have
-/// no attack strength left, or its ROE no longer accepts the odds against
-/// the opponents still in the battle. A side with a starbase never breaks
-/// off: the base cannot leave, and its guard fights with it.
-fn breaks_off(
+/// After an exchange, both sides drop every fleet whose ROE no longer
+/// accepts the odds of the sides as they stand, and every fleet with no
+/// attack strength left, all at once, recomputing until none fails. A
+/// dropped fleet is out for good, even if the odds later favour it; a
+/// starbase never leaves. Nobody leaves a battle whose opponents are all
+/// gone. Returns the fleets dropped, as (side, member, reason).
+fn prune(task_forces: &mut [TaskForce]) -> Vec<(usize, usize, EncounterDispositionReason)> {
+    let mut dropped = Vec::new();
+    loop {
+        let power: Vec<u32> = task_forces
+            .iter()
+            .map(|tf| tf.state.total_combat_as())
+            .collect();
+        let mut batch = Vec::new();
+        for (k, tf) in task_forces.iter().enumerate() {
+            let enemy = task_forces
+                .iter()
+                .enumerate()
+                .filter(|(j, other)| {
+                    *j != k && other.empire != tf.empire && other.state.has_units()
+                })
+                .map(|(j, _)| power[j])
+                .max();
+            let Some(enemy) = enemy else {
+                continue;
+            };
+            for (m, member) in tf.members.iter().enumerate() {
+                if !member.fighting() || member.fleet_idx().is_none() || !member.state.has_units() {
+                    continue;
+                }
+                let reason = if member.state.total_combat_as() == 0 {
+                    EncounterDispositionReason::UnarmedEscape
+                } else if !roe_permits(member.roe, power[k], enemy) {
+                    EncounterDispositionReason::RoeWithdrawal
+                } else {
+                    continue;
+                };
+                batch.push((k, m, reason));
+            }
+        }
+        if batch.is_empty() {
+            return dropped;
+        }
+        for &(k, m, reason) in &batch {
+            task_forces[k].members[m].left = Some(Withdrawal {
+                reason,
+                pursued: false,
+            });
+            task_forces[k].rebuild();
+        }
+        dropped.extend(batch);
+    }
+}
+
+/// Side `pursuer` chases the fleets of side `fleeing` that broke off in
+/// `round`, `dropped`: it needs armed ships (a starbase cannot chase), and
+/// it catches each fleeing fleet on its own, by speed and the catch draw,
+/// unless it has already had its one pursuit exchange of that fleet's
+/// escape. The fleets caught stand for one more exchange, carried hits
+/// included.
+#[allow(clippy::too_many_arguments)]
+fn pursue(
     game_data: &CoreGameData,
-    task_forces: &[TaskForce],
-    idx: usize,
-) -> Option<EncounterDispositionReason> {
-    let tf = &task_forces[idx];
-    if tf.withdrew.is_some() || !tf.state.has_ships() || tf.state.counts[IDX_SB] > 0 {
-        return None;
+    task_forces: &mut [TaskForce],
+    dice: &dyn BattleDice,
+    catch_kind: u64,
+    pursuit_kind: u64,
+    round: u32,
+    planet_owner: Option<u8>,
+    pursuer: usize,
+    fleeing: usize,
+    dropped: &[(usize, usize, EncounterDispositionReason)],
+) {
+    let chaser = &task_forces[pursuer];
+    if !chaser.state.has_ships() || chaser.state.total_combat_as() == 0 {
+        return;
     }
-    let opponents = engaged_opponents(tf, task_forces);
-    if opponents.is_empty() {
-        return None;
-    }
-    let own_as = tf.state.total_combat_as();
-    if own_as == 0 {
-        return Some(EncounterDispositionReason::UnarmedEscape);
-    }
-    let enemy_as = opponents
+    let (pursuer_speed, pursuer_empire) = (chaser.state.ship_speed(), chaser.empire);
+    let fleeing_empire = task_forces[fleeing].empire;
+    let caught: Vec<(usize, EncounterDispositionReason)> = dropped
         .iter()
-        .map(|other| other.state.total_combat_as())
-        .max()
-        .unwrap_or(0);
-    (!roe_permits(side_roe(game_data, tf), own_as, enemy_as))
-        .then_some(EncounterDispositionReason::RoeWithdrawal)
-}
-
-/// Whether `pursuer` may chase `fleeing`: it has armed ships to chase with
-/// (a starbase cannot), and it has not yet had its one pursuit exchange of
-/// the fleeing fleet's escape.
-fn may_pursue(game_data: &CoreGameData, pursuer: &TaskForce, fleeing: &TaskForce) -> bool {
-    pursuer.state.has_ships()
-        && pursuer.state.total_combat_as() > 0
-        && !fleeing.fleet_indices.iter().any(|&idx| {
-            game_data.fleets[idx]
-                .escape
-                .is_some_and(|escape| escape.pursued_by(pursuer.empire))
+        .filter(|&&(side, ..)| side == fleeing)
+        .filter(|&&(_, m, _)| {
+            let member = &task_forces[fleeing].members[m];
+            let got_away = member.fleet_idx().is_some_and(|idx| {
+                game_data.fleets[idx]
+                    .escape
+                    .is_some_and(|escape| escape.pursued_by(pursuer_empire))
+            });
+            !got_away
+                && pursuit_catches(
+                    pursuer_speed,
+                    member.state.ship_speed(),
+                    dice.pursuit(
+                        catch_kind | (m as u64) << 48,
+                        round,
+                        pursuer_empire,
+                        fleeing_empire,
+                    ),
+                )
         })
+        .map(|&(_, m, reason)| (m, reason))
+        .collect();
+    if caught.is_empty() {
+        return;
+    }
+    for &(m, _) in &caught {
+        task_forces[fleeing].members[m].left = None;
+    }
+    task_forces[fleeing].rebuild();
+    fire_exchange(task_forces, dice, pursuit_kind, round, planet_owner);
+    for &(m, reason) in &caught {
+        task_forces[fleeing].members[m].left = Some(Withdrawal {
+            reason,
+            pursued: true,
+        });
+    }
+    task_forces[fleeing].rebuild();
 }
 
 fn is_ship_loss_abort_reason(order: Order, reason: FleetOrderValidationError) -> bool {
@@ -269,10 +385,10 @@ fn abort_invalid_dominant_missions_after_battle(
     };
 
     for task_force in task_forces {
-        if task_force.empire != dominant_empire || task_force.withdrew.is_some() {
+        if task_force.empire != dominant_empire {
             continue;
         }
-        for &fleet_idx in &task_force.fleet_indices {
+        for fleet_idx in fighting_fleets(task_force) {
             let Some(order) = pre_retreat_orders.get(&fleet_idx).copied() else {
                 continue;
             };
@@ -290,6 +406,15 @@ fn abort_invalid_dominant_missions_after_battle(
             );
         }
     }
+}
+
+/// The fleets of a side still in the battle.
+fn fighting_fleets(task_force: &TaskForce) -> impl Iterator<Item = usize> + '_ {
+    task_force
+        .members
+        .iter()
+        .filter(|member| member.fighting())
+        .filter_map(Member::fleet_idx)
 }
 
 /// Report fleet `fleet_idx`'s mission aborted at `coords`, if `order` was a
@@ -327,7 +452,7 @@ fn tt_only_blitz_followthrough_empire(
     if task_forces.is_empty()
         || task_forces
             .iter()
-            .any(|tf| tf.withdrew.is_some() || tf.state.total_combat_as() > 0)
+            .any(|tf| tf.any_left() || tf.state.total_combat_as() > 0)
         || task_forces.iter().any(defending_starbase_holds_planet)
     {
         return None;
@@ -336,9 +461,8 @@ fn tt_only_blitz_followthrough_empire(
         .iter()
         .filter(|tf| tf.state.has_units())
         .filter_map(|tf| {
-            tf.fleet_indices
-                .iter()
-                .any(|&fleet_idx| {
+            fighting_fleets(tf)
+                .any(|fleet_idx| {
                     pre_orders.get(&fleet_idx) == Some(&Order::BlitzWorld) && {
                         let fleet = &game_data.fleets[fleet_idx];
                         troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0
@@ -404,15 +528,16 @@ pub(crate) struct FleetBattle {
     pub held_by: Option<u8>,
 }
 
-/// Fight one encounter battle between exactly two sides at `coords`. The
-/// attacker is the fleet whose encounter check started it; nobody else in
-/// the sector joins. `battle_key` tells apart battles fought at the same
-/// place in one year.
+/// Fight one encounter battle between two empires at `coords`: the
+/// attacker's side, its fleets that volunteered, and the defender's roster,
+/// the units the encounter assembled. `battle_key` tells apart battles
+/// fought at the same place in one year.
 ///
 /// This is Rust's battle (seeded flat effectiveness table, carried hits,
-/// ROE checks after every exchange, pursuit of a side that breaks off,
-/// post-battle retreat), not classic's, which is not decoded yet; it is the
-/// seam where classic's battle will go.
+/// ROE checks after every exchange by every fleet, pursuit of fleets that
+/// break off, losses shared among a side's fleets, post-battle retreat),
+/// not classic's, which is not decoded yet; it is the seam where classic's
+/// battle will go.
 pub(crate) fn fight_encounter(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
@@ -465,13 +590,9 @@ pub(super) fn fight_encounter_with_dice(
             )
         })
         .collect();
-    let bases_by_empire: HashMap<u8, Vec<usize>> = sides
-        .iter()
-        .map(|side| (side.empire, side.bases.clone()))
-        .collect();
     let pre_encounter_orders: HashMap<usize, Order> = task_forces
         .iter()
-        .flat_map(|tf| tf.fleet_indices.iter().copied())
+        .flat_map(|tf| tf.fleet_indices())
         .map(|idx| (idx, game_data.fleets[idx].order))
         .collect();
     let participants: Vec<u8> = task_forces
@@ -504,31 +625,18 @@ pub(super) fn fight_encounter_with_dice(
         .map(|tf| {
             (
                 tf.empire,
-                loaded_armies_for_fleet_indices(game_data, &tf.fleet_indices),
+                loaded_armies_for_fleet_indices(game_data, &tf.fleet_indices()),
             )
         })
         .collect();
-    let original_fleet_states: HashMap<usize, ShipLosses> = task_forces
+    let original_member_states: HashMap<usize, FleetCombatState> = task_forces
         .iter()
-        .flat_map(|tf| tf.fleet_indices.iter().copied())
-        .map(|idx| {
-            let fleet = &game_data.fleets[idx];
-            (
-                idx,
-                ShipLosses {
-                    destroyers: u32::from(fleet.ships.destroyers),
-                    cruisers: u32::from(fleet.ships.cruisers),
-                    battleships: u32::from(fleet.ships.battleships),
-                    scouts: u32::from(fleet.ships.scouts),
-                    transports: u32::from(troop_transports(fleet)),
-                    etacs: u32::from(fleet.ships.etacs),
-                },
-            )
-        })
+        .flat_map(|tf| tf.members.iter())
+        .filter_map(|member| member.fleet_idx().map(|idx| (idx, member.state.clone())))
         .collect();
     let original_fleet_loaded_armies: HashMap<usize, u32> = task_forces
         .iter()
-        .flat_map(|tf| tf.fleet_indices.iter().copied())
+        .flat_map(|tf| tf.fleet_indices())
         .map(|idx| {
             (
                 idx,
@@ -553,10 +661,12 @@ pub(super) fn fight_encounter_with_dice(
     let mut capped = false;
     let mut round = 0;
 
-    // The first exchange is compulsory; after every exchange each side
-    // checks whether it stays. When both break off nobody pursues; when one
-    // does, the other may catch it for one more exchange, carried hits
-    // included. A battle still undecided at the round cap ends unresolved.
+    // The first exchange is compulsory; after every exchange each fleet
+    // checks whether it stays. Fleets that break off while their side
+    // fights on leave unpursued; when a whole side breaks off and the other
+    // stays, the other may catch each fleeing fleet for one more exchange,
+    // carried hits included, and when both break off nobody pursues. A
+    // battle still undecided at the round cap ends unresolved.
     loop {
         if !battle_has_live_hostile_targets(&task_forces) {
             break;
@@ -568,42 +678,38 @@ pub(super) fn fight_encounter_with_dice(
         round += 1;
         combat_occurred |= fire_exchange(&mut task_forces, dice, combat_kind, round, planet_owner);
 
-        let breaking: Vec<(usize, EncounterDispositionReason)> = (0..task_forces.len())
-            .filter_map(|idx| breaks_off(game_data, &task_forces, idx).map(|reason| (idx, reason)))
+        let dropped = prune(&mut task_forces);
+        if dropped.is_empty() {
+            continue;
+        }
+        combat_occurred = true;
+        let broke_off: Vec<usize> = (0..task_forces.len())
+            .filter(|&k| {
+                !task_forces[k].state.has_units() && dropped.iter().any(|&(side, ..)| side == k)
+            })
             .collect();
-        match breaking.as_slice() {
+        match broke_off.as_slice() {
             [] => {}
-            &[(fleeing, reason)] => {
-                let fleeing_empire = task_forces[fleeing].empire;
-                let pursuer = task_forces.iter().position(|tf| {
-                    tf.empire != fleeing_empire && tf.state.has_units() && tf.withdrew.is_none()
-                });
-                let pursued = pursuer.is_some_and(|pursuer| {
-                    let (pursuer, fleeing) = (&task_forces[pursuer], &task_forces[fleeing]);
-                    may_pursue(game_data, pursuer, fleeing)
-                        && pursuit_catches(
-                            pursuer.state.ship_speed(),
-                            fleeing.state.ship_speed(),
-                            dice.pursuit(catch_kind, round, pursuer.empire, fleeing.empire),
-                        )
-                });
-                if pursued {
-                    fire_exchange(&mut task_forces, dice, pursuit_kind, round, planet_owner);
+            &[fleeing] => {
+                if let Some(pursuer) = (0..task_forces.len())
+                    .find(|&k| k != fleeing && task_forces[k].state.has_units())
+                {
+                    pursue(
+                        game_data,
+                        &mut task_forces,
+                        dice,
+                        catch_kind,
+                        pursuit_kind,
+                        round,
+                        planet_owner,
+                        pursuer,
+                        fleeing,
+                        &dropped,
+                    );
                 }
-                task_forces[fleeing].withdrew = Some(Withdrawal { reason, pursued });
-                combat_occurred = true;
                 break;
             }
-            _ => {
-                for &(idx, reason) in &breaking {
-                    task_forces[idx].withdrew = Some(Withdrawal {
-                        reason,
-                        pursued: false,
-                    });
-                }
-                combat_occurred = true;
-                break;
-            }
+            _ => break,
         }
     }
 
@@ -617,10 +723,7 @@ pub(super) fn fight_encounter_with_dice(
         let survivors: Vec<&TaskForce> = task_forces
             .iter()
             .filter(|tf| {
-                tf.engaged_in_battle
-                    && tf.state.has_units()
-                    && tf.state.total_combat_as() > 0
-                    && tf.withdrew.is_none()
+                tf.engaged_in_battle && tf.state.has_units() && tf.state.total_combat_as() > 0
             })
             .collect();
         match survivors.as_slice() {
@@ -640,21 +743,33 @@ pub(super) fn fight_encounter_with_dice(
             .or_else(|| dominant_empire_after_battle(&task_forces, winner_empire))
     };
 
+    // Every record, departed fleets included, as the battle left it.
     let mut destroyed_starbases_by_empire: HashMap<u8, Vec<u16>> = HashMap::new();
     for tf in &task_forces {
-        if let Some(before) = original_states.get(&tf.empire) {
-            distribute_fleet_losses(game_data, &tf.fleet_indices, before, &tf.state);
-            let destroyed_starbases =
-                write_back_bases(game_data, &bases_by_empire[&tf.empire], before, &tf.state);
-            if !destroyed_starbases.is_empty() {
-                destroyed_starbases_by_empire.insert(tf.empire, destroyed_starbases);
+        for member in &tf.members {
+            match member.record {
+                Record::Fleet(idx) => {
+                    write_back_fleet(game_data, idx, &member.state, member.loaded)
+                }
+                Record::Base(idx) => {
+                    if let Some(destroyed) = write_back_base(game_data, idx, &member.state) {
+                        destroyed_starbases_by_empire
+                            .entry(tf.empire)
+                            .or_default()
+                            .push(destroyed);
+                    }
+                }
             }
         }
     }
+    let final_states: HashMap<u8, FleetCombatState> = task_forces
+        .iter()
+        .map(|tf| (tf.empire, tf.full_state()))
+        .collect();
 
     let pre_retreat_orders: HashMap<usize, Order> = task_forces
         .iter()
-        .flat_map(|tf| tf.fleet_indices.iter().copied())
+        .flat_map(|tf| tf.fleet_indices())
         .map(|idx| (idx, game_data.fleets[idx].order))
         .collect();
     let tt_only_blitz_followthrough = (dominant_empire.is_none())
@@ -669,9 +784,9 @@ pub(super) fn fight_encounter_with_dice(
         if capped || tt_only_blitz_followthrough.is_some() {
             continue;
         }
-        if tf.engaged_in_battle && Some(tf.empire) != dominant_empire && tf.withdrew.is_none() {
+        if tf.engaged_in_battle && Some(tf.empire) != dominant_empire {
             retreat_task_force(game_data, tf);
-            for &fleet_idx in &tf.fleet_indices {
+            for fleet_idx in fighting_fleets(tf) {
                 emit_aborted_mission_event(
                     game_data,
                     &mut events,
@@ -691,89 +806,76 @@ pub(super) fn fight_encounter_with_dice(
         &pre_retreat_orders,
         coords,
     );
-    for tf in &task_forces {
-        let Some(withdrawal) = tf.withdrew else {
-            continue;
-        };
-        // What the mission report says: repelled by the orbital defence when
-        // the world's owner held the field, or left without the ships the
-        // mission needs; checked before the retreat order replaces it.
-        let abort_reasons: Vec<Option<MissionAbortReason>> = tf
-            .fleet_indices
-            .iter()
-            .map(|&fleet_idx| {
-                let order = pre_encounter_orders.get(&fleet_idx).copied();
-                if repelled_from_orbit {
-                    Some(MissionAbortReason::OrbitBlocked)
-                } else if order
-                    .is_some_and(|order| mission_lost_its_ships(game_data, fleet_idx, order))
-                {
-                    Some(MissionAbortReason::CapabilityLost)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        let pursuer = withdrawal
-            .pursued
-            .then(|| {
-                task_forces
-                    .iter()
-                    .find(|other| other.empire != tf.empire)
-                    .map(|other| other.empire)
-            })
-            .flatten();
-        escape_task_force(game_data, tf, coords, pursuer);
-        for (&fleet_idx, &abort_reason) in tf.fleet_indices.iter().zip(&abort_reasons) {
-            emit_aborted_mission_event(
-                game_data,
-                &mut events,
-                fleet_idx,
-                pre_encounter_orders.get(&fleet_idx).copied(),
-                coords,
-                abort_reason,
-            );
-        }
-        if !tf_has_any_units(tf) {
-            continue;
-        }
-        let Some(before) = original_states.get(&tf.empire) else {
-            continue;
-        };
-        let losses = ship_losses_from_states(before, &tf.state);
-        let mut enemy_before = FleetCombatState::default();
-        let mut enemy_after = FleetCombatState::default();
+    let hostile_state = |empire: u8| {
+        let mut before = FleetCombatState::default();
+        let mut after = FleetCombatState::default();
         for other in &task_forces {
-            if !hostile_pairs.contains(&(tf.empire, other.empire)) {
+            if !hostile_pairs.contains(&(empire, other.empire)) {
                 continue;
             }
             if let Some(orig) = original_states.get(&other.empire) {
                 for idx in 0..7 {
-                    enemy_before.counts[idx] += orig.counts[idx];
-                    enemy_after.counts[idx] += other.state.counts[idx];
+                    before.counts[idx] += orig.counts[idx];
+                    after.counts[idx] += final_states[&other.empire].counts[idx];
                 }
             }
         }
-        let enemy_losses_inflicted = ship_losses_from_states(&enemy_before, &enemy_after);
+        (before, after)
+    };
+    for tf in &task_forces {
         let target_empire_code = task_forces
             .iter()
             .filter(|other| hostile_pairs.contains(&(tf.empire, other.empire)))
-            .max_by_key(|other| other.state.total_combat_as())
+            .max_by_key(|other| final_states[&other.empire].total_combat_as())
             .map(|other| other.empire)
             .unwrap_or(0);
         let target_fleet_number = task_forces
             .iter()
             .find(|other| other.empire == target_empire_code)
-            .and_then(|other| single_named_fleet_number(game_data, &other.fleet_indices));
-        for &idx in &tf.fleet_indices {
-            let fleet_idx = idx;
+            .and_then(|other| single_named_fleet_number(game_data, &other.fleet_indices()));
+        let (enemy_before, enemy_after) = hostile_state(tf.empire);
+        let enemy_losses_inflicted = ship_losses_from_states(&enemy_before, &enemy_after);
+        for member in &tf.members {
+            let (Some(withdrawal), Some(fleet_idx)) = (member.left, member.fleet_idx()) else {
+                continue;
+            };
+            // What the mission report says: repelled by the orbital defence
+            // when the world's owner held the field, or left without the
+            // ships the mission needs; checked before the retreat order
+            // replaces it.
+            let order = pre_encounter_orders.get(&fleet_idx).copied();
+            let abort_reason = if repelled_from_orbit {
+                Some(MissionAbortReason::OrbitBlocked)
+            } else if order.is_some_and(|order| mission_lost_its_ships(game_data, fleet_idx, order))
+            {
+                Some(MissionAbortReason::CapabilityLost)
+            } else {
+                None
+            };
+            let pursuer = withdrawal.pursued.then_some(target_empire_code);
+            escape_fleet(game_data, fleet_idx, coords, pursuer);
+            emit_aborted_mission_event(
+                game_data,
+                &mut events,
+                fleet_idx,
+                order,
+                coords,
+                abort_reason,
+            );
+            if !member.state.has_units() {
+                continue;
+            }
+            let losses =
+                ship_losses_from_states(&original_member_states[&fleet_idx], &member.state);
             let owner_empire = tf.empire;
-            let mission = mission_kind_for_order(pre_encounter_orders.get(&idx).copied());
-            let friendly_initial = original_fleet_states.get(&idx).copied().unwrap_or_default();
-            let friendly_loaded_armies_initial =
-                original_fleet_loaded_armies.get(&idx).copied().unwrap_or(0);
+            let mission = mission_kind_for_order(order);
+            let friendly_initial = ship_counts_from_state(&original_member_states[&fleet_idx]);
+            let friendly_loaded_armies_initial = original_fleet_loaded_armies
+                .get(&fleet_idx)
+                .copied()
+                .unwrap_or(0);
             let enemy_initial = ship_counts_from_state(&enemy_before);
-            let retreat_target_coords = game_data.fleets[idx].target.to_array();
+            let retreat_target_coords = game_data.fleets[fleet_idx].target.to_array();
             let event = if withdrawal.pursued {
                 EncounterDispositionEvent::PursuitFire {
                     fleet_idx,
@@ -814,7 +916,7 @@ pub(super) fn fight_encounter_with_dice(
     }
     let fought_against = |empire: u8, other: &TaskForce| {
         hostile_pairs.contains(&(empire, other.empire))
-            && (other.engaged_in_battle || other.withdrew.is_some())
+            && (other.engaged_in_battle || other.any_left())
     };
     for empire in participants {
         if !combat_occurred {
@@ -829,7 +931,7 @@ pub(super) fn fight_encounter_with_dice(
         if !after_tf.engaged_in_battle {
             continue;
         }
-        let after = &after_tf.state;
+        let after = &final_states[&empire];
         let friendly_losses = ship_losses_from_states(before, after);
         let mut enemy_before = FleetCombatState::default();
         let mut enemy_after = FleetCombatState::default();
@@ -840,7 +942,7 @@ pub(super) fn fight_encounter_with_dice(
             if let Some(orig) = original_states.get(&tf.empire) {
                 for idx in 0..7 {
                     enemy_before.counts[idx] += orig.counts[idx];
-                    enemy_after.counts[idx] += tf.state.counts[idx];
+                    enemy_after.counts[idx] += final_states[&tf.empire].counts[idx];
                 }
             }
         }
@@ -860,18 +962,21 @@ pub(super) fn fight_encounter_with_dice(
             })
             .map(|tf| tf.empire)
             .collect();
-        let reporting_fleet_idx =
-            preferred_reporting_fleet_index(game_data, &after_tf.fleet_indices);
+        let fleet_indices = after_tf.fleet_indices();
+        let reporting_fleet_idx = preferred_reporting_fleet_index(game_data, &fleet_indices);
         let reporting_fleet_number = reporting_fleet_idx
             .map(|idx| game_data.fleets[idx].fleet_number.0 as u8)
             .filter(|fleet_number| *fleet_number != 0);
         let reporting_mission = reporting_fleet_idx
             .and_then(|idx| mission_kind_for_order(pre_encounter_orders.get(&idx).copied()));
-        let primary_enemy_fleet_number = task_forces
-            .iter()
-            .filter(|tf| fought_against(empire, tf) && tf.state.has_units())
-            .max_by_key(|tf| tf.state.total_combat_as())
-            .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices));
+        let primary_enemy = || {
+            task_forces
+                .iter()
+                .filter(|tf| fought_against(empire, tf) && final_states[&tf.empire].has_units())
+                .max_by_key(|tf| final_states[&tf.empire].total_combat_as())
+        };
+        let primary_enemy_fleet_number = primary_enemy()
+            .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices()));
         events.fleet_battle_events.push(FleetBattleEvent {
             reporting_empire: empire,
             reporting_fleet_number,
@@ -892,8 +997,7 @@ pub(super) fn fight_encounter_with_dice(
                 .copied()
                 .unwrap_or(0),
             friendly_losses,
-            friendly_starbases_lost: before.counts[IDX_SB]
-                .saturating_sub(after_tf.state.counts[IDX_SB]),
+            friendly_starbases_lost: before.counts[IDX_SB].saturating_sub(after.counts[IDX_SB]),
             enemy_initial: ship_counts_from_state(&enemy_before),
             enemy_initial_starbases: enemy_before.counts[IDX_SB],
             enemy_loaded_armies_initial,
@@ -903,18 +1007,22 @@ pub(super) fn fight_encounter_with_dice(
             stardate_week: None,
         });
 
-        if !tf_has_any_units(after_tf) && !after_tf.fleet_indices.is_empty() {
+        let primary_enemy_empire = || {
+            task_forces
+                .iter()
+                .filter(|tf| fought_against(empire, tf))
+                .max_by_key(|tf| final_states[&tf.empire].total_combat_as())
+                .map(|tf| tf.empire)
+        };
+        let primary_enemy_fleet_number = || {
+            task_forces
+                .iter()
+                .filter(|tf| fought_against(empire, tf))
+                .max_by_key(|tf| final_states[&tf.empire].total_combat_as())
+                .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices()))
+        };
+        if !tf_has_any_units(after_tf) && !fleet_indices.is_empty() {
             let fleet_number = reporting_fleet_number.unwrap_or(0);
-            let primary_enemy_empire = task_forces
-                .iter()
-                .filter(|tf| fought_against(empire, tf))
-                .max_by_key(|tf| tf.state.total_combat_as())
-                .map(|tf| tf.empire);
-            let primary_enemy_fleet_number = task_forces
-                .iter()
-                .filter(|tf| fought_against(empire, tf))
-                .max_by_key(|tf| tf.state.total_combat_as())
-                .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices));
             events.fleet_destroyed_events.push(FleetDestroyedEvent {
                 reporting_empire: empire,
                 fleet_number,
@@ -935,40 +1043,30 @@ pub(super) fn fight_encounter_with_dice(
                     .saturating_sub(enemy_after.counts[IDX_SB]),
                 enemy_ground_battery_losses: 0,
                 enemy_ground_army_losses: 0,
-                primary_enemy_empire,
-                primary_enemy_fleet_number,
+                primary_enemy_empire: primary_enemy_empire(),
+                primary_enemy_fleet_number: primary_enemy_fleet_number(),
                 stardate_week: None,
             });
         }
 
         let destroyed_starbases = before.counts[IDX_SB].saturating_sub(after.counts[IDX_SB]);
-        if destroyed_starbases > 0 {
-            let primary_enemy_empire = task_forces
-                .iter()
-                .filter(|tf| fought_against(empire, tf))
-                .max_by_key(|tf| tf.state.total_combat_as())
-                .map(|tf| tf.empire);
-            let primary_enemy_fleet_number = task_forces
-                .iter()
-                .filter(|tf| fought_against(empire, tf))
-                .max_by_key(|tf| tf.state.total_combat_as())
-                .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices));
-            if let Some(lost_ids) = destroyed_starbases_by_empire.get(&empire) {
-                for &starbase_id in lost_ids {
-                    events
-                        .starbase_destroyed_events
-                        .push(StarbaseDestroyedEvent {
-                            reporting_empire: empire,
-                            starbase_id,
-                            coords,
-                            enemy_initial: ship_counts_from_state(&enemy_before),
-                            enemy_loaded_armies_initial,
-                            enemy_losses,
-                            primary_enemy_empire,
-                            primary_enemy_fleet_number,
-                            stardate_week: None,
-                        });
-                }
+        if destroyed_starbases > 0
+            && let Some(lost_ids) = destroyed_starbases_by_empire.get(&empire)
+        {
+            for &starbase_id in lost_ids {
+                events
+                    .starbase_destroyed_events
+                    .push(StarbaseDestroyedEvent {
+                        reporting_empire: empire,
+                        starbase_id,
+                        coords,
+                        enemy_initial: ship_counts_from_state(&enemy_before),
+                        enemy_loaded_armies_initial,
+                        enemy_losses,
+                        primary_enemy_empire: primary_enemy_empire(),
+                        primary_enemy_fleet_number: primary_enemy_fleet_number(),
+                        stardate_week: None,
+                    });
             }
         }
     }

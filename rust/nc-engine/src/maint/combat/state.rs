@@ -1,6 +1,7 @@
 use crate::{CoreGameData, EncounterDispositionReason, Order, ShipLosses};
 use nc_data::{
-    CrippledHulls, CrippledShips, HullClass, ShipCounts, Starbase, slowest_speed, troop_transports,
+    CrippledHulls, CrippledShips, HullClass, ShipCounts, Starbase, hull_count, slowest_speed,
+    troop_transports,
 };
 
 pub(super) const IDX_DD: usize = 0;
@@ -43,7 +44,7 @@ pub(super) enum BattleRole {
 /// crippled ones by recovery state. The state is loaded from the records at
 /// the start of a battle or strike and written back at its end, so damage
 /// carries into every later battle.
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub(super) struct FleetCombatState {
     pub(super) counts: [u32; 7],
     pub(super) crippled: [CrippledHulls; 7],
@@ -57,7 +58,7 @@ pub(super) struct CarriedHits {
     pub(super) execution: u32,
 }
 
-/// How a side left the battle.
+/// How a fleet left the battle.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct Withdrawal {
     /// Its ROE failed, or it had no armed ship left.
@@ -66,19 +67,91 @@ pub(super) struct Withdrawal {
     pub(super) pursued: bool,
 }
 
+/// The record a member of a side is.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum Record {
+    Fleet(usize),
+    Base(usize),
+}
+
+/// One fleet or starbase on a side, with its own hulls. The roster is fixed
+/// when the battle starts; a fleet leaves it only by breaking off.
+#[derive(Clone, Debug)]
+pub(super) struct Member {
+    pub(super) record: Record,
+    pub(super) state: FleetCombatState,
+    /// Loaded transports among the fleet's transports. Transport losses
+    /// fall on them first.
+    pub(super) loaded: u32,
+    pub(super) roe: u8,
+    /// Set once the fleet has broken off: it is out of the battle. A
+    /// starbase never leaves.
+    pub(super) left: Option<Withdrawal>,
+}
+
+impl Member {
+    pub(super) fn fleet_idx(&self) -> Option<usize> {
+        match self.record {
+            Record::Fleet(idx) => Some(idx),
+            Record::Base(_) => None,
+        }
+    }
+
+    /// Still in the battle: it has not left.
+    pub(super) fn fighting(&self) -> bool {
+        self.left.is_none()
+    }
+}
+
+/// One empire's side of a battle: its fleets and starbases in the sector
+/// and layer, each with its own hulls, and the aggregate they fire with.
 #[derive(Clone, Debug)]
 pub(super) struct TaskForce {
     pub(super) empire: u8,
-    pub(super) fleet_indices: Vec<usize>,
+    pub(super) members: Vec<Member>,
+    /// The hulls of the members still in the battle: what the side fires
+    /// with and what fire lands on. Rebuilt whenever a member leaves.
     pub(super) state: FleetCombatState,
     pub(super) role: BattleRole,
-    /// Set once the side has broken off: it is out of the battle.
-    pub(super) withdrew: Option<Withdrawal>,
     pub(super) engaged_in_battle: bool,
     /// Hits carried against this side from earlier exchanges of this
     /// battle. They belong to the side, not to its fleets: a fleet that
     /// leaves takes none with them, and the battle's end drops them.
     pub(super) carried_hits: CarriedHits,
+}
+
+impl TaskForce {
+    /// Every fleet on the roster, in it or not.
+    pub(super) fn fleet_indices(&self) -> Vec<usize> {
+        self.members.iter().filter_map(Member::fleet_idx).collect()
+    }
+
+    /// The aggregate of the members still in the battle.
+    pub(super) fn rebuild(&mut self) {
+        self.state = sum_states(self.members.iter().filter(|m| m.fighting()));
+    }
+
+    /// The hulls of the whole roster, departed fleets included, as the
+    /// battle left them.
+    pub(super) fn full_state(&self) -> FleetCombatState {
+        sum_states(self.members.iter())
+    }
+
+    /// A fleet has left the battle.
+    pub(super) fn any_left(&self) -> bool {
+        self.members.iter().any(|m| m.left.is_some())
+    }
+}
+
+fn sum_states<'a>(members: impl Iterator<Item = &'a Member>) -> FleetCombatState {
+    let mut state = FleetCombatState::default();
+    for member in members {
+        for idx in 0..7 {
+            state.counts[idx] += member.state.counts[idx];
+            state.crippled[idx].add(&member.state.crippled[idx]);
+        }
+    }
+    state
 }
 
 impl FleetCombatState {
@@ -318,16 +391,65 @@ pub(super) fn new_task_force(
     bases: &[usize],
 ) -> TaskForce {
     let role = task_force_role(game_data, empire, coords, &fleet_indices);
-    let state = fleet_state_from_records(game_data, &fleet_indices, bases);
-    TaskForce {
+    let fleets = fleet_indices.iter().map(|&idx| {
+        let fleet = &game_data.fleets[idx];
+        Member {
+            record: Record::Fleet(idx),
+            state: fleet_state_from_records(game_data, &[idx], &[]),
+            loaded: u32::from(fleet.ships.loaded_transports),
+            roe: fleet.rules_of_engagement,
+            left: None,
+        }
+    });
+    let bases = bases.iter().map(|&idx| Member {
+        record: Record::Base(idx),
+        state: fleet_state_from_records(game_data, &[], &[idx]),
+        loaded: 0,
+        roe: 0,
+        left: None,
+    });
+    let mut task_force = TaskForce {
         empire,
-        fleet_indices,
-        state,
+        members: fleets.chain(bases).collect(),
+        state: FleetCombatState::default(),
         role,
-        withdrew: None,
         engaged_in_battle: false,
         carried_hits: CarriedHits::default(),
+    };
+    task_force.rebuild();
+    task_force
+}
+
+/// The ships of fleet `fleet_idx` as `state` has them: counts by class, the
+/// crippled cohorts, and `loaded` of the transports loaded.
+pub(super) fn write_fleet_state(
+    game_data: &mut CoreGameData,
+    fleet_idx: usize,
+    state: &FleetCombatState,
+    loaded: u32,
+) -> bool {
+    let fleet = &mut game_data.fleets[fleet_idx];
+    let mut lost = false;
+    for class in HullClass::ALL {
+        let idx = class_index(class);
+        let count = state.counts[idx];
+        lost |= count < hull_count(fleet, class);
+        *fleet.crippled.get_mut(class) = state.crippled[idx];
+        let count = count.min(u32::from(u16::MAX)) as u16;
+        match class {
+            HullClass::Destroyer => fleet.ships.destroyers = count,
+            HullClass::Cruiser => fleet.ships.cruisers = count,
+            HullClass::Battleship => fleet.ships.battleships = count,
+            HullClass::Scout => fleet.ships.scouts = count,
+            HullClass::Etac => fleet.ships.etacs = count,
+            HullClass::Transport => {
+                let loaded = loaded.min(u32::from(count)) as u16;
+                fleet.ships.loaded_transports = loaded;
+                fleet.ships.empty_transports = count - loaded;
+            }
+        }
     }
+    lost
 }
 
 pub(super) fn ship_losses_from_states(
@@ -355,8 +477,9 @@ pub(super) fn ship_counts_from_state(state: &FleetCombatState) -> ShipLosses {
     }
 }
 
+/// The roster has a hull left anywhere, departed fleets included.
 pub(super) fn tf_has_any_units(tf: &TaskForce) -> bool {
-    tf.state.counts.iter().any(|&count| count > 0)
+    tf.full_state().has_units()
 }
 
 pub(super) fn planet_idx_at_coords(game_data: &CoreGameData, coords: [u8; 2]) -> Option<usize> {

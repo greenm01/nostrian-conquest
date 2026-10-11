@@ -165,11 +165,15 @@ cross it:
   movement for the tick. NC keeps these (encounter spec §5).
 
 **Same as classic.** The tick loop, sighting, awareness, the decision rules
-and the ROE table, the intercept roll, the two-sided battle, the lost tick of
+and the ROE table, the intercept roll, the two-empire battle, the lost tick of
 movement, and unchanged diplomacy (classic's one exception, the Rogues
-conversion, is an economy rule, below). One difference by choice: a sector
-with no world is nobody's system, where classic reads a garbage owner. Rust
-matches classic's odds, not its random sequence.
+conversion, is an economy rule, below). Three differences by choice: a sector
+with no world is nobody's system, where classic reads a garbage owner; the
+strength a fleet weighs is NC attack strength (combat decision 2); and each
+side of a battle is an empire's fleets in the sector and layer, volunteers
+admitted on the assembled odds, with no first-identification bypass (combat
+decision 6, [gzly58c5](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md)).
+Rust matches classic's odds, not its random sequence.
 
 **Different.**
 
@@ -187,9 +191,11 @@ matches classic's odds, not its random sequence.
   Classic shooters pick one target and keep it; batteries only ever target
   warships, except in a blitz landing; and the larger side holds part of its
   force back each round.
-- Rounds. NC fights one compulsory exchange, then checks ROE after every
-  exchange, lets a side that stays pursue one that breaks off when it
-  catches it, and ends an undecided battle unresolved at 64 exchanges.
+- Rounds. NC fights one compulsory exchange, then lets every fleet check
+  its own ROE after every exchange, shares a side's losses among its
+  fleets, lets a side that stays pursue each fleet of one that breaks off
+  when it catches it, and ends an undecided battle unresolved at 64
+  exchanges.
   Classic checks ROE after every round from round 1, fights across a
   separation distance with weapon ranges, and has no cap.
 - Retreat. NC's retreat aborts the mission. Classic's scatter sends the fleet

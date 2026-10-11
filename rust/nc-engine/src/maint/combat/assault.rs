@@ -416,7 +416,7 @@ fn apply_blitz_landing_fire(
             .sum()
     };
     let armies_before = loaded_armies(game_data);
-    super::damage::distribute_fleet_losses(game_data, fleet_indices, &before, &after);
+    super::damage::write_back_strike(game_data, fleet_indices[0], &after);
     let armies_after = loaded_armies(game_data);
 
     (
@@ -620,12 +620,7 @@ pub(crate) fn resolve_strike(
                         defender_exchange.hits,
                         u32::from(defender_exchange.critical),
                     );
-                    super::damage::distribute_fleet_losses(
-                        game_data,
-                        &fleets,
-                        &fleet_state,
-                        &next_state,
-                    );
+                    super::damage::write_back_strike(game_data, fleet_idx, &next_state);
                     fleet_state = fleet_state_from_records(game_data, &fleets, &[]);
                 }
 
@@ -734,7 +729,7 @@ pub(crate) fn resolve_strike(
                 return_exchange.hits,
                 u32::from(return_exchange.critical),
             );
-            super::damage::distribute_fleet_losses(game_data, &fleets, &before, &after);
+            super::damage::write_back_strike(game_data, fleet_idx, &after);
 
             apply_battery_hits(
                 &mut game_data.planets[planet_idx],

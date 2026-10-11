@@ -279,8 +279,13 @@ willing(O, T) = test(O, S(T)) || (mode < 3 && O.ROE > 0)
 engage        = willing && intercept(O, T)      // attack iff engage
 ```
 So at first identification any ROE > 0 commits regardless of odds; later
-re-checks need the strength test. `planet` = the world in O's sector (only
-looked up when O is in layer 1; see the deep-space note).
+re-checks need the strength test. NC departs here (combat decision 6,
+[gzly58c5](../notes/decisions/gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md)):
+`willing` is the strength test alone, in both modes, and the test weighs
+the sides as they would fight, O's empire's volunteers in the sector and
+layer against T's empire's fleets there with the bases the target rule
+brings (see section 5). `planet` = the world in O's sector (only looked up
+when O is in layer 1; see the deep-space note).
 
 ### Strength `S(F)` `24a3:02b4` [C]
 `S = 21*BB + 7*CA + 2*DD` (u16 arithmetic), `+30` if order 4 and speed 0.
@@ -304,6 +309,11 @@ Transports, ETACs, scouts count 0. ECMAINT writes `S` to `+0x34`.
 
 `test_vs_fleet(F, T) = test(F, S(T))` (`09c1`);
 `test_vs_base(F, B) = test(F, 30 + S(guard_fleet_of(B)) if any else 30)` (`0a0e`).
+NC's yardstick is effective attack strength
+([decision 2](../notes/decisions/kiswrzos-withdrawal-pursuit-and-one-strength-yardstick.md)),
+and both tests weigh the assembled sides (decision 6): the base's side is
+the base, its guard, and its owner's other fleets there, against a declared
+enemy too, where classic weighed the base alone.
 
 ### Fleet target, in this order
 
@@ -445,6 +455,12 @@ sector with no world belongs to no one and is nobody's system.
      layer; or, for a base target, the base plus `guard_fleet_of(B)`.
    No other fleets in the sector join (not allies, not other fleets of
    either empire). A second target is fought only in a later tick.
+   NC departs here (combat decision 6): the battle is still between the two
+   empires, but side A is the observer's empire's fleets in the sector and
+   layer that volunteer under their own ROE on the assembled odds (the
+   observer among them, or there is no attack), and side B is the target's
+   empire's fleets there, with the base the target is, or each guard fleet
+   at rest among them guards. Third empires still never join.
 4. The battle starts at a separation distance of `5 + Random(20)` (the
    `Random(5)+5` surprise branch needs a flag that the encounter path always
    passes as 0). The battle itself, with its retreat, scatter, and loss
@@ -467,7 +483,8 @@ sector with no world belongs to no one and is nobody's system.
 8. Report: both sides get battle reports ("We successfully intercepted ...",
    "We were attacked by ...", "We lost all contact with ...").
 
-Rust follows steps 1-3 and 5-7 but resolves the battle itself with NC combat
+Rust follows steps 1, 2, and 5-7, assembles the sides of step 3 as noted
+there, and resolves the battle itself with NC combat
 (see [nc-combat-spec.md](nc-combat-spec.md) and
 [NC combat stays](../notes/decisions/b5u6lekb-rust-keeps-its-own-combat-system.md));
 classic's battle is decoded in [ec-battle-spec.md](ec-battle-spec.md) for
