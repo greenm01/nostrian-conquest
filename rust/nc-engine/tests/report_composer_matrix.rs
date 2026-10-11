@@ -85,6 +85,7 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(1),
+        surprise: false,
     });
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
         reporting_empire: 1,
@@ -681,6 +682,7 @@ fn fleet_battle_reports_cover_both_viewers() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(1),
+        surprise: false,
     });
     events.fleet_battle_events.push(FleetBattleEvent {
         reporting_empire: 2,
@@ -714,6 +716,7 @@ fn fleet_battle_reports_cover_both_viewers() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(1),
+        surprise: false,
     });
 
     assert_viewers_have_reports(&game_data, &events, &[1, 2]);
@@ -778,6 +781,7 @@ fn fleet_destruction_events_still_cover_both_viewers() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(1),
+        surprise: false,
     });
 
     assert_viewers_have_reports(&game_data, &events, &[1, 2]);
@@ -1021,6 +1025,7 @@ fn starbase_only_defense_still_covers_both_viewers() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 1,
         stardate_week: Some(2),
+        surprise: false,
     });
     events
         .starbase_destroyed_events

@@ -173,6 +173,7 @@ fn results_reports_battle_before_bombard_aftermath() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
@@ -262,6 +263,7 @@ fn destroyed_reporting_fleet_uses_telemetry_report_even_if_side_holds_field() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
 
     let rows = build_results_report_blocks(&game_data, &events);
@@ -1202,6 +1204,7 @@ fn results_reports_named_hostile_fleet_with_empire_local_slot() {
                 enemy_losses: ShipLosses::default(),
                 enemy_starbases_destroyed: 0,
                 stardate_week: Some(2),
+                surprise: false,
             }],
             ..MaintenanceEvents::default()
         },
@@ -1382,6 +1385,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
     events
         .encounter_disposition_events
@@ -1453,6 +1457,7 @@ fn starbase_only_defender_report_uses_command_center_source() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
 
     let rows = build_results_report_blocks(&game_data, &events);
@@ -1499,6 +1504,7 @@ fn attacker_report_mentions_destroyed_lone_starbase() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 1,
         stardate_week: Some(2),
+        surprise: false,
     });
 
     let rows = build_results_report_blocks(&game_data, &events);
@@ -1545,6 +1551,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
     events
         .encounter_disposition_events
@@ -1626,6 +1633,7 @@ fn victorious_fleet_report_uses_total_destruction_phrase() {
         },
         enemy_starbases_destroyed: 0,
         stardate_week: Some(3),
+        surprise: false,
     });
 
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
@@ -1671,6 +1679,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
     events
         .encounter_disposition_events
@@ -1736,6 +1745,7 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 0,
         stardate_week: Some(2),
+        surprise: false,
     });
     events
         .starbase_destroyed_events
@@ -1807,6 +1817,7 @@ fn attacker_battle_report_explicitly_mentions_enemy_starbase_destruction() {
         enemy_losses: ShipLosses::default(),
         enemy_starbases_destroyed: 1,
         stardate_week: Some(2),
+        surprise: false,
     });
 
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
@@ -2195,4 +2206,65 @@ fn recovery_reports_say_how_many_ships_recovered() {
     }
     assert!(!joined.to_lowercase().contains("turns left"));
     assert!(!joined.to_lowercase().contains("crippled"));
+}
+
+/// A battle report names a surprise in one clause, from the reporting
+/// side's point of view, and says nothing when there was none.
+#[test]
+fn battle_reports_say_when_the_attack_was_a_surprise() {
+    let game_data = GameStateBuilder::new()
+        .with_player_count(4)
+        .with_year(3016)
+        .build_initialized_baseline()
+        .expect("baseline should build");
+    let battle = |reporting_empire, perspective, surprise| FleetBattleEvent {
+        reporting_empire,
+        reporting_fleet_number: None,
+        reporting_mission: None,
+        perspective,
+        coords: [9, 6],
+        enemy_empires: vec![3 - reporting_empire],
+        primary_enemy_fleet_number: Some(12),
+        held_field: true,
+        friendly_initial: ShipLosses {
+            cruisers: 3,
+            ..ShipLosses::default()
+        },
+        friendly_initial_starbases: 0,
+        friendly_loaded_armies_initial: 0,
+        friendly_losses: ShipLosses::default(),
+        friendly_starbases_lost: 0,
+        enemy_initial: ShipLosses {
+            cruisers: 1,
+            ..ShipLosses::default()
+        },
+        enemy_initial_starbases: 0,
+        enemy_loaded_armies_initial: 0,
+        enemy_losses: ShipLosses::default(),
+        enemy_starbases_destroyed: 0,
+        surprise,
+        stardate_week: Some(2),
+    };
+    let text = |event: FleetBattleEvent| {
+        let viewer = event.reporting_empire;
+        let mut events = MaintenanceEvents::default();
+        events.fleet_battle_events.push(event);
+        viewer_report_texts(viewer, &build_results_report_blocks(&game_data, &events))
+            .join(" ")
+            .replace('\n', " ")
+    };
+
+    let attacker = text(battle(1, FleetBattlePerspective::Intercepted, true));
+    assert!(attacker.contains("We attacked by surprise."), "{attacker}");
+    let defender = text(battle(2, FleetBattlePerspective::Attacked, true));
+    assert!(
+        defender.contains("The enemy attacked by surprise."),
+        "{defender}"
+    );
+    for (empire, perspective) in [
+        (1, FleetBattlePerspective::Intercepted),
+        (2, FleetBattlePerspective::Attacked),
+    ] {
+        assert!(!text(battle(empire, perspective, false)).contains("surprise"));
+    }
 }

@@ -1,4 +1,5 @@
 use super::format::{join_report_parts, ship_loss_summary, unit_count_text};
+use crate::maint::FleetBattlePerspective;
 use nc_data::{MaintenanceEvents, Mission, MissionOutcome, ShipLosses, stardock_slot_kind};
 
 pub fn enemy_losses_sentence(losses: ShipLosses) -> String {
@@ -48,6 +49,18 @@ pub fn battle_outcome_sentence(
     } else {
         "We were forced to disengage.".to_string()
     }
+}
+
+/// The clause a battle report adds when the attacking side struck by
+/// surprise, from the reporting side's point of view.
+pub fn surprise_sentence(battle_event: &nc_data::FleetBattleEvent) -> Option<String> {
+    battle_event.surprise.then(|| {
+        match battle_event.perspective {
+            FleetBattlePerspective::Intercepted => "We attacked by surprise.",
+            FleetBattlePerspective::Attacked => "The enemy attacked by surprise.",
+        }
+        .to_string()
+    })
 }
 
 pub fn enemy_starbase_outcome_line(starbases_destroyed: u32) -> Option<String> {

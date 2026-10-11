@@ -119,6 +119,7 @@ mod tests {
             enemy_losses: ShipLosses::default(),
             enemy_starbases_destroyed: 0,
             stardate_week: None,
+            surprise: false,
         });
         canonicalize_events(&mut events, &[]);
         assert_eq!(events.fleet_battle_events[0].stardate_week, Some(2));
