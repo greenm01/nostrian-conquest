@@ -39,15 +39,19 @@ pub fn set_civil_disorder(player: &mut Player) {
     set_empire_name(player, "In Civil Disorder");
 }
 
-/// Joined and rogue empires both contest the campaign and can be eliminated;
-/// only civil disorder (0x00) is out of it.
+/// Joined and rogue empires both contest the campaign; only civil disorder
+/// (0x00) is out of it. A joined empire with no way back is eliminated.
+/// ECMAINT keeps playing a rogue empire after its last world falls, so a
+/// rogue one is never eliminated.
 pub fn is_contesting_empire(player: &Player) -> bool {
     player.mode.code() != 0x00
 }
 
 /// A contesting empire still contends for the throne while it holds a world,
-/// is inside its recovery window, or can still take a world. Missing
-/// lifecycle states count as a fresh empire's.
+/// is inside its recovery window, or can still take a world. A rogue empire
+/// contends only while it holds a world: without one it patrols
+/// (`24a3:0dbc`) and never takes another. Missing lifecycle states count as
+/// a fresh empire's.
 pub fn is_campaign_contender(
     game_data: &CoreGameData,
     empire: u8,
@@ -69,8 +73,9 @@ pub fn is_campaign_contender(
         .any(|planet| planet.owner.0 == empire);
     is_contesting_empire(player)
         && (owns_any_planets
-            || lifecycle.recovery_window_turns_remaining > 0
-            || empire_has_recovery_path(game_data, empire))
+            || (player.mode != PlayerMode::Rogue
+                && (lifecycle.recovery_window_turns_remaining > 0
+                    || empire_has_recovery_path(game_data, empire))))
 }
 
 pub fn default_player_lifecycle_states(player_count: u8) -> Vec<PlayerLifecycleState> {

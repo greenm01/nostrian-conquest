@@ -8,8 +8,9 @@ mod common;
 
 use common::move_scenario::*;
 use nc_data::{
-    Coords, CoreGameData, MaintenanceEvents, Mission, MissionOutcome, MissionRetargetEvent, Order,
-    Real48, SalvageResolvedEvent, Starbase, set_starbase_at_rest, stored_production_points,
+    Coords, CoreGameData, EscapeEpisode, MaintenanceEvents, Mission, MissionOutcome,
+    MissionRetargetEvent, Order, Real48, SalvageResolvedEvent, Starbase, set_starbase_at_rest,
+    stored_production_points,
 };
 
 fn retargets(events: &MaintenanceEvents, mission: Mission) -> Vec<&MissionRetargetEvent> {
@@ -517,4 +518,146 @@ fn autopilot_leaves_unarmed_fleets_in_orbit_and_other_orders_alone() {
     assert_eq!(game_data.fleets[1].target.to_array(), [8, 13]);
     assert_eq!(game_data.fleets[2].order, Order::SeekHome);
     assert_eq!(game_data.fleets[2].target.to_array(), OTHER_NEAR_WORLD);
+}
+
+#[test]
+fn a_human_guard_starbase_fleet_that_lost_its_warships_holds_and_lets_go_of_its_base() {
+    // The pre-maintenance check takes the fleet off its order (it has no
+    // other world to seek, so it holds), and the base lets go of it.
+    let mut game_data = scenario();
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 1, 0);
+    place_fleet(
+        &mut game_data,
+        HOME,
+        Real48::ONE,
+        Order::GuardStarbase,
+        HOME,
+        0,
+    );
+    game_data.fleets[0].mission_target = 1;
+    let escort = game_data.fleets[0].fleet_number.0;
+    add_base(&mut game_data, 1, HOME, Real48::ONE, 1, escort);
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.fleets[0].order, Order::HoldPosition);
+    assert_eq!(game_data.bases[0].escort.0, 0);
+}
+
+#[test]
+fn autopilot_leaves_an_etac_only_guard_blockade_fleet_on_its_order_and_it_takes_a_base() {
+    // Classic ETAC probe, three years: ECMAINT checks no order of an
+    // autopilot empire. The fleet without warships takes the base on Guard
+    // Starbase (its ROE 6 becomes 0 as for any fleet without warships) and
+    // holds it: the autopilot re-orders only Hold fleets.
+    let mut game_data = autopilot_scenario();
+    let base = add_base(&mut game_data, 1, NEAR_WORLD, Real48::ONE, 1, 0);
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 0, 1);
+    place_fleet(
+        &mut game_data,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        NEAR_WORLD,
+        0,
+    );
+    game_data.fleets[0].rules_of_engagement = 6;
+
+    for _ in 0..3 {
+        run(&mut game_data);
+        let fleet = &game_data.fleets[0];
+        assert_eq!(fleet.order, Order::GuardStarbase);
+        assert_eq!(fleet.mission_target, 1);
+        assert_eq!(fleet.rules_of_engagement, 0);
+        assert_eq!(game_data.bases[base].escort, fleet.fleet_number);
+    }
+}
+
+#[test]
+fn a_human_etac_only_guard_blockade_fleet_still_holds() {
+    // The same fleet of a human empire not on autopilot: classic sent it to
+    // Hold at ROE 0. Only the empires ECMAINT plays are left unchecked.
+    let mut game_data = scenario();
+    set_ships(&mut game_data.fleets[0], 0, 0, 0, 0, 1);
+    place_fleet(
+        &mut game_data,
+        HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        HOME,
+        0,
+    );
+    game_data.fleets[0].rules_of_engagement = 6;
+    add_base(&mut game_data, 1, HOME, Real48::ONE, 1, 0);
+
+    run(&mut game_data);
+
+    let fleet = &game_data.fleets[0];
+    assert_eq!(fleet.order, Order::HoldPosition);
+    assert_eq!(fleet.rules_of_engagement, 0);
+    assert_eq!(game_data.bases[0].escort.0, 0);
+}
+
+fn escaping(sector: [u8; 2], layer: u8) -> Option<EscapeEpisode> {
+    Some(EscapeEpisode {
+        sector: Coords::from_array(sector),
+        layer,
+        pursuers: 1,
+    })
+}
+
+#[test]
+fn an_order_from_the_autopilot_ends_an_escape_episode_and_no_order_leaves_it() {
+    // The Hold fleet in orbit is ordered (it guards the world) and its
+    // episode ends; the Move fleet, stalled in deep space with no speed to
+    // go on, gets no order and keeps its own.
+    let mut game_data = autopilot_scenario();
+    set_ships(&mut game_data.fleets[0], 0, 1, 0, 0, 0);
+    place_fleet(
+        &mut game_data,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::HoldPosition,
+        NEAR_WORLD,
+        0,
+    );
+    game_data.fleets[0].escape = escaping(NEAR_WORLD, 1);
+    let fleet = &mut game_data.fleets[1];
+    fleet.sector = Coords::from_array(EMPTY_SECTOR);
+    fleet.depth = Real48::ZERO;
+    fleet.order = Order::MoveOnly;
+    fleet.target = Coords::from_array([8, 13]);
+    fleet.target_depth = 0;
+    fleet.speed = 0;
+    fleet.max_speed = 0;
+    fleet.escape = escaping(EMPTY_SECTOR, 0);
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.fleets[0].order, Order::GuardBlockadeWorld);
+    assert_eq!(game_data.fleets[0].escape, None);
+    assert_eq!(game_data.fleets[1].order, Order::MoveOnly);
+    assert_eq!(game_data.fleets[1].escape, escaping(EMPTY_SECTOR, 0));
+}
+
+#[test]
+fn the_autopilot_starbase_step_ends_the_escape_of_a_fleet_it_did_not_order() {
+    // A fleet already on Guard/Blockade is not re-ordered, but it takes the
+    // base: the order it is given then ends its episode.
+    let mut game_data = autopilot_scenario();
+    add_base(&mut game_data, 1, NEAR_WORLD, Real48::ONE, 1, 0);
+    place_fleet(
+        &mut game_data,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        NEAR_WORLD,
+        0,
+    );
+    game_data.fleets[0].escape = escaping(NEAR_WORLD, 1);
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.fleets[0].order, Order::GuardStarbase);
+    assert_eq!(game_data.fleets[0].escape, None);
 }

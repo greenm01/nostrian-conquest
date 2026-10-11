@@ -386,8 +386,10 @@ same sector and layer. [P bd3, bd5, d4, icpt]
 
 N1 is a subset of N2 in practice (same outcome, different text).
 
-**abort_to_seek_home(O)**: the destination is the nearest friendly world
-(`24a3:0876`, called with flag 1). If found: order 2, target = that world,
+**abort_to_seek_home(O)**: first the escort release (`2895:30f4`,
+[ec-starbase-spec.md](ec-starbase-spec.md)), which finds nothing because O is
+on Bombard, Invade, Blitz, or Colonize. The destination is the nearest
+friendly world (`24a3:0876`, called with flag 1). If found: order 2, target = that world,
 TZ 1, speed = max speed, mission id untouched; text "Until ordered
 otherwise, we will be seeking the safety of a friendly controlled solar
 system. Our new destination is ...". If none: order 1 (Move) to O's own

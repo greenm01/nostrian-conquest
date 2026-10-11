@@ -193,6 +193,14 @@ pub struct Fleet {
     pub escape: Option<EscapeEpisode>,
 }
 
+impl Fleet {
+    /// A new order ends an escape from a battle. Every order a fleet is
+    /// given calls this, a player's and ECMAINT's orders pass's alike.
+    pub fn end_escape(&mut self) {
+        self.escape = None;
+    }
+}
+
 /// A fleet's escape from a battle: it broke off in `sector` and `layer`
 /// and is leaving. Each opposing empire catches it in at most one pursuit
 /// exchange while the episode lasts, and an empire that has had its

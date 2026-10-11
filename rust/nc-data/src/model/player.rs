@@ -110,3 +110,11 @@ pub struct Player {
     /// 0x6D: ECMAINT plays this human empire.
     pub autopilot: bool,
 }
+
+impl Player {
+    /// ECMAINT plays this empire: a rogue empire, or a human empire on
+    /// autopilot.
+    pub fn played_by_ecmaint(&self) -> bool {
+        self.mode == PlayerMode::Rogue || (self.mode == PlayerMode::Human && self.autopilot)
+    }
+}

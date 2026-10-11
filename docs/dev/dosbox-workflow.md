@@ -146,6 +146,17 @@ python3 tools/ncmaint_oracle.py replay-preserved fleet-order /tmp/ecmaint-fleet-
 That copies the preserved pre-maint fixture directly, runs `ECMAINT`, and
 compares the result against the preserved post-maint fixture.
 
+For a scenario that needs fleets, starbases, and empire modes edited
+together, `tools/ncmaint_escort_probe.py` builds the scenario on the move
+fixture, runs ECMAINT for several years under DOSBox-X, and prints the fleet,
+starbase, and empire records after each year. With `--rust` it runs the same
+directory through `nc-cli maint-rust` and `db-export`, so the two engines can
+be compared record by record:
+
+```bash
+nix shell nixpkgs#dosbox-x -c python3 tools/ncmaint_escort_probe.py --group merge --rust
+```
+
 ### 1. Prepare the working directory
 
 ```bash

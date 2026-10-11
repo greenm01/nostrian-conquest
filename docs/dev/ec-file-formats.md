@@ -243,7 +243,7 @@ with dump offsets. Every byte is accounted for.
 
 | Offset | Width | Type | Name | Meaning | Evidence |
 |---|---|---|---|---|---|
-| 0x00 | 2 | u16 | `escort` | FLEETS 0x00 number of the Guard Starbase fleet riding with the base; 0 for none. The guard arrival writes it when it is 0 (0x4537); the escort carry matches it (0x5C8); the robot guard assignment requires 0 (0x1F197). Nothing clears it when the escort leaves. | [C][P] |
+| 0x00 | 2 | u16 | `escort` | FLEETS 0x00 number of the Guard Starbase fleet riding with the base; 0 for none. The guard arrival writes it when it is 0 (0x4537); the escort carry matches it (0x5C8); the robot guard assignment requires 0 (0x1F197). ECMAINT clears it when it re-orders or deletes the escort (Escort Release in [ec-starbase-spec.md](ec-starbase-spec.md)); ECGAME's moving the escort clears nothing. | [C][P] |
 | 0x02 | 2 | u16 | `base_id` | "Starbase 1". A guarding fleet names it in FLEETS 0x23 (guard lookup 0x15043; unit loader 0x264EB). | [C][P] |
 | 0x04 | 1 | u8 | `owner` | Owning empire. The loader's integrity check requires it to match the chain's player (0x26488). | [C][P] |
 | 0x05 | 2 | u16 | `next` | Next base in the owner's chain, 0 at the tail (0x26582..0x266CC). | [C][P] |

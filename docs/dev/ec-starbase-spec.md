@@ -187,24 +187,60 @@ fleet's `0x00` word, and the fleet's `Z` takes the base's `Z` (`0b5d:10a7`).
 the fleet's sector and layer (`Round(Z) = 1` against the unit's layer flag)
 whose word equals the fleet's `0x00` word. It does not read the fleet's
 `0x23`. For any other order it does nothing. ECMAINT calls it each time it
-re-orders a fleet: [C]
+re-orders or deletes a fleet: [C]
 
 - the orders pass, for a rogue or autopilot fleet it gives a world to
   (`24a3:26d1`), and a planetless rogue's fleets (`24a3:0e73`)
   ([ec-movement-spec.md](ec-movement-spec.md));
 - every fleet-record deletion (`2895:3d0c`, at `2895:3d46`): a fleet
-  destroyed, merged away, salvaged, or disbanded;
-- the encounter's mission aborts, before each flag-1 pick: the two decision
-  aborts (`1b05:185e` fleet, `1b05:1f5d` base), the battle's scatter and
-  retreat (`1b05:25ab`, `1b05:3151`) ([ec-encounter-spec.md](ec-encounter-spec.md));
-- the wrap-up of a planet assault (`0b5d:c53a`, `0b5d:cb7b`), which holds the
-  attacking fleet; an attacker is not on Guard Starbase, so the call finds
-  nothing to release.
+  destroyed in a battle (`1b05:9927` the attacker, `1b05:9966` the target),
+  merged into another (`2895:4a6b`), salvaged, disbanded by a planetless
+  rogue (`24a3:0f28`), or defecting (`24a3:2fa9`);
+- the battle's scatter (`1b05:25ab`), which runs for any order but Seek Home
+  and Salvage once the owner has a world;
+- the battle's retreat (`1b05:3151`), the two decision aborts of the
+  encounter (`1b05:185e` fleet, `1b05:1f5d` base), and the wrap-up of a planet
+  assault (`0b5d:c53a`, `0b5d:cb7b`). These find nothing to release: the
+  fleets that reach them are on Bombard, Invade, Blitz, Colonize, or
+  Guard/Blockade, never on Guard Starbase
+  ([ec-encounter-spec.md](ec-encounter-spec.md)).
+
+The scatter calls the release before it picks a world, and the pick fails
+when the empire owns no world outside the fleet's own system. The fleet then
+keeps its order, Guard Starbase, and its base has let go of it anyway.
 
 [P: a rogue Guard Starbase fleet over a base in a world its empire did not
 own was sent home and its base's escort word, which was the fleet's number,
-read 0 after the year.] The release is why a base whose guard left is
-available to the next fleet that goes on Guard/Blockade at rest in its orbit.
+read 0 after the year. A Guard Starbase fleet at its base that attacked an
+enemy destroyer and lost its last warship scattered (3 of 10 runs): the base's
+escort word read 0, and the fleet, whose empire owns no other world, kept
+Guard Starbase at ROE 0. One that lost its only destroyer was deleted (1 of 12
+runs) and the word read 0. A rogue Guard Starbase fleet that merged into
+another at its world freed the base, which the merged fleet then took. Bombard
+fleets that aborted before a guard (2 of 5 runs) left the word, which was
+their number, on a base in their sector.] The release is why a base whose guard
+left is available to the next fleet that goes on Guard/Blockade at rest in its
+orbit.
+
+Rust calls `CoreGameData::release_starbase_escort` at the same points, and
+wherever else it takes a Guard Starbase fleet off its order:
+
+- the orders pass and the planetless rogue's patrol, as above;
+- every fleet-record removal (`apply_fleet_removal_remap`): merges, culls,
+  disbanding, and defection;
+- a fleet that dies in a battle, when its ships are written back, so its base
+  is free the year of the kill and not when maintenance next culls the empty
+  record;
+- a fleet sent to seek home or hold (`abort_mission_to_seek_home_or_hold`):
+  the battle's retreat and escape, and the pre-maintenance check of a human
+  empire's fleet that lost the warships its order needs. NC combat sends a
+  guard that leaves a battle under its ROE home, or holds it with no world to
+  go to; classic's retreat leaves such a guard's order alone, and only a
+  scatter moves it;
+- the encounter's decision aborts (`abort_mission`), a call that finds
+  nothing, as in classic.
+
+The planet-assault wrap-ups release nothing in Rust either.
 
 ## ECGAME Starbase Command
 
@@ -234,8 +270,8 @@ show ECGAME's warning first.
 
 ## Rust Differences
 
-Rust follows the rules above except in four places and one gap. The first
-three fix classic guard bugs, by decision of 2026-10-10
+Rust follows the rules above except in four places. The first three fix
+classic guard bugs, by decision of 2026-10-10
 ([t040](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t040)):
 
 - A guard that becomes its base's escort takes the base's layer as its
@@ -253,14 +289,6 @@ three fix classic guard bugs, by decision of 2026-10-10
 - Classic reads a garbage owner when the world it checks is missing (a
   worldless target sector or orbit). Rust treats a sector with no world as
   nobody's, so the check fails.
-
-The gap is the escort release. Rust releases a base's escort word where its
-orders pass re-orders a Guard Starbase fleet, which covers the rogue and
-autopilot empires and a planetless rogue's patrol
-(`CoreGameData::release_starbase_escort`). It does not yet release it when an
-encounter decision or a battle retreat re-orders such a fleet, or when a
-fleet record is removed, so the word of a guard that left or died stays on
-its base until another guard arrives there.
 
 ## Probes
 

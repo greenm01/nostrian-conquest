@@ -233,10 +233,12 @@ fn planetless_rogue_without_recovery_forces_does_not_block_victory() {
     let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
 
     assert_eq!(winner.winner_empire, Some(1));
+    // ECMAINT keeps playing the rogue empire: it is not eliminated.
     assert!(
         events
             .empire_elimination_events
             .iter()
-            .any(|event| event.defeated_empire == 4)
+            .all(|event| event.defeated_empire != 4)
     );
+    assert_eq!(game_data.players[3].mode, PlayerMode::Rogue);
 }

@@ -263,18 +263,36 @@ ten runs on the four-player map gave targets from 1 to 18 on both axes
 gone; a fleet whose target was another sector kept it; an empire with no
 fleet kept its base.]
 
+The empire stays rogue however long it has no world. At the start of the pass
+every rogue empire with a count of 0, with or without a fleet, marks each
+human empire its enemy (`24a3:0c2a`), and nothing takes the mark back. [P:
+over three years the rogue's fleet reached its target and stopped there with
+the empire still rogue; its stance toward the human empire read Enemy from the
+first year, with a fleet and without; with no fleet its starbase lifted from
+the world it no longer owned, as any base does.]
+
 Rust follows this in `economics/orders.rs`, once a year before the planet
 pass: the flag-2 picker (`CoreGameData::nearest_productive_world`, which
 writes no production floor, and `nearest_productive_world_for_base`, which
 measures a base from offsets of zero), the escort release
 (`CoreGameData::release_starbase_escort`), the Guard/Blockade and Guard
-Starbase steps for both kinds of empire, the rogue starbase pick, and the
-patrol. The patrol targets come from the campaign seed (`RNG_TAG_ORDERS`,
-the year, and the empire), and the deleted fleets leave the fleet table with
-the usual Join host bookkeeping. Rust's input check (`sanitize.rs`) runs
-first and sends a fleet without warships on Guard/Blockade home or to Hold,
-for the empires ECMAINT plays as for any other; classic left such fleets of a
-rogue and of an autopilot empire on Guard/Blockade, and they took a base.
+Starbase steps for both kinds of empire, the rogue starbase pick, the
+enemy mark, and the patrol. The patrol targets come from the campaign seed
+(`RNG_TAG_ORDERS`, the year, and the empire), and the deleted fleets leave
+the fleet table with the usual Join host bookkeeping. Every order the pass
+gives a fleet ends the fleet's escape from a battle, as a player's order does
+([nc-combat-spec.md](nc-combat-spec.md)). The campaign rules never eliminate
+a rogue empire, so it is still rogue when the next pass runs.
+
+Classic checks none of the orders of these two kinds of empire. Rust's input
+check (`sanitize.rs`) leaves a rogue or autopilot fleet without warships on
+Guard/Blockade or Guard Starbase alone, so it stays on that order and takes a
+starbase. [P: an ETAC-only fleet on Guard/Blockade took a base at ROE 0 under
+a rogue empire and under an autopilot one, and was still on Guard Starbase
+after three years; the rogue pass freed the base each later year and the
+autopilot did not.] For a human empire not on autopilot the check stays: such
+a fleet goes home or to Hold, and its ROE becomes 0. [P: the same fleet of a
+human empire held at ROE 0.]
 
 ### Hostile Missions
 

@@ -1,5 +1,6 @@
 //! The yearly orders pass for rogue empires against classic ECMAINT
-//! (`24a3:25f7`, `24a3:28fe`, `24a3:0dbc`; t070).
+//! (`24a3:25f7`, `24a3:28fe`, `24a3:0dbc`; t070, and t094 for the escort
+//! release at a fleet delete, unarmed guards, and the worldless rogue).
 //!
 //! Each case names the sector, depth, speed, and ownership it was probed
 //! with on the move fixture and the orders classic gave (2026-10-11, DOSBox-X;
@@ -11,7 +12,10 @@
 mod common;
 
 use common::move_scenario::*;
-use nc_data::{Coords, CoreGameData, Fleet, GameRng, Order, PlayerMode, RNG_TAG_ORDERS, Real48};
+use nc_data::{
+    Coords, CoreGameData, DiplomaticRelation, EscapeEpisode, Fleet, GameRng, Order, PlayerMode,
+    RNG_TAG_ORDERS, Real48, stored_diplomatic_relation,
+};
 use nc_engine::run_maintenance_turn_with_seed;
 
 const ROGUE_HOME: [u8; 2] = [4, 13];
@@ -60,6 +64,14 @@ fn set_fleet(
     fleet.speed = speed;
     fleet.rules_of_engagement = roe;
     fleet.mission_target = 0;
+}
+
+/// Empty every rogue fleet but `keep`; maintenance culls the empty ones
+/// before anything moves, so they cannot fly home and join the others.
+fn keep_only(game_data: &mut CoreGameData, keep: &[usize]) {
+    for n in (0..4).filter(|n| !keep.contains(n)) {
+        set_ships(rogue(game_data, n), 0, 0, 0, 0, 0);
+    }
 }
 
 /// Empire 2 is rogue and owns (4,13) and (12,12), with its fleets parked.
@@ -359,6 +371,79 @@ fn releasing_an_escort_clears_only_the_words_of_the_fleet_that_guards() {
     assert_eq!(game_data.bases[here].escort.0, number);
 }
 
+#[test]
+fn a_rogue_guard_starbase_fleet_merged_away_lets_go_of_its_base() {
+    // Classic merge probe: fleet 1 on Guard/Blockade and fleet 2, the escort
+    // of the home base, share the home world. Fleet 2 merges into fleet 1
+    // (`2895:4a6b`) and its delete frees the base (`2895:3d0c`); the merged
+    // fleet, at rest on Guard/Blockade, then takes the base. After the year:
+    // one fleet of two destroyers on Guard Starbase, the base its escort.
+    let mut game_data = rogue_scenario();
+    for (n, order) in [(0, Order::GuardBlockadeWorld), (1, Order::GuardStarbase)] {
+        let fleet = rogue(&mut game_data, n);
+        set_ships(fleet, 0, 0, 1, 0, 0);
+        set_fleet(fleet, ROGUE_HOME, Real48::ONE, order, ROGUE_HOME, 1, 0, 10);
+    }
+    keep_only(&mut game_data, &[0, 1]);
+    rogue(&mut game_data, 1).mission_target = 1;
+    let escort = rogue(&mut game_data, 1).fleet_number.0;
+    let base = add_base(&mut game_data, 2, ROGUE_HOME, Real48::ONE, 1, escort);
+
+    run(&mut game_data);
+
+    let fleets: Vec<&Fleet> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| fleet.owner.0 == 2)
+        .collect();
+    assert_eq!(fleets.len(), 1);
+    let fleet = fleets[0];
+    assert_ne!(fleet.fleet_number.0, escort);
+    assert_eq!(fleet.ships.destroyers, 2);
+    assert_eq!(fleet.order, Order::GuardStarbase);
+    assert_eq!(fleet.mission_target, 1);
+    assert_eq!(game_data.bases[base].escort, fleet.fleet_number);
+}
+
+#[test]
+fn a_rogue_fleet_without_warships_on_guard_blockade_takes_a_base_and_keeps_its_order() {
+    // Classic ETAC probe, three years: the ECMAINT-played empires' orders
+    // are not checked, so the ETAC-only fleet takes the base on Guard
+    // Starbase with ROE 0 (a fleet without warships); every later year the
+    // pass frees the base again (`24a3:26d1`) and the fleet keeps its order.
+    let mut game_data = rogue_scenario();
+    let fleet = rogue(&mut game_data, 1);
+    set_ships(fleet, 0, 0, 0, 0, 1);
+    set_fleet(
+        fleet,
+        ROGUE_HOME,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        ROGUE_HOME,
+        1,
+        0,
+        6,
+    );
+    keep_only(&mut game_data, &[1]);
+    let base = add_base(&mut game_data, 2, ROGUE_HOME, Real48::ONE, 1, 0);
+
+    run(&mut game_data);
+
+    let fleet = rogue(&mut game_data, 0).clone();
+    assert_eq!(fleet.order, Order::GuardStarbase);
+    assert_eq!(fleet.mission_target, 1);
+    assert_eq!(fleet.rules_of_engagement, 0);
+    assert_eq!(game_data.bases[base].escort, fleet.fleet_number);
+
+    for _ in 0..2 {
+        run(&mut game_data);
+        let fleet = rogue(&mut game_data, 0);
+        assert_eq!(fleet.order, Order::GuardStarbase);
+        assert_eq!(fleet.mission_target, 1);
+        assert_eq!(game_data.bases[base].escort.0, 0);
+    }
+}
+
 // ── Starbases ───────────────────────────────────────────────────────────
 
 #[test]
@@ -551,4 +636,136 @@ fn the_rogue_planet_count_is_the_one_the_last_run_saved() {
             .iter()
             .all(|fleet| fleet.owner.0 != 2 || fleet.ships.etacs == 0)
     );
+}
+
+#[test]
+fn a_rogue_with_no_world_marks_every_human_empire_its_enemy() {
+    // Classic, with and without a fleet (`24a3:0c2a`): the rogue's stance
+    // toward empire 1, the human, is Enemy after the year; empires 3 and 4,
+    // in civil disorder, stay neutral.
+    for armed in [true, false] {
+        let mut game_data = worldless_scenario();
+        if armed {
+            armed_idle(&mut game_data, 0, [8, 13]);
+        } else {
+            game_data.fleets.retain(|fleet| fleet.owner.0 != 2);
+            game_data.players[1].fleets_first.0 = 0;
+            game_data.players[1].fleets_last.0 = 0;
+        }
+
+        run(&mut game_data);
+
+        let rogue = &game_data.players[1];
+        assert_eq!(rogue.mode, PlayerMode::Rogue);
+        assert_eq!(
+            stored_diplomatic_relation(rogue, 1),
+            Some(DiplomaticRelation::Enemy)
+        );
+        for other in [3, 4] {
+            assert_eq!(
+                stored_diplomatic_relation(rogue, other),
+                Some(DiplomaticRelation::Neutral),
+                "armed {armed}, empire {other}"
+            );
+        }
+    }
+}
+
+#[test]
+fn a_rogue_that_loses_its_last_world_goes_on_patrolling() {
+    // Both worlds fall during the year the saved count (PLAYER 0x50) still
+    // reads 2. Classic leaves the empire rogue; the next year's pass finds a
+    // count of 0 and sends its warships on patrol. Rust used to turn the
+    // empire into civil disorder at the end of the first year.
+    let mut game_data = rogue_scenario();
+    armed_idle(&mut game_data, 0, [8, 13]);
+    planet_at(&mut game_data, ROGUE_HOME).owner.0 = 0;
+    planet_at(&mut game_data, NEAR_WORLD).owner.0 = 0;
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.players[1].mode, PlayerMode::Rogue);
+    assert_eq!(game_data.players[1].planet_count, 0);
+    assert_eq!(rogue(&mut game_data, 0).order, Order::HoldPosition);
+
+    run(&mut game_data);
+
+    assert_eq!(game_data.players[1].mode, PlayerMode::Rogue);
+    let fleet = rogue(&mut game_data, 0);
+    assert_eq!(fleet.order, Order::PatrolSector);
+    assert_eq!(fleet.rules_of_engagement, 10);
+}
+
+// ── Escape episodes ─────────────────────────────────────────────────────
+
+fn escaping(sector: [u8; 2], layer: u8) -> Option<EscapeEpisode> {
+    Some(EscapeEpisode {
+        sector: Coords::from_array(sector),
+        layer,
+        pursuers: 1,
+    })
+}
+
+#[test]
+fn an_order_from_the_rogue_pass_ends_an_escape_episode() {
+    // A player's order ends an escape (`Fleet::end_escape`); so does each
+    // order the pass gives, whether it changes the fleet's order (the Move
+    // fleet is sent home), only restates it (the cruiser in orbit stays on
+    // Guard/Blockade), or ends on the starbase step (the third fleet takes
+    // the base).
+    let mut game_data = rogue_scenario();
+    let fleet = rogue(&mut game_data, 0);
+    set_ships(fleet, 0, 1, 0, 0, 0);
+    set_fleet(
+        fleet,
+        [8, 13],
+        Real48::ZERO,
+        Order::MoveOnly,
+        [8, 13],
+        0,
+        0,
+        6,
+    );
+    for (n, sector) in [(1, ROGUE_HOME), (2, NEAR_WORLD)] {
+        let fleet = rogue(&mut game_data, n);
+        set_ships(fleet, 0, 1, 0, 0, 0);
+        set_fleet(
+            fleet,
+            sector,
+            Real48::ONE,
+            Order::GuardBlockadeWorld,
+            sector,
+            1,
+            0,
+            10,
+        );
+    }
+    add_base(&mut game_data, 2, NEAR_WORLD, Real48::ONE, 1, 0);
+    for n in 0..3 {
+        let sector = rogue(&mut game_data, n).sector.to_array();
+        let layer = u8::from(n > 0);
+        rogue(&mut game_data, n).escape = escaping(sector, layer);
+    }
+    run(&mut game_data);
+
+    for n in 0..3 {
+        assert_eq!(rogue(&mut game_data, n).escape, None, "fleet {n}");
+    }
+}
+
+#[test]
+fn a_rogue_patrol_order_ends_an_escape_episode() {
+    // With no speed to set out on, the fleet stays in its sector, so only
+    // the order can end the episode.
+    let mut game_data = worldless_scenario();
+    armed_idle(&mut game_data, 0, [8, 13]);
+    rogue(&mut game_data, 0).max_speed = 0;
+    rogue(&mut game_data, 0).escape = escaping([8, 13], 0);
+
+    run(&mut game_data);
+
+    let fleet = rogue(&mut game_data, 0);
+    assert_eq!(fleet.order, Order::PatrolSector);
+    assert_eq!(fleet.sector.to_array(), [8, 13]);
+    assert_eq!(fleet.escape, None);
 }

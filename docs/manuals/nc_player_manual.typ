@@ -836,6 +836,8 @@ production. Warships already in orbit there take Guard/Blockade, raising an
 ROE of 0 to 6. Any fleet of yours on Guard/Blockade that sits still in orbit
 with a starbase of yours that has no escort escorts that starbase, whether or
 not autopilot gave it the order. Fleets with any other order are left alone.
+Autopilot does not check your fleets' orders, so a fleet without warships on
+Guard/Blockade or Guard Starbase stays on it.
 Diplomacy (*E*) lets you mark other empires as Neutral or
 Enemy. Messages (*C*) lets you write to other empires. In the message editor, *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark, as it does in name fields. Messages reach their recipients at the next maintenance. Until then, the ones you send this turn sit at the top of your inbox, marked *OUT*; *Enter* reads one and *D* cancels it. *D* on the recipient list opens the same queued messages with the same keys.
 
@@ -861,6 +863,11 @@ three-turn recovery window expires first, your empire becomes *Defeated*.
 Fleet Command sends you a final defeat report, and you receive one last
 review-only login so you can read the closing reports and messages. After that
 final review, you may no longer enter the campaign.
+
+The computer's rogue empires are never eliminated. A rogue empire that loses
+its last planet sends its warships on patrol, marks every player's empire an
+enemy, and disbands its other fleets and starbases. Without a planet it does
+not contend for the throne, and taking its last planet delivers no final blow.
 
 When you eliminate another empire, Fleet Command reports that you delivered the
 final blow. This is separate from overall game victory. The game ends only

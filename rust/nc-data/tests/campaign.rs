@@ -171,6 +171,71 @@ fn empty_rogue_empire_is_not_a_campaign_contender() {
 }
 
 #[test]
+fn a_planetless_rogue_with_colonists_is_not_a_campaign_contender() {
+    // A joined empire with an ETAC and an unowned world to take contends;
+    // a rogue one only patrols, so it does not.
+    let mut game_data = baseline_game();
+    for empire in 2..=3u8 {
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == empire {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
+            }
+        }
+    }
+    for empire in 2..=3u8 {
+        let fleet = game_data
+            .fleets
+            .iter_mut()
+            .find(|fleet| fleet.owner.0 == empire)
+            .expect("fleet");
+        fleet.ships.etacs = 1;
+    }
+    game_data.players[1].mode = PlayerMode::Rogue;
+
+    assert!(game_data.campaign_contenders().contains(&3));
+    assert!(!game_data.campaign_contenders().contains(&2));
+}
+
+#[test]
+fn maintenance_keeps_a_planetless_rogue_empire_rogue() {
+    // ECMAINT plays on: the rogue empire is not eliminated, whether or not
+    // it has a way back. Its slot stays rogue (0xFF).
+    for colonists in [false, true] {
+        let mut game_data = baseline_game();
+        for planet in &mut game_data.planets {
+            if planet.owner.0 == 2 {
+                planet.owner.0 = 0;
+                planet.years_under_owner = 0;
+            }
+        }
+        for fleet in &mut game_data.fleets {
+            if fleet.owner.0 == 2 {
+                fleet.ships.etacs = u16::from(colonists);
+                set_troop_transports(fleet, 0);
+                set_armies_aboard(fleet, 0);
+            }
+        }
+        game_data.players[1].mode = PlayerMode::Rogue;
+
+        let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
+
+        assert_eq!(game_data.players[1].mode, PlayerMode::Rogue);
+        assert!(
+            events
+                .empire_elimination_events
+                .iter()
+                .all(|event| event.defeated_empire != 2),
+            "colonists {colonists}"
+        );
+        assert_eq!(
+            game_data.empire_campaign_state(2),
+            Some(CampaignState::Rogue)
+        );
+    }
+}
+
+#[test]
 fn maintenance_marks_empire_without_recovery_path_defeated() {
     let mut game_data = baseline_game();
     for planet in &mut game_data.planets {
