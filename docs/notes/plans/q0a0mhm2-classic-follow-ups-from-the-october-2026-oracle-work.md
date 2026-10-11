@@ -639,3 +639,5 @@ Result (2026-10-11): all four items done, each checked against classic.
   disassembly, for autopilot ones (Hold and Guard/Blockade only); Rust's
   merges rogue fleets wherever they meet and the autopilot's never. Rust's hold after a pre-maintenance abort
   sets the target depth to 0 where classic keeps 1.
+- **Suite.** On the tree merged with main at `6d97eb66`: 3152 passed, 0
+  failed, 11 ignored (`cargo test --workspace --no-fail-fast`).
