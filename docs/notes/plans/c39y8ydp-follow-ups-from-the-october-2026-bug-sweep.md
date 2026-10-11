@@ -470,6 +470,24 @@ The t067 follow-up confirmed the mail side: hosted maintenance saves queued
 mail as empty and `ProcessTurnSubmission` is a stub, so no mail reaches a
 hosted game, and maintenance would wipe it if it did.
 
+Result (t061, 2026-10-11): the load, run-turn and save sequence
+`nc-sysop maint` ran inline is now `nc_engine::CampaignMaintenance`
+(`nc-engine/src/maint/campaign_run.rs`), and `nc-sysop maint`, `nc-host
+maint` and the hosted scheduler all run it. Hosted intake validates a
+`30522` submission against the live snapshot (seat, turn, typed KDL, a dry
+run of the orders) and answers `accepted`, `rejected`, `wrong_turn`,
+`not_claimed` or `superseded`; maintenance applies the staged submissions
+through `TurnSubmission::apply_to_runtime_state`, the path `nc-game
+submit-turn` uses, records the game clock, and sends every claimed seat a
+`30520` snapshot or a `30521` delta. `nc-host serve` polls the schedule
+once a minute; an unscheduled game is armed one interval out, and a run
+moves the next due time one interval past now. Tests:
+`nc-host/tests/hosted_maint.rs` (the hosted and local paths produce the
+same snapshot, reports and mail for the same orders), `turn_intake.rs` and
+`maint_schedule.rs`. The shared `MaintenanceEvents::extend` also carries the
+starbase, Scorch-Earth and ship-recovery events that the hand-copied merge
+in `nc-sysop` dropped, so those reports now reach local players too.
+
 ### t067
 
 Reported by the user on 2026-10-10: after sending a message there seemed to

@@ -536,6 +536,12 @@ Rules:
 - the handle is validated host-locally and case-insensitively against the
   daemon roster before the turn is accepted
 - the daemon queues the submission in the per-game store before acknowledging it
+- the daemon then validates it against the live snapshot (the seat, the
+  turn, the typed KDL, and a dry run of the orders) and answers with the
+  `30524` receipt; an accepted submission stays staged until maintenance
+  applies it
+- a newer submission for the same turn replaces the one staged before it,
+  which gets a `superseded` receipt
 - one game's turn queue must not block any other game
 
 ## 12. 30524 `TurnReceipt`
