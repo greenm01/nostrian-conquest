@@ -302,7 +302,7 @@ fn nc_sysop_maint_persists_scout_system_reports_and_runtime_intel() {
     assert_eq!(snapshot.known_starbase_count, Some(0));
     assert_eq!(
         snapshot.known_docked_summary.as_deref(),
-        Some("2 destroyers")
+        Some("DD2")
     );
 
     let _ = fs::remove_dir_all(&target);

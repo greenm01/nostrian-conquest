@@ -40,9 +40,9 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
 
     let dock_after = format_stardock_summary(
         &game_data.planets[planet_idx],
-        CompactUnitSummaryStyle::Words,
+        CompactUnitSummaryStyle::Notation,
     );
-    assert_eq!(dock_after, "2 destroyers");
+    assert_eq!(dock_after, "DD2");
 
     assert!(
         events.mission_events.iter().any(|event| {

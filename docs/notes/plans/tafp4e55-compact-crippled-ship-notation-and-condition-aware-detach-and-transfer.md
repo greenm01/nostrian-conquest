@@ -191,3 +191,27 @@ and nothing else. A producer fills a `Composition` and calls `notation()`.
   `nc-engine/src/maint/results/format.rs` check the report producers. The
   affected expectations moved to the new text. Workspace, with main at 48ab3e7a merged: 3133 passed, 0
   failed, 11 ignored.
+
+## Owner decisions after t097 (2026-10-11)
+
+- **A scouted planet's `Docked` line uses the notation.** The planet
+  intelligence row stores the stardock in notation (`BB1 CA2 TT3`), like the
+  scout report and the owner's own planets. Rows written before the change
+  keep their prose until the planet is scouted again; the text is NC's own
+  store, not a classic file, so nothing migrates. The scout mission report
+  prints the same stored line, so it now reads "Scanning the planet's
+  stardock, we detected DD2." where classic ECMAINT writes the ships in
+  words; the owner confirmed notation for both after Claude corrected an
+  earlier claim that the report already used it. Task t098.
+- **The door's commission picker follows the class order.** Its columns read
+  `SC BB CA DD TT ET SB`, same widths and layout. Task t098.
+
+## Result (t098)
+
+Done. `intel.rs` writes the `Docked` summary with
+`CompactUnitSummaryStyle::Notation` in both places (a scout's report and the
+refresh of a full-tier row), and `planet_commission.rs` reorders the picker's
+columns and cells. `docs/dev/ship-notation.md` says both. Four
+expectations moved with the text: the picker render test (`│02│04│`), the
+nc-cli scout report test (`we detected DD2.`), the nc-sysop runtime intel
+test and the engine's stardock phase-order test (`DD2`).

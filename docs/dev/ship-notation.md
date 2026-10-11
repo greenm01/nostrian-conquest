@@ -4,10 +4,11 @@
 [t093 and t097](../notes/plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
 This is the common notation for every compact ship
 composition, including healthy fleets: the door and helm fleet screens, the
-planet stardock and build-queue lines, the reports and the CLI's output. The
-plan's Implementation section lists the surfaces. Prose keeps full ship
-names (the scouting report's `2 cruisers`, casualty lists that name
-transports in words), and numeric columns keep their class headings.
+planet stardock and build-queue lines (a scouted planet's `Docked` line
+included), the reports and the CLI's output. The plan's Implementation
+section lists the surfaces. Prose keeps full ship names (casualty lists that
+name transports in words), and numeric columns keep their class headings,
+in the same class order.
 
 ## Format
 
@@ -66,8 +67,10 @@ Do not alternate between `12CA`, `CA 12`, `CA12 (3!)` and `CA12!3` for the
 same kind of composition. Reuse one formatter across those surfaces.
 
 Full ship names remain appropriate in prose, explanations and menu labels.
-Dedicated numeric columns retain their class headings and numeric cells;
-do not insert a ship code into every numeric cell or widen those tables.
+Dedicated numeric columns retain their class headings and numeric cells,
+in the class order below (the door's commission picker reads
+`SC BB CA DD TT ET SB`); do not insert a ship code into every numeric cell
+or widen those tables.
 Every composition lists its classes in one order, the fleet screens' order:
 `SC BB CA DD TT* TT ETAC SB`. One formatter writes it
 (`nc-data/src/ship_notation.rs`). A planet's stardock and build-queue lines

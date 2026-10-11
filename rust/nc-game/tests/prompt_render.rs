@@ -694,7 +694,7 @@ fn commission_picker_renders_planets_with_stardock_counts() {
     assert!(row_text(&buffer, top_row + 1).contains("ET"));
     assert!(row_text(&buffer, top_row + 3).contains("(08,09)"));
     assert!(row_text(&buffer, top_row + 3).contains("Aurora Prime"));
-    assert!(row_text(&buffer, top_row + 3).contains("│04│02│"));
+    assert!(row_text(&buffer, top_row + 3).contains("│02│04│"));
     assert!(row_text(&buffer, top_row + 3).contains("│03│"));
     assert!(row_text(&buffer, top_row + 3).contains("│01│"));
     assert!(row_text(&buffer, top_row + 4).contains("│01│"));

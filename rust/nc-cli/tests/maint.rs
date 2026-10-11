@@ -1571,7 +1571,7 @@ fn maint_rust_scout_system_generates_results_report() {
     assert!(text.contains("Owned by:"));
     assert!(text.contains("Number of ground batteries:"));
     assert!(text.contains("Scanning the planet's stardock"));
-    assert!(text.contains("2 destroyers"));
+    assert!(text.contains("Scanning the planet's stardock, we detected DD2."));
     assert!(text.contains("System(15,13)"));
 
     let game_data = load_classic_core_files(&target).expect("maint-rust output should load");

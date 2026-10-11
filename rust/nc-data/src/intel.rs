@@ -280,7 +280,7 @@ fn snapshot_from_runtime_grant(
                 Some(stored_production_points(planet).min(u32::from(u16::MAX)) as u16);
             snapshot.known_docked_summary = Some(crate::format_stardock_summary(
                 planet,
-                crate::CompactUnitSummaryStyle::Words,
+                crate::CompactUnitSummaryStyle::Notation,
             ));
             snapshot.known_orbit_summary = Some(format_orbit_summary(orbit_presence));
             snapshot.compat_word_1e = Some(0x23);
@@ -475,7 +475,7 @@ fn refresh_visible_snapshot_from_runtime(
             Some(stored_production_points(planet).min(u32::from(u16::MAX)) as u16);
         refreshed.known_docked_summary = Some(crate::format_stardock_summary(
             planet,
-            crate::CompactUnitSummaryStyle::Words,
+            crate::CompactUnitSummaryStyle::Notation,
         ));
         refreshed.known_orbit_summary = Some(format_orbit_summary(orbit_presence));
     }
