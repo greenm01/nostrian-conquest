@@ -1,5 +1,7 @@
 use crate::app::state::App;
 use crate::domains::messaging::controller::compose_recipient_label;
+use crate::domains::messaging::state::OutboxMode;
+use crate::reports::runtime_outgoing_message_lines;
 use crate::screen::{PlayfieldBuffer, ScreenFrame, ScreenId};
 
 pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Error>> {
@@ -37,15 +39,28 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
             app.messaging.compose_body_cursor_col,
             app.messaging.compose_body_status.as_deref(),
         ),
-        ScreenId::ComposeMessageOutbox => app.message_compose.render_outbox(
-            frame.geometry,
-            &app.compose_outbox_queue()?,
-            &app.messaging.compose_outbox_input,
-            app.messaging.compose_outbox_status.as_deref(),
-            app.messaging.compose_outbox_scroll_offset,
-            app.messaging.compose_outbox_cursor,
-            &app.game_data,
-        ),
+        ScreenId::ComposeMessageOutbox => {
+            let queue = app.compose_outbox_queue()?;
+            match (
+                app.messaging.compose_outbox_mode,
+                queue.get(app.messaging.compose_outbox_cursor),
+            ) {
+                (OutboxMode::Read, Some(mail)) => app.message_compose.render_outbox_message(
+                    frame.geometry,
+                    &runtime_outgoing_message_lines(&app.game_data, mail),
+                ),
+                (mode, _) => app.message_compose.render_outbox(
+                    frame.geometry,
+                    &queue,
+                    &app.messaging.compose_outbox_input,
+                    app.messaging.compose_outbox_status.as_deref(),
+                    app.messaging.compose_outbox_scroll_offset,
+                    app.messaging.compose_outbox_cursor,
+                    mode,
+                    &app.game_data,
+                ),
+            }
+        }
         ScreenId::ComposeMessageDiscardConfirm => app.message_compose.render_discard_confirm(
             frame.geometry,
             &compose_recipient_label(&app.game_data, app.messaging.compose_recipient_empire),

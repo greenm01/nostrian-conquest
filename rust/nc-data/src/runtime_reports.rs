@@ -20,6 +20,8 @@ pub struct ReportsPreview {
 pub enum InboxItemType {
     Message,
     Report,
+    /// The viewer's own message, queued this turn and not yet delivered.
+    Outgoing,
 }
 
 impl InboxItemType {
@@ -27,6 +29,7 @@ impl InboxItemType {
         match self {
             Self::Message => "M",
             Self::Report => "R",
+            Self::Outgoing => "OUT",
         }
     }
 }
@@ -122,6 +125,47 @@ pub fn runtime_inbox_items(
     items
 }
 
+/// The viewer's own messages queued this turn, newest first. Maintenance
+/// advances the year, so a message leaves this list once it is delivered.
+pub fn runtime_outgoing_inbox_items(
+    game_data: &CoreGameData,
+    sender_empire_id: u8,
+    queued_mail: &[QueuedPlayerMail],
+) -> Vec<InboxItem> {
+    let current_year = game_data.conquest.game_year();
+    queued_mail
+        .iter()
+        .enumerate()
+        .rev()
+        .filter(|(_, mail)| mail.sender_empire_id == sender_empire_id && mail.year == current_year)
+        .map(|(idx, mail)| InboxItem {
+            source: InboxItemSource::QueuedMail(idx),
+            item_type: InboxItemType::Outgoing,
+            year: mail.year,
+            week: None,
+            subject: inbox_message_subject(mail),
+            body_lines: runtime_outgoing_message_lines(game_data, mail),
+            report_bucket: None,
+        })
+        .collect()
+}
+
+/// A queued message as its sender reads it: the recipient takes the place
+/// of the sender line.
+pub fn runtime_outgoing_message_lines(
+    game_data: &CoreGameData,
+    mail: &QueuedPlayerMail,
+) -> Vec<String> {
+    message_lines(
+        format!(
+            "To {} (Empire #{})",
+            empire_label(game_data, mail.recipient_empire_id),
+            mail.recipient_empire_id
+        ),
+        mail,
+    )
+}
+
 pub fn runtime_inbox_preview_lines(lines: &[String], width: usize) -> Vec<String> {
     if width == 0 {
         return Vec::new();
@@ -205,11 +249,18 @@ fn runtime_message_blocks(
 }
 
 fn runtime_message_lines(game_data: &CoreGameData, mail: &QueuedPlayerMail) -> Vec<String> {
-    let mut lines = vec![format!(
-        "From {} (Empire #{})",
-        sender_label(game_data, mail.sender_empire_id),
-        mail.sender_empire_id
-    )];
+    message_lines(
+        format!(
+            "From {} (Empire #{})",
+            empire_label(game_data, mail.sender_empire_id),
+            mail.sender_empire_id
+        ),
+        mail,
+    )
+}
+
+fn message_lines(header: String, mail: &QueuedPlayerMail) -> Vec<String> {
+    let mut lines = vec![header];
     if !mail.subject.trim().is_empty() {
         lines.push(format!("Subject: {}", mail.subject.trim()));
     }
@@ -416,7 +467,7 @@ fn inbox_source_index(source: InboxItemSource) -> usize {
 fn inbox_item_type_rank(item_type: InboxItemType) -> u8 {
     match item_type {
         InboxItemType::Report => 1,
-        InboxItemType::Message => 0,
+        InboxItemType::Message | InboxItemType::Outgoing => 0,
     }
 }
 
@@ -442,13 +493,13 @@ fn decode_text_lines(text: &str) -> Vec<String> {
     lines
 }
 
-fn sender_label(game_data: &CoreGameData, sender_empire_id: u8) -> String {
+fn empire_label(game_data: &CoreGameData, empire_id: u8) -> String {
     let Some(player) = game_data
         .player
         .records
-        .get(sender_empire_id.saturating_sub(1) as usize)
+        .get(empire_id.saturating_sub(1) as usize)
     else {
-        return format!("Empire #{sender_empire_id}");
+        return format!("Empire #{empire_id}");
     };
     let controlled = player.controlled_empire_name_summary();
     if !controlled.is_empty() {
@@ -458,5 +509,5 @@ fn sender_label(game_data: &CoreGameData, sender_empire_id: u8) -> String {
     if !legacy.is_empty() {
         return legacy;
     }
-    format!("Empire #{sender_empire_id}")
+    format!("Empire #{empire_id}")
 }
