@@ -1,5 +1,5 @@
 use nc_data::{
-    AssaultReportEvent, BombardEvent, ContactReportSource, EncounterDispositionEvent,
+    AssaultReportEvent, BombardEvent, ContactReportSource, Coords, EncounterDispositionEvent,
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, FleetMergeEvent,
     GameStateBuilder, JoinMissionHostEvent, MaintenanceEvents, Mission, MissionEvent,
     MissionOutcome, MissionRetargetEvent, PlanetOwnershipChangeEvent, ScoutContactEvent,
@@ -30,9 +30,9 @@ fn configure_fleet(
     coords: [u8; 2],
 ) {
     let fleet = &mut game_data.fleets[fleet_idx];
-    fleet.set_owner_empire_raw(owner_empire_raw);
-    fleet.set_local_slot_word_raw(fleet_number as u16);
-    fleet.set_current_location_coords_raw(coords);
+    fleet.owner.0 = owner_empire_raw;
+    fleet.fleet_number.0 = fleet_number as u16;
+    fleet.sector = Coords::from_array(coords);
 }
 
 fn assert_viewers_have_reports(

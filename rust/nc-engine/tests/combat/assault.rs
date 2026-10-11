@@ -2,7 +2,8 @@
 //! costs.
 
 use nc_data::{
-    CoreGameData, MaintenanceEvents, Mission, MissionAbortReason, MissionOutcome, Order, Real48,
+    Coords, CoreGameData, MaintenanceEvents, Mission, MissionAbortReason, MissionOutcome, Order,
+    Real48, has_any_force, set_fleet_at_rest,
 };
 use nc_engine::{
     run_maintenance_turn, run_maintenance_turn_with_context,
@@ -39,11 +40,11 @@ fn diving_on_system(
 ) {
     place_fleet(game_data, idx, owner, SYSTEM, order, SYSTEM, ships, roe);
     let fleet = &mut game_data.fleets[idx];
-    fleet.set_mission_target(1, fleet.mission_id_raw());
-    fleet.set_at_rest_motion();
-    fleet.set_depth(Real48::ZERO);
-    fleet.set_max_speed(3);
-    fleet.set_current_speed(3);
+    fleet.target_depth = 1;
+    set_fleet_at_rest(fleet);
+    fleet.depth = Real48::ZERO;
+    fleet.max_speed = 3;
+    fleet.speed = 3;
 }
 
 /// Fleet record `idx` of `owner` at rest in orbit of `SYSTEM` on Hold with
@@ -59,7 +60,7 @@ fn holding_orbit(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: Shi
         ships,
         0,
     );
-    game_data.fleets[idx].set_at_rest_motion();
+    set_fleet_at_rest(&mut game_data.fleets[idx]);
 }
 
 /// Empire 1's only world in the fixture, at (16,13), next door to `SYSTEM`.
@@ -69,7 +70,7 @@ const HOME_PLANET_IDX: usize = 14;
 const HOME: [u8; 2] = [3, 13];
 
 fn far_home(game_data: &mut CoreGameData) {
-    game_data.planets[HOME_PLANET_IDX].set_coords_raw(HOME);
+    game_data.planets[HOME_PLANET_IDX].sector = Coords::from_array(HOME);
 }
 
 fn cruiser() -> Ships {
@@ -121,7 +122,7 @@ fn one_cruiser_cannot_clear_ten_batteries_in_one_round() {
 fn stardock_ships_absorb_their_own_defense_strength() {
     let mut game_data = assault_on_system(Order::BombardWorld, cruiser(), 0, 0);
     let planet = &mut game_data.planets[SYSTEM_PLANET_IDX];
-    planet.set_stardock_count_raw(2, 1);
+    planet.stardock.battleships = 1;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -130,10 +131,7 @@ fn stardock_ships_absorb_their_own_defense_strength() {
         bombard.stardock_items_destroyed, 0,
         "a docked battleship (DS 100) outlasts a lone cruiser's per-round hits"
     );
-    assert_eq!(
-        game_data.planets[SYSTEM_PLANET_IDX].stardock_count_raw(2),
-        1
-    );
+    assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].stardock.battleships, 1);
 }
 
 #[test]
@@ -148,8 +146,8 @@ fn breakthrough_hits_reach_industry_on_the_ten_times_scale() {
         0,
     );
     let planet = &mut game_data.planets[SYSTEM_PLANET_IDX];
-    planet.set_present_production_points(100);
-    planet.set_stored_production_points(10_000);
+    planet.production = Real48::from_f64(100.0);
+    planet.stored_goods = Real48::from_f64(10000.0);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -228,13 +226,13 @@ fn bombard_fleet_is_not_folded_into_a_same_turn_invasion() {
         "only the invading fleet lands its armies"
     );
     let bombard_fleet = &game_data.fleets[1];
-    assert_eq!(bombard_fleet.army_count(), 3);
-    assert_eq!(bombard_fleet.standing_order_kind(), Order::BombardWorld);
+    assert_eq!(bombard_fleet.ships.loaded_transports, 3);
+    assert_eq!(bombard_fleet.order, Order::BombardWorld);
     // Both strike on tick 1 in the year's unit order: the bomber either
     // bombarded first or found the world already its own. Either way it
     // keeps its order and its armies, in orbit.
-    assert_eq!(bombard_fleet.depth(), nc_data::Real48::ONE);
-    assert_eq!(game_data.fleets[0].army_count(), 0);
+    assert_eq!(bombard_fleet.depth, nc_data::Real48::ONE);
+    assert_eq!(game_data.fleets[0].ships.loaded_transports, 0);
 }
 
 #[test]
@@ -300,7 +298,7 @@ fn a_bombardment_resolves_in_its_tick_before_relief_arrives() {
     );
     let bomber = &game_data.fleets[0];
     assert!(
-        !(bomber.has_any_force() && bomber.standing_order_kind() == Order::BombardWorld),
+        !(has_any_force(bomber) && bomber.order == Order::BombardWorld),
         "five battleships end the bombardment"
     );
 }
@@ -335,18 +333,9 @@ fn assault_fleets_of_different_classes_strike_in_tick_order() {
         events.ownership_change_events[0].stardate_week,
         Some(DIVE_TICK)
     );
-    assert_eq!(
-        game_data.planets[SYSTEM_PLANET_IDX].owner_empire_slot_raw(),
-        1
-    );
-    assert_eq!(
-        game_data.fleets[0].standing_order_kind(),
-        Order::BombardWorld
-    );
-    assert_eq!(
-        game_data.fleets[1].standing_order_kind(),
-        Order::HoldPosition
-    );
+    assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
+    assert_eq!(game_data.fleets[0].order, Order::BombardWorld);
+    assert_eq!(game_data.fleets[1].order, Order::HoldPosition);
 }
 
 #[test]
@@ -364,7 +353,7 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
         1,
         0,
     );
-    game_data.fleets[0].set_rules_of_engagement(0);
+    game_data.fleets[0].rules_of_engagement = 0;
     // On ROE 10: the invasion fleet holds the orbit it took, and the orbital
     // gate makes the bomber beat it at the strike tick (t054).
     diving_on_system(
@@ -396,10 +385,7 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
     assert_eq!(bombard.stardate_week, Some(DIVE_TICK));
     assert_eq!(bombard.attacker_empire_raw, 3);
     assert_eq!(bombard.defender_empire_raw, 1);
-    assert_eq!(
-        game_data.planets[SYSTEM_PLANET_IDX].owner_empire_slot_raw(),
-        1
-    );
+    assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
 }
 
 #[test]
@@ -461,12 +447,12 @@ fn an_unsighted_starbase_fights_an_invasion_before_it_lands() {
         assert_eq!(battle.stardate_week, Some(1), "seed {seed}");
         assert_eq!(battle.enemy_initial_starbases, 1);
         assert!(battle.held_field);
-        assert!(year.bases.iter().all(|base| base.base_id_raw() == 0));
+        assert!(year.bases.iter().all(|base| base.base_id.0 == 0));
         let assault = &events.assault_report_events[0];
         assert_eq!(assault.kind, Mission::InvadeWorld);
         assert_eq!(assault.stardate_week, Some(1), "seed {seed}");
         assert_eq!(events.ownership_change_events[0].stardate_week, Some(1));
-        assert_eq!(year.planets[SYSTEM_PLANET_IDX].owner_empire_slot_raw(), 1);
+        assert_eq!(year.planets[SYSTEM_PLANET_IDX].owner.0, 1);
     }
 }
 
@@ -504,7 +490,7 @@ fn an_owners_fleet_in_orbit_fights_the_bomber_at_the_strike_tick() {
     assert_eq!(battle.stardate_week, Some(1));
     assert_eq!(battle.enemy_initial.destroyers, 1);
     assert!(battle.held_field);
-    assert_eq!(game_data.fleets[4].destroyer_count(), 0);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
     assert_eq!(events.bombard_events[0].stardate_week, Some(1));
 }
 
@@ -530,12 +516,12 @@ fn a_defender_in_deep_space_does_not_fight_at_the_strike_tick() {
             ..Ships::default()
         },
     );
-    game_data.fleets[4].set_depth(Real48::ZERO);
+    game_data.fleets[4].depth = Real48::ZERO;
 
     let events = run_neutral(&mut game_data, 0);
 
     assert!(events.fleet_battle_events.is_empty());
-    assert_eq!(game_data.fleets[4].destroyer_count(), 1);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 1);
     assert_eq!(events.bombard_events[0].stardate_week, Some(1));
 }
 
@@ -545,7 +531,7 @@ fn an_attacker_whose_roe_forbids_the_fight_seeks_home_without_a_shot() {
     // has none. The bomber aborts at the gate, as it would on sighting the
     // base, and heads for home at full speed.
     let mut game_data = assault_on_system(Order::BombardWorld, cruiser(), 0, 0);
-    game_data.fleets[0].set_rules_of_engagement(2);
+    game_data.fleets[0].rules_of_engagement = 2;
     place_starbase(&mut game_data, 2, SYSTEM);
     far_home(&mut game_data);
 
@@ -559,10 +545,10 @@ fn an_attacker_whose_roe_forbids_the_fight_seeks_home_without_a_shot() {
         events.mission_events
     );
     let fleet = &game_data.fleets[0];
-    assert_eq!(fleet.cruiser_count(), 1);
-    assert_eq!(fleet.standing_order_kind(), Order::SeekHome);
-    assert_eq!(fleet.standing_order_target_coords_raw(), HOME);
-    assert_eq!(fleet.world_target_flag_raw(), 1);
+    assert_eq!(fleet.ships.cruisers, 1);
+    assert_eq!(fleet.order, Order::SeekHome);
+    assert_eq!(fleet.target.to_array(), HOME);
+    assert_eq!(fleet.target_depth, 1);
 }
 
 #[test]
@@ -607,10 +593,10 @@ fn a_beaten_attacker_retreats_repelled_by_the_orbital_defence() {
         assert!(events.bombard_events.is_empty(), "seed {seed}");
         assert!(repelled(&events, Mission::BombardWorld), "seed {seed}");
         let fleet = &year.fleets[0];
-        assert_eq!(fleet.destroyer_count(), 0, "seed {seed}");
-        assert!(fleet.scout_count() > 0, "seed {seed}");
-        assert_eq!(fleet.standing_order_kind(), Order::SeekHome, "seed {seed}");
-        assert_eq!(fleet.standing_order_target_coords_raw(), HOME);
+        assert_eq!(fleet.ships.destroyers, 0, "seed {seed}");
+        assert!(fleet.ships.scouts > 0, "seed {seed}");
+        assert_eq!(fleet.order, Order::SeekHome, "seed {seed}");
+        assert_eq!(fleet.target.to_array(), HOME);
     }
 }
 
@@ -634,7 +620,7 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
     };
     let blitz = || {
         let mut game_data = assault_on_system(Order::BlitzWorld, loaded, 1, 0);
-        game_data.fleets[0].set_rules_of_engagement(0);
+        game_data.fleets[0].rules_of_engagement = 0;
         far_home(&mut game_data);
         game_data
     };
@@ -659,11 +645,7 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
             Some(1),
             "{name}"
         );
-        assert_eq!(
-            game_data.planets[SYSTEM_PLANET_IDX].owner_empire_slot_raw(),
-            1,
-            "{name}"
-        );
+        assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1, "{name}");
     }
 
     for (name, mut game_data) in [
@@ -687,14 +669,13 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
             events.mission_events
         );
         let fleet = &game_data.fleets[0];
-        assert_eq!(fleet.army_count(), 10, "{name}: the armies stay aboard");
-        assert_eq!(fleet.standing_order_kind(), Order::SeekHome, "{name}");
-        assert_eq!(fleet.standing_order_target_coords_raw(), HOME, "{name}");
         assert_eq!(
-            game_data.planets[SYSTEM_PLANET_IDX].owner_empire_slot_raw(),
-            2,
-            "{name}"
+            fleet.ships.loaded_transports, 10,
+            "{name}: the armies stay aboard"
         );
+        assert_eq!(fleet.order, Order::SeekHome, "{name}");
+        assert_eq!(fleet.target.to_array(), HOME, "{name}");
+        assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 2, "{name}");
     }
 }
 
@@ -738,6 +719,6 @@ fn a_second_fleet_of_the_same_empire_strikes_without_refighting_the_defenders() 
                 .iter()
                 .all(|event| event.stardate_week == Some(1))
         );
-        assert!(year.bases.iter().all(|base| base.base_id_raw() == 0));
+        assert!(year.bases.iter().all(|base| base.base_id.0 == 0));
     }
 }

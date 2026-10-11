@@ -1,6 +1,7 @@
 use nc_data::{
     CampaignOutcomeEvent, CampaignOutlookEvent, GameStateBuilder, GameVictoryNoticeEvent,
-    InvalidPlayerStateEvent, MaintenanceEvents, PlanetPlayerInputValidationError,
+    InvalidPlayerStateEvent, MaintenanceEvents, PlanetPlayerInputValidationError, PlayerMode,
+    has_results_chain,
 };
 use nc_engine::{apply_results_reviewable_flags, build_results_dat, build_results_report_blocks};
 
@@ -22,7 +23,7 @@ fn outlook_events() -> MaintenanceEvents {
 }
 
 fn has_results(game_data: &nc_data::CoreGameData, empire_raw: u8) -> bool {
-    game_data.players[empire_raw as usize - 1].has_classic_results_chain_state()
+    has_results_chain(&game_data.players[empire_raw as usize - 1])
 }
 
 #[test]
@@ -64,8 +65,8 @@ fn campaign_outlook_claims_the_throne_only_for_the_leader() {
 #[test]
 fn campaign_outlook_skips_unjoined_empires() {
     let mut game_data = joined_game_data();
-    game_data.players[0].set_player_mode_raw(0x00);
-    game_data.players[3].set_player_mode_raw(0xff);
+    game_data.players[0].mode = PlayerMode::CivilDisorder;
+    game_data.players[3].mode = PlayerMode::Rogue;
 
     let rows = build_results_report_blocks(&game_data, &outlook_events());
     assert!(!rows.is_empty());
@@ -141,10 +142,7 @@ fn walk_player_chain(
     results: &[u8],
 ) -> Vec<u16> {
     let player = &game_data.players[empire_raw as usize - 1];
-    let (first, last) = (
-        player.classic_results_first_header_raw(),
-        player.classic_results_last_header_raw(),
-    );
+    let (first, last) = (player.results_first as u16, player.results_last as u16);
     let mut headers = Vec::new();
     let mut previous = 0;
     let mut header = first;

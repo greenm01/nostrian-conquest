@@ -3,8 +3,8 @@
 //! civil-disorder defections).
 
 use nc_data::{
-    ColonizationResolvedEvent, CoreGameData, Fleet, GameStateBuilder, JoinMissionHostEvent,
-    Mission, MissionOutcome, Order,
+    ColonizationResolvedEvent, Coords, CoreGameData, Fleet, GameStateBuilder, JoinMissionHostEvent,
+    Mission, MissionOutcome, Order, set_planet_name,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -18,7 +18,7 @@ fn baseline() -> CoreGameData {
         .build_initialized_baseline()
         .expect("baseline should build");
     for player in &mut game_data.players {
-        player.set_autopilot_flag(0);
+        player.autopilot = false;
     }
     game_data
 }
@@ -32,22 +32,19 @@ fn order_fleet(
     speed: u8,
 ) {
     let fleet = &mut game_data.fleets[idx];
-    fleet.set_current_location_coords_raw(coords);
-    fleet.set_standing_order_kind(order);
-    fleet.set_standing_order_target_coords_raw(target);
-    fleet.set_current_speed(speed);
+    fleet.sector = Coords::from_array(coords);
+    fleet.order = order;
+    fleet.target = Coords::from_array(target);
+    fleet.speed = speed;
     // As ECGAME writes the order, with the fleet in deep space.
-    fleet.set_mission_target(u8::from(order.targets_world()), fleet.mission_id_raw());
-    fleet.set_depth(nc_data::Real48::ZERO);
+    fleet.target_depth = u8::from(order.targets_world());
+    fleet.depth = nc_data::Real48::ZERO;
 }
 
 /// Order fleet `joiner_idx` to join the co-located fleet `host_idx` this turn.
 fn join_in_place(game_data: &mut CoreGameData, joiner_idx: usize, host_idx: usize) {
     let host = &game_data.fleets[host_idx];
-    let (host_number, host_coords) = (
-        host.local_slot_word_raw(),
-        host.current_location_coords_raw(),
-    );
+    let (host_number, host_coords) = (host.fleet_number.0, host.sector.to_array());
     order_fleet(
         game_data,
         joiner_idx,
@@ -56,18 +53,18 @@ fn join_in_place(game_data: &mut CoreGameData, joiner_idx: usize, host_idx: usiz
         host_coords,
         0,
     );
-    game_data.fleets[joiner_idx].set_join_host_fleet_id_raw(host_number);
+    game_data.fleets[joiner_idx].mission_target = host_number;
 }
 
 fn place_world(game_data: &mut CoreGameData, planet_idx: usize, coords: [u8; 2], owner: u8) {
     let planet = &mut game_data.planets[planet_idx];
-    planet.set_coords_raw(coords);
+    planet.sector = Coords::from_array(coords);
     if owner != 0 {
-        planet.set_owner_empire_slot_raw(owner);
-        planet.set_ownership_status_raw(2);
-        planet.set_planet_name("Target");
-        planet.set_army_count_raw(1);
-        planet.set_ground_batteries_raw(1);
+        planet.owner.0 = owner;
+        planet.years_under_owner = 2;
+        set_planet_name(planet, "Target");
+        planet.armies = 1;
+        planet.ground_batteries = 1;
     }
 }
 
@@ -75,13 +72,13 @@ fn fleet_by_number(game_data: &CoreGameData, owner: u8, number: u16) -> &Fleet {
     game_data
         .fleets
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == owner && fleet.local_slot_word_raw() == number)
+        .find(|fleet| fleet.owner.0 == owner && fleet.fleet_number.0 == number)
         .unwrap_or_else(|| panic!("empire {owner} fleet {number} should exist"))
 }
 
 fn fleet_identity(game_data: &CoreGameData, fleet_idx: usize) -> (u8, u16) {
     let fleet = &game_data.fleets[fleet_idx];
-    (fleet.owner_empire_raw(), fleet.local_slot_word_raw())
+    (fleet.owner.0, fleet.fleet_number.0)
 }
 
 #[test]
@@ -106,7 +103,7 @@ fn colonization_follows_colonizer_shifted_by_join_merge() {
         "colonization should succeed: {:?}",
         events.colonization_events
     );
-    assert_eq!(game_data.planets[planet_idx].owner_empire_slot_raw(), 1);
+    assert_eq!(game_data.planets[planet_idx].owner.0, 1);
 }
 
 #[test]
@@ -128,13 +125,10 @@ fn view_world_completion_follows_viewer_shifted_by_join_merge() {
     assert_eq!(view_events.len(), 1, "one view report: {view_events:?}");
     assert_eq!(view_events[0].outcome, MissionOutcome::Succeeded);
     assert_eq!(fleet_identity(&game_data, view_events[0].fleet_idx), (1, 3));
-    assert_eq!(
-        fleet_by_number(&game_data, 1, 3).standing_order_kind(),
-        Order::HoldPosition
-    );
+    assert_eq!(fleet_by_number(&game_data, 1, 3).order, Order::HoldPosition);
     let mover = fleet_by_number(&game_data, 1, 4);
-    assert_eq!(mover.standing_order_kind(), Order::MoveOnly);
-    assert_eq!(mover.current_speed(), 1);
+    assert_eq!(mover.order, Order::MoveOnly);
+    assert_eq!(mover.speed, 1);
 }
 
 #[test]
@@ -142,19 +136,13 @@ fn scout_order_restored_on_scout_shifted_by_join_merge() {
     let mut game_data = baseline();
     join_in_place(&mut game_data, 0, 1);
     order_fleet(&mut game_data, 2, HOME, Order::ScoutSector, [6, 4], 6);
-    game_data.fleets[2].set_scout_count(1);
+    game_data.fleets[2].ships.scouts = 1;
     order_fleet(&mut game_data, 3, HOME, Order::MoveOnly, [4, 16], 1);
 
     run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    assert_eq!(
-        fleet_by_number(&game_data, 1, 3).standing_order_kind(),
-        Order::ScoutSector
-    );
-    assert_eq!(
-        fleet_by_number(&game_data, 1, 4).standing_order_kind(),
-        Order::MoveOnly
-    );
+    assert_eq!(fleet_by_number(&game_data, 1, 3).order, Order::ScoutSector);
+    assert_eq!(fleet_by_number(&game_data, 1, 4).order, Order::MoveOnly);
 }
 
 #[test]
@@ -185,11 +173,11 @@ fn bombard_after_arrival(with_join: bool) -> usize {
     place_world(&mut game_data, 10, target, 2);
     place_world(&mut game_data, 11, second_target, 2);
     order_fleet(&mut game_data, 3, [5, 6], Order::BombardWorld, target, 6);
-    game_data.fleets[3].set_cruiser_count(5);
+    game_data.fleets[3].ships.cruisers = 5;
     let arrival = run_maintenance_turn(&mut game_data).expect("arrival turn should succeed");
     assert_eq!(arrival.bombard_events.len(), 1, "bomber strikes on arrival");
     assert_eq!(
-        game_data.fleets[3].standing_order_kind(),
+        game_data.fleets[3].order,
         Order::BombardWorld,
         "bomber keeps bombarding"
     );
@@ -202,7 +190,7 @@ fn bombard_after_arrival(with_join: bool) -> usize {
         second_target,
         6,
     );
-    game_data.fleets[2].set_cruiser_count(5);
+    game_data.fleets[2].ships.cruisers = 5;
     if with_join {
         join_in_place(&mut game_data, 0, 1);
     }
@@ -235,8 +223,8 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
         chased,
         1,
     );
-    let host_number = game_data.fleets[2].local_slot_word_raw();
-    game_data.fleets[3].set_join_host_fleet_id_raw(host_number);
+    let host_number = game_data.fleets[2].fleet_number.0;
+    game_data.fleets[3].mission_target = host_number;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -250,9 +238,9 @@ fn join_chase_keeps_host_when_unrelated_join_merge_compacts_ids() {
     );
     let chaser = fleet_by_number(&game_data, 1, 4);
     // The host's record id compacted from 3 to 2; its fleet number did not.
-    assert_eq!(fleet_by_number(&game_data, 1, 3).fleet_id_word_raw(), 2);
-    assert_eq!(chaser.join_host_fleet_id_raw(), 3);
-    assert_eq!(chaser.standing_order_target_coords_raw(), chased);
+    assert_eq!(fleet_by_number(&game_data, 1, 3).record.0, 2);
+    assert_eq!(chaser.mission_target, 3);
+    assert_eq!(chaser.target.to_array(), chased);
 }
 
 #[test]
@@ -262,20 +250,19 @@ fn join_resolves_by_fleet_number_when_host_number_differs_from_record_id() {
     let host_idx = game_data
         .fleets
         .iter()
-        .position(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 1)
+        .position(|fleet| fleet.owner.0 == 2 && fleet.fleet_number.0 == 1)
         .expect("empire 2 fleet 1");
     let joiner_idx = host_idx + 1;
     assert_eq!(fleet_identity(&game_data, joiner_idx), (2, 2));
     assert_ne!(
-        game_data.fleets[host_idx].fleet_id_word_raw(),
-        1,
+        game_data.fleets[host_idx].record.0, 1,
         "the host's record id must differ from its fleet number"
     );
-    let host_cruisers = game_data.fleets[host_idx].cruiser_count();
-    let joiner_cruisers = game_data.fleets[joiner_idx].cruiser_count();
-    let empire_1_fleet_1_cruisers = fleet_by_number(&game_data, 1, 1).cruiser_count();
+    let host_cruisers = game_data.fleets[host_idx].ships.cruisers;
+    let joiner_cruisers = game_data.fleets[joiner_idx].ships.cruisers;
+    let empire_1_fleet_1_cruisers = fleet_by_number(&game_data, 1, 1).ships.cruisers;
     join_in_place(&mut game_data, joiner_idx, host_idx);
-    assert_eq!(game_data.fleets[joiner_idx].join_host_fleet_id_raw(), 1);
+    assert_eq!(game_data.fleets[joiner_idx].mission_target, 1);
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
@@ -290,18 +277,18 @@ fn join_resolves_by_fleet_number_when_host_number_differs_from_record_id() {
         events.fleet_merge_events
     );
     assert_eq!(
-        fleet_by_number(&game_data, 2, 1).cruiser_count(),
+        fleet_by_number(&game_data, 2, 1).ships.cruisers,
         host_cruisers + joiner_cruisers
     );
     assert!(
         !game_data
             .fleets
             .iter()
-            .any(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 2)
+            .any(|fleet| fleet.owner.0 == 2 && fleet.fleet_number.0 == 2)
     );
     // Empire 1's fleet 1 (record id 1) was not the host.
     assert_eq!(
-        fleet_by_number(&game_data, 1, 1).cruiser_count(),
+        fleet_by_number(&game_data, 1, 1).ships.cruisers,
         empire_1_fleet_1_cruisers
     );
 }
@@ -310,14 +297,14 @@ fn join_resolves_by_fleet_number_when_host_number_differs_from_record_id() {
 fn move_report_names_mover_shifted_by_civil_disorder_defection() {
     let mut game_data = baseline();
     for planet in &mut game_data.planets {
-        if planet.owner_empire_slot_raw() == 1 {
-            planet.set_owner_empire_slot_raw(0);
-            planet.set_ownership_status_raw(0);
+        if planet.owner.0 == 1 {
+            planet.owner.0 = 0;
+            planet.years_under_owner = 0;
         }
     }
     for fleet in &mut game_data.fleets {
-        if fleet.owner_empire_raw() == 1 {
-            fleet.set_etac_count(0);
+        if fleet.owner.0 == 1 {
+            fleet.ships.etacs = 0;
         }
     }
     run_maintenance_turn(&mut game_data).expect("collapse turn should succeed");
@@ -325,7 +312,7 @@ fn move_report_names_mover_shifted_by_civil_disorder_defection() {
     let mover_idx = game_data
         .fleets
         .iter()
-        .position(|fleet| fleet.owner_empire_raw() == 2 && fleet.local_slot_word_raw() == 1)
+        .position(|fleet| fleet.owner.0 == 2 && fleet.fleet_number.0 == 1)
         .expect("empire 2 fleet 1");
     order_fleet(
         &mut game_data,

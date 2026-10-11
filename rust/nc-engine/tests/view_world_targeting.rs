@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use nc_data::{GameStateBuilder, IntelTier, PlanetIntelSnapshot};
+use nc_data::{Coords, GameStateBuilder, IntelTier, PlanetIntelSnapshot};
 use nc_engine::{recommended_coordinate_target, target_available_for_mission};
 
 fn seed_non_owned_world(
@@ -12,10 +12,10 @@ fn seed_non_owned_world(
         .planets
         .iter_mut()
         .enumerate()
-        .find(|(_, planet)| planet.owner_empire_slot_raw() == 0 && planet.coords_raw() == [0, 0])
+        .find(|(_, planet)| planet.owner.0 == 0 && planet.sector.to_array() == [0, 0])
         .expect("unused planet slot");
-    planet.set_coords_raw(coords);
-    planet.set_owner_empire_slot_raw(owner_empire_id);
+    planet.sector = Coords::from_array(coords);
+    planet.owner.0 = owner_empire_id;
     planet_index + 1
 }
 
@@ -30,16 +30,16 @@ fn snapshot_map(
         .enumerate()
         .filter_map(|(planet_index, planet)| {
             let planet_record_index_1_based = planet_index + 1;
-            if planet.owner_empire_slot_raw() == viewer_empire_id {
+            if planet.owner.0 == viewer_empire_id {
                 return None;
             }
             let (intel_tier, known_owner_empire_id) =
                 if Some(planet_record_index_1_based) == unknown_planet_record_index {
                     (IntelTier::Unknown, None)
-                } else if planet.coords_raw() == [0, 0] {
+                } else if planet.sector.to_array() == [0, 0] {
                     (IntelTier::Owned, Some(viewer_empire_id))
                 } else {
-                    (IntelTier::Partial, Some(planet.owner_empire_slot_raw()))
+                    (IntelTier::Partial, Some(planet.owner.0))
                 };
             Some((
                 planet_record_index_1_based,
@@ -84,7 +84,7 @@ fn view_world_prefers_unknown_targets_while_any_remain() {
     assert_eq!(target, Some([8, 8]));
     assert_ne!(
         target,
-        Some(game_data.planets[nearer_known_target - 1].coords_raw())
+        Some(game_data.planets[nearer_known_target - 1].sector.to_array())
     );
 }
 

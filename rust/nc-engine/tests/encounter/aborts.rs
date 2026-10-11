@@ -2,7 +2,7 @@
 //! world: classic's nearest friendly world (`24a3:0876`), or the fallback
 //! of the decision that aborted it when its empire owns no other world.
 
-use nc_data::{CoreGameData, MissionAbortReason, MissionOutcome, Order, Real48};
+use nc_data::{Coords, CoreGameData, MissionAbortReason, MissionOutcome, Order, Real48};
 
 use super::support::{
     Fleet, NO_SHIPS, Ships, WORLD, add_starbase, board_with_world, ca, declared, put, years,
@@ -22,12 +22,12 @@ const BY_TRAVEL: [u8; 2] = [12, 11];
 fn board(friendly_worlds: bool) -> CoreGameData {
     let mut game_data = board_with_world();
     let planets = &mut game_data.planets;
-    planets[HOME_PLANET_IDX].set_owner_empire_slot_raw(3);
+    planets[HOME_PLANET_IDX].owner.0 = 3;
     if friendly_worlds {
-        planets[7].set_coords_raw(BY_MANHATTAN);
-        planets[7].set_owner_empire_slot_raw(1);
-        assert_eq!(planets[10].coords_raw(), BY_TRAVEL);
-        planets[10].set_owner_empire_slot_raw(1);
+        planets[7].sector = Coords::from_array(BY_MANHATTAN);
+        planets[7].owner.0 = 1;
+        assert_eq!(planets[10].sector.to_array(), BY_TRAVEL);
+        planets[10].owner.0 = 1;
     }
     game_data
 }
@@ -94,10 +94,10 @@ fn a_fleet_turned_back_by_a_base_heads_home_by_travel_distance() {
         // bomber's own sighting of the base on its way down.
         sighted += usize::from(tick < 52);
         let fleet = &game_data.fleets[0];
-        assert_eq!(fleet.standing_order_kind(), Order::SeekHome);
-        assert_eq!(fleet.standing_order_target_coords_raw(), BY_TRAVEL);
-        assert_eq!(fleet.world_target_flag_raw(), 1);
-        assert_eq!(fleet.current_speed(), 1);
+        assert_eq!(fleet.order, Order::SeekHome);
+        assert_eq!(fleet.target.to_array(), BY_TRAVEL);
+        assert_eq!(fleet.target_depth, 1);
+        assert_eq!(fleet.speed, 1);
     }
     assert!(sighted > 0);
 }
@@ -111,11 +111,11 @@ fn a_fleet_turned_back_by_a_base_with_no_world_to_seek_stops_where_it_is() {
         }
         sighted += 1;
         let fleet = &game_data.fleets[0];
-        assert_eq!(fleet.standing_order_kind(), Order::HoldPosition);
-        assert_eq!(fleet.current_speed(), 0);
-        assert_eq!(fleet.current_location_coords_raw(), WORLD);
+        assert_eq!(fleet.order, Order::HoldPosition);
+        assert_eq!(fleet.speed, 0);
+        assert_eq!(fleet.sector.to_array(), WORLD);
         assert!(
-            fleet.depth() >= Real48::HALF && fleet.depth() < Real48::ONE,
+            fleet.depth >= Real48::HALF && fleet.depth < Real48::ONE,
             "it stops in the system, short of orbit"
         );
     }
@@ -128,12 +128,12 @@ fn a_fleet_turned_back_by_a_guard_heads_home_by_travel_distance() {
     for (game_data, events) in years(&guard_blocks(true), &declared(&[]), 0..32) {
         let fleet = &game_data.fleets[0];
         // The orbital gate's abort is reported; the re-check's is not.
-        if fleet.standing_order_kind() != Order::SeekHome || reported_abort(&events).is_some() {
+        if fleet.order != Order::SeekHome || reported_abort(&events).is_some() {
             continue;
         }
         rechecked += 1;
-        assert_eq!(fleet.standing_order_target_coords_raw(), BY_TRAVEL);
-        assert_eq!(fleet.world_target_flag_raw(), 1);
+        assert_eq!(fleet.target.to_array(), BY_TRAVEL);
+        assert_eq!(fleet.target_depth, 1);
     }
     assert!(rechecked > 0);
 }
@@ -143,13 +143,13 @@ fn a_fleet_turned_back_by_a_guard_with_no_world_to_seek_climbs_out() {
     let mut climbing = 0;
     for (game_data, _) in years(&guard_blocks(false), &declared(&[]), 0..32) {
         let fleet = &game_data.fleets[0];
-        if fleet.standing_order_kind() != Order::MoveOnly {
+        if fleet.order != Order::MoveOnly {
             continue;
         }
         climbing += 1;
-        assert_eq!(fleet.standing_order_target_coords_raw(), WORLD);
-        assert_eq!(fleet.world_target_flag_raw(), 0, "out to deep space");
-        assert_eq!(fleet.current_speed(), 1);
+        assert_eq!(fleet.target.to_array(), WORLD);
+        assert_eq!(fleet.target_depth, 0, "out to deep space");
+        assert_eq!(fleet.speed, 1);
     }
     assert!(climbing > 0);
 }
