@@ -181,11 +181,11 @@ automatically.
 
 == Your Objective
 
-Your objective is simple: become Emperor by dominating rivals or eliminating every serious threat.
+Your objective is to dominate the galaxy and become Emperor by defeating rival empires.
 
-You begin with one planet at 100 production and four fleets --- two carrying an ETAC and cruiser for colonization, and two lone destroyers for screening and early contact. Set your empire-wide tax rate around 50--65%, and use the revenue to build ships, armies, batteries, and starbases. Lower the empire-wide rate when you want new colonies to develop faster.
+You begin with one planet at 100 production and four fleets --- two carrying an ETAC and cruiser for colonization, and two lone destroyers for screening and early contact. Set your empire-wide tax rate around 50--65%, and use the revenue to build ships, armies, batteries, and starbases. Every planet uses that same rate; colonies cannot be taxed separately. Lowering it favors colony growth at the cost of a lower tax rate on established worlds too.
 
-Each round represents one year. You submit orders during the year, and maintenance resolves all empires simultaneously on an internal 52-week timeline. Reports are dated as `Stardate WK/YYYY` (week/year).
+Nostrian Conquest is asynchronous and turn-based. Players log in on their own schedules to review reports and issue orders before maintenance. The deliberate pace leaves time to plan and negotiate. Each round represents one year; maintenance resolves orders on an internal 52-week timeline. Reports are dated as `Stardate WK/YYYY` (week/year).
 
 == Turn Progression
 
@@ -374,7 +374,9 @@ Every planet has a *Potential Production* --- the maximum productive capacity it
 
 == Tax Revenue
 
-The tax rate is empire-wide: you set one rate for all your planets. Revenue per
+*One tax rate applies to every planet you own.* You cannot set separate rates
+for individual worlds. Planet Command’s Tax option changes this shared rate,
+regardless of which planet you have selected. Revenue per
 planet per year is a fixed percentage of Production, and your empire's
 Empire Revenue is the sum of that revenue across all owned planets. The screens
 show next year's revenue, rounded to the nearest whole point, and setting the
@@ -385,7 +387,7 @@ See @appendix-economy for the exact formula.
 == Growth Toward Potential
 
 Each maintenance turn, every owned planet grows toward its Potential. Lower
-taxes grow faster. A planet at 30% tax develops far faster than one at 60%.
+taxes grow faster. An empire-wide rate of 30% develops your growing worlds faster than a rate of 60%.
 Growth also slows as the planet nears its ceiling: each year a planet closes
 a share of its gap to Potential, so it comes close to Potential without
 reaching it on a fixed date. Every point of tax costs growth, and there is no
@@ -398,7 +400,7 @@ Growth is based on the gap to Potential and the remaining tax headroom. See
 
 #admonition("WARNING")[Setting taxes above *65%* can directly _reduce_ Production on your planets, not just slow growth.]
 
-Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production, and a mature planet settles below its Potential: a Potential-100 world taxed at 70% settles at Production 88 and earns 62 a year, and at 71% it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
+Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production, and a mature planet settles below its Potential: with the empire-wide rate at 70%, a Potential-100 world settles at Production 88 and earns 62 a year; at 71%, it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
 
 The recommended early-game rate is around 50--65%. Lower the empire-wide rate to accelerate colony development; this also reduces the tax rate on established worlds.
 See @appendix-economy for the exact penalty and yearly update formulas.
@@ -428,7 +430,7 @@ Tax revenue that a planet does not spend accumulates in its *Treasury* --- the p
 
 == Newly Colonized Planets
 
-A freshly colonized planet starts at Production 3 (or at its Potential, if that is lower) and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on the next maintenance turn. Each year growth is applied first and tax revenue is then credited on the grown Production, so at moderate tax rates most colonies have a small budget after their first full turn. Very small worlds, or colonies under low taxes, can still sit at zero budget for a turn or more, because the treasury only counts whole points. The head start comes only with founding, never with capture, recapture, or recovery, and does not depend on the tax rate. Low taxes still develop new colonies fastest; they just fill the treasury more slowly at first.
+A freshly colonized planet starts at Production 3 (or at its Potential, if that is lower) and with no treasury. It does not collect revenue or growth on the same maintenance turn that establishes the colony. Growth begins on the next maintenance turn. Each year growth is applied first and tax revenue is then credited on the grown Production, so at moderate tax rates most colonies have a small budget after their first full turn. Very small worlds, or colonies in an empire with a low tax rate, can still sit at zero budget for a turn or more, because the treasury only counts whole points. The head start comes only with founding, never with capture, recapture, or recovery, and does not depend on the tax rate. A low empire-wide tax rate develops new colonies fastest, but fills their treasuries more slowly at first.
 
 == Conquered Planets
 
@@ -454,7 +456,7 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength in every later battle until it recovers on its own: a ship crippled this year fights crippled next year and the year after, and is whole from then on, with no order, payment, or shipyard. A fleet that rests in orbit of your world beside your starbase for a whole year gets its older cripples back a year sooner. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
@@ -774,7 +776,7 @@ answer yes to "Include time to enter system?"
 
 *Mission 9: View a World.* A quick look. The fleet dives into the target system, scans for owner and production data, and climbs straight back out into deep space. While it is in the system, the owner's fleets may spot and attack it. It reverts to Hold Position after reporting.
 
-*Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster under low taxes. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
+*Mission 12: Colonize a World.* Requires at least one ETAC (Environmental Transformation And Colonization ship). If the planet is unowned, it is terraformed and claimed. The new colony starts with one garrison army, no treasury, and very low current production. It does not receive revenue or growth until later maintenance turns, and then develops faster when the empire-wide tax rate is low. The ETAC is not consumed --- it survives and can colonize additional planets. If the planet is already owned, the ETAC aborts, reports the owner's identity and production potential, writes that partial result into your Total Planet Database, and waits for new orders.
 
 *Mission 15: Salvage.* The fleet travels to one of your planets and scraps its ships for half their build cost, rounded up ship by ship, returned to that planet's treasury: 23 points for a battleship, 8 for a cruiser, 3 for a destroyer, 3 for a transport (loaded or empty), 10 for an ETAC, and 8 for a scout. Armies aboard loaded transports land on the planet, and the fleet is disbanded. If you lose the planet while the fleet is en route, the fleet salvages at the nearest planet you still own instead; with none left, it stops and holds where it is. The game offers the planet nearest the fleet as the default target; if you own only one planet, it takes that planet without asking. A group salvages at one planet.
 
@@ -901,7 +903,7 @@ blocked from further play.
 
 == Planet Command
 
-Planet Command controls your economy and ground operations. Tax (*T*) sets the empire-wide tax rate. From the main Planet Command menu, Scorch Earth (*S*) sets or rescinds the order that wears down your own industry to deny it to an invader (see @scorch-earth). Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) assigns newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase currently waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
+Planet Command controls your economy and ground operations. Tax (*T*) sets the rate for every planet you own, not just the selected planet. From the main Planet Command menu, Scorch Earth (*S*) sets or rescinds the order that wears down your own industry to deny it to an invader (see @scorch-earth). Build (*B*) spends production points on ships, defenses, or starbases. Commission (*C*) assigns newly built ships from stardock into active fleets. *Mass Commission* (*M*) commissions every ship and starbase currently waiting in stardock. Load and Unload (*L* / *U*) move armies between the planet surface and troop transports.
 
 The *Planet List* is the fast row-centric operations screen for owned worlds. Once you open it, the highlighted planet becomes the working row for the most common actions: Build (*B*), Display Queue (*D*), Abort Builds (*A*), Mass Commission (*M*), Commission (*C*), Load / Unload armies (*L* / *U*), and Scorch Earth (*X*). On that screen, *S* is reserved for *Sort*, while *I* or *Enter* opens planet information for the selected row. Owned-planet information includes the planet's *Budget* as well as its *Treasury*.
 
@@ -1010,7 +1012,7 @@ familiar. If you are new to it, this manual gives you the rules straight.
 
 = Appendix A: Economy Formula Reference <appendix-economy>
 
-This appendix collects the exact economy formulas in one place.
+This appendix collects the exact economy formulas in one place. In every formula, `tax_rate` is the same empire-wide setting for all owned planets.
 
 == Yearly Tax Revenue
 

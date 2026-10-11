@@ -78,3 +78,61 @@ Git otherwise treats the generated PDF cross-reference CRLF records as text.
 [Release plan](../plans/fv6fg33o-release-v1-0-0-beta-3.md) tracks the remaining
 binary, signing, and publication work. The guide is included by future builds;
 it has not been uploaded into an existing public archive.
+
+## Owner wording review
+
+The goal is to dominate the galaxy, not one sector. Describe player activity
+as asynchronous, turn-based play, with deliberate time for planning and
+diplomacy. Use fleet orders, not naval orders. Maintenance resolution and
+simultaneous fire within a fleet battle are separate mechanics; they do not
+mean players must act together. Updated the quick-start introduction, the
+full manual introduction to gameplay, and the README accordingly.
+
+A second tax wording pass makes the shared rate explicit in the first-turn
+checklist, colony advice, Planet Command description, and formula appendix.
+Individual planets cannot have separate tax rates. The 30%/60% growth example
+now compares empire-wide policies, not differently taxed colonies.
+
+Recovery wording now leads with automatic healing at the end of the second
+turn after damage, then explains the one-turn orbital starbase bonus. This
+is the existing RT contract, not a same-sector bonus or a timing change.
+
+At the owner’s request, the quick-start now uses the player manual’s exact
+CC BY-NC-SA 4.0 notice, shared badge, and license link on a dedicated final
+page. The guide has three gameplay pages and one license page.
+
+## Second complete quick-start audit
+
+Re-read the current guide claim by claim against the running edition's code,
+not the supplied draft. Additional source checks:
+
+- [New-game builder](../../../rust/nc-data/src/builder.rs): actual joinable
+  fleet blocks and `seeded_homeworld`, rather than only compatibility helpers.
+- [Production kinds](../../../rust/nc-data/src/model/planet.rs): every listed
+  cost; [ship speeds](../../../rust/nc-data/src/fleet_ships.rs): every maximum.
+- [Fleet order validation](../../../rust/nc-data/src/directory/mutators_fleet.rs):
+  editable speed, loaded-transport and warship requirements, scout-only missions.
+- [ROE rules](../../../rust/nc-engine/src/maint/encounter/rules.rs): 0, 6, 10
+  and the distinction between willingness and diplomatic hostility.
+- [Recovery cohorts](../../../rust/nc-data/src/model/crippled.rs) and
+  [assistance tests](../../../rust/nc-engine/src/maint/ship_recovery_tests.rs):
+  no damage-year countdown; the fleet, base and ownership must qualify all year.
+- [Ship notation](../../../rust/nc-data/src/ship_notation.rs): loaded/empty
+  categories and crippled counts included in totals.
+- [Fleet controller](../../../rust/nc-game/src/domains/fleet/controller.rs):
+  ETA asks whether to include system entry. Rechecked main/general/fleet/planet
+  menu entries and Build Commands' S key directly in screen code.
+- [Campaign outcome](../../../rust/nc-engine/src/maint/campaign/state.rs):
+  sole contender recognized as Emperor, not a one-sector victory condition.
+
+Corrected remaining overstatements: speeds are maxima, builds may span turns,
+ETACs carry no armies (an ETAC can still accompany an invasion fleet), colony
+production is capped by Potential, the assisting base must also stay put,
+and industry preservation has a Scorch Earth exception. Added the missing
+load-armies step and Invade's warship requirement. Distinguished a failed
+landing that leaves a fleet holding orbit from defeat in the orbital fight.
+No game behavior changed.
+
+Rebuilt the quick-start PDF without warnings and rendered every page to inspect
+page breaks, table widths, and the license. The final rendering has three gameplay pages plus one license page, with no
+stray overflow page.

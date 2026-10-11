@@ -21,6 +21,10 @@ fleets, you must tax, build, scout, bargain, threaten, and strike before rival
 powers can do the same. Some systems will join your banner willingly. Others
 will require persuasion from orbit.
 
+Play is asynchronous and turn-based. Log in on your own schedule, issue orders,
+and return after maintenance for the results. The pace leaves time to plan and
+negotiate.
+
 Each maintenance marks the passage of a year. In that span, fleets cross the
 dark between stars, colonies grow or starve, alliances turn cold, and victory is
 decided by industry, cunning, and will.

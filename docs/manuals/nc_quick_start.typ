@@ -76,9 +76,11 @@
 
 = Your First Year
 
-Expand from one world, build your economy, and defeat your rivals. The game ends when one empire becomes Emperor and no serious contender remains.
+Your goal is to dominate the galaxy. Expand from one world, build your economy, and defeat your rivals. The game ends when one empire becomes Emperor and no serious contender remains.
 
-You issue orders between maintenance runs. There is no End Turn button. Maintenance resolves everyone's orders and advances the year. Ask your sysop for the schedule. Builds and the economy run first; movement and combat then unfold over 52 internal weeks. `Stardate 14/3002` means week 14 of year 3002.
+Nostrian Conquest is an asynchronous, turn-based strategy game. Log in when it suits you, review reports, and issue fleet orders before the next maintenance. Players need not be online together. The deliberate pace leaves time to plan, negotiate, and weigh your next move.
+
+There is no End Turn button. Scheduled maintenance resolves everyone's orders and advances the year. Ask your sysop for the schedule. Builds and the economy run first; movement and combat then unfold over 52 internal weeks. `Stardate 14/3002` means week 14 of year 3002.
 
 == What You Start With
 
@@ -92,9 +94,9 @@ An ETAC does not carry an army. It claims unowned worlds with *Colonize*, missio
 == First-Turn Checklist
 
 + *Read your reports.* From the main menu, press `G`, then `R` for the Inbox. It has Reports, Messages, and Sent folders. Return with `Q`.
-+ *Inspect your worlds.* Main-menu `P` opens Planet Command. `T` sets *one tax rate for your entire empire*. Around 50–65% is a useful opening range: lower taxes favor growth; higher taxes collect more now. Above 65%, production suffers a penalty.
-+ *Queue useful builds.* In Planet Command, `B` opens Build Commands; `S` specifies orders. A cruiser costs 15 points, a destroyer 5, and an ETAC 20. Spend for your plan; your homeworld already has defenses. Builds complete during maintenance. Commission finished ships from stardock with Planet Command `C` or `M` before using them.
-+ *Explore and colonize.* Main-menu `F` opens Fleet Command. Use `O` to assign orders. Send a destroyer on *View*, mission 9, to inspect a nearby world. Send a cruiser-and-ETAC fleet on *Colonize*, mission 12, to an unowned world. Do not use an invasion order to found a colony. Scout missions 10 and 11 require a Scout (`SC`), not a destroyer.
++ *Inspect your worlds.* Main-menu `P` opens Planet Command. `T` sets *one tax rate for every planet you own*. You cannot set separate rates for individual worlds. Around 50–65% is a useful opening range: lower taxes favor growth; higher taxes collect more now. Above 65%, production suffers a penalty.
++ *Queue useful builds.* In Planet Command, `B` opens Build Commands; `S` specifies orders. A cruiser costs 15 points, a destroyer 5, and an ETAC 20. Spend for your plan; your homeworld already has defenses. Builds advance during maintenance and may take several turns to finish. Commission finished ships from stardock with Planet Command `C` or `M` before using them.
++ *Explore and colonize.* Main-menu `F` opens Fleet Command. Use `O`, choose the fleet, then select its mission and target. Send a destroyer on *View*, mission 9, to inspect a nearby world. Send a cruiser-and-ETAC fleet on *Colonize*, mission 12, to an unowned world. Do not use an invasion order to found a colony. Scout missions 10 and 11 require a Scout (`SC`), not a destroyer.
 + *Check travel time, then log off.* Use the fleet ETA command (`E`) and include system-entry time for a world mission. Check targets and standing orders. Return to the main menu and press `Q` when finished.
 
 #admonition("REMEMBER")[
@@ -111,17 +113,17 @@ An ETAC does not carry an army. It claims unowned worlds with *Colonize*, missio
   columns: (auto, auto, auto, 1fr),
   align: (left, right, right, left),
   inset: 5pt,
-  table.header([Code], [Cost], [Speed], [Role]),
+  table.header([Code], [Cost], [Max. speed], [Role]),
   [`DD`], [5], [6], [Destroyer: fast combat ship and raider.],
   [`CA`], [15], [5], [Cruiser: balanced fighter and escort.],
   [`BB`], [45], [4], [Battleship: heavy firepower and durability.],
   [`SC`], [15], [6], [Scout: unarmed reconnaissance ship.],
   [`TT`], [5], [5], [Troop transport: carries one army; built empty.],
-  [`ETAC`], [20], [3], [Reusable colony ship; cannot invade.],
+  [`ETAC`], [20], [3], [Reusable colony ship; carries no armies.],
   [`SB`], [50], [1], [Starbase: separate unit, with orbital defense and economic benefits.],
 )
 
-Speed is sectors per year. A fleet travels at its slowest ship's speed. Leaving orbit costs one sector of movement, and entering a destination's orbit costs another. Check ETA rather than assuming a nearby world is one turn away.
+Speed is sectors per year. A fleet's maximum speed is set by its slowest ship; you can order it to travel more slowly. Leaving orbit costs one sector of movement, and entering a destination's orbit costs another. Check ETA rather than assuming a nearby world is one turn away.
 
 == Read the Ship Notation
 
@@ -136,11 +138,13 @@ The legend is `! = crippled; * = loaded`.
 
 == Recovery Is Automatic
 
-Crippled ships fight at half strength but keep their speed. A ship crippled this year stays damaged through the next two years and is whole for the year after that. No repair order or payment is needed. Resting for a full year at your own world beside your own starbase lets older cripples recover a year sooner; newly damaged ships do not get that bonus in their damage year.
+Crippled ships fight at half strength but keep their speed. They recover automatically at the end of the second turn after they were damaged. No repair order or payment is needed.
+
+Keep damaged ships at rest in orbit of your world beside your starbase for the whole following turn to recover them one turn sooner. The base must stay there too. The bonus applies to ships damaged in an earlier turn, not fresh damage. Sharing the sector alone is not enough.
 
 == Grow Before You Fight
 
-New colonies start at Production 3 and begin growing and earning revenue the following maintenance. Lowering taxes helps them develop, but lowers the rate on your homeworld too. Tax changes do not change a world's Potential Production.
+New colonies start at Production 3, or their Potential if lower, and begin growing and earning revenue the following maintenance. The same tax rate applies to your homeworld and every colony. Lowering it favors colony growth over immediate tax revenue across your whole empire. It does not change any world's Potential Production.
 
 A commissioned starbase at rest in orbit boosts growth at taxes below 65% and lets the world spend up to five times its production from saved treasury. More bases add defense, not more economic bonuses. Armies cost 2 points and batteries 20. They deploy to the surface when their builds complete, not when you place the order.
 
@@ -150,17 +154,17 @@ A commissioned starbase at rest in orbit boosts growth at taxes below 65% and le
 
 == Choose Your Risks
 
-*ROE* (Rules of Engagement) runs from 0 to 10. Set it with Fleet Command `C`. ROE 0 never volunteers to attack; ROE 6 requires at least equal attack strength; ROE 10 accepts any odds. The comparison uses participating sides' attack strength, including damaged ships at their reduced strength, rather than ship counts.
+*ROE* (Rules of Engagement) runs from 0 to 10. Set it with Fleet Command `C`. It controls willingness to fight a hostile force, not whom you declare an enemy. ROE 0 never volunteers to attack; ROE 6 requires at least equal attack strength; ROE 10 accepts any odds. The comparison uses participating sides' attack strength, including damaged ships at their reduced strength, rather than ship counts.
 
 A fleet that is attacked must fight one exchange. After each exchange, its ROE decides whether it stays. Fleets without warships try to escape. Faster enemies can catch a retreat, so low ROE is not a promise of safety. Escorts protect auxiliaries from ordinary fire while the combat line holds, but critical hits can reach past it.
 
-*Scout before assaulting.* Enemy starbases and defending fleets in orbit must be dealt with before a planetary strike. Then choose the mission:
+*Prepare before assaulting.* Troop transports are built empty. Use Fleet Command `L` at your world to load armies; each transport carries one. Scout the target and bring escorts. Defending forces in orbit can stop a planetary strike before it reaches the surface. Then choose the mission:
 
 - *Bombard (6):* repeated attacks that can destroy batteries, docked ships, armies, goods, and production. It continues each year until you change orders.
-- *Invade (7):* suppress batteries, soften the garrison, then land armies from loaded transports. Surviving batteries block the landing. Industry and goods are preserved.
-- *Blitz (8):* land sooner with brief cover fire. Surviving batteries fire on your transports. Industry is preserved, and surviving batteries become yours if you capture the world.
+- *Invade (7):* requires warships and loaded transports. Suppress batteries, soften the garrison, then land armies. Surviving batteries block the landing.
+- *Blitz (8):* requires loaded transports. Escorting warships provide brief cover fire, then surviving batteries fire on your landing transports. Surviving batteries become yours if you capture the world.
 
-Defending armies fire first in each ground round. Equal numbers are a poor gamble; bring a margin. Invade and Blitz finish on Hold after the assault. A captured world earns no revenue for the next two maintenance turns. Conquest takes both ships and time.
+Invade and Blitz do not damage industry or goods, but a defender’s Scorch Earth order can destroy assets before and during capture. Defending armies fire first in each ground round. Equal numbers are a poor gamble; bring a margin. Fleets that keep orbit after an assault finish on Hold, win or lose; those beaten in space withdraw. A captured world earns no revenue for the next two maintenance turns.
 
 == Find the Right Menu
 
@@ -169,7 +173,7 @@ Keys depend on the menu. These paths start at the *main menu*; press `Q` to back
 #table(
   columns: (1.15in, 1fr),
   align: (left, left),
-  inset: 5pt,
+  inset: 4pt,
   table.header([Keys], [Action]),
   [`P`, then `T`], [Set the empire-wide tax rate.],
   [`P`, then `B`], [Build ships and defenses.],
@@ -185,12 +189,30 @@ Keys depend on the menu. These paths start at the *main menu*; press `Q` to back
   [`Q`], [Leave a submenu; from the main menu, quit.],
 )
 
-At your next login, read the reports, commission completed ships, and check fleets that finished their missions. Sent shows queued messages until maintenance delivers them. General Command `D` clears reports from your view; it does not erase the game's stored history.
+After maintenance, read reports, commission new ships, and check completed missions. Sent marks pending messages as Queued. General Command `D` clears reports from view, not from the game’s history.
 
 For the full rules and tables, read *nc_player_manual.pdf*, shipped beside this guide.
 
-#v(0.5em)
-#text(size: 8pt, fill: luma(100))[
-  © 2026 Mason A. Green. New text and layout licensed under
-  #link("https://creativecommons.org/licenses/by-nc-sa/4.0/")[CC BY-NC-SA 4.0].
+#pagebreak()
+
+#let manual_license_notice = [
+  New text, layout, and explanatory material in this manual
+  © 2026 Mason A. Green and are licensed under CC BY-NC-SA 4.0. Original
+  historical Esterian Conquest references and other preserved 1992 source
+  material are excluded from that grant and remain credited to their original
+  authors and rights holders.
+]
+
+#align(center + horizon)[
+  #v(3em)
+  #image("assets/cc-by-nc-sa-4.0-badge.svg", width: 3.3in)
+  #v(1em)
+  #block(width: 80%)[
+    #set text(size: 9pt, fill: luma(110))
+    #manual_license_notice
+  ]
+  #v(0.5em)
+  #text(size: 9pt, fill: luma(110))[
+    License text: #link("https://creativecommons.org/licenses/by-nc-sa/4.0/")
+  ]
 ]
