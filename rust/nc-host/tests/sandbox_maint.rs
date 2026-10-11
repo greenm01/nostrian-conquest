@@ -24,6 +24,7 @@ fn seed_runtime_with_activity(
         .collect::<Vec<_>>();
     store
         .save_runtime_state_structured_with_intel_and_activity(
+            game_data.conquest.game_year,
             &game_data,
             &BTreeSet::new(),
             &[] as &[ReportBlockRow],

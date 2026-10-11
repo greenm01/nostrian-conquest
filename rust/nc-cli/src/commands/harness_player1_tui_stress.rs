@@ -173,6 +173,7 @@ pub(crate) fn seed_player1_tui_stress(
     replace_player_one_mail(&mut state, game_year);
 
     store.save_runtime_state_structured_with_intel(
+        game_year,
         &state.game_data,
         &state.planet_scorch_orders,
         &state.report_block_rows,

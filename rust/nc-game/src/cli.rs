@@ -13,7 +13,9 @@ use crate::terminal::OutputEncoding;
 use crate::terminal::Terminal;
 use crate::terminal::door::{DoorTerminal, DoorTimeout, DoorTransport};
 use crate::terminal::stdout::StdoutTerminal;
-use nc_data::{BbsGameConfig, CampaignStore, CampaignStoreError, SeatBindSource};
+use nc_data::{
+    BbsGameConfig, CampaignStore, CampaignStoreError, STALE_SESSION_MESSAGE, SeatBindSource,
+};
 use nc_session::launch::{
     LaunchBindingRequest, LaunchPlayerBinding, LaunchPlayerBindingSource,
     resolve_launch_player_binding as shared_resolve_launch_player_binding,
@@ -272,6 +274,12 @@ fn run_interactive(
             let _ = terminal.dump_text_capture(&timeout.to_string());
             Ok(())
         }
+        // Maintenance ran under a door session; saves are refused, so send
+        // the caller back to the BBS the way a time limit does.
+        Ok(SessionEnd::Stale) => {
+            let _ = terminal.dump_text_capture(STALE_SESSION_MESSAGE);
+            Ok(())
+        }
         Err(err) => {
             let _ = terminal.clear_and_restore();
             Err(err)
@@ -284,6 +292,7 @@ enum SessionEnd {
     Quit,
     InputClosed,
     TimedOut(DoorTimeout),
+    Stale,
 }
 
 fn run_interactive_inner(
@@ -349,6 +358,13 @@ fn run_interactive_inner(
         );
         if matches!(outcome, AppOutcome::Quit) {
             return Ok(SessionEnd::Quit);
+        }
+        if app.door_mode && app.session_stale {
+            tracing::info!(
+                player = app.player.record_index_1_based,
+                "door session ended: maintenance ran after it loaded"
+            );
+            return Ok(SessionEnd::Stale);
         }
     }
 }
@@ -992,7 +1008,9 @@ mod tests {
     use crate::terminal::{ColorMode, OutputEncoding, Terminal};
     use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
     use nc_compat::import_directory_snapshot;
-    use nc_data::{BbsGameConfig, CampaignStore, SeatBindSource, SeatReservation};
+    use nc_data::{
+        BbsGameConfig, CampaignStore, STALE_SESSION_MESSAGE, SeatBindSource, SeatReservation,
+    };
     use std::collections::{BTreeSet, VecDeque};
     use std::fs;
     use std::io;
@@ -1092,7 +1110,13 @@ mod tests {
             .expect("join player");
         nc_data::set_player_handle(&mut data.players[player - 1], alias);
         store
-            .save_runtime_state_structured(&data, &BTreeSet::new(), &[], &[])
+            .save_runtime_state_structured(
+                data.conquest.game_year,
+                &data,
+                &BTreeSet::new(),
+                &[],
+                &[],
+            )
             .expect("save runtime state");
     }
 
@@ -1740,6 +1764,61 @@ mod tests {
 
             assert_eq!(terminal.captures, vec![timeout.to_string()]);
         }
+
+        let _ = fs::remove_dir_all(&game_dir);
+    }
+
+    #[test]
+    fn door_session_ends_cleanly_with_a_message_once_maintenance_has_run() {
+        let game_dir = temp_first_time_game_copy();
+        let config = AppConfig {
+            game_dir: game_dir.clone(),
+            player_record_index_1_based: 1,
+            export_root: None,
+            queue_dir: None,
+            session_timeout_secs: None,
+            game_config: RuntimeConfig::default(),
+        };
+        let mut door_app = App::load(config.clone()).expect("app should load");
+        let mut local_app = App::load(config).expect("app should load");
+
+        let store = CampaignStore::open_default_in_dir(&game_dir).expect("open store");
+        let mut state = store
+            .load_latest_runtime_state()
+            .expect("load runtime state")
+            .expect("snapshot exists");
+        nc_engine::run_maintenance_turn(&mut state.game_data).expect("maintenance should run");
+        store
+            .save_runtime_state_structured(
+                state.game_year,
+                &state.game_data,
+                &state.planet_scorch_orders,
+                &state.report_block_rows,
+                &state.queued_mail,
+            )
+            .expect("maintenance saves the new year");
+
+        let keys = [
+            key(KeyCode::Char('x')),
+            key(KeyCode::Char('x')),
+            key(KeyCode::Char('x')),
+        ];
+        door_app.door_mode = true;
+        door_app.save_game_data().expect_err("the save is refused");
+        let mut door_terminal = ScriptedTerminal::new(keys);
+        run_interactive(&mut door_app, &mut door_terminal, false)
+            .expect("a stale door session is a normal exit");
+        assert_eq!(door_terminal.captures, vec![STALE_SESSION_MESSAGE]);
+        assert_eq!(door_terminal.keys.len(), 2, "the session ended at once");
+
+        // A local session is not thrown out: it keeps running until the
+        // player quits, but never saves again.
+        local_app.save_game_data().expect_err("the save is refused");
+        let mut local_terminal = ScriptedTerminal::new(keys);
+        run_interactive(&mut local_app, &mut local_terminal, false).expect("local session ends");
+        assert!(local_terminal.captures.is_empty());
+        assert!(local_terminal.keys.is_empty());
+        assert!(local_app.session_stale);
 
         let _ = fs::remove_dir_all(&game_dir);
     }

@@ -149,7 +149,13 @@ fn export_rows(label: &str, oracle: &Path, rows: &[ReportBlockRow]) -> (Vec<u8>,
     let dir = scratch_dir(label);
     let store = CampaignStore::open_default_in_dir(&dir).expect("store");
     store
-        .save_runtime_state_structured(&game_data, &BTreeSet::new(), rows, &[])
+        .save_runtime_state_structured(
+            game_data.conquest.game_year,
+            &game_data,
+            &BTreeSet::new(),
+            rows,
+            &[],
+        )
         .expect("save");
     export_latest_snapshot_to_dir(&store, &dir).expect("export");
     let exported = (
