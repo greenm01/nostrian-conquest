@@ -45,6 +45,11 @@ attacker and a roll otherwise.
 > classic still decides who may meet whom and when, but whether a fleet
 > agrees to fight now uses effective NC attack strength, not classic's
 > encounter weights.
+>
+> Also refined on 2026-10-10 by
+> [fleets of one empire fight together and first contact obeys ROE](gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md):
+> each side of a battle is an empire's assembled fleets in the sector and
+> layer, and first identification no longer bypasses ROE.
 
 ## Decision
 

@@ -20,6 +20,11 @@ settled the resolution table and [decision 3](p01cg7ll-rt-controls-automatic-shi
 made damage last, which made the yardstick question pressing: a damaged
 fleet must look as weak as it is.
 
+> Its first-identification clause (item 5's "classic's first-identification
+> rule ... unchanged") is superseded on 2026-10-10 by
+> [fleets of one empire fight together and first contact obeys ROE](gzly58c5-fleets-of-one-empire-fight-together-and-first-contact-obeys-roe.md):
+> every attack now passes the assembled ROE test.
+
 ## Decision
 
 The owner approved Claude and Codex's joint recommendation on 2026-10-10,
