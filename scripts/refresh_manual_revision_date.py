@@ -23,6 +23,12 @@ class ManualSpec:
 
 
 MANUALS = {
+    "quick-start": ManualSpec(
+        key="quick-start",
+        label="quick-start",
+        typ_path=MANUALS_DIR / "nc_quick_start.typ",
+        pdf_path=MANUALS_DIR / "nc_quick_start.pdf",
+    ),
     "player": ManualSpec(
         key="player",
         label="player",
@@ -46,15 +52,15 @@ REVISION_DATE_RE = re.compile(r"Revision date: [A-Za-z]+ \d{1,2}, \d{4}")
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
-            "Refresh the revision date in one or both Typst manuals and, by "
+            "Refresh the revision date in the selected Typst guides and, by "
             "default, rebuild the matching PDF outputs."
         )
     )
     parser.add_argument(
         "--doc",
-        choices=("player", "sysop", "both"),
+        choices=("player", "sysop", "quick-start", "both", "all"),
         default="both",
-        help="Which manual to update. Defaults to both.",
+        help="Which guide to update. Both means player and sysop; all includes quick-start.",
     )
     parser.add_argument(
         "--date",
@@ -80,6 +86,8 @@ def parse_iso_date(value: str) -> date:
 
 
 def target_specs(doc_arg: str) -> list[ManualSpec]:
+    if doc_arg == "all":
+        return list(MANUALS.values())
     if doc_arg == "both":
         return [MANUALS["player"], MANUALS["sysop"]]
     return [MANUALS[doc_arg]]

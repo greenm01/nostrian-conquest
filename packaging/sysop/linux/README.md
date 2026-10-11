@@ -11,6 +11,12 @@ If you want localhost or direct SSH play, build from source and use
 `nc-game`. If you want the VPS/Nostr daemon stack, build from tagged source
 and use `scripts/install_vps.sh`.
 
+## Player Guide
+
+Start with [NC Player Quick Start](docs/nc_quick_start.pdf). The full
+[player manual](docs/nc_player_manual.pdf) covers the rules and tables.
+Both are included with the sysop manual.
+
 ## BBS Quick Start
 
 1. Create a game directory and write `config.kdl` first. Start from

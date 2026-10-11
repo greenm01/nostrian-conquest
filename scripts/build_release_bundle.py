@@ -19,6 +19,7 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 RUST_ROOT = REPO_ROOT / "rust"
 RELEASES_DIR = REPO_ROOT / "releases"
 PLAYER_MANUAL = REPO_ROOT / "docs" / "manuals" / "nc_player_manual.pdf"
+QUICK_START = REPO_ROOT / "docs" / "manuals" / "nc_quick_start.pdf"
 SYSOP_MANUAL = REPO_ROOT / "docs" / "manuals" / "nc_sysop_manual.pdf"
 SYSOP_DOCS_ROOT = REPO_ROOT / "docs" / "sysop"
 SYSOP_ASSET_ROOT = REPO_ROOT / "packaging" / "sysop"
@@ -507,6 +508,7 @@ def stage_bundle(spec: BundleSpec, binary_paths: dict[str, Path], workspace_root
             for path in binary_paths.values():
                 copy_file(path, bundle_root / path.name)
             copy_file(PLAYER_MANUAL, bundle_root / PLAYER_MANUAL.name)
+            copy_file(QUICK_START, bundle_root / QUICK_START.name)
             copy_file(SYSOP_MANUAL, bundle_root / SYSOP_MANUAL.name)
             copy_file(SYSOP_CONFIG_EXAMPLE, bundle_root / "config.kdl")
         else:
@@ -516,6 +518,7 @@ def stage_bundle(spec: BundleSpec, binary_paths: dict[str, Path], workspace_root
             for name, path in binary_paths.items():
                 copy_file(path, bin_dir / name, executable=True)
             copy_file(PLAYER_MANUAL, docs_dir / PLAYER_MANUAL.name)
+            copy_file(QUICK_START, docs_dir / QUICK_START.name)
             copy_file(SYSOP_MANUAL, docs_dir / SYSOP_MANUAL.name)
             copy_file(SYSOP_CONFIG_EXAMPLE, examples_dir / "config.kdl")
         copy_tree(SYSOP_DOCS_ROOT, sysop_docs_dir)
@@ -525,6 +528,7 @@ def stage_bundle(spec: BundleSpec, binary_paths: dict[str, Path], workspace_root
             for path in binary_paths.values():
                 copy_file(path, bundle_root / path.name)
             copy_file(PLAYER_MANUAL, bundle_root / PLAYER_MANUAL.name)
+            copy_file(QUICK_START, bundle_root / QUICK_START.name)
             if spec.artifact == "public-beta":
                 copy_file(SYSOP_MANUAL, bundle_root / SYSOP_MANUAL.name)
         else:
@@ -533,6 +537,7 @@ def stage_bundle(spec: BundleSpec, binary_paths: dict[str, Path], workspace_root
             for name, path in binary_paths.items():
                 copy_file(path, bin_dir / name, executable=True)
             copy_file(PLAYER_MANUAL, docs_dir / PLAYER_MANUAL.name)
+            copy_file(QUICK_START, docs_dir / QUICK_START.name)
             if spec.artifact == "public-beta":
                 copy_file(SYSOP_MANUAL, docs_dir / SYSOP_MANUAL.name)
         for license_path in EC_CONNECT_LICENSES:
@@ -621,6 +626,7 @@ def verify_archive(spec: BundleSpec, archive_path: Path, *, run_smoke: bool) -> 
                 "README.md",
                 "BUILD-INFO.txt",
                 f"{docs_prefix}nc_player_manual.pdf",
+                f"{docs_prefix}nc_quick_start.pdf",
                 f"{docs_prefix}nc_sysop_manual.pdf",
                 "docs/sysop/README.md",
                 "docs/sysop/bbs/mystic-bbs-setup.md",
@@ -648,6 +654,7 @@ def verify_archive(spec: BundleSpec, archive_path: Path, *, run_smoke: bool) -> 
                 "README.md",
                 "BUILD-INFO.txt",
                 f"{docs_prefix}nc_player_manual.pdf",
+                f"{docs_prefix}nc_quick_start.pdf",
                 "licenses/OFL-0xProto.txt",
                 "licenses/OFL-JetBrainsMono.txt",
                 "licenses/LICENSE-NotoSansMono.txt",

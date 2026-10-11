@@ -12,6 +12,12 @@ BBS door. If you want localhost or direct console play on Windows, build from
 source and use `nc-game.exe`. If you want the VPS/Nostr daemon stack, build
 from tagged source on Linux and use `scripts/install_vps.sh`.
 
+## Player Guide
+
+Start with [NC Player Quick Start](nc_quick_start.pdf). The full
+[player manual](nc_player_manual.pdf) covers the rules and tables.
+Both are included with the sysop manual.
+
 ## BBS Quick Start
 
 1. Choose a game directory and copy `config.kdl` into it. Adjust `players`

@@ -65,10 +65,14 @@ Those archives are the public BBS/sysop package and include `nc-door`,
 
 ## Learn The Game
 
-Start with the current Rust manuals:
+Start with the player quick-start guide, then use the manuals for the full rules:
 
+- **[NC Player Quick Start (PDF)](docs/manuals/nc_quick_start.pdf)**
 - **[NC Player Manual (PDF)](docs/manuals/nc_player_manual.pdf)**
 - **[NC Sysop Manual (PDF)](docs/manuals/nc_sysop_manual.pdf)**
+
+To rebuild all three PDFs from their Typst sources, run
+`python3 scripts/refresh_manual_revision_date.py --doc all` (requires Typst).
 
 Historical `.DOC` files remain preserved in [original/v1.5](original/v1.5).
 

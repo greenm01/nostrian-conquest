@@ -26,6 +26,7 @@ carry:
 - `nc-sysop`
 - the sysop manual PDF
 - the player manual PDF
+- the player quick-start PDF
 - minimal example campaign files for a normal door host handoff
 
 Localhost play is supported on Windows, Linux, and macOS, but it remains a

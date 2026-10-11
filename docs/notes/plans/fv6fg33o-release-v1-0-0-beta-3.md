@@ -48,6 +48,33 @@ deleted the beta.2 Windows zips. All four links in
 `website/landing/downloads.html` now name beta.3, so the Windows links work
 again once t024 uploads those archives. Deploy the site after t024.
 
+## Readiness review, 2026-10-11
+
+At main `54663dcd`, the published Linux beta.3 archive still records
+`ce383f2d` in BUILD-INFO. Its SHA-256 matches the manifest and its detached
+signature verifies against the repository release key. It predates the latest
+engine/report and door workflow fixes. No Windows Rust archives are currently
+published. The live download page still names removed beta.2 assets, while
+its repository source names beta.3.
+
+Before closing t024:
+
+- Fix the packager's binary lookup: `build_binaries` assumes `rust/target`,
+  but cargo-slot puts artifacts elsewhere. Bundle the binaries actually built.
+- Rebuild Linux and all three Windows packages from one final commit, with
+  the reviewed [quick-start guide](../investigations/jl2o2ym3-quick-start-guide-accuracy-and-release-inclusion.md)
+  and current manuals. Use the revision helper's `--doc all` for all three PDFs.
+- Verify extracted packages and perform current Windows door acceptance.
+  Earlier Windows console acceptance does not cover the latest source.
+- Regenerate the complete checksum manifest, sign it, upload the packages,
+  and deploy the matching download page. Check all four live links afterward.
+
+Existing source evidence: 3,233 workspace tests passed, 11 ignored; after the
+last prompt wording change, 486 affected tests passed. A Linux release build
+and attended BBS menu testing passed. These do not substitute for fresh
+Windows binaries or extracted-package acceptance. No release assets or live
+website content were changed by this review.
+
 ## Connections
 
 Ships the work recorded in the

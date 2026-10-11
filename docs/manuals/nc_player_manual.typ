@@ -183,7 +183,7 @@ automatically.
 
 Your objective is simple: become Emperor by dominating rivals or eliminating every serious threat.
 
-You begin with one planet at 100 production and four fleets --- two carrying an ETAC and cruiser for colonization, and two lone destroyers for screening and early contact. Set a tax rate around 50--65% on your homeworld, and use the revenue to build ships, armies, batteries, and starbases. Keep taxes low on new colonies so they develop quickly.
+You begin with one planet at 100 production and four fleets --- two carrying an ETAC and cruiser for colonization, and two lone destroyers for screening and early contact. Set your empire-wide tax rate around 50--65%, and use the revenue to build ships, armies, batteries, and starbases. Lower the empire-wide rate when you want new colonies to develop faster.
 
 Each round represents one year. You submit orders during the year, and maintenance resolves all empires simultaneously on an internal 52-week timeline. Reports are dated as `Stardate WK/YYYY` (week/year).
 
@@ -400,7 +400,7 @@ Growth is based on the gap to Potential and the remaining tax headroom. See
 
 Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty kicks in that actively damages Production, and a mature planet settles below its Potential: a Potential-100 world taxed at 70% settles at Production 88 and earns 62 a year, and at 71% it settles at 86 and earns 61. A commissioned starbase does *not* remove this danger. Its value is that it helps young colonies grow faster before you reach punitive tax rates, and it still preserves the powerful build-capacity bonus described below.
 
-The recommended early-game rate is around 50--65%. Drop taxes on new colonies to accelerate their development.
+The recommended early-game rate is around 50--65%. Lower the empire-wide rate to accelerate colony development; this also reduces the tax rate on established worlds.
 See @appendix-economy for the exact penalty and yearly update formulas.
 
 == Starbase Economic Effects
@@ -972,7 +972,7 @@ A planet without a starbase can spend up to its Production, rounded to the neare
 
 == Early Game: The Land Grab
 
-The opening turns are a race for territory. ETACs are your most valuable early asset --- grab every raw planet you can find before your rivals do. Push lone destroyers forward as pickets to make early contact, but use true Scouts when you need stealth reconnaissance. Keep your tax rate at or below 65% to avoid damaging production, and drop taxes even lower on new colonies so they develop quickly. The temptation to tax at 100% for immediate cash is strong, but it cripples long-term growth.
+The opening turns are a race for territory. ETACs are your most valuable early asset --- grab every raw planet you can find before your rivals do. Push lone destroyers forward as pickets to make early contact, but use true Scouts when you need stealth reconnaissance. Keep your tax rate at or below 65% to avoid damaging production, and lower the empire-wide rate further when colony growth matters more than immediate revenue. The temptation to tax at 100% for immediate cash is strong, but it cripples long-term growth.
 
 == Mid-Game: Consolidation
 
