@@ -678,11 +678,11 @@ fn intel_tier_code(
 }
 
 fn format_stardock_summary(planet: &Planet) -> String {
-    shared_stardock_summary(planet, CompactUnitSummaryStyle::JoinedCodes)
+    shared_stardock_summary(planet, CompactUnitSummaryStyle::Notation)
 }
 
 fn format_build_queue_summary(planet: &Planet) -> String {
-    shared_build_queue_summary(planet, CompactUnitSummaryStyle::JoinedCodes)
+    shared_build_queue_summary(planet, CompactUnitSummaryStyle::Notation)
 }
 
 fn format_owned_orbit_summary(app: &DashApp, coords: [u8; 2], viewer_empire_id: u8) -> String {
@@ -818,8 +818,8 @@ mod tests {
         planet.build_queue[0].points_owed = 90;
         planet.stardock[1] = 5;
 
-        assert_eq!(format_build_queue_summary(&planet), "2BB");
-        assert_eq!(format_stardock_summary(&planet), "5CA");
+        assert_eq!(format_build_queue_summary(&planet), "BB2");
+        assert_eq!(format_stardock_summary(&planet), "CA5");
     }
 
     #[test]

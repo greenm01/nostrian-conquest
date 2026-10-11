@@ -296,7 +296,7 @@ Ships operate in fleets. A fleet always moves at the speed of its slowest member
 
 === Reading Fleet Compositions <ship-notation>
 
-Wherever the game lists the ships of a fleet in one line, it uses one notation: a ship code, the total number of ships of that kind, and, when some of them are crippled, a `!` and the number crippled. The total always includes the crippled ships. A single ship still shows its count, a kind the fleet lacks is left out, and `!0` is never written.
+Wherever the game lists ships in one line, it uses one notation, and always the same order: scouts, battleships, cruisers, destroyers, loaded transports, empty transports, ETACs, starbases. A planet's stardock and build queue read the same way, with armies (`AR`) and ground batteries (`GB`) after the starbases. Each token is a ship code, the total number of ships of that kind, and, when some of them are crippled, a `!` and the number crippled. The total always includes the crippled ships. A single ship still shows its count, a kind the fleet lacks is left out, and `!0` is never written.
 
 #figure(
   table(
@@ -304,18 +304,18 @@ Wherever the game lists the ships of a fleet in one line, it uses one notation: 
     align: (left, left),
     inset: 6pt,
     table.header([Token], [Meaning]),
-    [`DD8`], [Eight destroyers, none crippled.],
-    [`CA12!3`], [Twelve cruisers in all; three of them are crippled.],
-    [`BB2!1`], [Two battleships; one is crippled.],
     [`SC1`], [One scout.],
-    [`TT5`], [Five empty transports.],
+    [`BB2!1`], [Two battleships; one is crippled.],
+    [`CA12!3`], [Twelve cruisers in all; three of them are crippled.],
+    [`DD8`], [Eight destroyers, none crippled.],
     [`TT*4!1`], [Four loaded transports; one is crippled.],
+    [`TT5`], [Five empty transports.],
     [`ETAC2`], [Two ETACs.],
     [`SB1!1`], [One starbase, crippled.],
   ),
 )
 
-A fleet of `DD8 CA12!3 BB2!1 TT5 TT*4!1 ETAC2` therefore holds nine transports, five empty and four loaded: the star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `!n = crippled ships included in total; TT* = loaded transports`.
+A fleet of `BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2` therefore holds nine transports, five empty and four loaded: the star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `!n = crippled ships included in total; TT* = loaded transports`.
 
 A fleet counts its crippled transports once, whether they carry armies or not. The game lists them against the loaded transports first, the same order in which transports are lost in battle.
 

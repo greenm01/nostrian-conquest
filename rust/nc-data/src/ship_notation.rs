@@ -9,6 +9,9 @@
 
 use crate::{AutoCommissionFleetEntry, Fleet, HullClass};
 
+/// The code a starbase count is written with. It follows the ship classes.
+pub const STARBASE_CODE: &str = "SB";
+
 /// The short legend the door's help and detail screens repeat.
 pub const NOTATION_LEGEND: &str = "!n = crippled ships included in total; TT* = loaded transports";
 
@@ -135,36 +138,85 @@ pub fn crippled_by_category(fleet: &Fleet) -> [u32; ShipCategory::COUNT] {
     crippled
 }
 
+/// Ships and starbases to be written in the notation. Every compact
+/// composition on every screen is filled in here and written by
+/// [`Composition::notation`], so the one class order (`SC BB CA DD TT* TT
+/// ETAC SB`) lives in this file alone.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+pub struct Composition {
+    /// Per category, indexed like [`ShipCategory::ALL`]: the ships and how
+    /// many of them are crippled (included in the total).
+    pub ships: [(u32, u32); ShipCategory::COUNT],
+    /// The starbases and how many of them are crippled.
+    pub starbases: (u32, u32),
+}
+
+impl Composition {
+    /// The ships of a fleet, with the crippled split of
+    /// [`crippled_by_category`].
+    pub fn of_fleet(fleet: &Fleet) -> Self {
+        let crippled = crippled_by_category(fleet);
+        let mut composition = Self::default();
+        for category in ShipCategory::ALL {
+            composition.ships[category.index()] =
+                (category.ships_in(fleet), crippled[category.index()]);
+        }
+        composition
+    }
+
+    /// Undamaged ships of the given categories.
+    pub fn undamaged(counts: impl IntoIterator<Item = (ShipCategory, u32)>) -> Self {
+        let mut composition = Self::default();
+        for (category, total) in counts {
+            composition.ships[category.index()] = (total, 0);
+        }
+        composition
+    }
+
+    /// The same composition with undamaged starbases.
+    pub fn with_starbases(mut self, total: u32) -> Self {
+        self.starbases = (total, 0);
+        self
+    }
+
+    /// The tokens in the one class order, one space apart. Empty when there
+    /// is nothing to show.
+    pub fn notation(&self) -> String {
+        join_tokens(
+            ShipCategory::ALL
+                .into_iter()
+                .map(|category| {
+                    let (total, crippled) = self.ships[category.index()];
+                    ship_token(category.code(), total, crippled)
+                })
+                .chain([ship_token(
+                    STARBASE_CODE,
+                    self.starbases.0,
+                    self.starbases.1,
+                )]),
+        )
+    }
+}
+
 /// The fleet's ships in notation: `SC1 BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2`.
 /// Empty when the fleet has no ships.
 pub fn fleet_notation(fleet: &Fleet) -> String {
-    let crippled = crippled_by_category(fleet);
-    join_tokens(ShipCategory::ALL.into_iter().map(|category| {
-        ship_token(
-            category.code(),
-            category.ships_in(fleet),
-            crippled[category.index()],
-        )
-    }))
-}
-
-/// A starbase count in notation: `SB1`, `SB1!1`.
-pub fn starbase_token(total: u32, crippled: u32) -> Option<String> {
-    ship_token("SB", total, crippled)
+    Composition::of_fleet(fleet).notation()
 }
 
 /// The new ships of an auto-commission entry in notation, as the commission
-/// notice lists them (`DD4 CA2`). New ships are undamaged and their
+/// notice lists them (`CA2 DD4`). New ships are undamaged and their
 /// transports empty.
 pub fn auto_commission_notation(entry: &AutoCommissionFleetEntry) -> String {
-    join_tokens([
-        ship_token("DD", entry.destroyers, 0),
-        ship_token("CA", entry.cruisers, 0),
-        ship_token("BB", entry.battleships, 0),
-        ship_token("SC", entry.scouts, 0),
-        ship_token("TT", entry.transports, 0),
-        ship_token("ETAC", entry.etacs, 0),
+    Composition::undamaged([
+        (ShipCategory::Scouts, entry.scouts),
+        (ShipCategory::Battleships, entry.battleships),
+        (ShipCategory::Cruisers, entry.cruisers),
+        (ShipCategory::Destroyers, entry.destroyers),
+        (ShipCategory::EmptyTransports, entry.transports),
+        (ShipCategory::Etacs, entry.etacs),
     ])
+    .notation()
 }
 
 /// A composition cut to `width` characters without splitting a token: the

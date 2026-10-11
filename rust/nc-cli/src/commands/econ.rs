@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{Coords, CoreGameData, EmpireId, Order, Planet, Real48};
+use nc_data::ShipCategory::{Battleships, Cruisers, Destroyers};
+use nc_data::{Composition, Coords, CoreGameData, EmpireId, Order, Planet, Real48};
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, with_runtime_game_mut_and_export,
@@ -81,8 +82,10 @@ pub(crate) fn set_econ(
     })?;
 
     println!(
-        "  FLEET[3]: order=BombardWorld tgt=({}, {}) speed=3/3 BB={} CA={} DD={}",
-        target_x, target_y, bb, ca, dd
+        "  FLEET[3]: order=BombardWorld tgt=({}, {}) speed=3/3 {}",
+        target_x,
+        target_y,
+        econ_ships(bb, ca, dd)
     );
     println!(
         "  PLANET[14]: ({}, {}) empire=2 armies={} batteries={}",
@@ -159,7 +162,7 @@ pub(crate) fn init_econ_batch(
         )?;
         manifest.push_str(&format!("{name}\n"));
         manifest.push_str(&format!("  target=[{}, {}]\n", x, y));
-        manifest.push_str(&format!("  BB={} CA={} DD={}\n", bb, ca, dd));
+        manifest.push_str(&format!("  {}\n", econ_ships(bb, ca, dd)));
         manifest.push_str(&format!(
             "  Planet14: [{}, {}] armies={} batteries={}\n",
             p14x, p14y, p14a, p14b
@@ -262,10 +265,23 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
 
     if errors.is_empty() {
         println!("Valid econ scenario");
-        println!("  FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 CA=50 DD=50");
+        println!(
+            "  FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 {}",
+            econ_ships(0, 50, 50)
+        );
         println!("  PLANET[14]: (15,13) empire=2 armies=142 batteries=15");
         Ok(())
     } else {
         Err(errors.join("\n").into())
     }
+}
+
+/// The scenario's bombarding ships in the ship notation.
+fn econ_ships(bb: u16, ca: u16, dd: u16) -> String {
+    Composition::undamaged([
+        (Battleships, bb.into()),
+        (Cruisers, ca.into()),
+        (Destroyers, dd.into()),
+    ])
+    .notation()
 }

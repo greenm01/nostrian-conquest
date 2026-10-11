@@ -2,14 +2,17 @@ use std::collections::BTreeMap;
 
 use crate::homeworld_seed::is_named_homeworld_seed;
 use crate::{
-    CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT, has_any_force,
-    is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
+    Composition, CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT, ShipCategory,
+    has_any_force, is_homeworld_seed_ignoring_name, join_tokens, present_production_points,
+    ship_token, stardock_slot_kind,
 };
 
+/// How a planet's stardock or build queue reads: in the ship notation
+/// (`BB5 CA10 SB2 AR8 GB7`), or in words (`5 battleships, 10 cruisers`), as
+/// the classic scouting report words a stardock and the snapshots store it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CompactUnitSummaryStyle {
-    JoinedCodes,
-    DashedCodes,
+    Notation,
     Words,
 }
 
@@ -27,21 +30,6 @@ pub enum OwnedPlanetStatus {
     FactoriesDestroyed,
     FactoriesDamaged,
     FactoriesFunctional,
-}
-
-pub fn compact_unit_code(kind: ProductionItemKind) -> &'static str {
-    match kind {
-        ProductionItemKind::Destroyer => "DD",
-        ProductionItemKind::Cruiser => "CA",
-        ProductionItemKind::Battleship => "BB",
-        ProductionItemKind::Scout => "SC",
-        ProductionItemKind::Transport => "TT",
-        ProductionItemKind::Etac => "ET",
-        ProductionItemKind::Army => "AR",
-        ProductionItemKind::GroundBattery => "GB",
-        ProductionItemKind::Starbase => "SB",
-        ProductionItemKind::Unknown(_) => "UN",
-    }
 }
 
 pub fn stardock_unit_counts(planet: &Planet) -> BTreeMap<u8, u32> {
@@ -97,31 +85,62 @@ pub fn format_unit_counts(
     counts_by_kind: &BTreeMap<u8, u32>,
     style: CompactUnitSummaryStyle,
 ) -> String {
-    let parts = ordered_unit_count_entries(counts_by_kind)
-        .into_iter()
-        .map(|(kind, count)| match style {
-            CompactUnitSummaryStyle::JoinedCodes => {
-                format!("{}{}", count, compact_unit_code(kind))
-            }
-            CompactUnitSummaryStyle::DashedCodes => {
-                format!("{}-{}", count, compact_unit_code(kind))
-            }
-            CompactUnitSummaryStyle::Words => {
-                format!("{} {}", count, unit_words(kind, count))
-            }
-        })
-        .collect::<Vec<_>>();
-
-    if parts.is_empty() {
+    let summary = match style {
+        CompactUnitSummaryStyle::Notation => unit_counts_notation(counts_by_kind),
+        CompactUnitSummaryStyle::Words => ordered_unit_count_entries(counts_by_kind)
+            .into_iter()
+            .map(|(kind, count)| format!("{} {}", count, unit_words(kind, count)))
+            .collect::<Vec<_>>()
+            .join(", "),
+    };
+    if summary.is_empty() {
         String::from("Nothing")
     } else {
-        match style {
-            CompactUnitSummaryStyle::JoinedCodes => parts.join(" "),
-            CompactUnitSummaryStyle::DashedCodes | CompactUnitSummaryStyle::Words => {
-                parts.join(", ")
-            }
-        }
+        summary
     }
+}
+
+/// The units in the ship notation: the ships and starbases in its class
+/// order, then the armies (`AR`) and ground batteries (`GB`) a build queue
+/// can hold. Stardock and build-queue ships are new, so undamaged, and their
+/// transports empty.
+fn unit_counts_notation(counts_by_kind: &BTreeMap<u8, u32>) -> String {
+    let count = |kind: ProductionItemKind| counts_by_kind.get(&kind.code()).copied().unwrap_or(0);
+    let ships = Composition::undamaged([
+        (ShipCategory::Scouts, count(ProductionItemKind::Scout)),
+        (
+            ShipCategory::Battleships,
+            count(ProductionItemKind::Battleship),
+        ),
+        (ShipCategory::Cruisers, count(ProductionItemKind::Cruiser)),
+        (
+            ShipCategory::Destroyers,
+            count(ProductionItemKind::Destroyer),
+        ),
+        (
+            ShipCategory::EmptyTransports,
+            count(ProductionItemKind::Transport),
+        ),
+        (ShipCategory::Etacs, count(ProductionItemKind::Etac)),
+    ])
+    .with_starbases(count(ProductionItemKind::Starbase))
+    .notation();
+    let unknown = counts_by_kind.iter().filter_map(|(&raw, &count)| {
+        matches!(
+            ProductionItemKind::from_code(raw),
+            ProductionItemKind::Unknown(_)
+        )
+        .then(|| ship_token("UN", count, 0))
+    });
+    join_tokens(
+        [
+            (!ships.is_empty()).then_some(ships),
+            ship_token("AR", count(ProductionItemKind::Army), 0),
+            ship_token("GB", count(ProductionItemKind::GroundBattery), 0),
+        ]
+        .into_iter()
+        .chain(unknown),
+    )
 }
 
 pub fn format_stardock_summary(planet: &Planet, style: CompactUnitSummaryStyle) -> String {
@@ -300,7 +319,7 @@ pub fn planet_derived_summary(planet: &Planet) -> String {
     if !queued.is_empty() {
         parts.push(format!(
             "build={}",
-            format_unit_counts(&queued, CompactUnitSummaryStyle::JoinedCodes)
+            format_unit_counts(&queued, CompactUnitSummaryStyle::Notation)
         ));
     }
     if planet.owner.0 != 0 {

@@ -91,7 +91,7 @@ impl KnownScenario {
                 "accepted heavy invasion scenario: fleet at (15,13) with armies, InvadeWorld order"
             }
             Self::Econ => {
-                "accepted economy scenario: fleet 3 bombards planet 14 at (15,13), CA=50 DD=50"
+                "accepted economy scenario: fleet 3 bombards planet 14 at (15,13), CA50 DD50"
             }
         }
     }

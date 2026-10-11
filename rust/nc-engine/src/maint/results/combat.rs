@@ -1,8 +1,8 @@
 use super::format::{join_report_parts, loss_summary, ship_loss_summary, unit_count_text};
 use crate::maint::FleetBattlePerspective;
 use nc_data::{
-    MaintenanceEvents, Mission, MissionOutcome, ShipLosses, join_tokens, ship_token,
-    starbase_token, stardock_slot_kind,
+    CompactUnitSummaryStyle, Composition, MaintenanceEvents, Mission, MissionOutcome, ShipCategory,
+    ShipLosses, format_stardock_summary,
 };
 
 pub fn enemy_losses_sentence(losses: ShipLosses) -> String {
@@ -432,34 +432,9 @@ pub fn roe_retreat_loss_clause(losses: ShipLosses) -> String {
 }
 
 pub fn stardock_scan_summary(planet: &nc_data::Planet) -> String {
-    use nc_data::ProductionItemKind;
-
-    let mut tokens = Vec::new();
-    for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
-        if count == 0 {
-            continue;
-        }
-        let code = match stardock_slot_kind(planet, slot) {
-            ProductionItemKind::Destroyer => "DD",
-            ProductionItemKind::Cruiser => "CA",
-            ProductionItemKind::Battleship => "BB",
-            ProductionItemKind::Scout => "SC",
-            // Transports are built empty and dock empty.
-            ProductionItemKind::Transport => "TT",
-            ProductionItemKind::Etac => "ETAC",
-            ProductionItemKind::Starbase => "SB",
-            ProductionItemKind::GroundBattery
-            | ProductionItemKind::Army
-            | ProductionItemKind::Unknown(_) => continue,
-        };
-        tokens.push(ship_token(code, count, 0));
-    }
-    let tokens = join_tokens(tokens);
-    if tokens.is_empty() {
-        "The planet's stardock appears to be empty.".to_string()
-    } else {
-        format!("Scanning the planet's stardock, we detected {tokens}.")
+    match format_stardock_summary(planet, CompactUnitSummaryStyle::Notation).as_str() {
+        "Nothing" => "The planet's stardock appears to be empty.".to_string(),
+        tokens => format!("Scanning the planet's stardock, we detected {tokens}."),
     }
 }
 
@@ -483,16 +458,20 @@ pub fn fleet_force_summary_with_starbases(
     } else {
         0
     };
-    let tokens = join_tokens([
-        ship_token("BB", losses.battleships, 0),
-        ship_token("CA", losses.cruisers, 0),
-        ship_token("DD", losses.destroyers, 0),
-        ship_token("SC", losses.scouts, 0),
-        ship_token("TT*", loaded, 0),
-        ship_token("TT", losses.transports.saturating_sub(loaded), 0),
-        ship_token("ETAC", losses.etacs, 0),
-        starbase_token(starbases, 0),
-    ]);
+    let tokens = Composition::undamaged([
+        (ShipCategory::Scouts, losses.scouts),
+        (ShipCategory::Battleships, losses.battleships),
+        (ShipCategory::Cruisers, losses.cruisers),
+        (ShipCategory::Destroyers, losses.destroyers),
+        (ShipCategory::FullTransports, loaded),
+        (
+            ShipCategory::EmptyTransports,
+            losses.transports.saturating_sub(loaded),
+        ),
+        (ShipCategory::Etacs, losses.etacs),
+    ])
+    .with_starbases(starbases)
+    .notation();
     if tokens.is_empty() {
         "no ships".to_string()
     } else {

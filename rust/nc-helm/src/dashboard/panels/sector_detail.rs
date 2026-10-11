@@ -221,7 +221,7 @@ mod tests {
         let lines = rendered_widget_lines(
             &[DetailLine {
                 label: "Building",
-                value: String::from("5BB 10CA 4DD 6TT 3ET 2SB"),
+                value: String::from("BB5 CA10 DD4 TT6 ETAC3 SB2"),
             }],
             24,
             MAX_BODY_ROWS,
@@ -230,8 +230,8 @@ mod tests {
         assert_eq!(
             lines,
             vec![
-                String::from("Building: 5BB 10CA 4DD"),
-                String::from("          6TT 3ET 2SB"),
+                String::from("Building: BB5 CA10 DD4"),
+                String::from("          TT6 ETAC3 SB2"),
             ]
         );
     }

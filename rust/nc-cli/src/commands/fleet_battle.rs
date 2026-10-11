@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{Coords, CoreGameData, EmpireId, Order, Planet, Real48};
+use nc_data::ShipCategory::{Battleships, Cruisers, Destroyers, Scouts};
+use nc_data::{Composition, Coords, CoreGameData, EmpireId, Order, Planet, Real48};
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, with_runtime_game_mut_and_export,
@@ -137,20 +138,33 @@ pub(crate) fn set_fleet_battle(
     })?;
 
     println!(
-        "  FLEET[1]: loc=({}, {}) tgt=({}, {}) RoE={} BB={} CA={} DD={}",
-        battle_x, battle_y, battle_x, battle_y, f0_roe, f0_bb, f0_ca, f0_dd
+        "  FLEET[1]: loc=({}, {}) tgt=({}, {}) RoE={} {}",
+        battle_x,
+        battle_y,
+        battle_x,
+        battle_y,
+        f0_roe,
+        battle_ships(0, f0_bb, f0_ca, f0_dd)
     );
     println!(
-        "  FLEET[3]: order=BombardWorld tgt=({}, {}) speed=3/3 CA={} DD={}",
-        p14_x, p14_y, f2_ca, f2_dd
+        "  FLEET[3]: order=BombardWorld tgt=({}, {}) speed=3/3 {}",
+        p14_x,
+        p14_y,
+        battle_ships(0, 0, f2_ca, f2_dd)
     );
     println!(
-        "  FLEET[5]: order=PatrolSector loc=({}, {}) speed=0/6 SC={} BB={} CA={}",
-        battle_x, battle_y, f4_sc, f4_bb, f4_ca
+        "  FLEET[5]: order=PatrolSector loc=({}, {}) speed=0/6 {}",
+        battle_x,
+        battle_y,
+        battle_ships(f4_sc, f4_bb, f4_ca, 0)
     );
     println!(
-        "  FLEET[9]: order=MoveOnly loc=({}, {}) tgt=({}, {}) speed=3/6 SC={} BB={} CA={}",
-        f8_loc_x, f8_loc_y, battle_x, battle_y, f8_sc, f8_bb, f8_ca
+        "  FLEET[9]: order=MoveOnly loc=({}, {}) tgt=({}, {}) speed=3/6 {}",
+        f8_loc_x,
+        f8_loc_y,
+        battle_x,
+        battle_y,
+        battle_ships(f8_sc, f8_bb, f8_ca, 0)
     );
     println!(
         "  PLANET[14]: ({}, {}) empire=2 armies={} batteries={}",
@@ -323,17 +337,20 @@ pub(crate) fn init_fleet_battle_batch(
         manifest.push_str(&format!("{name}\n"));
         manifest.push_str(&format!("  battle=[{}, {}]\n", bx, by));
         manifest.push_str(&format!(
-            "  F0: RoE={} BB={} CA={} DD={}\n",
-            f0r, f0bb, f0ca, f0dd
+            "  F0: RoE={} {}\n",
+            f0r,
+            battle_ships(0, f0bb, f0ca, f0dd)
         ));
         manifest.push_str(&format!(
-            "  F2: CA={} DD={} (bombards planet)\n",
-            f2ca, f2dd
+            "  F2: {} (bombards planet)\n",
+            battle_ships(0, 0, f2ca, f2dd)
         ));
-        manifest.push_str(&format!("  F4: SC={} BB={} CA={}\n", f4sc, f4bb, f4ca));
+        manifest.push_str(&format!("  F4: {}\n", battle_ships(f4sc, f4bb, f4ca, 0)));
         manifest.push_str(&format!(
-            "  F8: loc=[{}, {}] SC={} BB={} CA={}\n",
-            f8lx, f8ly, f8sc, f8bb, f8ca
+            "  F8: loc=[{}, {}] {}\n",
+            f8lx,
+            f8ly,
+            battle_ships(f8sc, f8bb, f8ca, 0)
         ));
         manifest.push_str(&format!(
             "  Planet14: [{}, {}] armies={} batteries={}\n",
@@ -571,13 +588,36 @@ pub(crate) fn validate_fleet_battle_data(
 
     if errors.is_empty() {
         println!("Valid fleet-battle scenario");
-        println!("  FLEET[1]: loc=(10,10) tgt=(10,10) RoE=100 BB=50 CA=50 DD=50");
-        println!("  FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 CA=50 DD=50");
-        println!("  FLEET[5]: order=0x03 (PatrolSector) loc=(10,10) speed=0/6 SC=0 BB=100");
-        println!("  FLEET[9]: order=0x01 (MoveOnly) loc=(9,10) tgt=(10,10) speed=3/6 SC=0 BB=1");
+        println!(
+            "  FLEET[1]: loc=(10,10) tgt=(10,10) RoE=100 {}",
+            battle_ships(0, 50, 50, 50)
+        );
+        println!(
+            "  FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 {}",
+            battle_ships(0, 0, 50, 50)
+        );
+        println!(
+            "  FLEET[5]: order=0x03 (PatrolSector) loc=(10,10) speed=0/6 {}",
+            battle_ships(0, 100, 0, 0)
+        );
+        println!(
+            "  FLEET[9]: order=0x01 (MoveOnly) loc=(9,10) tgt=(10,10) speed=3/6 {}",
+            battle_ships(0, 1, 0, 0)
+        );
         println!("  PLANET[14]: (15,13) empire=2 armies=142 batteries=15");
         Ok(())
     } else {
         Err(errors.join("\n").into())
     }
+}
+
+/// A scenario fleet's ships in the ship notation.
+fn battle_ships(sc: u8, bb: u16, ca: u16, dd: u16) -> String {
+    Composition::undamaged([
+        (Scouts, sc.into()),
+        (Battleships, bb.into()),
+        (Cruisers, ca.into()),
+        (Destroyers, dd.into()),
+    ])
+    .notation()
 }

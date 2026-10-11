@@ -1,8 +1,10 @@
 use std::fs;
 use std::path::Path;
 
+use nc_data::ShipCategory::{Battleships, Cruisers, Destroyers, EmptyTransports, Scouts};
 use nc_data::{
-    Coords, CoreGameData, EmpireId, Order, Planet, Real48, set_troop_transports, troop_transports,
+    Composition, Coords, CoreGameData, EmpireId, Order, Planet, Real48, set_troop_transports,
+    troop_transports,
 };
 
 use crate::commands::runtime::{
@@ -84,8 +86,11 @@ pub(crate) fn set_invade_onefleet(
     })?;
 
     println!(
-        "  FLEET[3].order=InvadeWorld tgt=({}, {}) army={} SC={} BB={} CA={} DD={} TT={}",
-        target_x, target_y, invasion_armies, sc, bb, ca, dd, tt
+        "  FLEET[3].order=InvadeWorld tgt=({}, {}) army={} {}",
+        target_x,
+        target_y,
+        invasion_armies,
+        invade_ships(sc, bb, ca, dd, tt)
     );
     println!(
         "  PLANET[14]: Dust Bowl target world at ({}, {})",
@@ -145,8 +150,9 @@ pub(crate) fn init_invade_batch(
         manifest.push_str(&format!("{name}\n"));
         manifest.push_str(&format!("  target=[{}, {}]\n", x, y));
         manifest.push_str(&format!(
-            "  SC={} BB={} CA={} DD={} TT={} armies={}\n",
-            sc, bb, ca, dd, tt, armies
+            "  {} armies={}\n",
+            invade_ships(sc, bb, ca, dd, tt),
+            armies
         ));
         manifest.push_str(&format!("  dir={}\n", scenario_dir.display()));
         manifest.push_str(&format!(
@@ -269,11 +275,25 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     if errors.is_empty() {
         println!("Valid invade scenario");
         println!(
-            "  FLEET[3]: order=0x07 (InvadeWorld) tgt=(15,13) speed=3/3 army=100 SC=0 BB=100 CA=50 DD=50 TT=50"
+            "  FLEET[3]: order=0x07 (InvadeWorld) tgt=(15,13) speed=3/3 army=100 {}",
+            invade_ships(0, 100, 50, 50, 50)
         );
         println!("  PLANET[14]: (15,13) empire=2 armies=142 batteries=15");
         Ok(())
     } else {
         Err(errors.join("\n").into())
     }
+}
+
+/// The scenario fleet's ships in the ship notation. Its transports are empty:
+/// the invasion armies are a separate figure.
+fn invade_ships(sc: u8, bb: u16, ca: u16, dd: u16, tt: u16) -> String {
+    Composition::undamaged([
+        (Scouts, sc.into()),
+        (Battleships, bb.into()),
+        (Cruisers, ca.into()),
+        (Destroyers, dd.into()),
+        (EmptyTransports, tt.into()),
+    ])
+    .notation()
 }

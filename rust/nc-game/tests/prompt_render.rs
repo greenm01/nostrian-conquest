@@ -891,7 +891,7 @@ fn commission_result_renders_notice_with_dismiss_prompt() {
 fn auto_commission_report_bottom_aligns_text_and_leaves_blank_row_above_prompt() {
     let mut screen = PlanetCommissionScreen::new();
     let rows = vec![
-        "Fleet 03 commissioned from \"Aurora Prime\" in sector (08,09) with DD4 CA2.".to_string(),
+        "Fleet 03 commissioned from \"Aurora Prime\" in sector (08,09) with CA2 DD4.".to_string(),
     ];
 
     let buffer = screen
@@ -919,7 +919,7 @@ fn auto_commission_report_24_row_door_keeps_prompt_on_last_visible_row() {
     let mut screen = PlanetCommissionScreen::new();
     let geometry = ScreenGeometry::for_door(Some(24));
     let rows = vec![
-        "Fleet 03 commissioned from \"Aurora Prime\" in sector (08,09) with DD4 CA2.".to_string(),
+        "Fleet 03 commissioned from \"Aurora Prime\" in sector (08,09) with CA2 DD4.".to_string(),
     ];
 
     let buffer = screen

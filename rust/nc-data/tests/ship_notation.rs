@@ -3,9 +3,9 @@
 //! no hulls, `!0` never written, and `TT*` kept for loaded transports.
 
 use nc_data::{
-    CrippledHulls, Fleet, ShipCategory, crippled_by_category, fit_notation, fleet_notation,
-    join_tokens, set_armies_aboard, set_troop_transports, ship_composition_table_summary,
-    ship_token, starbase_token,
+    Composition, CrippledHulls, Fleet, ShipCategory, crippled_by_category, fit_notation,
+    fleet_notation, join_tokens, set_armies_aboard, set_troop_transports,
+    ship_composition_table_summary, ship_token,
 };
 
 fn hulls(count: u32) -> CrippledHulls {
@@ -104,9 +104,30 @@ fn transport_damage_follows_the_cargo_state() {
 
 #[test]
 fn a_starbase_uses_the_same_syntax() {
-    assert_eq!(starbase_token(1, 0).as_deref(), Some("SB1"));
-    assert_eq!(starbase_token(1, 1).as_deref(), Some("SB1!1"));
-    assert_eq!(starbase_token(0, 0), None);
+    let base = |total, crippled| Composition {
+        starbases: (total, crippled),
+        ..Composition::default()
+    };
+    assert_eq!(base(1, 0).notation(), "SB1");
+    assert_eq!(base(1, 1).notation(), "SB1!1");
+    assert_eq!(base(0, 0).notation(), "");
+}
+
+#[test]
+fn a_composition_writes_every_class_in_the_one_order() {
+    let all = Composition::undamaged([
+        // Given out of order on purpose: the order is the formatter's.
+        (ShipCategory::Etacs, 7),
+        (ShipCategory::Destroyers, 4),
+        (ShipCategory::EmptyTransports, 6),
+        (ShipCategory::Scouts, 1),
+        (ShipCategory::FullTransports, 5),
+        (ShipCategory::Cruisers, 3),
+        (ShipCategory::Battleships, 2),
+    ])
+    .with_starbases(8);
+    assert_eq!(all.notation(), "SC1 BB2 CA3 DD4 TT*5 TT6 ETAC7 SB8");
+    assert_eq!(Composition::default().notation(), "");
 }
 
 #[test]

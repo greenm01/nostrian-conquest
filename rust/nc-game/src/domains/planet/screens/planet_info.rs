@@ -372,11 +372,11 @@ fn intel_efficiency_label(current: Option<u8>, potential: Option<u16>) -> String
 }
 
 fn format_stardock_summary(planet: &nc_data::Planet) -> String {
-    shared_stardock_summary(planet, CompactUnitSummaryStyle::DashedCodes)
+    shared_stardock_summary(planet, CompactUnitSummaryStyle::Notation)
 }
 
 fn format_build_queue_summary(planet: &nc_data::Planet) -> String {
-    shared_build_queue_summary(planet, CompactUnitSummaryStyle::DashedCodes)
+    shared_build_queue_summary(planet, CompactUnitSummaryStyle::Notation)
 }
 
 fn format_owned_orbit_summary(frame: &ScreenFrame<'_>, coords: [u8; 2]) -> String {

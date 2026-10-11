@@ -5,7 +5,7 @@ use nc_data::{
 };
 
 #[test]
-fn compact_planet_summaries_support_all_dashboard_and_game_styles() {
+fn compact_planet_summaries_support_the_notation_and_words() {
     let mut game_data = GameStateBuilder::new()
         .with_player_count(4)
         .build_initialized_baseline()
@@ -16,12 +16,8 @@ fn compact_planet_summaries_support_all_dashboard_and_game_styles() {
     planet.stardock.cruisers = 5;
 
     assert_eq!(
-        format_build_queue_summary(planet, CompactUnitSummaryStyle::JoinedCodes),
-        "2BB"
-    );
-    assert_eq!(
-        format_build_queue_summary(planet, CompactUnitSummaryStyle::DashedCodes),
-        "2-BB"
+        format_build_queue_summary(planet, CompactUnitSummaryStyle::Notation),
+        "BB2"
     );
     assert_eq!(
         format_stardock_summary(planet, CompactUnitSummaryStyle::Words),
