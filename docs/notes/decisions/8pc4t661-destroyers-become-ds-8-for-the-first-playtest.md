@@ -57,8 +57,16 @@ longer. Under certain pursuit the wipe rate improves instead (85.6% to
 82.4%). Sturdier destroyers also last longer against batteries; that and
 campaign encounter rates go on the playtest watch list.
 
-Implementation is pending: the unit table in the engine, the manual's
-Appendix B, and the combat-odds tables.
+## Implementation (t078)
+
+The engine's unit table has the destroyer at AS 10, DS 8 (`DS_DD` in
+`nc-engine`'s combat state), so crippling one costs 8 hits and execution
+fire pays 16 to destroy a nominal one; a docked destroyer in a stardock
+costs 8 too. The combat spec's unit and stardock tables and the manual's
+three ship tables (quick start, Forces, Appendix B) say 8. No existing test
+pinned the old value, so none moved; a regression test pins the new step
+costs. The Python model's `UNITS` table keeps DS 5 as the t055 baseline,
+and its `dd-10-8-5` variant now describes the engine.
 
 ## Acceptance and connections
 

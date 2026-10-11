@@ -211,7 +211,7 @@ The table below lists everything your planets can produce. *AS* is Attack Streng
     table.header(
       [Item], [Cost], [Size], [Speed], [AS], [DS], [Purpose],
     ),
-    [Destroyer],       [05], [S], [6], [10], [05], [Fast combat, screening, defense],
+    [Destroyer],       [05], [S], [6], [10], [08], [Fast combat, screening, defense],
     [Cruiser],         [15], [M], [5], [30], [30], [Balanced combat],
     [Battleship],      [45], [L], [4], [90], [100], [Heavy combat],
     [Scout],           [15], [S], [6], [00], [10], [Reconnaissance],
@@ -285,7 +285,7 @@ Ships operate in fleets. A fleet always moves at the speed of its slowest member
     table.header(
       [Ship Type], [Cost], [Speed], [Size], [AS], [DS], [Tactical Role],
     ),
-    [*Destroyer*],  [05], [6], [S], [10], [05], [Fast, cheap screen. Escapes heavy fleets. Good for fast response and interception.],
+    [*Destroyer*],  [05], [6], [S], [10], [08], [Fast raider and line support. Escapes heavy fleets. Good for fast response and interception.],
     [*Cruiser*],    [15], [5], [M], [30], [30], [Balanced fighter. About 3x the power of a destroyer.],
     [*Battleship*], [45], [4], [L], [90], [100], [Heavy firepower anchor. About 3x the power of a cruiser. Slow but durable.],
     [*Scout*],      [15], [6], [S], [00], [10], [Stealthy spy. A lone scout is hardest to detect.],
@@ -978,7 +978,7 @@ lets crippled light ships keep contributing fire.
     table.header(
       [Unit], [AS], [DS], [Notes],
     ),
-    [Destroyer], [10], [5],  [Agile glass cannon],
+    [Destroyer], [10], [8],  [Fast raider and line support],
     [Cruiser],   [30], [30], [Balanced brawler],
     [Battleship],[90], [100],[Primary battle line],
     [Scout],     [0],  [10], [Non-combat hull],

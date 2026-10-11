@@ -12,7 +12,9 @@ use nc_data::{
     Coords, CoreGameData, Order, set_armies_aboard, set_troop_transports, troop_transports,
 };
 
-use super::exchange::{COMBAT_KIND_WITHDRAWAL, fleet_die_modifier, fleet_volley};
+use super::exchange::{
+    COMBAT_KIND_WITHDRAWAL, apply_hits_to_fleet, fleet_die_modifier, fleet_volley,
+};
 use super::fleet_battle::{BattleSide, fight_encounter_with_rolls};
 use super::state::{FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB};
 
@@ -99,6 +101,30 @@ fn fleet_volley_reads_the_flat_table() {
     assert!(fleet_volley(9, 0, 100).critical);
     assert!(!fleet_volley(7, 2, 100).critical);
     assert!(!fleet_volley(9, 0, 0).critical);
+}
+
+/// Decision 7: a destroyer's DS is 8, so each of its damage steps costs 8
+/// and execution fire pays 16 to destroy a nominal one.
+#[test]
+fn a_destroyer_costs_eight_hits_a_step() {
+    let mut state = FleetCombatState::default();
+    state.counts[IDX_DD] = 2;
+    let carried = apply_hits_to_fleet(&mut state, 15, 0, 0);
+    assert_eq!(state.crippled[IDX_DD], 1, "15 suppression hits cripple one");
+    assert_eq!(carried.suppression, 7);
+    let carried = apply_hits_to_fleet(&mut state, 0, 16, 0);
+    assert_eq!(
+        (state.counts[IDX_DD], state.crippled[IDX_DD]),
+        (1, 0),
+        "execution fire finishes the crippled one for 8 and cannot afford the nominal one"
+    );
+    assert_eq!(carried.execution, 8);
+    let carried = apply_hits_to_fleet(&mut state, 0, 16, 0);
+    assert_eq!(
+        state.counts[IDX_DD], 0,
+        "16 execution hits destroy a nominal destroyer"
+    );
+    assert_eq!(carried.execution, 0);
 }
 
 #[test]
