@@ -136,3 +136,14 @@ No game behavior changed.
 Rebuilt the quick-start PDF without warnings and rendered every page to inspect
 page breaks, table widths, and the license. The final rendering has three gameplay pages plus one license page, with no
 stray overflow page.
+
+The owner made offline map planning a first-turn priority. Both quick-start
+sections now lead with a printed player map or a spreadsheet of known systems,
+updated from reports. BBS wording directs players to the sysop for available
+player-map exports rather than promising client-side file downloads.
+
+The quick-start opens with the first paragraph of the game’s
+[INTRO_PAGE_1](../../../rust/nc-game/src/domains/startup/screens/startup.rs),
+quoted unchanged apart from wrapping. The map checklist remains the first
+action. Rebuilt both PDFs and checked the quick-start page layout before
+the signed documentation commit.

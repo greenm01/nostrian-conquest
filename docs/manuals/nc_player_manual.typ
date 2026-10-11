@@ -179,6 +179,18 @@ automatically.
 
 = Quick Start: Gameplay Basics
 
+== Start With a Map
+
+Print your player map or keep a spreadsheet of known systems before issuing
+orders. Record coordinates, owners, production potential, and fleet
+destinations. Use it to choose colonies, plan routes, and spot exposed worlds.
+Update it from your reports after each maintenance.
+
+From the main menu, press *G*, then *M* to open the galaxy map. Localhost
+players can export a text map and CSV files from the starmap screen. On a BBS,
+ask your sysop for your player-map export if available. You can also enter the
+systems you know into your own spreadsheet.
+
 == Your Objective
 
 Your objective is to dominate the galaxy and become Emperor by defeating rival empires.

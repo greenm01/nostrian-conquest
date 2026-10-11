@@ -74,13 +74,21 @@
 
 #v(0.5em)
 
+#block[
+  #set text(style: "italic", size: 9.5pt)
+  Beyond the mapped frontiers of the old Nostrian dominion lies a small galaxy of
+  contested solar systems. The old masters are gone. Their stations are silent,
+  their patrols vanished, and their subjects left with fleets, industry, and
+  enough knowledge to build empires.
+]
+
 = Your First Year
 
-Your goal is to dominate the galaxy. Expand from one world, build your economy, and defeat your rivals. The game ends when one empire becomes Emperor and no serious contender remains.
+Your goal is to dominate the galaxy. The game ends when one empire becomes Emperor and no serious contender remains.
 
-Nostrian Conquest is an asynchronous, turn-based strategy game. Log in when it suits you, review reports, and issue fleet orders before the next maintenance. Players need not be online together. The deliberate pace leaves time to plan, negotiate, and weigh your next move.
+Nostrian Conquest is asynchronous and turn-based. Log in on your own schedule, review reports, and issue fleet orders before maintenance. Players need not be online together. The pace leaves time to plan and negotiate.
 
-There is no End Turn button. Scheduled maintenance resolves everyone's orders and advances the year. Ask your sysop for the schedule. Builds and the economy run first; movement and combat then unfold over 52 internal weeks. `Stardate 14/3002` means week 14 of year 3002.
+There is no End Turn button. Maintenance resolves orders and advances the year on your sysop’s schedule. Reports use week/year dates: `14/3002` means week 14 of year 3002.
 
 == What You Start With
 
@@ -89,19 +97,16 @@ A standard new empire has one homeworld at Production 100, a treasury of 35 poin
 - *Fleets 1 and 2:* each has `CA1 ETAC1` — a cruiser and a reusable colony ship.
 - *Fleets 3 and 4:* each has `DD1` — a destroyer for early exploration and defense.
 
-An ETAC does not carry an army. It claims unowned worlds with *Colonize*, mission 12. Troop transports (`TT`) carry armies for conquest. Check your own reports and fleet list; an existing campaign may differ from this opening.
+ETACs claim unowned worlds with *Colonize*, mission 12. Troop transports (`TT`) carry armies for conquest. Check your reports; an existing campaign may differ from this opening.
 
 == First-Turn Checklist
 
++ *Keep a map beside you.* Print your player map or track known systems in a spreadsheet. Mark coordinates, owners, production potential, and fleet destinations. Update it from each turn’s reports. Main-menu `G`, then `M` opens the galaxy map; ask your sysop for a printable map or CSV export if available.
 + *Read your reports.* From the main menu, press `G`, then `R` for the Inbox. It has Reports, Messages, and Sent folders. Return with `Q`.
 + *Inspect your worlds.* Main-menu `P` opens Planet Command. `T` sets *one tax rate for every planet you own*. You cannot set separate rates for individual worlds. Around 50–65% is a useful opening range: lower taxes favor growth; higher taxes collect more now. Above 65%, production suffers a penalty.
-+ *Queue useful builds.* In Planet Command, `B` opens Build Commands; `S` specifies orders. A cruiser costs 15 points, a destroyer 5, and an ETAC 20. Spend for your plan; your homeworld already has defenses. Builds advance during maintenance and may take several turns to finish. Commission finished ships from stardock with Planet Command `C` or `M` before using them.
-+ *Explore and colonize.* Main-menu `F` opens Fleet Command. Use `O`, choose the fleet, then select its mission and target. Send a destroyer on *View*, mission 9, to inspect a nearby world. Send a cruiser-and-ETAC fleet on *Colonize*, mission 12, to an unowned world. Do not use an invasion order to found a colony. Scout missions 10 and 11 require a Scout (`SC`), not a destroyer.
++ *Queue useful builds.* In Planet Command, press `B`, then `S` to specify orders. Builds advance during maintenance and may take several turns. Commission finished ships from stardock with Planet Command `C` or `M` before using them.
++ *Explore and colonize.* Main-menu `F` opens Fleet Command. Use `O` to choose a fleet, mission, and target. Send a destroyer on *View* (9) to inspect a world, and a cruiser-and-ETAC fleet on *Colonize* (12) to claim an unowned world. Scout missions 10 and 11 require a Scout (`SC`).
 + *Check travel time, then log off.* Use the fleet ETA command (`E`) and include system-entry time for a world mission. Check targets and standing orders. Return to the main menu and press `Q` when finished.
-
-#admonition("REMEMBER")[
-  Colonization can take more than one year. The ETAC survives, so send it to another unowned world after the colony is established. Review the results after every maintenance.
-]
 
 #pagebreak()
 
@@ -143,6 +148,8 @@ Crippled ships fight at half strength but keep their speed. They recover automat
 Keep damaged ships at rest in orbit of your world beside your starbase for the whole following turn to recover them one turn sooner. The base must stay there too. The bonus applies to ships damaged in an earlier turn, not fresh damage. Sharing the sector alone is not enough.
 
 == Grow Before You Fight
+
+Colonization can take several turns. Once a colony is established, its ETAC can move on to another unowned world.
 
 New colonies start at Production 3, or their Potential if lower, and begin growing and earning revenue the following maintenance. The same tax rate applies to your homeworld and every colony. Lowering it favors colony growth over immediate tax revenue across your whole empire. It does not change any world's Potential Production.
 
