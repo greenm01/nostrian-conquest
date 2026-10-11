@@ -1,5 +1,8 @@
-use super::format::{join_report_parts, ship_loss_summary, unit_count_text};
-use nc_data::{MaintenanceEvents, Mission, MissionOutcome, ShipLosses, stardock_slot_kind};
+use super::format::{join_report_parts, loss_summary, ship_loss_summary, unit_count_text};
+use nc_data::{
+    MaintenanceEvents, Mission, MissionOutcome, ShipLosses, join_tokens, ship_token,
+    starbase_token, stardock_slot_kind,
+};
 
 pub fn enemy_losses_sentence(losses: ShipLosses) -> String {
     let summary = ship_loss_summary(losses);
@@ -418,85 +421,43 @@ pub fn roe_retreat_loss_clause(losses: ShipLosses) -> String {
 pub fn stardock_scan_summary(planet: &nc_data::Planet) -> String {
     use nc_data::ProductionItemKind;
 
-    let mut parts = Vec::new();
+    let mut tokens = Vec::new();
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        let count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
+        let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
         if count == 0 {
             continue;
         }
-        let kind = stardock_slot_kind(planet, slot);
-        let name = match kind {
-            ProductionItemKind::Destroyer => format!("{}DD", count),
-            ProductionItemKind::Cruiser => format!("{}CA", count),
-            ProductionItemKind::Battleship => format!("{}BB", count),
-            ProductionItemKind::Scout => format!("{}SC", count),
-            ProductionItemKind::Transport => format!("{}TT", count),
-            ProductionItemKind::Etac => format!("{}ET", count),
-            ProductionItemKind::Starbase => format!("{}SB", count),
+        let code = match stardock_slot_kind(planet, slot) {
+            ProductionItemKind::Destroyer => "DD",
+            ProductionItemKind::Cruiser => "CA",
+            ProductionItemKind::Battleship => "BB",
+            ProductionItemKind::Scout => "SC",
+            // Transports are built empty and dock empty.
+            ProductionItemKind::Transport => "TT",
+            ProductionItemKind::Etac => "ETAC",
+            ProductionItemKind::Starbase => "SB",
             ProductionItemKind::GroundBattery
             | ProductionItemKind::Army
             | ProductionItemKind::Unknown(_) => continue,
         };
-        parts.push(name);
+        tokens.push(ship_token(code, count, 0));
     }
-    if parts.is_empty() {
+    let tokens = join_tokens(tokens);
+    if tokens.is_empty() {
         "The planet's stardock appears to be empty.".to_string()
     } else {
-        format!(
-            "Scanning the planet's stardock, we detected {}.",
-            parts.join(", ")
-        )
+        format!("Scanning the planet's stardock, we detected {tokens}.")
     }
 }
 
 pub fn combat_loss_summary(losses: ShipLosses, starbases: u32, no_loss_text: &str) -> String {
-    let ship_summary = ship_loss_summary(losses);
-    let mut parts = Vec::new();
-    if ship_summary != "no ship losses" {
-        parts.push(ship_summary);
-    }
-    if starbases > 0 {
-        parts.push(format!("{}SB", starbases));
-    }
-    if parts.is_empty() {
-        no_loss_text.to_string()
-    } else {
-        parts.join(", ")
-    }
+    loss_summary(losses, starbases).unwrap_or_else(|| no_loss_text.to_string())
 }
 
+/// A force in ship notation: `BB10 CA11 TT*14 TT7`. The `loaded_armies` of
+/// the force are its loaded transports.
 pub fn fleet_force_summary(losses: ShipLosses, loaded_armies: u32) -> String {
-    let mut parts = Vec::new();
-    if losses.battleships > 0 {
-        parts.push(format!("{}BB", losses.battleships));
-    }
-    if losses.cruisers > 0 {
-        parts.push(format!("{}CA", losses.cruisers));
-    }
-    if losses.destroyers > 0 {
-        parts.push(format!("{}DD", losses.destroyers));
-    }
-    if losses.scouts > 0 {
-        parts.push(format!("{}SC", losses.scouts));
-    }
-    if losses.transports > 0 {
-        if loaded_armies > 0 {
-            parts.push(format!("{}TT*", loaded_armies));
-            if losses.transports > loaded_armies {
-                parts.push(format!("{}TT", losses.transports - loaded_armies));
-            }
-        } else {
-            parts.push(format!("{}TT", losses.transports));
-        }
-    }
-    if losses.etacs > 0 {
-        parts.push(format!("{}ET", losses.etacs));
-    }
-    if parts.is_empty() {
-        "no ships".to_string()
-    } else {
-        parts.join(", ")
-    }
+    fleet_force_summary_with_starbases(losses, loaded_armies, 0)
 }
 
 pub fn fleet_force_summary_with_starbases(
@@ -504,16 +465,25 @@ pub fn fleet_force_summary_with_starbases(
     loaded_armies: u32,
     starbases: u32,
 ) -> String {
-    let ship_summary = fleet_force_summary(losses, loaded_armies);
-    if starbases > 0 {
-        let sb = format!("{}SB", starbases);
-        if ship_summary == "no ships" {
-            sb
-        } else {
-            format!("{ship_summary}, {sb}")
-        }
+    let loaded = if losses.transports > 0 {
+        loaded_armies
     } else {
-        ship_summary
+        0
+    };
+    let tokens = join_tokens([
+        ship_token("BB", losses.battleships, 0),
+        ship_token("CA", losses.cruisers, 0),
+        ship_token("DD", losses.destroyers, 0),
+        ship_token("SC", losses.scouts, 0),
+        ship_token("TT*", loaded, 0),
+        ship_token("TT", losses.transports.saturating_sub(loaded), 0),
+        ship_token("ETAC", losses.etacs, 0),
+        starbase_token(starbases, 0),
+    ]);
+    if tokens.is_empty() {
+        "no ships".to_string()
+    } else {
+        tokens
     }
 }
 

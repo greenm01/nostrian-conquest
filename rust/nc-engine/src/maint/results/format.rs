@@ -1,5 +1,7 @@
 use crate::maint::timing::format_report_first_line;
-use nc_data::{CoreGameData, Mission, MissionOutcome, ShipLosses};
+use nc_data::{
+    CoreGameData, Mission, MissionOutcome, ShipLosses, join_tokens, ship_token, starbase_token,
+};
 
 pub fn report_header(source_clause: &str, week: Option<u8>, year: u16) -> String {
     format_report_first_line(source_clause, week.unwrap_or(1), year)
@@ -218,31 +220,32 @@ pub fn nearest_owned_destination_text(
     }
 }
 
+/// The ships and starbases a side lost, in ship notation (`BB2 CA1 SB1`).
+/// A loss record counts transports without their cargo, and the notation
+/// keeps loaded (`TT*`) and empty (`TT`) transports apart, so lost transports
+/// are named in words rather than given a cargo they may not have had.
+/// `None` when nothing was lost.
+pub fn loss_summary(losses: ShipLosses, starbases: u32) -> Option<String> {
+    let tokens = join_tokens([
+        ship_token("BB", losses.battleships, 0),
+        ship_token("CA", losses.cruisers, 0),
+        ship_token("DD", losses.destroyers, 0),
+        ship_token("SC", losses.scouts, 0),
+        ship_token("ETAC", losses.etacs, 0),
+        starbase_token(starbases, 0),
+    ]);
+    let transports = (losses.transports > 0)
+        .then(|| unit_count_text(losses.transports, "transport", "transports"));
+    match (tokens.is_empty(), transports) {
+        (true, None) => None,
+        (false, None) => Some(tokens),
+        (true, Some(transports)) => Some(transports),
+        (false, Some(transports)) => Some(format!("{tokens} and {transports}")),
+    }
+}
+
 pub fn ship_loss_summary(losses: ShipLosses) -> String {
-    let mut parts = Vec::new();
-    if losses.battleships > 0 {
-        parts.push(format!("{}BB", losses.battleships));
-    }
-    if losses.cruisers > 0 {
-        parts.push(format!("{}CA", losses.cruisers));
-    }
-    if losses.destroyers > 0 {
-        parts.push(format!("{}DD", losses.destroyers));
-    }
-    if losses.scouts > 0 {
-        parts.push(format!("{}SC", losses.scouts));
-    }
-    if losses.transports > 0 {
-        parts.push(format!("{}TT", losses.transports));
-    }
-    if losses.etacs > 0 {
-        parts.push(format!("{}ET", losses.etacs));
-    }
-    if parts.is_empty() {
-        "no ship losses".to_string()
-    } else {
-        parts.join(", ")
-    }
+    loss_summary(losses, 0).unwrap_or_else(|| "no ship losses".to_string())
 }
 
 pub fn unit_count_text(count: u32, singular: &str, plural: &str) -> String {
