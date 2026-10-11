@@ -297,3 +297,32 @@ nc-door \
 * If `--dropfile` targets a file named `DOOR32.SYS`, `DOOR.SYS`, or `CHAIN.TXT`, the engine parses it using the classic positional parser.
 * If `--dropfile` targets `*.kdl` or `door.kdl`, the engine uses the `DOOR.KDL` parser.
 * Command-line flags (such as `--socket-port` or `--encoding`) remain explicit overrides if provided on the CLI.
+
+---
+
+## 6. Crate Ecosystem & Data Flow
+
+`DOOR.KDL` serves as the shared data contract between the web/chat bridge and the game player client. In the Rust workspace, this is encapsulated in the `nc-dropfile` crate:
+
+```text
+               ┌───────────────────────┐
+               │      nc-dropfile      │  <-- Shared Data Crate (KDL schema)
+               └───────────┬───────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+  ┌─────────────────────┐     ┌─────────────────────┐
+  │       nc-game       │     │      nc-bridge      │  <-- WebSocket/PTY Daemon
+  │     (`nc-door`)     │     └──────────┬──────────┘      & Node Manager
+  └─────────────────────┘                │
+                                         ▼
+                              ┌─────────────────────┐
+                              │      nc-herald      │  <-- Discord/Matrix Bot &
+                              │                     │      Webhook Dispatcher
+                              └─────────────────────┘
+```
+
+* **Producer:** `nc-bridge` serializes `DoorKdl` into `/tmp/nc-nodes/node_N/door.kdl` when initializing a player session.
+* **Consumer:** `nc-door` parses `DoorKdl` on startup to bind player seats, configure sockets, and enforce time limits.
+* **Announcer:** `nc-herald` listens for outbound event callbacks fired by active nodes.
+

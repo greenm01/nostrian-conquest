@@ -285,3 +285,45 @@ Maintenance occurs completely asynchronously from player sessions.
    * Process memory capped via `systemd` cgroups or container resource limits (maximum 64MB per active node).
 3. **Network Isolation:** `nc-door` does not require outbound internet access. It communicates exclusively via local Unix sockets or loopback TCP.
 4. **No Administrative Commands over Discord:** Sysop functions (creating games, modifying parameters, resetting seeds) are physically disabled in the bridge; they can only be executed by a sysop logged into the host console.
+
+---
+
+## 8. Crate Architecture & Workspace Partitioning
+
+To ensure the simulation engine remains completely isolated from web frameworks and third-party chat APIs, the implementation is partitioned into three dedicated workspace crates:
+
+```text
+               ┌───────────────────────┐
+               │      nc-dropfile      │  <-- Shared Data Crate (KDL schema)
+               └───────────┬───────────┘
+                           │
+             ┌─────────────┴─────────────┐
+             ▼                           ▼
+  ┌─────────────────────┐     ┌─────────────────────┐
+  │       nc-game       │     │      nc-bridge      │  <-- WebSocket/PTY Daemon
+  │     (`nc-door`)     │     └──────────┬──────────┘      & Node Manager
+  └─────────────────────┘                │
+                                         ▼
+                              ┌─────────────────────┐
+                              │      nc-herald      │  <-- Discord/Matrix Bot &
+                              │                     │      Webhook Dispatcher
+                              └─────────────────────┘
+```
+
+### Crate Responsibilities
+
+* **`nc-dropfile` (Shared Dropfile Types & Schema):**
+  * Lightweight data library with zero networking or async code.
+  * Owns the parser, serializer, and data types for `DOOR.KDL` and legacy dropfiles.
+  * Consumed by `nc-game` (reader/player) and `nc-bridge` (producer/writer).
+* **`nc-bridge` (Web Terminal Daemon & Node Manager):**
+  * Completely agnostic of Discord, Matrix, or specific chat platforms.
+  * Hosts static web client assets (`xterm.js`, CP437 fonts).
+  * Allocates virtual node slots and generates per-session `DOOR.KDL` files.
+  * Spawns `nc-door` child processes and proxies WebSocket streams to TCP loopback / Unix sockets.
+* **`nc-herald` (Chat Platform Adapter & Broadcaster):**
+  * The only crate with platform-specific chat logic (Discord OAuth2, webhooks, Matrix API).
+  * Validates user authorization tokens from the Activity SDK.
+  * Formats maintenance results and broadcasts the "Galactic Gazette" embed.
+  * Relays live in-game event webhooks into channel announcements.
+
