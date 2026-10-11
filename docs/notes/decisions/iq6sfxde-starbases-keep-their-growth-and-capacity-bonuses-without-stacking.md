@@ -56,10 +56,11 @@ defense, not growth.
 Growth alone repays a base in about 8 passes at a fresh potential-100
 colony, 22 if the base arrives five passes late, and never at a
 potential-20 world, where a base is for defense and capacity. A mature world
-gains nothing from the growth bonus. The fade cannot be gamed by cycling
-taxes: with a base present, cycles of 75%, 64%, 64% and of 70%, 64% fall
-behind a steady 65% (after 20 cycles by 105 and 41 points from production
-50, and by 96 and 35 from a fully developed world). Implementation is
+gains nothing from the growth bonus. The two tax cycles tested with a base
+present, 75%, 64%, 64% and 70%, 64%, fall behind a steady 65% in the long
+run (after 20 cycles by 105 and 41 points from production 50, and by 96
+and 35 from a fully developed world); that is evidence against cycling, not
+a proof that no tax schedule can gain. Implementation is
 pending, with the economy work (t084): the smooth fade, non-stacking, and
 documentation in `docs/dev/economics.md` and the manual.
 
