@@ -488,3 +488,13 @@ Inbox lists the player's own messages queued this turn, first and marked
 outgoing, with the recipient in the sender's place; `Enter` reads one and
 `D` cancels it with the inbox's default-yes prompt. They leave the list when
 maintenance delivers them.
+
+Result (2026-10-10): merged. The outbox reads on `Enter` and deletes on `D`
+after the inbox's default-yes prompt; Review Inbox lists the player's queued
+messages first, marked `OUT`, until maintenance. The agent also fixed an
+outbox crash (a 60-character subject pushed the table past 80 columns) and
+stale inbox numbers after a cancel. Owner decisions on its findings: the
+outbox shows only this turn's queued messages; a recipient sees a message
+only after the maintenance that delivers it (shared local and BBS games
+delivered at once before); the outbox read view scrolls like the inbox
+preview. Those three land as a follow-up commit under t067.
