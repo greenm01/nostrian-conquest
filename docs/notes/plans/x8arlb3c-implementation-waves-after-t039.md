@@ -48,6 +48,15 @@ The two lanes share only the combat spec and the manual's combat chapters;
 each lane edits its own sections, and the second to merge resolves the
 prose. Decision 6's participation items (t073) follow when approved.
 
+### Follow-up after t066
+
+**t093** adds the owner's compact `CA12!3` damage display and `3!`
+crippled-only input to the existing door Detach and Transfer flows. Plain
+quantities become healthy-first; recovery cohorts stay intact. See the
+[approved interface plan](tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
+Coordinate its shared fleet mutations with the fleet lane; keep existing
+BBS columns and menus.
+
 ## Wave C: the rest
 
 t070 rogue fleet orders and the starbase spec correction; t077 the nc-helm

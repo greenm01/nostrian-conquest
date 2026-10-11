@@ -160,6 +160,28 @@ compatibility recommendation has not been separately approved by the owner.
 The engine, the display, and the manual are done (see Implementation). This
 approval does not authorize a crippled speed penalty or partial AS recovery.
 
+## Approved door-interface follow-up (2026-10-11)
+
+The owner approved `CA12!3`: 12 cruisers total, including 3 crippled. Omit
+`!n` when no ships are crippled, and use a lone `!` beside a fleet with any
+damaged hulls. Keep `TT*` for loaded transports. Use this compact notation
+in existing fleet details, report compositions and operation summaries,
+without widening BBS tables or showing recovery timers.
+
+Detach and Transfer accept `3!` to move exactly three crippled ships of the
+selected class. Reject insufficient crippled counts without substituting
+healthy hulls. Plain `3` selects healthy ships first, then crippled if
+necessary. This replaces t066's crippled-first default for plain quantities;
+within crippled hulls, longest remaining recovery still moves first. All
+recovery state and cargo move intact. Preview the actual selection with the
+same notation in the existing flow, for example `CA3!1`.
+
+Implementation is pending as [t093](../plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
+The t066 implementation account below describes the earlier behavior;
+its display and ordinary-quantity selection are superseded by this approved
+follow-up when t093 lands. RT 2, automatic recovery and starbase assistance
+are unchanged.
+
 ## Implementation (t066)
 
 Done in t066. The model, the engine, the display, and the tests follow the
@@ -240,10 +262,10 @@ touches them; the defection test checks that the fleets that stay keep
 theirs. Any future path that changes a fleet's owner must carry `crippled`
 with it.
 
-Detaching (owner, 2026-10-11): when a player detaches ships of a class from a
-fleet that has crippled ones, the crippled ships go first, most turns
-remaining first, so the fleet that stays is closest to full strength and a
-damaged group can be sent to a starbase to recover.
+Detaching (owner, 2026-10-11, superseding an earlier same-day choice of
+crippled-first): a plain quantity takes healthy ships first, then crippled
+ones if needed; `3!` takes exactly three crippled ships. Within crippled
+ships, the most turns remaining go first. See the t093 paragraph below.
 
 ## Evidence and acceptance
 
