@@ -40,6 +40,15 @@ class BuildArtifactsTests(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "nc-door, nc-sysop"):
             self.build("x86_64-unknown-linux-gnu", {})
 
+    def test_win7_build_info_records_the_compiler_actually_used(self):
+        spec = bundle.BundleSpec(
+            "1.0.0-beta.3", bundle.SUPPORTED_TARGETS["i686-win7-windows-msvc"], "sysop"
+        )
+        with patch.object(bundle, "capture", side_effect=["commit", "short", "rustc nightly"]) as capture:
+            info = bundle.build_info_text(spec)
+        capture.assert_called_with(["rustc", "+nightly", "-V"])
+        self.assertIn("rustc=rustc nightly", info)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -82,7 +82,21 @@ longer assumes `rust/target`, so cargo-slot and configured target directories
 use the artifacts from the actual build. Three Python tests cover slot paths,
 Windows executable paths, and refusal to fall back when an artifact is missing.
 All three manual PDFs were rebuilt, and the quick-start link leads both manual
-lists in the project README. Package builds and platform acceptance follow.
+lists in the project README. A fourth test checks that Windows 7 build metadata
+names the nightly compiler actually used, rather than the host default.
+
+At `ee34e2a2`, the workspace passed 3,233 tests, with zero failures and 11
+ignored. Linux x64 and native MSVC Windows x64 archives passed content checks,
+fresh-game creation, two maintenance passes, door startup rendering over a
+loopback socket, and clean disconnect. Each bundled PDF matches the repository
+PDF byte for byte. This scripted check does not replace attended Windows
+console acceptance.
+
+The Windows x86 build compiled, but Microsoft Defender quarantined its three
+generated executables as `Trojan:Win32/RustyStealer.ARY!MTB` before packaging.
+Defender reports that the threat did not execute. A false positive is not yet
+established; no exclusion or protection change was made. Resolve this detection
+before shipping that archive. No public release assets have been replaced.
 
 ## Connections
 

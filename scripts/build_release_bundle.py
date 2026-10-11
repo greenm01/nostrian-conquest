@@ -324,8 +324,9 @@ def build_binaries(spec: BundleSpec) -> dict[str, Path]:
 def build_info_text(spec: BundleSpec) -> str:
     commit = capture(["git", "rev-parse", "HEAD"])
     short_commit = capture(["git", "rev-parse", "--short", "HEAD"])
-    rustc = capture(["rustc", "-V"])
     cargo_toolchain = "nightly" if spec.is_win7_windows else "default"
+    rustc_command = ["rustc", "+nightly", "-V"] if spec.is_win7_windows else ["rustc", "-V"]
+    rustc = capture(rustc_command)
     built_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
         f"artifact={spec.artifact}",
