@@ -51,7 +51,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert_eq!(terminal.line(8).trim_end(), " ROE: 0");
     assert!(terminal.line(10).contains("Ships: SC1 CA1 DD4 TT*4"));
     assert!(!terminal.line(10).contains("AR="));
-    assert_eq!(terminal.line(12).trim_end(), "<C>ommission, <X> Cancel");
+    assert_eq!(terminal.line(12).trim_end(), "<D> Detach, <X> Clear");
     assert!(
         line_containing(&terminal, "Class <SC,CA,DD,TT*>")
             .contains("Class <SC,CA,DD,TT*>")
@@ -83,8 +83,7 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert!(line_containing(&terminal, "Staged for New Fleet: ").contains("DD1"));
     assert!(line_containing(&terminal, "Remaining on Donor: ").contains("SC1 CA1 DD3 TT*4"));
 
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
     app.render(&mut terminal)
         .expect("render menu notice after commission");
     assert_eq!(app.current_screen(), ScreenId::FleetDetach);
@@ -168,8 +167,7 @@ fn fleet_detach_new_fleet_starts_at_the_classic_default_roe() {
         enter_detach_input(&mut app, class);
         submit_detach(&mut app);
         submit_detach(&mut app);
-        enter_detach_input(&mut app, "c");
-        submit_detach(&mut app);
+        confirm_detach(&mut app);
     }
 
     let updated = latest_runtime_state(&fixture_dir).game_data;
@@ -229,8 +227,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     enter_detach_input(&mut app, "dd");
     submit_detach(&mut app);
     submit_detach(&mut app);
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
@@ -245,7 +242,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
         .expect("render empty commission warning with pinned message");
     assert_eq!(
         app.fleet.detach_status.as_deref(),
-        Some("Choose a listed class, C, X, or Q.")
+        Some("Choose a listed class, D, X, or Q.")
     );
     assert!(
         terminal
@@ -261,8 +258,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
     enter_detach_input(&mut app, "ca");
     submit_detach(&mut app);
     submit_detach(&mut app);
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
     app.render(&mut terminal)
         .expect("render after second commission");
     let second_commission_message = line_containing(&terminal, "Commissioned Fleet #")
@@ -298,15 +294,14 @@ fn fleet_detach_commission_requires_staged_ships_and_preserves_staged_block() {
     assert_eq!(app.current_screen(), ScreenId::FleetDetach);
 
     let mut terminal = CaptureTerminal::new();
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
     app.render(&mut terminal)
         .expect("render empty commission warning");
 
     assert_eq!(app.current_screen(), ScreenId::FleetDetach);
     assert!(
-        line_containing(&terminal, "Stage at least one ship before commissioning.")
-            .contains("Stage at least one ship before commissioning.")
+        line_containing(&terminal, "Stage at least one ship before detaching.")
+            .contains("Stage at least one ship before detaching.")
     );
     assert!(line_containing(&terminal, "Staged for New Fleet: ").contains("none"));
 }
@@ -433,8 +428,7 @@ fn fleet_detach_final_commission_returns_to_menu_with_new_fleet_number_notice() 
     enter_detach_input(&mut app, "dd");
     submit_detach(&mut app);
     submit_detach(&mut app);
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
 
     let mut terminal = CaptureTerminal::new();
     app.render(&mut terminal)
@@ -493,8 +487,7 @@ fn fleet_detach_invalidated_colonize_donor_resets_to_hold() {
     enter_detach_input(&mut app, "et");
     submit_detach(&mut app);
     submit_detach(&mut app);
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
 
     let updated = latest_runtime_state(&fixture_dir).game_data;
     let donor = &updated.fleets[0];

@@ -164,7 +164,9 @@ Implementation consequence:
   - `[D]elete`
   - `[A]ll`
   unless the prompt is a yes/no confirmation exception.
-- Keep prompt wording short and input-oriented.
+- Keep prompt wording short and input-oriented. Show the action, available choices,
+  limits, and defaults. Put notation explanations such as `n! = crippled only`
+  in help, not in the input prompt.
 - Do not expand simple prompts into wordy forms like `<Y>es, <N>o` unless a
   specific screen genuinely needs the extra text for clarity.
 - If a prompt already has a command-center label, do not repeat that title in
@@ -213,8 +215,8 @@ COMMAND <- Planet coords [16,13] <Q> ->
 COMMAND <- Empire tax rate (0 - 100) [65] <Q> ->
 COMMAND <- Qty for Destroyers [00] <Q> ->
 COMMAND <- How many new destroyers to build [1] <Q> ->
-COMMAND <- <ENTER> commissions the drafted fleet. <Q> ->
-COMMAND <- <ENTER> commissions the highlighted starbase. <Q> ->
+COMMAND <- <ENTER> Commission fleet <Q> ->
+COMMAND <- <ENTER> Commission starbase <Q> ->
 COMMAND <- Delete <A> or 1-2 <Q> ->
 ```
 
@@ -236,6 +238,23 @@ confirmation prompts do not resize the queue table.
 
 Ship-class staging prompts show only classes available from the current donor,
 after subtracting staged ships and applying the action's limits. Keep the
-composition's class order. Commission/transfer and cancel stay on their
-separate action line. With no further ships available, show
-`COMMAND <- No more ships to stage <Q> ->` instead of an empty class list.
+composition's class order. Transfer offers `<T> Transfer, <X> Clear` while
+staging. `T` or an empty Enter opens
+`COMMAND <- Transfer these ships? [Y]/N <Q> ->`. Staging the last allowed ship
+opens confirmation automatically. Enter/Y accepts, N keeps the selection and
+returns to editing, and Q cancels. Collapse the hidden action row during
+confirmation. Keep the staged, source remaining, and destination after
+transfer previews visible.
+
+Detach offers `<D> Detach, <X> Clear` while staging. `D` or an empty Enter
+opens `COMMAND <- Detach these ships? [Y]/N <Q> ->`. Staging the last allowed
+ship opens that confirmation automatically. Enter or Y accepts, N returns to
+editing with the selection intact, and Q cancels the detach. Hide staging
+actions and stale instructions during confirmation. A required donor-speed
+adjustment still occurs before any ships move.
+
+At a Detach or Transfer quantity prompt, show `1! = 1 crippled` on the
+existing row immediately above the command line only when the selected class
+has crippled hulls left to stage. Do not add rows or put the hint inside the
+command rail. Hide it on class selection, confirmation, speed entry, and when
+all crippled hulls of that class have already been staged.

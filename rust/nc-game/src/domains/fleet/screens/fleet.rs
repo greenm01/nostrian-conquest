@@ -1,3 +1,4 @@
+use crate::screen::layout::draw_command_line_prompt_text_padded;
 use crossterm::event::{KeyCode, KeyEvent};
 use nc_ui::table_filter::{TableFilterClause, is_filter_column_char};
 use std::collections::BTreeSet;
@@ -77,10 +78,9 @@ fn filter_prompt_dismiss_prompt(message: &str) -> String {
 }
 
 /// The Ships cell of a fleet table row: the composition in ship notation,
-/// which shows each damaged class as `CA12!3`. When it has to be cut and the
-/// fleet has crippled ships, the cell ends in `+!` so the damage stays visible.
+/// which shows each damaged class as `CA12!3`. A cut cell ends in `+`.
 fn fleet_table_ships_cell(row: &FleetRow, width: usize) -> String {
-    nc_data::fit_notation(&row.table_ships_label, width, row.damaged_ships > 0)
+    nc_data::fit_notation(&row.table_ships_label, width)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -99,8 +99,7 @@ pub struct FleetRow {
     pub order_label: String,
     /// The fleet's ships in ship notation (`SC1 CA12!3 TT*4`).
     pub table_ships_label: String,
-    /// Crippled ships in the fleet: the list's `!` marker and the review
-    /// screen's legend appear only when this is not zero.
+    /// Crippled ships in the fleet: the review legend appears when nonzero.
     pub damaged_ships: u32,
     pub join_host_fleet_number: Option<u16>,
 }
@@ -174,6 +173,7 @@ pub enum FleetDetachClass {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FleetDetachMode {
     ChoosingClass,
+    Confirming,
     EnteringQuantity(FleetDetachClass),
     AdjustingDonorSpeed,
 }
@@ -181,6 +181,7 @@ pub enum FleetDetachMode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FleetTransferMode {
     ChoosingClass,
+    Confirming,
     EnteringQuantity(FleetDetachClass),
 }
 
@@ -1729,7 +1730,8 @@ impl FleetTransferScreen {
         &mut self,
         donor_row: &FleetRow,
         host_row: &FleetRow,
-        _mode: FleetTransferMode,
+        mode: FleetTransferMode,
+        crippled_quantity_hint: bool,
         input: &str,
         status: Option<&str>,
         prompt: &str,
@@ -1753,8 +1755,12 @@ impl FleetTransferScreen {
         const DEST_SPEED_ROE_ROW: usize = 13;
         const DEST_SHIPS_ROW: usize = 14;
         const ACTION_ROW: usize = 16;
-        const COMMAND_ROW: usize = 18;
-        const STAGED_ROW: usize = 20;
+        let command_row = if mode == FleetTransferMode::Confirming {
+            ACTION_ROW
+        } else {
+            ACTION_ROW + 2
+        };
+        let staged_row = command_row + 2;
 
         let mut buffer = new_playfield();
         buffer.fill_row(0, classic::menu_style());
@@ -1833,53 +1839,60 @@ impl FleetTransferScreen {
             ),
         );
         draw_status_line(&mut buffer, DEST_SHIPS_ROW, "Ships: ", destination_ships);
-        buffer.write_spans(
-            ACTION_ROW,
-            0,
-            &[
-                StyledSpan::new("<", classic::prompt_style()),
-                StyledSpan::new("C", classic::prompt_hotkey_style()),
-                StyledSpan::new(">ommit, <", classic::prompt_style()),
-                StyledSpan::new("X", classic::prompt_hotkey_style()),
-                StyledSpan::new("> Cancel", classic::prompt_style()),
-            ],
-        );
-        draw_command_line_default_input_padded(
-            &mut buffer,
-            COMMAND_ROW,
-            COMMAND_LABEL,
-            prompt,
-            default,
-            input,
-        );
+        if mode == FleetTransferMode::Confirming {
+            draw_command_line_prompt_text_padded(&mut buffer, command_row, COMMAND_LABEL, prompt);
+        } else {
+            buffer.write_spans(
+                ACTION_ROW,
+                0,
+                &[
+                    StyledSpan::new("<", classic::prompt_style()),
+                    StyledSpan::new("T", classic::prompt_hotkey_style()),
+                    StyledSpan::new("> Transfer, <", classic::prompt_style()),
+                    StyledSpan::new("X", classic::prompt_hotkey_style()),
+                    StyledSpan::new("> Clear", classic::prompt_style()),
+                ],
+            );
+            if crippled_quantity_hint {
+                draw_status_line(&mut buffer, command_row - 1, "", "1! = 1 crippled");
+            }
+            draw_command_line_default_input_padded(
+                &mut buffer,
+                command_row,
+                COMMAND_LABEL,
+                prompt,
+                default,
+                input,
+            );
+        }
         let staged_end_row = if staged_summary != "none" {
             draw_status_line(
                 &mut buffer,
-                STAGED_ROW,
+                staged_row,
                 "Staged to Transfer: ",
                 staged_summary,
             );
             draw_status_line(
                 &mut buffer,
-                STAGED_ROW + 1,
+                staged_row + 1,
                 "Remaining on Source: ",
                 remaining_summary,
             );
             draw_status_line(
                 &mut buffer,
-                STAGED_ROW + 2,
+                staged_row + 2,
                 "Destination After Transfer: ",
                 destination_summary,
             );
-            STAGED_ROW + 2
+            staged_row + 2
         } else {
             draw_status_line(
                 &mut buffer,
-                STAGED_ROW,
+                staged_row,
                 "Staged to Transfer: ",
                 staged_summary,
             );
-            STAGED_ROW
+            staged_row
         };
         if let Some(status) = status {
             let status_row = (staged_end_row + 2).min(last_body_row());
@@ -2005,6 +2018,8 @@ impl FleetDetachScreen {
     pub fn render(
         &mut self,
         donor_row: &FleetRow,
+        mode: FleetDetachMode,
+        crippled_quantity_hint: bool,
         prompt: &str,
         default: &str,
         input: &str,
@@ -2021,8 +2036,12 @@ impl FleetDetachScreen {
         const ROE_ROW: usize = 8;
         const SHIPS_ROW: usize = 10;
         const ACTION_ROW: usize = 12;
-        const COMMAND_ROW: usize = 14;
-        const STAGED_ROW: usize = 16;
+        let command_row = if mode == FleetDetachMode::Confirming {
+            ACTION_ROW
+        } else {
+            ACTION_ROW + 2
+        };
+        let staged_row = command_row + 2;
 
         let mut buffer = new_playfield();
         buffer.fill_row(0, classic::menu_style());
@@ -2069,34 +2088,41 @@ impl FleetDetachScreen {
             "Ships: ",
             &donor_row.table_ships_label,
         );
-        buffer.write_spans(
-            ACTION_ROW,
-            0,
-            &[
-                StyledSpan::new("<", classic::prompt_style()),
-                StyledSpan::new("C", classic::prompt_hotkey_style()),
-                StyledSpan::new(">ommission, <", classic::prompt_style()),
-                StyledSpan::new("X", classic::prompt_hotkey_style()),
-                StyledSpan::new("> Cancel", classic::prompt_style()),
-            ],
-        );
-        draw_command_line_default_input_padded(
-            &mut buffer,
-            COMMAND_ROW,
-            COMMAND_LABEL,
-            prompt,
-            default,
-            input,
-        );
+        if mode == FleetDetachMode::Confirming {
+            draw_command_line_prompt_text_padded(&mut buffer, command_row, COMMAND_LABEL, prompt);
+        } else {
+            buffer.write_spans(
+                ACTION_ROW,
+                0,
+                &[
+                    StyledSpan::new("<", classic::prompt_style()),
+                    StyledSpan::new("D", classic::prompt_hotkey_style()),
+                    StyledSpan::new("> Detach, <", classic::prompt_style()),
+                    StyledSpan::new("X", classic::prompt_hotkey_style()),
+                    StyledSpan::new("> Clear", classic::prompt_style()),
+                ],
+            );
+            if crippled_quantity_hint {
+                draw_status_line(&mut buffer, command_row - 1, "", "1! = 1 crippled");
+            }
+            draw_command_line_default_input_padded(
+                &mut buffer,
+                command_row,
+                COMMAND_LABEL,
+                prompt,
+                default,
+                input,
+            );
+        }
         let staged_rows = draw_wrapped_message(
             &mut buffer,
-            STAGED_ROW,
-            last_body_row().saturating_sub(STAGED_ROW) + 1,
+            staged_row,
+            last_body_row().saturating_sub(staged_row) + 1,
             "Staged for New Fleet: ",
             staged_summary,
         );
         let staged_end_row = if staged_summary != "none" {
-            let remaining_row = STAGED_ROW + staged_rows;
+            let remaining_row = staged_row + staged_rows;
             let remaining_rows = draw_wrapped_message(
                 &mut buffer,
                 remaining_row,
@@ -2106,7 +2132,7 @@ impl FleetDetachScreen {
             );
             remaining_row + remaining_rows.saturating_sub(1)
         } else {
-            STAGED_ROW + staged_rows.saturating_sub(1)
+            staged_row + staged_rows.saturating_sub(1)
         };
         if let Some(status) = status {
             let status_row = (staged_end_row + 2).min(last_body_row().saturating_sub(1));

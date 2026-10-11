@@ -97,7 +97,7 @@ const BRIEF_TOP_HEADER_CELLS: [&str; 13] = [
 const BRIEF_BROWSE_HOTKEYS: &str = "? F S B D A C M L U X <Q>";
 const BRIEF_FILTER_HOTKEYS: &str = "? A R S T <Q>";
 pub(crate) const PLANET_LIST_MASS_COMMISSION_PROMPT: &str =
-    "Mass Commission: Commission all ships and starbases? [Y]/N -> ";
+    "Commission all ships and starbases? [Y]/N -> ";
 pub(crate) const PLANET_LIST_LOAD_FLEET_PROMPT: &str = "Load Armies: Fleet # ";
 pub(crate) const PLANET_LIST_UNLOAD_FLEET_PROMPT: &str = "Unload Armies: Fleet # ";
 pub(crate) const PLANET_LIST_LOAD_QTY_PROMPT: &str = "Load Armies: How many armies? ";

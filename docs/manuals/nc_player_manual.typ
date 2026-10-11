@@ -319,7 +319,7 @@ A fleet of `BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2` therefore holds nine transports, 
 
 Loaded and empty transports are damaged separately, so `TT*4!1 TT5!2` says exactly which transports are crippled. Loading an army uses your healthy empty transports first and a crippled one only when no healthy one is left; unloading or landing puts the armies aboard crippled transports ashore first. A crippled transport keeps its recovery time either way.
 
-In the Fleet List the Ships cell is narrow. When it cannot hold a damaged fleet's whole composition, it ends in `+!`: the `+` says the line was cut short, and the `!` says the fleet has crippled ships. A lone `!` never means the whole fleet is crippled.
+In the Fleet List the Ships cell is narrow. When it cannot hold the whole composition, it ends in `+`. Review shows the full composition, including any crippled ships omitted from the table.
 
 == Starbases
 
@@ -912,11 +912,26 @@ code (`BB`, `CA`, `DD`, `TT*`, `TT`, `SC`, or `ETAC`), then a quantity. A plain
 quantity such as `3` takes healthy ships first and takes crippled ships only
 when the class has too few healthy ones. A quantity followed by a bang, such as
 `3!`, takes exactly three crippled ships; the game refuses it when the fleet has
-fewer, and it never fills the gap with healthy ships. Among crippled ships, those
+fewer, and it never fills the gap with healthy ships. When the selected class
+has crippled ships left to stage, `1! = 1 crippled` appears above the quantity
+prompt. Among crippled ships, those
 crippled most recently go first, then those with the most recovery time left.
 The *Staged* line shows the ships that will move, in the same notation: `CA3!1`
 is three cruisers, one of them crippled. Moving crippled ships never repairs
 them or restarts their recovery, and each keeps the time it has left.
+
+In *Detach*, type *D* to finish staging early. When only one ship remains on the
+donor, confirmation opens automatically. Press *Enter* or *Y* to detach the
+staged ships, *N* to return to editing, or *Q* to cancel. While editing, *X*
+clears the staged selection. If the donor needs a lower speed after detaching,
+the game asks for it before moving the ships.
+
+*Transfer* uses the same staging and confirmation flow. Type *T* or press
+*Enter* at an empty class prompt to finish staging early. Confirmation opens
+automatically when only one ship remains on the source. Review the staged
+ships, source remainder, and destination after transfer; then press *Enter*
+or *Y* to transfer, *N* to keep editing, or *Q* to cancel. *X* clears staging
+while editing.
 
 == Building and Commissioning
 

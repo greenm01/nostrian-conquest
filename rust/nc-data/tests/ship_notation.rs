@@ -150,29 +150,29 @@ fn class_codes_parse_and_etac_keeps_its_short_form() {
 
 #[test]
 fn a_composition_that_fits_is_returned_whole() {
-    assert_eq!(fit_notation("DD8 CA12!3", 18, true), "DD8 CA12!3");
-    assert_eq!(fit_notation("DD8 CA12", 8, false), "DD8 CA12");
+    assert_eq!(fit_notation("DD8 CA12!3", 18), "DD8 CA12!3");
+    assert_eq!(fit_notation("DD8 CA12", 8), "DD8 CA12");
 }
 
 #[test]
 fn a_healthy_composition_is_cut_between_tokens_with_a_plus() {
     let ships = "SC1 BB2 CA12 DD8 TT*4 TT5 ETAC2";
-    assert_eq!(fit_notation(ships, 18, false), "SC1 BB2 CA12 DD8 +");
-    assert_eq!(fit_notation(ships, 17, false), "SC1 BB2 CA12 +");
-    assert_eq!(fit_notation(ships, 4, false), "+");
-    assert_eq!(fit_notation(ships, 0, false), "");
+    assert_eq!(fit_notation(ships, 18), "SC1 BB2 CA12 DD8 +");
+    assert_eq!(fit_notation(ships, 17), "SC1 BB2 CA12 +");
+    assert_eq!(fit_notation(ships, 4), "+");
+    assert_eq!(fit_notation(ships, 0), "");
 }
 
 #[test]
-fn a_damaged_composition_keeps_a_lone_bang_however_far_it_is_cut() {
+fn a_damaged_composition_uses_plain_plus_however_far_it_is_cut() {
     let ships = "SC1 BB2 CA12 DD8 TT*4 TT5 ETAC2!1";
-    assert_eq!(fit_notation(ships, 18, true), "SC1 BB2 CA12 +!");
-    assert_eq!(fit_notation(ships, 5, true), "+!");
-    assert_eq!(fit_notation(ships, 2, true), "+!");
-    assert_eq!(fit_notation(ships, 1, true), "!");
+    assert_eq!(fit_notation(ships, 18), "SC1 BB2 CA12 DD8 +");
+    assert_eq!(fit_notation(ships, 5), "SC1 +");
+    assert_eq!(fit_notation(ships, 2), "+");
+    assert_eq!(fit_notation(ships, 1), "+");
     // The same fleet with its damage showing in the tokens that fit.
     assert_eq!(
-        fit_notation("SC1 BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2", 18, true),
-        "SC1 BB2!1 +!"
+        fit_notation("SC1 BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2", 18),
+        "SC1 BB2!1 CA12!3 +"
     );
 }

@@ -90,9 +90,9 @@ the code settled.
 **One formatter.** `nc-data/src/ship_notation.rs` owns the grammar:
 `ship_token`, `join_tokens`, `fleet_notation` (the fleet screens' class order,
 `SC BB CA DD TT* TT ETAC`), `starbase_token`, `fit_notation`, and the
-`NOTATION_LEGEND` text. `fit_notation` cuts between tokens and ends a cut
-damaged fleet in ` +!`, so the lone `!` survives however far the cell is
-cut. `ship_composition_table_summary` is now `fleet_notation` with the empty
+`NOTATION_LEGEND` text. `fit_notation` cuts between tokens and ends every
+cut composition in ` +`; see the [overflow audit](9ir2qgc6-use-plain-plus-for-table-composition-overflow.md).
+Damage appears only in complete class tokens. `ship_composition_table_summary` is now `fleet_notation` with the empty
 fleet assertion; `ship_composition_summary` (`SC=1 ... AR=2`) and
 `damaged_ships_table_summary` are gone. The grammar is used by the door's fleet
 list and group screens, the review, ETA and order screens' ship rows, Detach and
@@ -125,8 +125,9 @@ the same ships. This also changes the shared default: the CLI, the KDL
 turn files, the helm and the fuzzer have no `n!` syntax, so their plain
 quantities now take healthy ships first as well.
 
-**Door input.** The quantity prompt accepts digits and one trailing `!`; a
-class with crippled ships left to stage says `n! = crippled only`. A refused
+**Door input.** The quantity prompt accepts digits and one trailing `!`. The
+[short-prompt audit](om9r4ejo-keep-command-prompts-short-and-input-focused.md)
+keeps the `n!` explanation in help instead of the input prompt. A refused
 `n!` says `Enter a crippled quantity from 1 to N.` or `No crippled CA left to
 stage.` and leaves the prompt open. Class codes show `ETAC`; `ET` still
 works. Help for the fleet list, Detach and Transfer carries the legend and

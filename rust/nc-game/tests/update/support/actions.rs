@@ -279,3 +279,14 @@ pub(crate) fn confirm_fleet_group_order(app: &mut App, confirm: bool) {
         AppOutcome::Continue
     );
 }
+
+/// Finish a staged detach, including its explicit confirmation.
+pub(crate) fn confirm_detach(app: &mut App) {
+    if app.fleet.detach_mode != nc_game::screen::FleetDetachMode::Confirming {
+        enter_detach_input(app, "d");
+        submit_detach(app);
+    }
+    if app.fleet.detach_mode == nc_game::screen::FleetDetachMode::Confirming {
+        submit_detach(app);
+    }
+}

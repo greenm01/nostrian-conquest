@@ -362,9 +362,9 @@ impl PlanetCommissionScreen {
             TableFooter::CommandPrompt {
                 label: "COMMAND",
                 prompt: if has_ship_draft {
-                    "<ENTER> commissions the drafted fleet. <Q> -> "
+                    "<ENTER> Commission fleet <Q> -> "
                 } else {
-                    "<ENTER> commissions the highlighted starbase. <Q> -> "
+                    "<ENTER> Commission starbase <Q> -> "
                 },
             }
         };

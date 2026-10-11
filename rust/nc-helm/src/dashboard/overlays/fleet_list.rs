@@ -1375,7 +1375,6 @@ pub(crate) fn table_rows(app: &DashApp) -> Vec<FleetOverlayRow> {
                 nc_data::fit_notation(
                     &nc_data::ship_composition_table_summary(&fleet),
                     COLUMNS[9].width,
-                    !fleet.crippled.is_empty(),
                 ),
             ],
         });
@@ -1912,7 +1911,7 @@ mod tests {
     }
 
     #[test]
-    fn fleet_table_rows_show_ship_notation_and_keep_a_cut_bang() {
+    fn fleet_table_rows_show_ship_notation_and_plain_plus_overflow() {
         let mut app = dash_app();
         let fleet_number;
         let fleet = app
@@ -1957,7 +1956,7 @@ mod tests {
         nc_data::set_armies_aboard(fleet, 4);
         nc_data::recompute_max_speed(fleet);
         let cut = cell(&app);
-        assert!(cut.ends_with(" +!"), "{cut}");
+        assert!(cut.ends_with(" +"), "{cut}");
         assert!(cut.chars().count() <= super::COLUMNS[9].width, "{cut}");
     }
 

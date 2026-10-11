@@ -140,9 +140,9 @@ fn planet_list_auto_commission_prompt_and_report_return_to_list() {
     assert!(
         line_containing(
             &terminal,
-            "Mass Commission: Commission all ships and starbases? [Y]/N ->",
+            "Commission all ships and starbases? [Y]/N ->",
         )
-        .contains("Mass Commission: Commission all ships and starbases? [Y]/N ->"),
+        .contains("Commission all ships and starbases? [Y]/N ->"),
         "expected inline mass-commission prompt on planet list"
     );
     assert!(

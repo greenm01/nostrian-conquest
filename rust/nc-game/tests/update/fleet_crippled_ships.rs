@@ -194,10 +194,7 @@ fn n_bang_beyond_the_crippled_cruisers_is_rejected_and_changes_nothing() {
     );
     assert_eq!(detach_staged(&mut app), "Staged for New Fleet: none");
     let terminal = screen(&mut app);
-    assert!(
-        line_containing(&terminal, "CA to stage (max 4, n! = crippled only)")
-            .contains("[1] <Q> ->")
-    );
+    assert!(line_containing(&terminal, "CA to stage (max 4)").contains("[1] <Q> ->"));
     // The same prompt is still open for a corrected answer.
     app.fleet.detach_input.clear();
     enter_detach_input(&mut app, "2!");
@@ -277,8 +274,7 @@ fn plain_and_crippled_quantities_add_up_in_one_staged_selection() {
 fn commissioning_moves_the_crippled_cruisers_with_their_recovery_intact() {
     let (mut app, root) = detach_app(twelve_cruisers);
     detach_stage(&mut app, "ca", "2!");
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
     let state = latest_runtime_state(&root).game_data;
     let new_fleet = state
         .fleets
@@ -323,8 +319,7 @@ fn transports_stage_by_cargo_and_the_confirmation_keeps_the_star() {
     assert!(detach_remaining(&mut app).ends_with("SC1 CA2 TT*1 TT1"));
     detach_stage(&mut app, "tt", "1");
     assert!(detach_staged(&mut app).ends_with("TT*1!1 TT2!1"));
-    enter_detach_input(&mut app, "c");
-    submit_detach(&mut app);
+    confirm_detach(&mut app);
     let state = latest_runtime_state(&root).game_data;
     let new_fleet = state
         .fleets
@@ -380,7 +375,8 @@ fn transfer_takes_the_same_selection_rules() {
         Some("No crippled CA left to stage.")
     );
     apply_action(&mut app, Action::Fleet(FleetAction::CancelTransfer));
-    enter_transfer_input(&mut app, "c");
+    enter_transfer_input(&mut app, "t");
+    submit_transfer(&mut app);
     submit_transfer(&mut app);
     let state = latest_runtime_state(&root).game_data;
     assert_eq!(nc_data::fleet_notation(&state.fleets[0]), "SC1 CA9");
@@ -464,7 +460,7 @@ fn the_fleet_list_help_repeats_the_notation_legend() {
     app.current_screen = ScreenId::FleetList;
     let terminal = help_screen(app);
     assert!(line_containing(&terminal, "! = crippled; * = loaded").contains("Ships"));
-    assert!(line_containing(&terminal, "cut-short Ships cell").contains("+!"));
+    assert!(line_containing(&terminal, "Review shows the full composition").contains("+"));
 }
 
 #[test]
@@ -489,7 +485,7 @@ fn detach_choices_follow_staging_and_cancel_restores_them() {
     assert!(line_containing(&screen(&mut app), "Class <SC,CA,TT>").contains("<Q>"));
     detach_stage(&mut app, "tt", "1");
     detach_stage(&mut app, "ca", "2");
-    assert!(line_containing(&screen(&mut app), "No more ships to stage").contains("<Q>"));
+    assert!(line_containing(&screen(&mut app), "Detach these ships? [Y]/N").contains("<Q>"));
     apply_action(&mut app, Action::Fleet(FleetAction::ClearDetachSelection));
     assert!(line_containing(&screen(&mut app), "Class <SC,CA,TT*,TT>").contains("<Q>"));
 }
@@ -499,7 +495,112 @@ fn transfer_choices_omit_classes_not_available_from_the_donor() {
     let (mut app, _root) = transfer_app(twelve_cruisers);
     assert!(line_containing(&screen(&mut app), "Class <SC,CA>").contains("<Q>"));
     transfer_stage(&mut app, "ca", "12");
-    assert!(line_containing(&screen(&mut app), "No more ships to stage").contains("<Q>"));
+    assert!(line_containing(&screen(&mut app), "Transfer these ships? [Y]/N").contains("<Q>"));
     apply_action(&mut app, Action::Fleet(FleetAction::ClearTransferSelection));
     assert!(line_containing(&screen(&mut app), "Class <SC,CA>").contains("<Q>"));
 }
+
+fn detach_key(app: &mut App, code: KeyCode) {
+    let action = app.handle_key(KeyEvent::new(code, KeyModifiers::NONE));
+    assert_eq!(apply_action(app, action), AppOutcome::Continue);
+}
+
+#[test]
+fn last_stage_confirms_and_enter_detaches_crippled_ship_without_extra_command() {
+    let (mut app, root) = detach_app(|data| {
+        arrange(&mut data.fleets[0], 0, 0, 0, 0);
+        let donor = &mut data.fleets[0];
+        donor.ships.battleships = 1;
+        donor.ships.destroyers = 1;
+        donor.crippled.battleships = hulls(0, 1, 0);
+        donor.crippled.destroyers = hulls(1, 0, 0);
+        nc_data::recompute_max_speed(donor);
+    });
+    let before = latest_runtime_state(&root).game_data;
+    for code in [
+        KeyCode::Char('d'),
+        KeyCode::Char('d'),
+        KeyCode::Enter,
+        KeyCode::Char('1'),
+        KeyCode::Char('!'),
+        KeyCode::Enter,
+    ] {
+        detach_key(&mut app, code);
+    }
+    let terminal = screen(&mut app);
+    assert!(line_containing(&terminal, "Detach these ships? [Y]/N <Q> ->").contains("COMMAND"));
+    assert!(terminal.line(10).contains("Ships: BB1!1 DD1!1"));
+    assert!(terminal.line(11).trim().is_empty());
+    assert!(terminal.line(12).contains("Detach these ships?"));
+    assert!(terminal.line(13).trim().is_empty());
+    assert!(terminal.line(14).contains("Staged for New Fleet:"));
+    assert!(terminal.line(15).contains("Remaining on Donor:"));
+    assert!(line_containing(&terminal, "Staged for New Fleet:").contains("DD1!1"));
+    assert!(line_containing(&terminal, "Remaining on Donor:").contains("BB1!1"));
+    assert!(
+        !terminal
+            .lines
+            .iter()
+            .any(|line| line.contains("Enter a ship code") || line.contains("<D> Detach"))
+    );
+    assert_eq!(
+        latest_runtime_state(&root).game_data.fleets.len(),
+        before.fleets.len()
+    );
+    detach_key(&mut app, KeyCode::Enter);
+    let after = latest_runtime_state(&root).game_data;
+    assert_eq!(after.fleets.len(), before.fleets.len() + 1);
+    assert!(
+        after
+            .fleets
+            .iter()
+            .any(|fleet| nc_data::fleet_notation(fleet) == "DD1!1")
+    );
+    assert!(
+        after
+            .fleets
+            .iter()
+            .any(|fleet| nc_data::fleet_notation(fleet) == "BB1!1")
+    );
+}
+
+#[test]
+fn early_detach_confirmation_can_be_declined_cleared_or_cancelled() {
+    let (mut app, root) = detach_app(twelve_cruisers);
+    let count = latest_runtime_state(&root).game_data.fleets.len();
+    detach_stage(&mut app, "ca", "3!");
+    detach_key(&mut app, KeyCode::Char('d'));
+    detach_key(&mut app, KeyCode::Enter);
+    assert!(line_containing(&screen(&mut app), "Detach these ships?").contains("[Y]/N"));
+    detach_key(&mut app, KeyCode::Char('n'));
+    assert!(line_containing(&screen(&mut app), "Class <SC,CA>").contains("<Q>"));
+    assert!(line_containing(&screen(&mut app), "Staged for New Fleet:").contains("CA3!3"));
+    detach_key(&mut app, KeyCode::Char('x'));
+    assert!(line_containing(&screen(&mut app), "Staged for New Fleet:").contains("none"));
+    detach_stage(&mut app, "ca", "2");
+    detach_key(&mut app, KeyCode::Enter);
+    detach_key(&mut app, KeyCode::Char('q'));
+    assert_ne!(app.current_screen(), ScreenId::FleetDetach);
+    let after = latest_runtime_state(&root).game_data;
+    assert_eq!(after.fleets.len(), count);
+    assert_eq!(after.fleets[0].ships.cruisers, 12);
+}
+
+#[test]
+fn y_accepts_an_early_detach_confirmation() {
+    let (mut app, root) = detach_app(twelve_cruisers);
+    let count = latest_runtime_state(&root).game_data.fleets.len();
+    detach_stage(&mut app, "ca", "1");
+    detach_key(&mut app, KeyCode::Enter);
+    detach_key(&mut app, KeyCode::Char('y'));
+    assert_eq!(
+        latest_runtime_state(&root).game_data.fleets.len(),
+        count + 1
+    );
+}
+
+#[path = "fleet_crippled_ships/transfer_confirmation.rs"]
+mod transfer_confirmation;
+
+#[path = "fleet_crippled_ships/quantity_hint.rs"]
+mod quantity_hint;

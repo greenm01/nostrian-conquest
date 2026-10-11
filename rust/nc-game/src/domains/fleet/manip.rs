@@ -379,6 +379,12 @@ impl App {
                 }
                 self.fleet.transfer_input.push(ch.to_ascii_uppercase());
             }
+            FleetTransferMode::Confirming => {
+                if ch.eq_ignore_ascii_case(&'n') {
+                    self.fleet.transfer_mode = FleetTransferMode::ChoosingClass;
+                    self.fleet.transfer_input.clear();
+                }
+            }
             FleetTransferMode::EnteringQuantity(_) => {
                 if !quantity_char_fits(&self.fleet.transfer_input, ch) {
                     return;
@@ -402,6 +408,12 @@ impl App {
                     return;
                 }
                 self.fleet.detach_input.push(ch.to_ascii_uppercase());
+            }
+            FleetDetachMode::Confirming => {
+                if ch.eq_ignore_ascii_case(&'n') {
+                    self.fleet.detach_mode = FleetDetachMode::ChoosingClass;
+                    self.fleet.detach_input.clear();
+                }
             }
             FleetDetachMode::EnteringQuantity(_) => {
                 if !quantity_char_fits(&self.fleet.detach_input, ch) {
@@ -434,7 +446,7 @@ impl App {
         self.fleet.transfer_input.clear();
         self.fleet.transfer_status = None;
         match self.fleet.transfer_mode {
-            FleetTransferMode::ChoosingClass => {
+            FleetTransferMode::ChoosingClass | FleetTransferMode::Confirming => {
                 self.reset_fleet_transfer_staging();
                 self.fleet.transfer_donor_record_index_1_based = None;
                 self.fleet.transfer_host_record_index_1_based = None;
@@ -469,7 +481,7 @@ impl App {
         self.fleet.detach_input.clear();
         self.fleet.detach_status = None;
         match self.fleet.detach_mode {
-            FleetDetachMode::ChoosingClass => {
+            FleetDetachMode::ChoosingClass | FleetDetachMode::Confirming => {
                 self.reset_fleet_detach_staging();
                 self.fleet.detach_last_commissioned = None;
                 self.fleet.detach_donor_record_index_1_based = None;
@@ -504,24 +516,16 @@ impl App {
         match self.fleet.transfer_mode {
             FleetTransferMode::ChoosingClass => {
                 let raw = self.fleet.transfer_input.trim().to_ascii_uppercase();
-                if raw.is_empty() {
-                    self.fleet.transfer_status = Some("Enter a ship code, C, X, or Q.".to_string());
-                    return Ok(());
-                }
                 match raw.as_str() {
-                    "C" => {
+                    "T" | "" => {
                         if self.fleet.transfer_selection.total_ships() == 0 {
                             self.fleet.transfer_status =
-                                Some("Stage at least one ship before committing.".to_string());
+                                Some("Stage at least one ship before transferring.".to_string());
                             return Ok(());
                         }
-                        if self.fleet_transfer_remaining_total_after_selection() == 0 {
-                            self.fleet.transfer_status = Some(
-                                "At least one ship must remain in the source fleet.".to_string(),
-                            );
-                            return Ok(());
-                        }
-                        self.finish_fleet_transfer()?;
+                        self.fleet.transfer_input.clear();
+                        self.fleet.transfer_status = None;
+                        self.fleet.transfer_mode = FleetTransferMode::Confirming;
                     }
                     "X" => {
                         self.clear_fleet_transfer_selection();
@@ -532,7 +536,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.transfer_status =
-                                Some("Choose a listed class, C, X, or Q.".to_string());
+                                Some("Choose a listed class, T, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_transfer_available_for_class(class) == 0 {
@@ -586,7 +590,15 @@ impl App {
                     .stage(category, value, crippled);
                 self.fleet.transfer_input.clear();
                 self.fleet.transfer_status = None;
-                self.fleet.transfer_mode = FleetTransferMode::ChoosingClass;
+                self.fleet.transfer_mode =
+                    if self.fleet_transfer_remaining_total_after_selection() == 1 {
+                        FleetTransferMode::Confirming
+                    } else {
+                        FleetTransferMode::ChoosingClass
+                    };
+            }
+            FleetTransferMode::Confirming => {
+                self.finish_fleet_transfer()?;
             }
         }
         Ok(())
@@ -618,34 +630,16 @@ impl App {
         match self.fleet.detach_mode {
             FleetDetachMode::ChoosingClass => {
                 let raw = self.fleet.detach_input.trim().to_ascii_uppercase();
-                if raw.is_empty() {
-                    self.fleet.detach_status = Some("Enter a ship code, C, X, or Q.".to_string());
-                    return Ok(());
-                }
                 match raw.as_str() {
-                    "C" => {
+                    "D" | "" => {
                         if self.fleet.detach_selection.total_ships() == 0 {
                             self.fleet.detach_status =
-                                Some("Stage at least one ship before commissioning.".to_string());
-                            return Ok(());
-                        }
-                        if self.fleet_detach_remaining_total_after_selection() == 0 {
-                            self.fleet.detach_status = Some(
-                                "At least one ship must remain in the donor fleet.".to_string(),
-                            );
+                                Some("Stage at least one ship before detaching.".to_string());
                             return Ok(());
                         }
                         self.fleet.detach_input.clear();
                         self.fleet.detach_status = None;
-                        self.fleet.detach_donor_speed = None;
-                        if self.fleet_detach_requires_speed_prompt() {
-                            self.fleet.detach_mode = FleetDetachMode::AdjustingDonorSpeed;
-                        } else {
-                            self.commit_fleet_detach_staged_selection(
-                                donor_record_index_1_based,
-                                selected_row.fleet_number,
-                            )?;
-                        }
+                        self.fleet.detach_mode = FleetDetachMode::Confirming;
                     }
                     "X" => {
                         self.clear_fleet_detach_selection();
@@ -656,7 +650,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.detach_status =
-                                Some("Choose a listed class, C, X, or Q.".to_string());
+                                Some("Choose a listed class, D, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_detach_available_for_class(class) == 0 {
@@ -704,7 +698,25 @@ impl App {
                 self.fleet.detach_selection.stage(category, value, crippled);
                 self.fleet.detach_input.clear();
                 self.fleet.detach_status = None;
-                self.fleet.detach_mode = FleetDetachMode::ChoosingClass;
+                self.fleet.detach_mode = if self.fleet_detach_remaining_total_after_selection() == 1
+                {
+                    FleetDetachMode::Confirming
+                } else {
+                    FleetDetachMode::ChoosingClass
+                };
+            }
+            FleetDetachMode::Confirming => {
+                self.fleet.detach_input.clear();
+                self.fleet.detach_status = None;
+                self.fleet.detach_donor_speed = None;
+                if self.fleet_detach_requires_speed_prompt() {
+                    self.fleet.detach_mode = FleetDetachMode::AdjustingDonorSpeed;
+                } else {
+                    self.commit_fleet_detach_staged_selection(
+                        donor_record_index_1_based,
+                        selected_row.fleet_number,
+                    )?;
+                }
             }
             FleetDetachMode::AdjustingDonorSpeed => {
                 let default_speed = self.fleet_detach_donor_default_speed().max(1);
@@ -733,6 +745,20 @@ impl App {
     ) -> crate::app::Action {
         use crossterm::event::KeyCode;
 
+        if self.fleet.detach_mode == FleetDetachMode::Confirming {
+            return match key.code {
+                KeyCode::Enter | KeyCode::Char('y' | 'Y') => {
+                    crate::app::Action::Fleet(FleetAction::SubmitDetach)
+                }
+                KeyCode::Char('n' | 'N') => {
+                    crate::app::Action::Fleet(FleetAction::AppendDetachChar('n'))
+                }
+                KeyCode::Char('q' | 'Q') | KeyCode::Esc => {
+                    crate::app::Action::Fleet(FleetAction::CancelDetach)
+                }
+                _ => crate::app::Action::Noop,
+            };
+        }
         match key.code {
             KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitDetach),
             KeyCode::Backspace => crate::app::Action::Fleet(FleetAction::BackspaceDetachInput),
@@ -745,9 +771,11 @@ impl App {
             KeyCode::Char(ch)
                 if match self.fleet.detach_mode {
                     FleetDetachMode::ChoosingClass => ch.is_ascii_alphanumeric() || ch == '*',
-                    FleetDetachMode::EnteringQuantity(_) | FleetDetachMode::AdjustingDonorSpeed => {
-                        ch.is_ascii_digit()
+                    FleetDetachMode::Confirming => false,
+                    FleetDetachMode::EnteringQuantity(_) => {
+                        quantity_char_fits(&self.fleet.detach_input, ch)
                     }
+                    FleetDetachMode::AdjustingDonorSpeed => ch.is_ascii_digit(),
                 } =>
             {
                 crate::app::Action::Fleet(FleetAction::AppendDetachChar(ch))
@@ -762,6 +790,20 @@ impl App {
     ) -> crate::app::Action {
         use crossterm::event::KeyCode;
 
+        if self.fleet.transfer_mode == FleetTransferMode::Confirming {
+            return match key.code {
+                KeyCode::Enter | KeyCode::Char('y' | 'Y') => {
+                    crate::app::Action::Fleet(FleetAction::SubmitTransfer)
+                }
+                KeyCode::Char('n' | 'N') => {
+                    crate::app::Action::Fleet(FleetAction::AppendTransferChar('n'))
+                }
+                KeyCode::Char('q' | 'Q') | KeyCode::Esc => {
+                    crate::app::Action::Fleet(FleetAction::CancelTransfer)
+                }
+                _ => crate::app::Action::Noop,
+            };
+        }
         match key.code {
             KeyCode::Enter => crate::app::Action::Fleet(FleetAction::SubmitTransfer),
             KeyCode::Backspace => crate::app::Action::Fleet(FleetAction::BackspaceTransferInput),
@@ -774,7 +816,10 @@ impl App {
             KeyCode::Char(ch)
                 if match self.fleet.transfer_mode {
                     FleetTransferMode::ChoosingClass => ch.is_ascii_alphanumeric() || ch == '*',
-                    FleetTransferMode::EnteringQuantity(_) => ch.is_ascii_digit(),
+                    FleetTransferMode::Confirming => false,
+                    FleetTransferMode::EnteringQuantity(_) => {
+                        quantity_char_fits(&self.fleet.transfer_input, ch)
+                    }
                 } =>
             {
                 crate::app::Action::Fleet(FleetAction::AppendTransferChar(ch))
@@ -800,21 +845,12 @@ impl App {
                 String::new(),
             ),
             FleetDetachMode::EnteringQuantity(class) => (
-                quantity_prompt(
-                    class,
-                    self.fleet_detach_available_for_class(class),
-                    self.fleet
-                        .detach_donor_record_index_1_based
-                        .and_then(|idx| self.game_data.fleets.get(idx - 1))
-                        .map_or(0, |donor| {
-                            crippled_left_to_stage(
-                                donor,
-                                &self.fleet.detach_selection,
-                                ShipCategory::from(class),
-                            )
-                        }),
-                ),
+                quantity_prompt(class, self.fleet_detach_available_for_class(class)),
                 "1".to_string(),
+            ),
+            FleetDetachMode::Confirming => (
+                "Detach these ships? [Y]/N <Q> -> ".to_string(),
+                String::new(),
             ),
             FleetDetachMode::AdjustingDonorSpeed => (
                 format!("Fleet #{} new speed ", fleet_number),
@@ -1122,21 +1158,12 @@ impl App {
                 ),
                 String::new(),
             ),
+            FleetTransferMode::Confirming => (
+                "Transfer these ships? [Y]/N <Q> -> ".to_string(),
+                String::new(),
+            ),
             FleetTransferMode::EnteringQuantity(class) => (
-                quantity_prompt(
-                    class,
-                    self.fleet_transfer_available_for_class(class),
-                    self.fleet
-                        .transfer_donor_record_index_1_based
-                        .and_then(|idx| self.game_data.fleets.get(idx - 1))
-                        .map_or(0, |donor| {
-                            crippled_left_to_stage(
-                                donor,
-                                &self.fleet.transfer_selection,
-                                ShipCategory::from(class),
-                            )
-                        }),
-                ),
+                quantity_prompt(class, self.fleet_transfer_available_for_class(class)),
                 "1".to_string(),
             ),
         }
@@ -1423,15 +1450,10 @@ fn parse_quantity_input(typed: &str, default: u16) -> Option<(u16, bool)> {
     digits.parse::<u16>().ok().map(|value| (value, crippled))
 }
 
-/// The quantity prompt for a class. A class with crippled ships left to
-/// stage also says how to ask for them.
-fn quantity_prompt(class: FleetDetachClass, available: u16, crippled_left: u32) -> String {
+/// The class quantity and its current limit.
+fn quantity_prompt(class: FleetDetachClass, available: u16) -> String {
     let code = ShipCategory::from(class).code();
-    if crippled_left == 0 {
-        format!("{code} to stage (max {available}) ")
-    } else {
-        format!("{code} to stage (max {available}, n! = crippled only) ")
-    }
+    format!("{code} to stage (max {available}) ")
 }
 
 /// Why `value` ships of `category` cannot be staged on top of `selection`, if

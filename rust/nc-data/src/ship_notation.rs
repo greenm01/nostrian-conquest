@@ -210,15 +210,13 @@ pub fn auto_commission_notation(entry: &AutoCommissionFleetEntry) -> String {
 }
 
 /// A composition cut to `width` characters without splitting a token: the
-/// tokens that fit, then ` +` for the rest. For a fleet with crippled ships
-/// the cut ends in ` +!`, so a lone `!` still says the fleet is damaged
-/// when the damaged classes are among the tokens cut away. A composition that
-/// fits is returned whole.
-pub fn fit_notation(summary: &str, width: usize, damaged: bool) -> String {
+/// tokens that fit, then ` +` for the rest. Damage is shown only in the
+/// complete class tokens. A composition that fits is returned whole.
+pub fn fit_notation(summary: &str, width: usize) -> String {
     if summary.chars().count() <= width {
         return summary.to_string();
     }
-    let marker = if damaged { "+!" } else { "+" };
+    let marker = "+";
     let mut kept = Vec::new();
     let mut used = 0;
     for token in summary.split_whitespace() {
@@ -235,10 +233,5 @@ pub fn fit_notation(summary: &str, width: usize, damaged: bool) -> String {
     } else {
         format!("{} {marker}", kept.join(" "))
     };
-    // Whatever else is cut, the damage mark stays.
-    match cut.chars().count() > width {
-        false => cut,
-        true if damaged => "!".repeat(width.min(1)),
-        true => cut.chars().take(width).collect(),
-    }
+    cut.chars().take(width).collect()
 }

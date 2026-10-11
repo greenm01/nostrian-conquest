@@ -1,7 +1,7 @@
 //! Crippled ships in the BBS door (t066, t093). Compositions use the ship
 //! notation: `CA12!3` is twelve cruisers, three of them crippled. The fleet
 //! list shows it in the Ships cell and, when a damaged fleet's composition
-//! must be cut, ends the cell in `+!` so the damage stays visible; the review
+//! must be cut, ends the cell in `+` for omitted ships; the review
 //! screen repeats the notation and separates its compact legend by a blank row. The
 //! tables keep their columns and rows, and there is no recovery-time column.
 
@@ -77,26 +77,27 @@ fn the_list_shows_the_notation_and_keeps_the_table_shape() {
 }
 
 #[test]
-fn a_damaged_composition_that_has_to_be_cut_ends_in_a_lone_bang() {
+fn a_damaged_composition_that_has_to_be_cut_ends_in_plain_plus() {
     // The column is 18 wide at 80x25, so this one does not fit.
     let ships = "SC1 BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2";
     let cell = list(row(ships, 5)).plain_line(4);
-    assert!(cell.contains("SC1 BB2!1 +!"), "{cell}");
-    assert!(!cell.contains("CA12"), "{cell}");
-    // The same composition with no damage is cut the way it always was.
+    assert!(cell.contains("SC1 BB2!1 CA12!3 +"), "{cell}");
+    assert!(!cell.contains("DD8"), "{cell}");
+    // Healthy fleets use the same overflow mark.
     let healthy = list(row("SC1 BB2 CA12 DD8 TT*4 TT5 ETAC2", 0)).plain_line(4);
     assert!(healthy.contains("SC1 BB2 CA12 DD8 +"), "{healthy}");
     assert!(!healthy.contains('!'), "{healthy}");
-    // A fleet whose damage is in a class the cut drops still shows it.
+    // Damage in omitted classes is available in Review, not the overflow mark.
     let hidden = list(row("SC1 BB2 CA12 DD8 TT*4 TT5 ETAC2!1", 1)).plain_line(4);
-    assert!(hidden.contains("+!"), "{hidden}");
+    assert!(hidden.contains("+"), "{hidden}");
     assert!(!hidden.contains("ETAC2"), "{hidden}");
+    assert!(!hidden.contains('!'), "{hidden}");
 }
 
 #[test]
 fn a_cut_that_fits_nothing_still_shows_the_marker() {
     let cell = list(row("CA12345678901234567!3", 3)).plain_line(4);
-    assert!(cell.contains("+!"), "{cell}");
+    assert!(cell.contains("+"), "{cell}");
 }
 
 #[test]

@@ -780,8 +780,7 @@ fn commission_draft_switches_prompt_for_starbase_rows() {
         .expect("commission draft renders");
 
     assert!((0..buffer.height()).any(|row| {
-        row_text(&buffer, row)
-            .contains("COMMAND <- <ENTER> commissions the highlighted starbase. <Q> -> ")
+        row_text(&buffer, row).contains("COMMAND <- <ENTER> Commission starbase <Q> -> ")
     }));
 }
 

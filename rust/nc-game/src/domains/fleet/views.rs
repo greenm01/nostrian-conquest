@@ -210,6 +210,20 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 .ok_or("fleet transfer host row missing")?;
             let status = app.fleet.transfer_status.as_deref();
             let (prompt, default) = app.fleet_transfer_prompt_and_default();
+            let crippled_quantity_hint = match app.fleet.transfer_mode {
+                crate::screen::FleetTransferMode::EnteringQuantity(class) => app
+                    .fleet
+                    .transfer_donor_record_index_1_based
+                    .and_then(|idx| app.game_data.fleets.get(idx - 1))
+                    .is_some_and(|donor| {
+                        nc_data::crippled_left_to_stage(
+                            donor,
+                            &app.fleet.transfer_selection,
+                            nc_data::ShipCategory::from(class),
+                        ) > 0
+                    }),
+                _ => false,
+            };
             let donor_ships = app.fleet_transfer_source_summary();
             let host_ships = app.fleet_transfer_destination_summary();
             let staged_summary = app.fleet_transfer_staged_summary();
@@ -219,6 +233,7 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 &donor_row,
                 &host_row,
                 app.fleet.transfer_mode,
+                crippled_quantity_hint,
                 &app.fleet.transfer_input,
                 status,
                 &prompt,
@@ -235,12 +250,28 @@ pub fn render(app: &mut App) -> Result<PlayfieldBuffer, Box<dyn std::error::Erro
                 .fleet_detach_donor_row()
                 .ok_or("fleet detach donor row missing")?;
             let (prompt, default) = app.fleet_detach_prompt_and_default();
+            let crippled_quantity_hint = match app.fleet.detach_mode {
+                crate::screen::FleetDetachMode::EnteringQuantity(class) => app
+                    .fleet
+                    .detach_donor_record_index_1_based
+                    .and_then(|idx| app.game_data.fleets.get(idx - 1))
+                    .is_some_and(|donor| {
+                        nc_data::crippled_left_to_stage(
+                            donor,
+                            &app.fleet.detach_selection,
+                            nc_data::ShipCategory::from(class),
+                        ) > 0
+                    }),
+                _ => false,
+            };
             let staged_summary = app.fleet_detach_staged_summary();
             let remaining_summary = app.fleet_detach_remaining_summary();
             let status = app.fleet.detach_status.as_deref();
             let last_commissioned = app.fleet.detach_last_commissioned.as_deref();
             app.fleet_detach.render(
                 &donor_row,
+                app.fleet.detach_mode,
+                crippled_quantity_hint,
                 &prompt,
                 &default,
                 &app.fleet.detach_input,
