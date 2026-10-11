@@ -382,3 +382,9 @@ existing worldless-sector ruling gives Rust. The production floor in flag 2
 is the bump already ruled on: Rust divides by `max(P, 1.0)` and never writes
 it. Probe note for later work: a world whose present production exceeds its
 potential makes ECMAINT stop without output, leaving its `.TOK` files.
+
+Owner decisions on t064 (2026-10-10): an aborted Salvage keeps classic's
+behaviour, salvaging at the nearest friendly world, and its report says it
+will salvage there rather than "seek to safety"; a Salvage fleet with no
+friendly world left holds at its current depth like Seek Home, without
+classic's snap to the nearer layer (a classic bug).
