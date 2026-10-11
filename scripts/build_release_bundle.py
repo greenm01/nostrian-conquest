@@ -112,8 +112,8 @@ class BundleSpec:
         return self.platform.target_triple.endswith("windows-msvc")
 
     @property
-    def is_win7_windows(self) -> bool:
-        return self.platform.target_triple.endswith("-win7-windows-msvc")
+    def builds_windows_std(self) -> bool:
+        return self.is_windows and self.platform.target_triple.startswith("i686-")
 
     @property
     def archive_name(self) -> str:
@@ -252,7 +252,7 @@ def validate_artifact_platform(spec: BundleSpec) -> None:
 
 def build_command(spec: BundleSpec, packages: tuple[str, ...]) -> list[str]:
     command = ["cargo"]
-    if spec.is_win7_windows:
+    if spec.builds_windows_std:
         command.extend(["+nightly", "build", "-Z", "build-std=std,panic_abort"])
     else:
         command.append("build")
@@ -267,7 +267,7 @@ def cargo_home() -> Path:
     return Path.home() / ".cargo"
 
 
-def find_win7_windows_i686_link_dir() -> Path:
+def find_windows_i686_link_dir() -> Path:
     registry_src = cargo_home() / "registry" / "src"
     candidates = sorted(
         path
@@ -276,7 +276,7 @@ def find_win7_windows_i686_link_dir() -> Path:
     )
     if not candidates:
         raise SystemExit(
-            "i686-win7-windows-msvc packaging requires the windows_i686_msvc crate "
+            "Windows x86 packaging requires the windows_i686_msvc crate "
             "to be present in the local Cargo registry cache."
         )
     return candidates[-1] / "lib"
@@ -294,8 +294,8 @@ def build_binaries(spec: BundleSpec) -> dict[str, Path]:
             "not supported for release packaging."
         )
     extra_env: dict[str, str] = {}
-    if spec.is_win7_windows:
-        link_dir = find_win7_windows_i686_link_dir()
+    if spec.builds_windows_std:
+        link_dir = find_windows_i686_link_dir()
         rustflags = os.environ.get("RUSTFLAGS", "").strip()
         link_flag = f"-Lnative={link_dir}"
         extra_env["RUSTFLAGS"] = f"{rustflags} {link_flag}".strip()
@@ -324,8 +324,8 @@ def build_binaries(spec: BundleSpec) -> dict[str, Path]:
 def build_info_text(spec: BundleSpec) -> str:
     commit = capture(["git", "rev-parse", "HEAD"])
     short_commit = capture(["git", "rev-parse", "--short", "HEAD"])
-    cargo_toolchain = "nightly" if spec.is_win7_windows else "default"
-    rustc_command = ["rustc", "+nightly", "-V"] if spec.is_win7_windows else ["rustc", "-V"]
+    cargo_toolchain = "nightly" if spec.builds_windows_std else "default"
+    rustc_command = ["rustc", "+nightly", "-V"] if spec.builds_windows_std else ["rustc", "-V"]
     rustc = capture(rustc_command)
     built_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     lines = [
@@ -338,7 +338,7 @@ def build_info_text(spec: BundleSpec) -> str:
         f"built_at_utc={built_at}",
         f"rustc={rustc}",
     ]
-    if spec.is_win7_windows:
+    if spec.builds_windows_std:
         lines.append("build_std=std,panic_abort")
     return "\n".join(lines) + "\n"
 

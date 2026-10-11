@@ -98,6 +98,21 @@ Defender reports that the threat did not execute. A false positive is not yet
 established; no exclusion or protection change was made. Resolve this detection
 before shipping that archive. No public release assets have been replaced.
 
+Follow-up: Defender signature update `1.459.670.0` to `1.459.676.0` did not clear
+the standard x86 build. Switching from stable Rust 1.99 to nightly 1.101 alone
+also failed. A dependency-free x86 Rust control passed an explicit scan. Building
+modern x86 with the same source-built standard-library setup as the Windows 7+
+target produced an archive that passed an explicit Defender scan, game creation,
+two maintenance passes, door startup over a loopback socket and clean disconnect.
+Real-time protection stayed enabled; no exclusions or allow rules were added.
+These controls establish a usable build method, not the exact detection cause.
+
+The release script now uses that method for both x86 targets and records it in
+BUILD-INFO. Five Python tests cover artifact lookup and the build contract.
+Windows x64 and Windows 7+ x86 also passed explicit Defender scans and the same
+runtime smoke test on Windows build 26300. This is not a test on Windows 7 itself.
+Rebuild all four final archives from the packaging-fix commit before signing.
+
 ## Connections
 
 Ships the work recorded in the
