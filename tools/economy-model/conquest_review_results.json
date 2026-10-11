@@ -1,0 +1,3348 @@
+{
+  "method": "Exact fractions; approved smooth economy; no engine or classic-oracle execution, battle sampling, or campaign win-rate claim.",
+  "conversion": [
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 5.0,
+          "goods": 5.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 15.0,
+          "goods": 15.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 40.0,
+          "goods": 40.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 90.0,
+          "goods": 90.0,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 2.5,
+          "income_total": 2.5,
+          "goods": 2.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 7.5,
+          "goods": 7.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 17.5,
+          "goods": 17.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 42.5,
+          "goods": 42.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 10.0,
+          "income": 5.0,
+          "income_total": 92.5,
+          "goods": 92.5,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 6.5,
+          "goods": 6.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 19.5,
+          "goods": 19.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 52.0,
+          "goods": 52.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 117.0,
+          "goods": 117.0,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 3.25,
+          "income_total": 3.25,
+          "goods": 3.25,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 9.75,
+          "goods": 9.75,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 22.75,
+          "goods": 22.75,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 55.25,
+          "goods": 55.25,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 10.0,
+          "income": 6.5,
+          "income_total": 120.25,
+          "goods": 120.25,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 9.9,
+          "income": 6.93,
+          "income_total": 6.93,
+          "goods": 6.93,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 9.7247775,
+          "income": 6.80734425,
+          "income_total": 20.60329425,
+          "goods": 20.60329425,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 9.40155868,
+          "income": 6.58109107,
+          "income_total": 53.92119609,
+          "goods": 53.92119609,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 9.06130144,
+          "income": 6.34291101,
+          "income_total": 118.2498403,
+          "goods": 118.2498403,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 10,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 9.9,
+          "income": 3.465,
+          "income_total": 3.465,
+          "goods": 3.465,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 9.8085,
+          "income": 6.86595,
+          "income_total": 10.33095,
+          "goods": 10.33095,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 9.64817141,
+          "income": 6.75371999,
+          "income_total": 23.89201424,
+          "goods": 23.89201424,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 9.35242619,
+          "income": 6.54669833,
+          "income_total": 57.00289442,
+          "goods": 57.00289442,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 9.04109082,
+          "income": 6.32876357,
+          "income_total": 121.11360388,
+          "goods": 121.11360388,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 11.25,
+          "income": 5.625,
+          "income_total": 5.625,
+          "goods": 5.625,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 13.30078125,
+          "income": 6.65039062,
+          "income_total": 18.44726562,
+          "goods": 18.44726562,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 16.56391084,
+          "income": 8.28195542,
+          "income_total": 57.02631205,
+          "goods": 57.02631205,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 19.09604886,
+          "income": 9.54802443,
+          "income_total": 148.16382897,
+          "goods": 148.16382897,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.625,
+          "income": 2.65625,
+          "income_total": 2.65625,
+          "goods": 2.65625,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 11.796875,
+          "income": 5.8984375,
+          "income_total": 8.5546875,
+          "goods": 8.5546875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 13.71948242,
+          "income": 6.85974121,
+          "income_total": 21.82556152,
+          "goods": 21.82556152,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 16.77866641,
+          "income": 8.38933321,
+          "income_total": 61.11841755,
+          "goods": 61.11841755,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 19.15254581,
+          "income": 9.57627291,
+          "income_total": 152.80983966,
+          "goods": 152.80983966,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.875,
+          "income": 7.06875,
+          "income_total": 7.06875,
+          "goods": 7.06875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 12.40201172,
+          "income": 8.06130762,
+          "income_total": 22.71779199,
+          "goods": 22.71779199,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 15.19312327,
+          "income": 9.87553013,
+          "income_total": 68.79804298,
+          "goods": 68.79804298,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 18.07605915,
+          "income": 11.74943845,
+          "income_total": 179.2558562,
+          "goods": 179.2558562,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.4375,
+          "income": 3.3921875,
+          "income_total": 3.3921875,
+          "goods": 3.3921875,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 11.27421875,
+          "income": 7.32824219,
+          "income_total": 10.72042969,
+          "goods": 10.72042969,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 12.73442371,
+          "income": 8.27737541,
+          "income_total": 26.82232609,
+          "goods": 26.82232609,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 15.40342413,
+          "income": 10.01222568,
+          "income_total": 73.7303161,
+          "goods": 73.7303161,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 18.16023156,
+          "income": 11.80415051,
+          "income_total": 185.04309999,
+          "goods": 185.04309999,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.65,
+          "income": 7.455,
+          "income_total": 7.455,
+          "goods": 7.455,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 11.78894625,
+          "income": 8.25226238,
+          "income_total": 23.57858738,
+          "goods": 23.57858738,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 13.8898686,
+          "income": 9.72290802,
+          "income_total": 69.51222542,
+          "goods": 69.51222542,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 16.10154062,
+          "income": 11.27107844,
+          "income_total": 176.37603802,
+          "goods": 176.37603802,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 20,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.275,
+          "income": 3.59625,
+          "income_total": 3.59625,
+          "goods": 3.59625,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 10.901625,
+          "income": 7.6311375,
+          "income_total": 11.2273875,
+          "goods": 11.2273875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 11.99961299,
+          "income": 8.39972909,
+          "income_total": 27.65960741,
+          "goods": 27.65960741,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 14.02498294,
+          "income": 9.81748806,
+          "income_total": 74.16255501,
+          "goods": 74.16255501,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 16.15711983,
+          "income": 11.30998388,
+          "income_total": 181.62568819,
+          "goods": 181.62568819,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 21.25,
+          "income": 10.625,
+          "income_total": 10.625,
+          "goods": 10.625,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 39.70703125,
+          "income": 19.85351562,
+          "income_total": 46.02539062,
+          "goods": 46.02539062,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 69.07519758,
+          "income": 34.53759879,
+          "income_total": 193.23680848,
+          "goods": 193.23680848,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 91.86443978,
+          "income": 45.93221989,
+          "income_total": 613.47446075,
+          "goods": 613.47446075,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 50,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 15.625,
+          "income": 3.90625,
+          "income_total": 3.90625,
+          "goods": 3.90625,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 26.171875,
+          "income": 13.0859375,
+          "income_total": 16.9921875,
+          "goods": 16.9921875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 43.4753418,
+          "income": 21.7376709,
+          "income_total": 56.43005371,
+          "goods": 56.43005371,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 71.00799773,
+          "income": 35.50399886,
+          "income_total": 210.06575795,
+          "goods": 210.06575795,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 92.3729123,
+          "income": 46.18645615,
+          "income_total": 635.28855696,
+          "goods": 635.28855696,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 17.875,
+          "income": 11.61875,
+          "income_total": 11.61875,
+          "goods": 11.61875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 31.61810547,
+          "income": 20.55176855,
+          "income_total": 48.46012793,
+          "goods": 48.46012793,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 56.73810943,
+          "income": 36.87977113,
+          "income_total": 203.18238681,
+          "goods": 203.18238681,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 82.68453233,
+          "income": 53.74494602,
+          "income_total": 677.30270583,
+          "goods": 677.30270583,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 65,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 13.9375,
+          "income": 4.5296875,
+          "income_total": 4.5296875,
+          "goods": 4.5296875,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 21.46796875,
+          "income": 13.95417969,
+          "income_total": 18.48386719,
+          "goods": 18.48386719,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 34.60981335,
+          "income": 22.49637868,
+          "income_total": 59.40093483,
+          "goods": 59.40093483,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 58.63081714,
+          "income": 38.11003114,
+          "income_total": 221.57284489,
+          "goods": 221.57284489,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 83.44208404,
+          "income": 54.23735463,
+          "income_total": 703.38789995,
+          "goods": 703.38789995,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 16.65,
+          "income": 11.655,
+          "income_total": 11.655,
+          "goods": 11.655,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 28.30229625,
+          "income": 19.81160738,
+          "income_total": 47.38093238,
+          "goods": 47.38093238,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 49.796348,
+          "income": 34.8574436,
+          "income_total": 194.24046009,
+          "goods": 194.24046009,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 72.42345406,
+          "income": 50.69641784,
+          "income_total": 641.38561974,
+          "goods": 641.38561974,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 10,
+      "tax": 70,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 10.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 13.275,
+          "income": 4.64625,
+          "income_total": 4.64625,
+          "goods": 4.64625,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 19.646625,
+          "income": 13.7526375,
+          "income_total": 18.3988875,
+          "goods": 18.3988875,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 30.81114562,
+          "income": 21.56780193,
+          "income_total": 57.80035274,
+          "goods": 57.80035274,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 51.40543696,
+          "income": 35.98380587,
+          "income_total": 211.4398397,
+          "goods": 211.4398397,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 73.08535195,
+          "income": 51.15974636,
+          "income_total": 665.72236269,
+          "goods": 665.72236269,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 50,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 56.25,
+          "income": 28.125,
+          "income_total": 28.125,
+          "goods": 28.125,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 66.50390625,
+          "income": 33.25195312,
+          "income_total": 92.23632812,
+          "goods": 92.23632812,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 82.81955421,
+          "income": 41.4097771,
+          "income_total": 285.13156027,
+          "goods": 285.13156027,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 95.48024432,
+          "income": 47.74012216,
+          "income_total": 740.81914486,
+          "goods": 740.81914486,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 50,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 53.125,
+          "income": 13.28125,
+          "income_total": 13.28125,
+          "goods": 13.28125,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 58.984375,
+          "income": 29.4921875,
+          "income_total": 42.7734375,
+          "goods": 42.7734375,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 68.59741211,
+          "income": 34.29870605,
+          "income_total": 109.12780762,
+          "goods": 109.12780762,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 83.89333207,
+          "income": 41.94666604,
+          "income_total": 305.59208775,
+          "goods": 305.59208775,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 95.76272905,
+          "income": 47.88136453,
+          "income_total": 764.04919831,
+          "goods": 764.04919831,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 65,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 54.375,
+          "income": 35.34375,
+          "income_total": 35.34375,
+          "goods": 35.34375,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 62.01005859,
+          "income": 40.30653809,
+          "income_total": 113.58895996,
+          "goods": 113.58895996,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 75.96561635,
+          "income": 49.37765063,
+          "income_total": 343.99021489,
+          "goods": 343.99021489,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 90.38029574,
+          "income": 58.74719223,
+          "income_total": 896.27928102,
+          "goods": 896.27928102,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 65,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 52.1875,
+          "income": 16.9609375,
+          "income_total": 16.9609375,
+          "goods": 16.9609375,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 56.37109375,
+          "income": 36.64121094,
+          "income_total": 53.60214844,
+          "goods": 53.60214844,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 63.67211853,
+          "income": 41.38687704,
+          "income_total": 134.11163046,
+          "goods": 134.11163046,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 77.01712063,
+          "income": 50.06112841,
+          "income_total": 368.65158049,
+          "goods": 368.65158049,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 90.8011578,
+          "income": 59.02075257,
+          "income_total": 925.21549997,
+          "goods": 925.21549997,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 70,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 53.25,
+          "income": 37.275,
+          "income_total": 37.275,
+          "goods": 37.275,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 58.94473125,
+          "income": 41.26131187,
+          "income_total": 117.89293688,
+          "goods": 117.89293688,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 69.44934301,
+          "income": 48.6145401,
+          "income_total": 347.56112711,
+          "goods": 347.56112711,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 80.50770311,
+          "income": 56.35539218,
+          "income_total": 881.8801901,
+          "goods": 881.8801901,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 50,
+      "tax": 70,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 50.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 51.375,
+          "income": 17.98125,
+          "income_total": 17.98125,
+          "goods": 17.98125,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 54.508125,
+          "income": 38.1556875,
+          "income_total": 56.1369375,
+          "goods": 56.1369375,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 59.99806495,
+          "income": 41.99864547,
+          "income_total": 138.29803703,
+          "goods": 138.29803703,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 70.12491471,
+          "income": 49.0874403,
+          "income_total": 370.81277504,
+          "goods": 370.81277504,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 80.78559917,
+          "income": 56.54991942,
+          "income_total": 908.12844095,
+          "goods": 908.12844095,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 50,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 50.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 150.0,
+          "goods": 150.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 400.0,
+          "goods": 400.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 900.0,
+          "goods": 900.0,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 50,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 25.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 75.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 175.0,
+          "goods": 175.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 425.0,
+          "goods": 425.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 925.0,
+          "goods": 925.0,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 65,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 65.0,
+          "goods": 65.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 195.0,
+          "goods": 195.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 520.0,
+          "goods": 520.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 1170.0,
+          "goods": 1170.0,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 65,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 32.5,
+          "income_total": 32.5,
+          "goods": 32.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 97.5,
+          "goods": 97.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 227.5,
+          "goods": 227.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 552.5,
+          "goods": 552.5,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 100.0,
+          "income": 65.0,
+          "income_total": 1202.5,
+          "goods": 1202.5,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 70,
+      "schedule": "zero_zero_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 99.0,
+          "income": 69.3,
+          "income_total": 69.3,
+          "goods": 69.3,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 97.247775,
+          "income": 68.0734425,
+          "income_total": 206.0329425,
+          "goods": 206.0329425,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 94.01558677,
+          "income": 65.81091074,
+          "income_total": 539.21196089,
+          "goods": 539.21196089,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 90.61301443,
+          "income": 63.4291101,
+          "income_total": 1182.49840305,
+          "goods": 1182.49840305,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    },
+    {
+      "k": 100,
+      "start": 100,
+      "tax": 70,
+      "schedule": "zero_half_full",
+      "at": {
+        "1": {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 0
+        },
+        "2": {
+          "pass_number": 2,
+          "production": 99.0,
+          "income": 34.65,
+          "income_total": 34.65,
+          "goods": 34.65,
+          "paid": 0,
+          "owed": 0
+        },
+        "3": {
+          "pass_number": 3,
+          "production": 98.085,
+          "income": 68.6595,
+          "income_total": 103.3095,
+          "goods": 103.3095,
+          "paid": 0,
+          "owed": 0
+        },
+        "5": {
+          "pass_number": 5,
+          "production": 96.48171412,
+          "income": 67.53719989,
+          "income_total": 238.92014239,
+          "goods": 238.92014239,
+          "paid": 0,
+          "owed": 0
+        },
+        "10": {
+          "pass_number": 10,
+          "production": 93.52426189,
+          "income": 65.46698332,
+          "income_total": 570.02894421,
+          "goods": 570.02894421,
+          "paid": 0,
+          "owed": 0
+        },
+        "20": {
+          "pass_number": 20,
+          "production": 90.4109082,
+          "income": 63.28763574,
+          "income_total": 1211.13603879,
+          "goods": 1211.13603879,
+          "paid": 0,
+          "owed": 0
+        }
+      }
+    }
+  ],
+  "inherited_queue": [
+    {
+      "goods": -10,
+      "schedule": "zero_zero_full",
+      "first_payment": 4,
+      "completion": 4,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": -10.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": -10.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 40.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 100.0,
+          "goods": 78.0,
+          "paid": 12,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": -10,
+      "schedule": "zero_half_full",
+      "first_payment": 3,
+      "completion": 3,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": -10.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 15.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 53.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 125.0,
+          "goods": 103.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 4.5,
+      "schedule": "zero_zero_full",
+      "first_payment": 1,
+      "completion": 4,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.5,
+          "paid": 4,
+          "owed": 8
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.5,
+          "paid": 0,
+          "owed": 8
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 50.5,
+          "paid": 0,
+          "owed": 8
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 100.0,
+          "goods": 92.5,
+          "paid": 8,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 4.5,
+      "schedule": "zero_half_full",
+      "first_payment": 1,
+      "completion": 3,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.5,
+          "paid": 4,
+          "owed": 8
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 25.5,
+          "paid": 0,
+          "owed": 8
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 67.5,
+          "paid": 8,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 125.0,
+          "goods": 117.5,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 0,
+      "schedule": "zero_zero_full",
+      "first_payment": 4,
+      "completion": 4,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 50.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 100.0,
+          "goods": 88.0,
+          "paid": 12,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 0,
+      "schedule": "zero_half_full",
+      "first_payment": 3,
+      "completion": 3,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 0.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 25.0,
+          "paid": 0,
+          "owed": 12
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 63.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 125.0,
+          "goods": 113.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "schedule": "zero_zero_full",
+      "first_payment": 1,
+      "completion": 1,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 38.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 38.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 88.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 100.0,
+          "goods": 138.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "schedule": "zero_half_full",
+      "first_payment": 1,
+      "completion": 1,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 38.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 63.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 113.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 125.0,
+          "goods": 163.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 200,
+      "schedule": "zero_zero_full",
+      "first_payment": 1,
+      "completion": 1,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 188.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 188.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 50.0,
+          "goods": 238.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 100.0,
+          "goods": 288.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    },
+    {
+      "goods": 200,
+      "schedule": "zero_half_full",
+      "first_payment": 1,
+      "completion": 1,
+      "first_four": [
+        {
+          "pass_number": 1,
+          "production": 100.0,
+          "income": 0.0,
+          "income_total": 0.0,
+          "goods": 188.0,
+          "paid": 12,
+          "owed": 0
+        },
+        {
+          "pass_number": 2,
+          "production": 100.0,
+          "income": 25.0,
+          "income_total": 25.0,
+          "goods": 213.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 3,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 75.0,
+          "goods": 263.0,
+          "paid": 0,
+          "owed": 0
+        },
+        {
+          "pass_number": 4,
+          "production": 100.0,
+          "income": 50.0,
+          "income_total": 125.0,
+          "goods": 313.0,
+          "paid": 0,
+          "owed": 0
+        }
+      ]
+    }
+  ],
+  "bombardment": [
+    {
+      "start": 100,
+      "goods": -10,
+      "exposed_hits": [
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": -10,
+      "exposed_hits": [
+        10
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 1.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.4375,
+          "remaining_production_gap": 0.875
+        },
+        "5": {
+          "revenue_lost": 1.70481873,
+          "remaining_production_gap": 0.51290894
+        },
+        "10": {
+          "revenue_lost": 2.57923548,
+          "remaining_production_gap": 0.26307558
+        },
+        "20": {
+          "revenue_lost": 3.25776934,
+          "remaining_production_gap": 0.06920876
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": -10,
+      "exposed_hits": [
+        30
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 3.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 1.3125,
+          "remaining_production_gap": 2.625
+        },
+        "5": {
+          "revenue_lost": 5.11445618,
+          "remaining_production_gap": 1.53872681
+        },
+        "10": {
+          "revenue_lost": 7.73770645,
+          "remaining_production_gap": 0.78922673
+        },
+        "20": {
+          "revenue_lost": 9.77330803,
+          "remaining_production_gap": 0.20762628
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": -10,
+      "exposed_hits": [
+        9,
+        9,
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": -10,
+      "exposed_hits": [
+        100
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 10.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 4.375,
+          "remaining_production_gap": 8.75
+        },
+        "5": {
+          "revenue_lost": 17.04818726,
+          "remaining_production_gap": 5.12908936
+        },
+        "10": {
+          "revenue_lost": 25.79235483,
+          "remaining_production_gap": 2.63075576
+        },
+        "20": {
+          "revenue_lost": 32.57769344,
+          "remaining_production_gap": 0.69208759
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 0,
+      "exposed_hits": [
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 0,
+      "exposed_hits": [
+        10
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 1.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.4375,
+          "remaining_production_gap": 0.875
+        },
+        "5": {
+          "revenue_lost": 1.70481873,
+          "remaining_production_gap": 0.51290894
+        },
+        "10": {
+          "revenue_lost": 2.57923548,
+          "remaining_production_gap": 0.26307558
+        },
+        "20": {
+          "revenue_lost": 3.25776934,
+          "remaining_production_gap": 0.06920876
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 0,
+      "exposed_hits": [
+        30
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 3.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 1.3125,
+          "remaining_production_gap": 2.625
+        },
+        "5": {
+          "revenue_lost": 5.11445618,
+          "remaining_production_gap": 1.53872681
+        },
+        "10": {
+          "revenue_lost": 7.73770645,
+          "remaining_production_gap": 0.78922673
+        },
+        "20": {
+          "revenue_lost": 9.77330803,
+          "remaining_production_gap": 0.20762628
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 0,
+      "exposed_hits": [
+        9,
+        9,
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 0,
+      "exposed_hits": [
+        100
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 10.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 4.375,
+          "remaining_production_gap": 8.75
+        },
+        "5": {
+          "revenue_lost": 17.04818726,
+          "remaining_production_gap": 5.12908936
+        },
+        "10": {
+          "revenue_lost": 25.79235483,
+          "remaining_production_gap": 2.63075576
+        },
+        "20": {
+          "revenue_lost": 32.57769344,
+          "remaining_production_gap": 0.69208759
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 50,
+      "exposed_hits": [
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 50,
+      "exposed_hits": [
+        10
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 1.0,
+      "goods_lost": 50.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.4375,
+          "remaining_production_gap": 0.875
+        },
+        "5": {
+          "revenue_lost": 1.70481873,
+          "remaining_production_gap": 0.51290894
+        },
+        "10": {
+          "revenue_lost": 2.57923548,
+          "remaining_production_gap": 0.26307558
+        },
+        "20": {
+          "revenue_lost": 3.25776934,
+          "remaining_production_gap": 0.06920876
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 50,
+      "exposed_hits": [
+        30
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 3.0,
+      "goods_lost": 50.0,
+      "at": {
+        "1": {
+          "revenue_lost": 1.3125,
+          "remaining_production_gap": 2.625
+        },
+        "5": {
+          "revenue_lost": 5.11445618,
+          "remaining_production_gap": 1.53872681
+        },
+        "10": {
+          "revenue_lost": 7.73770645,
+          "remaining_production_gap": 0.78922673
+        },
+        "20": {
+          "revenue_lost": 9.77330803,
+          "remaining_production_gap": 0.20762628
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 50,
+      "exposed_hits": [
+        9,
+        9,
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 50,
+      "exposed_hits": [
+        100
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 10.0,
+      "goods_lost": 50.0,
+      "at": {
+        "1": {
+          "revenue_lost": 4.375,
+          "remaining_production_gap": 8.75
+        },
+        "5": {
+          "revenue_lost": 17.04818726,
+          "remaining_production_gap": 5.12908936
+        },
+        "10": {
+          "revenue_lost": 25.79235483,
+          "remaining_production_gap": 2.63075576
+        },
+        "20": {
+          "revenue_lost": 32.57769344,
+          "remaining_production_gap": 0.69208759
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 500,
+      "exposed_hits": [
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 500,
+      "exposed_hits": [
+        10
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 1.0,
+      "goods_lost": 100.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.4375,
+          "remaining_production_gap": 0.875
+        },
+        "5": {
+          "revenue_lost": 1.70481873,
+          "remaining_production_gap": 0.51290894
+        },
+        "10": {
+          "revenue_lost": 2.57923548,
+          "remaining_production_gap": 0.26307558
+        },
+        "20": {
+          "revenue_lost": 3.25776934,
+          "remaining_production_gap": 0.06920876
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 500,
+      "exposed_hits": [
+        30
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 3.0,
+      "goods_lost": 300.0,
+      "at": {
+        "1": {
+          "revenue_lost": 1.3125,
+          "remaining_production_gap": 2.625
+        },
+        "5": {
+          "revenue_lost": 5.11445618,
+          "remaining_production_gap": 1.53872681
+        },
+        "10": {
+          "revenue_lost": 7.73770645,
+          "remaining_production_gap": 0.78922673
+        },
+        "20": {
+          "revenue_lost": 9.77330803,
+          "remaining_production_gap": 0.20762628
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 500,
+      "exposed_hits": [
+        9,
+        9,
+        9
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 0.0,
+      "goods_lost": 0.0,
+      "at": {
+        "1": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "5": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "10": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        },
+        "20": {
+          "revenue_lost": 0.0,
+          "remaining_production_gap": 0.0
+        }
+      }
+    },
+    {
+      "start": 100,
+      "goods": 500,
+      "exposed_hits": [
+        100
+      ],
+      "tax": 50,
+      "base": false,
+      "production_lost": 10.0,
+      "goods_lost": 500.0,
+      "at": {
+        "1": {
+          "revenue_lost": 4.375,
+          "remaining_production_gap": 8.75
+        },
+        "5": {
+          "revenue_lost": 17.04818726,
+          "remaining_production_gap": 5.12908936
+        },
+        "10": {
+          "revenue_lost": 25.79235483,
+          "remaining_production_gap": 2.63075576
+        },
+        "20": {
+          "revenue_lost": 32.57769344,
+          "remaining_production_gap": 0.69208759
+        }
+      }
+    }
+  ],
+  "recapture": [
+    {
+      "pass_number": 1,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    },
+    {
+      "pass_number": 2,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    },
+    {
+      "pass_number": 3,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    },
+    {
+      "pass_number": 4,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    },
+    {
+      "pass_number": 5,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    },
+    {
+      "pass_number": 6,
+      "production": 100.0,
+      "income": 0.0,
+      "income_total": 0.0,
+      "goods": 0.0,
+      "paid": 0,
+      "owed": 0
+    }
+  ],
+  "base_bombardment": {
+    "start": 100,
+    "goods": 500,
+    "exposed_hits": [
+      10
+    ],
+    "tax": 50,
+    "base": true,
+    "production_lost": 1.0,
+    "goods_lost": 100.0,
+    "at": {
+      "1": {
+        "revenue_lost": 0.40625,
+        "remaining_production_gap": 0.8125
+      },
+      "5": {
+        "revenue_lost": 1.39946604,
+        "remaining_production_gap": 0.3540926
+      },
+      "10": {
+        "revenue_lost": 1.8950066,
+        "remaining_production_gap": 0.12538157
+      },
+      "20": {
+        "revenue_lost": 2.1326055,
+        "remaining_production_gap": 0.01572054
+      }
+    }
+  },
+  "scorch_potential_control": {
+    "0": [
+      {
+        "pass_number": 1,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 2,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 3,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 4,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 5,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 6,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 7,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 8,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 9,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 10,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 11,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 12,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 13,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 14,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 15,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 16,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 17,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 18,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 19,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 20,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      }
+    ],
+    "100": [
+      {
+        "pass_number": 1,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 2,
+        "production": 0.0,
+        "income": 0.0,
+        "income_total": 0.0,
+        "goods": 0.0,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 3,
+        "production": 12.5,
+        "income": 6.25,
+        "income_total": 6.25,
+        "goods": 6.25,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 4,
+        "production": 23.4375,
+        "income": 11.71875,
+        "income_total": 17.96875,
+        "goods": 17.96875,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 5,
+        "production": 33.0078125,
+        "income": 16.50390625,
+        "income_total": 34.47265625,
+        "goods": 34.47265625,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 6,
+        "production": 41.38183594,
+        "income": 20.69091797,
+        "income_total": 55.16357422,
+        "goods": 55.16357422,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 7,
+        "production": 48.70910645,
+        "income": 24.35455322,
+        "income_total": 79.51812744,
+        "goods": 79.51812744,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 8,
+        "production": 55.12046814,
+        "income": 27.56023407,
+        "income_total": 107.07836151,
+        "goods": 107.07836151,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 9,
+        "production": 60.73040962,
+        "income": 30.36520481,
+        "income_total": 137.44356632,
+        "goods": 137.44356632,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 10,
+        "production": 65.63910842,
+        "income": 32.81955421,
+        "income_total": 170.26312053,
+        "goods": 170.26312053,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 11,
+        "production": 69.93421987,
+        "income": 34.96710993,
+        "income_total": 205.23023047,
+        "goods": 205.23023047,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 12,
+        "production": 73.69244238,
+        "income": 36.84622119,
+        "income_total": 242.07645166,
+        "goods": 242.07645166,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 13,
+        "production": 76.98088709,
+        "income": 38.49044354,
+        "income_total": 280.5668952,
+        "goods": 280.5668952,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 14,
+        "production": 79.8582762,
+        "income": 39.9291381,
+        "income_total": 320.4960333,
+        "goods": 320.4960333,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 15,
+        "production": 82.37599167,
+        "income": 41.18799584,
+        "income_total": 361.68402914,
+        "goods": 361.68402914,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 16,
+        "production": 84.57899272,
+        "income": 42.28949636,
+        "income_total": 403.9735255,
+        "goods": 403.9735255,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 17,
+        "production": 86.50661863,
+        "income": 43.25330931,
+        "income_total": 447.22683481,
+        "goods": 447.22683481,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 18,
+        "production": 88.1932913,
+        "income": 44.09664565,
+        "income_total": 491.32348046,
+        "goods": 491.32348046,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 19,
+        "production": 89.66912989,
+        "income": 44.83456494,
+        "income_total": 536.1580454,
+        "goods": 536.1580454,
+        "paid": 0,
+        "owed": 0
+      },
+      {
+        "pass_number": 20,
+        "production": 90.96048865,
+        "income": 45.48024432,
+        "income_total": 581.63828973,
+        "goods": 581.63828973,
+        "paid": 0,
+        "owed": 0
+      }
+    ]
+  }
+}

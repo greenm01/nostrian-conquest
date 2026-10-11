@@ -444,10 +444,17 @@ more." The profile prints that limit as "Maximum # of Fleets & Bases".
 1 army, and the name "Not Named Yet". G stays 0. The colony's first pass is
 the next year, at full scale, from P 1.0.
 
-`[C]` Capture (dump `0xFA41..0xFE38`) sets status 0 and clears the queue. If
-the world was under Scorch-Earth it halves P and G, empties the dock, and
-clears the flag. A halved P can fall below 1.0 until the next pass floors
-it.
+`[C]` Capture (dump `0xFA41..0xFE38`) sets status 0 and clears the queue.
+Ordinary capture also damages assets before the Scorch-Earth check. Invade
+reduces P and G by separate random retention factors and reduces dock
+contents; Blitz retains a survivor-dependent fraction of P, G, batteries
+and dock contents. See [battle reference §2.9](ec-battle-spec.md)
+for the mission formulas and their code/probe evidence. Capture does not
+ordinarily preserve the whole treasury and industry as NC does. If the
+world was under Scorch-Earth it additionally halves P and G, empties the
+dock, and clears the flag. Every capture then floors P at 1.0
+(`110a:6edd..6f02`, after the Scorch branch at `110a:6e6a..6ed8`), so a
+halved P never stays below 1.0.
 
 ## Probe log
 

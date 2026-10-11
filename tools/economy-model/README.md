@@ -115,3 +115,15 @@ non-stacking bonuses; there is no engine movement or battle simulation.
 `test_starbase_review.py` is included in unittest discovery. See the
 [starbase review](../../docs/notes/investigations/w3vj4wti-starbase-growth-capacity-and-economic-concentration.md)
 for eligibility, mathematical return limits and the draft recommendation.
+
+## Conquest and exposed-industry controls (t086)
+
+`python3 tools/economy-model/conquest_review.py` writes
+`conquest_review_results.json`. Exact controls compare0/0/full with0/half/full
+conversion on the approved smooth economy, inherited local savings and one
+partly paid order, and economic damage from hits already reaching industry.
+They also isolate destroying potential under Scorch. They do not simulate
+classic capture destruction, raid success or complete campaigns.
+`test_conquest_review.py` runs under unittest discovery. See the
+[conquest review](../../docs/notes/investigations/et03gvm9-conquest-income-inherited-assets-and-bombardment-economics.md)
+for the proposed decision4 and remaining decision5 questions.
