@@ -29,6 +29,8 @@ mod playability_canaries;
 mod reports_startup;
 #[path = "update/sort_toggle.rs"]
 mod sort_toggle;
+#[path = "update/stale_session.rs"]
+mod stale_session;
 #[path = "update/starmap_planet_info.rs"]
 mod starmap_planet_info;
 #[path = "update/startup_join.rs"]

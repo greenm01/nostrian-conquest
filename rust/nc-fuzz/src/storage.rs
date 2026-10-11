@@ -32,6 +32,7 @@ fn round_trip(
     let store = CampaignStore::open_default_in_dir(dir).map_err(|err| err.to_string())?;
     store
         .save_runtime_state_structured_with_intel_activity_and_lifecycle(
+            game_data.conquest.game_year,
             game_data,
             &BTreeSet::new(),
             report_rows,

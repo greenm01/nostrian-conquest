@@ -116,6 +116,12 @@ pub struct App {
     pub terminal_notice_lines: Vec<String>,
     pub command_menu_notice: Option<String>,
     pub quit_confirm_open: bool,
+    /// Maintenance wrote a newer year after this session loaded, so every
+    /// save is refused. Set by the first refused save and never cleared.
+    pub session_stale: bool,
+    /// A save was refused during the current action; the stale-session
+    /// notice is shown once the action finishes.
+    pub(crate) stale_notice_due: bool,
     pub popup_help: Option<PopupHelp>,
     pub planet_intel_snapshots: BTreeMap<usize, PlanetIntelSnapshot>,
     pub owned_planet_years: BTreeMap<usize, u16>,
@@ -285,6 +291,8 @@ impl App {
             terminal_notice_lines: Vec::new(),
             command_menu_notice: None,
             quit_confirm_open: false,
+            session_stale: false,
+            stale_notice_due: false,
             popup_help: None,
             planet_intel_snapshots,
             owned_planet_years,
@@ -363,6 +371,7 @@ fn apply_game_config_overrides(
 
     let snapshot_id = if changed {
         store.save_runtime_state_structured(
+            game_data.conquest.game_year,
             &game_data,
             planet_scorch_orders,
             report_block_rows,

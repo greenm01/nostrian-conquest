@@ -75,6 +75,7 @@ pub fn import_directory_snapshot_with_seed(
         game_data.conquest.game_year,
     );
     store.save_runtime_state_structured_with_intel_and_seed(
+        game_data.conquest.game_year,
         &game_data,
         &BTreeSet::new(),
         &report_block_rows,

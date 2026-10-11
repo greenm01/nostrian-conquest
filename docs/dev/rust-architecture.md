@@ -407,6 +407,18 @@ Practical rule:
   as a side effect
 - SQLite is the runtime source of truth; classic files remain the compatibility
   and oracle projection boundary
+- the store keeps one snapshot per game year and loads the highest; every
+  `save_runtime_state_*` takes `loaded_year`, the year the caller loaded, and
+  refuses the write with `CampaignStoreError::StaleSnapshot` if a newer
+  snapshot exists, so a session left open across maintenance cannot write into
+  a year nobody reads; maintenance loads year Y and writes Y + 1, so it passes
+  Y and is never refused; code that creates state from nothing passes the year
+  it writes
+- a session that gets `StaleSnapshot` stops saving and shows
+  `STALE_SESSION_MESSAGE` in its message area (`nc-game`: the main-menu notice,
+  after the action finishes; `nc-helm`: each prompt's status line, because the
+  error's text is that message); the BBS door then ends the session the way a
+  time-limit expiry does
 
 Do not bypass classic compatibility just because Rust-native storage exists, and
 do not couple client/runtime logic directly to `DATABASE.DAT` or other classic

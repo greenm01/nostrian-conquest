@@ -102,3 +102,42 @@ The same t083 results also compare smooth colonies starting at1 and
 small-world order dates, decade income, low-tax investment controls and the
 exact decay of the initial advantage; it does not restore every current
 order date and is not an approved rule.
+
+## Starbase economics (t085)
+
+`python3 tools/economy-model/starbase_review.py` writes
+`starbase_review_results.json`. Exact controls separate growth payback,
+imposed arrival delay, locally funded build/commission timing and reserve
+spending capacity. Exact limiting-cycle controls compare75/64/64 and70/64
+with steady65, at starting production50 and100, with and without a base.
+They use approved smooth growth/P3 and base cost50, with
+non-stacking bonuses; there is no engine movement or battle simulation.
+`test_starbase_review.py` is included in unittest discovery. See the
+[starbase review](../../docs/notes/investigations/w3vj4wti-starbase-growth-capacity-and-economic-concentration.md)
+for eligibility, mathematical return limits and the draft recommendation.
+
+## Conquest and exposed-industry controls (t086)
+
+`python3 tools/economy-model/conquest_review.py` writes
+`conquest_review_results.json`. Exact controls compare0/0/full with0/half/full
+conversion on the approved smooth economy, inherited local savings and one
+partly paid order, and economic damage from hits already reaching industry.
+They also isolate destroying potential under Scorch. They do not simulate
+classic capture destruction, raid success or complete campaigns.
+`test_conquest_review.py` runs under unittest discovery. See the
+[conquest review](../../docs/notes/investigations/et03gvm9-conquest-income-inherited-assets-and-bombardment-economics.md)
+for the proposed decision4 and remaining decision5 questions.
+
+## Bombardment and recoverable Scorch (t087)
+
+`python3 tools/economy-model/raid_review.py --trials 10000` writes
+`raid_review_results.json`: orbital gates followed by bombardment, with
+retained damage, DD8 and the approved battery shield. Three goods rates use
+matched seeds; repeated stationary raids are separate controls. This is
+conditional on arriving at contact, not an engine run or map campaign.
+`python3 tools/economy-model/scorch_review.py` writes
+`scorch_review_results.json`: enumerated classic-style annual production
+decay, proposed NC debt/queue adaptations, and approved smooth recovery.
+Both new test files run under unittest discovery. See the
+[joint item5 review](../../docs/notes/investigations/wrk1xd3p-bombardment-raid-costs-and-recoverable-scorch-earth.md)
+for the proposed rates, full Scorch contract and limits.
