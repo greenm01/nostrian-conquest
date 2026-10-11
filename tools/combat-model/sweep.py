@@ -269,7 +269,7 @@ def render(results, rulesets, args):
                      f'{100 * LOSS_TOLERANCE:.0f}% of that side\'s starting build points. A case missing '
                      'on either side, or without a battle, is listed with the reason.')
         lines.append('')
-    return '\n'.join(lines)
+    return '\n'.join(lines).rstrip()
 
 
 def summarise(value):
