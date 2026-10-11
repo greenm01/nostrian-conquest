@@ -41,7 +41,9 @@ separate, still pending.
    defending empire's memory there does not include the attacker's empire.
    The +1 counts within the existing +2 modifier cap. Natural-9 criticals
    are unchanged, and pursuit exchanges never refresh surprise. Detection
-   and interception rolls do not change.
+   and interception rolls do not change. Only the attacking side can be
+   surprising: a hidden defender joining the battle earns no counter-bonus,
+   because surprise means catching the defending side unprepared.
 4. **Storage and export.** The memory is typed state with its own SQLite
    storage, saved and loaded deterministically. Classic export cannot
    represent it: export omits it, says so, and never alters the store. A
