@@ -466,3 +466,18 @@ maintenance on them. The shipped BBS and localhost paths (`nc-sysop maint`)
 are not affected. Finish the hosted maintenance path (apply submissions,
 compose reports, keep mail and scorch orders) or gate the command until it
 is finished. Found by the t039 phase 4 agent on 2026-10-10.
+
+### t067
+
+Reported by the user on 2026-10-10: after sending a message there seemed to
+be no way to review it or cancel it before maintenance. The outbox exists
+(Messages, then `D` on the recipient list) but is hard to find, shows only
+number, recipient, and subject, and deletes the highlighted message on
+`Enter` without asking, although its help calls `Enter` "accept highlighted
+item" and its footer shows only `? <Q>`.
+
+Decision (2026-10-10, owner): within the existing screens and table layout,
+`Enter` opens the highlighted queued message to read; `D` deletes it after a
+"Delete? [Y]/N" prompt that defaults to yes, as the inbox does; the outbox
+footer shows `D`; and the send confirmation says that `D` on the recipient
+list reviews or cancels queued messages.
