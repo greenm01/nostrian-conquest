@@ -353,3 +353,43 @@ python3 -I -B tools/combat-model/sweep.py --rules engine-t060 --units baseline -
 `--engine-rules` chooses the model records used for comparison; its default
 remains `current` so historical commands retain their meaning. See the
 [results](nc_t060_comparison.md) and the [t062 investigation](../../docs/notes/investigations/7y0ypr6b-combat-withdrawal-and-persistent-damage-after-decision-1.md).
+
+## Ground and RT calibration (t068)
+
+The [t068 investigation](../../docs/notes/investigations/4lasivnr-ground-combat-and-recovery-turns-campaign-calibration.md)
+connects these experiments to the ground decision and proposed initial RT values.
+
+```sh
+uv run --no-project --with scipy python -B tools/combat-model/ground_calibration.py
+python3 -B tools/combat-model/invasion_price.py
+python3 -B tools/combat-model/rt_campaign.py --trials 5000
+uv run --no-project --with scipy python -B -m unittest discover -s tools/combat-model -p 'test_*.py'
+```
+
+`ground_calibration.py` writes `nc_ground_calibration.json` and `.md` beside
+it. Shared rolls enumerate every reachable state, including fractional
+army damage; the independent-fire control uses SciPy sparse transitions for
+exactly 64 rounds. The shared candidates prove their longest reachable
+path is within that cap for the listed cases. Probabilities use floating
+point. No sampling or engine-parity claim for these new ground candidates.
+
+`invasion_price.py` writes `nc_invasion_price.json`. It separates committed
+build cost from expected casualties at a 90% single-attempt capture threshold.
+Invade prices assume the battery line was already cleared and the named
+escorts remain nominal. Blitz includes its cover and landing fire on the
+existing planetary CRT. All cases assume the orbital gate has been won.
+This is not a full campaign or a price for first securing orbit.
+
+`rt_campaign.py` writes `nc_rt_campaign.json`. It reuses fleet allocation
+and the approved cohort timing. The force meets four fresh enemies on a
+fixed schedule, without replacements. Each schedule gets the same seed
+for each trial and encounter. Gap 0 means four encounters in one year;
+gap 2 means years 0, 2, 4, 6. All fights occur before end-year recovery.
+Assisted controls qualify only full quiet passes at a separate friendly
+base, never the battle pass; travel feasibility is not simulated. Starbases
+never assist themselves. None/certain pursuit are immediate-catch controls,
+not chase simulations. First-return damage is conditioned on being alive;
+full-force destruction and destroyed build points are also reported.
+Uniform 1, uniform 2, class 1/2/3 with SB 2 or 3, and a DD-only RT 1 control
+keep baseline hull AS/DS and prices fixed. These are stress campaigns, not
+measured frequencies of combat on generated maps.
