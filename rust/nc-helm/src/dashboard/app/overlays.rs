@@ -1,4 +1,6 @@
-use crate::dashboard::inbox::{DashInboxItemSource, matches_filter, project_inbox_items};
+use crate::dashboard::inbox::{
+    DashInboxItemSource, DashInboxItemType, matches_filter, project_inbox_items,
+};
 use crate::dashboard::input::{KeyCode, KeyEvent, KeyModifiers};
 use crate::dashboard::overlays::{diplomacy, fleet_list, inbox, intel_database, planet_list};
 use crate::dashboard::table_filter::{
@@ -1636,10 +1638,7 @@ impl DashApp {
             .inbox_overlay
             .outbox_selected
             .min(messages.len().saturating_sub(1));
-        let Some(message) = self.remove_hosted_message(selected) else {
-            return Ok(());
-        };
-        remove_preview_queued_message(self, &message);
+        cancel_queued_message(self, &messages[selected]);
         self.save_and_refresh_runtime()?;
         let remaining = inbox::staged_outbox_messages(self).len();
         self.inbox_overlay.outbox_selected = self
@@ -2113,6 +2112,16 @@ fn delete_selected_inbox_item(app: &mut DashApp) {
             idx,
             viewer,
         ),
+        DashInboxItemSource::QueuedMail(idx) if item.item_type == DashInboxItemType::Outgoing => {
+            if let Some(mail) = app.queued_mail.get(idx) {
+                let message = nc_data::TurnMessage {
+                    recipient_empire: mail.recipient_empire_id,
+                    subject: mail.subject.clone(),
+                    body: mail.body.clone(),
+                };
+                cancel_queued_message(app, &message);
+            }
+        }
         DashInboxItemSource::QueuedMail(idx) => {
             if let Some(mail) = app.queued_mail.get_mut(idx) {
                 mail.mark_deleted_by_recipient();
@@ -2128,7 +2137,10 @@ fn first_message_recipient_default(app: &DashApp) -> String {
         .unwrap_or_default()
 }
 
-fn remove_preview_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
+/// Cancels one of the player's own messages before maintenance delivers it:
+/// the outbox and the inbox's outgoing rows both end here. The message leaves
+/// the local queue and the hosted turn draft.
+fn cancel_queued_message(app: &mut DashApp, message: &nc_data::TurnMessage) {
     let sender = app.player_record_index_1_based as u8;
     let year = app.game_data.conquest.game_year;
     if let Some(index) = app.queued_mail.iter().position(|mail| {
@@ -2139,6 +2151,13 @@ fn remove_preview_queued_message(app: &mut DashApp, message: &nc_data::TurnMessa
             && mail.body == message.body
     }) {
         app.queued_mail.remove(index);
+    }
+    let draft_index = app
+        .hosted_turn_draft
+        .as_ref()
+        .and_then(|draft| draft.messages.iter().position(|staged| staged == message));
+    if let Some(index) = draft_index {
+        app.remove_hosted_message(index);
     }
 }
 
