@@ -22,7 +22,7 @@
 
 use crate::{CoreGameData, Order};
 
-use super::state::TaskForce;
+use super::state::{Member, TaskForce};
 use nc_data::{
     Coords, EscapeEpisode, Real48, has_any_force, set_fleet_at_rest, set_mission_target,
 };
@@ -83,11 +83,17 @@ pub(crate) fn retreat_fleet(game_data: &mut CoreGameData, fleet_idx: usize) {
     abort_mission_to_seek_home_or_hold(&mut game_data.fleets[fleet_idx], retreat_target);
 }
 
-/// Send a task force's fleets home after their losses are on the records:
-/// each fleet with ships retreats on its own; one with none holds at rest
-/// until it is culled.
+/// Send the fleets still on a side at the end home after their losses are
+/// on the records: each fleet with ships retreats on its own; one with none
+/// holds at rest until it is culled. Fleets that broke off have escaped
+/// already.
 pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &TaskForce) {
-    for &idx in &task_force.fleet_indices {
+    for idx in task_force
+        .members
+        .iter()
+        .filter(|member| member.fighting())
+        .filter_map(Member::fleet_idx)
+    {
         if !has_any_force(&game_data.fleets[idx]) {
             hold_until_culled(&mut game_data.fleets[idx]);
             continue;
@@ -96,39 +102,37 @@ pub(super) fn retreat_task_force(game_data: &mut CoreGameData, task_force: &Task
     }
 }
 
-/// Send a side that broke off home from the battle at `coords` and record
-/// its escape: each fleet with ships retreats and is in an escape episode
-/// from `coords` and its layer, continuing the one it was already in (a
-/// fleet's episode is always from the cell it is in, since leaving the cell
-/// ends it), with `pursuer` noted as having had its pursuit exchange. A
-/// fleet with nowhere to go holds where it is and is in no episode; one
-/// with no ships holds at rest until it is culled.
-pub(super) fn escape_task_force(
+/// Send a fleet that broke off home from the battle at `coords` and record
+/// its escape: with ships it retreats and is in an escape episode from
+/// `coords` and its layer, continuing the one it was already in (a fleet's
+/// episode is always from the cell it is in, since leaving the cell ends
+/// it), with `pursuer` noted as having had its pursuit exchange. A fleet
+/// with nowhere to go holds where it is and is in no episode; one with no
+/// ships holds at rest until it is culled.
+pub(super) fn escape_fleet(
     game_data: &mut CoreGameData,
-    task_force: &TaskForce,
+    idx: usize,
     coords: [u8; 2],
     pursuer: Option<u8>,
 ) {
-    for &idx in &task_force.fleet_indices {
-        if !has_any_force(&game_data.fleets[idx]) {
-            hold_until_culled(&mut game_data.fleets[idx]);
-            continue;
-        }
-        let home = nearest_friendly_world(game_data, idx);
-        let fleet = &mut game_data.fleets[idx];
-        abort_mission_to_seek_home_or_hold(fleet, home);
-        fleet.escape = home.map(|_| {
-            let mut episode = fleet.escape.unwrap_or(EscapeEpisode {
-                sector: Coords::from_array(coords),
-                layer: u8::from(fleet.depth >= Real48::HALF),
-                pursuers: 0,
-            });
-            if let Some(pursuer) = pursuer {
-                episode.record_pursuit(pursuer);
-            }
-            episode
-        });
+    if !has_any_force(&game_data.fleets[idx]) {
+        hold_until_culled(&mut game_data.fleets[idx]);
+        return;
     }
+    let home = nearest_friendly_world(game_data, idx);
+    let fleet = &mut game_data.fleets[idx];
+    abort_mission_to_seek_home_or_hold(fleet, home);
+    fleet.escape = home.map(|_| {
+        let mut episode = fleet.escape.unwrap_or(EscapeEpisode {
+            sector: Coords::from_array(coords),
+            layer: u8::from(fleet.depth >= Real48::HALF),
+            pursuers: 0,
+        });
+        if let Some(pursuer) = pursuer {
+            episode.record_pursuit(pursuer);
+        }
+        episode
+    });
 }
 
 fn hold_until_culled(fleet: &mut nc_data::Fleet) {
@@ -147,7 +151,7 @@ pub(super) fn dominant_empire_after_battle(
 
     let mut surviving_empires = task_forces
         .iter()
-        .filter(|tf| tf.engaged_in_battle && tf.state.has_units() && tf.withdrew.is_none())
+        .filter(|tf| tf.engaged_in_battle && tf.state.has_units())
         .map(|tf| tf.empire)
         .collect::<Vec<_>>();
     surviving_empires.sort_unstable();

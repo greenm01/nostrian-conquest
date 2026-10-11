@@ -28,6 +28,7 @@ pub(super) const COMBAT_KIND_BLITZ_COVER: u64 = 7;
 pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
 pub(super) const COMBAT_KIND_PURSUIT_CATCH: u64 = 10;
+pub(super) const COMBAT_KIND_ALLOCATION: u64 = 11;
 
 /// Planetary combat's ratio CRT, multipliers in quarters: one row per d10
 /// value and one column per force-ratio band.
@@ -122,14 +123,25 @@ fn hits_from_multiplier(as_total: u32, multiplier_x4: u8) -> u32 {
     (as_total.saturating_mul(multiplier_x4 as u32)).div_ceil(4)
 }
 
-/// A fleet battle's luck: one d10 per side and exchange, and the draws of a
-/// pursuit. Maintenance seeds them from the battle context; tests script
-/// them.
+/// A fleet battle's luck: one d10 per side and exchange, the draws of a
+/// pursuit, and the stream that breaks ties when a side's losses are shared
+/// among its fleets. Maintenance seeds them from the battle context; tests
+/// script them.
 pub(super) trait BattleDice {
     fn d10(&self, kind: u64, round: u32, acting_empire: u8, target_empire: u8) -> u8;
     /// Two draws in [0, 1) for `pursuer`'s chase of `fleeing` in `round`:
     /// the intercept arc, then the roll against it.
     fn pursuit(&self, kind: u64, round: u32, pursuer: u8, fleeing: u8) -> (f64, f64);
+    /// The stream that breaks allocation ties for `empire`'s side after its
+    /// exchange of `round`. Scripted dice get a fixed stream unless they
+    /// script one.
+    fn allocation(&self, kind: u64, round: u32, empire: u8) -> GameRng {
+        GameRng::from_context(
+            0,
+            RNG_TAG_COMBAT,
+            &[kind, u64::from(round), u64::from(empire)],
+        )
+    }
 }
 
 /// The dice of a maintenance battle: every draw is keyed by the campaign
@@ -168,6 +180,10 @@ impl BattleDice for SeededDice {
         let mut rng = self.rng(kind, round, pursuer, fleeing);
         let arc = rng.next_real();
         (arc, rng.next_real())
+    }
+
+    fn allocation(&self, kind: u64, round: u32, empire: u8) -> GameRng {
+        self.rng(kind, round, empire, 0)
     }
 }
 

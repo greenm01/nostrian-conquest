@@ -1,5 +1,5 @@
-//! Fleet battle effectiveness, carried hits, ROE checks, escape, and
-//! pursuit.
+//! Fleet battle effectiveness, carried hits, ROE checks, escape, pursuit,
+//! and the joined sides of combat decision 6.
 //!
 //! Inline rather than in tests/: maintenance rolls seeded dice and carried
 //! hits never leave the battle, so these tests script the dice through the
@@ -91,6 +91,28 @@ pub(super) fn place(game_data: &mut CoreGameData, idx: usize, owner: u8, ships: 
     fleet.escape = None;
 }
 
+/// Fight one battle in `DEEP_SPACE` between the fleets of two empires: the
+/// attacking side `attackers` and the defending roster `defenders`, under
+/// `round_cap` rounds.
+pub(super) fn fight_sides(
+    game_data: &mut CoreGameData,
+    dice: &dyn BattleDice,
+    round_cap: u32,
+    battle_key: u64,
+    attackers: &[usize],
+    defenders: &[usize],
+) -> FleetBattle {
+    let side = |fleets: &[usize]| BattleSide {
+        empire: game_data.fleets[fleets[0]].owner.0,
+        fleets: fleets.to_vec(),
+        bases: Vec::new(),
+    };
+    let (attacker, defender) = (side(attackers), side(defenders));
+    fight_encounter_with_dice(
+        game_data, dice, round_cap, battle_key, DEEP_SPACE, &attacker, &defender,
+    )
+}
+
 /// Fight one battle in `DEEP_SPACE` between two fleet records, each a side
 /// of its owner, under `round_cap` rounds.
 pub(super) fn fight_capped(
@@ -101,14 +123,13 @@ pub(super) fn fight_capped(
     attacker: usize,
     defender: usize,
 ) -> FleetBattle {
-    let side = |fleet: usize| BattleSide {
-        empire: game_data.fleets[fleet].owner.0,
-        fleets: vec![fleet],
-        bases: Vec::new(),
-    };
-    let (attacker, defender) = (side(attacker), side(defender));
-    fight_encounter_with_dice(
-        game_data, dice, round_cap, battle_key, DEEP_SPACE, &attacker, &defender,
+    fight_sides(
+        game_data,
+        dice,
+        round_cap,
+        battle_key,
+        &[attacker],
+        &[defender],
     )
 }
 
@@ -238,6 +259,10 @@ fn suppression_and_execution_carry_separately() {
         place(&mut game_data, 4, 2, Ships { tt: 1, ..NONE }, 0);
         game_data
     };
+    let dice = Scripted {
+        d10: &|_, _, _, _| 0,
+        pursuit: &|_, _, _| CAUGHT,
+    };
     let pools = |carried_suppression: u32, suppression: u32, execution: u32| {
         let mut forces = vec![new_task_force(&game_data, 2, DEEP_SPACE, vec![4], &[])];
         forces[0].carried_hits.suppression = carried_suppression;
@@ -246,6 +271,9 @@ fn suppression_and_execution_carry_separately() {
             &HashMap::from([(2, suppression)]),
             &HashMap::from([(2, execution)]),
             &HashMap::new(),
+            &dice,
+            0,
+            1,
         );
         (
             forces[0].state.crippled_count(IDX_TT),
@@ -512,4 +540,176 @@ fn the_round_cap_ends_the_battle_unresolved() {
     assert_eq!(battle.held_by, None);
     assert_eq!(game_data.fleets[0].ships.destroyers, 0);
     assert_eq!(game_data.fleets[4].ships.destroyers, 0);
+}
+
+/// Combat decision 6: after an exchange every fleet checks its own ROE on
+/// the sides as they stand, all at once and for good. Empire 1 brings a
+/// battleship at ROE 5 (fleet 0) and one at ROE 10 (fleet 1); empire 2 two
+/// battleships at ROE 5. Rolls of 0 buy no damage step, so the odds stay
+/// 180 against 180: after the compulsory exchange both ROE 5 fleets leave
+/// in the same step, the ROE 10 fleet stays and holds the field, and its
+/// departed companion is not re-added though it now faces nobody.
+#[test]
+fn every_fleet_leaves_under_its_own_roe_at_once_and_for_good() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { bb: 1, ..NONE }, 5);
+    place(&mut game_data, 1, 1, Ships { bb: 1, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { bb: 2, ..NONE }, 5);
+    let low = |_, _, _, _| 0;
+    let dice = Scripted {
+        d10: &low,
+        pursuit: &|_, _, _| ESCAPED,
+    };
+    let battle = fight_sides(
+        &mut game_data,
+        &dice,
+        COMBAT_GUARDRAIL_MAX_ROUNDS,
+        1,
+        &[0, 1],
+        &[4],
+    );
+    assert_eq!(
+        departure(&battle, 0),
+        Some((EncounterDispositionReason::RoeWithdrawal, false))
+    );
+    assert_eq!(
+        departure(&battle, 4),
+        Some((EncounterDispositionReason::RoeWithdrawal, false))
+    );
+    assert_eq!(departure(&battle, 1), None);
+    assert_eq!(battle.held_by, Some(1));
+    assert_eq!(game_data.fleets[0].order, Order::SeekHome);
+    assert_eq!(game_data.fleets[1].order, Order::HoldPosition);
+    assert_eq!(game_data.fleets[4].order, Order::SeekHome);
+    // Empire 1's report covers both its fleets.
+    let report = battle
+        .events
+        .fleet_battle_events
+        .iter()
+        .find(|event| event.reporting_empire == 1)
+        .expect("empire 1 reports the battle");
+    assert_eq!(report.friendly_initial.battleships, 2);
+    assert!(report.held_field);
+}
+
+/// A fleet that leaves while its side fights on is not pursued; when the
+/// whole side has broken off, each fleeing fleet is chased on its own.
+/// Empire 1 brings a cruiser at ROE 1 (fleet 0) and three at ROE 7 (fleet
+/// 1) against four cruisers at ROE 10, all rolling 6. Exchange 1 cripples
+/// every cruiser on both sides (120 hits each way); the ROE 1 cruiser
+/// leaves, unpursued, while the trio (45 against 60, within 3:2) fights
+/// on. Exchange 2 finishes two of the trio (15 against 45 is beyond 3:2),
+/// so it breaks off and is caught alone, the pursuit's roll of 0 sparing
+/// its last hull.
+#[test]
+fn pursuit_is_per_fleeing_fleet_once_the_whole_side_breaks_off() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { ca: 1, ..NONE }, 1);
+    place(&mut game_data, 1, 1, Ships { ca: 3, ..NONE }, 7);
+    place(&mut game_data, 4, 2, Ships { ca: 4, ..NONE }, 10);
+    let rolls = |kind: u64, _, _, _| if kind == COMBAT_KIND_PURSUIT { 0 } else { 6 };
+    let dice = Scripted {
+        d10: &rolls,
+        pursuit: &|_, _, _| CAUGHT,
+    };
+    let battle = fight_sides(
+        &mut game_data,
+        &dice,
+        COMBAT_GUARDRAIL_MAX_ROUNDS,
+        1,
+        &[0, 1],
+        &[4],
+    );
+    assert_eq!(
+        departure(&battle, 0),
+        Some((EncounterDispositionReason::RoeWithdrawal, false))
+    );
+    assert_eq!(
+        departure(&battle, 1),
+        Some((EncounterDispositionReason::RoeWithdrawal, true))
+    );
+    assert_eq!(game_data.fleets[0].ships.cruisers, 1);
+    assert_eq!(game_data.fleets[1].ships.cruisers, 1);
+    assert_eq!(game_data.fleets[4].ships.cruisers, 3);
+    assert!(
+        game_data.fleets[0]
+            .escape
+            .is_some_and(|escape| !escape.pursued_by(2))
+    );
+    assert!(
+        game_data.fleets[1]
+            .escape
+            .is_some_and(|escape| escape.pursued_by(2))
+    );
+    assert_eq!(battle.held_by, Some(2));
+}
+
+/// ROE 0 never volunteers but fights when attacked: a cruiser on ROE 0 on
+/// the defending roster fires the compulsory exchange (crippling the
+/// attacker's cruiser) and then leaves; its ROE 10 companion fights on.
+#[test]
+fn a_fleet_on_roe_zero_fights_the_first_exchange_when_attacked() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { ca: 1, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 0);
+    place(&mut game_data, 5, 2, Ships { ca: 1, ..NONE }, 10);
+    let dice = Scripted {
+        d10: &|_, _, _, _| 0,
+        pursuit: &|_, _, _| ESCAPED,
+    };
+    let battle = fight_sides(&mut game_data, &dice, 1, 1, &[0], &[4, 5]);
+    assert_eq!(
+        departure(&battle, 4),
+        Some((EncounterDispositionReason::RoeWithdrawal, false))
+    );
+    assert_eq!(departure(&battle, 5), None);
+    // Two cruisers' 15 hits at a roll of 0 join to cripple nothing by
+    // themselves, but the defenders' report shows both fired.
+    let report = battle
+        .events
+        .fleet_battle_events
+        .iter()
+        .find(|event| event.reporting_empire == 2)
+        .expect("empire 2 reports the battle");
+    assert_eq!(report.friendly_initial.cruisers, 2);
+    assert_eq!(game_data.fleets[4].order, Order::SeekHome);
+}
+
+/// The allocation example at the battle level: eighteen destroyers' 180
+/// execution hits destroy three nominal cruisers of a side whose fleets
+/// hold 8 and 2, shared as 2 and 1.
+#[test]
+fn losses_are_shared_among_a_sides_fleets_in_proportion() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { ca: 8, ..NONE }, 10);
+    place(&mut game_data, 1, 1, Ships { ca: 2, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { dd: 18, ..NONE }, 10);
+    let dice = Scripted {
+        d10: &|_, _, _, _| 6,
+        pursuit: &|_, _, _| ESCAPED,
+    };
+    fight_sides(&mut game_data, &dice, 1, 1, &[0, 1], &[4]);
+    assert_eq!(game_data.fleets[0].ships.cruisers, 6);
+    assert_eq!(game_data.fleets[1].ships.cruisers, 1);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 0);
+}
+
+/// The carry bank stays with the side: the 15 suppression hits a cruiser
+/// pair's roll of 0 leaves carried are still there after the fleet that
+/// was hit has left, and buy a cripple with the next exchange's 15.
+#[test]
+fn a_departing_fleet_leaves_the_carried_hits_with_its_side() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { ca: 2, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { ca: 1, ..NONE }, 0);
+    place(&mut game_data, 5, 2, Ships { ca: 1, ..NONE }, 10);
+    let dice = Scripted {
+        d10: &|_, _, _, _| 0,
+        pursuit: &|_, _, _| ESCAPED,
+    };
+    // Exchange 1: 15 carried against empire 2; the ROE 0 cruiser leaves.
+    // Exchange 2: 15 more make 30, and the remaining cruiser is crippled.
+    fight_sides(&mut game_data, &dice, 2, 1, &[0], &[4, 5]);
+    assert_eq!(game_data.fleets[4].crippled.cruisers.total(), 0);
+    assert_eq!(game_data.fleets[5].crippled.cruisers.total(), 1);
 }

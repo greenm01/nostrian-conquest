@@ -426,7 +426,10 @@ fn an_attacker_loses_the_ticks_movement() {
 }
 
 /// A starbase and its guard fleet fight as one side: attacking either
-/// brings in the other, and nobody else joins.
+/// brings in the other, and nobody else joins. The guard is on ROE 10: with
+/// combat decision 6 a guard leaves under its own ROE like any fleet, and
+/// on ROE 0 it would leave its base after the first exchange, to be caught
+/// later in a battle with no base in it.
 #[test]
 fn a_starbase_and_its_guard_fight_together() {
     let sector = [9, 10];
@@ -435,7 +438,9 @@ fn a_starbase_and_its_guard_fight_together() {
     put(
         &mut scenario,
         4,
-        Fleet::on_station(2, sector, true, Order::GuardStarbase, ca(2)).guarding(1),
+        Fleet::on_station(2, sector, true, Order::GuardStarbase, ca(2))
+            .guarding(1)
+            .roe(10),
     );
     // A bystander of empire 3 in the same orbit never joins.
     put(

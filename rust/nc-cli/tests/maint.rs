@@ -1378,6 +1378,17 @@ fn maint_rust_attacker_battle_report_mentions_destroyed_starbase() {
 
     let mut game_data = load_classic_core_files(&target).expect("fixture should load");
     let starbase_coords = game_data.bases[0].sector.to_array();
+    // The base's defenders stand to the end on ROE 10: since combat
+    // decision 6 a guard leaves under its own ROE like any fleet, and the
+    // fixture's would flee after the first exchange, leaving the base to
+    // die alone ("The enemy fled the field.").
+    for defender in game_data
+        .fleets
+        .iter_mut()
+        .filter(|fleet| fleet.owner.0 == 1 && fleet.sector.to_array() == starbase_coords)
+    {
+        defender.rules_of_engagement = 10;
+    }
     let attacker = &mut game_data.fleets[4];
     attacker.sector = Coords::from_array(starbase_coords);
     attacker.order = Order::MoveOnly;

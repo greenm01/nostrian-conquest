@@ -1,9 +1,11 @@
 //! Classic ECMAINT's encounter rules as pure functions: sighting, strength,
 //! ROE, intercept, and the attack decision (`docs/dev/ec-encounter-spec.md`
 //! sections 2-4). Randomness comes from the caller's `GameRng`, so Rust
-//! matches classic's odds, not its random sequence. Strength is the one
-//! place NC departs: a fleet weighs itself and its enemy by NC attack
-//! strength, the yardstick its battle uses, not by classic's 21/7/2.
+//! matches classic's odds, not its random sequence. NC departs in what a
+//! fleet weighs (combat decisions 2 and 6): the sides as they would fight,
+//! each empire's fleets in the sector and layer at their NC attack strength,
+//! not classic's 21/7/2 for the two fleets alone, and no attack skips the
+//! ROE test because the attacker identified its enemy first.
 
 use nc_data::{CrippledShips, GameRng};
 
@@ -48,9 +50,6 @@ pub struct FleetFacts {
     pub scouts: u16,
     /// The fleet's crippled ships, which count at their crippled AS.
     pub crippled: CrippledShips,
-    /// The fleet is escaping from a battle: it does not volunteer for a
-    /// fight through first identification.
-    pub escaping: bool,
 }
 
 impl FleetFacts {
@@ -189,25 +188,56 @@ pub fn roe_permits(roe: u8, own: u32, enemy: u32) -> bool {
     }
 }
 
-/// Whether an attacker catches its target (`1b05:03b1`). `awareness` is the
-/// target empire's awareness of the attacker. A faster attacker always
-/// catches; otherwise the target notices with `100 - 33 * awareness` percent
-/// and runs, and an unnoticed target fights only if its own ROE accepts.
+/// Whether an attacker catches its target (`1b05:03b1`). A faster attacker
+/// always catches; otherwise the target notices with `100 - 33 * awareness`
+/// percent (the target empire's awareness of the attacker) and runs, and an
+/// unnoticed target fights only if its own ROE accepts the odds of the sides
+/// as they would fight.
 pub fn intercept(
     rng: &mut GameRng,
     attacker: &FleetFacts,
     target: &FleetFacts,
-    awareness: u8,
+    situation: Situation,
 ) -> bool {
     if attacker.max_speed > target.max_speed {
         return true;
     }
-    if roll(rng, 100.0 - 33.0 * f64::from(awareness)) {
+    if roll(rng, 100.0 - 33.0 * f64::from(situation.target_awareness)) {
         let arc = rng.next_real();
         let roll = rng.next_real();
         return speed_roll_catches(attacker.max_speed, target.speed, arc, roll);
     }
-    roe_permits(target.roe, strength(target), strength(attacker))
+    roe_permits(target.roe, situation.enemy_strength, situation.own_strength)
+}
+
+/// Which of `candidates`, each a fleet's ROE and strength, volunteer to
+/// attack a side of strength `enemy`: a fleet with ROE above 0 and warships
+/// whose ROE accepts the volunteers' assembled strength against the enemy's,
+/// recomputed with every refusal until none refuses. A fleet dropped is not
+/// re-admitted.
+pub fn admitted(candidates: &[(u8, u32)], enemy: u32) -> Vec<bool> {
+    let mut admitted: Vec<bool> = candidates
+        .iter()
+        .map(|&(roe, strength)| roe > 0 && strength > 0)
+        .collect();
+    loop {
+        let own: u32 = candidates
+            .iter()
+            .zip(&admitted)
+            .filter(|(_, stays)| **stays)
+            .map(|(&(_, strength), _)| strength)
+            .sum();
+        let mut dropped = false;
+        for (&(roe, _), stays) in candidates.iter().zip(&mut admitted) {
+            if *stays && !roe_permits(roe, own, enemy) {
+                *stays = false;
+                dropped = true;
+            }
+        }
+        if !dropped {
+            return admitted;
+        }
+    }
 }
 
 /// The intercept's speed roll, with `arc` and `roll` uniform in [0, 1): a
@@ -221,13 +251,6 @@ pub fn speed_roll_catches(pursuer_max: u8, speed: u8, arc: f64, roll: f64) -> bo
     let chance =
         100.0 * (std::f64::consts::PI * arc).sin() * f64::from(pursuer_max) / f64::from(speed);
     roll * 100.0 <= chance
-}
-
-/// First identification, or a later re-check of an identified unit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Mode {
-    Identify,
-    Recheck,
 }
 
 /// What a decision said, for the report.
@@ -265,31 +288,50 @@ pub struct Situation {
     pub declared_enemy: bool,
     /// The target empire's awareness of the observer, for the intercept.
     pub target_awareness: u8,
+    /// The strength of the observer's side as it would fight: the fleets of
+    /// its empire in the sector and layer that `admitted` lets volunteer
+    /// against `enemy_strength`.
+    pub own_strength: u32,
+    /// The strength of the target's side as it would fight: its empire's
+    /// fleets in the sector and layer, with the starbases they bring.
+    pub enemy_strength: u32,
 }
 
-fn engage(rng: &mut GameRng, willing: bool, o: &FleetFacts, t: &FleetFacts, aw: u8) -> Verdict {
+impl Situation {
+    /// The observer is among its side's volunteers: its ROE accepts the
+    /// assembled odds. A fleet without warships never volunteers.
+    fn willing(&self, o: &FleetFacts) -> bool {
+        strength(o) > 0 && roe_permits(o.roe, self.own_strength, self.enemy_strength)
+    }
+}
+
+fn engage(
+    rng: &mut GameRng,
+    willing: bool,
+    o: &FleetFacts,
+    t: &FleetFacts,
+    situation: Situation,
+) -> Verdict {
     if !willing {
         Verdict::Avoided
-    } else if intercept(rng, o, t, aw) {
+    } else if intercept(rng, o, t, situation) {
         Verdict::Engaged
     } else {
         Verdict::Escaped
     }
 }
 
-/// Should observer `o` attack fleet `t` (`1b05:1277`)? At first
-/// identification any ROE above 0 commits, unless the observer is escaping
-/// from a battle; later re-checks need the strength test.
+/// Should observer `o` attack fleet `t` (`1b05:1277`)? Classic lets any ROE
+/// above 0 attack at first identification; NC does not (combat decision 6):
+/// every attack passes the ROE test on the sides as they would fight, at
+/// first identification and at every later re-check alike.
 pub fn decide_vs_fleet(
     rng: &mut GameRng,
     o: &FleetFacts,
     t: &FleetFacts,
     situation: Situation,
-    mode: Mode,
 ) -> Verdict {
-    let willing = roe_permits(o.roe, strength(o), strength(t))
-        || (mode == Mode::Identify && o.roe > 0 && !o.escaping);
-    let aw = situation.target_awareness;
+    let willing = situation.willing(o);
     let unowned_world = situation.world_owner == Some(0);
     // Hostile-mission block: both on world missions at this world.
     if o.layer == 1
@@ -313,10 +355,10 @@ pub fn decide_vs_fleet(
         if o.order == order::GUARD_BLOCKADE
             && (assault || (t.order == order::COLONIZE && unowned_world))
         {
-            return engage(rng, willing, o, t, aw);
+            return engage(rng, willing, o, t, situation);
         }
         if o.order == order::COLONIZE && t.order == order::COLONIZE && unowned_world {
-            return engage(rng, willing, o, t, aw);
+            return engage(rng, willing, o, t, situation);
         }
         if o.order != order::GUARD_BLOCKADE
             && matches!(t.order, order::GUARD_STARBASE | order::GUARD_BLOCKADE)
@@ -325,37 +367,39 @@ pub fn decide_vs_fleet(
             if !willing {
                 return Verdict::Aborted;
             }
-            return engage(rng, willing, o, t, aw);
+            return engage(rng, willing, o, t, situation);
         }
     }
     if situation.declared_enemy {
-        return engage(rng, willing, o, t, aw);
+        return engage(rng, willing, o, t, situation);
     }
     // A neutral fleet inside one of the observer's systems.
     if o.layer == 1 && o.owner != 0 && situation.world_owner == Some(o.owner) {
-        return engage(rng, willing, o, t, aw);
+        return engage(rng, willing, o, t, situation);
     }
     Verdict::Ignored
 }
 
-/// Should observer `o` attack a starbase (`1b05:1d11`)? `defense` is the
-/// base's strength with its guard fleet, and `base` its strength alone. There
-/// is no intercept roll.
-pub fn decide_vs_base(o: &FleetFacts, defense: u32, base: u32, declared_enemy: bool) -> Verdict {
-    let own = strength(o);
+/// Should observer `o` attack a starbase (`1b05:1d11`)? `own` is the
+/// strength of the observer's side as it would fight and `enemy` the base's
+/// side: the base, its guard, and its owner's other fleets there. Classic
+/// weighed the base alone against a declared enemy; NC weighs the sides as
+/// they would fight (combat decision 6). There is no intercept roll.
+pub fn decide_vs_base(o: &FleetFacts, own: u32, enemy: u32, declared_enemy: bool) -> Verdict {
+    let willing = strength(o) > 0 && roe_permits(o.roe, own, enemy);
     if o.layer == 1
         && matches!(o.order, order::BOMBARD | order::INVADE | order::BLITZ)
         && o.sector == o.target
         && o.target_layer == 1
     {
         // The base protects the assault's target world.
-        if roe_permits(o.roe, own, defense) {
+        if willing {
             Verdict::Engaged
         } else {
             Verdict::Aborted
         }
     } else if declared_enemy {
-        if roe_permits(o.roe, own, base) {
+        if willing {
             Verdict::Engaged
         } else {
             Verdict::Avoided

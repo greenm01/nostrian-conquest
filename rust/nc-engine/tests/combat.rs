@@ -3,6 +3,8 @@ mod support;
 
 #[path = "combat/assault.rs"]
 mod assault;
+#[path = "combat/participation.rs"]
+mod participation;
 #[path = "combat/planetary.rs"]
 mod planetary;
 #[path = "combat/pursuit.rs"]

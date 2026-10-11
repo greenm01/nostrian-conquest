@@ -2,9 +2,10 @@
 // (14,6) in week 16 of turn 6 and reports the arrival there; a later re-check
 // of the guard force aborts the mission without a report, and the fleet heads
 // home for the rest of the year. Hegel-shrunk from map seed 623, then cut to
-// the turn files and actions the path still needs. Since t065 the lone
-// destroyer of turn 3 breaks off after one exchange instead of dying, so no
-// record compaction precedes turn 5 and empire 2's main fleet is record 5.
+// the turn files and actions the path still needs. Since t080 the guard
+// force's four fleets fight together (combat decision 6) and destroy the
+// lone destroyer of turn 3 in one exchange, so its record is compacted away
+// before turn 5 and empire 2's main fleet is record 4.
 combat-scenario player_count=3 year=3000 seed=623 baseline="builder-compatible" turns=6 label="nc-fuzz"
 
 house record=1

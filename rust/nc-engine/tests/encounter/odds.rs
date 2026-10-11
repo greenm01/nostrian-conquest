@@ -3,7 +3,8 @@
 
 use nc_data::GameRng;
 use nc_engine::maint::encounter::rules::{
-    FleetFacts, Mode, Situation, Verdict, decide_vs_fleet, intercept, order, roll, sighting_percent,
+    FleetFacts, Situation, Verdict, decide_vs_fleet, intercept, order, roll, sighting_percent,
+    strength,
 };
 
 use super::support::assert_rate;
@@ -21,6 +22,18 @@ fn fleet(owner: u8, max_speed: u8, speed: u8) -> FleetFacts {
         roe: 6,
         cruisers: 1,
         ..FleetFacts::default()
+    }
+}
+
+/// Attacker and target alone on their sides, the target's empire aware of
+/// the attacker at `awareness`.
+fn meeting(attacker: &FleetFacts, target: &FleetFacts, awareness: u8) -> Situation {
+    Situation {
+        world_owner: None,
+        declared_enemy: true,
+        target_awareness: awareness,
+        own_strength: strength(attacker),
+        enemy_strength: strength(target),
     }
 }
 
@@ -69,7 +82,7 @@ fn intercept_odds_follow_the_speed_ratio() {
             mean_capped_sine(f64::from(attacker_max))
         };
         let hits = (0..TRIALS)
-            .filter(|_| intercept(&mut rng, &attacker, &target, 0))
+            .filter(|_| intercept(&mut rng, &attacker, &target, meeting(&attacker, &target, 0)))
             .count();
         eprintln!(
             "attacker max {attacker_max}: expected {expected:.3} classic {classic:.3} rust {:.3}",
@@ -100,7 +113,14 @@ fn an_aware_target_rarely_runs() {
         let stays = if target_roe == 10 { 1.0 } else { 0.0 };
         let expected = notice * run_odds + (1.0 - notice) * stays;
         let hits = (0..TRIALS)
-            .filter(|_| intercept(&mut rng, &attacker, &target, awareness))
+            .filter(|_| {
+                intercept(
+                    &mut rng,
+                    &attacker,
+                    &target,
+                    meeting(&attacker, &target, awareness),
+                )
+            })
             .count();
         assert_rate(
             &format!("intercept with awareness {awareness}, target ROE {target_roe}"),
@@ -112,26 +132,20 @@ fn an_aware_target_rarely_runs() {
     }
 }
 
-/// Re-checks of an identified enemy attack only when the strength test
-/// passes, and then at the intercept rate; a failed test never attacks.
+/// A decision against an identified enemy attacks only when the strength
+/// test passes, and then at the intercept rate; a failed test never
+/// attacks.
 #[test]
-fn rechecks_attack_at_the_strength_test_times_the_intercept_rate() {
+fn decisions_attack_at_the_strength_test_times_the_intercept_rate() {
     let mut rng = GameRng::from_seed(38);
-    let enemy = Situation {
-        world_owner: None,
-        declared_enemy: true,
-        target_awareness: 0,
-    };
     let mut target = fleet(2, 6, 3);
     let observer = fleet(1, 3, 0);
     // ROE 6 against an equal cruiser passes; against 2 cruisers it fails.
     for (target_cruisers, expected) in [(1u16, mean_capped_sine(1.0)), (2, 0.0)] {
         target.cruisers = target_cruisers;
+        let enemy = meeting(&observer, &target, 0);
         let attacks = (0..TRIALS)
-            .filter(|_| {
-                decide_vs_fleet(&mut rng, &observer, &target, enemy, Mode::Recheck)
-                    == Verdict::Engaged
-            })
+            .filter(|_| decide_vs_fleet(&mut rng, &observer, &target, enemy) == Verdict::Engaged)
             .count();
         assert_rate(
             &format!("recheck against {target_cruisers} CA"),

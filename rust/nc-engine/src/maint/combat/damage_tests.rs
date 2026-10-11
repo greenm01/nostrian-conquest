@@ -8,10 +8,10 @@
 //! deals its side's whole AS, and a one-round cap ends a battle after that
 //! exchange.
 
-use nc_data::{CrippledHulls, Starbase};
+use nc_data::{CrippledHulls, GameRng, Starbase};
 
 use super::assault::bombard_attack_as;
-use super::damage::{Holder, apply_class_change, write_back_bases};
+use super::damage::{Holder, apply_class_change, apportion, write_back_base};
 use super::fleet_battle::{BattleSide, fight_encounter_with_dice};
 use super::fleet_battle_tests::{
     CAUGHT, DEEP_SPACE, NONE, Scripted, Ships, board, fight_capped, place,
@@ -133,8 +133,17 @@ fn a_surviving_cripple_keeps_its_count() {
 fn holders(parts: &[(u32, CrippledHulls)]) -> Vec<Holder> {
     parts
         .iter()
-        .map(|&(hulls, crippled)| Holder { hulls, crippled })
+        .map(|&(hulls, crippled)| Holder {
+            hulls,
+            crippled,
+            loaded: 0,
+        })
         .collect()
+}
+
+/// No allocation below draws: every share here is untied.
+fn no_draws() -> GameRng {
+    GameRng::from_seed(0)
 }
 
 fn state(parts: &[(u32, CrippledHulls)]) -> (u32, CrippledHulls) {
@@ -145,20 +154,34 @@ fn state(parts: &[(u32, CrippledHulls)]) -> (u32, CrippledHulls) {
     (parts.iter().map(|part| part.0).sum(), total)
 }
 
+/// Two hulls crippled this battle are shared by nominal hulls: one with
+/// one nominal hull and one with three take 0.5 and 1.5, so the larger
+/// remainder (the first holder's) is rounded up first.
 #[test]
-fn newly_crippled_hulls_go_to_the_first_nominal_hulls() {
+fn newly_crippled_hulls_are_shared_by_nominal_hulls() {
     let mut side = holders(&[(2, hulls(0, 1, 0)), (3, CrippledHulls::default())]);
-    // Two hulls were crippled this battle.
-    apply_class_change(&mut side, (5, &hulls(0, 1, 0)), (5, &hulls(0, 1, 2)));
+    apply_class_change(
+        &mut side,
+        (5, &hulls(0, 1, 0)),
+        (5, &hulls(0, 1, 2)),
+        &mut no_draws(),
+    );
     assert_eq!(side[0].crippled, hulls(0, 1, 1));
     assert_eq!(side[1].crippled, hulls(0, 0, 1));
     assert_eq!(side[0].hulls + side[1].hulls, 5);
 }
 
+/// Two nominal hulls destroyed leave the holders of nominal hulls: the
+/// first holder's only hull is crippled, so both come from the second.
 #[test]
-fn destroyed_nominal_hulls_leave_the_first_holders_that_have_any() {
+fn destroyed_nominal_hulls_leave_the_holders_that_have_any() {
     let mut side = holders(&[(1, hulls(1, 0, 0)), (2, CrippledHulls::default())]);
-    apply_class_change(&mut side, (3, &hulls(1, 0, 0)), (1, &hulls(1, 0, 0)));
+    apply_class_change(
+        &mut side,
+        (3, &hulls(1, 0, 0)),
+        (1, &hulls(1, 0, 0)),
+        &mut no_draws(),
+    );
     assert_eq!((side[0].hulls, side[1].hulls), (1, 0));
     assert_eq!(side[0].crippled, hulls(1, 0, 0));
 }
@@ -171,9 +194,116 @@ fn a_hull_crippled_and_finished_in_one_battle_counts_as_a_nominal_one_destroyed(
         &mut side,
         (3, &CrippledHulls::default()),
         (2, &hulls(0, 0, 1)),
+        &mut no_draws(),
     );
     assert_eq!(side[0].hulls, 2);
     assert_eq!(side[0].crippled, hulls(0, 0, 1));
+}
+
+/// Combat decision 6: losses are shared by largest remainder. Fleets of 8
+/// and 2 eligible cruisers share 3 losses as 2 and 1 (exact shares 2.4 and
+/// 0.6), and no draw is made for an untied award.
+#[test]
+fn losses_are_shared_by_largest_remainder_without_a_draw_when_untied() {
+    let mut rng = GameRng::from_seed(750_000);
+    let mut untouched = rng.clone();
+    assert_eq!(apportion(&[8, 2], 3, &mut rng), [2, 1]);
+    assert_eq!(rng.next_u64(), untouched.next_u64(), "nothing was drawn");
+    // Every share is bounded by the holder's hulls and the total is exact.
+    for counts in [[0, 3, 1], [2, 2, 2], [1, 0, 0], [3, 3, 2]] {
+        for loss in 0..=counts.iter().sum::<u32>() {
+            let shares = apportion(&counts, loss, &mut GameRng::from_seed(1));
+            assert_eq!(shares.iter().sum::<u32>(), loss, "{counts:?} {loss}");
+            assert!(shares.iter().zip(&counts).all(|(s, n)| s <= n));
+        }
+    }
+    // The 8 and 2 example at the battle level: three nominal cruisers
+    // destroyed leave the fleets with 6 and 1.
+    let mut side = holders(&[(8, CrippledHulls::default()), (2, CrippledHulls::default())]);
+    apply_class_change(
+        &mut side,
+        (10, &CrippledHulls::default()),
+        (7, &CrippledHulls::default()),
+        &mut no_draws(),
+    );
+    assert_eq!((side[0].hulls, side[1].hulls), (6, 1));
+}
+
+/// A tie at the cutoff is drawn from the battle's seeded stream, without
+/// replacement, so either fleet can take the loss, the same seed replays
+/// the same draw, and roster order gives no priority.
+#[test]
+fn a_cutoff_tie_is_drawn_from_the_seeded_stream() {
+    let draws: Vec<Vec<u32>> = (0..64u64)
+        .map(|seed| apportion(&[1, 1], 1, &mut GameRng::from_seed(seed)))
+        .collect();
+    assert!(draws.contains(&vec![1, 0]) && draws.contains(&vec![0, 1]));
+    for seed in 0..8u64 {
+        let (mut first, mut second) = (GameRng::from_seed(seed), GameRng::from_seed(seed));
+        let replay: Vec<Vec<u32>> = (0..5)
+            .map(|_| apportion(&[1, 1, 1], 2, &mut first))
+            .collect();
+        for shares in &replay {
+            assert_eq!(shares.iter().sum::<u32>(), 2);
+            assert!(shares.iter().all(|&share| share <= 1));
+        }
+        assert_eq!(
+            replay,
+            (0..5)
+                .map(|_| apportion(&[1, 1, 1], 2, &mut second))
+                .collect::<Vec<_>>()
+        );
+    }
+}
+
+/// Transport losses fall on loaded transports first across the side: six
+/// loaded in one fleet and four empty in another lose four loaded ones to
+/// four losses, as one fleet of ten would; the empty ones are untouched.
+#[test]
+fn transport_losses_fall_on_loaded_transports_first_across_the_side() {
+    let mut side = vec![
+        Holder {
+            hulls: 6,
+            crippled: CrippledHulls::default(),
+            loaded: 6,
+        },
+        Holder {
+            hulls: 4,
+            crippled: CrippledHulls::default(),
+            loaded: 0,
+        },
+    ];
+    apply_class_change(
+        &mut side,
+        (10, &CrippledHulls::default()),
+        (6, &CrippledHulls::default()),
+        &mut no_draws(),
+    );
+    assert_eq!((side[0].hulls, side[0].loaded), (2, 2));
+    assert_eq!((side[1].hulls, side[1].loaded), (4, 0));
+    // A fleet's loaded transports are its most damaged: finishing two of
+    // a side's crippled transports takes the loaded fleet's two before the
+    // empty fleet's.
+    let mut side = vec![
+        Holder {
+            hulls: 3,
+            crippled: hulls(0, 0, 2),
+            loaded: 2,
+        },
+        Holder {
+            hulls: 3,
+            crippled: hulls(0, 0, 2),
+            loaded: 0,
+        },
+    ];
+    apply_class_change(
+        &mut side,
+        (6, &hulls(0, 0, 4)),
+        (4, &hulls(0, 0, 2)),
+        &mut no_draws(),
+    );
+    assert_eq!((side[0].hulls, side[0].loaded), (1, 0));
+    assert_eq!((side[1].hulls, side[1].crippled), (3, hulls(0, 0, 2)));
 }
 
 #[test]
@@ -193,6 +323,7 @@ fn a_change_is_conserved_over_any_split_of_the_holders() {
         &mut side,
         (hulls_before, &crippled_before),
         (hulls_after, &after_crippled),
+        &mut GameRng::from_seed(7),
     );
     let total: u32 = side.iter().map(|holder| holder.hulls).sum();
     let mut crippled = CrippledHulls::default();
@@ -219,15 +350,12 @@ fn a_destroyed_base_is_the_crippled_one_and_a_survivor_keeps_its_state() {
     game_data.bases.clear();
     let whole = base(&mut game_data, 1, CrippledHulls::default());
     let hurt = base(&mut game_data, 2, hulls(0, 1, 0));
-    let mut before = FleetCombatState::default();
-    before.counts[IDX_SB] = 2;
-    before.crippled[IDX_SB] = hulls(0, 1, 0);
-    let mut after = FleetCombatState::default();
-    after.counts[IDX_SB] = 1;
+    let gone = FleetCombatState::default();
+    let mut kept = FleetCombatState::default();
+    kept.counts[IDX_SB] = 1;
 
-    let destroyed = write_back_bases(&mut game_data, &[whole, hurt], &before, &after);
-
-    assert_eq!(destroyed, [2]);
+    assert_eq!(write_back_base(&mut game_data, hurt, &gone), Some(2));
+    assert_eq!(write_back_base(&mut game_data, whole, &kept), None);
     assert_eq!(game_data.bases[hurt].base_id.0, 0);
     assert_eq!(game_data.bases[whole].base_id.0, 1);
     assert!(game_data.bases[whole].crippled.is_empty());
@@ -236,10 +364,10 @@ fn a_destroyed_base_is_the_crippled_one_and_a_survivor_keeps_its_state() {
     let mut crippled_after = FleetCombatState::default();
     crippled_after.counts[IDX_SB] = 1;
     crippled_after.crippled[IDX_SB] = hulls(0, 0, 1);
-    let mut one = FleetCombatState::default();
-    one.counts[IDX_SB] = 1;
-    let destroyed = write_back_bases(&mut game_data, &[whole], &one, &crippled_after);
-    assert!(destroyed.is_empty());
+    assert_eq!(
+        write_back_base(&mut game_data, whole, &crippled_after),
+        None
+    );
     assert_eq!(game_data.bases[whole].crippled, hulls(0, 0, 1));
 }
 

@@ -1,11 +1,12 @@
 //! The decision table (`1b05:1277`, `1b05:1d11`), strength, ROE, and the
 //! observer and visibility factors, checked case by case. Strength is NC's
 //! one yardstick (combat decision 2): attack strength, not classic's
-//! 21/7/2 weights.
+//! 21/7/2 weights, and the decision weighs the sides as they would fight
+//! (combat decision 6): here one fleet a side unless a test assembles more.
 
 use nc_data::{CrippledHulls, GameRng};
 use nc_engine::maint::encounter::rules::{
-    BASE_STRENGTH, FleetFacts, Mode, Situation, Verdict, base_factor, decide_vs_base,
+    BASE_STRENGTH, FleetFacts, Situation, Verdict, admitted, base_factor, decide_vs_base,
     decide_vs_fleet, fleet_posture, fleet_visibility, order, roe_permits, strength,
 };
 
@@ -26,23 +27,36 @@ fn at_world(owner: u8, order: u8) -> FleetFacts {
     }
 }
 
-fn situation(world_owner: Option<u8>, declared_enemy: bool) -> Situation {
+/// The situation of observer `o` meeting target `t` with nobody else on
+/// either side.
+fn situation(
+    o: &FleetFacts,
+    t: &FleetFacts,
+    world_owner: Option<u8>,
+    declared_enemy: bool,
+) -> Situation {
     Situation {
         world_owner,
         declared_enemy,
         target_awareness: 0,
+        own_strength: strength(o),
+        enemy_strength: strength(t),
     }
 }
 
-/// Decide with a target that cannot get away (it is stopped, so the
-/// intercept always succeeds).
-fn verdict(o: FleetFacts, t: FleetFacts, situation: Situation, mode: Mode) -> Verdict {
-    decide_vs_fleet(&mut GameRng::from_seed(1), &o, &t, situation, mode)
+/// Decide, one fleet a side, with a target that cannot get away (it is
+/// stopped, so the intercept always succeeds).
+fn verdict(o: FleetFacts, t: FleetFacts, world_owner: Option<u8>, declared_enemy: bool) -> Verdict {
+    let situation = situation(&o, &t, world_owner, declared_enemy);
+    decide_vs_fleet(&mut GameRng::from_seed(1), &o, &t, situation)
 }
 
+/// Two cruisers a side: the defender's ROE 6 accepts even odds. (It was
+/// ROE 1 under classic's first-identification bypass, gone with combat
+/// decision 6: first contact obeys ROE.)
 #[test]
 fn neutral_fleet_in_an_owned_system_is_attacked_by_any_willing_fleet() {
-    let defender = at_world(2, order::HOLD).roe_set(1);
+    let defender = at_world(2, order::HOLD).roe_set(6);
     for visitor_order in [
         order::HOLD,
         order::VIEW,
@@ -52,7 +66,7 @@ fn neutral_fleet_in_an_owned_system_is_attacked_by_any_willing_fleet() {
     ] {
         let visitor = at_world(1, visitor_order);
         assert_eq!(
-            verdict(defender, visitor, situation(Some(2), false), Mode::Identify),
+            verdict(defender, visitor, Some(2), false),
             Verdict::Engaged,
             "order {visitor_order}"
         );
@@ -66,12 +80,7 @@ fn neutral_fleet_elsewhere_is_ignored() {
     // Someone else's world, an unowned world, and a worldless sector.
     for world_owner in [Some(3), Some(0), None] {
         assert_eq!(
-            verdict(
-                observer,
-                visitor,
-                situation(world_owner, false),
-                Mode::Identify
-            ),
+            verdict(observer, visitor, world_owner, false),
             Verdict::Ignored
         );
     }
@@ -80,10 +89,7 @@ fn neutral_fleet_elsewhere_is_ignored() {
     deep.layer = 0;
     let mut deep_visitor = visitor;
     deep_visitor.layer = 0;
-    assert_eq!(
-        verdict(deep, deep_visitor, situation(None, false), Mode::Identify),
-        Verdict::Ignored
-    );
+    assert_eq!(verdict(deep, deep_visitor, None, false), Verdict::Ignored);
 }
 
 #[test]
@@ -94,47 +100,83 @@ fn only_the_observers_own_declaration_makes_an_enemy() {
     let mut deep_observer = observer;
     deep_observer.layer = 0;
     assert_eq!(
-        verdict(
-            deep_observer,
-            visitor,
-            situation(None, true),
-            Mode::Identify
-        ),
+        verdict(deep_observer, visitor, None, true),
         Verdict::Engaged
     );
     // The visitor's empire declaring the observer's an enemy is not enough.
     assert_eq!(
-        verdict(
-            deep_observer,
-            visitor,
-            situation(None, false),
-            Mode::Identify
-        ),
+        verdict(deep_observer, visitor, None, false),
         Verdict::Ignored
     );
 }
 
+/// Combat decision 6: first contact obeys ROE. Classic let any ROE above 0
+/// attack the first time it identified an enemy; here a cautious fleet
+/// declines a stronger enemy whenever it meets it, and ROE 0 never attacks.
 #[test]
-fn identification_commits_any_roe_but_rechecks_need_the_odds() {
+fn first_contact_obeys_roe() {
     let mut observer = at_world(2, order::HOLD).roe_set(2);
     observer.layer = 0;
     let mut enemy = at_world(1, order::HOLD);
     enemy.layer = 0;
     enemy.battleships = 10;
-    let enemy_situation = situation(None, true);
+    assert_eq!(verdict(observer, enemy, None, true), Verdict::Avoided);
+    enemy.battleships = 0;
+    enemy.cruisers = 0;
+    assert_eq!(verdict(observer, enemy, None, true), Verdict::Engaged);
+    observer.roe = 0;
+    assert_eq!(verdict(observer, enemy, None, true), Verdict::Avoided);
+}
+
+/// The decision weighs the sides as they would fight: two cruiser pairs
+/// (60 each) at ROE 6 would each decline four cruisers (120) alone, and
+/// take them on assembled (120 against 120). A fleet without warships
+/// never volunteers, whatever its ROE.
+#[test]
+fn the_decision_weighs_the_assembled_sides() {
+    let mut observer = at_world(2, order::HOLD).roe_set(6);
+    observer.layer = 0;
+    let mut enemy = at_world(1, order::HOLD);
+    enemy.layer = 0;
+    enemy.cruisers = 4;
+    assert_eq!(verdict(observer, enemy, None, true), Verdict::Avoided);
+    let mut assembled = situation(&observer, &enemy, None, true);
+    assembled.own_strength = 120;
     assert_eq!(
-        verdict(observer, enemy, enemy_situation, Mode::Identify),
+        decide_vs_fleet(&mut GameRng::from_seed(1), &observer, &enemy, assembled),
         Verdict::Engaged
     );
+    let mut unarmed = observer;
+    unarmed.cruisers = 0;
+    unarmed.roe = 10;
     assert_eq!(
-        verdict(observer, enemy, enemy_situation, Mode::Recheck),
+        decide_vs_fleet(&mut GameRng::from_seed(1), &unarmed, &enemy, assembled),
         Verdict::Avoided
     );
-    observer.roe = 0;
+}
+
+/// Admission (combat decision 6): each volunteer tests its own ROE on the
+/// volunteers' assembled strength, recomputed until none refuses. The
+/// model's cases (`participation_review.py`): two 180s at ROE 6 take on
+/// 300 together; with one of them at ROE 0 the other is left alone and
+/// refuses; two 180s at ROE 6 refuse 390; ROE 8 joins ROE 6.
+#[test]
+fn volunteers_are_admitted_on_their_assembled_strength() {
+    assert_eq!(admitted(&[(6, 180), (6, 180)], 300), [true, true]);
+    assert_eq!(admitted(&[(6, 180), (0, 180)], 300), [false, false]);
+    assert_eq!(admitted(&[(6, 300), (0, 30)], 300), [true, false]);
+    assert_eq!(admitted(&[(6, 180), (6, 180)], 390), [false, false]);
+    assert_eq!(admitted(&[(6, 180), (8, 180)], 300), [true, true]);
+    // A refusal is for good: once the ROE 6 fleet drops (280 against 300),
+    // the ROE 8 fleet stays alone (180 against 300, within 2:1), and a
+    // fleet without warships is never a volunteer.
     assert_eq!(
-        verdict(observer, enemy, enemy_situation, Mode::Identify),
-        Verdict::Avoided
+        admitted(&[(6, 100), (8, 180), (10, 0)], 300),
+        [false, true, false]
     );
+    // Without it the ROE 7 fleet would have dropped too (300 against 180
+    // is beyond 3:2), though it accepted the odds with the ROE 6 fleet in.
+    assert_eq!(admitted(&[(6, 100), (7, 180)], 300), [false, false]);
 }
 
 #[test]
@@ -142,66 +184,38 @@ fn blockade_attacks_assaults_and_colonizers_of_an_unowned_world() {
     let blockade = at_world(3, order::GUARD_BLOCKADE).roe_set(6);
     for assault in [order::BOMBARD, order::INVADE, order::BLITZ] {
         assert_eq!(
-            verdict(
-                blockade,
-                at_world(1, assault),
-                situation(Some(2), false),
-                Mode::Identify
-            ),
+            verdict(blockade, at_world(1, assault), Some(2), false),
             Verdict::Engaged
         );
     }
     let colonizer = at_world(1, order::COLONIZE);
     assert_eq!(
-        verdict(
-            blockade,
-            colonizer,
-            situation(Some(0), false),
-            Mode::Identify
-        ),
+        verdict(blockade, colonizer, Some(0), false),
         Verdict::Engaged
     );
     // Colonizing an owned world, and other neutral orders, are ignored.
     assert_eq!(
-        verdict(
-            blockade,
-            colonizer,
-            situation(Some(2), false),
-            Mode::Identify
-        ),
+        verdict(blockade, colonizer, Some(2), false),
         Verdict::Ignored
     );
     assert_eq!(
-        verdict(
-            blockade,
-            at_world(1, order::HOLD),
-            situation(Some(2), false),
-            Mode::Identify
-        ),
+        verdict(blockade, at_world(1, order::HOLD), Some(2), false),
         Verdict::Ignored
     );
     // A colonizer in a worldless sector has no unowned world to race for.
-    assert_eq!(
-        verdict(blockade, colonizer, situation(None, false), Mode::Identify),
-        Verdict::Ignored
-    );
+    assert_eq!(verdict(blockade, colonizer, None, false), Verdict::Ignored);
 }
 
+/// Two cruisers a side: ROE 6 takes the race, ROE 0 avoids it. (The racer
+/// was ROE 1 under classic's first-identification bypass, gone with combat
+/// decision 6.)
 #[test]
 fn colonizers_race_for_an_unowned_world() {
-    let first = at_world(1, order::COLONIZE).roe_set(1);
+    let first = at_world(1, order::COLONIZE).roe_set(6);
     let second = at_world(2, order::COLONIZE);
+    assert_eq!(verdict(first, second, Some(0), false), Verdict::Engaged);
     assert_eq!(
-        verdict(first, second, situation(Some(0), false), Mode::Identify),
-        Verdict::Engaged
-    );
-    assert_eq!(
-        verdict(
-            first.roe_set(0),
-            second,
-            situation(Some(0), false),
-            Mode::Identify
-        ),
+        verdict(first.roe_set(0), second, Some(0), false),
         Verdict::Avoided
     );
 }
@@ -211,25 +225,14 @@ fn assault_fleet_blocked_by_a_guard_fights_or_aborts() {
     let guard = at_world(2, order::GUARD_BLOCKADE);
     let bomber = at_world(1, order::BOMBARD);
     assert_eq!(
-        verdict(
-            bomber.roe_set(6),
-            guard,
-            situation(Some(2), false),
-            Mode::Identify
-        ),
+        verdict(bomber.roe_set(6), guard, Some(2), false),
         Verdict::Engaged
     );
-    assert_eq!(
-        verdict(bomber, guard, situation(Some(2), false), Mode::Identify),
-        Verdict::Aborted
-    );
+    assert_eq!(verdict(bomber, guard, Some(2), false), Verdict::Aborted);
     // A guard ordered elsewhere is not guarding this world.
     let mut leaving = guard;
     leaving.target = [1, 1];
-    assert_eq!(
-        verdict(bomber, leaving, situation(Some(2), false), Mode::Identify),
-        Verdict::Ignored
-    );
+    assert_eq!(verdict(bomber, leaving, Some(2), false), Verdict::Ignored);
 }
 
 #[test]
@@ -241,55 +244,71 @@ fn faster_attacker_always_intercepts_and_a_slower_one_may_not() {
     runner.speed = 6;
     runner.max_speed = 6;
     runner.cruisers = 0;
-    let enemy = situation(None, true);
+    let enemy = situation(&observer, &runner, None, true);
     let mut rng = GameRng::from_seed(9);
     observer.max_speed = 7;
-    assert!((0..200).all(|_| {
-        decide_vs_fleet(&mut rng, &observer, &runner, enemy, Mode::Identify) == Verdict::Engaged
-    }));
+    assert!(
+        (0..200)
+            .all(|_| { decide_vs_fleet(&mut rng, &observer, &runner, enemy) == Verdict::Engaged })
+    );
     observer.max_speed = 1;
     let escapes = (0..200)
-        .filter(|_| {
-            decide_vs_fleet(&mut rng, &observer, &runner, enemy, Mode::Identify) == Verdict::Escaped
-        })
+        .filter(|_| decide_vs_fleet(&mut rng, &observer, &runner, enemy) == Verdict::Escaped)
         .count();
     assert!(escapes > 0);
 }
 
+/// `decide_vs_base` takes the sides as they would fight: the observer's
+/// volunteers and the base with its guard and its owner's other fleets.
 #[test]
 fn starbases_are_attacked_only_as_an_assault_target_or_a_declared_enemy() {
     let mut bomber = at_world(1, order::BOMBARD).roe_set(6);
     bomber.battleships = 2;
+    let own = strength(&bomber);
     assert_eq!(
-        decide_vs_base(&bomber, BASE_STRENGTH, BASE_STRENGTH, false),
+        decide_vs_base(&bomber, own, BASE_STRENGTH, false),
         Verdict::Engaged
     );
     // The base protects the target world: its guard counts too.
     let guarded = BASE_STRENGTH + strength(&at_world(2, order::GUARD_STARBASE)) + 100;
     assert_eq!(
-        decide_vs_base(&bomber, guarded, BASE_STRENGTH, false),
+        decide_vs_base(&bomber, own, guarded, false),
         Verdict::Aborted
     );
     let hold = at_world(1, order::HOLD).roe_set(10);
+    let own = strength(&hold);
     assert_eq!(
-        decide_vs_base(&hold, BASE_STRENGTH, BASE_STRENGTH, false),
+        decide_vs_base(&hold, own, BASE_STRENGTH, false),
         Verdict::Ignored
     );
     assert_eq!(
-        decide_vs_base(&hold, BASE_STRENGTH, BASE_STRENGTH, true),
+        decide_vs_base(&hold, own, BASE_STRENGTH, true),
         Verdict::Engaged
     );
-    // A declared enemy weighs the base alone (100), not its guard.
+    // Against a declared enemy classic weighed the base alone (30, its
+    // guard ignored); combat decision 6 weighs the base's side as it would
+    // fight, so a lone base (100) is taken on and a guarded one declined.
     let cautious = at_world(1, order::HOLD).roe_set(6);
-    assert_eq!(
-        decide_vs_base(&cautious, 1000, BASE_STRENGTH, true),
-        Verdict::Avoided
-    );
     let mut strong = cautious;
     strong.battleships = 2;
     assert_eq!(
-        decide_vs_base(&strong, 1000, BASE_STRENGTH, true),
+        decide_vs_base(&cautious, strength(&cautious), BASE_STRENGTH, true),
+        Verdict::Avoided
+    );
+    assert_eq!(
+        decide_vs_base(&strong, strength(&strong), BASE_STRENGTH, true),
         Verdict::Engaged
+    );
+    assert_eq!(
+        decide_vs_base(&strong, strength(&strong), 1000, true),
+        Verdict::Avoided
+    );
+    // A fleet without warships never attacks a base, whatever its ROE.
+    let mut unarmed = hold;
+    unarmed.cruisers = 0;
+    assert_eq!(
+        decide_vs_base(&unarmed, 0, BASE_STRENGTH, true),
+        Verdict::Avoided
     );
 }
 
@@ -343,8 +362,7 @@ fn a_crippled_fleet_declines_the_fight_its_whole_strength_would_take() {
     let mut target = at_world(2, order::HOLD);
     target.layer = 0;
     target.cruisers = 3;
-    let rechecks =
-        |observer: FleetFacts| verdict(observer, target, situation(None, true), Mode::Recheck);
+    let rechecks = |observer: FleetFacts| verdict(observer, target, None, true);
     assert_eq!(rechecks(observer), Verdict::Engaged);
     observer.crippled.cruisers.turns[0] = 2;
     assert_eq!(rechecks(observer), Verdict::Avoided);
@@ -363,40 +381,16 @@ fn the_yardstick_lets_three_destroyers_fight_a_cruiser_and_four_cruisers_a_base(
     let mut cruiser = at_world(2, order::HOLD);
     cruiser.layer = 0;
     cruiser.cruisers = 1;
-    assert_eq!(
-        verdict(destroyers, cruiser, situation(None, true), Mode::Recheck),
-        Verdict::Engaged
-    );
+    assert_eq!(verdict(destroyers, cruiser, None, true), Verdict::Engaged);
     let mut cruisers = at_world(1, order::BOMBARD).roe_set(6);
     cruisers.cruisers = 4;
+    let own = strength(&cruisers);
     assert_eq!(
-        decide_vs_base(&cruisers, BASE_STRENGTH, BASE_STRENGTH, false),
+        decide_vs_base(&cruisers, own, BASE_STRENGTH, false),
         Verdict::Engaged
     );
     assert_eq!(
-        decide_vs_base(&cruisers, BASE_STRENGTH, BASE_STRENGTH, true),
-        Verdict::Engaged
-    );
-}
-
-/// A fleet escaping from a battle does not volunteer through first
-/// identification; its ROE test alone decides.
-#[test]
-fn an_escaping_fleet_does_not_volunteer_at_first_identification() {
-    let mut observer = at_world(2, order::HOLD).roe_set(2);
-    observer.layer = 0;
-    observer.escaping = true;
-    let mut enemy = at_world(1, order::HOLD);
-    enemy.layer = 0;
-    enemy.battleships = 10;
-    assert_eq!(
-        verdict(observer, enemy, situation(None, true), Mode::Identify),
-        Verdict::Avoided
-    );
-    enemy.battleships = 0;
-    enemy.cruisers = 0;
-    assert_eq!(
-        verdict(observer, enemy, situation(None, true), Mode::Identify),
+        decide_vs_base(&cruisers, own, BASE_STRENGTH, true),
         Verdict::Engaged
     );
 }
