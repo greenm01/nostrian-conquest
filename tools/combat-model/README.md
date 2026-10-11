@@ -443,3 +443,20 @@ These are conditional detection controls, not campaign ambush frequencies.
 Run `python3 -m unittest discover -s tools/combat-model -p test_surprise_memory_review.py`.
 The [decision-6 investigation](../../docs/notes/investigations/m1h272uh-joined-participation-surprise-and-allocation-fairness.md)
 records the assumptions, state cost and pending participation work.
+
+### Joined participation controls (t073)
+
+`python3 tools/combat-model/participation_review.py --trials 20000` writes
+`nc_participation_review.json`. This uses DD 10/8/5 and the approved flat/carry
+fleet resolution with ROE after exchange one, no catch and unchanged criticals.
+It compares two imposed sequential contacts with one joined battle, and
+measures the first-exchange surprise bonus. Wilson intervals accompany wins.
+No movement, legal contact frequency or engine outcome-flip rate is simulated.
+The deterministic participation tests cover assembled willingness, irrevocable
+simultaneous withdrawals and proportional allocation within an eligible
+class/damage/recovery pool, including loaded-first transport casualties.
+Remainder ties use uniform draws from the battle’s seeded roll stream, with
+a fixed battle roster. Splitting or merging can shift a rounding loss by one
+hull per allocation; this is not a bound on its later combat consequences. See the
+[decision-6 note](../../docs/notes/investigations/m1h272uh-joined-participation-surprise-and-allocation-fairness.md)
+for pending contract details and the separately approved surprise ADR.

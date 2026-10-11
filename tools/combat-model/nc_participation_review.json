@@ -1,0 +1,532 @@
+{
+  "method": "Seeded battle controls, Python RNG; DD 10/8/5, other hulls unchanged; no tick simulation or engine execution; all-ROE10 attrition rows, no catch, surprise only exchange1 and combined die cap2, natural9 unchanged. Wilson 95% intervals. Sequential contacts reset carry and preserve completed damage; no recovery between contacts.",
+  "units": {
+    "DD": {
+      "AS": 10,
+      "DS": 8,
+      "cost": 5,
+      "fire": "execution",
+      "line": true
+    },
+    "CA": {
+      "AS": 30,
+      "DS": 30,
+      "cost": 15,
+      "fire": "suppression",
+      "line": true
+    },
+    "BB": {
+      "AS": 90,
+      "DS": 100,
+      "cost": 45,
+      "fire": "suppression",
+      "line": true
+    },
+    "SB": {
+      "AS": 100,
+      "DS": 120,
+      "cost": 50,
+      "fire": "execution",
+      "line": true
+    },
+    "SC": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 15,
+      "fire": null,
+      "line": false
+    },
+    "TT": {
+      "AS": 0,
+      "DS": 10,
+      "cost": 5,
+      "fire": null,
+      "line": false
+    },
+    "ET": {
+      "AS": 0,
+      "DS": 20,
+      "cost": 20,
+      "fire": null,
+      "line": false
+    }
+  },
+  "rules": {
+    "name": "decisions1-3",
+    "effect": {
+      "kind": "flat",
+      "rows": [
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        4,
+        4,
+        4,
+        4
+      ],
+      "unit": 4
+    },
+    "mixed_shift": 1,
+    "base_shift": 1,
+    "base_condition": "present",
+    "shift_cap": 2,
+    "execution_classes": [
+      "DD",
+      "SB"
+    ],
+    "crippled_ds": "full",
+    "remainder": "carry",
+    "critical": "free-kill",
+    "screen": "absolute",
+    "roe": "after1",
+    "withdrawal": "none",
+    "round_cap": 64,
+    "mutual_withdrawal_exchange": false,
+    "critical_order": [
+      "DD",
+      "SC",
+      "TT",
+      "ET",
+      "CA",
+      "BB",
+      "SB"
+    ],
+    "unarmed_escape": true
+  },
+  "rows": [
+    {
+      "case": "split-CA-even",
+      "joined": false,
+      "trials": 20000,
+      "capture_field": 0.1001,
+      "win_ci95": [
+        0.09601692700948389,
+        0.10433666342818858
+      ],
+      "loss_cost": 144.43725
+    },
+    {
+      "case": "split-CA-even",
+      "joined": true,
+      "trials": 20000,
+      "capture_field": 0.49655,
+      "win_ci95": [
+        0.48962197370500377,
+        0.5034793513437833
+      ],
+      "loss_cost": 93.92625
+    },
+    {
+      "case": "split-CA-advantage",
+      "joined": false,
+      "trials": 20000,
+      "capture_field": 0.36785,
+      "win_ci95": [
+        0.36119286210604035,
+        0.37455789302358816
+      ],
+      "loss_cost": 152.58075
+    },
+    {
+      "case": "split-CA-advantage",
+      "joined": true,
+      "trials": 20000,
+      "capture_field": 0.7815,
+      "win_ci95": [
+        0.7757192877535408,
+        0.7871725959468723
+      ],
+      "loss_cost": 62.6685
+    },
+    {
+      "case": "assault-fixture-two-4BB",
+      "joined": false,
+      "trials": 20000,
+      "capture_field": 1.0,
+      "win_ci95": [
+        0.9998079639438954,
+        1.0
+      ],
+      "loss_cost": 11.6145
+    },
+    {
+      "case": "assault-fixture-two-4BB",
+      "joined": true,
+      "trials": 20000,
+      "capture_field": 1.0,
+      "win_ci95": [
+        0.9998079639438954,
+        1.0
+      ],
+      "loss_cost": 5.8275
+    },
+    {
+      "case": "split-DD-CA",
+      "joined": false,
+      "trials": 20000,
+      "capture_field": 0.2295,
+      "win_ci95": [
+        0.22372439170767489,
+        0.2353794997986777
+      ],
+      "loss_cost": 182.086
+    },
+    {
+      "case": "split-DD-CA",
+      "joined": true,
+      "trials": 20000,
+      "capture_field": 0.7062,
+      "win_ci95": [
+        0.6998480722874957,
+        0.7124727320429668
+      ],
+      "loss_cost": 88.2275
+    }
+  ],
+  "surprise": [
+    {
+      "a": {
+        "CA": 10
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": false,
+      "trials": 20000,
+      "win": 0.4891,
+      "win_ci95": [
+        0.48217488577560386,
+        0.4960293006104192
+      ]
+    },
+    {
+      "a": {
+        "CA": 10
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": true,
+      "trials": 20000,
+      "win": 0.5439,
+      "win_ci95": [
+        0.5369894691187506,
+        0.5507936701155235
+      ]
+    },
+    {
+      "a": {
+        "CA": 8
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": false,
+      "trials": 20000,
+      "win": 0.1685,
+      "win_ci95": [
+        0.16337619502941533,
+        0.17375112487578204
+      ]
+    },
+    {
+      "a": {
+        "CA": 8
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": true,
+      "trials": 20000,
+      "win": 0.1965,
+      "win_ci95": [
+        0.1910516017539011,
+        0.20206496413215438
+      ]
+    },
+    {
+      "a": {
+        "CA": 11
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": false,
+      "trials": 20000,
+      "win": 0.64945,
+      "win_ci95": [
+        0.6428091406322748,
+        0.6560334597905554
+      ]
+    },
+    {
+      "a": {
+        "CA": 11
+      },
+      "b": {
+        "CA": 10
+      },
+      "first_exchange_bonus": true,
+      "trials": 20000,
+      "win": 0.71065,
+      "win_ci95": [
+        0.7043254921173061,
+        0.716893603092257
+      ]
+    },
+    {
+      "a": {
+        "CA": 5,
+        "DD": 5
+      },
+      "b": {
+        "CA": 7
+      },
+      "first_exchange_bonus": false,
+      "trials": 20000,
+      "win": 0.404,
+      "win_ci95": [
+        0.3972184685791629,
+        0.4108184023436093
+      ]
+    },
+    {
+      "a": {
+        "CA": 5,
+        "DD": 5
+      },
+      "b": {
+        "CA": 7
+      },
+      "first_exchange_bonus": true,
+      "trials": 20000,
+      "win": 0.4487,
+      "win_ci95": [
+        0.44181755635234465,
+        0.45560214654701164
+      ]
+    }
+  ],
+  "eligibility": [
+    {
+      "strengths": [
+        180,
+        180
+      ],
+      "roes": [
+        6,
+        6
+      ],
+      "enemy": 300,
+      "own_AS": [],
+      "assembled_AS": [
+        0,
+        1
+      ]
+    },
+    {
+      "strengths": [
+        180,
+        180
+      ],
+      "roes": [
+        6,
+        8
+      ],
+      "enemy": 300,
+      "own_AS": [
+        1
+      ],
+      "assembled_AS": [
+        0,
+        1
+      ]
+    },
+    {
+      "strengths": [
+        300,
+        30
+      ],
+      "roes": [
+        6,
+        0
+      ],
+      "enemy": 300,
+      "own_AS": [
+        0
+      ],
+      "assembled_AS": [
+        0
+      ]
+    },
+    {
+      "strengths": [
+        180,
+        180
+      ],
+      "roes": [
+        6,
+        6
+      ],
+      "enemy": 390,
+      "own_AS": [],
+      "assembled_AS": []
+    }
+  ],
+  "withdrawal_controls": [
+    {
+      "remaining": [
+        [],
+        []
+      ],
+      "iterations": [
+        {
+          "before": [
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "power": [
+            300,
+            300
+          ],
+          "after": [
+            [],
+            []
+          ]
+        },
+        {
+          "before": [
+            [],
+            []
+          ],
+          "power": [
+            0,
+            0
+          ],
+          "after": [
+            [],
+            []
+          ]
+        }
+      ]
+    },
+    {
+      "remaining": [
+        [
+          0,
+          1
+        ],
+        [
+          0
+        ]
+      ],
+      "iterations": [
+        {
+          "before": [
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ],
+          "power": [
+            360,
+            300
+          ],
+          "after": [
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ]
+        }
+      ]
+    },
+    {
+      "remaining": [
+        [
+          0
+        ],
+        [
+          0
+        ]
+      ],
+      "iterations": [
+        {
+          "before": [
+            [
+              0,
+              1
+            ],
+            [
+              0
+            ]
+          ],
+          "power": [
+            300,
+            300
+          ],
+          "after": [
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        },
+        {
+          "before": [
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ],
+          "power": [
+            300,
+            300
+          ],
+          "after": [
+            [
+              0
+            ],
+            [
+              0
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "allocation": {
+    "tie_rule": "Uniform sample without replacement at the cutoff remainder, battle seeded RNG, fixed battle roster; not renumbering-invariant per seed.",
+    "eight_two_three": [
+      2,
+      1
+    ],
+    "split_cargo": {
+      "loaded": [
+        4,
+        0
+      ],
+      "empty": [
+        0,
+        0
+      ]
+    }
+  }
+}
