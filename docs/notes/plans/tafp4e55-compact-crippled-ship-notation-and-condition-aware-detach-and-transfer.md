@@ -155,3 +155,39 @@ crippled counts in battle reports needs the combat events to carry them.
   one class order everywhere (SC BB CA DD TT* TT ETAC SB, the fleet screens'
   order). Output that scripts or tests parse changes only together with
   them. Task t097.
+
+## Result (t097)
+
+Done. Every compact ship composition now goes through `Composition`
+(`nc-data/src/ship_notation.rs`), which writes `SC BB CA DD TT* TT ETAC SB`
+and nothing else. A producer fills a `Composition` and calls `notation()`.
+
+- **Planet lines.** The stardock and build-queue summaries in nc-helm (the
+  planet panel and popup, the sector panel) and in the door's planet info
+  screen read `BB5 CA10 DD4 TT6 ETAC3 SB2`. The door's `5-CA, 2-BB` form and
+  the helm's `5BB 10CA` form are gone: `CompactUnitSummaryStyle` is now
+  `Notation` or `Words`. The two non-ship build items follow the starbases
+  as `AR` and `GB`. Docked and new transports are empty, so `TT`. The
+  CLI's `inspect` planet summary (`build=`) uses the same text.
+- **CLI.** `fleet-ships` and `fleet-detach` print the resulting fleet's
+  notation (`Fleet 1 ships set: SC12 BB8 CA10 DD14 TT*4 TT5 ETAC2`), which
+  also replaces `loaded_armies=`, `fullTT=` and `emptyTT=`. The scenario
+  commands (`bombard`, `econ`, `invade`, `fleet-battle` and their batch
+  manifests and `validate` output) print their ships the same way.
+  Nothing in `tools/` or `scripts/` reads these lines; the CLI tests that
+  did (`bombard`, `test_setup`) changed with them.
+- **One order.** The commission notice (`CA2 DD4`, was `DD CA BB`), the
+  reports' force compositions and loss lists (were `BB CA DD SC`) and the
+  reports' stardock scan (was slot order) follow it. `starbase_token` is
+  replaced by `Composition::with_starbases`.
+- **Kept.** `Words` (the stored scouting-report stardock text, `2 cruisers`,
+  which the helm also shows for foreign planets) keeps its prose and its
+  slot order. The door's commission table keeps its `DD CA BB SC TT ET SB`
+  column headings, and the harness bundle readme its labelled lists. The
+  KDL turn files and the fuzzer's repro output (`bb=1 ca=0`) are input
+  formats, not compositions.
+- **Tests.** `nc-cli/tests/notation_order.rs` checks the fleet, commission,
+  detach, planet and CLI producers; three tests in
+  `nc-engine/src/maint/results/format.rs` check the report producers. The
+  affected expectations moved to the new text. Workspace: 3111 passed, 0
+  failed, 11 ignored.

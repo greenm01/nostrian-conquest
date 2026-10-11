@@ -1,10 +1,13 @@
 # ASCII ship notation
 
 **Status:** approved by the owner on 2026-10-11; implemented in
-[t093](../notes/plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
-This is the common notation for compact ship compositions, including
-healthy fleets. The plan's Implementation section lists the surfaces that
-use it and the few that deliberately keep their own wording.
+[t093 and t097](../notes/plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
+This is the common notation for every compact ship
+composition, including healthy fleets: the door and helm fleet screens, the
+planet stardock and build-queue lines, the reports and the CLI's output. The
+plan's Implementation section lists the surfaces. Prose keeps full ship
+names (the scouting report's `2 cruisers`, casualty lists that name
+transports in words), and numeric columns keep their class headings.
 
 ## Format
 
@@ -23,26 +26,26 @@ fleet label if nothing remains.
 
 | Token | Meaning |
 | --- | --- |
-| `DD8` | Eight destroyers, none crippled. |
-| `CA12!3` | Twelve cruisers total; three are crippled. |
-| `BB2!1` | Two battleships total; one is crippled. |
 | `SC1` | One scout. |
-| `TT5` | Five empty transports. |
+| `BB2!1` | Two battleships total; one is crippled. |
+| `CA12!3` | Twelve cruisers total; three are crippled. |
+| `DD8` | Eight destroyers, none crippled. |
 | `TT*4!1` | Four loaded transports total; one is crippled. |
+| `TT5` | Five empty transports. |
 | `ETAC2` | Two reusable colonization ships. |
 | `SB1!1` | One starbase, crippled. |
 
 Use `DD`, `CA`, `BB`, `SC`, `TT`, `TT*`, `ETAC` and `SB` consistently.
 Starbases use the same syntax where a base composition is shown; this does
 not make them transferable ships. Empty and loaded transports are separate
-categories: `TT5 TT*4!1` means nine transports total, not five plus four
+categories: `TT*4!1 TT5` means nine transports total, not five plus four
 additional armies counted as ships. Keep cargo and condition distinct:
 `*` means loaded, `!` introduces the crippled count.
 
 Example fleet:
 
 ```text
-DD8 CA12!3 BB2!1 TT5 TT*4!1 ETAC2
+BB2!1 CA12!3 DD8 TT*4!1 TT5 ETAC2
 ```
 
 Short legend:
@@ -65,9 +68,14 @@ same kind of composition. Reuse one formatter across those surfaces.
 Full ship names remain appropriate in prose, explanations and menu labels.
 Dedicated numeric columns retain their class headings and numeric cells;
 do not insert a ship code into every numeric cell or widen those tables.
-Use the established class order for the relevant surface. Keep BBS screen
-widths, columns, prompt rows and hotkeys. Do not add recovery-time columns
-or countdowns.
+Every composition lists its classes in one order, the fleet screens' order:
+`SC BB CA DD TT* TT ETAC SB`. One formatter writes it
+(`nc-data/src/ship_notation.rs`). A planet's stardock and build-queue lines
+follow the starbases with the two non-ship build items, `AR` for armies and
+`GB` for ground batteries (`BB5 CA10 DD4 TT6 ETAC3 SB2 AR8 GB7`). New and
+docked transports are empty, so they read `TT`. Keep BBS screen widths,
+columns, prompt rows and hotkeys. Do not add recovery-time columns or
+countdowns.
 
 Show only information that the player is entitled to know. Omitted damage
 on incomplete enemy intelligence is not a guarantee that the ships are
