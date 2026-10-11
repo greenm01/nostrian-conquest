@@ -102,3 +102,14 @@ The same t083 results also compare smooth colonies starting at1 and
 small-world order dates, decade income, low-tax investment controls and the
 exact decay of the initial advantage; it does not restore every current
 order date and is not an approved rule.
+
+## Starbase economics (t085)
+
+`python3 tools/economy-model/starbase_review.py` writes
+`starbase_review_results.json`. Exact controls separate growth payback,
+imposed arrival delay, locally funded build/commission timing and reserve
+spending capacity. They use approved smooth growth/P3 and base cost50, with
+non-stacking bonuses; there is no engine movement or battle simulation.
+`test_starbase_review.py` is included in unittest discovery. See the
+[starbase review](../../docs/notes/investigations/w3vj4wti-starbase-growth-capacity-and-economic-concentration.md)
+for eligibility, mathematical return limits and the draft recommendation.
