@@ -230,7 +230,7 @@ impl MessageComposeScreen {
             &mut buffer,
             command_line_row_for(geometry),
             COMMAND_LABEL,
-            "? ^E ^X",
+            "^G ^E ^X",
         );
         let render_row = first_body_row + cursor_row.saturating_sub(start);
         buffer.set_cursor(cursor_col as u16, render_row as u16);

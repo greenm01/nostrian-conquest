@@ -194,6 +194,10 @@ fn door_input_decoder_maps_ascii_and_control_keys() {
         &[0x18],
         KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL),
     );
+    assert_decode(
+        &[0x07],
+        KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL),
+    );
     assert_decode(&[0x1b], KeyEvent::new(KeyCode::Esc, KeyModifiers::NONE));
 }
 
@@ -420,7 +424,10 @@ fn door_serializer_redraws_rows_in_place_without_clearing_the_screen() {
     // A full clear before drawing flashes a blank screen when the terminal
     // paints mid-frame; every row, blank ones included, is erased to its end.
     assert!(!frame_text.contains("\x1b[2J"));
-    assert_eq!(frame_text.matches("\x1b[K").count(), geometry.height() as usize);
+    assert_eq!(
+        frame_text.matches("\x1b[K").count(),
+        geometry.height() as usize
+    );
     assert!(frame_text.contains("ABC\x1b[0;37;40m\x1b[K"));
 }
 

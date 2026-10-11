@@ -541,6 +541,7 @@ fn try_decode_complete(pending: &VecDeque<u8>) -> ParseResult {
         0x03 => ParseResult::Event(KeyEvent::new(KeyCode::Char('c'), KeyModifiers::CONTROL), 1),
         0x04 => ParseResult::Event(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::CONTROL), 1),
         0x05 => ParseResult::Event(KeyEvent::new(KeyCode::Char('e'), KeyModifiers::CONTROL), 1),
+        0x07 => ParseResult::Event(KeyEvent::new(KeyCode::Char('g'), KeyModifiers::CONTROL), 1),
         0x15 => ParseResult::Event(KeyEvent::new(KeyCode::Char('u'), KeyModifiers::CONTROL), 1),
         0x18 => ParseResult::Event(KeyEvent::new(KeyCode::Char('x'), KeyModifiers::CONTROL), 1),
         b'\r' | b'\n' => ParseResult::Event(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE), 1),

@@ -426,7 +426,7 @@ fn compose_body_uses_full_80x25_vertical_editor_space() {
     assert!(row_text(&buffer, 19).contains("line 16"));
     assert!(row_text(&buffer, 22).trim().is_empty());
     assert!(row_text(&buffer, 23).contains("Chars:"));
-    assert!(row_text(&buffer, 24).starts_with("COMMAND <- ? ^E ^X ->"));
+    assert!(row_text(&buffer, 24).starts_with("COMMAND <- ^G ^E ^X ->"));
 }
 
 #[test]

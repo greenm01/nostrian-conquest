@@ -691,7 +691,7 @@ after three missed turns. Your first real return that year --- logging into
 `nc-game`, entering through `nc-door`, or submitting a valid turn file ---
 turns that inactivity autopilot back off. Manual autopilot stays on until you
 change it yourself. Diplomacy (*E*) lets you mark other empires as Neutral or
-Enemy. Messages (*C*) lets you write to other empires.
+Enemy. Messages (*C*) lets you write to other empires. In the message editor, *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark, as it does in name fields.
 
 To keep messaging civil, you may send no more than three messages to any single opponent per turn. In a four-player game, for example, that is up to twelve outgoing messages in a turn. Messages and reports are never automatically purged --- they accumulate in your inbox across turns until you remove them yourself. The inbox supports type and year filters to help you find older items, and pressing *D* on a selected item prompts for deletion, defaulting to yes. General Command also offers a bulk delete to clear all messages at once. New reports and messages from the most recent maintenance turn are presented one by one through the scrolling intro review when you log in, giving you another opportunity to read and delete before reaching the main menu.
 

@@ -1131,7 +1131,7 @@ fn compose_body_popup_help_lists_send_and_cancel_shortcuts() {
 
     app.current_screen = ScreenId::ComposeMessageBody;
 
-    let popup_action = app.handle_key(key(KeyCode::Char('?')));
+    let popup_action = app.handle_key(ctrl_key('g'));
     assert_eq!(popup_action, Action::OpenPopupHelp);
     assert_eq!(apply_action(&mut app, popup_action), AppOutcome::Continue);
 
@@ -1381,4 +1381,51 @@ fn compose_body_cursor_preserves_visual_column_in_blank_canvas_space() {
     );
     assert_eq!(app.messaging.compose_body_cursor_row, 2);
     assert_eq!(app.messaging.compose_body_cursor_col, 8);
+}
+
+#[test]
+fn question_mark_is_text_in_the_message_editor() {
+    let fixture_dir = temp_game_copy();
+    let mut app = App::load(AppConfig {
+        game_dir: fixture_dir.clone(),
+        player_record_index_1_based: 1,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .expect("app should load");
+    let question_mark = KeyEvent::new(KeyCode::Char('?'), KeyModifiers::SHIFT);
+
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::OpenComposeRecipient),
+    );
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::AppendComposeRecipientChar('2')),
+    );
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::SubmitComposeRecipient),
+    );
+    assert_eq!(app.current_screen(), ScreenId::ComposeMessageSubject);
+    assert_eq!(
+        app.handle_key(question_mark),
+        Action::Messaging(MessagingAction::AppendComposeSubjectChar('?'))
+    );
+
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::AppendComposeSubjectChar('Q')),
+    );
+    apply_action(
+        &mut app,
+        Action::Messaging(MessagingAction::SubmitComposeSubject),
+    );
+    assert_eq!(app.current_screen(), ScreenId::ComposeMessageBody);
+    assert_eq!(
+        app.handle_key(question_mark),
+        Action::Messaging(MessagingAction::AppendComposeBodyChar('?'))
+    );
 }
