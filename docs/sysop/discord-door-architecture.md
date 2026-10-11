@@ -128,11 +128,27 @@ If Discord access is ever decommissioned or banned, players simply connect via d
 
 ---
 
-## 4. The Dropfile Handoff (`DOOR32.SYS`)
+## 4. The Dropfile Handoff (`DOOR32.SYS` & `DOOR.KDL`)
 
-`nc-door` natively understands the modern `DOOR32.SYS` dropfile format. When a player clicks "Play" in Discord, the bridge daemon constructs a compliant `DOOR32.SYS` file in a temporary per-node directory.
+`nc-door` supports both legacy BBS dropfiles (`DOOR32.SYS`) and the modern structured dropfile specification **[`DOOR.KDL`](door-kdl-spec.md)**. 
 
-### Mapping Discord Context to DOOR32.SYS
+### Modern Specification: `DOOR.KDL` (Recommended)
+
+For modern chat bridges (Discord, Matrix) and web frontends, `DOOR.KDL` eliminates fragile positional lines, passes immutable user snowflakes, supports event callback webhooks, and negotiates mobile/touchscreen layouts. See the full **[DOOR.KDL Specification](door-kdl-spec.md)** for details.
+
+When launching via `DOOR.KDL`:
+
+```bash
+nc-door \
+  --dir /srv/nc/campaigns/alpha \
+  --dropfile /tmp/nc-nodes/node1/door.kdl
+```
+
+### Legacy Compatibility: `DOOR32.SYS`
+
+For classic compatibility, `nc-door` natively understands standard `DOOR32.SYS` dropfiles. When a player clicks "Play" in Discord, the bridge daemon can also construct a compliant `DOOR32.SYS` file in a temporary per-node directory.
+
+#### Mapping Discord Context to DOOR32.SYS
 
 | Line # | DOOR32 Field | Injected Value | Purpose |
 |---|---|---|---|
@@ -148,7 +164,7 @@ If Discord access is ever decommissioned or banned, players simply connect via d
 | **10** | Emulation | `1` (Color ANSI) | Guarantees 16-color ANSI output |
 | **11** | Node number | `1` (Unique per concurrent worker) | Virtual node identifier |
 
-### Process Execution Command
+#### Process Execution Command
 
 The bridge starts an ephemeral TCP listener on an available port (e.g. `5041`) and spawns:
 

@@ -17,6 +17,9 @@ Use these docs in roughly this order:
 - [discord-door-architecture.md](discord-door-architecture.md)
   - architecture specification for hosting `nc-door` inside Discord Embedded
     Activities while preserving 100% self-sovereignty
+- [door-kdl-spec.md](door-kdl-spec.md)
+  - modern KDL-based dropfile specification for chat rooms, WebSockets, and
+    contemporary BBS doors
 - [rust/campaign-settings.md](rust/campaign-settings.md)
   - non-BBS campaign settings and raw `nc-sysop settings show` reference
 - [rust/turn-kdl.md](rust/turn-kdl.md)
