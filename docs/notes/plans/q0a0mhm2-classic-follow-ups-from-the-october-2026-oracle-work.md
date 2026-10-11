@@ -641,3 +641,25 @@ Result (2026-10-11): all four items done, each checked against classic.
   sets the target depth to 0 where classic keeps 1.
 - **Suite.** On the tree merged with main at `6d97eb66`: 3152 passed, 0
   failed, 11 ignored (`cargo test --workspace --no-fail-fast`).
+
+## t099
+
+Classic differences t094 found while reading, none changed there:
+
+1. **Rogue and autopilot merges.** Classic's merge pass (`24a3:216f`) joins
+   co-located fleets only at the empire's own worlds: any order for a rogue
+   empire, and Hold or Guard/Blockade fleets for an autopilot one (by the
+   disassembly; probe it). Rust merges rogue fleets wherever they meet and
+   never merges the autopilot's. Match classic.
+2. **Hold depth after a pre-maintenance abort.** Rust's hold sets the target
+   depth to 0 where classic keeps 1. Match classic.
+3. **Planetless civil disorder.** Classic's `24a3:0c2a` turns a
+   civil-disorder empire with no planets into a rogue, which then patrols.
+   NC's campaign rules eliminate a defeated empire into civil disorder, with
+   a final review login, so copying this would bring eliminated empires back
+   as computer rogues. Needs the owner's ruling before any change.
+
+Not a gap: classic's battle scatter frees a guard's base before its world
+pick, so a guard with no other world keeps Guard Starbase; Rust's guard holds
+in place, as every NC retreat does without a world to go to (NC combat is
+NC's own design), and the base is freed too.

@@ -135,7 +135,10 @@ together: a fleet's loaded transports are read as its most damaged, the
 first in the finishing order, which is also how a lone fleet's losses have
 always fallen on its loaded transports first. The write-back puts each
 member's hulls on its record; a strike, one fleet, writes its state back
-directly (`write_back_strike`).
+directly (`write_back_strike`). Since t096 a fleet keeps a crippled
+counter for each cargo state, and each fleet's loaded and empty transports
+are separate holders; see
+[p01cg7ll](p01cg7ll-rt-controls-automatic-ship-recovery.md).
 
 **Tests.** Inline, with scripted dice: simultaneous irrevocable pruning,
 ROE 0 fighting the first exchange, per-fleet pursuit, the carry staying
