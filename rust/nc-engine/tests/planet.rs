@@ -8,7 +8,7 @@ use nc_engine::{
 };
 
 #[test]
-fn production_item_kind_raw_matches_runtime_codes() {
+fn production_item_kind_code_matches_runtime_codes() {
     assert_eq!(production_item_kind_code(ProductionItemKind::Destroyer), 1);
     assert_eq!(production_item_kind_code(ProductionItemKind::Cruiser), 2);
     assert_eq!(production_item_kind_code(ProductionItemKind::Battleship), 3);

@@ -455,7 +455,7 @@ Current Rust implementation status:
   rather than burying that choice inside the battle loop
 - `nc-data` now exposes a typed stored-diplomacy seam, and the classic
   `PLAYER.DAT` enemy/neutral bytes are now mapped as a contiguous table:
-  - `PLAYER.DAT[player].raw[0x54 + (target_empire_raw - 1)]`
+  - `PLAYER.DAT[player].raw[0x54 + (target_empire - 1)]`
   - `0x00 = neutral`
   - `0x01 = enemy`
 - the contiguous `0x54..=0x6C` span provides 25 diplomacy slots

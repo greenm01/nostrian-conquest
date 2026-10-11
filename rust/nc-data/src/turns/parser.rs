@@ -275,7 +275,7 @@ fn order_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
 
 fn parse_production_kind_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissionError> {
     if let Some(value) = opt_prop_string(node, "kind")? {
-        return production_kind_raw_from_name(&value);
+        return production_kind_code_from_name(&value);
     }
     let raw = prop_u8_with_aliases(node, &["kind_raw", "raw"])?;
     match ProductionItemKind::from_code(raw) {
@@ -286,7 +286,7 @@ fn parse_production_kind_code(node: &::kdl::KdlNode) -> Result<u8, TurnSubmissio
     }
 }
 
-fn production_kind_raw_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
+fn production_kind_code_from_name(value: &str) -> Result<u8, TurnSubmissionError> {
     let raw = match value.to_ascii_lowercase().as_str() {
         "destroyer" | "destroyers" => 1,
         "cruiser" | "cruisers" => 2,
