@@ -37,7 +37,7 @@ pub(super) fn apply_turn_submission(
     for directive in &submission.diplomacy {
         game_data.set_stored_diplomatic_relation(
             player_record_index_1_based as u8,
-            directive.to_empire_raw,
+            directive.to_empire,
             directive.relation,
         )?;
     }
@@ -415,7 +415,7 @@ fn queue_message(
     let (subject, body) = validate_queued_player_message(
         queued_mail,
         sender_player_record_index_1_based as u8,
-        message.recipient_empire_raw,
+        message.recipient_empire,
         game_data.conquest.game_year,
         game_data.conquest.player_count,
         &message.subject,
@@ -425,7 +425,7 @@ fn queue_message(
 
     queued_mail.push(QueuedPlayerMail {
         sender_empire_id: sender_player_record_index_1_based as u8,
-        recipient_empire_id: message.recipient_empire_raw,
+        recipient_empire_id: message.recipient_empire,
         year: game_data.conquest.game_year,
         subject,
         body,

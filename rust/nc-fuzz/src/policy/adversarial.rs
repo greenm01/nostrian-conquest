@@ -39,7 +39,7 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
             &[0, 100, 101, u8::MAX],
         )?)),
         3 => {
-            let to_empire_raw = pick_from(
+            let to_empire = pick_from(
                 choices,
                 &[
                     0,
@@ -50,7 +50,7 @@ pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option
                 ],
             )?;
             Some(TurnAction::Diplomacy(TurnDiplomacyDirective {
-                to_empire_raw,
+                to_empire,
                 relation: DiplomaticRelation::Enemy,
             }))
         }

@@ -70,13 +70,13 @@ fn configured_delayed_hostile_arrival_state(
 fn mutual_enemy_overrides(left: u8, right: u8) -> [DiplomacyOverride; 2] {
     [
         DiplomacyOverride {
-            from_empire_raw: left,
-            to_empire_raw: right,
+            from_empire: left,
+            to_empire: right,
             relation: DiplomaticRelation::Enemy,
         },
         DiplomacyOverride {
-            from_empire_raw: right,
-            to_empire_raw: left,
+            from_empire: right,
+            to_empire: left,
             relation: DiplomaticRelation::Enemy,
         },
     ]
@@ -245,7 +245,7 @@ fn test_colonization_emits_success_event() {
         ColonizationResolvedEvent::Succeeded {
             fleet_idx: 0,
             planet_idx: 13,
-            colonizer_empire_raw: 1,
+            colonizer_empire: 1,
             ..
         }
     ));
@@ -284,8 +284,8 @@ fn test_colonization_emits_blocked_event_for_occupied_world() {
         ColonizationResolvedEvent::BlockedByOwner {
             fleet_idx: 0,
             planet_idx: 13,
-            colonizer_empire_raw: 1,
-            owner_empire_raw: 2,
+            colonizer_empire: 1,
+            owner_empire: 2,
             ..
         }
     ));
@@ -297,7 +297,7 @@ fn test_colonization_emits_blocked_event_for_occupied_world() {
     }));
     assert!(events.planet_intel_events.iter().any(|event| {
         event.planet_idx == 13
-            && event.viewer_empire_raw == 1
+            && event.viewer_empire == 1
             && event.source == PlanetIntelSource::ColonizeBlockedByOwner
             && event.source_fleet_idx == Some(0)
     }));
@@ -358,7 +358,7 @@ fn test_blockading_foreign_world_escalates_to_enemy() {
         events
             .diplomatic_escalation_events
             .iter()
-            .any(|event| event.left_empire_raw == 1 && event.right_empire_raw == 2)
+            .any(|event| event.left_empire == 1 && event.right_empire == 2)
     );
     assert_eq!(
         diplomatic_relation_toward(&game_data.players[0], 2),
@@ -370,7 +370,7 @@ fn test_blockading_foreign_world_escalates_to_enemy() {
     );
     assert!(events.mission_events.iter().any(|event| {
         event.kind == Mission::GuardBlockadeWorld
-            && event.owner_empire_raw == 1
+            && event.owner_empire == 1
             && event.planet_idx == Some(planet_idx)
     }));
 }
@@ -392,7 +392,7 @@ fn test_scout_system_arrival_emits_success_event() {
     assert!(events.colonization_events.is_empty());
     assert_eq!(events.planet_intel_events.len(), 1);
     assert_eq!(events.planet_intel_events[0].planet_idx, 13);
-    assert_eq!(events.planet_intel_events[0].viewer_empire_raw, 1);
+    assert_eq!(events.planet_intel_events[0].viewer_empire, 1);
     assert_eq!(
         events.planet_intel_events[0].source,
         PlanetIntelSource::ScoutSolarSystem
@@ -428,7 +428,7 @@ fn test_view_world_arrival_emits_success_and_intel_event() {
     assert!(events.colonization_events.is_empty());
     assert_eq!(events.planet_intel_events.len(), 1);
     assert_eq!(events.planet_intel_events[0].planet_idx, 13);
-    assert_eq!(events.planet_intel_events[0].viewer_empire_raw, 1);
+    assert_eq!(events.planet_intel_events[0].viewer_empire, 1);
     assert_eq!(
         events.planet_intel_events[0].source,
         PlanetIntelSource::ViewWorld
@@ -486,12 +486,12 @@ fn test_view_world_fleet_caught_by_an_enemy_commits_no_intel() {
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == 1)
+            .any(|event| event.reporting_empire == 1)
     });
 
     assert!(
         !events.planet_intel_events.iter().any(|event| {
-            event.viewer_empire_raw == 1 && event.source == PlanetIntelSource::ViewWorld
+            event.viewer_empire == 1 && event.source == PlanetIntelSource::ViewWorld
         }),
         "aborted ViewWorld should not commit intel"
     );
@@ -535,7 +535,7 @@ fn test_scout_system_arrival_still_emits_intel_with_enemy_fleet_present() {
         events
             .fleet_destroyed_events
             .iter()
-            .all(|event| event.reporting_empire_raw != 1)
+            .all(|event| event.reporting_empire != 1)
             && events
                 .mission_events
                 .iter()
@@ -544,7 +544,7 @@ fn test_scout_system_arrival_still_emits_intel_with_enemy_fleet_present() {
 
     assert!(
         events.planet_intel_events.iter().any(|event| {
-            event.viewer_empire_raw == 1 && event.source == PlanetIntelSource::ScoutSolarSystem
+            event.viewer_empire == 1 && event.source == PlanetIntelSource::ScoutSolarSystem
         }),
         "arrival ScoutSolarSystem should still emit intel before any later hostility logic"
     );
@@ -560,7 +560,7 @@ fn test_scout_system_arrival_still_emits_intel_with_enemy_fleet_present() {
         events
             .fleet_destroyed_events
             .iter()
-            .all(|event| event.reporting_empire_raw != 1),
+            .all(|event| event.reporting_empire != 1),
         "the arriving scout should not be destroyed on the same tick"
     );
 }
@@ -627,7 +627,7 @@ fn test_join_merge_emits_merge_event() {
     assert!(events.fleet_merge_events.iter().any(|event| {
         event.fleet_idx == 1
             && event.kind == Mission::JoinAnotherFleet
-            && event.owner_empire_raw == 1
+            && event.owner_empire == 1
             && !event.survivor_side
     }));
 }
@@ -1687,12 +1687,12 @@ fn test_salvage_converts_fleet_value_into_owned_planet_production_and_removes_fl
         matches!(
             event,
             SalvageResolvedEvent::Succeeded {
-                owner_empire_raw,
+                owner_empire,
                 planet_idx: event_planet_idx,
                 coords,
                 recovered_points,
                 ..
-            } if *owner_empire_raw == 1
+            } if *owner_empire == 1
                 && *event_planet_idx == planet_idx
                 && *coords == target_coords
                 && *recovered_points == 10
@@ -1794,12 +1794,12 @@ fn test_salvage_fails_at_foreign_planet_without_removing_fleet() {
         matches!(
             event,
             SalvageResolvedEvent::Failed {
-                owner_empire_raw,
+                owner_empire,
                 planet_idx: Some(idx),
                 coords,
                 reason,
                 ..
-            } if *owner_empire_raw == 1
+            } if *owner_empire == 1
                 && *idx == planet_idx
                 && *coords == target_coords
                 && *reason == SalvageFailureReason::PlanetNotOwned
@@ -1935,9 +1935,7 @@ fn test_view_world_on_station_reverts_to_hold_position() {
     // Observation must fire.
     assert!(
         events.planet_intel_events.iter().any(|e| {
-            e.planet_idx == 13
-                && e.viewer_empire_raw == 1
-                && e.source == PlanetIntelSource::ViewWorld
+            e.planet_idx == 13 && e.viewer_empire == 1 && e.source == PlanetIntelSource::ViewWorld
         }),
         "on-station ViewWorld must emit a planet intel event"
     );
@@ -2009,7 +2007,7 @@ fn test_colonize_world_on_station_colonizes_and_resets() {
             ColonizationResolvedEvent::Succeeded {
                 fleet_idx: 0,
                 planet_idx: 13,
-                colonizer_empire_raw: 1,
+                colonizer_empire: 1,
                 ..
             }
         )),
@@ -2078,7 +2076,7 @@ fn test_scout_system_on_station_fires_intel_and_persists() {
     assert!(
         events.planet_intel_events.iter().any(|e| {
             e.planet_idx == 13
-                && e.viewer_empire_raw == 1
+                && e.viewer_empire == 1
                 && e.source == PlanetIntelSource::ScoutSolarSystem
         }),
         "on-station ScoutSolarSystem must emit a planet intel event"
@@ -2225,7 +2223,7 @@ fn test_bombard_world_executes_on_second_turn() {
         events
             .bombard_events
             .iter()
-            .any(|e| e.planet_idx == target_idx && e.attacker_empire_raw == 1),
+            .any(|e| e.planet_idx == target_idx && e.attacker_empire == 1),
         "BombardEvent must reference the target planet and attacker empire"
     );
     assert_eq!(
@@ -2254,7 +2252,7 @@ fn test_invade_world_executes_on_second_turn() {
             .iter()
             .any(|e| e.kind == Mission::InvadeWorld
                 && e.planet_idx == target_idx
-                && e.attacker_empire_raw == 1),
+                && e.attacker_empire == 1),
         "AssaultReportEvent must reference InvadeWorld, the target planet, and attacker empire"
     );
 }
@@ -2279,7 +2277,7 @@ fn test_blitz_world_executes_on_second_turn() {
             .iter()
             .any(|e| e.kind == Mission::BlitzWorld
                 && e.planet_idx == target_idx
-                && e.attacker_empire_raw == 1),
+                && e.attacker_empire == 1),
         "AssaultReportEvent must reference BlitzWorld, the target planet, and attacker empire"
     );
 }
@@ -2297,7 +2295,7 @@ fn test_tt_only_blitz_executes_without_combat_ships() {
         events.assault_report_events.iter().any(|event| {
             event.kind == Mission::BlitzWorld
                 && event.planet_idx == target_idx
-                && event.attacker_empire_raw == 1
+                && event.attacker_empire == 1
                 && event.outcome != MissionOutcome::Aborted
         }),
         "loaded TT*-only blitz should resolve as a real assault"
@@ -2444,12 +2442,12 @@ fn test_on_station_hostile_orders_assigned_via_mutator_execute_next_turn() {
                 events
                     .bombard_events
                     .iter()
-                    .any(|e| e.planet_idx == target_idx && e.attacker_empire_raw == 1),
+                    .any(|e| e.planet_idx == target_idx && e.attacker_empire == 1),
                 "BombardWorld should execute on the next maintenance tick"
             ),
             Mission::InvadeWorld | Mission::BlitzWorld => assert!(
                 events.assault_report_events.iter().any(|e| {
-                    e.kind == mission && e.planet_idx == target_idx && e.attacker_empire_raw == 1
+                    e.kind == mission && e.planet_idx == target_idx && e.attacker_empire == 1
                 }),
                 "{mission:?} should execute on the next maintenance tick"
             ),
@@ -2691,7 +2689,7 @@ fn test_join_host_is_named_by_fleet_number_not_record_id() {
 
     assert!(events.fleet_merge_events.iter().any(|event| {
         event.kind == Mission::JoinAnotherFleet
-            && event.owner_empire_raw == 2
+            && event.owner_empire == 2
             && event.host_fleet_number == 1
             && event.absorbed_fleet_number == 2
     }));

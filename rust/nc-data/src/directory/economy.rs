@@ -153,11 +153,11 @@ impl CoreGameData {
         &self,
         player_record_index_1_based: usize,
     ) -> EmpireUnitSummary {
-        let empire_raw = player_record_index_1_based as u8;
+        let empire = player_record_index_1_based as u8;
         let mut summary = EmpireUnitSummary::default();
 
         for fleet in &self.fleets {
-            if fleet.owner.0 != empire_raw {
+            if fleet.owner.0 != empire {
                 continue;
             }
             summary.destroyers += u32::from(fleet.ships.destroyers);
@@ -172,7 +172,7 @@ impl CoreGameData {
             self.player_owned_base_record_count_current_known(player_record_index_1_based) as u32;
 
         for planet in &self.planets {
-            if planet.owner.0 != empire_raw {
+            if planet.owner.0 != empire {
                 continue;
             }
             summary.armies += u32::from(u8::try_from(planet.armies).unwrap_or(u8::MAX));
@@ -184,11 +184,11 @@ impl CoreGameData {
     }
 
     pub fn empire_stardock_summary(&self, player_record_index_1_based: usize) -> EmpireUnitSummary {
-        let empire_raw = player_record_index_1_based as u8;
+        let empire = player_record_index_1_based as u8;
         let mut summary = EmpireUnitSummary::default();
 
         for planet in &self.planets {
-            if planet.owner.0 != empire_raw {
+            if planet.owner.0 != empire {
                 continue;
             }
             for slot in 0..crate::STARDOCK_SLOT_COUNT {
@@ -302,9 +302,9 @@ impl CoreGameData {
     /// bound for it, as ECGAME's build screen tests for the 5x budget: in
     /// the world's sector at depth 0.5 or more, with that sector as its
     /// target and orbit as its target layer.
-    pub fn planet_has_friendly_starbase(&self, owner_empire_raw: u8, coords: [u8; 2]) -> bool {
+    pub fn planet_has_friendly_starbase(&self, owner_empire: u8, coords: [u8; 2]) -> bool {
         self.bases.iter().any(|base| {
-            base.owner.0 == owner_empire_raw
+            base.owner.0 == owner_empire
                 && base.sector.to_array() == coords
                 && base.base_id.0 != 0
                 && base.depth >= Real48::HALF
@@ -382,8 +382,8 @@ impl CoreGameData {
         self.empire_production_ranking_rows(sort)
     }
 
-    pub fn empire_campaign_state(&self, empire_raw: u8) -> Option<CampaignState> {
-        let player_idx = empire_raw.checked_sub(1)? as usize;
+    pub fn empire_campaign_state(&self, empire: u8) -> Option<CampaignState> {
+        let player_idx = empire.checked_sub(1)? as usize;
         let player = self.players.get(player_idx)?;
 
         match player.mode.code() {
@@ -396,7 +396,7 @@ impl CoreGameData {
         let owned_planets = self
             .planets
             .iter()
-            .filter(|planet| planet.owner.0 == empire_raw)
+            .filter(|planet| planet.owner.0 == empire)
             .count();
         if owned_planets > 0 {
             return Some(CampaignState::Stable);
@@ -406,7 +406,7 @@ impl CoreGameData {
         let mut can_recover_planet = false;
 
         for fleet in &self.fleets {
-            if fleet.owner.0 != empire_raw {
+            if fleet.owner.0 != empire {
                 continue;
             }
 
@@ -441,7 +441,7 @@ impl CoreGameData {
 
     pub fn campaign_contenders(&self) -> Vec<u8> {
         (1..=self.players.len() as u8)
-            .filter(|&empire_raw| crate::is_campaign_contender(self, empire_raw, &[]))
+            .filter(|&empire| crate::is_campaign_contender(self, empire, &[]))
             .collect()
     }
 
@@ -456,20 +456,20 @@ impl CoreGameData {
 
     pub fn campaign_outlook(&self) -> CampaignOutlook {
         match self.sole_contender() {
-            Some(empire_raw) => CampaignOutlook::SoleContender(empire_raw),
+            Some(empire) => CampaignOutlook::SoleContender(empire),
             None => CampaignOutlook::Contested,
         }
     }
 
     pub fn campaign_outcome(&self) -> CampaignOutcome {
         match self.sole_contender() {
-            Some(empire_raw)
+            Some(empire)
                 if matches!(
-                    self.empire_campaign_state(empire_raw),
+                    self.empire_campaign_state(empire),
                     Some(CampaignState::Stable)
                 ) =>
             {
-                CampaignOutcome::RecognizedEmperor(empire_raw)
+                CampaignOutcome::RecognizedEmperor(empire)
             }
             _ => CampaignOutcome::Ongoing,
         }

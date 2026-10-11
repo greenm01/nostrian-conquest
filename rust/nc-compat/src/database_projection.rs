@@ -40,7 +40,7 @@ pub fn build_database_dat(
     let current_turn_grants = collect_planet_intel_sources(events);
 
     for player in 0..player_count {
-        let viewer_empire_raw = (player + 1) as u8;
+        let viewer_empire = (player + 1) as u8;
         let viewer_is_active = game_data.players[player].mode.code() != 0;
         let previous_rows = planet_intel_by_viewer.get(player);
         for planet_idx in 0..planet_count {
@@ -49,7 +49,7 @@ pub fn build_database_dat(
             let record = &mut new_database.records[record_idx];
             let planet = &game_data.planets[planet_idx];
             let snapshot = previous_rows.and_then(|rows| rows.get(&(planet_idx + 1)));
-            let current_turn_grant = current_turn_grants.get(&(viewer_empire_raw, planet_idx));
+            let current_turn_grant = current_turn_grants.get(&(viewer_empire, planet_idx));
             let template_is_orbit = template_record.map(is_orbit_record).unwrap_or(false);
             let snapshot_is_orbit = snapshot
                 .map(|row| {
@@ -60,14 +60,14 @@ pub fn build_database_dat(
                 .unwrap_or(false);
             let template_shows_owned_world = template_record
                 .filter(|_| !template_is_orbit)
-                .map(|row| row.raw[0x15] == viewer_empire_raw)
+                .map(|row| row.raw[0x15] == viewer_empire)
                 .unwrap_or(false);
             let snapshot_shows_owned_world = snapshot
                 .filter(|_| !snapshot_is_orbit)
                 .map(|row| row.intel_tier == IntelTier::Owned)
                 .unwrap_or(false);
             let owns_world = !snapshot_is_orbit
-                && planet.owner.0 == viewer_empire_raw
+                && planet.owner.0 == viewer_empire
                 && (viewer_is_active || template_shows_owned_world || snapshot_shows_owned_world);
 
             if owns_world {
@@ -95,7 +95,7 @@ pub fn build_database_dat(
 
             if snapshot_is_orbit {
                 let snapshot = snapshot.expect("snapshot_is_orbit requires a snapshot row");
-                apply_compat_orbit_snapshot_row(record, snapshot, viewer_empire_raw);
+                apply_compat_orbit_snapshot_row(record, snapshot, viewer_empire);
                 continue;
             }
 
@@ -129,7 +129,7 @@ fn collect_planet_intel_sources(
 ) -> BTreeMap<(u8, usize), PlanetIntelSource> {
     let mut sources = BTreeMap::new();
     for event in &events.planet_intel_events {
-        sources.insert((event.viewer_empire_raw, event.planet_idx), event.source);
+        sources.insert((event.viewer_empire, event.planet_idx), event.source);
     }
     sources
 }
@@ -188,7 +188,7 @@ fn preserve_orbit_record(
 fn apply_compat_orbit_snapshot_row(
     record: &mut DatabaseRecord,
     snapshot: &PlanetIntelSnapshot,
-    viewer_empire_raw: u8,
+    viewer_empire: u8,
 ) {
     if let Some(name) = snapshot.known_name.as_deref() {
         record.set_unknown_planet();
@@ -196,7 +196,7 @@ fn apply_compat_orbit_snapshot_row(
     } else {
         record.set_blank_unknown_planet();
     }
-    record.raw[0x15] = snapshot.known_owner_empire_id.unwrap_or(viewer_empire_raw);
+    record.raw[0x15] = snapshot.known_owner_empire_id.unwrap_or(viewer_empire);
     if let Some(potential) = snapshot.known_potential_production {
         record.raw[0x1c] = potential.min(u16::from(u8::MAX)) as u8;
     }

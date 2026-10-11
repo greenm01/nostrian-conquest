@@ -21,7 +21,7 @@ pub fn matching_planet_intel_event<'a>(
         _ => return None,
     };
     events.planet_intel_events.iter().find(|intel_event| {
-        intel_event.viewer_empire_raw == event.owner_empire_raw
+        intel_event.viewer_empire == event.owner_empire
             && intel_event.source == source
             && intel_event.source_fleet_idx == Some(event.fleet_idx)
     })
@@ -82,23 +82,23 @@ pub fn push_intel_entries(
         for event in &events.encounter_disposition_events {
             let (owner, target, coords) = match *event {
                 nc_data::EncounterDispositionEvent::NoEngagement {
-                    owner_empire_raw,
-                    target_empire_raw,
+                    owner_empire,
+                    target_empire,
                     coords,
                     ..
                 }
                 | nc_data::EncounterDispositionEvent::Retreated {
-                    owner_empire_raw,
-                    target_empire_raw,
+                    owner_empire,
+                    target_empire,
                     coords,
                     ..
                 }
                 | nc_data::EncounterDispositionEvent::PursuitFire {
-                    owner_empire_raw,
-                    target_empire_raw,
+                    owner_empire,
+                    target_empire,
                     coords,
                     ..
-                } => (owner_empire_raw, target_empire_raw, coords),
+                } => (owner_empire, target_empire, coords),
             };
             set.insert((owner, target, coords));
         }
@@ -112,11 +112,7 @@ pub fn push_intel_entries(
         // Deduplicate fleet-source contacts; starbase contacts always pass through
         // as they carry unique intelligence about the starbase's detection.
         if !matches!(event.source, ContactReportSource::Starbase { .. }) {
-            let contact_key = (
-                event.viewer_empire_raw,
-                event.target_empire_raw,
-                event.coords,
-            );
+            let contact_key = (event.viewer_empire, event.target_empire, event.coords);
             if !seen_contacts.insert(contact_key) {
                 continue;
             }
@@ -136,7 +132,7 @@ pub fn push_intel_entries(
                 let body = if let Some(enemy) = known_hostile_fleet_label(
                     game_data,
                     event.target_fleet_number,
-                    event.target_empire_raw,
+                    event.target_empire,
                 ) {
                     format!(
                         " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We had {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
@@ -144,7 +140,7 @@ pub fn push_intel_entries(
                 } else {
                     format!(
                         " {label}: Sensor contact -- detected and identified an alien fleet in {location}. We had {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
-                        classic_empire_clause(game_data, event.target_empire_raw),
+                        classic_empire_clause(game_data, event.target_empire),
                     )
                 };
                 entries.push(ReportEntry {
@@ -152,7 +148,7 @@ pub fn push_intel_entries(
                     kind: 0x06,
                     tail: RESULTS_TAIL_SCOUTING,
                     target: ReportTarget::Both {
-                        recipient: event.viewer_empire_raw,
+                        recipient: event.viewer_empire,
                     },
                     repeat_next_pointer: false,
                     stardate_week: event.stardate_week,
@@ -169,7 +165,7 @@ pub fn push_intel_entries(
                 let body = if let Some(enemy) = known_hostile_fleet_label(
                     game_data,
                     event.target_fleet_number,
-                    event.target_empire_raw,
+                    event.target_empire,
                 ) {
                     format!(
                         " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We had {reporting_force}. It is {enemy}. Their fleet contains {fleet_description}."
@@ -177,7 +173,7 @@ pub fn push_intel_entries(
                 } else {
                     format!(
                         " Sensor contact -- detected and identified an alien fleet in System({x},{y}). We had {reporting_force}. It belongs to {}. Their fleet contains {fleet_description}.",
-                        classic_empire_clause(game_data, event.target_empire_raw),
+                        classic_empire_clause(game_data, event.target_empire),
                     )
                 };
                 entries.push(ReportEntry {
@@ -185,7 +181,7 @@ pub fn push_intel_entries(
                     kind: 0x06,
                     tail: RESULTS_TAIL_SCOUTING,
                     target: ReportTarget::Both {
-                        recipient: event.viewer_empire_raw,
+                        recipient: event.viewer_empire,
                     },
                     repeat_next_pointer: false,
                     stardate_week: event.stardate_week,
@@ -198,9 +194,9 @@ pub fn push_intel_entries(
                 let enemy = known_hostile_fleet_label(
                     game_data,
                     event.target_fleet_number,
-                    event.target_empire_raw,
+                    event.target_empire,
                 )
-                .unwrap_or_else(|| classic_empire_clause(game_data, event.target_empire_raw));
+                .unwrap_or_else(|| classic_empire_clause(game_data, event.target_empire));
                 let outcome = match alert {
                     StarbaseAlert::HeadedAtOurWorld => {
                         let planet = game_data
@@ -224,7 +220,7 @@ pub fn push_intel_entries(
                     kind: 0x06,
                     tail: RESULTS_TAIL_SCOUTING,
                     target: ReportTarget::Both {
-                        recipient: event.viewer_empire_raw,
+                        recipient: event.viewer_empire,
                     },
                     repeat_next_pointer: false,
                     stardate_week: event.stardate_week,
@@ -250,14 +246,14 @@ pub fn push_intel_entries(
         let body = format!(
             " We have located and identified an alien starbase in {place}({x},{y}). It is Starbase {} of {}. {outcome}",
             event.target_starbase_id,
-            classic_empire_clause(game_data, event.target_empire_raw),
+            classic_empire_clause(game_data, event.target_empire),
         );
         entries.push(ReportEntry {
             text: format!("{header}{body}"),
             kind: 0x06,
             tail: RESULTS_TAIL_SCOUTING,
             target: ReportTarget::Both {
-                recipient: event.viewer_empire_raw,
+                recipient: event.viewer_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -267,7 +263,7 @@ pub fn push_intel_entries(
 
     // ----- Ownership change events -----
     for event in &events.ownership_change_events {
-        if event.reporting_empire_raw == 0 {
+        if event.reporting_empire == 0 {
             continue;
         }
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
@@ -281,11 +277,11 @@ pub fn push_intel_entries(
         let header = report_header(&source, event.stardate_week, year);
         let items = if let Some(assault) = events.assault_report_events.iter().find(|assault| {
             assault.planet_idx == event.planet_idx
-                && assault.attacker_empire_raw == event.new_owner_empire_raw
-                && assault.defender_empire_raw == event.reporting_empire_raw
+                && assault.attacker_empire == event.new_owner_empire
+                && assault.defender_empire == event.reporting_empire
                 && assault.outcome == MissionOutcome::Succeeded
         }) {
-            let invader = classic_empire_clause(game_data, event.new_owner_empire_raw);
+            let invader = classic_empire_clause(game_data, event.new_owner_empire);
             let context_rows = vec![StructuredBodyItem::Label {
                 label: LABEL_INVADER.to_string(),
                 value: invader.clone(),
@@ -346,7 +342,7 @@ pub fn push_intel_entries(
                 Vec::new(),
                 vec![StructuredBodyItem::Text(format!(
                     "Planet captured by {}.",
-                    classic_empire_clause(game_data, event.new_owner_empire_raw),
+                    classic_empire_clause(game_data, event.new_owner_empire),
                 ))],
             )
         };
@@ -356,7 +352,7 @@ pub fn push_intel_entries(
             kind: 0x0c,
             tail: RESULTS_TAIL_INVASION,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,

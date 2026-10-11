@@ -130,13 +130,13 @@ fn add_active_starbase(game_data: &mut CoreGameData, owner: u8, coords: [u8; 2])
 fn mutual_enemy_overrides(left: u8, right: u8) -> [DiplomacyOverride; 2] {
     [
         DiplomacyOverride {
-            from_empire_raw: left,
-            to_empire_raw: right,
+            from_empire: left,
+            to_empire: right,
             relation: nc_data::DiplomaticRelation::Enemy,
         },
         DiplomacyOverride {
-            from_empire_raw: right,
-            to_empire_raw: left,
+            from_empire: right,
+            to_empire: left,
             relation: nc_data::DiplomaticRelation::Enemy,
         },
     ]
@@ -206,7 +206,7 @@ fn canonical_bombardment_consumes_order_and_devastates_target() {
 
     assert_eq!(events.bombard_events.len(), 1);
     assert_eq!(events.bombard_events[0].planet_idx, 13);
-    assert_eq!(events.bombard_events[0].attacker_empire_raw, 1);
+    assert_eq!(events.bombard_events[0].attacker_empire, 1);
     assert!(
         events.planet_intel_events.is_empty(),
         "bombardment alone should not refresh classic planet-database intel"
@@ -318,10 +318,10 @@ fn foreign_contact_without_enemy_declaration_reports_but_does_not_force_battle()
     assert_eq!(events.fleet_battle_events.len(), 0);
     assert!(events.fleet_destroyed_events.is_empty());
     assert!(events.scout_contact_events.iter().any(|event| {
-        event.viewer_empire_raw == 1
+        event.viewer_empire == 1
             && event.source == ContactReportSource::FleetMission(Mission::ScoutSector)
             && event.coords == [10, 10]
-            && event.target_empire_raw == 2
+            && event.target_empire == 2
     }));
     assert!(events.mission_events.iter().all(|event| {
         !(event.kind == Mission::ScoutSector && event.outcome == MissionOutcome::Aborted)
@@ -356,16 +356,14 @@ fn declared_enemy_fleet_battle_clears_destroyed_scout_fleet_without_garbage_coun
             && event.location_coords == Some([10, 10])
     }));
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.coords == [10, 10]
-            && event.enemy_empires_raw.contains(&2)
-            && event.reporting_empire_raw == 1
+        event.coords == [10, 10] && event.enemy_empires.contains(&2) && event.reporting_empire == 1
     }));
     // Whoever attacked sighted the other first.
     assert!(
         events
             .scout_contact_events
             .iter()
-            .any(|event| { event.coords == [10, 10] && matches!(event.viewer_empire_raw, 1 | 2) })
+            .any(|event| { event.coords == [10, 10] && matches!(event.viewer_empire, 1 | 2) })
     );
 
     let survivor = &game_data.fleets[6];
@@ -391,9 +389,7 @@ fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() 
 
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
         events.fleet_battle_events.iter().any(|event| {
-            event.reporting_empire_raw == 1
-                && event.held_field
-                && event.friendly_losses.destroyers == 1
+            event.reporting_empire == 1 && event.held_field && event.friendly_losses.destroyers == 1
         })
     });
 
@@ -426,7 +422,7 @@ fn dominant_fleet_with_invalidated_invade_order_holds_and_skips_stale_assault() 
         1,
     );
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 1 && event.reporting_mission == Some(Mission::InvadeWorld)
+        event.reporting_empire == 1 && event.reporting_mission == Some(Mission::InvadeWorld)
     }));
 }
 
@@ -470,10 +466,10 @@ fn roe_zero_enemies_identify_and_avoid_each_other() {
         matches!(
             event,
             EncounterDispositionEvent::NoEngagement {
-                owner_empire_raw: 1,
+                owner_empire: 1,
                 mission: Some(Mission::PatrolSector),
                 coords: event_coords,
-                target_empire_raw: 2,
+                target_empire: 2,
                 reason: nc_data::EncounterDispositionReason::RoeDeclined,
                 ..
             } if *event_coords == coords
@@ -511,11 +507,11 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
             matches!(
                 event,
                 EncounterDispositionEvent::Retreated {
-                    owner_empire_raw,
+                    owner_empire,
                     mission: Some(Mission::MoveOnly),
                     reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
                     ..
-                } if *owner_empire_raw == 2
+                } if *owner_empire == 2
             )
         }),
         "{events:?}"
@@ -524,15 +520,15 @@ fn enemy_roe_withdrawal_does_not_abort_invader_mission() {
         matches!(
             event,
             EncounterDispositionEvent::Retreated {
-                owner_empire_raw,
+                owner_empire,
                 mission: Some(Mission::InvadeWorld),
                 reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
                 ..
-            } if *owner_empire_raw == 1
+            } if *owner_empire == 1
         )
     }));
     assert!(!events.mission_events.iter().any(|event| {
-        event.owner_empire_raw == 1
+        event.owner_empire == 1
             && event.kind == Mission::InvadeWorld
             && event.outcome == MissionOutcome::Aborted
     }));
@@ -566,15 +562,15 @@ fn friendly_roe_withdrawal_aborts_invade_mission_and_records_abort_event() {
         matches!(
             event,
             EncounterDispositionEvent::Retreated {
-                owner_empire_raw,
+                owner_empire,
                 mission: Some(Mission::InvadeWorld),
                 reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
                 ..
-            } if *owner_empire_raw == 1
+            } if *owner_empire == 1
         )
     }));
     assert!(events.mission_events.iter().any(|event| {
-        event.owner_empire_raw == 1
+        event.owner_empire == 1
             && event.kind == Mission::InvadeWorld
             && event.outcome == MissionOutcome::Aborted
     }));
@@ -644,7 +640,7 @@ fn owners_guard_attacks_a_neutral_bombard_arrival() {
         "defended-world assault posture should force a local battle"
     );
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 2
+        event.reporting_empire == 2
             && event.perspective == nc_data::maintenance_types::FleetBattlePerspective::Intercepted
     }));
 }
@@ -730,11 +726,11 @@ fn anchored_guard_intercepts_declared_enemy_transit_contact() {
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == 1 && event.enemy_empires_raw == [2]),
+            .any(|event| event.reporting_empire == 1 && event.enemy_empires == [2]),
         "declared enemies are intercepted wherever encountered, including a guarded system"
     );
     assert!(events.scout_contact_events.iter().any(|event| {
-        event.viewer_empire_raw == 1 && event.target_empire_raw == 2 && event.coords == coords
+        event.viewer_empire == 1 && event.target_empire == 2 && event.coords == coords
     }));
 }
 
@@ -771,9 +767,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     let (game_data, events) = common::first_year(&game_data, &diplomacy, |_, events| {
         events.encounter_disposition_events.is_empty()
             && events.fleet_battle_events.iter().any(|event| {
-                event.reporting_empire_raw == 1
-                    && event.held_field
-                    && event.enemy_losses.cruisers == 8
+                event.reporting_empire == 1 && event.held_field && event.enemy_losses.cruisers == 8
             })
     });
 
@@ -782,7 +776,7 @@ fn committed_patrol_engagement_can_resolve_before_any_roe_withdrawal() {
     assert_eq!(game_data.fleets[0].speed, 0);
     assert_eq!(game_data.fleets[0].target.to_array(), [16, 13]);
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 1 && event.enemy_losses.cruisers == 8 && event.held_field
+        event.reporting_empire == 1 && event.enemy_losses.cruisers == 8 && event.held_field
     }));
     assert!(
         events.encounter_disposition_events.is_empty(),
@@ -828,12 +822,12 @@ fn combat_reports_enemy_fleet_by_empire_local_slot() {
         .expect("maintenance should succeed");
 
     assert!(events.scout_contact_events.iter().any(|event| {
-        event.viewer_empire_raw == 1
-            && event.target_empire_raw == 2
+        event.viewer_empire == 1
+            && event.target_empire == 2
             && event.target_fleet_number == Some(hostile_fleet_number)
     }));
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 1
+        event.reporting_empire == 1
             && event.primary_enemy_fleet_number == Some(hostile_fleet_number)
     }));
 }
@@ -893,7 +887,7 @@ fn committed_fire_can_reach_auxiliaries_after_the_combat_line_collapses() {
     );
     assert_eq!(screened.ships.loaded_transports, 0);
     assert!(events.fleet_battle_events.iter().any(|event| {
-        event.reporting_empire_raw == 1
+        event.reporting_empire == 1
             && event.friendly_losses.cruisers == 1
             && event.friendly_losses.transports == 1
     }));
@@ -1051,7 +1045,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
         events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == 1 && !event.held_field),
+            .any(|event| event.reporting_empire == 1 && !event.held_field),
         "attacker should not hold the field while the defending starbase survives"
     );
 }
@@ -1222,22 +1216,19 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 3);
     assert_eq!(events.ownership_change_events[0].planet_idx, 13);
-    assert_eq!(
-        events.ownership_change_events[0].previous_owner_empire_raw,
-        2
-    );
-    assert_eq!(events.ownership_change_events[0].new_owner_empire_raw, 1);
+    assert_eq!(events.ownership_change_events[0].previous_owner_empire, 2);
+    assert_eq!(events.ownership_change_events[0].new_owner_empire, 1);
     assert!(
         events
             .planet_intel_events
             .iter()
-            .any(|event| event.planet_idx == 13 && event.viewer_empire_raw == 1)
+            .any(|event| event.planet_idx == 13 && event.viewer_empire == 1)
     );
     assert!(
         events
             .planet_intel_events
             .iter()
-            .any(|event| event.planet_idx == 13 && event.viewer_empire_raw == 2)
+            .any(|event| event.planet_idx == 13 && event.viewer_empire == 2)
     );
     assert!(
         events

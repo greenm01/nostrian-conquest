@@ -197,13 +197,13 @@ fn bare_scenario() -> ScenarioSpec {
         houses: vec![house(1), house(2)],
         diplomacy: vec![
             DiplomacySpec {
-                from_empire_raw: 1,
-                to_empire_raw: 2,
+                from_empire: 1,
+                to_empire: 2,
                 relation: DiplomaticRelation::Enemy,
             },
             DiplomacySpec {
-                from_empire_raw: 2,
-                to_empire_raw: 1,
+                from_empire: 2,
+                to_empire: 1,
                 relation: DiplomaticRelation::Enemy,
             },
         ],
@@ -257,15 +257,15 @@ fn first_battle(events: &MaintenanceEvents, coords: [u8; 2]) -> Option<(Outcome,
         events
             .fleet_battle_events
             .iter()
-            .find(|event| event.coords == coords && event.reporting_empire_raw == empire)
+            .find(|event| event.coords == coords && event.reporting_empire == empire)
     };
     let (left, right) = (report(1)?, report(2)?);
     let withdrew = |empire: u8| {
         events.encounter_disposition_events.iter().any(|event| {
             matches!(
                 event,
-                EncounterDispositionEvent::Retreated { owner_empire_raw, coords: at, .. }
-                    if *owner_empire_raw == empire && *at == coords
+                EncounterDispositionEvent::Retreated { owner_empire, coords: at, .. }
+                    if *owner_empire == empire && *at == coords
             )
         })
     };

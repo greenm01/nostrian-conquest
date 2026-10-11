@@ -48,7 +48,7 @@ pub(super) fn parse_turn_submission(input: &str) -> Result<TurnSubmission, TurnS
             }
             "diplomacy" => {
                 submission.diplomacy.push(TurnDiplomacyDirective {
-                    to_empire_raw: prop_u8(node, "to")?,
+                    to_empire: prop_u8(node, "to")?,
                     relation: parse_diplomatic_relation(node)?,
                 });
             }
@@ -186,7 +186,7 @@ fn parse_fleet_block(node: &::kdl::KdlNode) -> Result<FleetTurnBlock, TurnSubmis
 
 fn parse_message(node: &::kdl::KdlNode) -> Result<TurnMessage, TurnSubmissionError> {
     Ok(TurnMessage {
-        recipient_empire_raw: prop_u8(node, "to")?,
+        recipient_empire: prop_u8(node, "to")?,
         subject: opt_prop_string(node, "subject")?.unwrap_or_default(),
         body: prop_string(node, "body")?,
     })

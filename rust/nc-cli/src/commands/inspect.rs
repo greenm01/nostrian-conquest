@@ -498,10 +498,10 @@ fn print_header_summary(setup: &Setup, conquest: &Conquest) {
 
 fn classify_classic_login_state(
     data: &CoreGameData,
-    empire_raw: u8,
+    empire: u8,
     caller_alias: &str,
 ) -> &'static str {
-    let Some(player) = data.players.get(empire_raw.saturating_sub(1) as usize) else {
+    let Some(player) = data.players.get(empire.saturating_sub(1) as usize) else {
         return "unknown";
     };
 
@@ -514,7 +514,7 @@ fn classify_classic_login_state(
         return "first-time-menu";
     }
 
-    let Some(homeworld) = login_homeworld_like_planet(data, empire_raw, player) else {
+    let Some(homeworld) = login_homeworld_like_planet(data, empire, player) else {
         return "returning-player";
     };
 
@@ -535,13 +535,13 @@ fn homeworld_planet<'a>(data: &'a CoreGameData, player: &nc_data::Player) -> Opt
 
 fn login_homeworld_like_planet<'a>(
     data: &'a CoreGameData,
-    empire_raw: u8,
+    empire: u8,
     player: &nc_data::Player,
 ) -> Option<&'a Planet> {
     homeworld_planet(data, player).or_else(|| {
         data.planets
             .iter()
-            .find(|planet| planet.owner.0 == empire_raw && is_named_homeworld_seed(planet))
+            .find(|planet| planet.owner.0 == empire && is_named_homeworld_seed(planet))
     })
 }
 

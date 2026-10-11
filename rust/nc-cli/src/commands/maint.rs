@@ -138,7 +138,7 @@ pub fn run_rust_maintenance_with_options(
         return Err(Box::new(err));
     }
 
-    if winner_state.winner_empire_raw.is_some() {
+    if winner_state.winner_empire.is_some() {
         return Err("campaign winner has already been declared; maintenance is frozen".into());
     }
 
@@ -473,8 +473,8 @@ fn load_diplomacy_overrides_if_present(
         .directives
         .into_iter()
         .map(|directive| DiplomacyOverride {
-            from_empire_raw: directive.from_empire_raw,
-            to_empire_raw: directive.to_empire_raw,
+            from_empire: directive.from_empire,
+            to_empire: directive.to_empire,
             relation: directive.relation,
         })
         .collect())
@@ -488,20 +488,20 @@ fn apply_diplomatic_escalations(
     let mut pairs = Vec::new();
 
     for event in &events.fleet_battle_events {
-        for &enemy_empire_raw in &event.enemy_empires_raw {
-            pairs.push((event.reporting_empire_raw, enemy_empire_raw));
+        for &enemy_empire in &event.enemy_empires {
+            pairs.push((event.reporting_empire, enemy_empire));
         }
     }
 
     for event in &events.bombard_events {
-        if event.defender_empire_raw != 0 {
-            pairs.push((event.attacker_empire_raw, event.defender_empire_raw));
+        if event.defender_empire != 0 {
+            pairs.push((event.attacker_empire, event.defender_empire));
         }
     }
 
     for event in &events.assault_report_events {
-        if event.defender_empire_raw != 0 {
-            pairs.push((event.attacker_empire_raw, event.defender_empire_raw));
+        if event.defender_empire != 0 {
+            pairs.push((event.attacker_empire, event.defender_empire));
         }
     }
 
@@ -545,15 +545,15 @@ fn apply_one_way_escalation(
 
     if let Some(existing) = diplomacy_overrides
         .iter_mut()
-        .find(|directive| directive.from_empire_raw == from && directive.to_empire_raw == to)
+        .find(|directive| directive.from_empire == from && directive.to_empire == to)
     {
         existing.relation = DiplomaticRelation::Enemy;
         return Ok(());
     }
 
     diplomacy_overrides.push(DiplomacyOverride {
-        from_empire_raw: from,
-        to_empire_raw: to,
+        from_empire: from,
+        to_empire: to,
         relation: DiplomaticRelation::Enemy,
     });
     Ok(())
@@ -569,8 +569,8 @@ fn save_diplomacy_overrides_if_needed(
         .iter()
         .copied()
         .map(|directive| DiplomacyDirective {
-            from_empire_raw: directive.from_empire_raw,
-            to_empire_raw: directive.to_empire_raw,
+            from_empire: directive.from_empire,
+            to_empire: directive.to_empire,
             relation: directive.relation,
         })
         .collect::<Vec<_>>();
@@ -594,8 +594,8 @@ fn absorb_persistable_diplomacy_overrides(
     let mut remaining = Vec::with_capacity(diplomacy_overrides.len());
     for directive in diplomacy_overrides.drain(..) {
         if game_data.set_stored_diplomatic_relation(
-            directive.from_empire_raw,
-            directive.to_empire_raw,
+            directive.from_empire,
+            directive.to_empire,
             directive.relation,
         )? {
             continue;

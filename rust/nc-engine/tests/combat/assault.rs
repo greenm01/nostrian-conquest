@@ -289,7 +289,7 @@ fn a_bombardment_resolves_in_its_tick_before_relief_arrives() {
     let battle = events
         .fleet_battle_events
         .iter()
-        .find(|event| event.reporting_empire_raw == 2)
+        .find(|event| event.reporting_empire == 2)
         .expect("the relief squadron engages the bomber");
     assert!(
         battle.stardate_week > bombard.stardate_week,
@@ -373,18 +373,18 @@ fn a_world_captured_mid_year_is_defended_by_its_new_owner() {
 
     let capture = &events.ownership_change_events[0];
     assert_eq!(capture.stardate_week, Some(1));
-    assert_eq!(capture.new_owner_empire_raw, 1);
+    assert_eq!(capture.new_owner_empire, 1);
     let gate = events
         .fleet_battle_events
         .iter()
-        .find(|event| event.reporting_empire_raw == 3)
+        .find(|event| event.reporting_empire == 3)
         .expect("the new owner's fleet in orbit fights the bomber");
     assert_eq!(gate.stardate_week, Some(DIVE_TICK));
-    assert_eq!(gate.enemy_empires_raw, vec![1]);
+    assert_eq!(gate.enemy_empires, vec![1]);
     let bombard = &events.bombard_events[0];
     assert_eq!(bombard.stardate_week, Some(DIVE_TICK));
-    assert_eq!(bombard.attacker_empire_raw, 3);
-    assert_eq!(bombard.defender_empire_raw, 1);
+    assert_eq!(bombard.attacker_empire, 3);
+    assert_eq!(bombard.defender_empire, 1);
     assert_eq!(game_data.planets[SYSTEM_PLANET_IDX].owner.0, 1);
 }
 
@@ -442,7 +442,7 @@ fn an_unsighted_starbase_fights_an_invasion_before_it_lands() {
         let battle = events
             .fleet_battle_events
             .iter()
-            .find(|event| event.reporting_empire_raw == 1)
+            .find(|event| event.reporting_empire == 1)
             .unwrap_or_else(|| panic!("the base fights the invader, seed {seed}"));
         assert_eq!(battle.stardate_week, Some(1), "seed {seed}");
         assert_eq!(battle.enemy_initial_starbases, 1);
@@ -485,7 +485,7 @@ fn an_owners_fleet_in_orbit_fights_the_bomber_at_the_strike_tick() {
     let battle = events
         .fleet_battle_events
         .iter()
-        .find(|event| event.reporting_empire_raw == 1)
+        .find(|event| event.reporting_empire == 1)
         .expect("the owner's fleet fights the bomber");
     assert_eq!(battle.stardate_week, Some(1));
     assert_eq!(battle.enemy_initial.destroyers, 1);
@@ -586,7 +586,7 @@ fn a_beaten_attacker_retreats_repelled_by_the_orbital_defence() {
         let battle = events
             .fleet_battle_events
             .iter()
-            .find(|event| event.reporting_empire_raw == 1)
+            .find(|event| event.reporting_empire == 1)
             .unwrap_or_else(|| panic!("the orbit's defenders fight the bomber, seed {seed}"));
         assert_eq!(battle.stardate_week, Some(1), "seed {seed}");
         assert!(!battle.held_field, "seed {seed}");
@@ -707,7 +707,7 @@ fn a_second_fleet_of_the_same_empire_strikes_without_refighting_the_defenders() 
             events
                 .fleet_battle_events
                 .iter()
-                .filter(|event| event.reporting_empire_raw == 1)
+                .filter(|event| event.reporting_empire == 1)
                 .count(),
             1,
             "one battle with the base, seed {seed}"

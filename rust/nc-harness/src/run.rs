@@ -12,7 +12,7 @@ use crate::spec::{
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EmpireCombatSummary {
-    pub empire_raw: u8,
+    pub empire: u8,
     pub planets_before: usize,
     pub planets_after: usize,
     pub fleets_before: usize,
@@ -96,14 +96,14 @@ pub fn run_combat_scenario(spec: &CombatScenarioSpec) -> Result<CombatRun, Harne
     let final_year = built.game_data.conquest.game_year;
     let after = snapshot_empire_summaries(&built.game_data);
     let empires = (1..=built.game_data.conquest.player_count)
-        .map(|empire_raw| EmpireCombatSummary {
-            empire_raw,
-            planets_before: before[(empire_raw - 1) as usize].0,
-            planets_after: after[(empire_raw - 1) as usize].0,
-            fleets_before: before[(empire_raw - 1) as usize].1,
-            fleets_after: after[(empire_raw - 1) as usize].1,
-            ships_before: before[(empire_raw - 1) as usize].2,
-            ships_after: after[(empire_raw - 1) as usize].2,
+        .map(|empire| EmpireCombatSummary {
+            empire,
+            planets_before: before[(empire - 1) as usize].0,
+            planets_after: after[(empire - 1) as usize].0,
+            fleets_before: before[(empire - 1) as usize].1,
+            fleets_after: after[(empire - 1) as usize].1,
+            ships_before: before[(empire - 1) as usize].2,
+            ships_after: after[(empire - 1) as usize].2,
         })
         .collect::<Vec<_>>();
 
@@ -174,21 +174,21 @@ pub fn run_combat_sweep(spec: &CombatSweepSpec) -> Result<CombatSweepReport, Har
 
 fn snapshot_empire_summaries(game_data: &CoreGameData) -> Vec<(usize, usize, u32)> {
     (1..=game_data.conquest.player_count)
-        .map(|empire_raw| {
+        .map(|empire| {
             let planets = game_data
                 .planets
                 .iter()
-                .filter(|planet| planet.owner.0 == empire_raw)
+                .filter(|planet| planet.owner.0 == empire)
                 .count();
             let fleets = game_data
                 .fleets
                 .iter()
-                .filter(|fleet| fleet.owner.0 == empire_raw && fleet_has_units(fleet))
+                .filter(|fleet| fleet.owner.0 == empire && fleet_has_units(fleet))
                 .count();
             let ships = game_data
                 .fleets
                 .iter()
-                .filter(|fleet| fleet.owner.0 == empire_raw)
+                .filter(|fleet| fleet.owner.0 == empire)
                 .map(total_fleet_units)
                 .sum::<u32>();
             (planets, fleets, ships)
@@ -294,15 +294,15 @@ fn rotated_dimensions(dimensions: &[SweepDimension], seed: u64) -> Vec<SweepDime
                     }
                 }
                 SweepDimension::DiplomaticRelation {
-                    from_empire_raw,
-                    to_empire_raw,
+                    from_empire,
+                    to_empire,
                     values,
                 } => {
                     let mut rotated = values.clone();
                     rotate_left(&mut rotated, salt);
                     SweepDimension::DiplomaticRelation {
-                        from_empire_raw: *from_empire_raw,
-                        to_empire_raw: *to_empire_raw,
+                        from_empire: *from_empire,
+                        to_empire: *to_empire,
                         values: rotated,
                     }
                 }
@@ -419,27 +419,26 @@ fn expand_dimension_recursive(
             planet.ground_batteries = original_batteries;
         }
         SweepDimension::DiplomaticRelation {
-            from_empire_raw,
-            to_empire_raw,
+            from_empire,
+            to_empire,
             values,
         } => {
-            let relation = relation_spec_mut(current, *from_empire_raw, *to_empire_raw);
+            let relation = relation_spec_mut(current, *from_empire, *to_empire);
             let original = relation.map(|existing| existing.relation);
             for value in values {
-                if let Some(existing) = relation_spec_mut(current, *from_empire_raw, *to_empire_raw)
-                {
+                if let Some(existing) = relation_spec_mut(current, *from_empire, *to_empire) {
                     existing.relation = *value;
                 } else {
                     current.diplomacy.push(DiplomacySpec {
-                        from_empire_raw: *from_empire_raw,
-                        to_empire_raw: *to_empire_raw,
+                        from_empire: *from_empire,
+                        to_empire: *to_empire,
                         relation: *value,
                     });
                 }
                 labels.push(format!(
                     "relation{}-{}={}",
-                    from_empire_raw,
-                    to_empire_raw,
+                    from_empire,
+                    to_empire,
                     relation_label(*value)
                 ));
                 expand_dimension_recursive(dimensions, idx + 1, current, labels, out, max_cases)?;
@@ -448,13 +447,12 @@ fn expand_dimension_recursive(
                     break;
                 }
             }
-            if let Some(existing) = relation_spec_mut(current, *from_empire_raw, *to_empire_raw) {
+            if let Some(existing) = relation_spec_mut(current, *from_empire, *to_empire) {
                 if let Some(original) = original {
                     existing.relation = original;
                 } else {
                     current.diplomacy.retain(|entry| {
-                        !(entry.from_empire_raw == *from_empire_raw
-                            && entry.to_empire_raw == *to_empire_raw)
+                        !(entry.from_empire == *from_empire && entry.to_empire == *to_empire)
                     });
                 }
             }
@@ -509,12 +507,13 @@ fn planet_spec_mut(
 
 fn relation_spec_mut(
     scenario: &mut ScenarioSpec,
-    from_empire_raw: u8,
-    to_empire_raw: u8,
+    from_empire: u8,
+    to_empire: u8,
 ) -> Option<&mut DiplomacySpec> {
-    scenario.diplomacy.iter_mut().find(|relation| {
-        relation.from_empire_raw == from_empire_raw && relation.to_empire_raw == to_empire_raw
-    })
+    scenario
+        .diplomacy
+        .iter_mut()
+        .find(|relation| relation.from_empire == from_empire && relation.to_empire == to_empire)
 }
 
 fn apply_fleet_ship_value(

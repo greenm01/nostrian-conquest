@@ -116,24 +116,20 @@ pub fn planet_input_validation_reason_text(reason: PlanetPlayerInputValidationEr
 
 pub fn diplomacy_input_validation_reason_text(reason: PlayerDiplomacyValidationError) -> String {
     match reason {
-        PlayerDiplomacyValidationError::TargetOutOfRange { target_empire_raw } => {
+        PlayerDiplomacyValidationError::TargetOutOfRange { target_empire } => {
             format!(
                 "target empire {} was outside the active player range",
-                target_empire_raw
+                target_empire
             )
         }
-        PlayerDiplomacyValidationError::SelfTarget { empire_raw } => {
+        PlayerDiplomacyValidationError::SelfTarget { empire } => {
+            format!("empire {} attempted to target itself in diplomacy", empire)
+        }
+        PlayerDiplomacyValidationError::InvalidStoredRelationByte { target_empire, raw } => {
             format!(
-                "empire {} attempted to target itself in diplomacy",
-                empire_raw
+                "stored diplomacy byte {raw:#04x} toward empire {} was invalid",
+                target_empire
             )
         }
-        PlayerDiplomacyValidationError::InvalidStoredRelationByte {
-            target_empire_raw,
-            raw,
-        } => format!(
-            "stored diplomacy byte {raw:#04x} toward empire {} was invalid",
-            target_empire_raw
-        ),
     }
 }

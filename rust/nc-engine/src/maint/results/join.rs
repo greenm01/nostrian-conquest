@@ -81,7 +81,7 @@ pub fn build_join_summary_entries(
         .iter()
         .filter(|event| event.kind == Mission::JoinAnotherFleet)
     {
-        let summary = by_empire.entry(event.owner_empire_raw).or_default();
+        let summary = by_empire.entry(event.owner_empire).or_default();
         summary
             .completed_by_host
             .entry(event.host_fleet_number)
@@ -98,12 +98,12 @@ pub fn build_join_summary_entries(
         match *event {
             nc_data::JoinMissionHostEvent::Retargeted {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 ..
             } => {
                 if let Some(fleet_number) = fleet_number_from_idx(game_data, fleet_idx) {
                     by_empire
-                        .entry(owner_empire_raw)
+                        .entry(owner_empire)
                         .or_default()
                         .retargeted_joiners
                         .insert(fleet_number);
@@ -111,13 +111,13 @@ pub fn build_join_summary_entries(
             }
             nc_data::JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 destroyed_host_fleet_number,
                 ..
             } => {
                 if let Some(fleet_number) = fleet_number_from_idx(game_data, fleet_idx) {
                     by_empire
-                        .entry(owner_empire_raw)
+                        .entry(owner_empire)
                         .or_default()
                         .lost_hosts
                         .entry(
@@ -134,7 +134,7 @@ pub fn build_join_summary_entries(
         if let nc_data::MissionRetargetEvent::Retargeted {
             fleet_idx,
             reporting_fleet_number,
-            owner_empire_raw,
+            owner_empire,
             mission: Mission::JoinAnotherFleet,
             ..
         } = *event
@@ -144,7 +144,7 @@ pub fn build_join_summary_entries(
                 .or_else(|| fleet_number_from_idx(game_data, fleet_idx))
             {
                 by_empire
-                    .entry(owner_empire_raw)
+                    .entry(owner_empire)
                     .or_default()
                     .retargeted_joiners
                     .insert(fleet_number);
@@ -153,7 +153,7 @@ pub fn build_join_summary_entries(
     }
 
     let mut entries = Vec::new();
-    for (owner_empire_raw, mut summary) in by_empire {
+    for (owner_empire, mut summary) in by_empire {
         if summary.completed_by_host.is_empty()
             && summary.retargeted_joiners.is_empty()
             && summary.lost_hosts.is_empty()
@@ -280,7 +280,7 @@ pub fn build_join_summary_entries(
             kind: 0x05,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: owner_empire_raw,
+                recipient: owner_empire,
             },
             repeat_next_pointer: false,
             stardate_week: summary.summary_week,

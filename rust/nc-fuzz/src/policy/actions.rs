@@ -359,14 +359,14 @@ pub fn diplomacy(
     let others = (1..=state.conquest.player_count)
         .filter(|&other| other != empire)
         .collect::<Vec<_>>();
-    let to_empire_raw = pick_from(choices, &others)?;
+    let to_empire = pick_from(choices, &others)?;
     let relation = if hostile || choices.flip() {
         DiplomaticRelation::Enemy
     } else {
         DiplomaticRelation::Neutral
     };
     Some(TurnAction::Diplomacy(TurnDiplomacyDirective {
-        to_empire_raw,
+        to_empire,
         relation,
     }))
 }

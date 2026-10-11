@@ -54,7 +54,7 @@ pub(super) fn process_mission_fleet_merging(
         to_remove[joiner_idx] = true;
         merge_events.push(FleetMergeEvent {
             fleet_idx: joiner_idx,
-            owner_empire_raw: joiner_owner,
+            owner_empire: joiner_owner,
             kind: Mission::JoinAnotherFleet,
             host_fleet_id_raw: game_data.fleets[host_idx].record.0,
             absorbed_fleet_id_raw: joiner_fleet_id,
@@ -93,12 +93,12 @@ pub(super) fn process_mission_fleet_merging(
                 continue;
             }
             let absorbed_id = game_data.fleets[absorbed_idx].record.0;
-            let owner_empire_raw = game_data.fleets[absorbed_idx].owner.0;
+            let owner_empire = game_data.fleets[absorbed_idx].owner.0;
             merge_one_fleet_into_host(game_data, survivor_idx, absorbed_idx);
             to_remove[absorbed_idx] = true;
             merge_events.push(FleetMergeEvent {
                 fleet_idx: absorbed_idx,
-                owner_empire_raw,
+                owner_empire,
                 kind: Mission::RendezvousSector,
                 host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
                 absorbed_fleet_id_raw: absorbed_id,
@@ -110,7 +110,7 @@ pub(super) fn process_mission_fleet_merging(
             });
             merge_events.push(FleetMergeEvent {
                 fleet_idx: survivor_idx,
-                owner_empire_raw,
+                owner_empire,
                 kind: Mission::RendezvousSector,
                 host_fleet_id_raw: game_data.fleets[survivor_idx].record.0,
                 absorbed_fleet_id_raw: absorbed_id,
@@ -152,10 +152,7 @@ pub(super) fn process_join_host_updates(
             && event.absorbed_fleet_id_raw != event.host_fleet_id_raw
         {
             absorbed_by.insert(
-                (
-                    event.owner_empire_raw,
-                    u16::from(event.absorbed_fleet_number),
-                ),
+                (event.owner_empire, u16::from(event.absorbed_fleet_number)),
                 event,
             );
         }
@@ -212,7 +209,7 @@ pub(super) fn process_join_host_updates(
                     fleet.target = Coords::from_array(*coords);
                     events.push(JoinMissionHostEvent::Retargeted {
                         fleet_idx,
-                        owner_empire_raw: owner,
+                        owner_empire: owner,
                         previous_host_fleet_number: Some(merge.absorbed_fleet_number),
                         new_host_fleet_number: Some(merge.host_fleet_number),
                         coords: fleet.sector.to_array(),
@@ -227,7 +224,7 @@ pub(super) fn process_join_host_updates(
             // join_host_fleet_id_raw is already 0 — no need to set it again.
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
-                owner_empire_raw: owner,
+                owner_empire: owner,
                 destroyed_host_fleet_number: destroyed_join_host_fleet_numbers
                     .get(&fleet.record.0)
                     .copied(),
@@ -246,7 +243,7 @@ pub(super) fn process_join_host_updates(
             fleet.mission_target = 0;
             events.push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx,
-                owner_empire_raw: owner,
+                owner_empire: owner,
                 destroyed_host_fleet_number: host_viable.is_some().then_some(host_number as u8),
                 coords,
             });

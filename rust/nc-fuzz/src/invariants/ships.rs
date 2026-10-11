@@ -40,7 +40,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     for event in &events.fleet_battle_events {
         add_ships(
             fleet_battle_losses
-                .entry((event.reporting_empire_raw, event.coords))
+                .entry((event.reporting_empire, event.coords))
                 .or_default(),
             losses_as_ships(&event.friendly_losses),
         );
@@ -53,19 +53,19 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
     };
     for event in &events.encounter_disposition_events {
         if let EncounterDispositionEvent::Retreated {
-            owner_empire_raw,
+            owner_empire,
             coords,
             losses_sustained,
             ..
         }
         | EncounterDispositionEvent::PursuitFire {
-            owner_empire_raw,
+            owner_empire,
             coords,
             losses_sustained,
             ..
         } = event
         {
-            report(*owner_empire_raw, *coords, losses_sustained);
+            report(*owner_empire, *coords, losses_sustained);
         }
     }
     for losses in fleet_battle_losses.into_values() {
@@ -100,7 +100,7 @@ fn merged_fleets(observation: &TurnObservation) -> BTreeMap<(u8, u16), Ships> {
     }
     let mut seen = BTreeSet::new();
     for event in &observation.events.fleet_merge_events {
-        let owner = event.owner_empire_raw;
+        let owner = event.owner_empire;
         if !seen.insert((owner, event.host_fleet_number, event.absorbed_fleet_number)) {
             continue;
         }
@@ -124,7 +124,7 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
     let mut removed = [0; 6];
     for event in &observation.events.salvage_events {
         let SalvageResolvedEvent::Succeeded {
-            owner_empire_raw,
+            owner_empire,
             coords,
             ..
         } = *event
@@ -132,7 +132,7 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
             continue;
         };
         let mut candidates = observation.before.fleets.iter().filter(|fleet| {
-            fleet.owner.0 == owner_empire_raw
+            fleet.owner.0 == owner_empire
                 && fleet.order == Order::Salvage
                 && fleet.target.to_array() == coords
         });
@@ -145,10 +145,10 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
     for event in &observation.events.fleet_defection_events {
         // Combat runs before defection, so a defecting empire that also took
         // losses leaves the defected fleet's final composition unknown.
-        if took_losses(observation, event.reporting_empire_raw) {
+        if took_losses(observation, event.reporting_empire) {
             return None;
         }
-        let key = (event.reporting_empire_raw, u16::from(event.fleet_number));
+        let key = (event.reporting_empire, u16::from(event.fleet_number));
         add_ships(&mut removed, *merged.get(&key)?);
     }
     Some(removed)
@@ -159,23 +159,23 @@ fn took_losses(observation: &TurnObservation, empire: u8) -> bool {
     events
         .fleet_battle_events
         .iter()
-        .any(|event| event.reporting_empire_raw == empire)
+        .any(|event| event.reporting_empire == empire)
         || events.encounter_disposition_events.iter().any(|event| {
             matches!(
                 event,
-                EncounterDispositionEvent::Retreated { owner_empire_raw, .. }
-                    | EncounterDispositionEvent::PursuitFire { owner_empire_raw, .. }
-                    if *owner_empire_raw == empire
+                EncounterDispositionEvent::Retreated { owner_empire, .. }
+                    | EncounterDispositionEvent::PursuitFire { owner_empire, .. }
+                    if *owner_empire == empire
             )
         })
         || events
             .bombard_events
             .iter()
-            .any(|event| event.attacker_empire_raw == empire)
+            .any(|event| event.attacker_empire == empire)
         || events
             .assault_report_events
             .iter()
-            .any(|event| event.attacker_empire_raw == empire)
+            .any(|event| event.attacker_empire == empire)
 }
 
 fn fleet_key(fleet: &Fleet) -> (u8, u16) {

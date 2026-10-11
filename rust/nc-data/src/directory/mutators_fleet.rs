@@ -8,18 +8,18 @@ use crate::{
 impl CoreGameData {
     pub fn conflicting_friendly_colonize_fleet_record(
         &self,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         target: [u8; 2],
         excluded_fleet_record_indexes_1_based: &BTreeSet<usize>,
     ) -> Option<usize> {
-        if owner_empire_raw == 0 {
+        if owner_empire == 0 {
             return None;
         }
         self.fleets
             .iter()
             .enumerate()
             .find(|(idx, fleet)| {
-                fleet.owner.0 == owner_empire_raw
+                fleet.owner.0 == owner_empire
                     && !excluded_fleet_record_indexes_1_based.contains(&(idx + 1))
                     && fleet.ships.etacs > 0
                     && fleet.order == Order::ColonizeWorld
@@ -30,13 +30,13 @@ impl CoreGameData {
 
     pub fn validate_friendly_colonize_target_available(
         &self,
-        owner_empire_raw: u8,
+        owner_empire: u8,
         target: [u8; 2],
         excluded_fleet_record_indexes_1_based: &BTreeSet<usize>,
     ) -> Result<(), FleetOrderValidationError> {
         if let Some(conflicting_fleet_record_index_1_based) = self
             .conflicting_friendly_colonize_fleet_record(
-                owner_empire_raw,
+                owner_empire,
                 target,
                 excluded_fleet_record_indexes_1_based,
             )

@@ -183,20 +183,20 @@ impl CoreGameData {
         let Some(player) = self.players.get(player_index_1_based - 1) else {
             return errors;
         };
-        let empire_raw = player_index_1_based as u8;
+        let empire = player_index_1_based as u8;
         let player_count = self.players.len() as u8;
-        for target_empire_raw in 1..=player_count {
-            let raw = stored_diplomatic_relation(player, target_empire_raw)
+        for target_empire in 1..=player_count {
+            let raw = stored_diplomatic_relation(player, target_empire)
                 .map_or(0, DiplomaticRelation::code);
-            if target_empire_raw == empire_raw {
+            if target_empire == empire {
                 if raw != 0 {
-                    errors.push(PlayerDiplomacyValidationError::SelfTarget { empire_raw });
+                    errors.push(PlayerDiplomacyValidationError::SelfTarget { empire });
                 }
                 continue;
             }
             if raw != 0x00 && raw != 0x01 {
                 errors.push(PlayerDiplomacyValidationError::InvalidStoredRelationByte {
-                    target_empire_raw,
+                    target_empire,
                     raw,
                 });
             }
@@ -226,57 +226,50 @@ impl CoreGameData {
 
     pub fn stored_diplomatic_relation(
         &self,
-        from_empire_raw: u8,
-        to_empire_raw: u8,
+        from_empire: u8,
+        to_empire: u8,
     ) -> Option<DiplomaticRelation> {
-        if from_empire_raw == 0 || to_empire_raw == 0 || from_empire_raw == to_empire_raw {
+        if from_empire == 0 || to_empire == 0 || from_empire == to_empire {
             return None;
         }
         self.players
-            .get(from_empire_raw.saturating_sub(1) as usize)
-            .and_then(|record| diplomatic_relation_toward(record, to_empire_raw))
+            .get(from_empire.saturating_sub(1) as usize)
+            .and_then(|record| diplomatic_relation_toward(record, to_empire))
     }
 
     pub fn set_stored_diplomatic_relation(
         &mut self,
-        from_empire_raw: u8,
-        to_empire_raw: u8,
+        from_empire: u8,
+        to_empire: u8,
         relation: DiplomaticRelation,
     ) -> Result<bool, GameStateMutationError> {
         let player_count = self.players.len() as u8;
-        if to_empire_raw == 0 || to_empire_raw > player_count {
+        if to_empire == 0 || to_empire > player_count {
             return Err(GameStateMutationError::InvalidDiplomacyInput {
-                player_index_1_based: from_empire_raw as usize,
+                player_index_1_based: from_empire as usize,
                 reason: PlayerDiplomacyValidationError::TargetOutOfRange {
-                    target_empire_raw: to_empire_raw,
+                    target_empire: to_empire,
                 },
             });
         }
-        if from_empire_raw == 0 || from_empire_raw > player_count {
+        if from_empire == 0 || from_empire > player_count {
             return Err(GameStateMutationError::MissingPlayerRecord {
-                index_1_based: from_empire_raw as usize,
+                index_1_based: from_empire as usize,
             });
         }
-        if from_empire_raw == to_empire_raw {
+        if from_empire == to_empire {
             return Err(GameStateMutationError::InvalidDiplomacyInput {
-                player_index_1_based: from_empire_raw as usize,
+                player_index_1_based: from_empire as usize,
                 reason: PlayerDiplomacyValidationError::SelfTarget {
-                    empire_raw: from_empire_raw,
+                    empire: from_empire,
                 },
             });
         }
-        let Some(record) = self
-            .players
-            .get_mut(from_empire_raw.saturating_sub(1) as usize)
-        else {
+        let Some(record) = self.players.get_mut(from_empire.saturating_sub(1) as usize) else {
             return Err(GameStateMutationError::MissingPlayerRecord {
-                index_1_based: from_empire_raw as usize,
+                index_1_based: from_empire as usize,
             });
         };
-        Ok(set_diplomatic_relation_toward(
-            record,
-            to_empire_raw,
-            relation,
-        ))
+        Ok(set_diplomatic_relation_toward(record, to_empire, relation))
     }
 }

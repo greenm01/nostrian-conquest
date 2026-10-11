@@ -1798,7 +1798,7 @@ mod tests {
             Some(DiplomaticRelation::Enemy)
         );
         assert_eq!(draft.diplomacy.len(), 1);
-        assert_eq!(draft.diplomacy[0].to_empire_raw, target);
+        assert_eq!(draft.diplomacy[0].to_empire, target);
         assert_eq!(draft.diplomacy[0].relation, DiplomaticRelation::Enemy);
     }
 
@@ -1921,7 +1921,7 @@ mod tests {
             panic!("expected hosted draft save effect, got {:?}", effects);
         };
         assert_eq!(draft.messages.len(), 1);
-        assert_eq!(draft.messages[0].recipient_empire_raw, 2);
+        assert_eq!(draft.messages[0].recipient_empire, 2);
         assert_eq!(draft.messages[0].subject, "Hi");
         assert_eq!(draft.messages[0].body, "Move");
         assert!(

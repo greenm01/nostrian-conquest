@@ -45,7 +45,7 @@ pub struct ReportPreviewQuery {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ViewerReportSet {
     pub role: &'static str,
-    pub empire_raw: u8,
+    pub empire: u8,
     pub reports: Vec<String>,
 }
 
@@ -75,7 +75,7 @@ pub struct ReportPreviewRun {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct ViewerRole {
     role: &'static str,
-    empire_raw: u8,
+    empire: u8,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -361,8 +361,8 @@ fn build_family_run(
             .iter()
             .map(|viewer| ViewerReportSet {
                 role: viewer.role,
-                empire_raw: viewer.empire_raw,
-                reports: viewer_report_texts(viewer.empire_raw, &rows),
+                empire: viewer.empire,
+                reports: viewer_report_texts(viewer.empire, &rows),
             })
             .collect();
         cases.push(ReportPreviewCase {
@@ -466,9 +466,9 @@ fn build_bombard_preview(seed: u64, sample_index: usize) -> Result<PreviewScenar
     let week = Some(sample_week(sample_index));
     world.events.bombard_events.push(BombardEvent {
         planet_idx: TARGET_PLANET_IDX,
-        attacker_empire_raw: ATTACKER_EMPIRE,
+        attacker_empire: ATTACKER_EMPIRE,
         attacker_fleet_number: Some(ATTACKER_FLEET_NUMBER),
-        defender_empire_raw: DEFENDER_EMPIRE,
+        defender_empire: DEFENDER_EMPIRE,
         attacker_initial: attacker_force.to_ship_losses(),
         attacker_loaded_armies_initial: attacker_force.loaded_armies(),
         defender_batteries_initial: defense_batteries,
@@ -485,7 +485,7 @@ fn build_bombard_preview(seed: u64, sample_index: usize) -> Result<PreviewScenar
     });
     world.events.mission_events.push(MissionEvent {
         fleet_idx: ATTACKER_FLEET_IDX,
-        owner_empire_raw: ATTACKER_EMPIRE,
+        owner_empire: ATTACKER_EMPIRE,
         kind: Mission::BombardWorld,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -587,8 +587,8 @@ fn build_assault_preview(
         kind: mission,
         attacker_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         planet_idx: TARGET_PLANET_IDX,
-        attacker_empire_raw: ATTACKER_EMPIRE,
-        defender_empire_raw: DEFENDER_EMPIRE,
+        attacker_empire: ATTACKER_EMPIRE,
+        defender_empire: DEFENDER_EMPIRE,
         attacker_initial: attacker_force.to_ship_losses(),
         attacker_loaded_armies_initial: attacker_force.loaded_armies(),
         defender_batteries_initial: defense_batteries,
@@ -608,7 +608,7 @@ fn build_assault_preview(
     });
     world.events.mission_events.push(MissionEvent {
         fleet_idx: ATTACKER_FLEET_IDX,
-        owner_empire_raw: ATTACKER_EMPIRE,
+        owner_empire: ATTACKER_EMPIRE,
         kind: mission,
         outcome,
         abort_reason: None,
@@ -623,9 +623,9 @@ fn build_assault_preview(
             .ownership_change_events
             .push(PlanetOwnershipChangeEvent {
                 planet_idx: TARGET_PLANET_IDX,
-                reporting_empire_raw: DEFENDER_EMPIRE,
-                previous_owner_empire_raw: DEFENDER_EMPIRE,
-                new_owner_empire_raw: ATTACKER_EMPIRE,
+                reporting_empire: DEFENDER_EMPIRE,
+                previous_owner_empire: DEFENDER_EMPIRE,
+                new_owner_empire: ATTACKER_EMPIRE,
                 stardate_week: week,
             });
     }
@@ -671,7 +671,7 @@ fn build_fleet_battle_preview(
         ..ShipLosses::default()
     };
     world.events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: ATTACKER_EMPIRE,
+        reporting_empire: ATTACKER_EMPIRE,
         reporting_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: if held_field {
@@ -680,7 +680,7 @@ fn build_fleet_battle_preview(
             FleetBattlePerspective::Attacked
         },
         coords,
-        enemy_empires_raw: vec![DEFENDER_EMPIRE],
+        enemy_empires: vec![DEFENDER_EMPIRE],
         primary_enemy_fleet_number: Some(DEFENDER_FLEET_NUMBER),
         held_field,
         friendly_initial: attacker_force.to_ship_losses(),
@@ -696,7 +696,7 @@ fn build_fleet_battle_preview(
         stardate_week: week,
     });
     world.events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: DEFENDER_EMPIRE,
+        reporting_empire: DEFENDER_EMPIRE,
         reporting_fleet_number: Some(DEFENDER_FLEET_NUMBER),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: if held_field {
@@ -705,7 +705,7 @@ fn build_fleet_battle_preview(
             FleetBattlePerspective::Intercepted
         },
         coords,
-        enemy_empires_raw: vec![ATTACKER_EMPIRE],
+        enemy_empires: vec![ATTACKER_EMPIRE],
         primary_enemy_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         held_field: !held_field,
         friendly_initial: defender_force.to_ship_losses(),
@@ -756,7 +756,7 @@ fn build_fleet_destroyed_preview(
         .events
         .fleet_destroyed_events
         .push(FleetDestroyedEvent {
-            reporting_empire_raw: DEFENDER_EMPIRE,
+            reporting_empire: DEFENDER_EMPIRE,
             fleet_number: DEFENDER_FLEET_NUMBER,
             coords,
             was_intercepting: false,
@@ -771,17 +771,17 @@ fn build_fleet_destroyed_preview(
             enemy_starbases_destroyed: 0,
             enemy_ground_battery_losses: 0,
             enemy_ground_army_losses: 0,
-            primary_enemy_empire_raw: Some(ATTACKER_EMPIRE),
+            primary_enemy_empire: Some(ATTACKER_EMPIRE),
             primary_enemy_fleet_number: Some(ATTACKER_FLEET_NUMBER),
             stardate_week: week,
         });
     world.events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: ATTACKER_EMPIRE,
+        reporting_empire: ATTACKER_EMPIRE,
         reporting_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords,
-        enemy_empires_raw: vec![DEFENDER_EMPIRE],
+        enemy_empires: vec![DEFENDER_EMPIRE],
         primary_enemy_fleet_number: Some(DEFENDER_FLEET_NUMBER),
         held_field: true,
         friendly_initial: attacker_force.to_ship_losses(),
@@ -828,13 +828,13 @@ fn build_scout_contact_preview(
     let medium = u32::from(rng.range_u8(0, 3));
     let large = u32::from(rng.range_u8(0, 2));
     world.events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: ATTACKER_EMPIRE,
+        viewer_empire: ATTACKER_EMPIRE,
         source,
         reporting_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         reporting_initial: viewer_force.to_ship_losses(),
         reporting_loaded_armies_initial: viewer_force.loaded_armies(),
         coords: world.target_coords,
-        target_empire_raw: DEFENDER_EMPIRE,
+        target_empire: DEFENDER_EMPIRE,
         target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
         small_vessels: small,
         medium_vessels: medium,
@@ -844,11 +844,11 @@ fn build_scout_contact_preview(
     world.viewers = vec![
         ViewerRole {
             role: "viewer",
-            empire_raw: ATTACKER_EMPIRE,
+            empire: ATTACKER_EMPIRE,
         },
         ViewerRole {
             role: "target",
-            empire_raw: DEFENDER_EMPIRE,
+            empire: DEFENDER_EMPIRE,
         },
     ];
     world.finish(
@@ -915,12 +915,12 @@ fn build_encounter_preview(
             world.events.encounter_disposition_events.push(
                 EncounterDispositionEvent::NoEngagement {
                     fleet_idx: ATTACKER_FLEET_IDX,
-                    owner_empire_raw: ATTACKER_EMPIRE,
+                    owner_empire: ATTACKER_EMPIRE,
                     mission: Some(Mission::ScoutSector),
                     coords: world.target_coords,
                     friendly_initial: friendly.to_ship_losses(),
                     friendly_loaded_armies_initial: friendly.loaded_armies(),
-                    target_empire_raw: DEFENDER_EMPIRE,
+                    target_empire: DEFENDER_EMPIRE,
                     target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
                     small_vessels: u32::from(rng.range_u8(1, 4)),
                     medium_vessels: u32::from(rng.range_u8(0, 2)),
@@ -936,12 +936,12 @@ fn build_encounter_preview(
                 .encounter_disposition_events
                 .push(EncounterDispositionEvent::Retreated {
                     fleet_idx: ATTACKER_FLEET_IDX,
-                    owner_empire_raw: ATTACKER_EMPIRE,
+                    owner_empire: ATTACKER_EMPIRE,
                     mission: Some(Mission::InvadeWorld),
                     coords: world.target_coords,
                     friendly_initial: friendly.to_ship_losses(),
                     friendly_loaded_armies_initial: friendly.loaded_armies(),
-                    target_empire_raw: DEFENDER_EMPIRE,
+                    target_empire: DEFENDER_EMPIRE,
                     target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
                     enemy_initial: enemy.to_ship_losses(),
                     retreat_target_coords: retreat_coords(world.target_coords),
@@ -959,7 +959,7 @@ fn build_encounter_preview(
                 });
             world.events.mission_events.push(MissionEvent {
                 fleet_idx: ATTACKER_FLEET_IDX,
-                owner_empire_raw: ATTACKER_EMPIRE,
+                owner_empire: ATTACKER_EMPIRE,
                 kind: Mission::InvadeWorld,
                 outcome: MissionOutcome::Aborted,
                 abort_reason: None,
@@ -973,12 +973,12 @@ fn build_encounter_preview(
             world.events.encounter_disposition_events.push(
                 EncounterDispositionEvent::PursuitFire {
                     fleet_idx: ATTACKER_FLEET_IDX,
-                    owner_empire_raw: ATTACKER_EMPIRE,
+                    owner_empire: ATTACKER_EMPIRE,
                     mission: Some(Mission::BombardWorld),
                     coords: world.target_coords,
                     friendly_initial: friendly.to_ship_losses(),
                     friendly_loaded_armies_initial: friendly.loaded_armies(),
-                    target_empire_raw: DEFENDER_EMPIRE,
+                    target_empire: DEFENDER_EMPIRE,
                     target_fleet_number: Some(DEFENDER_FLEET_NUMBER),
                     enemy_initial: enemy.to_ship_losses(),
                     retreat_target_coords: retreat_coords(world.target_coords),
@@ -1000,11 +1000,11 @@ fn build_encounter_preview(
     world.viewers = vec![
         ViewerRole {
             role: "reporting-fleet",
-            empire_raw: ATTACKER_EMPIRE,
+            empire: ATTACKER_EMPIRE,
         },
         ViewerRole {
             role: "target",
-            empire_raw: DEFENDER_EMPIRE,
+            empire: DEFENDER_EMPIRE,
         },
     ];
     world.finish(
@@ -1052,8 +1052,8 @@ fn build_ownership_change_preview(
         kind: mission,
         attacker_fleet_number: Some(ATTACKER_FLEET_NUMBER),
         planet_idx: TARGET_PLANET_IDX,
-        attacker_empire_raw: ATTACKER_EMPIRE,
-        defender_empire_raw: DEFENDER_EMPIRE,
+        attacker_empire: ATTACKER_EMPIRE,
+        defender_empire: DEFENDER_EMPIRE,
         attacker_initial: attacker_force.to_ship_losses(),
         attacker_loaded_armies_initial: attacker_force.loaded_armies(),
         defender_batteries_initial: defense_batteries,
@@ -1080,14 +1080,14 @@ fn build_ownership_change_preview(
         .ownership_change_events
         .push(PlanetOwnershipChangeEvent {
             planet_idx: TARGET_PLANET_IDX,
-            reporting_empire_raw: DEFENDER_EMPIRE,
-            previous_owner_empire_raw: DEFENDER_EMPIRE,
-            new_owner_empire_raw: ATTACKER_EMPIRE,
+            reporting_empire: DEFENDER_EMPIRE,
+            previous_owner_empire: DEFENDER_EMPIRE,
+            new_owner_empire: ATTACKER_EMPIRE,
             stardate_week: week,
         });
     world.events.mission_events.push(MissionEvent {
         fleet_idx: ATTACKER_FLEET_IDX,
-        owner_empire_raw: ATTACKER_EMPIRE,
+        owner_empire: ATTACKER_EMPIRE,
         kind: mission,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -1205,11 +1205,11 @@ impl PreviewWorld {
             viewers: vec![
                 ViewerRole {
                     role: "attacker",
-                    empire_raw: ATTACKER_EMPIRE,
+                    empire: ATTACKER_EMPIRE,
                 },
                 ViewerRole {
                     role: "defender",
-                    empire_raw: DEFENDER_EMPIRE,
+                    empire: DEFENDER_EMPIRE,
                 },
             ],
             target_coords,
@@ -1298,12 +1298,12 @@ fn hash_label(label: &str) -> u64 {
 
 fn configure_named_player(
     game_data: &mut nc_data::CoreGameData,
-    empire_raw: u8,
+    empire: u8,
     handle: &str,
     empire_name: &str,
 ) {
-    if let Some(player) = game_data.players.get_mut((empire_raw - 1) as usize) {
-        player.mode = PlayerMode::from_code(empire_raw);
+    if let Some(player) = game_data.players.get_mut((empire - 1) as usize) {
+        player.mode = PlayerMode::from_code(empire);
         set_player_handle(player, handle);
         set_empire_name(player, empire_name);
     }
@@ -1313,7 +1313,7 @@ fn configure_target_planet(
     game_data: &mut nc_data::CoreGameData,
     name: &str,
     coords: [u8; 2],
-    owner_empire_raw: u8,
+    owner_empire: u8,
     armies: u8,
     batteries: u8,
 ) {
@@ -1321,8 +1321,8 @@ fn configure_target_planet(
     *planet = Planet::default();
     planet.sector = Coords::from_array(coords);
     set_planet_name(planet, name);
-    planet.owner.0 = owner_empire_raw;
-    planet.years_under_owner = if owner_empire_raw == 0 { 0 } else { 2 };
+    planet.owner.0 = owner_empire;
+    planet.years_under_owner = if owner_empire == 0 { 0 } else { 2 };
     planet.ground_batteries = u16::from(batteries);
     planet.armies = u16::from(armies);
     planet.potential_production = 120;
@@ -1332,7 +1332,7 @@ fn configure_target_planet(
 
 fn configure_fleet(
     fleet: &mut Fleet,
-    owner_empire_raw: u8,
+    owner_empire: u8,
     fleet_number: u8,
     coords: [u8; 2],
     force: ForceSpec,
@@ -1340,7 +1340,7 @@ fn configure_fleet(
     target: [u8; 2],
 ) {
     *fleet = Fleet::default();
-    fleet.owner.0 = owner_empire_raw;
+    fleet.owner.0 = owner_empire;
     fleet.fleet_number.0 = fleet_number.into();
     fleet.sector = Coords::from_array(coords);
     fleet.order = order;

@@ -17,7 +17,7 @@ pub(super) fn render_turn_submission(submission: &TurnSubmission) -> String {
     for directive in &submission.diplomacy {
         out.push_str(&format!(
             "diplomacy to={} relation=\"{}\"\n",
-            directive.to_empire_raw,
+            directive.to_empire,
             relation_name(directive.relation)
         ));
     }
@@ -156,7 +156,7 @@ fn render_fleet_block(out: &mut String, fleet: &FleetTurnBlock) {
 fn render_message(out: &mut String, message: &TurnMessage) {
     out.push_str(&format!(
         "message to={} subject=\"{}\" body=\"{}\"\n",
-        message.recipient_empire_raw,
+        message.recipient_empire,
         kdl_escape(&message.subject),
         kdl_escape(&message.body)
     ));

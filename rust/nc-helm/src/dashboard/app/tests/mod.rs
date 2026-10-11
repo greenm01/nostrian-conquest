@@ -3806,10 +3806,7 @@ fn diplomacy_overlay_updates_preview_and_hosted_draft() {
     assert_eq!(
         app.hosted_turn_draft
             .as_ref()
-            .and_then(|draft| draft
-                .diplomacy
-                .iter()
-                .find(|row| row.to_empire_raw == target))
+            .and_then(|draft| draft.diplomacy.iter().find(|row| row.to_empire == target))
             .map(|row| row.relation),
         Some(DiplomaticRelation::Enemy)
     );
@@ -3906,7 +3903,7 @@ fn inbox_quick_compose_stages_and_removes_hosted_message() {
 
     let draft = app.hosted_turn_draft.as_ref().expect("draft");
     assert_eq!(draft.messages.len(), 1);
-    assert_eq!(draft.messages[0].recipient_empire_raw, 2);
+    assert_eq!(draft.messages[0].recipient_empire, 2);
     assert_eq!(draft.messages[0].subject, "Hi");
     assert_eq!(draft.messages[0].body, "Move");
     assert!(

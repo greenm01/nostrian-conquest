@@ -174,9 +174,9 @@ pub enum PlanetPlayerInputValidationError {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PlayerDiplomacyValidationError {
-    TargetOutOfRange { target_empire_raw: u8 },
-    SelfTarget { empire_raw: u8 },
-    InvalidStoredRelationByte { target_empire_raw: u8, raw: u8 },
+    TargetOutOfRange { target_empire: u8 },
+    SelfTarget { empire: u8 },
+    InvalidStoredRelationByte { target_empire: u8, raw: u8 },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

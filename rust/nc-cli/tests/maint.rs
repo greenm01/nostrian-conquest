@@ -900,7 +900,7 @@ fn maint_rust_updates_large_game_database_from_scout_intel_event() {
 
     let mut game_data = load_classic_core_files(&target).expect("generated game should load");
     zero_all_fleets(&mut game_data);
-    let (planet_idx, coords, owner_empire_raw) = game_data
+    let (planet_idx, coords, owner_empire) = game_data
         .planets
         .iter()
         .enumerate()
@@ -928,11 +928,11 @@ fn maint_rust_updates_large_game_database_from_scout_intel_event() {
     let viewer_record = database.record(planet_idx, 0, planet_count);
     assert_ne!(viewer_record.planet_name_bytes(), b"UNKNOWN");
     assert!(!viewer_record.planet_name_bytes().is_empty());
-    assert_eq!(viewer_record.raw[0x15], owner_empire_raw);
+    assert_eq!(viewer_record.raw[0x15], owner_empire);
 
     let unrelated_viewer_record = database.record(planet_idx, 2, planet_count);
     assert_eq!(unrelated_viewer_record.planet_name_bytes(), b"UNKNOWN");
-    assert_ne!(unrelated_viewer_record.raw[0x15], owner_empire_raw);
+    assert_ne!(unrelated_viewer_record.raw[0x15], owner_empire);
 
     cleanup_dir(&target);
 }
@@ -957,7 +957,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
     assert!(stdout.contains("seed=1515"));
 
     let mut game_data = load_classic_core_files(&target).expect("generated game should load");
-    let (planet_idx, coords, owner_empire_raw) = game_data
+    let (planet_idx, coords, owner_empire) = game_data
         .planets
         .iter()
         .enumerate()
@@ -1009,7 +1009,7 @@ fn maint_rust_lone_scout_system_does_not_reproduce_classic_abort_bug() {
     let viewer_record = database.record(planet_idx, 0, planet_count);
     assert_ne!(viewer_record.planet_name_bytes(), b"UNKNOWN");
     assert!(!viewer_record.planet_name_bytes().is_empty());
-    assert_eq!(viewer_record.raw[0x15], owner_empire_raw);
+    assert_eq!(viewer_record.raw[0x15], owner_empire);
 
     cleanup_dir(&target);
 }
@@ -3611,15 +3611,15 @@ fn maint_rust_reports_when_one_serious_contender_remains() {
         .build_initialized_baseline()
         .expect("baseline should build");
 
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);
@@ -3661,15 +3661,15 @@ fn maint_rust_reports_emperor_recognition_when_only_stable_empire_remains() {
         .build_initialized_baseline()
         .expect("baseline should build");
 
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);

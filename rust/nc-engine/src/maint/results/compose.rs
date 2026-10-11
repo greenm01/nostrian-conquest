@@ -25,8 +25,7 @@ impl ReportSuppressionPlan {
             .fleet_destroyed_events
             .iter()
             .filter_map(|event| {
-                (event.fleet_number != 0)
-                    .then_some((event.reporting_empire_raw, event.fleet_number))
+                (event.fleet_number != 0).then_some((event.reporting_empire, event.fleet_number))
             })
             .collect();
         let disposition_covered_fleet_keys = events
@@ -35,12 +34,12 @@ impl ReportSuppressionPlan {
             .filter_map(|event| match *event {
                 nc_data::EncounterDispositionEvent::Retreated {
                     fleet_idx,
-                    owner_empire_raw,
+                    owner_empire,
                     ..
                 }
                 | nc_data::EncounterDispositionEvent::PursuitFire {
                     fleet_idx,
-                    owner_empire_raw,
+                    owner_empire,
                     ..
                 } => {
                     let fleet_number = game_data
@@ -48,7 +47,7 @@ impl ReportSuppressionPlan {
                         .get(fleet_idx)
                         .map(|f| f.fleet_number.0 as u8)
                         .filter(|n| *n != 0)?;
-                    Some((owner_empire_raw, fleet_number))
+                    Some((owner_empire, fleet_number))
                 }
                 _ => None,
             })
@@ -60,19 +59,19 @@ impl ReportSuppressionPlan {
         }
     }
 
-    pub(super) fn fleet_survives(&self, empire_raw: u8, fleet_number: u8) -> bool {
+    pub(super) fn fleet_survives(&self, empire: u8, fleet_number: u8) -> bool {
         self.surviving_fleet_report_keys
-            .contains(&(empire_raw, fleet_number))
+            .contains(&(empire, fleet_number))
     }
 
-    pub(super) fn destroyed_supersedes_battle(&self, empire_raw: u8, fleet_number: u8) -> bool {
+    pub(super) fn destroyed_supersedes_battle(&self, empire: u8, fleet_number: u8) -> bool {
         self.destroyed_fleet_report_keys
-            .contains(&(empire_raw, fleet_number))
+            .contains(&(empire, fleet_number))
     }
 
-    pub(super) fn disposition_supersedes_battle(&self, empire_raw: u8, fleet_number: u8) -> bool {
+    pub(super) fn disposition_supersedes_battle(&self, empire: u8, fleet_number: u8) -> bool {
         self.disposition_covered_fleet_keys
-            .contains(&(empire_raw, fleet_number))
+            .contains(&(empire, fleet_number))
     }
 }
 
@@ -86,7 +85,7 @@ pub(super) fn mission_event_has_assault_report(
     events.assault_report_events.iter().any(|assault| {
         assault.kind == event.kind
             && assault.planet_idx == planet_idx
-            && assault.attacker_empire_raw == event.owner_empire_raw
+            && assault.attacker_empire == event.owner_empire
             && assault.outcome == event.outcome
     })
 }
@@ -101,8 +100,7 @@ pub(super) fn mission_event_has_fleet_destroyed(
     };
     let fleet_number = fleet.fleet_number.0 as u8;
     events.fleet_destroyed_events.iter().any(|destroyed| {
-        destroyed.fleet_number == fleet_number
-            && destroyed.reporting_empire_raw == event.owner_empire_raw
+        destroyed.fleet_number == fleet_number && destroyed.reporting_empire == event.owner_empire
     })
 }
 
@@ -120,7 +118,7 @@ pub(super) fn matching_roe_abort_disposition_index(
         .position(|disposition| match disposition {
             nc_data::EncounterDispositionEvent::Retreated {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 mission: Some(mission),
                 coords: disposition_coords,
                 reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
@@ -128,14 +126,14 @@ pub(super) fn matching_roe_abort_disposition_index(
             }
             | nc_data::EncounterDispositionEvent::PursuitFire {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 mission: Some(mission),
                 coords: disposition_coords,
                 reason: nc_data::EncounterDispositionReason::RoeWithdrawal,
                 ..
             } => {
                 *fleet_idx == event.fleet_idx
-                    && *owner_empire_raw == event.owner_empire_raw
+                    && *owner_empire == event.owner_empire
                     && *mission == event.kind
                     && *disposition_coords == coords
             }

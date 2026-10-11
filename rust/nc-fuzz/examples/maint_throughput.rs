@@ -127,7 +127,7 @@ fn play_game(mode: Mode, player_count: u8, seed: u64, turns: u16) -> Totals {
         play.run_maintenance().expect("maintenance should run");
         totals.maintenance += start.elapsed();
         totals.turns += 1;
-        if play.winner_state.winner_empire_raw.is_some() {
+        if play.winner_state.winner_empire.is_some() {
             break;
         }
     }

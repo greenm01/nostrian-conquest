@@ -206,22 +206,22 @@ pub fn push_routed_message_legacy_chunked(
 pub fn push_routed_message_chunked(
     data: &mut Vec<u8>,
     game_data: &mut CoreGameData,
-    recipient_empire_raw: u8,
+    recipient_empire: u8,
     kind: u8,
     tail: [u8; 10],
     text: &str,
 ) {
-    if recipient_empire_raw == 0 {
+    if recipient_empire == 0 {
         return;
     }
     let routed = format!(
         "For {}: {}",
-        empire_label(game_data, recipient_empire_raw),
+        empire_label(game_data, recipient_empire),
         text
     );
     if let Some(player) = game_data
         .players
-        .get_mut(recipient_empire_raw.saturating_sub(1) as usize)
+        .get_mut(recipient_empire.saturating_sub(1) as usize)
     {
         set_login_reviewables_present(player, true);
     }

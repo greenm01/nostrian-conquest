@@ -22,11 +22,11 @@ pub fn enemy_retreat_reported_for_battle(
         matches!(
             event,
             nc_data::EncounterDispositionEvent::Retreated {
-                owner_empire_raw,
+                owner_empire,
                 coords,
                 ..
             } if *coords == battle_event.coords
-                && battle_event.enemy_empires_raw.contains(owner_empire_raw)
+                && battle_event.enemy_empires.contains(owner_empire)
         )
     })
 }

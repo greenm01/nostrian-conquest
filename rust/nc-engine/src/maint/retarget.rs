@@ -16,10 +16,10 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
         }
         let previous_target_coords = fleet.target.to_array();
         let current_coords = fleet.sector.to_array();
-        let owner_empire_raw = fleet.owner.0;
+        let owner_empire = fleet.owner.0;
         let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
         let Some(new_target_coords) =
-            nearest_owned_planet_target_from_list(&owned_planets, owner_empire_raw, current_coords)
+            nearest_owned_planet_target_from_list(&owned_planets, owner_empire, current_coords)
         else {
             fleet.order = Order::HoldPosition;
             fleet.speed = 0;
@@ -27,7 +27,7 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
             events.push(MissionRetargetEvent::Abandoned {
                 fleet_idx,
                 reporting_fleet_number,
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::SeekHome,
                 previous_target_coords,
                 coords: current_coords,
@@ -39,7 +39,7 @@ pub(super) fn refresh_seek_home_targets(game_data: &mut CoreGameData) -> Vec<Mis
             events.push(MissionRetargetEvent::Retargeted {
                 fleet_idx,
                 reporting_fleet_number,
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::SeekHome,
                 current_coords,
                 previous_target_coords,
@@ -105,7 +105,7 @@ pub(super) fn refresh_join_host_targets(game_data: &mut CoreGameData) -> Vec<Mis
                 events.push(MissionRetargetEvent::Retargeted {
                     fleet_idx,
                     reporting_fleet_number,
-                    owner_empire_raw: fleet.owner.0,
+                    owner_empire: fleet.owner.0,
                     mission: Mission::JoinAnotherFleet,
                     current_coords,
                     previous_target_coords,
@@ -139,15 +139,15 @@ pub(super) fn refresh_guard_starbase_targets(
         }
         let previous_target_coords = fleet.target.to_array();
         let current_coords = fleet.sector.to_array();
-        let owner_empire_raw = fleet.owner.0;
+        let owner_empire = fleet.owner.0;
         let reporting_fleet_number = Some(fleet.fleet_number.0 as u8);
         let base_id = fleet.mission_target;
         let new_target_coords = active_bases_by_id
-            .get(&(owner_empire_raw, base_id))
+            .get(&(owner_empire, base_id))
             .copied()
             .or_else(|| {
                 active_base_coords
-                    .contains(&(owner_empire_raw, previous_target_coords))
+                    .contains(&(owner_empire, previous_target_coords))
                     .then_some(previous_target_coords)
             });
         let Some(new_target_coords) = new_target_coords else {
@@ -157,7 +157,7 @@ pub(super) fn refresh_guard_starbase_targets(
             events.push(MissionRetargetEvent::Abandoned {
                 fleet_idx,
                 reporting_fleet_number,
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::GuardStarbase,
                 previous_target_coords,
                 coords: current_coords,
@@ -169,7 +169,7 @@ pub(super) fn refresh_guard_starbase_targets(
             events.push(MissionRetargetEvent::Retargeted {
                 fleet_idx,
                 reporting_fleet_number,
-                owner_empire_raw,
+                owner_empire,
                 mission: Mission::GuardStarbase,
                 current_coords,
                 previous_target_coords,
@@ -182,12 +182,12 @@ pub(super) fn refresh_guard_starbase_targets(
 
 pub(super) fn nearest_owned_planet_target_from_list(
     owned_planets: &[(u8, [u8; 2])],
-    empire_raw: u8,
+    empire: u8,
     from: [u8; 2],
 ) -> Option<[u8; 2]> {
     owned_planets
         .iter()
-        .filter(|(owner, _)| *owner == empire_raw)
+        .filter(|(owner, _)| *owner == empire)
         .min_by_key(|(_, coords)| sector_distance_sq(from, *coords))
         .map(|(_, coords)| *coords)
 }

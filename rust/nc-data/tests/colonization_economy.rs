@@ -53,7 +53,7 @@ fn newly_colonized_active_planets_skip_same_turn_economics() {
             event,
             ColonizationResolvedEvent::Succeeded {
                 planet_idx,
-                colonizer_empire_raw: 1,
+                colonizer_empire: 1,
                 ..
             } if *planet_idx == target_idx
         )

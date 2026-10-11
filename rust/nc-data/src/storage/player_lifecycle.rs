@@ -50,7 +50,7 @@ impl PlayerLifecycleState {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct WinnerState {
-    pub winner_empire_raw: Option<u8>,
+    pub winner_empire: Option<u8>,
     pub winner_declared_year: Option<u16>,
 }
 

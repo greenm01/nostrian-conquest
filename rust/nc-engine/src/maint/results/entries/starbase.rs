@@ -55,7 +55,7 @@ pub fn push_starbase_entries(
             entries,
             &source,
             body,
-            event.owner_empire_raw,
+            event.owner_empire,
             event.stardate_week,
             year,
         );
@@ -73,14 +73,14 @@ pub fn push_starbase_entries(
         );
         let body = format!(
             " Guard Starbase mission report: We have arrived at {} and are merging with the {}.",
-            starbase_at(game_data, event.owner_empire_raw, event.coords),
+            starbase_at(game_data, event.owner_empire, event.coords),
             fleet_label(event.host_fleet_number)
         );
         push(
             entries,
             &source,
             body,
-            event.owner_empire_raw,
+            event.owner_empire,
             event.stardate_week,
             year,
         );

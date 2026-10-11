@@ -196,8 +196,8 @@ pub fn declared(enemies: &[(u8, u8)]) -> Vec<DiplomacyOverride> {
     for from in 1..=4u8 {
         for to in (1..=4u8).filter(|to| *to != from) {
             overrides.push(DiplomacyOverride {
-                from_empire_raw: from,
-                to_empire_raw: to,
+                from_empire: from,
+                to_empire: to,
                 relation: if enemies.contains(&(from, to)) {
                     DiplomaticRelation::Enemy
                 } else {
@@ -229,7 +229,7 @@ pub fn first_contact(events: &MaintenanceEvents, viewer: u8, coords: [u8; 2]) ->
     events
         .scout_contact_events
         .iter()
-        .filter(|event| event.viewer_empire_raw == viewer && event.coords == coords)
+        .filter(|event| event.viewer_empire == viewer && event.coords == coords)
         .filter_map(|event| event.stardate_week)
         .min()
 }
@@ -240,7 +240,7 @@ pub fn fought(events: &MaintenanceEvents, empire: u8, coords: [u8; 2]) -> bool {
         || events
             .fleet_battle_events
             .iter()
-            .any(|event| event.reporting_empire_raw == empire && event.coords == coords)
+            .any(|event| event.reporting_empire == empire && event.coords == coords)
 }
 
 /// Battles `empire` started at `coords`.
@@ -249,7 +249,7 @@ pub fn attacks(events: &MaintenanceEvents, empire: u8, coords: [u8; 2]) -> usize
         .fleet_battle_events
         .iter()
         .filter(|event| {
-            event.reporting_empire_raw == empire
+            event.reporting_empire == empire
                 && event.coords == coords
                 && event.perspective
                     == nc_data::maintenance_types::FleetBattlePerspective::Intercepted

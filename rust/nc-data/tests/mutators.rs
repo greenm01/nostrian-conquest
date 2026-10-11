@@ -2066,7 +2066,7 @@ fn set_stored_diplomatic_relation_rejects_self_target() {
         error,
         GameStateMutationError::InvalidDiplomacyInput {
             player_index_1_based: 1,
-            reason: PlayerDiplomacyValidationError::SelfTarget { empire_raw: 1 },
+            reason: PlayerDiplomacyValidationError::SelfTarget { empire: 1 },
         }
     );
 }

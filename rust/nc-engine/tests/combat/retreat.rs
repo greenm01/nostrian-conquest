@@ -406,7 +406,7 @@ fn retreat_from_the_fleets_own_system_seeks_another_world() {
         let events = run(&mut game_data, seed);
         for event in &events.encounter_disposition_events {
             if let EncounterDispositionEvent::Retreated {
-                owner_empire_raw: 1,
+                owner_empire: 1,
                 coords: HOME,
                 retreat_target_coords,
                 ..

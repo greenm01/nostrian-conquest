@@ -142,15 +142,15 @@ fn rogue_and_civil_disorder_states_are_preserved() {
 #[test]
 fn empty_rogue_empire_is_not_a_campaign_contender() {
     let mut game_data = baseline_game();
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);
@@ -194,7 +194,7 @@ fn maintenance_marks_empire_without_recovery_path_defeated() {
     assert_eq!(player.empire_name.trim().to_string(), "");
     assert_eq!(events.civil_disorder_events.len(), 0);
     assert_eq!(events.empire_elimination_events.len(), 1);
-    assert_eq!(events.empire_elimination_events[0].defeated_empire_raw, 1);
+    assert_eq!(events.empire_elimination_events[0].defeated_empire, 1);
     assert_eq!(
         game_data.empire_campaign_state(1),
         Some(CampaignState::CivilDisorder)
@@ -204,15 +204,15 @@ fn maintenance_marks_empire_without_recovery_path_defeated() {
 #[test]
 fn sole_contender_is_reported_when_only_one_empire_can_still_contest() {
     let mut game_data = baseline_game();
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);
@@ -239,15 +239,15 @@ fn sole_contender_is_reported_when_only_one_empire_can_still_contest() {
 #[test]
 fn maintenance_emits_campaign_outlook_event_when_one_contender_remains() {
     let mut game_data = baseline_game();
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);
@@ -278,15 +278,15 @@ fn multiple_contenders_keep_campaign_outlook_contested() {
 #[test]
 fn maintenance_emits_campaign_outcome_when_last_stable_contender_remains() {
     let mut game_data = baseline_game();
-    for empire_raw in 2..=4u8 {
+    for empire in 2..=4u8 {
         for planet in &mut game_data.planets {
-            if planet.owner.0 == empire_raw {
+            if planet.owner.0 == empire {
                 planet.owner.0 = 0;
                 planet.years_under_owner = 0;
             }
         }
         for fleet in &mut game_data.fleets {
-            if fleet.owner.0 == empire_raw {
+            if fleet.owner.0 == empire {
                 fleet.ships.etacs = 0;
                 set_troop_transports(fleet, 0);
                 set_armies_aboard(fleet, 0);

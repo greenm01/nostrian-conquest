@@ -5,27 +5,27 @@ pub fn report_header(source_clause: &str, week: Option<u8>, year: u16) -> String
     format_report_first_line(source_clause, week.unwrap_or(1), year)
 }
 
-pub fn empire_label(game_data: &CoreGameData, empire_raw: u8) -> String {
-    let idx = empire_raw.saturating_sub(1) as usize;
+pub fn empire_label(game_data: &CoreGameData, empire_code: u8) -> String {
+    let idx = empire_code.saturating_sub(1) as usize;
     let Some(player) = game_data.players.get(idx) else {
-        return format!("Empire #{empire_raw}");
+        return format!("Empire #{empire_code}");
     };
     let empire = player.empire_name.trim().to_string();
     let handle = player.handle.trim().to_string();
     let legacy = player.empire_name.trim().to_string();
     if !empire.is_empty() {
-        format!("Empire #{empire_raw} \"{empire}\"")
+        format!("Empire #{empire_code} \"{empire}\"")
     } else if !handle.is_empty() {
-        format!("Empire #{empire_raw} \"{handle}\"")
+        format!("Empire #{empire_code} \"{handle}\"")
     } else if !legacy.is_empty() {
-        format!("Empire #{empire_raw} \"{legacy}\"")
+        format!("Empire #{empire_code} \"{legacy}\"")
     } else {
-        format!("Empire #{empire_raw}")
+        format!("Empire #{empire_code}")
     }
 }
 
-pub fn classic_empire_display_name(game_data: &CoreGameData, empire_raw: u8) -> Option<String> {
-    let idx = empire_raw.saturating_sub(1) as usize;
+pub fn classic_empire_display_name(game_data: &CoreGameData, empire_code: u8) -> Option<String> {
+    let idx = empire_code.saturating_sub(1) as usize;
     let player = game_data.players.get(idx)?;
     let empire = player.empire_name.trim().to_string();
     if !empire.is_empty() {
@@ -42,11 +42,11 @@ pub fn classic_empire_display_name(game_data: &CoreGameData, empire_raw: u8) -> 
     None
 }
 
-pub fn classic_empire_clause(game_data: &CoreGameData, empire_raw: u8) -> String {
-    if let Some(name) = classic_empire_display_name(game_data, empire_raw) {
-        format!("\"{name}\", (Empire #{empire_raw})")
+pub fn classic_empire_clause(game_data: &CoreGameData, empire: u8) -> String {
+    if let Some(name) = classic_empire_display_name(game_data, empire) {
+        format!("\"{name}\", (Empire #{empire})")
     } else {
-        format!("Empire #{empire_raw}")
+        format!("Empire #{empire}")
     }
 }
 
@@ -98,13 +98,13 @@ pub fn fleet_number_from_idx(game_data: &CoreGameData, fleet_idx: usize) -> Opti
 pub fn known_hostile_fleet_label(
     game_data: &CoreGameData,
     fleet_number: Option<u8>,
-    empire_raw: u8,
+    empire: u8,
 ) -> Option<String> {
     let fleet_number = fleet_number.filter(|fleet_number| *fleet_number != 0)?;
     Some(format!(
         "the {} of {}",
         fleet_label(fleet_number),
-        classic_empire_clause(game_data, empire_raw)
+        classic_empire_clause(game_data, empire)
     ))
 }
 
@@ -123,22 +123,18 @@ fn capitalize_leading_ascii(text: &str) -> String {
 pub fn classic_enemy_reference(
     game_data: &CoreGameData,
     fleet_number: Option<u8>,
-    empire_raw: u8,
+    empire: u8,
 ) -> String {
-    known_hostile_fleet_label(game_data, fleet_number, empire_raw)
-        .unwrap_or_else(|| classic_empire_clause(game_data, empire_raw))
+    known_hostile_fleet_label(game_data, fleet_number, empire)
+        .unwrap_or_else(|| classic_empire_clause(game_data, empire))
 }
 
 pub fn classic_enemy_reference_titlecase(
     game_data: &CoreGameData,
     fleet_number: Option<u8>,
-    empire_raw: u8,
+    empire: u8,
 ) -> String {
-    capitalize_leading_ascii(&classic_enemy_reference(
-        game_data,
-        fleet_number,
-        empire_raw,
-    ))
+    capitalize_leading_ascii(&classic_enemy_reference(game_data, fleet_number, empire))
 }
 
 pub fn mission_short_label(kind: Mission) -> &'static str {
@@ -204,13 +200,13 @@ pub fn coords_system_text(coords: [u8; 2]) -> String {
 
 pub fn nearest_owned_destination_text(
     game_data: &CoreGameData,
-    empire_raw: u8,
+    empire: u8,
     coords: [u8; 2],
 ) -> String {
     if let Some(planet) = game_data
         .planets
         .iter()
-        .find(|planet| planet.sector.to_array() == coords && planet.owner.0 == empire_raw)
+        .find(|planet| planet.sector.to_array() == coords && planet.owner.0 == empire)
     {
         format!(
             "planet \"{}\", located in {}",
@@ -342,14 +338,14 @@ pub fn structured_repulsed_assault_alert(kind: Mission, outcome: MissionOutcome)
 pub fn aborted_mission_follow_on_text(
     game_data: &CoreGameData,
     fleet: &nc_data::Fleet,
-    empire_raw: u8,
+    empire: u8,
 ) -> String {
     use nc_data::Order;
     if fleet.order == Order::SeekHome && fleet.speed > 0 {
         let retreat_target = fleet.target.to_array();
         format!(
             "withdrawing toward {}",
-            nearest_owned_destination_text(game_data, empire_raw, retreat_target)
+            nearest_owned_destination_text(game_data, empire, retreat_target)
         )
     } else {
         "holding position and awaiting orders".to_string()
@@ -371,20 +367,20 @@ pub fn aborted_event_follow_on_text(
     {
         return format!(
             "withdrawing toward {}",
-            nearest_owned_destination_text(game_data, event.owner_empire_raw, target)
+            nearest_owned_destination_text(game_data, event.owner_empire, target)
         );
     }
-    aborted_mission_follow_on_text(game_data, fleet, event.owner_empire_raw)
+    aborted_mission_follow_on_text(game_data, fleet, event.owner_empire)
 }
 
 pub fn aborted_mission_follow_on_text_from_idx(
     game_data: &CoreGameData,
     fleet_idx: usize,
-    empire_raw: u8,
+    empire: u8,
 ) -> String {
     game_data
         .fleets
         .get(fleet_idx)
-        .map(|fleet| aborted_mission_follow_on_text(game_data, fleet, empire_raw))
+        .map(|fleet| aborted_mission_follow_on_text(game_data, fleet, empire))
         .unwrap_or_else(|| "holding position and awaiting orders".to_string())
 }

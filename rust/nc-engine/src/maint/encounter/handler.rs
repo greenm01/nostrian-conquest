@@ -255,7 +255,7 @@ impl Year<'_> {
         let relation = self
             .diplomacy_overrides
             .iter()
-            .find(|directive| directive.from_empire_raw == from && directive.to_empire_raw == to)
+            .find(|directive| directive.from_empire == from && directive.to_empire == to)
             .map(|directive| directive.relation)
             .or_else(|| game_data.stored_diplomatic_relation(from, to));
         relation == Some(DiplomaticRelation::Enemy)
@@ -320,11 +320,11 @@ impl Year<'_> {
                     self.events
                         .starbase_sighting_events
                         .push(StarbaseSightingEvent {
-                            viewer_empire_raw: owner,
+                            viewer_empire: owner,
                             starbase_id: base_id,
                             coords: sector,
                             in_system: layer == 1,
-                            target_empire_raw: unit.owner,
+                            target_empire: unit.owner,
                             target_starbase_id: target_base.base_id.0,
                             alerting,
                             stardate_week: Some(tick),
@@ -670,7 +670,7 @@ impl Year<'_> {
         let coords = fleet.sector.to_array();
         self.events.mission_events.push(MissionEvent {
             fleet_idx,
-            owner_empire_raw: fleet.owner.0,
+            owner_empire: fleet.owner.0,
             kind,
             outcome: MissionOutcome::Aborted,
             abort_reason: Some(MissionAbortReason::OrbitBlocked),

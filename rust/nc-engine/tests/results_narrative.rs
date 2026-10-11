@@ -52,7 +52,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::ScoutSector),
         reporting_fleet_number: Some(15),
         reporting_initial: ShipLosses {
@@ -61,7 +61,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         },
         reporting_loaded_armies_initial: 0,
         coords,
-        target_empire_raw: 3,
+        target_empire: 3,
         target_fleet_number: Some(4),
         small_vessels: 2,
         medium_vessels: 2,
@@ -69,7 +69,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         stardate_week: Some(2),
     });
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         fleet_number: 15,
         coords,
         was_intercepting: true,
@@ -92,7 +92,7 @@ fn results_reports_contact_before_destroyed_fleet_notice() {
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses: 0,
         enemy_ground_army_losses: 0,
-        primary_enemy_empire_raw: Some(3),
+        primary_enemy_empire: Some(3),
         primary_enemy_fleet_number: Some(4),
         stardate_week: Some(2),
     });
@@ -125,7 +125,7 @@ fn results_reports_battle_before_bombard_aftermath() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::GuardBlockadeWorld),
         reporting_fleet_number: Some(7),
         reporting_initial: ShipLosses {
@@ -135,7 +135,7 @@ fn results_reports_battle_before_bombard_aftermath() {
         },
         reporting_loaded_armies_initial: 0,
         coords,
-        target_empire_raw: 2,
+        target_empire: 2,
         target_fleet_number: Some(9),
         small_vessels: 1,
         medium_vessels: 1,
@@ -143,12 +143,12 @@ fn results_reports_battle_before_bombard_aftermath() {
         stardate_week: Some(2),
     });
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(7),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords,
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(9),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -175,9 +175,9 @@ fn results_reports_battle_before_bombard_aftermath() {
     });
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 2,
+        attacker_empire: 2,
         attacker_fleet_number: Some(9),
-        defender_empire_raw: 1,
+        defender_empire: 1,
         attacker_initial: ShipLosses {
             destroyers: 1,
             ..ShipLosses::default()
@@ -230,12 +230,12 @@ fn destroyed_reporting_fleet_uses_telemetry_report_even_if_side_holds_field() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(15),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: nc_engine::maint::FleetBattlePerspective::Intercepted,
         coords: [9, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: None,
         held_field: true,
         friendly_initial: ShipLosses {
@@ -284,9 +284,9 @@ fn bombardment_defender_report_uses_first_person_loss_wording() {
     let mut events = MaintenanceEvents::default();
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 2,
+        attacker_empire: 2,
         attacker_fleet_number: Some(9),
-        defender_empire_raw: 1,
+        defender_empire: 1,
         attacker_initial: ShipLosses {
             destroyers: 1,
             ..ShipLosses::default()
@@ -339,8 +339,8 @@ fn blitz_report_distinguishes_total_army_losses_from_transport_losses() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             transports: 3,
@@ -391,8 +391,8 @@ fn blitz_report_includes_transport_and_ground_army_losses_in_total_losses() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             transports: 2,
@@ -435,8 +435,8 @@ fn blitz_report_for_undefended_world_includes_attacker_force_and_no_battery_text
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(10),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 0,
+        attacker_empire: 1,
+        defender_empire: 0,
         attacker_initial: ShipLosses {
             cruisers: 2,
             transports: 2,
@@ -485,8 +485,8 @@ fn invasion_report_includes_attacker_force_and_undefended_world_wording() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(10),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 0,
+        attacker_empire: 1,
+        defender_empire: 0,
         attacker_initial: ShipLosses {
             battleships: 1,
             transports: 2,
@@ -535,8 +535,8 @@ fn invasion_report_lists_ship_and_ground_army_losses() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             battleships: 2,
             cruisers: 25,
@@ -591,8 +591,8 @@ fn defender_receives_repulsed_invasion_report() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             battleships: 2,
             transports: 12,
@@ -647,8 +647,8 @@ fn defender_receives_blocked_invasion_report() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             destroyers: 4,
             transports: 8,
@@ -701,8 +701,8 @@ fn ownership_change_report_uses_assault_context_for_defender() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             ..ShipLosses::default()
@@ -723,9 +723,9 @@ fn ownership_change_report_uses_assault_context_for_defender() {
         .ownership_change_events
         .push(PlanetOwnershipChangeEvent {
             planet_idx: 0,
-            reporting_empire_raw: 2,
-            previous_owner_empire_raw: 2,
-            new_owner_empire_raw: 1,
+            reporting_empire: 2,
+            previous_owner_empire: 2,
+            new_owner_empire: 1,
             stardate_week: Some(3),
         });
 
@@ -763,8 +763,8 @@ fn defender_receives_repulsed_blitz_report() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             transports: 6,
@@ -810,9 +810,9 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
     let mut events = MaintenanceEvents::default();
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 1,
+        attacker_empire: 1,
         attacker_fleet_number: Some(10),
-        defender_empire_raw: 2,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             battleships: 10,
             cruisers: 11,
@@ -834,7 +834,7 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
     });
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::BombardWorld,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -878,7 +878,7 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
     let mut events = MaintenanceEvents::default();
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::BombardWorld,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -888,7 +888,7 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
         stardate_week: Some(3),
     });
     let escort_destroyed = FleetDestroyedEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         fleet_number: 11,
         coords,
         was_intercepting: false,
@@ -906,7 +906,7 @@ fn bombardment_report_ignores_destroyed_escort_when_bomber_survives() {
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses: 0,
         enemy_ground_army_losses: 0,
-        primary_enemy_empire_raw: Some(2),
+        primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: None,
         stardate_week: Some(3),
     };
@@ -941,9 +941,9 @@ fn bombardment_defender_report_uses_no_defenses_for_zero_counts() {
     let mut events = MaintenanceEvents::default();
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 2,
+        attacker_empire: 2,
         attacker_fleet_number: Some(10),
-        defender_empire_raw: 1,
+        defender_empire: 1,
         attacker_initial: ShipLosses {
             battleships: 10,
             cruisers: 11,
@@ -1003,7 +1003,7 @@ fn scout_system_report_uses_estimated_production_not_present_production() {
     let mut events = MaintenanceEvents::default();
     events.planet_intel_events.push(PlanetIntelEvent {
         planet_idx: 0,
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: PlanetIntelSource::ScoutSolarSystem,
         source_fleet_idx: Some(0),
         observed_snapshot: None,
@@ -1011,7 +1011,7 @@ fn scout_system_report_uses_estimated_production_not_present_production() {
     });
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::ScoutSolarSystem,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -1048,7 +1048,7 @@ fn scout_system_report_aligns_its_fact_rows() {
     let mut events = MaintenanceEvents::default();
     events.planet_intel_events.push(PlanetIntelEvent {
         planet_idx: 0,
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: PlanetIntelSource::ScoutSolarSystem,
         source_fleet_idx: Some(0),
         observed_snapshot: None,
@@ -1056,7 +1056,7 @@ fn scout_system_report_aligns_its_fact_rows() {
     });
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::ScoutSolarSystem,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -1095,12 +1095,12 @@ fn results_reports_named_hostile_fleet_with_empire_local_slot() {
         &mut game_data,
         &MaintenanceEvents {
             fleet_battle_events: vec![FleetBattleEvent {
-                reporting_empire_raw: 1,
+                reporting_empire: 1,
                 reporting_fleet_number: Some(3),
                 reporting_mission: Some(Mission::PatrolSector),
                 perspective: FleetBattlePerspective::Attacked,
                 coords: [8, 8],
-                enemy_empires_raw: vec![2],
+                enemy_empires: vec![2],
                 primary_enemy_fleet_number: Some(2),
                 held_field: false,
                 friendly_initial: ShipLosses {
@@ -1162,7 +1162,7 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
     let mut events = MaintenanceEvents::default();
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::InvadeWorld,
         outcome: MissionOutcome::Aborted,
         abort_reason: None,
@@ -1175,7 +1175,7 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::InvadeWorld),
             coords: [15, 13],
             friendly_initial: ShipLosses {
@@ -1184,7 +1184,7 @@ fn results_merge_roe_retreat_into_invasion_abort_report() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 2,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(4),
             enemy_initial: ShipLosses {
                 cruisers: 2,
@@ -1235,7 +1235,7 @@ fn roe_retreat_without_losses_uses_natural_wording() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::MoveOnly),
             coords: [11, 12],
             friendly_initial: ShipLosses {
@@ -1243,7 +1243,7 @@ fn roe_retreat_without_losses_uses_natural_wording() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 9,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(14),
             enemy_initial: ShipLosses {
                 battleships: 1,
@@ -1275,12 +1275,12 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(12),
         reporting_mission: Some(Mission::InvadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 13],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(8),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1308,7 +1308,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 4,
-            owner_empire_raw: 2,
+            owner_empire: 2,
             mission: Some(Mission::MoveOnly),
             coords: [9, 13],
             friendly_initial: ShipLosses {
@@ -1316,7 +1316,7 @@ fn victorious_invasion_report_says_enemy_fled_without_roe_leak() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 1,
+            target_empire: 1,
             target_fleet_number: Some(12),
             enemy_initial: ShipLosses {
                 battleships: 5,
@@ -1350,12 +1350,12 @@ fn starbase_only_defender_report_uses_command_center_source() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 2,
+        reporting_empire: 2,
         reporting_fleet_number: None,
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
-        enemy_empires_raw: vec![1],
+        enemy_empires: vec![1],
         primary_enemy_fleet_number: Some(12),
         held_field: false,
         friendly_initial: ShipLosses::default(),
@@ -1396,12 +1396,12 @@ fn attacker_report_mentions_destroyed_lone_starbase() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(12),
         reporting_mission: Some(Mission::BombardWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: None,
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1441,12 +1441,12 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(8),
         reporting_mission: Some(Mission::PatrolSector),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [9, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(12),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1471,7 +1471,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 4,
-            owner_empire_raw: 2,
+            owner_empire: 2,
             mission: Some(Mission::MoveOnly),
             coords: [9, 6],
             friendly_initial: ShipLosses {
@@ -1479,7 +1479,7 @@ fn victorious_fleet_report_says_enemy_fled_without_roe_leak() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 1,
+            target_empire: 1,
             target_fleet_number: Some(8),
             enemy_initial: ShipLosses {
                 cruisers: 2,
@@ -1510,12 +1510,12 @@ fn victorious_fleet_report_uses_total_destruction_phrase() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(6),
         reporting_mission: Some(Mission::BombardWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [11, 4],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(9),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1570,12 +1570,12 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 2,
+        reporting_empire: 2,
         reporting_fleet_number: None,
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
-        enemy_empires_raw: vec![1],
+        enemy_empires: vec![1],
         primary_enemy_fleet_number: Some(12),
         held_field: true,
         friendly_initial: ShipLosses::default(),
@@ -1597,7 +1597,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::BombardWorld),
             coords: [9, 6],
             friendly_initial: ShipLosses {
@@ -1605,7 +1605,7 @@ fn victorious_starbase_report_says_enemy_fled_without_roe_leak() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: None,
             enemy_initial: ShipLosses::default(),
             retreat_target_coords: [8, 6],
@@ -1633,12 +1633,12 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 2,
+        reporting_empire: 2,
         reporting_fleet_number: None,
         reporting_mission: None,
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
-        enemy_empires_raw: vec![1],
+        enemy_empires: vec![1],
         primary_enemy_fleet_number: Some(12),
         held_field: false,
         friendly_initial: ShipLosses::default(),
@@ -1661,7 +1661,7 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
     events
         .starbase_destroyed_events
         .push(nc_data::StarbaseDestroyedEvent {
-            reporting_empire_raw: 2,
+            reporting_empire: 2,
             starbase_id: 4,
             coords: [9, 6],
             enemy_initial: ShipLosses {
@@ -1672,7 +1672,7 @@ fn destroyed_starbase_only_defender_emits_only_telemetry_report() {
             },
             enemy_loaded_armies_initial: 11,
             enemy_losses: ShipLosses::default(),
-            primary_enemy_empire_raw: Some(1),
+            primary_enemy_empire: Some(1),
             primary_enemy_fleet_number: Some(12),
             stardate_week: Some(2),
         });
@@ -1704,12 +1704,12 @@ fn attacker_battle_report_explicitly_mentions_enemy_starbase_destruction() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(12),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: None,
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1747,11 +1747,11 @@ fn results_reports_a_starbase_sighting_of_an_alien_starbase() {
     let mut events = MaintenanceEvents::default();
     for (alerting, week) in [(true, 2), (false, 3)] {
         events.starbase_sighting_events.push(StarbaseSightingEvent {
-            viewer_empire_raw: 1,
+            viewer_empire: 1,
             starbase_id: 5,
             coords: [9, 13],
             in_system: false,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_starbase_id: 3,
             alerting,
             stardate_week: Some(week),
@@ -1795,7 +1795,7 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::Starbase {
             id: 5,
             alert: StarbaseAlert::Enemy,
@@ -1804,7 +1804,7 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
         reporting_initial: ShipLosses::default(),
         reporting_loaded_armies_initial: 0,
         coords,
-        target_empire_raw: 2,
+        target_empire: 2,
         target_fleet_number: Some(7),
         small_vessels: 31,
         medium_vessels: 19,
@@ -1814,7 +1814,7 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
     events
         .starbase_destroyed_events
         .push(nc_data::StarbaseDestroyedEvent {
-            reporting_empire_raw: 1,
+            reporting_empire: 1,
             starbase_id: 5,
             coords,
             enemy_initial: ShipLosses {
@@ -1827,7 +1827,7 @@ fn results_reports_starbase_contact_before_destroyed_starbase_notice() {
             },
             enemy_loaded_armies_initial: 9,
             enemy_losses: ShipLosses::default(),
-            primary_enemy_empire_raw: Some(2),
+            primary_enemy_empire: Some(2),
             primary_enemy_fleet_number: Some(7),
             stardate_week: Some(2),
         });
@@ -1869,13 +1869,13 @@ fn starbase_sighting_report_ends_with_the_bases_alert() {
     ] {
         let mut events = MaintenanceEvents::default();
         events.scout_contact_events.push(ScoutContactEvent {
-            viewer_empire_raw: 1,
+            viewer_empire: 1,
             source: ContactReportSource::Starbase { id: 5, alert },
             reporting_fleet_number: None,
             reporting_initial: ShipLosses::default(),
             reporting_loaded_armies_initial: 0,
             coords,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(7),
             small_vessels: 0,
             medium_vessels: 1,
@@ -1910,7 +1910,7 @@ fn unable_to_intercept_report_uses_classic_wording() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::NoEngagement {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::GuardBlockadeWorld),
             coords: [15, 13],
             friendly_initial: ShipLosses {
@@ -1918,7 +1918,7 @@ fn unable_to_intercept_report_uses_classic_wording() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(1),
             small_vessels: 0,
             medium_vessels: 2,
@@ -1949,7 +1949,7 @@ fn results_projection_is_pure_until_reviewable_flags_are_applied() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::ScoutSector),
         reporting_fleet_number: Some(15),
         reporting_initial: ShipLosses {
@@ -1958,7 +1958,7 @@ fn results_projection_is_pure_until_reviewable_flags_are_applied() {
         },
         reporting_loaded_armies_initial: 0,
         coords,
-        target_empire_raw: 3,
+        target_empire: 3,
         target_fleet_number: Some(4),
         small_vessels: 2,
         medium_vessels: 0,
@@ -1999,7 +1999,7 @@ fn invalid_fleet_mission_report_tolerates_removed_fleet_index() {
         .invalid_player_state_events
         .push(InvalidPlayerStateEvent::FleetMission {
             fleet_idx: 99,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             order_code_raw: nc_data::Order::InvadeWorld.code(),
             coords: [9, 9],
             reason: FleetOrderValidationError::MissingLoadedTroopTransports,
@@ -2024,8 +2024,8 @@ fn defeated_empire_report_uses_first_person_voice() {
     events
         .empire_elimination_events
         .push(EmpireEliminationEvent {
-            defeated_empire_raw: 2,
-            victor_empire_raw: Some(1),
+            defeated_empire: 2,
+            victor_empire: Some(1),
             cause: EmpireEliminationCause::LastPlanetLost,
             planet_idx: None,
             coords: Some([7, 5]),
@@ -2054,8 +2054,8 @@ fn victory_declared_report_uses_first_person_for_winner() {
     events
         .game_victory_notice_events
         .push(GameVictoryNoticeEvent {
-            recipient_empire_raw: 1,
-            winner_empire_raw: 1,
+            recipient_empire: 1,
+            winner_empire: 1,
             stardate_week: Some(52),
         });
 

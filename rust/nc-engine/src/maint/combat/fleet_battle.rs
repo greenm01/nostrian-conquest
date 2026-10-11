@@ -325,11 +325,11 @@ fn abort_invalid_dominant_missions_after_battle(
                 continue;
             }
 
-            let owner_empire_raw = game_data.fleets[fleet_idx].owner.0;
+            let owner_empire = game_data.fleets[fleet_idx].owner.0;
             retreat_fleet(game_data, fleet_idx);
             events.mission_events.push(MissionEvent {
                 fleet_idx,
-                owner_empire_raw,
+                owner_empire,
                 kind,
                 outcome: MissionOutcome::Aborted,
                 abort_reason: Some(MissionAbortReason::CapabilityLost),
@@ -357,7 +357,7 @@ fn emit_aborted_mission_events_for_task_force(
         let fleet = &game_data.fleets[fleet_idx];
         events.mission_events.push(MissionEvent {
             fleet_idx,
-            owner_empire_raw: fleet.owner.0,
+            owner_empire: fleet.owner.0,
             kind,
             outcome: MissionOutcome::Aborted,
             abort_reason,
@@ -784,8 +784,8 @@ pub(super) fn fight_encounter_with_rolls(
             .collect();
         evaluation_order.sort_by_key(|&(empire, roe)| (roe, empire));
 
-        for (empire_raw, roe) in evaluation_order {
-            let Some(tf_idx) = task_forces.iter().position(|tf| tf.empire == empire_raw) else {
+        for (empire_code, roe) in evaluation_order {
+            let Some(tf_idx) = task_forces.iter().position(|tf| tf.empire == empire_code) else {
                 continue;
             };
 
@@ -816,17 +816,17 @@ pub(super) fn fight_encounter_with_rolls(
                     BattleRole::GuardingDefender | BattleRole::IncumbentDefender
                 );
                 if is_guard && !task_forces[tf_idx].free_hold_used {
-                    free_holds_to_consume.push(empire_raw);
+                    free_holds_to_consume.push(empire_code);
                     continue;
                 }
                 let Some(target_empire) =
-                    hostile_target_priority(empire_raw, &hostile_opponents, planet_owner)
+                    hostile_target_priority(empire_code, &hostile_opponents, planet_owner)
                 else {
                     continue;
                 };
                 // Mark as withdrawn immediately for the benefit of subsequent fleets in the evaluation loop.
                 task_forces[tf_idx].withdrew_under_roe = true;
-                post_round_retreats.push((empire_raw, target_empire));
+                post_round_retreats.push((empire_code, target_empire));
             }
         }
 
@@ -1009,7 +1009,7 @@ pub(super) fn fight_encounter_with_rolls(
             }
         }
         let enemy_losses_inflicted = ship_losses_from_states(&enemy_before, &enemy_after);
-        let target_empire_raw = task_forces
+        let target_empire_code = task_forces
             .iter()
             .filter(|other| hostile_pairs.contains(&(tf.empire, other.empire)))
             .max_by_key(|other| other.state.total_combat_as())
@@ -1017,14 +1017,14 @@ pub(super) fn fight_encounter_with_rolls(
             .unwrap_or(0);
         let target_fleet_number = task_forces
             .iter()
-            .find(|other| other.empire == target_empire_raw)
+            .find(|other| other.empire == target_empire_code)
             .and_then(|other| single_named_fleet_number(game_data, &other.fleet_indices));
         for &idx in &tf.fleet_indices {
             events
                 .encounter_disposition_events
                 .push(EncounterDispositionEvent::Retreated {
                     fleet_idx: idx,
-                    owner_empire_raw: tf.empire,
+                    owner_empire: tf.empire,
                     mission: mission_kind_for_order(pre_encounter_orders.get(&idx).copied()),
                     coords,
                     friendly_initial: original_fleet_states.get(&idx).copied().unwrap_or_default(),
@@ -1032,7 +1032,7 @@ pub(super) fn fight_encounter_with_rolls(
                         .get(&idx)
                         .copied()
                         .unwrap_or(0),
-                    target_empire_raw,
+                    target_empire: target_empire_code,
                     target_fleet_number,
                     enemy_initial: ship_counts_from_state(&enemy_before),
                     retreat_target_coords: game_data.fleets[idx].target.to_array(),
@@ -1081,7 +1081,7 @@ pub(super) fn fight_encounter_with_rolls(
             .filter(|tf| fought_against(empire, tf))
             .map(|tf| original_loaded_armies.get(&tf.empire).copied().unwrap_or(0))
             .sum();
-        let enemy_empires_raw = task_forces
+        let enemy_empires = task_forces
             .iter()
             .filter(|tf| {
                 fought_against(empire, tf)
@@ -1104,7 +1104,7 @@ pub(super) fn fight_encounter_with_rolls(
             .max_by_key(|tf| tf.state.total_combat_as())
             .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices));
         events.fleet_battle_events.push(FleetBattleEvent {
-            reporting_empire_raw: empire,
+            reporting_empire: empire,
             reporting_fleet_number,
             reporting_mission,
             perspective: if empire == attacker.empire {
@@ -1113,7 +1113,7 @@ pub(super) fn fight_encounter_with_rolls(
                 FleetBattlePerspective::Attacked
             },
             coords,
-            enemy_empires_raw,
+            enemy_empires,
             primary_enemy_fleet_number,
             held_field: dominant_empire == Some(empire),
             friendly_initial: ship_counts_from_state(before),
@@ -1136,7 +1136,7 @@ pub(super) fn fight_encounter_with_rolls(
 
         if !tf_has_any_units(after_tf) && !after_tf.fleet_indices.is_empty() {
             let fleet_number = reporting_fleet_number.unwrap_or(0);
-            let primary_enemy_empire_raw = task_forces
+            let primary_enemy_empire = task_forces
                 .iter()
                 .filter(|tf| fought_against(empire, tf))
                 .max_by_key(|tf| tf.state.total_combat_as())
@@ -1147,7 +1147,7 @@ pub(super) fn fight_encounter_with_rolls(
                 .max_by_key(|tf| tf.state.total_combat_as())
                 .and_then(|tf| single_named_fleet_number(game_data, &tf.fleet_indices));
             events.fleet_destroyed_events.push(FleetDestroyedEvent {
-                reporting_empire_raw: empire,
+                reporting_empire: empire,
                 fleet_number,
                 coords,
                 was_intercepting: empire == attacker.empire,
@@ -1166,7 +1166,7 @@ pub(super) fn fight_encounter_with_rolls(
                     .saturating_sub(enemy_after.counts[IDX_SB]),
                 enemy_ground_battery_losses: 0,
                 enemy_ground_army_losses: 0,
-                primary_enemy_empire_raw,
+                primary_enemy_empire,
                 primary_enemy_fleet_number,
                 stardate_week: None,
             });
@@ -1174,7 +1174,7 @@ pub(super) fn fight_encounter_with_rolls(
 
         let destroyed_starbases = before.counts[IDX_SB].saturating_sub(after.counts[IDX_SB]);
         if destroyed_starbases > 0 {
-            let primary_enemy_empire_raw = task_forces
+            let primary_enemy_empire = task_forces
                 .iter()
                 .filter(|tf| fought_against(empire, tf))
                 .max_by_key(|tf| tf.state.total_combat_as())
@@ -1189,13 +1189,13 @@ pub(super) fn fight_encounter_with_rolls(
                     events
                         .starbase_destroyed_events
                         .push(StarbaseDestroyedEvent {
-                            reporting_empire_raw: empire,
+                            reporting_empire: empire,
                             starbase_id,
                             coords,
                             enemy_initial: ship_counts_from_state(&enemy_before),
                             enemy_loaded_armies_initial,
                             enemy_losses,
-                            primary_enemy_empire_raw,
+                            primary_enemy_empire,
                             primary_enemy_fleet_number,
                             stardate_week: None,
                         });

@@ -27,7 +27,7 @@ pub struct TurnSubmission {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TurnDiplomacyDirective {
-    pub to_empire_raw: u8,
+    pub to_empire: u8,
     pub relation: DiplomaticRelation,
 }
 
@@ -107,7 +107,7 @@ pub enum FleetTurnAction {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TurnMessage {
-    pub recipient_empire_raw: u8,
+    pub recipient_empire: u8,
     pub subject: String,
     pub body: String,
 }

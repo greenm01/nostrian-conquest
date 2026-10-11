@@ -19,13 +19,13 @@ fn load_fixture(name: &str) -> CoreGameData {
 #[test]
 fn invalid_bombard_order_is_canceled_before_execution() {
     let mut game_data = load_fixture("ecmaint-post");
-    let owner_empire_raw = game_data.fleets[0].owner.0;
+    let owner_empire = game_data.fleets[0].owner.0;
     for planet in &mut game_data.planets {
         planet.owner.0 = 0;
         planet.years_under_owner = 0;
     }
     let homeworld = &mut game_data.planets[0];
-    homeworld.owner.0 = owner_empire_raw;
+    homeworld.owner.0 = owner_empire;
     homeworld.years_under_owner = 2;
     homeworld.sector = Coords::new(10, 10);
     let fleet = &mut game_data.fleets[0];

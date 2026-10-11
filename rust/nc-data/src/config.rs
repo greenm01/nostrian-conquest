@@ -6,8 +6,8 @@ use crate::DiplomaticRelation;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DiplomacyDirective {
-    pub from_empire_raw: u8,
-    pub to_empire_raw: u8,
+    pub from_empire: u8,
+    pub to_empire: u8,
     pub relation: DiplomaticRelation,
 }
 
@@ -62,8 +62,8 @@ impl DiplomacyConfig {
             };
 
             directives.push(DiplomacyDirective {
-                from_empire_raw: prop_u8(node, "from")?,
-                to_empire_raw: prop_u8(node, "to")?,
+                from_empire: prop_u8(node, "from")?,
+                to_empire: prop_u8(node, "to")?,
                 relation,
             });
         }
@@ -85,7 +85,7 @@ impl DiplomacyConfig {
             };
             text.push_str(&format!(
                 "relation from={} to={} status=\"{}\"\n",
-                directive.from_empire_raw, directive.to_empire_raw, status
+                directive.from_empire, directive.to_empire, status
             ));
         }
         text
@@ -94,27 +94,27 @@ impl DiplomacyConfig {
     pub fn validate_for_player_count(self, player_count: u8) -> Result<Self, SetupConfigError> {
         let mut seen = std::collections::BTreeSet::new();
         for directive in &self.directives {
-            if directive.from_empire_raw == 0 || directive.from_empire_raw > player_count {
+            if directive.from_empire == 0 || directive.from_empire > player_count {
                 return Err(SetupConfigError::Parse(format!(
                     "diplomacy relation 'from' must be in 1..={player_count}, got {}",
-                    directive.from_empire_raw
+                    directive.from_empire
                 )));
             }
-            if directive.to_empire_raw == 0 || directive.to_empire_raw > player_count {
+            if directive.to_empire == 0 || directive.to_empire > player_count {
                 return Err(SetupConfigError::Parse(format!(
                     "diplomacy relation 'to' must be in 1..={player_count}, got {}",
-                    directive.to_empire_raw
+                    directive.to_empire
                 )));
             }
-            if directive.from_empire_raw == directive.to_empire_raw {
+            if directive.from_empire == directive.to_empire {
                 return Err(SetupConfigError::Parse(
                     "diplomacy relation cannot target the same empire".to_string(),
                 ));
             }
-            if !seen.insert((directive.from_empire_raw, directive.to_empire_raw)) {
+            if !seen.insert((directive.from_empire, directive.to_empire)) {
                 return Err(SetupConfigError::Parse(format!(
                     "duplicate diplomacy relation from empire {} to {}",
-                    directive.from_empire_raw, directive.to_empire_raw
+                    directive.from_empire, directive.to_empire
                 )));
             }
         }

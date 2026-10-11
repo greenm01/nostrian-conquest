@@ -154,7 +154,7 @@ impl YearMovement<'_> {
         let fleets = &game_data.fleets;
         let event = FleetMergeEvent {
             fleet_idx: donor,
-            owner_empire_raw: fleets[donor].owner.0,
+            owner_empire: fleets[donor].owner.0,
             kind: Mission::GuardStarbase,
             host_fleet_id_raw: fleets[host].record.0,
             absorbed_fleet_id_raw: fleets[donor].record.0,
@@ -189,7 +189,7 @@ impl YearMovement<'_> {
         let report = |game_data: &CoreGameData, report| {
             let base = &game_data.bases[base_idx];
             StarbaseReportEvent {
-                owner_empire_raw: owner,
+                owner_empire: owner,
                 starbase_id: base.base_id.0,
                 coords: base.sector.to_array(),
                 in_system: layer(base.depth) == 1,

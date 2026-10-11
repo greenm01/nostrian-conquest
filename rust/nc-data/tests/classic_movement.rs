@@ -120,9 +120,9 @@ fn struck(events: &MaintenanceEvents, mission: u8) -> bool {
         6 => events
             .bombard_events
             .iter()
-            .any(|event| event.attacker_fleet_number == Some(1) && event.attacker_empire_raw == 1),
+            .any(|event| event.attacker_fleet_number == Some(1) && event.attacker_empire == 1),
         7 | 8 => events.assault_report_events.iter().any(|event| {
-            event.attacker_empire_raw == 1
+            event.attacker_empire == 1
                 && event.kind
                     == if mission == 7 {
                         Mission::InvadeWorld

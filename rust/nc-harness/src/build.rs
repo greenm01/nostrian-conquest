@@ -161,8 +161,8 @@ fn apply_house_specs(
 fn apply_diplomacy(spec: &ScenarioSpec, game_data: &mut CoreGameData) -> Result<(), HarnessError> {
     for relation in &spec.diplomacy {
         game_data.set_stored_diplomatic_relation(
-            relation.from_empire_raw,
-            relation.to_empire_raw,
+            relation.from_empire,
+            relation.to_empire,
             relation.relation,
         )?;
     }
@@ -186,9 +186,9 @@ fn apply_planet_specs(
         if let Some(coords) = planet_spec.coords {
             planet.sector = Coords::from_array(coords);
         }
-        if let Some(owner_empire_raw) = planet_spec.owner_empire_raw {
-            planet.owner.0 = owner_empire_raw;
-            planet.years_under_owner = if owner_empire_raw == 0 { 0 } else { 2 };
+        if let Some(owner_empire) = planet_spec.owner_empire {
+            planet.owner.0 = owner_empire;
+            planet.years_under_owner = if owner_empire == 0 { 0 } else { 2 };
         }
         if let Some(name) = &planet_spec.name {
             set_planet_name(planet, name);
@@ -279,8 +279,8 @@ fn apply_fleet_specs(
                     fleet_spec.record_index_1_based
                 ))
             })?;
-        if let Some(owner_empire_raw) = fleet_spec.owner_empire_raw {
-            if owner_empire_raw != fleet.owner.0 {
+        if let Some(owner_empire) = fleet_spec.owner_empire {
+            if owner_empire != fleet.owner.0 {
                 return Err(HarnessError::Validation(format!(
                     "fleet {} owner reassignment is not supported; existing owner is {}",
                     fleet_spec.record_index_1_based, fleet.owner.0
@@ -353,8 +353,8 @@ pub(crate) fn apply_turn_files(
 
 fn apply_queued_mail(spec: &ScenarioSpec, queued_mail: &mut Vec<QueuedPlayerMail>) {
     queued_mail.extend(spec.queued_mail.iter().map(|mail| QueuedPlayerMail {
-        sender_empire_id: mail.sender_empire_raw,
-        recipient_empire_id: mail.recipient_empire_raw,
+        sender_empire_id: mail.sender_empire,
+        recipient_empire_id: mail.recipient_empire,
         year: mail.year.unwrap_or(spec.metadata.year),
         subject: mail.subject.clone(),
         body: mail.body.clone(),

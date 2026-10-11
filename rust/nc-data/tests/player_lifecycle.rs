@@ -14,18 +14,18 @@ fn baseline_game() -> nc_data::CoreGameData {
         .expect("baseline should build")
 }
 
-fn strip_empire_planets(game_data: &mut nc_data::CoreGameData, empire_raw: u8) {
+fn strip_empire_planets(game_data: &mut nc_data::CoreGameData, empire: u8) {
     for planet in &mut game_data.planets {
-        if planet.owner.0 == empire_raw {
+        if planet.owner.0 == empire {
             planet.owner.0 = 0;
             planet.years_under_owner = 0;
         }
     }
 }
 
-fn strip_empire_ships(game_data: &mut nc_data::CoreGameData, empire_raw: u8) {
+fn strip_empire_ships(game_data: &mut nc_data::CoreGameData, empire: u8) {
     for fleet in &mut game_data.fleets {
-        if fleet.owner.0 == empire_raw {
+        if fleet.owner.0 == empire {
             fleet.ships.destroyers = 0;
             fleet.ships.cruisers = 0;
             fleet.ships.battleships = 0;
@@ -171,7 +171,7 @@ fn access_mode_distinguishes_review_survey_and_lockout() {
             2,
             &lifecycle,
             WinnerState {
-                winner_empire_raw: Some(1),
+                winner_empire: Some(1),
                 winner_declared_year: Some(3005),
             }
         ),
@@ -209,7 +209,7 @@ fn losing_last_recovery_force_inside_window_is_not_reported_as_expiry() {
     let defeat = events
         .empire_elimination_events
         .iter()
-        .find(|event| event.defeated_empire_raw == 2)
+        .find(|event| event.defeated_empire == 2)
         .expect("player 2 should be defeated");
     assert_eq!(
         defeat.cause,
@@ -222,9 +222,9 @@ fn planetless_rogue_without_recovery_forces_does_not_block_victory() {
     let mut game_data = baseline_game();
     let mut lifecycle = default_player_lifecycle_states(game_data.conquest.player_count);
     let mut winner = WinnerState::default();
-    for empire_raw in 2..=4u8 {
-        strip_empire_planets(&mut game_data, empire_raw);
-        strip_empire_ships(&mut game_data, empire_raw);
+    for empire in 2..=4u8 {
+        strip_empire_planets(&mut game_data, empire);
+        strip_empire_ships(&mut game_data, empire);
     }
     game_data.players[3].mode = PlayerMode::Rogue;
     // Empire 2 keeps the campaign contested until its recovery window closes.
@@ -232,11 +232,11 @@ fn planetless_rogue_without_recovery_forces_does_not_block_victory() {
 
     let events = run_turn(&mut game_data, &mut lifecycle, &mut winner);
 
-    assert_eq!(winner.winner_empire_raw, Some(1));
+    assert_eq!(winner.winner_empire, Some(1));
     assert!(
         events
             .empire_elimination_events
             .iter()
-            .any(|event| event.defeated_empire_raw == 4)
+            .any(|event| event.defeated_empire == 4)
     );
 }

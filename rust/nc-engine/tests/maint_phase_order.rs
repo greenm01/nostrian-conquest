@@ -46,7 +46,7 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
 
     assert!(
         events.mission_events.iter().any(|event| {
-            event.owner_empire_raw == 1
+            event.owner_empire == 1
                 && event.fleet_idx == 0
                 && event.kind == Mission::ScoutSolarSystem
                 && event.outcome == MissionOutcome::Succeeded
@@ -61,7 +61,7 @@ fn ships_built_this_year_are_in_the_stardock_before_the_first_tick() {
         .planet_intel_events
         .iter()
         .find(|event| {
-            event.viewer_empire_raw == 1
+            event.viewer_empire == 1
                 && event.planet_idx == planet_idx
                 && event.source == PlanetIntelSource::ScoutSolarSystem
         })

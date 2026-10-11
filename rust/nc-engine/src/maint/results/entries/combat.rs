@@ -16,7 +16,7 @@ pub fn push_combat_entries(
 ) {
     // ----- Bombard events (defender-side report) -----
     for event in &events.bombard_events {
-        if event.defender_empire_raw == 0 {
+        if event.defender_empire == 0 {
             continue;
         }
         let Some(planet) = game_data.planets.get(event.planet_idx) else {
@@ -31,7 +31,7 @@ pub fn push_combat_entries(
         let attacker = classic_enemy_reference_titlecase(
             game_data,
             event.attacker_fleet_number,
-            event.attacker_empire_raw,
+            event.attacker_empire,
         );
         let context_rows = vec![StructuredBodyItem::Label {
             label: LABEL_ATTACKER.to_string(),
@@ -85,7 +85,7 @@ pub fn push_combat_entries(
             kind: 0x08,
             tail: RESULTS_TAIL_BOMBARD,
             target: ReportTarget::Both {
-                recipient: event.defender_empire_raw,
+                recipient: event.defender_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -97,31 +97,31 @@ pub fn push_combat_entries(
     let suppression_plan = ReportSuppressionPlan::build(game_data, events);
     for event in &events.fleet_battle_events {
         if event.reporting_fleet_number.is_some_and(|fleet_number| {
-            suppression_plan.destroyed_supersedes_battle(event.reporting_empire_raw, fleet_number)
+            suppression_plan.destroyed_supersedes_battle(event.reporting_empire, fleet_number)
         }) {
             continue;
         }
         if event.reporting_fleet_number.is_some_and(|fleet_number| {
-            suppression_plan.disposition_supersedes_battle(event.reporting_empire_raw, fleet_number)
+            suppression_plan.disposition_supersedes_battle(event.reporting_empire, fleet_number)
         }) {
             continue;
         }
         let reporting_fleet_survives = event.reporting_fleet_number.is_some_and(|fleet_number| {
-            suppression_plan.fleet_survives(event.reporting_empire_raw, fleet_number)
+            suppression_plan.fleet_survives(event.reporting_empire, fleet_number)
         });
         let enemy_list = join_report_parts(
             &event
-                .enemy_empires_raw
+                .enemy_empires
                 .iter()
                 .map(|empire| classic_empire_clause(game_data, *empire))
                 .collect::<Vec<_>>(),
         );
         let [x, y] = event.coords;
-        let enemy = if event.enemy_empires_raw.len() == 1 {
+        let enemy = if event.enemy_empires.len() == 1 {
             classic_enemy_reference_titlecase(
                 game_data,
                 event.primary_enemy_fleet_number,
-                event.enemy_empires_raw[0],
+                event.enemy_empires[0],
             )
         } else {
             format!("hostile fleets belonging to {enemy_list}")
@@ -192,7 +192,7 @@ pub fn push_combat_entries(
                 kind: 0x06,
                 tail: RESULTS_TAIL_FLEET,
                 target: ReportTarget::Both {
-                    recipient: event.reporting_empire_raw,
+                    recipient: event.reporting_empire,
                 },
                 repeat_next_pointer: false,
                 stardate_week: event.stardate_week,
@@ -262,7 +262,7 @@ pub fn push_combat_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -274,7 +274,7 @@ pub fn push_combat_entries(
     for event in &events.fleet_destroyed_events {
         let [x, y] = event.coords;
         let enemy = event
-            .primary_enemy_empire_raw
+            .primary_enemy_empire
             .and_then(|empire| {
                 known_hostile_fleet_label(game_data, event.primary_enemy_fleet_number, empire)
                     .or_else(|| Some(classic_empire_clause(game_data, empire)))
@@ -321,7 +321,7 @@ pub fn push_combat_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -333,7 +333,7 @@ pub fn push_combat_entries(
     for event in &events.starbase_destroyed_events {
         let [x, y] = event.coords;
         let enemy = event
-            .primary_enemy_empire_raw
+            .primary_enemy_empire
             .and_then(|empire| {
                 known_hostile_fleet_label(game_data, event.primary_enemy_fleet_number, empire)
                     .or_else(|| Some(classic_empire_clause(game_data, empire)))
@@ -371,7 +371,7 @@ pub fn push_combat_entries(
             kind: 0x06,
             tail: RESULTS_TAIL_FLEET,
             target: ReportTarget::Both {
-                recipient: event.reporting_empire_raw,
+                recipient: event.reporting_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
@@ -481,14 +481,14 @@ pub fn push_combat_entries(
             kind: 0x0c,
             tail: RESULTS_TAIL_INVASION,
             target: ReportTarget::Both {
-                recipient: event.attacker_empire_raw,
+                recipient: event.attacker_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,
             narrative_phase: NarrativePhase::AttackerAftermath,
         });
 
-        if event.defender_empire_raw == 0 || event.outcome == MissionOutcome::Succeeded {
+        if event.defender_empire == 0 || event.outcome == MissionOutcome::Succeeded {
             continue;
         }
 
@@ -500,7 +500,7 @@ pub fn push_combat_entries(
         let attacker = classic_enemy_reference_titlecase(
             game_data,
             event.attacker_fleet_number,
-            event.attacker_empire_raw,
+            event.attacker_empire,
         );
         let context_rows = vec![StructuredBodyItem::Label {
             label: LABEL_ATTACKER.to_string(),
@@ -585,7 +585,7 @@ pub fn push_combat_entries(
             kind: 0x0c,
             tail: RESULTS_TAIL_INVASION,
             target: ReportTarget::Both {
-                recipient: event.defender_empire_raw,
+                recipient: event.defender_empire,
             },
             repeat_next_pointer: false,
             stardate_week: event.stardate_week,

@@ -36,12 +36,12 @@ pub struct TurnBuilder {
 }
 
 impl TurnBuilder {
-    pub fn new(start: &CoreGameData, empire_raw: u8) -> Self {
+    pub fn new(start: &CoreGameData, empire: u8) -> Self {
         Self {
             start: start.clone(),
             working: start.clone(),
             accepted: TurnSubmission {
-                player_record_index_1_based: usize::from(empire_raw),
+                player_record_index_1_based: usize::from(empire),
                 year: start.conquest.game_year,
                 tax_rate: None,
                 diplomacy: Vec::new(),

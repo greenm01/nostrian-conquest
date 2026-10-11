@@ -39,7 +39,7 @@ mod tests {
     fn make_mission_event(kind: Mission, outcome: MissionOutcome) -> MissionEvent {
         MissionEvent {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             kind,
             outcome,
             abort_reason: None,
@@ -100,12 +100,12 @@ mod tests {
     fn fleet_battle_event_gets_week_2() {
         let mut events = MaintenanceEvents::default();
         events.fleet_battle_events.push(FleetBattleEvent {
-            reporting_empire_raw: 1,
+            reporting_empire: 1,
             reporting_fleet_number: Some(1),
             reporting_mission: Some(Mission::GuardBlockadeWorld),
             perspective: crate::maint::FleetBattlePerspective::Intercepted,
             coords: [5, 5],
-            enemy_empires_raw: vec![2],
+            enemy_empires: vec![2],
             primary_enemy_fleet_number: Some(5),
             held_field: true,
             friendly_initial: ShipLosses::default(),
@@ -128,7 +128,7 @@ mod tests {
     fn civil_disorder_events_get_week_52() {
         let mut events = MaintenanceEvents::default();
         events.civil_disorder_events.push(CivilDisorderEvent {
-            reporting_empire_raw: 1,
+            reporting_empire: 1,
             prior_label: "Empire Alpha".to_string(),
             stardate_week: None,
         });
@@ -140,7 +140,7 @@ mod tests {
     fn campaign_outlook_gets_week_52() {
         let mut events = MaintenanceEvents::default();
         events.campaign_outlook_events.push(CampaignOutlookEvent {
-            empire_raw: 1,
+            empire: 1,
             stardate_week: None,
         });
         canonicalize_events(&mut events, &[]);
@@ -152,7 +152,7 @@ mod tests {
         let mut events = MaintenanceEvents::default();
         events.mission_events.push(MissionEvent {
             fleet_idx: 3,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             kind: Mission::ColonizeWorld,
             outcome: MissionOutcome::Succeeded,
             abort_reason: None,
@@ -166,7 +166,7 @@ mod tests {
             .push(ColonizationResolvedEvent::Succeeded {
                 fleet_idx: 3,
                 planet_idx: 5,
-                colonizer_empire_raw: 1,
+                colonizer_empire: 1,
                 stardate_week: None,
             });
         canonicalize_events(&mut events, &[]);

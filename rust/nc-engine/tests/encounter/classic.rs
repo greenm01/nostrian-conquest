@@ -341,7 +341,7 @@ fn awareness_is_shared_by_the_empire_and_reset_by_a_sector_change() {
         let reports = events
             .scout_contact_events
             .iter()
-            .filter(|event| event.viewer_empire_raw == 1)
+            .filter(|event| event.viewer_empire == 1)
             .count();
         assert!(reports <= 1, "{reports} first contacts");
     }
@@ -458,12 +458,12 @@ fn a_starbase_and_its_guard_fight_together() {
     let mut battles = 0;
     for (_, events) in years(&scenario, &declared(&[(1, 2)]), 0..200) {
         for event in &events.fleet_battle_events {
-            assert_ne!(event.reporting_empire_raw, 3);
-            if event.reporting_empire_raw == 2 {
+            assert_ne!(event.reporting_empire, 3);
+            if event.reporting_empire == 2 {
                 battles += 1;
                 assert_eq!(event.friendly_initial_starbases, 1);
                 assert_eq!(event.friendly_initial.cruisers, 2);
-                assert_eq!(event.enemy_empires_raw, vec![1]);
+                assert_eq!(event.enemy_empires, vec![1]);
             }
         }
     }
@@ -511,7 +511,7 @@ fn a_starbase_reports_what_it_makes_of_the_fleet() {
                 events
                     .scout_contact_events
                     .iter()
-                    .filter(|event| event.viewer_empire_raw == 1)
+                    .filter(|event| event.viewer_empire == 1)
                     .filter_map(|event| match event.source {
                         ContactReportSource::Starbase { id: 1, alert } => Some(alert),
                         _ => None,
@@ -549,7 +549,7 @@ fn a_starbase_reports_an_alien_starbase_it_identifies() {
                 events
                     .starbase_sighting_events
                     .iter()
-                    .filter(|event| event.viewer_empire_raw == 1)
+                    .filter(|event| event.viewer_empire == 1)
                     .copied(),
             );
         }
@@ -563,7 +563,7 @@ fn a_starbase_reports_an_alien_starbase_it_identifies() {
                 event.starbase_id == 1
                     && event.coords == sector
                     && !event.in_system
-                    && event.target_empire_raw == 2
+                    && event.target_empire == 2
                     && event.target_starbase_id == 2
                     && event.alerting == alerting
                     && event.stardate_week.is_some()
@@ -595,7 +595,7 @@ fn a_fleet_that_cannot_catch_its_target_reports_it() {
             .iter()
             .filter_map(|event| match *event {
                 EncounterDispositionEvent::NoEngagement {
-                    owner_empire_raw: 1,
+                    owner_empire: 1,
                     reason,
                     ..
                 } => Some(reason),

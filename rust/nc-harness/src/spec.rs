@@ -30,8 +30,8 @@ pub struct HouseSpec {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct DiplomacySpec {
-    pub from_empire_raw: u8,
-    pub to_empire_raw: u8,
+    pub from_empire: u8,
+    pub to_empire: u8,
     pub relation: DiplomaticRelation,
 }
 
@@ -51,7 +51,7 @@ pub struct CommissionSpec {
 pub struct PlanetSpec {
     pub record_index_1_based: usize,
     pub coords: Option<[u8; 2]>,
-    pub owner_empire_raw: Option<u8>,
+    pub owner_empire: Option<u8>,
     pub name: Option<String>,
     pub potential_production: Option<u16>,
     pub present_production: Option<u16>,
@@ -85,7 +85,7 @@ pub struct FleetOrderSpec {
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FleetSpec {
     pub record_index_1_based: usize,
-    pub owner_empire_raw: Option<u8>,
+    pub owner_empire: Option<u8>,
     pub coords: Option<[u8; 2]>,
     pub ships: Option<FleetShipsSpec>,
     pub rules_of_engagement: Option<u8>,
@@ -104,8 +104,8 @@ pub struct TurnFileSpec {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QueuedMailSpec {
-    pub sender_empire_raw: u8,
-    pub recipient_empire_raw: u8,
+    pub sender_empire: u8,
+    pub recipient_empire: u8,
     pub year: Option<u16>,
     pub subject: String,
     pub body: String,
@@ -170,8 +170,8 @@ pub enum SweepDimension {
         values: Vec<u16>,
     },
     DiplomaticRelation {
-        from_empire_raw: u8,
-        to_empire_raw: u8,
+        from_empire: u8,
+        to_empire: u8,
         values: Vec<DiplomaticRelation>,
     },
 }

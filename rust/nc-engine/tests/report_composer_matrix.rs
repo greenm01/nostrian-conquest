@@ -25,12 +25,12 @@ fn seeded_game_data() -> nc_data::CoreGameData {
 fn configure_fleet(
     game_data: &mut nc_data::CoreGameData,
     fleet_idx: usize,
-    owner_empire_raw: u8,
+    owner_empire: u8,
     fleet_number: u8,
     coords: [u8; 2],
 ) {
     let fleet = &mut game_data.fleets[fleet_idx];
-    fleet.owner.0 = owner_empire_raw;
+    fleet.owner.0 = owner_empire;
     fleet.fleet_number.0 = fleet_number as u16;
     fleet.sector = Coords::from_array(coords);
 }
@@ -57,12 +57,12 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(11),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [6, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(7),
         held_field: false,
         friendly_initial: ShipLosses {
@@ -87,7 +87,7 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
         stardate_week: Some(1),
     });
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         fleet_number: 11,
         coords: [6, 6],
         was_intercepting: true,
@@ -108,7 +108,7 @@ fn fleet_destroyed_event_supersedes_generic_battle_report() {
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses: 0,
         enemy_ground_army_losses: 0,
-        primary_enemy_empire_raw: Some(2),
+        primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: Some(7),
         stardate_week: Some(1),
     });
@@ -138,7 +138,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
     let mut events = MaintenanceEvents::default();
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::InvadeWorld,
         outcome: MissionOutcome::Aborted,
         abort_reason: None,
@@ -151,7 +151,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::Retreated {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::InvadeWorld),
             coords: [6, 6],
             friendly_initial: ShipLosses {
@@ -160,7 +160,7 @@ fn roe_retreat_and_abort_merge_into_one_report() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 2,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(3),
             enemy_initial: ShipLosses {
                 cruisers: 2,
@@ -194,7 +194,7 @@ fn rendezvous_absorbing_report_uses_compact_oxford_fleet_list() {
     for absorbed in [11, 5, 7, 6] {
         events.fleet_merge_events.push(FleetMergeEvent {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             kind: Mission::RendezvousSector,
             host_fleet_id_raw: 1,
             absorbed_fleet_id_raw: u16::from(absorbed),
@@ -227,7 +227,7 @@ fn unknown_join_host_never_renders_zero_fleet_number() {
         .join_host_events
         .push(JoinMissionHostEvent::HostDestroyed {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             destroyed_host_fleet_number: None,
             coords: [3, 9],
         });
@@ -250,7 +250,7 @@ fn known_join_host_renders_destroyed_host_fleet_number() {
         .join_host_events
         .push(JoinMissionHostEvent::HostDestroyed {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             destroyed_host_fleet_number: Some(7),
             coords: [3, 9],
         });
@@ -274,7 +274,7 @@ fn join_summary_retarget_uses_stored_reporting_fleet_number_and_omits_sector() {
         .push(MissionRetargetEvent::Retargeted {
             fleet_idx: 0,
             reporting_fleet_number: Some(11),
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
             previous_target_coords: [4, 4],
@@ -301,7 +301,7 @@ fn join_summary_contains_single_end_of_transmission_footer() {
     let mut events = MaintenanceEvents::default();
     events.fleet_merge_events.push(FleetMergeEvent {
         fleet_idx: 1,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::JoinAnotherFleet,
         host_fleet_id_raw: 1,
         absorbed_fleet_id_raw: 2,
@@ -316,7 +316,7 @@ fn join_summary_contains_single_end_of_transmission_footer() {
         .push(MissionRetargetEvent::Retargeted {
             fleet_idx: 2,
             reporting_fleet_number: Some(11),
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
             previous_target_coords: [4, 4],
@@ -326,7 +326,7 @@ fn join_summary_contains_single_end_of_transmission_footer() {
         .join_host_events
         .push(JoinMissionHostEvent::HostDestroyed {
             fleet_idx: 3,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             destroyed_host_fleet_number: Some(2),
             coords: [6, 6],
         });
@@ -348,7 +348,7 @@ fn destroyed_fleet_telemetry_reports_starbase_only_opponent() {
 
     let mut events = MaintenanceEvents::default();
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         fleet_number: 20,
         coords: [11, 8],
         was_intercepting: true,
@@ -366,7 +366,7 @@ fn destroyed_fleet_telemetry_reports_starbase_only_opponent() {
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses: 0,
         enemy_ground_army_losses: 0,
-        primary_enemy_empire_raw: Some(2),
+        primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: None,
         stardate_week: Some(2),
     });
@@ -388,7 +388,7 @@ fn no_engagement_report_includes_reporting_fleet_composition() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::NoEngagement {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::ScoutSector),
             coords: [9, 5],
             friendly_initial: ShipLosses {
@@ -397,7 +397,7 @@ fn no_engagement_report_includes_reporting_fleet_composition() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(4),
             small_vessels: 1,
             medium_vessels: 2,
@@ -420,7 +420,7 @@ fn fleet_contact_report_includes_reporting_fleet_composition() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::ScoutSector),
         reporting_fleet_number: Some(13),
         reporting_initial: ShipLosses {
@@ -429,7 +429,7 @@ fn fleet_contact_report_includes_reporting_fleet_composition() {
         },
         reporting_loaded_armies_initial: 0,
         coords: [24, 14],
-        target_empire_raw: 2,
+        target_empire: 2,
         target_fleet_number: Some(5),
         small_vessels: 2,
         medium_vessels: 0,
@@ -454,7 +454,7 @@ fn join_host_retarget_summary_lists_joiner_without_host_merge_prose() {
         .join_host_events
         .push(JoinMissionHostEvent::Retargeted {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             previous_host_fleet_number: Some(14),
             new_host_fleet_number: Some(2),
             coords: [2, 7],
@@ -480,7 +480,7 @@ fn join_summary_combines_completed_retargeted_and_lost_hosts() {
     let mut events = MaintenanceEvents::default();
     events.fleet_merge_events.push(FleetMergeEvent {
         fleet_idx: 1,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::JoinAnotherFleet,
         host_fleet_id_raw: 1,
         absorbed_fleet_id_raw: 2,
@@ -495,7 +495,7 @@ fn join_summary_combines_completed_retargeted_and_lost_hosts() {
         .push(MissionRetargetEvent::Retargeted {
             fleet_idx: 2,
             reporting_fleet_number: Some(11),
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
             previous_target_coords: [4, 4],
@@ -505,7 +505,7 @@ fn join_summary_combines_completed_retargeted_and_lost_hosts() {
         .join_host_events
         .push(JoinMissionHostEvent::HostDestroyed {
             fleet_idx: 3,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             destroyed_host_fleet_number: Some(2),
             coords: [7, 7],
         });
@@ -537,7 +537,7 @@ fn join_summary_uses_compact_fleet_lists_for_multi_fleet_sections() {
     for absorbed in [11, 5, 7] {
         events.fleet_merge_events.push(FleetMergeEvent {
             fleet_idx: (absorbed - 4) as usize,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             kind: Mission::JoinAnotherFleet,
             host_fleet_id_raw: 1,
             absorbed_fleet_id_raw: u16::from(absorbed),
@@ -554,7 +554,7 @@ fn join_summary_uses_compact_fleet_lists_for_multi_fleet_sections() {
             .push(MissionRetargetEvent::Retargeted {
                 fleet_idx: 0,
                 reporting_fleet_number: Some(fleet_number),
-                owner_empire_raw: 1,
+                owner_empire: 1,
                 mission: Mission::JoinAnotherFleet,
                 current_coords: [7, 7],
                 previous_target_coords: [4, 4],
@@ -566,7 +566,7 @@ fn join_summary_uses_compact_fleet_lists_for_multi_fleet_sections() {
             .join_host_events
             .push(JoinMissionHostEvent::HostDestroyed {
                 fleet_idx: (fleet_number - 4) as usize,
-                owner_empire_raw: 1,
+                owner_empire: 1,
                 destroyed_host_fleet_number: Some(2),
                 coords: [7, 7],
             });
@@ -600,7 +600,7 @@ fn mirrored_contact_events_cover_both_viewers() {
 
     let mut events = MaintenanceEvents::default();
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 1,
+        viewer_empire: 1,
         source: ContactReportSource::FleetMission(Mission::ScoutSector),
         reporting_fleet_number: Some(13),
         reporting_initial: ShipLosses {
@@ -609,7 +609,7 @@ fn mirrored_contact_events_cover_both_viewers() {
         },
         reporting_loaded_armies_initial: 0,
         coords: [24, 14],
-        target_empire_raw: 2,
+        target_empire: 2,
         target_fleet_number: Some(5),
         small_vessels: 2,
         medium_vessels: 0,
@@ -617,7 +617,7 @@ fn mirrored_contact_events_cover_both_viewers() {
         stardate_week: Some(52),
     });
     events.scout_contact_events.push(ScoutContactEvent {
-        viewer_empire_raw: 2,
+        viewer_empire: 2,
         source: ContactReportSource::Fleet(5),
         reporting_fleet_number: Some(5),
         reporting_initial: ShipLosses {
@@ -626,7 +626,7 @@ fn mirrored_contact_events_cover_both_viewers() {
         },
         reporting_loaded_armies_initial: 0,
         coords: [24, 14],
-        target_empire_raw: 1,
+        target_empire: 1,
         target_fleet_number: Some(13),
         small_vessels: 1,
         medium_vessels: 0,
@@ -642,12 +642,12 @@ fn fleet_battle_reports_cover_both_viewers() {
     let game_data = seeded_game_data();
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(11),
         reporting_mission: Some(Mission::GuardBlockadeWorld),
         perspective: FleetBattlePerspective::Intercepted,
         coords: [6, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: Some(7),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -675,12 +675,12 @@ fn fleet_battle_reports_cover_both_viewers() {
         stardate_week: Some(1),
     });
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 2,
+        reporting_empire: 2,
         reporting_fleet_number: Some(7),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [6, 6],
-        enemy_empires_raw: vec![1],
+        enemy_empires: vec![1],
         primary_enemy_fleet_number: Some(11),
         held_field: false,
         friendly_initial: ShipLosses {
@@ -716,7 +716,7 @@ fn fleet_destruction_events_still_cover_both_viewers() {
     let game_data = seeded_game_data();
     let mut events = MaintenanceEvents::default();
     events.fleet_destroyed_events.push(FleetDestroyedEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         fleet_number: 11,
         coords: [6, 6],
         was_intercepting: true,
@@ -737,17 +737,17 @@ fn fleet_destruction_events_still_cover_both_viewers() {
         enemy_starbases_destroyed: 0,
         enemy_ground_battery_losses: 0,
         enemy_ground_army_losses: 0,
-        primary_enemy_empire_raw: Some(2),
+        primary_enemy_empire: Some(2),
         primary_enemy_fleet_number: Some(7),
         stardate_week: Some(1),
     });
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 2,
+        reporting_empire: 2,
         reporting_fleet_number: Some(7),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [6, 6],
-        enemy_empires_raw: vec![1],
+        enemy_empires: vec![1],
         primary_enemy_fleet_number: Some(11),
         held_field: true,
         friendly_initial: ShipLosses {
@@ -781,9 +781,9 @@ fn bombardment_reports_cover_attacker_and_defender() {
     let mut events = MaintenanceEvents::default();
     events.bombard_events.push(BombardEvent {
         planet_idx: 0,
-        attacker_empire_raw: 1,
+        attacker_empire: 1,
         attacker_fleet_number: Some(10),
-        defender_empire_raw: 2,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             battleships: 10,
             cruisers: 11,
@@ -805,7 +805,7 @@ fn bombardment_reports_cover_attacker_and_defender() {
     });
     events.mission_events.push(MissionEvent {
         fleet_idx: 0,
-        owner_empire_raw: 1,
+        owner_empire: 1,
         kind: Mission::BombardWorld,
         outcome: MissionOutcome::Succeeded,
         abort_reason: None,
@@ -827,8 +827,8 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             battleships: 2,
             transports: 12,
@@ -850,9 +850,9 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         .ownership_change_events
         .push(PlanetOwnershipChangeEvent {
             planet_idx: 0,
-            reporting_empire_raw: 2,
-            previous_owner_empire_raw: 2,
-            new_owner_empire_raw: 1,
+            reporting_empire: 2,
+            previous_owner_empire: 2,
+            new_owner_empire: 1,
             stardate_week: Some(3),
         });
     assert_viewers_have_reports(&game_data, &success, &[1, 2]);
@@ -862,8 +862,8 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             destroyers: 4,
             transports: 8,
@@ -888,8 +888,8 @@ fn invasion_reports_cover_both_viewers_for_success_failure_and_abort() {
         kind: Mission::InvadeWorld,
         attacker_fleet_number: Some(8),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             destroyers: 4,
             transports: 8,
@@ -922,8 +922,8 @@ fn blitz_reports_cover_both_viewers_for_success_and_failure() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             transports: 6,
@@ -945,9 +945,9 @@ fn blitz_reports_cover_both_viewers_for_success_and_failure() {
         .ownership_change_events
         .push(PlanetOwnershipChangeEvent {
             planet_idx: 0,
-            reporting_empire_raw: 2,
-            previous_owner_empire_raw: 2,
-            new_owner_empire_raw: 1,
+            reporting_empire: 2,
+            previous_owner_empire: 2,
+            new_owner_empire: 1,
             stardate_week: Some(3),
         });
     assert_viewers_have_reports(&game_data, &success, &[1, 2]);
@@ -957,8 +957,8 @@ fn blitz_reports_cover_both_viewers_for_success_and_failure() {
         kind: Mission::BlitzWorld,
         attacker_fleet_number: Some(4),
         planet_idx: 0,
-        attacker_empire_raw: 1,
-        defender_empire_raw: 2,
+        attacker_empire: 1,
+        defender_empire: 2,
         attacker_initial: ShipLosses {
             cruisers: 1,
             transports: 6,
@@ -984,12 +984,12 @@ fn starbase_only_defense_still_covers_both_viewers() {
     let game_data = seeded_game_data();
     let mut events = MaintenanceEvents::default();
     events.fleet_battle_events.push(FleetBattleEvent {
-        reporting_empire_raw: 1,
+        reporting_empire: 1,
         reporting_fleet_number: Some(12),
         reporting_mission: Some(Mission::MoveOnly),
         perspective: FleetBattlePerspective::Attacked,
         coords: [9, 6],
-        enemy_empires_raw: vec![2],
+        enemy_empires: vec![2],
         primary_enemy_fleet_number: None,
         held_field: true,
         friendly_initial: ShipLosses {
@@ -1012,7 +1012,7 @@ fn starbase_only_defense_still_covers_both_viewers() {
     events
         .starbase_destroyed_events
         .push(nc_data::StarbaseDestroyedEvent {
-            reporting_empire_raw: 2,
+            reporting_empire: 2,
             starbase_id: 4,
             coords: [9, 6],
             enemy_initial: ShipLosses {
@@ -1023,7 +1023,7 @@ fn starbase_only_defense_still_covers_both_viewers() {
             },
             enemy_loaded_armies_initial: 11,
             enemy_losses: ShipLosses::default(),
-            primary_enemy_empire_raw: Some(1),
+            primary_enemy_empire: Some(1),
             primary_enemy_fleet_number: Some(12),
             stardate_week: Some(2),
         });
@@ -1041,7 +1041,7 @@ fn no_engagement_composer_path_still_emits_a_viewer_report() {
         .encounter_disposition_events
         .push(EncounterDispositionEvent::NoEngagement {
             fleet_idx: 0,
-            owner_empire_raw: 1,
+            owner_empire: 1,
             mission: Some(Mission::ScoutSector),
             coords: [9, 5],
             friendly_initial: ShipLosses {
@@ -1050,7 +1050,7 @@ fn no_engagement_composer_path_still_emits_a_viewer_report() {
                 ..ShipLosses::default()
             },
             friendly_loaded_armies_initial: 0,
-            target_empire_raw: 2,
+            target_empire: 2,
             target_fleet_number: Some(4),
             small_vessels: 1,
             medium_vessels: 2,
