@@ -59,3 +59,11 @@ decisions: [ubnjcchu](ubnjcchu-fractional-economy-accounting-smooth-growth-and-a
 [iq6sfxde](iq6sfxde-starbases-keep-their-growth-and-capacity-bonuses-without-stacking.md),
 [3htuxw8w](3htuxw8w-captured-worlds-convert-in-two-quiet-years-and-keep-what-survives.md),
 [nrvey7jk](nrvey7jk-lighter-bombardment-of-goods-and-classic-scorch-earth.md).
+
+
+Result (t090, 2026-10-11): the
+[hostile-map price review](../investigations/n7fzd2vk-unit-prices-on-generated-maps-with-hostile-openings.md)
+ran 7,020 campaigns at the recorded pre-t099 engine revision. It recommends
+keeping prices and the opening unchanged. Its scripts, tables and limits
+are linked there; the bot's low finish rate is not evidence by itself for
+a price change.

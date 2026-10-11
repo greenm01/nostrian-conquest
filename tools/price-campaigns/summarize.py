@@ -11,8 +11,9 @@ happened at all.
     python3 tools/price-campaigns/summarize.py /tmp/price-campaigns/*.tsv
 """
 
+import argparse
+import json
 import statistics
-import sys
 from collections import defaultdict
 
 G_COLUMNS = (
@@ -22,7 +23,7 @@ G_COLUMNS = (
     "lost_dd lost_ca lost_bb lost_sc lost_tt lost_etac"
 ).split()
 E_COLUMNS = (
-    "kind label prices goods players opening doctrine seed empire empire_opening "
+    "kind label prices goods players opening doctrine seed empire empire_opening empire_doctrine "
     "first_colony col_by5 col_by10 col_by20 owned5 owned10 owned20 owned_end "
     "built_dd built_ca built_bb built_sc built_tt built_etac built_gb built_army "
     "built_sb built_bb_home first_bb_order first_base exhausted_years wait_years "
@@ -39,10 +40,11 @@ def parse(paths):
                 if line.startswith("#") or not line.strip():
                     continue
                 fields = line.rstrip("\n").split("\t")
-                if fields[0] == "G":
-                    games.append(dict(zip(G_COLUMNS, fields)))
-                elif fields[0] == "E":
-                    empires.append(dict(zip(E_COLUMNS, fields)))
+                columns = {"G": G_COLUMNS, "E": E_COLUMNS}.get(fields[0])
+                if columns is None or len(fields) != len(columns):
+                    raise ValueError(f"{path}: malformed {fields[0]} row ({len(fields)} fields)")
+                row = dict(zip(columns, fields))
+                (games if fields[0] == "G" else empires).append(row)
     return games, empires
 
 
@@ -149,14 +151,20 @@ def main(paths):
         ),
     )
 
-    # Mixed games: outcomes by opening, pooled over seeds.
-    mixed = [row for row in empires if row["opening"] == "mixed"]
-    if mixed:
-        print("\n## Mixed games: outcome by the empire's opening")
+    # Mixed games: outcomes by the empire's own opening or doctrine, pooled
+    # over seeds.
+    for mixed_column, own_column, title in (
+        ("opening", "empire_opening", "opening"),
+        ("doctrine", "empire_doctrine", "doctrine"),
+    ):
+        mixed = [row for row in empires if row[mixed_column] == "mixed"]
+        if not mixed:
+            continue
+        print(f"\n## Mixed games: outcome by the empire's {title}")
         by = defaultdict(list)
         for row in mixed:
-            by[(row["label"], row["goods"], row["players"], row["doctrine"], row["empire_opening"])].append(row)
-        columns = ["col_by10", "owned20", "owned_end", "first_bb_order", "first_base", "captures", "home_lost", "eliminated", "alive", "winner"]
+            by[(row["label"], row["goods"], row["players"], row["opening"] + "/" + row["doctrine"], row[own_column])].append(row)
+        columns = ["col_by10", "owned20", "owned_end", "built_bb", "built_ca", "first_bb_order", "first_base", "captures", "home_lost", "eliminated", "alive", "winner"]
         print("\n| cell | n | " + " | ".join(columns) + " |")
         print("| --- | ---: | " + " | ".join("---:" for _ in columns) + " |")
         for key in sorted(by):
@@ -174,7 +182,44 @@ def main(paths):
             print(f"| {key[0]} g{key[1]} {key[2]}p {key[3]} {key[4]} | {len(rows)} | " + " | ".join(cells) + " |")
 
 
+def compact_summary(paths):
+    """Campaign counts and group means; samples are campaigns, not independent seats."""
+    games, empires = parse(paths)
+    cells = []
+    for key in sorted({key_of(row) for row in games}):
+        g = [row for row in games if key_of(row) == key]
+        e = [row for row in empires if key_of(row) == key]
+        seeds = [int(row["seed"]) for row in g]
+        if len(set(seeds)) != len(seeds):
+            raise ValueError(f"duplicate campaign seeds in {key}")
+        for seed in seeds:
+            seats = [int(row["empire"]) for row in e if int(row["seed"]) == seed]
+            if sorted(seats) != list(range(1, int(key[2]) + 1)):
+                raise ValueError(f"missing or duplicate empire rows in {key}, seed {seed}")
+        def metrics(rows, columns):
+            return {column: {"mean": mean(rows, column), "observed": share(rows, column)}
+                    for column in columns}
+        cells.append({
+            "label": key[0], "goods": int(key[1]), "players": int(key[2]),
+            "opening": key[3], "doctrine": key[4], "seeds": sorted(seeds),
+            "campaigns": len(g), "empires": len(e),
+            "game": metrics(g, G_COLUMNS[8:]),
+            "empire": metrics(e, E_COLUMNS[11:]),
+            "by_opening": {o: metrics([r for r in e if r["empire_opening"] == o], E_COLUMNS[11:])
+                           for o in sorted({r["empire_opening"] for r in e}) if key[3] == "mixed"},
+            "by_doctrine": {d: metrics([r for r in e if r["empire_doctrine"] == d], E_COLUMNS[11:])
+                            for d in sorted({r["empire_doctrine"] for r in e}) if key[4] == "mixed"},
+        })
+    return {"campaigns": len(games), "empires": len(empires), "cells": cells}
+
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        sys.exit(__doc__)
-    main(sys.argv[1:])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("paths", nargs="+")
+    parser.add_argument("--json", help="also write compact numeric results")
+    args = parser.parse_args()
+    if args.json:
+        with open(args.json, "w", encoding="utf-8") as handle:
+            json.dump(compact_summary(args.paths), handle, indent=2)
+            handle.write("\n")
+    main(args.paths)

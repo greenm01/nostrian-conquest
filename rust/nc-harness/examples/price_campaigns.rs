@@ -18,7 +18,9 @@
 //!   colonies exist or from year 6, then hulls. The `value` doctrine buys
 //!   the affordable hull with the most attack plus defense per point; the
 //!   `fixed` doctrine buys BB, CA, CA, DD, DD in turn and waits for the next
-//!   one. Colonies always use `value`. Tax is 50% throughout.
+//!   one; the `cruisers` doctrine never buys a battleship. Colonies follow
+//!   the empire's doctrine, except that `fixed` colonies use `value`. Tax is
+//!   50% throughout.
 //! - War: the two starting lone destroyers guard home. Everything else built
 //!   at home joins one home fleet on Guard/Blockade. The victim is the
 //!   enemy with the least navy, batteries, and bases, weighted by distance;
@@ -48,7 +50,8 @@
 //! ```
 //!
 //! `--opening mixed` gives the four openings to the empires of each game,
-//! rotated by seed. `tools/price-campaigns/summarize.py` makes the tables.
+//! rotated by seed; `--doctrine mixed` seats `value` and `cruisers` empires
+//! alternately. `tools/price-campaigns/summarize.py` makes the tables.
 
 use std::thread;
 
@@ -132,6 +135,8 @@ enum Doctrine {
     Value,
     /// Buys BB, CA, CA, DD, DD in turn and waits for the next one.
     Fixed,
+    /// Buys cruisers, or destroyers when a cruiser is not affordable.
+    Cruisers,
 }
 
 impl Doctrine {
@@ -139,6 +144,7 @@ impl Doctrine {
         Some(match text {
             "value" => Doctrine::Value,
             "fixed" => Doctrine::Fixed,
+            "cruisers" => Doctrine::Cruisers,
             _ => return None,
         })
     }
@@ -147,6 +153,7 @@ impl Doctrine {
         match self {
             Doctrine::Value => "value",
             Doctrine::Fixed => "fixed",
+            Doctrine::Cruisers => "cruisers",
         }
     }
 }
@@ -167,7 +174,8 @@ struct Config {
     years: u16,
     /// `None` is the mixed opening: the four openings rotated by seed.
     opening: Option<Opening>,
-    doctrine: Doctrine,
+    /// `None` is the mixed doctrine: `value` and `cruisers` seated in turn.
+    doctrine: Option<Doctrine>,
     goods: u32,
     threads: usize,
 }
@@ -179,7 +187,7 @@ fn parse_args() -> Config {
         seeds: 0..20,
         years: 40,
         opening: Some(Opening::Escort),
-        doctrine: Doctrine::Value,
+        doctrine: Some(Doctrine::Value),
         goods: 50,
         threads: thread::available_parallelism().map_or(1, |n| n.get()),
     };
@@ -203,7 +211,11 @@ fn parse_args() -> Config {
                 }
             }
             "--doctrine" => {
-                config.doctrine = Doctrine::parse(value).expect("--doctrine value|fixed")
+                config.doctrine = if value == "mixed" {
+                    None
+                } else {
+                    Some(Doctrine::parse(value).expect("--doctrine value|fixed|cruisers|mixed"))
+                }
             }
             "--goods" => config.goods = value.parse().expect("--goods"),
             "--threads" => config.threads = value.parse().expect("--threads"),
@@ -217,6 +229,16 @@ fn parse_args() -> Config {
 fn opening_for(config: &Config, seed: u64, empire: u8) -> Opening {
     config.opening.unwrap_or_else(|| {
         Opening::ALL[(seed as usize + usize::from(empire) - 1) % Opening::ALL.len()]
+    })
+}
+
+fn doctrine_for(config: &Config, seed: u64, empire: u8) -> Doctrine {
+    config.doctrine.unwrap_or_else(|| {
+        if (seed as usize + usize::from(empire)) % 2 == 0 {
+            Doctrine::Value
+        } else {
+            Doctrine::Cruisers
+        }
     })
 }
 
@@ -831,6 +853,7 @@ impl Brain {
         let mut counts = [0u32; 10];
         let mut budget = Self::budget(phase, planet_idx);
         let fixed = at_home && self.doctrine == Doctrine::Fixed;
+        let no_battleships = self.doctrine == Doctrine::Cruisers;
         loop {
             let kind = if fixed {
                 let wanted = FIXED_CYCLE[self.fixed_pos % FIXED_CYCLE.len()];
@@ -843,7 +866,7 @@ impl Brain {
                 self.fixed_pos += 1;
                 wanted
             } else {
-                let Some(kind) = best_value_hull(budget) else {
+                let Some(kind) = best_value_hull(budget, no_battleships) else {
                     break;
                 };
                 kind
@@ -1169,13 +1192,14 @@ fn order_action(order: Order, speed: u8, target: [u8; 2]) -> FleetTurnAction {
 
 /// The affordable hull with the most attack plus defense per point; the
 /// larger hull wins a tie.
-fn best_value_hull(budget: u32) -> Option<ProductionItemKind> {
+fn best_value_hull(budget: u32, no_battleships: bool) -> Option<ProductionItemKind> {
     [
         (ProductionItemKind::Battleship, 190.0),
         (ProductionItemKind::Cruiser, 60.0),
         (ProductionItemKind::Destroyer, 18.0),
     ]
     .into_iter()
+    .filter(|(kind, _)| !(no_battleships && *kind == ProductionItemKind::Battleship))
     .filter(|(kind, _)| cost(*kind) <= budget)
     .map(|(kind, worth)| (kind, worth / cost(kind) as f64))
     .fold(
@@ -1347,7 +1371,7 @@ fn play_game(config: &Config, seed: u64) -> (GameStats, Vec<Brain>, CoreGameData
                 &play.built.game_data,
                 empire,
                 opening_for(config, seed, empire),
-                config.doctrine,
+                doctrine_for(config, seed, empire),
             )
         })
         .collect();
@@ -1422,7 +1446,7 @@ fn game_rows(
         config.goods,
         config.players,
         opening,
-        config.doctrine.name(),
+        config.doctrine.map_or("mixed", Doctrine::name),
         seed
     );
     out.push_str(&format!(
@@ -1449,9 +1473,10 @@ fn game_rows(
         let owned_end = owned_planets(state_end, brain.empire).len();
         let alive = brain.alive(state_end) && owned_end > 0;
         out.push_str(&format!(
-            "E\t{key}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
+            "E\t{key}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n",
             brain.empire,
             brain.opening.name(),
+            brain.doctrine.name(),
             opt(stats.first_colony),
             stats.colonies_by[0],
             stats.colonies_by[1],
@@ -1499,13 +1524,13 @@ fn main() {
         config.seeds.end,
         config.years,
         config.opening.map_or("mixed", Opening::name),
-        config.doctrine.name()
+        config.doctrine.map_or("mixed", Doctrine::name)
     );
     println!(
         "# G\tlabel\tprices\tgoods\tplayers\topening\tdoctrine\tseed\tyears\twinner\twinner_year\teliminations\tbattles\tbattle_reports\tassaults\tassaults_resolved\thome_assaults\tassault_failures\tcaptures\tbombards\tcolonies\tfirst_battle\tfirst_capture\tlost_dd\tlost_ca\tlost_bb\tlost_sc\tlost_tt\tlost_etac"
     );
     println!(
-        "# E\tlabel\tprices\tgoods\tplayers\topening\tdoctrine\tseed\tempire\tempire_opening\tfirst_colony\tcol_by5\tcol_by10\tcol_by20\towned5\towned10\towned20\towned_end\tbuilt_dd\tbuilt_ca\tbuilt_bb\tbuilt_sc\tbuilt_tt\tbuilt_etac\tbuilt_gb\tbuilt_army\tbuilt_sb\tbuilt_bb_home\tfirst_bb_order\tfirst_base\texhausted_years\twait_years\tetacs_bought\tassaults\tcaptures\teliminated\thome_lost\talive\twinner\tlost_dd\tlost_ca\tlost_bb\tlost_sc\tlost_tt\tlost_etac"
+        "# E\tlabel\tprices\tgoods\tplayers\topening\tdoctrine\tseed\tempire\tempire_opening\tempire_doctrine\tfirst_colony\tcol_by5\tcol_by10\tcol_by20\towned5\towned10\towned20\towned_end\tbuilt_dd\tbuilt_ca\tbuilt_bb\tbuilt_sc\tbuilt_tt\tbuilt_etac\tbuilt_gb\tbuilt_army\tbuilt_sb\tbuilt_bb_home\tfirst_bb_order\tfirst_base\texhausted_years\twait_years\tetacs_bought\tassaults\tcaptures\teliminated\thome_lost\talive\twinner\tlost_dd\tlost_ca\tlost_bb\tlost_sc\tlost_tt\tlost_etac"
     );
     let seeds: Vec<u64> = config.seeds.clone().collect();
     let threads = config.threads.max(1).min(seeds.len().max(1));

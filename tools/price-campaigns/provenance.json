@@ -1,0 +1,662 @@
+{
+  "engine_base_commit": "7348955f",
+  "driver_initial_commit": "0c1c8f6f",
+  "driver_sha256": "c021d70e15b06b450219ef4b72f909119435acd7064def52b9ad6cdd36d6960d",
+  "campaign_seed": 0,
+  "map_seeds": "0..59 symmetric; 0..149 mixed",
+  "years_limit": 80,
+  "runs": [
+    {
+      "file": "base_2p_bare_fixed.tsv",
+      "sha256": "39da73bccc760833040999591dd63c58e1fee2537892d890ef014349ae3e4aad",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "base_2p_bare_value.tsv",
+      "sha256": "6dea3b5a8318b6dc1d3e9fbc54d67e0bb2de1704b39d5a31d882794651b29458",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "base_2p_escort_fixed.tsv",
+      "sha256": "da25d319378f85fcf02899ba3fdad394142f284528a34777c06f90c6da403701",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "base_2p_escort_value.tsv",
+      "sha256": "d514d071ee9ec6b426d0f1d3f58aabe3c8f91ce9306a9b3525c3df8e589f0af8",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "base_4p_bare_fixed.tsv",
+      "sha256": "f29c8617dfa2dfbaf8d154ef73fe9b99d5286573676425a61bf2a9fc73a784cd",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "base_4p_bare_value.tsv",
+      "sha256": "50edebe9cb4bfb381ce5d00e61ce91061ff7c2dc40025bea11c1acbaff22369b",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "base_4p_escort_fixed.tsv",
+      "sha256": "a996f4ba3a2d7ff44ffdfa2bcf7148518b40549eb05bc7f737070663800fcbd7",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "base_4p_escort_mixed.tsv",
+      "sha256": "fbf2b14bfbdf6004a08c2bdb4e11c9f95445696de645c44bf00b09ebcb3c4740",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "base_4p_escort_value.tsv",
+      "sha256": "482ab0ce862bfd0c5cf47912cd9c6e2c7d67a82303b18cd1e9154e64cbcefbae",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "base_4p_mixed_fixed.tsv",
+      "sha256": "c3330ba503f481d2809129c6d0c42df53b7589850bdc5c43a89d212a7e05d815",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "base_4p_mixed_value.tsv",
+      "sha256": "cab185d59de1f42b79d2883a46430ac803a5c550abed379fc5ec5022ffae4d59",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "base_6p_bare_fixed.tsv",
+      "sha256": "657688063ee9f3d3a459d5cab9c7e9741a8a76034c53172f40574a28e41b8ac4",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "base_6p_bare_value.tsv",
+      "sha256": "cc2bb05881ef0a686cd76d34f115b778cb4a820c8f10347958d2e6295cc44246",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "base_6p_escort_fixed.tsv",
+      "sha256": "363afdebae0c14cf85f41053e6a22f9c24ff3385aba97502c3cb30f2995eb322",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "base_6p_escort_value.tsv",
+      "sha256": "3504dfa8befc9b3ca1d259fd2ac1777ebff2a42c83eb70c058a7ae1517e3cf06",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=base prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb30_2p_bare_fixed.tsv",
+      "sha256": "9e6fd03a451051e049ae189c63470c877203d57c99cc32b726fa1b1ed2f665c1",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb30_2p_bare_value.tsv",
+      "sha256": "72586173dd295ce129aca6e69b057226692681d17df0bb9a5629aebe763c709d",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb30_2p_escort_fixed.tsv",
+      "sha256": "612a13481cb606f82734b241fb94021a1577cae5e0db96727b47ccac79660d75",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb30_2p_escort_value.tsv",
+      "sha256": "68471597884d02154fccec9cd38a5669d9d18ffd7021960bf93d2553e8a731c2",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb30_4p_bare_fixed.tsv",
+      "sha256": "3c52a52de1812637cfaa971b0c3e3e464e5638dbc84aafe6e45bfbed4cd6de33",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb30_4p_bare_value.tsv",
+      "sha256": "4d3871476189318cb64bd46492525e32f49f608ecc116df461edaa932fea1784",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb30_4p_escort_fixed.tsv",
+      "sha256": "22756d2f7fc2cb4cac36288da2907e116cc03386345dcdf45625e4ee2d8fc2e3",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb30_4p_escort_mixed.tsv",
+      "sha256": "6f5508670bcbd56b6cdeb62eb8e96194f9d6e558a7e69f0fbe31f74d357299af",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "bb30_4p_escort_value.tsv",
+      "sha256": "e190d5b19daf1c442a97e335786f083fa71d4bb09e422ee10f2867bb57fab0e4",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb30_4p_mixed_fixed.tsv",
+      "sha256": "ff9c16c517617828a8edafb266bb8e50346b819111e625886866b38132bd7423",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "bb30_4p_mixed_value.tsv",
+      "sha256": "88a05913b4657518e8ec83d52f136e74596065dbd415d22541257718eb02cad3",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "bb30_6p_bare_fixed.tsv",
+      "sha256": "7aee81ad95f04b6a9dc6ff28757aa1b8cb9d3e75dc09c94abf9bdfb603857379",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb30_6p_bare_value.tsv",
+      "sha256": "c212bbadf211aabf26b499a9b50551680cc6ee91c01954b499470eea404d4d11",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb30_6p_escort_fixed.tsv",
+      "sha256": "194f24272c75c03ae154354cffffa5f4a688b50ec9e79d27fb002c4b3d2a9c3a",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb30_6p_escort_value.tsv",
+      "sha256": "37ca8d7d3a0e612a6855b5963eefba197b917a29a6296a9764da8e2a891f6c6c",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb30 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/30/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb60_2p_bare_fixed.tsv",
+      "sha256": "ec1fd12fbffe01512241c8b3887de46c69809d6d19255c471f9067b48d85d7e3",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb60_2p_bare_value.tsv",
+      "sha256": "d2c3c17e61bdd8a2c5bf0b8d4ee12590cf92baa0d5e8fe5fe738d29171a1b845",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb60_2p_escort_fixed.tsv",
+      "sha256": "9d8fd08679e4a1e8bec0f063ad920cdd97d23531227b6018ddcd2aa32d9bdee9",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb60_2p_escort_value.tsv",
+      "sha256": "7fb9f3bce352246bb40e34d7983d790e457b62555736a57c0feaf8324b10c73a",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb60_4p_bare_fixed.tsv",
+      "sha256": "8f4adbcdb3e5dd6e91c79a32c4b03d04d7b0a62063148bc33fcc85347740038c",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb60_4p_bare_value.tsv",
+      "sha256": "b9059cf9d6947403d4e2bd411fe71f1153db0e19d26e15c9e4e5be4c0ad88c7b",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb60_4p_escort_fixed.tsv",
+      "sha256": "7d7dd07ac27b31ec2b04aaee0ef326690827579dfaf13b92a8a605bf7f6b2c85",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb60_4p_escort_mixed.tsv",
+      "sha256": "dfe1da21e1f885802450bb06341018674aa4ebfce3ba405ffbb3fb9763f4a216",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "bb60_4p_escort_value.tsv",
+      "sha256": "3fb184ea0a3fd9dc5574e3006d17f4b10af7faeae86d8f5dd89c1e9de1db3a37",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "bb60_4p_mixed_fixed.tsv",
+      "sha256": "d64a81693aa457b8138210273dae664474fa68a5d5d610575cb62ab788c5ae93",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "bb60_4p_mixed_value.tsv",
+      "sha256": "f428764fe5eac3a0556642c6ce41e4def40f74103f586a91bdaa18cd4d589082",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "bb60_6p_bare_fixed.tsv",
+      "sha256": "9befb43e3c170ecf24e1da30149a06130a6aad0ee29ef0bb30a3e5282a9a6e60",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "bb60_6p_bare_value.tsv",
+      "sha256": "d574a8fda58eaf328244f670b545e3cf06efb8c92d353b69d83f024f47db2c42",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "bb60_6p_escort_fixed.tsv",
+      "sha256": "8011d9f48d81fb38624451640f37dddf311bfd0a03ea738fc77604f2fcc2fa08",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "bb60_6p_escort_value.tsv",
+      "sha256": "ba1a58d04005088f4fb4aadb02445431329c34b2096fc74a77235224fc9412c0",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=bb60 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/60/15/5/20/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac15_2p_bare_fixed.tsv",
+      "sha256": "f55d95bfd68b10c3eb74734ecf19d02a34df23c5c031a425742a88dade9a5cdf",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac15_2p_bare_value.tsv",
+      "sha256": "edf0c5e2ebfc5bdc6d97da0165d84d5ba499a1a69c5dabf38ad11fad6fbfd531",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac15_2p_escort_fixed.tsv",
+      "sha256": "bc46c0d06b7202578459a4d5d676e583d7f6c40cc15ab13d609d9963ed91db6d",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac15_2p_escort_value.tsv",
+      "sha256": "225eacb2bd2a25a89186a12d7a4b4ea506da49b99e3794e28ef67951d7d1c080",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac15_4p_bare_fixed.tsv",
+      "sha256": "46254fca75f820da9dc2994e59ded3d160e71e1730b0cffe11b32f6cba00b98d",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac15_4p_bare_value.tsv",
+      "sha256": "c21ac772f717b1ea1e66f8e02335b540cddf4916f693a67b734a04cfae13d4f0",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac15_4p_escort_fixed.tsv",
+      "sha256": "ae12dbb51f5077d776d15d68087c8d933b3c40dd11abeba53a489afef6fe5cdd",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac15_4p_escort_mixed.tsv",
+      "sha256": "010e863b3db774ed2249daad32a7ec1514bc40ff0894b88e553348b67529c4fe",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "etac15_4p_escort_value.tsv",
+      "sha256": "30814a61c5d9101cb6201502588eb36fdfb2236d6a18867fcc6167c28fac9e63",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac15_4p_mixed_fixed.tsv",
+      "sha256": "e3b14e45883dd8196e718daae71737ca883a15fa468f593598fb71dba180cc2b",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "etac15_4p_mixed_value.tsv",
+      "sha256": "105fc58dc4bcbbfb0a5919a02474efe9bf27e2dbb73eea0b39831483c9d9ff21",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "etac15_6p_bare_fixed.tsv",
+      "sha256": "f66eb6459c281e40d1f70e9bb437aa0a3d4efc24dc6e9bd7c98402815dcb1005",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac15_6p_bare_value.tsv",
+      "sha256": "603313e2ba23d67f874713cb3d837e9d6350087f6a1f68beb02691f03b0f0161",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac15_6p_escort_fixed.tsv",
+      "sha256": "2c8310913a732d3832840bbdb01457c05178901bc00f1fedbae35f22520f84b1",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac15_6p_escort_value.tsv",
+      "sha256": "c136c233ff71979dc423337fa5dd2a8c7a0945d3b9e7624580209a814937c917",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac15 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/15/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac25_2p_bare_fixed.tsv",
+      "sha256": "91efe1a07a1f66cb43a3d0e8ec90e252153c078686ed54c396885e8ef81093fd",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac25_2p_bare_value.tsv",
+      "sha256": "338f8d845ec9f11544b987700feb5b4d746b210eed79c6e906a18767a3259299",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac25_2p_escort_fixed.tsv",
+      "sha256": "f515cd9f5c691152f5d4ca10eaeddc8b145141d554fb064c56670f284b07a6ee",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac25_2p_escort_value.tsv",
+      "sha256": "351b72b038aefd143a56a76891e3f2b2e599a0eb5f38b54f44ca51e52116988b",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac25_4p_bare_fixed.tsv",
+      "sha256": "1efcf05d5988140d101fecfc2b44e3e4289f4fc56534a80688cfc436c22642bd",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac25_4p_bare_value.tsv",
+      "sha256": "a67c4e670c3f8affb17b35e3a84c4b1bd4f908e9adfb6d0866a611e62303f6ee",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac25_4p_escort_fixed.tsv",
+      "sha256": "e59086b60861078d22f8f812d48c8c51d6e8f4b6733194943eff877835995646",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac25_4p_escort_mixed.tsv",
+      "sha256": "79ce5cf6312fd806ebe463c804b2074f759dfe2f86c824139f3d1fe1907ffa3a",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "etac25_4p_escort_value.tsv",
+      "sha256": "0b5daa06ead5e184afc44867132082696d9e1ed8efc26885889eb228352f0fd1",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "etac25_4p_mixed_fixed.tsv",
+      "sha256": "938f999346f795d55c8c3a262d6023d6cd0aaf0ab8f769a1c9fb846b5c90a047",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "etac25_4p_mixed_value.tsv",
+      "sha256": "80e42d3ca3d929b1c89c6cadc5b6972403722c4d55e3b855518f68fba58ab61f",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "etac25_6p_bare_fixed.tsv",
+      "sha256": "02375c8e60313ab2d9a560f09b297637b617c1b3613afcaed24c8a521e630795",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "etac25_6p_bare_value.tsv",
+      "sha256": "fc3166277960bc45d3496413ae9740a2426d6cc1c444b2fa2da92782604fd6f9",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "etac25_6p_escort_fixed.tsv",
+      "sha256": "936c21ac02e3339d89f33605de6fbe988856d194a36a08496938b29748efc9ee",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "etac25_6p_escort_value.tsv",
+      "sha256": "309519f975ec54f01a0269fbc06e2656b14be875bb9b0fd679d65e729cebe603",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=etac25 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/25/20/2/50 goods=50 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "goods35_2p_bare_fixed.tsv",
+      "sha256": "929273e49388fb2573965d6f2cde380d9df9f33898c6e4a3c54da693f327d4b4",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=2 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "goods35_2p_bare_value.tsv",
+      "sha256": "affc2a1bfdca2d7fd0c7bd78d585ee232a65d61ffe6859203a6238ff3e4edc41",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=2 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "goods35_2p_escort_fixed.tsv",
+      "sha256": "9a14ee3a5978c51ad40d5923464176c99e733a7b779d3959459b4da8a0afe5fb",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=2 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "goods35_2p_escort_value.tsv",
+      "sha256": "ca7cdbfd407c34618644f1eb22cfd3299a6d9a137455c72b343507d3c847130e",
+      "games": 60,
+      "empires": 120,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=2 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "goods35_4p_bare_fixed.tsv",
+      "sha256": "76dbe57623ba13cd09f7d0442ff4f671755b7c75f9b8f0134b9d3b5272dbbc7f",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "goods35_4p_bare_value.tsv",
+      "sha256": "9f22ee86984b49903a11492f9614b2baf8e724fc90bf40f31bebea98ffb43292",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "goods35_4p_escort_fixed.tsv",
+      "sha256": "a5242aa34a33d8d6987f1c5969de844ad36eaea6ff26f21a0aeabb508b87e579",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "goods35_4p_escort_mixed.tsv",
+      "sha256": "93f47bfe8d93b1955ac1d551e93084a08ea9002d9ba93207831de5e6bc2651ce",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..150 years=80 opening=escort doctrine=mixed"
+    },
+    {
+      "file": "goods35_4p_escort_value.tsv",
+      "sha256": "976a8ac0c662ef4c891ea836f83ad1d0e1f7d4051076db66accc69da906667e0",
+      "games": 60,
+      "empires": 240,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..60 years=80 opening=escort doctrine=value"
+    },
+    {
+      "file": "goods35_4p_mixed_fixed.tsv",
+      "sha256": "05784912ea048f33b24d4ab3a833eff2239d2af7d5b45da96c5ba4ea8880f0b1",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..150 years=80 opening=mixed doctrine=fixed"
+    },
+    {
+      "file": "goods35_4p_mixed_value.tsv",
+      "sha256": "b7826fc54c1a013725e7f9c2566b206175154c32e79893249d33349de7e07432",
+      "games": 150,
+      "empires": 600,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=4 seeds=0..150 years=80 opening=mixed doctrine=value"
+    },
+    {
+      "file": "goods35_6p_bare_fixed.tsv",
+      "sha256": "eade9095d11bb2165c0cb889ad0d0841d5c51e229b7a96ab23643a51b3ad1376",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=6 seeds=0..60 years=80 opening=bare doctrine=fixed"
+    },
+    {
+      "file": "goods35_6p_bare_value.tsv",
+      "sha256": "2290f0d9679b69ada31d3eaf602420a9a8a595468e715f69f52e4258eef00345",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=6 seeds=0..60 years=80 opening=bare doctrine=value"
+    },
+    {
+      "file": "goods35_6p_escort_fixed.tsv",
+      "sha256": "8f5461ef49231bc86208db7668f906f6d5ac37b8085c92798b08fb38dabc733b",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=6 seeds=0..60 years=80 opening=escort doctrine=fixed"
+    },
+    {
+      "file": "goods35_6p_escort_value.tsv",
+      "sha256": "4f6ef867f673f7c745fd0c58d31644c968d447be4b78abffd63fe1cfb0847a3b",
+      "games": 60,
+      "empires": 360,
+      "header": "# price_campaigns label=goods35 prices(dd/ca/bb/sc/tt/etac/gb/army/sb)=5/15/45/15/5/20/20/2/50 goods=35 players=6 seeds=0..60 years=80 opening=escort doctrine=value"
+    }
+  ],
+  "binaries": {
+    "base": {
+      "path": "bin/price_campaigns_base",
+      "sha256": "897a838086caaaf9ce9359ddaa24f9d92aa0b962bd770b1e4e531e6ba2882345"
+    },
+    "bb30": {
+      "path": "bin/price_campaigns_bb30",
+      "sha256": "4029bfb8f5abd74bea55b1e4a38a3a9cb5b83edce47e50139a0b8f11a2ce0380"
+    },
+    "bb60": {
+      "path": "bin/price_campaigns_bb60",
+      "sha256": "925a89fce8f28bc15d83b2f4ef8417362539c3677ab5649bb189ba6aae34a29a"
+    },
+    "etac15": {
+      "path": "bin/price_campaigns_etac15",
+      "sha256": "068ec3f4b91f8569a228218f9b6fc96d398fb111fc1be91b7e67b47a5db9edb0"
+    },
+    "etac25": {
+      "path": "bin/price_campaigns_etac25",
+      "sha256": "69444ebe490b6ae0b11f54100ac891ba20a8ebc79adca8b9fa6e9f30623d1448"
+    }
+  }
+}
