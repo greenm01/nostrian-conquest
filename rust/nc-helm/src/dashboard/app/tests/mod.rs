@@ -4004,6 +4004,7 @@ fn inbox_quick_compose_stages_and_removes_hosted_message() {
 
     app.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
     app.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
 
     assert!(app.hosted_turn_draft.as_ref().unwrap().messages.is_empty());
     assert!(!app.queued_mail.iter().any(|mail| {

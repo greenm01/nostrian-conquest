@@ -168,6 +168,54 @@ fn inbox_cancel_of_an_outgoing_row_asks_then_removes_it_everywhere() {
 }
 
 #[test]
+fn outbox_cancel_asks_first_and_defaults_to_yes() {
+    let mut app = dash_app_with_store();
+    app.initialize_hosted_turn_draft();
+    app.handle_key(KeyEvent::new(KeyCode::Char('i'), KeyModifiers::NONE));
+    send_message(&mut app, "One", "First body");
+    send_message(&mut app, "Two", "Second body");
+    app.handle_key(KeyEvent::new(KeyCode::Char('o'), KeyModifiers::NONE));
+    assert_eq!(app.inbox_overlay.prompt_mode, InboxPromptMode::Outbox);
+    let staged = |app: &DashApp| app.hosted_turn_draft.as_ref().unwrap().messages.len();
+
+    for decline in [KeyCode::Esc, KeyCode::Char('n')] {
+        app.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+        assert!(app.inbox_overlay.delete_confirm);
+        let lines = render_dashboard_lines(&app);
+        assert!(
+            lines
+                .iter()
+                .any(|line| line.contains("Delete this item? [Y]/N"))
+        );
+        assert!(!lines.iter().any(|line| line.contains("Y/[N]")));
+        assert_eq!(staged(&app), 2);
+        assert_eq!(app.queued_mail.len(), 2);
+
+        app.handle_key(KeyEvent::new(decline, KeyModifiers::NONE));
+        assert!(!app.inbox_overlay.delete_confirm);
+        assert_eq!(app.inbox_overlay.prompt_mode, InboxPromptMode::Outbox);
+        assert_eq!(staged(&app), 2);
+        assert_eq!(app.queued_mail.len(), 2);
+    }
+
+    app.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Enter, KeyModifiers::NONE));
+    assert!(!app.inbox_overlay.delete_confirm);
+    assert_eq!(app.inbox_overlay.prompt_mode, InboxPromptMode::Outbox);
+    assert_eq!(staged(&app), 1);
+    assert_eq!(app.queued_mail.len(), 1);
+    assert_eq!(
+        app.hosted_turn_draft.as_ref().unwrap().messages[0].subject,
+        "Two"
+    );
+
+    app.handle_key(KeyEvent::new(KeyCode::Char('d'), KeyModifiers::NONE));
+    app.handle_key(KeyEvent::new(KeyCode::Char('y'), KeyModifiers::NONE));
+    assert_eq!(staged(&app), 0);
+    assert!(app.queued_mail.is_empty());
+}
+
+#[test]
 fn comms_panel_counts_reports_of_the_latest_delivered_year() {
     let mut app = dash_app();
     let year = app.game_data.conquest.game_year;
