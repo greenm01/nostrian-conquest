@@ -239,7 +239,12 @@ throwaway worktree, build the example there, and run it with another
 line and in every row. The complete matrix ran in about three minutes on 30 threads after builds.
 The price-campaigns README documents the matrix and regeneration commands.
 The parser rejects truncated rows, duplicate campaigns and missing seats;
-its four integrity tests pass.
+its four integrity tests pass. Regenerating the JSON from all 90 archived
+TSVs reproduces the committed results exactly. A separate release-build
+smoke check after merging t099 runs two four-player campaigns for eight
+years with mixed openings and doctrines; its two game and eight seat rows
+pass the same integrity checks. That check does not replace or mix with
+the earlier revision's price matrix.
 
 ## Connections
 
