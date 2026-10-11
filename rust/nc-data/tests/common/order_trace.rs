@@ -455,6 +455,9 @@ pub fn build_trace_baseline() -> CoreGameData {
         .build_initialized_baseline()
         .expect("baseline should build");
 
+    // The traces follow one fleet's orders; autopilot would give a fleet left
+    // on Hold new ones.
+    game_data.players[0].autopilot = false;
     game_data.bases = vec![];
     for fleet in game_data.fleets.iter_mut().skip(1) {
         clear_fleet_for_probe(fleet);

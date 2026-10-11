@@ -156,18 +156,12 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         claim(event, fleet_claim);
     }
     for event in &events.salvage_events {
-        let (SalvageResolvedEvent::Succeeded {
+        let SalvageResolvedEvent::Succeeded {
             fleet_idx,
             owner_empire,
             coords,
             ..
-        }
-        | SalvageResolvedEvent::Failed {
-            fleet_idx,
-            owner_empire,
-            coords,
-            ..
-        }) = *event;
+        } = *event;
         claim(event, FleetClaim::at(fleet_idx, owner_empire, coords));
     }
     for event in &events.join_host_events {

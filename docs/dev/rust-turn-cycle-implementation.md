@@ -238,8 +238,8 @@ that exists today.
    - advance year
    - merge co-located friendly fleets before movement
    - sanitize invalid player inputs
-   - refresh retarget / seek-home / join-host / guard-starbase targets
-   - apply autopilot fleet recalls
+   - refresh join-host and guard-starbase targets
+   - apply autopilot fleet orders
    - run the planet pass: build completion, then planet economy
    - intercept fleets ordered away from blockaded worlds
    - run the year's ticks: movement, encounters, fleet battles, and

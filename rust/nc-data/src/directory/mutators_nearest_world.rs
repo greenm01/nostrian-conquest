@@ -1,14 +1,18 @@
-//! ECGAME's choice of target for Seek Home and Salvage.
+//! ECGAME's choice of target for Seek Home and Salvage, and ECMAINT's picks
+//! for fleet orders.
 //!
 //! ECGAME (`0xf5f0` in the unpacked image) lists the worlds the fleet's
 //! empire owns in PLANETS.DAT order and takes the one with the shortest
 //! travel distance (`0x1d8ac`), keeping the first on a tie. With
 //! `skip_current_system` it leaves out the world in the fleet's sector when
 //! the fleet is in that system (depth at least 0.5); Seek Home uses this for
-//! "seek the next closest system".
+//! "seek the next closest system". ECMAINT's picker (`24a3:0876`) is the
+//! same list and measure; flag 1 is the call above, flag 2 divides each
+//! distance by the world's present production first
+//! ([`CoreGameData::nearest_productive_world`]).
 
 use super::*;
-use crate::Real48;
+use crate::{Planet, Real48};
 
 impl CoreGameData {
     /// The owned world ECGAME picks for this fleet's Seek Home or Salvage
@@ -18,29 +22,58 @@ impl CoreGameData {
         fleet_record_index_1_based: usize,
         skip_current_system: bool,
     ) -> Option<[u8; 2]> {
+        self.pick_owned_world(fleet_record_index_1_based, skip_current_system, false)
+    }
+
+    /// ECMAINT's picker with flag 2, which the rogue and autopilot orders
+    /// use (`24a3:26c2`): every world the fleet's empire owns, the one in
+    /// the fleet's own system included, ranked by travel distance divided by
+    /// present production, a production below 1.0 counting as 1.0. The
+    /// earlier world wins a tie and a lone world is taken unmeasured.
+    /// ECMAINT also raises the stored production of each candidate below 1.0
+    /// to 1.0; that is a classic bug and nothing is written here.
+    pub fn nearest_productive_world(&self, fleet_record_index_1_based: usize) -> Option<[u8; 2]> {
+        self.pick_owned_world(fleet_record_index_1_based, false, true)
+    }
+
+    fn pick_owned_world(
+        &self,
+        fleet_record_index_1_based: usize,
+        skip_current_system: bool,
+        per_production: bool,
+    ) -> Option<[u8; 2]> {
         let fleet = self.fleets.get(fleet_record_index_1_based - 1)?;
         let here = fleet.sector.to_array();
         let in_system = fleet.depth >= Real48::HALF;
-        let candidates = self
+        let mut candidates = self
             .planets
             .iter()
             .filter(|planet| planet.owner.0 == fleet.owner.0)
-            .map(|planet| planet.sector.to_array())
-            .filter(|coords| !(skip_current_system && in_system && *coords == here))
-            .collect::<Vec<_>>();
-        if candidates.len() <= 1 {
-            return candidates.first().copied();
-        }
-        let mut best = candidates[0];
-        let mut best_distance = travel_distance(fleet, best, Real48::ONE);
-        for &coords in &candidates[1..] {
-            let distance = travel_distance(fleet, coords, Real48::ONE);
-            if distance < best_distance {
-                best = coords;
-                best_distance = distance;
+            .filter(|planet| {
+                !(skip_current_system && in_system && planet.sector.to_array() == here)
+            });
+        let first = candidates.next()?;
+        let measure = |planet: &Planet| {
+            let distance = travel_distance(fleet, planet.sector.to_array(), Real48::ONE);
+            if per_production {
+                distance / planet.production.max(Real48::ONE)
+            } else {
+                distance
+            }
+        };
+        let Some(second) = candidates.next() else {
+            return Some(first.sector.to_array());
+        };
+        let mut best = first;
+        let mut best_measure = measure(first);
+        for planet in std::iter::once(second).chain(candidates) {
+            let planet_measure = measure(planet);
+            if planet_measure < best_measure {
+                best = planet;
+                best_measure = planet_measure;
             }
         }
-        Some(best)
+        Some(best.sector.to_array())
     }
 
     /// ECGAME's single-fleet Seek Home flow.

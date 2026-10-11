@@ -388,3 +388,52 @@ behaviour, salvaging at the nearest friendly world, and its report says it
 will salvage there rather than "seek to safety"; a Salvage fleet with no
 friendly world left holds at its current depth like Seek Home, without
 classic's snap to the nearer layer (a classic bug).
+
+Result (2026-10-10; t064 and t069): all three paths now match classic, and
+the salvage values and army landing with them.
+
+- **Seek Home and Salvage.** `refresh_seek_home_targets` and its helpers are
+  gone. `YearMovement::check_home_world` (`maint/movement/home.rs`) runs in
+  `Movement::dispatch` every tick, after the step and before the arrival
+  test, for both orders. A target world that is missing or not the empire's
+  sends the fleet to `nearest_friendly_world` from its stepped position (the
+  retarget, stamped with the tick) or, with none, to Hold at speed 0 with
+  `TZ = Round(Z)` and the depth untouched. Salvage keeps its order and
+  refills a zero speed; its report says it will salvage at the new world
+  (owner decision). `SalvageResolvedEvent::Failed` and
+  `SalvageFailureReason` are removed, since a Salvage fleet can only arrive
+  at its own world. The reports use classic's texts, with `System(x,y)` or
+  `Sector(x,y)` in the header by depth (classic: `System` from depth 0.5), so
+  the retarget events carry `in_system` and `stardate_week`.
+- **Autopilot recall.** `autopilot_fleet_orders` follows classic's
+  `24a3:25f7` for autopilot empires, using the new
+  `CoreGameData::nearest_productive_world` (flag 2, no production write).
+  Rogue empires' fleet and starbase orders are not implemented and stay
+  with t070.
+- **Salvage values (t069).** 23, 8, 3, 3, 10, 8 per battleship, cruiser,
+  destroyer, transport, ETAC, and scout, and loaded transports land their
+  armies; the report says so.
+- **Probes rerun under DOSBox-X** on the move fixture with empire 1 human
+  (scripts were in the session scratchpad). Classic and Rust agree on: a
+  Seek Home fleet at (13,13) keeps (16,13) while (12,12) is nearer; the
+  deep-space fleet at (13,14), speed 3, seeking empire 2's (18,15) ends over
+  (12,12) at depth 0.67036, and 0.75769 when it sought the empty sector
+  (13,13) (a fleet starting in orbit at speed 4 gives 0.76393 in both);
+  depth 0.69231 held
+  with `TZ` 1 and no world left; the Salvage fleet (CA, ETAC) retargeted at
+  stardate 1 and salvaged 18 points at (12,12) in tick 44; one of each hull
+  plus two loaded transports gave 61 points, 2 armies; the four autopilot
+  cases. Rust differs from classic only where the owner ruled: the Salvage
+  hold keeps depth 0.692 and 0.135 (classic snaps to 1.0 and 0.0), and the
+  retarget report names salvaging. `tools/ncmaint_mission_sweep.py` for
+  missions 2 and 15 (speed 3, offsets d3 and s3, four years) matches classic
+  year by year, planet bytes included.
+- **Other changes.** The nc-fuzz ship-conservation invariant finds a
+  salvaged fleet by its number, because its target can change during the
+  year. The order traces turn autopilot off for empire 1, since an
+  autopilot empire now gives an idle fleet in orbit of its world new orders.
+- **Tests.** `nc-data/tests/home_orders.rs` (the discriminating scenarios),
+  `nc-data/tests/salvage_value.rs`, the rewritten
+  `test_salvage_whose_world_is_not_ours_salvages_at_a_friendly_world` in
+  `maint_fleet.rs`, and `seek_home_picks_nearest_world_across_distant_coordinates`
+  in `maint_hardening.rs`, rewritten around a lost target.

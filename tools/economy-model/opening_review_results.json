@@ -1,0 +1,2249 @@
+{
+  "method": "t088 approved-economy prices and opening controls.\n\nExact local order/build dates plus paired synthetic peaceful maps. No real\nmap generator, exploration, encounters or campaign win-rate claim. Existing\nstarter fleet is2CA+2ETAC+2DD; home P/K100,10armies,4batteries,joined G50.\n",
+  "prices": {
+    "DD": 5,
+    "CA": 15,
+    "BB": 45,
+    "SC": 15,
+    "TT": 5,
+    "ETAC": 20,
+    "SB": 50,
+    "army": 2,
+    "battery": 20
+  },
+  "maps": [
+    {
+      "config": {
+        "policy": "two"
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.576,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 11.132,
+          "median": 11.0,
+          "p10": 10,
+          "p90": 13
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 7.179,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 9
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 3.316,
+          "colony_income": 27.755941528320314,
+          "home_goods": 300,
+          "expansion_paid": 0
+        },
+        "10": {
+          "colonies": 7.125,
+          "colony_income": 116.12767176106199,
+          "home_goods": 550,
+          "expansion_paid": 0
+        },
+        "20": {
+          "colonies": 13.582,
+          "colony_income": 354.60264603122675,
+          "home_goods": 1050,
+          "expansion_paid": 0
+        },
+        "25": {
+          "colonies": 16.366,
+          "colony_income": 472.75620551595546,
+          "home_goods": 1300,
+          "expansion_paid": 0
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4"
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.489,
+          "median": 4.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.521,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 8
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.331,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.865,
+          "colony_income": 34.17076184082031,
+          "home_goods": 260,
+          "expansion_paid": 40
+        },
+        "10": {
+          "colonies": 11.648,
+          "colony_income": 178.27895084407552,
+          "home_goods": 510,
+          "expansion_paid": 40
+        },
+        "20": {
+          "colonies": 20.836,
+          "colony_income": 562.9265520072258,
+          "home_goods": 1010,
+          "expansion_paid": 40
+        },
+        "25": {
+          "colonies": 23.144,
+          "colony_income": 718.1696770655958,
+          "home_goods": 1260,
+          "expansion_paid": 40
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "guarded4"
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.025,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 6
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.792,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 9
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.521,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.362,
+          "colony_income": 31.704386840820312,
+          "home_goods": 230,
+          "expansion_paid": 70
+        },
+        "10": {
+          "colonies": 11.413,
+          "colony_income": 170.9124609110616,
+          "home_goods": 480,
+          "expansion_paid": 70
+        },
+        "20": {
+          "colonies": 20.755,
+          "colony_income": 557.0827609433093,
+          "home_goods": 980,
+          "expansion_paid": 70
+        },
+        "25": {
+          "colonies": 23.077,
+          "colony_income": 713.6601317191834,
+          "home_goods": 1230,
+          "expansion_paid": 70
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4",
+        "etac_cost": 15
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.489,
+          "median": 4.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.521,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 8
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.331,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.865,
+          "colony_income": 34.17076184082031,
+          "home_goods": 270,
+          "expansion_paid": 30
+        },
+        "10": {
+          "colonies": 11.648,
+          "colony_income": 178.27895084407552,
+          "home_goods": 520,
+          "expansion_paid": 30
+        },
+        "20": {
+          "colonies": 20.836,
+          "colony_income": 562.9265520072258,
+          "home_goods": 1020,
+          "expansion_paid": 30
+        },
+        "25": {
+          "colonies": 23.144,
+          "colony_income": 718.1696770655958,
+          "home_goods": 1270,
+          "expansion_paid": 30
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4",
+        "etac_cost": 25
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.489,
+          "median": 4.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.521,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 8
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.331,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.865,
+          "colony_income": 34.17076184082031,
+          "home_goods": 250,
+          "expansion_paid": 50
+        },
+        "10": {
+          "colonies": 11.648,
+          "colony_income": 178.27895084407552,
+          "home_goods": 500,
+          "expansion_paid": 50
+        },
+        "20": {
+          "colonies": 20.836,
+          "colony_income": 562.9265520072258,
+          "home_goods": 1000,
+          "expansion_paid": 50
+        },
+        "25": {
+          "colonies": 23.144,
+          "colony_income": 718.1696770655958,
+          "home_goods": 1250,
+          "expansion_paid": 50
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4",
+        "etac_cost": 30
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.025,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 6
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.792,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 9
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.521,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.362,
+          "colony_income": 31.704386840820312,
+          "home_goods": 240,
+          "expansion_paid": 60
+        },
+        "10": {
+          "colonies": 11.413,
+          "colony_income": 170.9124609110616,
+          "home_goods": 490,
+          "expansion_paid": 60
+        },
+        "20": {
+          "colonies": 20.755,
+          "colony_income": 557.0827609433093,
+          "home_goods": 990,
+          "expansion_paid": 60
+        },
+        "25": {
+          "colonies": 23.077,
+          "colony_income": 713.6601317191834,
+          "home_goods": 1240,
+          "expansion_paid": 60
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4",
+        "goods": 35
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.025,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 6
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.792,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 9
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.521,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.362,
+          "colony_income": 31.704386840820312,
+          "home_goods": 245,
+          "expansion_paid": 40
+        },
+        "10": {
+          "colonies": 11.413,
+          "colony_income": 170.9124609110616,
+          "home_goods": 495,
+          "expansion_paid": 40
+        },
+        "20": {
+          "colonies": 20.755,
+          "colony_income": 557.0827609433093,
+          "home_goods": 995,
+          "expansion_paid": 40
+        },
+        "25": {
+          "colonies": 23.077,
+          "colony_income": 713.6601317191834,
+          "home_goods": 1245,
+          "expansion_paid": 40
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "rapid4",
+        "goods": 65
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.489,
+          "median": 4.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.521,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 8
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.331,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.865,
+          "colony_income": 34.17076184082031,
+          "home_goods": 275,
+          "expansion_paid": 40
+        },
+        "10": {
+          "colonies": 11.648,
+          "colony_income": 178.27895084407552,
+          "home_goods": 525,
+          "expansion_paid": 40
+        },
+        "20": {
+          "colonies": 20.836,
+          "colony_income": 562.9265520072258,
+          "home_goods": 1025,
+          "expansion_paid": 40
+        },
+        "25": {
+          "colonies": 23.144,
+          "colony_income": 718.1696770655958,
+          "home_goods": 1275,
+          "expansion_paid": 40
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "guarded4",
+        "goods": 35
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.025,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 6
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.792,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 9
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.521,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.362,
+          "colony_income": 31.704386840820312,
+          "home_goods": 215,
+          "expansion_paid": 70
+        },
+        "10": {
+          "colonies": 11.413,
+          "colony_income": 170.9124609110616,
+          "home_goods": 465,
+          "expansion_paid": 70
+        },
+        "20": {
+          "colonies": 20.755,
+          "colony_income": 557.0827609433093,
+          "home_goods": 965,
+          "expansion_paid": 70
+        },
+        "25": {
+          "colonies": 23.077,
+          "colony_income": 713.6601317191834,
+          "home_goods": 1215,
+          "expansion_paid": 70
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "guarded4",
+        "goods": 65
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 5.025,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 6
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.792,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 9
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.521,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.362,
+          "colony_income": 31.704386840820312,
+          "home_goods": 245,
+          "expansion_paid": 70
+        },
+        "10": {
+          "colonies": 11.413,
+          "colony_income": 170.9124609110616,
+          "home_goods": 495,
+          "expansion_paid": 70
+        },
+        "20": {
+          "colonies": 20.755,
+          "colony_income": 557.0827609433093,
+          "home_goods": 995,
+          "expansion_paid": 70
+        },
+        "25": {
+          "colonies": 23.077,
+          "colony_income": 713.6601317191834,
+          "home_goods": 1245,
+          "expansion_paid": 70
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "guarded4",
+        "goods": 75
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.203,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 3
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.489,
+          "median": 4.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 7.521,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 8
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.331,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 7
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.865,
+          "colony_income": 34.17076184082031,
+          "home_goods": 255,
+          "expansion_paid": 70
+        },
+        "10": {
+          "colonies": 11.648,
+          "colony_income": 178.27895084407552,
+          "home_goods": 505,
+          "expansion_paid": 70
+        },
+        "20": {
+          "colonies": 20.836,
+          "colony_income": 562.9265520072258,
+          "home_goods": 1005,
+          "expansion_paid": 70
+        },
+        "25": {
+          "colonies": 23.144,
+          "colony_income": 718.1696770655958,
+          "home_goods": 1255,
+          "expansion_paid": 70
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "two",
+        "worlds": 12
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 2.631,
+          "median": 3.0,
+          "p10": 2,
+          "p90": 4
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 6.893,
+          "median": 7.0,
+          "p10": 6,
+          "p90": 8
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 15.181,
+          "median": 15.0,
+          "p10": 12,
+          "p90": 19
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 8.073,
+          "median": 8.0,
+          "p10": 7,
+          "p90": 10
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 2.47,
+          "colony_income": 21.236486938476563,
+          "home_goods": 300,
+          "expansion_paid": 0
+        },
+        "10": {
+          "colonies": 5.503,
+          "colony_income": 90.68445190353319,
+          "home_goods": 550,
+          "expansion_paid": 0
+        },
+        "20": {
+          "colonies": 9.577,
+          "colony_income": 259.7765698001041,
+          "home_goods": 1050,
+          "expansion_paid": 0
+        },
+        "25": {
+          "colonies": 11.106,
+          "colony_income": 335.66145727936856,
+          "home_goods": 1300,
+          "expansion_paid": 0
+        }
+      }
+    },
+    {
+      "config": {
+        "policy": "two",
+        "worlds": 48
+      },
+      "maps": 1000,
+      "seed": 880001,
+      "milestones": {
+        "first_colony": {
+          "reach_fraction": 1.0,
+          "mean": 1.898,
+          "median": 2.0,
+          "p10": 1,
+          "p90": 2
+        },
+        "four_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 4.629,
+          "median": 5.0,
+          "p10": 4,
+          "p90": 5
+        },
+        "eight_colonies": {
+          "reach_fraction": 1.0,
+          "mean": 9.17,
+          "median": 9.0,
+          "p10": 8,
+          "p90": 10
+        },
+        "colony_income_ge_home": {
+          "reach_fraction": 1.0,
+          "mean": 6.413,
+          "median": 6.0,
+          "p10": 5,
+          "p90": 8
+        }
+      },
+      "at": {
+        "5": {
+          "colonies": 4.133,
+          "colony_income": 36.694771728515626,
+          "home_goods": 300,
+          "expansion_paid": 0
+        },
+        "10": {
+          "colonies": 8.702,
+          "colony_income": 144.79067875491828,
+          "home_goods": 550,
+          "expansion_paid": 0
+        },
+        "20": {
+          "colonies": 17.392,
+          "colony_income": 446.71079150661643,
+          "home_goods": 1050,
+          "expansion_paid": 0
+        },
+        "25": {
+          "colonies": 21.336,
+          "colony_income": 607.3146532547516,
+          "home_goods": 1300,
+          "expansion_paid": 0
+        }
+      }
+    }
+  ],
+  "local": [
+    {
+      "k": 10,
+      "unit": "DD",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 3,
+        "complete_pass": 4,
+        "commission_after_pass": 4,
+        "first_departure_pass": 5
+      }
+    },
+    {
+      "k": 10,
+      "unit": "CA",
+      "cost": 15,
+      "dates": null
+    },
+    {
+      "k": 10,
+      "unit": "BB",
+      "cost": 45,
+      "dates": null
+    },
+    {
+      "k": 10,
+      "unit": "SC",
+      "cost": 15,
+      "dates": null
+    },
+    {
+      "k": 10,
+      "unit": "TT",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 3,
+        "complete_pass": 4,
+        "commission_after_pass": 4,
+        "first_departure_pass": 5
+      }
+    },
+    {
+      "k": 10,
+      "unit": "ETAC",
+      "cost": 20,
+      "dates": null
+    },
+    {
+      "k": 10,
+      "unit": "SB",
+      "cost": 50,
+      "dates": null
+    },
+    {
+      "k": 10,
+      "unit": "army",
+      "cost": 2,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 10,
+      "unit": "battery",
+      "cost": 20,
+      "dates": null
+    },
+    {
+      "k": 20,
+      "unit": "DD",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 20,
+      "unit": "CA",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 9,
+        "complete_pass": 10,
+        "commission_after_pass": 10,
+        "first_departure_pass": 11
+      }
+    },
+    {
+      "k": 20,
+      "unit": "BB",
+      "cost": 45,
+      "dates": null
+    },
+    {
+      "k": 20,
+      "unit": "SC",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 9,
+        "complete_pass": 10,
+        "commission_after_pass": 10,
+        "first_departure_pass": 11
+      }
+    },
+    {
+      "k": 20,
+      "unit": "TT",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 20,
+      "unit": "ETAC",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 27,
+        "complete_pass": 28,
+        "commission_after_pass": 28,
+        "first_departure_pass": 29
+      }
+    },
+    {
+      "k": 20,
+      "unit": "SB",
+      "cost": 50,
+      "dates": null
+    },
+    {
+      "k": 20,
+      "unit": "army",
+      "cost": 2,
+      "dates": {
+        "order_after_pass": 1,
+        "complete_pass": 2,
+        "commission_after_pass": 2,
+        "first_departure_pass": 3
+      }
+    },
+    {
+      "k": 20,
+      "unit": "battery",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 27,
+        "complete_pass": 28,
+        "commission_after_pass": 28,
+        "first_departure_pass": 29
+      }
+    },
+    {
+      "k": 50,
+      "unit": "DD",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 50,
+      "unit": "CA",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 3,
+        "complete_pass": 4,
+        "commission_after_pass": 4,
+        "first_departure_pass": 5
+      }
+    },
+    {
+      "k": 50,
+      "unit": "BB",
+      "cost": 45,
+      "dates": {
+        "order_after_pass": 17,
+        "complete_pass": 18,
+        "commission_after_pass": 18,
+        "first_departure_pass": 19
+      }
+    },
+    {
+      "k": 50,
+      "unit": "SC",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 3,
+        "complete_pass": 4,
+        "commission_after_pass": 4,
+        "first_departure_pass": 5
+      }
+    },
+    {
+      "k": 50,
+      "unit": "TT",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 50,
+      "unit": "ETAC",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 4,
+        "complete_pass": 5,
+        "commission_after_pass": 5,
+        "first_departure_pass": 6
+      }
+    },
+    {
+      "k": 50,
+      "unit": "SB",
+      "cost": 50,
+      "dates": {
+        "order_after_pass": 35,
+        "complete_pass": 36,
+        "commission_after_pass": 36,
+        "first_departure_pass": 37
+      }
+    },
+    {
+      "k": 50,
+      "unit": "army",
+      "cost": 2,
+      "dates": {
+        "order_after_pass": 1,
+        "complete_pass": 2,
+        "commission_after_pass": 2,
+        "first_departure_pass": 3
+      }
+    },
+    {
+      "k": 50,
+      "unit": "battery",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 4,
+        "complete_pass": 5,
+        "commission_after_pass": 5,
+        "first_departure_pass": 6
+      }
+    },
+    {
+      "k": 100,
+      "unit": "DD",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 1,
+        "complete_pass": 2,
+        "commission_after_pass": 2,
+        "first_departure_pass": 3
+      }
+    },
+    {
+      "k": 100,
+      "unit": "CA",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 100,
+      "unit": "BB",
+      "cost": 45,
+      "dates": {
+        "order_after_pass": 5,
+        "complete_pass": 6,
+        "commission_after_pass": 6,
+        "first_departure_pass": 7
+      }
+    },
+    {
+      "k": 100,
+      "unit": "SC",
+      "cost": 15,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 100,
+      "unit": "TT",
+      "cost": 5,
+      "dates": {
+        "order_after_pass": 1,
+        "complete_pass": 2,
+        "commission_after_pass": 2,
+        "first_departure_pass": 3
+      }
+    },
+    {
+      "k": 100,
+      "unit": "ETAC",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    },
+    {
+      "k": 100,
+      "unit": "SB",
+      "cost": 50,
+      "dates": {
+        "order_after_pass": 5,
+        "complete_pass": 6,
+        "commission_after_pass": 6,
+        "first_departure_pass": 7
+      }
+    },
+    {
+      "k": 100,
+      "unit": "army",
+      "cost": 2,
+      "dates": {
+        "order_after_pass": 1,
+        "complete_pass": 2,
+        "commission_after_pass": 2,
+        "first_departure_pass": 3
+      }
+    },
+    {
+      "k": 100,
+      "unit": "battery",
+      "cost": 20,
+      "dates": {
+        "order_after_pass": 2,
+        "complete_pass": 3,
+        "commission_after_pass": 3,
+        "first_departure_pass": 4
+      }
+    }
+  ],
+  "bb_price": [
+    {
+      "k": 20,
+      "cost": 30,
+      "dates": null
+    },
+    {
+      "k": 20,
+      "cost": 45,
+      "dates": null
+    },
+    {
+      "k": 20,
+      "cost": 60,
+      "dates": null
+    },
+    {
+      "k": 50,
+      "cost": 30,
+      "dates": {
+        "order_after_pass": 7,
+        "complete_pass": 8,
+        "commission_after_pass": 8,
+        "first_departure_pass": 9
+      }
+    },
+    {
+      "k": 50,
+      "cost": 45,
+      "dates": {
+        "order_after_pass": 17,
+        "complete_pass": 18,
+        "commission_after_pass": 18,
+        "first_departure_pass": 19
+      }
+    },
+    {
+      "k": 50,
+      "cost": 60,
+      "dates": null
+    },
+    {
+      "k": 100,
+      "cost": 30,
+      "dates": {
+        "order_after_pass": 3,
+        "complete_pass": 4,
+        "commission_after_pass": 4,
+        "first_departure_pass": 5
+      }
+    },
+    {
+      "k": 100,
+      "cost": 45,
+      "dates": {
+        "order_after_pass": 5,
+        "complete_pass": 6,
+        "commission_after_pass": 6,
+        "first_departure_pass": 7
+      }
+    },
+    {
+      "k": 100,
+      "cost": 60,
+      "dates": {
+        "order_after_pass": 7,
+        "complete_pass": 8,
+        "commission_after_pass": 8,
+        "first_departure_pass": 9
+      }
+    }
+  ],
+  "openings": [
+    {
+      "goods": 35,
+      "choice": "two_ETAC",
+      "orders": [
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 20,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "two_escorted_ETAC",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 35,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "base",
+      "orders": [
+        {
+          "cost": 50,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "CA_and_battery",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "six_loaded_TT",
+      "orders": [
+        {
+          "cost": 42,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "six_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "three_BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 35,
+      "choice": "ten_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 3,
+          "complete_pass": 4,
+          "commission_after_pass": 4,
+          "first_departure_pass": 5
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "two_ETAC",
+      "orders": [
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "two_escorted_ETAC",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 35,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "base",
+      "orders": [
+        {
+          "cost": 50,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "CA_and_battery",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "six_loaded_TT",
+      "orders": [
+        {
+          "cost": 42,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "six_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "three_BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 50,
+      "choice": "ten_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "two_ETAC",
+      "orders": [
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "two_escorted_ETAC",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 35,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "base",
+      "orders": [
+        {
+          "cost": 50,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "CA_and_battery",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "six_loaded_TT",
+      "orders": [
+        {
+          "cost": 42,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "six_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "three_BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 65,
+      "choice": "ten_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "two_ETAC",
+      "orders": [
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 20,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "two_escorted_ETAC",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "base",
+      "orders": [
+        {
+          "cost": 50,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "CA_and_battery",
+      "orders": [
+        {
+          "cost": 35,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "six_loaded_TT",
+      "orders": [
+        {
+          "cost": 42,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "six_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "three_BB",
+      "orders": [
+        {
+          "cost": 45,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 45,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    },
+    {
+      "goods": 75,
+      "choice": "ten_CA",
+      "orders": [
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 0,
+          "complete_pass": 1,
+          "commission_after_pass": 1,
+          "first_departure_pass": 2
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 1,
+          "complete_pass": 2,
+          "commission_after_pass": 2,
+          "first_departure_pass": 3
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        },
+        {
+          "cost": 15,
+          "order_after_pass": 2,
+          "complete_pass": 3,
+          "commission_after_pass": 3,
+          "first_departure_pass": 4
+        }
+      ]
+    }
+  ]
+}

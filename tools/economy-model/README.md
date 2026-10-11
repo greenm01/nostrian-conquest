@@ -141,3 +141,15 @@ decay, proposed NC debt/queue adaptations, and approved smooth recovery.
 Both new test files run under unittest discovery. See the
 [joint item5 review](../../docs/notes/investigations/wrk1xd3p-bombardment-raid-costs-and-recoverable-scorch-earth.md)
 for the proposed rates, full Scorch contract and limits.
+
+## Prices and opening resources (t088)
+
+`python3 tools/economy-model/opening_review.py` writes
+`opening_review_results.json`. Exact local order/completion/departure dates
+and13 paired synthetic-map configurations test the approved smooth/P3
+economy at tax50, existing prices and joined treasury50. Extra ETACs and
+escorts are paid for. The map benchmark has no rivals, detection or combat;
+its dates are economic opportunities, not campaign win odds.
+`test_opening_review.py` runs under unittest discovery. See the
+[price/opening review](../../docs/notes/investigations/y95fnqkm-unit-prices-and-opening-resources-under-the-approved-economy.md)
+for the unchanged-price recommendation and actual-map follow-up limits.

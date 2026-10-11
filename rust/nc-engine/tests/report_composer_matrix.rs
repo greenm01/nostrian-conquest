@@ -277,8 +277,10 @@ fn join_summary_retarget_uses_stored_reporting_fleet_number_and_omits_sector() {
             owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
+            in_system: false,
             previous_target_coords: [4, 4],
             new_target_coords: [8, 8],
+            stardate_week: None,
         });
 
     let text = viewer_report_texts(1, &build_results_report_blocks(&game_data, &events))
@@ -319,8 +321,10 @@ fn join_summary_contains_single_end_of_transmission_footer() {
             owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
+            in_system: false,
             previous_target_coords: [4, 4],
             new_target_coords: [8, 8],
+            stardate_week: None,
         });
     events
         .join_host_events
@@ -498,8 +502,10 @@ fn join_summary_combines_completed_retargeted_and_lost_hosts() {
             owner_empire: 1,
             mission: Mission::JoinAnotherFleet,
             current_coords: [6, 6],
+            in_system: false,
             previous_target_coords: [4, 4],
             new_target_coords: [8, 8],
+            stardate_week: None,
         });
     events
         .join_host_events
@@ -557,8 +563,10 @@ fn join_summary_uses_compact_fleet_lists_for_multi_fleet_sections() {
                 owner_empire: 1,
                 mission: Mission::JoinAnotherFleet,
                 current_coords: [7, 7],
+                in_system: false,
                 previous_target_coords: [4, 4],
                 new_target_coords: [8, 8],
+                stardate_week: None,
             });
     }
     for fleet_number in [12, 9, 8] {
