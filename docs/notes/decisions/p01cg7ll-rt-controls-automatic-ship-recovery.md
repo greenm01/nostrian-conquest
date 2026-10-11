@@ -39,9 +39,9 @@ add a repair menu, widen fleet tables, or expand every fleet into per-class
 recovery rows.
 
 Use a compact aggregate such as “4 damaged” in the fleet summary only where
-it fits the existing layout. Put class counts and remaining recovery times
-in the existing fleet detail view, on demand. Keep RT documented in the
-ship reference; do not force an RT column into every game table. Reports
+it fits the existing layout, and crippled counts by class in the existing
+fleet detail view. Players see nominal or crippled, not remaining recovery
+time; there is no RT column in any table. Reports
 normally summarize “4 ships recovered”, adding starbase assistance only
 when relevant. Avoid routine per-class recovery chatter.
 
@@ -57,8 +57,13 @@ the values on 2026-10-10 after Claude and Codex's joint recommendation:
 **RT 2 for every class, starbases included.** A ship damaged this year
 fights damaged next year and the year after, and returns to full strength
 after that; a full qualifying year at a friendly starbase speeds that up.
-RT stays a per-class stat, so classes can differ later: DD 1 is a
-candidate playtest, and BB 3 is not used. RT 2 is the shortest value that
+Because every class has the same value, RT is one game-wide rule, not a
+per-class stat, and no ship table shows it (owner, 2026-10-10). The only
+state a player sees for a ship or fleet is nominal or crippled; the manual
+states the recovery rule once, and reports say when ships recover. The
+engine still tracks each crippled hull's remaining time. If a later
+playtest wants classes to differ (DD 1 was a candidate; BB 3 is not used),
+RT can become a per-class value then. RT 2 is the shortest value that
 lets the starbase bonus matter; with RT 1 every eligible hull recovers in
 the same pass anyway. Codex's campaign controls (t068, in
 [4lasivnr](../investigations/4lasivnr-ground-combat-and-recovery-turns-campaign-calibration.md)):
@@ -145,8 +150,8 @@ Codex agrees this is deterministic and explainable. This is an implementation
 proposal, not an extra player choice. Document the default selection between
 nominal and crippled ships as well; no operation may lose recovery metadata.
 
-The detail view may state “CA: 4 crippled, recover in 1 turn”; routine
-reports use the compact aggregate described above. Export behavior for recovery metadata still
+The detail view shows crippled counts by class; routine reports use the
+compact aggregate described above. Export behavior for recovery metadata still
 needs an explicit compatibility contract: classic has no such field. The
 consultation recommends exporting whole surviving hulls without changing
 the SQLite state and disclosing that classic loses recovery state; this
