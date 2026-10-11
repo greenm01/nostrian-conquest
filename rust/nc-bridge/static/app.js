@@ -1,4 +1,4 @@
-// Nostrian Conquest — Web Door Client (xterm.js + WebSocket)
+// Nostrian Conquest — Web Door Client (xterm.js + WebGL + WebSocket)
 
 (function () {
     'use strict';
@@ -6,6 +6,7 @@
     // State
     let term = null;
     let fitAddon = null;
+    let webglAddon = null;
     let ws = null;
     let reconnectTimeout = null;
 
@@ -13,32 +14,71 @@
     const statusBadge = document.getElementById('status-badge');
     const mobileControls = document.getElementById('mobile-controls');
     const btnToggleTouch = document.getElementById('btn-toggle-touch');
+    const btnToggleCrt = document.getElementById('btn-toggle-crt');
+    const btnFontInc = document.getElementById('btn-font-inc');
+    const btnFontDec = document.getElementById('btn-font-dec');
     const btnFullscreen = document.getElementById('btn-fullscreen');
+    const crtFrame = document.getElementById('crt-frame');
+
+    // Compute font size to make 80x25 fit comfortably on screen without being oversized
+    function computeOptimalFontSize() {
+        const saved = localStorage.getItem('nc_font_size');
+        if (saved) {
+            const parsed = parseInt(saved, 10);
+            if (!isNaN(parsed) && parsed >= 12 && parsed <= 30) {
+                return parsed;
+            }
+        }
+        const wrapper = document.getElementById('terminal-wrapper');
+        if (!wrapper) return 18;
+        // Conservative space with 48px margins
+        const availW = Math.max(300, wrapper.clientWidth - 48);
+        const availH = Math.max(200, wrapper.clientHeight - 48);
+        // JetBrains Mono width/height is ~0.61; with lineHeight 1.0, row height is strictly fontSize
+        const sizeW = Math.floor(availW / (80 * 0.61));
+        const sizeH = Math.floor(availH / 26.0);
+        // Comfortable default range: clamp between 14px and 20px
+        const fit = Math.min(sizeW, sizeH);
+        return Math.max(14, Math.min(fit, 20));
+    }
+
+    function setFontSize(newSize) {
+        const clamped = Math.max(12, Math.min(newSize, 30));
+        if (term) {
+            term.options.fontSize = clamped;
+            term.resize(80, 25);
+        }
+        localStorage.setItem('nc_font_size', clamped.toString());
+    }
 
     // 1. Initialize Terminal
     function initTerminal() {
+        const initialSize = computeOptimalFontSize();
+
         term = new Terminal({
             cols: 80,
             rows: 25,
+            scrollback: 0,
             cursorBlink: true,
             cursorStyle: 'block',
-            fontFamily: "'VT323', 'Courier New', monospace",
-            fontSize: 18,
-            lineHeight: 1.1,
+            fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace",
+            fontSize: initialSize,
+            lineHeight: 1.0,
             letterSpacing: 0,
+            allowProposedApi: true,
             theme: {
                 background: '#000000',
-                foreground: '#aaaaaa',
+                foreground: '#cccccc',
                 cursor: '#33ff66',
                 black: '#000000',
-                red: '#aa0000',
-                green: '#00aa00',
-                yellow: '#aa5500',
-                blue: '#0000aa',
-                magenta: '#aa00aa',
-                cyan: '#00aaaa',
-                white: '#aaaaaa',
-                brightBlack: '#555555',
+                red: '#cc0000',
+                green: '#00cc00',
+                yellow: '#cccc00',
+                blue: '#0000cc',
+                magenta: '#cc00cc',
+                cyan: '#00cccc',
+                white: '#bbbbbb',
+                brightBlack: '#666666',
                 brightRed: '#ff5555',
                 brightGreen: '#55ff55',
                 brightYellow: '#ffff55',
@@ -49,20 +89,74 @@
             }
         });
 
-        if (window.FitAddon && window.FitAddon.FitAddon) {
-            fitAddon = new window.FitAddon.FitAddon();
-            term.loadAddon(fitAddon);
-        }
-
         const container = document.getElementById('terminal');
         term.open(container);
+        term.resize(80, 25);
+        term.focus();
 
-        if (fitAddon) {
-            fitAddon.fit();
-            window.addEventListener('resize', () => {
-                try { fitAddon.fit(); } catch (e) {}
-            });
+        // Hardware-accelerated WebGL rendering at native Retina / HiDPI resolution
+        if (window.WebglAddon && window.WebglAddon.WebglAddon) {
+            try {
+                webglAddon = new window.WebglAddon.WebglAddon();
+                webglAddon.onContextLoss(() => {
+                    webglAddon.dispose();
+                });
+                term.loadAddon(webglAddon);
+                console.log('WebGL hardware acceleration enabled for xterm.js (HiDPI active)');
+            } catch (err) {
+                console.warn('WebGL addon not supported, falling back to standard renderer:', err);
+            }
         }
+
+        window.addEventListener('resize', () => {
+            if (!localStorage.getItem('nc_font_size')) {
+                const newSize = computeOptimalFontSize();
+                if (term && term.options.fontSize !== newSize) {
+                    term.options.fontSize = newSize;
+                    term.resize(80, 25);
+                }
+            }
+        });
+
+        // Global auto-focus capture: immediately focus terminal on click or keypress
+        window.addEventListener('click', (e) => {
+            if (e.target.closest('#header-bar') || e.target.closest('#mobile-controls')) {
+                return;
+            }
+            if (term) term.focus();
+        });
+
+        window.addEventListener('keydown', (e) => {
+            if (!term) return;
+            if (document.activeElement !== term.textarea && !term.hasSelection()) {
+                term.focus();
+            }
+        });
+
+        // Intercept Ctrl+C / Cmd+C (copy to clipboard) and Ctrl+V (paste)
+        term.attachCustomKeyEventHandler((event) => {
+            if (event.ctrlKey || event.metaKey) {
+                // If Ctrl+C or Cmd+C, copy selected text and prevent sending 0x03 interrupt
+                if (event.key === 'c' || event.key === 'C') {
+                    if (term.hasSelection()) {
+                        navigator.clipboard.writeText(term.getSelection()).catch(() => {});
+                    }
+                    return false; // Prevent sending SIGINT (0x03) to nc-door child process!
+                }
+                // If Ctrl+V or Cmd+V, paste from system clipboard
+                if (event.key === 'v' || event.key === 'V') {
+                    if (event.type === 'keydown') {
+                        navigator.clipboard.readText().then((text) => {
+                            if (ws && ws.readyState === WebSocket.OPEN) {
+                                ws.send(text);
+                            }
+                        }).catch(() => {});
+                    }
+                    return false;
+                }
+            }
+            return true;
+        });
 
         // Send keystrokes to WebSocket
         term.onData((data) => {
@@ -86,7 +180,6 @@
                 const discordSdk = new window.DiscordSDK.DiscordSDK(clientId);
                 await discordSdk.ready();
 
-                // Discord Activity context resolved
                 if (discordSdk.user) {
                     handle = discordSdk.user.username;
                     platformId = discordSdk.user.id;
@@ -122,15 +215,15 @@
         const wsUrl = `${protocol}//${window.location.host}/ws/connect?handle=${encodeURIComponent(identity.handle)}&platform_id=${encodeURIComponent(identity.platformId)}` +
             (identity.displayName ? `&display_name=${encodeURIComponent(identity.displayName)}` : '');
 
-        term.writeln('\x1b[33mConnecting to Nostrian Conquest door bridge...\x1b[0m\r');
-
         try {
             ws = new WebSocket(wsUrl);
             ws.binaryType = 'arraybuffer';
 
             ws.onopen = () => {
                 updateStatus('connected');
-                term.clear();
+                term.reset();
+                term.resize(80, 25);
+                term.focus();
             };
 
             ws.onmessage = (event) => {
@@ -179,7 +272,6 @@
                 e.preventDefault();
                 const key = btn.getAttribute('data-key');
                 if (key && ws && ws.readyState === WebSocket.OPEN) {
-                    // Translate escape sequences
                     const payload = key.replace(/\\x1b/g, '\x1b').replace(/\\r/g, '\r');
                     ws.send(payload);
                 }
@@ -188,6 +280,20 @@
             btn.addEventListener('touchstart', sendKey, { passive: false });
             btn.addEventListener('click', sendKey);
         });
+
+        // Font scaling buttons A- and A+
+        if (btnFontInc) {
+            btnFontInc.addEventListener('click', () => {
+                const current = term ? term.options.fontSize : 18;
+                setFontSize(current + 2);
+            });
+        }
+        if (btnFontDec) {
+            btnFontDec.addEventListener('click', () => {
+                const current = term ? term.options.fontSize : 18;
+                setFontSize(current - 2);
+            });
+        }
 
         // Toggle virtual controller manually
         btnToggleTouch.addEventListener('click', () => {
@@ -198,8 +304,20 @@
                 mobileControls.classList.add('hidden');
                 mobileControls.classList.add('manual-hidden');
             }
-            if (fitAddon) setTimeout(() => fitAddon.fit(), 100);
         });
+
+        // Toggle CRT Scanlines
+        if (btnToggleCrt && crtFrame) {
+            btnToggleCrt.addEventListener('click', () => {
+                if (crtFrame.classList.contains('crt-active')) {
+                    crtFrame.classList.remove('crt-active');
+                    btnToggleCrt.textContent = '📺 CRT: OFF';
+                } else {
+                    crtFrame.classList.add('crt-active');
+                    btnToggleCrt.textContent = '📺 CRT: ON';
+                }
+            });
+        }
 
         // Fullscreen toggle
         btnFullscreen.addEventListener('click', () => {

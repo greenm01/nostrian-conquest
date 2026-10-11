@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-webgl@0.16.0/lib/addon-webgl.min.js"></script>
     <!-- Discord Embedded App SDK (Optional) -->
     <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.3.1/output/index.js"></script>
     <link rel="stylesheet" href="style.css">
@@ -21,6 +22,9 @@
             </div>
             <div class="header-actions">
                 <span id="status-badge" class="badge connecting">CONNECTING...</span>
+                <button id="btn-font-dec" class="btn-tool" title="Decrease Font Size">A-</button>
+                <button id="btn-font-inc" class="btn-tool" title="Increase Font Size">A+</button>
+                <button id="btn-toggle-crt" class="btn-tool" title="Toggle Retro CRT Shaders">📺 CRT: OFF</button>
                 <button id="btn-toggle-touch" class="btn-tool" title="Toggle Virtual Controller">🎮</button>
                 <button id="btn-fullscreen" class="btn-tool" title="Toggle Fullscreen">⛶</button>
             </div>

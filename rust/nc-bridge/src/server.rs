@@ -177,7 +177,7 @@ async fn handle_socket(socket: WebSocket, query: ConnectQuery, manager: Arc<Node
         "--socket-port",
         &loopback_port.to_string(),
         "--encoding",
-        "cp437",
+        "utf8",
         "--color-mode",
         "ansi16",
     ]);

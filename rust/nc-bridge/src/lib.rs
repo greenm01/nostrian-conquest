@@ -111,7 +111,6 @@ impl NodeManager {
     ) -> Result<ActiveNode, Box<dyn std::error::Error + Send + Sync>> {
         let node_dir = self.config.node_base_dir.join(format!("node_{node_index}"));
         std::fs::create_dir_all(&node_dir)?;
-        let dropfile_path = node_dir.join("door.kdl");
         let callback_token = format!("tok_node_{node_index}_{loopback_port}");
 
         let callbacks = Some(CallbacksInfo {
@@ -141,14 +140,25 @@ impl NodeManager {
             callbacks,
         };
 
-        std::fs::write(&dropfile_path, dropfile.to_kdl_string())?;
+        let kdl_path = node_dir.join("door.kdl");
+        std::fs::write(&kdl_path, dropfile.to_kdl_string())?;
+
+        // Write DOOR32.SYS for standard BBS dropfile compatibility with nc-door
+        let door32_path = node_dir.join("DOOR32.SYS");
+        let timeout_mins = (self.config.session_timeout_seconds / 60).max(1);
+        let real_name = caller.display_name.as_deref().unwrap_or(&caller.handle);
+        let door32_content = format!(
+            "2\r\n0\r\n38400\r\nNostrian Conquest Bridge\r\n1\r\n{}\r\n{}\r\n30\r\n{}\r\n1\r\n80\r\n25\r\n",
+            real_name, caller.handle, timeout_mins
+        );
+        std::fs::write(&door32_path, door32_content)?;
 
         let active = ActiveNode {
             node_index,
             caller_handle: caller.handle,
             platform_id: caller.platform_id,
             loopback_port,
-            dropfile_path,
+            dropfile_path: door32_path,
             callback_token,
         };
 
@@ -175,6 +185,7 @@ impl NodeManager {
         if let Some(slot) = nodes.remove(&node_index) {
             if let NodeSlot::Active(node) = slot {
                 let _ = std::fs::remove_file(&node.dropfile_path);
+                let _ = std::fs::remove_file(node.dropfile_path.with_file_name("door.kdl"));
             }
         }
     }
@@ -189,7 +200,7 @@ impl NodeManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use nc_dropfile::{CallerRole, DoorKdl};
+    use nc_dropfile::{CallerRole, DoorKdl, Dropfile};
 
     #[tokio::test]
     async fn node_manager_lifecycle() {
@@ -219,11 +230,14 @@ mod tests {
         assert_eq!(manager.active_count().await, 1);
         assert!(session1.dropfile_path.exists());
 
-        // Verify that the generated dropfile is valid and parses with nc-dropfile
-        let loaded_kdl = DoorKdl::load_from_file(&session1.dropfile_path).expect("valid KDL on disk");
+        // Verify that the generated dropfiles are valid
+        let loaded_kdl = DoorKdl::load_from_file(&session1.dropfile_path.with_file_name("door.kdl")).expect("valid KDL on disk");
         assert_eq!(loaded_kdl.caller.handle, "vorn");
         assert_eq!(loaded_kdl.session.node, 1);
         assert!(loaded_kdl.callbacks.is_some());
+
+        let loaded_door32 = Dropfile::load_autodetect(&session1.dropfile_path).expect("valid DOOR32 on disk");
+        assert_eq!(loaded_door32.alias.as_deref(), Some("vorn"));
 
         // Verify callback token authentication
         assert!(manager.verify_node_token(n1, &session1.callback_token).await.is_some());
