@@ -10,7 +10,10 @@
 //! speed 0, still on Bombard, or holding after Invade or Blitz.
 
 use nc_compat::load_classic_core_files;
-use nc_data::{CoreGameData, Fleet, MaintenanceEvents, Mission, Starbase};
+use nc_data::{
+    Coords, CoreGameData, Fleet, MaintenanceEvents, Mission, Order, Starbase, recompute_max_speed,
+    set_armies_aboard, set_mission_target, set_starbase_at_rest, set_troop_transports,
+};
 use nc_engine::run_maintenance_turn;
 use std::path::Path;
 
@@ -62,18 +65,18 @@ fn scenario(case: &Case) -> CoreGameData {
         let mut game_data = load_fixture("ecmaint-bombard-pre");
         // The scenario's own attacker is parked at home, out of the way.
         let parked = &mut game_data.fleets[2];
-        parked.set_scout_count(0);
-        parked.set_battleship_count(0);
-        parked.set_cruiser_count(1);
-        parked.set_destroyer_count(0);
-        parked.set_troop_transport_count(0);
-        parked.set_army_count(0);
-        parked.set_etac_count(0);
-        parked.recompute_max_speed_from_composition();
-        parked.set_current_speed(0);
-        parked.set_standing_order_code_raw(5);
-        parked.set_standing_order_target_coords_raw(HOME);
-        parked.set_mission_aux_bytes([1, 0]);
+        parked.ships.scouts = 0;
+        parked.ships.battleships = 0;
+        parked.ships.cruisers = 1;
+        parked.ships.destroyers = 0;
+        set_troop_transports(parked, 0);
+        set_armies_aboard(parked, 0);
+        parked.ships.etacs = 0;
+        recompute_max_speed(parked);
+        parked.speed = 0;
+        parked.order = Order::GuardBlockadeWorld;
+        parked.target = Coords::from_array(HOME);
+        set_mission_target(parked, 1, 0);
         game_data
     } else {
         load_fixture("ecmaint-move-pre")
@@ -83,21 +86,21 @@ fn scenario(case: &Case) -> CoreGameData {
         // the guard's target, escorted by fleet 1.
         let base_at = [start[0x20], start[0x21]];
         let mut base = Starbase::default();
-        base.set_escort_fleet_slot_raw(1);
-        base.set_base_id_raw(1);
-        base.set_record_number_raw(1);
-        base.set_coords_raw(base_at);
-        base.set_at_rest_motion();
-        base.set_target_coords_raw(base_at);
-        base.set_target_depth_raw(1);
-        base.set_owner_empire_raw(1);
+        base.escort.0 = 1;
+        base.base_id.0 = 1;
+        base.record.0 = 1;
+        base.sector = Coords::from_array(base_at);
+        set_starbase_at_rest(&mut base);
+        base.target = Coords::from_array(base_at);
+        base.target_depth = 1;
+        base.owner.0 = 1;
         game_data.bases = vec![base];
-        game_data.players[0].set_first_base_record_raw(1);
+        game_data.players[0].bases_first.0 = 1;
     }
     let mut fleet = Fleet::from_raw(start[..].try_into().expect("a fleet record"));
     if matches!(mission, 10 | 11) {
         // Classic counts the lone scout at 0x32, Rust at 0x24.
-        fleet.set_scout_count(1);
+        fleet.ships.scouts = 1;
     }
     game_data.fleets[0] = fleet;
     game_data
@@ -107,7 +110,7 @@ fn empire_one_fleets(game_data: &CoreGameData) -> usize {
     game_data
         .fleets
         .iter()
-        .filter(|fleet| fleet.owner_empire_raw() == 1)
+        .filter(|fleet| fleet.owner.0 == 1)
         .count()
 }
 
@@ -148,14 +151,9 @@ fn run_cases(cases: &[Case]) {
                         "{} year {year} motion",
                         case.name
                     );
+                    assert_eq!(fleet.speed, *speed, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.current_speed(),
-                        *speed,
-                        "{} year {year} speed",
-                        case.name
-                    );
-                    assert_eq!(
-                        fleet.standing_order_code_raw(),
+                        fleet.order.to_raw(),
                         *order,
                         "{} year {year} order",
                         case.name
@@ -176,7 +174,7 @@ fn run_cases(cases: &[Case]) {
                 ),
                 Year::Strike => {
                     assert!(struck(&events, mission), "{} year {year} strike", case.name);
-                    let target = fleet.standing_order_target_coords_raw();
+                    let target = fleet.target.to_array();
                     let at_rest = format!(
                         "{:02x}{:02x}800000000000800000000000810000000000",
                         target[0], target[1]
@@ -187,9 +185,9 @@ fn run_cases(cases: &[Case]) {
                         "{} year {year} in orbit",
                         case.name
                     );
-                    assert_eq!(fleet.current_speed(), 0, "{} year {year} speed", case.name);
+                    assert_eq!(fleet.speed, 0, "{} year {year} speed", case.name);
                     assert_eq!(
-                        fleet.standing_order_code_raw(),
+                        fleet.order.to_raw(),
                         if mission == 6 { 6 } else { 0 },
                         "{} year {year} order",
                         case.name

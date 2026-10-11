@@ -13,7 +13,8 @@ use nc_data::classic::parse_fleets_dat;
 use nc_data::classic::{ClassicFile, without_ignored_bytes};
 use nc_data::{
     CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME, Fleet, FleetDetachSelection, Mission,
-    Order,
+    Order, PlayerMode, recompute_max_speed, set_armies_aboard, set_mission_target,
+    set_troop_transports, troop_transports,
 };
 use nc_engine::run_maintenance_turn;
 
@@ -56,19 +57,19 @@ fn original_fleets_dat_reads_the_classic_layout() {
     // ECUTIL leaves a stray high byte in the mission id of its Guard/Blockade
     // fleets; it is not a scout count.
     let fleet2 = &fleets[1];
-    assert_eq!(fleet2.standing_order_kind(), Order::GuardBlockadeWorld);
-    assert_eq!(fleet2.mission_id_raw(), 0x46b0);
-    assert_eq!(fleets[2].mission_id_raw(), u16::from_le_bytes([154, 183]));
-    assert_eq!(fleets[4].mission_id_raw(), u16::from_le_bytes([61, 139]));
+    assert_eq!(fleet2.order, Order::GuardBlockadeWorld);
+    assert_eq!(fleet2.mission_target, 0x46b0);
+    assert_eq!(fleets[2].mission_target, u16::from_le_bytes([154, 183]));
+    assert_eq!(fleets[4].mission_target, u16::from_le_bytes([61, 139]));
 
     // Fleet 1 guards starbase 1.
-    assert_eq!(fleets[0].standing_order_kind(), Order::GuardStarbase);
-    assert_eq!(fleets[0].guard_starbase_index_raw(), 1);
+    assert_eq!(fleets[0].order, Order::GuardStarbase);
+    assert_eq!(fleets[0].mission_target, 1);
 
     for fleet in &fleets {
-        assert_eq!(fleet.scout_count(), 0);
-        assert_eq!(fleet.loaded_transport_count(), 0);
-        assert_eq!(fleet.army_count(), 0);
+        assert_eq!(fleet.ships.scouts, 0);
+        assert_eq!(fleet.ships.loaded_transports, 0);
+        assert_eq!(fleet.ships.loaded_transports, 0);
     }
 }
 
@@ -101,16 +102,18 @@ fn original_fleets_dat_round_trips_through_the_campaign_database() {
 
 #[test]
 fn fleet_accessors_use_the_classic_offsets() {
-    let mut fleet = Fleet::default();
-    fleet.set_mission_id_raw(0x0203);
-    fleet.set_rules_of_engagement(4);
-    fleet.set_battleship_count(0x0405);
-    fleet.set_cruiser_count(0x0607);
-    fleet.set_destroyer_count(0x0809);
-    fleet.set_empty_transport_count(0x0a0b);
-    fleet.set_loaded_transport_count(0x0c0d);
-    fleet.set_etac_count(0x0e0f);
-    fleet.set_scout_count(0x1011);
+    let mut fleet = Fleet {
+        mission_target: 0x0203,
+        rules_of_engagement: 4,
+        ..Fleet::default()
+    };
+    fleet.ships.battleships = 0x0405;
+    fleet.ships.cruisers = 0x0607;
+    fleet.ships.destroyers = 0x0809;
+    fleet.ships.empty_transports = 0x0a0b;
+    fleet.ships.loaded_transports = 0x0c0d;
+    fleet.ships.etacs = 0x0e0f;
+    fleet.ships.scouts = 0x1011;
 
     // The dead 0x34 word encodes as zero.
     assert_eq!(
@@ -120,73 +123,55 @@ fn fleet_accessors_use_the_classic_offsets() {
             0x11, 0x10, 0, 0,
         ]
     );
-    assert_eq!(fleet.mission_id_raw(), 0x0203);
-    assert_eq!(fleet.join_host_fleet_id_raw(), 0x0203);
-    assert_eq!(fleet.guard_starbase_index_raw(), 0x0203);
-    assert_eq!(fleet.troop_transport_count(), 0x0a0b + 0x0c0d);
-    assert_eq!(fleet.army_count(), 0x0c0d);
-    assert_eq!(fleet.scout_count(), 0x1011);
+    assert_eq!(fleet.mission_target, 0x0203);
+    assert_eq!(fleet.mission_target, 0x0203);
+    assert_eq!(fleet.mission_target, 0x0203);
+    assert_eq!(troop_transports(&fleet), 0x0a0b + 0x0c0d);
+    assert_eq!(fleet.ships.loaded_transports, 0x0c0d);
+    assert_eq!(fleet.ships.scouts, 0x1011);
 }
 
 #[test]
 fn mission_target_writes_the_whole_mission_id_word() {
-    let mut fleet = Fleet::default();
-    fleet.set_mission_id_raw(70 << 8);
-    fleet.set_mission_target(1, 3);
+    let mut fleet = Fleet {
+        mission_target: 70 << 8,
+        ..Fleet::default()
+    };
+    set_mission_target(&mut fleet, 1, 3);
     assert_eq!(&fleet.to_bytes()[0x22..0x25], &[1, 3, 0]);
-
-    // The raw aux override touches only 0x22 and 0x23.
-    fleet.set_mission_id_raw((70 << 8) | 3);
-    fleet.set_mission_aux_bytes([1, 5]);
-    assert_eq!(&fleet.to_bytes()[0x22..0x25], &[1, 5, 70]);
 }
 
 #[test]
 fn transport_setters_move_transports_between_empty_and_loaded() {
     let mut fleet = Fleet::default();
-    fleet.set_troop_transport_count(5);
+    set_troop_transports(&mut fleet, 5);
     assert_eq!(
-        (
-            fleet.empty_transport_count(),
-            fleet.loaded_transport_count()
-        ),
+        (fleet.ships.empty_transports, fleet.ships.loaded_transports),
         (5, 0)
     );
 
-    fleet.set_army_count(3);
+    set_armies_aboard(&mut fleet, 3);
     assert_eq!(
-        (
-            fleet.empty_transport_count(),
-            fleet.loaded_transport_count()
-        ),
+        (fleet.ships.empty_transports, fleet.ships.loaded_transports),
         (2, 3)
     );
 
-    fleet.set_army_count(1);
+    set_armies_aboard(&mut fleet, 1);
     assert_eq!(
-        (
-            fleet.empty_transport_count(),
-            fleet.loaded_transport_count()
-        ),
+        (fleet.ships.empty_transports, fleet.ships.loaded_transports),
         (4, 1)
     );
 
     // Shrinking the total keeps loaded transports first.
-    fleet.set_army_count(3);
-    fleet.set_troop_transport_count(4);
+    set_armies_aboard(&mut fleet, 3);
+    set_troop_transports(&mut fleet, 4);
     assert_eq!(
-        (
-            fleet.empty_transport_count(),
-            fleet.loaded_transport_count()
-        ),
+        (fleet.ships.empty_transports, fleet.ships.loaded_transports),
         (1, 3)
     );
-    fleet.set_troop_transport_count(2);
+    set_troop_transports(&mut fleet, 2);
     assert_eq!(
-        (
-            fleet.empty_transport_count(),
-            fleet.loaded_transport_count()
-        ),
+        (fleet.ships.empty_transports, fleet.ships.loaded_transports),
         (0, 2)
     );
 }
@@ -195,29 +180,31 @@ fn transport_setters_move_transports_between_empty_and_loaded() {
 fn max_speed_is_the_slowest_ship_type_present() {
     let cases: [(fn(&mut Fleet), u8); 9] = [
         (|_| {}, 7),
-        (|f| f.set_scout_count(1), 6),
-        (|f| f.set_destroyer_count(1), 6),
-        (|f| f.set_empty_transport_count(1), 5),
-        (|f| f.set_loaded_transport_count(1), 5),
-        (|f| f.set_cruiser_count(1), 5),
-        (|f| f.set_battleship_count(1), 4),
-        (|f| f.set_etac_count(1), 3),
+        (|f| f.ships.scouts = 1, 6),
+        (|f| f.ships.destroyers = 1, 6),
+        (|f| f.ships.empty_transports = 1, 5),
+        (|f| f.ships.loaded_transports = 1, 5),
+        (|f| f.ships.cruisers = 1, 5),
+        (|f| f.ships.battleships = 1, 4),
+        (|f| f.ships.etacs = 1, 3),
         (
             |f| {
-                f.set_scout_count(1);
-                f.set_battleship_count(1);
-                f.set_loaded_transport_count(1);
+                f.ships.scouts = 1;
+                f.ships.battleships = 1;
+                f.ships.loaded_transports = 1;
             },
             4,
         ),
     ];
     for (idx, (compose, expected)) in cases.into_iter().enumerate() {
-        let mut fleet = Fleet::default();
-        fleet.set_current_speed(7);
+        let mut fleet = Fleet {
+            speed: 7,
+            ..Fleet::default()
+        };
         compose(&mut fleet);
-        fleet.recompute_max_speed_from_composition();
-        assert_eq!(fleet.max_speed(), expected, "case {idx}");
-        assert_eq!(fleet.current_speed(), expected, "case {idx}");
+        recompute_max_speed(&mut fleet);
+        assert_eq!(fleet.max_speed, expected, "case {idx}");
+        assert_eq!(fleet.speed, expected, "case {idx}");
     }
 }
 
@@ -227,10 +214,10 @@ fn pad_fleets_to(game_data: &mut CoreGameData, count: usize) {
     while game_data.fleets.len() + 1 < count {
         let mut filler = template.clone();
         let id = (game_data.fleets.len() + 1) as u16;
-        filler.set_fleet_id_word_raw(id);
-        filler.set_local_slot_word_raw(id);
-        filler.set_previous_fleet_id(0);
-        filler.set_next_fleet_link_word_raw(0);
+        filler.record.0 = id;
+        filler.fleet_number.0 = id;
+        filler.prev.0 = 0;
+        filler.next.0 = 0;
         game_data.fleets.push(filler);
     }
 }
@@ -240,24 +227,24 @@ fn join_merges_into_a_host_whose_number_exceeds_one_byte() {
     // 0x23 is the host's fleet number (its 0x00 word), stored as a word; the
     // host's record id (300) differs from its number (299).
     let mut game_data = load_fixture("ecmaint-post");
-    game_data.players[0].set_player_mode_raw(0x00);
+    game_data.players[0].mode = PlayerMode::CivilDisorder;
     pad_fleets_to(&mut game_data, 300);
 
     let mut host = game_data.fleets[0].clone();
-    host.set_fleet_id_word_raw(300);
-    host.set_local_slot_word_raw(299);
-    host.set_previous_fleet_id(0);
-    host.set_next_fleet_link_word_raw(0);
-    host.set_standing_order_kind(Order::HoldPosition);
-    host.set_battleship_count(2);
+    host.record.0 = 300;
+    host.fleet_number.0 = 299;
+    host.prev.0 = 0;
+    host.next.0 = 0;
+    host.order = Order::HoldPosition;
+    host.ships.battleships = 2;
     game_data.fleets.push(host);
     assert_eq!(game_data.fleets.len(), 300);
 
     let joiner = &mut game_data.fleets[1];
-    joiner.set_standing_order_kind(Order::JoinAnotherFleet);
-    joiner.set_mission_target(1, 299);
+    joiner.order = Order::JoinAnotherFleet;
+    set_mission_target(joiner, 1, 299);
     assert_eq!(&joiner.to_bytes()[0x23..0x25], &[0x2b, 0x01]);
-    let joiner_cruisers = joiner.cruiser_count();
+    let joiner_cruisers = joiner.ships.cruisers;
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance");
 
@@ -270,10 +257,10 @@ fn join_merges_into_a_host_whose_number_exceeds_one_byte() {
     let host = game_data
         .fleets
         .iter()
-        .find(|fleet| fleet.owner_empire_raw() == 1 && fleet.local_slot_word_raw() == 299)
+        .find(|fleet| fleet.owner.0 == 1 && fleet.fleet_number.0 == 299)
         .expect("host survives");
-    assert_eq!(host.battleship_count(), 2);
-    assert_eq!(host.cruiser_count(), 1 + joiner_cruisers);
+    assert_eq!(host.ships.battleships, 2);
+    assert_eq!(host.ships.cruisers, 1 + joiner_cruisers);
 }
 
 #[test]
@@ -282,16 +269,16 @@ fn fleet_chain_links_are_words() {
     let mut bytes = [0u8; 54];
     bytes[0x03..0x09].copy_from_slice(&[0x2c, 0x01, 0x2d, 0x01, 0x2b, 0x01]);
     let mut fleet = Fleet::from_raw(bytes);
-    assert_eq!(fleet.next_fleet_id(), 300);
-    assert_eq!(fleet.fleet_id(), 301);
-    assert_eq!(fleet.previous_fleet_id(), 299);
-    fleet.set_previous_fleet_id(0x0203);
+    assert_eq!(fleet.next.0, 300);
+    assert_eq!(fleet.record.0, 301);
+    assert_eq!(fleet.prev.0, 299);
+    fleet.prev.0 = 0x0203;
     assert_eq!(&fleet.to_bytes()[0x07..0x09], &[0x03, 0x02]);
 
     // The invade pre-fixture's byte 0x08 (an old tool's "invasion armies")
     // is the previous-fleet word's high byte.
     let fixture = load_fixture("ecmaint-invade-pre");
-    assert_eq!(fixture.fleets[2].previous_fleet_id(), 0x6402);
+    assert_eq!(fixture.fleets[2].prev.0, 0x6402);
 }
 
 #[test]
@@ -302,7 +289,7 @@ fn detached_fleets_link_to_predecessors_above_one_byte() {
         destroyers: 1,
         ..FleetDetachSelection::default()
     };
-    game_data.fleets[2].set_destroyer_count(3);
+    game_data.fleets[2].ships.destroyers = 3;
     let first = game_data
         .detach_ships_to_new_fleet(1, 3, one_destroyer, None, 6)
         .expect("first detach");
@@ -311,8 +298,8 @@ fn detached_fleets_link_to_predecessors_above_one_byte() {
         .expect("second detach");
     let first = &game_data.fleets[first.new_fleet_record_index_1_based - 1];
     let second = &game_data.fleets[second.new_fleet_record_index_1_based - 1];
-    assert_eq!(first.fleet_id(), 300);
-    assert_eq!(second.fleet_id(), 301);
-    assert_eq!(second.previous_fleet_id(), 300);
-    assert_eq!(first.next_fleet_id(), 301);
+    assert_eq!(first.record.0, 300);
+    assert_eq!(second.record.0, 301);
+    assert_eq!(second.prev.0, 300);
+    assert_eq!(first.next.0, 301);
 }

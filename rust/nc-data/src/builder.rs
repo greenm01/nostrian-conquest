@@ -1,6 +1,6 @@
-use crate::{Conquest, CoreGameData, Fleet, GameStateMutationError, Ipbm, Planet, Player, Setup};
 use crate::{
-    Coords, EmpireId, PlayerMode, Real48, set_armies_aboard, set_empire_name, set_fleet_at_rest,
+    Conquest, Coords, CoreGameData, EmpireId, Fleet, GameStateMutationError, Ipbm, Planet, Player,
+    PlayerMode, Real48, Setup, set_armies_aboard, set_empire_name, set_fleet_at_rest,
     set_mission_target, set_player_handle, set_troop_transports,
 };
 

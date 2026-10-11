@@ -1,8 +1,10 @@
 use std::collections::BTreeMap;
 
 use crate::storage::{IntelTier, PlanetIntelSnapshot};
-use crate::{CoreGameData, PlanetIntelEvent, PlanetIntelSource};
-use crate::{has_any_force, present_production_points, stored_production_points};
+use crate::{
+    CoreGameData, PlanetIntelEvent, PlanetIntelSource, has_any_force, present_production_points,
+    stored_production_points,
+};
 
 pub fn merge_player_intel_from_runtime(
     game_data: &CoreGameData,

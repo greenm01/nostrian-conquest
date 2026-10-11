@@ -1,9 +1,8 @@
 use super::support::*;
 use super::*;
-use crate::Planet;
 use crate::{
-    Coords, recompute_max_speed, set_fleet_at_rest, set_mission_target, set_troop_transports,
-    stardock_slot_kind,
+    Coords, Planet, recompute_max_speed, set_fleet_at_rest, set_mission_target,
+    set_troop_transports, stardock_slot_kind,
 };
 
 impl CoreGameData {

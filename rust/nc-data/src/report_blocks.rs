@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::Player;
-use crate::PlayerMode;
+use crate::{Player, PlayerMode};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReportBlockRow {

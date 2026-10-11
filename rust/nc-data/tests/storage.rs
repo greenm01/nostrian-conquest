@@ -10,7 +10,9 @@ use nc_compat::{
     DatabaseDat, export_latest_snapshot_to_dir, import_directory_snapshot,
     import_directory_snapshot_with_seed, load_classic_core_files,
 };
-use nc_data::{CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, SeatBindSource};
+use nc_data::{
+    CampaignStore, CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, SeatBindSource, set_empire_name,
+};
 use rusqlite::Connection;
 
 fn repo_root() -> PathBuf {
@@ -131,7 +133,7 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
         .load_latest_runtime_state()
         .expect("load runtime state")
         .expect("runtime snapshot");
-    state.game_data.players[0].set_controlled_empire_name_raw("Runtime Empire");
+    set_empire_name(&mut state.game_data.players[0], "Runtime Empire");
     store
         .save_runtime_state_structured(
             &state.game_data,
@@ -145,13 +147,13 @@ fn sqlite_store_latest_runtime_game_data_ignores_stale_classic_files() {
         .load_latest_runtime_game_data()
         .expect("load latest runtime game data");
     assert_eq!(
-        runtime_game.players[0].controlled_empire_name_summary(),
+        runtime_game.players[0].empire_name.trim().to_string(),
         "Runtime Empire"
     );
 
     let classic_game = load_classic_core_files(&imported).expect("load classic directory");
     assert_ne!(
-        classic_game.players[0].controlled_empire_name_summary(),
+        classic_game.players[0].empire_name.trim().to_string(),
         "Runtime Empire"
     );
 }
@@ -174,9 +176,12 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
         .game_data
         .set_join_fleet_order(1, 2, 1)
         .expect("join order");
-    let host_number = state.game_data.fleets[0].local_slot_word_raw() as u8;
+    let host_number = state.game_data.fleets[0].fleet_number.0 as u8;
     assert_eq!(
-        state.game_data.fleets[1].mission_aux_bytes(),
+        [
+            state.game_data.fleets[1].target_depth,
+            state.game_data.fleets[1].mission_target as u8
+        ],
         [1, host_number]
     );
     store
@@ -192,13 +197,19 @@ fn sqlite_store_round_trips_join_host_number_in_mission_aux() {
         .load_latest_runtime_game_data()
         .expect("load latest runtime game data");
     let joiner = &runtime_game.fleets[1];
-    assert_eq!(joiner.mission_aux_bytes(), [1, host_number]);
-    assert_eq!(joiner.join_host_fleet_id_raw(), u16::from(host_number));
+    assert_eq!(
+        [joiner.target_depth, joiner.mission_target as u8],
+        [1, host_number]
+    );
+    assert_eq!(joiner.mission_target, u16::from(host_number));
 
     export_latest_snapshot_to_dir(&store, &exported).expect("export snapshot");
     let exported_game = load_classic_core_files(&exported).expect("load exported directory");
     assert_eq!(
-        exported_game.fleets[1].mission_aux_bytes(),
+        [
+            exported_game.fleets[1].target_depth,
+            exported_game.fleets[1].mission_target as u8
+        ],
         [1, host_number]
     );
 }

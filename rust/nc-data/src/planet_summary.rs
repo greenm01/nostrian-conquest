@@ -1,9 +1,9 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::homeworld_seed::is_named_homeworld_seed;
-use crate::{CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT};
 use crate::{
-    has_any_force, is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
+    CoreGameData, Planet, ProductionItemKind, STARDOCK_SLOT_COUNT, has_any_force,
+    is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

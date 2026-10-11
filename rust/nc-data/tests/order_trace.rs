@@ -668,10 +668,7 @@ fn check_colonize_world_trace(run: &TraceRun) {
         Mission::ColonizeWorld,
         MissionOutcome::Succeeded,
     );
-    assert_eq!(
-        run.states[2].planets[TARGET_PLANET_IDX].owner_empire_slot_raw(),
-        1
-    );
+    assert_eq!(run.states[2].planets[TARGET_PLANET_IDX].owner.0, 1);
 }
 
 fn check_view_world_trace(run: &TraceRun) {
@@ -793,10 +790,7 @@ fn check_invade_world_trace(run: &TraceRun) {
         MissionOutcome::Succeeded,
     );
     assert!(!run.events[1].assault_report_events.is_empty());
-    assert_eq!(
-        run.states[2].planets[TARGET_PLANET_IDX].owner_empire_slot_raw(),
-        1
-    );
+    assert_eq!(run.states[2].planets[TARGET_PLANET_IDX].owner.0, 1);
 }
 
 fn check_blitz_world_trace(run: &TraceRun) {
@@ -814,17 +808,14 @@ fn check_blitz_world_trace(run: &TraceRun) {
         MissionOutcome::Succeeded,
     );
     assert!(!run.events[1].assault_report_events.is_empty());
-    assert_eq!(
-        run.states[2].planets[TARGET_PLANET_IDX].owner_empire_slot_raw(),
-        1
-    );
+    assert_eq!(run.states[2].planets[TARGET_PLANET_IDX].owner.0, 1);
 }
 
 fn check_join_chase_trace(run: &TraceRun) {
     let host = &run.states[1].fleets[0];
-    assert_eq!(host.current_location_coords_raw(), [12, 10]);
+    assert_eq!(host.sector.to_array(), [12, 10]);
     let host_after_second = &run.states[2].fleets[0];
-    assert_eq!(host_after_second.current_location_coords_raw(), [14, 10]);
+    assert_eq!(host_after_second.sector.to_array(), [14, 10]);
 }
 
 fn check_join_merge_trace(run: &TraceRun) {
@@ -834,10 +825,7 @@ fn check_join_merge_trace(run: &TraceRun) {
             .iter()
             .any(|event| { event.kind == Mission::JoinAnotherFleet && !event.survivor_side })
     );
-    assert_eq!(
-        run.states[1].fleets[0].standing_order_kind(),
-        Order::HoldPosition
-    );
+    assert_eq!(run.states[1].fleets[0].order, Order::HoldPosition);
 }
 
 fn check_rendezvous_travel_trace(run: &TraceRun) {
@@ -857,7 +845,7 @@ fn check_rendezvous_merge_trace(run: &TraceRun) {
             .any(|event| { event.kind == Mission::RendezvousSector && !event.survivor_side })
     );
     let survivor = &run.states[1].fleets[0];
-    assert_eq!(survivor.standing_order_kind(), Order::RendezvousSector);
-    assert_eq!(survivor.standing_order_target_coords_raw(), TRACE_TARGET);
-    assert_eq!(survivor.max_speed(), 3);
+    assert_eq!(survivor.order, Order::RendezvousSector);
+    assert_eq!(survivor.target.to_array(), TRACE_TARGET);
+    assert_eq!(survivor.max_speed, 3);
 }

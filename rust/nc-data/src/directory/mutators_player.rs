@@ -1,9 +1,8 @@
 use super::*;
-use crate::is_classic_text_char;
 use crate::{
-    PlayerMode, Real48, diplomatic_relation_toward, is_homeworld_seed_ignoring_name,
-    present_production_points, set_diplomatic_relation_toward, set_empire_name, set_planet_name,
-    stored_diplomatic_relation,
+    PlayerMode, Real48, diplomatic_relation_toward, is_classic_text_char,
+    is_homeworld_seed_ignoring_name, present_production_points, set_diplomatic_relation_toward,
+    set_empire_name, set_planet_name, stored_diplomatic_relation,
 };
 
 const DEFAULT_JOIN_TAX_RATE: u8 = 50;

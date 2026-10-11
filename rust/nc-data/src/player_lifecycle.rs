@@ -1,8 +1,7 @@
 use crate::names::set_empire_name;
-use crate::troop_transports;
 use crate::{
     CoreGameData, Player, PlayerActivityState, PlayerLifecycleState, PlayerMode, TerminalOutcome,
-    WinnerState,
+    WinnerState, troop_transports,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

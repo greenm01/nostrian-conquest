@@ -5,8 +5,9 @@ use std::time::{SystemTime, UNIX_EPOCH};
 
 use nc_compat::import_directory_snapshot;
 use nc_data::{
-    CampaignStore, DiplomaticRelation, FleetTurnAction, Order, PlanetPlayerInputValidationError,
-    TurnSubmission,
+    CampaignStore, Coords, DiplomaticRelation, FleetTurnAction, Order,
+    PlanetPlayerInputValidationError, ProductionItemKind, Real48, TurnSubmission,
+    recompute_max_speed, set_armies_aboard, set_troop_transports, stardock_slot_kind,
 };
 use nc_engine::build_seeded_initialized_game;
 
@@ -18,38 +19,42 @@ fn turn_submission_applies_mixed_player_actions() {
     let planet_record_index_1_based = data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
     let fleet_indexes = data
         .fleets
         .iter()
         .enumerate()
-        .filter(|(_, fleet)| fleet.owner_empire_raw() == 1)
+        .filter(|(_, fleet)| fleet.owner.0 == 1)
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
     let fleet_record_index_1_based = fleet_indexes[0];
     let host_fleet_record_index_1_based = fleet_indexes[1];
-    let target_coords = data.planets[planet_record_index_1_based - 1].coords_raw();
-    let host_destroyers_before = data.fleets[host_fleet_record_index_1_based - 1].destroyer_count();
+    let target_coords = data.planets[planet_record_index_1_based - 1]
+        .sector
+        .to_array();
+    let host_destroyers_before = data.fleets[host_fleet_record_index_1_based - 1]
+        .ships
+        .destroyers;
 
     {
         let fleet = &mut data.fleets[fleet_record_index_1_based - 1];
-        fleet.set_destroyer_count(2);
-        fleet.set_scout_count(1);
-        fleet.set_troop_transport_count(2);
-        fleet.set_army_count(0);
-        fleet.recompute_max_speed_from_composition();
-        fleet.set_current_speed(0);
+        fleet.ships.destroyers = 2;
+        fleet.ships.scouts = 1;
+        set_troop_transports(fleet, 2);
+        set_armies_aboard(fleet, 0);
+        recompute_max_speed(fleet);
+        fleet.speed = 0;
     }
     {
         let host = &mut data.fleets[host_fleet_record_index_1_based - 1];
-        host.set_current_location_coords_raw(target_coords);
+        host.sector = Coords::from_array(target_coords);
     }
     {
         let planet = &mut data.planets[planet_record_index_1_based - 1];
-        planet.set_stardock_count_raw(0, 2);
-        planet.set_stored_production_points(50);
+        planet.stardock.destroyers = 2;
+        planet.stored_goods = Real48::from_f64(50.0);
     }
 
     let kdl = format!(
@@ -86,38 +91,47 @@ message to=2 subject="Border" body="Holding lane."
     assert_eq!(report.fleet_blocks, 1);
     assert_eq!(report.messages_queued, 1);
 
-    assert_eq!(data.players[0].tax_rate(), 41);
+    assert_eq!(data.players[0].tax_rate, 41);
     assert_eq!(
         data.stored_diplomatic_relation(1, 2),
         Some(DiplomaticRelation::Enemy)
     );
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].planet_name(),
+        data.planets[planet_record_index_1_based - 1].name.clone(),
         "New Aurora"
     );
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].build_count_raw(0),
+        data.planets[planet_record_index_1_based - 1].build_queue[0].points_owed,
         15
     );
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].build_kind_raw(0),
+        data.planets[planet_record_index_1_based - 1].build_queue[0]
+            .kind
+            .to_raw(),
         4
     );
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].stardock_kind_raw(0),
+        stardock_slot_kind(&data.planets[planet_record_index_1_based - 1], 0).to_raw(),
         0
     );
     assert_eq!(
-        data.fleets[fleet_record_index_1_based - 1].standing_order_kind(),
+        data.fleets[fleet_record_index_1_based - 1].order,
         Order::ScoutSolarSystem
     );
     assert_eq!(
-        data.fleets[fleet_record_index_1_based - 1].destroyer_count(),
+        data.fleets[fleet_record_index_1_based - 1].ships.destroyers,
         1
     );
-    assert_eq!(data.fleets[fleet_record_index_1_based - 1].army_count(), 1);
     assert_eq!(
-        data.fleets[host_fleet_record_index_1_based - 1].destroyer_count(),
+        data.fleets[fleet_record_index_1_based - 1]
+            .ships
+            .loaded_transports,
+        1
+    );
+    assert_eq!(
+        data.fleets[host_fleet_record_index_1_based - 1]
+            .ships
+            .destroyers,
         host_destroyers_before + 1
     );
     assert_eq!(queued_mail.len(), 1);
@@ -151,10 +165,10 @@ fn turn_submission_rejects_non_ascii_planet_rename() {
     let planet_record_index_1_based = data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
-    let before = data.planets[planet_record_index_1_based - 1].planet_name();
+    let before = data.planets[planet_record_index_1_based - 1].name.clone();
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
 turn player=1 year=3000
@@ -170,7 +184,7 @@ planet record={planet_record_index_1_based} {{
         .expect_err("non-ASCII planet name should be rejected");
     assert!(err.to_string().contains("printable ASCII"), "{err}");
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].planet_name(),
+        data.planets[planet_record_index_1_based - 1].name.clone(),
         before
     );
 }
@@ -181,14 +195,14 @@ fn turn_submission_clear_build_kind_round_trips_and_clears_only_selected_kind() 
     let planet_record_index_1_based = data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
     let planet = &mut data.planets[planet_record_index_1_based - 1];
-    planet.set_build_kind_raw(0, 1);
-    planet.set_build_count_raw(0, 10);
-    planet.set_build_kind_raw(1, 2);
-    planet.set_build_count_raw(1, 30);
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
+    planet.build_queue[0].points_owed = 10;
+    planet.build_queue[1].kind = ProductionItemKind::Cruiser;
+    planet.build_queue[1].points_owed = 30;
 
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -210,10 +224,10 @@ planet record={planet_record_index_1_based} {{
         .expect("apply clear_build_kind");
 
     let planet = &data.planets[planet_record_index_1_based - 1];
-    assert_eq!(planet.build_kind_raw(0), 0);
-    assert_eq!(planet.build_count_raw(0), 0);
-    assert_eq!(planet.build_kind_raw(1), 2);
-    assert_eq!(planet.build_count_raw(1), 30);
+    assert_eq!(planet.build_queue[0].kind.to_raw(), 0);
+    assert_eq!(planet.build_queue[0].points_owed, 0);
+    assert_eq!(planet.build_queue[1].kind.to_raw(), 2);
+    assert_eq!(planet.build_queue[1].points_owed, 30);
 }
 
 #[test]
@@ -222,14 +236,14 @@ fn turn_submission_remove_build_round_trips_and_removes_one_unit_of_selected_kin
     let planet_record_index_1_based = data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
     let planet = &mut data.planets[planet_record_index_1_based - 1];
-    planet.set_build_kind_raw(0, 1);
-    planet.set_build_count_raw(0, 15);
-    planet.set_build_kind_raw(1, 2);
-    planet.set_build_count_raw(1, 30);
+    planet.build_queue[0].kind = ProductionItemKind::Destroyer;
+    planet.build_queue[0].points_owed = 15;
+    planet.build_queue[1].kind = ProductionItemKind::Cruiser;
+    planet.build_queue[1].points_owed = 30;
 
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -251,10 +265,10 @@ planet record={planet_record_index_1_based} {{
         .expect("apply remove_build");
 
     let planet = &data.planets[planet_record_index_1_based - 1];
-    assert_eq!(planet.build_kind_raw(0), 1);
-    assert_eq!(planet.build_count_raw(0), 10);
-    assert_eq!(planet.build_kind_raw(1), 2);
-    assert_eq!(planet.build_count_raw(1), 30);
+    assert_eq!(planet.build_queue[0].kind.to_raw(), 1);
+    assert_eq!(planet.build_queue[0].points_owed, 10);
+    assert_eq!(planet.build_queue[1].kind.to_raw(), 2);
+    assert_eq!(planet.build_queue[1].points_owed, 30);
 }
 
 #[test]
@@ -263,7 +277,7 @@ fn turn_submission_rejects_fleet_targets_outside_the_map() {
     let fleet_index = data
         .fleets
         .iter()
-        .position(|fleet| fleet.owner_empire_raw() == 1)
+        .position(|fleet| fleet.owner.0 == 1)
         .map(|idx| idx + 1)
         .expect("empire 1 should have a fleet");
     let submit_move = |x: u8, y: u8| {
@@ -327,24 +341,24 @@ fn turn_submission_rejects_duplicate_friendly_colonize_targets_without_mutation(
         .fleets
         .iter()
         .enumerate()
-        .filter(|(_, fleet)| fleet.owner_empire_raw() == 1)
+        .filter(|(_, fleet)| fleet.owner.0 == 1)
         .map(|(idx, _)| idx + 1)
         .take(2)
         .collect::<Vec<_>>();
     let target_coords = data
         .planets
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() == 0)
-        .map(|planet| planet.coords_raw())
+        .find(|planet| planet.owner.0 == 0)
+        .map(|planet| planet.sector.to_array())
         .expect("initialized game should have an unowned planet");
-    let first_order_before = data.fleets[fleet_indexes[0] - 1].standing_order_kind();
-    let second_order_before = data.fleets[fleet_indexes[1] - 1].standing_order_kind();
+    let first_order_before = data.fleets[fleet_indexes[0] - 1].order;
+    let second_order_before = data.fleets[fleet_indexes[1] - 1].order;
 
     for fleet_index in &fleet_indexes {
         let fleet = &mut data.fleets[*fleet_index - 1];
-        fleet.set_etac_count(1);
-        fleet.recompute_max_speed_from_composition();
-        fleet.set_current_speed(0);
+        fleet.ships.etacs = 1;
+        recompute_max_speed(fleet);
+        fleet.speed = 0;
     }
 
     let kdl = format!(
@@ -371,14 +385,8 @@ fleet record={} {{
         .expect_err("duplicate colonize targets should fail");
 
     assert!(err.to_string().contains("friendly fleet"));
-    assert_eq!(
-        data.fleets[fleet_indexes[0] - 1].standing_order_kind(),
-        first_order_before
-    );
-    assert_eq!(
-        data.fleets[fleet_indexes[1] - 1].standing_order_kind(),
-        second_order_before
-    );
+    assert_eq!(data.fleets[fleet_indexes[0] - 1].order, first_order_before);
+    assert_eq!(data.fleets[fleet_indexes[1] - 1].order, second_order_before);
 }
 
 #[test]
@@ -387,10 +395,10 @@ fn turn_submission_rejects_non_multiple_ship_build_points() {
     let planet_record_index_1_based = data
         .planets
         .iter()
-        .position(|planet| planet.owner_empire_slot_raw() == 1)
+        .position(|planet| planet.owner.0 == 1)
         .map(|idx| idx + 1)
         .unwrap();
-    data.planets[planet_record_index_1_based - 1].set_stored_production_points(50);
+    data.planets[planet_record_index_1_based - 1].stored_goods = Real48::from_f64(50.0);
 
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -429,7 +437,7 @@ planet record={planet_record_index_1_based} {{
 fn turn_submission_rejects_build_points_beyond_planet_budget() {
     let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
     let planet_record_index_1_based = 2;
-    data.planets[planet_record_index_1_based - 1].set_stored_production_points(0);
+    data.planets[planet_record_index_1_based - 1].stored_goods = Real48::ZERO;
 
     let submission = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -449,7 +457,7 @@ planet record={planet_record_index_1_based} {{
         "unexpected error: {err:?}"
     );
     assert_eq!(
-        data.planets[planet_record_index_1_based - 1].build_count_raw(0),
+        data.planets[planet_record_index_1_based - 1].build_queue[0].points_owed,
         0
     );
 }
@@ -459,7 +467,7 @@ fn turn_submission_build_budget_counts_points_already_queued() {
     let mut data = build_seeded_initialized_game(4, 3000, 1515).unwrap();
     let planet_record_index_1_based = 2;
     // Production 100 gives capacity 100; a treasury of 60 makes the budget 60.
-    data.planets[planet_record_index_1_based - 1].set_stored_production_points(60);
+    data.planets[planet_record_index_1_based - 1].stored_goods = Real48::from_f64(60.0);
 
     let within_budget = TurnSubmission::parse_kdl_str(&format!(
         r#"
@@ -604,7 +612,7 @@ message to=2 subject="Scout" body="Watch the lane."
     assert_eq!(report.messages_queued, 1);
     let store = CampaignStore::open_default_in_dir(&dir).unwrap();
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.players[0].tax_rate(), 37);
+    assert_eq!(state.game_data.players[0].tax_rate, 37);
     assert_eq!(state.queued_mail.len(), 1);
 
     cleanup_dir(&dir);
@@ -649,9 +657,9 @@ fn turn_submission_runtime_helper_clears_inactivity_auto_enabled_autopilot() {
         .game_data
         .rename_player_homeworld(1, "Codex Prime")
         .unwrap();
-    state.game_data.players[0].set_autopilot_flag(1);
-    state.game_data.players[0].set_last_run_year_raw(2997);
-    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count())
+    state.game_data.players[0].autopilot = true;
+    state.game_data.players[0].last_year_on = 2997;
+    let planet_intel_by_viewer = (1..=state.game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             store
                 .latest_planet_intel_for_viewer(viewer_empire_id)
@@ -662,7 +670,7 @@ fn turn_submission_runtime_helper_clears_inactivity_auto_enabled_autopilot() {
         })
         .collect::<Vec<_>>();
     let mut player_activity_states = store
-        .latest_player_activity_states(state.game_data.conquest.player_count())
+        .latest_player_activity_states(state.game_data.conquest.player_count)
         .unwrap();
     player_activity_states[0].last_participation_year = 2997;
     player_activity_states[0].inactivity_autopilot_pending_clear = true;
@@ -690,11 +698,11 @@ tax rate=37
     TurnSubmission::submit_kdl_file_to_campaign_dir(&dir, 1, &path, false).unwrap();
 
     let state = store.load_latest_runtime_state().unwrap().unwrap();
-    assert_eq!(state.game_data.players[0].tax_rate(), 37);
-    assert_eq!(state.game_data.players[0].autopilot_flag(), 0);
-    assert_eq!(state.game_data.players[0].last_run_year_raw(), 2997);
+    assert_eq!(state.game_data.players[0].tax_rate, 37);
+    assert!(!state.game_data.players[0].autopilot);
+    assert_eq!(state.game_data.players[0].last_year_on, 2997);
     let activity = store
-        .latest_player_activity_states(state.game_data.conquest.player_count())
+        .latest_player_activity_states(state.game_data.conquest.player_count)
         .unwrap();
     assert_eq!(activity[0].last_participation_year, 3000);
     assert!(!activity[0].inactivity_autopilot_pending_clear);

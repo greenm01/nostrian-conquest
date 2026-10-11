@@ -1,5 +1,4 @@
-use crate::PlayerMode;
-use crate::{CoreGameData, PlayerActivityState};
+use crate::{CoreGameData, PlayerActivityState, PlayerMode};
 
 pub const DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS: u8 = 3;
 

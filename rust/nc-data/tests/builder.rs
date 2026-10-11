@@ -1,4 +1,4 @@
-use nc_data::GameStateBuilder;
+use nc_data::{GameStateBuilder, present_production_points, stored_production_points};
 
 #[test]
 fn builder_creates_valid_gamestate() {
@@ -8,20 +8,16 @@ fn builder_creates_valid_gamestate() {
         .build_initialized_baseline()
         .expect("Should build successfully");
 
-    assert_eq!(data.conquest.game_year(), 3001);
-    assert_eq!(data.conquest.player_count(), 4);
+    assert_eq!(data.conquest.game_year, 3001);
+    assert_eq!(data.conquest.player_count, 4);
     assert_eq!(data.fleets.len(), 16); // 4 players * 4 fleets
 
     // Validate with preflight
     let errors = data.ecmaint_preflight_errors();
     assert!(errors.is_empty(), "Preflight errors: {:?}", errors);
-    assert!(
-        data.players
-            .iter()
-            .all(|player| player.owner_mode_raw() == 1)
-    );
-    assert_eq!(data.players[0].tax_rate(), 50);
-    assert_eq!(data.planets[0].present_production_points(), Some(100));
+    assert!(data.players.iter().all(|player| player.mode.to_raw() == 1));
+    assert_eq!(data.players[0].tax_rate, 50);
+    assert_eq!(present_production_points(&data.planets[0]), 100);
 }
 
 #[test]
@@ -32,8 +28,8 @@ fn builder_with_fleet_order() {
         .expect("Should build successfully");
 
     let fleet = &data.fleets[0];
-    assert_eq!(fleet.standing_order_code_raw(), 0x0C);
-    assert_eq!(fleet.current_speed(), 3);
+    assert_eq!(fleet.order.to_raw(), 0x0C);
+    assert_eq!(fleet.speed, 3);
 }
 
 #[test]
@@ -44,8 +40,8 @@ fn builder_with_planet_build() {
         .expect("Should build successfully");
 
     let planet = &data.planets[14]; // 15 is 1-based, so index 14
-    assert_eq!(planet.build_count_raw(0), 0x03);
-    assert_eq!(planet.build_kind_raw(0), 0x01);
+    assert_eq!(planet.build_queue[0].points_owed, 0x03);
+    assert_eq!(planet.build_queue[0].kind.to_raw(), 0x01);
 }
 
 #[test]
@@ -60,12 +56,15 @@ fn builder_with_guard_starbase() {
     assert_eq!(data.bases.len(), 1);
 
     // Player should have starbase_count = 1
-    assert_eq!(data.players[0].first_base_record_raw(), 1);
+    assert_eq!(data.players[0].bases_first.0, 1);
 
     // Fleet should have guard order
     let fleet = &data.fleets[0];
-    assert_eq!(fleet.standing_order_code_raw(), 0x04); // Guard Starbase
-    assert_eq!(fleet.mission_aux_bytes(), [0x01, 0x01]);
+    assert_eq!(fleet.order.to_raw(), 0x04); // Guard Starbase
+    assert_eq!(
+        [fleet.target_depth, fleet.mission_target as u8],
+        [0x01, 0x01]
+    );
 
     // Validate with preflight
     let errors = data.ecmaint_preflight_errors();
@@ -103,18 +102,18 @@ fn builder_can_create_joinable_new_game_baseline() {
         .build_joinable_new_game_baseline()
         .expect("Should build successfully");
 
-    assert_eq!(data.players[0].owner_mode_raw(), 0);
-    assert_eq!(data.players[1].owner_mode_raw(), 0);
-    assert_eq!(data.players[0].autopilot_flag(), 1);
-    assert_eq!(data.players[1].autopilot_flag(), 1);
-    assert_eq!(data.players[0].fleet_chain_head_raw(), 1);
-    assert_eq!(data.players[1].fleet_chain_head_raw(), 5);
-    assert_eq!(data.planets[0].planet_name(), "Not Named Yet");
-    assert_eq!(data.planets[0].owner_empire_slot_raw(), 1);
-    assert_eq!(data.planets[0].army_count_raw(), 10);
-    assert_eq!(data.planets[0].ground_batteries_raw(), 4);
-    assert_eq!(data.players[0].tax_rate(), 50);
-    assert_eq!(data.planets[0].present_production_points(), Some(100));
+    assert_eq!(data.players[0].mode.to_raw(), 0);
+    assert_eq!(data.players[1].mode.to_raw(), 0);
+    assert!(data.players[0].autopilot);
+    assert!(data.players[1].autopilot);
+    assert_eq!(data.players[0].fleets_first.0, 1);
+    assert_eq!(data.players[1].fleets_first.0, 5);
+    assert_eq!(data.planets[0].name.clone(), "Not Named Yet");
+    assert_eq!(data.planets[0].owner.0, 1);
+    assert_eq!(data.planets[0].armies, 10);
+    assert_eq!(data.planets[0].ground_batteries, 4);
+    assert_eq!(data.players[0].tax_rate, 50);
+    assert_eq!(present_production_points(&data.planets[0]), 100);
     assert!(data.ecmaint_preflight_errors().is_empty());
 }
 
@@ -129,11 +128,11 @@ fn joining_player_grants_documented_opening_homeworld_production_points() {
         .expect("join player should succeed");
 
     let player = &data.players[0];
-    let homeworld_index = player.homeworld_planet_index_1_based_raw() as usize;
+    let homeworld_index = player.homeworld as usize;
     let homeworld = &data.planets[homeworld_index - 1];
-    assert_eq!(player.tax_rate(), 50);
-    assert_eq!(homeworld.present_production_points(), Some(100));
-    assert_eq!(homeworld.stored_production_points(), 50);
+    assert_eq!(player.tax_rate, 50);
+    assert_eq!(present_production_points(homeworld), 100);
+    assert_eq!(stored_production_points(homeworld), 50);
 }
 
 #[test]
@@ -145,7 +144,7 @@ fn pre_joined_baselines_start_with_the_join_path_treasury() {
     joined
         .join_player(1, "Codex Dominion")
         .expect("join player should succeed");
-    let join_treasury = joined.planets[0].stored_production_points();
+    let join_treasury = stored_production_points(&joined.planets[0]);
     assert!(join_treasury > 0);
 
     let initialized = GameStateBuilder::new()
@@ -156,7 +155,7 @@ fn pre_joined_baselines_start_with_the_join_path_treasury() {
         nc_engine::build_seeded_initialized_game(4, 3000, 1515).expect("seeded game should build");
     for data in [&initialized, &seeded] {
         for homeworld in &data.planets[..4] {
-            assert_eq!(homeworld.stored_production_points(), join_treasury);
+            assert_eq!(stored_production_points(homeworld), join_treasury);
         }
     }
 }

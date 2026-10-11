@@ -35,22 +35,22 @@ fn ecmaint_fleet_scenario_consumes_order_and_updates_fleet_and_planet_state() {
     let pre_fleet = &pre_fleets[0];
     let post_fleet = &post_fleets[0];
 
-    assert_eq!(pre_fleet.current_speed(), 3);
-    assert_eq!(pre_fleet.standing_order_kind(), Order::ColonizeWorld);
-    assert_eq!(pre_fleet.standing_order_target_coords_raw()[0], 0x0f);
+    assert_eq!(pre_fleet.speed, 3);
+    assert_eq!(pre_fleet.order, Order::ColonizeWorld);
+    assert_eq!(pre_fleet.target.to_array()[0], 0x0f);
 
-    assert_eq!(post_fleet.current_location_coords_raw()[0], 0x0f);
+    assert_eq!(post_fleet.sector.to_array()[0], 0x0f);
     assert_eq!(
-        post_fleet.depth().to_bytes(),
+        post_fleet.depth.to_bytes(),
         [0x80, 0xb9, 0xff, 0xff, 0xff, 0x7f]
     );
-    assert_eq!(post_fleet.standing_order_kind(), Order::HoldPosition);
-    assert_eq!(post_fleet.standing_order_target_coords_raw()[0], 0x0f);
+    assert_eq!(post_fleet.order, Order::HoldPosition);
+    assert_eq!(post_fleet.target.to_array()[0], 0x0f);
 
     let post_planet = &post_planets[13];
-    assert_eq!(post_planet.army_count_raw(), 1);
-    assert_eq!(post_planet.ownership_status_raw(), 2);
-    assert_eq!(post_planet.owner_empire_slot_raw(), 1);
+    assert_eq!(post_planet.armies, 1);
+    assert_eq!(post_planet.years_under_owner, 2);
+    assert_eq!(post_planet.owner.0, 1);
 }
 
 #[test]
@@ -61,17 +61,14 @@ fn ecmaint_bombard_scenario_arrival_preserves_attack_order() {
     let pre_fleet = &pre[2];
     let arrive_fleet = &arrive[2];
 
-    assert_eq!(pre_fleet.current_speed(), 0x03);
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.standing_order_target_coords_raw(), [0x0f, 0x0d]);
+    assert_eq!(pre_fleet.speed, 0x03);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.target.to_array(), [0x0f, 0x0d]);
 
-    assert_eq!(arrive_fleet.current_speed(), 0x03);
-    assert_eq!(arrive_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(arrive_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(
-        arrive_fleet.standing_order_target_coords_raw(),
-        [0x0f, 0x0d]
-    );
+    assert_eq!(arrive_fleet.speed, 0x03);
+    assert_eq!(arrive_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(arrive_fleet.order.to_raw(), 0x06);
+    assert_eq!(arrive_fleet.target.to_array(), [0x0f, 0x0d]);
 }
 
 // These preserved-fixture checks document classic ECMAINT outputs.
@@ -84,16 +81,16 @@ fn ecmaint_bombard_scenario_second_pass_consumes_order_and_kills_attackers() {
     let arrive_fleet = &arrive[2];
     let post_fleet = &post[2];
 
-    assert_eq!(arrive_fleet.current_speed(), 0x03);
-    assert_eq!(arrive_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(arrive_fleet.cruiser_count(), 0x03);
-    assert_eq!(arrive_fleet.destroyer_count(), 0x05);
+    assert_eq!(arrive_fleet.speed, 0x03);
+    assert_eq!(arrive_fleet.order.to_raw(), 0x06);
+    assert_eq!(arrive_fleet.ships.cruisers, 0x03);
+    assert_eq!(arrive_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x02);
-    assert_eq!(post_fleet.destroyer_count(), 0x01);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x02);
+    assert_eq!(post_fleet.ships.destroyers, 0x01);
 
     let arrive_planets =
         parse_planets_dat(&read_ecmaint_bombard_arrive_fixture("PLANETS.DAT")).unwrap();
@@ -110,15 +107,15 @@ fn ecmaint_bombard_zero_army_target_changes_planet_without_attacker_losses() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x03);
-    assert_eq!(post_fleet.destroyer_count(), 0x05);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x03);
+    assert_eq!(post_fleet.ships.destroyers, 0x05);
 
     let pre_planets =
         parse_planets_dat(&read_ecmaint_bombard_army0_pre_fixture("PLANETS.DAT")).unwrap();
@@ -127,12 +124,12 @@ fn ecmaint_bombard_zero_army_target_changes_planet_without_attacker_losses() {
     let pre_target = &pre_planets[13];
     let post_target = &post_planets[13];
 
-    assert_eq!(pre_target.ground_batteries_raw(), 0);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(pre_target.owner_empire_slot_raw(), 2);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
-    assert_eq!(pre_target.army_count_raw(), 0x8e);
-    assert_eq!(post_target.army_count_raw(), 0x8a);
+    assert_eq!(pre_target.ground_batteries, 0);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(pre_target.owner.0, 2);
+    assert_eq!(post_target.owner.0, 2);
+    assert_eq!(pre_target.armies, 0x8e);
+    assert_eq!(post_target.armies, 0x8a);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -154,12 +151,12 @@ fn ecmaint_bombard_zero_army_zero_dev_target_changes_damage_pattern() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x03);
-    assert_eq!(post_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x03);
+    assert_eq!(post_fleet.ships.destroyers, 0x05);
 
     let pre_planets =
         parse_planets_dat(&read_ecmaint_bombard_army0_dev0_pre_fixture("PLANETS.DAT")).unwrap();
@@ -168,12 +165,12 @@ fn ecmaint_bombard_zero_army_zero_dev_target_changes_damage_pattern() {
     let pre_target = &pre_planets[13];
     let post_target = &post_planets[13];
 
-    assert_eq!(pre_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.army_count_raw(), 0x00);
-    assert_eq!(pre_target.ground_batteries_raw(), 0x00);
-    assert_eq!(post_target.ground_batteries_raw(), 0x00);
-    assert_eq!(pre_target.owner_empire_slot_raw(), 2);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
+    assert_eq!(pre_target.armies, 0x00);
+    assert_eq!(post_target.armies, 0x00);
+    assert_eq!(pre_target.ground_batteries, 0x00);
+    assert_eq!(post_target.ground_batteries, 0x00);
+    assert_eq!(pre_target.owner.0, 2);
+    assert_eq!(post_target.owner.0, 2);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -194,15 +191,15 @@ fn ecmaint_bombard_one_army_target_causes_partial_attacker_losses() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x02);
-    assert_eq!(post_fleet.destroyer_count(), 0x02);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x02);
+    assert_eq!(post_fleet.ships.destroyers, 0x02);
 
     let pre_planets =
         parse_planets_dat(&read_ecmaint_bombard_army1_pre_fixture("PLANETS.DAT")).unwrap();
@@ -211,12 +208,12 @@ fn ecmaint_bombard_one_army_target_causes_partial_attacker_losses() {
     let pre_target = &pre_planets[13];
     let post_target = &post_planets[13];
 
-    assert_eq!(pre_target.ground_batteries_raw(), 1);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(pre_target.owner_empire_slot_raw(), 2);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
-    assert_eq!(pre_target.army_count_raw(), 0x8e);
-    assert_eq!(post_target.army_count_raw(), 0x8d);
+    assert_eq!(pre_target.ground_batteries, 1);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(pre_target.owner.0, 2);
+    assert_eq!(post_target.owner.0, 2);
+    assert_eq!(pre_target.armies, 0x8e);
+    assert_eq!(post_target.armies, 0x8d);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -238,15 +235,15 @@ fn ecmaint_bombard_one_army_zero_dev_target_changes_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x02);
-    assert_eq!(post_fleet.destroyer_count(), 0x04);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x02);
+    assert_eq!(post_fleet.ships.destroyers, 0x04);
 
     let pre_planets =
         parse_planets_dat(&read_ecmaint_bombard_army1_dev0_pre_fixture("PLANETS.DAT")).unwrap();
@@ -255,12 +252,12 @@ fn ecmaint_bombard_one_army_zero_dev_target_changes_loss_profile() {
     let pre_target = &pre_planets[13];
     let post_target = &post_planets[13];
 
-    assert_eq!(pre_target.ground_batteries_raw(), 1);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(pre_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.army_count_raw(), 0x00);
-    assert_eq!(pre_target.owner_empire_slot_raw(), 2);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
+    assert_eq!(pre_target.ground_batteries, 1);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(pre_target.armies, 0x00);
+    assert_eq!(post_target.armies, 0x00);
+    assert_eq!(pre_target.owner.0, 2);
+    assert_eq!(post_target.owner.0, 2);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -287,15 +284,15 @@ fn ecmaint_bombard_byte_0e_increases_defender_damage_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x03);
-    assert_eq!(post_fleet.destroyer_count(), 0x01);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x03);
+    assert_eq!(post_fleet.ships.destroyers, 0x01);
 
     let pre_planets = parse_planets_dat(&read_ecmaint_bombard_army1_dev0_e0c_pre_fixture(
         "PLANETS.DAT",
@@ -309,12 +306,12 @@ fn ecmaint_bombard_byte_0e_increases_defender_damage_profile() {
     let post_target = &post_planets[13];
 
     assert_eq!(pre_target.stored_goods.to_bytes()[5], 0x0c);
-    assert_eq!(pre_target.ground_batteries_raw(), 1);
-    assert_eq!(pre_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(post_target.army_count_raw(), 0x00);
+    assert_eq!(pre_target.ground_batteries, 1);
+    assert_eq!(pre_target.armies, 0x00);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(post_target.armies, 0x00);
     assert_eq!(post_target.stored_goods.to_bytes()[5], 0x54);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
+    assert_eq!(post_target.owner.0, 2);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -341,15 +338,15 @@ fn ecmaint_bombard_byte_08_changes_defender_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x01);
-    assert_eq!(post_fleet.destroyer_count(), 0x03);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x01);
+    assert_eq!(post_fleet.ships.destroyers, 0x03);
 
     let pre_planets = parse_planets_dat(&read_ecmaint_bombard_army1_dev0_b08_pre_fixture(
         "PLANETS.DAT",
@@ -363,11 +360,11 @@ fn ecmaint_bombard_byte_08_changes_defender_loss_profile() {
     let post_target = &post_planets[13];
 
     assert_eq!(pre_target.production.to_bytes()[5], 0x00);
-    assert_eq!(pre_target.ground_batteries_raw(), 1);
-    assert_eq!(pre_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(post_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
+    assert_eq!(pre_target.ground_batteries, 1);
+    assert_eq!(pre_target.armies, 0x00);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(post_target.armies, 0x00);
+    assert_eq!(post_target.owner.0, 2);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -394,15 +391,15 @@ fn ecmaint_bombard_byte_09_changes_attacker_loss_profile() {
     let pre_fleet = &pre[2];
     let post_fleet = &post[2];
 
-    assert_eq!(pre_fleet.standing_order_code_raw(), 0x06);
-    assert_eq!(pre_fleet.cruiser_count(), 0x03);
-    assert_eq!(pre_fleet.destroyer_count(), 0x05);
+    assert_eq!(pre_fleet.order.to_raw(), 0x06);
+    assert_eq!(pre_fleet.ships.cruisers, 0x03);
+    assert_eq!(pre_fleet.ships.destroyers, 0x05);
 
-    assert_eq!(post_fleet.current_speed(), 0x00);
-    assert_eq!(post_fleet.standing_order_code_raw(), 0x00);
-    assert_eq!(post_fleet.current_location_coords_raw(), [0x0f, 0x0d]);
-    assert_eq!(post_fleet.cruiser_count(), 0x01);
-    assert_eq!(post_fleet.destroyer_count(), 0x05);
+    assert_eq!(post_fleet.speed, 0x00);
+    assert_eq!(post_fleet.order.to_raw(), 0x00);
+    assert_eq!(post_fleet.sector.to_array(), [0x0f, 0x0d]);
+    assert_eq!(post_fleet.ships.cruisers, 0x01);
+    assert_eq!(post_fleet.ships.destroyers, 0x05);
 
     let pre_planets = parse_planets_dat(&read_ecmaint_bombard_army1_dev0_b09_pre_fixture(
         "PLANETS.DAT",
@@ -416,11 +413,11 @@ fn ecmaint_bombard_byte_09_changes_attacker_loss_profile() {
     let post_target = &post_planets[13];
 
     assert_eq!(pre_target.stored_goods.to_bytes()[0], 0x00);
-    assert_eq!(pre_target.ground_batteries_raw(), 1);
-    assert_eq!(pre_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.ground_batteries_raw(), 0);
-    assert_eq!(post_target.army_count_raw(), 0x00);
-    assert_eq!(post_target.owner_empire_slot_raw(), 2);
+    assert_eq!(pre_target.ground_batteries, 1);
+    assert_eq!(pre_target.armies, 0x00);
+    assert_eq!(post_target.ground_batteries, 0);
+    assert_eq!(post_target.armies, 0x00);
+    assert_eq!(post_target.owner.0, 2);
     assert_ne!(pre_target, post_target);
 
     assert_eq!(
@@ -442,8 +439,8 @@ fn ecmaint_bombard_heavy_generates_combat_report() {
     let pre_target = &pre_planets[13];
     let post_target = &post_planets[13];
 
-    assert_eq!(pre_target.ground_batteries_raw(), 15);
-    assert_eq!(pre_target.army_count_raw(), 0x8E);
+    assert_eq!(pre_target.ground_batteries, 15);
+    assert_eq!(pre_target.armies, 0x8E);
     assert_ne!(pre_target, post_target);
 
     let results = read_ecmaint_bombard_heavy_post_fixture("RESULTS.DAT");

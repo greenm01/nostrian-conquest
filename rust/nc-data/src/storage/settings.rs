@@ -1,9 +1,8 @@
 use rusqlite::{OptionalExtension, params};
 
 use super::{CampaignStore, CampaignStoreError};
-use crate::DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS;
-use crate::SeatReservation;
 use crate::bbs_config::validate_reservations as validate_shared_reservations;
+use crate::{DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS, SeatReservation};
 
 pub const DEFAULT_CAMPAIGN_THEME_KEY: &str = "tokyo_night";
 pub const DEFAULT_MAINTENANCE_INTERVAL_MINUTES: u32 = 24 * 60;

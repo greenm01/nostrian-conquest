@@ -7,8 +7,7 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 
-use crate::PlayerMode;
-use crate::{Player, ReportBlockRow};
+use crate::{Player, PlayerMode, ReportBlockRow};
 
 pub const CLASSIC_RESULTS_RECORD_SIZE: usize = 84;
 const CHAIN_ID_OFFSET: usize = 74;

@@ -1,10 +1,8 @@
 use super::*;
 use crate::{
-    Player, ProductionItemKind, Real48, build_capacity, yearly_growth_delta, yearly_tax_revenue,
-};
-use crate::{
-    is_homeworld_seed_ignoring_name, present_production_points, stardock_slot_kind,
-    stored_production_points, troop_transports,
+    Player, ProductionItemKind, Real48, build_capacity, is_homeworld_seed_ignoring_name,
+    present_production_points, stardock_slot_kind, stored_production_points, troop_transports,
+    yearly_growth_delta, yearly_tax_revenue,
 };
 
 impl CoreGameData {

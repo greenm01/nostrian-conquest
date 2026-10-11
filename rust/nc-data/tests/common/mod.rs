@@ -135,8 +135,8 @@ pub fn read_ecmaint_bombard_heavy_post_fixture(name: &str) -> Vec<u8> {
 /// dispatcher prelude has nothing to restore, so it ends the year in place
 /// whatever its order and target.
 pub fn stall_in_place(fleet: &mut Fleet) {
-    fleet.set_current_speed(0);
-    fleet.set_max_speed(0);
+    fleet.speed = 0;
+    fleet.max_speed = 0;
 }
 
 /// The first seeded year of `game_data` whose events satisfy `wanted`.
@@ -168,8 +168,8 @@ pub fn battle(_: &nc_data::CoreGameData, events: &nc_data::MaintenanceEvents) ->
 /// (they still defend themselves if attacked).
 pub fn hold_fire(game_data: &mut nc_data::CoreGameData, empire: u8) {
     for fleet in &mut game_data.fleets {
-        if fleet.owner_empire_raw() == empire {
-            fleet.set_rules_of_engagement(0);
+        if fleet.owner.0 == empire {
+            fleet.rules_of_engagement = 0;
         }
     }
 }
