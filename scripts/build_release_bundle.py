@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
 import zipfile
@@ -297,11 +299,26 @@ def build_binaries(spec: BundleSpec) -> dict[str, Path]:
         rustflags = os.environ.get("RUSTFLAGS", "").strip()
         link_flag = f"-Lnative={link_dir}"
         extra_env["RUSTFLAGS"] = f"{rustflags} {link_flag}".strip()
-    run(build_command(spec, packages), cwd=RUST_ROOT, extra_env=extra_env)
-
-    target_dir = RUST_ROOT / "target" / spec.platform.target_triple / "release"
-    ext = ".exe" if spec.is_windows else ""
-    return {name: target_dir / f"{name}{ext}" for name in binaries}
+    command = build_command(spec, packages)
+    command.append("--message-format=json-render-diagnostics")
+    try:
+        result = run(command, cwd=RUST_ROOT, extra_env=extra_env, capture_output=True)
+    except subprocess.CalledProcessError as error:
+        sys.stderr.write(error.stderr or "")
+        raise
+    sys.stderr.write(result.stderr)
+    paths: dict[str, Path] = {}
+    for line in result.stdout.splitlines():
+        message = json.loads(line)
+        if message.get("reason") != "compiler-artifact" or not message.get("executable"):
+            continue
+        name = message["target"]["name"]
+        if name in binaries:
+            paths[name] = Path(message["executable"])
+    missing = set(binaries) - paths.keys()
+    if missing:
+        raise SystemExit(f"Cargo did not report release binaries: {', '.join(sorted(missing))}")
+    return paths
 
 
 def build_info_text(spec: BundleSpec) -> str:

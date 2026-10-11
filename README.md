@@ -178,9 +178,10 @@ cargo run -q -p nc-helm -- --dir /tmp/nc-helm-lab/map45-p25 --windowed
 
 ## Operator Docs
 
+- [NC Player Quick Start (PDF)](docs/manuals/nc_quick_start.pdf)
+- [NC Player Manual (PDF)](docs/manuals/nc_player_manual.pdf)
 - [NC Sysop Manual (PDF)](docs/manuals/nc_sysop_manual.pdf)
 - [Sysop Documentation Index](docs/sysop/README.md)
-- [NC Player Manual (PDF)](docs/manuals/nc_player_manual.pdf)
 - [Nostr Roadmap Notes](docs/nostr/README.md)
 
 ## Developer Commands

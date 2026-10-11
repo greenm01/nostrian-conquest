@@ -75,6 +75,15 @@ and attended BBS menu testing passed. These do not substitute for fresh
 Windows binaries or extracted-package acceptance. No release assets or live
 website content were changed by this review.
 
+## Packaging preparation, 2026-10-11
+
+The packager now takes executable paths from Cargo's build messages. It no
+longer assumes `rust/target`, so cargo-slot and configured target directories
+use the artifacts from the actual build. Three Python tests cover slot paths,
+Windows executable paths, and refusal to fall back when an artifact is missing.
+All three manual PDFs were rebuilt, and the quick-start link leads both manual
+lists in the project README. Package builds and platform acceptance follow.
+
 ## Connections
 
 Ships the work recorded in the
