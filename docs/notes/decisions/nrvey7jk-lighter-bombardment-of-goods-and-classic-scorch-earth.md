@@ -64,9 +64,27 @@ starbase, 3 batteries, and 10 armies lose 57.5 points on average, 85.8 with
 3 guard cruisers added (conditional on reaching orbit). A production-100
 world with 500 goods, scorched one pass and then captured, is left with
 production 15-24.5 (mean 19.75) and 11.18 goods, and takes 18-19 passes to
-rebuild to 90% at 50% tax without a base. Implementation is pending with the
-economy work (t084): the bombard rate, Scorch's decay and capture handling,
-the confirmations, reports, and forecast, and the manual.
+rebuild to 90% at 50% tax without a base.
+
+## Implementation
+
+The Scorch order, its yearly decay, the confirmations, reports, and forecast
+are done in t084. The Scorch command sets the planet's `scorch_earth` flag at
+once and wipes nothing; the same command rescinds it, after three
+confirmations to set and one to rescind. Each yearly pass
+(`maint/economics/planets.rs`), after builds and before the ticks, decays a
+flagged world in place of growth and income: production keeps
+`0.30 + Random(20) / 100` of itself, at least 1 and at most the potential;
+positive goods become `min(G / 10, sqrt(G))`; a debt and the potential are
+left alone. `Random(20)` comes from the campaign seed, one draw per world per
+year (`RNG_TAG_ECONOMY`). The pass also applies to a converting world. The
+owner's maintenance report says each year that the order is in force, what it
+cost, and that it stays until rescinded. The separate pending-orders set
+(`planet_scorch_orders`) is gone; the flag on the planet is the one source.
+`economy_model.rs` checks the decay against `scorch_review.py`: all twenty
+factors, both goods branches, debt untouched, the floor, and recovery after
+rescinding. The bombard rate and capture handling belong to the planetary
+lane.
 
 ## Acceptance and connections
 

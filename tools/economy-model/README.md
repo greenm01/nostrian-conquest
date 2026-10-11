@@ -153,3 +153,13 @@ its dates are economic opportunities, not campaign win odds.
 `test_opening_review.py` runs under unittest discovery. See the
 [price/opening review](../../docs/notes/investigations/y95fnqkm-unit-prices-and-opening-resources-under-the-approved-economy.md)
 for the unchanged-price recommendation and actual-map follow-up limits.
+
+## Engine comparison (t084)
+
+`rust/nc-data/tests/economy_model.rs` runs the Rust engine against the
+`accounting_review.py`, `starbase_review.py`, and `scorch_review.py` numbers:
+the 70% and 71% equilibria, the ten-pass colony rows with the head start, the
+starbase fade, the two tax cycles, the Scorch decay, and recovery. The
+engine stores Real48, so the tests allow a relative error of 1e-8; the
+observed difference is about 1e-10. When a model changes, update the numbers
+in that file.

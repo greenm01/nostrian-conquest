@@ -526,17 +526,17 @@ not a list of changes to make.
 
 | Topic | Classic | NC |
 |---|---|---|
-| Growth | Angle on a quarter circle, 7.5 degrees a year times `1 - (tax +- 5)/70`; big gains early, almost none near potential; no minimum; can be negative from 66% | `ceil(gap * (100 - tax) / 400)`, at least 1, never negative below the penalty |
-| 65% threshold | 65% is the highest rate that never shrinks a world; the random roll of +-5 makes 66..75% a gamble; the direct penalty starts above 70% at `(tax - 70) * 0.5..1.5` percent of P | A deterministic penalty `ceil(P * (tax - 65) / 500)` above 65% |
-| Starbase growth help | A random cut of 0..9 tax points on the growth term, with the leak bug; any base at rest counts if the owner has a base | +50% of base growth at tax <= 50, tapering to 0 at 65; the owner's base at rest, by the same orbit test |
+| Growth | Angle on a quarter circle, 7.5 degrees a year times `1 - (tax +- 5)/70`; big gains early, almost none near potential; no minimum; can be negative from 66% | `gap * (100 - tax) / 400`, with no rounding and no yearly minimum; never negative below the penalty |
+| 65% threshold | 65% is the highest rate that never shrinks a world; the random roll of +-5 makes 66..75% a gamble; the direct penalty starts above 70% at `(tax - 70) * 0.5..1.5` percent of P | A deterministic penalty `P * (tax - 65) / 500` above 65%, not rounded |
+| Starbase growth help | A random cut of 0..9 tax points on the growth term, with the leak bug; any base at rest counts if the owner has a base | +50% of the growth term at tax <= 50, fading in a line to 0 at 65; the owner's base at rest, by the same orbit test; more bases add nothing |
 | Starbase build help | 5x spend limit in ECGAME; base in orbit with the world as target, moving flag ignored | 5x build capacity; same ECGAME test |
-| Revenue | `P * tax / 100 * status scale`, a real; fractions accumulate | `floor(P * tax / 100)`, an integer |
+| Revenue | `P * tax / 100 * status scale`, a real; fractions accumulate | `P * tax / 100`, a real, credited without rounding; the screens show next pass's figure to the nearest point |
 | Status after capture | Scale 0, 0.5, 1.0 on both growth and income for three passes | "Approximately two turns"; same stepping idea |
-| New colony | P 1.0, status 2, full growth and income from the next pass | P 0, no treasury; growth from the next turn |
-| Treasury | Per-world goods, capped at 65535, can go negative | Per-world treasury; budget `min(treasury, capacity)`; never negative |
+| New colony | P 1.0, status 2, full growth and income from the next pass | P `min(3, potential)`, no treasury; growth from the next pass |
+| Treasury | Per-world goods, capped at 65535, can go negative | Per-world treasury that keeps fractions; budget `min(floor(max(0, treasury)), capacity)`; a debt (only from imported states) stays and income pays it down |
 | Builds | Everything queued completes; no partial progress; dock slots saturate at 65535; ECGAME limits the order, not ECMAINT | Spending limited to the budget; partial progress carries over; blocked builds stay queued; armies and batteries cap at 255 |
 | Unit caps | ECGAME: armies <= 10 P, batteries <= P per world | 255 each |
-| Scorch-Earth | Yearly: G to `min(G/10, sqrt(G))`, P to 30..49%; no growth or income | Not covered in economics.md |
+| Scorch-Earth | Yearly: G to `min(G/10, sqrt(G))`, P to 30..49%; no growth or income | The same decay, with P floored at 1 and capped at the potential, and a debt left alone; the order stays until rescinded (economics.md) |
 | Year order | Pass before the 52 ticks; builds complete before movement | After the tick loop (t048 covers the mismatch) |
 | Disorder empires | Economy runs; they keep their last tax | Frozen |
 | AI tax | `Round(65 * sum P / sum potential)` | Not stated |

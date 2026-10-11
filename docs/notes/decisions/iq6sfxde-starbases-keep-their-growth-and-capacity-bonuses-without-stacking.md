@@ -60,9 +60,24 @@ gains nothing from the growth bonus. The two tax cycles tested with a base
 present, 75%, 64%, 64% and 70%, 64%, fall behind a steady 65% in the long
 run (after 20 cycles by 105 and 41 points from production 50, and by 96
 and 35 from a fully developed world); that is evidence against cycling, not
-a proof that no tax schedule can gain. Implementation is
-pending, with the economy work (t084): the smooth fade, non-stacking, and
-documentation in `docs/dev/economics.md` and the manual.
+a proof that no tax schedule can gain.
+
+## Implementation
+
+Done in t084. The growth bonus is `starbase_growth_bonus` in
+`nc-data/src/economy.rs`: 0.5 at 50% and below, `(65 - tax) / 30` from 51% to
+64%, 0 from 65%, applied to the growth term only. The two eligibility tests
+are unchanged and documented in `docs/dev/economics.md` and the manual: growth
+uses `starbase_planets` (the owner's base, depth 0.5 or more, not moving,
+taken before the ticks); capacity, the build screen, and the Revenue forecast
+use `planet_has_friendly_starbase` (the owner's base in orbit or descending
+to its own world's orbit). Each test is a yes or no for the world, so a second
+base adds nothing. A base has no persistent damage state, so a crippled base
+that survives keeps both bonuses. `economy_model.rs` checks the fade rows at
+taxes 40 to 66 against `starbase_review.py`, and the two tested tax cycles
+(75, 64, 64 and 70, 64) over 20 cycles from production 50 and 100, with a
+base present, against the model; `starbase_economy.rs` keeps the eligibility
+cases.
 
 ## Acceptance and connections
 

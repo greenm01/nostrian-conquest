@@ -68,9 +68,29 @@ years, then 65%, trail a steady 65% by 195 points at year 5 and lead by 238
 at year 20). These are exact model controls with no enemies; campaign
 effects are not measured.
 
-Implementation is pending: the economy pass, colony founding, the planet and
-empire screens' revenue fields and tax feedback, `docs/dev/economics.md`, and
-the manual's economy chapter and Appendix A.
+## Implementation
+
+Done in t084. `nc-data/src/economy.rs` holds the rule in `f64`: `yearly_growth`,
+`yearly_high_tax_penalty`, `next_production`, `tax_income`, and `next_pass`,
+the forecast. The yearly pass (`nc-engine`, `maint/economics/planets.rs`)
+stores production and goods back into Real48 without rounding. The build
+pass and Salvage subtract and add against the exact treasury, so fractions
+and debts carry over: a negative treasury stays negative and income is added
+to it. `stored_production_points` is the floor of the non-negative part and
+`present_production_points` rounds to the nearest point, which build capacity
+uses. Colony founding (`maint/merging/colonization.rs`) sets production to
+`min(3, potential)`; capture and recovery do not touch it. The planet list's
+Rev and Gro columns, planet information's Expected Revenue, Empire Revenue,
+and the tax confirmation ("Revenue next year") show the forecast to the
+nearest point, with no new column and no change to any screen's width or row
+count. The forecast reads 0 for a scorched or still-converting world.
+
+`nc-data/tests/economy_model.rs` compares the engine with the exact models
+within a relative error of 1e-8 (observed about 1e-10): the 70% and 71%
+equilibria (88.24 and 61.76, 85.80 and 60.92), and the potential-10, 20, and
+100 ten-pass rows with the head start. It also covers spending from a
+fractional treasury and debt carried through income. Existing tests whose
+numbers moved are listed in the t084 commit messages.
 
 ## Acceptance and connections
 
