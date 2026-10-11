@@ -3,66 +3,62 @@
 Keep this file short. Historical detail belongs in
 [archive/next-session-archive.md](archive/next-session-archive.md), not here.
 
-## Completed This Session
+## Handoff from Claude to Codex (2026-10-11)
 
-**Typed game state (t039, 2026-10-10).** Game state is plain typed Rust
-structs (`nc-data/src/model/`); SQLite stores them in typed columns; the
-runtime reads and writes only the store; the classic `.DAT` codecs live in
-`nc-compat/src/classic/`, guarded by `nc-data/tests/classic_boundary.rs`.
-`.DAT` files appear only through `nc-cli db-export`/`db-import` and the
-oracle tools. See the [plan](../notes/plans/7h5r6ne8-typed-game-state-in-rust-and-sqlite.md).
+**Heads.** `main` = `origin/main` at this commit; nothing uncommitted on
+main. The last full suite ran on the t061 merge (`a9c2a710`): 3195 passed,
+0 failed, 11 ignored. Commits after it change only the sysop PDF, todo.md and
+this file.
 
-**Classic fidelity (t031-t064).** 2.5D movement, the per-tick encounter loop,
-starbase movement, the orbital gate, and the classic home pickers match
-ECMAINT; deviations are owner-approved classic bugs, listed in the specs.
+**Live work.** Three Claude subagents were running at handoff. They stop
+when Claude stands down; their work stays in the worktrees. The worktrees
+are in Claude's session scratchpad under `/tmp` (`git worktree list` shows
+the paths), which is on **tmpfs: a reboot loses uncommitted work**. Each
+brief is at `briefs/<task>.md` beside the worktrees.
 
-**NC combat redesign.** The owner approved all seven combat decisions with
-Claude and Codex's joint recommendations (ADRs in `docs/notes/decisions/`).
-Decision 1 (the flat 25/50/100 table with carried hits) is in the engine;
-the rest are tasks t065, t066, t071, t074, t078, t079, t080.
+| Task | Branch, worktree | State at handoff |
+| --- | --- | --- |
+| t099 | `t099`, `wt-t099` (from `7348955f`) | ~20 files uncommitted, no commits |
+| t090 | `t090`, `wt-t090` | `0c1c8f6f` (price campaign driver) + 3 uncommitted; also detached worktrees `variants/{bb30,bb60,etac15,etac25}` |
+| t101 | `t101`, `wt-t101` (from `9a9ca001`) | 1 file uncommitted |
 
-**Door and mail fixes.** Windows console input, output, arrow keys, and
-flicker (t019); `?` types text in editors, Ctrl+G opens help; queued mail is
-readable and cancellable and is delivered at maintenance (t067).
+To take one over: read its brief, review the diff, finish, commit signed,
+merge. After t090, remove the four variant worktrees and their cargo pools
+(`~/.cache/cargo-slots/nostrian-conquest@{bb30,bb60,etac15,etac25}`).
 
-**Next:** the `*_raw` identifier cleanup, then the implementation waves in
-[x8arlb3c](../notes/plans/x8arlb3c-implementation-waves-after-t039.md);
-`zk queue` for the order.
+**Merge routine.** For each branch: every commit `%G? = G`; `git merge
+--no-ff -S`; full suite from `rust/` with `nice -n 10 cargo-slot
+nostrian-conquest cargo test --workspace --no-fail-fast`; if a `.typ`
+changed, `python3 scripts/refresh_manual_revision_date.py --doc
+player|sysop` and commit the PDF; close with `zk tasks -p ls id:tNNN` then
+`zk tasks do N` (re-read the line number after each close), `zk index`;
+`zk list docs/notes --broken-links` reports 22 pre-existing notes; push;
+`git worktree remove` and delete `~/.cache/cargo-slots/nostrian-conquest@wt-tNNN`.
+`zk tasks add` prepends the date itself. The highest task ID is t101.
 
-## Current Goal
+**Signing.** Every commit is GPG-signed by Mason Green's key; the agent
+cache expires (default 10 min, max 2 h), and a cold cache makes `git
+commit -S` time out at pinentry. The GitHub SSH key sits in the same
+gpg-agent. When either is cold, ask the owner to unlock it in a terminal
+(`echo x | gpg --clearsign >/dev/null`, `ssh -T git@github.com`). Never
+commit unsigned. To sign an agent's unsigned commits, cherry-pick them with
+`-S` onto the branch's base and compare trees; a rebase would also rewrite
+main commits the branch merged.
 
-- Stabilize the localhost and BBS release surfaces for public beta use.
-- Fix real playtest bugs and workflow rough edges quickly.
-- Keep docs aligned with the local/BBS product story.
-- Treat future Nostr work as a separate `nc-host` / `nc-helm` track.
+**Queue after the three tasks.** t024: the Windows nc-sysop packages
+(x64, x86, Win7+ x86, as beta.2 was), built on `ssh bean` (PowerShell;
+sync by git bundle over scp, since `git pull` hangs there), signed and
+uploaded from crunch; ask the owner before uploading. Then the beta.3
+re-release: rebuild and replace its assets and deploy the website, keeping
+the version v1.0.0-beta.3.
 
-## Biggest Blockers
+**Owner decisions.** None block the queue. For the owner's review:
+t061's choices (a new hosted game arms its timer instead of running at
+once; a host that was down runs one year on return; hosted league games
+put absent players on autopilot after three turns, as local games do), and
+t090's price recommendation when it lands (prices change only with the
+owner's approval). Rulings for t099 are in
+[q0a0mhm2](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t099).
 
-- No known major engine/storage blocker remains.
-- The main remaining risk is field bugs found by real BBS and localhost players.
-- The hosted `nc-host` / `nc-helm` track now exists locally, but it is still a
-  dev-only path and not the public shipped product story.
-- The hosted client now stages and replays build, fleet, tax, diplomacy, and
-  quick message drafts. Remaining gaps are narrower unsupported actions such as
-  starbase moves and fleet renumbering.
-- The BBS door renderer redraws every row each frame (no flash since t019)
-  instead of using the retained-frame diffing already in local `nc-game`.
-
-## Immediate Next Steps
-
-1. Keep running real BBS and localhost playtests and tighten the rough edges.
-2. Regenerate manuals/PDFs whenever the public command surface changes.
-3. Keep runtime/storage code pointed at SQLite and away from raw offset-style
-   regressions.
-4. Keep the runtime DB scoped to localhost/BBS play; future hosted work should
-   use its own schema rather than reviving retired hosted tables in `ncgame.db`.
-5. Keep the localhost `nc-host` lab reproducible with the user-service install
-   script and dev docs, but keep the public docs centered on local/BBS play.
-6. Keep the shared local/hosted dashboard launch path stable while real users
-   exercise the hosted dashboard.
-7. Finish the remaining unsupported hosted dashboard actions or explicitly
-   scope them out of the hosted flow.
-8. If modal drag pacing still feels rough in `nc-helm`, evaluate a future
-   GPU/vsynced native renderer path as follow-up work.
-9. After `nc-helm` is stable on the shared ratatui render contract, replace
-   the temporary `crossterm` event types with a small local input model.
+**Other agents.** The owner's own agent pushes signed commits to nc-bridge,
+nc-herald and nc-dropfile; fetch before each merge.
