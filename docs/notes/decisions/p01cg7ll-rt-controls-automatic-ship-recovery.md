@@ -187,6 +187,26 @@ The t066 implementation account below describes the earlier behavior;
 its display and ordinary-quantity selection are superseded by this
 follow-up. RT 2, automatic recovery and starbase assistance are unchanged.
 
+## Transports by cargo state (t096)
+
+Loaded and empty transports keep separate crippled counters
+(`HullClass::LoadedTransport` and `HullClass::EmptyTransport`), replacing
+t093's reading of one shared counter as loaded first. Combat writes a
+crippled or finished transport to the counter of the cargo state it was
+struck in, loaded first across the side as before. Recovery, starbase
+assistance, merges, detaching, transferring, and the store treat the two as
+any other class. The campaign store's `RUNTIME_SCHEMA_VERSION` is 17, with
+no migration.
+
+Loading and unloading move cohorts between the counters with their hulls.
+The order is a default chosen so that armies ride the soundest hulls, and
+it awaits the owner's confirmation: loading takes healthy empty transports
+first and crippled ones only when none is left, the nearest to recovery
+first; unloading and landing empty the crippled loaded transports first,
+the most turns left first, then the healthy ones. Each order lives in one
+helper (`load_transports` and `unload_transports` in
+`nc-data/src/fleet_ships.rs`), so it can change in one place.
+
 ## Implementation (t066)
 
 Done in t066. The model, the engine, the display, and the tests follow the
@@ -197,7 +217,7 @@ for one class, `turns[i]` hulls with `i + 1` turns left and `fresh`, the
 hulls crippled during the current pass. `RECOVERY_TURNS` is the one
 constant, 2; there is no per-class value, stat, or column. `Fleet::crippled`
 holds one `CrippledHulls` per class (destroyer, cruiser, battleship, scout,
-transport, ETAC; loaded and empty transports share one), and
+loaded transport, empty transport, ETAC), and
 `Starbase::crippled` holds the base's one hull. The campaign store keeps
 them in two child tables, `snapshot_fleet_crippled` and
 `snapshot_base_crippled`, one row per non-empty class and turns-left value

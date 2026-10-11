@@ -22,9 +22,9 @@ use super::retreat::{
     dominant_empire_after_battle, escape_fleet, retreat_fleet, retreat_task_force,
 };
 use super::state::{
-    BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Withdrawal,
-    new_task_force, planet_idx_at_coords, ship_counts_from_state, ship_losses_from_states,
-    tf_has_any_units,
+    BattleRole, FleetCombatState, IDX_SB, IDX_TT, Member, Record, TaskForce, Transports,
+    Withdrawal, new_task_force, planet_idx_at_coords, ship_counts_from_state,
+    ship_losses_from_states, tf_has_any_units,
 };
 use crate::maint::encounter::rules::roe_permits;
 use nc_data::{GameRng, has_any_force, troop_transports};
@@ -181,14 +181,7 @@ fn share_losses(tf: &mut TaskForce, before: &FleetCombatState, rng: &mut GameRng
     for idx in 0..7 {
         let mut holders: Vec<Holder> = fighting
             .iter()
-            .map(|&m| {
-                let member = &tf.members[m];
-                Holder {
-                    hulls: member.state.counts[idx],
-                    crippled: member.state.crippled[idx],
-                    loaded: if idx == IDX_TT { member.loaded } else { 0 },
-                }
-            })
+            .flat_map(|&m| holders_of(&tf.members[m], idx))
             .collect();
         apply_class_change(
             &mut holders,
@@ -196,12 +189,19 @@ fn share_losses(tf: &mut TaskForce, before: &FleetCombatState, rng: &mut GameRng
             (tf.state.counts[idx], &tf.state.crippled[idx]),
             rng,
         );
-        for (&m, holder) in fighting.iter().zip(holders) {
+        let mut holders = holders.iter();
+        for &m in &fighting {
             let member = &mut tf.members[m];
-            member.state.counts[idx] = holder.hulls;
-            member.state.crippled[idx] = holder.crippled;
             if idx == IDX_TT {
-                member.loaded = holder.loaded;
+                let loaded = holders.next().expect("the loaded holder");
+                let empty = holders.next().expect("the empty holder");
+                member.transports = Transports::from_holders(loaded, empty);
+                (member.state.counts[IDX_TT], member.state.crippled[IDX_TT]) =
+                    member.transports.total();
+            } else {
+                let holder = holders.next().expect("the class holder");
+                member.state.counts[idx] = holder.hulls;
+                member.state.crippled[idx] = holder.crippled;
             }
         }
     }
@@ -214,6 +214,20 @@ fn share_losses(tf: &mut TaskForce, before: &FleetCombatState, rng: &mut GameRng
         },
         "the members' hulls add up to the side's"
     );
+}
+
+/// A member's holders of class `idx`: for transports its two cargo
+/// subgroups, loaded first; for any other class its one holder.
+fn holders_of(member: &Member, idx: usize) -> Vec<Holder> {
+    if idx == IDX_TT {
+        member.transports.holders().to_vec()
+    } else {
+        vec![Holder {
+            hulls: member.state.counts[idx],
+            crippled: member.state.crippled[idx],
+            loaded: false,
+        }]
+    }
 }
 
 /// After an exchange, both sides drop every fleet whose ROE no longer
@@ -768,7 +782,7 @@ pub(super) fn fight_encounter_with_dice(
         for member in &tf.members {
             match member.record {
                 Record::Fleet(idx) => {
-                    write_back_fleet(game_data, idx, &member.state, member.loaded);
+                    write_back_fleet(game_data, idx, &member.state, &member.transports);
                     // ECMAINT deletes a fleet where it dies, and its base
                     // lets go of it first (`2895:3d46`).
                     if !has_any_force(&game_data.fleets[idx]) {

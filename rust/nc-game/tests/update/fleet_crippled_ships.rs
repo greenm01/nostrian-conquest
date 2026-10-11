@@ -298,27 +298,31 @@ fn commissioning_moves_the_crippled_cruisers_with_their_recovery_intact() {
 fn transports_stage_by_cargo_and_the_confirmation_keeps_the_star() {
     let (mut app, root) = detach_app(|game_data| {
         arrange(&mut game_data.fleets[0], 1, 2, 2, 2);
-        game_data.fleets[0].crippled.transports = hulls(1, 1, 0);
+        game_data.fleets[0].crippled.loaded_transports = hulls(0, 1, 0);
+        game_data.fleets[0].crippled.empty_transports = hulls(1, 0, 0);
     });
     let terminal = screen(&mut app);
-    assert!(line_containing(&terminal, "Ships: ").contains("Ships: SC1 CA2 TT*2!2 TT2"));
-    // Both crippled transports are loaded ones: the empty class has none.
-    detach_stage(&mut app, "tt", "1!");
+    assert!(line_containing(&terminal, "Ships: ").contains("Ships: SC1 CA2 TT*2!1 TT2!1"));
+    // Each cargo state has its own crippled count: one empty transport is
+    // crippled, so `2!` on the empty class is refused and `1!` is taken.
+    detach_stage(&mut app, "tt", "2!");
     assert_eq!(
         status(&app).as_deref(),
-        Some("No crippled TT left to stage.")
+        Some("Enter a crippled quantity from 1 to 1.")
     );
     apply_action(&mut app, Action::Fleet(FleetAction::CancelDetach));
-    detach_stage(&mut app, "tt*", "1!");
+    detach_stage(&mut app, "tt", "1!");
     assert_eq!(status(&app), None);
     assert!(
-        detach_staged(&mut app).ends_with("TT*1!1"),
+        detach_staged(&mut app).ends_with("TT1!1"),
         "{}",
         detach_staged(&mut app)
     );
-    assert!(detach_remaining(&mut app).ends_with("SC1 CA2 TT*1!1 TT2"));
-    detach_stage(&mut app, "tt", "2");
-    assert!(detach_staged(&mut app).ends_with("TT*1!1 TT2"));
+    detach_stage(&mut app, "tt*", "1!");
+    assert!(detach_staged(&mut app).ends_with("TT*1!1 TT1!1"));
+    assert!(detach_remaining(&mut app).ends_with("SC1 CA2 TT*1 TT1"));
+    detach_stage(&mut app, "tt", "1");
+    assert!(detach_staged(&mut app).ends_with("TT*1!1 TT2!1"));
     enter_detach_input(&mut app, "c");
     submit_detach(&mut app);
     let state = latest_runtime_state(&root).game_data;
@@ -328,8 +332,10 @@ fn transports_stage_by_cargo_and_the_confirmation_keeps_the_star() {
         .filter(|fleet| fleet.owner.0 == 1)
         .max_by_key(|fleet| fleet.fleet_number.0)
         .expect("a new fleet");
-    assert_eq!(nc_data::fleet_notation(new_fleet), "TT*1!1 TT2");
+    assert_eq!(nc_data::fleet_notation(new_fleet), "TT*1!1 TT2!1");
     assert_eq!(new_fleet.ships.loaded_transports, 1);
+    assert_eq!(new_fleet.crippled.loaded_transports, hulls(0, 1, 0));
+    assert_eq!(new_fleet.crippled.empty_transports, hulls(1, 0, 0));
     let armies: u32 = state
         .fleets
         .iter()

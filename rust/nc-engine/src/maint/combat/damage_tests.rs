@@ -8,16 +8,17 @@
 //! deals its side's whole AS, and a one-round cap ends a battle after that
 //! exchange.
 
-use nc_data::{CrippledHulls, GameRng, Starbase};
+use nc_data::{CrippledHulls, GameRng, Starbase, set_armies_aboard};
 
 use super::assault::bombard_attack_as;
-use super::damage::{Holder, apply_class_change, apportion, write_back_base};
+use super::damage::{Holder, apply_class_change, apportion, write_back_base, write_back_strike};
 use super::fleet_battle::{BattleSide, fight_encounter_with_dice};
 use super::fleet_battle_tests::{
     CAUGHT, DEEP_SPACE, NONE, Scripted, Ships, board, fight_capped, place,
 };
 use super::state::{
-    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, base_attack_strength, warship_attack_strength,
+    FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_SB, IDX_TT, TransportGroup, Transports,
+    base_attack_strength, fleet_state_from_records, warship_attack_strength,
 };
 
 fn hulls(turns_1: u32, turns_2: u32, fresh: u32) -> CrippledHulls {
@@ -137,7 +138,7 @@ fn holders(parts: &[(u32, CrippledHulls)]) -> Vec<Holder> {
         .map(|&(hulls, crippled)| Holder {
             hulls,
             crippled,
-            loaded: 0,
+            loaded: false,
         })
         .collect()
 }
@@ -257,54 +258,161 @@ fn a_cutoff_tie_is_drawn_from_the_seeded_stream() {
     }
 }
 
+/// A fleet's transports are two holders, its loaded and its empty
+/// subgroup, each with its own crippled cohorts.
+fn cargo(loaded: (u32, CrippledHulls), empty: (u32, CrippledHulls)) -> Transports {
+    Transports {
+        loaded: TransportGroup {
+            hulls: loaded.0,
+            crippled: loaded.1,
+        },
+        empty: TransportGroup {
+            hulls: empty.0,
+            crippled: empty.1,
+        },
+    }
+}
+
 /// Transport losses fall on loaded transports first across the side: six
 /// loaded in one fleet and four empty in another lose four loaded ones to
 /// four losses, as one fleet of ten would; the empty ones are untouched.
 #[test]
 fn transport_losses_fall_on_loaded_transports_first_across_the_side() {
-    let mut side = vec![
-        Holder {
-            hulls: 6,
-            crippled: CrippledHulls::default(),
-            loaded: 6,
-        },
-        Holder {
-            hulls: 4,
-            crippled: CrippledHulls::default(),
-            loaded: 0,
-        },
-    ];
+    let whole = CrippledHulls::default();
+    let mut side = Vec::new();
+    side.extend(cargo((6, whole), (0, whole)).holders());
+    side.extend(cargo((0, whole), (4, whole)).holders());
+    apply_class_change(&mut side, (10, &whole), (6, &whole), &mut no_draws());
+    let loaded_fleet = Transports::from_holders(&side[0], &side[1]);
+    let empty_fleet = Transports::from_holders(&side[2], &side[3]);
+    assert_eq!(loaded_fleet, cargo((2, whole), (0, whole)));
+    assert_eq!(empty_fleet, cargo((0, whole), (4, whole)));
+}
+
+/// Each cargo subgroup keeps its own crippled counter: crippling and
+/// finishing strike the loaded subgroup first, and nothing is counted twice
+/// or moves between subgroups. One fleet holds two loaded and two empty
+/// transports, another two empty; the side's four nominal transports are
+/// crippled, then two of its cripples are finished.
+#[test]
+fn transport_damage_is_written_to_the_struck_subgroups_own_counter() {
+    let whole = CrippledHulls::default();
+    let mut side = Vec::new();
+    side.extend(cargo((2, whole), (2, whole)).holders());
+    side.extend(cargo((0, whole), (2, whole)).holders());
+    // Four crippled: the two loaded first, then the empty ones shared by
+    // their holders (2 and 2 share two losses as 1 and 1).
     apply_class_change(
         &mut side,
-        (10, &CrippledHulls::default()),
-        (6, &CrippledHulls::default()),
+        (6, &whole),
+        (6, &hulls(0, 0, 4)),
         &mut no_draws(),
     );
-    assert_eq!((side[0].hulls, side[0].loaded), (2, 2));
-    assert_eq!((side[1].hulls, side[1].loaded), (4, 0));
-    // A fleet's loaded transports are its most damaged: finishing two of
-    // a side's crippled transports takes the loaded fleet's two before the
-    // empty fleet's.
-    let mut side = vec![
-        Holder {
-            hulls: 3,
-            crippled: hulls(0, 0, 2),
-            loaded: 2,
-        },
-        Holder {
-            hulls: 3,
-            crippled: hulls(0, 0, 2),
-            loaded: 0,
-        },
-    ];
+    assert_eq!(
+        Transports::from_holders(&side[0], &side[1]),
+        cargo((2, hulls(0, 0, 2)), (2, hulls(0, 0, 1)))
+    );
+    assert_eq!(
+        Transports::from_holders(&side[2], &side[3]),
+        cargo((0, whole), (2, hulls(0, 0, 1)))
+    );
+    // Two of the cripples finished: the loaded ones go before any empty
+    // one, so the empty subgroups keep their cripple each.
     apply_class_change(
         &mut side,
         (6, &hulls(0, 0, 4)),
         (4, &hulls(0, 0, 2)),
         &mut no_draws(),
     );
-    assert_eq!((side[0].hulls, side[0].loaded), (1, 0));
-    assert_eq!((side[1].hulls, side[1].crippled), (3, hulls(0, 0, 2)));
+    assert_eq!(
+        Transports::from_holders(&side[0], &side[1]),
+        cargo((0, whole), (2, hulls(0, 0, 1)))
+    );
+    assert_eq!(
+        Transports::from_holders(&side[2], &side[3]),
+        cargo((0, whole), (2, hulls(0, 0, 1)))
+    );
+}
+
+/// Two fleets of one side, one with two loaded transports and one with two
+/// empty, meet a cruiser: its 30 hits cripple three transports. The loaded
+/// fleet's two come first, then one of the empty fleet's, each on its
+/// fleet's own counter for that cargo state, and the armies stay aboard.
+/// The unarmed side then breaks off, and the cruiser, no faster than the
+/// transports, never catches it.
+#[test]
+fn a_battle_writes_transport_damage_to_each_fleets_own_cargo_counter() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { ca: 1, ..NONE }, 10);
+    place(&mut game_data, 4, 2, Ships { tt: 2, ..NONE }, 10);
+    set_armies_aboard(&mut game_data.fleets[4], 2);
+    place(&mut game_data, 8, 2, Ships { tt: 2, ..NONE }, 10);
+    let attacker = BattleSide {
+        empire: 1,
+        fleets: vec![0],
+        bases: Vec::new(),
+    };
+    let defender = BattleSide {
+        empire: 2,
+        fleets: vec![4, 8],
+        bases: Vec::new(),
+    };
+    let dice = Scripted {
+        d10: &|_, _, _, _| 6,
+        pursuit: &|_, _, _| (0.0, 0.5),
+    };
+
+    fight_encounter_with_dice(
+        &mut game_data,
+        &dice,
+        1,
+        1,
+        DEEP_SPACE,
+        &attacker,
+        &defender,
+        false,
+    );
+
+    let loaded = &game_data.fleets[4];
+    assert_eq!(
+        (
+            loaded.ships.loaded_transports,
+            loaded.ships.empty_transports
+        ),
+        (2, 0)
+    );
+    assert_eq!(loaded.crippled.loaded_transports, hulls(0, 0, 2));
+    assert!(loaded.crippled.empty_transports.is_empty());
+    let empty = &game_data.fleets[8];
+    assert_eq!(
+        (empty.ships.loaded_transports, empty.ships.empty_transports),
+        (0, 2)
+    );
+    assert_eq!(empty.crippled.empty_transports, hulls(0, 0, 1));
+    assert!(empty.crippled.loaded_transports.is_empty());
+}
+
+/// A strike's result goes on the record by the same rule. A fleet of two
+/// loaded and two empty transports loses one and has one crippled: both on
+/// the loaded subgroup, and the lost one takes its army.
+#[test]
+fn a_strike_writes_transport_damage_to_the_loaded_subgroup_first() {
+    let mut game_data = board();
+    place(&mut game_data, 0, 1, Ships { tt: 4, ..NONE }, 10);
+    set_armies_aboard(&mut game_data.fleets[0], 2);
+    let mut after = fleet_state_from_records(&game_data, &[0], &[]);
+    after.counts[IDX_TT] = 3;
+    after.crippled[IDX_TT] = hulls(0, 0, 1);
+
+    write_back_strike(&mut game_data, 0, &after);
+
+    let fleet = &game_data.fleets[0];
+    assert_eq!(
+        (fleet.ships.loaded_transports, fleet.ships.empty_transports),
+        (1, 2)
+    );
+    assert_eq!(fleet.crippled.loaded_transports, hulls(0, 0, 1));
+    assert!(fleet.crippled.empty_transports.is_empty());
 }
 
 #[test]

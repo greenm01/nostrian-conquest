@@ -1,7 +1,7 @@
 use crate::{CoreGameData, EncounterDispositionReason, Order, ShipLosses};
 use nc_data::{
-    CrippledHulls, CrippledShips, HullClass, ShipCounts, Starbase, hull_count, slowest_speed,
-    troop_transports,
+    CrippledHulls, CrippledShips, Fleet, HullClass, ShipCounts, Starbase, hull_count,
+    slowest_speed, troop_transports,
 };
 
 pub(super) const IDX_DD: usize = 0;
@@ -67,6 +67,46 @@ pub(super) struct Withdrawal {
     pub(super) pursued: bool,
 }
 
+/// A fleet's transports of one cargo state, loaded or empty: the hulls and,
+/// among them, the crippled cohorts. Each keeps its own counter on the
+/// record, and fire strikes the loaded ones first.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) struct TransportGroup {
+    pub(super) hulls: u32,
+    pub(super) crippled: CrippledHulls,
+}
+
+/// A fleet's transports by cargo state. Together they are its `IDX_TT`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub(super) struct Transports {
+    pub(super) loaded: TransportGroup,
+    pub(super) empty: TransportGroup,
+}
+
+impl Transports {
+    /// The fleet's transports as its record has them.
+    pub(super) fn from_record(fleet: &Fleet) -> Self {
+        Self {
+            loaded: TransportGroup {
+                hulls: u32::from(fleet.ships.loaded_transports),
+                crippled: fleet.crippled.loaded_transports,
+            },
+            empty: TransportGroup {
+                hulls: u32::from(fleet.ships.empty_transports),
+                crippled: fleet.crippled.empty_transports,
+            },
+        }
+    }
+
+    /// Both subgroups together: the hulls and crippled cohorts of the
+    /// fleet's `IDX_TT`.
+    pub(super) fn total(&self) -> (u32, CrippledHulls) {
+        let mut crippled = self.loaded.crippled;
+        crippled.add(&self.empty.crippled);
+        (self.loaded.hulls + self.empty.hulls, crippled)
+    }
+}
+
 /// The record a member of a side is.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) enum Record {
@@ -80,9 +120,9 @@ pub(super) enum Record {
 pub(super) struct Member {
     pub(super) record: Record,
     pub(super) state: FleetCombatState,
-    /// Loaded transports among the fleet's transports. Transport losses
-    /// fall on them first.
-    pub(super) loaded: u32,
+    /// The fleet's transports by cargo state, each with its own crippled
+    /// cohorts. Transport losses fall on the loaded ones first.
+    pub(super) transports: Transports,
     pub(super) roe: u8,
     /// Set once the fleet has broken off: it is out of the battle. A
     /// starbase never leaves.
@@ -277,7 +317,7 @@ pub(super) fn class_index(class: HullClass) -> usize {
         HullClass::Cruiser => IDX_CA,
         HullClass::Battleship => IDX_BB,
         HullClass::Scout => IDX_SC,
-        HullClass::Transport => IDX_TT,
+        HullClass::LoadedTransport | HullClass::EmptyTransport => IDX_TT,
         HullClass::Etac => IDX_ET,
     }
 }
@@ -396,7 +436,7 @@ pub(super) fn new_task_force(
         Member {
             record: Record::Fleet(idx),
             state: fleet_state_from_records(game_data, &[idx], &[]),
-            loaded: u32::from(fleet.ships.loaded_transports),
+            transports: Transports::from_record(fleet),
             roe: fleet.rules_of_engagement,
             left: None,
         }
@@ -404,7 +444,7 @@ pub(super) fn new_task_force(
     let bases = bases.iter().map(|&idx| Member {
         record: Record::Base(idx),
         state: fleet_state_from_records(game_data, &[], &[idx]),
-        loaded: 0,
+        transports: Transports::default(),
         roe: 0,
         left: None,
     });
@@ -420,33 +460,39 @@ pub(super) fn new_task_force(
     task_force
 }
 
-/// The ships of fleet `fleet_idx` as `state` has them: counts by class, the
-/// crippled cohorts, and `loaded` of the transports loaded.
+/// The ships of fleet `fleet_idx` as `state` has them: counts by class and
+/// the crippled cohorts, the transports by cargo state from `transports`.
 pub(super) fn write_fleet_state(
     game_data: &mut CoreGameData,
     fleet_idx: usize,
     state: &FleetCombatState,
-    loaded: u32,
+    transports: &Transports,
 ) -> bool {
+    debug_assert_eq!(
+        transports.total().0,
+        state.counts[IDX_TT],
+        "the cargo subgroups add up to the transports"
+    );
     let fleet = &mut game_data.fleets[fleet_idx];
     let mut lost = false;
     for class in HullClass::ALL {
         let idx = class_index(class);
-        let count = state.counts[idx];
+        let (count, crippled) = match class {
+            HullClass::LoadedTransport => (transports.loaded.hulls, transports.loaded.crippled),
+            HullClass::EmptyTransport => (transports.empty.hulls, transports.empty.crippled),
+            _ => (state.counts[idx], state.crippled[idx]),
+        };
         lost |= count < hull_count(fleet, class);
-        *fleet.crippled.get_mut(class) = state.crippled[idx];
+        *fleet.crippled.get_mut(class) = crippled;
         let count = count.min(u32::from(u16::MAX)) as u16;
         match class {
             HullClass::Destroyer => fleet.ships.destroyers = count,
             HullClass::Cruiser => fleet.ships.cruisers = count,
             HullClass::Battleship => fleet.ships.battleships = count,
             HullClass::Scout => fleet.ships.scouts = count,
+            HullClass::LoadedTransport => fleet.ships.loaded_transports = count,
+            HullClass::EmptyTransport => fleet.ships.empty_transports = count,
             HullClass::Etac => fleet.ships.etacs = count,
-            HullClass::Transport => {
-                let loaded = loaded.min(u32::from(count)) as u16;
-                fleet.ships.loaded_transports = loaded;
-                fleet.ships.empty_transports = count - loaded;
-            }
         }
     }
     lost

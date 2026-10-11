@@ -125,6 +125,18 @@ fn take_never_removes_more_than_exist() {
     assert!(state.is_empty());
 }
 
+/// The order loading armies takes crippled transports in: the fewest turns
+/// left first, this pass's last.
+#[test]
+fn take_nearest_removes_the_fewest_turns_left_first_and_this_pass_last() {
+    let mut state = hulls(3, 4, 2);
+    assert_eq!(state.take_nearest(2), hulls(2, 0, 0));
+    assert_eq!(state.take_nearest(6), hulls(1, 4, 1));
+    assert_eq!(state, hulls(0, 0, 1));
+    assert_eq!(state.take_nearest(10), hulls(0, 0, 1));
+    assert!(state.is_empty());
+}
+
 #[test]
 fn a_split_and_merge_conserves_every_counter() {
     let original = hulls(3, 4, 2);

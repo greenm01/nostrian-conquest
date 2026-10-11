@@ -202,10 +202,15 @@ fn a_detachment_of_other_classes_leaves_the_cripples_alone() {
 }
 
 #[test]
-fn full_and_empty_transports_share_one_crippled_class() {
+fn full_and_empty_transports_each_carry_their_own_counter() {
     let mut game_data = setup();
-    game_data.fleets[0].crippled.transports = hulls(0, 2, 0);
+    game_data.fleets[0].crippled.empty_transports = hulls(0, 2, 0);
+    // Both empty transports are crippled, so loading one army takes the
+    // one nearest to recovery, and its cohort moves to the loaded counter.
     set_armies_aboard(&mut game_data.fleets[0], 1);
+    let fleet = &game_data.fleets[0];
+    assert_eq!(fleet.crippled.loaded_transports, hulls(0, 1, 0));
+    assert_eq!(fleet.crippled.empty_transports, hulls(0, 1, 0));
     let selection = FleetDetachSelection {
         full_transports: 1,
         empty_transports: 1,
@@ -217,7 +222,8 @@ fn full_and_empty_transports_share_one_crippled_class() {
         .detach_ships_to_new_fleet(1, 1, selection, None, 0)
         .expect("detach");
     let new_fleet = &game_data.fleets[result.new_fleet_record_index_1_based - 1];
-    assert_eq!(new_fleet.crippled.transports, hulls(0, 2, 0));
+    assert_eq!(new_fleet.crippled.loaded_transports, hulls(0, 1, 0));
+    assert_eq!(new_fleet.crippled.empty_transports, hulls(0, 1, 0));
     assert_eq!(total(&game_data), before);
 }
 
@@ -294,15 +300,14 @@ fn a_transfer_takes_healthy_hulls_first_and_n_bang_takes_cripples() {
 }
 
 /// Fleet #1: five healthy destroyers and four transports, two loaded (two
-/// armies aboard) and two empty. Two transports are crippled, one with a
-/// turn left and one with two. The loaded transports come first in the
-/// split, so both crippled ones are loaded.
+/// armies aboard) and two empty. Both loaded transports are crippled, one
+/// with a turn left and one with two; the empty ones are whole.
 fn transport_setup() -> CoreGameData {
     let mut game_data = setup();
     game_data.fleets[0].crippled = CrippledShips::default();
     set_ships(&mut game_data.fleets[0], 5, 4);
     set_armies_aboard(&mut game_data.fleets[0], 2);
-    game_data.fleets[0].crippled.transports = hulls(1, 1, 0);
+    game_data.fleets[0].crippled.loaded_transports = hulls(1, 1, 0);
     game_data
 }
 
@@ -345,7 +350,7 @@ fn empty_transports_leave_the_crippled_loaded_ones_and_their_armies_alone() {
     let new_fleet = new_fleet_of(&game_data, &result);
     assert_eq!(fleet_notation(&new_fleet), "TT2");
     assert_eq!(new_fleet.ships.loaded_transports, 0);
-    assert!(new_fleet.crippled.transports.is_empty());
+    assert!(new_fleet.crippled.is_empty());
     let donor = &game_data.fleets[result.donor_fleet_record_index_1_based - 1];
     assert_eq!(fleet_notation(donor), "DD5 TT*2!2");
     assert_eq!(tally(&game_data), before);
@@ -362,11 +367,11 @@ fn a_plain_loaded_quantity_takes_crippled_loaded_transports_when_none_are_health
     // Both loaded transports are crippled, so the one that goes is the one
     // with two turns left, and its army goes with it.
     assert_eq!(fleet_notation(&new_fleet), "TT*1!1");
-    assert_eq!(new_fleet.crippled.transports, hulls(0, 1, 0));
+    assert_eq!(new_fleet.crippled.loaded_transports, hulls(0, 1, 0));
     assert_eq!(new_fleet.ships.loaded_transports, 1);
     let donor = &game_data.fleets[result.donor_fleet_record_index_1_based - 1];
     assert_eq!(fleet_notation(donor), "DD5 TT*1!1 TT2");
-    assert_eq!(donor.crippled.transports, hulls(1, 0, 0));
+    assert_eq!(donor.crippled.loaded_transports, hulls(1, 0, 0));
     assert_eq!(tally(&game_data), before);
 }
 
@@ -397,12 +402,102 @@ fn n_bang_on_loaded_transports_moves_the_crippled_ones_with_their_armies() {
         .expect("transfer");
     let host = &game_data.fleets[1];
     assert_eq!(fleet_notation(host), "DD1 TT*2!2 TT1");
-    assert_eq!(host.crippled.transports, hulls(1, 1, 0));
+    assert_eq!(host.crippled.loaded_transports, hulls(1, 1, 0));
+    assert!(host.crippled.empty_transports.is_empty());
     assert_eq!(host.ships.loaded_transports, 2);
     let donor = &game_data.fleets[0];
     assert_eq!(fleet_notation(donor), "DD5 TT2");
-    assert!(donor.crippled.transports.is_empty());
+    assert!(donor.crippled.loaded_transports.is_empty());
     assert_eq!(tally(&game_data), before);
+}
+
+#[test]
+fn n_bang_on_empty_transports_takes_a_crippled_empty_one_and_its_own_cohort() {
+    let mut game_data = transport_setup();
+    game_data.fleets[0].crippled.empty_transports = hulls(0, 0, 1);
+    assert_eq!(fleet_notation(&game_data.fleets[0]), "DD5 TT*2!2 TT2!1");
+    let before = tally(&game_data);
+    let mut selection = transports(0, 1);
+    selection.required_crippled[ShipCategory::EmptyTransports.index()] = 1;
+    let preview = resolve_selection(&game_data.fleets[0], &selection).expect("resolves");
+    assert_eq!(preview.notation(), "TT1!1");
+    let result = game_data
+        .detach_ships_to_new_fleet(1, 1, selection, None, 0)
+        .expect("detach");
+    let new_fleet = new_fleet_of(&game_data, &result);
+    assert_eq!(fleet_notation(&new_fleet), "TT1!1");
+    assert_eq!(new_fleet.crippled.empty_transports, hulls(0, 0, 1));
+    assert!(new_fleet.crippled.loaded_transports.is_empty());
+    let donor = &game_data.fleets[result.donor_fleet_record_index_1_based - 1];
+    assert_eq!(fleet_notation(donor), "DD5 TT*2!2 TT1");
+    assert_eq!(donor.crippled.loaded_transports, hulls(1, 1, 0));
+    assert!(donor.crippled.empty_transports.is_empty());
+    assert_eq!(tally(&game_data), before);
+}
+
+#[test]
+fn a_transfer_carries_each_cargo_states_own_cohorts() {
+    let mut game_data = transport_setup();
+    game_data.fleets[0].crippled.empty_transports = hulls(0, 0, 1);
+    let before = tally(&game_data);
+    game_data
+        .transfer_ships_between_fleets(1, 1, 2, transports(1, 2))
+        .expect("transfer");
+    let host = &game_data.fleets[1];
+    // The loaded one taken is the cripple with two turns left; the two
+    // empty ones are the healthy one and the cripple.
+    assert_eq!(fleet_notation(host), "DD1 TT*1!1 TT3!1");
+    assert_eq!(host.crippled.loaded_transports, hulls(0, 1, 0));
+    assert_eq!(host.crippled.empty_transports, hulls(0, 0, 1));
+    let donor = &game_data.fleets[0];
+    assert_eq!(fleet_notation(donor), "DD5 TT*1!1");
+    assert_eq!(donor.crippled.loaded_transports, hulls(1, 0, 0));
+    assert!(donor.crippled.empty_transports.is_empty());
+    assert_eq!(tally(&game_data), before);
+}
+
+/// Loading takes healthy empty transports first and crippled ones only
+/// when no healthy one is left, the nearest to recovery first; the cohorts
+/// move to the loaded counter with the hulls.
+#[test]
+fn loading_armies_takes_healthy_transports_first_then_the_nearest_to_recovery() {
+    let mut game_data = setup();
+    set_ships(&mut game_data.fleets[0], 0, 4);
+    let fleet = &mut game_data.fleets[0];
+    fleet.crippled.empty_transports = hulls(1, 1, 1);
+    set_armies_aboard(fleet, 1);
+    assert_eq!(fleet_notation(fleet), "TT*1 TT3!3");
+    assert!(fleet.crippled.loaded_transports.is_empty());
+    set_armies_aboard(fleet, 2);
+    assert_eq!(fleet.crippled.loaded_transports, hulls(1, 0, 0));
+    assert_eq!(fleet.crippled.empty_transports, hulls(0, 1, 1));
+    set_armies_aboard(fleet, 3);
+    assert_eq!(fleet.crippled.loaded_transports, hulls(1, 1, 0));
+    assert_eq!(fleet.crippled.empty_transports, hulls(0, 0, 1));
+    set_armies_aboard(fleet, 4);
+    assert_eq!(fleet_notation(fleet), "TT*4!3");
+    assert!(fleet.crippled.empty_transports.is_empty());
+}
+
+/// Unloading puts the crippled loaded transports ashore first, this pass's
+/// and then the most turns left, and the healthy ones last; the cohorts
+/// move to the empty counter with the hulls.
+#[test]
+fn unloading_armies_empties_crippled_transports_first_most_turns_left_first() {
+    let mut game_data = setup();
+    set_ships(&mut game_data.fleets[0], 0, 4);
+    let fleet = &mut game_data.fleets[0];
+    set_armies_aboard(fleet, 4);
+    fleet.crippled.loaded_transports = hulls(1, 1, 1);
+    set_armies_aboard(fleet, 3);
+    assert_eq!(fleet.crippled.loaded_transports, hulls(1, 1, 0));
+    assert_eq!(fleet.crippled.empty_transports, hulls(0, 0, 1));
+    set_armies_aboard(fleet, 1);
+    assert_eq!(fleet_notation(fleet), "TT*1 TT3!3");
+    assert!(fleet.crippled.loaded_transports.is_empty());
+    assert_eq!(fleet.crippled.empty_transports, hulls(1, 1, 1));
+    set_armies_aboard(fleet, 0);
+    assert_eq!(fleet_notation(fleet), "TT4!3");
 }
 
 #[test]

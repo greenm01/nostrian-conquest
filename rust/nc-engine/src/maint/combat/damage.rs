@@ -7,32 +7,34 @@
 //! seeded roll stream, without replacement, only when a tied group straddles
 //! the remaining losses; a completed allocation is never redrawn. Transport
 //! losses fall on loaded transports first across the side, so moving cargo
-//! into another fleet does not shelter it. Nothing is restored afterwards:
-//! crippled hulls stay crippled until the recovery step.
+//! into another fleet does not shelter it, and each cargo subgroup keeps its
+//! own crippled counter. Nothing is restored afterwards: crippled hulls stay
+//! crippled until the recovery step.
 
 use std::cmp::Reverse;
 use std::collections::BTreeMap;
 
 use nc_data::{
     CoreGameData, CrippledHulls, GameRng, RECOVERY_TURNS, has_any_force, recompute_max_speed,
-    troop_transports,
 };
 
-use super::state::{FleetCombatState, IDX_SB, IDX_TT, write_fleet_state};
+use super::state::{
+    FleetCombatState, IDX_SB, IDX_TT, TransportGroup, Transports, write_fleet_state,
+};
 
-/// One record's hulls of a class: how many it holds, how many of them are
-/// crippled, and how many are loaded transports (0 for any other class).
+/// One record's hulls of a class, or one cargo subgroup of its transports:
+/// how many it holds, how many of them are crippled, and whether they are
+/// loaded transports, which fire strikes before the empty ones.
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct Holder {
     pub(super) hulls: u32,
     pub(super) crippled: CrippledHulls,
-    pub(super) loaded: u32,
+    pub(super) loaded: bool,
 }
 
 /// The cohorts of a class in the order finishing fire takes them: this
 /// pass's cripples, then the most turns left down to one, then the nominal
-/// hulls. A fleet's loaded transports are deemed to be the first hulls in
-/// this order, which is how the record's loaded-first losses read.
+/// hulls.
 const NOMINAL: usize = RECOVERY_TURNS + 1;
 
 impl Holder {
@@ -58,14 +60,39 @@ impl Holder {
 
     fn lose(&mut self, count: u32) {
         self.hulls -= count;
-        self.loaded -= count.min(self.loaded);
     }
 
-    /// The holder's loaded transports in `stage`: its loaded hulls fill the
-    /// stages in finishing order.
-    fn loaded_in(&self, stage: usize) -> u32 {
-        let earlier: u32 = (0..stage).map(|s| self.stage(s)).sum();
-        self.loaded.saturating_sub(earlier).min(self.stage(stage))
+    fn of(group: &TransportGroup, loaded: bool) -> Self {
+        Holder {
+            hulls: group.hulls,
+            crippled: group.crippled,
+            loaded,
+        }
+    }
+
+    fn group(&self) -> TransportGroup {
+        TransportGroup {
+            hulls: self.hulls,
+            crippled: self.crippled,
+        }
+    }
+}
+
+impl Transports {
+    /// The two cargo subgroups as holders, loaded first.
+    pub(super) fn holders(&self) -> [Holder; 2] {
+        [
+            Holder::of(&self.loaded, true),
+            Holder::of(&self.empty, false),
+        ]
+    }
+
+    /// The subgroups as the holders left them.
+    pub(super) fn from_holders(loaded: &Holder, empty: &Holder) -> Self {
+        Transports {
+            loaded: loaded.group(),
+            empty: empty.group(),
+        }
     }
 }
 
@@ -118,13 +145,19 @@ fn apportion_cargo(loaded: &[u32], empty: &[u32], loss: u32, rng: &mut GameRng) 
 }
 
 fn shares(holders: &[Holder], stage: usize, loss: u32, rng: &mut GameRng) -> Vec<u32> {
-    let loaded: Vec<u32> = holders.iter().map(|h| h.loaded_in(stage)).collect();
-    let empty: Vec<u32> = holders
-        .iter()
-        .zip(&loaded)
-        .map(|(h, l)| h.stage(stage) - l)
-        .collect();
-    apportion_cargo(&loaded, &empty, loss, rng)
+    let in_stage = |loaded: bool| -> Vec<u32> {
+        holders
+            .iter()
+            .map(|h| {
+                if h.loaded == loaded {
+                    h.stage(stage)
+                } else {
+                    0
+                }
+            })
+            .collect()
+    };
+    apportion_cargo(&in_stage(true), &in_stage(false), loss, rng)
 }
 
 /// Spread a side's change in one class, `before` to `after` (hulls and
@@ -177,9 +210,9 @@ pub(super) fn write_back_fleet(
     game_data: &mut CoreGameData,
     fleet_idx: usize,
     state: &FleetCombatState,
-    loaded: u32,
+    transports: &Transports,
 ) {
-    let lost = write_fleet_state(game_data, fleet_idx, state, loaded);
+    let lost = write_fleet_state(game_data, fleet_idx, state, transports);
     let fleet = &mut game_data.fleets[fleet_idx];
     if lost && has_any_force(fleet) {
         recompute_max_speed(fleet);
@@ -187,17 +220,26 @@ pub(super) fn write_back_fleet(
 }
 
 /// Put a strike's result on the striking fleet: its ships as `after` has
-/// them, transport losses on loaded transports first, each taking its army
-/// with it.
+/// them. Its transport losses and cripples fall on the loaded transports
+/// first, each lost one taking its army with it, shared as a battle shares
+/// them; a lone fleet's two subgroups never tie at a cutoff, so no draw is
+/// made.
 pub(super) fn write_back_strike(
     game_data: &mut CoreGameData,
     fleet_idx: usize,
     after: &FleetCombatState,
 ) {
-    let fleet = &game_data.fleets[fleet_idx];
-    let lost = u32::from(troop_transports(fleet)).saturating_sub(after.counts[IDX_TT]);
-    let loaded = u32::from(fleet.ships.loaded_transports).saturating_sub(lost);
-    write_back_fleet(game_data, fleet_idx, after, loaded);
+    let before = Transports::from_record(&game_data.fleets[fleet_idx]);
+    let (hulls_before, crippled_before) = before.total();
+    let mut holders = before.holders();
+    apply_class_change(
+        &mut holders,
+        (hulls_before, &crippled_before),
+        (after.counts[IDX_TT], &after.crippled[IDX_TT]),
+        &mut GameRng::from_seed(0),
+    );
+    let transports = Transports::from_holders(&holders[0], &holders[1]);
+    write_back_fleet(game_data, fleet_idx, after, &transports);
 }
 
 /// Put the result of a battle on a starbase record: a base destroyed is
