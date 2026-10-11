@@ -46,7 +46,22 @@ fn confirm_auto_commission_opens_paged_report_when_entries_exist() {
     app.render(&mut terminal).expect("report should render");
     assert_eq!(terminal.line(24).trim_end(), " (slap a key)");
     assert_eq!(terminal.line(23).trim_end(), "");
-    assert!(line_containing(&terminal, "Fleet").contains("commissioned from \""));
+    let fleet_line = line_containing(&terminal, "Fleet");
+    assert!(fleet_line.contains("commissioned from \""));
+    // The new fleet's ships read in ship notation: `DD4 CA2`.
+    let composition = fleet_line
+        .split(" with ")
+        .nth(1)
+        .expect("a composition")
+        .trim_end()
+        .trim_end_matches('.');
+    assert!(
+        composition.split(' ').all(|token| token
+            .trim_start_matches(char::is_alphabetic)
+            .parse::<u32>()
+            .is_ok()),
+        "{composition}"
+    );
     assert!(line_containing(&terminal, "Starbase").contains("commissioned to \""));
 }
 
@@ -66,9 +81,7 @@ fn auto_commission_report_advances_by_page_then_returns_to_planet_menu() {
     app.open_planet_menu();
     app.current_screen = ScreenId::PlanetAutoCommissionReport;
     app.planet.auto_commission_report_rows = (1..=24)
-        .map(|idx| {
-            format!("Fleet {idx:02} commissioned from \"Foo\" in sector (08,09) with DD 01.")
-        })
+        .map(|idx| format!("Fleet {idx:02} commissioned from \"Foo\" in sector (08,09) with DD1."))
         .collect();
     app.planet.auto_commission_report_revealed_rows = 23;
 

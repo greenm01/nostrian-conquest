@@ -1,10 +1,10 @@
 # ASCII ship notation
 
-**Status:** approved by the owner on2026-10-11; rollout is pending in
+**Status:** approved by the owner on 2026-10-11; implemented in
 [t093](../notes/plans/tafp4e55-compact-crippled-ship-notation-and-condition-aware-detach-and-transfer.md).
 This is the common notation for compact ship compositions, including
-healthy fleets. Existing screens may still use older forms until that task
-lands.
+healthy fleets. The plan's Implementation section lists the surfaces that
+use it and the few that deliberately keep their own wording.
 
 ## Format
 

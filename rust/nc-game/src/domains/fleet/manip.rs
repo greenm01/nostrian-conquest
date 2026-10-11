@@ -5,7 +5,10 @@ use crate::screen::layout::PromptFeedback;
 use crate::screen::{
     CommandMenu, FleetDetachClass, FleetDetachMode, FleetRow, FleetTransferMode, ScreenId,
 };
-use nc_data::{CoreGameData, Fleet, FleetDetachSelection, NEW_FLEET_DEFAULT_ROE};
+use nc_data::{
+    CoreGameData, Fleet, FleetDetachSelection, NEW_FLEET_DEFAULT_ROE, ShipCategory,
+    crippled_left_to_stage, resolve_selection,
+};
 use nc_engine::{
     fleet_eta_label as engine_fleet_eta_label, fleet_list_eta_label as engine_fleet_list_eta_label,
     fleet_record_supports_mission_code, fleet_target_eta_message, resolve_checked_fleet_merge_plan,
@@ -371,13 +374,13 @@ impl App {
                 if !(ch.is_ascii_alphanumeric() || ch == '*') {
                     return;
                 }
-                if self.fleet.transfer_input.len() >= 3 {
+                if self.fleet.transfer_input.len() >= CLASS_CODE_MAX_LEN {
                     return;
                 }
                 self.fleet.transfer_input.push(ch.to_ascii_uppercase());
             }
             FleetTransferMode::EnteringQuantity(_) => {
-                if !ch.is_ascii_digit() || self.fleet.transfer_input.len() >= 3 {
+                if !quantity_char_fits(&self.fleet.transfer_input, ch) {
                     return;
                 }
                 self.fleet.transfer_input.push(ch);
@@ -395,12 +398,18 @@ impl App {
                 if !(ch.is_ascii_alphanumeric() || ch == '*') {
                     return;
                 }
-                if self.fleet.detach_input.len() >= 3 {
+                if self.fleet.detach_input.len() >= CLASS_CODE_MAX_LEN {
                     return;
                 }
                 self.fleet.detach_input.push(ch.to_ascii_uppercase());
             }
-            FleetDetachMode::EnteringQuantity(_) | FleetDetachMode::AdjustingDonorSpeed => {
+            FleetDetachMode::EnteringQuantity(_) => {
+                if !quantity_char_fits(&self.fleet.detach_input, ch) {
+                    return;
+                }
+                self.fleet.detach_input.push(ch);
+            }
+            FleetDetachMode::AdjustingDonorSpeed => {
                 if !ch.is_ascii_digit() || self.fleet.detach_input.len() >= 3 {
                     return;
                 }
@@ -523,7 +532,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.transfer_status =
-                                Some("Use BB, CA, DD, TT*, TT, SC, ET, C, X, or Q.".to_string());
+                                Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_transfer_available_for_class(class) == 0 {
@@ -538,8 +547,6 @@ impl App {
                 }
             }
             FleetTransferMode::EnteringQuantity(class) => {
-                let default_qty = 1u16.min(self.fleet_transfer_available_for_class(class));
-                let value = self.resolve_fleet_transfer_numeric_input(default_qty)?;
                 let available = self.fleet_transfer_available_for_class(class);
                 if available == 0 {
                     self.fleet.transfer_status =
@@ -548,31 +555,35 @@ impl App {
                     self.fleet.transfer_input.clear();
                     return Ok(());
                 }
-                if value == 0 || value > available {
-                    self.fleet.transfer_status =
-                        Some(format!("Enter a quantity from 1 to {available}."));
+                let default_qty = 1u16.min(available);
+                let Some((value, crippled)) =
+                    parse_quantity_input(&self.fleet.transfer_input, default_qty)
+                else {
+                    self.fleet.transfer_status = Some("Enter an integer value.".to_string());
+                    return Ok(());
+                };
+                let Some(donor) = self
+                    .fleet
+                    .transfer_donor_record_index_1_based
+                    .and_then(|idx| self.game_data.fleets.get(idx - 1))
+                else {
+                    return Ok(());
+                };
+                let category = ShipCategory::from(class);
+                if let Some(message) = staging_error(
+                    donor,
+                    &self.fleet.transfer_selection,
+                    category,
+                    value,
+                    crippled,
+                    available,
+                ) {
+                    self.fleet.transfer_status = Some(message);
                     return Ok(());
                 }
-                match class {
-                    FleetDetachClass::Battleships => {
-                        self.fleet.transfer_selection.battleships += value
-                    }
-                    FleetDetachClass::Cruisers => self.fleet.transfer_selection.cruisers += value,
-                    FleetDetachClass::Destroyers => {
-                        self.fleet.transfer_selection.destroyers += value
-                    }
-                    FleetDetachClass::FullTransports => {
-                        self.fleet.transfer_selection.full_transports += value
-                    }
-                    FleetDetachClass::EmptyTransports => {
-                        self.fleet.transfer_selection.empty_transports += value
-                    }
-                    FleetDetachClass::Scouts => {
-                        self.fleet.transfer_selection.scouts =
-                            self.fleet.transfer_selection.scouts.saturating_add(value);
-                    }
-                    FleetDetachClass::Etacs => self.fleet.transfer_selection.etacs += value,
-                }
+                self.fleet
+                    .transfer_selection
+                    .stage(category, value, crippled);
                 self.fleet.transfer_input.clear();
                 self.fleet.transfer_status = None;
                 self.fleet.transfer_mode = FleetTransferMode::ChoosingClass;
@@ -645,7 +656,7 @@ impl App {
                     _ => {
                         let Some(class) = self.parse_fleet_detach_class_code(&raw) else {
                             self.fleet.detach_status =
-                                Some("Use BB, CA, DD, TT*, TT, SC, ET, C, X, or Q.".to_string());
+                                Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.".to_string());
                             return Ok(());
                         };
                         if self.fleet_detach_available_for_class(class) == 0 {
@@ -660,8 +671,6 @@ impl App {
                 }
             }
             FleetDetachMode::EnteringQuantity(class) => {
-                let default_qty = 1u16.min(self.fleet_detach_available_for_class(class));
-                let value = self.resolve_fleet_detach_numeric_input(default_qty)?;
                 let available = self.fleet_detach_available_for_class(class);
                 if available == 0 {
                     self.fleet.detach_status =
@@ -670,35 +679,29 @@ impl App {
                     self.fleet.detach_input.clear();
                     return Ok(());
                 }
-                if value == 0 || value > available {
-                    self.fleet.detach_status =
-                        Some(format!("Enter a quantity from 1 to {available}."));
+                let default_qty = 1u16.min(available);
+                let Some((value, crippled)) =
+                    parse_quantity_input(&self.fleet.detach_input, default_qty)
+                else {
+                    self.fleet.detach_status = Some("Enter an integer value.".to_string());
+                    return Ok(());
+                };
+                let Some(donor) = self.game_data.fleets.get(donor_record_index_1_based - 1) else {
+                    return Ok(());
+                };
+                let category = ShipCategory::from(class);
+                if let Some(message) = staging_error(
+                    donor,
+                    &self.fleet.detach_selection,
+                    category,
+                    value,
+                    crippled,
+                    available,
+                ) {
+                    self.fleet.detach_status = Some(message);
                     return Ok(());
                 }
-                match class {
-                    FleetDetachClass::Battleships => {
-                        self.fleet.detach_selection.battleships += value;
-                    }
-                    FleetDetachClass::Cruisers => {
-                        self.fleet.detach_selection.cruisers += value;
-                    }
-                    FleetDetachClass::Destroyers => {
-                        self.fleet.detach_selection.destroyers += value;
-                    }
-                    FleetDetachClass::FullTransports => {
-                        self.fleet.detach_selection.full_transports += value;
-                    }
-                    FleetDetachClass::EmptyTransports => {
-                        self.fleet.detach_selection.empty_transports += value;
-                    }
-                    FleetDetachClass::Scouts => {
-                        self.fleet.detach_selection.scouts =
-                            self.fleet.detach_selection.scouts.saturating_add(value);
-                    }
-                    FleetDetachClass::Etacs => {
-                        self.fleet.detach_selection.etacs += value;
-                    }
-                }
+                self.fleet.detach_selection.stage(category, value, crippled);
                 self.fleet.detach_input.clear();
                 self.fleet.detach_status = None;
                 self.fleet.detach_mode = FleetDetachMode::ChoosingClass;
@@ -788,14 +791,23 @@ impl App {
             .unwrap_or(1);
         match self.fleet.detach_mode {
             FleetDetachMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ET,C,X> ".to_string(),
+                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
                 String::new(),
             ),
             FleetDetachMode::EnteringQuantity(class) => (
-                format!(
-                    "{} to stage (max {}) ",
-                    self.fleet_detach_class_label(class),
-                    self.fleet_detach_available_for_class(class)
+                quantity_prompt(
+                    class,
+                    self.fleet_detach_available_for_class(class),
+                    self.fleet
+                        .detach_donor_record_index_1_based
+                        .and_then(|idx| self.game_data.fleets.get(idx - 1))
+                        .map_or(0, |donor| {
+                            crippled_left_to_stage(
+                                donor,
+                                &self.fleet.detach_selection,
+                                ShipCategory::from(class),
+                            )
+                        }),
                 ),
                 "1".to_string(),
             ),
@@ -807,7 +819,10 @@ impl App {
     }
 
     pub(crate) fn fleet_detach_staged_summary(&self) -> String {
-        self.format_fleet_detach_summary_from_selection(self.fleet.detach_selection)
+        self.format_fleet_detach_summary_from_selection(
+            self.fleet.detach_donor_record_index_1_based,
+            &self.fleet.detach_selection,
+        )
     }
 
     pub(crate) fn fleet_detach_remaining_summary(&self) -> String {
@@ -889,76 +904,35 @@ impl App {
     }
 
     fn parse_fleet_detach_class_code(&self, raw: &str) -> Option<FleetDetachClass> {
-        match raw {
-            "BB" => Some(FleetDetachClass::Battleships),
-            "CA" => Some(FleetDetachClass::Cruisers),
-            "DD" => Some(FleetDetachClass::Destroyers),
-            "TT*" => Some(FleetDetachClass::FullTransports),
-            "TT" => Some(FleetDetachClass::EmptyTransports),
-            "SC" => Some(FleetDetachClass::Scouts),
-            "ET" => Some(FleetDetachClass::Etacs),
-            _ => None,
-        }
+        ShipCategory::from_code(raw).map(FleetDetachClass::from)
     }
 
-    fn fleet_detach_class_label(&self, class: FleetDetachClass) -> &'static str {
-        match class {
-            FleetDetachClass::Battleships => "BB",
-            FleetDetachClass::Cruisers => "CA",
-            FleetDetachClass::Destroyers => "DD",
-            FleetDetachClass::FullTransports => "TT*",
-            FleetDetachClass::EmptyTransports => "TT",
-            FleetDetachClass::Scouts => "SC",
-            FleetDetachClass::Etacs => "ET",
-        }
-    }
-
+    /// The ships a selection would move, in notation, as the move itself
+    /// resolves them. `none` before anything is staged.
     fn format_fleet_detach_summary_from_selection(
         &self,
-        selection: FleetDetachSelection,
+        donor_record_index_1_based: Option<usize>,
+        selection: &FleetDetachSelection,
     ) -> String {
-        let mut parts = Vec::new();
-        for (label, count) in [
-            ("SC", selection.scouts),
-            ("BB", selection.battleships),
-            ("CA", selection.cruisers),
-            ("DD", selection.destroyers),
-            ("TT*", selection.full_transports),
-            ("TT", selection.empty_transports),
-            ("ET", selection.etacs),
-        ] {
-            if count > 0 {
-                parts.push(format!("{label}={count}"));
-            }
-        }
-        if parts.is_empty() {
-            "none".to_string()
-        } else {
-            parts.join(" ")
-        }
+        donor_record_index_1_based
+            .and_then(|idx| self.game_data.fleets.get(idx - 1))
+            .and_then(|donor| resolve_selection(donor, selection).ok())
+            .map_or_else(|| "none".to_string(), |resolved| resolved.notation())
     }
 
     fn format_fleet_detach_summary_from_record(&self, record: &Fleet) -> String {
-        let empty_transports =
-            nc_data::troop_transports(&record).saturating_sub(record.ships.loaded_transports);
-        self.format_fleet_detach_summary_from_selection(FleetDetachSelection {
-            battleships: record.ships.battleships,
-            cruisers: record.ships.cruisers,
-            destroyers: record.ships.destroyers,
-            full_transports: record.ships.loaded_transports,
-            empty_transports,
-            scouts: record.ships.scouts,
-            etacs: record.ships.etacs,
-        })
+        match nc_data::fleet_notation(record) {
+            notation if notation.is_empty() => "none".to_string(),
+            notation => notation,
+        }
     }
 
     fn fleet_detach_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.detach_donor_record_index_1_based?;
-        let mut donor_after = self
-            .game_data
-            .fleets
-            .get(fleet_record_index_1_based - 1)?
-            .clone();
+        let donor = self.game_data.fleets.get(fleet_record_index_1_based - 1)?;
+        let resolved = resolve_selection(donor, &self.fleet.detach_selection).ok()?;
+        let mut donor_after = donor.clone();
+        donor_after.crippled = resolved.remaining;
         donor_after.ships.battleships = donor_after
             .ships
             .battleships
@@ -1106,7 +1080,10 @@ impl App {
     }
 
     pub(crate) fn fleet_transfer_staged_summary(&self) -> String {
-        self.format_fleet_detach_summary_from_selection(self.fleet.transfer_selection)
+        self.format_fleet_detach_summary_from_selection(
+            self.fleet.transfer_donor_record_index_1_based,
+            &self.fleet.transfer_selection,
+        )
     }
 
     pub(crate) fn fleet_transfer_remaining_summary(&self) -> String {
@@ -1130,14 +1107,23 @@ impl App {
     pub(crate) fn fleet_transfer_prompt_and_default(&self) -> (String, String) {
         match self.fleet.transfer_mode {
             FleetTransferMode::ChoosingClass => (
-                "Class <BB,CA,DD,TT*,TT,SC,ET,C,X> ".to_string(),
+                "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X> ".to_string(),
                 String::new(),
             ),
             FleetTransferMode::EnteringQuantity(class) => (
-                format!(
-                    "{} to stage (max {}) ",
-                    self.fleet_detach_class_label(class),
-                    self.fleet_transfer_available_for_class(class)
+                quantity_prompt(
+                    class,
+                    self.fleet_transfer_available_for_class(class),
+                    self.fleet
+                        .transfer_donor_record_index_1_based
+                        .and_then(|idx| self.game_data.fleets.get(idx - 1))
+                        .map_or(0, |donor| {
+                            crippled_left_to_stage(
+                                donor,
+                                &self.fleet.transfer_selection,
+                                ShipCategory::from(class),
+                            )
+                        }),
                 ),
                 "1".to_string(),
             ),
@@ -1204,23 +1190,6 @@ impl App {
         }
     }
 
-    fn resolve_fleet_transfer_numeric_input(
-        &mut self,
-        default: u16,
-    ) -> Result<u16, Box<dyn std::error::Error>> {
-        let raw = self.fleet.transfer_input.trim();
-        if raw.is_empty() {
-            return Ok(default);
-        }
-        match raw.parse::<u16>() {
-            Ok(value) => Ok(value),
-            Err(_) => {
-                self.fleet.transfer_status = Some("Enter an integer value.".to_string());
-                Err("invalid transfer numeric input".into())
-            }
-        }
-    }
-
     fn reset_fleet_transfer_staging(&mut self) {
         self.fleet.transfer_input.clear();
         self.fleet.transfer_status = None;
@@ -1281,11 +1250,10 @@ impl App {
 
     fn fleet_transfer_donor_after_selection_record(&self) -> Option<Fleet> {
         let fleet_record_index_1_based = self.fleet.transfer_donor_record_index_1_based?;
-        let mut donor_after = self
-            .game_data
-            .fleets
-            .get(fleet_record_index_1_based - 1)?
-            .clone();
+        let donor = self.game_data.fleets.get(fleet_record_index_1_based - 1)?;
+        let resolved = resolve_selection(donor, &self.fleet.transfer_selection).ok()?;
+        let mut donor_after = donor.clone();
+        donor_after.crippled = resolved.remaining;
         donor_after.ships.battleships = donor_after
             .ships
             .battleships
@@ -1320,12 +1288,18 @@ impl App {
     }
 
     fn fleet_transfer_host_after_selection_record(&self) -> Option<Fleet> {
+        let donor = self
+            .game_data
+            .fleets
+            .get(self.fleet.transfer_donor_record_index_1_based? - 1)?;
+        let resolved = resolve_selection(donor, &self.fleet.transfer_selection).ok()?;
         let fleet_record_index_1_based = self.fleet.transfer_host_record_index_1_based?;
         let mut host_after = self
             .game_data
             .fleets
             .get(fleet_record_index_1_based - 1)?
             .clone();
+        host_after.crippled.add(&resolved.moved);
         host_after.ships.battleships = host_after
             .ships
             .battleships
@@ -1378,6 +1352,99 @@ impl App {
             destination,
         )
     }
+}
+
+/// The longest class code a player types: `ETAC`.
+const CLASS_CODE_MAX_LEN: usize = 4;
+
+impl From<FleetDetachClass> for ShipCategory {
+    fn from(class: FleetDetachClass) -> Self {
+        match class {
+            FleetDetachClass::Battleships => ShipCategory::Battleships,
+            FleetDetachClass::Cruisers => ShipCategory::Cruisers,
+            FleetDetachClass::Destroyers => ShipCategory::Destroyers,
+            FleetDetachClass::FullTransports => ShipCategory::FullTransports,
+            FleetDetachClass::EmptyTransports => ShipCategory::EmptyTransports,
+            FleetDetachClass::Scouts => ShipCategory::Scouts,
+            FleetDetachClass::Etacs => ShipCategory::Etacs,
+        }
+    }
+}
+
+impl From<ShipCategory> for FleetDetachClass {
+    fn from(category: ShipCategory) -> Self {
+        match category {
+            ShipCategory::Battleships => FleetDetachClass::Battleships,
+            ShipCategory::Cruisers => FleetDetachClass::Cruisers,
+            ShipCategory::Destroyers => FleetDetachClass::Destroyers,
+            ShipCategory::FullTransports => FleetDetachClass::FullTransports,
+            ShipCategory::EmptyTransports => FleetDetachClass::EmptyTransports,
+            ShipCategory::Scouts => FleetDetachClass::Scouts,
+            ShipCategory::Etacs => FleetDetachClass::Etacs,
+        }
+    }
+}
+
+/// Whether `ch` may follow `typed` in a quantity: digits, then at most one
+/// `!` after the digits (`3!` means three crippled ships).
+fn quantity_char_fits(typed: &str, ch: char) -> bool {
+    if typed.ends_with('!') {
+        return false;
+    }
+    match ch {
+        '!' => !typed.is_empty(),
+        ch => ch.is_ascii_digit() && typed.len() < 3,
+    }
+}
+
+/// A typed quantity: digits, with a trailing `!` for crippled ships only.
+/// Empty input is the default quantity.
+fn parse_quantity_input(typed: &str, default: u16) -> Option<(u16, bool)> {
+    let typed = typed.trim();
+    if typed.is_empty() {
+        return Some((default, false));
+    }
+    let (digits, crippled) = match typed.strip_suffix('!') {
+        Some(digits) => (digits, true),
+        None => (typed, false),
+    };
+    digits.parse::<u16>().ok().map(|value| (value, crippled))
+}
+
+/// The quantity prompt for a class. A class with crippled ships left to
+/// stage also says how to ask for them.
+fn quantity_prompt(class: FleetDetachClass, available: u16, crippled_left: u32) -> String {
+    let code = ShipCategory::from(class).code();
+    if crippled_left == 0 {
+        format!("{code} to stage (max {available}) ")
+    } else {
+        format!("{code} to stage (max {available}, n! = crippled only) ")
+    }
+}
+
+/// Why `value` ships of `category` cannot be staged on top of `selection`, if
+/// they cannot. A plain quantity has to fit what the class has left; `n!`
+/// has to fit the crippled ships the staged ships leave, and is never filled
+/// out with healthy ones.
+fn staging_error(
+    donor: &Fleet,
+    selection: &FleetDetachSelection,
+    category: ShipCategory,
+    value: u16,
+    crippled: bool,
+    available: u16,
+) -> Option<String> {
+    if !crippled {
+        return (value == 0 || value > available)
+            .then(|| format!("Enter a quantity from 1 to {available}."));
+    }
+    let crippled_left =
+        crippled_left_to_stage(donor, selection, category).min(u32::from(available)) as u16;
+    if crippled_left == 0 {
+        return Some(format!("No crippled {} left to stage.", category.code()));
+    }
+    (value == 0 || value > crippled_left)
+        .then(|| format!("Enter a crippled quantity from 1 to {crippled_left}."))
 }
 
 pub(super) fn fleet_eta_label(game_data: &CoreGameData, fleet_idx: usize) -> String {

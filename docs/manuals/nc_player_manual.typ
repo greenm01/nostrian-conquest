@@ -294,6 +294,33 @@ Ships operate in fleets. A fleet always moves at the speed of its slowest member
   ),
 )
 
+=== Reading Fleet Compositions <ship-notation>
+
+Wherever the game lists the ships of a fleet in one line, it uses one notation: a ship code, the total number of ships of that kind, and, when some of them are crippled, a `!` and the number crippled. The total always includes the crippled ships. A single ship still shows its count, a kind the fleet lacks is left out, and `!0` is never written.
+
+#figure(
+  table(
+    columns: (auto, 1fr),
+    align: (left, left),
+    inset: 6pt,
+    table.header([Token], [Meaning]),
+    [`DD8`], [Eight destroyers, none crippled.],
+    [`CA12!3`], [Twelve cruisers in all; three of them are crippled.],
+    [`BB2!1`], [Two battleships; one is crippled.],
+    [`SC1`], [One scout.],
+    [`TT5`], [Five empty transports.],
+    [`TT*4!1`], [Four loaded transports; one is crippled.],
+    [`ETAC2`], [Two ETACs.],
+    [`SB1!1`], [One starbase, crippled.],
+  ),
+)
+
+A fleet of `DD8 CA12!3 BB2!1 TT5 TT*4!1 ETAC2` therefore holds nine transports, five empty and four loaded: the star marks cargo, the bang marks damage, and the two never mix. The short legend, repeated in the in-game help, is: `!n = crippled ships included in total; TT* = loaded transports`.
+
+A fleet counts its crippled transports once, whether they carry armies or not. The game lists them against the loaded transports first, the same order in which transports are lost in battle.
+
+In the Fleet List the Ships cell is narrow. When it cannot hold a damaged fleet's whole composition, it ends in `+!`: the `+` says the line was cut short, and the `!` says the fleet has crippled ships. A lone `!` never means the whole fleet is crippled.
+
 == Starbases
 
 Starbases are large space fortresses (Cost: 50, AS: 100, DS: 120). In orbit,
@@ -427,7 +454,7 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 There is no "first strike" advantage. Each round, both sides fire at the same instant. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength in every later battle until it recovers on its own: a ship crippled this year fights crippled next year and the year after, and is whole from then on, with no order, payment, or shipyard. A fleet that rests in orbit of your world beside your starbase for a whole year gets its older cripples back a year sooner. Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength in every later battle until it recovers on its own: a ship crippled this year fights crippled next year and the year after, and is whole from then on, with no order, payment, or shipyard. A fleet that rests in orbit of your world beside your starbase for a whole year gets its older cripples back a year sooner. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
@@ -836,9 +863,21 @@ Fleet ID as the host, and *T* opens ship transfer for a checked pair. Row-based
 commands such as *Review*, *ETA*, *Detach*, *Load*, and *Unload* still use the
 highlighted fleet.
 
-Crippled ships show in two places. The Fleet List adds the number of damaged
-ships to a fleet's Ships cell when it fits, and *Review* lists them by class.
-Your maintenance report says when ships have recovered.
+Crippled ships show in the Ships cell of the Fleet List, in *Review*, and in
+*Detach* and *Transfer*, always in the notation of @ship-notation. *Review*
+adds the short legend under the composition of a damaged fleet. Your
+maintenance report says when ships have recovered.
+
+*Detach* (*D*) and *Transfer* (*T*) stage ships one class at a time. Type a class
+code (`BB`, `CA`, `DD`, `TT*`, `TT`, `SC`, or `ETAC`), then a quantity. A plain
+quantity such as `3` takes healthy ships first and takes crippled ships only
+when the class has too few healthy ones. A quantity followed by a bang, such as
+`3!`, takes exactly three crippled ships; the game refuses it when the fleet has
+fewer, and it never fills the gap with healthy ships. Among crippled ships, those
+crippled most recently go first, then those with the most recovery time left.
+The *Staged* line shows the ships that will move, in the same notation: `CA3!1`
+is three cruisers, one of them crippled. Moving crippled ships never repairs
+them or restarts their recovery, and each keeps the time it has left.
 
 == Building and Commissioning
 
@@ -1160,7 +1199,9 @@ outright, a crippled ship first.
   class. A starbase brings it back a year early when the hull was crippled
   before the year began and its fleet rested in orbit of your own world beside
   that starbase for the whole year. Finishing fire takes the newest damage
-  first, then the hulls with the most time left.
+  first, then the hulls with the most time left. Detach and Transfer
+  take healthy hulls first for a plain quantity and crippled hulls, newest damage
+  first, for `n!`.
 
 == Planetary Force Ratio to CRT Column
 

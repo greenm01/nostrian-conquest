@@ -161,5 +161,5 @@ fn structured_report_rows_keep_label_column_alignment() {
         .position(|line| line.starts_with("Attacking force:"))
         .expect("attacking force row");
     assert_eq!(&lines[force_idx][..18], "Attacking force:  ");
-    assert!(lines[force_idx][18..].starts_with(|ch: char| ch.is_ascii_digit()));
+    assert!(lines[force_idx][18..].starts_with(|ch: char| ch.is_ascii_uppercase()));
 }

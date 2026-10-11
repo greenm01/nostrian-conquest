@@ -1,30 +1,25 @@
 use super::support::*;
 use super::*;
 use crate::{
-    CrippledShips, HullClass, recompute_max_speed, set_armies_aboard, set_mission_target,
-    starship_count,
+    ResolvedSelection, recompute_max_speed, resolve_selection, set_armies_aboard,
+    set_mission_target, starship_count,
 };
 
-/// The crippled hulls that go with a selection of ships. Players pick ships
-/// by class, so a split takes the donor's crippled hulls of each class
-/// first, the most turns left first, which leaves the fleet that stays
-/// closest to full strength. Nothing resets or speeds up a recovery.
-fn take_crippled(donor: &mut CrippledShips, selection: &FleetDetachSelection) -> CrippledShips {
-    let mut moved = CrippledShips::default();
-    for (class, count) in [
-        (HullClass::Battleship, u32::from(selection.battleships)),
-        (HullClass::Cruiser, u32::from(selection.cruisers)),
-        (HullClass::Destroyer, u32::from(selection.destroyers)),
-        (
-            HullClass::Transport,
-            u32::from(selection.full_transports) + u32::from(selection.empty_transports),
-        ),
-        (HullClass::Scout, u32::from(selection.scouts)),
-        (HullClass::Etac, u32::from(selection.etacs)),
-    ] {
-        *moved.get_mut(class) = donor.get_mut(class).take(count);
-    }
-    moved
+/// The recovery state that goes with a selection: `n!` takes crippled ships,
+/// a plain number takes healthy ships first (see [`resolve_selection`]).
+fn resolve_moved_ships(
+    donor: &Fleet,
+    fleet_index_1_based: usize,
+    selection: &FleetDetachSelection,
+) -> Result<ResolvedSelection, GameStateMutationError> {
+    resolve_selection(donor, selection).map_err(|shortage| {
+        GameStateMutationError::FleetDetachCrippledExceedsAvailable {
+            fleet_index_1_based,
+            ship_kind: shortage.category.code(),
+            requested: shortage.requested,
+            available: shortage.available,
+        }
+    })
 }
 
 impl CoreGameData {
@@ -120,7 +115,8 @@ impl CoreGameData {
             .saturating_sub(selection.full_transports);
         donor_after.ships.scouts = donor_after.ships.scouts.saturating_sub(selection.scouts);
         donor_after.ships.etacs = donor_after.ships.etacs.saturating_sub(selection.etacs);
-        let moved_crippled = take_crippled(&mut donor_after.crippled, &selection);
+        let moved = resolve_moved_ships(donor, donor_fleet_record_index_1_based, &selection)?;
+        donor_after.crippled = moved.remaining;
         recompute_max_speed(&mut donor_after);
         let donor_mission_invalidated = composition_invalidates_current_mission(&donor_after);
         if donor_mission_invalidated.is_none()
@@ -162,7 +158,7 @@ impl CoreGameData {
         new_fleet.ships.loaded_transports = selection.full_transports;
         new_fleet.ships.scouts = selection.scouts;
         new_fleet.ships.etacs = selection.etacs;
-        new_fleet.crippled = moved_crippled;
+        new_fleet.crippled = moved.moved;
         // Ships detached from an escaping fleet are still escaping: a split
         // gives nobody a second pursuit.
         new_fleet.escape = donor.escape;
@@ -313,7 +309,8 @@ impl CoreGameData {
             .saturating_sub(selection.full_transports);
         donor_after.ships.scouts = donor_after.ships.scouts.saturating_sub(selection.scouts);
         donor_after.ships.etacs = donor_after.ships.etacs.saturating_sub(selection.etacs);
-        let moved_crippled = take_crippled(&mut donor_after.crippled, &selection);
+        let moved = resolve_moved_ships(&donor, donor_fleet_record_index_1_based, &selection)?;
+        donor_after.crippled = moved.remaining;
         recompute_max_speed(&mut donor_after);
         if donor_after.speed > donor_after.max_speed {
             donor_after.speed = donor_after.max_speed;
@@ -339,7 +336,7 @@ impl CoreGameData {
             .saturating_add(selection.full_transports);
         host_after.ships.scouts = host_after.ships.scouts.saturating_add(selection.scouts);
         host_after.ships.etacs = host_after.ships.etacs.saturating_add(selection.etacs);
-        host_after.crippled.add(&moved_crippled);
+        host_after.crippled.add(&moved.moved);
         recompute_max_speed(&mut host_after);
         if host_after.speed > host_after.max_speed {
             host_after.speed = host_after.max_speed;

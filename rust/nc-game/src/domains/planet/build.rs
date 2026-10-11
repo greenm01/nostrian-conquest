@@ -1827,19 +1827,12 @@ fn format_auto_commission_fleet_entry(
     entry: &AutoCommissionFleetEntry,
     max_fleet_number: u16,
 ) -> String {
-    let mut composition = Vec::new();
-    push_auto_commission_ship_code(&mut composition, "DD", entry.destroyers);
-    push_auto_commission_ship_code(&mut composition, "CA", entry.cruisers);
-    push_auto_commission_ship_code(&mut composition, "BB", entry.battleships);
-    push_auto_commission_ship_code(&mut composition, "SC", entry.scouts);
-    push_auto_commission_ship_code(&mut composition, "TT", entry.transports);
-    push_auto_commission_ship_code(&mut composition, "ET", entry.etacs);
     format!(
         "Fleet {} commissioned from \"{}\" in sector {} with {}.",
         format_fleet_number(entry.fleet_number, max_fleet_number),
         entry.planet_name,
         format_sector_coords_table(entry.coords),
-        composition.join(", "),
+        nc_data::auto_commission_notation(entry),
     )
 }
 
@@ -1850,11 +1843,4 @@ fn format_auto_commission_starbase_entry(entry: &AutoCommissionStarbaseEntry) ->
         entry.planet_name,
         format_sector_coords_table(entry.coords),
     )
-}
-
-fn push_auto_commission_ship_code(parts: &mut Vec<String>, code: &str, qty: u32) {
-    if qty == 0 {
-        return;
-    }
-    parts.push(format!("{code} {qty:02}"));
 }

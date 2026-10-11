@@ -1855,7 +1855,7 @@ fn fleet_list_enter_on_fleet_opens_review_and_escape_returns_to_list() {
 }
 
 #[test]
-fn fleet_review_lists_crippled_ships_by_class_only_when_there_are_any() {
+fn fleet_review_shows_crippled_ships_in_ship_notation() {
     let mut app = dash_app();
     app.overlay = ActiveOverlay::FleetList;
     select_first_fleet_row(&mut app);
@@ -1869,11 +1869,9 @@ fn fleet_review_lists_crippled_ships_by_class_only_when_there_are_any() {
         fleet.ships.destroyers = 3;
     }
     app.handle_key(key(KeyCode::Enter));
-    assert!(
-        !render_dashboard_lines(&app)
-            .iter()
-            .any(|line| line.contains("Damaged"))
-    );
+    let ships = render_fleet_detail_popup_line(&app, "Ships");
+    assert!(ships.contains("BB1 DD3"), "{ships}");
+    assert!(!ships.contains('!'), "{ships}");
     app.handle_key(key(KeyCode::Esc));
 
     {
@@ -1882,10 +1880,13 @@ fn fleet_review_lists_crippled_ships_by_class_only_when_there_are_any() {
         fleet.crippled.battleships.turns[1] = 1;
     }
     app.handle_key(key(KeyCode::Enter));
-    let damaged = render_fleet_detail_popup_line(&app, "Damaged");
-    assert!(damaged.contains("BB 2DD"), "{damaged}");
     let ships = render_fleet_detail_popup_line(&app, "Ships");
-    assert_eq!(ships.find(" : "), damaged.find(" : "));
+    assert!(ships.contains("BB1!1 DD3!2"), "{ships}");
+    assert!(
+        !render_dashboard_lines(&app)
+            .iter()
+            .any(|line| line.contains("Damaged"))
+    );
 }
 
 #[test]

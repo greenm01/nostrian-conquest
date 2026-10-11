@@ -178,7 +178,7 @@ fn fleet_matches_clause(
         "ars" => clause
             .predicate
             .matches_number(Some(i64::from(row.loaded_armies))),
-        "shi" => clause.predicate.matches_text(Some(&row.composition_label)),
+        "shi" => clause.predicate.matches_text(Some(&row.table_ships_label)),
         "sel" => clause
             .predicate
             .matches_bool(selected_fleet_record_indexes.contains(&row.fleet_record_index_1_based)),
@@ -1794,10 +1794,8 @@ impl App {
                     rules_of_engagement: fleet.rules_of_engagement,
                     loaded_armies: fleet.ships.loaded_transports,
                     order_label,
-                    composition_label: nc_data::ship_composition_summary(&fleet),
                     table_ships_label: nc_data::ship_composition_table_summary(&fleet),
                     damaged_ships: fleet.crippled.total(),
-                    damaged_label: nc_data::damaged_ships_table_summary(&fleet),
                     join_host_fleet_number,
                 }
             })

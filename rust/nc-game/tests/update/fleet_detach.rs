@@ -49,12 +49,12 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
     assert!(terminal.line(6).starts_with(" Target: "));
     assert_eq!(terminal.line(7).trim_end(), " Speed: 0");
     assert_eq!(terminal.line(8).trim_end(), " ROE: 0");
-    assert!(terminal.line(10).contains("Ships: SC CA 4DD 4TT*"));
+    assert!(terminal.line(10).contains("Ships: SC1 CA1 DD4 TT*4"));
     assert!(!terminal.line(10).contains("AR="));
     assert_eq!(terminal.line(12).trim_end(), "<C>ommission, <X> Cancel");
     assert!(
-        line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ET,C,X>")
-            .contains("Class <BB,CA,DD,TT*,TT,SC,ET,C,X>")
+        line_containing(&terminal, "Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>")
+            .contains("Class <BB,CA,DD,TT*,TT,SC,ETAC,C,X>")
     );
     assert!(
         !terminal
@@ -80,8 +80,8 @@ fn fleet_detach_uses_staged_class_prompt_and_creates_new_fleet() {
 
     submit_detach(&mut app);
     app.render(&mut terminal).expect("render staged summary");
-    assert!(line_containing(&terminal, "Staged for New Fleet: ").contains("DD=1"));
-    assert!(line_containing(&terminal, "Remaining on Donor: ").contains("SC=1 CA=1 DD=3 TT*=4"));
+    assert!(line_containing(&terminal, "Staged for New Fleet: ").contains("DD1"));
+    assert!(line_containing(&terminal, "Remaining on Donor: ").contains("SC1 CA1 DD3 TT*4"));
 
     enter_detach_input(&mut app, "c");
     submit_detach(&mut app);
@@ -245,7 +245,7 @@ fn fleet_detach_last_commissioned_message_persists_until_overwritten() {
         .expect("render empty commission warning with pinned message");
     assert_eq!(
         app.fleet.detach_status.as_deref(),
-        Some("Use BB, CA, DD, TT*, TT, SC, ET, C, X, or Q.")
+        Some("Use BB, CA, DD, TT*, TT, SC, ETAC, C, X, or Q.")
     );
     assert!(
         terminal

@@ -2,10 +2,7 @@
 //! and the order hulls leave in. The arithmetic mirrors the cohort model in
 //! `tools/combat-model/recovery.py`.
 
-use nc_data::{
-    CrippledHulls, CrippledShips, Fleet, HullClass, RECOVERY_TURNS, Recovered,
-    damaged_ships_table_summary,
-};
+use nc_data::{CrippledHulls, CrippledShips, HullClass, RECOVERY_TURNS, Recovered};
 
 fn hulls(a: u32, b: u32, fresh: u32) -> CrippledHulls {
     CrippledHulls {
@@ -146,19 +143,13 @@ fn a_split_and_merge_conserves_every_counter() {
 }
 
 #[test]
-fn ships_sum_their_classes_and_summarise_them_by_class() {
+fn ships_sum_their_classes() {
     let mut crippled = CrippledShips::default();
     assert!(crippled.is_empty());
     crippled.get_mut(HullClass::Battleship).cripple(1);
     crippled.get_mut(HullClass::Destroyer).cripple(2);
     crippled.get_mut(HullClass::Destroyer).turns[1] += 1;
     assert_eq!(crippled.total(), 4);
-    let fleet = Fleet {
-        crippled,
-        ..Fleet::default()
-    };
-    assert_eq!(damaged_ships_table_summary(&fleet), "BB 3DD");
-    assert_eq!(damaged_ships_table_summary(&Fleet::default()), "");
 
     let mut other = CrippledShips::default();
     other.get_mut(HullClass::Battleship).cripple(2);

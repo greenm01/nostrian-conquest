@@ -2,7 +2,7 @@
 //! armies aboard them, the top speed its slowest ship allows, and the
 //! composition labels the screens and reports show.
 
-use crate::{CoreGameData, Fleet, HullClass, ShipCounts};
+use crate::{CoreGameData, Fleet, HullClass, ShipCounts, fleet_notation};
 
 /// All troop transports, empty and loaded.
 pub fn troop_transports(fleet: &Fleet) -> u16 {
@@ -95,50 +95,12 @@ pub fn slowest_speed(ships: &ShipCounts) -> u8 {
     max_speed
 }
 
-/// The fleet's ships as `SC=1 BB=2 ...`, armies counted as `AR`.
-pub fn ship_composition_summary(fleet: &Fleet) -> String {
-    let parts: Vec<String> = [
-        ("SC", fleet.ships.scouts),
-        ("BB", fleet.ships.battleships),
-        ("CA", fleet.ships.cruisers),
-        ("DD", fleet.ships.destroyers),
-        ("TT", troop_transports(fleet)),
-        ("AR", fleet.ships.loaded_transports),
-        ("ET", fleet.ships.etacs),
-    ]
-    .into_iter()
-    .filter(|&(_, count)| count > 0)
-    .map(|(label, count)| format!("{label}={count}"))
-    .collect();
-    assert!(!parts.is_empty(), "empty fleet record is not a fleet");
-    parts.join(" ")
-}
-
-/// The fleet's ships as the fleet list shows them: `2BB DD TT* 3TT`, with
-/// loaded transports marked `TT*`.
+/// The fleet's ships in the compact notation (`SC1 BB2!1 CA12!3 TT*4 TT5`),
+/// as the fleet lists, details, and previews show them.
 pub fn ship_composition_table_summary(fleet: &Fleet) -> String {
-    fn token(label: &str, count: u16) -> Option<String> {
-        match count {
-            0 => None,
-            1 => Some(label.to_string()),
-            _ => Some(format!("{count}{label}")),
-        }
-    }
-
-    let parts: Vec<String> = [
-        token("SC", fleet.ships.scouts),
-        token("BB", fleet.ships.battleships),
-        token("CA", fleet.ships.cruisers),
-        token("DD", fleet.ships.destroyers),
-        token("TT*", fleet.ships.loaded_transports),
-        token("TT", fleet.ships.empty_transports),
-        token("ET", fleet.ships.etacs),
-    ]
-    .into_iter()
-    .flatten()
-    .collect();
-    assert!(!parts.is_empty(), "empty fleet record is not a fleet");
-    parts.join(" ")
+    let summary = fleet_notation(fleet);
+    assert!(!summary.is_empty(), "empty fleet record is not a fleet");
+    summary
 }
 
 /// The ships of one class in the fleet.
@@ -152,27 +114,6 @@ pub fn hull_count(fleet: &Fleet, class: HullClass) -> u32 {
         HullClass::Transport => troop_transports(fleet),
         HullClass::Etac => ships.etacs,
     })
-}
-
-/// The fleet's crippled ships as the fleet detail view shows them, by
-/// class: `BB 2DD`. Empty when none are crippled.
-pub fn damaged_ships_table_summary(fleet: &Fleet) -> String {
-    [
-        ("SC", HullClass::Scout),
-        ("BB", HullClass::Battleship),
-        ("CA", HullClass::Cruiser),
-        ("DD", HullClass::Destroyer),
-        ("TT", HullClass::Transport),
-        ("ET", HullClass::Etac),
-    ]
-    .into_iter()
-    .filter_map(|(label, class)| match fleet.crippled.get(class).total() {
-        0 => None,
-        1 => Some(label.to_string()),
-        count => Some(format!("{count}{label}")),
-    })
-    .collect::<Vec<_>>()
-    .join(" ")
 }
 
 /// Every crippled hull in the game, fleets and starbases together.

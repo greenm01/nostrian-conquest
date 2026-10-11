@@ -306,9 +306,15 @@ that finishes a crippled hull takes the one with the most turns remaining,
 and the hulls crippled this pass before any other, so a fleet's survivors
 are the closest to recovery. A surviving crippled hull keeps its count.
 Merging fleets adds the counts, this pass's included. Detaching or
-transferring ships takes the donor's crippled hulls of each class first,
-in the same order, and moves their counts with them; nothing is reset or
-sped up. A fleet that changes owner would keep its counts; the engine has
+transferring ships moves a plain quantity healthy hulls first, then crippled
+ones only if the class has too few healthy hulls; `n!` moves exactly `n`
+crippled hulls and is refused, with nothing changed, when the class has
+fewer. Crippled hulls leave the donor in the same order as finishing fire
+(this pass's first, then the most turns left) and take their counts with
+them; nothing is reset or sped up. One rule, `resolve_selection`, picks the
+hulls for both the move and the door's preview. A fleet keeps one counter for
+all its transports, so the loaded/empty split of crippled transports is read
+as loaded first, the order transport losses already follow. A fleet that changes owner would keep its counts; the engine has
 no path that moves a fleet between empires (a civil-disorder defection
 removes the fleet).
 

@@ -14,8 +14,7 @@ use nc_compat::classic::{
 use nc_data::*;
 use nc_data::{
     has_any_force, is_named_homeworld_seed, order_summary, ownership_summary, set_armies_aboard,
-    set_troop_transports, ship_composition_summary, ship_composition_table_summary,
-    stardock_slot_kind,
+    set_troop_transports, ship_composition_table_summary, stardock_slot_kind,
 };
 
 #[test]
@@ -200,8 +199,7 @@ fn round_trip_initialized_fleets_dat() {
         order_summary(&parsed[0]),
         "Guard/blockade world in System (16,13)"
     );
-    assert_eq!(ship_composition_summary(&parsed[0]), "CA=1 ET=1");
-    assert_eq!(ship_composition_table_summary(&parsed[0]), "CA ET");
+    assert_eq!(ship_composition_table_summary(&parsed[0]), "CA1 ETAC1");
 
     assert_eq!(parsed[2].record.0, 3);
     assert_eq!(parsed[2].fleet_number.0, 3);
@@ -219,8 +217,7 @@ fn round_trip_initialized_fleets_dat() {
         order_summary(&parsed[2]),
         "Guard/blockade world in System (16,13)"
     );
-    assert_eq!(ship_composition_summary(&parsed[2]), "DD=1");
-    assert_eq!(ship_composition_table_summary(&parsed[2]), "DD");
+    assert_eq!(ship_composition_table_summary(&parsed[2]), "DD1");
 }
 
 #[test]
@@ -264,15 +261,15 @@ fn fleet_table_summary_uses_tt_star_for_loaded_transports_only() {
     record.ships.etacs = 0;
     set_troop_transports(&mut record, 2);
     set_armies_aboard(&mut record, 0);
-    assert_eq!(ship_composition_table_summary(&record), "2TT");
+    assert_eq!(ship_composition_table_summary(&record), "TT2");
 
     set_armies_aboard(&mut record, 2);
-    assert_eq!(ship_composition_table_summary(&record), "2TT*");
-    assert!(!ship_composition_table_summary(&record).contains("TT "));
+    assert_eq!(ship_composition_table_summary(&record), "TT*2");
+    assert!(!ship_composition_table_summary(&record).contains("TT2"));
 }
 
 #[test]
-fn fleet_list_summary_shows_counts_only_when_greater_than_one() {
+fn fleet_list_summary_always_shows_the_total_even_for_one_ship() {
     let mut record = parse_fleets_dat(&read_post_maint_fixture("FLEETS.DAT")).unwrap()[0].clone();
     record.ships.scouts = 2;
     record.ships.battleships = 1;
@@ -282,7 +279,7 @@ fn fleet_list_summary_shows_counts_only_when_greater_than_one() {
     set_armies_aboard(&mut record, 0);
     record.ships.etacs = 1;
 
-    assert_eq!(ship_composition_table_summary(&record), "2SC BB 4DD ET");
+    assert_eq!(ship_composition_table_summary(&record), "SC2 BB1 DD4 ETAC1");
 }
 
 #[test]
@@ -296,7 +293,7 @@ fn fleet_list_summary_splits_loaded_and_empty_transports() {
     set_armies_aboard(&mut record, 2);
     record.ships.etacs = 0;
 
-    assert_eq!(ship_composition_table_summary(&record), "2TT* 3TT");
+    assert_eq!(ship_composition_table_summary(&record), "TT*2 TT3");
 }
 
 #[test]

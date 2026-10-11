@@ -86,10 +86,8 @@ fn fleet_group_order_scrollbar_renders_just_right_of_table_border() {
             rules_of_engagement: 6,
             loaded_armies: 0,
             order_label: "Patrol".to_string(),
-            composition_label: "SC=1".to_string(),
-            table_ships_label: "SC".to_string(),
+            table_ships_label: "SC1".to_string(),
             damaged_ships: 0,
-            damaged_label: String::new(),
             join_host_fleet_number: None,
         })
         .collect::<Vec<_>>();
@@ -134,7 +132,7 @@ fn fleet_group_order_scrollbar_renders_just_right_of_table_border() {
 }
 
 #[test]
-fn fleet_group_order_ships_column_matches_sparse_counted_table_format() {
+fn fleet_group_order_ships_column_matches_ship_notation() {
     let rows = vec![FleetRow {
         fleet_record_index_1_based: 1,
         fleet_number: 4,
@@ -148,10 +146,8 @@ fn fleet_group_order_ships_column_matches_sparse_counted_table_format() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Patrol".to_string(),
-        composition_label: "SC=2 BB=1 DD=4 AR=2 ET=1".to_string(),
-        table_ships_label: "2SC BB 4DD 2TT* ET".to_string(),
+        table_ships_label: "SC2 BB1 DD4 TT*2".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
     let mut screen = FleetGroupScreen::new();
@@ -186,7 +182,7 @@ fn fleet_group_order_ships_column_matches_sparse_counted_table_format() {
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("2SC BB 4DD 2TT* ET")),
+            .any(|line| line.contains("SC2 BB1 DD4 TT*2")),
         "{:#?}",
         terminal.lines
     );
@@ -194,7 +190,7 @@ fn fleet_group_order_ships_column_matches_sparse_counted_table_format() {
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("│  2│") && line.contains("2SC BB 4DD 2TT* ET")),
+            .any(|line| line.contains("│  2│") && line.contains("SC2 BB1 DD4 TT*2")),
         "{:#?}",
         terminal.lines
     );
@@ -215,10 +211,8 @@ fn fleet_group_order_ships_column_truncates_by_whole_token_with_plus_marker() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Patrol".to_string(),
-        composition_label: "SC=2 BB=4 CA=3 DD=5 TT=5 AR=2 ET=1".to_string(),
-        table_ships_label: "2SC 4BB 3CA 5DD 2TT* 3TT ET".to_string(),
+        table_ships_label: "SC2 BB4 CA3 DD5 TT*2 TT3 ETAC1".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
     let mut screen = FleetGroupScreen::new();
@@ -253,7 +247,7 @@ fn fleet_group_order_ships_column_truncates_by_whole_token_with_plus_marker() {
         terminal
             .lines
             .iter()
-            .any(|line| line.contains("2SC 4BB 3CA 5DD +")),
+            .any(|line| line.contains("SC2 BB4 CA3 DD5 +")),
         "{:#?}",
         terminal.lines
     );
@@ -261,7 +255,7 @@ fn fleet_group_order_ships_column_truncates_by_whole_token_with_plus_marker() {
         terminal
             .lines
             .iter()
-            .all(|line| !line.contains("2TT* 3TT ET"))
+            .all(|line| !line.contains("TT*2 TT3 ETAC1"))
     );
 }
 
@@ -280,10 +274,8 @@ fn fleet_group_order_ar_column_renders_zero_like_fleet_list() {
         rules_of_engagement: 6,
         loaded_armies: 0,
         order_label: "Patrol".to_string(),
-        composition_label: "SC=1".to_string(),
-        table_ships_label: "SC".to_string(),
+        table_ships_label: "SC1".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     }];
     let mut screen = FleetGroupScreen::new();
@@ -340,10 +332,8 @@ fn fleet_single_order_coordinate_screen_splits_loaded_and_empty_transports() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Move fleet to Sector (19,13)".to_string(),
-        composition_label: "CA=1 TT=5 AR=2".to_string(),
-        table_ships_label: "CA 2TT* 3TT".to_string(),
+        table_ships_label: "CA1 TT*2 TT3".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: None,
     };
 
@@ -367,7 +357,7 @@ fn fleet_single_order_coordinate_screen_splits_loaded_and_empty_transports() {
         )
         .expect("fleet order screen renders");
 
-    assert!(buffer.plain_line(7).contains("Ships: CA 2TT* 3TT"));
+    assert!(buffer.plain_line(7).contains("Ships: CA1 TT*2 TT3"));
     assert!(!buffer.plain_line(7).contains("AR="));
 }
 
@@ -387,10 +377,8 @@ fn fleet_single_order_named_target_screen_splits_loaded_and_empty_transports() {
         rules_of_engagement: 6,
         loaded_armies: 2,
         order_label: "Join Fleet #3".to_string(),
-        composition_label: "CA=1 TT=5 AR=2".to_string(),
-        table_ships_label: "CA 2TT* 3TT".to_string(),
+        table_ships_label: "CA1 TT*2 TT3".to_string(),
         damaged_ships: 0,
-        damaged_label: String::new(),
         join_host_fleet_number: Some(3),
     };
 
@@ -414,7 +402,7 @@ fn fleet_single_order_named_target_screen_splits_loaded_and_empty_transports() {
         )
         .expect("named-target fleet order screen renders");
 
-    assert!(buffer.plain_line(7).contains("Ships: CA 2TT* 3TT"));
+    assert!(buffer.plain_line(7).contains("Ships: CA1 TT*2 TT3"));
     assert!(!buffer.plain_line(7).contains("AR="));
 }
 

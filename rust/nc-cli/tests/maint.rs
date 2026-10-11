@@ -1308,13 +1308,13 @@ fn maint_rust_surviving_fleet_battle_reports_loaded_armies_without_zero_army_cla
     assert!(
         report_texts
             .iter()
-            .any(|report| report.contains("Our forces:       3DD, 2TT*")),
+            .any(|report| report.contains("Our forces:       DD3 TT*2")),
         "expected friendly force summary with loaded armies, got: {report_texts:?}"
     );
     assert!(
         report_texts
             .iter()
-            .any(|report| { report.contains("Alien forces:     1DD, 2TT") })
+            .any(|report| { report.contains("Alien forces:     DD1 TT2") })
     );
     assert!(
         !report_texts
@@ -2133,10 +2133,10 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
         "{defender_report}"
     );
     assert!(
-        defender_report.contains("20BB, 20CA, 20DD"),
+        defender_report.contains("BB20 CA20 DD20"),
         "{defender_report}"
     );
-    assert!(defender_report.contains("120TT*"), "{defender_report}");
+    assert!(defender_report.contains("TT*120"), "{defender_report}");
     assert!(
         defender_report.contains("Our defenses:     15 ground batteries and 142 armies"),
         "{defender_report}"
@@ -2304,8 +2304,8 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
         defender_report.contains("Attacking force:"),
         "{defender_report}"
     );
-    assert!(defender_report.contains("1DD"), "{defender_report}");
-    assert!(defender_report.contains("10TT*"), "{defender_report}");
+    assert!(defender_report.contains("DD1"), "{defender_report}");
+    assert!(defender_report.contains("TT*10"), "{defender_report}");
     assert!(
         defender_report.contains("Our defenses:     1 ground battery and 1 army"),
         "{defender_report}"

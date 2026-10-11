@@ -247,6 +247,7 @@ fn pick_selection(state: &CoreGameData, record: usize, choices: Choices) -> Flee
         empty_transports: choices.pick(0, empty) as u16,
         scouts: choices.pick(0, u32::from(donor.ships.scouts)) as u16,
         etacs: choices.pick(0, u32::from(donor.ships.etacs)) as u16,
+        ..FleetDetachSelection::default()
     }
 }
 
