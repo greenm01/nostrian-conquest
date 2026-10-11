@@ -31,12 +31,12 @@
         }
         const wrapper = document.getElementById('terminal-wrapper');
         if (!wrapper) return 18;
-        // Conservative space with 48px margins
-        const availW = Math.max(300, wrapper.clientWidth - 48);
-        const availH = Math.max(200, wrapper.clientHeight - 48);
+        // Reserve space for wrapper padding (24px*2) + frame padding (20px*2) + bezel border
+        const availW = Math.max(300, wrapper.clientWidth - 110);
+        const availH = Math.max(200, wrapper.clientHeight - 110);
         // JetBrains Mono width/height is ~0.61; with lineHeight 1.0, row height is strictly fontSize
         const sizeW = Math.floor(availW / (80 * 0.61));
-        const sizeH = Math.floor(availH / 26.0);
+        const sizeH = Math.floor(availH / 25.5);
         // Comfortable default range: clamp between 14px and 20px
         const fit = Math.min(sizeW, sizeH);
         return Math.max(14, Math.min(fit, 20));
@@ -59,9 +59,10 @@
             cols: 80,
             rows: 25,
             scrollback: 0,
+            customGlyphs: true,
             cursorBlink: true,
             cursorStyle: 'block',
-            fontFamily: "'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace",
+            fontFamily: "'Perfect DOS VGA 437', 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace",
             fontSize: initialSize,
             lineHeight: 1.0,
             letterSpacing: 0,
@@ -94,7 +95,8 @@
         term.resize(80, 25);
         term.focus();
 
-        // Hardware-accelerated WebGL rendering at native Retina / HiDPI resolution
+        // Hardware-accelerated WebGL or Canvas rendering for seamless vector box-drawing
+        let rendererActive = false;
         if (window.WebglAddon && window.WebglAddon.WebglAddon) {
             try {
                 webglAddon = new window.WebglAddon.WebglAddon();
@@ -102,9 +104,21 @@
                     webglAddon.dispose();
                 });
                 term.loadAddon(webglAddon);
-                console.log('WebGL hardware acceleration enabled for xterm.js (HiDPI active)');
+                rendererActive = true;
+                console.log('xterm.js WebGL GPU renderer loaded (seamless vector box-drawing active)');
             } catch (err) {
-                console.warn('WebGL addon not supported, falling back to standard renderer:', err);
+                console.warn('WebGL addon failed, falling back to Canvas renderer:', err);
+            }
+        }
+
+        if (!rendererActive && window.CanvasAddon && window.CanvasAddon.CanvasAddon) {
+            try {
+                const canvasAddon = new window.CanvasAddon.CanvasAddon();
+                term.loadAddon(canvasAddon);
+                rendererActive = true;
+                console.log('xterm.js Canvas 2D renderer loaded (seamless vector box-drawing active)');
+            } catch (err) {
+                console.warn('Canvas addon failed:', err);
             }
         }
 

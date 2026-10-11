@@ -1,6 +1,14 @@
 /* Nostrian Conquest — Web Door Styling */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
 
+@font-face {
+    font-family: 'Perfect DOS VGA 437';
+    src: url('https://cdn.jsdelivr.net/npm/tuicss@2.1.2/dist/fonts/Perfect%20DOS%20VGA%20437.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 :root {
     --bg-color: #07090b;
     --term-bg: #000000;
@@ -9,7 +17,7 @@
     --amber-glow: #ffb833;
     --cyan-accent: #33ccff;
     --red-alert: #ff3344;
-    --font-term: 'JetBrains Mono', 'Cascadia Code', 'Consolas', 'Courier New', monospace;
+    --font-term: 'Perfect DOS VGA 437', 'JetBrains Mono', 'Cascadia Code', 'Consolas', monospace;
 }
 
 * {
@@ -121,28 +129,26 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0;
-    background: #000000;
-    overflow: hidden;
+    padding: 24px;
+    background: #080c11;
+    overflow: auto;
     position: relative;
 }
 
 #crt-frame {
     position: relative;
-    padding: 0;
-    margin: auto;
+    padding: 16px 20px;
     background: #000000;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    border: 2px solid #233140;
+    border-radius: 6px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    display: inline-block;
+    margin: auto;
 }
 
 #terminal {
     display: block;
-    margin: auto;
+    line-height: 1;
 }
 
 /* CRT Scanlines & Glow Overlay (Toggleable) */

@@ -5,6 +5,7 @@ Nostrian Conquest.
 
 The primary sources are:
 
+- [nc_quick_start.typ](nc_quick_start.typ)
 - [nc_player_manual.typ](nc_player_manual.typ)
 - [nc_sysop_manual.typ](nc_sysop_manual.typ)
 

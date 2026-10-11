@@ -239,6 +239,22 @@ pub async fn play(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+/// Download the 3-page Quick Start Guide PDF.
+#[poise::command(slash_command)]
+pub async fn guide(ctx: Context<'_>) -> Result<(), Error> {
+    let guide_path = std::path::Path::new("docs/manuals/nc_quick_start.pdf");
+    let mut reply = CreateReply::default().content(
+        "📖 **Nostrian Conquest — Quick Start Guide**\n*3-page tactical briefing: First-turn checklist, economic doctrine, and command reference.*",
+    );
+
+    if let Ok(bytes) = std::fs::read(guide_path) {
+        reply = reply.attachment(CreateAttachment::bytes(bytes, "nc_quick_start.pdf"));
+    }
+
+    ctx.send(reply).await?;
+    Ok(())
+}
+
 /// Start the Poise Discord bot framework.
 pub async fn run_bot(
     token: String,
@@ -247,7 +263,7 @@ pub async fn run_bot(
 ) -> Result<(), Error> {
     let framework = poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![status(), map(), report(), play()],
+            commands: vec![status(), map(), report(), play(), guide()],
             ..Default::default()
         })
         .setup(|ctx, _ready, framework| {
