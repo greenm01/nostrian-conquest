@@ -189,5 +189,5 @@ and nothing else. A producer fills a `Composition` and calls `notation()`.
 - **Tests.** `nc-cli/tests/notation_order.rs` checks the fleet, commission,
   detach, planet and CLI producers; three tests in
   `nc-engine/src/maint/results/format.rs` check the report producers. The
-  affected expectations moved to the new text. Workspace: 3111 passed, 0
+  affected expectations moved to the new text. Workspace, with main at 48ab3e7a merged: 3133 passed, 0
   failed, 11 ignored.
