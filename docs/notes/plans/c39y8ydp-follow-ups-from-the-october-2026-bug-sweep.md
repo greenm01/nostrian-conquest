@@ -552,3 +552,5 @@ the current year, but delivered mail and maintenance reports carry an
 earlier year (`report_year = year - 1`), so the filter hides everything.
 Make it show the latest delivered year. The filter is off by default.
 Found by the t067 follow-up.
+
+Result (2026-10-11): `nc-helm`'s "current year only" inbox filter now keeps delivered mail and reports of the year before the current one (the latest delivered year), and an outgoing row (the sender's own queued message, not yet delivered) of the current year.
