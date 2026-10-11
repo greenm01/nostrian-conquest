@@ -264,10 +264,11 @@ pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> Exchang
     }
 }
 
-/// A fleet battle side's die modifier: +1 for a mixed fleet and +1 for a
-/// starbase, at most +2.
-pub(super) fn fleet_die_modifier(state: &FleetCombatState) -> u8 {
-    let modifier = u8::from(state.is_mixed()) + u8::from(state.counts[IDX_SB] > 0);
+/// A fleet battle side's die modifier: +1 for a mixed fleet, +1 for a
+/// starbase, and +1 for a surprise first exchange, at most +2.
+pub(super) fn fleet_die_modifier(state: &FleetCombatState, surprise: bool) -> u8 {
+    let modifier =
+        u8::from(state.is_mixed()) + u8::from(state.counts[IDX_SB] > 0) + u8::from(surprise);
     modifier.min(FLEET_DIE_MODIFIER_CAP)
 }
 

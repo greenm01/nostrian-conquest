@@ -47,6 +47,7 @@ fn single_world(tax: u8, potential: u8, production: f64, goods: f64) -> CoreGame
         ipbms: vec![],
         setup: zeroed_setup(),
         conquest: configured_conquest(1),
+        sightings: Default::default(),
     }
 }
 

@@ -176,10 +176,12 @@ pub fn push_combat_entries(
                     value: enemy_initial,
                 },
             ];
-            let outcome_rows = vec![StructuredBodyItem::Label {
+            let mut outcome_rows = Vec::new();
+            outcome_rows.extend(surprise_sentence(event).map(StructuredBodyItem::Text));
+            outcome_rows.push(StructuredBodyItem::Label {
                 label: LABEL_ENEMY_LOSSES.to_string(),
                 value: combat_losses_value(event.enemy_losses, event.enemy_starbases_destroyed),
-            }];
+            });
             let items = structured_combat_body(
                 structured_fleet_destroyed_alert(),
                 context_rows,
@@ -236,6 +238,7 @@ pub fn push_combat_entries(
                 "Interception successful.".to_string(),
             ));
         }
+        outcome_rows.extend(surprise_sentence(event).map(StructuredBodyItem::Text));
         outcome_rows.push(StructuredBodyItem::Text(outcome_text.clone()));
         if let Some(starbase_line) = enemy_starbase_outcome_line(event.enemy_starbases_destroyed) {
             outcome_rows.push(StructuredBodyItem::Text(starbase_line));

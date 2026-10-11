@@ -498,6 +498,9 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
         &fleet_record_keys(game_data),
     );
     refs.remap(&defection_remap);
+    // What the pass removed after the ticks (colonizers, defectors) takes
+    // its empire's sighting memory with it where nothing else of it stands.
+    encounter::prune_sightings(game_data);
     defection_remap.remap_colonization_events(&mut colonization_events);
     defection_remap.remap_fleet_battle_phase_events(&mut fleet_battle_phase_events);
     defection_remap.remap_mission_events(&mut assault_events.mission_events);

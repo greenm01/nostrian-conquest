@@ -205,6 +205,7 @@ fn rename_owned_planet_updates_name_for_matching_owner() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
     data.players[0].mode = PlayerMode::Human;
 
@@ -388,6 +389,7 @@ fn commission_ship_from_stardock_appends_fleet_and_clears_slot() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 0).unwrap();
@@ -431,6 +433,7 @@ fn commission_support_only_fleet_starts_at_roe_zero() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 3).unwrap();
@@ -467,6 +470,7 @@ fn append_planet_build_order_still_uses_all_ten_queue_slots() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.append_planet_build_order(1, 15, 4).unwrap();
@@ -495,6 +499,7 @@ fn append_planet_build_order_merges_into_matching_kind_before_using_empty_slot()
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.append_planet_build_order(1, 15, 1).unwrap();
@@ -524,6 +529,7 @@ fn append_planet_build_order_keeps_one_slot_per_kind_with_no_point_cap() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.append_planet_build_order(1, 20, 1).unwrap();
@@ -570,6 +576,7 @@ fn append_planet_build_order_does_not_write_when_no_slot_is_free() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let error = data.append_planet_build_order(1, 2, 8).unwrap_err();
@@ -599,6 +606,7 @@ fn append_planet_build_order_rejects_non_multiple_ship_points() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let error = data.append_planet_build_order(1, 14, 4).unwrap_err();
@@ -632,6 +640,7 @@ fn append_planet_build_order_holds_any_number_of_starbases_in_one_slot() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     // ECGAME allows 15 starbases a year; Rust's ten slots used to hold three.
@@ -676,6 +685,7 @@ fn commission_ship_reuses_lowest_available_owned_fleet_number() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     // ECGAME appends fleet #2 as record 3 (id 3), then sorts the chain by
@@ -724,6 +734,7 @@ fn commission_ship_draft_can_split_selected_stardock_rows() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data
@@ -772,6 +783,7 @@ fn commission_starbase_from_stardock_appends_base_and_clears_slot() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data.commission_planet_stardock_slot(1, 1, 6).unwrap();
@@ -832,6 +844,7 @@ fn commission_rejects_foreign_owned_planet() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let err = data.commission_planet_stardock_slot(1, 1, 0).unwrap_err();
@@ -879,6 +892,7 @@ fn auto_commission_all_stardock_units_creates_fleets_and_bases() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let report = data.auto_commission_all_stardock_units(1).unwrap();
@@ -962,6 +976,7 @@ fn load_planet_armies_onto_fleet_moves_armies_into_transports() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.load_planet_armies_onto_fleet(1, 1, 1, 3).unwrap();
@@ -999,6 +1014,7 @@ fn unload_fleet_armies_to_planet_moves_armies_back_to_planet() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.unload_fleet_armies_to_planet(1, 1, 1, 2).unwrap();
@@ -1036,6 +1052,7 @@ fn unload_fleet_armies_to_planet_rejects_planet_overflow() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let err = data.unload_fleet_armies_to_planet(1, 1, 1, 1).unwrap_err();
@@ -1175,6 +1192,7 @@ fn core_game_data_current_known_count_helpers_follow_player1_and_records() {
         ipbms: vec![Ipbm::default(), Ipbm::default(), Ipbm::default()],
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     assert_eq!(data.player1_starbase_count_current_known(), 0);
     assert_eq!(
@@ -1251,6 +1269,7 @@ fn core_game_data_initialized_fleet_block_helpers_match_known_fixtures() {
         ipbms: parse_ipbm_dat(&read_initialized_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_initialized_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_initialized_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     assert!(data.looks_like_initialized_fleet_blocks_current_known());
@@ -1302,6 +1321,7 @@ fn core_game_data_initialized_fleet_block_errors_catch_broken_local_chain() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.fleets[1].next.0 = 9;
@@ -1322,6 +1342,7 @@ fn core_game_data_initialized_fleet_payload_errors_catch_broken_slot_pattern() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.fleets[2].max_speed = 3;
@@ -1342,6 +1363,7 @@ fn core_game_data_initialized_fleet_payload_errors_catch_missing_tuple_markers()
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.fleets[0].x_fraction = Real48::ZERO;
@@ -1362,6 +1384,7 @@ fn core_game_data_initialized_fleet_mission_errors_catch_wrong_order_code() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.fleets[0].order = crate::Order::GuardStarbase;
@@ -1382,6 +1405,7 @@ fn core_game_data_initialized_fleet_mission_errors_catch_wrong_aux_bytes() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     set_mission_target(&mut data.fleets[0], 0, 1);
@@ -1404,6 +1428,7 @@ fn core_game_data_owner_range_errors_catch_invalid_planet_and_base_owners() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[0].owner.0 = 9;
@@ -1433,6 +1458,7 @@ fn core_game_data_homeworld_alignment_errors_catch_misaligned_fleet_block() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let [_, target_y] = data.fleets[4].target.to_array();
@@ -1454,6 +1480,7 @@ fn core_game_data_initialized_planet_ownership_errors_catch_non_homeworld_owner(
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[0].owner.0 = 2;
@@ -1477,6 +1504,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_army_marker() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[14].ground_batteries = 1;
@@ -1497,6 +1525,7 @@ fn core_game_data_homeworld_seed_payload_errors_catch_changed_stored_goods() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[14].stored_goods = Real48::from_f64(34.75);
@@ -1517,6 +1546,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_owned_marker() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[0].ground_batteries = 1;
@@ -1537,6 +1567,7 @@ fn core_game_data_unowned_planet_payload_errors_catch_nonzero_stored_goods() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[0].stored_goods = Real48::from_f64(1.0);
@@ -1557,6 +1588,7 @@ fn core_game_data_empty_auxiliary_state_errors_catch_starbase_record() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.bases.push(Starbase::default());
@@ -1577,6 +1609,7 @@ fn core_game_data_setup_baseline_errors_catch_changed_timeout_flag() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.setup.remote_timeout = false;
@@ -1597,6 +1630,7 @@ fn core_game_data_conquest_baseline_errors_catch_changed_year() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.conquest.game_year = 2999;
@@ -1620,6 +1654,7 @@ fn core_game_data_sync_current_known_baseline_controls_and_counts_repairs_mutate
         ipbms: vec![Ipbm::default()],
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.players[0].bases_first.0 = 9;
@@ -1648,6 +1683,7 @@ fn core_game_data_sync_current_known_initialized_fleet_baseline_repairs_mutated_
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.fleets.clear();
@@ -1680,6 +1716,7 @@ fn core_game_data_sync_current_known_initialized_planet_payloads_repairs_mutated
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.planets[14].stored_goods = Real48::from_f64(3.0);
@@ -1708,6 +1745,7 @@ fn core_game_data_sync_current_known_initialized_post_maint_baseline_repairs_com
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.players[0].bases_first.0 = 7;
@@ -1761,6 +1799,7 @@ fn core_game_data_can_apply_current_known_scenario_mutations() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let aux = data
@@ -1833,6 +1872,7 @@ fn set_fleet_order_rejects_speed_above_current_maximum() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let max_speed = data.fleets[0].max_speed;
@@ -1978,6 +2018,7 @@ fn the_scorch_order_sets_and_rescinds_a_flag_and_changes_nothing_else() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let planet = &mut data.planets[14];
@@ -2011,6 +2052,7 @@ fn set_fleet_rules_of_engagement_rejects_non_combat_value() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     let fleet = &mut data.fleets[0];
     fleet.ships.destroyers = 0;
@@ -2041,6 +2083,7 @@ fn set_fleet_rules_of_engagement_allows_mixed_fleet_value() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     let fleet = &mut data.fleets[0];
     fleet.ships.destroyers = 1;
@@ -2066,6 +2109,7 @@ fn set_stored_diplomatic_relation_rejects_self_target() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let error = data
@@ -2090,6 +2134,7 @@ fn clear_planet_build_orders_by_kind_removes_matching_slots_only() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     let planet = &mut data.planets[0];
     planet.build_queue[0].points_owed = 4;
@@ -2125,6 +2170,7 @@ fn set_join_fleet_order_targets_host_fleet_and_records_host_id() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let host_coords = data.fleets[0].sector.to_array();
@@ -2147,6 +2193,7 @@ fn set_fleet_order_writes_mission_aux_bytes_as_ecgame_does() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
     let base = data.bases[0].clone();
@@ -2223,6 +2270,7 @@ fn set_fleet_order_accepts_guard_starbase_using_submitted_aux_bytes() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     data.set_guard_starbase(1, 1, [16, 13], 1, 1).unwrap();
@@ -2263,6 +2311,7 @@ fn set_fleet_order_accepts_join_another_fleet_using_submitted_aux_bytes() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
 
     let host = data.fleets[0].clone();
@@ -2296,6 +2345,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         ipbms: parse_ipbm_dat(&read_ecmaint_fleet_pre_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_ecmaint_fleet_pre_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_ecmaint_fleet_pre_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     assert!(
         fleet_data
@@ -2311,6 +2361,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         ipbms: parse_ipbm_dat(&read_ecmaint_build_pre_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_ecmaint_build_pre_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_ecmaint_build_pre_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     assert!(
         build_data
@@ -2326,6 +2377,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         ipbms: parse_ipbm_dat(&read_ecmaint_starbase_pre_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_ecmaint_starbase_pre_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_ecmaint_starbase_pre_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     assert!(
         starbase_data
@@ -2408,6 +2460,7 @@ fn core_game_data_current_known_validation_helpers_match_known_fixtures() {
         ipbms: parse_ipbm_dat(&read_post_maint_fixture("IPBM.DAT")).unwrap(),
         setup: parse_setup_dat(&read_post_maint_fixture("SETUP.DAT")).unwrap(),
         conquest: parse_conquest_dat(&read_post_maint_fixture("CONQUEST.DAT")).unwrap(),
+        sightings: Default::default(),
     };
     assert!(post_data.ipbm_count_errors_current_known().is_empty());
     assert!(
@@ -2465,6 +2518,7 @@ fn detach_ships_creates_new_fleet_and_preserves_donor_order() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data
@@ -2541,6 +2595,7 @@ fn detach_ships_clamps_support_only_new_fleet_to_roe_zero() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data
@@ -2587,6 +2642,7 @@ fn detach_ships_requires_valid_post_split_donor_speed() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let error = data
@@ -2641,6 +2697,7 @@ fn detach_ships_invalidated_donor_colonize_order_falls_back_to_local_hold() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.detach_ships_to_new_fleet(
@@ -2700,6 +2757,7 @@ fn transfer_ships_between_fleets_moves_counts_and_preserves_both_fleets() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     let result = data
@@ -2767,6 +2825,7 @@ fn transfer_ships_invalidated_donor_scout_order_falls_back_to_local_hold() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.transfer_ships_between_fleets(
@@ -2824,6 +2883,7 @@ fn transfer_ships_clamps_support_only_resulting_fleet_to_roe_zero() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.transfer_ships_between_fleets(
@@ -2876,6 +2936,7 @@ fn unload_armies_invalidated_invade_order_falls_back_to_local_hold() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     data.unload_fleet_armies_to_planet(1, 1, 1, 1).unwrap();
@@ -2905,6 +2966,7 @@ fn append_planet_build_order_rejects_non_multiple_surface_points() {
         ipbms: vec![],
         setup: Setup::default(),
         conquest: Conquest::default(),
+        sightings: Default::default(),
     };
 
     for (points, kind) in [(1, 7), (21, 7), (1, 8), (3, 8)] {

@@ -7,6 +7,8 @@
 mod handler;
 pub mod rules;
 
+use std::collections::HashSet;
+
 use nc_data::{DiplomacyOverride, GameRng, RNG_TAG_ENCOUNTER, Real48, has_any_force};
 
 use super::combat::{AssaultEvents, FleetBattlePhaseEvents};
@@ -33,6 +35,25 @@ struct Unit {
     sector: [u8; 2],
     layer: u8,
     active: bool,
+}
+
+/// An empire's units standing in a sector and depth layer: the place its
+/// sighting memory is kept (`SightingMemory`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct Presence {
+    empire: u8,
+    sector: [u8; 2],
+    layer: u8,
+}
+
+impl Presence {
+    fn of(unit: &Unit) -> Self {
+        Self {
+            empire: unit.owner,
+            sector: unit.sector,
+            layer: unit.layer,
+        }
+    }
 }
 
 /// Classic keeps one awareness byte per empire per unit.
@@ -99,6 +120,24 @@ fn build_units(game_data: &CoreGameData) -> Vec<Unit> {
     fleets.chain(bases).collect()
 }
 
+/// Drop the sighting memory of every empire that has no fleet or starbase
+/// left in the sector and layer it remembers. The ticks keep this true as
+/// units move and die; this settles what happens outside them, in the
+/// orders phase and after the year (colonization, defections).
+pub(super) fn prune_sightings(game_data: &mut CoreGameData) {
+    if game_data.sightings.is_empty() {
+        return;
+    }
+    let present: HashSet<(u8, [u8; 2], u8)> = build_units(game_data)
+        .iter()
+        .filter(|unit| unit.active)
+        .map(|unit| (unit.owner, unit.sector, unit.layer))
+        .collect();
+    game_data
+        .sightings
+        .retain(|viewer, sector, layer| present.contains(&(viewer, sector.to_array(), layer)));
+}
+
 /// What the year's ticks produced.
 pub(super) struct YearOutcome {
     pub movement_events: MovementEvents,
@@ -124,6 +163,7 @@ pub(super) fn run_year(
         RNG_TAG_ENCOUNTER,
         &[u64::from(game_data.conquest.game_year)],
     );
+    prune_sightings(game_data);
     let units = build_units(game_data);
     // The order is drawn once per year: a Random(0xFFDC) key per unit,
     // sorted descending, ties in table order.
@@ -140,6 +180,7 @@ pub(super) fn run_year(
         movement: YearMovement::new(game_data, visible_hazards_by_empire),
         events: FleetBattlePhaseEvents::default(),
         assault_events: AssaultEvents::default(),
+        departed: Vec::new(),
     };
     // The starbase's extra recovery turn is decided from what rests where
     // when the ticks begin, and each unit's turn can only strike entries off.

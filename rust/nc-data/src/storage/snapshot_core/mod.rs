@@ -1,7 +1,8 @@
 //! The core game state's snapshot tables: one typed column per model field,
 //! and a child table for each array the model holds. Rows load straight into
 //! the model structs; no classic record bytes pass through the store.
-//! The crippled hulls of fleets and starbases have their own child tables.
+//! The crippled hulls of fleets and starbases have their own child tables,
+//! as does each empire's local sighting memory.
 
 use rusqlite::{Connection, Row, ToSql, Transaction};
 
@@ -17,6 +18,7 @@ mod ipbms;
 mod planets;
 mod players;
 mod setup;
+mod sightings;
 
 pub(super) fn create_tables(conn: &Connection) -> Result<(), CampaignStoreError> {
     for schema in [
@@ -28,6 +30,7 @@ pub(super) fn create_tables(conn: &Connection) -> Result<(), CampaignStoreError>
         ipbms::SCHEMA,
         setup::SCHEMA,
         conquest::SCHEMA,
+        sightings::SCHEMA,
     ] {
         conn.execute_batch(schema)?;
     }
@@ -48,6 +51,7 @@ pub(super) fn write_snapshot_core_rows(
     ipbms::write(tx, snapshot_id, &game_data.ipbms)?;
     setup::write(tx, snapshot_id, &game_data.setup)?;
     conquest::write(tx, snapshot_id, &game_data.conquest)?;
+    sightings::write(tx, snapshot_id, &game_data.sightings)?;
     Ok(())
 }
 
@@ -67,6 +71,7 @@ pub(super) fn load_snapshot_game_data(
         ipbms: ipbms::load(conn, snapshot_id)?,
         setup: setup::load(conn, snapshot_id)?,
         conquest: conquest::load(conn, snapshot_id)?,
+        sightings: sightings::load(conn, snapshot_id)?,
     })
 }
 

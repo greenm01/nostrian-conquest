@@ -11,7 +11,7 @@ use super::rules::{
     BASE_VISIBILITY, FleetFacts, Situation, Verdict, admitted, base_factor, decide_vs_base,
     decide_vs_fleet, fleet_posture, fleet_visibility, order, roll, sighting_percent, strength,
 };
-use super::{Awareness, Unit, UnitKind, layer_of};
+use super::{Awareness, Presence, Unit, UnitKind, layer_of};
 use crate::CoreGameData;
 use crate::maint::combat::{
     AssaultEvents, BattleSide, ContactObserver, FleetBattle, FleetBattlePhaseEvents,
@@ -41,6 +41,9 @@ pub(super) struct Year<'a> {
     pub movement: YearMovement<'a>,
     pub events: FleetBattlePhaseEvents,
     pub assault_events: AssaultEvents,
+    /// Where units stopped being since the last settling: their empire, and
+    /// the sector and layer they were in.
+    pub departed: Vec<Presence>,
 }
 
 impl Year<'_> {
@@ -75,12 +78,38 @@ impl Year<'_> {
                 }
                 if self.movement.removed(index) {
                     self.units[unit].active = false;
+                    self.departed.push(Presence::of(&self.units[unit]));
                 }
             }
             UnitKind::Fleet => {}
             UnitKind::Base => self.movement.dispatch_base(game_data, index, tick),
         }
+        self.settle_sightings(game_data);
         Ok(())
+    }
+
+    /// Forget what an empire remembers where its units have left or died,
+    /// unless another of its units is still there: a viewer's sighting
+    /// memory lasts as long as it has a unit in the sector and layer.
+    fn settle_sightings(&mut self, game_data: &mut CoreGameData) {
+        for presence in std::mem::take(&mut self.departed) {
+            let Presence {
+                empire,
+                sector,
+                layer,
+            } = presence;
+            let sector = Coords::from_array(sector);
+            if game_data.sightings.holds(empire, sector, layer) && !self.occupied(presence) {
+                game_data.sightings.forget(empire, sector, layer);
+            }
+        }
+    }
+
+    /// Whether the empire has a unit in play at `presence`.
+    fn occupied(&self, presence: Presence) -> bool {
+        self.units
+            .iter()
+            .any(|u| u.active && Presence::of(u) == presence)
     }
 
     /// Fleet unit `unit`'s strike test passed: once it holds the orbit, it
@@ -92,11 +121,25 @@ impl Year<'_> {
             return;
         }
         let fleet_idx = self.units[unit].index;
+        let Unit {
+            owner,
+            sector,
+            layer,
+            ..
+        } = self.units[unit];
+        if let Some(world_owner) = world_owner_at(game_data, sector)
+            .filter(|world_owner| ![0, owner].contains(world_owner))
+        {
+            self.note_combat(game_data, sector, layer, owner, world_owner);
+        }
         let mut events = resolve_strike(game_data, self.campaign_seed, fleet_idx);
         events.stamp(tick);
         self.assault_events.append(events);
         self.movement.reload(fleet_idx);
         self.units[unit].active = has_any_force(&game_data.fleets[fleet_idx]);
+        if !self.units[unit].active {
+            self.departed.push(Presence::of(&self.units[unit]));
+        }
     }
 
     /// The orbital gate, classic's starbase gate (`110a:67bd`) extended to
@@ -177,6 +220,7 @@ impl Year<'_> {
         let (sector, layer) = (fleet.sector.to_array(), layer_of(fleet.depth));
         let entry = &mut self.units[unit];
         if (entry.sector, entry.layer) != (sector, layer) {
+            self.departed.push(Presence::of(entry));
             entry.sector = sector;
             entry.layer = layer;
             fleet.escape = None;
@@ -190,16 +234,24 @@ impl Year<'_> {
     fn follow_base_step(&mut self, game_data: &mut CoreGameData, unit: usize, step: &BaseStep) {
         let base = &game_data.bases[self.units[unit].index];
         let entry = &mut self.units[unit];
-        entry.sector = base.sector.to_array();
-        entry.layer = layer_of(base.depth);
+        let (sector, layer) = (base.sector.to_array(), layer_of(base.depth));
+        if (entry.sector, entry.layer) != (sector, layer) {
+            self.departed.push(Presence::of(entry));
+        }
+        entry.sector = sector;
+        entry.layer = layer;
         if step.moved_cell {
             self.awareness.forget(unit);
         }
         if let Some(escort) = step.escort.and_then(|fleet_idx| self.fleet_unit(fleet_idx)) {
             let fleet = &mut game_data.fleets[self.units[escort].index];
             let entry = &mut self.units[escort];
-            entry.sector = fleet.sector.to_array();
-            entry.layer = layer_of(fleet.depth);
+            let (sector, layer) = (fleet.sector.to_array(), layer_of(fleet.depth));
+            if (entry.sector, entry.layer) != (sector, layer) {
+                self.departed.push(Presence::of(entry));
+            }
+            entry.sector = sector;
+            entry.layer = layer;
             if step.moved_cell {
                 fleet.escape = None;
                 self.awareness.forget(escort);
@@ -207,6 +259,7 @@ impl Year<'_> {
         }
         for &fleet_idx in &step.merged {
             if let Some(merged) = self.fleet_unit(fleet_idx) {
+                self.departed.push(Presence::of(&self.units[merged]));
                 self.units[merged].active = false;
             }
         }
@@ -223,6 +276,31 @@ impl Year<'_> {
     fn meets(&self, observer: usize, other: usize) -> bool {
         let (o, t) = (&self.units[observer], &self.units[other]);
         t.active && t.owner != o.owner && t.sector == o.sector && t.layer == o.layer
+    }
+
+    /// Unit `observer` has sighted a unit of empire `opponent`: its empire
+    /// remembers that here, for all its units in the sector and layer.
+    fn note_sighting(&self, game_data: &mut CoreGameData, observer: usize, opponent: u8) {
+        let u = self.units[observer];
+        let sector = Coords::from_array(u.sector);
+        game_data.sightings.note(u.owner, sector, u.layer, opponent);
+    }
+
+    /// Empires `a` and `b` fought in a sector and layer: each that has a
+    /// unit there remembers the other.
+    fn note_combat(&self, game_data: &mut CoreGameData, sector: [u8; 2], layer: u8, a: u8, b: u8) {
+        for (viewer, opponent) in [(a, b), (b, a)] {
+            let presence = Presence {
+                empire: viewer,
+                sector,
+                layer,
+            };
+            if self.occupied(presence) {
+                game_data
+                    .sightings
+                    .note(viewer, Coords::from_array(sector), layer, opponent);
+            }
+        }
     }
 
     fn fleet_facts(&self, game_data: &CoreGameData, fleet_idx: usize) -> FleetFacts {
@@ -389,6 +467,7 @@ impl Year<'_> {
             if !roll(&mut self.rng, sighting_percent(aware, visibility, factor)) {
                 continue;
             }
+            self.note_sighting(game_data, observer, unit.owner);
             self.awareness.raise(owner, target, 2);
             match unit.kind {
                 UnitKind::Fleet => {
@@ -477,6 +556,7 @@ impl Year<'_> {
                     if !roll(&mut self.rng, chance) {
                         continue;
                     }
+                    self.note_sighting(game_data, observer, unit.owner);
                     let mut level = aware.max(1);
                     let mut identify = false;
                     if aware == 0 {
@@ -558,6 +638,7 @@ impl Year<'_> {
                     if !roll(&mut self.rng, chance) {
                         continue;
                     }
+                    self.note_sighting(game_data, observer, unit.owner);
                     let decides = scouting || aware >= 2 || closing;
                     let level = if decides { aware.max(2) } else { aware.max(1) };
                     self.awareness.raise(owner, target, level);
@@ -644,7 +725,10 @@ impl Year<'_> {
     /// sides are the attacker's `volunteers` and the defenders' `roster`,
     /// each side its empire's units in the sector and layer; nobody else
     /// joins. Every unit of each side becomes known (3, fought) to the
-    /// other empire. Returns who held the field.
+    /// other empire, and each empire remembers the other here. The attack
+    /// is a surprise when the defending empire had not sighted the
+    /// attacking one in this sector and layer, decided before the combat
+    /// adds to anyone's memory. Returns who held the field.
     #[allow(clippy::too_many_arguments)]
     fn battle(
         &mut self,
@@ -657,6 +741,11 @@ impl Year<'_> {
         tick: u8,
     ) -> Option<u8> {
         let a = self.units[attacker];
+        let sector = Coords::from_array(a.sector);
+        let surprise = !game_data
+            .sightings
+            .knows(defender_empire, sector, a.layer, a.owner);
+        self.note_combat(game_data, a.sector, a.layer, a.owner, defender_empire);
         for &unit in volunteers {
             self.awareness.raise(defender_empire, unit, 3);
         }
@@ -675,14 +764,15 @@ impl Year<'_> {
             bases: roster.bases.iter().map(record).collect(),
         };
         self.fight(
-            game_data, tick, battle_key, a.sector, &attacking, &defending,
+            game_data, tick, battle_key, a.sector, &attacking, &defending, surprise,
         )
     }
 
-    /// Fight `attacker` against `defender` at `sector` and put the result on
-    /// the books: the events dated to the tick, the fighters' records
-    /// reloaded, and destroyed units out of play. Returns who held the
-    /// field.
+    /// Fight `attacker` against `defender` at `sector`, the attacker's first
+    /// exchange a surprise if `surprise`, and put the result on the books:
+    /// the events dated to the tick, the fighters' records reloaded, and
+    /// destroyed units out of play. Returns who held the field.
+    #[allow(clippy::too_many_arguments)]
     fn fight(
         &mut self,
         game_data: &mut CoreGameData,
@@ -691,6 +781,7 @@ impl Year<'_> {
         sector: [u8; 2],
         attacker: &BattleSide,
         defender: &BattleSide,
+        surprise: bool,
     ) -> Option<u8> {
         let FleetBattle {
             mut events,
@@ -702,6 +793,7 @@ impl Year<'_> {
             sector,
             attacker,
             defender,
+            surprise,
         );
         stamp_battle_events(&mut events, tick);
         self.events.append(events);
@@ -709,10 +801,14 @@ impl Year<'_> {
             self.movement.reload(fleet_idx);
         }
         for unit in &mut self.units {
-            unit.active = match unit.kind {
+            let active = match unit.kind {
                 UnitKind::Fleet => unit.active && has_any_force(&game_data.fleets[unit.index]),
                 UnitKind::Base => game_data.bases[unit.index].base_id.0 != 0,
             };
+            if unit.active && !active {
+                self.departed.push(Presence::of(unit));
+            }
+            unit.active = active;
         }
         held_by
     }

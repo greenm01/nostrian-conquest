@@ -10,6 +10,7 @@ mod ipbm;
 mod planet;
 mod player;
 mod setup;
+mod sighting;
 mod starbase;
 
 pub use conquest::{Conquest, MaintenanceDays};
@@ -20,4 +21,5 @@ pub use ipbm::Ipbm;
 pub use planet::{BuildSlot, Planet, ProductionItemKind, Stardock};
 pub use player::{DiplomaticRelation, Player, PlayerMode};
 pub use setup::Setup;
+pub use sighting::{Sighting, SightingMemory};
 pub use starbase::Starbase;
