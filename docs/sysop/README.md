@@ -14,6 +14,9 @@ Use these docs in roughly this order:
 - [sysop-map-exports.md](sysop-map-exports.md)
   - player map export and queue/download staging across hosted, direct, and
     BBS workflows
+- [discord-door-architecture.md](discord-door-architecture.md)
+  - architecture specification for hosting `nc-door` inside Discord Embedded
+    Activities while preserving 100% self-sovereignty
 - [rust/campaign-settings.md](rust/campaign-settings.md)
   - non-BBS campaign settings and raw `nc-sysop settings show` reference
 - [rust/turn-kdl.md](rust/turn-kdl.md)
