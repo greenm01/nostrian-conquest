@@ -2,7 +2,7 @@ use crate::proxy::bridge_session;
 use crate::NodeManager;
 use axum::extract::ws::{WebSocket, WebSocketUpgrade};
 use axum::extract::{Query, State};
-use axum::response::{Html, IntoResponse, Response};
+use axum::response::{IntoResponse, Response};
 use axum::routing::get;
 use axum::Router;
 use nc_dropfile::{CallerInfo, CallerRole, PlatformInfo};
@@ -10,6 +10,7 @@ use serde::Deserialize;
 use std::sync::Arc;
 use tokio::net::TcpListener;
 use tokio::process::Command;
+use tower_http::services::ServeDir;
 use tracing::{error, info, warn};
 
 #[derive(Debug, Deserialize)]
@@ -21,10 +22,13 @@ pub struct ConnectQuery {
 
 /// Create the Axum HTTP & WebSocket application router.
 pub fn create_router(manager: Arc<NodeManager>) -> Router {
+    let static_dir = manager.config().static_dir.clone();
+    let serve_dir = ServeDir::new(&static_dir).append_index_html_on_directories(true);
+
     Router::new()
-        .route("/", get(index_handler))
         .route("/health", get(health_handler))
         .route("/ws/connect", get(ws_connect_handler))
+        .fallback_service(serve_dir)
         .with_state(manager)
 }
 
@@ -37,30 +41,6 @@ async fn health_handler(State(manager): State<Arc<NodeManager>>) -> Response {
         "max_nodes": manager.config().max_nodes,
     }))
     .into_response()
-}
-
-async fn index_handler() -> Html<&'static str> {
-    Html(r#"<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <title>Nostrian Conquest — Web Door</title>
-    <style>
-        body { background: #000; color: #aaa; font-family: monospace; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .box { border: 1px solid #333; padding: 2rem; max-width: 600px; text-align: center; }
-        h1 { color: #55ff55; margin-top: 0; }
-        p { line-height: 1.5; }
-        a { color: #55ffff; }
-    </style>
-</head>
-<body>
-    <div class="box">
-        <h1>NOSTRIAN CONQUEST</h1>
-        <p>BBS Web Door &amp; Discord Activity Bridge</p>
-        <p>Connect your WebSocket terminal client to <code>/ws/connect</code> to launch a door session.</p>
-    </div>
-</body>
-</html>"#)
 }
 
 async fn ws_connect_handler(

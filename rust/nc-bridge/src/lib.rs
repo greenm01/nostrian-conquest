@@ -22,6 +22,7 @@ pub struct BridgeConfig {
     pub max_nodes: usize,
     pub session_timeout_seconds: u32,
     pub node_base_dir: PathBuf,
+    pub static_dir: PathBuf,
 }
 
 impl Default for BridgeConfig {
@@ -34,6 +35,7 @@ impl Default for BridgeConfig {
             max_nodes: 16,
             session_timeout_seconds: 1800,
             node_base_dir: PathBuf::from("/tmp/nc-nodes"),
+            static_dir: PathBuf::from("static"),
         }
     }
 }

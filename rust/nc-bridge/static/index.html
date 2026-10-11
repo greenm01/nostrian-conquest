@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nostrian Conquest</title>
+    <!-- xterm.js CDN -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/css/xterm.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-fit@0.10.0/lib/addon-fit.min.js"></script>
+    <!-- Discord Embedded App SDK (Optional) -->
+    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.3.1/output/index.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <header id="header-bar">
+            <div class="brand">
+                <span class="logo-text">NOSTRIAN CONQUEST</span>
+                <span class="sub-text">BBS Web Door</span>
+            </div>
+            <div class="header-actions">
+                <span id="status-badge" class="badge connecting">CONNECTING...</span>
+                <button id="btn-toggle-touch" class="btn-tool" title="Toggle Virtual Controller">🎮</button>
+                <button id="btn-fullscreen" class="btn-tool" title="Toggle Fullscreen">⛶</button>
+            </div>
+        </header>
+
+        <main id="terminal-wrapper">
+            <div id="crt-frame">
+                <div id="terminal"></div>
+                <div class="crt-scanlines"></div>
+                <div class="crt-glow"></div>
+            </div>
+        </main>
+
+        <!-- Virtual Touchpad Overlay for Mobile / Touchscreens -->
+        <nav id="mobile-controls" class="hidden">
+            <div class="control-grid">
+                <!-- Nav and Primary Actions -->
+                <div class="btn-group actions-group">
+                    <button class="vkey key-esc" data-key="\x1b">ESC</button>
+                    <button class="vkey key-up" data-key="\x1b[A">▲</button>
+                    <button class="vkey key-enter" data-key="\r">ENTER</button>
+                    <button class="vkey key-left" data-key="\x1b[D">◄</button>
+                    <button class="vkey key-down" data-key="\x1b[B">▼</button>
+                    <button class="vkey key-right" data-key="\x1b[C">►</button>
+                </div>
+
+                <!-- Door Hotkeys & Space -->
+                <div class="btn-group hotkeys-group">
+                    <button class="vkey key-space" data-key=" ">SPACE</button>
+                    <button class="vkey" data-key="B">B</button>
+                    <button class="vkey" data-key="F">F</button>
+                    <button class="vkey" data-key="R">R</button>
+                    <button class="vkey" data-key="Y">Y</button>
+                    <button class="vkey" data-key="N">N</button>
+                </div>
+
+                <!-- Number Row for Fleet/Planet Lists -->
+                <div class="btn-group numbers-group">
+                    <button class="vkey num-key" data-key="1">1</button>
+                    <button class="vkey num-key" data-key="2">2</button>
+                    <button class="vkey num-key" data-key="3">3</button>
+                    <button class="vkey num-key" data-key="4">4</button>
+                    <button class="vkey num-key" data-key="5">5</button>
+                    <button class="vkey num-key" data-key="6">6</button>
+                    <button class="vkey num-key" data-key="7">7</button>
+                    <button class="vkey num-key" data-key="8">8</button>
+                    <button class="vkey num-key" data-key="9">9</button>
+                    <button class="vkey num-key" data-key="0">0</button>
+                </div>
+            </div>
+        </nav>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
