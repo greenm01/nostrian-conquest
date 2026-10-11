@@ -437,3 +437,104 @@ the salvage values and army landing with them.
   `test_salvage_whose_world_is_not_ours_salvages_at_a_friendly_world` in
   `maint_fleet.rs`, and `seek_home_picks_nearest_world_across_distant_coordinates`
   in `maint_hardening.rs`, rewritten around a lost target.
+
+## t070
+
+Rogue empires got no orders in Rust: t064 left their fleets and starbases
+to the player-order code that never ran for them. Classic's orders pass
+(`24a3:3cc6`) plays them every year, and the starbase spec wrongly said
+nothing in ECMAINT clears a base's escort word.
+
+Research (2026-10-11; ECMAINT disassembly and nine classic probe groups
+under DOSBox-X on the move fixture with empire 2 rogue). The rules are in
+[ec-movement-spec.md](../../dev/ec-movement-spec.md) ("Rogue And Autopilot
+Orders") and [ec-starbase-spec.md](../../dev/ec-starbase-spec.md) ("Escort
+Release"). What the disassembly added to t064's reading of `24a3:25f7`:
+
+- A rogue with a saved planet count (PLAYER `0x50`) above 0 runs `25f7`
+  then `28fe`; with 0 it runs `24a3:0dbc`, whether or not it owns a world.
+- The starbase step at the end of `25f7` tests the order the fleet has by
+  then, not the order the pass gave it. Autopilot fleets already on
+  Guard/Blockade at rest take an unescorted base, and so do fleets without
+  warships. A base counts as at rest when it sits at its target and
+  `TZ = Round(Z)`; the moving flag is not read.
+- `28fe` measures a rogue base from a scratch record whose in-sector offsets
+  are never filled (stack bytes, zero in practice), so a base in deep space
+  breaks near-ties differently from its own offsets.
+- `0dbc` (no world): armed fleets get Patrol (3), ROE 10, target depth 0,
+  maximum speed, and a target drawn as `Random(9 * Trunc(Sqrt(players))) + 1`
+  per axis only when the fleet's target is its own sector; unarmed fleets and
+  all starbases are deleted; an empire with no fleet is left alone.
+- `2895:30f4` (escort release) clears the escort word of every base of the
+  empire in the fleet's sector and layer that holds the fleet's number, for
+  a fleet on Guard Starbase. Its callers are the orders pass, the planetless
+  patrol, every fleet deletion (`2895:3d0c`), the encounter's decision aborts
+  and battle retreats (`1b05:185e`, `1f5d`, `25ab`, `3151`), and the planet
+  assault wrap-ups (`0b5d:c53a`, `cb7b`, which find nothing to release).
+
+Result (2026-10-11): rogue empires now get classic's orders.
+
+- **Orders pass.** `economics/orders.rs` holds the pass for both kinds of
+  empire: `fleet_orders` (`25f7`, shared by rogue and autopilot, with the
+  Guard Starbase step now applying to every fleet on Guard/Blockade at rest),
+  `starbase_orders` (`28fe`), and `patrol_orders` (`0dbc`). The autopilot code
+  moved out of `ai.rs`. Patrol targets come from the campaign seed
+  (`RNG_TAG_ORDERS`, year, empire). Fleets the patrol disbands go through
+  `apply_fleet_removal_remap`, and `maint/mod.rs` carries the remap and the
+  Join host bookkeeping into the turn's references.
+- **Shared pieces in nc-data.** `CoreGameData::release_starbase_escort`
+  (`30f4`), `nearest_productive_world_for_base` (the flag-2 pick from a base,
+  measured from offsets of zero), and `RNG_TAG_ORDERS`.
+- **Probes** (classic and Rust agreed on every fleet and base record, apart
+  from the patrol's random targets, tax rates, which the economic AI sets,
+  the planetless rogue's fate, and ETAC-only Guard/Blockade fleets, which
+  Rust's input check had moved first): `core` (Move fleet far out,
+  Guard/Blockade at home ROE 3 to 10, ETAC-only Hold in orbit,
+  Guard/Blockade over an unowned world with the production-weighted pick), `orbit` (Move and Patrol warships in orbit stop
+  on Guard/Blockade ROE 10; deep-space Hold goes home), `bases` and
+  `baserest` (unescorted, escorted, about-to-lift, and moving-flag bases;
+  Guard Starbase fleet re-ordered and its base released; rogue base picks),
+  `basefrac` (the zero-offset tie that tells the scratch record from the
+  base's own offsets), `autopilot` (Guard/Blockade fleets at rest take a
+  base), `stalecount` and `patrol` (the count gate; ten runs gave patrol
+  targets in 1 to 18 on both axes), `nofleets` (an empire with no fleet keeps
+  its base).
+- **Tests.** New `nc-data/tests/rogue_orders.rs` (18 tests, one per branch
+  above: any-order recall, production weighting, ROE 10, warship and
+  unarmed orbit cases, base taken, base escorted, base lifting, moving flag,
+  escort release in the pass and in `release_starbase_escort`, base picks and
+  the zero-offset tie, patrol, seed dependence, redraw, disbanding, no fleet,
+  stale count) and one autopilot test in `home_orders.rs`. Ten existing tests
+  assumed rogue fleets stay put: the join and rendezvous merge traces now give
+  the rogue a saved planet count and expect Seek Home, and nine battle
+  tests on `ecmaint-fleet-battle-pre` (whose empire 1 is rogue) make it human.
+- **Escort word elsewhere.** Rust clears it only in this pass. The decision
+  aborts, battle retreats, fleet removal, and planet-assault wrap-ups are in
+  or beside the encounter and combat code under t080 and are untouched.
+
+For the owner:
+
+1. Zero offsets. Classic measures a rogue base's distances from stack bytes,
+   which read as offsets of zero while the empire's last fleet sits at a
+   sector centre and are arbitrary otherwise (a fleet in flight can give
+   enormous distances). A base in orbit of an owned world is unaffected
+   (its own world is at distance 0). Rust uses zero always. Keep that, or
+   use the base's real offsets?
+2. Input check. Rust's sanitizer (`sanitize.rs`) sends a fleet without
+   warships on Guard/Blockade home or to Hold before the pass runs, for any
+   empire. Classic does not check the orders of rogue or autopilot empires:
+   its ETAC-only Guard/Blockade fleets stay and take a base. Exempt the
+   empires ECMAINT plays, or keep the check?
+3. Escort release. Add the release where Rust re-orders a guard in the
+   encounter and combat code, and where a fleet record is removed?
+4. Escape episodes. An order the pass gives does not end a fleet's escape
+   episode, as a player's order does. Should it?
+5. Planetless rogues. Classic keeps a rogue with no world alive, patrolling
+   with its warships forever. Rust's campaign rules turn a defeated empire
+   into civil disorder at the end of the same turn (`defeat_empire`), so the
+   patrol runs for one year.
+6. Autopilot, classic fixes made here: the Guard Starbase step applies to
+   every fleet on Guard/Blockade at rest, not only Hold fleets the pass
+   re-ordered, and a base is at rest by target and `TZ = Round(Z)` with the
+   moving flag ignored (t064 required the flag clear and ignored `TZ`).
+   The player manual's autopilot paragraph says so; the PDF is not rebuilt.

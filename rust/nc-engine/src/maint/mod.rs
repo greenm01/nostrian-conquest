@@ -334,9 +334,21 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     refs.mission_retarget_events
         .extend(retarget::refresh_guard_starbase_targets(game_data));
 
-    // Autopilot orders for idle fleets, before the planet pass and the ticks
-    // so they can start moving this turn.
-    economics::process_autopilot_fleet_orders(game_data)?;
+    // Orders for the empires ECMAINT plays (rogue and autopilot), before the
+    // planet pass and the ticks so their fleets can start moving this turn.
+    // A rogue empire with no world disbands its unarmed fleets.
+    if let Some(remap) = economics::process_home_orders(game_data, campaign_seed)? {
+        refs.remap(&remap.fleet_indices);
+        refs.destroyed_join_host_fleet_numbers
+            .extend(remap.destroyed_join_host_fleet_numbers.clone());
+        let join_host_events = merging::process_join_host_updates(
+            game_data,
+            &[],
+            &refs.destroyed_join_host_fleet_numbers,
+            &remap,
+        );
+        refs.join_host_events.extend(join_host_events);
+    }
 
     // ECMAINT's planet pass (`1852:0000`) runs before the year driver
     // (`0824:1004`): each owned world completes its build queue and then

@@ -458,6 +458,31 @@ fn autopilot_warships_guard_an_unescorted_starbase_in_orbit() {
 }
 
 #[test]
+fn autopilot_guard_blockade_fleets_at_rest_also_take_an_unescorted_starbase() {
+    // Classic runs the starbase step on every fleet on Guard/Blockade at
+    // rest, not only on those the pass re-ordered; this one keeps its ROE 3.
+    let mut game_data = autopilot_scenario();
+    add_base(&mut game_data, 1, NEAR_WORLD, Real48::ONE, 1, 0);
+    place_fleet(
+        &mut game_data,
+        NEAR_WORLD,
+        Real48::ONE,
+        Order::GuardBlockadeWorld,
+        NEAR_WORLD,
+        0,
+    );
+    game_data.fleets[0].rules_of_engagement = 3;
+
+    run(&mut game_data);
+
+    let fleet = &game_data.fleets[0];
+    assert_eq!(fleet.order, Order::GuardStarbase);
+    assert_eq!(fleet.mission_target, 1);
+    assert_eq!(fleet.rules_of_engagement, 3);
+    assert_eq!(game_data.bases[0].escort.0, fleet.fleet_number.0);
+}
+
+#[test]
 fn autopilot_leaves_unarmed_fleets_in_orbit_and_other_orders_alone() {
     let mut game_data = autopilot_scenario();
     // Fleet 1: an ETAC alone in orbit stays on Hold.

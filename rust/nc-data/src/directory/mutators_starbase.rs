@@ -1,5 +1,5 @@
 use super::*;
-use crate::{Coords, ProductionItemKind};
+use crate::{Coords, Order, ProductionItemKind};
 
 impl CoreGameData {
     /// Starbase Command "Move": what ECGAME writes on a confirmed move. The
@@ -38,6 +38,33 @@ impl CoreGameData {
         base.target = base.sector;
         base.target_depth = base.depth.round() as u8;
         Ok(())
+    }
+
+    /// ECMAINT's `2895:30f4`, which it runs whenever it re-orders a Guard
+    /// Starbase fleet: the fleet lets go of its base. Every base of the
+    /// fleet's empire in the fleet's sector and layer whose escort word is
+    /// the fleet's number loses it. A fleet on any other order releases
+    /// nothing.
+    pub fn release_starbase_escort(&mut self, fleet_idx: usize) {
+        let fleet = &self.fleets[fleet_idx];
+        if fleet.order != Order::GuardStarbase {
+            return;
+        }
+        let (owner, sector, layer, number) = (
+            fleet.owner,
+            fleet.sector,
+            fleet.depth.round() == 1,
+            fleet.fleet_number,
+        );
+        for base in &mut self.bases {
+            if base.owner == owner
+                && base.sector == sector
+                && (base.depth.round() == 1) == layer
+                && base.escort == number
+            {
+                base.escort.0 = 0;
+            }
+        }
     }
 
     /// ECGAME warns that moving a base in orbit cancels the builds of the

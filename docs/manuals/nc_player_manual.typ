@@ -753,8 +753,9 @@ turns that inactivity autopilot back off. Manual autopilot stays on until you
 change it yourself. While autopilot runs, each year it sends every fleet on
 Hold Position to the planet of yours that is best for its distance and
 production. Warships already in orbit there take Guard/Blockade, raising an
-ROE of 0 to 6, and escort a starbase of yours in the same orbit that has no
-escort; fleets with any other order are left alone.
+ROE of 0 to 6. Any fleet of yours on Guard/Blockade that sits still in orbit
+with a starbase of yours that has no escort escorts that starbase, whether or
+not autopilot gave it the order. Fleets with any other order are left alone.
 Diplomacy (*E*) lets you mark other empires as Neutral or
 Enemy. Messages (*C*) lets you write to other empires. In the message editor, *^E* sends, *^X* cancels, and *^G* shows help; *?* types a question mark, as it does in name fields. Messages reach their recipients at the next maintenance. Until then, the ones you send this turn sit at the top of your inbox, marked *OUT*; *Enter* reads one and *D* cancels it. *D* on the recipient list opens the same queued messages with the same keys.
 

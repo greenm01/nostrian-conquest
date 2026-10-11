@@ -361,6 +361,8 @@ pub fn build_join_chase_trace() -> CoreGameData {
 pub fn build_join_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
     game_data.players[0].mode = PlayerMode::Rogue;
+    // A rogue empire's orders pass reads the saved planet count.
+    game_data.players[0].planet_count = 1;
     let coords = [10, 10];
 
     let host = &mut game_data.fleets[0];
@@ -394,6 +396,7 @@ pub fn build_rendezvous_travel_trace() -> CoreGameData {
 pub fn build_rendezvous_merge_trace() -> CoreGameData {
     let mut game_data = build_trace_baseline();
     game_data.players[0].mode = PlayerMode::Rogue;
+    game_data.players[0].planet_count = 1;
 
     let slow = &mut game_data.fleets[0];
     configure_cruiser_fleet(slow);
