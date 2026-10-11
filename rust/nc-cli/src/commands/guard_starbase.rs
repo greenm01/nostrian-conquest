@@ -47,14 +47,11 @@ pub(crate) fn validate_guard_starbase_scenario(
         println!("  PLAYER[1].first_base_record = 1");
         println!(
             "  linkage keys: player[44]={} fleet[00]={} fleet[05]={} base[07]={}",
-            player1.first_base_record_raw(),
-            fleet.local_slot_word_raw(),
-            fleet.fleet_id_word_raw(),
-            base.record_number_raw()
+            player1.bases_first.0, fleet.fleet_number.0, fleet.record.0, base.record.0
         );
         println!(
             "  one-base guard-starbase linkage holds at coords {:?}",
-            base.coords_raw()
+            base.sector.to_array()
         );
         println!(
             "  selected_base: present={} id={:?} escort={:?} owner={:?}",
@@ -78,29 +75,17 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
     println!("  dir={}", dir.display());
     println!(
         "  player[1].fleet_chain_head_raw={}",
-        player1.fleet_chain_head_raw()
+        player1.fleets_first.0
     );
-    println!(
-        "  player[1].first_base_record={}",
-        player1.first_base_record_raw()
-    );
-    println!(
-        "  fleet[1].local_slot_word_raw={}",
-        fleet1.local_slot_word_raw()
-    );
-    println!(
-        "  fleet[1].next_fleet_link_word_raw={}",
-        fleet1.next_fleet_link_word_raw()
-    );
-    println!(
-        "  fleet[1].fleet_id_word_raw={}",
-        fleet1.fleet_id_word_raw()
-    );
+    println!("  player[1].first_base_record={}", player1.bases_first.0);
+    println!("  fleet[1].local_slot_word_raw={}", fleet1.fleet_number.0);
+    println!("  fleet[1].next_fleet_link_word_raw={}", fleet1.next.0);
+    println!("  fleet[1].fleet_id_word_raw={}", fleet1.record.0);
     println!(
         "  fleet[1].order={:#04x} target={:?} guard_index={}",
-        fleet1.standing_order_code_raw(),
-        fleet1.standing_order_target_coords_raw(),
-        fleet1.guard_starbase_index_raw()
+        fleet1.order.to_raw(),
+        fleet1.target.to_array(),
+        fleet1.mission_target
     );
     if let Ok(linkage) = data.guard_starbase_linkage_summary_current_known(1, 1) {
         println!(
@@ -117,16 +102,16 @@ pub(crate) fn print_guard_starbase_report(dir: &Path) -> Result<(), Box<dyn std:
         println!("  base_count={}", data.bases.len());
         println!(
             "  base[1].escort={} id={} owner={} next={:#06x} record={:#06x} prev={:#06x} coords={:?} moving={} target={:?} target_depth={}",
-            base1.escort_fleet_slot_raw(),
-            base1.base_id_raw(),
-            base1.owner_empire_raw(),
-            base1.next_base_link_raw(),
-            base1.record_number_raw(),
-            base1.previous_base_link_raw(),
-            base1.coords_raw(),
-            base1.moving_flag_raw(),
-            base1.target_coords_raw(),
-            base1.target_depth_raw()
+            base1.escort.0,
+            base1.base_id.0,
+            base1.owner.0,
+            base1.next.0,
+            base1.record.0,
+            base1.prev.0,
+            base1.sector.to_array(),
+            u8::from(base1.moving),
+            base1.target.to_array(),
+            base1.target_depth
         );
     } else {
         println!("  base_count=0");

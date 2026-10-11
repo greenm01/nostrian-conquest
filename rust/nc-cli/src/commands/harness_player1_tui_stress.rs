@@ -2,8 +2,11 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use nc_data::{
-    CampaignStore, CoreGameData, FleetDetachSelection, IntelTier, Planet, PlanetIntelSnapshot,
-    ProductionItemKind, QueuedPlayerMail, ReportBlockRow, merge_player_intel_from_runtime,
+    CampaignStore, Coords, CoreGameData, FleetDetachSelection, IntelTier, Planet,
+    PlanetIntelSnapshot, ProductionItemKind, QueuedPlayerMail, Real48, ReportBlockRow,
+    merge_player_intel_from_runtime, present_production_points, recompute_max_speed,
+    set_armies_aboard, set_planet_name, set_troop_transports, stardock_slot_kind,
+    stored_production_points, troop_transports,
 };
 
 use crate::commands::runtime::{
@@ -131,13 +134,13 @@ pub(crate) fn seed_player1_tui_stress(
     let mut state = load_runtime_state_preferring_live_directory(dir, &store)?;
     let mut planet_intel_by_viewer = load_runtime_intel_by_viewer(&store, &state.game_data)?;
     let game_year = state.game_year;
-    let player_count = state.game_data.conquest.player_count() as usize;
+    let player_count = state.game_data.conquest.player_count as usize;
     let homeworld_coords = state
         .game_data
         .planets
         .iter()
         .take(player_count)
-        .map(|planet| planet.coords_raw())
+        .map(|planet| planet.sector.to_array())
         .collect::<Vec<_>>();
 
     configure_planets(&mut state.game_data)?;
@@ -150,7 +153,7 @@ pub(crate) fn seed_player1_tui_stress(
     configure_other_player_fleets(&mut state.game_data, &homeworld_coords)?;
     let commissioned_starbases = commission_player_one_starbases(&mut state.game_data)?;
 
-    for viewer_empire_id in 1..=state.game_data.conquest.player_count() {
+    for viewer_empire_id in 1..=state.game_data.conquest.player_count {
         let viewer_idx = viewer_empire_id.saturating_sub(1) as usize;
         let previous = planet_intel_by_viewer
             .get(viewer_idx)
@@ -204,13 +207,13 @@ struct PlanetPayload {
 
 fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::error::Error>> {
     let total_planets = game_data.planets.len();
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
     let owners = ownership_sequence_for_players(player_count, total_planets);
     let empire_short_names = game_data
         .players
         .iter()
         .map(|record| {
-            let empire = record.controlled_empire_name_summary();
+            let empire = record.empire_name.trim().to_string();
             empire
                 .split_whitespace()
                 .next()
@@ -227,21 +230,14 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
         let payload = planet_payload(&empire_short_names, owner, idx + 1, *ordinal);
         *ordinal += 1;
 
-        planet.set_owner_empire_slot_raw(owner);
-        planet.set_ownership_status_raw(if owner == 0 { 0 } else { 2 });
-        planet.set_planet_name(&payload.name);
-        planet.set_potential_production_points(payload.potential);
-        if !planet.set_present_production_points(payload.present) {
-            return Err(format!(
-                "planet {} present production out of range: {}",
-                idx + 1,
-                payload.present
-            )
-            .into());
-        }
-        planet.set_stored_production_points(payload.stored);
-        planet.set_army_count_raw(payload.armies);
-        planet.set_ground_batteries_raw(payload.batteries);
+        planet.owner.0 = owner;
+        planet.years_under_owner = if owner == 0 { 0 } else { 2 };
+        set_planet_name(planet, &payload.name);
+        planet.potential_production = payload.potential;
+        planet.production = Real48::from_f64(f64::from(payload.present));
+        planet.stored_goods = Real48::from_f64(f64::from(payload.stored));
+        planet.armies = u16::from(payload.armies);
+        planet.ground_batteries = u16::from(payload.batteries);
         clear_planet_build_queue(planet);
         clear_planet_stardock(planet);
     }
@@ -253,14 +249,14 @@ fn configure_planets(game_data: &mut CoreGameData) -> Result<(), Box<dyn std::er
 
 fn clear_planet_build_queue(planet: &mut Planet) {
     for slot in 0..10 {
-        planet.set_build_count_raw(slot, 0);
-        planet.set_build_kind_raw(slot, 0);
+        planet.build_queue[slot].points_owed = 0;
+        planet.build_queue[slot].kind = ProductionItemKind::Unknown(0);
     }
 }
 
 fn clear_planet_stardock(planet: &mut Planet) {
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        planet.set_stardock_count_raw(slot, 0);
+        planet.stardock[slot] = 0;
     }
 }
 
@@ -274,7 +270,7 @@ fn apply_stardock_specs(game_data: &mut CoreGameData, specs: &[(usize, u8, u16)]
             continue;
         }
         let planet = &mut game_data.planets[*record_index_1_based - 1];
-        planet.set_stardock_count_raw(slot, *count);
+        planet.stardock[slot] = u32::from(*count);
     }
 }
 
@@ -287,7 +283,7 @@ fn apply_player_owned_stardock_specs(
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == owner_empire_id)
+        .filter(|(_, planet)| planet.owner.0 == owner_empire_id)
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
     for (owned_ordinal_1_based, kind_raw, count) in specs {
@@ -299,7 +295,7 @@ fn apply_player_owned_stardock_specs(
             continue;
         };
         let planet = &mut game_data.planets[record_index_1_based - 1];
-        planet.set_stardock_count_raw(slot, *count);
+        planet.stardock[slot] = u32::from(*count);
     }
 }
 
@@ -431,8 +427,8 @@ fn player_owned_planet_coords(game_data: &CoreGameData, owner: u8) -> Vec<[u8; 2
     game_data
         .planets
         .iter()
-        .filter(|planet| planet.owner_empire_slot_raw() == owner)
-        .map(|planet| planet.coords_raw())
+        .filter(|planet| planet.owner.0 == owner)
+        .map(|planet| planet.sector.to_array())
         .collect()
 }
 
@@ -499,7 +495,7 @@ fn configure_other_player_fleets(
     game_data: &mut CoreGameData,
     homeworld_coords: &[[u8; 2]],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    for player in 2..=game_data.conquest.player_count() as usize {
+    for player in 2..=game_data.conquest.player_count as usize {
         let donor_record_index_1_based = (player - 1) * 4 + 1;
         let home = homeworld_coords[player - 1];
         let scouts = 4 + (player as u16 % 3);
@@ -567,16 +563,16 @@ fn set_fleet_composition(
     armies_loaded: u16,
     etacs: u16,
 ) {
-    fleet.set_scout_count(scouts);
-    fleet.set_battleship_count(battleships);
-    fleet.set_cruiser_count(cruisers);
-    fleet.set_destroyer_count(destroyers);
-    fleet.set_troop_transport_count(transports);
-    fleet.set_army_count(armies_loaded);
-    fleet.set_etac_count(etacs);
-    fleet.recompute_max_speed_from_composition();
-    if fleet.current_speed() > fleet.max_speed() {
-        fleet.set_current_speed(fleet.max_speed());
+    fleet.ships.scouts = scouts;
+    fleet.ships.battleships = battleships;
+    fleet.ships.cruisers = cruisers;
+    fleet.ships.destroyers = destroyers;
+    set_troop_transports(fleet, transports);
+    set_armies_aboard(fleet, armies_loaded);
+    fleet.ships.etacs = etacs;
+    recompute_max_speed(fleet);
+    if fleet.speed > fleet.max_speed {
+        fleet.speed = fleet.max_speed;
     }
 }
 
@@ -590,7 +586,7 @@ fn set_fleet_location(
             format!("fleet record index out of range: {fleet_record_index_1_based}").into(),
         );
     };
-    fleet.set_current_location_coords_raw(coords);
+    fleet.sector = Coords::from_array(coords);
     Ok(())
 }
 
@@ -702,7 +698,7 @@ fn commission_player_one_starbases(
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, planet)| planet.owner_empire_slot_raw() == 1)
+        .filter(|(_, planet)| planet.owner.0 == 1)
         .map(|(idx, _)| idx + 1)
         .collect::<Vec<_>>();
 
@@ -712,7 +708,8 @@ fn commission_player_one_starbases(
             let planet = &game_data.planets[planet_index_1_based - 1];
             (0..nc_data::STARDOCK_SLOT_COUNT)
                 .filter(|slot| {
-                    planet.stardock_kind_raw(*slot) == 9 && planet.stardock_count_raw(*slot) > 0
+                    stardock_slot_kind(planet, *slot).to_raw() == 9
+                        && u16::try_from(planet.stardock[*slot]).unwrap_or(u16::MAX) > 0
                 })
                 .collect::<Vec<_>>()
         };
@@ -744,8 +741,8 @@ fn seed_player_one_intel(
         .iter()
         .enumerate()
         .filter(|(_, planet)| {
-            let owner = planet.owner_empire_slot_raw();
-            owner >= 2 && owner <= game_data.conquest.player_count()
+            let owner = planet.owner.0;
+            owner >= 2 && owner <= game_data.conquest.player_count
         })
         .map(|(idx, planet)| (idx + 1, planet))
         .collect::<Vec<_>>();
@@ -784,9 +781,9 @@ fn partial_snapshot(
         last_intel_year: Some(intel_year),
         seen_year: Some(intel_year),
         scout_year: None,
-        known_name: Some(planet.status_or_name_summary()),
-        known_owner_empire_id: Some(planet.owner_empire_slot_raw()),
-        known_potential_production: Some(planet.potential_production_points()),
+        known_name: Some(planet.name.trim().to_string()),
+        known_owner_empire_id: Some(planet.owner.0),
+        known_potential_production: Some(u16::from(planet.potential_production)),
         known_armies: None,
         known_ground_batteries: None,
         known_starbase_count: None,
@@ -811,21 +808,20 @@ fn full_snapshot(
         last_intel_year: Some(intel_year),
         seen_year: Some(intel_year),
         scout_year: Some(intel_year),
-        known_name: Some(planet.status_or_name_summary()),
-        known_owner_empire_id: Some(planet.owner_empire_slot_raw()),
-        known_potential_production: Some(planet.potential_production_points()),
-        known_armies: Some(planet.army_count_raw()),
-        known_ground_batteries: Some(planet.ground_batteries_raw()),
+        known_name: Some(planet.name.trim().to_string()),
+        known_owner_empire_id: Some(planet.owner.0),
+        known_potential_production: Some(u16::from(planet.potential_production)),
+        known_armies: Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+        known_ground_batteries: Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
         known_starbase_count: Some(nc_data::active_starbase_count_at(
             game_data,
-            planet.coords_raw(),
+            planet.sector.to_array(),
         )),
-        known_current_production: planet
-            .present_production_points()
+        known_current_production: Some(present_production_points(planet))
             .map(|value| value.min(u16::from(u8::MAX)) as u8),
-        known_stored_points: Some(planet.stored_production_points().min(u32::from(u16::MAX)) as u16),
+        known_stored_points: Some(stored_production_points(planet).min(u32::from(u16::MAX)) as u16),
         known_docked_summary: Some(format_stardock_summary(planet)),
-        known_orbit_summary: Some(format_orbit_summary(game_data, planet.coords_raw())),
+        known_orbit_summary: Some(format_orbit_summary(game_data, planet.sector.to_array())),
         compat_word_1e: Some(0x23),
     }
 }
@@ -833,11 +829,11 @@ fn full_snapshot(
 fn format_stardock_summary(planet: &nc_data::Planet) -> String {
     let mut parts = Vec::new();
     for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-        let count = u32::from(planet.stardock_count_raw(slot));
+        let count = u32::from(u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX));
         if count == 0 {
             continue;
         }
-        let kind = planet.stardock_item_kind_current_known(slot);
+        let kind = stardock_slot_kind(planet, slot);
         parts.push(format!("{} {}", count, unit_label(kind, count)));
     }
     if parts.is_empty() {
@@ -851,12 +847,12 @@ fn format_orbit_summary(game_data: &CoreGameData, coords: [u8; 2]) -> String {
     let fleet_count = game_data
         .fleets
         .iter()
-        .filter(|fleet| fleet.current_location_coords_raw() == coords && fleet_has_any_force(fleet))
+        .filter(|fleet| fleet.sector.to_array() == coords && fleet_has_any_force(fleet))
         .count();
     let starbase_count = game_data
         .bases
         .iter()
-        .filter(|base| base.coords_raw() == coords && base.base_id_raw() != 0)
+        .filter(|base| base.sector.to_array() == coords && base.base_id.0 != 0)
         .count();
     let mut parts = Vec::new();
     if fleet_count > 0 {
@@ -885,13 +881,13 @@ fn format_orbit_summary(game_data: &CoreGameData, coords: [u8; 2]) -> String {
 }
 
 fn fleet_has_any_force(fleet: &nc_data::Fleet) -> bool {
-    fleet.scout_count() > 0
-        || fleet.battleship_count() > 0
-        || fleet.cruiser_count() > 0
-        || fleet.destroyer_count() > 0
-        || fleet.troop_transport_count() > 0
-        || fleet.army_count() > 0
-        || fleet.etac_count() > 0
+    fleet.ships.scouts > 0
+        || fleet.ships.battleships > 0
+        || fleet.ships.cruisers > 0
+        || fleet.ships.destroyers > 0
+        || troop_transports(fleet) > 0
+        || fleet.ships.loaded_transports > 0
+        || fleet.ships.etacs > 0
 }
 
 fn unit_label(kind: ProductionItemKind, count: u32) -> &'static str {

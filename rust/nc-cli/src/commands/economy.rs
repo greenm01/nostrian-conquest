@@ -1,6 +1,10 @@
 use std::path::Path;
 
 use crate::commands::runtime::{load_runtime_game_data, with_runtime_game_mut};
+use nc_data::{
+    Coords, EmpireId, Planet, ProductionItemKind, Real48, is_homeworld_seed_ignoring_name,
+    set_planet_name,
+};
 
 const PROBE_COLONY_SPECS: [(&str, u16, u16, u8, u8); 2] =
     [("Mid Colony", 50, 100, 3, 1), ("New Colony", 25, 100, 1, 0)];
@@ -21,7 +25,7 @@ pub(crate) fn init_tax_growth_probe(
 
         let empire_raw = player_record_index_1_based as u8;
         let Some(homeworld_idx) = data.planets.iter().position(|planet| {
-            planet.owner_empire_slot_raw() == empire_raw && planet.is_homeworld_seed_ignoring_name()
+            planet.owner.0 == empire_raw && is_homeworld_seed_ignoring_name(planet)
         }) else {
             return Err(format!(
                 "player {} homeworld seed not found",
@@ -32,17 +36,17 @@ pub(crate) fn init_tax_growth_probe(
 
         {
             let homeworld = &mut data.planets[homeworld_idx];
-            homeworld.set_stored_production_points(0);
-            homeworld.set_army_count_raw(10);
-            homeworld.set_ground_batteries_raw(4);
-            homeworld.set_ownership_status_raw(2);
+            homeworld.stored_goods = Real48::ZERO;
+            homeworld.armies = 10;
+            homeworld.ground_batteries = 4;
+            homeworld.years_under_owner = 2;
         }
 
         let unowned_indices = data
             .planets
             .iter()
             .enumerate()
-            .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
+            .filter(|(_, planet)| planet.owner.0 == 0)
             .map(|(idx, _)| idx)
             .rev()
             .take(PROBE_COLONY_SPECS.len())
@@ -58,31 +62,27 @@ pub(crate) fn init_tax_growth_probe(
         for (planet_idx, (name, present, potential, armies, batteries)) in
             unowned_indices.into_iter().zip(PROBE_COLONY_SPECS)
         {
-            let coords = data.planets[planet_idx].coords_raw();
+            let coords = data.planets[planet_idx].sector.to_array();
             let planet = &mut data.planets[planet_idx];
-            planet.set_as_owned_target_world(
-                coords,
-                [0; 2],
-                [0; 6],
-                0,
-                probe_name_len(name),
-                probe_name_buffer(name),
-                [0; 7],
-                armies,
-                batteries,
-                2,
-                empire_raw,
-            );
-            planet.set_potential_production_points(potential.min(u16::from(u8::MAX)) as u8);
-            planet.set_present_production_points(present);
+            *planet = Planet {
+                sector: Coords::from_array(coords),
+                name: name.to_string(),
+                armies: u16::from(armies),
+                ground_batteries: u16::from(batteries),
+                years_under_owner: 2,
+                owner: EmpireId(empire_raw),
+                ..Planet::default()
+            };
+            planet.potential_production = potential.min(u16::from(u8::MAX)) as u8;
+            planet.production = Real48::from_f64(f64::from(present));
             for slot in 0..10 {
-                planet.set_build_count_raw(slot, 0);
-                planet.set_build_kind_raw(slot, 0);
+                planet.build_queue[slot].points_owed = 0;
+                planet.build_queue[slot].kind = ProductionItemKind::Unknown(0);
             }
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-                planet.set_stardock_count_raw(slot, 0);
+                planet.stardock[slot] = 0;
             }
-            planet.set_stored_production_points(0);
+            planet.stored_goods = Real48::ZERO;
         }
 
         Ok(())
@@ -108,7 +108,7 @@ pub(crate) fn init_starbase_tax_probe(
         let empire_name = data
             .players
             .get(player_record_index_1_based - 1)
-            .map(|player| player.controlled_empire_name_summary())
+            .map(|player| player.empire_name.trim().to_string())
             .filter(|name| !name.trim().is_empty() && name != "In Civil Disorder")
             .unwrap_or_else(|| format!("Probe Empire {player_record_index_1_based}"));
 
@@ -116,13 +116,12 @@ pub(crate) fn init_starbase_tax_probe(
         data.set_player_tax_rate(player_record_index_1_based, tax_rate)?;
 
         if let Some(player) = data.players.get_mut(player_record_index_1_based - 1) {
-            player.set_first_base_record_raw(0);
+            player.bases_first.0 = 0;
         }
-        data.bases
-            .retain(|base| base.owner_empire_raw() != empire_raw);
+        data.bases.retain(|base| base.owner.0 != empire_raw);
 
         let Some(homeworld_idx) = data.planets.iter().position(|planet| {
-            planet.owner_empire_slot_raw() == empire_raw && planet.is_homeworld_seed_ignoring_name()
+            planet.owner.0 == empire_raw && is_homeworld_seed_ignoring_name(planet)
         }) else {
             return Err(format!(
                 "player {} homeworld seed not found",
@@ -133,17 +132,17 @@ pub(crate) fn init_starbase_tax_probe(
 
         {
             let homeworld = &mut data.planets[homeworld_idx];
-            homeworld.set_stored_production_points(0);
-            homeworld.set_army_count_raw(10);
-            homeworld.set_ground_batteries_raw(4);
-            homeworld.set_ownership_status_raw(2);
+            homeworld.stored_goods = Real48::ZERO;
+            homeworld.armies = 10;
+            homeworld.ground_batteries = 4;
+            homeworld.years_under_owner = 2;
         }
 
         let unowned_indices = data
             .planets
             .iter()
             .enumerate()
-            .filter(|(_, planet)| planet.owner_empire_slot_raw() == 0)
+            .filter(|(_, planet)| planet.owner.0 == 0)
             .map(|(idx, _)| idx)
             .rev()
             .take(STARBASE_PROBE_COLONY_SPECS.len())
@@ -161,34 +160,26 @@ pub(crate) fn init_starbase_tax_probe(
             unowned_indices.into_iter().zip(STARBASE_PROBE_COLONY_SPECS)
         {
             let planet = &mut data.planets[planet_idx];
-            planet.set_owner_empire_slot_raw(empire_raw);
-            planet.set_ownership_status_raw(2);
-            planet.set_planet_name(name);
-            planet.set_potential_production_points(
-                STARBASE_PROBE_POTENTIAL_PRODUCTION.min(u16::from(u8::MAX)) as u8,
-            );
-            if !planet.set_present_production_points(STARBASE_PROBE_PRESENT_PRODUCTION) {
-                return Err(format!(
-                    "unsupported probe production value {} for planet {}",
-                    STARBASE_PROBE_PRESENT_PRODUCTION,
-                    planet_idx + 1
-                )
-                .into());
-            }
-            planet.set_army_count_raw(STARBASE_PROBE_ARMIES);
-            planet.set_ground_batteries_raw(STARBASE_PROBE_BATTERIES);
+            planet.owner.0 = empire_raw;
+            planet.years_under_owner = 2;
+            set_planet_name(planet, name);
+            planet.potential_production =
+                STARBASE_PROBE_POTENTIAL_PRODUCTION.min(u16::from(u8::MAX)) as u8;
+            planet.production = Real48::from_f64(f64::from(STARBASE_PROBE_PRESENT_PRODUCTION));
+            planet.armies = u16::from(STARBASE_PROBE_ARMIES);
+            planet.ground_batteries = u16::from(STARBASE_PROBE_BATTERIES);
             for slot in 0..10 {
-                planet.set_build_count_raw(slot, 0);
-                planet.set_build_kind_raw(slot, 0);
+                planet.build_queue[slot].points_owed = 0;
+                planet.build_queue[slot].kind = ProductionItemKind::Unknown(0);
             }
             for slot in 0..nc_data::STARDOCK_SLOT_COUNT {
-                planet.set_stardock_count_raw(slot, 0);
+                planet.stardock[slot] = 0;
             }
-            planet.set_stored_production_points(0);
+            planet.stored_goods = Real48::ZERO;
 
             if has_starbase {
                 let slot = nc_data::stardock_slot_for_kind(9).expect("starbase stardock slot");
-                planet.set_stardock_count_raw(slot, 1);
+                planet.stardock[slot] = 1;
                 starbase_planet_index_1_based = Some(planet_idx + 1);
             }
         }
@@ -229,7 +220,7 @@ pub(crate) fn print_economy_report(
         "Economy report: dir={} player={} empire=\"{}\"",
         dir.display(),
         player_record_index_1_based,
-        player.controlled_empire_name_summary()
+        player.empire_name.trim().to_string()
     );
     println!(
         "  tax_rate={} present={} potential={} available={} last_run_year={}",
@@ -237,7 +228,7 @@ pub(crate) fn print_economy_report(
         economy.present_production,
         economy.potential_production,
         economy.total_available_points,
-        player.last_run_year_raw()
+        player.last_year_on
     );
     println!(
         "  planets={} rank_planets={} rank_production={} efficiency={:.3}%",
@@ -291,16 +282,4 @@ pub(crate) fn print_economy_report(
     }
 
     Ok(())
-}
-
-fn probe_name_len(name: &str) -> u8 {
-    name.len().min(13) as u8
-}
-
-fn probe_name_buffer(name: &str) -> [u8; 13] {
-    let mut buffer = [0u8; 13];
-    let bytes = name.as_bytes();
-    let len = bytes.len().min(buffer.len());
-    buffer[..len].copy_from_slice(&bytes[..len]);
-    buffer
 }

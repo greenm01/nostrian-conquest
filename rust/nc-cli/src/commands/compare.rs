@@ -75,8 +75,8 @@ fn compare_player(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
             "  record {}: {} differing bytes, tax {} -> {}",
             idx + 1,
             count,
-            a.tax_rate(),
-            b.tax_rate()
+            a.tax_rate,
+            b.tax_rate
         );
     }
     Ok(())
@@ -95,8 +95,8 @@ fn compare_planets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std:
             "  record {:02}: {} differing bytes, text '{}' -> '{}'",
             idx + 1,
             count,
-            ascii_trim(a.status_or_name_bytes()),
-            ascii_trim(b.status_or_name_bytes())
+            ascii_trim(a.name.as_bytes()),
+            ascii_trim(b.name.as_bytes())
         );
     }
     Ok(())
@@ -124,10 +124,10 @@ fn compare_fleets(left_dir: &Path, right_dir: &Path) -> Result<(), Box<dyn std::
                 "  record {:02}: {} differing bytes, current speed {} -> {}, params {:02x?} -> {:02x?}",
                 idx + 1,
                 count,
-                a.current_speed(),
-                b.current_speed(),
-                a.mission_param_bytes(),
-                b.mission_param_bytes()
+                a.speed,
+                b.speed,
+                [a.order.to_raw(), a.target.x, a.target.y],
+                [b.order.to_raw(), b.target.x, b.target.y]
             );
         }
     }

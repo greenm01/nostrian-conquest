@@ -29,7 +29,7 @@ where
     let mut state = load_runtime_state_preferring_live_directory(dir, &store)?;
     let mut planet_intel_by_viewer = load_runtime_intel_by_viewer(&store, &state.game_data)?;
     let result = mutate(&mut state)?;
-    for viewer_empire_id in 1..=state.game_data.conquest.player_count() {
+    for viewer_empire_id in 1..=state.game_data.conquest.player_count {
         let viewer_idx = viewer_empire_id.saturating_sub(1) as usize;
         let previous = planet_intel_by_viewer
             .get(viewer_idx)
@@ -38,7 +38,7 @@ where
         planet_intel_by_viewer[viewer_idx] = nc_data::merge_player_intel_from_runtime(
             &state.game_data,
             viewer_empire_id,
-            state.game_data.conquest.game_year(),
+            state.game_data.conquest.game_year,
             Some(&previous),
             None,
         );
@@ -115,7 +115,7 @@ pub(crate) fn load_runtime_intel_by_viewer(
     campaign_store: &CampaignStore,
     game_data: &CoreGameData,
 ) -> Result<Vec<BTreeMap<usize, PlanetIntelSnapshot>>, Box<dyn std::error::Error>> {
-    (1..=game_data.conquest.player_count())
+    (1..=game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             Ok(campaign_store
                 .latest_planet_intel_for_viewer(viewer_empire_id)?

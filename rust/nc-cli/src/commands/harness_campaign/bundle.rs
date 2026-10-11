@@ -2,7 +2,8 @@ use std::fs;
 
 use nc_data::{
     CampaignRuntimeState, Fleet, PlayerStarmapProjection, PlayerStarmapWorld, ProductionItemKind,
-    build_player_starmap_projection_from_snapshots,
+    build_player_starmap_projection_from_snapshots, order_summary, present_production_points,
+    ship_composition_summary, stardock_slot_kind, stored_production_points, troop_transports,
 };
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta_to_destination};
 
@@ -120,8 +121,8 @@ fn render_player_bundle_readme(
     year: u16,
 ) -> String {
     let player = &state.game_data.players[assignment.record_index_1_based - 1];
-    let empire_name = player.controlled_empire_name_summary();
-    let handle = player.assigned_player_handle_summary();
+    let empire_name = player.empire_name.trim().to_string();
+    let handle = player.handle.trim().to_string();
     let economy = state
         .game_data
         .empire_economy_summary(assignment.record_index_1_based);
@@ -237,7 +238,7 @@ fn render_player_bundle_readme(
     ));
 
     out.push_str("## Diplomacy\n\n");
-    for other in 1..=state.game_data.conquest.player_count() as usize {
+    for other in 1..=state.game_data.conquest.player_count as usize {
         if other == assignment.record_index_1_based {
             continue;
         }
@@ -250,7 +251,10 @@ fn render_player_bundle_readme(
                 nc_data::DiplomaticRelation::Unknown(_) => "unknown",
             })
             .unwrap_or("unknown");
-        let other_empire = state.game_data.players[other - 1].controlled_empire_name_summary();
+        let other_empire = state.game_data.players[other - 1]
+            .empire_name
+            .trim()
+            .to_string();
         out.push_str(&format!(
             "- empire `{other}` (`{other_empire}`): `{relation}`\n"
         ));
@@ -258,29 +262,29 @@ fn render_player_bundle_readme(
     out.push('\n');
 
     out.push_str("## Owned Planets\n\n");
-    for planet in
-        state.game_data.planets.iter().filter(|planet| {
-            planet.owner_empire_slot_raw() as usize == assignment.record_index_1_based
-        })
+    for planet in state
+        .game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 as usize == assignment.record_index_1_based)
     {
-        let [x, y] = planet.coords_raw();
-        let present = planet
-            .present_production_points_current_known()
+        let [x, y] = planet.sector.to_array();
+        let present = Some(present_production_points(planet))
             .map(|value| value.to_string())
             .unwrap_or_else(|| "UNKNOWN".to_string());
         out.push_str(&format!(
             "- `{}` at `({x},{y})`: potential `{}`, present `{}`, stored `{}`, armies `{}`, batteries `{}`\n",
-            planet.planet_name(),
-            planet.potential_production_points_current_known(),
+            planet.name.clone(),
+            u16::from(planet.potential_production),
             present,
-            planet.stored_production_points(),
-            planet.army_count_raw(),
-            planet.ground_batteries_raw()
+            stored_production_points(planet),
+            u8::try_from(planet.armies).unwrap_or(u8::MAX),
+            u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)
         ));
         let build_slots = (0..10)
             .filter_map(|slot| {
-                let count = planet.build_count_raw(slot);
-                let kind = planet.build_kind_raw(slot);
+                let count = planet.build_queue[slot].points_owed;
+                let kind = planet.build_queue[slot].kind.to_raw();
                 (count > 0 || kind > 0).then_some(format!(
                     "slot {}: points={} kind_raw={}",
                     slot + 1,
@@ -297,12 +301,12 @@ fn render_player_bundle_readme(
         }
         let docked = (0..nc_data::STARDOCK_SLOT_COUNT)
             .filter_map(|slot| {
-                let count = planet.stardock_count_raw(slot);
+                let count = u16::try_from(planet.stardock[slot]).unwrap_or(u16::MAX);
                 (count > 0).then_some(format!(
                     "slot {}: {} x {}",
                     slot + 1,
                     count,
-                    production_kind_label(planet.stardock_item_kind_current_known(slot))
+                    production_kind_label(stardock_slot_kind(planet, slot))
                 ))
             })
             .collect::<Vec<_>>();
@@ -317,19 +321,19 @@ fn render_player_bundle_readme(
 
     out.push_str("## Owned Fleets\n\n");
     for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
-        if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
+        if fleet.owner.0 as usize != assignment.record_index_1_based {
             continue;
         }
-        let [x, y] = fleet.current_location_coords_raw();
+        let [x, y] = fleet.sector.to_array();
         out.push_str(&format!(
             "- record `{}` / fleet_id `{}` at `({x},{y})`: ships `{}` speed `{}` / max `{}` roe `{}` order `{}`\n",
             idx + 1,
-            fleet.fleet_id(),
-            fleet.ship_composition_summary(),
-            fleet.current_speed(),
-            fleet.max_speed(),
-            fleet.rules_of_engagement(),
-            fleet.standing_order_summary()
+            fleet.record.0,
+            ship_composition_summary(fleet),
+            fleet.speed,
+            fleet.max_speed,
+            fleet.rules_of_engagement,
+            order_summary(fleet)
         ));
     }
     out.push('\n');
@@ -339,15 +343,15 @@ fn render_player_bundle_readme(
         "Use these as hard guardrails. If an order family is listed as unavailable, do not submit it this turn.\n\n",
     );
     for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
-        if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
+        if fleet.owner.0 as usize != assignment.record_index_1_based {
             continue;
         }
-        let [x, y] = fleet.current_location_coords_raw();
+        let [x, y] = fleet.sector.to_array();
         let capabilities = fleet_capabilities(fleet);
         out.push_str(&format!(
             "- fleet `{}` / fleet_id `{}` at `({x},{y})`\n",
             idx + 1,
-            fleet.fleet_id()
+            fleet.record.0
         ));
         out.push_str("  - always safe families: `hold`, `move`, `seek_home`\n");
 
@@ -495,7 +499,9 @@ fn render_player_bundle_readme(
     } else {
         for mail in incoming_messages {
             let sender_name = state.game_data.players[mail.sender_empire_id as usize - 1]
-                .controlled_empire_name_summary();
+                .empire_name
+                .trim()
+                .to_string();
             out.push_str(&format!(
                 "- from empire `{}` (`{}`), year `{}`\n",
                 mail.sender_empire_id, sender_name, mail.year
@@ -511,8 +517,7 @@ fn render_player_bundle_readme(
     out.push_str("## Review Flags\n\n");
     out.push_str(&format!(
         "- reports_pending_flag: `{}`\n- messages_pending_flag: `{}`\n\n",
-        player.classic_reports_pending_flag_raw(),
-        player.classic_messages_pending_flag_raw()
+        player.messages_last as u8, player.messages_first as u8
     ));
 
     out.push_str("## Files In This Bundle\n\n");
@@ -556,22 +561,22 @@ fn render_llm_spatial_kdl(
     }
 
     for (idx, fleet) in state.game_data.fleets.iter().enumerate() {
-        if fleet.owner_empire_raw() as usize != assignment.record_index_1_based {
+        if fleet.owner.0 as usize != assignment.record_index_1_based {
             continue;
         }
-        let [x, y] = fleet.current_location_coords_raw();
+        let [x, y] = fleet.sector.to_array();
         let capabilities = fleet_capabilities(fleet);
         out.push_str(&format!(
             "fleet record={} fleet_id={} x={} y={} speed={} max_speed={} roe={} order=\"{}\" order_label=\"{}\" {{\n",
             idx + 1,
-            fleet.fleet_id(),
+            fleet.record.0,
             x,
             y,
-            fleet.current_speed(),
-            fleet.max_speed(),
-            fleet.rules_of_engagement(),
-            kdl_escape(fleet.standing_order_kind().as_str()),
-            kdl_escape(fleet.standing_order_kind().display_label())
+            fleet.speed,
+            fleet.max_speed,
+            fleet.rules_of_engagement,
+            kdl_escape(fleet.order.as_str()),
+            kdl_escape(fleet.order.display_label())
         ));
         for family in non_target_families(capabilities) {
             out.push_str(&format!("  non_target_family \"{}\"\n", kdl_escape(family)));
@@ -607,7 +612,9 @@ fn render_llm_spatial_kdl(
                         &mut out,
                         "owner_empire_name",
                         &state.game_data.players[owner_empire_id as usize - 1]
-                            .controlled_empire_name_summary(),
+                            .empire_name
+                            .trim()
+                            .to_string(),
                     );
                 }
             }
@@ -704,12 +711,12 @@ fn visible_planet_hints_from_projection(
 
 fn fleet_capabilities(fleet: &Fleet) -> FleetCapabilities {
     FleetCapabilities {
-        has_combat: fleet.destroyer_count() > 0
-            || fleet.cruiser_count() > 0
-            || fleet.battleship_count() > 0,
-        has_scout: fleet.scout_count() > 0,
-        has_etac: fleet.etac_count() > 0,
-        has_loaded_troops: fleet.troop_transport_count() > 0 && fleet.army_count() > 0,
+        has_combat: fleet.ships.destroyers > 0
+            || fleet.ships.cruisers > 0
+            || fleet.ships.battleships > 0,
+        has_scout: fleet.ships.scouts > 0,
+        has_etac: fleet.ships.etacs > 0,
+        has_loaded_troops: troop_transports(fleet) > 0 && fleet.ships.loaded_transports > 0,
     }
 }
 

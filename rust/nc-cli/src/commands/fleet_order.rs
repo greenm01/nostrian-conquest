@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::CoreGameData;
+use nc_data::{Coords, CoreGameData};
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, load_runtime_game_data, with_runtime_game_mut,
@@ -54,7 +54,7 @@ pub(crate) fn set_raw_fleet_order(
     let current_aux = record_index_1_based
         .checked_sub(1)
         .and_then(|idx| data.fleets.get(idx))
-        .map(|fleet| fleet.mission_aux_bytes())
+        .map(|fleet| [fleet.target_depth, fleet.mission_target as u8])
         .unwrap_or_default();
     data.set_fleet_order(
         record_index_1_based,
@@ -79,7 +79,7 @@ fn ensure_planet_target_for_order(
         || data
             .planets
             .iter()
-            .any(|planet| planet.coords_raw() == coords)
+            .any(|planet| planet.sector.to_array() == coords)
     {
         return Ok(());
     }
@@ -87,7 +87,7 @@ fn ensure_planet_target_for_order(
     let template = data
         .planets
         .iter()
-        .find(|planet| planet.owner_empire_slot_raw() == 0)
+        .find(|planet| planet.owner.0 == 0)
         .or_else(|| data.planets.last())
         .ok_or("no planet record available to clone target coordinates")?
         .clone();
@@ -96,7 +96,7 @@ fn ensure_planet_target_for_order(
         .last_mut()
         .ok_or("no planet record available to receive target coordinates")?;
     *target = template;
-    target.set_coords_raw(coords);
+    target.sector = Coords::from_array(coords);
     Ok(())
 }
 
@@ -124,16 +124,16 @@ pub(crate) fn print_fleet_order_report(
     println!("Fleet Order Report");
     println!("  dir={}", dir.display());
     println!("  record={}", record_index_1_based);
-    println!("  current_speed={}", record.current_speed());
-    println!("  order={:#04x}", record.standing_order_code_raw());
-    println!("  target={:?}", record.standing_order_target_coords_raw());
-    println!("  mission_aux={:02x?}", record.mission_aux_bytes());
-    println!("  local_slot_word={}", record.local_slot_word_raw());
+    println!("  current_speed={}", record.speed);
+    println!("  order={:#04x}", record.order.to_raw());
+    println!("  target={:?}", record.target.to_array());
     println!(
-        "  next_fleet_link_word={}",
-        record.next_fleet_link_word_raw()
+        "  mission_aux={:02x?}",
+        [record.target_depth, record.mission_target as u8]
     );
-    println!("  fleet_id_word={}", record.fleet_id_word_raw());
+    println!("  local_slot_word={}", record.fleet_number.0);
+    println!("  next_fleet_link_word={}", record.next.0);
+    println!("  fleet_id_word={}", record.record.0);
     Ok(())
 }
 

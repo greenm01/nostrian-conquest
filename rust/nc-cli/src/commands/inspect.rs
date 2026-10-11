@@ -3,7 +3,10 @@ use std::path::Path;
 
 use crate::commands::runtime::load_runtime_game_data;
 use nc_compat::{inspect_classic_messages_dat, load_classic_core_files};
-use nc_data::{Conquest, CoreGameData, Planet, Setup};
+use nc_data::{
+    Conquest, CoreGameData, Planet, PlayerMode, Setup, is_named_homeworld_seed, order_summary,
+    ownership_summary, planet_derived_summary, ship_composition_summary,
+};
 use nc_engine::{FleetEtaEstimate, estimate_fleet_eta, plan_route};
 
 pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
@@ -22,26 +25,23 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  slot {}: owner_mode={} assigned_player_flag={} tax={} last_run_year={} autopilot={} reports_pending={} messages_pending={} message_review={:04x}/{:04x} results_review={:04x}/{:04x} results_chain={:04x}/{:04x} campaign_state={} summary={}",
             idx + 1,
-            record.owner_mode_raw(),
-            record.assigned_player_flag_raw(),
-            record.tax_rate(),
-            record.last_run_year_raw(),
-            record.autopilot_flag(),
-            record.classic_reports_pending_flag_raw(),
-            record.classic_messages_pending_flag_raw(),
-            record.classic_message_review_word_raw(),
-            record.classic_message_review_carry_word_raw(),
-            record.classic_results_review_word_raw(),
-            record.classic_results_review_carry_word_raw(),
-            record.classic_results_first_header_raw(),
-            record.classic_results_last_header_raw(),
+            record.mode.to_raw(),
+            record.mode.to_raw(),
+            record.tax_rate,
+            record.last_year_on,
+            u8::from(record.autopilot),
+            record.messages_last as u8,
+            record.messages_first as u8,
+            record.messages_first as u16,
+            (record.messages_first >> 16) as u16,
+            record.messages_last as u16,
+            (record.messages_last >> 16) as u16,
+            record.results_first as u16,
+            record.results_last as u16,
             campaign_state,
-            record.ownership_summary()
+            ownership_summary(record)
         );
-        println!(
-            "    first_base_record_raw={}",
-            record.first_base_record_raw()
-        );
+        println!("    first_base_record_raw={}", record.bases_first.0);
     }
     println!();
 
@@ -51,13 +51,17 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  planet {:02}: coords={:?} hdr={:02x?} len={} text='{}' tail58={:02x?} fact_word={:04x} summary='{}'",
             idx + 1,
-            record.coords_raw(),
-            record.header_bytes(),
-            record.string_len(),
-            record.status_or_name_summary(),
+            record.sector.to_array(),
+            [
+                record.sector.x,
+                record.sector.y,
+                record.potential_production
+            ],
+            record.name.chars().count() as u8,
+            record.name.trim().to_string(),
             &bytes[0x58..0x61],
             u16::from_le_bytes([bytes[0x08], bytes[0x09]]),
-            record.derived_summary()
+            planet_derived_summary(record)
         );
     }
     println!("  ... {} total planet records", data.planets.len());
@@ -66,7 +70,7 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         .planets
         .iter()
         .enumerate()
-        .filter(|(_, record)| record.is_named_homeworld_seed())
+        .filter(|(_, record)| is_named_homeworld_seed(record))
         .collect::<Vec<_>>();
     if !homeworld_like.is_empty() {
         println!();
@@ -75,8 +79,8 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
             println!(
                 "  planet {:02}: summary='{}' potential={}",
                 idx + 1,
-                record.derived_summary(),
-                record.potential_production_points()
+                planet_derived_summary(record),
+                u16::from(record.potential_production)
             );
         }
     }
@@ -88,21 +92,24 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  fleet {:02}: id={} slot={} prev={} next={} cur_spd={} max_spd={} roe={} ships={} loc_raw={:02x?} order={}({}) target_raw={:02x?} summary='{}'",
             idx + 1,
-            record.fleet_id(),
-            record.local_slot(),
-            record.previous_fleet_id(),
-            record.next_fleet_id(),
-            record.current_speed(),
-            record.max_speed(),
-            record.rules_of_engagement(),
-            record.ship_composition_summary(),
-            record.current_location_coords_raw(),
-            record.standing_order_kind().as_str(),
-            record.standing_order_code_raw(),
-            record.standing_order_target_coords_raw(),
-            record.standing_order_summary()
+            record.record.0,
+            record.fleet_number.0 as u8,
+            record.prev.0,
+            record.next.0,
+            record.speed,
+            record.max_speed,
+            record.rules_of_engagement,
+            ship_composition_summary(record),
+            record.sector.to_array(),
+            record.order.as_str(),
+            record.order.to_raw(),
+            record.target.to_array(),
+            order_summary(record)
         );
-        println!("    mission_aux={:02x?}", record.mission_aux_bytes());
+        println!(
+            "    mission_aux={:02x?}",
+            [record.target_depth, record.mission_target as u8]
+        );
     }
     if data.fleets.len() > fleet_display_count {
         println!("  ... {} total fleet records", data.fleets.len());
@@ -110,31 +117,33 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
 
     let looks_like_initialized_blocks = !data.fleets.is_empty()
         && data.fleets.len() % 4 == 0
-        && data
-            .fleets
-            .chunks_exact(4)
-            .all(|group| group.iter().map(|r| r.local_slot()).eq([1, 2, 3, 4]));
+        && data.fleets.chunks_exact(4).all(|group| {
+            group
+                .iter()
+                .map(|r| r.fleet_number.0 as u8)
+                .eq([1, 2, 3, 4])
+        });
 
     if looks_like_initialized_blocks {
         println!();
         println!("Fleet Groups:");
         for (group_idx, group) in data.fleets.chunks_exact(4).enumerate() {
-            let home = group[0].current_location_coords_raw();
+            let home = group[0].sector.to_array();
             println!(
                 "  empire block {}: loc_raw={:02x?} target_raw={:02x?}",
                 group_idx + 1,
                 home,
-                group[0].standing_order_target_coords_raw()
+                group[0].target.to_array()
             );
             for record in group {
                 println!(
                     "    id={} slot={} ships={} max_spd={} order={} summary='{}'",
-                    record.fleet_id(),
-                    record.local_slot(),
-                    record.ship_composition_summary(),
-                    record.max_speed(),
-                    record.standing_order_kind().as_str(),
-                    record.standing_order_summary()
+                    record.record.0,
+                    record.fleet_number.0 as u8,
+                    ship_composition_summary(record),
+                    record.max_speed,
+                    record.order.as_str(),
+                    order_summary(record)
                 );
             }
         }
@@ -146,16 +155,16 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  base {:02}: escort={} id={} owner={} next={} record={} prev={} coords={:02x?} moving={} target={:02x?} target_depth={}",
             idx + 1,
-            record.escort_fleet_slot_raw(),
-            record.base_id_raw(),
-            record.owner_empire_raw(),
-            record.next_base_link_raw(),
-            record.record_number_raw(),
-            record.previous_base_link_raw(),
-            record.coords_raw(),
-            record.moving_flag_raw(),
-            record.target_coords_raw(),
-            record.target_depth_raw()
+            record.escort.0,
+            record.base_id.0,
+            record.owner.0,
+            record.next.0,
+            record.record.0,
+            record.prev.0,
+            record.sector.to_array(),
+            u8::from(record.moving),
+            record.target.to_array(),
+            record.target_depth
         );
     }
 
@@ -165,10 +174,10 @@ pub(crate) fn inspect_dir(dir: &Path) -> Result<(), Box<dyn std::error::Error>> 
         println!(
             "  record {:02}: number={} owner={} next={} record_number={}",
             idx + 1,
-            record.ipbm_number_raw(),
-            record.owner_empire_raw(),
-            record.next_ipbm_link_raw(),
-            record.record_number_raw()
+            record.ipbm_number,
+            record.owner.0,
+            record.next.0,
+            record.record.0
         );
     }
 
@@ -254,25 +263,28 @@ pub(crate) fn inspect_fleet_movement(
         }
     );
     println!("fleet_record={fleet_record_index_1_based}");
-    println!("fleet_id={}", fleet.fleet_id());
+    println!("fleet_id={}", fleet.record.0);
     println!(
         "coords={},{}",
-        fleet.current_location_coords_raw()[0],
-        fleet.current_location_coords_raw()[1]
+        fleet.sector.to_array()[0],
+        fleet.sector.to_array()[1]
     );
     println!(
         "target={},{}",
-        fleet.standing_order_target_coords_raw()[0],
-        fleet.standing_order_target_coords_raw()[1]
+        fleet.target.to_array()[0],
+        fleet.target.to_array()[1]
     );
-    println!("order={}", fleet.standing_order_kind().as_str());
-    println!("order_code={}", fleet.standing_order_code_raw());
-    println!("current_speed={}", fleet.current_speed());
-    println!("max_speed={}", fleet.max_speed());
-    println!("roe={}", fleet.rules_of_engagement());
-    println!("mission_aux={:02x?}", fleet.mission_aux_bytes());
-    println!("x_fraction={:02x?}", fleet.x_fraction().to_bytes());
-    println!("depth={:02x?}", fleet.depth().to_bytes());
+    println!("order={}", fleet.order.as_str());
+    println!("order_code={}", fleet.order.to_raw());
+    println!("current_speed={}", fleet.speed);
+    println!("max_speed={}", fleet.max_speed);
+    println!("roe={}", fleet.rules_of_engagement);
+    println!(
+        "mission_aux={:02x?}",
+        [fleet.target_depth, fleet.mission_target as u8]
+    );
+    println!("x_fraction={:02x?}", fleet.x_fraction.to_bytes());
+    println!("depth={:02x?}", fleet.depth.to_bytes());
     println!(
         "route_steps={}",
         route.as_ref().map(|route| route.steps.len()).unwrap_or(0)
@@ -290,7 +302,7 @@ pub(crate) fn inspect_fleet_movement(
             println!("eta_years={years}");
             println!(
                 "arrival_year={}",
-                data.conquest.game_year().saturating_add(years)
+                data.conquest.game_year.saturating_add(years)
             );
         }
     }
@@ -310,15 +322,15 @@ pub(crate) fn inspect_classic_login(
 
     for (idx, player) in data.players.iter().enumerate() {
         let slot = idx + 1;
-        let handle = player.assigned_player_handle_summary();
-        let empire = player.controlled_empire_name_summary();
+        let handle = player.handle.trim().to_string();
+        let empire = player.empire_name.trim().to_string();
         let campaign_state = data
             .empire_campaign_state(slot as u8)
             .map(|state| state.as_str())
             .unwrap_or("unknown");
         let homeworld = login_homeworld_like_planet(&data, slot as u8, player);
         let homeworld_name = homeworld
-            .map(Planet::planet_name)
+            .map(|planet| planet.name.clone())
             .unwrap_or_else(|| "<unknown>".to_string());
         let classification = classify_classic_login_state(&data, slot as u8, caller_alias);
 
@@ -330,14 +342,14 @@ pub(crate) fn inspect_classic_login(
             empire,
             campaign_state,
             homeworld_name,
-            player.classic_reports_pending_flag_raw(),
-            player.classic_messages_pending_flag_raw(),
-            player.classic_message_review_word_raw(),
-            player.classic_message_review_carry_word_raw(),
-            player.classic_results_review_word_raw(),
-            player.classic_results_review_carry_word_raw(),
-            player.classic_results_first_header_raw(),
-            player.classic_results_last_header_raw()
+            player.messages_last as u8,
+            player.messages_first as u8,
+            player.messages_first as u16,
+            (player.messages_first >> 16) as u16,
+            player.messages_last as u16,
+            (player.messages_last >> 16) as u16,
+            player.results_first as u16,
+            player.results_last as u16
         );
     }
 
@@ -352,137 +364,134 @@ pub(crate) fn dump_headers(dir: &Path) -> Result<(), Box<dyn std::error::Error>>
     println!("Directory: {}", dir.display());
     println!(
         "SETUP.version={}",
-        String::from_utf8_lossy(setup.version_tag())
+        String::from_utf8_lossy(setup.version_tag.as_slice())
     );
-    println!("SETUP.option_prefix={:02x?}", setup.option_prefix());
+    println!("SETUP.option_prefix={:02x?}", option_prefix(setup));
     println!(
         "SETUP.com_irqs=[{}, {}, {}, {}]",
-        setup.com_irq_raw(0).unwrap_or_default(),
-        setup.com_irq_raw(1).unwrap_or_default(),
-        setup.com_irq_raw(2).unwrap_or_default(),
-        setup.com_irq_raw(3).unwrap_or_default()
+        setup.com_irq.first().copied().unwrap_or_default(),
+        setup.com_irq.get(1).copied().unwrap_or_default(),
+        setup.com_irq.get(2).copied().unwrap_or_default(),
+        setup.com_irq.get(3).copied().unwrap_or_default()
     );
     println!(
         "SETUP.com_flow_control=[{}, {}, {}, {}]",
-        setup.com_hardware_flow_control_enabled(0).unwrap_or(false),
-        setup.com_hardware_flow_control_enabled(1).unwrap_or(false),
-        setup.com_hardware_flow_control_enabled(2).unwrap_or(false),
-        setup.com_hardware_flow_control_enabled(3).unwrap_or(false)
+        setup.com_hw_flow_control.first().copied().unwrap_or(false),
+        setup.com_hw_flow_control.get(1).copied().unwrap_or(false),
+        setup.com_hw_flow_control.get(2).copied().unwrap_or(false),
+        setup.com_hw_flow_control.get(3).copied().unwrap_or(false)
     );
-    println!("SETUP.snoop_enabled={}", setup.snoop_enabled());
-    println!(
-        "SETUP.local_timeout_enabled={}",
-        setup.local_timeout_enabled()
-    );
-    println!(
-        "SETUP.remote_timeout_enabled={}",
-        setup.remote_timeout_enabled()
-    );
+    println!("SETUP.snoop_enabled={}", setup.snoop);
+    println!("SETUP.local_timeout_enabled={}", setup.local_timeout);
+    println!("SETUP.remote_timeout_enabled={}", setup.remote_timeout);
     println!(
         "SETUP.max_time_between_keys_minutes_raw={}",
-        setup.max_time_between_keys_minutes_raw()
+        u8::try_from(setup.max_key_gap_minutes).unwrap_or(u8::MAX)
     );
     println!(
         "SETUP.minimum_time_granted_minutes_raw={}",
-        setup.minimum_time_granted_minutes_raw()
+        setup.minimum_time_minutes
     );
     println!(
         "SETUP.purge_after_turns_raw={}",
-        setup.purge_after_turns_raw()
+        u8::try_from(setup.purge_after_turns).unwrap_or(u8::MAX)
     );
     println!(
         "SETUP.autopilot_inactive_turns_raw={}",
-        setup.autopilot_inactive_turns_raw()
+        u8::try_from(setup.autopilot_after_turns).unwrap_or(u8::MAX)
     );
-    println!("CONQUEST.game_year={}", conquest.game_year());
-    println!("CONQUEST.player_count={}", conquest.player_count());
+    println!("CONQUEST.game_year={}", conquest.game_year);
+    println!("CONQUEST.player_count={}", conquest.player_count);
     println!(
         "CONQUEST.maintenance_schedule={:02x?}",
-        conquest.maintenance_schedule_bytes()
+        conquest.maintenance_days.0.map(u8::from)
     );
-    let empires = usize::from(conquest.player_count()).min(25);
+    let empires = usize::from(conquest.player_count).min(25);
     println!(
         "CONQUEST.previous_production={:?}",
-        &conquest.previous_production()[..empires]
+        &conquest.previous_production[..empires]
     );
     println!(
         "CONQUEST.previous_planet_count={:?}",
-        &conquest.previous_planet_count()[..empires]
+        &conquest.previous_planet_count[..empires]
     );
 
     Ok(())
 }
 
+/// SETUP.DAT bytes 5..12 as ECUTIL writes them: the COM IRQs, then the
+/// COM flow-control flags.
+fn option_prefix(setup: &Setup) -> [u8; 8] {
+    let mut prefix = [0u8; 8];
+    prefix[..4].copy_from_slice(&setup.com_irq);
+    for (byte, enabled) in prefix[4..].iter_mut().zip(setup.com_hw_flow_control) {
+        *byte = u8::from(enabled);
+    }
+    prefix
+}
+
 fn print_header_summary(setup: &Setup, conquest: &Conquest) {
     println!(
         "SETUP version: {}",
-        String::from_utf8_lossy(setup.version_tag())
+        String::from_utf8_lossy(setup.version_tag.as_slice())
     );
-    println!("SETUP option prefix: {:02x?}", setup.option_prefix());
+    println!("SETUP option prefix: {:02x?}", option_prefix(setup));
     println!(
         "SETUP COM IRQs: [{}, {}, {}, {}]",
-        setup.com_irq_raw(0).unwrap_or_default(),
-        setup.com_irq_raw(1).unwrap_or_default(),
-        setup.com_irq_raw(2).unwrap_or_default(),
-        setup.com_irq_raw(3).unwrap_or_default()
+        setup.com_irq.first().copied().unwrap_or_default(),
+        setup.com_irq.get(1).copied().unwrap_or_default(),
+        setup.com_irq.get(2).copied().unwrap_or_default(),
+        setup.com_irq.get(3).copied().unwrap_or_default()
     );
     println!(
         "SETUP COM flow control: [{}, {}, {}, {}]",
-        yes_no(setup.com_hardware_flow_control_enabled(0).unwrap_or(false)),
-        yes_no(setup.com_hardware_flow_control_enabled(1).unwrap_or(false)),
-        yes_no(setup.com_hardware_flow_control_enabled(2).unwrap_or(false)),
-        yes_no(setup.com_hardware_flow_control_enabled(3).unwrap_or(false))
+        yes_no(setup.com_hw_flow_control.first().copied().unwrap_or(false)),
+        yes_no(setup.com_hw_flow_control.get(1).copied().unwrap_or(false)),
+        yes_no(setup.com_hw_flow_control.get(2).copied().unwrap_or(false)),
+        yes_no(setup.com_hw_flow_control.get(3).copied().unwrap_or(false))
     );
     println!(
         "SETUP snoop enabled: {}",
-        if setup.snoop_enabled() { "yes" } else { "no" }
+        if setup.snoop { "yes" } else { "no" }
     );
     println!(
         "SETUP local timeout enabled: {}",
-        if setup.local_timeout_enabled() {
-            "yes"
-        } else {
-            "no"
-        }
+        if setup.local_timeout { "yes" } else { "no" }
     );
     println!(
         "SETUP remote timeout enabled: {}",
-        if setup.remote_timeout_enabled() {
-            "yes"
-        } else {
-            "no"
-        }
+        if setup.remote_timeout { "yes" } else { "no" }
     );
     println!(
         "SETUP max time between keys (raw minutes): {}",
-        setup.max_time_between_keys_minutes_raw()
+        u8::try_from(setup.max_key_gap_minutes).unwrap_or(u8::MAX)
     );
     println!(
         "SETUP minimum time granted (raw minutes): {}",
-        setup.minimum_time_granted_minutes_raw()
+        setup.minimum_time_minutes
     );
     println!(
         "SETUP purge after turns (raw): {}",
-        setup.purge_after_turns_raw()
+        u8::try_from(setup.purge_after_turns).unwrap_or(u8::MAX)
     );
     println!(
         "SETUP autopilot inactive turns (raw): {}",
-        setup.autopilot_inactive_turns_raw()
+        u8::try_from(setup.autopilot_after_turns).unwrap_or(u8::MAX)
     );
-    println!("CONQUEST game year: {}", conquest.game_year());
-    println!("CONQUEST player count: {}", conquest.player_count());
+    println!("CONQUEST game year: {}", conquest.game_year);
+    println!("CONQUEST player count: {}", conquest.player_count);
     println!(
         "CONQUEST maintenance schedule: {:02x?}",
-        conquest.maintenance_schedule_bytes()
+        conquest.maintenance_days.0.map(u8::from)
     );
-    let empires = usize::from(conquest.player_count()).min(25);
+    let empires = usize::from(conquest.player_count).min(25);
     println!(
         "CONQUEST previous production: {:?}",
-        &conquest.previous_production()[..empires]
+        &conquest.previous_production[..empires]
     );
     println!(
         "CONQUEST previous planet count: {:?}",
-        &conquest.previous_planet_count()[..empires]
+        &conquest.previous_planet_count[..empires]
     );
 }
 
@@ -495,11 +504,11 @@ fn classify_classic_login_state(
         return "unknown";
     };
 
-    if !player.is_active_human_player() {
+    if player.mode != PlayerMode::Human {
         return "first-time-menu";
     }
 
-    let handle = player.assigned_player_handle_summary();
+    let handle = player.handle.trim().to_string();
     if !handle.eq_ignore_ascii_case(caller_alias) {
         return "first-time-menu";
     }
@@ -508,7 +517,7 @@ fn classify_classic_login_state(
         return "returning-player";
     };
 
-    if homeworld.is_named_homeworld_seed() {
+    if is_named_homeworld_seed(homeworld) {
         "matched-preloaded-first-login"
     } else {
         "returning-player"
@@ -516,7 +525,7 @@ fn classify_classic_login_state(
 }
 
 fn homeworld_planet<'a>(data: &'a CoreGameData, player: &nc_data::Player) -> Option<&'a Planet> {
-    let index = player.homeworld_planet_index_1_based_raw() as usize;
+    let index = player.homeworld as usize;
     if index == 0 {
         return None;
     }
@@ -529,9 +538,9 @@ fn login_homeworld_like_planet<'a>(
     player: &nc_data::Player,
 ) -> Option<&'a Planet> {
     homeworld_planet(data, player).or_else(|| {
-        data.planets.iter().find(|planet| {
-            planet.owner_empire_slot_raw() == empire_raw && planet.is_named_homeworld_seed()
-        })
+        data.planets
+            .iter()
+            .find(|planet| planet.owner.0 == empire_raw && is_named_homeworld_seed(planet))
     })
 }
 

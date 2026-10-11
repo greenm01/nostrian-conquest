@@ -18,30 +18,30 @@ pub(crate) fn print_ipbm_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
     println!("  dir={}", dir.display());
     println!(
         "  player[1].ipbm_chain_head={}",
-        data.players[0].ipbm_chain_head_raw()
+        data.players[0].ipbms_first.0
     );
     println!("  file_record_count={}", data.ipbms.len());
     println!("  file_size={}", ipbm_bytes.len());
     println!(
         "  expected_size_from_player1={}",
-        data.players[0].ipbm_chain_head_raw() as usize * IPBM_RECORD_SIZE
+        data.players[0].ipbms_first.0 as usize * IPBM_RECORD_SIZE
     );
 
     for (idx, record) in data.ipbms.iter().enumerate() {
         println!(
             "  record {}: primary={:#06x} owner={} gate={:#06x} follow_on={:#06x} sector={:?} target={:?} target_depth={}",
             idx + 1,
-            record.ipbm_number_raw(),
-            record.owner_empire_raw(),
-            record.next_ipbm_link_raw(),
-            record.record_number_raw(),
-            record.coords_raw(),
-            record.target_coords_raw(),
-            record.target_depth_raw()
+            record.ipbm_number,
+            record.owner.0,
+            record.next.0,
+            record.record.0,
+            record.sector.to_array(),
+            record.target.to_array(),
+            record.target_depth
         );
-        println!("    x_fraction={:02x?}", record.x_fraction().to_bytes());
-        println!("    y_fraction={:02x?}", record.y_fraction().to_bytes());
-        println!("    depth={:02x?}", record.depth().to_bytes());
+        println!("    x_fraction={:02x?}", record.x_fraction.to_bytes());
+        println!("    y_fraction={:02x?}", record.y_fraction.to_bytes());
+        println!("    depth={:02x?}", record.depth.to_bytes());
     }
 
     Ok(())

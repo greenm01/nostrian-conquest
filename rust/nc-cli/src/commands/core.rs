@@ -6,7 +6,10 @@ use nc_compat::{
     current_known_baseline_diff_counts, current_known_baseline_diff_offsets,
     ensure_classic_auxiliary_files, load_classic_core_files, save_classic_core_files,
 };
-use nc_data::{FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE};
+use nc_data::{
+    FLEET_RECORD_SIZE, PLANET_RECORD_SIZE, PLAYER_RECORD_SIZE, order_summary,
+    planet_derived_summary,
+};
 
 use crate::commands::runtime::{
     load_runtime_game_data, with_runtime_game_mut_and_export, with_runtime_game_mut_and_export_core,
@@ -38,7 +41,7 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
     println!("  fleet_record_count={}", data.fleets.len());
     println!("  base_record_count={}", data.bases.len());
     println!("  ipbm_record_count={}", data.ipbms.len());
-    println!("  conquest.game_year={}", data.conquest.game_year());
+    println!("  conquest.game_year={}", data.conquest.game_year);
     println!(
         "  initialized_fleet_blocks={}",
         data.looks_like_initialized_fleet_blocks_current_known()
@@ -109,8 +112,8 @@ pub(crate) fn print_core_report(dir: &Path) -> Result<(), Box<dyn std::error::Er
             player_owned_planet_counts[idx],
             player_homeworld_seed_coords.get(idx).copied().flatten(),
             player_owned_base_counts[idx],
-            record.first_base_record_raw(),
-            record.ipbm_chain_head_raw(),
+            record.bases_first.0,
+            record.ipbms_first.0,
             player_fleet_chain_heads[idx]
         );
     }
@@ -238,16 +241,16 @@ pub(crate) fn print_canonical_transition_details(
                     println!(
                         "    record {} current: first_base_record_raw={} ipbm_chain_head_raw={} fleet_chain_head_raw={}",
                         record_index,
-                        current.first_base_record_raw(),
-                        current.ipbm_chain_head_raw(),
-                        current.fleet_chain_head_raw()
+                        current.bases_first.0,
+                        current.ipbms_first.0,
+                        current.fleets_first.0
                     );
                     println!(
                         "    record {} canonical: first_base_record_raw={} ipbm_chain_head_raw={} fleet_chain_head_raw={}",
                         record_index,
-                        canonical.first_base_record_raw(),
-                        canonical.ipbm_chain_head_raw(),
-                        canonical.fleet_chain_head_raw()
+                        canonical.bases_first.0,
+                        canonical.ipbms_first.0,
+                        canonical.fleets_first.0
                     );
                 }
             }
@@ -261,12 +264,12 @@ pub(crate) fn print_canonical_transition_details(
                     println!(
                         "    record {} current: {}",
                         record_index,
-                        current.derived_summary()
+                        planet_derived_summary(current)
                     );
                     println!(
                         "    record {} canonical: {}",
                         record_index,
-                        canonical.derived_summary()
+                        planet_derived_summary(canonical)
                     );
                 }
             }
@@ -280,18 +283,18 @@ pub(crate) fn print_canonical_transition_details(
                     println!(
                         "    record {} current: loc={:?} target={:?} order={} aux={:?}",
                         record_index,
-                        current.current_location_coords_raw(),
-                        current.standing_order_target_coords_raw(),
-                        current.standing_order_summary(),
-                        current.mission_aux_bytes()
+                        current.sector.to_array(),
+                        current.target.to_array(),
+                        order_summary(current),
+                        [current.target_depth, current.mission_target as u8]
                     );
                     println!(
                         "    record {} canonical: loc={:?} target={:?} order={} aux={:?}",
                         record_index,
-                        canonical.current_location_coords_raw(),
-                        canonical.standing_order_target_coords_raw(),
-                        canonical.standing_order_summary(),
-                        canonical.mission_aux_bytes()
+                        canonical.sector.to_array(),
+                        canonical.target.to_array(),
+                        order_summary(canonical),
+                        [canonical.target_depth, canonical.mission_target as u8]
                     );
                 }
             }
@@ -526,8 +529,8 @@ pub(crate) fn sync_core_counts(dir: &Path) -> Result<(), Box<dyn std::error::Err
                 .copied()
                 .flatten(),
             owned_base_count,
-            data.players[idx].first_base_record_raw(),
-            data.players[idx].ipbm_chain_head_raw(),
+            data.players[idx].bases_first.0,
+            data.players[idx].ipbms_first.0,
             fleet_chain_head
         );
     }

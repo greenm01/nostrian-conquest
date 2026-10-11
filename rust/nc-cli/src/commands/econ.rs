@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{CoreGameData, Order};
+use nc_data::{Coords, CoreGameData, EmpireId, Order, Planet, Real48};
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, with_runtime_game_mut_and_export,
@@ -54,29 +54,28 @@ pub(crate) fn set_econ(
     with_runtime_game_mut_and_export(dir, |data| {
         {
             let f = &mut data.fleets[2];
-            f.set_max_speed(3);
-            f.set_current_speed(3);
-            f.set_standing_order_kind(Order::BombardWorld);
-            f.set_standing_order_target_coords_raw([target_x, target_y]);
-            f.set_battleship_count(bb);
-            f.set_cruiser_count(ca);
-            f.set_destroyer_count(dd);
+            f.max_speed = 3;
+            f.speed = 3;
+            f.order = Order::BombardWorld;
+            f.target = Coords::new(target_x, target_y);
+            f.ships.battleships = bb;
+            f.ships.cruisers = ca;
+            f.ships.destroyers = dd;
         }
         {
             let p = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
-            p.set_as_owned_target_world(
-                [p14_x, p14_y],
-                [0x64, 0x87],
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-                0x04,
-                0x0b,
-                *b"TargetPrimeet",
-                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-                p14_armies,
-                p14_batteries,
-                0x02,
-                0x02,
-            );
+            *p = Planet {
+                sector: Coords::new(p14_x, p14_y),
+                potential_production: 100,
+                production: Real48::from_int(100),
+                stored_goods: Real48::from_int(66),
+                name: "TargetPrime".to_string(),
+                armies: u16::from(p14_armies),
+                ground_batteries: u16::from(p14_batteries),
+                years_under_owner: 0x02,
+                owner: EmpireId(0x02),
+                ..Planet::default()
+            };
         }
         Ok(())
     })?;
@@ -188,40 +187,37 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
     match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
-            if f.max_speed() != 3 {
+            if f.max_speed != 3 {
                 errors.push(format!(
                     "FLEET[3].max_speed expected 3, got {}",
-                    f.max_speed()
+                    f.max_speed
                 ));
             }
-            if f.current_speed() != 3 {
+            if f.speed != 3 {
                 errors.push(format!(
                     "FLEET[3].current_speed expected 3, got {}",
-                    f.current_speed()
+                    f.speed
                 ));
             }
-            if f.standing_order_code_raw() != 0x06 {
+            if f.order.to_raw() != 0x06 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x06 (BombardWorld), got {:#04x}",
-                    f.standing_order_code_raw()
+                    f.order.to_raw()
                 ));
             }
-            if f.standing_order_target_coords_raw() != [0x0f, 0x0d] {
+            if f.target.to_array() != [0x0f, 0x0d] {
                 errors.push(format!(
                     "FLEET[3].target expected (15,13), got {:?}",
-                    f.standing_order_target_coords_raw()
+                    f.target.to_array()
                 ));
             }
-            if f.cruiser_count() != 50 {
-                errors.push(format!(
-                    "FLEET[3].ca expected 50, got {}",
-                    f.cruiser_count()
-                ));
+            if f.ships.cruisers != 50 {
+                errors.push(format!("FLEET[3].ca expected 50, got {}", f.ships.cruisers));
             }
-            if f.destroyer_count() != 50 {
+            if f.ships.destroyers != 50 {
                 errors.push(format!(
                     "FLEET[3].dd expected 50, got {}",
-                    f.destroyer_count()
+                    f.ships.destroyers
                 ));
             }
         }
@@ -231,34 +227,34 @@ pub(crate) fn validate_econ_data(data: &CoreGameData) -> Result<(), Box<dyn std:
     match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
-            if p.coords_raw() != [0x0f, 0x0d] {
+            if p.sector.to_array() != [0x0f, 0x0d] {
                 errors.push(format!(
                     "PLANET[14].coords expected (15,13), got {:?}",
-                    p.coords_raw()
+                    p.sector.to_array()
                 ));
             }
-            if p.army_count_raw() != 142 {
+            if p.armies != 142 {
                 errors.push(format!(
                     "PLANET[14].armies expected 142, got {}",
-                    p.army_count_raw()
+                    u8::try_from(p.armies).unwrap_or(u8::MAX)
                 ));
             }
-            if p.ground_batteries_raw() != 15 {
+            if p.ground_batteries != 15 {
                 errors.push(format!(
                     "PLANET[14].batteries expected 15, got {}",
-                    p.ground_batteries_raw()
+                    u8::try_from(p.ground_batteries).unwrap_or(u8::MAX)
                 ));
             }
-            if p.ownership_status_raw() != 2 {
+            if p.years_under_owner != 2 {
                 errors.push(format!(
                     "PLANET[14].ownership_status expected 2, got {}",
-                    p.ownership_status_raw()
+                    p.years_under_owner
                 ));
             }
-            if p.owner_empire_slot_raw() != 2 {
+            if p.owner.0 != 2 {
                 errors.push(format!(
                     "PLANET[14].owner_empire expected 2, got {}",
-                    p.owner_empire_slot_raw()
+                    p.owner.0
                 ));
             }
         }

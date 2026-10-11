@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{CoreGameData, Order};
+use nc_data::{Coords, CoreGameData, Order};
 
 use crate::commands::fleet_order::set_raw_fleet_order;
 use crate::commands::runtime::{
@@ -45,10 +45,10 @@ pub(crate) fn set_bombard_onefleet(
     with_runtime_game_mut_and_export(dir, |data| {
         {
             let fleet3 = &mut data.fleets[2];
-            fleet3.set_max_speed(3);
-            fleet3.set_current_speed(3);
-            fleet3.set_cruiser_count(ca);
-            fleet3.set_destroyer_count(dd);
+            fleet3.max_speed = 3;
+            fleet3.speed = 3;
+            fleet3.ships.cruisers = ca;
+            fleet3.ships.destroyers = dd;
         }
         {
             let template = data
@@ -58,7 +58,7 @@ pub(crate) fn set_bombard_onefleet(
                 .clone();
             let p14 = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
             *p14 = template;
-            p14.set_coords_raw([target_x, target_y]);
+            p14.sector = Coords::new(target_x, target_y);
         }
         set_raw_fleet_order(
             data,
@@ -141,28 +141,28 @@ pub(crate) fn validate_bombard_data(data: &CoreGameData) -> Result<(), Box<dyn s
     match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(fleet3) => {
-            if fleet3.max_speed() != 3 {
+            if fleet3.max_speed != 3 {
                 errors.push(format!(
                     "FLEET[3].max_speed expected 3, got {}",
-                    fleet3.max_speed()
+                    fleet3.max_speed
                 ));
             }
-            if fleet3.current_speed() != 3 {
+            if fleet3.speed != 3 {
                 errors.push(format!(
                     "FLEET[3].current_speed expected 3, got {}",
-                    fleet3.current_speed()
+                    fleet3.speed
                 ));
             }
-            if fleet3.standing_order_code_raw() != 0x06 {
+            if fleet3.order.to_raw() != 0x06 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x06 (bombard), got {:#04x}",
-                    fleet3.standing_order_code_raw()
+                    fleet3.order.to_raw()
                 ));
             }
-            if fleet3.standing_order_target_coords_raw() != [0x0F, 0x0D] {
+            if fleet3.target.to_array() != [0x0F, 0x0D] {
                 errors.push(format!(
                     "FLEET[3].target expected (15,13), got {:?}",
-                    fleet3.standing_order_target_coords_raw()
+                    fleet3.target.to_array()
                 ));
             }
         }
@@ -172,34 +172,34 @@ pub(crate) fn validate_bombard_data(data: &CoreGameData) -> Result<(), Box<dyn s
     match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
-            if p.coords_raw() != [0x0F, 0x0D] {
+            if p.sector.to_array() != [0x0F, 0x0D] {
                 errors.push(format!(
                     "PLANET[14].coords expected (15,13), got {:?}",
-                    p.coords_raw()
+                    p.sector.to_array()
                 ));
             }
-            if p.ownership_status_raw() != 2 {
+            if p.years_under_owner != 2 {
                 errors.push(format!(
                     "PLANET[14].ownership_status expected 2, got {}",
-                    p.ownership_status_raw()
+                    p.years_under_owner
                 ));
             }
-            if p.owner_empire_slot_raw() != 2 {
+            if p.owner.0 != 2 {
                 errors.push(format!(
                     "PLANET[14].owner_empire_slot expected 2, got {}",
-                    p.owner_empire_slot_raw()
+                    p.owner.0
                 ));
             }
-            if p.army_count_raw() != 10 {
+            if p.armies != 10 {
                 errors.push(format!(
                     "PLANET[14].army_count expected 10, got {}",
-                    p.army_count_raw()
+                    u8::try_from(p.armies).unwrap_or(u8::MAX)
                 ));
             }
-            if p.ground_batteries_raw() != 4 {
+            if p.ground_batteries != 4 {
                 errors.push(format!(
                     "PLANET[14].ground_batteries expected 4, got {}",
-                    p.ground_batteries_raw()
+                    u8::try_from(p.ground_batteries).unwrap_or(u8::MAX)
                 ));
             }
         }

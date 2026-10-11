@@ -1,7 +1,9 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{CoreGameData, Order};
+use nc_data::{
+    Coords, CoreGameData, EmpireId, Order, Planet, Real48, set_troop_transports, troop_transports,
+};
 
 use crate::commands::runtime::{
     export_runtime_snapshot_in_place, with_runtime_game_mut_and_export,
@@ -52,34 +54,31 @@ pub(crate) fn set_invade_onefleet(
             // The preserved fixture holds the old "invasion armies" byte at
             // 0x08, which classic reads as the high byte of the previous-fleet
             // word.
-            f.set_previous_fleet_id(
-                (f.previous_fleet_id() & 0x00FF) | (u16::from(invasion_armies) << 8),
-            );
-            f.set_max_speed(3);
-            f.set_current_speed(3);
-            f.set_standing_order_kind(Order::InvadeWorld);
-            f.set_standing_order_target_coords_raw([target_x, target_y]);
-            f.set_scout_count(u16::from(sc));
-            f.set_battleship_count(bb);
-            f.set_cruiser_count(ca);
-            f.set_destroyer_count(dd);
-            f.set_troop_transport_count(tt);
+            f.prev.0 = (f.prev.0 & 0x00FF) | (u16::from(invasion_armies) << 8);
+            f.max_speed = 3;
+            f.speed = 3;
+            f.order = Order::InvadeWorld;
+            f.target = Coords::new(target_x, target_y);
+            f.ships.scouts = u16::from(sc);
+            f.ships.battleships = bb;
+            f.ships.cruisers = ca;
+            f.ships.destroyers = dd;
+            set_troop_transports(f, tt);
         }
         {
             let p = data.planets.get_mut(13).ok_or("planet record 14 missing")?;
-            p.set_as_owned_target_world(
-                [target_x, target_y],
-                [0x64, 0x87],
-                [0x00, 0x00, 0x00, 0x00, 0x48, 0x87],
-                0x04,
-                0x0b,
-                *b"TargetPrimeet",
-                [0x05, 0x1d, 0x0b, 0x11, 0x25, 0x1c, 0x05],
-                0x8e,
-                0x0f,
-                0x02,
-                0x02,
-            );
+            *p = Planet {
+                sector: Coords::new(target_x, target_y),
+                potential_production: 100,
+                production: Real48::from_int(100),
+                stored_goods: Real48::from_int(66),
+                name: "TargetPrime".to_string(),
+                armies: 0x8e,
+                ground_batteries: 0x0f,
+                years_under_owner: 0x02,
+                owner: EmpireId(0x02),
+                ..Planet::default()
+            };
         }
         Ok(())
     })?;
@@ -173,61 +172,58 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     match data.fleets.get(2) {
         None => errors.push("missing fleet record 3".to_string()),
         Some(f) => {
-            if f.previous_fleet_id() != 0x6402 {
+            if f.prev.0 != 0x6402 {
                 errors.push(format!(
                     "FLEET[3].previous_fleet_id expected 0x6402, got {:#06x}",
-                    f.previous_fleet_id()
+                    f.prev.0
                 ));
             }
-            if f.max_speed() != 3 {
+            if f.max_speed != 3 {
                 errors.push(format!(
                     "FLEET[3].max_speed expected 3, got {}",
-                    f.max_speed()
+                    f.max_speed
                 ));
             }
-            if f.current_speed() != 3 {
+            if f.speed != 3 {
                 errors.push(format!(
                     "FLEET[3].current_speed expected 3, got {}",
-                    f.current_speed()
+                    f.speed
                 ));
             }
-            if f.standing_order_code_raw() != 0x07 {
+            if f.order.to_raw() != 0x07 {
                 errors.push(format!(
                     "FLEET[3].order expected 0x07 (InvadeWorld), got {:#04x}",
-                    f.standing_order_code_raw()
+                    f.order.to_raw()
                 ));
             }
-            if f.standing_order_target_coords_raw() != [0x0f, 0x0d] {
+            if f.target.to_array() != [0x0f, 0x0d] {
                 errors.push(format!(
                     "FLEET[3].target expected (15,13), got {:?}",
-                    f.standing_order_target_coords_raw()
+                    f.target.to_array()
                 ));
             }
-            if f.scout_count() != 0 {
-                errors.push(format!("FLEET[3].sc expected 0, got {}", f.scout_count()));
+            if f.ships.scouts != 0 {
+                errors.push(format!("FLEET[3].sc expected 0, got {}", f.ships.scouts));
             }
-            if f.battleship_count() != 100 {
+            if f.ships.battleships != 100 {
                 errors.push(format!(
                     "FLEET[3].bb expected 100, got {}",
-                    f.battleship_count()
+                    f.ships.battleships
                 ));
             }
-            if f.cruiser_count() != 50 {
-                errors.push(format!(
-                    "FLEET[3].ca expected 50, got {}",
-                    f.cruiser_count()
-                ));
+            if f.ships.cruisers != 50 {
+                errors.push(format!("FLEET[3].ca expected 50, got {}", f.ships.cruisers));
             }
-            if f.destroyer_count() != 50 {
+            if f.ships.destroyers != 50 {
                 errors.push(format!(
                     "FLEET[3].dd expected 50, got {}",
-                    f.destroyer_count()
+                    f.ships.destroyers
                 ));
             }
-            if f.troop_transport_count() != 50 {
+            if troop_transports(f) != 50 {
                 errors.push(format!(
                     "FLEET[3].tt expected 50, got {}",
-                    f.troop_transport_count()
+                    troop_transports(f)
                 ));
             }
         }
@@ -237,34 +233,34 @@ pub(crate) fn validate_invade_data(data: &CoreGameData) -> Result<(), Box<dyn st
     match data.planets.get(13) {
         None => errors.push("missing planet record 14".to_string()),
         Some(p) => {
-            if p.coords_raw() != [0x0f, 0x0d] {
+            if p.sector.to_array() != [0x0f, 0x0d] {
                 errors.push(format!(
                     "PLANET[14].coords expected (15,13), got {:?}",
-                    p.coords_raw()
+                    p.sector.to_array()
                 ));
             }
-            if p.army_count_raw() != 142 {
+            if p.armies != 142 {
                 errors.push(format!(
                     "PLANET[14].armies expected 142, got {}",
-                    p.army_count_raw()
+                    u8::try_from(p.armies).unwrap_or(u8::MAX)
                 ));
             }
-            if p.ground_batteries_raw() != 15 {
+            if p.ground_batteries != 15 {
                 errors.push(format!(
                     "PLANET[14].batteries expected 15, got {}",
-                    p.ground_batteries_raw()
+                    u8::try_from(p.ground_batteries).unwrap_or(u8::MAX)
                 ));
             }
-            if p.ownership_status_raw() != 2 {
+            if p.years_under_owner != 2 {
                 errors.push(format!(
                     "PLANET[14].ownership_status expected 2, got {}",
-                    p.ownership_status_raw()
+                    p.years_under_owner
                 ));
             }
-            if p.owner_empire_slot_raw() != 2 {
+            if p.owner.0 != 2 {
                 errors.push(format!(
                     "PLANET[14].owner_empire expected 2, got {}",
-                    p.owner_empire_slot_raw()
+                    p.owner.0
                 ));
             }
         }
