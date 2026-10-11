@@ -240,6 +240,11 @@ touches them; the defection test checks that the fleets that stay keep
 theirs. Any future path that changes a fleet's owner must carry `crippled`
 with it.
 
+Detaching (owner, 2026-10-11): when a player detaches ships of a class from a
+fleet that has crippled ones, the crippled ships go first, most turns
+remaining first, so the fleet that stays is closest to full strength and a
+damaged group can be sent to a starbase to recover.
+
 ## Evidence and acceptance
 
 Approved by the owner on 2026-10-10 following the discussion of automatic
