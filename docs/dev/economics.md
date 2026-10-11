@@ -221,12 +221,26 @@ When maintenance applies build spending, completed units are dispatched:
 
 - orders are whole units: queued points must be an exact multiple of the
   unit cost
+- the planet's budget is the only limit on orders: orders of one kind share a
+  build slot, and a slot holds any number of points, so one order may call
+  for any number of units, starbases included
 - build spending is applied during maintenance from the planet's treasury,
   up to the planet's budget
 - partial progress carries the remaining build cost into later turns
 - units appear as enough points are applied to complete them, even if other
   units from the same order remain queued
 - blocked builds remain queued and do not consume the treasury that year
+
+### Classic Files
+
+Classic keeps a count of units by kind and charges for all of them at
+ECMAINT's next run. Rust keeps the points still owed. Import reads a count
+`n` of a kind as `n * cost` points owed and leaves the treasury alone, so
+neither side has charged for the order. A file with orders in the reserved
+slot 8 does not import. Export writes `ceil(points / cost)` units per kind and
+adds the paid part of any part-paid unit, `ceil(points / cost) * cost -
+points`, to the treasury; ECMAINT's charge for whole units then leaves the
+treasury where Rust's own pass would.
 
 ### Ships and Starbases (Stardock)
 Destroyers, cruisers, battleships, scouts, transports, ETACs, and starbases
