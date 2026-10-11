@@ -1,5 +1,6 @@
 """t068 independent checks of exact ground and cohort allocation wrappers."""
 import random
+import importlib.util
 import unittest
 
 import recovery as rt
@@ -31,6 +32,8 @@ class CalibrationTests(unittest.TestCase):
         self.assertAlmostEqual(Shared(EOTS_X4,4,first=True).solve(1,1)[0],win)
         self.assertFalse(states)
 
+    @unittest.skipUnless(importlib.util.find_spec('numpy') and importlib.util.find_spec('scipy'),
+                         'optional finite-matrix control needs numpy/scipy; see README')
     def test_independent_cap_is_real(self):
         from ground_calibration import independent
         out=independent(1,1,cap=1)(1,1)

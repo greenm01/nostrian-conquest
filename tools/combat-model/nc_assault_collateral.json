@@ -1,0 +1,801 @@
+{
+  "method": "Exact enumeration in floating point; independent d10 rolls; current bombardment modifiers, fleet DS costs, free critical and three-round gate. No ROE inside bombardment, as today. New proposed collateral order or flat support only where labelled. No engine validation.",
+  "rows": [
+    {
+      "case": "BB1-vs-B2-empty",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 22.724999999999998,
+      "batteries_lost": 1.95,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 4.949999999999999,
+      "goods_lost": 237.60000000000002,
+      "production_lost": 6.3855000000000075,
+      "survival": 0.4950000000000002,
+      "states": 13
+    },
+    {
+      "case": "BB1-vs-B2-empty",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 22.724999999999998,
+      "batteries_lost": 1.95,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 4.949999999999999,
+      "goods_lost": 237.60000000000002,
+      "production_lost": 6.3855000000000075,
+      "survival": 0.4950000000000002,
+      "states": 13
+    },
+    {
+      "case": "BB1-vs-B2-empty",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 22.724999999999998,
+      "batteries_lost": 1.95,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 4.949999999999999,
+      "goods_lost": 237.60000000000002,
+      "production_lost": 6.3855000000000075,
+      "survival": 0.4950000000000002,
+      "states": 13
+    },
+    {
+      "case": "BB1-vs-B2-empty",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 5.714999999999996,
+      "batteries_lost": 1.97,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 5.8491,
+      "goods_lost": 104.76000000000016,
+      "production_lost": 1.0476000000000312,
+      "survival": 0.8729999999999999,
+      "states": 10
+    },
+    {
+      "case": "BB1-vs-B2-dockedBB",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 25.69275,
+      "batteries_lost": 1.5945,
+      "dock_cost_lost": 38.25,
+      "armies_lost": 4.205000000000001,
+      "goods_lost": 201.84000000000003,
+      "production_lost": 5.4244500000000215,
+      "survival": 0.42905000000000015,
+      "states": 23
+    },
+    {
+      "case": "BB1-vs-B2-dockedBB",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 22.724999999999998,
+      "batteries_lost": 1.95,
+      "dock_cost_lost": 26.9775,
+      "armies_lost": 4.945049999999999,
+      "goods_lost": 236.61,
+      "production_lost": 6.345450000000014,
+      "survival": 0.4950000000000002,
+      "states": 21
+    },
+    {
+      "case": "BB1-vs-B2-dockedBB",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 22.724999999999998,
+      "batteries_lost": 1.95,
+      "dock_cost_lost": 22.275000000000006,
+      "armies_lost": 4.900499999999999,
+      "goods_lost": 227.70000000000005,
+      "production_lost": 5.985000000000014,
+      "survival": 0.4950000000000002,
+      "states": 18
+    },
+    {
+      "case": "BB1-vs-B2-dockedBB",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        2,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 5.714999999999996,
+      "batteries_lost": 1.97,
+      "dock_cost_lost": 22.518,
+      "armies_lost": 4.1103000000000005,
+      "goods_lost": 30.239999999999952,
+      "production_lost": 0.30239999999997735,
+      "survival": 0.8729999999999999,
+      "states": 13
+    },
+    {
+      "case": "CA6-vs-B3-dockedBB",
+      "force": {
+        "CA": 6
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 82.3527,
+      "batteries_lost": 2.60268,
+      "dock_cost_lost": 33.47325,
+      "armies_lost": 2.038249999999999,
+      "goods_lost": 32.339,
+      "production_lost": 0.43266999999998745,
+      "survival": 0.29326000000000013,
+      "states": 73
+    },
+    {
+      "case": "CA6-vs-B3-dockedBB",
+      "force": {
+        "CA": 6
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 80.241,
+      "batteries_lost": 2.92716,
+      "dock_cost_lost": 26.070749999999997,
+      "armies_lost": 2.566629999999999,
+      "goods_lost": 40.363000000000056,
+      "production_lost": 0.5417099999999948,
+      "survival": 0.3726000000000001,
+      "states": 59
+    },
+    {
+      "case": "CA6-vs-B3-dockedBB",
+      "force": {
+        "CA": 6
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 80.241,
+      "batteries_lost": 2.92716,
+      "dock_cost_lost": 7.61399999999999,
+      "armies_lost": 2.43914,
+      "goods_lost": 36.11000000000007,
+      "production_lost": 0.4907000000000181,
+      "survival": 0.3726000000000001,
+      "states": 48
+    },
+    {
+      "case": "CA6-vs-B3-dockedBB",
+      "force": {
+        "CA": 6
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 41.4399,
+      "batteries_lost": 2.9739,
+      "dock_cost_lost": 14.525999999999996,
+      "armies_lost": 4.038329999999998,
+      "goods_lost": 23.519999999999925,
+      "production_lost": 0.23520000000000607,
+      "survival": 0.9698199999999999,
+      "states": 46
+    },
+    {
+      "case": "BB3-vs-B3-dockedBB",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 40.5,
+      "batteries_lost": 3.0,
+      "dock_cost_lost": 45.0,
+      "armies_lost": 9.0,
+      "goods_lost": 450.0,
+      "production_lost": 39.599999999999994,
+      "survival": 0.9000000000000004,
+      "states": 18
+    },
+    {
+      "case": "BB3-vs-B3-dockedBB",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 40.5,
+      "batteries_lost": 3.0,
+      "dock_cost_lost": 45.0,
+      "armies_lost": 9.0,
+      "goods_lost": 450.0,
+      "production_lost": 39.599999999999994,
+      "survival": 0.9000000000000004,
+      "states": 18
+    },
+    {
+      "case": "BB3-vs-B3-dockedBB",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 40.5,
+      "batteries_lost": 3.0,
+      "dock_cost_lost": 40.5,
+      "armies_lost": 9.0,
+      "goods_lost": 450.0,
+      "production_lost": 39.599999999999994,
+      "survival": 0.9000000000000004,
+      "states": 18
+    },
+    {
+      "case": "BB3-vs-B3-dockedBB",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        3,
+        [
+          [
+            "BB",
+            1
+          ]
+        ],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 22.500000000000014,
+      "batteries_lost": 3.0,
+      "dock_cost_lost": 42.165,
+      "armies_lost": 8.953,
+      "goods_lost": 293.69999999999993,
+      "production_lost": 10.917000000000002,
+      "survival": 0.9999999999999999,
+      "states": 23
+    },
+    {
+      "case": "BB1-no-defense",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 500.0,
+      "production_lost": 22.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-no-defense",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 500.0,
+      "production_lost": 22.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-no-defense",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 500.0,
+      "production_lost": 22.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-no-defense",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 440.0,
+      "production_lost": 7.899999999999963,
+      "survival": 0.9999999999999999,
+      "states": 6
+    },
+    {
+      "case": "BB1-garrison10",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 480.0,
+      "production_lost": 12.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-garrison10",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 480.0,
+      "production_lost": 12.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-garrison10",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 480.0,
+      "production_lost": 12.899999999999963,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB1-garrison10",
+      "force": {
+        "BB": 1
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 6.7,
+      "goods_lost": 120.0,
+      "production_lost": 1.2000000000000028,
+      "survival": 0.9999999999999999,
+      "states": 6
+    },
+    {
+      "case": "BB3-garrison10",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 500.0,
+      "production_lost": 59.4,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB3-garrison10",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 500.0,
+      "production_lost": 59.4,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB3-garrison10",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 500.0,
+      "production_lost": 59.4,
+      "survival": 1.0000000000000002,
+      "states": 9
+    },
+    {
+      "case": "BB3-garrison10",
+      "force": {
+        "BB": 3
+      },
+      "planet": [
+        0,
+        [],
+        10,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 10.0,
+      "goods_lost": 350.0,
+      "production_lost": 15.0,
+      "survival": 0.9999999999999999,
+      "states": 6
+    },
+    {
+      "case": "DD1-no-defense",
+      "force": {
+        "DD": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "current",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 40.0,
+      "production_lost": 0.39999999999996305,
+      "survival": 1.0000000000000002,
+      "states": 5
+    },
+    {
+      "case": "DD1-no-defense",
+      "force": {
+        "DD": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "overflow",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 40.0,
+      "production_lost": 0.39999999999996305,
+      "survival": 1.0000000000000002,
+      "states": 5
+    },
+    {
+      "case": "DD1-no-defense",
+      "force": {
+        "DD": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": false,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 40.0,
+      "production_lost": 0.39999999999996305,
+      "survival": 1.0000000000000002,
+      "states": 5
+    },
+    {
+      "case": "DD1-no-defense",
+      "force": {
+        "DD": 1
+      },
+      "planet": [
+        0,
+        [],
+        0,
+        500,
+        100
+      ],
+      "order": "delayed",
+      "flat": true,
+      "ship_cost_lost": 0.0,
+      "batteries_lost": 0.0,
+      "dock_cost_lost": 0.0,
+      "armies_lost": 0.0,
+      "goods_lost": 0.0,
+      "production_lost": 0.0,
+      "survival": 0.9999999999999999,
+      "states": 4
+    }
+  ]
+}
