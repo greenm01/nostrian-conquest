@@ -1,25 +1,29 @@
+use nc_bridge::server::create_router;
 use nc_bridge::{BridgeConfig, NodeManager};
+use std::sync::Arc;
+use tokio::net::TcpListener;
 use tracing::info;
 
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let config = BridgeConfig::default();
-    let manager = NodeManager::new(config.clone());
+    let bind_addr = format!("{}:{}", config.bind_host, config.bind_port);
+    let manager = Arc::new(NodeManager::new(config.clone()));
+
+    let app = create_router(manager.clone());
+    let listener = TcpListener::bind(&bind_addr).await?;
 
     info!(
-        host = %config.bind_host,
-        port = %config.bind_port,
+        addr = %bind_addr,
         max_nodes = %config.max_nodes,
-        "nc-bridge web terminal daemon initialized"
+        "nc-bridge HTTP & WebSocket server listening"
     );
 
     println!(
-        "nc-bridge: listening on {}:{} (max {} concurrent nodes)",
-        config.bind_host, config.bind_port, config.max_nodes
+        "nc-bridge: listening on http://{} (max {} concurrent nodes)",
+        bind_addr, config.max_nodes
     );
 
-    let active = manager.active_count().await;
-    println!("Active sessions: {active}");
-
+    axum::serve(listener, app).await?;
     Ok(())
 }
