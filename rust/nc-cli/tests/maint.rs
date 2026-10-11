@@ -2334,8 +2334,9 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
         u16::from_le_bytes([viewer_record.raw[0x1e], viewer_record.raw[0x1f]]),
         65
     );
-    // Seeded garrison: 10 landed armies less 1 lost in the ground battle.
-    assert_eq!(viewer_record.raw[0x23], 9);
+    // Seeded garrison: all 10 landed armies, the lone defender's first
+    // volley having killed none.
+    assert_eq!(viewer_record.raw[0x23], 10);
     assert_eq!(viewer_record.raw[0x24], 0x00);
     assert_eq!(viewer_record.raw[0x25], 0);
     assert_eq!(viewer_record.raw[0x26], 0x00);

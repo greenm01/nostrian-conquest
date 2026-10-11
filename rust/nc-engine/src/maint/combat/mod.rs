@@ -7,6 +7,8 @@
 //! for Rust maintenance and classic save compatibility.
 
 mod assault;
+#[cfg(test)]
+mod assault_tests;
 mod exchange;
 mod fleet_battle;
 #[cfg(test)]
