@@ -111,6 +111,22 @@ fn fit_fleet_table_ships_summary(summary: &str, width: usize) -> String {
     "+".to_string()
 }
 
+/// The Ships cell of a fleet table row: the composition, and `N damaged`
+/// after it only when the whole composition and the note fit the column.
+/// Otherwise the cell is what it was before ships could be damaged.
+fn fleet_table_ships_cell(row: &FleetRow, width: usize) -> String {
+    let ships = fit_fleet_table_ships_summary(&row.table_ships_label, width);
+    if row.damaged_ships == 0 || ships != row.table_ships_label {
+        return ships;
+    }
+    let with_note = format!("{ships} {} damaged", row.damaged_ships);
+    if with_note.chars().count() <= width {
+        with_note
+    } else {
+        ships
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FleetRow {
     pub fleet_record_index_1_based: usize,
@@ -127,6 +143,11 @@ pub struct FleetRow {
     pub order_label: String,
     pub composition_label: String,
     pub table_ships_label: String,
+    /// Crippled ships in the fleet, for the list's "N damaged" where it fits.
+    pub damaged_ships: u32,
+    /// The crippled ships by class (`BB 2DD`) for the review screen; empty
+    /// when none.
+    pub damaged_label: String,
     pub join_host_fleet_number: Option<u16>,
 }
 
@@ -556,7 +577,7 @@ impl FleetListScreen {
                     row.list_eta_label.clone(),
                     row.rules_of_engagement.to_string(),
                     row.loaded_armies.to_string(),
-                    fit_fleet_table_ships_summary(&row.table_ships_label, ships_width),
+                    fleet_table_ships_cell(row, ships_width),
                 ]
             })
             .collect::<Vec<_>>();
@@ -1107,6 +1128,9 @@ impl FleetReviewScreen {
         );
         draw_status_line(&mut buffer, 7, "Standing Order: ", &row.order_label);
         draw_status_line(&mut buffer, 9, "Composition: ", &row.table_ships_label);
+        if !row.damaged_label.is_empty() {
+            draw_status_line(&mut buffer, 10, "Damaged: ", &row.damaged_label);
+        }
         draw_dismiss_prompt_padded(&mut buffer, dismiss_prompt_row(9));
         Ok(buffer)
     }
@@ -1549,7 +1573,7 @@ impl FleetGroupScreen {
                     row.list_eta_label.clone(),
                     row.rules_of_engagement.to_string(),
                     row.loaded_armies.to_string(),
-                    fit_fleet_table_ships_summary(&row.table_ships_label, ships_width),
+                    fleet_table_ships_cell(row, ships_width),
                 ]
             })
             .collect::<Vec<_>>();

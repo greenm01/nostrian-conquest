@@ -102,7 +102,7 @@ fn timeline(with_base: bool) -> Vec<(bool, u32)> {
 }
 
 #[test]
-fn rt_two_crippled_in_pass_n_is_crippled_through_n_plus_one_and_whole_from_n_plus_three() {
+fn rt_two_hulls_crippled_in_pass_n_recover_when_pass_n_plus_two_ends() {
     assert_eq!(timeline(false), MODEL_WITHOUT_BASE);
 }
 

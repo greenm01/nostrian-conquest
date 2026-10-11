@@ -48,6 +48,8 @@ fn sample_fleet_rows() -> Vec<FleetRow> {
         order_label: "Holding".to_string(),
         composition_label: "DD 05".to_string(),
         table_ships_label: "DD 05".to_string(),
+        damaged_ships: 0,
+        damaged_label: String::new(),
         join_host_fleet_number: None,
     }]
 }

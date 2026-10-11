@@ -1796,6 +1796,8 @@ impl App {
                     order_label,
                     composition_label: nc_data::ship_composition_summary(&fleet),
                     table_ships_label: nc_data::ship_composition_table_summary(&fleet),
+                    damaged_ships: fleet.crippled.total(),
+                    damaged_label: nc_data::damaged_ships_table_summary(&fleet),
                     join_host_fleet_number,
                 }
             })

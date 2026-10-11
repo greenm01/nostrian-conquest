@@ -3,8 +3,9 @@
 //! ticks, the post-year merges, and colonization, and before the AI and the
 //! reports, every turns-remaining count drops by one, hulls that reach zero
 //! are whole again, and the hulls crippled this pass enter at RT. RT is 2
-//! for every class: a hull crippled in pass N is crippled through N+1,
-//! recovers at the end of N+2, and fights whole from N+3.
+//! for every class: a hull crippled in pass N stays crippled through
+//! passes N+1 and N+2, recovers when pass N+2 ends, and fights whole from
+//! N+3.
 //!
 //! A hull can recover one pass early with a starbase's help. The engine
 //! decides that from a snapshot taken when the pass's ticks begin and kept

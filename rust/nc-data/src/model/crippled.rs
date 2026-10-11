@@ -4,8 +4,8 @@
 //!
 //! RT, Recovery Turns, is one game-wide rule: every class recovers in
 //! [`RECOVERY_TURNS`] full passes, so a fleet keeps counts, not per-hull
-//! records. A hull crippled in pass N is crippled through N+1, recovers at
-//! the end of N+2, and fights whole from N+3.
+//! records. A hull crippled in pass N stays crippled through passes N+1 and
+//! N+2, recovers when pass N+2 ends, and fights whole from N+3.
 
 /// Recovery Turns: the full passes a crippled hull needs to recover on its
 /// own. The pass that cripples it does not count.
