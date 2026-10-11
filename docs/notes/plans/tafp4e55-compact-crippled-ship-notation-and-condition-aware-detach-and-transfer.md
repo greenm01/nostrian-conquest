@@ -143,3 +143,15 @@ sector panel sample (`5BB 10CA`, from `planet_summary`) keep their form, and
 so do the CLI's key=value feedback lines (`BB=2 CA=1`). Showing friendly
 crippled counts in battle reports needs the combat events to carry them.
 
+
+## Owner decisions after t093 (2026-10-11)
+
+- **Transport damage is real state:** loaded and empty transports get
+  separate crippled counters in the engine (damage write-back, loading,
+  unloading, landing, and storage), replacing t093's loaded-first convention
+  over one shared counter. Task t096.
+- **Finish the rollout:** nc-helm's planet stardock and build-queue
+  summaries and the CLI's `BB=2` feedback lines move to the notation, with
+  one class order everywhere (SC BB CA DD TT* TT ETAC SB, the fleet screens'
+  order). Output that scripts or tests parse changes only together with
+  them. Task t097.
