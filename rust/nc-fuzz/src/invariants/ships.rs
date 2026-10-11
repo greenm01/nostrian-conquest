@@ -18,6 +18,7 @@ use std::collections::{BTreeMap, BTreeSet};
 
 use nc_data::{
     CoreGameData, EncounterDispositionEvent, Fleet, Order, SalvageResolvedEvent, ShipLosses,
+    troop_transports,
 };
 
 use super::{TurnObservation, Violation};
@@ -131,9 +132,9 @@ fn removed_fleets(observation: &TurnObservation) -> Option<Ships> {
             continue;
         };
         let mut candidates = observation.before.fleets.iter().filter(|fleet| {
-            fleet.owner_empire_raw() == owner_empire_raw
-                && fleet.standing_order_kind() == Order::Salvage
-                && fleet.standing_order_target_coords_raw() == coords
+            fleet.owner.0 == owner_empire_raw
+                && fleet.order == Order::Salvage
+                && fleet.target.to_array() == coords
         });
         let fleet = candidates.next()?;
         if candidates.next().is_some() {
@@ -178,7 +179,7 @@ fn took_losses(observation: &TurnObservation, empire: u8) -> bool {
 }
 
 fn fleet_key(fleet: &Fleet) -> (u8, u16) {
-    (fleet.owner_empire_raw(), fleet.local_slot_word_raw())
+    (fleet.owner.0, fleet.fleet_number.0)
 }
 
 fn fleet_ships(state: &CoreGameData) -> Ships {
@@ -191,12 +192,12 @@ fn fleet_ships(state: &CoreGameData) -> Ships {
 
 fn ships_of(fleet: &Fleet) -> Ships {
     [
-        u32::from(fleet.destroyer_count()),
-        u32::from(fleet.cruiser_count()),
-        u32::from(fleet.battleship_count()),
-        u32::from(fleet.scout_count()),
-        u32::from(fleet.troop_transport_count()),
-        u32::from(fleet.etac_count()),
+        u32::from(fleet.ships.destroyers),
+        u32::from(fleet.ships.cruisers),
+        u32::from(fleet.ships.battleships),
+        u32::from(fleet.ships.scouts),
+        u32::from(troop_transports(fleet)),
+        u32::from(fleet.ships.etacs),
     ]
 }
 

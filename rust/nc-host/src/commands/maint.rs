@@ -80,9 +80,9 @@ fn run_maintenance(
     let campaign_store = crate::support::runtime::open_existing_campaign_store(game_dir)?;
     let mut game_data = campaign_store.load_latest_runtime_game_data()?;
     let mut player_activity_states =
-        campaign_store.latest_player_activity_states(game_data.conquest.player_count())?;
+        campaign_store.latest_player_activity_states(game_data.conquest.player_count)?;
 
-    let current_turn = (game_data.conquest.game_year() - 3000) as u32;
+    let current_turn = (game_data.conquest.game_year - 3000) as u32;
 
     for turn_num in 0..turns {
         let turn: u32 = current_turn + turn_num + 1;
@@ -141,8 +141,8 @@ fn run_maintenance(
     }
 
     // Save the snapshot with updated activity states and fresh intel.
-    let player_count = game_data.conquest.player_count();
-    let year = game_data.conquest.game_year();
+    let player_count = game_data.conquest.player_count;
+    let year = game_data.conquest.game_year;
     let intel_by_viewer: Vec<BTreeMap<usize, PlanetIntelSnapshot>> = (1..=player_count)
         .map(|viewer_id| merge_player_intel_from_runtime(&game_data, viewer_id, year, None, None))
         .collect();
@@ -168,7 +168,7 @@ fn recycle_sandbox_seats(
     game_data: &mut CoreGameData,
     player_activity_states: &mut [nc_data::PlayerActivityState],
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let current_year = game_data.conquest.game_year();
+    let current_year = game_data.conquest.game_year;
     let mut recycled_any = false;
 
     for state in player_activity_states.iter_mut() {

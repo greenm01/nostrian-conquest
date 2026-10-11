@@ -73,7 +73,7 @@ fn nc_sysop_new_game_initializes_default_campaign_without_hosted_seats() {
         .load_latest_runtime_state()
         .expect("load runtime")
         .expect("runtime snapshot should exist");
-    assert_eq!(runtime.game_data.players[0].owner_mode_raw(), 0);
+    assert_eq!(runtime.game_data.players[0].mode.to_raw(), 0);
     assert_eq!(fs::read_dir(&target).expect("read dir").count(), 1);
 
     let _ = fs::remove_dir_all(&target);
@@ -114,7 +114,7 @@ fn nc_sysop_new_game_bbs_reads_minimal_config_kdl() {
         .load_latest_runtime_state()
         .expect("load runtime")
         .expect("runtime snapshot");
-    assert_eq!(runtime.game_data.conquest.game_year(), 3000);
+    assert_eq!(runtime.game_data.conquest.game_year, 3000);
     assert_eq!(runtime.game_data.players.len(), 4);
 
     let _ = fs::remove_dir_all(&target);
@@ -162,7 +162,7 @@ fn nc_sysop_maint_runs_rust_maintenance() {
         .load_latest_runtime_state()
         .expect("load runtime state")
         .expect("runtime snapshot should exist");
-    assert_eq!(runtime.game_data.conquest.game_year(), 3001);
+    assert_eq!(runtime.game_data.conquest.game_year, 3001);
 
     let _ = fs::remove_dir_all(&target);
 }

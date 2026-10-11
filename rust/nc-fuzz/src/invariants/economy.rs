@@ -6,7 +6,7 @@
 
 use std::collections::BTreeSet;
 
-use nc_data::{CoreGameData, InvalidPlayerStateEvent};
+use nc_data::{CoreGameData, InvalidPlayerStateEvent, PlayerMode, stored_production_points};
 
 use super::{TurnObservation, Violation};
 
@@ -65,17 +65,17 @@ pub fn check_maintenance_spending(observation: &TurnObservation) -> Vec<Violatio
     let mut violations = Vec::new();
     for (idx, planet) in after.planets.iter().enumerate() {
         let record = idx + 1;
-        let stored = planet.stored_production_points();
+        let stored = stored_production_points(planet);
         if stored >= WRAPPED_TREASURY {
             violations.push(Violation::NegativeTreasury {
                 planet_record: record,
                 stored,
             });
         }
-        let owner = before.planets[idx].owner_empire_slot_raw();
+        let owner = before.planets[idx].owner.0;
         if excluded.contains(&idx)
             || owner == 0
-            || owner != planet.owner_empire_slot_raw()
+            || owner != planet.owner.0
             || runs_ai(before, owner)
         {
             continue;
@@ -99,13 +99,13 @@ fn runs_ai(state: &CoreGameData, empire: u8) -> bool {
     state
         .players
         .get(usize::from(empire) - 1)
-        .is_some_and(|player| player.autopilot_flag() != 0 || player.is_rogue_player())
+        .is_some_and(|player| player.autopilot || player.mode == PlayerMode::Rogue)
 }
 
 fn committed_points(state: &CoreGameData, record: usize) -> u32 {
     let planet = &state.planets[record - 1];
     (0..10)
-        .map(|slot| u32::from(planet.build_count_raw(slot)))
+        .map(|slot| u32::from(planet.build_queue[slot].points_owed))
         .sum()
 }
 

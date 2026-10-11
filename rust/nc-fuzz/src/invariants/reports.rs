@@ -8,7 +8,7 @@
 //! end of the turn, or when it has a terminal outcome (defeat, loss, or win)
 //! that its former player reviews.
 
-use nc_data::{CoreGameData, TerminalOutcome};
+use nc_data::{CoreGameData, PlayerMode, TerminalOutcome};
 
 use super::{TurnObservation, Violation};
 
@@ -23,7 +23,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
         state
             .players
             .get(usize::from(viewer).wrapping_sub(1))
-            .is_some_and(|player| player.is_active_human_player())
+            .is_some_and(|player| player.mode == PlayerMode::Human)
     };
     let entitled = |viewer: u8| {
         active(observation.before, viewer)
@@ -69,9 +69,7 @@ pub fn check(observation: &TurnObservation) -> Vec<Violation> {
                     && !row.recipient_deleted
                     && row.decoded_text.contains(OUTLOOK_TEXT)
             });
-            if player.is_active_human_player()
-                && (!heard || !player.has_classic_results_review_state())
-            {
+            if player.mode == PlayerMode::Human && (!heard || player.messages_last == 0) {
                 violations.push(Violation::OutlookMissed { empire });
             }
         }

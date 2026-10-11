@@ -151,14 +151,14 @@ fn placement() -> ([usize; 2], [u8; 2]) {
     let first_fleet = |empire: u8| {
         data.fleets
             .iter()
-            .position(|fleet| fleet.owner_empire_raw() == empire)
+            .position(|fleet| fleet.owner.0 == empire)
             .map(|idx| idx + 1)
             .expect("empire should own a fleet record")
     };
     let map = map_size_for_player_count(2);
     let occupied = |coords: [u8; 2]| {
-        data.planets.iter().any(|p| p.coords_raw() == coords)
-            || data.bases.iter().any(|b| b.coords_raw() == coords)
+        data.planets.iter().any(|p| p.sector.to_array() == coords)
+            || data.bases.iter().any(|b| b.sector.to_array() == coords)
     };
     let mut empty = None;
     'search: for x in 1..=map {
@@ -291,7 +291,7 @@ fn first_battle(events: &MaintenanceEvents, coords: [u8; 2]) -> Option<(Outcome,
 
 fn trial(base: &BuiltScenario, coords: [u8; 2], seed: u64, years: u16, tally: &mut Tally) {
     let mut data = base.game_data.clone();
-    let mut lifecycle = default_player_lifecycle_states(data.conquest.player_count());
+    let mut lifecycle = default_player_lifecycle_states(data.conquest.player_count);
     let mut winner = WinnerState::default();
     tally.trials += 1;
     for year in 1..=years {

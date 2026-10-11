@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use nc_classic::{DatabaseDat, DatabaseRecord};
 use nc_data::{
     CoreGameData, IntelTier, MaintenanceEvents, Planet, PlanetIntelSnapshot, PlanetIntelSource,
+    has_homeworld_seed_production, is_homeworld_seed_ignoring_name, present_production_points,
 };
 
 /// Regenerate classic `DATABASE.DAT` from structured runtime state plus
@@ -17,7 +18,7 @@ pub fn build_database_dat(
     events: &MaintenanceEvents,
     template: Option<&DatabaseDat>,
 ) -> DatabaseDat {
-    let player_count = game_data.conquest.player_count() as usize;
+    let player_count = game_data.conquest.player_count as usize;
     let planet_count = game_data.planets.len();
     let expected_record_count = player_count * planet_count;
     let template = template
@@ -28,19 +29,19 @@ pub fn build_database_dat(
         &game_data
             .planets
             .iter()
-            .map(|planet| planet.planet_name())
+            .map(|planet| planet.name.clone())
             .collect::<Vec<_>>(),
-        game_data.conquest.game_year(),
+        game_data.conquest.game_year,
         player_count,
         None,
     );
-    let current_intel_year = game_data.conquest.game_year().saturating_sub(1);
-    let current_game_year = game_data.conquest.game_year();
+    let current_intel_year = game_data.conquest.game_year.saturating_sub(1);
+    let current_game_year = game_data.conquest.game_year;
     let current_turn_grants = collect_planet_intel_sources(events);
 
     for player in 0..player_count {
         let viewer_empire_raw = (player + 1) as u8;
-        let viewer_is_active = game_data.players[player].occupied_flag() != 0;
+        let viewer_is_active = game_data.players[player].mode.to_raw() != 0;
         let previous_rows = planet_intel_by_viewer.get(player);
         for planet_idx in 0..planet_count {
             let record_idx = DatabaseDat::record_index(planet_idx, player, planet_count);
@@ -66,7 +67,7 @@ pub fn build_database_dat(
                 .map(|row| row.intel_tier == IntelTier::Owned)
                 .unwrap_or(false);
             let owns_world = !snapshot_is_orbit
-                && planet.owner_empire_slot_raw() == viewer_empire_raw
+                && planet.owner.0 == viewer_empire_raw
                 && (viewer_is_active || template_shows_owned_world || snapshot_shows_owned_world);
 
             if owns_world {
@@ -154,7 +155,7 @@ fn preserve_orbit_record(
 
     if planet_idx < pre_maint_planets.len() {
         let had_build_queue =
-            (0..10).any(|slot| pre_maint_planets[planet_idx].build_count_raw(slot) > 0);
+            (0..10).any(|slot| pre_maint_planets[planet_idx].build_queue[slot].points_owed > 0);
         if had_build_queue {
             record.raw[0x1e] = 0x00;
         }
@@ -162,22 +163,22 @@ fn preserve_orbit_record(
 
     if planet_idx < game_data.planets.len() {
         let planet = &game_data.planets[planet_idx];
-        let planet_owner = planet.owner_empire_slot_raw() as usize;
-        if planet.has_homeworld_seed_production()
+        let planet_owner = planet.owner.0 as usize;
+        if has_homeworld_seed_production(planet)
             && planet_owner > 0
             && planet_owner == player_idx + 1
         {
-            let player_mode = game_data.players[player_idx].player_mode_raw();
-            let autopilot = game_data.players[player_idx].autopilot_flag();
+            let player_mode = game_data.players[player_idx].mode.to_raw();
+            let autopilot = u8::from(game_data.players[player_idx].autopilot);
             let ai_ran = player_mode == 0xff || (player_mode == 0x01 && autopilot == 0x01);
             if ai_ran {
                 let owner_slot = planet_owner as u8;
                 record.raw[0x1e] = unresolved_orbit_status_low_byte(
                     owner_slot,
-                    &planet.planet_name(),
+                    &planet.name,
                     Some(template_record),
                 );
-                record.raw[0x23] = planet.army_count_raw();
+                record.raw[0x23] = u8::try_from(planet.armies).unwrap_or(u8::MAX);
                 record.raw[0x24] = 0x00;
             }
         }
@@ -284,19 +285,19 @@ fn apply_owned_world_row(
     planet: &nc_data::Planet,
     intel_year: u16,
 ) {
-    let potential = planet.potential_production_points_current_known();
+    let potential = u16::from(planet.potential_production);
     apply_visible_row(
         record,
         template_record,
-        planet.planet_name().as_str(),
-        planet.owner_empire_slot_raw(),
+        planet.name.as_str(),
+        planet.owner.0,
         potential,
         template_current_production(template_record).or(Some(potential)),
         snapshot
             .and_then(|snapshot| snapshot.compat_word_1e)
             .or(Some(owned_row_word_1e(planet, template_record))),
-        Some(planet.army_count_raw()),
-        Some(planet.ground_batteries_raw()),
+        Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+        Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
         Some(intel_year),
         Some(intel_year),
     );
@@ -310,13 +311,13 @@ fn apply_intel_grant_row(
     current_game_year: u16,
     source: PlanetIntelSource,
 ) {
-    let potential = planet.potential_production_points_current_known();
+    let potential = u16::from(planet.potential_production);
     let (current_production, word_1e, armies, batteries, seen_year, scout_year) = match source {
         PlanetIntelSource::ScoutSolarSystem => (
             Some(scout_visible_current_production(planet)),
             template_word_1e(template_record).or(Some(0x23)),
-            Some(planet.army_count_raw()),
-            Some(planet.ground_batteries_raw()),
+            Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+            Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
             Some(intel_year),
             Some(intel_year),
         ),
@@ -340,7 +341,7 @@ fn apply_intel_grant_row(
             apply_civil_disorder_contact_row(
                 record,
                 template_record,
-                planet.owner_empire_slot_raw(),
+                planet.owner.0,
                 current_game_year,
             );
             return;
@@ -348,8 +349,8 @@ fn apply_intel_grant_row(
         PlanetIntelSource::AssaultSuccess => (
             template_current_production(template_record),
             template_word_1e(template_record),
-            Some(planet.army_count_raw()),
-            Some(planet.ground_batteries_raw()),
+            Some(u8::try_from(planet.armies).unwrap_or(u8::MAX)),
+            Some(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX)),
             Some(intel_year),
             Some(intel_year),
         ),
@@ -360,8 +361,8 @@ fn apply_intel_grant_row(
     apply_visible_row(
         record,
         template_record,
-        planet.planet_name().as_str(),
-        planet.owner_empire_slot_raw(),
+        planet.name.as_str(),
+        planet.owner.0,
         potential,
         current_production,
         word_1e,
@@ -445,13 +446,11 @@ fn template_word_1e(template_record: Option<&DatabaseRecord>) -> Option<u16> {
 }
 
 fn scout_visible_current_production(planet: &nc_data::Planet) -> u16 {
-    planet
-        .present_production_points_current_known()
-        .unwrap_or_else(|| planet.potential_production_points_current_known())
+    present_production_points(planet)
 }
 
 fn owned_row_word_1e(planet: &nc_data::Planet, template_record: Option<&DatabaseRecord>) -> u16 {
-    if planet.is_homeworld_seed_ignoring_name()
+    if is_homeworld_seed_ignoring_name(planet)
         && template_record
             .filter(|row| {
                 row.word_at(0x1e) == 0x23
@@ -462,14 +461,14 @@ fn owned_row_word_1e(planet: &nc_data::Planet, template_record: Option<&Database
             .is_some()
     {
         template_word_1e(template_record).unwrap_or(0x23)
-    } else if planet.planet_name().eq_ignore_ascii_case("not named yet") {
+    } else if planet.name.eq_ignore_ascii_case("not named yet") {
         0x23
     } else if let Some(template_record) =
         template_record.filter(|row| row.raw[0x1e] >= 0x41 && row.raw[0x1e] != 0xff)
     {
         template_record.word_at(0x1e)
     } else {
-        u16::from(0x40u8.saturating_add(planet.owner_empire_slot_raw()))
+        u16::from(0x40u8.saturating_add(planet.owner.0))
     }
 }
 

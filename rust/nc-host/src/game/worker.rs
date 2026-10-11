@@ -1406,7 +1406,7 @@ fn player_empire_name(game_data: &nc_data::CoreGameData, empire_id: u8) -> Strin
     let Some(player) = game_data.players.get(empire_id.saturating_sub(1) as usize) else {
         return format!("Seat {}", empire_id);
     };
-    let empire_name = player.controlled_empire_name_summary();
+    let empire_name = player.empire_name.trim().to_string();
     if empire_name.is_empty() {
         format!("Seat {}", empire_id)
     } else {

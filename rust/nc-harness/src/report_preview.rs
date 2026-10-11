@@ -1,4 +1,7 @@
-use nc_data::{Fleet, Planet, ReportBlockRow, StarbaseAlert};
+use nc_data::{
+    Coords, Fleet, Planet, PlayerMode, Real48, ReportBlockRow, StarbaseAlert, recompute_max_speed,
+    set_armies_aboard, set_empire_name, set_planet_name, set_player_handle, set_troop_transports,
+};
 use nc_engine::{
     AssaultReportEvent, BombardEvent, ContactReportSource, EncounterDispositionEvent,
     EncounterDispositionReason, FleetBattleEvent, FleetDestroyedEvent, GameRng, MaintenanceEvents,
@@ -1300,10 +1303,9 @@ fn configure_named_player(
     empire_name: &str,
 ) {
     if let Some(player) = game_data.players.get_mut((empire_raw - 1) as usize) {
-        player.set_owner_empire_raw(empire_raw);
-        player.set_occupied_flag(empire_raw);
-        player.set_assigned_player_handle_raw(handle);
-        player.set_controlled_empire_name_raw(empire_name);
+        player.mode = PlayerMode::from_raw(empire_raw);
+        set_player_handle(player, handle);
+        set_empire_name(player, empire_name);
     }
 }
 
@@ -1317,15 +1319,15 @@ fn configure_target_planet(
 ) {
     let planet = &mut game_data.planets[TARGET_PLANET_IDX];
     *planet = Planet::default();
-    planet.set_coords_raw(coords);
-    planet.set_planet_name(name);
-    planet.set_owner_empire_slot_raw(owner_empire_raw);
-    planet.set_ownership_status_raw(if owner_empire_raw == 0 { 0 } else { 2 });
-    planet.set_ground_batteries_raw(batteries);
-    planet.set_army_count_raw(armies);
-    planet.set_potential_production_points(120);
-    let _ = planet.set_present_production_points(95);
-    planet.set_stored_production_points(45);
+    planet.sector = Coords::from_array(coords);
+    set_planet_name(planet, name);
+    planet.owner.0 = owner_empire_raw;
+    planet.years_under_owner = if owner_empire_raw == 0 { 0 } else { 2 };
+    planet.ground_batteries = u16::from(batteries);
+    planet.armies = u16::from(armies);
+    planet.potential_production = 120;
+    planet.production = Real48::from_f64(95.0);
+    planet.stored_goods = Real48::from_f64(45.0);
 }
 
 fn configure_fleet(
@@ -1338,20 +1340,20 @@ fn configure_fleet(
     target: [u8; 2],
 ) {
     *fleet = Fleet::default();
-    fleet.set_owner_empire_raw(owner_empire_raw);
-    fleet.set_local_slot_word_raw(fleet_number.into());
-    fleet.set_current_location_coords_raw(coords);
-    fleet.set_standing_order_kind(order);
-    fleet.set_standing_order_target_coords_raw(target);
-    fleet.set_rules_of_engagement(10);
-    fleet.set_scout_count(force.scouts);
-    fleet.set_battleship_count(force.battleships);
-    fleet.set_cruiser_count(force.cruisers);
-    fleet.set_destroyer_count(force.destroyers);
-    fleet.set_troop_transport_count(force.transports);
-    fleet.set_army_count(force.loaded_armies);
-    fleet.set_etac_count(force.etacs);
-    fleet.recompute_max_speed_from_composition();
+    fleet.owner.0 = owner_empire_raw;
+    fleet.fleet_number.0 = fleet_number.into();
+    fleet.sector = Coords::from_array(coords);
+    fleet.order = order;
+    fleet.target = Coords::from_array(target);
+    fleet.rules_of_engagement = 10;
+    fleet.ships.scouts = force.scouts;
+    fleet.ships.battleships = force.battleships;
+    fleet.ships.cruisers = force.cruisers;
+    fleet.ships.destroyers = force.destroyers;
+    set_troop_transports(fleet, force.transports);
+    set_armies_aboard(fleet, force.loaded_armies);
+    fleet.ships.etacs = force.etacs;
+    recompute_max_speed(fleet);
 }
 
 fn sample_bombard_force(rng: &mut GameRng) -> ForceSpec {

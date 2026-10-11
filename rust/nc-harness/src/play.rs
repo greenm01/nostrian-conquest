@@ -23,7 +23,7 @@ pub struct ScenarioPlay {
 impl ScenarioPlay {
     pub fn new(built: BuiltScenario) -> Self {
         let player_lifecycle_states =
-            default_player_lifecycle_states(built.game_data.conquest.player_count());
+            default_player_lifecycle_states(built.game_data.conquest.player_count);
         Self {
             built,
             player_lifecycle_states,

@@ -1,6 +1,6 @@
 //! Shared launch/session helpers for nc-game and other clients.
 
-use nc_data::{CoreGameData, SeatReservation};
+use nc_data::{CoreGameData, SeatReservation, player_handle_matches};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum LaunchPlayerBindingSource {
@@ -97,9 +97,8 @@ pub fn resolve_launch_player_binding(
             .enumerate()
             .filter(|(idx, _)| !request.skip_stored_handle_seats.contains(&(idx + 1)))
             .filter_map(|(idx, player)| {
-                let handle = player.assigned_player_handle_summary();
-                (!handle.is_empty() && player.assigned_player_handle_matches(alias))
-                    .then_some(idx + 1)
+                let handle = player.handle.trim().to_string();
+                (!handle.is_empty() && player_handle_matches(player, alias)).then_some(idx + 1)
             })
             .collect::<Vec<_>>();
 
@@ -183,8 +182,8 @@ pub fn validate_reserved_seat_runtime(
                 reservation.player_record_index_1_based
             )
         })?;
-    let handle = player.assigned_player_handle_summary();
-    if !handle.is_empty() && !player.assigned_player_handle_matches(&reservation.alias) {
+    let handle = player.handle.trim().to_string();
+    if !handle.is_empty() && !player_handle_matches(player, &reservation.alias) {
         return Err(format!(
             "reserved alias '{}' conflicts with stored player handle '{}' for seat {}; reconcile ncgame.db settings or the campaign state",
             reservation.alias, handle, reservation.player_record_index_1_based

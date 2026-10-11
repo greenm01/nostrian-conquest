@@ -15,7 +15,7 @@ pub fn merge_player_intel_from_compat(
     let viewer_is_active = game_data
         .players
         .get(viewer_index)
-        .map(|player| player.occupied_flag() != 0)
+        .map(|player| player.mode.to_raw() != 0)
         .unwrap_or(false);
     compat_worlds(game_data, database, viewer_empire_id)
         .into_iter()
@@ -40,7 +40,7 @@ pub fn merge_player_intel_from_compat(
                 && current_snapshot.intel_tier == IntelTier::Owned
             {
                 if let Some(planet) = game_data.planets.get(planet_record_index_1_based - 1) {
-                    current_snapshot.known_name = Some(planet.status_or_name_summary());
+                    current_snapshot.known_name = Some(planet.name.trim().to_string());
                 }
                 current_snapshot.last_intel_year = Some(year);
             } else if !current_snapshot.compat_is_orbit_seed
@@ -61,7 +61,7 @@ pub fn extract_player_intel_from_compat_database(
     database: &DatabaseDat,
     year: u16,
 ) -> Vec<BTreeMap<usize, PlanetIntelSnapshot>> {
-    (1..=game_data.conquest.player_count())
+    (1..=game_data.conquest.player_count)
         .map(|viewer_empire_id| {
             merge_player_intel_from_compat(game_data, database, viewer_empire_id, year, None)
         })
@@ -92,7 +92,10 @@ fn compat_worlds(
                 decode_known_owner_empire_id(db_record, game_data, decoded_name.is_some());
             let known_owner_empire_name = known_owner_empire_id.and_then(|empire_id| {
                 (empire_id >= 1).then(|| {
-                    game_data.players[empire_id as usize - 1].controlled_empire_name_summary()
+                    game_data.players[empire_id as usize - 1]
+                        .empire_name
+                        .trim()
+                        .to_string()
                 })
             });
             let known_potential_production = decode_known_u16(db_record.raw[0x1c]);
@@ -101,7 +104,7 @@ fn compat_worlds(
 
             PlayerStarmapWorld {
                 planet_record_index_1_based: planet_index + 1,
-                coords: planet.coords_raw(),
+                coords: planet.sector.to_array(),
                 intel_tier: IntelTier::infer_from_fields(
                     viewer_empire_id,
                     known_owner_empire_id,
@@ -322,7 +325,7 @@ fn decode_known_owner_empire_id(
     let raw = record.raw[0x15];
     if raw == 0 && has_visible_name {
         Some(0)
-    } else if raw >= 1 && raw <= game_data.conquest.player_count() {
+    } else if raw >= 1 && raw <= game_data.conquest.player_count {
         Some(raw)
     } else {
         None

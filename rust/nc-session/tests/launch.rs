@@ -1,4 +1,4 @@
-use nc_data::{GameStateBuilder, SeatReservation};
+use nc_data::{GameStateBuilder, SeatReservation, set_player_handle};
 use nc_session::launch::{
     LaunchBindingRequest, LaunchPlayerBinding, LaunchPlayerBindingSource,
     resolve_launch_player_binding, validate_reserved_seat_runtime,
@@ -66,7 +66,7 @@ fn resolve_launch_binding_finds_handles_stored_in_classic_form() {
             .with_player_count(4)
             .build_joinable_new_game_baseline()
             .expect("build game data");
-        game_data.players[0].set_assigned_player_handle_raw(alias);
+        set_player_handle(&mut game_data.players[0], alias);
 
         let binding = resolve_launch_player_binding(LaunchBindingRequest {
             explicit_player_record_index_1_based: None,
@@ -102,7 +102,7 @@ fn resolve_launch_binding_skips_listed_stored_handle_seats() {
         .build_joinable_new_game_baseline()
         .expect("build game data");
     game_data.join_player(2, "Empire 2").expect("join player");
-    game_data.players[1].set_assigned_player_handle_raw("Tachyon");
+    set_player_handle(&mut game_data.players[1], "Tachyon");
     let request = |skip_stored_handle_seats| LaunchBindingRequest {
         explicit_player_record_index_1_based: None,
         dropfile_alias: Some("tachyon"),

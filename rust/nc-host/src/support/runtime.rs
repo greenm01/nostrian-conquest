@@ -3,7 +3,8 @@ use std::path::Path;
 
 use nc_data::{
     CampaignRuntimeState, CampaignStore, CoreGameData, DEFAULT_CAMPAIGN_DB_NAME,
-    PlanetIntelSnapshot, merge_player_intel_from_runtime, reset_player_slot_to_baseline,
+    PlanetIntelSnapshot, is_named_homeworld_seed, merge_player_intel_from_runtime,
+    reset_player_slot_to_baseline, set_empire_name, set_player_handle,
 };
 
 /// The game's campaign store. New-game creation seeds it, so a game
@@ -59,7 +60,7 @@ pub fn ensure_hosted_player_initialized(
         .players
         .get(player_record_index_1_based.saturating_sub(1))
         .map(|player| {
-            let empire_name = player.controlled_empire_name_summary();
+            let empire_name = player.empire_name.trim().to_string();
             if empire_name.is_empty() {
                 format!("Seat {}", player_seat)
             } else {
@@ -74,7 +75,7 @@ pub fn ensure_hosted_player_initialized(
             .players
             .get_mut(player_record_index_1_based.saturating_sub(1))
         {
-            player.set_assigned_player_handle_raw(handle);
+            set_player_handle(player, handle);
         }
     }
 
@@ -98,12 +99,12 @@ pub fn apply_hosted_first_join_names(
         .players
         .get(player_record_index_1_based.saturating_sub(1))
         .ok_or_else(|| format!("missing player record for seat {}", player_seat))?;
-    let empire_pending = player.controlled_empire_name_summary() == "In Civil Disorder";
+    let empire_pending = player.empire_name.trim() == "In Civil Disorder";
     let homeworld_pending = player
-        .homeworld_planet_index_1_based_raw()
+        .homeworld
         .checked_sub(1)
         .and_then(|idx| game_data.planets.get(idx as usize))
-        .is_some_and(|planet| planet.is_named_homeworld_seed());
+        .is_some_and(is_named_homeworld_seed);
 
     if !empire_pending && !homeworld_pending {
         return Err("first-join naming is no longer available".into());
@@ -113,7 +114,7 @@ pub fn apply_hosted_first_join_names(
         .players
         .get_mut(player_record_index_1_based.saturating_sub(1))
     {
-        player.set_controlled_empire_name_raw(empire_name);
+        set_empire_name(player, empire_name);
     }
     game_data.rename_player_homeworld(player_record_index_1_based, homeworld_name)?;
 
@@ -141,7 +142,7 @@ fn save_runtime_state_with_recomputed_intel(
     runtime: CampaignRuntimeState,
     game_data: CoreGameData,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
 
     let planet_intel_by_viewer = (1..=player_count)
         .map(|viewer_empire_id| {
@@ -153,7 +154,7 @@ fn save_runtime_state_with_recomputed_intel(
             Ok(merge_player_intel_from_runtime(
                 &game_data,
                 viewer_empire_id,
-                game_data.conquest.game_year(),
+                game_data.conquest.game_year,
                 Some(&previous),
                 None,
             ))

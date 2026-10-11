@@ -4,7 +4,7 @@
 
 use nc_data::{
     CoreGameData, DiplomaticRelation, FleetDetachSelection, FleetTurnAction, PlanetTurnAction,
-    TurnDiplomacyDirective,
+    TurnDiplomacyDirective, troop_transports,
 };
 
 use super::actions::Choices;
@@ -23,7 +23,7 @@ const NAMES: [&str; 5] = [
 ];
 
 pub fn edge_action(state: &CoreGameData, empire: u8, choices: Choices) -> Option<TurnAction> {
-    let player_count = usize::from(state.conquest.player_count());
+    let player_count = usize::from(state.conquest.player_count);
     match choices.pick(0, 9) {
         0 => fleet_order(state, empire, choices),
         1 => {
@@ -148,7 +148,7 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
     let max_speed = state
         .fleets
         .get(record.wrapping_sub(1))
-        .map_or(0, |fleet| fleet.max_speed());
+        .map_or(0, |fleet| fleet.max_speed);
     let speed = pick_from(
         choices,
         &[0, max_speed, max_speed.saturating_add(1), u8::MAX],
@@ -171,9 +171,7 @@ fn fleet_order(state: &CoreGameData, empire: u8, choices: Choices) -> Option<Tur
 fn fleet_record(state: &CoreGameData, empire: u8, choices: Choices) -> Option<usize> {
     let count = state.fleets.len();
     let mut records = owned_fleets(state, empire);
-    if let Some(foreign) =
-        (1..=count).find(|&record| fleet(state, record).owner_empire_raw() != empire)
-    {
+    if let Some(foreign) = (1..=count).find(|&record| fleet(state, record).owner.0 != empire) {
         records.push(foreign);
     }
     records.extend([0, count, count + 1, u16::MAX as usize]);
@@ -198,15 +196,15 @@ fn edge_selection(state: &CoreGameData, record: usize, choices: Choices) -> Flee
     let extra = u16::from(choices.flip());
     let mut selection = FleetDetachSelection::default();
     if choices.flip() {
-        selection.battleships = donor.battleship_count() + extra;
-        selection.cruisers = donor.cruiser_count() + extra;
-        selection.destroyers = donor.destroyer_count() + extra;
-        selection.scouts = donor.scout_count().saturating_add(extra);
-        selection.etacs = donor.etac_count() + extra;
-        selection.full_transports = donor.army_count().min(donor.troop_transport_count()) + extra;
-        selection.empty_transports = donor
-            .troop_transport_count()
-            .saturating_sub(donor.army_count());
+        selection.battleships = donor.ships.battleships + extra;
+        selection.cruisers = donor.ships.cruisers + extra;
+        selection.destroyers = donor.ships.destroyers + extra;
+        selection.scouts = donor.ships.scouts.saturating_add(extra);
+        selection.etacs = donor.ships.etacs + extra;
+        selection.full_transports =
+            donor.ships.loaded_transports.min(troop_transports(donor)) + extra;
+        selection.empty_transports =
+            troop_transports(donor).saturating_sub(donor.ships.loaded_transports);
     }
     selection
 }

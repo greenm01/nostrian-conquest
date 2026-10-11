@@ -71,7 +71,7 @@ pub fn import_directory_snapshot_with_seed(
     let planet_intel_by_viewer = extract_player_intel_from_compat_database(
         &game_data,
         &database,
-        game_data.conquest.game_year(),
+        game_data.conquest.game_year,
     );
     store.save_runtime_state_structured_with_intel_and_seed(
         &game_data,
@@ -109,8 +109,8 @@ pub fn export_snapshot_to_dir(
         layout_classic_results(&game_data.players, &with_classic_record_bytes(&report_rows));
     results.apply_to_players(&mut game_data.players);
     save_classic_core_files(dir, &game_data)?;
-    let planet_intel_by_viewer = store
-        .load_snapshot_planet_intel_by_viewer(snapshot_id, game_data.conquest.player_count())?;
+    let planet_intel_by_viewer =
+        store.load_snapshot_planet_intel_by_viewer(snapshot_id, game_data.conquest.player_count)?;
     let template_database = load_optional_database_template(dir, &game_data)?;
     let database = build_database_dat(
         &game_data,
@@ -234,12 +234,12 @@ pub fn write_default_database_dat_for_game_data(
     let planet_names = game_data
         .planets
         .iter()
-        .map(|planet| planet.planet_name())
+        .map(|planet| planet.name.clone())
         .collect::<Vec<_>>();
     let database = DatabaseDat::generate_from_planets_and_year(
         &planet_names,
-        game_data.conquest.game_year(),
-        game_data.conquest.player_count() as usize,
+        game_data.conquest.game_year,
+        game_data.conquest.player_count as usize,
         None,
     );
     write_path(dir.join("DATABASE.DAT"), &database.to_bytes())
@@ -258,11 +258,11 @@ pub fn regenerate_database_dat_from_directory(
         ),
         None => None,
     };
-    let planet_names: Vec<String> = planets.iter().map(|planet| planet.planet_name()).collect();
+    let planet_names: Vec<String> = planets.iter().map(|planet| planet.name.clone()).collect();
     let database = DatabaseDat::generate_from_planets_and_year(
         &planet_names,
-        conquest.game_year(),
-        conquest.player_count() as usize,
+        conquest.game_year,
+        conquest.player_count as usize,
         template.as_ref(),
     );
     write_path(dir.join("DATABASE.DAT"), &database.to_bytes())
@@ -401,8 +401,8 @@ fn default_unknown_database_template(game_data: &CoreGameData) -> DatabaseDat {
     let names = vec!["UNKNOWN".to_string(); game_data.planets.len()];
     DatabaseDat::generate_from_planets_and_year(
         &names,
-        game_data.conquest.game_year(),
-        game_data.conquest.player_count() as usize,
+        game_data.conquest.game_year,
+        game_data.conquest.player_count as usize,
         None,
     )
 }

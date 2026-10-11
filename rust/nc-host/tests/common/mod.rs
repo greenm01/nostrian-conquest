@@ -136,7 +136,7 @@ pub fn seed_runtime_snapshot(
             nc_data::merge_player_intel_from_runtime(
                 &game_data,
                 viewer_empire_id,
-                game_data.conquest.game_year(),
+                game_data.conquest.game_year,
                 None,
                 None,
             )

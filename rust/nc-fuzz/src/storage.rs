@@ -27,7 +27,7 @@ fn round_trip(
     dir: &std::path::Path,
 ) -> Result<Option<String>, String> {
     let game_data = &play.built.game_data;
-    let player_count = game_data.conquest.player_count();
+    let player_count = game_data.conquest.player_count;
     fs::create_dir_all(dir).map_err(|err| err.to_string())?;
     let store = CampaignStore::open_default_in_dir(dir).map_err(|err| err.to_string())?;
     store

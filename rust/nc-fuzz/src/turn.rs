@@ -42,7 +42,7 @@ impl TurnBuilder {
             working: start.clone(),
             accepted: TurnSubmission {
                 player_record_index_1_based: usize::from(empire_raw),
-                year: start.conquest.game_year(),
+                year: start.conquest.game_year,
                 tax_rate: None,
                 diplomacy: Vec::new(),
                 planets: Vec::new(),
