@@ -1280,7 +1280,7 @@ fn repeated_same_kind_build_submissions_merge_into_one_player_visible_total() {
     );
     terminal = CaptureTerminal::new();
     app.render(&mut terminal).expect("render succeeds");
-    assert!(line_containing(&terminal, "Building").contains("5-DD"));
+    assert!(line_containing(&terminal, "Building").contains("DD5"));
 }
 
 #[test]

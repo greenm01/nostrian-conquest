@@ -11,8 +11,8 @@
 //! nothing here heals a ship or resets a counter.
 
 use crate::{
-    CrippledShips, Fleet, FleetDetachSelection, HullClass, ShipCategory, crippled_by_category,
-    join_tokens, ship_token,
+    Composition, CrippledShips, Fleet, FleetDetachSelection, HullClass, ShipCategory,
+    crippled_by_category,
 };
 
 /// A request for more crippled ships than a category has.
@@ -37,10 +37,11 @@ pub struct ResolvedSelection {
 impl ResolvedSelection {
     /// The ships taken, in notation: `CA3!1 TT*2`. `none` when empty.
     pub fn notation(&self) -> String {
-        let notation = join_tokens(ShipCategory::ALL.into_iter().map(|category| {
-            let (total, crippled) = self.groups[category.index()];
-            ship_token(category.code(), total, crippled)
-        }));
+        let notation = Composition {
+            ships: self.groups,
+            ..Composition::default()
+        }
+        .notation();
         if notation.is_empty() {
             "none".to_string()
         } else {

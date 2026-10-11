@@ -1,7 +1,5 @@
 use crate::maint::timing::format_report_first_line;
-use nc_data::{
-    CoreGameData, Mission, MissionOutcome, ShipLosses, join_tokens, ship_token, starbase_token,
-};
+use nc_data::{Composition, CoreGameData, Mission, MissionOutcome, ShipCategory, ShipLosses};
 
 pub fn report_header(source_clause: &str, week: Option<u8>, year: u16) -> String {
     format_report_first_line(source_clause, week.unwrap_or(1), year)
@@ -226,14 +224,15 @@ pub fn nearest_owned_destination_text(
 /// are named in words rather than given a cargo they may not have had.
 /// `None` when nothing was lost.
 pub fn loss_summary(losses: ShipLosses, starbases: u32) -> Option<String> {
-    let tokens = join_tokens([
-        ship_token("BB", losses.battleships, 0),
-        ship_token("CA", losses.cruisers, 0),
-        ship_token("DD", losses.destroyers, 0),
-        ship_token("SC", losses.scouts, 0),
-        ship_token("ETAC", losses.etacs, 0),
-        starbase_token(starbases, 0),
-    ]);
+    let tokens = Composition::undamaged([
+        (ShipCategory::Scouts, losses.scouts),
+        (ShipCategory::Battleships, losses.battleships),
+        (ShipCategory::Cruisers, losses.cruisers),
+        (ShipCategory::Destroyers, losses.destroyers),
+        (ShipCategory::Etacs, losses.etacs),
+    ])
+    .with_starbases(starbases)
+    .notation();
     let transports = (losses.transports > 0)
         .then(|| unit_count_text(losses.transports, "transport", "transports"));
     match (tokens.is_empty(), transports) {
@@ -386,4 +385,63 @@ pub fn aborted_mission_follow_on_text_from_idx(
         .get(fleet_idx)
         .map(|fleet| aborted_mission_follow_on_text(game_data, fleet, empire))
         .unwrap_or_else(|| "holding position and awaiting orders".to_string())
+}
+
+#[cfg(test)]
+mod tests {
+    //! The reports write compositions in the notation's one class order
+    //! (`SC BB CA DD TT* TT ETAC SB`), whatever order their sources keep.
+
+    use super::loss_summary;
+    use crate::maint::results::combat::{
+        fleet_force_summary_with_starbases, stardock_scan_summary,
+    };
+    use nc_data::{Planet, ShipLosses, stardock_slot_for_kind};
+
+    #[test]
+    fn losses_list_classes_in_the_notation_order() {
+        let losses = ShipLosses {
+            destroyers: 4,
+            cruisers: 3,
+            battleships: 2,
+            scouts: 1,
+            transports: 5,
+            etacs: 6,
+        };
+        // Transports are named in words: a loss record has no cargo.
+        assert_eq!(
+            loss_summary(losses, 7).as_deref(),
+            Some("SC1 BB2 CA3 DD4 ETAC6 SB7 and 5 transports")
+        );
+    }
+
+    #[test]
+    fn forces_list_classes_in_the_notation_order() {
+        let force = ShipLosses {
+            destroyers: 4,
+            cruisers: 3,
+            battleships: 2,
+            scouts: 1,
+            transports: 9,
+            etacs: 6,
+        };
+        assert_eq!(
+            fleet_force_summary_with_starbases(force, 4, 7),
+            "SC1 BB2 CA3 DD4 TT*4 TT5 ETAC6 SB7"
+        );
+    }
+
+    #[test]
+    fn stardock_scans_list_classes_in_the_notation_order() {
+        let mut planet = Planet::default();
+        // Dock a ship of every kind a stardock holds.
+        for code in [9, 6, 5, 4, 3, 2, 1] {
+            let slot = stardock_slot_for_kind(code).expect("a stardock kind");
+            planet.stardock[slot] = u32::from(code);
+        }
+        assert_eq!(
+            stardock_scan_summary(&planet),
+            "Scanning the planet's stardock, we detected SC4 BB3 CA2 DD1 TT5 ETAC6 SB9."
+        );
+    }
 }

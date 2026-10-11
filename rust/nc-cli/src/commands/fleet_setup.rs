@@ -1,7 +1,8 @@
 use std::path::Path;
 
 use nc_data::{
-    Coords, FleetDetachSelection, recompute_max_speed, set_armies_aboard, set_troop_transports,
+    Coords, FleetDetachSelection, fleet_notation, recompute_max_speed, set_armies_aboard,
+    set_troop_transports,
 };
 
 use crate::commands::runtime::with_runtime_game_mut_and_export;
@@ -24,7 +25,7 @@ pub(crate) fn set_fleet_ships(
         .into());
     }
 
-    with_runtime_game_mut_and_export(dir, |data| {
+    let ships = with_runtime_game_mut_and_export(dir, |data| {
         let fleet = data
             .fleets
             .get_mut(fleet_record_index_1_based - 1)
@@ -42,19 +43,13 @@ pub(crate) fn set_fleet_ships(
         if fleet.speed > fleet.max_speed {
             fleet.speed = fleet.max_speed;
         }
-        Ok(())
+        Ok(fleet_notation(fleet))
     })?;
 
     println!(
-        "Fleet {} ships set: SC={} BB={} CA={} DD={} TT={} loaded_armies={} ETAC={}",
+        "Fleet {} ships set: {}",
         fleet_record_index_1_based,
-        scouts,
-        battleships,
-        cruisers,
-        destroyers,
-        transports,
-        armies_loaded,
-        etacs
+        none_if_empty(ships)
     );
     Ok(())
 }
@@ -98,42 +93,48 @@ pub(crate) fn detach_fleet_to_new_record(
     donor_speed: Option<u8>,
     new_fleet_roe: u8,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let result = with_runtime_game_mut_and_export(dir, |data| {
-        data.detach_ships_to_new_fleet(
-            player_record_index_1_based,
-            donor_fleet_record_index_1_based,
-            FleetDetachSelection {
-                battleships,
-                cruisers,
-                destroyers,
-                full_transports,
-                empty_transports,
-                scouts,
-                etacs,
-                ..FleetDetachSelection::default()
-            },
-            donor_speed,
-            new_fleet_roe,
-        )
-        .map_err(|err| err.to_string().into())
+    let (result, ships) = with_runtime_game_mut_and_export(dir, |data| {
+        let result = data
+            .detach_ships_to_new_fleet(
+                player_record_index_1_based,
+                donor_fleet_record_index_1_based,
+                FleetDetachSelection {
+                    battleships,
+                    cruisers,
+                    destroyers,
+                    full_transports,
+                    empty_transports,
+                    scouts,
+                    etacs,
+                    ..FleetDetachSelection::default()
+                },
+                donor_speed,
+                new_fleet_roe,
+            )
+            .map_err(|err| err.to_string())?;
+        let ships = fleet_notation(&data.fleets[result.new_fleet_record_index_1_based - 1]);
+        Ok((result, ships))
     })?;
 
     println!(
-        "Detached fleet {} -> new fleet {} for player {}: BB={} CA={} DD={} fullTT={} emptyTT={} SC={} ETAC={} donor_speed={} roe={}",
+        "Detached fleet {} -> new fleet {} for player {}: {} donor_speed={} roe={}",
         result.donor_fleet_record_index_1_based,
         result.new_fleet_record_index_1_based,
         player_record_index_1_based,
-        battleships,
-        cruisers,
-        destroyers,
-        full_transports,
-        empty_transports,
-        scouts,
-        etacs,
+        none_if_empty(ships),
         donor_speed
             .map(|value| value.to_string())
             .unwrap_or_else(|| "-".to_string()),
         new_fleet_roe
     );
     Ok(())
+}
+
+/// A fleet's notation, or `none` for a fleet without ships.
+fn none_if_empty(ships: String) -> String {
+    if ships.is_empty() {
+        "none".to_string()
+    } else {
+        ships
+    }
 }

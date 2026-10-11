@@ -115,9 +115,9 @@ pub use names::{
 };
 pub use planet_summary::{
     CompactUnitSummaryStyle, OrbitPresenceSummary, OwnedPlanetStatus, build_queue_unit_counts,
-    compact_unit_code, format_build_queue_summary, format_owned_orbit_summary,
-    format_stardock_summary, format_unit_counts, ordered_unit_count_entries, owned_orbit_presence,
-    owned_planet_status, planet_derived_summary, stardock_unit_counts,
+    format_build_queue_summary, format_owned_orbit_summary, format_stardock_summary,
+    format_unit_counts, ordered_unit_count_entries, owned_orbit_presence, owned_planet_status,
+    planet_derived_summary, stardock_unit_counts,
 };
 pub use player_activity::{
     DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS, apply_inactivity_autopilot_policy,
@@ -154,8 +154,8 @@ pub use runtime_reports::{
     wrap_review_text_preserving_spacing,
 };
 pub use ship_notation::{
-    NOTATION_LEGEND, ShipCategory, auto_commission_notation, crippled_by_category, fit_notation,
-    fleet_notation, join_tokens, ship_token, starbase_token,
+    Composition, NOTATION_LEGEND, STARBASE_CODE, ShipCategory, auto_commission_notation,
+    crippled_by_category, fit_notation, fleet_notation, join_tokens, ship_token,
 };
 pub use stardock::{STARDOCK_SLOT_COUNT, stardock_slot_for_kind, stardock_slot_kind};
 pub use starmap::{

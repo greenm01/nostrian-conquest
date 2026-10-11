@@ -844,8 +844,8 @@ fn build_menu_review_shortcut_opens_owned_planet_info_with_build_queue_and_retur
     app.render(&mut terminal).expect("render succeeds");
     let build_queue_line = line_containing(&terminal, "Building");
     assert!(build_queue_line.contains("Building"));
-    assert!(build_queue_line.contains("1-DD"));
-    assert!(line_containing(&terminal, "Docked").contains("2-DD"));
+    assert!(build_queue_line.contains("DD1"));
+    assert!(line_containing(&terminal, "Docked").contains("DD2"));
 
     assert_eq!(
         apply_action(&mut app, Action::ReturnToCommandMenu),
@@ -921,21 +921,16 @@ fn planet_info_compact_queue_and_docked_summaries_fit_with_full_entries() {
 
     app.render(&mut terminal).expect("render succeeds");
 
+    // Every entry shows, in the notation's class order.
     let build_queue_line = line_containing(&terminal, "Building");
-    for token in [
-        "10-DD", "8-CA", "5-BB", "4-SC", "5-TT", "6-ET", "7-GB", "8-AR", "5-SB",
-    ] {
-        assert!(
-            build_queue_line.contains(token),
-            "missing {token} in {build_queue_line}"
-        );
-    }
+    assert!(
+        build_queue_line.contains("SC4 BB5 CA8 DD10 TT5 ETAC6 SB5 AR8 GB7"),
+        "{build_queue_line}"
+    );
 
     let docked_line = line_containing(&terminal, "Docked");
-    for token in ["1-DD", "2-CA", "3-BB", "4-SC", "5-TT", "6-SB"] {
-        assert!(
-            docked_line.contains(token),
-            "missing {token} in {docked_line}"
-        );
-    }
+    assert!(
+        docked_line.contains("SC4 BB3 CA2 DD1 TT5 SB6"),
+        "{docked_line}"
+    );
 }

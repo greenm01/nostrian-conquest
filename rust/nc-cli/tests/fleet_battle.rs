@@ -41,8 +41,11 @@ fn validate_fleet_battle_accepts_known_valid_fixture() {
         "fleet-battle",
     ]);
     assert!(stdout.contains("Valid fleet-battle scenario"));
-    assert!(stdout.contains("FLEET[1]: loc=(10,10)"));
-    assert!(stdout.contains("FLEET[9]: order=0x01 (MoveOnly)"));
+    assert!(stdout.contains("FLEET[1]: loc=(10,10) tgt=(10,10) RoE=100 BB50 CA50 DD50"));
+    assert!(stdout.contains("FLEET[5]: order=0x03 (PatrolSector) loc=(10,10) speed=0/6 BB100"));
+    assert!(
+        stdout.contains("FLEET[9]: order=0x01 (MoveOnly) loc=(9,10) tgt=(10,10) speed=3/6 BB1")
+    );
     assert!(stdout.contains("PLANET[14]: (15,13) empire=2 armies=142 batteries=15"));
 }
 

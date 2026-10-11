@@ -173,7 +173,7 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
         "26:26",
     ]);
 
-    run_nc_cli(&[
+    let stdout = run_nc_cli(&[
         "fleet-ships",
         target.to_str().unwrap(),
         "1",
@@ -185,6 +185,9 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
         "4",
         "2",
     ]);
+    // The feedback line writes the fleet in the ship notation: nine
+    // transports, four of them loaded.
+    assert!(stdout.contains("Fleet 1 ships set: SC12 BB8 CA10 DD14 TT*4 TT5 ETAC2"));
 
     let stdout = run_nc_cli(&[
         "fleet-detach",
@@ -201,7 +204,9 @@ fn fleet_ships_and_detach_create_varied_extra_fleet() {
         "3",
         "6",
     ]);
-    assert!(stdout.contains("Detached fleet 1 -> new fleet 17"));
+    assert!(stdout.contains(
+        "Detached fleet 1 -> new fleet 17 for player 1: SC2 BB1 CA2 DD3 TT*1 TT1 ETAC1 donor_speed=3 roe=6"
+    ));
 
     export_campaign_db(&target, &target);
     let data = load_classic_core_files(&target).unwrap();

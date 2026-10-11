@@ -37,7 +37,7 @@ fn scenario_econ_recreates_known_valid_pre_fixture() {
 fn validate_econ_accepts_known_valid_fixture() {
     let stdout = run_nc_cli(&["validate", "fixtures/ecmaint-econ-pre/v1.5", "econ"]);
     assert!(stdout.contains("Valid econ scenario"));
-    assert!(stdout.contains("FLEET[3]: order=0x06 (BombardWorld)"));
+    assert!(stdout.contains("FLEET[3]: order=0x06 (BombardWorld) tgt=(15,13) speed=3/3 CA50 DD50"));
     assert!(stdout.contains("PLANET[14]: (15,13) empire=2 armies=142 batteries=15"));
 }
 

@@ -94,7 +94,7 @@ fn bombard_onefleet_allows_coordinate_variation() {
         ],
         common::rust_workspace(),
     );
-    assert!(stdout.contains("FLEET[3].order = 0x06 (BombardWorld), target = (10, 8), CA=4, DD=6"));
+    assert!(stdout.contains("FLEET[3].order = 0x06 (BombardWorld), target = (10, 8), CA4 DD6"));
     assert!(stdout.contains("PLANET[14]: homeworld clone empire=2, coords=(10, 8)"));
 
     cleanup_dir(&target);
@@ -116,7 +116,7 @@ fn bombard_init_materializes_parameterized_directory() {
         common::rust_workspace(),
     );
     assert!(stdout.contains("Bombard directory initialized at"));
-    assert!(stdout.contains("FLEET[3].order = 0x06 (BombardWorld), target = (12, 9), CA=3, DD=5"));
+    assert!(stdout.contains("FLEET[3].order = 0x06 (BombardWorld), target = (12, 9), CA3 DD5"));
     assert!(stdout.contains("PLANET[14]: homeworld clone empire=2, coords=(12, 9)"));
 
     cleanup_dir(&target);

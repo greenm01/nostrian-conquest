@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::Path;
 
-use nc_data::{Coords, CoreGameData, Order};
+use nc_data::ShipCategory::{Cruisers, Destroyers};
+use nc_data::{Composition, Coords, CoreGameData, Order};
 
 use crate::commands::fleet_order::set_raw_fleet_order;
 use crate::commands::runtime::{
@@ -74,8 +75,10 @@ pub(crate) fn set_bombard_onefleet(
     })?;
 
     println!(
-        "  FLEET[3].order = 0x06 (BombardWorld), target = ({}, {}), CA={}, DD={}",
-        target_x, target_y, ca, dd
+        "  FLEET[3].order = 0x06 (BombardWorld), target = ({}, {}), {}",
+        target_x,
+        target_y,
+        Composition::undamaged([(Cruisers, ca.into()), (Destroyers, dd.into())]).notation()
     );
     println!(
         "  PLANET[14]: homeworld clone empire=2, coords=({}, {})",

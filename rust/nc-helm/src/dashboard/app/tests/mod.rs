@@ -458,7 +458,7 @@ fn build_command_refreshes_cached_planet_status_without_store() {
 
     assert!(app.game_data_revision > initial_revision);
     let after = planet_view::selected_planet_detail(&app).expect("selected planet");
-    assert_eq!(detail_value(&after.widget_fields, "Building"), Some("1DD"));
+    assert_eq!(detail_value(&after.widget_fields, "Building"), Some("DD1"));
 }
 
 #[test]
@@ -3761,7 +3761,7 @@ fn owned_planet_popup_browse_uses_popup_record_not_crosshair() {
     let text = buffer_text(&buffer);
 
     assert!(text.contains("Building"));
-    assert!(text.contains("2BB"));
+    assert!(text.contains("BB2"));
 }
 
 #[test]
@@ -3793,7 +3793,7 @@ fn hosted_draft_replay_refreshes_planet_status_cache() {
 
     assert!(app.game_data_revision > before_revision);
     let detail = planet_view::selected_planet_detail(&app).expect("detail after replay");
-    assert_eq!(detail_value(&detail.popup_lines, "Building"), Some("1DD"));
+    assert_eq!(detail_value(&detail.popup_lines, "Building"), Some("DD1"));
 }
 
 #[test]
