@@ -78,3 +78,17 @@ checks do not substitute for it.
 
 - [Community hosting](../../dev/community-hosting.md)
 - [Hosting plan](qv5x08zs-discord-community-hosting-and-python-game-administration.md)
+
+### t127
+
+The owner requested a Nostr login button beside Discord on the public game
+listing. Group both sign-in controls in a wrapping row, with the optional Nostr
+player name below. Deploy the matching t126 backend and offline account
+conversion so the public button works. Preserve Beta 1's recruitment hold,
+existing seats and invite states. Back up before conversion, verify release
+hashes/signature, public login routes and unchanged campaign state afterward.
+An attended real-extension sign-in remains separate acceptance evidence.
+
+The updated page passes the existing headless Chromium signer/claim/logout
+smoke. The rollout preflight found no live door processes and confirmed Beta 1
+was recruiting at year 3000 with no deadline.
