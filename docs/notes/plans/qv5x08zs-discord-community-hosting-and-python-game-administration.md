@@ -132,3 +132,25 @@ Existing profiles refresh on the next sign-in.
 - [Hosting review](../investigations/dp6dayf5-review-web-and-discord-hosting-readiness.md)
 - [Current architecture](../../dev/rust-architecture.md)
 - [Work tracking](../../dev/work-tracking.md)
+
+### t124
+
+The owner approved eight-character, case-insensitive, single-use seat codes.
+Omit visually confusing `0 O 1 I`; store hashes and show each new code once.
+Python `nc-admin invites create/list/revoke` manages reservations. Discord
+`/invite` verifies the server owner and replies privately; `/join` accepts a
+code and binds the seat to the verified Discord ID. Retrying a successful claim
+returns the existing seat. Revoke does not evict players. Account and game rate
+limits bound failed guesses. Website joins cannot bypass the restriction.
+
+Configure daily midnight using `America/New_York`, including daylight saving.
+Recruitment stays open until an explicit operator start, even when full.
+Manual-turn games have no automatic deadline. Early operator-run turns do not
+push a future scheduled deadline back. Update the pinned welcome post with the
+code claim flow. Replace the unused old lobby with a fresh four-player game;
+archive its old channel and retain its data privately.
+
+Validation: invite lifecycle, concurrent claims, wrong-game claims, rate limits,
+secret-free listing and history, browser bypass rejection, manual scheduling,
+owner-controlled start, and both daylight saving transitions. All 109 affected Rust tests and seven Python CLI tests pass. Live deployment
+and signed-release checks are recorded below when complete.

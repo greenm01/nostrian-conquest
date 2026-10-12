@@ -42,6 +42,22 @@ class AdminTests(unittest.TestCase):
             with patch("nc_admin.cli.Client.call",return_value=[{"game":"one","error":"disk full"}]),contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(main(argv),1)
 
+    def test_private_invite_and_calendar_requests(self):
+        cases = [
+            (["games","invite-only","beta-1"], {"action":"invite_only","game":"beta-1"}),
+            (["invites","create","beta-1","--count","3"], {"action":"create_invites","game":"beta-1","count":3}),
+            (["invites","list","beta-1"], {"action":"list_invites","game":"beta-1"}),
+            (["invites","revoke","beta-1","example-id"], {"action":"revoke_invite","game":"beta-1","invite_id":"example-id"}),
+            (["games","schedule","beta-1","--midnight","America/New_York"], {"action":"configure_schedule","game":"beta-1","time_zone":"America/New_York"}),
+            (["games","schedule","practice","--manual"], {"action":"configure_schedule","game":"practice","time_zone":None}),
+            (["games","start","beta-1"], {"action":"start_configured","game":"beta-1"}),
+            (["games","resume","beta-1"], {"action":"start_configured","game":"beta-1"}),
+        ]
+        for argv,expected in cases:
+            with self.subTest(argv=argv): self.assertEqual(request_for(parser().parse_args(argv)),expected)
+        with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+            parser().parse_args(["games","schedule","beta-1","--manual","--midnight","America/New_York"])
+
     def test_timeout_never_retries_mutation(self):
         with patch('subprocess.run',side_effect=subprocess.TimeoutExpired('nc-host',1)) as run:
             with self.assertRaises(AdminError):Client(Path('/games'),'nc-host').call({'action':'maintain'})

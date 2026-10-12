@@ -18,11 +18,15 @@ async function loadGames() {
         const card = document.createElement('article');
         const title = document.createElement('h2'); title.textContent = game.name; card.append(title);
         const status = document.createElement('p');
-        status.textContent = `${game.state} | ${game.open}/${game.players} seats open | Year ${game.year} | Every ${game.interval_minutes / 60} hours`;
+        const schedule = game.schedule?.mode === 'manual' ? 'Manual turns' : game.schedule?.mode === 'daily_midnight' ? `Midnight ${game.schedule.time_zone} (daylight saving adjusted)` : `Every ${game.interval_minutes / 60} hours`;
+        status.textContent = `${game.state} | ${game.open}/${game.players} seats open | Year ${game.year} | ${schedule}`;
         card.append(status);
         const due = document.createElement('p'); due.textContent = game.next_due ? `Next turn: ${new Date(game.next_due * 1000).toLocaleString()}` : 'Turns have not been scheduled.'; card.append(due);
         const base = `/api/games/${encodeURIComponent(game.game)}`;
-        if (game.state === 'recruiting') button(card, 'Join', async () => {const seat = await request(`${base}/join`, 'POST'); notice.textContent = `Joined ${game.name}: seat ${seat.seat}. Click Play to enter.`; await loadGames();});
+        if (game.state === 'recruiting' && !game.invite_required) button(card, 'Join', async () => {const seat = await request(`${base}/join`, 'POST'); notice.textContent = `Joined ${game.name}: seat ${seat.seat}. Click Play to enter.`; await loadGames();});
+        if (game.invite_required && game.state === 'recruiting') {
+            const invite = document.createElement('p'); invite.textContent = `Invite required. Get a private code from the host, then use /join game:${game.game} code:YOURCODE in Discord. Already joined? Click Play.`; card.append(invite);
+        }
         button(card, 'Play', () => {location.href = `/terminal/index.html?game=${encodeURIComponent(game.game)}`;});
         button(card, 'Reconnect', async () => {await request(`${base}/reconnect`, 'POST'); notice.textContent = 'Previous session is closing. Click Play in a moment.';});
         for (const [label, format] of [['Map ZIP', 'map-zip'], ['Map TXT', 'map-txt'], ['Map CSV', 'map-csv'], ['Reports', 'reports']]) {

@@ -53,27 +53,65 @@ pub async fn games(ctx: Context<'_>) -> Result<(), Error> {
     }
     Ok(())
 }
-/// Reserve an open seat in a recruiting game.
+/// Claim an empire, using an invite code when required.
 #[poise::command(slash_command, ephemeral)]
 pub async fn join(
     ctx: Context<'_>,
     #[description = "Game ID from /games"] game: String,
+    #[description = "Private eight-character code from the host"] code: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
-    let access = host(
-        ctx.data(),
-        Request::Join {
+    let request = match code {
+        Some(code) => Request::ClaimInvite {
+            game: game.clone(),
+            discord_id: ctx.author().id.to_string(),
+            code,
+        },
+        None => Request::Join {
             game: game.clone(),
             discord_id: ctx.author().id.to_string(),
         },
-    )
-    .await?;
+    };
+    let access = match host(ctx.data(), request).await {
+        Ok(access) => access,
+        Err(_) => {
+            ctx.send(reply("Could not claim a seat. Check the game ID and invite code with the host. A code works once, while recruitment is open. After repeated failed attempts, wait ten minutes before trying again.")).await?;
+            return Ok(());
+        }
+    };
     ctx.send(reply(format!(
         "You have seat {} in `{game}`. Sign in with this Discord account to play: {}",
         access["seat"],
         play_url(ctx, &game)
     )))
     .await?;
+    Ok(())
+}
+/// Create a private, single-use seat code (server owner only).
+#[poise::command(slash_command, ephemeral)]
+pub async fn invite(
+    ctx: Context<'_>,
+    #[description = "Game ID from /games"] game: String,
+) -> Result<(), Error> {
+    ctx.defer_ephemeral().await?;
+    let guild = ctx.data().guild_id.to_partial_guild(ctx.http()).await?;
+    if guild.owner_id != ctx.author().id {
+        ctx.send(reply("Only the server owner can create invite codes."))
+            .await?;
+        return Ok(());
+    }
+    let result = host(
+        ctx.data(),
+        Request::CreateInvites {
+            game: game.clone(),
+            count: 1,
+        },
+    )
+    .await?;
+    let code = result["invites"][0]["code"]
+        .as_str()
+        .ok_or("missing invite code")?;
+    ctx.send(reply(format!("Private code for `{game}`: **{code}**\nSend it privately to one player. They claim it with `/join game:{game} code:{code}`, then use `/play game:{game}`. This code works once and is shown only here; keep it private."))).await?;
     Ok(())
 }
 /// Open your game in a browser terminal.
@@ -114,7 +152,13 @@ pub async fn status(
     let deadline = g["next_due"]
         .as_i64()
         .map(|t| format!("<t:{t}:F> (<t:{t}:R>)"))
-        .unwrap_or_else(|| "Not scheduled".into());
+        .unwrap_or_else(|| {
+            if g["schedule"]["mode"] == "manual" {
+                "Manual turns; no automatic deadline".into()
+            } else {
+                "Waiting for the host to start or resume".into()
+            }
+        });
     ctx.send(reply(format!(
         "`{game}` | {} | year {}\nSeats open: {}/{}\nNext turn: {deadline}",
         g["state"].as_str().unwrap_or("?"),
@@ -217,7 +261,8 @@ pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
 
 const HELP: &str = "**Nostrian Conquest commands**\n\
 `/games` — List games and their IDs.\n\
-`/join game` — Claim an open empire.\n\
+`/join game [code]` — Claim an empire. Private games need a code from the host.\n\
+`/invite game` — Create a private seat code (server owner only).\n\
 `/play game` — Open your game in a browser.\n\
 `/status game` — Check the year and turn deadline.\n\
 `/map game` — Download a ZIP with TXT, CSV, ODS and Excel maps. Optional format selects one file.\n\

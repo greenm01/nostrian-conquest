@@ -75,6 +75,7 @@ pub fn commands() -> Vec<poise::Command<BotData, Error>> {
     vec![
         commands::games(),
         commands::join(),
+        commands::invite(),
         commands::play(),
         commands::status(),
         commands::map(),

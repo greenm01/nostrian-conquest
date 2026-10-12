@@ -44,7 +44,9 @@ The new multi-game host is under validation. Players join through
 Operators use the Python `scripts/nc-admin` command over SSH; no dashboard is
 required. See [hosting setup](docs/dev/community-hosting.md) and
 [operator commands](tools/nc-admin/README.md). Existing BBS installations do not
-need this stack.
+need this stack. Invite-only games use `/join` with a private seat code; operators
+manage codes with `nc-admin invites create/list/revoke`. Daily local-midnight
+schedules follow daylight saving and begin only when the operator starts the game.
 
 ## Current Public Roles
 

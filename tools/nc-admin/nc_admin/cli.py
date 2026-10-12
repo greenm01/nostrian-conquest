@@ -30,15 +30,20 @@ def parser() -> argparse.ArgumentParser:
                    host_binary=os.environ.get("NC_HOST_BINARY", "nc-host"), json=False, dry_run=False)
     groups = p.add_subparsers(dest="group", required=True)
     games = groups.add_parser("games", parents=[common]).add_subparsers(dest="command", required=True)
-    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace"):
+    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "invite-only"):
         sub = games.add_parser(command, parents=[common], allow_abbrev=False)
         if command != "list": sub.add_argument("game")
         if command == "create":
             sub.add_argument("--name")
             sub.add_argument("--players", type=int, required=True, choices=range(1,26), metavar="1..25")
             sub.add_argument("--seed", type=int)
-        if command in ("start", "resume", "schedule"):
-            sub.add_argument("--first-due", type=deadline, required=True)
+        if command in ("start", "resume"):
+            sub.add_argument("--first-due", type=deadline)
+        if command == "schedule":
+            schedule = sub.add_mutually_exclusive_group(required=True)
+            schedule.add_argument("--first-due", type=deadline)
+            schedule.add_argument("--midnight", metavar="IANA_ZONE", help="Daily local midnight, adjusted for daylight saving")
+            schedule.add_argument("--manual", action="store_true")
         if command in ("start", "schedule"):
             sub.add_argument("--interval-minutes", type=int, default=1440)
         if command == "replace":
@@ -46,6 +51,12 @@ def parser() -> argparse.ArgumentParser:
             sub.add_argument("--discord-id", required=True)
             sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm replacement")
         if command == "archive": sub.add_argument("--confirm", required=True)
+    invites = groups.add_parser("invites", parents=[common]).add_subparsers(dest="command", required=True)
+    for command in ("create", "list", "revoke"):
+        sub = invites.add_parser(command, parents=[common])
+        sub.add_argument("game")
+        if command == "create": sub.add_argument("--count", type=int, default=1, choices=range(1,26), metavar="1..25")
+        if command == "revoke": sub.add_argument("invite_id")
     maintenance = groups.add_parser("maintenance", parents=[common]).add_subparsers(dest="command", required=True)
     maintenance.add_parser("due", parents=[common])
     run = maintenance.add_parser("run", parents=[common])
@@ -69,6 +80,16 @@ def request_for(args: argparse.Namespace) -> dict:
         if args.command == "create": return {"action":"backup", "game":args.game}
         return {"action":"verify_backup" if args.command == "verify" else "restore", "path":str(Path(args.path).resolve()),
                 **({"game":args.confirm} if args.command == "restore" else {})}
+    if args.group == "invites":
+        return {"action":{"create":"create_invites","list":"list_invites","revoke":"revoke_invite"}[args.command],
+                "game":args.game, **({"count":args.count} if args.command == "create" else {}),
+                **({"invite_id":args.invite_id} if args.command == "revoke" else {})}
+    if args.group == "games":
+        if args.command == "invite-only": return {"action":"invite_only", "game":args.game}
+        if args.command in ("start", "resume") and args.first_due is None:
+            return {"action":"start_configured", "game":args.game}
+        if args.command == "schedule" and args.first_due is None:
+            return {"action":"configure_schedule", "game":args.game, "time_zone":args.midnight}
     if args.group == "maintenance":
         if args.command == "due": return {"action":"due"}
         return {"action":"maintain", "game":args.game, "expected_year":args.expect_year, "request_id":args.request_id}

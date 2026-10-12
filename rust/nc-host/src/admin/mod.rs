@@ -2,9 +2,12 @@
 mod announcements;
 mod campaign;
 mod exports;
+mod invites;
 mod maintenance;
 mod recovery;
+mod scheduling;
 mod seats;
+pub use scheduling::next_local_midnight;
 
 use nc_data::hosted::HostedStore;
 use serde::{Deserialize, Serialize};
@@ -17,6 +20,32 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Request {
+    InviteOnly {
+        game: String,
+    },
+    CreateInvites {
+        game: String,
+        count: u8,
+    },
+    ListInvites {
+        game: String,
+    },
+    RevokeInvite {
+        game: String,
+        invite_id: String,
+    },
+    ClaimInvite {
+        game: String,
+        discord_id: String,
+        code: String,
+    },
+    ConfigureSchedule {
+        game: String,
+        time_zone: Option<String>,
+    },
+    StartConfigured {
+        game: String,
+    },
     SyncPlayerHandle {
         game: String,
         discord_id: String,
@@ -150,6 +179,19 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         .open(root.join(".admin.lock"))?;
     lock.lock()?;
     match request {
+        Request::InviteOnly { game } => invites::restrict(&root, &game),
+        Request::CreateInvites { game, count } => invites::create(&root, &game, count),
+        Request::ListInvites { game } => invites::list(&root, &game),
+        Request::RevokeInvite { game, invite_id } => invites::revoke(&root, &game, &invite_id),
+        Request::ClaimInvite {
+            game,
+            discord_id,
+            code,
+        } => seats::join(&root, &game, &discord_id, None, Some(&code)),
+        Request::ConfigureSchedule { game, time_zone } => {
+            scheduling::configure(&root, &game, time_zone.as_deref())
+        }
+        Request::StartConfigured { game } => scheduling::start(&root, &game),
         Request::SyncPlayerHandle {
             game,
             discord_id,
@@ -203,12 +245,12 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             Some(first_due),
             Some(interval_minutes),
         ),
-        Request::Join { game, discord_id } => seats::join(&root, &game, &discord_id, None),
+        Request::Join { game, discord_id } => seats::join(&root, &game, &discord_id, None, None),
         Request::Replace {
             game,
             seat,
             discord_id,
-        } => seats::join(&root, &game, &discord_id, Some(seat)),
+        } => seats::join(&root, &game, &discord_id, Some(seat), None),
         Request::Authorize { game, discord_id } => seats::authorize(&root, &game, &discord_id),
         Request::Maintain {
             game,

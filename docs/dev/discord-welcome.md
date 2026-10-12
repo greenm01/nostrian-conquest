@@ -4,9 +4,11 @@ Build an empire, explore the galaxy, and conquer rival worlds. NC is a turn-base
 
 **Join a game**
 1. Type `/games` in this server to see the game list.
-2. Use `/join` and enter the game ID to claim an open empire.
+2. For an invite-only game, ask the host for a private code. Enter `/join`, choose the game, and enter your code. Example: `/join game:beta-1 code:YOURCODE`. Open games need no code.
 3. Use `/play` with that game ID. Open the link and sign in with the same Discord account.
 4. Name your empire and issue your orders.
+
+Each code claims one empire. Keep it private. You only need it once; your Discord account owns the seat afterward.
 
 You can also find games at https://play.nostrian-conquest.com.
 

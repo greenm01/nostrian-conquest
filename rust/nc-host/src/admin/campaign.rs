@@ -48,7 +48,8 @@ pub(super) fn inspect(root: &Path, game: &str) -> Result<Value> {
         "players":meta.players,"claimed":seats.len(),"open":meta.players as usize-seats.len(),
         "seats":seats,"next_due":settings.maintenance_next_due_unix_seconds,
         "interval_minutes":settings.maintenance_interval_minutes,"last_backup":last_backup,
-        "writes_blocked":runtime.hosting_writes_blocked()?,"unfinished_runs":unfinished}),
+        "writes_blocked":runtime.hosting_writes_blocked()?,"unfinished_runs":unfinished,
+        "invite_required":invites::required(store.connection())?,"schedule":scheduling::description(store.connection())?}),
     )
 }
 
@@ -127,8 +128,8 @@ pub(super) fn transition(
     if !allowed {
         return Err(format!("cannot change {from} to {to}").into());
     }
-    if to == "running" && due.is_none_or(|due| due <= now()) {
-        return Err("first deadline must be in the future".into());
+    if to == "running" {
+        scheduling::validate_due(store.connection(), due)?;
     }
     if interval.is_some_and(|n| n == 0 || n > 525600) {
         return Err("interval must be 1-525600 minutes".into());
@@ -140,7 +141,7 @@ pub(super) fn transition(
     tx.execute("UPDATE game_metadata SET status=?1,maintenance_enabled=?2,
         maintenance_next_due_unix_seconds=?3,maintenance_interval_minutes=COALESCE(?4,maintenance_interval_minutes),
         recruiting=?5,lobby_visibility=?6,updated_at=?7 WHERE id=?8",
-        params![to,to=="running",due,interval,if to=="recruiting" {"new_players"} else {"none"},
+        params![to,to=="running" && due.is_some(),due,interval,if to=="recruiting" {"new_players"} else {"none"},
         if to=="archived" {"private"} else {"public"},now(),game])?;
     tx.execute(
         "INSERT INTO web_history(at,operation,detail) VALUES (?1,?2,?3)",
@@ -151,7 +152,7 @@ pub(super) fn transition(
         announcements::enqueue(
             &tx,
             "recruiting",
-            &json!({"game":game,"name":meta.name,"kind":"recruiting","players":meta.players}),
+            &json!({"game":game,"name":meta.name,"kind":"recruiting","players":meta.players,"invite_required":invites::required(&tx)?}),
         )?;
     }
     tx.commit()?;
@@ -173,6 +174,6 @@ pub(super) fn catalog(root: &Path) -> Result<Value> {
     Ok(Value::Array(rows.as_array().ok_or("invalid catalog")?.iter()
         .filter(|row| matches!(row["state"].as_str(), Some("recruiting" | "running" | "paused")))
         .map(|row| json!({"game":row["game"],"name":row["name"],"state":row["state"],"year":row["year"],
-            "open":row["open"],"players":row["players"],"next_due":row["next_due"],"interval_minutes":row["interval_minutes"]}))
+            "open":row["open"],"players":row["players"],"next_due":row["next_due"],"interval_minutes":row["interval_minutes"],"invite_required":row["invite_required"],"schedule":row["schedule"]}))
         .collect()))
 }

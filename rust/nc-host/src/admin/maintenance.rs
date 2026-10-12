@@ -163,12 +163,14 @@ fn finalize(store: &HostedStore, game: &str, request_id: &str, year: u16) -> Res
         params![year.to_string(), request_id],
     )?;
     if changed > 0 {
-        let interval = i64::from(settings.maintenance_interval_minutes) * 60;
         let due = settings.maintenance_next_due_unix_seconds.unwrap_or(now());
-        let next = if due + interval > now() {
-            due + interval
+        let next = if scheduling::manual(&tx)? {
+            None
+        } else if due > now() {
+            // An early manual turn must not postpone an upcoming deadline.
+            Some(due)
         } else {
-            now() + interval
+            scheduling::next(&tx, now(), settings.maintenance_interval_minutes)?
         };
         tx.execute(
             "UPDATE game_metadata SET current_year=?1,current_turn=?2,
@@ -208,11 +210,15 @@ pub(super) fn due(root: &Path) -> Result<Value> {
             continue;
         }
         let id = game["game"].as_str().ok_or("missing game ID")?;
-        let interval = game["interval_minutes"]
-            .as_i64()
-            .ok_or("missing interval")?
-            * 60;
-        if now() - deadline >= interval {
+        let (_, store) = store(root, id)?;
+        let next = scheduling::next(
+            store.connection(),
+            deadline,
+            game["interval_minutes"]
+                .as_u64()
+                .ok_or("missing interval")? as u32,
+        )?;
+        if next.is_some_and(|next| now() >= next) {
             campaign::transition(root, id, "paused", None, None)?;
             results.push(json!({"game":id,"paused":true,"reason":"multiple missed deadlines"}));
             continue;

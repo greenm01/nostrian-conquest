@@ -1,0 +1,3 @@
+#!/bin/sh
+# Install root-owned as /usr/local/bin/nc-admin on a community host.
+exec sudo -u nccommunity env NC_GAMES_ROOT=/srv/nc/community/games NC_HOST_BINARY=/opt/nc-community/current/bin/nc-host /opt/nc-community/current/bin/nc-admin "$@"

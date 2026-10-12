@@ -64,7 +64,13 @@ pub(super) fn authorize(root: &Path, game: &str, id: &str) -> Result<Value> {
     )
 }
 
-pub(super) fn join(root: &Path, game: &str, id: &str, replacement: Option<u32>) -> Result<Value> {
+pub(super) fn join(
+    root: &Path,
+    game: &str,
+    id: &str,
+    replacement: Option<u32>,
+    code: Option<&str>,
+) -> Result<Value> {
     validate_id(id)?;
     let (_, store) = store(root, game)?;
     let meta = hosted::get_game_metadata(store.connection(), game)?;
@@ -82,6 +88,7 @@ pub(super) fn join(root: &Path, game: &str, id: &str, replacement: Option<u32>) 
         }
         return authorize(root, game, id);
     }
+    let mut invite = None;
     let seat = if let Some(seat) = replacement {
         if !matches!(meta.status.as_str(), "running" | "paused" | "recruiting")
             || seat == 0
@@ -94,32 +101,60 @@ pub(super) fn join(root: &Path, game: &str, id: &str, replacement: Option<u32>) 
         if meta.status != "recruiting" {
             return Err("this game is not recruiting".into());
         }
-        (1..=meta.players)
-            .find(|seat| {
-                store
-                    .connection()
-                    .query_row(
-                        "SELECT NOT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1)",
-                        [seat],
-                        |r| r.get::<_, bool>(0),
-                    )
-                    .unwrap_or(false)
-            })
-            .ok_or("this game is full")?
+        if invites::required(store.connection())? {
+            let code =
+                code.ok_or("an invite code is required; use /join with the code from the host")?;
+            let (invite_id, seat) = invites::check(store.connection(), id, code)?;
+            invite = Some(invite_id);
+            seat
+        } else {
+            (1..=meta.players)
+                .find(|seat| {
+                    store
+                        .connection()
+                        .query_row(
+                            "SELECT NOT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1)",
+                            [seat],
+                            |r| r.get::<_, bool>(0),
+                        )
+                        .unwrap_or(false)
+                })
+                .ok_or("this game is full")?
+        }
     };
-    store.connection().execute(
+    let tx = store.connection().unchecked_transaction()?;
+    if replacement.is_some() {
+        invites::revoke_seat(&tx, seat)?;
+    } else {
+        let occupied: bool = tx.query_row(
+            "SELECT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1)",
+            [seat],
+            |r| r.get(0),
+        )?;
+        if occupied {
+            return Err("reserved seat is no longer available".into());
+        }
+    }
+    tx.execute(
         "INSERT INTO discord_seats(seat,discord_id) VALUES (?1,?2)
         ON CONFLICT(seat) DO UPDATE SET discord_id=excluded.discord_id",
         params![seat, id],
     )?;
-    campaign::record(
-        &store,
-        if replacement.is_some() {
-            "replace"
-        } else {
-            "join"
-        },
-        &json!({"seat":seat,"discord_id":id}),
+    if let Some(invite_id) = invite {
+        invites::consume(&tx, &invite_id, id)?;
+    }
+    tx.execute(
+        "INSERT INTO web_history(at,operation,detail) VALUES (?1,?2,?3)",
+        params![
+            now(),
+            if replacement.is_some() {
+                "replace"
+            } else {
+                "join"
+            },
+            json!({"seat":seat,"discord_id":id}).to_string()
+        ],
     )?;
+    tx.commit()?;
     authorize(root, game, id)
 }

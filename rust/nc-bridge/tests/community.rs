@@ -318,3 +318,58 @@ async fn old_sessions_need_a_verified_discord_profile_before_play() {
     assert_eq!(status, StatusCode::UNAUTHORIZED);
     assert!(body.contains("Sign in with Discord again"));
 }
+
+#[tokio::test]
+async fn browser_join_cannot_bypass_invite_only_seats() {
+    let (dir, app) = fixture();
+    admin::execute(
+        dir.path(),
+        HostRequest::InviteOnly {
+            game: "public".into(),
+        },
+    )
+    .unwrap();
+    let issued = admin::execute(
+        dir.path(),
+        HostRequest::CreateInvites {
+            game: "public".into(),
+            count: 1,
+        },
+    )
+    .unwrap();
+    let code = issued["invites"][0]["code"].as_str().unwrap();
+    let token = "c".repeat(64);
+    session(dir.path(), &token, "123");
+    assert_eq!(
+        call(
+            &app,
+            "/api/games/public/join",
+            "POST",
+            Some(&token),
+            Some("https://game.example")
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+    let (_, body) = call(&app, "/api/games", "GET", None, None).await;
+    let games: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(games[0]["invite_required"], true);
+    assert!(!body.contains(code));
+    // The bot has verified the account before sending this local operation.
+    admin::execute(
+        dir.path(),
+        HostRequest::ClaimInvite {
+            game: "public".into(),
+            discord_id: "123".into(),
+            code: code.into(),
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        call(&app, "/api/games/public/access", "GET", Some(&token), None)
+            .await
+            .0,
+        StatusCode::OK
+    );
+}

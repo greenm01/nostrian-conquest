@@ -26,14 +26,23 @@ pub(crate) async fn run(data: BotData, http: Arc<Http>, channel: u64) {
                     continue;
                 };
                 let payload = &event["payload"];
+                let join = if payload["invite_required"] == true {
+                    "Ask the host for a private code, then use /join with that code."
+                } else {
+                    "Use /join to reserve a seat."
+                };
+                let next = payload["next_due"]
+                    .as_i64()
+                    .map(|t| format!("Next turn: <t:{t}:F>."))
+                    .unwrap_or_else(|| "Turns run manually; no automatic deadline.".into());
                 let text = match payload["kind"].as_str() {
                     Some("recruiting") => format!(
-                        "`{game}` opened recruitment ({} seats). Use /games for current openings and /join to reserve a seat.\n{}",
+                        "`{game}` opened recruitment ({} seats). Use /games for current openings. {join}\n{}",
                         payload["players"], data.web_url
                     ),
                     Some("turn") => format!(
-                        "`{game}` — maintenance completed for year {}. Reports are available in the terminal. Scheduled next turn: <t:{}:F>.\n{}",
-                        payload["year"], payload["next_due"], data.web_url
+                        "`{game}` — maintenance completed for year {}. Reports are available in the terminal. {next}\n{}",
+                        payload["year"], data.web_url
                     ),
                     _ => continue,
                 };

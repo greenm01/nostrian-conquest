@@ -102,6 +102,10 @@ See Discord's [OAuth2 reference](https://docs.discord.com/developers/topics/oaut
 and [interaction reference](https://docs.discord.com/developers/interactions/receiving-and-responding).
 Commands register within the configured server. The browser lets any authenticated
 Discord account claim an open recruiting seat; server membership is not checked.
+Invite-only games require a single-use code through `/join` in the configured
+Discord server. `/invite` issues one privately and verifies the server owner
+before creating it. The browser cannot claim an invite-only seat without that
+prior bot claim.
 Closed games require an operator replacement, never a public seat selector.
 
 ## Services and browser behavior
@@ -113,8 +117,10 @@ The managed router does not mount them. Keep credentials out of proxy logs;
 do not log OAuth callback query strings.
 
 After setting credentials, start the browser and bot services. Keep the turn
-timer disabled until the private pilot passes. Deadlines default to daily UTC,
-but games start unscheduled. Running `maintenance due` is the scheduler's only
+timer disabled until the private pilot passes. Games start unscheduled. Choose a fixed interval,
+daily midnight in an IANA time zone, or manual turns. A daily calendar follows
+daylight saving; use `America/New_York` for midnight Eastern. Recruitment never
+starts maintenance, even when the game is full. An operator must start the game. Running `maintenance due` is the scheduler's only
 operation. Two missed deadlines pause a game instead of silently catching up.
 
 One account can own one seat in each game; one terminal may occupy that seat.
