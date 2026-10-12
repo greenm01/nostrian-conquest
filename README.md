@@ -1,343 +1,171 @@
 # Nostrian Conquest
 
-_Nostrian Conquest is a from-scratch Rust recreation of the 1990's BBS door game Esterian Conquest. It currently ships as a direct localhost client and BBS door stack, with a planned Nostr GameServer path as the modern network mode. All code is original. It is not affiliated with any historical release._
+Nostrian Conquest is an asynchronous space strategy game inspired by the 1992
+BBS game Esterian Conquest. Build fleets, settle worlds, and outmaneuver rival
+empires. Issue orders when it suits you; return after the next turn to see the
+results.
 
-**Status:** `v1.0.0-beta.3`  
-Active beta. The Rust player and sysop stack is playable now. The main work is live playtesting, bug fixing, and tightening the rough edges.
+**Version:** `v1.0.0-beta.3` — playable beta, with active testing and bug fixes.
 
 ![Nostrian Conquest title screen](docs/assets/nc-hero.png)
 
-[View screenshots](https://nostrian-conquest.com/screenshots.html)
-
-## What It Is
-
-Beyond the mapped frontiers of the old Nostrian dominion lies a small galaxy
-of contested solar systems. The old masters are gone. Their stations are
-silent, their patrols vanished, and their subjects left with fleets, industry,
-and enough knowledge to build empires.
-
-You rise as one of the new Star Masters. From a single world and a few small
-fleets, you must tax, build, scout, bargain, threaten, and strike before rival
-powers can do the same. Some systems will join your banner willingly. Others
-will require persuasion from orbit.
-
-Play is asynchronous and turn-based. Log in on your own schedule, issue orders,
-and return after maintenance for the results. The pace leaves time to plan and
-negotiate.
-
-Each maintenance marks the passage of a year. In that span, fleets cross the
-dark between stars, colonies grow or starve, alliances turn cold, and victory is
-decided by industry, cunning, and will.
-
-NC preserves the yearly-turn campaign rhythm, the reports, the maps, and the
-old-school pressure of the original game. The engine is modern Rust. Campaigns
-run from SQLite. Classic EC compatibility stays at the oracle and import/export
-boundary.
-
-If you want the recovery background, see
-[How the Game Was Recovered](docs/dev/approach.md#how-the-game-was-recovered).
-
-## Community game hosting
-
-The new multi-game host is under validation. Players join through
-[Discord](https://discord.gg/eZMRpdQTu) and play the BBS door in a browser.
-Operators use the Python `scripts/nc-admin` command over SSH; no dashboard is
-required. See [hosting setup](docs/dev/community-hosting.md) and
-[operator commands](tools/nc-admin/README.md). Existing BBS installations do not
-need this stack. Invite-only games use `/join` with a private seat code; operators
-manage codes with `nc-admin invites create/list/revoke`. Daily local-midnight
-schedules follow daylight saving and begin only when the operator starts the game.
-
-## Current Public Roles
-
-Keep the binaries straight:
-
-- `nc-game`: direct localhost player client
-- `nc-door`: BBS door entrypoint
-- `nc-sysop`: sysop and BBS/local campaign administration tool
-- `nc-helm`: Nostr player client in development; not yet available for joining games
-- `nc-cli`: internal developer, oracle, and compatibility tool
-
-A normal non-BBS game directory contains `ncgame.db` and nothing else. BBS
-campaigns add a small per-game `config.kdl` beside it for `players` and
-reserved aliases. That runtime DB is scoped to localhost/BBS play; the planned
-Nostr GameServer path is expected to use its own schema.
+Beyond the old Nostrian frontier lies a galaxy of contested worlds. You begin
+with one planet and a few small fleets. Explore, build, bargain, and fight for
+an empire. Victory is decided by industry, cunning, and will.
 
 ## Play
 
-NC is built for native Windows, Linux, and macOS clients. No web app is
-required. Use `nc-game` for direct same-machine play, `nc-door` when the host
-is a BBS, and keep the planned Nostr GameServer path in mind as the intended
-modern network mode.
+**[Find a game on Discord](https://discord.gg/eZMRpdQTu)** and play in your
+browser. No game client needs to be installed. The browser terminal uses
+xterm.js to keep the ANSI colors, text menus, and keyboard commands of a BBS.
 
-### Public Beta Downloads
+1. Read the pinned start-here post and use `/games` to find a game.
+2. Claim a seat with `/join`. For an invite-only game, get a private code from
+   its host and enter it with the command.
+3. Use `/play`, open the link, and sign in with the same Discord account.
 
-During the current beta, public GitHub Releases publish `nc-sysop` archives for
-Windows x64, Windows x86 (32-bit), Windows 7+ x86 (32-bit), and Linux x64.
-Those archives are the public BBS/sysop package and include `nc-door`,
-`nc-sysop`, and the manuals. Localhost play remains a source-build path. See
-[Release Policy](docs/release-policy.md).
+Already joined? **[Open your game](https://play.nostrian-conquest.com).**
 
-## Learn The Game
+Each turn represents a year. Maintenance resolves everyone's orders on the
+host's schedule; you do not need to stay online. A recruiting game waits for
+its host to start it, even when all seats are taken. The pace leaves time to
+plan and negotiate. Keep a printed map or spreadsheet beside your terminal.
 
-Start with the player quick-start guide, then use the manuals for the full rules:
+Traditional BBS play remains available: connect to a board that hosts NC and
+open it from the doors menu. You can also run a local game from source, as
+shown below.
 
-- **[NC Player Quick Start (PDF)](docs/manuals/nc_quick_start.pdf)**
-- **[NC Player Manual (PDF)](docs/manuals/nc_player_manual.pdf)**
-- **[NC Sysop Manual (PDF)](docs/manuals/nc_sysop_manual.pdf)**
+[View screenshots](https://nostrian-conquest.com/screenshots.html)
 
-To rebuild all three PDFs from their Typst sources, run
-`python3 scripts/refresh_manual_revision_date.py --doc all` (requires Typst).
+## Manuals
 
-Historical `.DOC` files remain preserved in [original/v1.5](original/v1.5).
+- **[Quick Start](https://nostrian-conquest.com/manuals/nc_quick_start.pdf)** — your first orders and turn.
+- **[Player Manual](https://nostrian-conquest.com/manuals/nc_player_manual.pdf)** — joining games, rules, and reference tables.
+- **[Sysop Manual](https://nostrian-conquest.com/manuals/nc_sysop_manual.pdf)** — local and BBS setup and administration.
 
-## Quick Start
+The [manuals page](https://nostrian-conquest.com/manuals.html) opens the PDFs in
+your browser. Their [sources and PDFs](docs/manuals/) are also in this repository.
 
-### 1. Run One Local Game
+## Host a game
 
-Create one game:
+For **Discord and browser games**, use the
+[community hosting guide](docs/dev/community-hosting.md). The Python
+[`nc-admin` CLI](tools/nc-admin/README.md) manages games, seats, invite codes,
+schedules, and backups over SSH. No dashboard is required. Hosts choose when
+to start each game. Daily local-midnight schedules follow daylight saving.
+The hosting stack is in beta; the guide records its remaining acceptance work.
 
-```bash
-cd rust
-cargo run -q -p nc-sysop -- new-game /srv/nc/games/friday-night --name "Friday Night NC" --players 4
-```
+For **BBS hosting**, get the packages from
+[GitHub Releases](https://github.com/greenm01/nostrian-conquest/releases).
+They include `nc-door`, `nc-sysop`, and the manuals. Packages are available for
+Windows x64, Windows x86, Windows 7+ x86, and Linux x64. See the
+[release policy](docs/release-policy.md) and
+[signature verification instructions](docs/release-signing.md).
 
-That game directory contains one runtime file:
+Board setup guides: [Mystic](docs/sysop/bbs/mystic-bbs-setup.md),
+[Synchronet](docs/sysop/bbs/synchronet-bbs-setup.md),
+[ENiGMA½](docs/sysop/bbs/enigma-bbs-setup.md), and
+[WWIV](docs/sysop/bbs/wwiv-bbs-setup.md).
 
-```text
-/srv/nc/games/friday-night/
-  ncgame.db
-```
+## Build and contribute
 
-Open the player client directly:
+The game engine is written in Rust. Campaigns use SQLite; classic EC files can
+be imported or exported through separate compatibility tools. See
+[how the game was recovered](docs/dev/approach.md#how-the-game-was-recovered)
+for the history and [the architecture guide](docs/dev/rust-architecture.md)
+for the code structure.
 
-```bash
-cd rust
-cargo run -q -p nc-game --bin nc-game -- --dir /srv/nc/games/friday-night --player 1
-```
+### Run a local game
 
-Run maintenance when needed:
+Install a current Rust toolchain and a native C/C++ build toolchain. Python 3
+is used by the repository's administration and development scripts. On Linux,
+`nix develop` provides a development shell if you use Nix; enter it from the
+repository root before the commands below.
 
-```bash
-cd rust
-cargo run -q -p nc-sysop -- maint /srv/nc/games/friday-night 1
-```
-
-IMPORTANT: use `--bin nc-game` in source builds. The `nc-game` package also
-ships `nc-door`, so plain `cargo run -p nc-game` is ambiguous.
-
-### 2. Run `nc-door` As A BBS Door
-
-For BBS campaigns, write a minimal per-game `config.kdl` first. For example:
-
-```kdl
-players 4
-reservations {
-  seat player=1 alias="SYSOP"
-}
-```
-
-Then initialize the campaign in BBS mode:
-
-```bash
-cd rust
-cargo run -q -p nc-sysop -- new-game --bbs /srv/nc/games/night-shift
-```
-
-BBS campaigns keep that `config.kdl` beside `ncgame.db`.
-
-Stage `nc-door` as the live BBS binary. For working host setups, see:
-
-- [Mystic BBS Setup](docs/sysop/bbs/mystic-bbs-setup.md)
-- [Synchronet BBS Setup](docs/sysop/bbs/synchronet-bbs-setup.md)
-- [ENiGMA½ BBS Setup](docs/sysop/bbs/enigma-bbs-setup.md)
-- [WWIV BBS Setup](docs/sysop/bbs/wwiv-bbs-setup.md)
-
-### 3. Planned Nostr GameServer Path
-
-The planned modern network path is a Nostr-backed GameServer with `nc-helm` as
-the player client. That stack is still under construction, but it is the
-intended long-term way to host and join NC over the network without direct BBS
-or localhost access.
-
-`nc-helm` is the hosted client architecture. Today it implements the local
-bootstrap, encrypted SQLite keychain flow, lobby shell, and background
-catalog/notices sync on a fresh `winit`/`wgpu`/`glyphon` runtime. Hosted
-dashboard edits stage local turn drafts for build, fleet, tax, diplomacy, and
-quick in-game message orders so they survive returning to the lobby and
-reopening the game.
-
-`nc-host` runs the hosted games. `nc-host serve` runs a game's maintenance
-when its schedule is due, and `nc-host maint <dir> [turns]` runs it by hand.
-Both apply the turns players submitted, run the yearly pass `nc-sysop maint`
-runs, and send every claimed seat its new state over the relay, so a hosted
-game plays like a local one.
-
-Try the new client with:
-
-```bash
-cd rust
-cargo run -q -p nc-helm -- --windowed
-```
-
-Or open a seeded local dashboard directly:
-
-```bash
-cd rust
-cargo run -q -p nc-helm -- --dir /tmp/nc-helm-lab/map45-p25 --windowed
-```
-
-## Operator Docs
-
-- [NC Player Quick Start (PDF)](docs/manuals/nc_quick_start.pdf)
-- [NC Player Manual (PDF)](docs/manuals/nc_player_manual.pdf)
-- [NC Sysop Manual (PDF)](docs/manuals/nc_sysop_manual.pdf)
-- [Sysop Documentation Index](docs/sysop/README.md)
-- [Nostr Roadmap Notes](docs/nostr/README.md)
-
-## Developer Commands
-
-Inspect a game directory:
-
-```bash
-cd rust
-cargo run -q -p nc-cli -- core-report /tmp/nc-game
-```
-
-Inspect player mail:
-
-```bash
-cd rust
-cargo run -q -p nc-cli -- inspect-messages /tmp/nc-game
-```
-
-A game directory holds no classic `.DAT` files. Export the store to get them,
-or import a classic directory to start a store from it:
-
-```bash
-cd rust
-cargo run -q -p nc-cli -- db-export /tmp/nc-game /tmp/nc-game-classic
-cargo run -q -p nc-cli -- db-import /tmp/nc-game-classic
-```
-
-Seed one `nc-helm` stress lab with all four map-size tiers:
-
-```bash
-cd rust
-cargo run -q -p nc-cli -- harness seed-nc-helm-lab --root /tmp/nc-helm-lab
-```
-
-Or use the repo wrapper from the root:
-
-```bash
-python3 scripts/setup_nc_helm_lab.py --root /tmp/nc-helm-lab --force
-```
-
-Submit a turn file without opening the TUI:
-
-```bash
-cd rust
-cargo run -q -p nc-game --bin nc-game -- submit-turn --check --dir /tmp/nc-game --player 1 --file /tmp/turn.kdl
-```
-
-Fuzz the engine with generated multi-turn games. A short run of each driver
-is part of `cargo test` and plays the same games on every run; `NC_FUZZ_CASES`
-sets the number of games and `NC_FUZZ_TURNS` the most turns per game for
-longer runs, and a seed picks another batch (`HEGEL_DERANDOMIZE=false`
-explores at random):
-
-```bash
-cd rust
-NC_FUZZ_CASES=2000 NC_FUZZ_TURNS=12 HEGEL_SEED=7 cargo test -p nc-fuzz --test hegel_driver
-NC_FUZZ_CASES=2000 PROPTEST_RNG_SEED=7 cargo test -p nc-fuzz --test proptest_driver
-```
-
-A failing game is shrunk and written as an `nc-harness` combat scenario with
-its turn files under `$NC_FUZZ_OUT/<driver>` (default `nc-fuzz/<driver>` in
-the system temp directory). Replay it with:
-
-```bash
-cargo run -q -p nc-cli -- harness run-combat --file /tmp/nc-fuzz/hegel/scenario.kdl
-```
-
-Failures worth keeping live under `nc-fuzz/tests/scenarios/` and replay under
-the invariants in `nc-fuzz/tests/replayed_failures.rs`.
-
-Measure engine throughput (maintenance turns per second and games per hour)
-on fixed setups from 2 to 25 players:
-
-```bash
-cargo run --release -p nc-fuzz --example maint_throughput
-```
-
-`nc-cli` remains the internal developer, oracle, and compatibility surface.
-Normal player and sysop workflows should prefer `nc-game`, `nc-door`, and
-`nc-sysop`.
-
-Combat balance models live in [tools/combat-model](tools/combat-model/README.md).
-The odds sweep compares the combat review's resolution candidates on fixed
-matchups without building Rust, and the `combat_odds` example runs the same
-matchups through the engine with fresh combat seeds so the model's
-current-rule numbers can be checked against it
-([workflow](docs/dev/combat-balance-workflow.md)):
+Clone the repository and build the local player and sysop tools:
 
 ```sh
-python3 -I -B tools/combat-model/sweep.py --markdown /tmp/sweep.md --json /tmp/sweep.json
-cargo run --release -p nc-fuzz --example combat_odds -- --trials 20000 --json /tmp/engine.json
-python3 -I -B tools/combat-model/sweep.py --rules current --units baseline --cases engine --engine /tmp/engine.json
+git clone https://github.com/greenm01/nostrian-conquest.git
+cd nostrian-conquest/rust
+cargo build -p nc-game -p nc-sysop
 ```
 
-Hostile-map economy and price controls live in
-[tools/price-campaigns](tools/price-campaigns/README.md). They run scripted
-campaigns through the real engine and record expansion, purchases, losses
-and captures; their policy assumptions and limits are documented with the
-results.
+Run the remaining commands from `rust/`. Choose an unused directory for the
+practice game; this example keeps it under your home directory.
 
-## Local Dependencies
-
-- Rust toolchain
-- Python 3
-- `sccache` (recommended)
-
-### NixOS
-
-For NixOS, enter the repo dev shell before building:
-
-```bash
-nix develop
-cd rust
-cargo build
+```sh
+cargo run -q -p nc-sysop -- new-game "$HOME/nc-games/practice" --name "Practice" --players 4
+cargo run -q -p nc-game --bin nc-game -- --dir "$HOME/nc-games/practice" --player 1
 ```
 
-The flake shell provides the Linux desktop/system libraries used by the native
-clients (`winit`/`wgpu`, X11, Wayland, clipboard support) plus the normal Rust
-tooling.
+The first command creates the campaign and its `ncgame.db`. The second opens
+player 1's terminal. Name your empire, issue orders, and quit the client. Then
+advance one year and return to read the results:
 
-For DOSBox-X, Ghidra, and other compatibility tooling, see the contributor
-docs under `docs/dev/`.
+```sh
+cargo run -q -p nc-sysop -- maint "$HOME/nc-games/practice" 1
+cargo run -q -p nc-game --bin nc-game -- --dir "$HOME/nc-games/practice" --player 1
+```
 
-## For Contributors
+Keep `--bin nc-game`: that package also builds `nc-door`.
 
-Read these first:
+### Test and explore
 
-- [docs/dev/next-session.md](docs/dev/next-session.md)
-- [docs/dev/approach.md](docs/dev/approach.md)
-- [docs/dev/rust-architecture.md](docs/dev/rust-architecture.md)
-- [docs/dev/work-tracking.md](docs/dev/work-tracking.md)
+Run the engine, player, and sysop tests from `rust/`:
 
-## Repository Layout
+```sh
+cargo test -p nc-data -p nc-engine -p nc-game -p nc-sysop
+```
 
-- `original/`: preserved original binaries and manuals
-- `docs/`: manuals, sysop docs, and engineering notes
-- `rust/`: engine, clients, sysop tools, and support crates
-- `tools/`: oracle runners and analysis scripts
-- `scripts/`: install, packaging, and release helpers
+Use `cargo test --workspace` for the full suite. It also builds the graphical
+client and needs its platform libraries. The [Nix development shell](flake.nix)
+includes the Linux display, font, and graphics dependencies.
+
+| Program | Purpose |
+| --- | --- |
+| `nc-game` | Play a local campaign. |
+| `nc-door` | Run the player terminal behind a BBS or browser host. |
+| `nc-sysop` | Create and administer local or BBS games. |
+| `nc-admin` | Administer community browser games through a Python CLI. |
+| `nc-host` | Provide community game operations and the in-development Nostr host. |
+| `nc-bridge` | Serve browser login, game access, and terminal sessions. |
+| `nc-discord` | Provide Discord game discovery and player commands. |
+| `nc-cli` | Inspect game data, run scenarios, and import or export classic files. |
+| `nc-helm` | Nostr player client in development; not yet joinable. |
+
+[Developer commands](docs/dev/developer-commands.md) cover data inspection,
+scripted turns, fuzzing, performance checks, balance models, and Nostr client
+experiments. Keep those experiments separate from live campaigns.
+
+Before contributing, read [the current handoff](docs/dev/next-session.md),
+[project approach](docs/dev/approach.md), [architecture](docs/dev/rust-architecture.md),
+and [work tracking](docs/dev/work-tracking.md). Agents must also follow
+[AGENTS.md](AGENTS.md), including the build-slot rules for shared development
+machines.
+
+The main directories are `rust/` for code, `docs/` for manuals and engineering
+notes, `tools/` for analysis and test tooling, and `scripts/` for build and
+release helpers. `original/` preserves the historical game materials.
+
+To rebuild the manuals, install Typst and run this from the repository root:
+
+```sh
+python3 scripts/refresh_manual_revision_date.py --doc all
+```
+
+## Roadmap
+
+Current work focuses on playtesting, clearer menus and reports, and reliable
+community hosting. Decentralized play through Nostr is planned, but is **not
+available for players to join yet**. The [Nostr design notes](docs/nostr/README.md)
+are developer references, not instructions for joining a live game.
 
 ## License
 
-Source code and tooling are licensed under the **O'Saasy License Agreement**.
-See [LICENSE](LICENSE).
+Source code and tooling use the **O'Saasy License Agreement**; see
+[LICENSE](LICENSE). Original material in the NC manuals uses **CC BY-NC-SA 4.0**,
+with historical material excluded as stated in each manual.
 
-The repository also preserves original `Esterian Conquest` materials for
-research and compatibility work, but Nostrian package archives do not include
-them.
+This is an independent recreation, not an official Esterian Conquest release.
+Preserved historical materials remain credited to their original authors and
+are not included in Nostrian package archives.

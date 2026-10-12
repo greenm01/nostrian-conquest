@@ -207,3 +207,22 @@ Sysop Manual, in that order. Release packages are linked through GitHub Releases
 instead of duplicated platform rows. The landing and screenshot navigation use
 `manuals.html`; `downloads.html` forwards old bookmarks to the new page. The
 narrow-screen layout and all three PDF links were checked before publication.
+
+### t125
+
+Rewrite the README around Play, Manuals, Host a game, Build and contribute,
+Roadmap and License. Lead with Discord/browser play while retaining BBS and
+local options. Keep one paragraph of setting, a concise executable table and
+one complete local development workflow. Move specialist commands into a linked
+developer guide without losing them. Remove stale claims about Nostr being the
+current network route. Verify local setup commands in a disposable game and
+check documentation links before publishing.
+
+The README now follows that structure. Specialist workflows live in
+[Developer commands](../../dev/developer-commands.md), including explicit
+engine/model preset selection for combat comparisons. All relative links in
+both documents resolve. Through cargo-slot, the documented new-game command
+created a disposable four-player campaign and maintenance advanced it from
+3000 to 3001. The nc-game binary built and its help confirmed the player and
+scripted-turn options; this was not an interactive terminal test. The sweep
+CLI help confirmed the comparison flags. No live campaign was changed.
