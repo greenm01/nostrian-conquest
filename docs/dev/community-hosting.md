@@ -4,8 +4,10 @@ Players find games in Discord, claim a seat, and play the existing 80x25 door in
 a browser. `nc-admin` handles operator work over SSH. There is no web dashboard.
 The existing community is <https://discord.gg/eZMRpdQTu>.
 
-This implementation is under local validation. Do not call it a deployed or
-accepted service until Discord login and the private two-game pilot pass.
+The browser and bot services are deployed for acceptance testing. HTTPS,
+the login redirect and all seven guild commands have been verified. Live Discord
+sign-in and the private two-game pilot remain pending; public recruitment and
+scheduled turns have not started.
 
 ## Components
 
