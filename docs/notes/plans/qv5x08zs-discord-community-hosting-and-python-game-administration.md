@@ -186,3 +186,11 @@ required"; its roster stayed unchanged. Beta 1 remains recruiting at year 3000,
 with one owner-reserved seat, three unclaimed seats and no deadline. The owner
 could enter without a code because that Discord ID already held the reserved
 seat. The open-seat count is capacity, not permission to join without an invite.
+
+The landing page now directs new players to the verified community Discord
+invite, with a separate browser link for returning players. The owner wanted
+the terminal style kept but the repeated instructions and technical details
+removed. The relay address, Nostr profile link and decentralized-play claim are
+removed from the landing page because that path is not ready to advertise.
+Desktop and narrow-screen browser previews were checked. This changes discovery
+only; it does not authorize starting Beta 1.
