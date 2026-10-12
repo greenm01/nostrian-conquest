@@ -122,8 +122,10 @@ injection, saved empire preservation and real-door startup.
 The implementation passes 784 tests across nc-host, nc-bridge and nc-game.
 The real-door socket control verifies the saved display handle, terminal output,
 wrong-game rejection, duplicate sessions, logout and cleanup. The startup
-regression shows player and empire names on separate lines. Live deployment
-requires a quiet browser service; existing profiles refresh on the next sign-in.
+regression shows player and empire names on separate lines. Signed release
+`499b81c6` is deployed after a backup and a quiet-session check. Debug and
+release door controls pass; live health and profile storage checks pass.
+Existing profiles refresh on the next sign-in.
 
 ## Connections
 

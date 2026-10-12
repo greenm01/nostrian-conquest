@@ -59,7 +59,8 @@ All 97 affected-crate tests pass. The [welcome post](discord-welcome.md) is post
 and pinned in the approved read-only rocket-marked start-here channel. t122 is
 complete. t123 replaces the browser launcher's `web1` placeholder with a verified
 Discord display name and separates player and empire in the greeting. Its
-784 tests and debug real-door smoke pass; deployment is pending. Existing
+784 tests and debug/release real-door smokes pass. Signed release `499b81c6`
+is deployed; health and profile storage checks pass. Existing
 sessions must sign in again to populate their verified profile.
 
 ## Release context
