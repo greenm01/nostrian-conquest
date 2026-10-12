@@ -55,7 +55,7 @@ Keep the binaries straight:
 - `nc-game`: direct localhost player client
 - `nc-door`: BBS door entrypoint
 - `nc-sysop`: sysop and BBS/local campaign administration tool
-- `nc-helm`: experimental TEA-based hosted player client for the Nostr path
+- `nc-helm`: Nostr player client in development; not yet available for joining games
 - `nc-cli`: internal developer, oracle, and compatibility tool
 
 A normal non-BBS game directory contains `ncgame.db` and nothing else. BBS
