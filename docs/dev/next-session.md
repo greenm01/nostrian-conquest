@@ -52,6 +52,12 @@ privately on the deployment host, and the existing bot installation was verified
 Multi-player acceptance and off-server backup setup remain outstanding.
 Do not mistake synthetic session tests for live login acceptance.
 
+t122's map ZIP and `/help`, `/about`, `/manuals` are deployed in signed release
+`bcf9be05`. All ten guild commands registered; the live ZIP contains the five
+expected files, and both nested workbook archives and their XML validate.
+All 97 affected-crate tests pass. The [welcome post](discord-welcome.md) awaits
+the owner's channel choice before posting and pinning. t122 stays open for that.
+
 ## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their
