@@ -27,7 +27,7 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
             root,
             Request::Join {
                 game: "test".into(),
-                discord_id: id.into(),
+                account: nc_data::AccountIdentity::Discord(id.into()),
             },
         )
         .unwrap();
@@ -39,7 +39,7 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
             root,
             Request::SyncPlayerHandle {
                 game: "test".into(),
-                discord_id: id.into(),
+                account: nc_data::AccountIdentity::Discord(id.into()),
                 display_name: name.into(),
             },
         )
@@ -53,7 +53,7 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
             root,
             Request::Authorize {
                 game: "test".into(),
-                discord_id: "123".into()
+                account: nc_data::AccountIdentity::Discord("123".into())
             }
         )
         .unwrap()["seat"],

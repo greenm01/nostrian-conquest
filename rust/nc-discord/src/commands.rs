@@ -64,12 +64,12 @@ pub async fn join(
     let request = match code {
         Some(code) => Request::ClaimInvite {
             game: game.clone(),
-            discord_id: ctx.author().id.to_string(),
+            account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
             code,
         },
         None => Request::Join {
             game: game.clone(),
-            discord_id: ctx.author().id.to_string(),
+            account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
         },
     };
     let access = match host(ctx.data(), request).await {
@@ -125,7 +125,7 @@ pub async fn play(
         ctx.data(),
         Request::Authorize {
             game: game.clone(),
-            discord_id: ctx.author().id.to_string(),
+            account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
         },
     )
     .await?;
@@ -182,7 +182,7 @@ async fn export(ctx: Context<'_>, game: &str, format: &str) -> Result<Value, Err
         ctx.data(),
         Request::Export {
             game: game.into(),
-            discord_id: ctx.author().id.to_string(),
+            account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
             format: format.into(),
         },
     )

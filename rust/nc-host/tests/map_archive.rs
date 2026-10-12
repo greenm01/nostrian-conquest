@@ -33,7 +33,7 @@ fn bundle_is_authorized_and_all_formats_share_the_player_snapshot() {
         root,
         Request::Join {
             game: "one".into(),
-            discord_id: "123".into(),
+            account: nc_data::AccountIdentity::Discord("123".into()),
         },
     )
     .unwrap();
@@ -61,7 +61,7 @@ fn bundle_is_authorized_and_all_formats_share_the_player_snapshot() {
             root,
             Request::Export {
                 game: game.into(),
-                discord_id: id.into(),
+                account: nc_data::AccountIdentity::Discord(id.into()),
                 format: format.into(),
             },
         )

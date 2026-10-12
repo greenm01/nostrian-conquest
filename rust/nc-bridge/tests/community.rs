@@ -45,8 +45,8 @@ fn session(dir: &std::path::Path, token: &str, id: &str) {
     rusqlite::Connection::open(dir.join(".web-sessions.db"))
         .unwrap()
         .execute(
-            "INSERT OR REPLACE INTO discord_profiles VALUES (?1,'Test Commander')",
-            [id],
+            "INSERT OR REPLACE INTO account_profiles VALUES (?1,'Test Commander')",
+            [format!("discord:{id}")],
         )
         .unwrap();
     rusqlite::Connection::open(dir.join(".web-sessions.db"))
@@ -55,7 +55,7 @@ fn session(dir: &std::path::Path, token: &str, id: &str) {
             "INSERT INTO web_sessions VALUES (?1,?2,?3)",
             rusqlite::params![
                 blake3::hash(token.as_bytes()).to_hex().to_string(),
-                id,
+                format!("discord:{id}"),
                 chrono::Utc::now().timestamp() + 300
             ],
         )
@@ -145,7 +145,7 @@ async fn catalog_and_join_do_not_trust_query_identity() {
     .await;
     assert_eq!(status, StatusCode::OK);
     let seat: Value = serde_json::from_str(&body).unwrap();
-    assert_eq!(seat["discord_id"], "123");
+    assert_eq!(seat["account"]["id"], "123");
     assert_eq!(seat["seat"], 1);
     assert_eq!(
         call(
@@ -251,7 +251,7 @@ async fn zip_download_has_binary_body_and_requires_own_seat() {
         dir.path(),
         HostRequest::Join {
             game: "public".into(),
-            discord_id: "123".into(),
+            account: nc_data::AccountIdentity::Discord("123".into()),
         },
     )
     .unwrap();
@@ -299,13 +299,13 @@ async fn old_sessions_need_a_verified_discord_profile_before_play() {
         dir.path(),
         HostRequest::Join {
             game: "public".into(),
-            discord_id: "123".into(),
+            account: nc_data::AccountIdentity::Discord("123".into()),
         },
     )
     .unwrap();
     rusqlite::Connection::open(dir.path().join(".web-sessions.db"))
         .unwrap()
-        .execute("DELETE FROM discord_profiles", [])
+        .execute("DELETE FROM account_profiles", [])
         .unwrap();
     let (status, body) = call(
         &app,
@@ -316,7 +316,7 @@ async fn old_sessions_need_a_verified_discord_profile_before_play() {
     )
     .await;
     assert_eq!(status, StatusCode::UNAUTHORIZED);
-    assert!(body.contains("Sign in with Discord again"));
+    assert!(body.contains("Sign in again"));
 }
 
 #[tokio::test]
@@ -361,7 +361,7 @@ async fn browser_join_cannot_bypass_invite_only_seats() {
         dir.path(),
         HostRequest::ClaimInvite {
             game: "public".into(),
-            discord_id: "123".into(),
+            account: nc_data::AccountIdentity::Discord("123".into()),
             code: code.into(),
         },
     )

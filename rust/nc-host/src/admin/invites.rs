@@ -37,7 +37,7 @@ pub(super) fn create(root: &Path, game: &str, count: u8) -> Result<Value> {
     ensure(conn)?;
     let mut seats = Vec::new();
     for seat in 1..=meta.players {
-        if conn.query_row("SELECT NOT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1) AND NOT EXISTS(SELECT 1 FROM web_invites WHERE seat=?1 AND state='unused')",[seat],|r|r.get::<_,bool>(0))? { seats.push(seat); }
+        if conn.query_row("SELECT NOT EXISTS(SELECT 1 FROM web_seats WHERE seat=?1) AND NOT EXISTS(SELECT 1 FROM web_invites WHERE seat=?1 AND state='unused')",[seat],|r|r.get::<_,bool>(0))? { seats.push(seat); }
     }
     if seats.len() < usize::from(count) {
         return Err("not enough unclaimed, unreserved seats".into());
@@ -80,7 +80,7 @@ pub(super) fn list(root: &Path, game: &str) -> Result<Value> {
     let mut q = store.connection().prepare(
         "SELECT id,seat,state,created_at,claimed_by FROM web_invites ORDER BY created_at,id",
     )?;
-    let rows=q.query_map([],|r|Ok(json!({"invite_id":r.get::<_,String>(0)?,"seat":r.get::<_,u32>(1)?,"state":r.get::<_,String>(2)?,"created_at":r.get::<_,i64>(3)?,"claimed_by":r.get::<_,Option<String>>(4)?})))?.collect::<std::result::Result<Vec<_>,_>>()?;
+    let rows=q.query_map([],|r|Ok(json!({"invite_id":r.get::<_,String>(0)?,"seat":r.get::<_,u32>(1)?,"state":r.get::<_,String>(2)?,"created_at":r.get::<_,i64>(3)?,"claimed_by":r.get::<_,Option<AccountIdentity>>(4)?})))?.collect::<std::result::Result<Vec<_>,_>>()?;
     Ok(json!({"game":game,"invites":rows}))
 }
 pub(super) fn revoke(root: &Path, game: &str, id: &str) -> Result<Value> {
@@ -98,7 +98,7 @@ pub(super) fn revoke(root: &Path, game: &str, id: &str) -> Result<Value> {
 }
 /// Only called after verifying recruitment and that this account has no seat.
 /// Failed guesses are bounded per account and across the entire game.
-pub(super) fn check(conn: &Connection, id: &str, code: &str) -> Result<(String, u32)> {
+pub(super) fn check(conn: &Connection, id: &AccountIdentity, code: &str) -> Result<(String, u32)> {
     ensure(conn)?;
     conn.execute(
         "DELETE FROM web_invite_attempts WHERE at<=?1",
@@ -130,7 +130,7 @@ pub(super) fn check(conn: &Connection, id: &str, code: &str) -> Result<(String, 
     )?;
     Err("invalid, used or revoked invite code".into())
 }
-pub(super) fn consume(conn: &Connection, invite_id: &str, id: &str) -> Result<()> {
+pub(super) fn consume(conn: &Connection, invite_id: &str, id: &AccountIdentity) -> Result<()> {
     if conn.execute(
         "UPDATE web_invites SET state='claimed',claimed_by=?2 WHERE id=?1 AND state='unused'",
         params![invite_id, id],

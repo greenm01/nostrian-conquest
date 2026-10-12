@@ -1,7 +1,8 @@
 # nc-admin
 
 Python 3.10+ administration for multiple Nostrian Conquest games. It uses only
-the standard library. Rust `nc-host admin` owns every game-state mutation.
+the standard library. Rust `nc-host admin` owns normal game-state mutations. The explicit offline
+pilot conversion below is a one-time deployment exception.
 Run from the repository with `scripts/nc-admin`, or build an executable zipapp:
 
 ```sh
@@ -58,7 +59,7 @@ Starting closes recruitment. Filling every seat never starts the game. Pause blo
 Archive hides a paused game without deleting its database or reports.
 A practice game uses the same rules and does not recycle player empires.
 
-Replacement preserves the empire and revokes the prior account's seat:
+Replacement preserves the empire and revokes all prior account bindings for the seat:
 
 ```sh
 nc-admin games replace practice --seat 2 --discord-id 123456789012345678 --confirm practice
@@ -130,8 +131,10 @@ An operator replacement revokes any unused code for that seat.
 
 The Discord server owner can also use `/invite game:beta-1` for one code in a
 private reply. The friend uses `/join game:beta-1 code:YOURCODE` and then `/play
-game:beta-1`. The authenticated Discord ID owns the seat; the code is not a login
-password. Failed claims are limited to five per account and 100 per game in ten
+game:beta-1`. Alternatively, a player signs in on the website with Discord or
+a NIP-07 Nostr extension and enters the code on the game card. The verified
+identity owns the seat; the code is not a login password. Once claimed, the code
+cannot be reused by the other provider, even for the same person. Failed claims are limited to five per account and 100 per game in ten
 minutes. The browser cannot bypass the invite requirement.
 
 **Only when you are ready to launch**, run:
@@ -159,3 +162,82 @@ The global timer skips manual games and games still recruiting. Configuring a
 schedule does not start a draft, recruiting or paused game. Changes to a running
 game take effect immediately. Starting and resuming are operator commands, not
 player bot commands.
+
+
+## Operator account access
+
+These are local sysop controls, not advertised player features. The operator
+must verify that the account/key belongs to the intended player before granting
+access: either identity can play the empire and read its private reports.
+Never accept a reused invite code as proof of ownership.
+
+To allow both providers on an existing Discord seat, link the player's **public**
+Nostr key (64 lowercase hex characters, not a private key):
+
+```sh
+nc-admin games link-account practice --seat 2 --nostr-pubkey PUBLIC_KEY_HEX --confirm practice
+nc-admin games inspect practice --json
+```
+
+For a Nostr seat, use `--discord-id DISCORD_ID` instead. There can be one identity
+of each provider per seat, and an identity cannot belong to two seats in one
+game. Linking is idempotent and never consumes, creates or restores an invite.
+Both identities share one terminal lease; changing login method does not permit
+simultaneous sessions on the same seat.
+
+Remove one provider without changing the empire:
+
+```sh
+nc-admin games unlink-account practice --seat 2 --discord-id DISCORD_ID --confirm practice
+```
+
+Unlinking removes only that identity's access in this game. Its active terminal
+fails authorization before subsequent input or on the next five-second check.
+The final identity cannot be unlinked; use `games replace` to transfer the seat
+to a different account/key. Replacement removes every existing binding, even
+when keeping an identity already attached to that seat. Both replacement and
+linking support either `--discord-id` or `--nostr-pubkey`, exclusively. Inspection
+returns one row per seat with an `accounts` array. Account changes are recorded
+in operator history and are allowed only while recruiting, running or paused.
+
+## Offline pilot identity conversion
+
+The new binaries expect the shared identity schema. They do not automatically
+upgrade old databases. Use `convert_community_identities.py` only for the current
+October 2026 community pilot schema; it does not modify the separate Nostr/BBS
+hosting databases or old backup directories.
+
+1. Stage the matching host, bridge, bot, Python client and static assets.
+2. Stop the community bridge and bot and stop turn/backup timers and services.
+   Stop the whole bridge control group so no door child survives. Keep campaign
+   lifecycle state unchanged; **do not pause/resume or start Beta 1**.
+3. Run the read-only preview, then conversion as the game service account:
+
+```sh
+python3 tools/nc-admin/convert_community_identities.py --root /srv/nc/community/games
+python3 tools/nc-admin/convert_community_identities.py --root /srv/nc/community/games --apply --backup-dir /srv/nc/community/pre-identity-upgrade
+```
+
+The backup directory must be new and outside the games root. The tool holds the
+bridge and admin locks, checks SQLite integrity, backs up campaign databases and
+browser profiles/sessions, and writes SHA-256 hashes in `identity-conversion.json`.
+Protect this directory: it contains private state. Conversion preserves seats,
+invite hashes/states, failed-guess history, profiles, campaign years and schedules.
+Old sessions and pending OAuth logins are expired. Original audit entries remain
+unchanged. A handled conversion failure restores already touched databases from
+the backup; after a process/host crash, keep services stopped and recover from
+that backup before retrying.
+
+4. Switch all components together and restart services/timers. Check health,
+   existing Discord ownership, unused code claims, and a real nos2x login using
+   disposable games. Verify Beta 1 remains recruiting with no deadline.
+
+Rollback requires stopping all components and restoring the matching backup
+with the previous binaries, not running old binaries against new databases.
+The conversion backup is a whole-root deployment snapshot with its own hash
+manifest; it is not an `nc-admin backup restore` campaign archive. Restore the
+saved database files while services are stopped and clear obsolete destination
+SQLite WAL/SHM files. Verify hashes and integrity before starting the old release.
+When restoring an older campaign archive for use with the new release, first
+verify/restore it with the matching old release into an isolated root, then run
+this conversion there.

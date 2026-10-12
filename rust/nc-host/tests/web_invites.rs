@@ -32,7 +32,7 @@ fn claim(root: &Path, game: &str, account: &str, code: &str) -> nc_host::admin::
         root,
         Request::ClaimInvite {
             game: game.into(),
-            discord_id: account.into(),
+            account: nc_data::AccountIdentity::Discord(account.into()),
             code: code.into(),
         },
     )
@@ -76,7 +76,7 @@ fn codes_bind_once_case_insensitively_without_starting_a_full_game() {
         root,
         Request::Join {
             game: "one".into(),
-            discord_id: "100".into(),
+            account: nc_data::AccountIdentity::Discord("100".into()),
         },
     )
     .unwrap();
@@ -93,7 +93,7 @@ fn no_code_cannot_bypass_reservations_and_listing_never_returns_secrets() {
             root,
             Request::Join {
                 game: "one".into(),
-                discord_id: "123".into()
+                account: nc_data::AccountIdentity::Discord("123".into())
             }
         )
         .is_err()
@@ -145,7 +145,7 @@ fn revocation_reissues_a_seat_and_replacement_invalidates_its_code() {
         Request::Replace {
             game: "one".into(),
             seat: 2,
-            discord_id: "234".into(),
+            account: nc_data::AccountIdentity::Discord("234".into()),
         },
     )
     .unwrap();
@@ -166,7 +166,7 @@ fn revocation_reissues_a_seat_and_replacement_invalidates_its_code() {
             root,
             Request::Authorize {
                 game: "one".into(),
-                discord_id: "123".into()
+                account: nc_data::AccountIdentity::Discord("123".into())
             }
         )
         .is_ok()

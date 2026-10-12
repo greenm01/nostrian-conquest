@@ -26,6 +26,13 @@ xterm.js to keep the ANSI colors, text menus, and keyboard commands of a BBS.
 
 Already joined? **[Open your game](https://play.nostrian-conquest.com).**
 
+Hosts running the updated browser service can also offer **Sign in with Nostr**
+using a NIP-07 extension such as nos2x. Sign in, enter the host's invite code on
+the game card, and play alongside Discord players. A code works once across
+both login methods; return with the same account or key. This login option
+requires the hosting update and is not yet deployed on the public pilot.
+
+
 Each turn represents a year. Maintenance resolves everyone's orders on the
 host's schedule; you do not need to stay online. A recruiting game waits for
 its host to start it, even when all seats are taken. The pace leaves time to

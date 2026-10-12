@@ -44,7 +44,7 @@ pub(super) async fn connect(
         &state,
         Request::Authorize {
             game: game.clone(),
-            discord_id: id.clone(),
+            account: id.clone(),
         },
     )
     .await
@@ -90,7 +90,7 @@ pub(super) async fn connect(
         &state,
         Request::SyncPlayerHandle {
             game: game.clone(),
-            discord_id: id.clone(),
+            account: id.clone(),
             display_name: name,
         },
     )
@@ -119,7 +119,7 @@ pub(super) async fn reconnect(
         &state,
         Request::Authorize {
             game: game.clone(),
-            discord_id: id,
+            account: id,
         },
     )
     .await
@@ -141,7 +141,7 @@ pub(super) async fn reconnect(
 async fn run(
     mut ws: WebSocket,
     lease: Lease,
-    id: String,
+    id: nc_data::AccountIdentity,
     mut cancel: tokio::sync::watch::Receiver<bool>,
 ) {
     if let Err(error) = pump(&mut ws, &lease, &id, &mut cancel).await {
@@ -157,7 +157,7 @@ async fn run(
 async fn pump(
     ws: &mut WebSocket,
     lease: &Lease,
-    id: &str,
+    id: &nc_data::AccountIdentity,
     cancel: &mut tokio::sync::watch::Receiver<bool>,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let listener = TcpListener::bind("127.0.0.1:0").await?;
@@ -233,15 +233,15 @@ async fn pump(
     result
 }
 
-async fn still_authorized(lease: &Lease, id: &str) -> bool {
-    if auth::identity(&lease.state, &lease.headers).ok().as_deref() != Some(id) {
+async fn still_authorized(lease: &Lease, id: &nc_data::AccountIdentity) -> bool {
+    if auth::identity(&lease.state, &lease.headers).ok().as_ref() != Some(id) {
         return false;
     }
     let access = host(
         &lease.state,
         Request::Authorize {
             game: lease.key.0.clone(),
-            discord_id: id.into(),
+            account: id.clone(),
         },
     )
     .await;

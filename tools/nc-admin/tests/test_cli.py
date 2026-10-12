@@ -68,6 +68,15 @@ class AdminTests(unittest.TestCase):
         with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
             parser().parse_args(["games","schedule","beta-1","--manual","--midnight","America/New_York"])
 
+    def test_operator_identity_changes_require_one_provider_and_confirmation(self):
+        for command in ['replace','link-account','unlink-account']:
+            for flag,provider,id in [('--discord-id','discord','123'),('--nostr-pubkey','nostr','a'*64)]:
+                argv=['games',command,'one','--seat','1',flag,id,'--confirm','one']
+                self.assertEqual(request_for(parser().parse_args(argv)),{'action':command.replace('-','_'),'game':'one','seat':1,'account':{'provider':provider,'id':id}})
+                with self.assertRaises(AdminError): request_for(parser().parse_args(argv[:-1]+['wrong']))
+            with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+                parser().parse_args(['games',command,'one','--seat','1','--discord-id','123','--nostr-pubkey','a'*64,'--confirm','one'])
+
     def test_timeout_never_retries_mutation(self):
         with patch('subprocess.run',side_effect=subprocess.TimeoutExpired('nc-host',1)) as run:
             with self.assertRaises(AdminError):Client(Path('/games'),'nc-host').call({'action':'maintain'})

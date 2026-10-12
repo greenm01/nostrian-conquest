@@ -23,11 +23,12 @@ def admin(root, binary, **request):
     return json.loads(p.stdout)['data']
 
 
-def request(port, method, path, token=None):
+def request(port, method, path, token=None, body=None):
     conn=http.client.HTTPConnection('127.0.0.1',port,timeout=10)
     headers={'Origin':f'http://127.0.0.1:{port}'}
     if token: headers['Cookie']=f'nc_session={token}'
-    conn.request(method,path,headers=headers)
+    if body is not None: headers['Content-Type']='application/json'
+    conn.request(method,path,body=json.dumps(body) if body is not None else None,headers=headers)
     response=conn.getresponse();status=response.status;body=response.read();conn.close()
     return status,body
 
@@ -75,43 +76,73 @@ def main():
                     except OSError:pass
                     time.sleep(.1)
                 else:raise AssertionError('bridge did not start')
-                # Copy the hash from the one-time login nonce. It uses exactly
-                # the same hash function as sessions, with no test auth endpoint.
-                conn=http.client.HTTPConnection('127.0.0.1',port)
-                conn.request('GET','/auth/login');response=conn.getresponse()
-                token=response.getheader('Set-Cookie').split(';')[0].split('=')[1];response.read();conn.close()
-                with sqlite3.connect(root/'.web-sessions.db') as db:
-                    digest=db.execute('SELECT token FROM oauth_states').fetchone()[0]
-                    db.execute('INSERT INTO web_sessions VALUES (?,?,?)',(digest,'123',int(time.time())+60))
-                    db.execute('INSERT INTO discord_profiles VALUES (?,?)',('123','Smoke Commander'))
-                assert request(port,'POST','/api/games/one/join',token)[0]==200
-                assert request(port,'GET','/api/games/two/exports/reports',token)[0]==409
-                sock,status=websocket(port,token);assert status==101,status
-                output=b''
-                for _ in range(20):
-                    opcode,payload=receive(sock)
-                    assert opcode!=8,'door closed before rendering'
-                    output+=payload
-                    if len(output)>100:break
-                assert len(output)>100,'door produced no terminal output'
-                with sqlite3.connect(root/'one/ncgame.db') as db:
-                    handle=db.execute('SELECT handle FROM snapshot_players WHERE record_index=1 ORDER BY snapshot_id DESC LIMIT 1').fetchone()[0]
-                    assert handle=='Smoke Commander',handle
-                other,status=websocket(port,token);other.close();assert status==409,status
-                assert request(port,'POST','/auth/logout',token)[0]==200
-                deadline=time.monotonic()+10
-                while time.monotonic()<deadline:
-                    try:
-                        opcode,_=receive(sock)
-                        if opcode==8:break
-                    except EOFError:break
-                else:raise AssertionError('logout did not close terminal')
-                sock.close()
+                def session(account, name):
+                    # Synthetic auth is confined to this disposable fixture.
+                    conn=http.client.HTTPConnection('127.0.0.1',port)
+                    conn.request('GET','/auth/login');response=conn.getresponse()
+                    token=response.getheader('Set-Cookie').split(';')[0].split('=')[1];response.read();conn.close()
+                    with sqlite3.connect(root/'.web-sessions.db') as db:
+                        digest=db.execute('SELECT token FROM oauth_states ORDER BY rowid DESC LIMIT 1').fetchone()[0]
+                        db.execute('INSERT INTO web_sessions VALUES (?,?,?)',(digest,account,int(time.time())+120))
+                        db.execute('INSERT INTO account_profiles VALUES (?,?)',(account,name))
+                    return token
+                def rendered(sock):
+                    output=b''
+                    for _ in range(20):
+                        opcode,payload=receive(sock)
+                        assert opcode!=8,'door closed before rendering'
+                        output+=payload
+                        if len(output)>100:return len(output)
+                    raise AssertionError('door produced no terminal output')
+                def closed(sock):
+                    deadline=time.monotonic()+10
+                    while time.monotonic()<deadline:
+                        try:
+                            opcode,_=receive(sock)
+                            if opcode==8:break
+                        except EOFError:break
+                    else:raise AssertionError('revocation did not close terminal')
+                    sock.close()
+                key='79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798'
+                alias_key='c6047f9441ed7d6d3045406e95c07cd85c778e4b8cef3ca7abac09b95c709ee5'
+                discord=session('discord:123','Discord Commander')
+                nostr=session('nostr:'+key,'Nostr Commander')
+                alias=session('nostr:'+alias_key,'Linked Commander')
+                admin(root,args.host,action='invite_only',game='one')
+                codes=admin(root,args.host,action='create_invites',game='one',count=2)['invites']
+                assert request(port,'POST','/api/games/one/join',discord,{'code':codes[0]['code']})[0]==200
+                assert request(port,'POST','/api/games/one/join',nostr,{'code':codes[0]['code']})[0]==409
+                assert request(port,'POST','/api/games/one/join',nostr,{'code':codes[1]['code']})[0]==200
+                assert request(port,'GET','/api/games/two/exports/reports',nostr)[0]==409
+                assert request(port,'GET','/api/games/one/exports/map-zip',nostr)[0]==200
+                sockets=[];total=0
+                for token,seat,name in [(discord,1,'Discord Commander'),(nostr,2,'Nostr Commander')]:
+                    sock,status=websocket(port,token);assert status==101,status
+                    sockets.append(sock);total+=rendered(sock)
+                    with sqlite3.connect(root/'one/ncgame.db') as db:
+                        handle=db.execute('SELECT handle FROM snapshot_players WHERE record_index=? ORDER BY snapshot_id DESC LIMIT 1',(seat,)).fetchone()[0]
+                        assert handle==name,handle
+                account={'provider':'nostr','id':alias_key}
+                admin(root,args.host,action='link_account',game='one',seat=1,account=account)
+                other,status=websocket(port,alias);other.close();assert status==409,status
+                assert request(port,'POST','/auth/logout',discord)[0]==200
+                closed(sockets[0])
+                # The alternate identity can use the same empire after the old terminal closes.
+                linked,status=websocket(port,alias);assert status==101,status
+                total+=rendered(linked)
+                admin(root,args.host,action='unlink_account',game='one',seat=1,account=account)
+                closed(linked)
+                assert request(port,'GET','/api/games/one/access',alias)[0]==409
+                assert request(port,'POST','/auth/logout',nostr)[0]==200
+                closed(sockets[1])
                 for _ in range(100):
                     if not list((root/'.nodes').iterdir()):break
                     time.sleep(.05)
                 else:raise AssertionError('terminal lease was not cleaned up')
-                print(json.dumps({'ok':True,'terminal_bytes':len(output),'checks':['real-door-render','wrong-game-export','duplicate-seat','logout-revocation','lease-cleanup']}))
+                game=admin(root,args.host,action='inspect',game='one')
+                assert (game['claimed'],game['state'],game['year'],game['next_due'])==(2,'recruiting',3000,None)
+                print(json.dumps({'ok':True,'terminal_bytes':total,'checks':['mixed-provider-real-doors','invite-single-use','wrong-game-export','linked-seat-exclusion','operator-unlink-revocation','logout-revocation','lease-cleanup','recruiting-hold']}))
+
             except Exception:
                 log.flush();log.seek(0);print(log.read());raise
             finally:

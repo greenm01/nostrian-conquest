@@ -1,4 +1,5 @@
 //! Local, transport-independent operations shared by nc-admin and the bridge.
+mod account_links;
 mod announcements;
 mod campaign;
 mod exports;
@@ -9,6 +10,7 @@ mod scheduling;
 mod seats;
 pub use scheduling::next_local_midnight;
 
+pub use nc_data::AccountIdentity;
 use nc_data::hosted::HostedStore;
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
@@ -36,7 +38,7 @@ pub enum Request {
     },
     ClaimInvite {
         game: String,
-        discord_id: String,
+        account: AccountIdentity,
         code: String,
     },
     ConfigureSchedule {
@@ -48,7 +50,7 @@ pub enum Request {
     },
     SyncPlayerHandle {
         game: String,
-        discord_id: String,
+        account: AccountIdentity,
         display_name: String,
     },
     List,
@@ -60,7 +62,7 @@ pub enum Request {
     },
     Export {
         game: String,
-        discord_id: String,
+        account: AccountIdentity,
         format: String,
     },
     VerifyBackup {
@@ -104,16 +106,26 @@ pub enum Request {
     },
     Join {
         game: String,
-        discord_id: String,
+        account: AccountIdentity,
     },
     Authorize {
         game: String,
-        discord_id: String,
+        account: AccountIdentity,
     },
     Replace {
         game: String,
         seat: u32,
-        discord_id: String,
+        account: AccountIdentity,
+    },
+    LinkAccount {
+        game: String,
+        seat: u32,
+        account: AccountIdentity,
+    },
+    UnlinkAccount {
+        game: String,
+        seat: u32,
+        account: AccountIdentity,
     },
     Maintain {
         game: String,
@@ -185,18 +197,18 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         Request::RevokeInvite { game, invite_id } => invites::revoke(&root, &game, &invite_id),
         Request::ClaimInvite {
             game,
-            discord_id,
+            account,
             code,
-        } => seats::join(&root, &game, &discord_id, None, Some(&code)),
+        } => seats::join(&root, &game, &account, None, Some(&code)),
         Request::ConfigureSchedule { game, time_zone } => {
             scheduling::configure(&root, &game, time_zone.as_deref())
         }
         Request::StartConfigured { game } => scheduling::start(&root, &game),
         Request::SyncPlayerHandle {
             game,
-            discord_id,
+            account,
             display_name,
-        } => seats::sync_handle(&root, &game, &discord_id, &display_name),
+        } => seats::sync_handle(&root, &game, &account, &display_name),
         Request::List => campaign::list(&root),
         Request::Catalog => campaign::catalog(&root),
         Request::Announcements => announcements::pending(&root),
@@ -205,9 +217,9 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         }
         Request::Export {
             game,
-            discord_id,
+            account,
             format,
-        } => exports::render(&root, &game, &discord_id, &format),
+        } => exports::render(&root, &game, &account, &format),
         Request::VerifyBackup { path } => recovery::verify(Path::new(&path)),
         Request::Restore { path, game } => recovery::restore(&root, Path::new(&path), &game),
         Request::Inspect { game } => campaign::inspect(&root, &game),
@@ -245,13 +257,23 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             Some(first_due),
             Some(interval_minutes),
         ),
-        Request::Join { game, discord_id } => seats::join(&root, &game, &discord_id, None, None),
+        Request::Join { game, account } => seats::join(&root, &game, &account, None, None),
         Request::Replace {
             game,
             seat,
-            discord_id,
-        } => seats::join(&root, &game, &discord_id, Some(seat), None),
-        Request::Authorize { game, discord_id } => seats::authorize(&root, &game, &discord_id),
+            account,
+        } => seats::join(&root, &game, &account, Some(seat), None),
+        Request::Authorize { game, account } => seats::authorize(&root, &game, &account),
+        Request::LinkAccount {
+            game,
+            seat,
+            account,
+        } => account_links::change(&root, &game, seat, &account, true),
+        Request::UnlinkAccount {
+            game,
+            seat,
+            account,
+        } => account_links::change(&root, &game, seat, &account, false),
         Request::Maintain {
             game,
             expected_year,
@@ -293,7 +315,7 @@ fn store(root: &Path, game: &str) -> Result<(PathBuf, HostedStore)> {
     }
     let store = HostedStore::open(&dir.join("hosted.db"))?;
     let managed: bool = store.connection().query_row(
-        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='discord_seats')",
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='web_seats')",
         [],
         |r| r.get(0),
     )?;

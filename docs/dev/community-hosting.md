@@ -1,10 +1,12 @@
 # Community hosting
 
-Players find games in Discord, claim a seat, and play the existing 80x25 door in
-a browser. `nc-admin` handles operator work over SSH. There is no web dashboard.
+Players find games, claim a seat with Discord or a NIP-07 Nostr signer, and play
+the existing 80x25 door in a browser. `nc-admin` handles operator work over SSH. There is no web dashboard.
 The existing community is <https://discord.gg/eZMRpdQTu>.
 
-The browser and bot services are deployed for acceptance testing. HTTPS,
+The Discord browser and bot services are deployed for acceptance testing.
+The shared-identity/NIP-07 update is implemented in source; production conversion,
+deployment and attended nos2x acceptance remain separate work. HTTPS,
 the login redirect and the initial seven guild commands have been verified. The
 owner has tested sign-in, empire setup, saved orders and reports after two manual
 turns. A fresh invite-only lobby is recruiting, with its owner seat reserved. The turn
@@ -17,7 +19,7 @@ acceptance and automated off-server copying remain pending.
 
 - `nc-host admin` provides local JSON operations and durable turn receipts.
 - Python `nc-admin` invokes those operations without editing game databases.
-- `nc-bridge --games-root` serves a public game list, Discord login, authorized
+- `nc-bridge --games-root` serves a public game list, Discord/Nostr login, authorized
   downloads and terminal sessions. It launches `nc-door` with a server-selected
   seat. Browser query parameters cannot choose an identity or seat.
 - `nc-discord` registers commands in one configured Discord server. `/games`,
@@ -87,7 +89,8 @@ server exchanges the code, verifies the account with Discord, and stores a
 hashed random session cookie. OAuth state expires after five minutes and is
 single use. Cookies are HttpOnly, Secure over HTTPS, and SameSite=Lax.
 
-The Discord ID is the permanent seat key. The verified account display name
+The account provider and verified ID identify a seat. Discord uses its numeric
+account ID; Nostr uses the signing public key. The verified account display name
 becomes the in-game player handle when the browser terminal opens; the username
 is the fallback when no display name is set. Names may change or match another
 player's name without changing ownership. The empire name remains the player's
@@ -106,11 +109,41 @@ See Discord's [OAuth2 reference](https://docs.discord.com/developers/topics/oaut
 and [interaction reference](https://docs.discord.com/developers/interactions/receiving-and-responding).
 Commands register within the configured server. The browser lets any authenticated
 Discord account claim an open recruiting seat; server membership is not checked.
-Invite-only games require a single-use code through `/join` in the configured
-Discord server. `/invite` issues one privately and verifies the server owner
-before creating it. The browser cannot claim an invite-only seat without that
-prior bot claim.
+Invite-only games require a single-use code through the browser game card or
+`/join` in the configured Discord server. `/invite` issues one privately and verifies the server owner
+before creating it. Both browser providers and the bot use one invite store. A successful claim
+consumes the code globally; it cannot claim or link an identity on another
+provider. Returning owners need no new code.
 Closed games require an operator replacement, never a public seat selector.
+
+## Nostr browser login
+
+The browser offers **Sign in with Nostr** through `window.nostr.signEvent`, as
+provided by nos2x and other NIP-07 extensions. The signer authorizes a NIP-98
+POST to `/auth/nostr`; no event is published and no relay is required. Private
+keys never reach the host. Discord configuration remains required for this
+combined service.
+
+`POST /auth/nostr/challenge` creates a five-minute random challenge tied to an
+HttpOnly browser cookie. The signed event must have kind 27235, empty content,
+a timestamp within 60 seconds, the exact configured URL and POST method, and a
+SHA-256 hash of the raw login body. Signature, event ID, origin, browser cookie
+and challenge are verified. Challenge consumption and session creation commit
+together. Login bodies contain `challenge` and optional `display_name` only.
+
+Nostr players can enter a player name, retain their saved name by leaving it
+blank, or initially use `Nostr-<12 hex characters>`. Names are untrusted labels;
+the verified public key determines access. Existing handle sanitization applies.
+The login chooser displays the current provider and account before claiming.
+
+`POST /api/games/{game}/join` accepts `{ "code": "..." }`; identity always comes
+from the authenticated session. `/api/me` returns `account` (provider and ID)
+and `display_name`. Local host requests now use `account` instead of
+`discord_id`; ship host, bridge, bot and Python client together.
+
+See the [operator identity and conversion instructions](../../tools/nc-admin/README.md#operator-account-access)
+for restricted account administration and the offline upgrade. These controls
+are not exposed in the player UI or Discord commands.
 
 ## Services and browser behavior
 
@@ -127,7 +160,8 @@ daylight saving; use `America/New_York` for midnight Eastern. Recruitment never
 starts maintenance, even when the game is full. An operator must start the game. Running `maintenance due` is the scheduler's only
 operation. Two missed deadlines pause a game instead of silently catching up.
 
-One account can own one seat in each game; one terminal may occupy that seat.
+One identity can access one seat in each game; one terminal may occupy that seat,
+including when the operator has enabled both providers for it.
 Reconnect closes the older session explicitly. Sign-out, expiry, replacement,
 pause or maintenance ends its authorization; active sessions check before input
 and every five seconds. A terminal has a thirty-minute maximum and a five-minute
@@ -158,13 +192,15 @@ Never load a newer incompatible database with an older binary. Restore a matchin
 backup into an unused root and verify it while paused before switching services.
 Classic `.DAT` exports are not backups of modern runtime state or account bindings.
 
-Before public recruitment, exercise two isolated games with two real Discord
-accounts: simultaneous orders; claim retry; wrong-account map/report rejection;
+Before deploying this update, exercise two isolated games with real Discord and
+nos2x sign-ins: simultaneous orders; claim retry; wrong-account map/report rejection;
 reconnect and logout; live maintenance; independent deadlines; pause/resume;
 backup/restore; a killed turn before and after its receipt; replacement; and
 child cleanup after terminal disconnect. On an attended browser, check login,
 box-drawing, 80x25 menus, keyboard input, downloads and return to the game list.
-A synthetic session test does not replace the real Discord login check.
+A synthetic session test does not replace real Discord OAuth or nos2x extension
+acceptance. Validate signed login, signing rejection, switching keys, single-use
+invites across providers, and operator unlink revocation as well.
 
 ## Website PDF viewing
 

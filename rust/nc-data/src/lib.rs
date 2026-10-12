@@ -3,6 +3,7 @@
 /// which its ROE prompt offers.
 pub const NEW_FLEET_DEFAULT_ROE: u8 = 6;
 
+mod account;
 mod bbs_config;
 mod builder;
 mod classic_results;
@@ -40,6 +41,7 @@ mod storage;
 mod support;
 mod turns;
 
+pub use account::AccountIdentity;
 pub use bbs_config::{BbsGameConfig, BbsGameConfigError, SeatReservation};
 pub use builder::{
     FleetOrderSpec, GameStateBuilder, GuardStarbaseSpec, PlanetBuildSpec,

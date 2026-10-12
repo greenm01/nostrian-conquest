@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 11),
+  date: datetime(year: 2026, month: 10, day: 12),
 )
 
 #set page(
@@ -74,7 +74,7 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 11, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 12, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
 ]
@@ -168,6 +168,14 @@ For an invite-only game, ask its host for a private code.
 Each invite code claims one seat. Keep it private. You only need it once;
 your Discord account owns the seat afterward. Your player handle comes from
 your Discord display name. Your empire name is a separate name you choose.
+
+On hosts offering *Sign in with Nostr*, you can instead use a NIP-07 browser
+extension such as nos2x. Approve the login, enter your invite code on the game
+card, and choose *Play*. Return using the same Nostr key. You may enter a player
+name when signing in; a blank name keeps your saved name or uses a short key
+label initially. Discord and Nostr players share the same games. Codes are
+single-use across both login methods. This option requires the updated host;
+it is separate from relay-based Nostr GameServer play.
 
 A recruiting game waits for its host to start it. Players can join and prepare
 orders while they wait. Filling all seats or opening *Play* does not start the

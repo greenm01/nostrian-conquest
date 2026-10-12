@@ -2,7 +2,7 @@ use super::*;
 use base64::Engine;
 use nc_data::{CampaignStore, build_player_starmap_projection_from_snapshots};
 
-pub(super) fn render(root: &Path, game: &str, id: &str, format: &str) -> Result<Value> {
+pub(super) fn render(root: &Path, game: &str, id: &AccountIdentity, format: &str) -> Result<Value> {
     let access = seats::authorize(root, game, id)?;
     let seat = access["seat"].as_u64().ok_or("missing seat")? as u8;
     let (dir, _) = store(root, game)?;

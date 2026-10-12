@@ -28,7 +28,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="nc-admin", parents=[common], allow_abbrev=False)
     groups = p.add_subparsers(dest="group", required=True)
     games = groups.add_parser("games", parents=[common]).add_subparsers(dest="command", required=True)
-    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "invite-only"):
+    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "link-account", "unlink-account", "invite-only"):
         sub = games.add_parser(command, parents=[common], allow_abbrev=False)
         if command != "list": sub.add_argument("game")
         if command == "create":
@@ -44,10 +44,12 @@ def parser() -> argparse.ArgumentParser:
             schedule.add_argument("--manual", action="store_true")
         if command in ("start", "schedule"):
             sub.add_argument("--interval-minutes", type=int, default=1440)
-        if command == "replace":
+        if command in ("replace", "link-account", "unlink-account"):
             sub.add_argument("--seat", type=int, required=True)
-            sub.add_argument("--discord-id", required=True)
-            sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm replacement")
+            identity = sub.add_mutually_exclusive_group(required=True)
+            identity.add_argument("--discord-id")
+            identity.add_argument("--nostr-pubkey", help="64-character lowercase hex public key")
+            sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm the account change")
         if command == "archive": sub.add_argument("--confirm", required=True)
     invites = groups.add_parser("invites", parents=[common]).add_subparsers(dest="command", required=True)
     for command in ("create", "list", "revoke"):
@@ -91,14 +93,15 @@ def request_for(args: argparse.Namespace) -> dict:
     if args.group == "maintenance":
         if args.command == "due": return {"action":"due"}
         return {"action":"maintain", "game":args.game, "expected_year":args.expect_year, "request_id":args.request_id}
-    request = {"action":args.command}
+    request = {"action":args.command.replace("-", "_")}
     if args.command != "list": request["game"] = args.game
     if args.command == "create": request.update(name=args.name or args.game, players=args.players, seed=args.seed)
     if args.command in ("start", "resume", "schedule"): request["first_due"] = args.first_due
     if args.command in ("start", "schedule"): request["interval_minutes"] = args.interval_minutes
-    if args.command in ("replace", "archive") and args.confirm != args.game:
+    if args.command in ("replace", "link-account", "unlink-account", "archive") and args.confirm != args.game:
         raise AdminError("confirmation must exactly match the game ID")
-    if args.command == "replace": request.update(seat=args.seat, discord_id=args.discord_id)
+    if args.command in ("replace", "link-account", "unlink-account"):
+        request.update(seat=args.seat, account={"provider":"discord" if args.discord_id else "nostr", "id":args.discord_id or args.nostr_pubkey})
     return request
 
 

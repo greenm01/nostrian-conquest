@@ -31,12 +31,18 @@ pub(super) fn inspect(root: &Path, game: &str) -> Result<Value> {
         .ok_or("missing campaign snapshot")?;
     let mut stmt = store
         .connection()
-        .prepare("SELECT seat,discord_id FROM discord_seats ORDER BY seat")?;
-    let seats = stmt
-        .query_map([], |r| {
-            Ok(json!({"seat":r.get::<_,u32>(0)?,"discord_id":r.get::<_,String>(1)?}))
-        })?
-        .collect::<std::result::Result<Vec<_>, _>>()?;
+        .prepare("SELECT seat,account FROM web_seats ORDER BY seat,account")?;
+    let mut grouped = std::collections::BTreeMap::<u32, Vec<AccountIdentity>>::new();
+    for row in stmt.query_map([], |r| {
+        Ok((r.get::<_, u32>(0)?, r.get::<_, AccountIdentity>(1)?))
+    })? {
+        let (seat, account) = row?;
+        grouped.entry(seat).or_default().push(account);
+    }
+    let seats: Vec<_> = grouped
+        .into_iter()
+        .map(|(seat, accounts)| json!({"seat":seat,"accounts":accounts}))
+        .collect();
     let mut runs = store.connection().prepare("SELECT request_id,expected_year,state FROM web_runs WHERE state!='done' ORDER BY started_at DESC")?;
     let unfinished=runs.query_map([],|r|Ok(json!({"request_id":r.get::<_,String>(0)?,"expected_year":r.get::<_,u16>(1)?,"state":r.get::<_,String>(2)?})))?.collect::<std::result::Result<Vec<_>,_>>()?;
     let last_backup: Option<String> =
@@ -68,7 +74,7 @@ pub(super) fn create(
     let result = (|| -> Result<()> {
         let store = HostedStore::create(&dir.join("hosted.db"))?;
         store.connection().execute_batch(
-            "CREATE TABLE discord_seats(seat INTEGER PRIMARY KEY, discord_id TEXT NOT NULL UNIQUE);
+            "CREATE TABLE web_seats(seat INTEGER NOT NULL, account TEXT PRIMARY KEY NOT NULL);
              CREATE TABLE web_runs(request_id TEXT PRIMARY KEY, expected_year INTEGER NOT NULL, state TEXT NOT NULL,
                  result TEXT, started_at INTEGER NOT NULL);
              CREATE TABLE web_history(id INTEGER PRIMARY KEY, at INTEGER NOT NULL, operation TEXT NOT NULL, detail TEXT NOT NULL);

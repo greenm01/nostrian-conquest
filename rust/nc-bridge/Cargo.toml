@@ -9,6 +9,9 @@ name = "nc-bridge"
 path = "src/main.rs"
 
 [dependencies]
+nostr-sdk = { version = "0.44", default-features = false }
+base64 = "0.22"
+sha2 = "0.10"
 nc-host = { path = "../nc-host" }
 nc-data = { path = "../nc-data" }
 rusqlite = { version = "0.31", features = ["bundled"] }

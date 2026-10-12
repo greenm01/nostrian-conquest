@@ -1,5 +1,6 @@
 use super::*;
 use axum::response::Redirect;
+use nc_data::AccountIdentity;
 use rusqlite::{Connection, OptionalExtension, params};
 
 pub(super) fn cookie(headers: &HeaderMap, name: &str) -> Option<String> {
@@ -14,7 +15,7 @@ pub(super) fn cookie(headers: &HeaderMap, name: &str) -> Option<String> {
                 .then(|| value.to_owned())
         })
 }
-fn digest(value: &str) -> String {
+pub(super) fn digest(value: &str) -> String {
     blake3::hash(value.as_bytes()).to_hex().to_string()
 }
 pub(super) fn token() -> String {
@@ -22,27 +23,37 @@ pub(super) fn token() -> String {
         .map(|_| format!("{:02x}", rand::random::<u8>()))
         .collect()
 }
-fn connection(state: &Community) -> Result<Connection, String> {
+pub(super) fn connection(state: &Community) -> Result<Connection, String> {
     Connection::open(state.config.games_root.join(".web-sessions.db")).map_err(|e| e.to_string())
 }
 pub(super) fn initialize(config: &Config) -> Result<(), String> {
     std::fs::create_dir_all(&config.games_root).map_err(|e| e.to_string())?;
     let conn =
         Connection::open(config.games_root.join(".web-sessions.db")).map_err(|e| e.to_string())?;
-    conn.execute_batch("CREATE TABLE IF NOT EXISTS web_sessions(token TEXT PRIMARY KEY,discord_id TEXT NOT NULL,expires INTEGER NOT NULL);
+    let legacy: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM pragma_table_info('web_sessions') WHERE name='discord_id')", [], |r| r.get(0)).map_err(|e| e.to_string())?;
+    if legacy {
+        return Err(
+            "Run the offline community identity conversion before starting this bridge".into(),
+        );
+    }
+    conn.execute_batch("CREATE TABLE IF NOT EXISTS web_sessions(token TEXT PRIMARY KEY,account TEXT NOT NULL,expires INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS oauth_states(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);
-        CREATE TABLE IF NOT EXISTS discord_profiles(discord_id TEXT PRIMARY KEY,display_name TEXT NOT NULL);") .map_err(|e|e.to_string())?;
+        CREATE TABLE IF NOT EXISTS account_profiles(account TEXT PRIMARY KEY,display_name TEXT NOT NULL);
+        CREATE TABLE IF NOT EXISTS nostr_challenges(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);") .map_err(|e|e.to_string())?;
     Ok(())
 }
-pub(super) fn identity(state: &Community, headers: &HeaderMap) -> Result<String, Response> {
-    let token = cookie(headers, "nc_session")
-        .ok_or_else(|| error(StatusCode::UNAUTHORIZED, "Sign in with Discord"))?;
+pub(super) fn identity(
+    state: &Community,
+    headers: &HeaderMap,
+) -> Result<AccountIdentity, Response> {
+    let token =
+        cookie(headers, "nc_session").ok_or_else(|| error(StatusCode::UNAUTHORIZED, "Sign in"))?;
     let id = connection(state)
         .and_then(|conn| {
             conn.query_row(
-                "SELECT discord_id FROM web_sessions WHERE token=?1 AND expires>?2",
+                "SELECT account FROM web_sessions WHERE token=?1 AND expires>?2",
                 params![digest(&token), chrono::Utc::now().timestamp()],
-                |r| r.get::<_, String>(0),
+                |r| r.get::<_, AccountIdentity>(0),
             )
             .optional()
             .map_err(|e| e.to_string())
@@ -53,9 +64,9 @@ pub(super) fn identity(state: &Community, headers: &HeaderMap) -> Result<String,
                 "Session storage unavailable",
             )
         })?;
-    id.ok_or_else(|| error(StatusCode::UNAUTHORIZED, "Sign in with Discord"))
+    id.ok_or_else(|| error(StatusCode::UNAUTHORIZED, "Sign in"))
 }
-fn set_cookie(state: &Community, name: &str, value: &str, age: u32) -> String {
+pub(super) fn set_cookie(state: &Community, name: &str, value: &str, age: u32) -> String {
     format!(
         "{name}={value}; Path=/; HttpOnly; SameSite=Lax; Max-Age={age}{}",
         if state.config.origin.starts_with("https://") {
@@ -170,38 +181,21 @@ pub(super) async fn callback(
     let Ok((id, name)) = result else {
         return error(StatusCode::BAD_GATEWAY, "Discord login failed; try again");
     };
-    let token = token();
-    if let Err(_) = connection(&state).and_then(|mut conn| {
+    let account = AccountIdentity::Discord(id);
+    let result = connection(&state).and_then(|mut conn| {
         let tx = conn.transaction().map_err(|e| e.to_string())?;
-        tx.execute(
-            "INSERT INTO discord_profiles(discord_id,display_name) VALUES (?1,?2)
-            ON CONFLICT(discord_id) DO UPDATE SET display_name=excluded.display_name",
-            params![id, name],
-        )
-        .map_err(|e| e.to_string())?;
-        tx.execute(
-            "INSERT INTO web_sessions(token,discord_id,expires) VALUES (?1,?2,?3)",
-            params![
-                digest(&token),
-                id,
-                chrono::Utc::now().timestamp() + 86400 * 14
-            ],
-        )
-        .map_err(|e| e.to_string())?;
-        tx.commit().map_err(|e| e.to_string())
-    }) {
+        let token = save_session(&tx, &account, Some(&name))?;
+        tx.commit().map_err(|e| e.to_string())?;
+        Ok(token)
+    });
+    let Ok(token) = result else {
         return error(
             StatusCode::SERVICE_UNAVAILABLE,
             "Session storage unavailable",
         );
-    }
+    };
     let mut response = Redirect::to("/").into_response();
-    response.headers_mut().append(
-        "set-cookie",
-        set_cookie(&state, "nc_session", &token, 86400 * 14)
-            .parse()
-            .unwrap(),
-    );
+    session_cookie(&state, &mut response, &token);
     response.headers_mut().append(
         "set-cookie",
         set_cookie(&state, "nc_login", "", 0).parse().unwrap(),
@@ -209,11 +203,53 @@ pub(super) async fn callback(
     response
 }
 
-pub(super) fn display_name(state: &Community, id: &str) -> Result<String, Response> {
+/// Caller owns the transaction, including challenge consumption for Nostr.
+pub(super) fn save_session(
+    conn: &Connection,
+    account: &AccountIdentity,
+    name: Option<&str>,
+) -> Result<String, String> {
+    if let Some(name) = name {
+        conn.execute(
+            "INSERT INTO account_profiles(account,display_name) VALUES (?1,?2)
+            ON CONFLICT(account) DO UPDATE SET display_name=excluded.display_name",
+            params![account, name],
+        )
+        .map_err(|e| e.to_string())?;
+    } else if let AccountIdentity::Nostr(key) = account {
+        conn.execute(
+            "INSERT OR IGNORE INTO account_profiles(account,display_name) VALUES (?1,?2)",
+            params![account, format!("Nostr-{}", &key[..12])],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    let token = token();
+    conn.execute(
+        "INSERT INTO web_sessions(token,account,expires) VALUES (?1,?2,?3)",
+        params![
+            digest(&token),
+            account,
+            chrono::Utc::now().timestamp() + 86400 * 14
+        ],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(token)
+}
+
+pub(super) fn session_cookie(state: &Community, response: &mut Response, token: &str) {
+    response.headers_mut().append(
+        "set-cookie",
+        set_cookie(state, "nc_session", token, 86400 * 14)
+            .parse()
+            .unwrap(),
+    );
+}
+
+pub(super) fn display_name(state: &Community, id: &AccountIdentity) -> Result<String, Response> {
     let name = connection(state)
         .and_then(|conn| {
             conn.query_row(
-                "SELECT display_name FROM discord_profiles WHERE discord_id=?1",
+                "SELECT display_name FROM account_profiles WHERE account=?1",
                 [id],
                 |r| r.get::<_, String>(0),
             )
@@ -229,7 +265,7 @@ pub(super) fn display_name(state: &Community, id: &str) -> Result<String, Respon
     name.ok_or_else(|| {
         error(
             StatusCode::UNAUTHORIZED,
-            "Sign in with Discord again to load your display name",
+            "Sign in again to load your display name",
         )
     })
 }

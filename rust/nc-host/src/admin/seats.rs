@@ -2,7 +2,12 @@ use super::*;
 use nc_data::hosted;
 use rusqlite::{OptionalExtension, params};
 
-pub(super) fn sync_handle(root: &Path, game: &str, id: &str, display_name: &str) -> Result<Value> {
+pub(super) fn sync_handle(
+    root: &Path,
+    game: &str,
+    id: &AccountIdentity,
+    display_name: &str,
+) -> Result<Value> {
     let access = authorize(root, game, id)?;
     if access["can_play"] != true {
         return Err("campaign is not accepting sessions".into());
@@ -39,54 +44,45 @@ pub(super) fn sync_handle(root: &Path, game: &str, id: &str, display_name: &str)
     Ok(json!({"seat":seat,"handle":handle}))
 }
 
-fn validate_id(id: &str) -> Result<()> {
-    if id.is_empty() || id.len() > 20 || !id.bytes().all(|b| b.is_ascii_digit()) {
-        return Err("invalid Discord account ID".into());
-    }
-    Ok(())
-}
-
-pub(super) fn authorize(root: &Path, game: &str, id: &str) -> Result<Value> {
-    validate_id(id)?;
+pub(super) fn authorize(root: &Path, game: &str, id: &AccountIdentity) -> Result<Value> {
+    id.validate()?;
     let (_, store) = store(root, game)?;
     let seat: Option<u32> = store
         .connection()
-        .query_row(
-            "SELECT seat FROM discord_seats WHERE discord_id=?1",
-            [id],
-            |r| r.get(0),
-        )
+        .query_row("SELECT seat FROM web_seats WHERE account=?1", [id], |r| {
+            r.get(0)
+        })
         .optional()?;
     let seat = seat.ok_or("no seat belongs to this account in this game")?;
     let status = hosted::get_game_metadata(store.connection(), game)?.status;
     Ok(
-        json!({"game":game,"seat":seat,"discord_id":id,"state":status,"can_play":matches!(status.as_str(),"recruiting"|"running")}),
+        json!({"game":game,"seat":seat,"account":id,"state":status,"can_play":matches!(status.as_str(),"recruiting"|"running")}),
     )
 }
 
 pub(super) fn join(
     root: &Path,
     game: &str,
-    id: &str,
+    id: &AccountIdentity,
     replacement: Option<u32>,
     code: Option<&str>,
 ) -> Result<Value> {
-    validate_id(id)?;
+    id.validate()?;
     let (_, store) = store(root, game)?;
     let meta = hosted::get_game_metadata(store.connection(), game)?;
     let existing: Option<u32> = store
         .connection()
-        .query_row(
-            "SELECT seat FROM discord_seats WHERE discord_id=?1",
-            [id],
-            |r| r.get(0),
-        )
+        .query_row("SELECT seat FROM web_seats WHERE account=?1", [id], |r| {
+            r.get(0)
+        })
         .optional()?;
     if let Some(seat) = existing {
         if replacement.is_some_and(|wanted| wanted != seat) {
             return Err("account already holds another seat".into());
         }
-        return authorize(root, game, id);
+        if replacement.is_none() {
+            return authorize(root, game, id);
+        }
     }
     let mut invite = None;
     let seat = if let Some(seat) = replacement {
@@ -102,8 +98,7 @@ pub(super) fn join(
             return Err("this game is not recruiting".into());
         }
         if invites::required(store.connection())? {
-            let code =
-                code.ok_or("an invite code is required; use /join with the code from the host")?;
+            let code = code.ok_or("an invite code is required; enter the code from the host")?;
             let (invite_id, seat) = invites::check(store.connection(), id, code)?;
             invite = Some(invite_id);
             seat
@@ -113,7 +108,7 @@ pub(super) fn join(
                     store
                         .connection()
                         .query_row(
-                            "SELECT NOT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1)",
+                            "SELECT NOT EXISTS(SELECT 1 FROM web_seats WHERE seat=?1)",
                             [seat],
                             |r| r.get::<_, bool>(0),
                         )
@@ -125,9 +120,10 @@ pub(super) fn join(
     let tx = store.connection().unchecked_transaction()?;
     if replacement.is_some() {
         invites::revoke_seat(&tx, seat)?;
+        tx.execute("DELETE FROM web_seats WHERE seat=?1", [seat])?;
     } else {
         let occupied: bool = tx.query_row(
-            "SELECT EXISTS(SELECT 1 FROM discord_seats WHERE seat=?1)",
+            "SELECT EXISTS(SELECT 1 FROM web_seats WHERE seat=?1)",
             [seat],
             |r| r.get(0),
         )?;
@@ -136,8 +132,7 @@ pub(super) fn join(
         }
     }
     tx.execute(
-        "INSERT INTO discord_seats(seat,discord_id) VALUES (?1,?2)
-        ON CONFLICT(seat) DO UPDATE SET discord_id=excluded.discord_id",
+        "INSERT INTO web_seats(seat,account) VALUES (?1,?2)",
         params![seat, id],
     )?;
     if let Some(invite_id) = invite {
@@ -152,7 +147,7 @@ pub(super) fn join(
             } else {
                 "join"
             },
-            json!({"seat":seat,"discord_id":id}).to_string()
+            json!({"seat":seat,"account":id}).to_string()
         ],
     )?;
     tx.commit()?;

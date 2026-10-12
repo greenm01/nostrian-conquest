@@ -1,5 +1,6 @@
 //! Authenticated browser hosting. Legacy single-game bridge routes are separate.
 mod auth;
+mod auth_nostr;
 mod terminal;
 use axum::{
     Json, Router,
@@ -50,7 +51,7 @@ pub fn router(config: Config) -> Result<Router, String> {
     if config.client_id.is_empty() || config.client_secret.is_empty() || config.max_sessions == 0 {
         return Err("Discord credentials and a positive session limit are required".into());
     }
-    auth::initialize(&config)?;
+    std::fs::create_dir_all(&config.games_root).map_err(|e| e.to_string())?;
     let instance_lock = std::fs::OpenOptions::new()
         .create(true)
         .truncate(false)
@@ -61,6 +62,7 @@ pub fn router(config: Config) -> Result<Router, String> {
     instance_lock
         .try_lock()
         .map_err(|_| "another bridge owns this games root".to_string())?;
+    auth::initialize(&config)?;
     let assets = config.static_dir.clone();
     let state = Arc::new(Community {
         _instance_lock: instance_lock,
@@ -79,6 +81,8 @@ pub fn router(config: Config) -> Result<Router, String> {
         .route("/auth/login", get(auth::login))
         .route("/auth/callback", get(auth::callback))
         .route("/auth/logout", post(auth::logout))
+        .route("/auth/nostr/challenge", post(auth_nostr::challenge))
+        .route("/auth/nostr", post(auth_nostr::login))
         .route("/api/games", get(games))
         .route("/api/me", get(me))
         .route("/api/games/{game}/join", post(join))
@@ -91,6 +95,7 @@ pub fn router(config: Config) -> Result<Router, String> {
             get(|| async { Json(json!({"service":"nc-community","ok":true})) }),
         )
         .nest_service("/terminal", tower_http::services::ServeDir::new(assets))
+        .layer(axum::extract::DefaultBodyLimit::max(16 * 1024))
         .layer(axum::middleware::from_fn(private_response))
         .with_state(state))
 }
@@ -119,14 +124,24 @@ async fn games(State(state): State<Arc<Community>>) -> Response {
 }
 async fn me(State(state): State<Arc<Community>>, headers: HeaderMap) -> Response {
     match auth::identity(&state, &headers) {
-        Ok(id) => Json(json!({"discord_id":id})).into_response(),
+        Ok(id) => match auth::display_name(&state, &id) {
+            Ok(name) => Json(json!({"account":id,"display_name":name})).into_response(),
+            Err(response) => response,
+        },
         Err(response) => response,
     }
 }
+#[derive(Deserialize, Default)]
+#[serde(deny_unknown_fields)]
+struct JoinBody {
+    code: Option<String>,
+}
+
 async fn join(
     State(state): State<Arc<Community>>,
     headers: HeaderMap,
     Path(game): Path<String>,
+    body: axum::body::Bytes,
 ) -> Response {
     if let Err(response) = check_origin(&state, &headers) {
         return response;
@@ -135,15 +150,23 @@ async fn join(
         Ok(id) => id,
         Err(response) => return response,
     };
-    match host(
-        &state,
-        Request::Join {
+    let body: JoinBody = if body.is_empty() {
+        JoinBody::default()
+    } else {
+        match serde_json::from_slice(&body) {
+            Ok(body) => body,
+            Err(_) => return error(StatusCode::BAD_REQUEST, "Invalid join request"),
+        }
+    };
+    let request = match body.code {
+        Some(code) => Request::ClaimInvite {
             game,
-            discord_id: id,
+            account: id,
+            code,
         },
-    )
-    .await
-    {
+        None => Request::Join { game, account: id },
+    };
+    match host(&state, request).await {
         Ok(data) => Json(data).into_response(),
         Err(response) => response,
     }
@@ -159,7 +182,7 @@ async fn export(
     };
     let request = Request::Export {
         game,
-        discord_id: id,
+        account: id,
         format,
     };
     match host(&state, request).await {
@@ -222,7 +245,7 @@ async fn access(
         &state,
         Request::Authorize {
             game,
-            discord_id: id.clone(),
+            account: id.clone(),
         },
     )
     .await

@@ -223,7 +223,7 @@
             document.getElementById('games-link').hidden = false;
             try {
                 const response = await fetch(`/api/games/${encodeURIComponent(game)}/access`, {credentials: 'same-origin'});
-                if (response.status === 401) {location.href = '/auth/login'; return;}
+                if (response.status === 401) {location.href = '/'; return;}
                 const access = await response.json();
                 if (!response.ok || !access.can_play) {
                     term.writeln(`\r\n${access.error || 'Campaign is not accepting sessions.'} Return to Games.\r\n`);
