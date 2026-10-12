@@ -165,3 +165,14 @@ backup/restore; a killed turn before and after its receipt; replacement; and
 child cleanup after terminal disconnect. On an attended browser, check login,
 box-drawing, 80x25 menus, keyboard input, downloads and return to the game list.
 A synthetic session test does not replace the real Discord login check.
+
+## Website PDF viewing
+
+The public Manuals page links to `/manuals/nc_quick_start.pdf`,
+`/manuals/nc_player_manual.pdf` and `/manuals/nc_sysop_manual.pdf` on the website.
+Publish the PDFs from `docs/manuals/` into the web root's `manuals/` directory
+whenever they are rebuilt; do not keep a second generated copy in the repository.
+Serve them as `application/pdf` without an attachment disposition. These links
+open a new tab and let the browser's PDF viewer display the document. A user's
+browser setting to always download PDFs takes precedence. GitHub raw-file links
+may force a download and are not used on this page.
