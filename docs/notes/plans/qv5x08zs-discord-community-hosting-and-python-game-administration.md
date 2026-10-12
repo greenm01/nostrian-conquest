@@ -201,3 +201,9 @@ private code claims, matching Discord identity, the host-controlled start, map
 ZIP downloads and reports. Nostr GameServer is explicitly roadmap-only and not
 yet joinable. The PDF was rebuilt and its connection pages checked for content
 and layout; the command list stays together on its own page.
+
+The website's Downloads entry is now Manuals: Quick Start, Player Manual and
+Sysop Manual, in that order. Release packages are linked through GitHub Releases
+instead of duplicated platform rows. The landing and screenshot navigation use
+`manuals.html`; `downloads.html` forwards old bookmarks to the new page. The
+narrow-screen layout and all three PDF links were checked before publication.
