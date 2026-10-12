@@ -70,7 +70,7 @@
   #v(1em)
   #text(size: 10pt, style: "italic")[A Rust recreation inspired by the classic 1990s BBS door game Esterian Conquest.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Built for localhost and BBS play. A Nostr GameServer path is planned.]
+  #text(size: 10pt, fill: luma(120))[Find games on Discord. Play in your browser, on a BBS, or locally.]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
@@ -128,50 +128,83 @@ In homage to the 1990s door-game pioneers and to the ancient dreamers, strategis
 
 = Connecting to a Game
 
-== Three Ways to Play
+== Choose How to Play
 
-Nostrian Conquest has three practical ways to play.
+*Discord and browser play* is the recommended way to join a community game.
+Find a game in Discord, claim an empire, and open the game in your browser.
+No game client needs to be installed. The browser terminal uses *xterm.js* to
+preserve the old-school BBS feel: ANSI colors, text menus, and keyboard commands
+in an 80×25 screen.
 
-The direct path is *Localhost*. In that mode you or your sysop runs `nc-game`
-directly on the same machine. Use this for solo play, hotseat testing, and
-trusted same-machine sessions. If you are setting that up yourself, see the
-*Sysop Manual* section *Localhost Session Setup*.
+*Traditional BBS play* remains available. Connect to a bulletin board with a
+terminal client and launch NC from its doors menu. The sysop runs `nc-door`
+behind the board. See the *Sysop Manual* section *BBS Door Setup* for hosting
+instructions.
 
-The classic path is *BBS*. In that mode you log into a bulletin board with a
-terminal client and launch the game from the doors menu. The sysop stages
-`nc-door` behind the BBS. If you are the sysop, see the *Sysop Manual* section
-*BBS Door Setup*.
+*Localhost play* runs `nc-game` directly on the same machine as the campaign.
+Use it for solo play, hotseat testing, or trusted local sessions. See the
+*Sysop Manual* section *Localhost Session Setup* if you are hosting it yourself.
 
-The planned network path is *Nostr GameServer*. That path is still under
-development. For now, treat localhost and BBS as the normal ways to play.
+#admonition("NOTE", [
+  Decentralized play through *Nostr GameServer* is on the roadmap. It is not
+  available for players to join yet. Use Discord and browser play, a BBS, or a
+  local game today.
+])
 
-== Finding New Games
+== Find a Game on Discord
 
-If you are joining a private localhost campaign, your sysop tells you which
-machine and player slot to use.
+Join the #link("https://discord.gg/eZMRpdQTu")[Nostrian Conquest Discord server]
+and read the pinned start-here post. Use `/games` to find games and their IDs.
+For an invite-only game, ask its host for a private code.
 
-If you are joining a BBS campaign, connect to the bulletin board normally and
-launch the game from the doors menu. Your sysop may reserve a seat for your BBS
-alias, or may leave open seats available from the first-time join menu.
+1. Use `/join` with the game ID. If the game needs an invite, enter your code
+   too: `/join game:beta-1 code:YOURCODE`. Replace the example game ID and code
+   with the ones your host gave you.
+2. Use `/play` with that game ID. Open the link and sign in with the *same
+   Discord account* you used to claim your seat.
+3. Name your empire and issue your orders. Return through `/play` or the
+   #link("https://play.nostrian-conquest.com")[browser game list].
 
-If you are waiting for the Nostr GameServer path, watch the main project docs.
-It is planned, but it is not the normal join path yet.
+Each invite code claims one seat. Keep it private. You only need it once;
+your Discord account owns the seat afterward. Your player handle comes from
+your Discord display name. Your empire name is a separate name you choose.
 
-== Joining a Game
+A recruiting game waits for its host to start it. Players can join and prepare
+orders while they wait. Filling all seats or opening *Play* does not start the
+game. The host sets the turn schedule; `/status` shows the next deadline once
+scheduled. You do not need to stay online when maintenance runs.
 
-For localhost play, the normal direct launch is:
+#pagebreak()
+
+== Useful Discord Commands
+
+Give the game ID when a command asks for one. Bot replies and empire downloads
+are private to you.
+
+- `/status` — Check the game year and next turn.
+- `/map` — Download your known map as a ZIP with text, CSV, ODS, and Excel files.
+- `/report` — Download your empire's reports. You can also read them in the game
+  inbox.
+- `/manuals` — Open the quick-start guide and this manual.
+- `/help` — See all bot commands.
+
+Keep a printed map or spreadsheet beside your terminal to track your plans.
+
+== Join Through a BBS or Localhost
+
+For a BBS campaign, connect to the board normally and launch NC from its doors
+menu. Your sysop may reserve a seat for your BBS alias or leave seats open in
+the game's first-time join menu. A reserved alias takes you to its assigned
+empire. Discord invite codes are for community browser games, not BBS logins.
+
+For localhost play, your sysop tells you which machine and player slot to use.
+The normal direct launch is:
 
 ```sh
 nc-game --dir /path/to/mygame --player 1
 ```
 
-Your sysop may give you a different player number or run the command for you on
-the local machine.
-
-For BBS play, the sysop launches `nc-door` from the board software and the
-caller enters through the normal first-time or returning-player flow inside the
-game. If your BBS alias is reserved for a seat, the door routes you there
-automatically.
+Your sysop may give you a different player number or run the command for you.
 
 #pagebreak()
 

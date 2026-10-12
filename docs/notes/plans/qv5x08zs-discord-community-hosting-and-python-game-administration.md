@@ -194,3 +194,10 @@ removed. The relay address, Nostr profile link and decentralized-play claim are
 removed from the landing page because that path is not ready to advertise.
 Desktop and narrow-screen browser previews were checked. This changes discovery
 only; it does not authorize starting Beta 1.
+
+The player manual now recommends Discord discovery and browser play through
+xterm.js, while retaining traditional BBS and localhost instructions. It covers
+private code claims, matching Discord identity, the host-controlled start, map
+ZIP downloads and reports. Nostr GameServer is explicitly roadmap-only and not
+yet joinable. The PDF was rebuilt and its connection pages checked for content
+and layout; the command list stays together on its own page.
