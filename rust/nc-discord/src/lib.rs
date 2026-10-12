@@ -1,7 +1,6 @@
 //! Discord discovery and authenticated, private campaign downloads.
 mod announcements;
 mod commands;
-pub mod excel;
 
 use nc_host::admin::{self, Request};
 use serde_json::Value;
@@ -46,7 +45,7 @@ pub async fn run_bot(
     let guild_id = GuildId::new(guild);
     let framework=poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![commands::games(),commands::join(),commands::play(),commands::status(),commands::map(),commands::report(),commands::guide()],
+            commands: commands(),
             command_check: Some(|ctx| Box::pin(async move {Ok(ctx.guild_id()==Some(ctx.data().guild_id))})),
             on_error: |err| Box::pin(async move {
                 if let poise::FrameworkError::Command{ctx,..}=err {
@@ -69,4 +68,20 @@ pub async fn run_bot(
         .await?;
     client.start().await?;
     Ok(())
+}
+
+/// The same command catalog is used for registration and integration checks.
+pub fn commands() -> Vec<poise::Command<BotData, Error>> {
+    vec![
+        commands::games(),
+        commands::join(),
+        commands::play(),
+        commands::status(),
+        commands::map(),
+        commands::report(),
+        commands::guide(),
+        commands::help(),
+        commands::about(),
+        commands::manuals(),
+    ]
 }

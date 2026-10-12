@@ -5,8 +5,9 @@ a browser. `nc-admin` handles operator work over SSH. There is no web dashboard.
 The existing community is <https://discord.gg/eZMRpdQTu>.
 
 The browser and bot services are deployed for acceptance testing. HTTPS,
-the login redirect and all seven guild commands have been verified. Live Discord
-sign-in and the private two-game pilot remain pending; public recruitment and
+the login redirect and the initial seven guild commands have been verified. The
+owner has tested sign-in, empire setup, saved orders and reports after two manual
+turns. The private two-game pilot remains pending; public recruitment and
 scheduled turns have not started.
 
 ## Components
@@ -20,6 +21,13 @@ scheduled turns have not started.
   `/join`, `/play`, `/status`, `/map`, `/report` and `/guide` use the same host
   operations. All command replies are private. Maps and reports are generated
   for the verified account's seat; the bot never scans a shared export directory.
+- `/map` defaults to one ZIP with TXT, grid CSV, known-world-details CSV, ODS and
+  XLSX files from one authorized snapshot. The workbooks contain Starmap and
+  Known Worlds sheets. Individual Text, Csv, Ods and Excel choices remain
+  available. The website provides the same Map ZIP download.
+- `/help` lists commands; `/about` explains the game; `/manuals` links the
+  quick-start and player-manual PDFs. `/guide` remains the quick-start shortcut.
+  The [welcome post](discord-welcome.md) is ready to pin in the owner's selected channel.
 - The systemd turn timer checks independent game deadlines. The bot delivers
   queued recruitment and completed-turn announcements to a configured channel.
 

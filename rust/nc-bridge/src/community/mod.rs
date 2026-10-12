@@ -164,11 +164,11 @@ async fn export(
     };
     match host(&state, request).await {
         Ok(data) => {
-            let mut response = data["contents"]
-                .as_str()
-                .unwrap_or("")
-                .to_owned()
-                .into_response();
+            let bytes = match nc_host::map_archive::download_bytes(&data) {
+                Ok(bytes) => bytes,
+                Err(_) => return error(StatusCode::INTERNAL_SERVER_ERROR, "Invalid download"),
+            };
+            let mut response = bytes.into_response();
             response.headers_mut().insert(
                 "content-type",
                 data["content_type"]

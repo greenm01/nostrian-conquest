@@ -1,4 +1,5 @@
 use super::*;
+use base64::Engine;
 use nc_data::{CampaignStore, build_player_starmap_projection_from_snapshots};
 
 pub(super) fn render(root: &Path, game: &str, id: &str, format: &str) -> Result<Value> {
@@ -21,7 +22,7 @@ pub(super) fn render(root: &Path, game: &str, id: &str, format: &str) -> Result<
                     .join("\n\n");
                 (contents, "TXT", "text/plain; charset=utf-8", "ECREPORT")
             }
-            "map-txt" | "map-csv" | "map-details" => {
+            "map-txt" | "map-csv" | "map-details" | "map-zip" | "map-ods" | "map-xlsx" => {
                 let intel = runtime.load_snapshot_planet_intel_by_viewer(
                     snapshot.snapshot_id,
                     snapshot.game_data.conquest.player_count,
@@ -31,6 +32,21 @@ pub(super) fn render(root: &Path, game: &str, id: &str, format: &str) -> Result<
                     &intel[usize::from(seat) - 1],
                     seat,
                 );
+                if matches!(format, "map-zip" | "map-ods" | "map-xlsx") {
+                    let bytes = crate::map_archive::render(&projection, format)?;
+                    if runtime.latest_snapshot_metadata()? != Some((snapshot.snapshot_id, snapshot.game_year)) {
+                        continue;
+                    }
+                    let (extension, content_type) = match format {
+                        "map-zip" => ("zip", "application/zip"),
+                        "map-ods" => ("ods", "application/vnd.oasis.opendocument.spreadsheet"),
+                        _ => ("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
+                    };
+                    return Ok(json!({"game":game,"seat":seat,"year":snapshot.game_year,
+                        "filename":format!("ECMAP-{game}-P{seat}-Y{}.{extension}",snapshot.game_year),
+                        "content_type":content_type,
+                        "contents_base64":base64::engine::general_purpose::STANDARD.encode(bytes)}));
+                }
                 if format == "map-txt" {
                     (
                         projection.render_ascii_export(),
@@ -54,7 +70,7 @@ pub(super) fn render(root: &Path, game: &str, id: &str, format: &str) -> Result<
                     )
                 }
             }
-            _ => return Err("format must be reports, map-txt, map-csv or map-details".into()),
+            _ => return Err("format must be reports, map-txt, map-csv, map-details, map-zip, map-ods or map-xlsx".into()),
         };
         if runtime.latest_snapshot_metadata()? != Some((snapshot.snapshot_id, snapshot.game_year)) {
             continue;

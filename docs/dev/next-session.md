@@ -40,13 +40,16 @@ The owner approved the [hosting plan](../notes/plans/qv5x08zs-discord-community-
 The first implementation milestone is ready for a private pilot. Read that plan and
 [community-hosting.md](community-hosting.md) before continuing. The isolated browser
 and bot services are running; existing BBS/Nostr services remain in place.
-HTTPS, the OAuth redirect and seven guild commands pass live checks. The game
-catalog is empty; turn and backup timers and announcements remain disabled.
+HTTPS, the OAuth redirect and the initial seven guild commands pass live checks.
+The owner tested login, empire setup, saved orders and reports after two manual
+turns in a reserved test game. Turn and backup timers and announcements remain
+disabled. The stored deadline still appears in status despite the disabled
+scheduler; this needs a manual-turn mode before general use.
 The workspace gate passed 3,245 tests (zero failures, 11 ignored), and final
 hosting controls and six Python tests pass. t117 and t118 are complete.
 Debug and release real-door smokes pass. Discord credentials were entered
 privately on the deployment host, and the existing bot installation was verified.
-Attended browser acceptance and off-server backup setup remain outstanding.
+Multi-player acceptance and off-server backup setup remain outstanding.
 Do not mistake synthetic session tests for live login acceptance.
 
 ## Release context

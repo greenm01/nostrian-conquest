@@ -85,6 +85,27 @@ Attended OAuth/browser/Discord acceptance, server installation and a verified
 off-server backup destination are still
 required before public launch.
 
+## Map downloads and bot onboarding
+
+### t122
+
+The owner requested one map ZIP, bot help and about commands, player-manual
+downloads, and a short pinned welcome post. The ZIP includes TXT, grid CSV,
+known-world-details CSV, ODS and XLSX. Both workbooks use the same authorized
+snapshot and have Starmap and Known Worlds sheets. Map ZIP is the default for
+Discord and a download link on the website. Existing individual formats remain.
+The shared host exporter owns workbook generation; the Discord-only Excel
+converter has been removed. User-supplied names are spreadsheet strings, not
+formulas. Tests cover names containing commas and XML characters, unauthorized
+accounts, wrong-game access, binary HTTP downloads and archive contents.
+LibreOffice opened both workbook formats and converted them to CSV successfully.
+All 97 tests in nc-host, nc-bridge and nc-discord pass, including the new
+archive, authorization, binary response and command-registration controls.
+
+`/help`, `/about` and `/manuals` supplement `/guide`. Manual links returned 200.
+The [welcome post](../../dev/discord-welcome.md) is under Discord's 2,000-character
+limit. Posting and pinning await the owner's channel choice.
+
 ## Connections
 
 - [Hosting review](../investigations/dp6dayf5-review-web-and-discord-hosting-readiness.md)

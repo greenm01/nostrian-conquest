@@ -127,8 +127,10 @@ pub async fn status(
 }
 #[derive(Debug, poise::ChoiceParameter, Clone, Copy)]
 pub enum MapFormat {
+    Zip,
     Text,
     Csv,
+    Ods,
     Excel,
 }
 async fn export(ctx: Context<'_>, game: &str, format: &str) -> Result<Value, Error> {
@@ -150,28 +152,21 @@ pub async fn map(
     #[description = "Download format"] format: Option<MapFormat>,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
-    let format = format.unwrap_or(MapFormat::Text);
+    let format = format.unwrap_or(MapFormat::Zip);
     let data = export(
         ctx,
         &game,
-        if matches!(format, MapFormat::Text) {
-            "map-txt"
-        } else {
-            "map-csv"
+        match format {
+            MapFormat::Zip => "map-zip",
+            MapFormat::Text => "map-txt",
+            MapFormat::Csv => "map-csv",
+            MapFormat::Ods => "map-ods",
+            MapFormat::Excel => "map-xlsx",
         },
     )
     .await?;
-    let text = data["contents"].as_str().ok_or("missing contents")?;
     let name = data["filename"].as_str().ok_or("missing filename")?;
-    let (bytes, name) = if matches!(format, MapFormat::Excel) {
-        // Convert one authorized CSV snapshot. Do not mix years by fetching a second export.
-        (
-            crate::excel::build_excel_starmap(text, None)?,
-            format!("{}.xlsx", name.trim_end_matches(".CSV")),
-        )
-    } else {
-        (text.as_bytes().to_vec(), name.into())
-    };
+    let bytes = nc_host::map_archive::download_bytes(&data)?;
     ctx.send(
         reply(format!(
             "`{game}` · seat {} · year {}",
@@ -210,5 +205,39 @@ pub async fn report(
 #[poise::command(slash_command, ephemeral)]
 pub async fn guide(ctx: Context<'_>) -> Result<(), Error> {
     ctx.send(reply("Quick start guide: https://github.com/greenm01/nostrian-conquest/raw/main/docs/manuals/nc_quick_start.pdf\nKeep a printed map or spreadsheet beside your terminal.")).await?;
+    Ok(())
+}
+
+/// List the bot's commands and how to start playing.
+#[poise::command(slash_command, ephemeral)]
+pub async fn help(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.send(reply(HELP)).await?;
+    Ok(())
+}
+
+const HELP: &str = "**Nostrian Conquest commands**\n\
+`/games` — List games and their IDs.\n\
+`/join game` — Claim an open empire.\n\
+`/play game` — Open your game in a browser.\n\
+`/status game` — Check the year and turn deadline.\n\
+`/map game` — Download a ZIP with TXT, CSV, ODS and Excel maps. Optional format selects one file.\n\
+`/report game` — Download your empire's reports.\n\
+`/manuals` — Download the quick start and player manual.\n\
+`/guide` — Open the quick start.\n\
+`/about` — About the game.\n\
+`/help` — Show this list.\n\n\
+Start with /games, then /join and /play. Use the same Discord account in your browser. Replies and empire downloads are private to you.";
+
+/// Learn about Nostrian Conquest.
+#[poise::command(slash_command, ephemeral)]
+pub async fn about(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.send(reply("**Nostrian Conquest**\nAn asynchronous, turn-based space strategy game inspired by the 1992 BBS game Esterian Conquest. Build an empire, explore the galaxy, and conquer rival worlds through an old-school BBS interface in your browser.\n\nIssue orders on your own schedule; maintenance resolves each game year.\nhttps://nostrian-conquest.com\nUse /help for commands and /manuals for the rules.")).await?;
+    Ok(())
+}
+
+/// Download the player manuals as PDFs.
+#[poise::command(slash_command, ephemeral)]
+pub async fn manuals(ctx: Context<'_>) -> Result<(), Error> {
+    ctx.send(reply("**Player manuals (PDF)**\n[Quick Start](https://github.com/greenm01/nostrian-conquest/raw/main/docs/manuals/nc_quick_start.pdf) — Start here.\n[Player Manual](https://github.com/greenm01/nostrian-conquest/raw/main/docs/manuals/nc_player_manual.pdf) — Full rules and reference.\n\nKeep a printed map or spreadsheet beside your terminal; /map downloads both.")).await?;
     Ok(())
 }

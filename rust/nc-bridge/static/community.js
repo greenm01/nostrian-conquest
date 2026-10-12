@@ -25,7 +25,7 @@ async function loadGames() {
         if (game.state === 'recruiting') button(card, 'Join', async () => {const seat = await request(`${base}/join`, 'POST'); notice.textContent = `Joined ${game.name}: seat ${seat.seat}. Click Play to enter.`; await loadGames();});
         button(card, 'Play', () => {location.href = `/terminal/index.html?game=${encodeURIComponent(game.game)}`;});
         button(card, 'Reconnect', async () => {await request(`${base}/reconnect`, 'POST'); notice.textContent = 'Previous session is closing. Click Play in a moment.';});
-        for (const [label, format] of [['Map TXT', 'map-txt'], ['Map CSV', 'map-csv'], ['Reports', 'reports']]) {
+        for (const [label, format] of [['Map ZIP', 'map-zip'], ['Map TXT', 'map-txt'], ['Map CSV', 'map-csv'], ['Reports', 'reports']]) {
             const link = document.createElement('a'); link.textContent = ` ${label} `; link.href = `${base}/exports/${format}`; card.append(link);
         }
         container.append(card);

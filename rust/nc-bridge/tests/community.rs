@@ -234,3 +234,51 @@ async fn oauth_callback_requires_matching_unexpired_state() {
     assert!(location.contains("scope=identify"));
     assert!(!location.contains("test-only"));
 }
+
+#[tokio::test]
+async fn zip_download_has_binary_body_and_requires_own_seat() {
+    let (dir, app) = fixture();
+    let token = "a".repeat(64);
+    session(dir.path(), &token, "123");
+    admin::execute(
+        dir.path(),
+        HostRequest::Join {
+            game: "public".into(),
+            discord_id: "123".into(),
+        },
+    )
+    .unwrap();
+    let response = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/api/games/public/exports/map-zip")
+                .header("cookie", format!("nc_session={token}"))
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    assert_eq!(response.headers()["content-type"], "application/zip");
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    assert!(
+        response.headers()["content-disposition"]
+            .to_str()
+            .unwrap()
+            .contains("ECMAP-public-P1-Y3000.zip")
+    );
+    let bytes = to_bytes(response.into_body(), 1_000_000).await.unwrap();
+    assert!(bytes.starts_with(b"PK\x03\x04"));
+    let (status, _) = call(&app, "/api/games/public/exports/map-zip", "GET", None, None).await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    let (status, _) = call(
+        &app,
+        "/api/games/draft/exports/map-zip",
+        "GET",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_ne!(status, StatusCode::OK);
+}

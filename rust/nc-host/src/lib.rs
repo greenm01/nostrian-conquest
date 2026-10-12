@@ -5,6 +5,7 @@ pub mod dispatch;
 pub mod game;
 pub mod invite;
 pub mod lobby;
+pub mod map_archive;
 pub mod status;
 pub mod supervisor;
 pub mod support;
