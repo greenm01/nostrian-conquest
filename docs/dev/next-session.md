@@ -42,14 +42,16 @@ The first implementation milestone is ready for a private pilot. Read that plan 
 and bot services are running; existing BBS/Nostr services remain in place.
 HTTPS, the OAuth redirect and the initial seven guild commands pass live checks.
 The owner tested login, empire setup, saved orders and reports after two manual
-turns in a reserved test game. Turn and backup timers and announcements remain
-disabled. The stored deadline still appears in status despite the disabled
-scheduler; this needs a manual-turn mode before general use.
+turns in a reserved test game. Turn and daily-backup timers are enabled. The test game now uses manual turns
+with no deadline. Announcements remain disabled. The new four-player invite-only
+lobby stays recruiting until the owner explicitly starts it; its configured
+schedule is midnight America/New_York, adjusted for daylight saving.
 The workspace gate passed 3,245 tests (zero failures, 11 ignored), and final
 hosting controls and six Python tests pass. t117 and t118 are complete.
 Debug and release real-door smokes pass. Discord credentials were entered
 privately on the deployment host, and the existing bot installation was verified.
-Multi-player acceptance and off-server backup setup remain outstanding.
+Multi-player acceptance and automated off-server copies remain outstanding.
+Current off-server copies have passed verification and isolated paused restores.
 Do not mistake synthetic session tests for live login acceptance.
 
 t122's map ZIP and `/help`, `/about`, `/manuals` are deployed in signed release
@@ -62,6 +64,15 @@ Discord display name and separates player and empire in the greeting. Its
 784 tests and debug/release real-door smokes pass. Signed release `499b81c6`
 is deployed; health and profile storage checks pass. Existing
 sessions must sign in again to populate their verified profile.
+
+t124 is deployed in signed release `263a4d34`: private eight-character seat
+codes, owner-only `/invite`, `/join` with a code, and Python create/list/revoke
+commands. The operator wrapper is installed; see the linked command guide.
+All 109 affected Rust tests, eight Python tests and the release real-door smoke
+pass. Eleven guild commands registered. Both the start-here post and fresh
+lobby instructions are pinned; the old channel retains its history in an
+archive. No invite codes were pre-generated. The owner can issue them through
+the bot or CLI. A successful code claim reserves a seat; it never starts a game.
 
 ## Release context
 

@@ -7,8 +7,11 @@ The existing community is <https://discord.gg/eZMRpdQTu>.
 The browser and bot services are deployed for acceptance testing. HTTPS,
 the login redirect and the initial seven guild commands have been verified. The
 owner has tested sign-in, empire setup, saved orders and reports after two manual
-turns. The private two-game pilot remains pending; public recruitment and
-scheduled turns have not started.
+turns. A fresh invite-only lobby is recruiting, with its owner seat reserved. The turn
+and daily-backup timers are enabled; the lobby has no deadline until its owner
+starts it, and the test game uses manual turns. Both games have verified
+off-server copies and passed isolated paused restores. Two-account attended
+acceptance and automated off-server copying remain pending.
 
 ## Components
 
@@ -27,7 +30,7 @@ scheduled turns have not started.
   available. The website provides the same Map ZIP download.
 - `/help` lists commands; `/about` explains the game; `/manuals` links the
   quick-start and player-manual PDFs. `/guide` remains the quick-start shortcut.
-  The [welcome post](discord-welcome.md) is ready to pin in the owner's selected channel.
+  The [welcome post](discord-welcome.md) is pinned and explains private invite codes.
 - The systemd turn timer checks independent game deadlines. The bot delivers
   queued recruitment and completed-turn announcements to a configured channel.
 

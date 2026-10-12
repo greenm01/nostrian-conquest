@@ -154,5 +154,19 @@ Validation: invite lifecycle, concurrent claims, wrong-game claims, rate limits,
 secret-free listing and history, browser bypass rejection, manual scheduling,
 owner-controlled start, and both daylight saving transitions. All 109 affected Rust tests and eight Python CLI tests pass. The release real-door
 smoke passes. Deployment preflight found and fixed a Python parser bug that
-dropped options placed before a subcommand; a regression covers all positions. Live deployment
-and signed-release checks are recorded below when complete.
+dropped options placed before a subcommand; a regression covers all positions. Signed release `263a4d34` is deployed; its manifest signature and every staged
+file hash verified. All eleven guild commands registered, including `/invite`
+and `/join`'s optional code. The fresh four-player lobby is invite-only and
+recruiting, with its owner seat reserved and no deadline. The prior channel is
+archived with history retained. The pinned start-here post now explains codes,
+joining and the matching browser identity; the new lobby has its own pinned
+instructions. The legacy game data remains intact and unscheduled.
+
+Turn and daily-backup timers are enabled. A live due check performed no turns:
+the lobby is recruiting and the separate test game is manual. Health and
+operator doctor checks pass. Both games have verified off-server copies and
+were restored into an isolated local root, paused, at their expected years.
+Off-server copying is verified but not yet automated. Two-account attended
+acceptance and general launch readiness remain t119–t121 work; command
+registration and synthetic claim tests do not substitute for a friend's live
+Discord claim.
