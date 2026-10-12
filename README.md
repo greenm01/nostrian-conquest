@@ -77,9 +77,10 @@ for the code structure.
 
 ### Run a local game
 
-Install a current Rust toolchain and a native C/C++ build toolchain. Python 3
-is used by the repository's administration and development scripts. On Linux,
-`nix develop` provides a development shell if you use Nix; enter it from the
+Install Rust and a C compiler and linker. NC builds its bundled SQLite
+dependency from source. Python 3 is used by the repository's administration
+and development scripts. On Linux, `nix develop` provides a development shell
+if you use Nix; enter it from the
 repository root before the commands below.
 
 Clone the repository and build the local player and sysop tools:
