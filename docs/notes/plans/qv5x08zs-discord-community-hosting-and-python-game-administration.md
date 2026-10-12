@@ -152,5 +152,7 @@ archive its old channel and retain its data privately.
 
 Validation: invite lifecycle, concurrent claims, wrong-game claims, rate limits,
 secret-free listing and history, browser bypass rejection, manual scheduling,
-owner-controlled start, and both daylight saving transitions. All 109 affected Rust tests and seven Python CLI tests pass. Live deployment
+owner-controlled start, and both daylight saving transitions. All 109 affected Rust tests and eight Python CLI tests pass. The release real-door
+smoke passes. Deployment preflight found and fixed a Python parser bug that
+dropped options placed before a subcommand; a regression covers all positions. Live deployment
 and signed-release checks are recorded below when complete.

@@ -42,6 +42,16 @@ class AdminTests(unittest.TestCase):
             with patch("nc_admin.cli.Client.call",return_value=[{"game":"one","error":"disk full"}]),contextlib.redirect_stdout(io.StringIO()):
                 self.assertEqual(main(argv),1)
 
+    def test_common_options_work_before_and_after_subcommands(self):
+        options=["--root","/private/games","--host-binary","/private/nc-host","--dry-run","--json"]
+        for argv in [options+["games","list"], ["games"]+options+["list"], ["games","list"]+options]:
+            output=io.StringIO()
+            with patch("subprocess.run") as run, contextlib.redirect_stdout(output):
+                self.assertEqual(main(argv),0)
+            run.assert_not_called()
+            self.assertEqual(json.loads(output.getvalue())["data"]["root"],"/private/games")
+            self.assertEqual(parser().parse_args(argv).host_binary,"/private/nc-host")
+
     def test_private_invite_and_calendar_requests(self):
         cases = [
             (["games","invite-only","beta-1"], {"action":"invite_only","game":"beta-1"}),

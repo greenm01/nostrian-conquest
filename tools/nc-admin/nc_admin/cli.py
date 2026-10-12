@@ -26,8 +26,6 @@ def parser() -> argparse.ArgumentParser:
     common.add_argument("--json", action="store_true", default=argparse.SUPPRESS)
     common.add_argument("--dry-run", action="store_true", default=argparse.SUPPRESS)
     p = argparse.ArgumentParser(prog="nc-admin", parents=[common], allow_abbrev=False)
-    p.set_defaults(root=Path(os.environ.get("NC_GAMES_ROOT", "/srv/nc/community/games")),
-                   host_binary=os.environ.get("NC_HOST_BINARY", "nc-host"), json=False, dry_run=False)
     groups = p.add_subparsers(dest="group", required=True)
     games = groups.add_parser("games", parents=[common]).add_subparsers(dest="command", required=True)
     for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "invite-only"):
@@ -106,6 +104,14 @@ def request_for(args: argparse.Namespace) -> dict:
 
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
+    # Apply defaults after parsing. Parent parsers share action objects; setting
+    # their defaults earlier lets subparsers overwrite explicitly given options.
+    for name, value in {
+        "root": Path(os.environ.get("NC_GAMES_ROOT", "/srv/nc/community/games")),
+        "host_binary": os.environ.get("NC_HOST_BINARY", "nc-host"),
+        "json": False, "dry_run": False,
+    }.items():
+        if not hasattr(args, name): setattr(args, name, value)
     try:
         request = request_for(args)
         root = args.into_root if args.group == "backup" and args.command == "restore" else args.root
