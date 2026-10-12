@@ -27,7 +27,8 @@ acceptance and automated off-server copying remain pending.
 - `/map` defaults to one ZIP with TXT, grid CSV, known-world-details CSV, ODS and
   XLSX files from one authorized snapshot. The workbooks contain Starmap and
   Known Worlds sheets. Individual Text, Csv, Ods and Excel choices remain
-  available. The website provides the same Map ZIP download.
+  available. The website provides a single Download map ZIP button. Reports remain in the
+  game inbox and `/report`; individual map formats remain available through the bot.
 - `/help` lists commands; `/about` explains the game; `/manuals` links the
   quick-start and player-manual PDFs. `/guide` remains the quick-start shortcut.
   The [welcome post](discord-welcome.md) is pinned and explains private invite codes.

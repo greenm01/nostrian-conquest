@@ -29,9 +29,7 @@ async function loadGames() {
         }
         button(card, 'Play', () => {location.href = `/terminal/index.html?game=${encodeURIComponent(game.game)}`;});
         button(card, 'Reconnect', async () => {await request(`${base}/reconnect`, 'POST'); notice.textContent = 'Previous session is closing. Click Play in a moment.';});
-        for (const [label, format] of [['Map ZIP', 'map-zip'], ['Map TXT', 'map-txt'], ['Map CSV', 'map-csv'], ['Reports', 'reports']]) {
-            const link = document.createElement('a'); link.textContent = ` ${label} `; link.href = `${base}/exports/${format}`; card.append(link);
-        }
+        button(card, 'Download map ZIP', () => {location.href = `${base}/exports/map-zip`;});
         container.append(card);
     }
     if (!games.length) container.textContent = 'No games are currently listed.';
