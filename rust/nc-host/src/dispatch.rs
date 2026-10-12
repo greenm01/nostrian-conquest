@@ -26,6 +26,7 @@ pub fn run_args(args: impl Iterator<Item = String>) -> Result<(), Box<dyn std::e
             Ok(())
         }
         "new-game" => commands::new_game::run(rest.as_slice()),
+        "admin" => crate::admin::cli(rest.as_slice()),
         "serve" => commands::serve::run(rest.as_slice()),
         "maint" => commands::maint::run(rest.as_slice()),
         "settings" => commands::settings::run(rest.as_slice()),
@@ -94,6 +95,7 @@ fn print_usage() {
     println!("  nc-host [--log-file <path>] [--log-level <level>] <command> [args]");
     println!();
     println!("Commands:");
+    println!("  admin        Local JSON interface for browser campaign administration");
     println!("  new-game     Create a hosted game directory");
     println!("  serve        Run the hosted relay event loop");
     println!("  maint        Run hosted maintenance for one game");

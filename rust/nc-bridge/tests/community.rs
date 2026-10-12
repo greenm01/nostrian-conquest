@@ -1,0 +1,236 @@
+use axum::{
+    Router,
+    body::{Body, to_bytes},
+    http::{Request, StatusCode},
+};
+use nc_bridge::community::{Config, router};
+use nc_host::admin::{self, Request as HostRequest};
+use serde_json::Value;
+use tower::ServiceExt;
+
+fn fixture() -> (tempfile::TempDir, Router) {
+    let dir = tempfile::tempdir().unwrap();
+    let app = router(Config {
+        games_root: dir.path().into(),
+        nc_door: "/nonexistent/nc-door".into(),
+        static_dir: "static".into(),
+        origin: "https://game.example".into(),
+        client_id: "123".into(),
+        client_secret: "test-only".into(),
+        max_sessions: 2,
+    })
+    .unwrap();
+    for game in ["public", "draft"] {
+        admin::execute(
+            dir.path(),
+            HostRequest::Create {
+                game: game.into(),
+                name: game.into(),
+                players: 4,
+                seed: Some(1515),
+            },
+        )
+        .unwrap();
+    }
+    admin::execute(
+        dir.path(),
+        HostRequest::Publish {
+            game: "public".into(),
+        },
+    )
+    .unwrap();
+    (dir, app)
+}
+fn session(dir: &std::path::Path, token: &str, id: &str) {
+    rusqlite::Connection::open(dir.join(".web-sessions.db"))
+        .unwrap()
+        .execute(
+            "INSERT INTO web_sessions VALUES (?1,?2,?3)",
+            rusqlite::params![
+                blake3::hash(token.as_bytes()).to_hex().to_string(),
+                id,
+                chrono::Utc::now().timestamp() + 300
+            ],
+        )
+        .unwrap();
+}
+async fn call(
+    app: &Router,
+    path: &str,
+    method: &str,
+    token: Option<&str>,
+    origin: Option<&str>,
+) -> (StatusCode, String) {
+    let mut request = Request::builder().uri(path).method(method);
+    if let Some(token) = token {
+        request = request.header("cookie", format!("nc_session={token}"));
+    }
+    if let Some(origin) = origin {
+        request = request.header("origin", origin);
+    }
+    let response = app
+        .clone()
+        .oneshot(request.body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+    assert_eq!(response.headers()["cache-control"], "no-store");
+    let status = response.status();
+    (
+        status,
+        String::from_utf8(
+            to_bytes(response.into_body(), 1024 * 1024)
+                .await
+                .unwrap()
+                .to_vec(),
+        )
+        .unwrap(),
+    )
+}
+
+#[tokio::test]
+async fn catalog_and_join_do_not_trust_query_identity() {
+    let (dir, app) = fixture();
+    let (status, body) = call(&app, "/api/games", "GET", None, None).await;
+    assert_eq!(status, StatusCode::OK);
+    let games: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(games.as_array().unwrap().len(), 1);
+    assert_eq!(games[0]["game"], "public");
+    assert!(games[0].get("seats").is_none());
+    assert_eq!(
+        call(
+            &app,
+            "/api/games/public/join?discord_id=123&seat=1",
+            "POST",
+            None,
+            Some("https://game.example")
+        )
+        .await
+        .0,
+        StatusCode::UNAUTHORIZED
+    );
+    let token = "a".repeat(64);
+    session(dir.path(), &token, "123");
+    assert_eq!(
+        call(&app, "/api/games/public/join", "POST", Some(&token), None)
+            .await
+            .0,
+        StatusCode::FORBIDDEN
+    );
+    assert_eq!(
+        call(
+            &app,
+            "/api/games/public/join",
+            "POST",
+            Some(&token),
+            Some("https://evil.example")
+        )
+        .await
+        .0,
+        StatusCode::FORBIDDEN
+    );
+    let (status, body) = call(
+        &app,
+        "/api/games/public/join?discord_id=456&seat=4",
+        "POST",
+        Some(&token),
+        Some("https://game.example"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let seat: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(seat["discord_id"], "123");
+    assert_eq!(seat["seat"], 1);
+    assert_eq!(
+        call(
+            &app,
+            "/api/games/draft/join",
+            "POST",
+            Some(&token),
+            Some("https://game.example")
+        )
+        .await
+        .0,
+        StatusCode::CONFLICT
+    );
+}
+
+#[tokio::test]
+async fn exports_are_seat_scoped_and_logout_revokes_session() {
+    let (dir, app) = fixture();
+    let a = "a".repeat(64);
+    let b = "b".repeat(64);
+    session(dir.path(), &a, "123");
+    session(dir.path(), &b, "456");
+    call(
+        &app,
+        "/api/games/public/join",
+        "POST",
+        Some(&a),
+        Some("https://game.example"),
+    )
+    .await;
+    let path = "/api/games/public/exports/map-txt?discord_id=123&seat=1";
+    assert_eq!(
+        call(&app, path, "GET", None, None).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+    assert_eq!(
+        call(&app, path, "GET", Some(&b), None).await.0,
+        StatusCode::CONFLICT
+    );
+    assert_eq!(
+        call(&app, path, "GET", Some(&a), None).await.0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        call(
+            &app,
+            "/auth/logout",
+            "POST",
+            Some(&a),
+            Some("https://game.example")
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    assert_eq!(
+        call(&app, path, "GET", Some(&a), None).await.0,
+        StatusCode::UNAUTHORIZED
+    );
+}
+
+#[tokio::test]
+async fn oauth_callback_requires_matching_unexpired_state() {
+    let (_dir, app) = fixture();
+    assert_eq!(
+        call(
+            &app,
+            "/auth/callback?code=bogus&state=bogus",
+            "GET",
+            None,
+            None
+        )
+        .await
+        .0,
+        StatusCode::BAD_REQUEST
+    );
+    let response = app
+        .oneshot(
+            Request::builder()
+                .uri("/auth/login")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::SEE_OTHER);
+    let cookie = response.headers()["set-cookie"].to_str().unwrap();
+    assert!(cookie.contains("HttpOnly"));
+    assert!(cookie.contains("Secure"));
+    assert!(cookie.contains("SameSite=Lax"));
+    let location = response.headers()["location"].to_str().unwrap();
+    assert!(location.starts_with("https://discord.com/oauth2/authorize?"));
+    assert!(location.contains("scope=identify"));
+    assert!(!location.contains("test-only"));
+}

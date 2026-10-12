@@ -1,292 +1,72 @@
-//! Interactive Discord bot implementation for Nostrian Conquest using Poise & Serenity.
-//!
-//! Provides player utility slash commands (`/status`, `/map`, `/report`, `/play`)
-//! while strictly preserving the Fog of War through ephemeral responses.
-
+//! Discord discovery and authenticated, private campaign downloads.
+mod announcements;
+mod commands;
 pub mod excel;
 
-use poise::CreateReply;
-use serenity::all::CreateAttachment;
+use nc_host::admin::{self, Request};
+use serde_json::Value;
+use serenity::all::{GatewayIntents, GuildId};
 use std::path::PathBuf;
-use tracing::info;
 
-/// Shared bot state across command handlers.
+#[derive(Clone)]
 pub struct BotData {
-    pub campaign_dir: PathBuf,
-    pub web_bridge_url: Option<String>,
+    pub games_root: PathBuf,
+    pub web_url: String,
+    pub guild_id: GuildId,
 }
-
 pub type Error = Box<dyn std::error::Error + Send + Sync>;
 pub type Context<'a> = poise::Context<'a, BotData, Error>;
 
-/// Display campaign status, current stardate, and turn maintenance countdown.
-#[poise::command(slash_command)]
-pub async fn status(ctx: Context<'_>) -> Result<(), Error> {
-    let campaign_name = ctx
-        .data()
-        .campaign_dir
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("Campaign");
-
-    ctx.send(
-        CreateReply::default().embed(
-            serenity::all::CreateEmbed::new()
-                .title("🪐 Campaign Status")
-                .description(format!("**Sector:** *{campaign_name}*\nOrders are currently active."))
-                .field("⏱️ Next Maintenance", "Scheduled daily at 04:00 UTC", false)
-                .field(
-                    "🛰️ Commands",
-                    "`/map` — Personal starmap (.xlsx, .csv, .txt)\n`/report` — Turn briefing (ephemeral)\n`/play` — Launch game activity",
-                    false,
-                )
-                .color(0x33cc66),
-        ),
-    )
-    .await?;
-
-    Ok(())
+pub async fn host(data: &BotData, request: Request) -> Result<Value, Error> {
+    let root = data.games_root.clone();
+    tokio::task::spawn_blocking(move || admin::execute(&root, request)).await?
 }
 
-/// File format choice for starmap downloads.
-#[derive(Debug, poise::ChoiceParameter, Default, Clone, Copy, PartialEq, Eq)]
-pub enum MapFormatChoice {
-    /// Download Excel workbook (.xlsx with formatted table and ASCII grid)
-    #[name = "Excel Workbook (.xlsx) — Formatted & Styled"]
-    #[default]
-    Excel,
-    /// Download all formats (.xlsx, .csv, and .txt)
-    #[name = "All Formats (.xlsx, .csv, and .txt)"]
-    All,
-    /// Download printable ASCII text grid (.txt)
-    #[name = "Printable ASCII Grid (.txt)"]
-    Text,
-    /// Download raw CSV (.csv)
-    #[name = "Raw CSV (.csv)"]
-    Csv,
-}
-
-/// Retrieve your personal starmap with Fog of War applied (only visible to you).
-#[poise::command(slash_command, ephemeral)]
-pub async fn map(
-    ctx: Context<'_>,
-    #[description = "Preferred format: Excel (.xlsx), all formats, printable text (.txt), or raw CSV (.csv)"]
-    format: Option<MapFormatChoice>,
-) -> Result<(), Error> {
-    let choice = format.unwrap_or_default();
-    let author_id = ctx.author().id.to_string();
-    let author_name = ctx.author().name.clone();
-
-    info!(
-        user = %author_name,
-        user_id = %author_id,
-        format = ?choice,
-        "Serving ephemeral starmap export"
-    );
-
-    let campaign_dir = &ctx.data().campaign_dir;
-    let export_dir = campaign_dir.join("export");
-    let mut attachments = Vec::new();
-
-    let include_xlsx = matches!(choice, MapFormatChoice::Excel | MapFormatChoice::All);
-    let include_csv = matches!(choice, MapFormatChoice::Csv | MapFormatChoice::All);
-    let include_txt = matches!(choice, MapFormatChoice::Text | MapFormatChoice::All);
-
-    let mut staged_csv = None;
-    let mut staged_txt = None;
-    let mut base_filename = "starmap".to_string();
-
-    if export_dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(&export_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    let upper = name.to_ascii_uppercase();
-                    let is_map = upper.starts_with("ECMAP-") || upper.starts_with("STARMAP");
-
-                    if is_map {
-                        if upper.ends_with(".CSV") {
-                            if let Ok(bytes) = std::fs::read(&path) {
-                                base_filename = name.trim_end_matches(".csv").trim_end_matches(".CSV").to_string();
-                                staged_csv = Some(bytes);
-                            }
-                        } else if upper.ends_with(".TXT") {
-                            if let Ok(bytes) = std::fs::read(&path) {
-                                staged_txt = Some(bytes);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    // Build Excel (.xlsx) if requested and CSV data is available
-    if include_xlsx {
-        if let Some(csv_bytes) = &staged_csv {
-            let csv_str = String::from_utf8_lossy(csv_bytes);
-            let txt_str = staged_txt.as_ref().map(|b| String::from_utf8_lossy(b));
-
-            if let Ok(xlsx_bytes) = excel::build_excel_starmap(&csv_str, txt_str.as_deref()) {
-                attachments.push(CreateAttachment::bytes(xlsx_bytes, format!("{base_filename}.xlsx")));
-            }
-        }
-    }
-
-    // Include raw CSV if requested
-    if include_csv {
-        if let Some(csv_bytes) = staged_csv {
-            attachments.push(CreateAttachment::bytes(csv_bytes, format!("{base_filename}.csv")));
-        }
-    }
-
-    // Include printable ASCII TXT if requested
-    if include_txt {
-        if let Some(txt_bytes) = staged_txt {
-            attachments.push(CreateAttachment::bytes(txt_bytes, format!("{base_filename}.txt")));
-        }
-    }
-
-    let mut reply = CreateReply::default().ephemeral(true);
-
-    if !attachments.is_empty() {
-        let msg = format!(
-            "🗺️ **Personal Tactical Starmap for {}**\n*Fog of War applied. Attached {} file(s) for your empire.*",
-            author_name,
-            attachments.len()
-        );
-        reply = reply.content(msg);
-        for att in attachments {
-            reply = reply.attachment(att);
-        }
-    } else {
-        reply = reply.content(format!(
-            "🗺️ **Tactical Starmap for {}**\n*No exported starmap files currently staged. Complete a reconnaissance scan or run `/status`.*",
-            author_name
-        ));
-    }
-
-    ctx.send(reply).await?;
-    Ok(())
-}
-
-/// Retrieve your private turn briefing and battle report (only visible to you).
-#[poise::command(slash_command, ephemeral)]
-pub async fn report(ctx: Context<'_>) -> Result<(), Error> {
-    let author_id = ctx.author().id.to_string();
-    let author_name = ctx.author().name.clone();
-
-    info!(user = %author_name, user_id = %author_id, "Serving ephemeral player turn report");
-
-    let campaign_dir = &ctx.data().campaign_dir;
-    let reports_dir = campaign_dir.join("reports");
-    let mut report_attachment = None;
-
-    if reports_dir.exists() {
-        if let Ok(entries) = std::fs::read_dir(&reports_dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    if name.starts_with("ECREPORT-") && name.ends_with(".TXT") {
-                        if let Ok(bytes) = std::fs::read(&path) {
-                            report_attachment = Some(CreateAttachment::bytes(bytes, name.to_string()));
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    let mut reply = CreateReply::default().ephemeral(true);
-
-    if let Some(att) = report_attachment {
-        reply = reply
-            .content(format!("📜 **Classified Turn Briefing for {}**", author_name))
-            .attachment(att);
-    } else {
-        reply = reply.content(format!(
-            "📜 **Turn Briefing for {}**\n*No private intelligence briefing staged this cycle. Stand by for next maintenance run.*",
-            author_name
-        ));
-    }
-
-    ctx.send(reply).await?;
-    Ok(())
-}
-
-/// Launch the Nostrian Conquest Activity or Web Door directly.
-#[poise::command(slash_command)]
-pub async fn play(ctx: Context<'_>) -> Result<(), Error> {
-    let play_url = ctx
-        .data()
-        .web_bridge_url
-        .as_deref()
-        .unwrap_or("http://localhost:8080");
-
-    ctx.send(
-        CreateReply::default().embed(
-            serenity::all::CreateEmbed::new()
-                .title("🚀 Launch Nostrian Conquest")
-                .description(format!(
-                    "Click below to launch your terminal door session directly:\n\n**Web Door Link:** [Open Terminal]({play_url})\n\n*Or click the Rocket icon in any voice channel to play via Discord Activity.*"
-                ))
-                .color(0x33aaff),
-        ),
-    )
-    .await?;
-
-    Ok(())
-}
-
-/// Download the 3-page Quick Start Guide PDF.
-#[poise::command(slash_command)]
-pub async fn guide(ctx: Context<'_>) -> Result<(), Error> {
-    let guide_path = std::path::Path::new("docs/manuals/nc_quick_start.pdf");
-    let mut reply = CreateReply::default().content(
-        "📖 **Nostrian Conquest — Quick Start Guide**\n*3-page tactical briefing: First-turn checklist, economic doctrine, and command reference.*",
-    );
-
-    if let Ok(bytes) = std::fs::read(guide_path) {
-        reply = reply.attachment(CreateAttachment::bytes(bytes, "nc_quick_start.pdf"));
-    }
-
-    ctx.send(reply).await?;
-    Ok(())
-}
-
-/// Start the Poise Discord bot framework.
 pub async fn run_bot(
     token: String,
-    campaign_dir: PathBuf,
-    web_bridge_url: Option<String>,
+    games_root: PathBuf,
+    web_url: String,
+    guild: u64,
+    channel: Option<u64>,
 ) -> Result<(), Error> {
-    let framework = poise::Framework::builder()
+    let url = reqwest::Url::parse(&web_url)?;
+    if url.scheme() != "https"
+        || url.host_str().is_none()
+        || url.path() != "/"
+        || url.query().is_some()
+        || url.fragment().is_some()
+        || !url.username().is_empty()
+        || url.password().is_some()
+    {
+        return Err("web URL must be an HTTPS origin".into());
+    }
+    if guild == 0 {
+        return Err("Discord server ID must be nonzero".into());
+    }
+    let guild_id = GuildId::new(guild);
+    let framework=poise::Framework::builder()
         .options(poise::FrameworkOptions {
-            commands: vec![status(), map(), report(), play(), guide()],
+            commands: vec![commands::games(),commands::join(),commands::play(),commands::status(),commands::map(),commands::report(),commands::guide()],
+            command_check: Some(|ctx| Box::pin(async move {Ok(ctx.guild_id()==Some(ctx.data().guild_id))})),
+            on_error: |err| Box::pin(async move {
+                if let poise::FrameworkError::Command{ctx,..}=err {
+                    let _=ctx.send(poise::CreateReply::default().ephemeral(true).content("Request could not be completed. Check the game ID and your seat, or try again shortly.")).await;
+                } else { tracing::warn!("Discord command failed before execution"); }
+            }),
             ..Default::default()
         })
-        .setup(|ctx, _ready, framework| {
-            Box::pin(async move {
-                info!("Registering slash commands globally with Discord...");
-                poise::builtins::register_globally(ctx, &framework.options().commands).await?;
-                info!("Discord slash commands registered successfully.");
-                Ok(BotData {
-                    campaign_dir,
-                    web_bridge_url,
-                })
-            })
-        })
-        .build();
-
-    let mut client = serenity::all::ClientBuilder::new(
-        token,
-        serenity::all::GatewayIntents::non_privileged(),
-    )
-    .framework(framework)
-    .await?;
-
-    info!("Discord bot client connected to gateway. Listening for commands.");
+        .setup(move |ctx,_,framework| Box::pin(async move {
+            poise::builtins::register_in_guild(ctx,&framework.options().commands,guild_id).await?;
+            let data=BotData{games_root,web_url:web_url.trim_end_matches('/').into(),guild_id};
+            if let Some(channel) = channel {
+                let http=ctx.http.clone();
+                tokio::spawn(announcements::run(data.clone(),http,channel));
+            }
+            Ok(data)
+        })).build();
+    let mut client = serenity::all::ClientBuilder::new(token, GatewayIntents::GUILDS)
+        .framework(framework)
+        .await?;
     client.start().await?;
     Ok(())
 }

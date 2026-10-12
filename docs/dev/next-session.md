@@ -33,7 +33,20 @@ All 90 TSV hashes match committed provenance. Experimental price worktrees
 and their cargo pools were removed after verifying their source backup.
 Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
-## Next work
+## Current work: Discord community hosting
+
+The owner approved the [hosting plan](../notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md)
+(t117–t121): Python administration, Discord discovery and browser BBS play.
+The first implementation milestone is ready for a private pilot. Read that plan and
+[community-hosting.md](community-hosting.md) before deploying. Existing services
+have not been changed. The workspace gate passed 3,245 tests (zero failures, 11 ignored), and final
+hosting controls and six Python tests pass. t117 and t118 are complete.
+Debug and release real-door smokes pass. Discord credentials were entered
+privately on the deployment host, and the existing bot installation was verified.
+Attended browser acceptance and off-server backup setup remain outstanding.
+Do not mistake synthetic session tests for live login acceptance.
+
+## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their
 signed checksum manifest, and the matching download page are live. The
@@ -50,8 +63,7 @@ passed explicit Defender scans and runtime smoke tests on Windows 11; Windows
 workspace passed 3,233 tests, zero failures and 11 ignored; five packaging
 tests passed.
 
-Run `zk queue` before starting new work. The next priority is owner-directed
-playtesting and concrete bug reports. Windows builds use a native MSVC host;
+Run `zk queue` before starting new work. The current priority is the approved community-hosting work. Windows builds use a native MSVC host;
 sync by git bundle rather than remote `git pull`, which has hung before.
 Check its tree before updating it.
 

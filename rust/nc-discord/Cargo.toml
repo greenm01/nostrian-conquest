@@ -9,6 +9,9 @@ name = "nc-discord"
 path = "src/main.rs"
 
 [dependencies]
+nc-host = { path = "../nc-host" }
+serde_json = "1"
+reqwest = "0.12"
 nc-log = { path = "../nc-log" }
 tracing = "0.1"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }

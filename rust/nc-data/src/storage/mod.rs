@@ -5,6 +5,7 @@ use rusqlite::{Connection, OptionalExtension};
 use crate::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 
 mod hex;
+mod hosting;
 mod intel;
 mod mail;
 mod metadata;
@@ -52,6 +53,7 @@ pub enum CampaignStoreError {
     Sql(rusqlite::Error),
     Parse(crate::ParseError),
     InvalidState(String),
+    HostingPaused,
     SchemaVersionMismatch {
         expected: i64,
         found: Option<i64>,
@@ -61,6 +63,10 @@ pub enum CampaignStoreError {
     StaleSnapshot {
         loaded_year: u16,
         latest_year: u16,
+    },
+    ConcurrentSnapshot {
+        expected: i64,
+        actual: Option<i64>,
     },
 }
 
@@ -141,6 +147,8 @@ pub struct PlanetIntelSnapshot {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CampaignStore {
     path: PathBuf,
+    expected_snapshot: Option<i64>,
+    maintenance_receipt: Option<(String, u16)>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,6 +171,10 @@ impl std::fmt::Display for CampaignStoreError {
             Self::Sql(source) => write!(f, "{source}"),
             Self::Parse(source) => write!(f, "{source}"),
             Self::InvalidState(message) => write!(f, "{message}"),
+            Self::HostingPaused => write!(
+                f,
+                "Campaign paused; your last change was not saved. Try again later."
+            ),
             Self::SchemaVersionMismatch { expected, found } => match found {
                 Some(found) => write!(
                     f,
@@ -174,6 +186,9 @@ impl std::fmt::Display for CampaignStoreError {
                 ),
             },
             Self::StaleSnapshot { .. } => f.write_str(STALE_SESSION_MESSAGE),
+            Self::ConcurrentSnapshot { .. } => {
+                f.write_str("Another session saved changes; refresh before trying again.")
+            }
         }
     }
 }
@@ -185,7 +200,10 @@ impl std::error::Error for CampaignStoreError {
             Self::Sql(source) => Some(source),
             Self::Parse(source) => Some(source),
             Self::InvalidState(_) => None,
-            Self::SchemaVersionMismatch { .. } | Self::StaleSnapshot { .. } => None,
+            Self::SchemaVersionMismatch { .. }
+            | Self::StaleSnapshot { .. }
+            | Self::ConcurrentSnapshot { .. }
+            | Self::HostingPaused => None,
         }
     }
 }
@@ -226,6 +244,8 @@ impl CampaignStore {
     pub fn open(path: impl AsRef<Path>) -> Result<Self, CampaignStoreError> {
         let store = Self {
             path: path.as_ref().to_path_buf(),
+            expected_snapshot: None,
+            maintenance_receipt: None,
         };
         store.initialize()?;
         Ok(store)
@@ -237,6 +257,14 @@ impl CampaignStore {
 
     pub fn path(&self) -> &Path {
         &self.path
+    }
+
+    /// Bind a write to the snapshot it was computed from. The check and save
+    /// share one SQLite transaction, including maintenance writes.
+    pub fn expecting_snapshot(&self, snapshot_id: i64) -> Self {
+        let mut store = self.clone();
+        store.expected_snapshot = Some(snapshot_id);
+        store
     }
 
     pub fn has_snapshots(&self) -> Result<bool, CampaignStoreError> {

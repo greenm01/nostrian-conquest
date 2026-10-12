@@ -37,6 +37,15 @@ boundary.
 If you want the recovery background, see
 [How the Game Was Recovered](docs/dev/approach.md#how-the-game-was-recovered).
 
+## Community game hosting
+
+The new multi-game host is under validation. Players join through
+[Discord](https://discord.gg/eZMRpdQTu) and play the BBS door in a browser.
+Operators use the Python `scripts/nc-admin` command over SSH; no dashboard is
+required. See [hosting setup](docs/dev/community-hosting.md) and
+[operator commands](tools/nc-admin/README.md). Existing BBS installations do not
+need this stack.
+
 ## Current Public Roles
 
 Keep the binaries straight:

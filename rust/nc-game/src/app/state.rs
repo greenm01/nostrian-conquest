@@ -122,6 +122,7 @@ pub struct App {
     /// A save was refused during the current action; the stale-session
     /// notice is shown once the action finishes.
     pub(crate) stale_notice_due: bool,
+    pub(crate) concurrent_notice_due: Option<String>,
     pub popup_help: Option<PopupHelp>,
     pub planet_intel_snapshots: BTreeMap<usize, PlanetIntelSnapshot>,
     pub owned_planet_years: BTreeMap<usize, u16>,
@@ -290,6 +291,7 @@ impl App {
             quit_confirm_open: false,
             session_stale: false,
             stale_notice_due: false,
+            concurrent_notice_due: None,
             popup_help: None,
             planet_intel_snapshots,
             owned_planet_years,
@@ -365,12 +367,14 @@ fn apply_game_config_overrides(
     }
 
     let snapshot_id = if changed {
-        store.save_runtime_state_structured(
-            game_data.conquest.game_year,
-            &game_data,
-            report_block_rows,
-            queued_mail,
-        )?
+        store
+            .expecting_snapshot(current_snapshot_id)
+            .save_runtime_state_structured(
+                game_data.conquest.game_year,
+                &game_data,
+                report_block_rows,
+                queued_mail,
+            )?
     } else {
         current_snapshot_id
     };

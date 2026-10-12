@@ -108,3 +108,74 @@ fn a_save_with_no_maintenance_in_between_goes_through() {
         !autopilot_before
     );
 }
+
+#[test]
+fn two_players_cannot_overwrite_each_others_same_year_orders() {
+    let dir = temp_game_copy();
+    let mut first = load_player_one(&dir);
+    let mut second = App::load(AppConfig {
+        game_dir: dir.clone(),
+        player_record_index_1_based: 2,
+        export_root: None,
+        queue_dir: None,
+        session_timeout_secs: None,
+        game_config: Default::default(),
+    })
+    .unwrap();
+    let before = latest_runtime_state(&dir);
+
+    apply_action(&mut first, Action::ToggleAutopilot);
+    apply_action(&mut second, Action::ToggleAutopilot);
+    let after_conflict = latest_runtime_state(&dir);
+    assert_eq!(
+        after_conflict.game_data.players[0].autopilot, !before.game_data.players[0].autopilot,
+        "player two must not undo player one's order"
+    );
+    assert_eq!(
+        after_conflict.game_data.players[1].autopilot, before.game_data.players[1].autopilot,
+        "the stale action must be refused"
+    );
+    assert!(
+        !second.session_stale,
+        "same-year conflicts can refresh without logging out"
+    );
+
+    apply_action(&mut second, Action::ToggleAutopilot);
+    let after_retry = latest_runtime_state(&dir);
+    assert_eq!(
+        after_retry.game_data.players[0].autopilot,
+        !before.game_data.players[0].autopilot
+    );
+    assert_eq!(
+        after_retry.game_data.players[1].autopilot,
+        !before.game_data.players[1].autopilot
+    );
+    assert!(after_retry.snapshot_id > after_conflict.snapshot_id);
+}
+
+#[test]
+fn a_paused_change_is_discarded_before_resume() {
+    let dir = temp_game_copy();
+    let mut app = load_player_one(&dir);
+    let store = CampaignStore::open_default_in_dir(&dir).unwrap();
+    let before = latest_runtime_state(&dir);
+    store.set_hosting_write_blocked(true).unwrap();
+    apply_action(&mut app, Action::ToggleAutopilot);
+    assert_eq!(
+        app.game_data.players[0].autopilot,
+        before.game_data.players[0].autopilot
+    );
+    assert_eq!(latest_runtime_state(&dir), before);
+    assert!(
+        render(&mut app)
+            .lines
+            .iter()
+            .any(|line| line.contains("Campaign paused"))
+    );
+    store.set_hosting_write_blocked(false).unwrap();
+    apply_action(&mut app, Action::ToggleAutopilot);
+    assert_eq!(
+        latest_runtime_state(&dir).game_data.players[0].autopilot,
+        !before.game_data.players[0].autopilot
+    );
+}

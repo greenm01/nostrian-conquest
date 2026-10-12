@@ -1,0 +1,22 @@
+[Unit]
+Description=Nostrian Conquest Discord community bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nccommunity
+Group=nccommunity
+EnvironmentFile=/etc/nc-community/discord.env
+WorkingDirectory=/srv/nc/community
+ExecStart=/opt/nc-community/current/bin/nc-discord
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/nc/community
+
+[Install]
+WantedBy=multi-user.target

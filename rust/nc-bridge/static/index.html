@@ -9,8 +9,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@xterm/xterm@5.5.0/lib/xterm.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-canvas@0.7.0/lib/addon-canvas.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-webgl@0.19.0/lib/addon-webgl.js"></script>
-    <!-- Discord Embedded App SDK (Optional) -->
-    <script src="https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk@1.3.1/output/index.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -21,6 +19,7 @@
                 <span class="sub-text">BBS Web Door</span>
             </div>
             <div class="header-actions">
+                <a id="games-link" class="btn-tool" href="/" hidden>Games</a>
                 <span id="status-badge" class="badge connecting">CONNECTING...</span>
                 <button id="btn-font-dec" class="btn-tool" title="Decrease Font Size">A-</button>
                 <button id="btn-font-inc" class="btn-tool" title="Increase Font Size">A+</button>

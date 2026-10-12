@@ -9,6 +9,12 @@ name = "nc-bridge"
 path = "src/main.rs"
 
 [dependencies]
+nc-host = { path = "../nc-host" }
+nc-data = { path = "../nc-data" }
+rusqlite = { version = "0.31", features = ["bundled"] }
+rand = "0.8"
+blake3 = "1"
+chrono = "0.4"
 nc-dropfile = { path = "../nc-dropfile" }
 nc-log = { path = "../nc-log" }
 tracing = "0.1"
@@ -20,3 +26,7 @@ serde_json = "1"
 tower-http = { version = "0.6", features = ["fs"] }
 clap = { version = "4", features = ["derive", "env"] }
 reqwest = { version = "0.12", features = ["json"] }
+
+[dev-dependencies]
+tempfile = "3"
+tower = { version = "0.5", features = ["util"] }

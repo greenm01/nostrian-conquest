@@ -217,17 +217,27 @@
 
     // 3. Connect to WebSocket
     async function connectWebSocket() {
-        if (ws) {
-            try { ws.close(); } catch (e) {}
-            ws = null;
-        }
-
-        updateStatus('connecting');
-
-        const identity = await resolveIdentity();
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const wsUrl = `${protocol}//${window.location.host}/ws/connect?handle=${encodeURIComponent(identity.handle)}&platform_id=${encodeURIComponent(identity.platformId)}` +
-            (identity.displayName ? `&display_name=${encodeURIComponent(identity.displayName)}` : '');
+        const game = new URLSearchParams(window.location.search).get('game');
+        if (game) {
+            document.getElementById('games-link').hidden = false;
+            try {
+                const response = await fetch(`/api/games/${encodeURIComponent(game)}/access`, {credentials: 'same-origin'});
+                if (response.status === 401) {location.href = '/auth/login'; return;}
+                const access = await response.json();
+                if (!response.ok || !access.can_play) {
+                    term.writeln(`\r\n${access.error || 'Campaign is not accepting sessions.'} Return to Games.\r\n`);
+                    updateStatus('disconnected'); return;
+                }
+            } catch (_) {
+                term.writeln('\r\nCannot reach the game host. Return to Games and try again.\r\n');
+                updateStatus('disconnected'); return;
+            }
+        }
+        const identity = game ? null : await resolveIdentity();
+        const wsUrl = game
+            ? `${protocol}//${window.location.host}/games/${encodeURIComponent(game)}/ws`
+            : `${protocol}//${window.location.host}/ws/connect?handle=${encodeURIComponent(identity.handle)}&platform_id=${encodeURIComponent(identity.platformId)}&display_name=${encodeURIComponent(identity.displayName || identity.handle)}`;
 
         try {
             ws = new WebSocket(wsUrl);
@@ -251,8 +261,8 @@
 
             ws.onclose = () => {
                 updateStatus('disconnected');
-                term.writeln('\r\n\x1b[31m[Session disconnected. Reconnecting in 5s...]\x1b[0m\r\n');
-                scheduleReconnect();
+                term.writeln('\r\n[Session ended. Return to the game list to reconnect.]\r\n');
+                if (!game) scheduleReconnect();
             };
 
             ws.onerror = (err) => {
@@ -262,7 +272,7 @@
         } catch (e) {
             console.error('Failed to instantiate WebSocket:', e);
             updateStatus('disconnected');
-            scheduleReconnect();
+            if (!game) scheduleReconnect();
         }
     }
 

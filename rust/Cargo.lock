@@ -3391,14 +3391,22 @@ name = "nc-bridge"
 version = "1.0.0-beta.3"
 dependencies = [
  "axum",
+ "blake3",
+ "chrono",
  "clap",
  "futures",
+ "nc-data",
  "nc-dropfile",
+ "nc-host",
  "nc-log",
+ "rand 0.8.5",
  "reqwest",
+ "rusqlite",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
+ "tower",
  "tower-http",
  "tracing",
 ]
@@ -3502,9 +3510,12 @@ name = "nc-discord"
 version = "1.0.0-beta.3"
 dependencies = [
  "clap",
+ "nc-host",
  "nc-log",
  "poise",
+ "reqwest",
  "rust_xlsxwriter",
+ "serde_json",
  "serenity",
  "tokio",
  "tracing",

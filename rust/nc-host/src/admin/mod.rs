@@ -1,0 +1,256 @@
+//! Local, transport-independent operations shared by nc-admin and the bridge.
+mod announcements;
+mod campaign;
+mod exports;
+mod maintenance;
+mod recovery;
+mod seats;
+
+use nc_data::hosted::HostedStore;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value, json};
+use std::io::Read;
+use std::path::{Path, PathBuf};
+
+pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + Sync>>;
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Request {
+    List,
+    Catalog,
+    Announcements,
+    AcknowledgeAnnouncement {
+        game: String,
+        id: String,
+    },
+    Export {
+        game: String,
+        discord_id: String,
+        format: String,
+    },
+    VerifyBackup {
+        path: String,
+    },
+    Restore {
+        path: String,
+        game: String,
+    },
+    Inspect {
+        game: String,
+    },
+    Create {
+        game: String,
+        name: String,
+        players: u8,
+        seed: Option<u64>,
+    },
+    Publish {
+        game: String,
+    },
+    Start {
+        game: String,
+        first_due: i64,
+        interval_minutes: u32,
+    },
+    Pause {
+        game: String,
+    },
+    Resume {
+        game: String,
+        first_due: i64,
+    },
+    Archive {
+        game: String,
+    },
+    Schedule {
+        game: String,
+        first_due: i64,
+        interval_minutes: u32,
+    },
+    Join {
+        game: String,
+        discord_id: String,
+    },
+    Authorize {
+        game: String,
+        discord_id: String,
+    },
+    Replace {
+        game: String,
+        seat: u32,
+        discord_id: String,
+    },
+    Maintain {
+        game: String,
+        expected_year: u16,
+        request_id: String,
+    },
+    Due,
+    DailyBackups,
+    Backup {
+        game: String,
+    },
+    History {
+        game: String,
+    },
+}
+
+pub fn cli(args: &[&str]) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    if args.len() != 2 || args[0] != "--root" {
+        return Err("usage: nc-host admin --root <games-root> (JSON request on stdin)".into());
+    }
+    let mut input = String::new();
+    std::io::stdin().take(65537).read_to_string(&mut input)?;
+    let result = if input.len() > 65536 {
+        Err("request too large".into())
+    } else {
+        serde_json::from_str::<Request>(&input)
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
+            .and_then(|request| execute(Path::new(args[1]), request))
+    };
+    match result {
+        Ok(data) => {
+            println!("{}", json!({"version":1,"ok":true,"data":data}));
+            Ok(())
+        }
+        Err(error) => {
+            println!(
+                "{}",
+                json!({"version":1,"ok":false,"error":error.to_string()})
+            );
+            Err(error.to_string().into())
+        }
+    }
+}
+
+pub fn execute(root: &Path, request: Request) -> Result<Value> {
+    if !root.exists() {
+        if matches!(&request, Request::Create { .. } | Request::Restore { .. }) {
+            std::fs::create_dir_all(root)?;
+        } else if matches!(&request, Request::List) {
+            return Ok(json!([]));
+        } else {
+            return Err("games root does not exist".into());
+        }
+    }
+    let root = root.canonicalize()?;
+    // Administrative changes cannot interleave across processes. Player writes
+    // use SQLite revision checks and the per-game write gate instead.
+    let lock = std::fs::OpenOptions::new()
+        .create(true)
+        .truncate(false)
+        .read(true)
+        .write(true)
+        .open(root.join(".admin.lock"))?;
+    lock.lock()?;
+    match request {
+        Request::List => campaign::list(&root),
+        Request::Catalog => campaign::catalog(&root),
+        Request::Announcements => announcements::pending(&root),
+        Request::AcknowledgeAnnouncement { game, id } => {
+            announcements::acknowledge(&root, &game, &id)
+        }
+        Request::Export {
+            game,
+            discord_id,
+            format,
+        } => exports::render(&root, &game, &discord_id, &format),
+        Request::VerifyBackup { path } => recovery::verify(Path::new(&path)),
+        Request::Restore { path, game } => recovery::restore(&root, Path::new(&path), &game),
+        Request::Inspect { game } => campaign::inspect(&root, &game),
+        Request::Create {
+            game,
+            name,
+            players,
+            seed,
+        } => campaign::create(&root, &game, &name, players, seed),
+        Request::Publish { game } => campaign::transition(&root, &game, "recruiting", None, None),
+        Request::Start {
+            game,
+            first_due,
+            interval_minutes,
+        } => campaign::transition(
+            &root,
+            &game,
+            "running",
+            Some(first_due),
+            Some(interval_minutes),
+        ),
+        Request::Pause { game } => campaign::transition(&root, &game, "paused", None, None),
+        Request::Resume { game, first_due } => {
+            campaign::transition(&root, &game, "running", Some(first_due), None)
+        }
+        Request::Archive { game } => campaign::transition(&root, &game, "archived", None, None),
+        Request::Schedule {
+            game,
+            first_due,
+            interval_minutes,
+        } => campaign::transition(
+            &root,
+            &game,
+            "running",
+            Some(first_due),
+            Some(interval_minutes),
+        ),
+        Request::Join { game, discord_id } => seats::join(&root, &game, &discord_id, None),
+        Request::Replace {
+            game,
+            seat,
+            discord_id,
+        } => seats::join(&root, &game, &discord_id, Some(seat)),
+        Request::Authorize { game, discord_id } => seats::authorize(&root, &game, &discord_id),
+        Request::Maintain {
+            game,
+            expected_year,
+            request_id,
+        } => maintenance::run(&root, &game, expected_year, &request_id),
+        Request::Due => maintenance::due(&root),
+        Request::DailyBackups => maintenance::daily_backups(&root),
+        Request::Backup { game } => maintenance::backup(&root, &game),
+        Request::History { game } => maintenance::history(&root, &game),
+    }
+}
+
+pub fn game_dir(root: &Path, game: &str) -> Result<PathBuf> {
+    if game.is_empty()
+        || game.len() > 64
+        || !game
+            .bytes()
+            .all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'-')
+    {
+        return Err("game ID must be 1-64 lowercase letters, digits or hyphens".into());
+    }
+    let path = root.join(game);
+    if path
+        .symlink_metadata()
+        .is_ok_and(|m| m.file_type().is_symlink())
+    {
+        return Err("game directory must not be a symlink".into());
+    }
+    Ok(path)
+}
+
+fn store(root: &Path, game: &str) -> Result<(PathBuf, HostedStore)> {
+    let dir = game_dir(root, game)?;
+    for name in ["hosted.db", "ncgame.db"] {
+        let meta = dir.join(name).symlink_metadata()?;
+        if !meta.is_file() || meta.file_type().is_symlink() {
+            return Err("campaign database must be a regular file".into());
+        }
+    }
+    let store = HostedStore::open(&dir.join("hosted.db"))?;
+    let managed: bool = store.connection().query_row(
+        "SELECT EXISTS(SELECT 1 FROM sqlite_master WHERE type='table' AND name='discord_seats')",
+        [],
+        |r| r.get(0),
+    )?;
+    if !managed {
+        return Err("campaign is not managed by nc-admin".into());
+    }
+    Ok((dir, store))
+}
+
+fn now() -> i64 {
+    chrono::Utc::now().timestamp()
+}

@@ -127,6 +127,7 @@ impl App {
         let saved = self
             .planet
             .campaign_store
+            .expecting_snapshot(self.snapshot_id)
             .save_runtime_state_structured_with_intel_activity_and_lifecycle(
                 self.game_data.conquest.game_year,
                 &self.game_data,
@@ -139,6 +140,15 @@ impl App {
             );
         match saved {
             Ok(snapshot_id) => Ok(snapshot_id),
+            Err(err @ CampaignStoreError::ConcurrentSnapshot { .. }) => {
+                self.concurrent_notice_due =
+                    Some("Game updated; your last change was not saved. Please try again.".into());
+                Err(err.into())
+            }
+            Err(err @ CampaignStoreError::HostingPaused) => {
+                self.concurrent_notice_due = Some(err.to_string());
+                Err(err.into())
+            }
             Err(err @ CampaignStoreError::StaleSnapshot { .. }) => {
                 tracing::warn!(
                     player = self.player.record_index_1_based,
@@ -157,6 +167,19 @@ impl App {
     /// menu notice line that the save was refused. Errors from the save are
     /// reported by each caller in its own prompt, so this runs after them.
     pub(crate) fn show_stale_session_notice_if_due(&mut self) {
+        if let Some(notice) = self.concurrent_notice_due.take() {
+            if self
+                .reload_runtime_state_and_bind_player_record_index_1_based(
+                    self.player.record_index_1_based,
+                )
+                .is_ok()
+            {
+                self.show_command_menu_notice(CommandMenu::Main, notice);
+            } else {
+                self.session_stale = true;
+                self.stale_notice_due = true;
+            }
+        }
         if std::mem::take(&mut self.stale_notice_due) {
             self.show_command_menu_notice(CommandMenu::Main, STALE_SESSION_MESSAGE);
         }

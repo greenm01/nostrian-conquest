@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily NC backup with 30-copy retention
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+Unit=nc-community-backup.service
+
+[Install]
+WantedBy=timers.target

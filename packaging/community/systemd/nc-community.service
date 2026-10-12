@@ -1,0 +1,24 @@
+[Unit]
+Description=Nostrian Conquest authenticated browser terminal
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nccommunity
+Group=nccommunity
+EnvironmentFile=/etc/nc-community/web.env
+WorkingDirectory=/srv/nc/community
+ExecStart=/opt/nc-community/current/bin/nc-bridge --games-root /srv/nc/community/games
+Restart=on-failure
+RestartSec=5
+KillMode=control-group
+TimeoutStopSec=30
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/nc/community
+
+[Install]
+WantedBy=multi-user.target

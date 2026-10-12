@@ -1,0 +1,10 @@
+[Unit]
+Description=Check independent NC game deadlines
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=1min
+Unit=nc-community-turns.service
+
+[Install]
+WantedBy=timers.target

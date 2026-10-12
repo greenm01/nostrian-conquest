@@ -10,6 +10,16 @@ use tracing::{info, warn};
 #[command(name = "nc-bridge")]
 #[command(about = "WebSocket PTY & Web Door Bridge for Nostrian Conquest", long_about = None)]
 struct Cli {
+    /// Enable authenticated multi-game community hosting.
+    #[arg(long, env = "NC_GAMES_ROOT")]
+    games_root: Option<PathBuf>,
+    #[arg(long, env = "NC_PUBLIC_ORIGIN")]
+    public_origin: Option<String>,
+    #[arg(long, env = "NC_DISCORD_CLIENT_ID")]
+    discord_client_id: Option<String>,
+    #[arg(long, env = "NC_DISCORD_CLIENT_SECRET", hide_env_values = true)]
+    discord_client_secret: Option<String>,
+
     /// Host interface to bind to
     #[arg(long, default_value = "127.0.0.1", env = "NC_BRIDGE_HOST")]
     host: String,
@@ -81,7 +91,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let bind_addr = format!("{}:{}", config.bind_host, config.bind_port);
     let manager = Arc::new(NodeManager::new(config.clone()));
 
-    let app = create_router(manager.clone());
+    let app = if let Some(root) = cli.games_root {
+        nc_bridge::community::router(nc_bridge::community::Config {
+            games_root: root,
+            nc_door: config.nc_door_binary.clone(),
+            static_dir: config.static_dir.clone(),
+            origin: cli
+                .public_origin
+                .ok_or("--public-origin is required")?
+                .trim_end_matches('/')
+                .to_owned(),
+            client_id: cli
+                .discord_client_id
+                .ok_or("Discord client ID is required")?,
+            client_secret: cli
+                .discord_client_secret
+                .ok_or("Discord client secret is required")?,
+            max_sessions: config.max_nodes,
+        })
+        .map_err(std::io::Error::other)?
+    } else {
+        create_router(manager.clone())
+    };
     let listener = TcpListener::bind(&bind_addr).await?;
 
     info!(

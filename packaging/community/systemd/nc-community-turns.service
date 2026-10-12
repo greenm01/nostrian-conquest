@@ -1,0 +1,18 @@
+[Unit]
+Description=Nostrian Conquest due campaign turns
+
+[Service]
+Type=oneshot
+User=nccommunity
+Group=nccommunity
+Environment=NC_GAMES_ROOT=/srv/nc/community/games
+Environment=NC_HOST_BINARY=/opt/nc-community/current/bin/nc-host
+ExecStart=/opt/nc-community/current/bin/nc-admin maintenance due --json
+TimeoutStartSec=10min
+KillMode=control-group
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/nc/community

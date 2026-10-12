@@ -33,9 +33,12 @@ impl CampaignStore {
         &self,
     ) -> Result<Option<CampaignRuntimeState>, CampaignStoreError> {
         let mut conn = self.connection()?;
+        // Pin all component reads to one SQLite snapshot while other sessions save.
+        conn.execute_batch("BEGIN DEFERRED")?;
         let Some((snapshot_id, game_year)) =
             super::metadata::latest_snapshot_id_and_year(&mut conn)?
         else {
+            conn.execute_batch("COMMIT")?;
             return Ok(None);
         };
         let game_data = super::snapshot_core::load_snapshot_game_data(&mut conn, snapshot_id)?;
@@ -50,6 +53,7 @@ impl CampaignStore {
         if stored_campaign_seed.is_none() {
             super::metadata::persist_campaign_seed(&mut conn, campaign_seed)?;
         }
+        conn.execute_batch("COMMIT")?;
         Ok(Some(CampaignRuntimeState {
             snapshot_id,
             game_year,
@@ -243,8 +247,30 @@ impl CampaignStore {
     ) -> Result<i64, CampaignStoreError> {
         let year = game_data.conquest.game_year;
         let mut conn = self.connection()?;
-        let tx = conn.transaction()?;
+        let tx = conn.transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
         refuse_if_superseded(&tx, loaded_year)?;
+        if self.maintenance_receipt.is_none() && super::hosting::writes_blocked(&tx)? {
+            return Err(CampaignStoreError::HostingPaused);
+        }
+        if let Some(expected) = self.expected_snapshot {
+            let actual = tx
+                .query_row(
+                    "SELECT id FROM snapshots ORDER BY game_year DESC LIMIT 1",
+                    [],
+                    |row| row.get::<_, i64>(0),
+                )
+                .optional()?;
+            if actual != Some(expected) {
+                return Err(CampaignStoreError::ConcurrentSnapshot { expected, actual });
+            }
+        }
+        if let Some((_, expected_year)) = &self.maintenance_receipt {
+            if *expected_year != loaded_year || loaded_year.checked_add(1) != Some(year) {
+                return Err(CampaignStoreError::InvalidState(
+                    "maintenance receipt must advance exactly one expected year".into(),
+                ));
+            }
+        }
         let snapshot_id = save_runtime_state_internal_tx(
             &tx,
             game_data,
@@ -258,6 +284,13 @@ impl CampaignStore {
             player_war_stats_override,
             winner_state_override,
         )?;
+        if let Some((request_id, expected_year)) = &self.maintenance_receipt {
+            tx.execute(
+                "INSERT INTO maintenance_receipts(request_id, expected_year, end_year)
+                 VALUES (?1, ?2, ?3)",
+                params![request_id, expected_year, year],
+            )?;
+        }
         tx.commit()?;
         Ok(snapshot_id)
     }
@@ -313,15 +346,25 @@ pub(super) fn save_runtime_state_internal_tx(
     } else {
         BTreeMap::new()
     };
+    // SQLite may reuse the deleted highest rowid. Keep a sequence so a
+    // same-year replacement always has a distinct revision, even after restore.
+    let snapshot_id: i64 = tx.query_row(
+        "INSERT INTO campaign_metadata(key, int_value)
+         VALUES ('snapshot_sequence', (SELECT COALESCE(MAX(id), 0) + 1 FROM snapshots))
+         ON CONFLICT(key) DO UPDATE SET int_value = MAX(int_value,
+             (SELECT COALESCE(MAX(id), 0) FROM snapshots)) + 1
+         RETURNING int_value",
+        [],
+        |row| row.get(0),
+    )?;
     tx.execute(
         "DELETE FROM snapshots WHERE game_year = ?1",
         params![i64::from(year)],
     )?;
     tx.execute(
-        "INSERT INTO snapshots(game_year) VALUES (?1)",
-        params![i64::from(year)],
+        "INSERT INTO snapshots(id, game_year) VALUES (?1, ?2)",
+        params![snapshot_id, i64::from(year)],
     )?;
-    let snapshot_id = tx.last_insert_rowid();
     super::snapshot_core::write_snapshot_core_rows(&tx, snapshot_id, game_data)?;
     super::report_blocks::write_report_block_rows(&tx, snapshot_id, report_block_rows)?;
     super::mail::write_queued_mail_rows(&tx, snapshot_id, queued_mail)?;

@@ -3,6 +3,7 @@
 //! Bridges incoming WebSocket connections from Discord Activities, Matrix Widgets,
 //! and standalone browsers to `nc-door` child processes using `DOOR.KDL` dropfiles.
 
+pub mod community;
 pub mod proxy;
 pub mod server;
 
