@@ -9,7 +9,7 @@ the login redirect and the initial seven guild commands have been verified. The
 owner has tested sign-in, empire setup, saved orders and reports after two manual
 turns. A fresh invite-only lobby is recruiting, with its owner seat reserved. The turn
 and daily-backup timers are enabled; the lobby has no deadline until its owner
-starts it, and the test game uses manual turns. Both games have verified
+starts it. The browser test game has been archived and is no longer listed. Both games have verified
 off-server copies and passed isolated paused restores. Two-account attended
 acceptance and automated off-server copying remain pending.
 

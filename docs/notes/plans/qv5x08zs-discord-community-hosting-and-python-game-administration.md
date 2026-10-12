@@ -178,3 +178,11 @@ check confirmed year 3000, recruiting, and no deadline. The
 [returning-host instructions](../../../tools/nc-admin/README.md#returning-to-a-recruiting-game)
 cover invite creation, claiming, progress checks and the separate launch step.
 The implemented launch control is CLI-only; no Launch button is present yet.
+
+At the owner's request, browser-test was backed up, verified, paused and archived;
+it no longer appears in the public catalog. No data was deleted. A live no-code
+claim for an unbound account against Beta 1 was rejected with "an invite code is
+required"; its roster stayed unchanged. Beta 1 remains recruiting at year 3000,
+with one owner-reserved seat, three unclaimed seats and no deadline. The owner
+could enter without a code because that Discord ID already held the reserved
+seat. The open-seat count is capacity, not permission to join without an invite.

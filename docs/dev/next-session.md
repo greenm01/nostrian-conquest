@@ -48,8 +48,7 @@ The first implementation milestone is ready for a private pilot. Read that plan 
 and bot services are running; existing BBS/Nostr services remain in place.
 HTTPS, the OAuth redirect and the initial seven guild commands pass live checks.
 The owner tested login, empire setup, saved orders and reports after two manual
-turns in a reserved test game. Turn and daily-backup timers are enabled. The test game now uses manual turns
-with no deadline. Announcements remain disabled. The new four-player invite-only
+turns in a reserved test game. Turn and daily-backup timers are enabled. The browser test game is now archived at the owner's request, with a verified backup retained. Announcements remain disabled. The new four-player invite-only
 lobby stays recruiting until the owner explicitly starts it; its configured
 schedule is midnight America/New_York, adjusted for daylight saving.
 The workspace gate passed 3,245 tests (zero failures, 11 ignored), and final
@@ -78,7 +77,9 @@ All 109 affected Rust tests, eight Python tests and the release real-door smoke
 pass. Eleven guild commands registered. Both the start-here post and fresh
 lobby instructions are pinned; the old channel retains its history in an
 archive. No invite codes were pre-generated. The owner can issue them through
-the bot or CLI. A successful code claim reserves a seat; it never starts a game.
+the bot or CLI. Its sole claimed seat was assigned to the owner before play;
+returning to that seat requires no new code. A live no-code claim for an unbound
+account was rejected, with the roster unchanged. A successful code claim reserves a seat; it never starts a game.
 
 ## Release context
 
