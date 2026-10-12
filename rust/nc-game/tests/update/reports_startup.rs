@@ -87,6 +87,8 @@ fn startup_results_only_pending_flags_do_not_route_into_messages() {
     let fixture_dir = temp_game_copy();
     let mut state = latest_runtime_state(&fixture_dir);
     clear_runtime_report_blocks(&mut state);
+    state.game_data.players[0].handle = "Commander".into();
+    state.game_data.players[0].empire_name = "Foosville".into();
     state.game_data.players[0].messages_last =
         (state.game_data.players[0].messages_last & !0xff) | 1;
     save_runtime_state(&fixture_dir, &state);
@@ -140,6 +142,18 @@ fn startup_results_only_pending_flags_do_not_route_into_messages() {
             app.render(&mut terminal)
                 .expect("login summary should render");
             assert!(terminal.line(24).starts_with(' '));
+            assert!(
+                terminal
+                    .lines
+                    .iter()
+                    .any(|line| line.contains("Player: Commander"))
+            );
+            assert!(
+                terminal
+                    .lines
+                    .iter()
+                    .any(|line| line.contains("Empire: Foosville (#1)"))
+            );
             assert!(
                 terminal
                     .lines

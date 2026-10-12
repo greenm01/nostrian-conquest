@@ -30,7 +30,8 @@ pub(super) fn initialize(config: &Config) -> Result<(), String> {
     let conn =
         Connection::open(config.games_root.join(".web-sessions.db")).map_err(|e| e.to_string())?;
     conn.execute_batch("CREATE TABLE IF NOT EXISTS web_sessions(token TEXT PRIMARY KEY,discord_id TEXT NOT NULL,expires INTEGER NOT NULL);
-        CREATE TABLE IF NOT EXISTS oauth_states(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);") .map_err(|e|e.to_string())?;
+        CREATE TABLE IF NOT EXISTS oauth_states(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);
+        CREATE TABLE IF NOT EXISTS discord_profiles(discord_id TEXT PRIMARY KEY,display_name TEXT NOT NULL);") .map_err(|e|e.to_string())?;
     Ok(())
 }
 pub(super) fn identity(state: &Community, headers: &HeaderMap) -> Result<String, Response> {
@@ -157,15 +158,28 @@ pub(super) async fn callback(
         if id.is_empty() || id.len() > 20 || !id.bytes().all(|b| b.is_ascii_digit()) {
             return Err("invalid identity".into());
         }
-        Ok::<String, Box<dyn std::error::Error + Send + Sync>>(id)
+        let name = user["global_name"]
+            .as_str()
+            .filter(|s| !s.trim().is_empty())
+            .or_else(|| user["username"].as_str())
+            .ok_or("missing display name")?
+            .to_owned();
+        Ok::<_, Box<dyn std::error::Error + Send + Sync>>((id, name))
     }
     .await;
-    let Ok(id) = result else {
+    let Ok((id, name)) = result else {
         return error(StatusCode::BAD_GATEWAY, "Discord login failed; try again");
     };
     let token = token();
-    if let Err(_) = connection(&state).and_then(|conn| {
-        conn.execute(
+    if let Err(_) = connection(&state).and_then(|mut conn| {
+        let tx = conn.transaction().map_err(|e| e.to_string())?;
+        tx.execute(
+            "INSERT INTO discord_profiles(discord_id,display_name) VALUES (?1,?2)
+            ON CONFLICT(discord_id) DO UPDATE SET display_name=excluded.display_name",
+            params![id, name],
+        )
+        .map_err(|e| e.to_string())?;
+        tx.execute(
             "INSERT INTO web_sessions(token,discord_id,expires) VALUES (?1,?2,?3)",
             params![
                 digest(&token),
@@ -173,8 +187,8 @@ pub(super) async fn callback(
                 chrono::Utc::now().timestamp() + 86400 * 14
             ],
         )
-        .map(|_| ())
-        .map_err(|e| e.to_string())
+        .map_err(|e| e.to_string())?;
+        tx.commit().map_err(|e| e.to_string())
     }) {
         return error(
             StatusCode::SERVICE_UNAVAILABLE,
@@ -193,6 +207,31 @@ pub(super) async fn callback(
         set_cookie(&state, "nc_login", "", 0).parse().unwrap(),
     );
     response
+}
+
+pub(super) fn display_name(state: &Community, id: &str) -> Result<String, Response> {
+    let name = connection(state)
+        .and_then(|conn| {
+            conn.query_row(
+                "SELECT display_name FROM discord_profiles WHERE discord_id=?1",
+                [id],
+                |r| r.get::<_, String>(0),
+            )
+            .optional()
+            .map_err(|e| e.to_string())
+        })
+        .map_err(|_| {
+            error(
+                StatusCode::SERVICE_UNAVAILABLE,
+                "Profile storage unavailable",
+            )
+        })?;
+    name.ok_or_else(|| {
+        error(
+            StatusCode::UNAUTHORIZED,
+            "Sign in with Discord again to load your display name",
+        )
+    })
 }
 pub(super) async fn logout(State(state): State<Arc<Community>>, headers: HeaderMap) -> Response {
     if let Err(response) = check_origin(&state, &headers) {

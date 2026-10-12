@@ -45,6 +45,13 @@ fn session(dir: &std::path::Path, token: &str, id: &str) {
     rusqlite::Connection::open(dir.join(".web-sessions.db"))
         .unwrap()
         .execute(
+            "INSERT OR REPLACE INTO discord_profiles VALUES (?1,'Test Commander')",
+            [id],
+        )
+        .unwrap();
+    rusqlite::Connection::open(dir.join(".web-sessions.db"))
+        .unwrap()
+        .execute(
             "INSERT INTO web_sessions VALUES (?1,?2,?3)",
             rusqlite::params![
                 blake3::hash(token.as_bytes()).to_hex().to_string(),
@@ -281,4 +288,33 @@ async fn zip_download_has_binary_body_and_requires_own_seat() {
     )
     .await;
     assert_ne!(status, StatusCode::OK);
+}
+
+#[tokio::test]
+async fn old_sessions_need_a_verified_discord_profile_before_play() {
+    let (dir, app) = fixture();
+    let token = "b".repeat(64);
+    session(dir.path(), &token, "123");
+    admin::execute(
+        dir.path(),
+        HostRequest::Join {
+            game: "public".into(),
+            discord_id: "123".into(),
+        },
+    )
+    .unwrap();
+    rusqlite::Connection::open(dir.path().join(".web-sessions.db"))
+        .unwrap()
+        .execute("DELETE FROM discord_profiles", [])
+        .unwrap();
+    let (status, body) = call(
+        &app,
+        "/api/games/public/access?display_name=Impostor",
+        "GET",
+        Some(&token),
+        None,
+    )
+    .await;
+    assert_eq!(status, StatusCode::UNAUTHORIZED);
+    assert!(body.contains("Sign in with Discord again"));
 }

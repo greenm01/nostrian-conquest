@@ -222,12 +222,17 @@ async fn access(
         &state,
         Request::Authorize {
             game,
-            discord_id: id,
+            discord_id: id.clone(),
         },
     )
     .await
     {
         Ok(data) => {
+            if data["can_play"] == true {
+                if let Err(response) = auth::display_name(&state, &id) {
+                    return response;
+                }
+            }
             Json(json!({"seat":data["seat"],"can_play":data["can_play"],"state":data["state"]}))
                 .into_response()
         }

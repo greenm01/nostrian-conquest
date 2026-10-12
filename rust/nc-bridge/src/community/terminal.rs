@@ -15,6 +15,7 @@ struct Lease {
     key: (String, u32),
     files: PathBuf,
     headers: HeaderMap,
+    handle: String,
 }
 impl Drop for Lease {
     fn drop(&mut self) {
@@ -55,6 +56,10 @@ pub(super) async fn connect(
         return error(StatusCode::CONFLICT, "Campaign is not accepting sessions");
     }
     let seat = access["seat"].as_u64().unwrap() as u32;
+    let name = match auth::display_name(&state, &id) {
+        Ok(name) => name,
+        Err(response) => return response,
+    };
     let key = (game.clone(), seat);
     let (sender, cancel) = tokio::sync::watch::channel(false);
     {
@@ -74,12 +79,27 @@ pub(super) async fn connect(
         active.insert(key.clone(), sender);
     }
     let files = state.config.games_root.join(".nodes").join(auth::token());
-    let lease = Lease {
+    let mut lease = Lease {
         state: state.clone(),
         key,
         files,
         headers,
+        handle: String::new(),
     };
+    let synced = match host(
+        &state,
+        Request::SyncPlayerHandle {
+            game: game.clone(),
+            discord_id: id.clone(),
+            display_name: name,
+        },
+    )
+    .await
+    {
+        Ok(value) => value,
+        Err(response) => return response,
+    };
+    lease.handle = synced["handle"].as_str().unwrap().to_owned();
     ws.max_message_size(4096)
         .on_upgrade(move |socket| run(socket, lease, id, cancel))
 }
@@ -149,8 +169,8 @@ async fn pump(
     std::fs::write(
         &dropfile,
         format!(
-            "2\r\n0\r\n38400\r\nNC Community\r\n1\r\nPlayer\r\nweb{}\r\n30\r\n30\r\n1\r\n80\r\n25\r\n",
-            lease.key.1
+            "2\r\n0\r\n38400\r\nNC Community\r\n1\r\nPlayer\r\n{}\r\n30\r\n30\r\n1\r\n80\r\n25\r\n",
+            lease.handle
         ),
     )?;
     let dir = nc_host::admin::game_dir(&lease.state.config.games_root, &lease.key.0)?;

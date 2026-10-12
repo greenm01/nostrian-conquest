@@ -17,6 +17,11 @@ pub type Result<T> = std::result::Result<T, Box<dyn std::error::Error + Send + S
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(tag = "action", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Request {
+    SyncPlayerHandle {
+        game: String,
+        discord_id: String,
+        display_name: String,
+    },
     List,
     Catalog,
     Announcements,
@@ -145,6 +150,11 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
         .open(root.join(".admin.lock"))?;
     lock.lock()?;
     match request {
+        Request::SyncPlayerHandle {
+            game,
+            discord_id,
+            display_name,
+        } => seats::sync_handle(&root, &game, &discord_id, &display_name),
         Request::List => campaign::list(&root),
         Request::Catalog => campaign::catalog(&root),
         Request::Announcements => announcements::pending(&root),

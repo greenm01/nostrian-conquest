@@ -83,6 +83,7 @@ def main():
                 with sqlite3.connect(root/'.web-sessions.db') as db:
                     digest=db.execute('SELECT token FROM oauth_states').fetchone()[0]
                     db.execute('INSERT INTO web_sessions VALUES (?,?,?)',(digest,'123',int(time.time())+60))
+                    db.execute('INSERT INTO discord_profiles VALUES (?,?)',('123','Smoke Commander'))
                 assert request(port,'POST','/api/games/one/join',token)[0]==200
                 assert request(port,'GET','/api/games/two/exports/reports',token)[0]==409
                 sock,status=websocket(port,token);assert status==101,status
@@ -93,6 +94,9 @@ def main():
                     output+=payload
                     if len(output)>100:break
                 assert len(output)>100,'door produced no terminal output'
+                with sqlite3.connect(root/'one/ncgame.db') as db:
+                    handle=db.execute('SELECT handle FROM snapshot_players WHERE record_index=1 ORDER BY snapshot_id DESC LIMIT 1').fetchone()[0]
+                    assert handle=='Smoke Commander',handle
                 other,status=websocket(port,token);other.close();assert status==409,status
                 assert request(port,'POST','/auth/logout',token)[0]==200
                 deadline=time.monotonic()+10

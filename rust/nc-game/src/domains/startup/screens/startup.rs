@@ -703,11 +703,12 @@ fn startup_login_summary_rows(frame: &ScreenFrame<'_>, game_year: u16) -> Vec<St
         display_or_unknown(&frame.player.empire_name)
     };
     vec![
+        format!("Player: {identity}"),
         format!(
-            "You are \"{identity}\", (Empire #{})",
+            "Empire: {} (#{})",
+            display_or_unknown(&frame.player.empire_name),
             frame.player.record_index_1_based
         ),
-        String::new(),
         format!("The year is: {game_year} A.D."),
         String::new(),
         format!("Last year on: {} A.D.", game_year.saturating_sub(1)),

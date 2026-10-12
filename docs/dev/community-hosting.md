@@ -83,6 +83,14 @@ server exchanges the code, verifies the account with Discord, and stores a
 hashed random session cookie. OAuth state expires after five minutes and is
 single use. Cookies are HttpOnly, Secure over HTTPS, and SameSite=Lax.
 
+The Discord ID is the permanent seat key. The verified account display name
+becomes the in-game player handle when the browser terminal opens; the username
+is the fallback when no display name is set. Names may change or match another
+player's name without changing ownership. The empire name remains the player's
+choice. Handles use the existing 25-character game text limits and discard
+control characters. A fresh Discord sign-in refreshes the display name;
+older sessions without a saved profile must sign in again.
+
 Install the bot into the **existing** community with `bot` and
 `applications.commands` scopes. It needs View Channel, Send Messages and Attach
 Files in the selected channels, not Administrator or Message Content intent.

@@ -2,6 +2,43 @@ use super::*;
 use nc_data::hosted;
 use rusqlite::{OptionalExtension, params};
 
+pub(super) fn sync_handle(root: &Path, game: &str, id: &str, display_name: &str) -> Result<Value> {
+    let access = authorize(root, game, id)?;
+    if access["can_play"] != true {
+        return Err("campaign is not accepting sessions".into());
+    }
+    // Names are labels only. The authenticated ID determines the seat, even
+    // when two accounts use the same name or one changes its name later.
+    let name: String = display_name.chars().filter(|c| !c.is_control()).collect();
+    if name.trim().is_empty() || name.len() > 512 {
+        return Err("invalid display name".into());
+    }
+    let seat = access["seat"].as_u64().ok_or("missing seat")? as usize;
+    let runtime = nc_data::CampaignStore::open_default_in_dir(&game_dir(root, game)?)?;
+    let mut snapshot = runtime
+        .load_latest_runtime_state()?
+        .ok_or("missing state")?;
+    let player = snapshot
+        .game_data
+        .players
+        .get_mut(seat - 1)
+        .ok_or("missing player")?;
+    let old = player.handle.clone();
+    nc_data::set_player_handle(player, name.trim());
+    let handle = player.handle.clone();
+    if handle != old {
+        runtime
+            .expecting_snapshot(snapshot.snapshot_id)
+            .save_runtime_state_structured(
+                snapshot.game_year,
+                &snapshot.game_data,
+                &snapshot.report_block_rows,
+                &snapshot.queued_mail,
+            )?;
+    }
+    Ok(json!({"seat":seat,"handle":handle}))
+}
+
 fn validate_id(id: &str) -> Result<()> {
     if id.is_empty() || id.len() > 20 || !id.bytes().all(|b| b.is_ascii_digit()) {
         return Err("invalid Discord account ID".into());

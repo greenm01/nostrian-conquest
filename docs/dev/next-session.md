@@ -55,8 +55,12 @@ Do not mistake synthetic session tests for live login acceptance.
 t122's map ZIP and `/help`, `/about`, `/manuals` are deployed in signed release
 `bcf9be05`. All ten guild commands registered; the live ZIP contains the five
 expected files, and both nested workbook archives and their XML validate.
-All 97 affected-crate tests pass. The [welcome post](discord-welcome.md) awaits
-the owner's channel choice before posting and pinning. t122 stays open for that.
+All 97 affected-crate tests pass. The [welcome post](discord-welcome.md) is posted
+and pinned in the approved read-only rocket-marked start-here channel. t122 is
+complete. t123 replaces the browser launcher's `web1` placeholder with a verified
+Discord display name and separates player and empire in the greeting. Its
+784 tests and debug real-door smoke pass; deployment is pending. Existing
+sessions must sign in again to populate their verified profile.
 
 ## Release context
 

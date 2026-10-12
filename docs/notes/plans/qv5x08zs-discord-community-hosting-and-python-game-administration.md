@@ -104,7 +104,26 @@ archive, authorization, binary response and command-registration controls.
 
 `/help`, `/about` and `/manuals` supplement `/guide`. Manual links returned 200.
 The [welcome post](../../dev/discord-welcome.md) is under Discord's 2,000-character
-limit. Posting and pinning await the owner's channel choice.
+limit. The owner approved the read-only rocket-marked start-here channel.
+The channel and pinned welcome post are live; pin state and member permissions
+were verified through Discord. All ten commands are registered.
+
+### t123
+
+Use the verified Discord display name as the player handle, with username as
+fallback. The Discord ID remains the permanent seat key. Sync the handle when
+opening the browser terminal; do not change the empire name or move a seat
+when a display name changes or duplicates another name. Strip control characters
+and use the existing 25-character game handle rules. Existing sessions without
+a verified profile must sign in again. Clarify the startup greeting by naming
+the player and empire separately. Test account isolation, renames, terminal
+injection, saved empire preservation and real-door startup.
+
+The implementation passes 784 tests across nc-host, nc-bridge and nc-game.
+The real-door socket control verifies the saved display handle, terminal output,
+wrong-game rejection, duplicate sessions, logout and cleanup. The startup
+regression shows player and empire names on separate lines. Live deployment
+requires a quiet browser service; existing profiles refresh on the next sign-in.
 
 ## Connections
 
