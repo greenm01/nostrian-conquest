@@ -170,3 +170,11 @@ Off-server copying is verified but not yet automated. Two-account attended
 acceptance and general launch readiness remain t119–t121 work; command
 registration and synthetic claim tests do not substitute for a friend's live
 Discord claim.
+
+The owner reaffirmed the launch hold while finding players: keep Beta 1
+recruiting indefinitely until the owner explicitly launches it. Do not start,
+resume or advance it during deployment or acceptance checks. A read-only live
+check confirmed year 3000, recruiting, and no deadline. The
+[returning-host instructions](../../../tools/nc-admin/README.md#returning-to-a-recruiting-game)
+cover invite creation, claiming, progress checks and the separate launch step.
+The implemented launch control is CLI-only; no Launch button is present yet.

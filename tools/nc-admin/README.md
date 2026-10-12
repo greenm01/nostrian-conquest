@@ -17,7 +17,6 @@ sudo authorization. Then administer over SSH, for example:
 ```sh
 ssh YOUR_SERVER nc-admin invites create beta-1
 ssh YOUR_SERVER nc-admin invites list beta-1
-ssh YOUR_SERVER nc-admin games start beta-1
 ```
 
 `NC_GAMES_ROOT` selects the managed games directory. `NC_HOST_BINARY` selects
@@ -82,6 +81,30 @@ Set `PYTHONPATH` to `tools/nc-admin` if running the tests outside their package.
 See [community hosting](../../docs/dev/community-hosting.md) for server setup,
 Discord installation, acceptance checks and recovery.
 
+## Returning to a recruiting game
+
+A recruiting game waits as long as the host needs. There is no recruitment
+countdown. Players can claim seats, name their empires and prepare orders.
+Neither filling the game nor opening **Play** starts maintenance. Invite codes
+remain usable until claimed or revoked, while recruitment stays open.
+
+To check progress, use `/status game:beta-1` in Discord or:
+
+```sh
+ssh YOUR_SERVER nc-admin games inspect beta-1
+ssh YOUR_SERVER nc-admin invites list beta-1
+```
+
+The waiting state is `recruiting`, with `next_due: null`. The daily timer skips
+it. A configured midnight schedule only becomes active when the host starts
+the game. Currently the launch control is the CLI `games start` command; there
+is no browser or Discord **Launch** button. **Play** only opens the terminal.
+
+For the current Beta 1 lobby, the owner has explicitly reserved the launch
+decision while finding players. Agents must not start it, resume it into running
+state, or advance a turn as part of setup, deployment or acceptance testing.
+Wait for the owner's explicit launch action or instruction.
+
 ## Private invites and local midnight
 
 Set invite-only **before** publishing. A game stays in recruitment until the
@@ -95,7 +118,6 @@ nc-admin games publish beta-1
 nc-admin invites create beta-1 --count 4
 nc-admin invites list beta-1
 nc-admin invites revoke beta-1 INVITE_ID
-nc-admin games start beta-1
 ```
 
 Generate only as many codes as there are unclaimed, unreserved seats. Each code
@@ -112,7 +134,13 @@ game:beta-1`. The authenticated Discord ID owns the seat; the code is not a logi
 password. Failed claims are limited to five per account and 100 per game in ten
 minutes. The browser cannot bypass the invite requirement.
 
-`games start` sets the first deadline to the next local midnight. The daily
+**Only when you are ready to launch**, run:
+
+```sh
+nc-admin games start beta-1
+```
+
+`games start` closes recruitment and sets the first deadline to the next local midnight. The daily
 schedule follows daylight saving, including 23-hour and 25-hour days. Configure
 it before starting; setting it on a running game replaces its next deadline.
 `games resume beta-1` resumes the same schedule. An early manual turn keeps the

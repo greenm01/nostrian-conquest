@@ -35,6 +35,12 @@ Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
 ## Current work: Discord community hosting
 
+**Owner launch hold:** Beta 1 must stay recruiting while the owner finds players.
+Do not start, resume or manually advance it during setup, deployment or testing.
+Wait for the owner's explicit launch action or instruction. Filling its seats
+and opening Play do not start it. The current launch control is CLI-only;
+there is no Launch button yet. See the [returning-host instructions](../../tools/nc-admin/README.md#returning-to-a-recruiting-game).
+
 The owner approved the [hosting plan](../notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md)
 (t117–t121): Python administration, Discord discovery and browser BBS play.
 The first implementation milestone is ready for a private pilot. Read that plan and
