@@ -5,8 +5,8 @@ the existing 80x25 door in a browser. `nc-admin` handles operator work over SSH.
 The existing community is <https://discord.gg/eZMRpdQTu>.
 
 The Discord browser and bot services are deployed for acceptance testing.
-The shared-identity/NIP-07 update is implemented in source; production conversion,
-deployment and attended nos2x acceptance remain separate work. HTTPS,
+The shared-identity/NIP-07 update is deployed with the offline account conversion.
+Attended nos2x acceptance remains outstanding. HTTPS,
 the login redirect and the initial seven guild commands have been verified. The
 owner has tested sign-in, empire setup, saved orders and reports after two manual
 turns. A fresh invite-only lobby is recruiting, with its owner seat reserved. The turn

@@ -92,3 +92,29 @@ An attended real-extension sign-in remains separate acceptance evidence.
 The updated page passes the existing headless Chromium signer/claim/logout
 smoke. The rollout preflight found no live door processes and confirmed Beta 1
 was recruiting at year 3000 with no deadline.
+
+## t127 deployment evidence
+
+Deployed signed release `8709ca82-ui` on 2026-10-12. Host, door and Discord
+executables retain the verified t126 hashes above. The bridge was rebuilt from
+`8709ca82` because the game-list HTML is embedded at compile time; its SHA-256
+is `0f0e09dbe9f8653b8b7b4a36ce1045521f836af2e4100519437c56adcdbd6b0e`.
+The matching Python client, static assets and converter are included in the
+signed release manifest. The rebuilt bridge passed the real-door smoke again.
+
+The offline conversion backed up five databases. Backup hashes and SQLite
+integrity passed; every preserved table row was compared before/after, accounting
+for provider prefixes and intentionally expired browser sessions/OAuth state.
+Campaign inspection matched exactly after normalizing seat identities. A private
+off-server archive of the conversion backup also passed all five database hashes.
+Beta 1 remains recruiting at year 3000, three seats open, no deadline. The archived
+test game remains archived. No invite or seat was claimed and no turn advanced.
+Community browser/bot and turn/backup timers are active; announcements remain off.
+
+The public HTML matches the committed page. Headless Chromium shows adjacent
+Discord/Nostr buttons at desktop width, wrapping without overflow at phone width,
+and loads the recruiting game card. Existing mock-signer checks cover missing
+extensions, signing rejection, payload, identity, invite claim and logout. A live
+HTTP smoke with a disposable software signer passed signed NIP-98 login, identity,
+Secure session, unbound-seat rejection, replay rejection and logout. Discord's
+OAuth redirect passes. This does not replace attended nos2x/Discord acceptance.

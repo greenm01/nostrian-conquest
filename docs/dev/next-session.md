@@ -83,7 +83,7 @@ account was rejected, with the roster unchanged. A successful code claim reserve
 
 ## NIP-07 browser login update (t126)
 
-The shared Discord/Nostr identity implementation is local, not deployed. See
+The shared Discord/Nostr identity implementation is deployed. See
 [the implementation note](../notes/plans/8vi3s0k3-discord-and-nostr-browser-identities-with-shared-invite-seats.md)
 for validation: 3,272 Rust tests and 13 Python tests pass; debug/release door
 and conversion smokes pass. Invite codes are consumed once across both providers. The owner
@@ -91,13 +91,14 @@ also requested unadvertised operator-only link/unlink controls: a sysop can gran
 both identities the same seat; a used invite can never do this. The player UI
 and bot expose no linking operation. One terminal per seat still applies.
 
-Deployment needs the explicit [offline pilot conversion](../../tools/nc-admin/README.md#offline-pilot-identity-conversion)
+Deployment used the explicit [offline pilot conversion](../../tools/nc-admin/README.md#offline-pilot-identity-conversion)
 and matching host/bridge/bot/Python/static versions. Existing seats, codes and
-profiles survive; old browser sessions expire. Source tests and synthetic
+profiles were preserved; old browser sessions expired. Source tests and synthetic
 browser/door smokes do not replace an attended nos2x and Discord login check.
-No live service, campaign, code or announcement was changed. Beta 1's launch
-hold remains in force. Deployment and live acceptance are separate from t126's
-implementation and remain part of the hosting acceptance work.
+t127 puts both sign-in buttons together on the public game listing. Beta 1's
+launch hold remains in force: recruiting, year 3000, no deadline. No seat or
+invite was claimed during rollout. Attended login acceptance remains part of
+the hosting acceptance work.
 
 ## Release context
 
