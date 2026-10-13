@@ -114,6 +114,10 @@ styling for the browser listing. Desktop/mobile navigation, clipboard controls
 and login-state checks pass; 3,274 Rust tests and 13 Python tests pass. The live
 Playwright checks pass too. Deployment preserved sessions and all campaign data.
 
+t130 is deployed in signed release `4115f43c`: external website links open new
+tabs; local navigation and login stay in the same tab. Game data and sessions
+were preserved.
+
 ## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their

@@ -190,3 +190,14 @@ Open external website links from the game listing, help and contact pages in
 new tabs with `noopener noreferrer`. Keep local navigation and authentication
 in the current tab; the Nostr app link continues to use its protocol handler.
 Verify HTML link attributes, rebuild the embedded pages and check live delivery.
+
+Deployed signed release `4115f43c` after verifying its manifest and signature.
+HTML checks and the release build pass. Live Playwright clicks verify external
+links open separate tabs without an opener and leave the source page in place;
+external destinations were intercepted for this check. Local navigation and
+login remain in the current tab. All campaign database content and metadata
+matched across deployment, and existing sessions were preserved.
+Nine external-link clicks passed the live browser check. The Chrome Web Store
+link's target/rel attributes were verified from markup; its special browser
+handling was excluded from mocked navigation after Chromium closed during that
+check. No production behavior was changed to accommodate the test harness.
