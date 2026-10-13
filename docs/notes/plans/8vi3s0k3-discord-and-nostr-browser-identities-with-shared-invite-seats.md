@@ -292,3 +292,8 @@ The owner confirmed nos2x and Flamingo each sign in successfully, but conflict
 when enabled together. Update the how-to to recommend those two choices, remove
 Alby links and explain enabling only one extension, then reloading. Verify
 rendering and links, rebuild the embedded page and publish.
+
+Signed release `a025dd8a` is live. Release build and local/live desktop/mobile
+browser checks pass; public how-to HTML matches source. Deployment verified
+signature and hashes, preserved sessions and all campaign database content,
+and resumed community services/timers. No player terminal was active.
