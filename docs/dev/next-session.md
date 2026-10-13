@@ -147,3 +147,7 @@ Task IDs are allocated above all IDs in todo and monthly done files.
 
 The broader invalid-order abort differences found by t099 remain outside
 its scope; see [q0a0mhm2](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-october-2026-oracle-work.md#t099).
+
+The approved Tokyo Night Storm palette (t131) is live in signed static release
+`4716b19a` across the listing, how-to and contact pages. Live desktop/mobile
+checks pass. Services were not restarted; campaign data was not modified.

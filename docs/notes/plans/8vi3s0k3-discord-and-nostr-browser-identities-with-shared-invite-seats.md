@@ -215,3 +215,8 @@ The existing Chromium listing checks pass. Playwright checks at 1280px and
 desktop and mobile screenshots were inspected. Text contrast checks range
 from 5.33:1 for blue controls to 9.02:1 for body text; control borders reach
 3.22:1. Colors follow the upstream Tokyo Night Storm palette.
+
+Signed static release `4716b19a` is live. Its signature and every artifact hash
+passed verification. Live CSS matches the source byte for byte, and all three
+pages pass the same desktop/mobile browser checks over HTTPS. All services and
+timers remain active; deployment required no restart or campaign data writes.
