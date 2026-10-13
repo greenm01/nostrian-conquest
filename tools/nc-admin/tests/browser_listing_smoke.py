@@ -56,10 +56,18 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             const event={preventDefault(){},currentTarget:form};
             await form.onsubmit(event);
             if(!document.getElementById('notice').textContent.includes('Install'))throw Error('missing extension');
-            window.nostr={signEvent:async()=>{throw Error('User rejected');}};
+            window.nostr={getPublicKey:async()=> 'a'.repeat(64),signEvent:async()=>{throw Error('User rejected');}};
             await form.onsubmit(event);
             if(!document.getElementById('notice').textContent.includes('User rejected'))throw Error('reject handling');
-            window.nostr={signEvent:async event=>({...event,id:'f'.repeat(64),pubkey:'a'.repeat(64),sig:'b'.repeat(128)})};
+            window.nostr={getPublicKey:async()=>null,signEvent:async()=>{throw Error('must not sign without a key');}};
+            await form.onsubmit(event);
+            check(document.getElementById('notice').textContent.includes('public key'),'missing key handling');
+            check(!logged && !form.querySelector('button').disabled,'missing key leaves login available');
+            let keyRequested=false;
+            window.nostr={getPublicKey:async()=>{keyRequested=true;return 'a'.repeat(64);},signEvent:async event=>{
+                check(keyRequested && event.pubkey==='a'.repeat(64),'public key required before signing');
+                return {...event,id:'f'.repeat(64),sig:'b'.repeat(128)};
+            }};
             document.getElementById('nostr-name').value='Commander';
             await form.onsubmit(event);
             if(!logged || !document.getElementById('identity').textContent.includes('Nostr'))throw Error('login failed');

@@ -113,13 +113,15 @@ document.getElementById('nostr-login').onsubmit = async event => {
     event.preventDefault();
     const submit = event.currentTarget.querySelector('button'); submit.disabled = true;
     try {
-        if (!window.nostr?.signEvent) throw new Error('Install or enable a NIP-07 extension such as nos2x, then reload this page.');
+        if (!window.nostr?.getPublicKey || !window.nostr?.signEvent) throw new Error('Install or enable a NIP-07 extension such as nos2x, then reload this page.');
         notice.textContent = 'Approve the login request in your Nostr extension.';
+        const pubkey = await window.nostr.getPublicKey();
+        if (typeof pubkey !== 'string' || !/^[0-9a-f]{64}$/.test(pubkey)) throw new Error('Your Nostr extension did not provide a public key. Set up or unlock your account in the extension, then try again.');
         const challenge = await request('/auth/nostr/challenge', 'POST');
         const body = JSON.stringify({challenge:challenge.challenge, display_name:document.getElementById('nostr-name').value.trim() || null});
         const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(body));
         const payload = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2,'0')).join('');
-        const signed = await window.nostr.signEvent({kind:27235, created_at:Math.floor(Date.now()/1000), content:'', tags:[['u',`${location.origin}/auth/nostr`],['method','POST'],['payload',payload]]});
+        const signed = await window.nostr.signEvent({pubkey, kind:27235, created_at:Math.floor(Date.now()/1000), content:'', tags:[['u',`${location.origin}/auth/nostr`],['method','POST'],['payload',payload]]});
         await request('/auth/nostr', 'POST', body, {Authorization:`Nostr ${btoa(JSON.stringify(signed))}`});
         await loadIdentity(); await loadGames();
         notice.textContent = 'Signed in.';

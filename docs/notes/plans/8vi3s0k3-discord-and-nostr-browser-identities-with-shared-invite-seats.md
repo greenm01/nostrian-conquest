@@ -270,3 +270,11 @@ verify desktop/mobile layout and publish the HTML.
 Commit `edcedd47` is live. Desktop/mobile checks pass locally and over HTTPS;
 the mobile screenshot confirms separate prompts with a line of space between
 them and natural wrapping on narrow screens. Green styling is preserved.
+
+### t136
+
+Request the NIP-07 public key before signing the login event, for compatibility
+with Flamingo, which hashes the event without inserting a public key. Validate
+the returned key and explain missing/unconfigured keys. Preserve the NIP-98
+challenge and server signature validation. Extend the Chromium regression
+check to require the public key before signing and cover a missing key.
