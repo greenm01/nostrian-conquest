@@ -152,3 +152,26 @@ signer: signed-out listing, signed login, hidden login choices, one visible
 Sign out button, Join-only unbound game card, and logout reset all passed.
 No game seat was claimed. This verifies the deployed browser/backend flow,
 not an attended nos2x extension popup.
+
+### t129
+
+Add public How to play and Contact sysop pages beside Community Discord. The
+owner requested brief, clear prose and a softer appearance. Use a shared warm
+gray/sage stylesheet for the listing and both pages, readable type and spacing,
+and wrapping layouts. Explain Discord/Nostr sign-in, nos2x/Alby setup links,
+single-use invitations and returning with the same identity. Keep operator-only
+account linking out of player documentation.
+
+The owner supplied Discord username `niltempus`, user ID `1084285950512857108`,
+and the public Nostr key shown on the contact page. Offer a Discord profile link,
+community fallback, Nostr app link and copy controls. No messages are sent.
+Verify desktop/mobile pages, navigation, copy success/failure, login controls and
+public routing before deploying. Preserve all live sessions and campaign data.
+
+The full workspace passed 3,274 tests (zero failures, 11 ignored), and 13 Python
+unit tests pass. Existing Chromium sign-in/seat-control checks pass with the
+shared stylesheet. Playwright checks at 1280px and 390px verified navigation,
+no horizontal overflow, exact contact details, clipboard success and failure,
+and signed-out controls. Screenshots were inspected. The supplied npub passes
+Bech32 checksum and 32-byte length validation. Extension links were checked
+against the nos2x project and official Alby documentation.

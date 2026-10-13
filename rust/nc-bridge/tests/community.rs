@@ -449,3 +449,14 @@ async fn access_describes_only_the_signed_in_accounts_seat() {
     assert_eq!(access["can_play"], false);
     assert_eq!(access["state"], "paused");
 }
+
+#[tokio::test]
+async fn help_and_contact_pages_are_available_before_sign_in() {
+    let (_dir, app) = fixture();
+    for (path, heading) in [("/howto", "How to play"), ("/contact", "Contact sysop")] {
+        let (status, body) = call(&app, path, "GET", None, None).await;
+        assert_eq!(status, StatusCode::OK);
+        assert!(body.contains(&format!("<h1>{heading}</h1>")));
+        assert!(body.contains("/terminal/community.css"));
+    }
+}

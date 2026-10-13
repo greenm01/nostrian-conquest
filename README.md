@@ -25,6 +25,8 @@ xterm.js to keep the ANSI colors, text menus, and keyboard commands of a BBS.
 3. Use `/play`, open the link, and sign in with the same Discord account.
 
 Already joined? **[Open your game](https://play.nostrian-conquest.com).**
+New here? Read [How to play](https://play.nostrian-conquest.com/howto), or
+[contact the sysop](https://play.nostrian-conquest.com/contact) for an invite.
 
 **[Sign in with Nostr](https://play.nostrian-conquest.com)** using a NIP-07
 extension such as nos2x, or choose Discord on the same page. Enter the host's

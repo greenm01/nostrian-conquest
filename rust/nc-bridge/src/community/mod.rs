@@ -78,6 +78,14 @@ pub fn router(config: Config) -> Result<Router, String> {
             "/",
             get(|| async { Html(include_str!("../../static/community.html")) }),
         )
+        .route(
+            "/howto",
+            get(|| async { Html(include_str!("../../static/howto.html")) }),
+        )
+        .route(
+            "/contact",
+            get(|| async { Html(include_str!("../../static/contact.html")) }),
+        )
         .route("/auth/login", get(auth::login))
         .route("/auth/callback", get(auth::callback))
         .route("/auth/logout", post(auth::logout))

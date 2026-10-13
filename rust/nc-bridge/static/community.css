@@ -1,0 +1,35 @@
+:root{color-scheme:light;background:#e8e7e1;color:#38423c;font:17px/1.65 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{max-width:66rem;margin:0 auto;padding:2.5rem 1.25rem 4rem}
+header{margin-bottom:2rem}
+h1,h2,h3,.site-name{color:#344c3d;line-height:1.2}
+h1,.site-name{font-family:Georgia,"Times New Roman",serif;font-weight:normal}
+h1{font-size:clamp(2rem,5vw,2.8rem);margin:0 0 .6rem}
+.site-name{font-size:1.5rem;margin:0 0 1rem}
+h2{font-size:1.35rem;margin:0 0 1rem}
+h3{font-size:1.05rem;margin:1.5rem 0 .5rem}
+p{margin:.8rem 0}
+.intro{color:#566258;margin:.5rem 0 1.4rem;font-size:1.08rem}
+nav,.login-actions,.actions{display:flex;flex-wrap:wrap;align-items:center;gap:.65rem 1.2rem}
+nav{padding:1rem 0;border-bottom:1px solid #bec6bc;font-size:.95rem}
+a{color:#355d48;text-underline-offset:.2em}
+a:hover{color:#1f4830}
+a[aria-current=page]{font-weight:650;text-decoration:none}
+section,article{background:#f3f2ed;border:1px solid #c7cec3;border-radius:.65rem;padding:1.5rem;margin:1.25rem 0}
+.reading{max-width:48rem}
+.reading p{max-width:66ch}
+button,.login-link,.button-link{display:inline-block;font:inherit;font-size:.95rem;line-height:1.4;padding:.65rem .9rem;border:1px solid #91a18d;border-radius:.35rem;background:#dce4d7;color:#304a38;text-decoration:none;cursor:pointer}
+button:hover,.login-link:hover,.button-link:hover{background:#d0ddc9;color:#243e2b}
+button:disabled{opacity:.65;cursor:wait}
+:focus-visible{outline:3px solid #607a64;outline-offset:3px}
+input{font:inherit;max-width:100%;padding:.4rem .5rem;color:#38423c;background:#faf9f5;border:1px solid #91a18d;border-radius:.3rem}
+label{display:inline-block}
+article button{margin:.5rem .5rem 0 0}
+article label{margin-right:.5rem}
+.account>p:first-child{margin-top:0}
+#notice,#copy-status{white-space:pre-wrap;color:#73552a}
+#notice:empty,#copy-status:empty{display:none}
+.contact-key{overflow-wrap:anywhere;padding:1rem;background:#e7eae1;border-radius:.35rem;font-size:.9rem}
+.actions{margin-top:1rem}
+@media(max-width:36rem){body{padding:1.5rem 1rem 3rem}section,article{padding:1.15rem}input{display:block;margin-top:.35rem}nav{gap:.65rem 1rem}}

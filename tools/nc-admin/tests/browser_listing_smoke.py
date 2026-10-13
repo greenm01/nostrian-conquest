@@ -40,7 +40,8 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
     };
     </script>'''
     html=html.replace('<script src=',mock+'<script src=')
-    html=html.replace('/terminal/community.js','/community.js')
+    html=html.replace('/terminal/community.js','/community.js').replace('/terminal/community.css','/community.css')
+    (dest/'community.css').write_text((root/'rust/nc-bridge/static/community.css').read_text())
     tests='''<script>
     window.addEventListener('load',async()=>{
         const result=document.createElement('pre'); result.id='result';document.body.append(result);
