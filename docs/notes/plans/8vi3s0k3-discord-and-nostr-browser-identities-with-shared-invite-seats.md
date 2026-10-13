@@ -226,3 +226,9 @@ timers remain active; deployment required no restart or campaign data writes.
 Give the site name the requested warm yellow, page titles a lavender accent,
 and section/game titles a soft blue from the existing Storm palette. Verify desktop/mobile rendering
 and publish the CSS without restarting services.
+
+Signed static release `b59a7a24` is live. Desktop/mobile browser checks pass
+locally and over HTTPS; the live stylesheet matches source. The listing
+screenshot confirms the warm yellow site title and blue game heading.
+Signature and artifact hashes passed verification, and all services remained
+active without a restart.

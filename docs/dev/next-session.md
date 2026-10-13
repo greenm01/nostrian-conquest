@@ -151,3 +151,6 @@ its scope; see [q0a0mhm2](../notes/plans/q0a0mhm2-classic-follow-ups-from-the-oc
 The approved Tokyo Night Storm palette (t131) is live in signed static release
 `4716b19a` across the listing, how-to and contact pages. Live desktop/mobile
 checks pass. Services were not restarted; campaign data was not modified.
+The title accent follow-up (t132), signed static release `b59a7a24`, is live:
+warm yellow site name, lavender page titles and blue section/game headings.
+Desktop/mobile checks pass locally and live.
