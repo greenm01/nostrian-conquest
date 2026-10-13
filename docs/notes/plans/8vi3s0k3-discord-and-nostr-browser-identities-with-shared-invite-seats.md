@@ -183,3 +183,10 @@ HTTPS, including contact details, copy controls and navigation. Campaign
 inspection and logical hashes of every campaign database matched across the
 switch. Sessions were preserved; all community services/timers are active.
 No seat, invite or game state changed, and no messages were sent.
+
+### t130
+
+Open external website links from the game listing, help and contact pages in
+new tabs with `noopener noreferrer`. Keep local navigation and authentication
+in the current tab; the Nostr app link continues to use its protocol handler.
+Verify HTML link attributes, rebuild the embedded pages and check live delivery.
