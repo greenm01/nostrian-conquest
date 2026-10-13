@@ -266,3 +266,7 @@ sockets rather than entering a live seat. Services stayed active without restart
 Place each landing info-box prompt and link in its own paragraph, with one
 line of space between prompts. Preserve green styling and link destinations;
 verify desktop/mobile layout and publish the HTML.
+
+Commit `edcedd47` is live. Desktop/mobile checks pass locally and over HTTPS;
+the mobile screenshot confirms separate prompts with a line of space between
+them and natural wrapping on narrow screens. Green styling is preserved.
