@@ -254,3 +254,9 @@ replace so Back does not reopen an ended terminal. The listing offers the
 current Play or Reconnect action after an exit or connection loss. Preserve
 standalone terminal reconnection and pre-connection error messages. Verify
 normal closure, connection loss, standalone reconnect and access errors.
+
+Signed static release `c07bbdc2` is live; signature and artifact hashes pass,
+and the public terminal script matches source. A JavaScript VM harness exercised
+normal and abnormal socket closure, standalone reconnection and denied access.
+The existing Chromium listing smoke also passes. These checks use mocked
+sockets rather than entering a live seat. Services stayed active without restart.
