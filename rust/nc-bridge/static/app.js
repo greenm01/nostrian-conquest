@@ -265,8 +265,12 @@
 
             ws.onclose = () => {
                 updateStatus('disconnected');
-                term.writeln('\r\n[Session ended. Return to the game list to reconnect.]\r\n');
-                if (!game) scheduleReconnect();
+                if (game) {
+                    window.location.replace('/');
+                    return;
+                }
+                term.writeln('\r\n[Session ended. Reconnecting…]\r\n');
+                scheduleReconnect();
             };
 
             ws.onerror = (err) => {

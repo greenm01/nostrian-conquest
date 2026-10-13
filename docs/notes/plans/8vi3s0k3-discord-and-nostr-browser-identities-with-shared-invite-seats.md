@@ -246,3 +246,11 @@ checks pass at 1280px and 390px; mobile screenshot inspected. The info box
 names both sign-in methods, links directly to games, help and contact, and
 opens those destinations in new tabs. Live HTML matches source byte for byte.
 The green background is preserved and live play-site CSS remains unchanged.
+
+### t134
+
+Return hosted-game terminals to the games page when the socket closes, using
+replace so Back does not reopen an ended terminal. The listing offers the
+current Play or Reconnect action after an exit or connection loss. Preserve
+standalone terminal reconnection and pre-connection error messages. Verify
+normal closure, connection loss, standalone reconnect and access errors.
