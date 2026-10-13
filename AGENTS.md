@@ -109,6 +109,19 @@ Track work with todo.txt and zk as defined in
 - Use `zk tasks` to add or complete tasks, and cite task IDs in commits
 - Never reuse a task ID; run `zk index` and `zk list docs/notes --broken-links` before committing tracking changes
 
+## Agent Recall (mem0)
+
+Use the `mem0-local` MCP server with project `nostrian-conquest` by default.
+
+- At task start, search for prior work (at most three results), then read the
+  cited source notes before acting. A memory never replaces this file, `todo.md`
+  or the notes. If mem0 is unavailable or unhelpful, use zk and fff.
+- After updating a durable source (plan, investigation, decision, handoff),
+  save a short summary under a stable key with its source path and revision.
+  To replace a key, read it first and pass its version as `expected_version`.
+- Store pointers and findings, not task status, copied notes, transcripts or
+  credentials. Memory is a search aid, not evidence or a task lock.
+
 ## Doc Authority
 
 Before making gameplay or rules assumptions, check sources in this order:
