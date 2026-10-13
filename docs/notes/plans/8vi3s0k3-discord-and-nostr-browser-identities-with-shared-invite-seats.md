@@ -260,3 +260,9 @@ and the public terminal script matches source. A JavaScript VM harness exercised
 normal and abnormal socket closure, standalone reconnection and denied access.
 The existing Chromium listing smoke also passes. These checks use mocked
 sockets rather than entering a live seat. Services stayed active without restart.
+
+### t135
+
+Place each landing info-box prompt and link in its own paragraph, with one
+line of space between prompts. Preserve green styling and link destinations;
+verify desktop/mobile layout and publish the HTML.
