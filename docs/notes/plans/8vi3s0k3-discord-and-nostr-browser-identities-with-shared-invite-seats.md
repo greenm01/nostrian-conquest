@@ -285,3 +285,10 @@ that requires the public key in its input. Existing listing checks pass.
 Release signature/hashes verify and live JavaScript matches source. All services
 remain active without restart. Actual Flamingo extension acceptance remains an
 attended browser check; automated checks use a mock NIP-07 provider.
+
+### t137
+
+The owner confirmed nos2x and Flamingo each sign in successfully, but conflict
+when enabled together. Update the how-to to recommend those two choices, remove
+Alby links and explain enabling only one extension, then reloading. Verify
+rendering and links, rebuild the embedded page and publish.
