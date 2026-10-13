@@ -278,3 +278,10 @@ with Flamingo, which hashes the event without inserting a public key. Validate
 the returned key and explain missing/unconfigured keys. Preserve the NIP-98
 challenge and server signature validation. Extend the Chromium regression
 check to require the public key before signing and cover a missing key.
+
+Signed static release `c0c2a47e` is live. The Chromium regression failed before
+this change and passes afterward, including missing-key handling and a signer
+that requires the public key in its input. Existing listing checks pass.
+Release signature/hashes verify and live JavaScript matches source. All services
+remain active without restart. Actual Flamingo extension acceptance remains an
+attended browser check; automated checks use a mock NIP-07 provider.
