@@ -306,3 +306,9 @@ Rebuild and verify the published page.
 Signed release `911b3207` is live. Build, artifact signature and hashes pass;
 live HTML matches source and the unwanted sentence is absent. Campaign data
 and sessions were preserved; no player terminal was active during deployment.
+
+### t139
+
+Use the approved long-game tagline. Link the play-site brand to the games
+page and add Home navigation to the main landing page in a new tab. Preserve
+title colors and check navigation on desktop and mobile before publishing.
