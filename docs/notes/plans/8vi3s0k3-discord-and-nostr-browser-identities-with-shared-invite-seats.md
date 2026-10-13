@@ -240,3 +240,9 @@ Discord or Nostr sign-in and invitation claims, and link to help and the sysop
 contact page. Keep community Discord as an optional social link. Preserve the
 landing page green theme and the play site Tokyo Night theme. Check desktop
 and mobile rendering, link destinations and live delivery.
+
+Commit `120e6f61` is deployed to the landing page. Local and live Playwright
+checks pass at 1280px and 390px; mobile screenshot inspected. The info box
+names both sign-in methods, links directly to games, help and contact, and
+opens those destinations in new tabs. Live HTML matches source byte for byte.
+The green background is preserved and live play-site CSS remains unchanged.
