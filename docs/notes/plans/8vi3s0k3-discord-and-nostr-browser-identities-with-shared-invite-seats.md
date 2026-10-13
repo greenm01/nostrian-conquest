@@ -201,3 +201,17 @@ Nine external-link clicks passed the live browser check. The Chrome Web Store
 link's target/rel attributes were verified from markup; its special browser
 handling was excluded from mocked navigation after Chromium closed during that
 check. No production behavior was changed to accommodate the test harness.
+
+### t131
+
+Apply the approved Tokyo Night Storm palette to the listing, help and contact
+pages through their shared CSS. Preserve layout, behavior and terminal styling.
+Use navy surfaces, lavender-gray text and restrained blue/lavender accents.
+Verify existing browser controls, desktop/mobile layouts and readable contrast;
+deploy the static files without restarting services or changing campaign data.
+
+The existing Chromium listing checks pass. Playwright checks at 1280px and
+390px pass for all three pages, navigation and clipboard success/failure;
+desktop and mobile screenshots were inspected. Text contrast checks range
+from 5.33:1 for blue controls to 9.02:1 for body text; control borders reach
+3.22:1. Colors follow the upstream Tokyo Night Storm palette.

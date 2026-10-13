@@ -154,7 +154,7 @@ for restricted account administration and the offline upgrade. These controls
 are not exposed in the player UI or Discord commands.
 
 The public `/howto` and `/contact` pages are available without signing in. They
-share the listing's soft gray/sage styling through `community.css`; the terminal
+share the listing's Tokyo Night Storm colors through `community.css`; the terminal
 keeps its game palette. Help links to the official nos2x listing and Alby extension
 and Nostr guide. Contact shows the operator-supplied Discord username/profile and
 Nostr public key, with clipboard controls and manual-copy fallback. No contact
