@@ -40,6 +40,7 @@ pub(super) fn initialize(config: &Config) -> Result<(), String> {
         CREATE TABLE IF NOT EXISTS oauth_states(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS account_profiles(account TEXT PRIMARY KEY,display_name TEXT NOT NULL);
         CREATE TABLE IF NOT EXISTS nostr_challenges(token TEXT PRIMARY KEY,expires INTEGER NOT NULL);") .map_err(|e|e.to_string())?;
+    nc_data::matrix_login::ensure(&conn).map_err(|e| e.to_string())?;
     Ok(())
 }
 pub(super) fn identity(

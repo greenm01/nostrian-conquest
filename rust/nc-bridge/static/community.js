@@ -27,8 +27,9 @@ async function loadIdentity() {
     if (!response.ok) throw new Error(me.error || 'Cannot load account');
     currentAccount = me.account;
     document.getElementById('nostr-login').hidden = true;
+    document.getElementById('matrix-login').hidden = true;
     document.getElementById('logout').hidden = false;
-    const provider = me.account.provider === 'discord' ? 'Discord' : 'Nostr';
+    const provider = {discord:'Discord', nostr:'Nostr', matrix:'Matrix'}[me.account.provider];
     const identifier = me.account.provider === 'nostr' ? `${me.account.id.slice(0,12)}…` : me.account.id;
     document.getElementById('identity').textContent = `Signed in as ${me.display_name} via ${provider} (${identifier}).`;
 }
@@ -129,7 +130,29 @@ document.getElementById('nostr-login').onsubmit = async event => {
         notice.textContent = error?.message || 'Nostr login was cancelled or failed. Try again when ready.';
     } finally {submit.disabled = false;}
 };
+async function matrixSignIn(code) {
+    await request('/auth/matrix', 'POST', JSON.stringify({code}));
+    await loadIdentity(); await loadGames();
+    notice.textContent = 'Signed in.';
+}
+document.getElementById('matrix-start').onclick = () => {
+    document.getElementById('matrix-login').hidden = false;
+    document.getElementById('matrix-code').focus();
+};
+document.getElementById('matrix-login').onsubmit = async event => {
+    event.preventDefault();
+    const submit = event.currentTarget.querySelector('button'); submit.disabled = true;
+    try {await matrixSignIn(document.getElementById('matrix-code').value.trim());} catch (error) {notice.textContent = error.message;} finally {submit.disabled = false;}
+};
 document.getElementById('logout').onclick = async () => {try {await request('/auth/logout', 'POST'); await loadIdentity(); await loadGames(); notice.textContent = 'Signed out.';} catch (error) {notice.textContent = error.message;}};
 window.addEventListener('pageshow', () => {
-    (async () => {await loadIdentity(); await loadGames();})().catch(error => {notice.textContent = error.message;});
+    (async () => {
+        // A Matrix sign-in link carries its secret in the fragment, which never reaches a server.
+        const link = location.hash.match(/^#matrix-login=([0-9a-f]{64})$/);
+        if (link) {
+            history.replaceState(null, '', location.pathname + location.search);
+            try {await matrixSignIn(link[1]); return;} catch (error) {notice.textContent = error.message;}
+        }
+        await loadIdentity(); await loadGames();
+    })().catch(error => {notice.textContent = error.message;});
 });

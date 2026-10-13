@@ -3,6 +3,7 @@
 /// which its ROE prompt offers.
 pub const NEW_FLEET_DEFAULT_ROE: u8 = 6;
 
+pub mod access_code;
 mod account;
 mod bbs_config;
 mod builder;
@@ -20,6 +21,7 @@ mod intel;
 pub mod maintenance_types;
 mod map_dimensions;
 mod map_export;
+pub mod matrix_login;
 pub mod model;
 mod motion;
 mod names;

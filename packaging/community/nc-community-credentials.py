@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Enter one Discord secret without shell history, echo, or chat exposure."""
+"""Enter one community secret without shell history, echo, or chat exposure."""
 import argparse
 import getpass
 import os
@@ -10,6 +10,7 @@ import tempfile
 FIELDS = {
     "bot": ("discord.env", "NC_DISCORD_BOT_TOKEN", "Discord bot token"),
     "oauth": ("web.env", "NC_DISCORD_CLIENT_SECRET", "Discord OAuth client secret"),
+    "matrix": ("matrix.env", "NC_MATRIX_ACCESS_TOKEN", "Matrix bot access token"),
 }
 
 

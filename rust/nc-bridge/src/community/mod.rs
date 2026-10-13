@@ -1,5 +1,6 @@
 //! Authenticated browser hosting. Legacy single-game bridge routes are separate.
 mod auth;
+mod auth_matrix;
 mod auth_nostr;
 mod terminal;
 use axum::{
@@ -91,6 +92,7 @@ pub fn router(config: Config) -> Result<Router, String> {
         .route("/auth/logout", post(auth::logout))
         .route("/auth/nostr/challenge", post(auth_nostr::challenge))
         .route("/auth/nostr", post(auth_nostr::login))
+        .route("/auth/matrix", post(auth_matrix::login))
         .route("/api/games", get(games))
         .route("/api/me", get(me))
         .route("/api/games/{game}/join", post(join))

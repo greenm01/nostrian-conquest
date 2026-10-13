@@ -49,6 +49,7 @@ def parser() -> argparse.ArgumentParser:
             identity = sub.add_mutually_exclusive_group(required=True)
             identity.add_argument("--discord-id")
             identity.add_argument("--nostr-pubkey", help="64-character lowercase hex public key")
+            identity.add_argument("--matrix-id", help="full Matrix user ID, such as @alice:matrix.org")
             sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm the account change")
         if command == "archive": sub.add_argument("--confirm", required=True)
     invites = groups.add_parser("invites", parents=[common]).add_subparsers(dest="command", required=True)
@@ -101,7 +102,8 @@ def request_for(args: argparse.Namespace) -> dict:
     if args.command in ("replace", "link-account", "unlink-account", "archive") and args.confirm != args.game:
         raise AdminError("confirmation must exactly match the game ID")
     if args.command in ("replace", "link-account", "unlink-account"):
-        request.update(seat=args.seat, account={"provider":"discord" if args.discord_id else "nostr", "id":args.discord_id or args.nostr_pubkey})
+        provider, id = next((p, v) for p, v in (("discord", args.discord_id), ("nostr", args.nostr_pubkey), ("matrix", args.matrix_id)) if v)
+        request.update(seat=args.seat, account={"provider":provider, "id":id})
     return request
 
 

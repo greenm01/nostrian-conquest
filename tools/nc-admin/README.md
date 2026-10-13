@@ -181,7 +181,8 @@ nc-admin games link-account practice --seat 2 --nostr-pubkey PUBLIC_KEY_HEX --co
 nc-admin games inspect practice --json
 ```
 
-For a Nostr seat, use `--discord-id DISCORD_ID` instead. There can be one identity
+For a Nostr seat, use `--discord-id DISCORD_ID` instead. For Matrix, use
+`--matrix-id @USER:SERVER` with the full Matrix user ID. There can be one identity
 of each provider per seat, and an identity cannot belong to two seats in one
 game. Linking is idempotent and never consumes, creates or restores an invite.
 Both identities share one terminal lease; changing login method does not permit
@@ -198,7 +199,7 @@ fails authorization before subsequent input or on the next five-second check.
 The final identity cannot be unlinked; use `games replace` to transfer the seat
 to a different account/key. Replacement removes every existing binding, even
 when keeping an identity already attached to that seat. Both replacement and
-linking support either `--discord-id` or `--nostr-pubkey`, exclusively. Inspection
+linking take exactly one of `--discord-id`, `--nostr-pubkey` or `--matrix-id`. Inspection
 returns one row per seat with an `accounts` array. Account changes are recorded
 in operator history and are allowed only while recruiting, running or paused.
 

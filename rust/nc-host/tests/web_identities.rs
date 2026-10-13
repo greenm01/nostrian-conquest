@@ -268,3 +268,76 @@ fn simultaneous_discord_and_nostr_claim_has_exactly_one_winner() {
         1
     );
 }
+
+#[test]
+fn matrix_claims_invites_and_links_alongside_discord_and_nostr() {
+    let dir = tempfile::tempdir().unwrap();
+    let root = dir.path();
+    let matrix = json!({"provider":"matrix","id":"@alice:matrix.org"});
+    let discord = json!({"provider":"discord","id":"123"});
+    let nostr = json!({"provider":"nostr","id":"79be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798"});
+    call(
+        root,
+        json!({"action":"create","game":"one","name":"one","players":4,"seed":1515}),
+    )
+    .unwrap();
+    call(root, json!({"action":"publish","game":"one"})).unwrap();
+    call(root, json!({"action":"invite_only","game":"one"})).unwrap();
+    let invites = call(
+        root,
+        json!({"action":"create_invites","game":"one","count":1}),
+    )
+    .unwrap();
+    let code = invites["invites"][0]["code"].as_str().unwrap().to_owned();
+    let seat = call(
+        root,
+        json!({"action":"claim_invite","game":"one","account":matrix,"code":code}),
+    )
+    .unwrap()["seat"]
+        .clone();
+    for account in [&discord, &nostr] {
+        call(
+            root,
+            json!({"action":"link_account","game":"one","seat":seat,"account":account}),
+        )
+        .unwrap();
+    }
+    assert!(
+        call(
+            root,
+            json!({"action":"link_account","game":"one","seat":seat,
+                "account":{"provider":"matrix","id":"@bob:example.org"}}),
+        )
+        .unwrap_err()
+        .contains("identity for this provider")
+    );
+    for account in [&matrix, &discord, &nostr] {
+        assert_eq!(
+            call(
+                root,
+                json!({"action":"authorize","game":"one","account":account})
+            )
+            .unwrap()["seat"],
+            seat
+        );
+    }
+    call(
+        root,
+        json!({"action":"unlink_account","game":"one","seat":seat,"account":matrix}),
+    )
+    .unwrap();
+    assert!(
+        call(
+            root,
+            json!({"action":"authorize","game":"one","account":matrix})
+        )
+        .is_err()
+    );
+    assert!(
+        call(
+            root,
+            json!({"action":"join","game":"one","account":{"provider":"matrix","id":"not-a-user"}}),
+        )
+        .is_err()
+    );
+}

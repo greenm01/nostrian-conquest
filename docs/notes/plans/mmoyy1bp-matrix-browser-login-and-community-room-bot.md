@@ -30,8 +30,11 @@ players whose chat client runs on another device. The bot never contacts
 anyone who has not contacted it first, and replies are rate-limited per user.
 
 The code reuses the invite generator's alphabet and length and is stored only
-as a hash. It is single use, expires after ten minutes, allows at most five
-attempts, and is cancelled by a newer request from the same user. The link
+as a hash. It is single use, expires after ten minutes, and is cancelled by a
+newer request from the same user. The approved plan said five attempts per code,
+but a wrong code cannot be attributed to any pending code. Instead, 100 failed
+redemptions in ten minutes pause Matrix sign-in site-wide for that window, as
+invite claims already limit guesses per game. The link
 carries its secret in the URL fragment; the page posts it to the bridge, so
 server URL previews and access logs never see or consume it.
 
@@ -40,7 +43,10 @@ server URL previews and access logs never see or consume it.
 - A shared module owns the login-code table in `.web-sessions.db`. `nc-matrix`
   only issues codes; `nc-bridge` only redeems them and creates the session.
 - Add the sign-in button, code entry and link landing to the games page, a
-  community Matrix link beside the Discord one, and how-to text.
+  community Matrix link to the space `#nostrian:matrix.org` beside the Discord
+  one, how-to text, and the owner's `@niltempus:matrix.org` on the contact page.
+- The bot account is `@nostrian-conquest-bot:matrix.org` (unregistered when
+  checked on 2026-10-13); the page names it, so register exactly that ID.
 - Operator linking already treats providers generically
   (`nc-host/src/admin/account_links.rs`); add `--matrix-id` to the Python
   `nc-admin` identity arguments for link, unlink and replace.
@@ -52,6 +58,30 @@ mixed-provider seat regressions against a mock homeserver; CLI tests;
 Chromium checks of button, code entry and link landing; full workspace suite.
 Attended sign-in with a real Matrix client and deployment are reported
 separately. Beta 1 stays recruiting at year 3000 without a deadline.
+
+## t140 implementation evidence
+
+Built on 2026-10-13; not yet run with a real bot account or deployed.
+The full workspace passed **3,290 tests, zero failures, 11 ignored**; all 13
+Python `nc-admin` tests pass. New regressions cover Matrix ID grammar and the
+255-byte limit; code and link sign-in, single use, expiry, cancellation by a
+newer request, the 30-second request interval and the site-wide failure limit;
+the bridge route's origin, body and throttling checks; Matrix invite claims and
+three-provider linking; and the bot's sync decisions. An end-to-end test runs
+`nc-matrix` against a mock homeserver: old invitations are declined silently,
+a new one yields one unencrypted private room and one message, a rapid second
+request sends nothing, and the code in that message signs in once.
+
+The Chromium listing smoke covers the Matrix button, a rejected code, code
+sign-in and link sign-in, which also clears the fragment from the address bar.
+Desktop and 390px screenshots of the listing and contact pages were inspected.
+The rebuilt player manual has the Matrix paragraph in section 2.2 and grew from
+48 to 49 pages. Clippy and rustfmt are not installed for the default nightly
+toolchain; stable rustfmt formatted the changed files only. matrix.org's
+login discovery offers `m.login.password`, which `nc-matrix login` uses.
+
+Remaining: register the bot, create its token, attended sign-in with a real
+Matrix client, and deployment with the bridge, static files and new service.
 
 ### t141
 

@@ -3686,6 +3686,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "nc-matrix"
+version = "1.0.0-beta.3"
+dependencies = [
+ "axum",
+ "chrono",
+ "clap",
+ "nc-data",
+ "nc-log",
+ "percent-encoding",
+ "reqwest",
+ "rpassword",
+ "rusqlite",
+ "serde_json",
+ "tempfile",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "nc-nostr"
 version = "1.0.0-beta.3"
 dependencies = [

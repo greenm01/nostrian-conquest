@@ -35,6 +35,8 @@ article label{margin-right:.5rem}
 .account>p:first-child{margin-top:0}
 #notice,#copy-status{white-space:pre-wrap;color:#e0af68}
 #notice:empty,#copy-status:empty{display:none}
+#matrix-login p{overflow-wrap:anywhere}
+#matrix-login button{margin-top:.35rem}
 .contact-key{overflow-wrap:anywhere;padding:1rem;background:#1f2335;border-radius:.35rem;font-size:.9rem}
 .actions{margin-top:1rem}
 @media(max-width:36rem){body{padding:1.5rem 1rem 3rem}section,article{padding:1.15rem}input{display:block;margin-top:.35rem}nav{gap:.65rem 1rem}}

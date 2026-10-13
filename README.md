@@ -139,6 +139,7 @@ includes the Linux display, font, and graphics dependencies.
 | `nc-host` | Provide community game operations and the in-development Nostr host. |
 | `nc-bridge` | Serve browser login, game access, and terminal sessions. |
 | `nc-discord` | Provide Discord game discovery and player commands. |
+| `nc-matrix` | Send one-time Matrix sign-in links and codes for the browser host. |
 | `nc-cli` | Inspect game data, run scenarios, and import or export classic files. |
 | `nc-helm` | Nostr player client in development; not yet joinable. |
 

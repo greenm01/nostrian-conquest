@@ -1,6 +1,6 @@
 # Community hosting
 
-Players find games, claim a seat with Discord or a NIP-07 Nostr signer, and play
+Players find games, claim a seat with Discord, a NIP-07 Nostr signer or Matrix, and play
 the existing 80x25 door in a browser. `nc-admin` handles operator work over SSH. There is no web dashboard.
 The existing community is <https://discord.gg/eZMRpdQTu>.
 
@@ -19,7 +19,7 @@ acceptance and automated off-server copying remain pending.
 
 - `nc-host admin` provides local JSON operations and durable turn receipts.
 - Python `nc-admin` invokes those operations without editing game databases.
-- `nc-bridge --games-root` serves a public game list, Discord/Nostr login, authorized
+- `nc-bridge --games-root` serves a public game list, Discord/Nostr/Matrix login, authorized
   downloads and terminal sessions. It launches `nc-door` with a server-selected
   seat. Browser query parameters cannot choose an identity or seat.
 - `nc-discord` registers commands in one configured Discord server. `/games`,
@@ -31,6 +31,8 @@ acceptance and automated off-server copying remain pending.
   Known Worlds sheets. Individual Text, Csv, Ods and Excel choices remain
   available. The website provides a single Download map ZIP button. Reports remain in the
   game inbox and `/report`; individual map formats remain available through the bot.
+- `nc-matrix run` is the Matrix sign-in bot. It sends one-time sign-in links and
+  codes and has no game commands.
 - `/help` lists commands; `/about` explains the game; `/manuals` links the
   quick-start and player-manual PDFs. `/guide` remains the quick-start shortcut.
   The [welcome post](discord-welcome.md) is pinned and explains private invite codes.
@@ -47,14 +49,14 @@ between sending and recording success. They cannot repeat maintenance.
 Build from `rust/` through the normal cargo-slot wrapper:
 
 ```sh
-cargo-slot nostrian-conquest cargo build --release -p nc-host -p nc-game -p nc-bridge -p nc-discord --bin nc-host --bin nc-door --bin nc-bridge --bin nc-discord
+cargo-slot nostrian-conquest cargo build --release -p nc-host -p nc-game -p nc-bridge -p nc-discord -p nc-matrix --bin nc-host --bin nc-door --bin nc-bridge --bin nc-discord --bin nc-matrix
 ```
 
-Stage these four binaries, the Python zipapp, and `rust/nc-bridge/static/` under
+Stage these five binaries, the Python zipapp, and `rust/nc-bridge/static/` under
 one versioned release directory:
 
 ```text
-/opt/nc-community/releases/<release>/bin/{nc-host,nc-door,nc-bridge,nc-discord,nc-admin}
+/opt/nc-community/releases/<release>/bin/{nc-host,nc-door,nc-bridge,nc-discord,nc-matrix,nc-admin}
 /opt/nc-community/releases/<release>/static/
 /opt/nc-community/current -> releases/<release>
 ```
@@ -67,12 +69,12 @@ include this new hosting stack.
 Create a dedicated `nccommunity` service account and a mode-0700
 `/srv/nc/community/games` owned by it. Keep this root separate from existing
 BBS/Nostr game roots and timers. Root-owned `/etc/nc-community/` holds mode-0600
-`web.env` and `discord.env`; systemd reads them before changing to the service
+`web.env`, `discord.env` and `matrix.env`; systemd reads them before changing to the service
 account. Copy the examples from [packaging/community](../../packaging/community).
 Never put secrets in git, command arguments, public notes or shell history.
 The optional `nc-community-credentials.py` helper can be installed as
-`/usr/local/sbin/nc-community-credentials`. Run it through sudo with `bot` or
-`oauth` in an attended terminal. It hides input and updates the corresponding
+`/usr/local/sbin/nc-community-credentials`. Run it through sudo with `bot`,
+`oauth` or `matrix` in an attended terminal. It hides input and updates the corresponding
 root-only environment file without printing the credential. Merge non-secret
 settings into these files; never overwrite entered credentials with an example.
 
@@ -159,6 +161,43 @@ keeps its game palette. Help links to the official nos2x listing and Alby extens
 and Nostr guide. Contact shows the operator-supplied Discord username/profile and
 Nostr public key, with clipboard controls and manual-copy fallback. No contact
 message is sent by the website.
+
+## Matrix sign-in
+
+**Sign in with Matrix** opens a code form. The player messages the bot, or sends
+`!login` in the community room. The bot reads only the sender's Matrix ID, which
+stays visible in encrypted rooms, and declines every invitation. It replies in
+an unencrypted private room it creates with that user. The reply holds a link
+whose secret is in the URL fragment, and an eight-character code. The games page
+posts either to `/auth/matrix` as `{ "code": "..." }`. Fragments never reach a
+server, so URL previews and access logs cannot use the link.
+
+The bot stores only hashes in `.web-sessions.db`; the bridge consumes the code
+in the transaction that creates the session. A code or link works once, expires
+after ten minutes, and is replaced by a newer request. Requests from one user
+less than 30 seconds apart are ignored. A wrong code cannot be traced to a
+pending one, so 100 failed redemptions within ten minutes pause Matrix sign-in
+site-wide for the rest of that window. Discord and Nostr are unaffected. The
+first sync after start only rebuilds room state; old messages and invitations
+never produce codes. The Matrix display name becomes the player handle, with
+the Matrix ID as the fallback.
+
+The bot needs its own account; never use an operator's personal account.
+On a workstation, create its access token once with the bot's password:
+
+```sh
+nc-matrix login --user @nostrian-conquest-bot:matrix.org
+```
+
+The password is read without echo and the token is printed once. Enter it on
+the server with `sudo nc-community-credentials matrix`. The password login
+uses matrix.org's compatibility API and gives a token that does not expire;
+tokens copied from Element expire. Log the bot out of Element afterward if
+desired; that does not end this token's session. Set the homeserver to the
+client API base URL (`https://matrix-client.matrix.org` for matrix.org) and
+the room to the community room alias. The bot joins that room at start.
+The site links to the community space `#nostrian:matrix.org`, and the contact
+page lists the operator's Matrix ID.
 
 ## Services and browser behavior
 

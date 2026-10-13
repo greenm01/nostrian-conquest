@@ -173,9 +173,18 @@ On hosts offering *Sign in with Nostr*, you can instead use a NIP-07 browser
 extension such as nos2x. Approve the login, enter your invite code on the game
 card, and choose *Play*. Return using the same Nostr key. You may enter a player
 name when signing in; a blank name keeps your saved name or uses a short key
-label initially. Discord and Nostr players share the same games. Codes are
-single-use across both login methods. This option requires the updated host;
-it is separate from relay-based Nostr GameServer play.
+label initially. This option is separate from relay-based Nostr GameServer
+play.
+
+On hosts offering *Sign in with Matrix*, choose it on the game list, then send
+any message to the host's sign-in bot, or send `!login` in its community room.
+The bot replies privately with a sign-in link and a code. Open the link, or
+enter the code on the game list. Each works once and expires after ten minutes.
+Your Matrix display name becomes your player handle. Return using the same
+Matrix account.
+
+Discord, Nostr and Matrix players share the same games. Invite codes are
+single-use across all sign-in methods.
 
 A recruiting game waits for its host to start it. Players can join and prepare
 orders while they wait. Filling all seats or opening *Play* does not start the

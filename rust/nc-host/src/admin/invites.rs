@@ -1,6 +1,5 @@
 use super::*;
-use nc_data::hosted;
-use rand::Rng;
+use nc_data::{access_code, hosted};
 use rusqlite::{Connection, OptionalExtension, params};
 
 fn ensure(conn: &Connection) -> Result<()> {
@@ -44,13 +43,10 @@ pub(super) fn create(root: &Path, game: &str, count: u8) -> Result<Value> {
     }
     let tx = conn.unchecked_transaction()?;
     let mut issued = Vec::new();
-    const ALPHABET: &[u8] = b"ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     for seat in seats.into_iter().take(usize::from(count)) {
         let code = loop {
-            let code: String = (0..8)
-                .map(|_| ALPHABET[rand::thread_rng().gen_range(0..ALPHABET.len())] as char)
-                .collect();
-            let hash = blake3::hash(code.as_bytes()).to_hex().to_string();
+            let code = access_code::generate();
+            let hash = access_code::hash(&code);
             let exists: bool = tx.query_row(
                 "SELECT EXISTS(SELECT 1 FROM web_invites WHERE code_hash=?1)",
                 [&hash],
@@ -112,8 +108,7 @@ pub(super) fn check(conn: &Connection, id: &AccountIdentity, code: &str) -> Resu
     if own >= 5 || all >= 100 {
         return Err("too many failed invite claims; try again in ten minutes".into());
     }
-    let normalized = code.trim().to_ascii_uppercase();
-    let hash = blake3::hash(normalized.as_bytes()).to_hex().to_string();
+    let hash = access_code::hash(code);
     let invite = conn
         .query_row(
             "SELECT id,seat FROM web_invites WHERE code_hash=?1 AND state='unused'",

@@ -14,7 +14,7 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
     const game={game:'one',name:'One',state:'recruiting',open:2,players:4,year:3000,schedule:{mode:'manual'},invite_required:true};
     window.fetch=async (url,opts={}) => {
         let data={},status=200;
-        if(url==='/api/me'){status=logged?200:401;data=logged?{account:{provider,id:provider==='nostr'?'a'.repeat(64):'123'},display_name:'Commander'}:{error:'Sign in'};}
+        if(url==='/api/me'){status=logged?200:401;data=logged?{account:{provider,id:{nostr:'a'.repeat(64),discord:'123',matrix:'@alice:matrix.org'}[provider]},display_name:'Commander'}:{error:'Sign in'};}
         else if(url==='/api/games') data=[game];
         else if(url==='/api/games/one/access') {
             if(accessError){status=503;data={error:'Temporarily unavailable'};}
@@ -33,6 +33,12 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             const body=JSON.parse(opts.body);
             if(body.code!=='AbCd2345' || Object.keys(body).length!==1)throw Error('bad claim');
             claimed=true;data={seat:1};
+        }
+        else if(url==='/auth/matrix'){
+            const body=JSON.parse(opts.body);
+            if(Object.keys(body).length!==1 || opts.method!=='POST')throw Error('bad Matrix request');
+            if(['K7MPQXA2','c'.repeat(64)].includes(body.code)){logged=true;provider='matrix';}
+            else {status=401;data={error:'Sign-in code is incorrect, used or expired'};}
         }
         else if(url==='/auth/logout')logged=false;
         else throw Error('unexpected endpoint '+url);
@@ -98,7 +104,25 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             logged=true;provider='discord';claimed=true;await loadIdentity();await loadGames();
             check(form.hidden && !logout.hidden && document.getElementById('identity').textContent.includes('Discord') && labels()==='Play,Download map ZIP','Discord member');
             await logout.onclick();
-            result.textContent='PASS: signed-out, sign-in, invite claim, joined, connected, reconnect, paused, maintenance, closed, full, lookup failure, logout';
+            const matrix=document.getElementById('matrix-login');
+            check(matrix.hidden,'Matrix code form starts hidden');
+            document.getElementById('matrix-start').onclick();
+            check(!matrix.hidden,'Matrix button shows code form');
+            const matrixEvent={preventDefault(){},currentTarget:matrix};
+            document.getElementById('matrix-code').value='WRONG234';
+            await matrix.onsubmit(matrixEvent);
+            check(!logged && document.getElementById('notice').textContent.includes('incorrect'),'wrong Matrix code');
+            document.getElementById('matrix-code').value=' K7MPQXA2 ';
+            await matrix.onsubmit(matrixEvent);
+            check(logged && document.getElementById('identity').textContent.includes('via Matrix (@alice:matrix.org)'),'Matrix code sign-in');
+            check(form.hidden && matrix.hidden && !logout.hidden,'Matrix signed-in controls');
+            await logout.onclick();
+            location.hash='#matrix-login='+'c'.repeat(64);
+            window.dispatchEvent(new Event('pageshow'));
+            for(let i=0;i<40 && !document.getElementById('identity').textContent.includes('Matrix');i++)await new Promise(r=>setTimeout(r,25));
+            check(logged && location.hash==='' && document.getElementById('identity').textContent.includes('Matrix'),'Matrix link sign-in');
+            await logout.onclick();
+            result.textContent='PASS: signed-out, sign-in, invite claim, joined, connected, reconnect, paused, maintenance, closed, full, lookup failure, logout, Matrix code and link';
         }catch(error){result.textContent='FAIL: '+error.message;}
     });
     </script>'''

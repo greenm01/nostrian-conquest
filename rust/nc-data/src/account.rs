@@ -12,6 +12,8 @@ use serde::{Deserialize, Serialize};
 pub enum AccountIdentity {
     Discord(String),
     Nostr(String),
+    /// Fully qualified Matrix user ID, such as `@alice:matrix.org`.
+    Matrix(String),
 }
 
 impl AccountIdentity {
@@ -30,6 +32,7 @@ impl AccountIdentity {
             {
                 Ok(())
             }
+            Self::Matrix(id) if valid_matrix_user_id(id) => Ok(()),
             _ => Err("invalid account identity"),
         }
     }
@@ -38,6 +41,7 @@ impl AccountIdentity {
         match self {
             Self::Discord(id) => format!("discord:{id}"),
             Self::Nostr(id) => format!("nostr:{id}"),
+            Self::Matrix(id) => format!("matrix:{id}"),
         }
     }
 
@@ -45,11 +49,27 @@ impl AccountIdentity {
         let account = match key.split_once(':') {
             Some(("discord", id)) => Self::Discord(id.into()),
             Some(("nostr", id)) => Self::Nostr(id.into()),
+            Some(("matrix", id)) => Self::Matrix(id.into()),
             _ => return Err("invalid account provider"),
         };
         account.validate()?;
         Ok(account)
     }
+}
+
+/// Matrix user ID grammar, accepting historical localparts: `@`, a localpart of
+/// printable ASCII other than `:`, then a server name; 255 bytes at most.
+fn valid_matrix_user_id(id: &str) -> bool {
+    let Some((local, server)) = id.strip_prefix('@').and_then(|rest| rest.split_once(':')) else {
+        return false;
+    };
+    id.len() <= 255
+        && !local.is_empty()
+        && local.bytes().all(|b| b.is_ascii_graphic())
+        && !server.is_empty()
+        && server
+            .bytes()
+            .all(|b| b.is_ascii_alphanumeric() || b".-:[]".contains(&b))
 }
 
 impl ToSql for AccountIdentity {

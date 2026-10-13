@@ -14,14 +14,19 @@
 <a href="https://nostrian-conquest.com/" target="_blank" rel="noopener noreferrer">Home</a>
 <a href="/" aria-current="page">Games</a>
 <a href="https://discord.gg/eZMRpdQTu" target="_blank" rel="noopener noreferrer">Community Discord</a>
+<a href="https://matrix.to/#/#nostrian:matrix.org" target="_blank" rel="noopener noreferrer">Community Matrix</a>
 <a href="/howto">How to play</a>
 <a href="/contact">Contact sysop</a>
 </nav>
 </header>
 <section aria-label="Your account" class="account">
 <form id="nostr-login" hidden>
-<div class="login-actions"><a class="login-link" href="/auth/login">Sign in with Discord</a><button type="submit">Sign in with Nostr</button></div>
+<div class="login-actions"><a class="login-link" href="/auth/login">Sign in with Discord</a><button type="submit">Sign in with Nostr</button><button id="matrix-start" type="button">Sign in with Matrix</button></div>
 <p><label>Nostr player name (optional) <input id="nostr-name" maxlength="25" autocomplete="nickname"></label></p>
+</form>
+<form id="matrix-login" hidden>
+<p>Message <a href="https://matrix.to/#/@nostrian-conquest-bot:matrix.org" target="_blank" rel="noopener noreferrer">@nostrian-conquest-bot:matrix.org</a>, or send <code>!login</code> in <a href="https://matrix.to/#/#nostrian-conquest:matrix.org" target="_blank" rel="noopener noreferrer">#nostrian-conquest</a>. The bot replies privately with a sign-in link and code. Open the link, or enter the code here.</p>
+<p><label>Sign-in code <input id="matrix-code" maxlength="8" autocomplete="one-time-code" spellcheck="false" required></label> <button type="submit">Sign in</button></p>
 </form>
 <p id="identity" aria-live="polite">Checking sign-in…</p>
 <button id="logout" type="button" hidden>Sign out</button>

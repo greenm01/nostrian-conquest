@@ -1,0 +1,22 @@
+[Unit]
+Description=Nostrian Conquest Matrix sign-in bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=nccommunity
+Group=nccommunity
+EnvironmentFile=/etc/nc-community/matrix.env
+WorkingDirectory=/srv/nc/community
+ExecStart=/opt/nc-community/current/bin/nc-matrix run
+Restart=on-failure
+RestartSec=10
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/nc/community
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,26 @@
+[package]
+name = "nc-matrix"
+version = "1.0.0-beta.3"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[[bin]]
+name = "nc-matrix"
+path = "src/main.rs"
+
+[dependencies]
+nc-data = { path = "../nc-data" }
+nc-log = { path = "../nc-log" }
+rusqlite = { version = "0.31", features = ["bundled"] }
+chrono = "0.4"
+serde_json = "1"
+reqwest = { version = "0.12", features = ["json"] }
+percent-encoding = "2"
+rpassword = "7"
+tracing = "0.1"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time"] }
+clap = { version = "4", features = ["derive", "env"] }
+
+[dev-dependencies]
+axum = "0.8"
+tempfile = "3"
