@@ -223,6 +223,6 @@ timers remain active; deployment required no restart or campaign data writes.
 
 ### t132
 
-Give page titles and the site name a lavender accent, and section/game titles
-a soft blue from the existing Storm palette. Verify desktop/mobile rendering
+Give the site name the requested warm yellow, page titles a lavender accent,
+and section/game titles a soft blue from the existing Storm palette. Verify desktop/mobile rendering
 and publish the CSS without restarting services.
