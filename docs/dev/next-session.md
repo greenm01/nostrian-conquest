@@ -100,6 +100,14 @@ launch hold remains in force: recruiting, year 3000, no deadline. No seat or
 invite was claimed during rollout. Attended login acceptance remains part of
 the hosting acceptance work.
 
+t128 is deployed in signed release `f7e017a0`. The game list hides login choices
+once signed in, shows Join only for an available unclaimed seat, and shows Play
+for a member. Reconnect appears only for an active terminal; paused/unavailable
+games explain their state. Workspace tests (3,273 passed), 13 Python tests,
+Chromium state checks and release real-door checks pass. This release changes no
+database schema and preserves existing sessions. Deployment verified all game
+database contents unchanged. Beta 1 is still recruiting with no deadline.
+
 ## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their

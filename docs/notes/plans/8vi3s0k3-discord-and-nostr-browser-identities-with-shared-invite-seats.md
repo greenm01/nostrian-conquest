@@ -139,3 +139,16 @@ and signed-in controls, joining, existing seats, active-terminal reconnect,
 paused/maintenance/full/closed games, lookup failure and logout. The release
 real-door smoke verifies connected status for a linked identity and null-seat
 status after unlink, alongside existing authorization and revocation checks.
+
+Signed release `f7e017a0` is deployed. Release signature and every artifact hash
+were verified on the server before switching. Pre/post-switch game inspection
+and logical hashes of all campaign databases match; SQLite integrity passes.
+The browser/bot and turn/backup timers are active. Beta 1's Nostr seat and three
+remaining invites are untouched; it stays recruiting at year 3000 with no
+deadline. No database conversion or session expiry was needed.
+
+A Playwright check against the live HTTPS site used a disposable software Nostr
+signer: signed-out listing, signed login, hidden login choices, one visible
+Sign out button, Join-only unbound game card, and logout reset all passed.
+No game seat was claimed. This verifies the deployed browser/backend flow,
+not an attended nos2x extension popup.
