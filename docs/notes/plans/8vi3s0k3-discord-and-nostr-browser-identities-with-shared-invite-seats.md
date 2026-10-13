@@ -175,3 +175,11 @@ no horizontal overflow, exact contact details, clipboard success and failure,
 and signed-out controls. Screenshots were inspected. The supplied npub passes
 Bech32 checksum and 32-byte length validation. Extension links were checked
 against the nos2x project and official Alby documentation.
+
+Signed release `25c3f5f3` is deployed. Its signature and all artifact hashes
+passed verification on the host. Both pages, shared CSS and copy script are
+served publicly. The desktop/mobile Playwright checks also pass against live
+HTTPS, including contact details, copy controls and navigation. Campaign
+inspection and logical hashes of every campaign database matched across the
+switch. Sessions were preserved; all community services/timers are active.
+No seat, invite or game state changed, and no messages were sent.

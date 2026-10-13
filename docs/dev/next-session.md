@@ -108,6 +108,12 @@ Chromium state checks and release real-door checks pass. This release changes no
 database schema and preserves existing sessions. Deployment verified all game
 database contents unchanged. Beta 1 is still recruiting with no deadline.
 
+t129 is deployed in signed release `25c3f5f3`: public `/howto` and `/contact`
+pages, the owner's Discord/Nostr contact details, and shared warm gray/sage
+styling for the browser listing. Desktop/mobile navigation, clipboard controls
+and login-state checks pass; 3,274 Rust tests and 13 Python tests pass. The live
+Playwright checks pass too. Deployment preserved sessions and all campaign data.
+
 ## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their
