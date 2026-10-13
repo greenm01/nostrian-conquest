@@ -2,4 +2,3 @@
 (A) 2026-10-11 Authenticate Discord browser play and isolate campaign seats and exports. +critical +hosting @development id:t119 order:350 depends:t118 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t119)
 (A) 2026-10-11 Add multi-game Discord discovery and real turn announcements. +critical +hosting @development id:t120 order:360 depends:t119 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t120)
 (A) 2026-10-11 Package hosting services and verify a private two-game pilot and recovery. +critical +hosting @development id:t121 order:370 depends:t120 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t121)
-(A) 2026-10-13 Update play-site tagline and home navigation. +critical +hosting @development id:t139 order:353 [details](docs/notes/plans/8vi3s0k3-discord-and-nostr-browser-identities-with-shared-invite-seats.md#t139)

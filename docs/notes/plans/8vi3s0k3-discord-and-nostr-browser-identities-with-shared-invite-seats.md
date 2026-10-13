@@ -312,3 +312,8 @@ and sessions were preserved; no player terminal was active during deployment.
 Use the approved long-game tagline. Link the play-site brand to the games
 page and add Home navigation to the main landing page in a new tab. Preserve
 title colors and check navigation on desktop and mobile before publishing.
+
+Signed release `abc2fdb6` is live. Release build and local/live desktop/mobile
+browser checks pass, including brand navigation and the new tagline. The Home
+link points to the main landing page. Deployment verified signatures/hashes
+and preserved campaign data and sessions.
