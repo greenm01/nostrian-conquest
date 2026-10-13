@@ -232,3 +232,11 @@ locally and over HTTPS; the live stylesheet matches source. The listing
 screenshot confirms the warm yellow site title and blue game heading.
 Signature and artifact hashes passed verification, and all services remained
 active without a restart.
+
+### t133
+
+Update only the main landing page info box: lead with the game listing, explain
+Discord or Nostr sign-in and invitation claims, and link to help and the sysop
+contact page. Keep community Discord as an optional social link. Preserve the
+landing page green theme and the play site Tokyo Night theme. Check desktop
+and mobile rendering, link destinations and live delivery.
