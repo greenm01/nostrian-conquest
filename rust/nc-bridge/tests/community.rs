@@ -373,3 +373,79 @@ async fn browser_join_cannot_bypass_invite_only_seats() {
         StatusCode::OK
     );
 }
+
+#[tokio::test]
+async fn access_describes_only_the_signed_in_accounts_seat() {
+    let (dir, app) = fixture();
+    let token = "d".repeat(64);
+    session(dir.path(), &token, "123");
+    admin::execute(
+        dir.path(),
+        HostRequest::Join {
+            game: "public".into(),
+            account: nc_data::AccountIdentity::Discord("456".into()),
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        call(&app, "/api/games/public/access", "GET", None, None)
+            .await
+            .0,
+        StatusCode::UNAUTHORIZED
+    );
+    let (status, body) = call(&app, "/api/games/public/access", "GET", Some(&token), None).await;
+    assert_eq!(status, StatusCode::OK);
+    let access: Value = serde_json::from_str(&body).unwrap();
+    assert!(access["seat"].is_null());
+    assert_eq!(access["can_play"], false);
+    assert_eq!(access["connected"], false);
+    assert!(!body.contains("456"));
+    // Membership is informational; it does not authorize a terminal or download.
+    assert!(
+        admin::execute(
+            dir.path(),
+            HostRequest::Authorize {
+                game: "public".into(),
+                account: nc_data::AccountIdentity::Discord("123".into()),
+            }
+        )
+        .is_err()
+    );
+    assert_ne!(
+        call(
+            &app,
+            "/api/games/public/exports/map-zip",
+            "GET",
+            Some(&token),
+            None
+        )
+        .await
+        .0,
+        StatusCode::OK
+    );
+    admin::execute(
+        dir.path(),
+        HostRequest::Join {
+            game: "public".into(),
+            account: nc_data::AccountIdentity::Discord("123".into()),
+        },
+    )
+    .unwrap();
+    let (_, body) = call(&app, "/api/games/public/access", "GET", Some(&token), None).await;
+    let access: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(access["seat"], 2);
+    assert_eq!(access["can_play"], true);
+    assert_eq!(access["connected"], false);
+    admin::execute(
+        dir.path(),
+        HostRequest::Pause {
+            game: "public".into(),
+        },
+    )
+    .unwrap();
+    let (_, body) = call(&app, "/api/games/public/access", "GET", Some(&token), None).await;
+    let access: Value = serde_json::from_str(&body).unwrap();
+    assert_eq!(access["seat"], 2);
+    assert_eq!(access["can_play"], false);
+    assert_eq!(access["state"], "paused");
+}

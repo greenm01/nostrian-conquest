@@ -124,6 +124,8 @@ def main():
                         assert handle==name,handle
                 account={'provider':'nostr','id':alias_key}
                 admin(root,args.host,action='link_account',game='one',seat=1,account=account)
+                access_status,access_body=request(port,'GET','/api/games/one/access',alias)
+                assert access_status==200 and json.loads(access_body)['connected'] is True
                 other,status=websocket(port,alias);other.close();assert status==409,status
                 assert request(port,'POST','/auth/logout',discord)[0]==200
                 closed(sockets[0])
@@ -132,7 +134,9 @@ def main():
                 total+=rendered(linked)
                 admin(root,args.host,action='unlink_account',game='one',seat=1,account=account)
                 closed(linked)
-                assert request(port,'GET','/api/games/one/access',alias)[0]==409
+                access_status,access_body=request(port,'GET','/api/games/one/access',alias)
+                assert access_status==200 and json.loads(access_body)['seat'] is None
+                assert json.loads(access_body)['connected'] is False
                 assert request(port,'POST','/auth/logout',nostr)[0]==200
                 closed(sockets[1])
                 for _ in range(100):

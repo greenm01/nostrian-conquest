@@ -135,6 +135,14 @@ Nostr players can enter a player name, retain their saved name by leaving it
 blank, or initially use `Nostr-<12 hex characters>`. Names are untrusted labels;
 the verified public key determines access. Existing handle sanitization applies.
 The login chooser displays the current provider and account before claiming.
+After sign-in, only the identity line and Sign out remain. Each game card checks
+the current account: Join and invite entry for an open recruiting seat, Play
+and downloads for an existing seat, or an explanation when play is unavailable.
+Reconnect appears only when that seat already has a terminal open. Returning
+from the terminal refreshes the listing, including browser Back navigation.
+`GET /api/games/{game}/access` requires a session and reports nullable `seat`,
+`can_play`, `state`, and `connected` for that account only. A null seat conveys
+no terminal or export permission.
 
 `POST /api/games/{game}/join` accepts `{ "code": "..." }`; identity always comes
 from the authenticated session. `/api/me` returns `account` (provider and ID)

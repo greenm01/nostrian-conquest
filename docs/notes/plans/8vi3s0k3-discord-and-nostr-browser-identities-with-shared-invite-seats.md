@@ -118,3 +118,24 @@ extensions, signing rejection, payload, identity, invite claim and logout. A liv
 HTTP smoke with a disposable software signer passed signed NIP-98 login, identity,
 Secure session, unbound-seat rejection, replay rejection and logout. Discord's
 OAuth redirect passes. This does not replace attended nos2x/Discord acceptance.
+
+### t128
+
+The owner approved state-aware browser controls. Show sign-in choices only to
+signed-out visitors; signed-in players see their identity and one sign-out button.
+Game cards show Join and an invite field only to signed-in nonmembers while
+recruitment has room. Members see Play and downloads, or an explanation when play
+is unavailable. Reconnect replaces Play only while the player's seat has a live
+terminal. Access lookups describe only the caller's membership and never grant
+an unbound account terminal/export authorization.
+
+Exit: browser state-transition checks, membership/isolation and real-terminal
+connection checks, workspace tests, and verified deployment without changing
+Beta 1's seats, invites, year or recruitment state.
+
+The workspace passed 3,273 tests (zero failures, 11 ignored); all 13 Python
+unit tests pass. The Chromium listing smoke covers both providers, signed-out
+and signed-in controls, joining, existing seats, active-terminal reconnect,
+paused/maintenance/full/closed games, lookup failure and logout. The release
+real-door smoke verifies connected status for a linked identity and null-seat
+status after unlink, alongside existing authorization and revocation checks.

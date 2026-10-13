@@ -243,8 +243,8 @@ async fn access(
     };
     match host(
         &state,
-        Request::Authorize {
-            game,
+        Request::Membership {
+            game: game.clone(),
             account: id.clone(),
         },
     )
@@ -256,7 +256,14 @@ async fn access(
                     return response;
                 }
             }
-            Json(json!({"seat":data["seat"],"can_play":data["can_play"],"state":data["state"]}))
+            let connected = data["seat"].as_u64().is_some_and(|seat| {
+                state
+                    .active
+                    .lock()
+                    .unwrap_or_else(|e| e.into_inner())
+                    .contains_key(&(game, seat as u32))
+            });
+            Json(json!({"seat":data["seat"],"can_play":data["can_play"],"state":data["state"],"connected":connected}))
                 .into_response()
         }
         Err(response) => response,

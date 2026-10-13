@@ -45,6 +45,14 @@ pub(super) fn sync_handle(
 }
 
 pub(super) fn authorize(root: &Path, game: &str, id: &AccountIdentity) -> Result<Value> {
+    let access = membership(root, game, id)?;
+    if access["seat"].is_null() {
+        return Err("no seat belongs to this account in this game".into());
+    }
+    Ok(access)
+}
+
+pub(super) fn membership(root: &Path, game: &str, id: &AccountIdentity) -> Result<Value> {
     id.validate()?;
     let (_, store) = store(root, game)?;
     let seat: Option<u32> = store
@@ -53,10 +61,9 @@ pub(super) fn authorize(root: &Path, game: &str, id: &AccountIdentity) -> Result
             r.get(0)
         })
         .optional()?;
-    let seat = seat.ok_or("no seat belongs to this account in this game")?;
     let status = hosted::get_game_metadata(store.connection(), game)?.status;
     Ok(
-        json!({"game":game,"seat":seat,"account":id,"state":status,"can_play":matches!(status.as_str(),"recruiting"|"running")}),
+        json!({"game":game,"seat":seat,"account":id,"state":status,"can_play":seat.is_some() && matches!(status.as_str(),"recruiting"|"running")}),
     )
 }
 

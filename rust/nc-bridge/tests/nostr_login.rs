@@ -134,12 +134,12 @@ async fn browser_claims_invite_with_verified_key_and_cannot_link_accounts() {
         .0,
         StatusCode::CONFLICT
     );
-    assert_eq!(
-        send(&app, "/api/games/one/access", "GET", &impostor, "", "", "")
-            .await
-            .0,
-        StatusCode::CONFLICT
-    );
+    let (status, access, _) =
+        send(&app, "/api/games/one/access", "GET", &impostor, "", "", "").await;
+    assert_eq!(status, StatusCode::OK);
+    assert!(access["seat"].is_null());
+    assert_eq!(access["can_play"], false);
+    assert_eq!(access["connected"], false);
     let injection =
         json!({"code":codes["invites"][1]["code"],"account":{"provider":"discord","id":"123"}})
             .to_string();

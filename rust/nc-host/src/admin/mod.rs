@@ -29,6 +29,10 @@ pub enum Request {
         game: String,
         count: u8,
     },
+    Membership {
+        game: String,
+        account: AccountIdentity,
+    },
     ListInvites {
         game: String,
     },
@@ -209,6 +213,7 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             account,
             display_name,
         } => seats::sync_handle(&root, &game, &account, &display_name),
+        Request::Membership { game, account } => seats::membership(&root, &game, &account),
         Request::List => campaign::list(&root),
         Request::Catalog => campaign::catalog(&root),
         Request::Announcements => announcements::pending(&root),

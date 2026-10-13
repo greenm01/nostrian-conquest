@@ -76,6 +76,8 @@ Tests:
 
 ```sh
 python3 -m unittest discover -s tools/nc-admin/tests
+# Requires Chromium; exercises the browser listing with mocked login and game responses.
+python3 tools/nc-admin/tests/browser_listing_smoke.py
 ```
 
 Set `PYTHONPATH` to `tools/nc-admin` if running the tests outside their package.

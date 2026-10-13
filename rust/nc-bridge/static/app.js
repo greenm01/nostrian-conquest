@@ -229,6 +229,10 @@
                     term.writeln(`\r\n${access.error || 'Campaign is not accepting sessions.'} Return to Games.\r\n`);
                     updateStatus('disconnected'); return;
                 }
+                if (access.connected) {
+                    term.writeln('\r\nYour seat is already open in another terminal. Return to Games and choose Reconnect.\r\n');
+                    updateStatus('disconnected'); return;
+                }
             } catch (_) {
                 term.writeln('\r\nCannot reach the game host. Return to Games and try again.\r\n');
                 updateStatus('disconnected'); return;
