@@ -302,3 +302,7 @@ and resumed community services/timers. No player terminal was active.
 
 Remove the unsolicited Bitcoin/payment sentence from the how-to, as requested.
 Rebuild and verify the published page.
+
+Signed release `911b3207` is live. Build, artifact signature and hashes pass;
+live HTML matches source and the unwanted sentence is absent. Campaign data
+and sessions were preserved; no player terminal was active during deployment.
