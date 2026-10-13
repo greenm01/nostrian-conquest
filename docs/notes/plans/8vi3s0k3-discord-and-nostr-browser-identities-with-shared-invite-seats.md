@@ -297,3 +297,8 @@ Signed release `a025dd8a` is live. Release build and local/live desktop/mobile
 browser checks pass; public how-to HTML matches source. Deployment verified
 signature and hashes, preserved sessions and all campaign database content,
 and resumed community services/timers. No player terminal was active.
+
+### t138
+
+Remove the unsolicited Bitcoin/payment sentence from the how-to, as requested.
+Rebuild and verify the published page.
