@@ -39,7 +39,8 @@ fn independent_games_atomic_seats_and_lifecycle() {
             root,
             Request::Join {
                 game: "one".into(),
-                account: nc_data::AccountIdentity::Discord("123".into())
+                account: nc_data::AccountIdentity::Discord("123".into()),
+                display_name: None,
             }
         )
         .is_err()
@@ -50,6 +51,7 @@ fn independent_games_atomic_seats_and_lifecycle() {
         let join = Request::Join {
             game: game.into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
+            display_name: None,
         };
         assert_eq!(execute(root, join.clone()).unwrap()["seat"], 1);
         assert_eq!(execute(root, join).unwrap()["seat"], 1);
@@ -215,6 +217,7 @@ fn concurrent_claims_cannot_share_a_seat() {
                     Request::Join {
                         game: "one".into(),
                         account: nc_data::AccountIdentity::Discord(format!("100{i}")),
+                        display_name: None,
                     },
                 )
             })

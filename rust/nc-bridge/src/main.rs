@@ -24,6 +24,14 @@ struct Cli {
     matrix_oauth_client_id: Option<String>,
     #[arg(long, env = "NC_MATRIX_OAUTH_CLIENT_SECRET", hide_env_values = true)]
     matrix_oauth_client_secret: Option<String>,
+    /// Comma-separated relays asked for Nostr profile names at sign-in.
+    #[arg(
+        long,
+        env = "NC_NOSTR_PROFILE_RELAYS",
+        value_delimiter = ',',
+        default_value = "wss://relay.damus.io,wss://nos.lol,wss://relay.primal.net"
+    )]
+    nostr_profile_relays: Vec<String>,
 
     /// Host interface to bind to
     #[arg(long, default_value = "127.0.0.1", env = "NC_BRIDGE_HOST")]
@@ -120,6 +128,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 (None, None) => None,
                 _ => return Err("set both Matrix OAuth client ID and secret, or neither".into()),
             },
+            nostr_relays: cli.nostr_profile_relays,
         })
         .map_err(std::io::Error::other)?
     } else {

@@ -34,6 +34,7 @@ fn bundle_is_authorized_and_all_formats_share_the_player_snapshot() {
         Request::Join {
             game: "one".into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
+            display_name: None,
         },
     )
     .unwrap();

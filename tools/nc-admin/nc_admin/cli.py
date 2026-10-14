@@ -28,7 +28,7 @@ def parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="nc-admin", parents=[common], allow_abbrev=False)
     groups = p.add_subparsers(dest="group", required=True)
     games = groups.add_parser("games", parents=[common]).add_subparsers(dest="command", required=True)
-    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "link-account", "unlink-account", "invite-only"):
+    for command in ("list", "inspect", "create", "publish", "start", "pause", "resume", "archive", "schedule", "history", "replace", "link-account", "unlink-account", "rename", "invite-only"):
         sub = games.add_parser(command, parents=[common], allow_abbrev=False)
         if command != "list": sub.add_argument("game")
         if command == "create":
@@ -51,6 +51,10 @@ def parser() -> argparse.ArgumentParser:
             identity.add_argument("--nostr-pubkey", help="64-character lowercase hex public key")
             identity.add_argument("--matrix-id", help="full Matrix user ID, such as @alice:matrix.org")
             sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm the account change")
+        if command == "rename":
+            sub.add_argument("--seat", type=int, required=True)
+            sub.add_argument("--handle", required=True, help="New player name; it stays locked until renamed again")
+            sub.add_argument("--confirm", required=True, help="Repeat the game ID to confirm the rename")
         if command == "archive": sub.add_argument("--confirm", required=True)
     invites = groups.add_parser("invites", parents=[common]).add_subparsers(dest="command", required=True)
     for command in ("create", "list", "revoke"):
@@ -99,11 +103,12 @@ def request_for(args: argparse.Namespace) -> dict:
     if args.command == "create": request.update(name=args.name or args.game, players=args.players, seed=args.seed)
     if args.command in ("start", "resume", "schedule"): request["first_due"] = args.first_due
     if args.command in ("start", "schedule"): request["interval_minutes"] = args.interval_minutes
-    if args.command in ("replace", "link-account", "unlink-account", "archive") and args.confirm != args.game:
+    if args.command in ("replace", "link-account", "unlink-account", "rename", "archive") and args.confirm != args.game:
         raise AdminError("confirmation must exactly match the game ID")
     if args.command in ("replace", "link-account", "unlink-account"):
         provider, id = next((p, v) for p, v in (("discord", args.discord_id), ("nostr", args.nostr_pubkey), ("matrix", args.matrix_id)) if v)
         request.update(seat=args.seat, account={"provider":provider, "id":id})
+    if args.command == "rename": request.update(seat=args.seat, handle=args.handle)
     return request
 
 

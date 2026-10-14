@@ -97,7 +97,8 @@ async fn rejects_forgery_wrong_scope_and_unbound_browser_without_consuming_chall
         .0,
         StatusCode::BAD_REQUEST
     );
-    let changed = json!({"challenge":nonce,"display_name":"Changed"}).to_string();
+    // Same JSON meaning, different bytes: the signed payload hash no longer matches.
+    let changed = format!("{body} ");
     assert_eq!(
         send(
             &app,

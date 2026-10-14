@@ -10,26 +10,25 @@ use support::*;
 async fn signed_login_names_logout_and_restart() {
     let (root, app) = fixture();
     let keys = Keys::generate();
-    let session = login(&app, &keys, None).await;
+    let session = login(&app, &keys).await;
     let (status, me, _) = send(&app, "/api/me", "GET", &session, "", "", "").await;
     assert_eq!(status, StatusCode::OK);
     assert_eq!(
         me["account"],
         json!({"provider":"nostr","id":keys.public_key().to_hex()})
     );
-    assert_eq!(
-        me["display_name"],
-        format!("Nostr-{}", &keys.public_key().to_hex()[..12])
+    // Without a published profile, a key keeps one random anonymous name.
+    let name = me["display_name"].as_str().unwrap().to_owned();
+    assert!(
+        name.len() == 8
+            && name.starts_with("anon")
+            && name[4..].bytes().all(|b| b.is_ascii_digit()),
+        "{name}"
     );
-    let session = login(&app, &keys, Some("New\r\nCommander\u{1b}")).await;
+    let session = login(&app, &keys).await;
     assert_eq!(
         send(&app, "/api/me", "GET", &session, "", "", "").await.1["display_name"],
-        "NewCommander"
-    );
-    let session = login(&app, &keys, None).await;
-    assert_eq!(
-        send(&app, "/api/me", "GET", &session, "", "", "").await.1["display_name"],
-        "NewCommander"
+        name.as_str()
     );
     assert_eq!(
         send(
@@ -49,7 +48,7 @@ async fn signed_login_names_logout_and_restart() {
         send(&app, "/api/me", "GET", &session, "", "", "").await.0,
         StatusCode::UNAUTHORIZED
     );
-    let session = login(&app, &keys, None).await;
+    let session = login(&app, &keys).await;
     drop(app);
     let app = router(config(root.path())).unwrap();
     assert_eq!(
@@ -75,7 +74,7 @@ async fn browser_claims_invite_with_verified_key_and_cannot_link_accounts() {
     host(json!({"action":"publish","game":"one"}));
     host(json!({"action":"invite_only","game":"one"}));
     let codes = host(json!({"action":"create_invites","game":"one","count":2}));
-    let session = login(&app, &Keys::generate(), Some("Commander")).await;
+    let session = login(&app, &Keys::generate()).await;
     let code = codes["invites"][0]["code"].as_str().unwrap().to_lowercase();
     let body = json!({"code":code}).to_string();
     assert_eq!(
@@ -119,7 +118,7 @@ async fn browser_claims_invite_with_verified_key_and_cannot_link_accounts() {
         .0,
         StatusCode::OK
     );
-    let impostor = login(&app, &Keys::generate(), Some("Commander")).await;
+    let impostor = login(&app, &Keys::generate()).await;
     assert_eq!(
         send(
             &app,

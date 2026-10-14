@@ -218,10 +218,14 @@ pub(super) fn save_session(
             params![account, name],
         )
         .map_err(|e| e.to_string())?;
-    } else if let AccountIdentity::Nostr(key) = account {
+    } else if let AccountIdentity::Nostr(_) = account {
+        // A key without a published profile keeps one random anonymous name.
         conn.execute(
             "INSERT OR IGNORE INTO account_profiles(account,display_name) VALUES (?1,?2)",
-            params![account, format!("Nostr-{}", &key[..12])],
+            params![
+                account,
+                format!("anon{:04}", rand::random::<u16>() % 10_000)
+            ],
         )
         .map_err(|e| e.to_string())?;
     }

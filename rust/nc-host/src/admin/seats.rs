@@ -2,48 +2,6 @@ use super::*;
 use nc_data::hosted;
 use rusqlite::{OptionalExtension, params};
 
-pub(super) fn sync_handle(
-    root: &Path,
-    game: &str,
-    id: &AccountIdentity,
-    display_name: &str,
-) -> Result<Value> {
-    let access = authorize(root, game, id)?;
-    if access["can_play"] != true {
-        return Err("campaign is not accepting sessions".into());
-    }
-    // Names are labels only. The authenticated ID determines the seat, even
-    // when two accounts use the same name or one changes its name later.
-    let name: String = display_name.chars().filter(|c| !c.is_control()).collect();
-    if name.trim().is_empty() || name.len() > 512 {
-        return Err("invalid display name".into());
-    }
-    let seat = access["seat"].as_u64().ok_or("missing seat")? as usize;
-    let runtime = nc_data::CampaignStore::open_default_in_dir(&game_dir(root, game)?)?;
-    let mut snapshot = runtime
-        .load_latest_runtime_state()?
-        .ok_or("missing state")?;
-    let player = snapshot
-        .game_data
-        .players
-        .get_mut(seat - 1)
-        .ok_or("missing player")?;
-    let old = player.handle.clone();
-    nc_data::set_player_handle(player, name.trim());
-    let handle = player.handle.clone();
-    if handle != old {
-        runtime
-            .expecting_snapshot(snapshot.snapshot_id)
-            .save_runtime_state_structured(
-                snapshot.game_year,
-                &snapshot.game_data,
-                &snapshot.report_block_rows,
-                &snapshot.queued_mail,
-            )?;
-    }
-    Ok(json!({"seat":seat,"handle":handle}))
-}
-
 pub(super) fn authorize(root: &Path, game: &str, id: &AccountIdentity) -> Result<Value> {
     let access = membership(root, game, id)?;
     if access["seat"].is_null() {
@@ -73,6 +31,7 @@ pub(super) fn join(
     id: &AccountIdentity,
     replacement: Option<u32>,
     code: Option<&str>,
+    name: Option<&str>,
 ) -> Result<Value> {
     id.validate()?;
     let (_, store) = store(root, game)?;
@@ -127,6 +86,7 @@ pub(super) fn join(
     let tx = store.connection().unchecked_transaction()?;
     if replacement.is_some() {
         invites::revoke_seat(&tx, seat)?;
+        handles::unlock(&tx, seat)?;
         tx.execute("DELETE FROM web_seats WHERE seat=?1", [seat])?;
     } else {
         let occupied: bool = tx.query_row(
@@ -158,5 +118,10 @@ pub(super) fn join(
         ],
     )?;
     tx.commit()?;
+    // The claim stands even if the handle cannot be written now; the seat then
+    // takes its player's name when they first press Play.
+    if let (None, Some(name)) = (replacement, name) {
+        let _ = handles::lock(root, game, seat, name, false);
+    }
     authorize(root, game, id)
 }

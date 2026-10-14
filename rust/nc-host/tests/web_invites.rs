@@ -34,6 +34,7 @@ fn claim(root: &Path, game: &str, account: &str, code: &str) -> nc_host::admin::
             game: game.into(),
             account: nc_data::AccountIdentity::Discord(account.into()),
             code: code.into(),
+            display_name: None,
         },
     )
 }
@@ -77,6 +78,7 @@ fn codes_bind_once_case_insensitively_without_starting_a_full_game() {
         Request::Join {
             game: "one".into(),
             account: nc_data::AccountIdentity::Discord("100".into()),
+            display_name: None,
         },
     )
     .unwrap();
@@ -93,7 +95,8 @@ fn no_code_cannot_bypass_reservations_and_listing_never_returns_secrets() {
             root,
             Request::Join {
                 game: "one".into(),
-                account: nc_data::AccountIdentity::Discord("123".into())
+                account: nc_data::AccountIdentity::Discord("123".into()),
+                display_name: None,
             }
         )
         .is_err()

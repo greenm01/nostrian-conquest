@@ -80,7 +80,6 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
                 check(keyRequested && event.pubkey==='a'.repeat(64),'public key required before signing');
                 return {...event,id:'f'.repeat(64),sig:'b'.repeat(128)};
             }};
-            document.getElementById('nostr-name').value='Commander';
             await form.onsubmit(event);
             if(!logged || !document.getElementById('identity').textContent.includes('Nostr'))throw Error('login failed');
             check(form.hidden && !logout.hidden,'signed-in controls');

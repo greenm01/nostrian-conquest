@@ -203,6 +203,22 @@ linking take exactly one of `--discord-id`, `--nostr-pubkey` or `--matrix-id`. I
 returns one row per seat with an `accounts` array. Account changes are recorded
 in operator history and are allowed only while recruiting, running or paused.
 
+### Player names
+
+A player's in-game name comes from the public name of the account that claimed
+the seat: the Discord display name, the Matrix display name, or the Nostr
+profile name (`anon` plus four digits when the key has no profile). It is locked
+for that game, so later name changes or linked identities do not rename the
+player. After `games replace`, the new player's name is taken the next time
+they press Play. To change a name yourself:
+
+```sh
+nc-admin games rename practice --seat 2 --handle "Admiral Vorn" --confirm practice
+```
+
+The new name stays locked and the rename is recorded in operator history.
+Renames are allowed while recruiting, running or paused.
+
 ## Offline pilot identity conversion
 
 The new binaries expect the shared identity schema. They do not automatically

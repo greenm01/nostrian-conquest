@@ -30,6 +30,8 @@ pub struct Config {
     pub max_sessions: usize,
     /// One-click Matrix sign-in; absent leaves only the bot code form.
     pub matrix: Option<MatrixOAuth>,
+    /// Relays asked for a Nostr key's public profile name at sign-in.
+    pub nostr_relays: Vec<String>,
 }
 /// An OAuth client registered with a homeserver's authentication service.
 #[derive(Clone)]
@@ -196,13 +198,20 @@ async fn join(
             Err(_) => return error(StatusCode::BAD_REQUEST, "Invalid join request"),
         }
     };
+    // The claimant's public name becomes the seat's locked player handle.
+    let display_name = auth::display_name(&state, &id).ok();
     let request = match body.code {
         Some(code) => Request::ClaimInvite {
             game,
             account: id,
             code,
+            display_name,
         },
-        None => Request::Join { game, account: id },
+        None => Request::Join {
+            game,
+            account: id,
+            display_name,
+        },
     };
     match host(&state, request).await {
         Ok(data) => Json(data).into_response(),

@@ -3,6 +3,7 @@ mod account_links;
 mod announcements;
 mod campaign;
 mod exports;
+mod handles;
 mod invites;
 mod maintenance;
 mod recovery;
@@ -44,6 +45,9 @@ pub enum Request {
         game: String,
         account: AccountIdentity,
         code: String,
+        /// The claimant's public name, which becomes the locked player handle.
+        #[serde(default)]
+        display_name: Option<String>,
     },
     ConfigureSchedule {
         game: String,
@@ -111,6 +115,13 @@ pub enum Request {
     Join {
         game: String,
         account: AccountIdentity,
+        #[serde(default)]
+        display_name: Option<String>,
+    },
+    Rename {
+        game: String,
+        seat: u32,
+        handle: String,
     },
     Authorize {
         game: String,
@@ -203,7 +214,15 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             game,
             account,
             code,
-        } => seats::join(&root, &game, &account, None, Some(&code)),
+            display_name,
+        } => seats::join(
+            &root,
+            &game,
+            &account,
+            None,
+            Some(&code),
+            display_name.as_deref(),
+        ),
         Request::ConfigureSchedule { game, time_zone } => {
             scheduling::configure(&root, &game, time_zone.as_deref())
         }
@@ -212,7 +231,7 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             game,
             account,
             display_name,
-        } => seats::sync_handle(&root, &game, &account, &display_name),
+        } => handles::on_play(&root, &game, &account, &display_name),
         Request::Membership { game, account } => seats::membership(&root, &game, &account),
         Request::List => campaign::list(&root),
         Request::Catalog => campaign::catalog(&root),
@@ -262,12 +281,17 @@ pub fn execute(root: &Path, request: Request) -> Result<Value> {
             Some(first_due),
             Some(interval_minutes),
         ),
-        Request::Join { game, account } => seats::join(&root, &game, &account, None, None),
+        Request::Join {
+            game,
+            account,
+            display_name,
+        } => seats::join(&root, &game, &account, None, None, display_name.as_deref()),
+        Request::Rename { game, seat, handle } => handles::rename(&root, &game, seat, &handle),
         Request::Replace {
             game,
             seat,
             account,
-        } => seats::join(&root, &game, &account, Some(seat), None),
+        } => seats::join(&root, &game, &account, Some(seat), None, None),
         Request::Authorize { game, account } => seats::authorize(&root, &game, &account),
         Request::LinkAccount {
             game,

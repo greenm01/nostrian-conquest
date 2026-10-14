@@ -79,6 +79,13 @@ class AdminTests(unittest.TestCase):
             with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
                 parser().parse_args(['games',command,'one','--seat','1','--nostr-pubkey','a'*64,'--matrix-id','@alice:matrix.org','--confirm','one'])
 
+    def test_rename_sets_a_seat_handle_with_confirmation(self):
+        argv=['games','rename','one','--seat','2','--handle','Admiral X','--confirm','one']
+        self.assertEqual(request_for(parser().parse_args(argv)),{'action':'rename','game':'one','seat':2,'handle':'Admiral X'})
+        with self.assertRaises(AdminError): request_for(parser().parse_args(argv[:-1]+['two']))
+        with contextlib.redirect_stderr(io.StringIO()),self.assertRaises(SystemExit):
+            parser().parse_args(['games','rename','one','--seat','2','--confirm','one'])
+
     def test_timeout_never_retries_mutation(self):
         with patch('subprocess.run',side_effect=subprocess.TimeoutExpired('nc-host',1)) as run:
             with self.assertRaises(AdminError):Client(Path('/games'),'nc-host').call({'action':'maintain'})

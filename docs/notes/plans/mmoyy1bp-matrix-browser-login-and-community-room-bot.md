@@ -192,6 +192,27 @@ with the pointer to the button and rejects a malformed ID. Delivery to a real
 account on another homeserver has not been tried; the owner's only Matrix
 account is on matrix.org.
 
+### t144
+
+Approved on 2026-10-14. Player handles come from each provider's public name
+and are locked per game once set, instead of following every sign-in.
+
+- Discord and Matrix already supply public display names. Nostr sign-in fetches
+  the key's profile (kind 0) from configured relays with a short timeout and
+  uses `display_name`, then `name`. Without one, the player becomes `anon`
+  plus a random four-digit number, kept for that key. The optional Nostr player
+  name box is removed.
+- Claiming a seat (invite code, open join or the Discord bot's `/join`) sets the
+  game handle from the claimant's current name and locks it. Play no longer
+  renames a locked handle. Seats claimed earlier, or reassigned with
+  `replace`, take the name of whoever next presses Play and then lock.
+- The operator renames a player with `nc-admin games rename GAME --seat N
+  --handle NAME --confirm GAME`, which also locks the handle.
+
+Exit: claim, Play, replace and rename regressions; Nostr profile lookup with a
+mock relay and the `anon` fallback; listing smoke and docs; full workspace
+suite; deployment and an attended sign-in.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed

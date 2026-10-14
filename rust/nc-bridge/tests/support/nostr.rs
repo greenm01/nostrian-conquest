@@ -21,6 +21,7 @@ pub fn config(root: &std::path::Path) -> Config {
         client_secret: "test-only".into(),
         max_sessions: 2,
         matrix: None,
+        nostr_relays: Vec::new(),
     }
 }
 pub fn fixture() -> (tempfile::TempDir, Router) {
@@ -133,9 +134,9 @@ pub fn signed(keys: &Keys, body: &str, fault: &str) -> String {
         base64::engine::general_purpose::STANDARD.encode(serde_json::to_vec(&value).unwrap())
     )
 }
-pub async fn login(app: &Router, keys: &Keys, name: Option<&str>) -> String {
+pub async fn login(app: &Router, keys: &Keys) -> String {
     let (nonce, cookie) = challenge(app).await;
-    let body = json!({"challenge":nonce,"display_name":name}).to_string();
+    let body = json!({"challenge":nonce}).to_string();
     let (status, _, session) = send(
         app,
         "/auth/nostr",

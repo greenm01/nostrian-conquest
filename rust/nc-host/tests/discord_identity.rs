@@ -2,7 +2,7 @@ use nc_data::CampaignStore;
 use nc_host::admin::{Request, execute};
 
 #[test]
-fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
+fn discord_id_owns_seat_and_names_match_and_lock_without_changing_empires() {
     let dir = tempfile::tempdir().unwrap();
     let root = dir.path();
     execute(
@@ -28,6 +28,7 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
             Request::Join {
                 game: "test".into(),
                 account: nc_data::AccountIdentity::Discord(id.into()),
+                display_name: None,
             },
         )
         .unwrap();
@@ -47,7 +48,8 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
     assert!(sync("789", "Impostor").is_err());
     assert_eq!(sync("123", "Commander").unwrap()["handle"], "Commander");
     assert_eq!(sync("456", "Commander").unwrap()["seat"], 2);
-    assert_eq!(sync("123", "New\r\nName\x1b").unwrap()["handle"], "NewName");
+    // The first Play locked the handle; a later sign-in name does not rename it.
+    assert_eq!(sync("123", "New\r\nName\x1b").unwrap()["handle"], "Commander");
     assert_eq!(
         execute(
             root,
@@ -68,7 +70,7 @@ fn discord_id_owns_seat_names_can_change_or_match_without_changing_empires() {
     assert_eq!(after.report_block_rows, before.report_block_rows);
     assert_eq!(after.queued_mail, before.queued_mail);
     let snapshot = after.snapshot_id;
-    sync("123", "NewName").unwrap();
+    sync("123", "Another Name").unwrap();
     assert_eq!(
         store
             .load_latest_runtime_state()

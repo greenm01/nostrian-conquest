@@ -92,13 +92,16 @@ hashed random session cookie. OAuth state expires after five minutes and is
 single use. Cookies are HttpOnly, Secure over HTTPS, and SameSite=Lax.
 
 The account provider and verified ID identify a seat. Discord uses its numeric
-account ID; Nostr uses the signing public key. The verified account display name
-becomes the in-game player handle when the browser terminal opens; the username
-is the fallback when no display name is set. Names may change or match another
-player's name without changing ownership. The empire name remains the player's
-choice. Handles use the existing 25-character game text limits and discard
-control characters. A fresh Discord sign-in refreshes the display name;
-older sessions without a saved profile must sign in again.
+account ID; Nostr uses the signing public key. Each sign-in saves the account's
+public name: the Discord display name (username as fallback), the Matrix display
+name, or the Nostr profile name. Claiming a seat (browser or `/join`) copies that
+name into the game as the player handle and locks it, so later name changes and
+linked identities never rename the player. A seat claimed before locking existed,
+or reassigned with `replace`, locks to the name of whoever next presses Play.
+`nc-admin games rename` is the only way to change a locked handle. Names may
+match another player's without changing ownership. The empire name remains the
+player's choice. Handles use the existing 25-character game text limits and
+discard control characters.
 
 Install the bot into the **existing** community with `bot` and
 `applications.commands` scopes. It needs View Channel, Send Messages and Attach
@@ -131,11 +134,14 @@ HttpOnly browser cookie. The signed event must have kind 27235, empty content,
 a timestamp within 60 seconds, the exact configured URL and POST method, and a
 SHA-256 hash of the raw login body. Signature, event ID, origin, browser cookie
 and challenge are verified. Challenge consumption and session creation commit
-together. Login bodies contain `challenge` and optional `display_name` only.
+together. Login bodies contain `challenge` only.
 
-Nostr players can enter a player name, retain their saved name by leaving it
-blank, or initially use `Nostr-<12 hex characters>`. Names are untrusted labels;
-the verified public key determines access. Existing handle sanitization applies.
+Sign-in asks the relays in `NC_NOSTR_PROFILE_RELAYS` (by default
+`wss://relay.damus.io`, `wss://nos.lol` and `wss://relay.primal.net`) for the
+key's profile event, waiting at most about five seconds, and uses its
+`display_name` or `name`. The event must be signed by the key. A key with no
+profile keeps one random name, `anon` plus four digits. Names are untrusted
+labels; the verified public key determines access. Existing handle sanitization applies.
 The login chooser displays the current provider and account before claiming.
 After sign-in, only the identity line and Sign out remain. Each game card checks
 the current account: Join and invite entry for an open recruiting seat, Play

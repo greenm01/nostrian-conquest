@@ -59,7 +59,36 @@ pub(super) async fn challenge(State(state): State<Arc<Community>>, headers: Head
 #[serde(deny_unknown_fields)]
 struct LoginBody {
     challenge: String,
-    display_name: Option<String>,
+}
+
+/// The key's public profile name from the configured relays, if any answers in
+/// time. Relays sign nothing for us: the profile event must be signed by the key.
+async fn profile_name(relays: &[String], key: nostr_sdk::PublicKey) -> Option<String> {
+    if relays.is_empty() {
+        return None;
+    }
+    let client = nostr_sdk::Client::default();
+    for relay in relays {
+        let _ = client.add_relay(relay.as_str()).await;
+    }
+    client.try_connect(std::time::Duration::from_secs(2)).await;
+    let metadata = client
+        .fetch_metadata(key, std::time::Duration::from_secs(3))
+        .await;
+    client.shutdown().await;
+    let metadata = metadata.ok()??;
+    [metadata.display_name, metadata.name]
+        .into_iter()
+        .flatten()
+        .map(|name| {
+            name.chars()
+                .filter(|c| !c.is_control())
+                .take(64)
+                .collect::<String>()
+                .trim()
+                .to_owned()
+        })
+        .find(|name| !name.is_empty())
 }
 
 fn exact_tag(event: &Event, name: &str, expected: &str) -> bool {
@@ -123,20 +152,8 @@ pub(super) async fn login(
             "Nostr signature invalid or expired; try again",
         );
     }
-    let name = request
-        .display_name
-        .map(|name| {
-            name.chars()
-                .filter(|c| !c.is_control())
-                .collect::<String>()
-                .trim()
-                .to_owned()
-        })
-        .filter(|name| !name.is_empty());
-    if name.as_ref().is_some_and(|name| name.len() > 512) {
-        return error(StatusCode::BAD_REQUEST, "Player name is too long");
-    }
     let account = AccountIdentity::Nostr(event.pubkey.to_hex());
+    let name = profile_name(&state.config.nostr_relays, event.pubkey).await;
     let result = auth::connection(&state).and_then(|mut conn| {
         let tx = conn.transaction().map_err(|e| e.to_string())?;
         let consumed = tx

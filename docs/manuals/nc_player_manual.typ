@@ -167,14 +167,14 @@ For an invite-only game, ask its host for a private code.
 
 Each invite code claims one seat. Keep it private. You only need it once;
 your Discord account owns the seat afterward. Your player handle comes from
-your Discord display name. Your empire name is a separate name you choose.
+your public profile name when you claim the seat and stays fixed for that game;
+ask the host to change it. Your empire name is a separate name you choose.
 
 On hosts offering *Sign in with Nostr*, you can instead use a NIP-07 browser
 extension such as nos2x. Approve the login, enter your invite code on the game
-card, and choose *Play*. Return using the same Nostr key. You may enter a player
-name when signing in; a blank name keeps your saved name or uses a short key
-label initially. This option is separate from relay-based Nostr GameServer
-play.
+card, and choose *Play*. Return using the same Nostr key. Your player handle
+comes from your Nostr profile name, or `anon` plus a number if you have none.
+This option is separate from relay-based Nostr GameServer play.
 
 On hosts offering *Sign in with Matrix*, choose it and sign in to your
 matrix.org account if asked. The game learns only your Matrix ID, not your

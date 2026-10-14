@@ -61,15 +61,24 @@ pub async fn join(
     #[description = "Private eight-character code from the host"] code: Option<String>,
 ) -> Result<(), Error> {
     ctx.defer_ephemeral().await?;
+    // The same public name the website uses: display name, else username.
+    let author = ctx.author();
+    let name = author
+        .global_name
+        .clone()
+        .filter(|name| !name.trim().is_empty())
+        .unwrap_or_else(|| author.name.clone());
     let request = match code {
         Some(code) => Request::ClaimInvite {
             game: game.clone(),
             account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
             code,
+            display_name: Some(name),
         },
         None => Request::Join {
             game: game.clone(),
             account: nc_host::admin::AccountIdentity::Discord(ctx.author().id.to_string()),
+            display_name: Some(name),
         },
     };
     let access = match host(ctx.data(), request).await {

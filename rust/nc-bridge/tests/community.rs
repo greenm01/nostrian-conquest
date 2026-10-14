@@ -19,6 +19,7 @@ fn fixture() -> (tempfile::TempDir, Router) {
         client_secret: "test-only".into(),
         max_sessions: 2,
         matrix: None,
+        nostr_relays: Vec::new(),
     })
     .unwrap();
     for game in ["public", "draft"] {
@@ -253,6 +254,7 @@ async fn zip_download_has_binary_body_and_requires_own_seat() {
         HostRequest::Join {
             game: "public".into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
+            display_name: None,
         },
     )
     .unwrap();
@@ -301,6 +303,7 @@ async fn old_sessions_need_a_verified_discord_profile_before_play() {
         HostRequest::Join {
             game: "public".into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
+            display_name: None,
         },
     )
     .unwrap();
@@ -364,6 +367,7 @@ async fn browser_join_cannot_bypass_invite_only_seats() {
             game: "public".into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
             code: code.into(),
+            display_name: None,
         },
     )
     .unwrap();
@@ -385,6 +389,7 @@ async fn access_describes_only_the_signed_in_accounts_seat() {
         HostRequest::Join {
             game: "public".into(),
             account: nc_data::AccountIdentity::Discord("456".into()),
+            display_name: None,
         },
     )
     .unwrap();
@@ -429,6 +434,7 @@ async fn access_describes_only_the_signed_in_accounts_seat() {
         HostRequest::Join {
             game: "public".into(),
             account: nc_data::AccountIdentity::Discord("123".into()),
+            display_name: None,
         },
     )
     .unwrap();
