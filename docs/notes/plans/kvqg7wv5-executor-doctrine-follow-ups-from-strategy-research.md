@@ -333,6 +333,34 @@ Measure the two changes separately: they are separate switches.
 
 **Exit:** as in Scope, for each switch.
 
+**Result (2026-10-14): both switches rejected.**
+
+- **`avoid_contested`.** Skip a colony target where a rival fleet was seen
+  within a sector in the last two years. Contacts give size classes, not
+  ship types, so a rival ETAC cannot be told apart. With the current
+  weights it won 0.219 and 0.257 on two blocks of 1,024 maps: no gain.
+- **`scaled_garrisons`.** A colony's army target is `colony_armies` per 25
+  points of production, at least one.
+  - With the current weights: 0.263 and 0.260.
+  - Tuned with the switch on, then the same weights with the switch on
+    against off: 0.279 and 0.248. That is inconsistent and below the bar.
+- **The rush again.** That tuning run found a rush too: war at year 1.9,
+  about 3 ETACs, strikes at 0.67 times defence. With the switch off, those
+  weights beat the current land-grab executor 0.326 and 0.309, more than
+  the first rush's 0.28. Two independent tunings now favour early war
+  over long expansion.
+- Both switches' code is removed.
+
+**Plan outcome.** Of t159–t164:
+
+- Kept: the land grab (t159), striking where weakest (t160), and
+  bombarding then invading (t161). Together, the current executor beats
+  t154's 0.508, and t154's wins 0.051 in reverse.
+- Rejected: front-row scouting, blockades, contested-colony avoidance and
+  scaled garrisons.
+- Still to do: retrain the strategist on the final executor and evaluate
+  it on 1,024 maps.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):
