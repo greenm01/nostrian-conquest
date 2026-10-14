@@ -213,6 +213,21 @@ Exit: claim, Play, replace and rename regressions; Nostr profile lookup with a
 mock relay and the `anon` fallback; listing smoke and docs; full workspace
 suite; deployment and an attended sign-in.
 
+Built and tested on 2026-10-14 on bean-void (Void Linux in WSL, Rust 1.98)
+while crunch was reserved for another project's latency measurements. The full
+workspace passed **3,308 tests, zero failures, 11 ignored**; 14 Python tests
+and the release real-door smoke pass. A mock relay test shows a published
+profile's `display_name` becoming the locked handle through the website claim,
+and a key without a profile receiving `anon` plus four digits. Host tests cover
+locking at claim and first Play, linked identities, replacement and operator
+rename. The older Discord identity test now expects the locked name.
+
+Signed release `4456d589` is live. Its checksums were signed on crunch and
+verified on the host; every binary started on Arch before install. The owner
+ran the switch, which restarted all three services. Game database dumps and the
+four sessions were unchanged, Beta 1 stayed recruiting at year 3000, and live
+pages match source with the Nostr name box removed.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed
