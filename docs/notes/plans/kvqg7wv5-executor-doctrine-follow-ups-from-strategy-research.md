@@ -304,6 +304,19 @@ force gathering at home.
 
 **Exit:** as in Scope.
 
+**Result (2026-10-14): rejected.**
+
+- **The switch tried.** `blockade` ordered a force that had bombarded a
+  world but lacked the armies to invade to Guard/Blockade it, instead of
+  going home. A force already blockading stayed while the world was still
+  the enemy's.
+- **Head to head:** one seat with the switch against three without won
+  0.092 and 0.104 on two blocks of 1,024 maps, against an even 0.25.
+- **Why.** As with t161's first version, the strike force stayed out
+  indefinitely. It never brought troops home to reload, and its own worlds
+  lay open. A blockade for a fixed year would only repeat t161's
+  bombard-then-leave, so no variant was tried. The code is removed.
+
 ### t164
 
 Avoid contested colonies, and scale colony garrisons to production.
