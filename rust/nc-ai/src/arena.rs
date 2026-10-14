@@ -76,25 +76,18 @@ impl ChoiceSource for SplitMix {
 /// Play `policies` (one per seat) on map `map_seed`, with the same campaign
 /// seed, for up to `years` years.
 pub fn play_match(map_seed: u64, policies: &[SeatPolicy], years: u16) -> MatchResult {
-    let player_count = policies.len() as u8;
-    let setup = CaseSetup {
-        player_count,
+    let mut game = seated_game(
         map_seed,
-        policies: policies
+        policies
             .iter()
             .map(|policy| match policy {
                 SeatPolicy::Autopilot => Policy::Autopilot,
                 _ => Policy::Aggressor,
             })
             .collect(),
-        collapsed_empire: None,
-        rally: false,
-        war: false,
-        armadas: vec![None; policies.len()],
-        turns: years,
-    };
-    let built = build_scenario(&setup.scenario_spec()).expect("setup should build");
-    let mut game = SeatedGame::new(ScenarioPlay::new(built).with_campaign_seed(map_seed));
+        map_seed,
+        years,
+    );
     let start_year = game.play.built.game_data.conquest.game_year;
     let mut choices = SplitMix(map_seed ^ 0xA66E_5503);
     let mut played = 0;
@@ -124,7 +117,7 @@ pub fn play_match(map_seed: u64, policies: &[SeatPolicy], years: u16) -> MatchRe
             break;
         }
     }
-    result(
+    match_result(
         &game.play.built.game_data,
         game.play.winner_state.winner_empire,
         played,
@@ -146,7 +139,34 @@ pub fn executor_turn(game: &mut SeatedGame, empire: u8, weights: &Weights, start
         .expect("executor turn should submit");
 }
 
-fn result(game_data: &CoreGameData, winner: Option<u8>, years: u16) -> MatchResult {
+/// A fresh game on map `map_seed`, one seat per policy (only Autopilot
+/// matters to setup), run with `campaign_seed`; setup records `turns`.
+pub(crate) fn seated_game(
+    map_seed: u64,
+    policies: Vec<Policy>,
+    campaign_seed: u64,
+    turns: u16,
+) -> SeatedGame {
+    let setup = CaseSetup {
+        player_count: policies.len() as u8,
+        map_seed,
+        armadas: vec![None; policies.len()],
+        policies,
+        collapsed_empire: None,
+        rally: false,
+        war: false,
+        turns,
+    };
+    let built = build_scenario(&setup.scenario_spec()).expect("setup should build");
+    SeatedGame::new(ScenarioPlay::new(built).with_campaign_seed(campaign_seed))
+}
+
+/// The standing in `game_data` after `years` years.
+pub(crate) fn match_result(
+    game_data: &CoreGameData,
+    winner: Option<u8>,
+    years: u16,
+) -> MatchResult {
     let player_count = usize::from(game_data.conquest.player_count);
     let mut production = vec![0; player_count];
     let mut worlds = vec![0; player_count];

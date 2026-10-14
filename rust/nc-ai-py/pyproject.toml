@@ -1,0 +1,22 @@
+[build-system]
+requires = ["maturin>=1.9,<2"]
+build-backend = "maturin"
+
+[project]
+name = "nc-ai-env"
+version = "1.0.0b3"
+description = "Nostrian Conquest batch training environment for learned AI seats"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2"]
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+
+# Rebuild when any crate the environment is compiled from changes.
+[tool.uv]
+cache-keys = [
+    { file = "pyproject.toml" },
+    { file = "Cargo.toml" },
+    { file = "../*/Cargo.toml" },
+    { file = "../*/src/**/*.rs" },
+]

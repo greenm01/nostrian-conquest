@@ -46,14 +46,19 @@ Done on 2026-10-14, all in the `nc-ai` crate unless noted:
 - t152: masked seat actions that decode straight to `TurnSubmission`.
 - t154: the scripted executor, with weights tuned by evolution against
   itself.
+- t153: `BatchEnv` in nc-ai, the `nc_ai_env` PyO3 module
+  (`rust/nc-ai-py`, outside the workspace) and the
+  [`tools/ai`](../../tools/ai/README.md) uv project with PyTorch MPS and
+  Parquet shards. About 2,700 random four-seat game-years a second end
+  to end; `seat_masks` costs 45 µs per seat. Xcode 27's `ld` can emit
+  dylibs that macOS 27 refuses to load. `macos-link.sh` works around it;
+  see the plan.
 
 Each task's result section in the plan holds its evidence.
 
-**Next is t153:** a PyO3 crate built with maturin, Parquet shards, and a
-`tools/ai/` uv project with MLX or PyTorch MPS. These are the repo's first
-Python dependencies; keep them out of the default workspace build. Measure
-the per-seat cost of `seat_masks` there: random masked play cost 1.9 ms per
-4-seat game-year.
+**Next is t155:** train the hierarchical agent. The batch needs scripted
+seats first, so imitation can read executor labels and PPO can play against
+executor and Aggressor seats.
 
 **Where the work runs:**
 - Training runs on the Mac mini (M4 Pro, 12 cores, 16-core GPU, 24 GB),

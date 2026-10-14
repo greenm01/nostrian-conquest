@@ -248,6 +248,86 @@ Expose the environment to Python on the mini.
 **Exit:** a Python random agent plays seeded games on the mini, and a
 learner script reads the shards it wrote.
 
+**Result (2026-10-14):** the mini plays and learns end to end.
+
+- **`BatchEnv`** (`nc-ai/src/batch.rs`) steps many seeded games on
+  parallel threads.
+  - Each seat's observation and masks are padded arrays indexed
+    `[game, seat, ...]`, one row per world and per own fleet.
+  - Between steps, finished ships are already commissioned, so the
+    fleet rows are the fleets the seat orders.
+  - `step` checks every choice against the masks before it touches any
+    game, so a bad action raises an error and changes nothing.
+  - A finished game pays each seat its `MatchResult::win_share`.
+- **`nc-ai-py`** (`rust/nc-ai-py`) is the PyO3 module `nc_ai_env`, built by
+  maturin.
+  - It provides `reset`, `observe`, `masks` and `step`, run with the GIL
+    released.
+  - Arrays take over the Rust buffers without a copy.
+  - It sits outside the `rust/` workspace, so the game never needs Python.
+- **`tools/ai/`** is a uv project with PyTorch on MPS: a Parquet shard
+  writer, a random agent and a learner. PyTorch was chosen over MLX for the
+  ONNX export t158 would need.
+  - Shards store entity tables and masks unpadded, one row per seat-year.
+  - The target mask is kept only for the chosen mission.
+
+`nc-ai/tests/batch.rs` shows three things:
+
+- executor choices encoded into the batch arrays play the same game as
+  `executor_turn` played by hand, on two maps for 25 years;
+- random play within the masks ends every game with exactly one win
+  shared out;
+- out-of-mask and wrongly sized choices are refused without changing any
+  game.
+
+`tools/ai/tests/test_shards.py` reads shards back and finds every stored
+choice inside its stored mask.
+
+The exit run on the mini:
+
+- 256 four-seat games of 60 years: 15,360 game-years.
+- Reset took 0.34 s. Play took 5.7 s, about 2,700 game-years a second
+  end to end.
+- Wall time per game-year:
+
+| Phase | ms per game-year |
+| --- | ---: |
+| Rust step, 12 threads | 0.237 |
+| observe | 0.029 |
+| masks | 0.013 |
+| numpy sampling | 0.057 |
+| shard writing | 0.037 |
+
+- `seat_masks` cost 45 µs of thread time per seat, 0.18 ms per four-seat
+  year. That is about a tenth of t152's 1.9 ms random game-year.
+- The single Python thread takes about a third of the wall time. Overlapping
+  it with the step is t158's concern.
+- The 19 MB shard held 891,945 fleet choices. The learner read it in
+  0.3 s and trained on MPS. Its masked mission loss settled at the
+  uniform-within-mask baseline (2.2698 against 2.2702), as it should on
+  random play.
+
+**macOS 27 linker bug.** Xcode 27's `ld` (ld-27037.1) writes the indirect
+symbol table straight before the string pool without padding. With an odd
+entry count the pool lands 4 bytes off 8-byte alignment, and macOS 27's
+dyld refuses to load the dylib. Whether a build loads therefore depends on
+symbol-count parity.
+
+- The fix: `rust/nc-ai-py/macos-link.sh` links with `cc`, then moves the
+  pool into the padding before the code signature and re-signs the file.
+- The crate's release profile turns off `strip`, which would recreate the
+  bad layout.
+- Neither `-ld_classic` (ignored), chained fixups, a newer deployment
+  target, `strip`, nor rust-lld (it cannot read the macOS 27 SDK) avoids
+  the bug.
+
+Not done here:
+
+- The batch has no scripted seats yet. t155's imitation needs the
+  executor's choices as labels, and its PPO pool needs executor and
+  Aggressor seats beside learned ones.
+- Start states are rebuilt on each reset rather than cached.
+
 ### t154
 
 Write the scripted executor on the seat view from t151. It takes strategic

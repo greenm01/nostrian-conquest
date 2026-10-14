@@ -1,0 +1,23 @@
+[package]
+name = "nc-ai-py"
+version = "1.0.0-beta.3"
+edition = "2024"
+publish = false
+
+# Outside the rust/ workspace: maturin builds it for tools/ai, and the game
+# build never needs Python.
+
+[lib]
+name = "nc_ai_env"
+crate-type = ["cdylib"]
+
+[dependencies]
+nc-ai = { path = "../nc-ai" }
+numpy = "0.29"
+pyo3 = { version = "0.29", features = ["abi3-py311", "extension-module"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+# strip runs after the linker and would undo macos-link.sh's realignment.
+strip = false

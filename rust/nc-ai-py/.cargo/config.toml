@@ -1,0 +1,6 @@
+# Xcode 27's ld (ld-27037) leaves a Mach-O string pool 4 bytes off 8-byte
+# alignment when the indirect symbol table before it has an odd length, and
+# macOS 27's dyld refuses to load the result ("mis-aligned LINKEDIT string
+# pool"). The wrapper links with cc, then realigns the pool.
+[target.aarch64-apple-darwin]
+linker = "./macos-link.sh"

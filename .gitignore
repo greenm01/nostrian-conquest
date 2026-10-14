@@ -116,3 +116,6 @@ releases/*-release-note.md
 /.todo/report.txt
 /todo.md.bak
 **/__pycache__/
+
+# uv environment for the AI training tools.
+tools/ai/.venv/

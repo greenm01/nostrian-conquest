@@ -10,10 +10,12 @@
 //! validators, and [`decode_action`] builds the [`nc_data::TurnSubmission`]
 //! for a choice without going through turn KDL. The scripted executor
 //! ([`plan_turn`]) plays a seat from a few strategy [`Weights`], and
-//! [`play_match`] scores seat policies against each other.
+//! [`play_match`] scores seat policies against each other. [`BatchEnv`]
+//! steps many seeded games at once as padded arrays for a learner.
 
 mod action;
 mod arena;
+mod batch;
 mod executor;
 mod game;
 mod memory;
@@ -25,6 +27,7 @@ pub use action::{
     SeatMasks, TAX_CHOICES, TAX_STEP, commission_submission, decode_action, seat_masks,
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
+pub use batch::{BatchActions, BatchEnv, BatchMasks, BatchObservation, StepResult, Table, Tensor};
 pub use executor::{Weights, plan_turn};
 pub use game::SeatedGame;
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
