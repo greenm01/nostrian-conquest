@@ -529,6 +529,27 @@ strategist's actions, and two builds per world per year for escorts.
   meet in one game, because the old build order is gone. The retrained
   strategist is the comparison. Its executor's own goals win 0.250 against
   three new executors on 1,024 maps.
+- **Land-grab retrain.** Imitation on the new teacher ended at strike
+  0.88 and colonize 0.91, but diplomacy fell to 0.89. Greedy, the student
+  won 0.188. PPO with entropy 0.001 then climbed more slowly than the first
+  run: 0.195 at iteration 10, 0.330 at 60, 0.451 at 100 and 0.535 at 180.
+
+  | Checkpoint, 1,024 maps vs three land-grab executors | Win share | Production share |
+  | --- | ---: | ---: |
+  | Land-grab run, iteration 180 | 0.515 | 0.339 |
+  | Land-grab run, iteration 200 | 0.490 | 0.339 |
+  | First run's final network | 0.489 | 0.323 |
+
+  Both networks won every game against Aggressor.
+
+  The first run's network fell from 0.568 against the old executor to
+  0.489 against the land-grab one. It drives the new executor too, so the
+  new teacher is the tougher opponent. The retrained network only matches
+  the old one, still short of 0.60. Checkpoints are kept in
+  `~/.local/state/nostrian-conquest/ai/landgrab/` on the mini.
+
+  Two continuations from iteration 180 are running side by side. A keeps
+  the settings; B uses Monte Carlo returns (λ = 1, γ = 1).
 - **Remaining work toward the exit.** Judge every result on 1,024 maps.
   In order:
   1. Finish the land-grab retrain: imitation, then PPO with entropy 0.001.
@@ -585,6 +606,82 @@ rsync them to the mini, with a limit on how stale its policy may be.
 
 **Exit:** utilisation is measured, and the decision is recorded here either
 way.
+
+### t165
+
+Put the finished AI into real games.
+
+Everything before this task plays in-memory copies of games. The owner
+chose (2026-10-14) to wait for the strong agent rather than seat the
+scripted executor early. Only the fleet-level agent (t157) goes into real
+games, and only once it passes the readiness gate below. The owner decided
+on the strength bar and on which agent to release.
+
+**Readiness gate.** Every part must pass. The owner's playtest verdict
+decides.
+
+1. **Strength against scripts**, measured on 1,024 held-out maps:
+   - one seat against three tuned executors, at least 0.60 win share;
+   - top of the t156 league ratings, above the strategist and every
+     earlier checkpoint;
+   - never loses to Aggressor or Autopilot seats.
+2. **Soundness:**
+   - thousands of full games with no rejected order and no crash;
+   - no engine exploit it relies on (any found is fixed as a bug);
+   - the fog-of-war tests still pass for its seat view.
+3. **Human play.** The owner and a few testers play full games against
+   it. It must be a real challenge, and its play must look sensible: it
+   expands early, defends what it holds, attacks with purpose, and makes no
+   absurd moves. A short written checklist records each game, and the
+   owner signs off.
+4. **Operations:**
+   - it runs on the game server without Python or a GPU;
+   - it finishes a turn within a few seconds;
+   - a sysop can assign AI seats and choose from at least two difficulty
+     levels.
+
+Parts 1 and 2 come before any real-game work. Parts 3 and 4 are this
+task's work:
+
+- **AI seats in a campaign.** A sysop marks a seat as AI. Before each
+  maintenance the seat submits a `TurnSubmission`, as any player does.
+- **The seat's memory from stored records.** Rebuild its `SeatMemory` from
+  the campaign's stored intel, sightings and reports, not the simulator's
+  memory, and check it matches what t151 builds in play.
+- **The network on the server.** Export the chosen agent to ONNX and run it
+  from Rust, so hosts need no Python and no GPU. Offer difficulty through
+  checkpoint and sampling temperature.
+
+**Exit:** a hosted test campaign plays to its end with AI seats beside a
+human seat. Every AI submission is accepted, and the AI's view of its
+world matches the in-memory view on the same seeds.
+
+### t166
+
+Learn from real games once AI seats play people.
+
+After t165, every hosted game with an AI seat is a seed plus each seat's
+submitted orders. The engine is deterministic, so any game can be replayed
+exactly, and each empire's fog-correct view rebuilt year by year, as t156's
+replays do.
+
+- **Mine the AI's losses.** Find the years where its estimated chance of
+  winning fell most, rebuild those positions in the simulator, and train on
+  them. This is the main use: a few hundred human games against millions of
+  simulated ones point at weaknesses better than they fuel training.
+- **A human-style model.** Imitate human turns to build a model of how
+  people play. Use it as a league opponent, and anchor the AI toward
+  human-like play with a piKL-style penalty (Diplodocus). It also gives a
+  natural difficulty setting.
+- **Human ratings.** Rate the AI on its games against people, beside its
+  league rating against bots.
+- **Consent.** Before any player's turns are used for training, the
+  community rules must say so. This is the owner's decision.
+
+**Exit:** one loop completed. Human games are collected with consent and
+the AI's losses mined. A retrained agent passes the t165 readiness gate
+again, and wins more often against the human-style model than the agent it
+replaces.
 
 ## Risks
 
