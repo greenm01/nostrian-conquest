@@ -507,260 +507,70 @@ Each year the order is in force, the planet's Production falls to between 30% an
 
 #pagebreak()
 
-// ─── 6. Combat Mechanics ────────────────────────────────────────────────
+// ─── 6. Combat ─────────────────────────────────────────────────────────
 
-= Combat Mechanics
+= Combat <combat>
 
-Battle reports are short, but the fighting is not random brawling. Combat is
-simultaneous and rule-driven. Both sides fire in the same round. Losses are
-then applied. This keeps battle outcomes clear, severe, and consistent.
+Battles fight themselves. You decide where your fleets go, what they are made
+of, and how much risk each one will take; maintenance does the rest, and your
+reports tell you what happened. For the full rules, see @appendix-combat.
 
-== The Rules of Battle
+== What You Decide
 
-Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
+*Where each fleet goes and what it does.* A fleet's mission decides whom it
+meets. Patrols and blockades watch for intruders; bombard, invade, and blitz
+missions attack a world (see @missions).
 
-Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+*How bold each fleet is.* Every fleet has a Rules of Engagement (ROE) level
+from 0 to 10. At 0 a fleet never starts a fight; higher numbers accept worse
+odds. The same level decides when a fleet breaks off a battle. Your fleets in
+the same place count together when they weigh the odds.
 
-Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+#admonition("IMPORTANT")[A low ROE does not keep a fleet safe. A fleet that is attacked fights at least the first exchange, whatever its ROE.]
 
-Three bonuses add to your die roll. A fleet that mixes at least two of
-destroyers, cruisers, and battleships gets a *combined arms bonus* of +1, so
-mix your composition when you can. A starbase fighting on your side adds
-another +1. An attack that catches the enemy unprepared adds a third +1 to
-the attacker's first round (see *Surprise* under Who Fights Whom). The
-bonuses never add more than +2, and a roll pushed past 9
-counts as 9. An unmodified 9 is a critical hit that destroys one more enemy
-ship outright. In a draw, the defender wins. See @appendix-combat for the
-exact ROE thresholds, combat values, effectiveness table, and assault
-formulas.
+Scouts, transports, and ETACs never fight, so a fleet of only those ships is
+always ROE 0. A fleet that Detach creates starts at ROE 6, or at 0 without
+warships; change it with ROE (*C*).
 
-== Who Fights Whom
+*What each fleet is made of.* Cruisers and battleships cripple enemy ships;
+destroyers and starbases finish them off. A fleet that mixes at least two of
+destroyers, cruisers, and battleships fights better than one that does not.
+Your warships shield your scouts, transports, and ETACs for as long as any of
+them stand. A fleet holds up to 3,000 ships and moves at the speed of its
+slowest one.
 
-Fleets meet only when they share a sector *and* a depth. Each sector has two
-layers: deep space, and the solar system around its world (see @movement). A
-fleet at least halfway down to a world is in its system. A fleet in orbit
-cannot see a fleet passing overhead in deep space, and neither can fight the
-other.
+== What to Expect
 
-A year is 52 weeks. Each week, every fleet and starbase takes a turn, in an
-order drawn at random once a year. In its turn a fleet moves one week's
-distance, scans the alien fleets and starbases sharing its sector and layer,
-and then carries out its order. Battles therefore happen in the middle of the
-year, wherever fleets happen to be that week, and the report carries that
-week's stardate.
+Fleets meet only when they share a sector and the same depth in it: deep space,
+or the solar system around its world. You fight empires you have declared
+enemies, and any fleet that enters one of your solar systems. Battles happen
+during the year, wherever fleets are that week, and your report gives the
+stardate.
 
-*Sighting.* Each week a fleet has a chance of spotting each alien unit near
-it. Big fleets are easier to see than small ones: battleships and ETACs show
-most, then cruisers and transports, then destroyers; scouts add a little. A
-fleet in a solar system is five times easier to see than one in deep space,
-and a fast-moving fleet is easier to see than a slow one. A fleet at its
-target on a bombard, invade, or blitz mission is twenty times easier to see,
-and patrols, colonizers, and system scouts twice as easy. Starbases are fairly
-conspicuous.
+Both sides fire at the same moment, so there is no advantage in shooting
+first. Damage cripples a ship before it destroys it. A crippled ship fights at
+half strength and recovers on its own two turns later, a turn sooner if it
+rests beside one of your starbases. A fleet that catches the enemy unseen
+gains an edge in the first round; keeping a fleet or starbase in a system
+keeps its defenders alert.
 
-How hard a fleet looks depends on its order. A patrol that has reached its
-sector looks ten times as hard as an ordinary fleet; a scout or a blockade on
-station, five times. Starbases look hardest of all. Spotting a unit once makes
-it easier to spot again. What one of your fleets or starbases learns about an
-alien unit, all of them know, until that unit moves to another sector or
-layer.
+When the odds turn against a fleet, it breaks off and heads for your nearest
+world. A faster enemy may catch it on the way out, so retreat is not always
+clean.
 
-*Identification.* A fleet with ROE above 0 closes to identify what it spots,
-and so do patrols, scouts, and blockades on station. Any other fleet only
-reports a sensor contact. A fleet guarding a starbase stays with its base and
-does not close.
+== Attacking Worlds
 
-*The decision.* A fleet that identifies an alien fleet attacks it when:
+A world's ground batteries must fall before your ships can touch anything
+behind them, so a well-defended world takes several turns of bombardment.
+Batteries destroy ships outright rather than crippling them. Only destroyers,
+cruisers, and battleships bombard.
 
-- your empire has declared the fleet's owner an enemy (his declaration
-  against you does not count);
-- the alien fleet is in one of your solar systems, whatever its order, and
-  even if its owner is neutral;
-- your fleet is blockading a world and the alien fleet has come to bombard,
-  invade, or blitz it, or to colonize it while it is unowned (this holds at
-  any world, yours or not);
-- both fleets are colonizing the same unowned world; or
-- your fleet is on a bombard, invade, blitz, or colonize mission and the
-  alien fleet guards the target world. If your ROE forbids that fight, your
-  fleet aborts its mission and seeks home instead.
-
-Any other alien fleet is ignored. A sector with no world is nobody's system.
-
-Whether your fleet then attacks is decided by its ROE and the odds, the first
-time it identifies a target as on every later week (see @appendix-combat).
-Identifying an enemy first commits nothing: a cautious fleet does not attack
-a stronger enemy just because it saw it first. For these odds each warship
-counts its attack strength --- a destroyer 10, a cruiser 30, a battleship 90
---- and a starbase 100, the same values the battle fires with. Scouts,
-transports, and ETACs count nothing, and a fleet without warships never
-attacks, whatever its ROE.
-
-The odds are those of the sides as they would fight. Your fleets in the same
-sector and layer fight together, so each of them weighs all of them against
-all of the enemy's there: two fleets of five cruisers at ROE 6 would each
-refuse ten cruisers alone, and take them on together. Each of your fleets
-there volunteers under its own ROE: one that refuses the assembled odds stays
-out, and the others re-check without it. If the fleet that spotted the enemy
-is the one that refuses, there is no attack that week; another willing fleet
-of yours attacks only when it spots and catches the enemy itself.
-
-*Intercept.* A fleet with a higher maximum speed always catches its target.
-Otherwise the target may notice the attack and run. A stopped target cannot
-run; a moving one escapes more often the faster it moves and the slower its
-pursuer. A target that already knows the attacker rarely notices it coming,
-and then it stays to fight only if its own ROE accepts the odds.
-
-*Battle.* Every battle is between two empires. Your side is your fleets in
-the sector and layer that volunteered; the enemy's side is all of his fleets
-there, whatever their ROE --- a fleet that is attacked fights, ROE 0 included
---- with the starbase that was attacked or that a guard fleet among them
-guards. Nobody else joins: not a third empire, not allies, not fleets that
-arrive later in the week. The fleet that started the attack spends the week
-fighting instead of moving. A fight does not change the empires' diplomacy.
-
-*Surprise.* Your empire remembers, in each sector and layer where it has a
-fleet or a starbase, which opposing empires it has spotted there. Whenever any
-of your fleets or starbases there spots an alien unit, its empire goes into
-that memory, and so does the empire of any fleet you fight there. All of your
-fleets and starbases in that sector and layer share it. The memory lasts,
-from week to week and year to year, for as long as you keep a fleet or a
-starbase in that sector and layer; when the last one leaves or is destroyed it
-is gone, and an opponent that leaves and comes back does not erase it. It is
-local readiness, not knowledge of the whole empire: what a scout learned in
-another sector does nothing here.
-
-An attack is a *surprise* when the defending empire's memory there does not
-include the attacker's empire: none of its fleets or starbases there has
-spotted the attacker, and the two have not fought there. The attacking side
-then adds 1 to its die in the first round of the battle. The bonus counts
-within the +2 limit, an unmodified 9 is still the only critical hit, and a
-pursuit round never gets it. Only the attacker can surprise: a defender
-that was hidden earns nothing for it. Spotting is not the same as
-identifying, and a fleet that spots an enemy and declines to attack, because
-of its ROE or because the odds are against it, still remembers. The battle
-report says "We attacked by surprise." or "The enemy attacked by surprise."
-Staying unseen therefore keeps your chance of a surprise, and watching a
-system keeps your defenders ready.
-
-*Starbases* scan, and what they identify every fleet of their empire knows,
-but they never start a fight and never join one to attack. A fleet attacks a
-starbase only if its empire has declared the base's owner an enemy, or if
-the base protects the world the fleet has come to bombard, invade, or blitz.
-Either way the fleet weighs the base, its guard, and the owner's other fleets
-there against its own side, and if the odds are against it, it avoids the
-base or aborts its mission.
-
-*Blockades.* A blockade does not stop a neutral fleet leaving the world or
-arriving at it, unless the arrival comes to attack or colonize it. A blockade
-catches a departing fleet only if your empire has declared that fleet's owner
-an enemy, and only if it spots and intercepts the fleet in the few weeks the
-fleet takes to climb out of orbit.
-
-== Tactical Roles and Split Fire
-
-Combat is more than just a numbers game. Different ship classes perform specific tactical roles based on how they deliver fire. Hits generated by a task force are split into two pools:
-
-- *Suppression Fire (Cruisers and Battleships):* These heavy vessels provide volume and suppression. Their hits are dispersed across the enemy fleet, reducing nominal ships to a *crippled* state. This effectively knocks enemy guns offline and wins the immediate field, but it does not always result in permanent kills.
-- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying the full 2x DS cost to blow ships up one by one.
-
-This creates a deadly pair. Heavy ships soften the line. Destroyers and
-starbases finish it. Each pool carries its own leftover hits: suppression hits
-never pay for an execution kill, and execution hits never pay for a cripple.
-
-#admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*. Fortified worlds do not "soften" an attacker; they destroy him.]
-
-== Fleet Limits
-
-A fleet can contain as few as one ship and as many as *3,000 ships* of mixed types. A fleet always moves at the speed of its slowest member.
-
-== Rules of Engagement (ROE)
-
-You assign an ROE level (0--10) to control when your fleet attacks. ROE 0
-never attacks, but a fleet on ROE 0 that is attacked still fights the first
-exchange. Any higher ROE attacks a hostile fleet when the force ratio of the
-two sides, your fleets in the sector and layer against the enemy's, meets the
-ROE threshold (see Who Fights Whom); seeing the enemy first changes nothing.
-ROE also decides when your fleet breaks off a battle: after the compulsory
-first exchange it checks the same odds after every exchange and leaves as
-soon as they fail (see Withdrawal and Retreat).
-
-The full ROE threshold table is collected in @appendix-combat.
-
-Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.
-
-== Withdrawal and Retreat
-
-#admonition("IMPORTANT")[Low ROE does not guarantee safety once combat begins.]
-
-Every battle opens with one compulsory exchange: both sides fire once,
-whatever their ROE. After it, and after every exchange that follows, each of
-your fleets in the battle checks its own ROE against the odds as they now
-stand, your side's attack strength against the enemy's, and breaks off as
-soon as they fail. Every fleet whose ROE fails leaves at once, on both sides
-together, and the fleets that stay re-check the odds without them. A fleet
-that has left does not come back, even if the odds later turn in your
-favour. A fleet with no armed ship left, including one that has just lost
-its last warship, tries to escape at once, whatever its ROE. A starbase
-never breaks off; the fleets beside it, its guard included, leave under
-their own ROE like any other.
-
-Losses are shared among your fleets in proportion to each fleet's eligible
-ships: of the ships the enemy's fire reaches, a fleet with eight cruisers and
-one with two share three losses as two and one. Ties are broken at random.
-Splitting or merging fleets can shift a rounding loss by one hull. Loaded
-transports are hit before empty ones across all your fleets there, so moving
-cargo into another fleet does not shelter it.
-
-Breaking off is not always a clean escape. A fleet that leaves while the rest
-of your side fights on gets away for now, but the enemy may still catch it
-once later. When your whole side has broken off and the enemy stays with
-armed ships, he may pursue each fleeing fleet. A pursuer whose ships are
-faster than yours catches you for certain; otherwise it is a roll, likelier
-the faster he is and the slower you are. A catch is one more exchange for
-the fleets caught, with die bonuses and carried hits on both sides, and then
-the battle is over. When both sides break off, nobody pursues. Each enemy
-empire catches an escaping fleet at most once: in the battle it left, or, if
-that pursuit failed, in one more attack while the fleet is still leaving the
-sector. After that the fleet has got away from that empire until it leaves
-the sector or you give it a new order. Your warships still screen your
-auxiliaries during a pursuit exchange; only a critical hit reaches past the
-line. A battle still undecided after 64 exchanges simply ends: nobody wins,
-nobody retreats, and the next week's encounter rules decide whether the
-fleets meet again.
-
-A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left --- its ROE, or no warships left --- and whether it was caught on the way out.
-
-== Planetary Combat
-
-When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
-
-#admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
-
-Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only, and hits beyond what destroys them are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
-
-Planetary targets have defense strength just like ships. Destroying a ground battery takes 20 hits, an army 10 hits, and a ship in the stardock as many hits as its own DS. A lone cruiser cannot level a fortified world in a single volley.
-
-This means a well-defended planet takes sustained bombardment over multiple turns before you touch its production. Build batteries to buy time; bring heavy fleets to break through faster.
-
-See @missions for the detailed mechanics of bombardment, invasion, and blitz missions. The exact bombardment weights, batteries-only return-fire rule, and combat tables are in @appendix-combat.
-
-=== The Landing Battle
-
-Armies that land fight on the same table as fleets, army against army, with no force-ratio columns. Each round the *defenders fire first*. Each side rolls one `d10` for its whole army: 0--2 deals 25%, 3--5 deals 50%, and 6--9 deals 100% of its armies' strength. The attackers' losses come off, and the attackers who survive fire back the same way. Rounds repeat until one side has no armies left.
-
-Damage short of a whole army carries into the next round of the same landing and is lost when the landing ends. There is no defender bonus, no homeworld bonus, and no critical hit; firing first is the defender's advantage. The attackers fire only with what survives, so both sides are never destroyed together. Your reports show whole armies lost and remaining; the carried fractions stay hidden.
-
-Capture odds follow the ratio of landed armies to defending armies, roughly the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. Appendix B gives the table.
-
-=== Captured Worlds
-
-A world that falls passes to you with what the fight left standing: its stored goods, production, docked ships, and queued build work. There is no capture bonus, no loss for the kind of attack, and no forgiveness of debt. Your capture report lists the goods, the docked ships, and the queued work you inherit.
-
-A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
-
-=== Failed Assaults
-
-Failure is not defeat. A fleet whose landing fails, or whose Invade is blocked because batteries survived suppression, keeps its survivors in orbit on Hold and receives a failure report. A blocked Invade lands nothing and its armies stay aboard. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
+Invading armies fight the defending armies, who fire first. Equal numbers take
+a world about one time in five; half again as many is an even chance, and twice
+as many wins nine times in ten. A captured world passes to you with whatever
+the fight left standing, unless its owner set Scorch Earth, which halves its
+production and goods and empties its stardock. A failed assault leaves your
+survivors in orbit on Hold.
 
 #pagebreak()
 
@@ -902,7 +712,7 @@ cripples can recover one turn sooner; a starbase cannot speed its own recovery.
 
 *Mission 0: Hold Position.* The default idle state. The fleet stays at its current location and takes defensive action based on ROE if hostile fleets approach.
 
-*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom allow, as far as your ROE permits. The mission remains active until you assign a new one.
+*Mission 3: Patrol a Sector.* The fleet watches a sector, looking ten times as hard as an ordinary fleet once it arrives. It identifies everything it spots, sends a report, and attacks what the rules in Who Fights Whom (see @appendix-combat) allow, as far as your ROE permits. The mission remains active until you assign a new one.
 
 *Mission 4: Guard Starbase.* The fleet escorts a starbase and fights alongside it: an attack on either one is a battle against both, and the base joins any battle its guard is drawn into as a defender. A guard stays with its base and does not close on the contacts it spots, but it attacks, or joins an attack by your other fleets there, when the ROE odds favor the fight.
 
@@ -1276,11 +1086,263 @@ Production is unchanged, and the planet's Revenue reads 0.
 
 #pagebreak()
 
-// ─── Appendix B. Combat Tables and Formula Reference ───────────────────
+// ─── Appendix B. Combat Rules and Tables ───────────────────
 
-= Appendix B: Combat Tables and Formula Reference <appendix-combat>
+= Appendix B: Combat Rules and Tables <appendix-combat>
 
-This appendix collects the combat reference tables in one place.
+Battles resolve automatically during maintenance. This appendix gives the exact
+rules and tables behind them, for players who want to plan a fight in detail.
+Battle reports are short, but the fighting is not random brawling. Combat is
+simultaneous and rule-driven. Both sides fire in the same round. Losses are
+then applied. This keeps battle outcomes clear, severe, and consistent.
+
+== The Rules of Battle
+
+Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
+
+Damage reduces ships from "Nominal" to "Crippled" status before destroying them. All nominal ships must be crippled before any crippled ship is destroyed. A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+
+Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
+
+Three bonuses add to your die roll. A fleet that mixes at least two of
+destroyers, cruisers, and battleships gets a *combined arms bonus* of +1, so
+mix your composition when you can. A starbase fighting on your side adds
+another +1. An attack that catches the enemy unprepared adds a third +1 to
+the attacker's first round (see *Surprise* under Who Fights Whom). The
+bonuses never add more than +2, and a roll pushed past 9
+counts as 9. An unmodified 9 is a critical hit that destroys one more enemy
+ship outright. In a draw, the defender wins. The exact ROE thresholds, combat values,
+effectiveness table, and assault formulas follow later in this appendix.
+
+== Who Fights Whom
+
+Fleets meet only when they share a sector *and* a depth. Each sector has two
+layers: deep space, and the solar system around its world (see @movement). A
+fleet at least halfway down to a world is in its system. A fleet in orbit
+cannot see a fleet passing overhead in deep space, and neither can fight the
+other.
+
+A year is 52 weeks. Each week, every fleet and starbase takes a turn, in an
+order drawn at random once a year. In its turn a fleet moves one week's
+distance, scans the alien fleets and starbases sharing its sector and layer,
+and then carries out its order. Battles therefore happen in the middle of the
+year, wherever fleets happen to be that week, and the report carries that
+week's stardate.
+
+*Sighting.* Each week a fleet has a chance of spotting each alien unit near
+it. Big fleets are easier to see than small ones: battleships and ETACs show
+most, then cruisers and transports, then destroyers; scouts add a little. A
+fleet in a solar system is five times easier to see than one in deep space,
+and a fast-moving fleet is easier to see than a slow one. A fleet at its
+target on a bombard, invade, or blitz mission is twenty times easier to see,
+and patrols, colonizers, and system scouts twice as easy. Starbases are fairly
+conspicuous.
+
+How hard a fleet looks depends on its order. A patrol that has reached its
+sector looks ten times as hard as an ordinary fleet; a scout or a blockade on
+station, five times. Starbases look hardest of all. Spotting a unit once makes
+it easier to spot again. What one of your fleets or starbases learns about an
+alien unit, all of them know, until that unit moves to another sector or
+layer.
+
+*Identification.* A fleet with ROE above 0 closes to identify what it spots,
+and so do patrols, scouts, and blockades on station. Any other fleet only
+reports a sensor contact. A fleet guarding a starbase stays with its base and
+does not close.
+
+*The decision.* A fleet that identifies an alien fleet attacks it when:
+
+- your empire has declared the fleet's owner an enemy (his declaration
+  against you does not count);
+- the alien fleet is in one of your solar systems, whatever its order, and
+  even if its owner is neutral;
+- your fleet is blockading a world and the alien fleet has come to bombard,
+  invade, or blitz it, or to colonize it while it is unowned (this holds at
+  any world, yours or not);
+- both fleets are colonizing the same unowned world; or
+- your fleet is on a bombard, invade, blitz, or colonize mission and the
+  alien fleet guards the target world. If your ROE forbids that fight, your
+  fleet aborts its mission and seeks home instead.
+
+Any other alien fleet is ignored. A sector with no world is nobody's system.
+
+Whether your fleet then attacks is decided by its ROE and the odds, the first
+time it identifies a target as on every later week (see Rules of Engagement
+Thresholds below).
+Identifying an enemy first commits nothing: a cautious fleet does not attack
+a stronger enemy just because it saw it first. For these odds each warship
+counts its attack strength --- a destroyer 10, a cruiser 30, a battleship 90
+--- and a starbase 100, the same values the battle fires with. Scouts,
+transports, and ETACs count nothing, and a fleet without warships never
+attacks, whatever its ROE.
+
+The odds are those of the sides as they would fight. Your fleets in the same
+sector and layer fight together, so each of them weighs all of them against
+all of the enemy's there: two fleets of five cruisers at ROE 6 would each
+refuse ten cruisers alone, and take them on together. Each of your fleets
+there volunteers under its own ROE: one that refuses the assembled odds stays
+out, and the others re-check without it. If the fleet that spotted the enemy
+is the one that refuses, there is no attack that week; another willing fleet
+of yours attacks only when it spots and catches the enemy itself.
+
+*Intercept.* A fleet with a higher maximum speed always catches its target.
+Otherwise the target may notice the attack and run. A stopped target cannot
+run; a moving one escapes more often the faster it moves and the slower its
+pursuer. A target that already knows the attacker rarely notices it coming,
+and then it stays to fight only if its own ROE accepts the odds.
+
+*Battle.* Every battle is between two empires. Your side is your fleets in
+the sector and layer that volunteered; the enemy's side is all of his fleets
+there, whatever their ROE --- a fleet that is attacked fights, ROE 0 included
+--- with the starbase that was attacked or that a guard fleet among them
+guards. Nobody else joins: not a third empire, not allies, not fleets that
+arrive later in the week. The fleet that started the attack spends the week
+fighting instead of moving. A fight does not change the empires' diplomacy.
+
+*Surprise.* Your empire remembers, in each sector and layer where it has a
+fleet or a starbase, which opposing empires it has spotted there. Whenever any
+of your fleets or starbases there spots an alien unit, its empire goes into
+that memory, and so does the empire of any fleet you fight there. All of your
+fleets and starbases in that sector and layer share it. The memory lasts,
+from week to week and year to year, for as long as you keep a fleet or a
+starbase in that sector and layer; when the last one leaves or is destroyed it
+is gone, and an opponent that leaves and comes back does not erase it. It is
+local readiness, not knowledge of the whole empire: what a scout learned in
+another sector does nothing here.
+
+An attack is a *surprise* when the defending empire's memory there does not
+include the attacker's empire: none of its fleets or starbases there has
+spotted the attacker, and the two have not fought there. The attacking side
+then adds 1 to its die in the first round of the battle. The bonus counts
+within the +2 limit, an unmodified 9 is still the only critical hit, and a
+pursuit round never gets it. Only the attacker can surprise: a defender
+that was hidden earns nothing for it. Spotting is not the same as
+identifying, and a fleet that spots an enemy and declines to attack, because
+of its ROE or because the odds are against it, still remembers. The battle
+report says "We attacked by surprise." or "The enemy attacked by surprise."
+Staying unseen therefore keeps your chance of a surprise, and watching a
+system keeps your defenders ready.
+
+*Starbases* scan, and what they identify every fleet of their empire knows,
+but they never start a fight and never join one to attack. A fleet attacks a
+starbase only if its empire has declared the base's owner an enemy, or if
+the base protects the world the fleet has come to bombard, invade, or blitz.
+Either way the fleet weighs the base, its guard, and the owner's other fleets
+there against its own side, and if the odds are against it, it avoids the
+base or aborts its mission.
+
+*Blockades.* A blockade does not stop a neutral fleet leaving the world or
+arriving at it, unless the arrival comes to attack or colonize it. A blockade
+catches a departing fleet only if your empire has declared that fleet's owner
+an enemy, and only if it spots and intercepts the fleet in the few weeks the
+fleet takes to climb out of orbit.
+
+== Tactical Roles and Split Fire
+
+Combat is more than just a numbers game. Different ship classes perform specific tactical roles based on how they deliver fire. Hits generated by a task force are split into two pools:
+
+- *Suppression Fire (Cruisers and Battleships):* These heavy vessels provide volume and suppression. Their hits are dispersed across the enemy fleet, reducing nominal ships to a *crippled* state. This effectively knocks enemy guns offline and wins the immediate field, but it does not always result in permanent kills.
+- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying the full 2x DS cost to blow ships up one by one.
+
+This creates a deadly pair. Heavy ships soften the line. Destroyers and
+starbases finish it. Each pool carries its own leftover hits: suppression hits
+never pay for an execution kill, and execution hits never pay for a cripple.
+
+#admonition("NOTE")[All planetary return fire from ground batteries is treated as *Execution Fire*. Fortified worlds do not "soften" an attacker; they destroy him.]
+
+== Fleet Limits
+
+A fleet can contain as few as one ship and as many as *3,000 ships* of mixed types. A fleet always moves at the speed of its slowest member.
+
+== Rules of Engagement (ROE)
+
+You assign an ROE level (0--10) to control when your fleet attacks. ROE 0
+never attacks, but a fleet on ROE 0 that is attacked still fights the first
+exchange. Any higher ROE attacks a hostile fleet when the force ratio of the
+two sides, your fleets in the sector and layer against the enemy's, meets the
+ROE threshold (see Who Fights Whom); seeing the enemy first changes nothing.
+ROE also decides when your fleet breaks off a battle: after the compulsory
+first exchange it checks the same odds after every exchange and leaves as
+soon as they fail (see Withdrawal and Retreat).
+
+The full ROE threshold table follows below.
+
+Non-combat fleets (scouts, transports, ETACs only) are treated as ROE 0 automatically. Giving such a fleet any order sets its ROE to 0, and so does a detach or transfer that leaves a fleet without a battleship, cruiser, or destroyer. A fleet that gains warships keeps its ROE, even ROE 0; set a new one with ROE (*C*). A fleet that Detach creates starts at ROE 6, or at 0 when it has no warships, whatever the donor's ROE is.
+
+== Withdrawal and Retreat
+
+#admonition("IMPORTANT")[Low ROE does not guarantee safety once combat begins.]
+
+Every battle opens with one compulsory exchange: both sides fire once,
+whatever their ROE. After it, and after every exchange that follows, each of
+your fleets in the battle checks its own ROE against the odds as they now
+stand, your side's attack strength against the enemy's, and breaks off as
+soon as they fail. Every fleet whose ROE fails leaves at once, on both sides
+together, and the fleets that stay re-check the odds without them. A fleet
+that has left does not come back, even if the odds later turn in your
+favour. A fleet with no armed ship left, including one that has just lost
+its last warship, tries to escape at once, whatever its ROE. A starbase
+never breaks off; the fleets beside it, its guard included, leave under
+their own ROE like any other.
+
+Losses are shared among your fleets in proportion to each fleet's eligible
+ships: of the ships the enemy's fire reaches, a fleet with eight cruisers and
+one with two share three losses as two and one. Ties are broken at random.
+Splitting or merging fleets can shift a rounding loss by one hull. Loaded
+transports are hit before empty ones across all your fleets there, so moving
+cargo into another fleet does not shelter it.
+
+Breaking off is not always a clean escape. A fleet that leaves while the rest
+of your side fights on gets away for now, but the enemy may still catch it
+once later. When your whole side has broken off and the enemy stays with
+armed ships, he may pursue each fleeing fleet. A pursuer whose ships are
+faster than yours catches you for certain; otherwise it is a roll, likelier
+the faster he is and the slower you are. A catch is one more exchange for
+the fleets caught, with die bonuses and carried hits on both sides, and then
+the battle is over. When both sides break off, nobody pursues. Each enemy
+empire catches an escaping fleet at most once: in the battle it left, or, if
+that pursuit failed, in one more attack while the fleet is still leaving the
+sector. After that the fleet has got away from that empire until it leaves
+the sector or you give it a new order. Your warships still screen your
+auxiliaries during a pursuit exchange; only a critical hit reaches past the
+line. A battle still undecided after 64 exchanges simply ends: nobody wins,
+nobody retreats, and the next week's encounter rules decide whether the
+fleets meet again.
+
+A fleet that retreats, or aborts a mission its ROE will not let it fight for, seeks home: it heads for your nearest planet other than the one whose system it is in. With no other planet to go to, it stays in the sector. Its report says why it left --- its ROE, or no warships left --- and whether it was caught on the way out.
+
+== Planetary Combat
+
+When fleets attack planets through bombardment, invasion, or blitz, different rules apply. Orbital fire at a planet reads its die on a table that compares the two sides' strength, and leftover hits do not carry from round to round. The landing battle between armies has its own rules (see The Landing Battle below). Ground batteries are the planet's shield wall --- while they stand, they draw orbital fire and shoot back, protecting the stardock, armies, production, and industry behind them. Only combat ships --- destroyers, cruisers, and battleships --- contribute bombardment firepower. Scouts, transports, and ETACs do not.
+
+#admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
+
+Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only, and hits beyond what destroys them are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
+
+Planetary targets have defense strength just like ships. Destroying a ground battery takes 20 hits, an army 10 hits, and a ship in the stardock as many hits as its own DS. A lone cruiser cannot level a fortified world in a single volley.
+
+This means a well-defended planet takes sustained bombardment over multiple turns before you touch its production. Build batteries to buy time; bring heavy fleets to break through faster.
+
+See @missions for the detailed mechanics of bombardment, invasion, and blitz missions. The exact bombardment weights, batteries-only return-fire rule, and combat tables follow below.
+
+=== The Landing Battle
+
+Armies that land fight on the same table as fleets, army against army, with no force-ratio columns. Each round the *defenders fire first*. Each side rolls one `d10` for its whole army: 0--2 deals 25%, 3--5 deals 50%, and 6--9 deals 100% of its armies' strength. The attackers' losses come off, and the attackers who survive fire back the same way. Rounds repeat until one side has no armies left.
+
+Damage short of a whole army carries into the next round of the same landing and is lost when the landing ends. There is no defender bonus, no homeworld bonus, and no critical hit; firing first is the defender's advantage. The attackers fire only with what survives, so both sides are never destroyed together. Your reports show whole armies lost and remaining; the carried fractions stay hidden.
+
+Capture odds follow the ratio of landed armies to defending armies, roughly the same at any scale. Equal numbers take a world about one time in five. At 1.5 to 1 the odds are about even, and at 2 to 1 the attackers win nine times in ten. Overwhelming numbers still win every time. The Landing Battle table below gives the figures.
+
+=== Captured Worlds
+
+A world that falls passes to you with what the fight left standing: its stored goods, production, docked ships, and queued build work. There is no capture bonus, no loss for the kind of attack, and no forgiveness of debt. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+
+A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
+
+=== Failed Assaults
+
+Failure is not defeat. A fleet whose landing fails, or whose Invade is blocked because batteries survived suppression, keeps its survivors in orbit on Hold and receives a failure report. A blocked Invade lands nothing and its armies stay aboard. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
+
 
 == Rules of Engagement Thresholds
 
