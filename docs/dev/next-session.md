@@ -118,6 +118,13 @@ t130 is deployed in signed release `4115f43c`: external website links open new
 tabs; local navigation and login stay in the same tab. Game data and sessions
 were preserved.
 
+t140 is deployed in signed release `4d0fc4be`: Matrix sign-in through the new
+`nc-matrix` service and `@nostrian-conquest-bot:matrix.org`, plus Community
+Matrix links and the owner's Matrix contact. The owner signed in with a real
+Matrix client. Details and evidence are in the
+[Matrix plan](../notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md);
+Matrix room announcements are later task t141.
+
 ## Release context
 
 Beta.3 is published. t024 is complete: all four BBS/sysop packages, their

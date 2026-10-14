@@ -80,8 +80,23 @@ The rebuilt player manual has the Matrix paragraph in section 2.2 and grew from
 toolchain; stable rustfmt formatted the changed files only. matrix.org's
 login discovery offers `m.login.password`, which `nc-matrix login` uses.
 
-Remaining: register the bot, create its token, attended sign-in with a real
-Matrix client, and deployment with the bridge, static files and new service.
+## t140 deployment evidence
+
+Signed release `4d0fc4be` is live on 2026-10-14. The release real-door smoke
+passed with the staged binaries. On the host, all 21 artifact hashes and the
+signature verified against the stored release key. A manual Beta 1 backup and a
+copy of the session database were taken first. Game database dumps matched the
+post-backup baseline after the switch; Beta 1 remains recruiting at year 3000
+with no deadline and three open seats. All four browser sessions survived. The
+bridge added the Matrix tables on start. Live pages and scripts match source;
+`/auth/matrix` rejects a wrong code (401) and a foreign origin (403).
+
+The bot runs as `@nostrian-conquest-bot:matrix.org` (registered through Google
+with a password added) and joined the community room. Its token was created by
+`nc-matrix login` and entered with the credentials helper; neither appears in
+notes or chat. The owner then signed in from `@niltempus:matrix.org` in a real
+browser; the session and profile name `niltempus` were confirmed on the host.
+The Matrix identity is not linked to the owner's Beta 1 seat.
 
 ### t141
 
