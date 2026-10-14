@@ -31,9 +31,12 @@ def random_actions(env, masks, rng):
     return {
         "tax": rng.integers(nc_ai_env.TAX_CHOICES, size=(games, seats)),
         "diplomacy": diplomacy,
-        "build": sample(masks["build"], rng),
+        "build": np.stack(
+            [sample(masks["build"], rng) for _ in range(nc_ai_env.BUILD_SLOTS)], axis=-1
+        ),
         "amount": rng.integers(
-            nc_ai_env.BUILD_AMOUNT_CHOICES, size=(games, seats, env.worlds)
+            nc_ai_env.BUILD_AMOUNT_CHOICES,
+            size=(games, seats, env.worlds, nc_ai_env.BUILD_SLOTS),
         ),
         "mission": mission,
         "target": sample(targets[:, :, :, 0, :], rng),
@@ -53,6 +56,11 @@ def main():
     parser.add_argument("--years", type=int, default=40)
     parser.add_argument("--first-seed", type=int, default=1)
     parser.add_argument("--threads", type=int, default=0)
+    parser.add_argument(
+        "--seats",
+        help="comma-separated lineup for every game: learned, executor, "
+        "baseline, aggressor or autopilot (default: all learned)",
+    )
     args = parser.parse_args()
 
     rng = np.random.default_rng(args.first_seed)
@@ -61,7 +69,13 @@ def main():
     env = nc_ai_env.Env(args.players, args.years, args.threads)
 
     started = time.perf_counter()
-    env.reset(map_seeds.tolist(), campaign_seeds.tolist())
+    seats = None
+    if args.seats:
+        lineup = args.seats.split(",")
+        if len(lineup) != args.players:
+            parser.error("--seats needs one name per player")
+        seats = [lineup] * args.games
+    env.reset(map_seeds.tolist(), campaign_seeds.tolist(), seats)
     reset_seconds = time.perf_counter() - started
 
     writer = ShardWriter(args.out)
@@ -88,7 +102,7 @@ def main():
 
         clock = time.perf_counter()
         writer.add(
-            experience_batch(map_seeds, campaign_seeds, done, obs, masks, actions, step)
+            experience_batch(map_seeds, campaign_seeds, env.learned, done, obs, masks, actions, step)
         )
         seconds["write"] += time.perf_counter() - clock
 

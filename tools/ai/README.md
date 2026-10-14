@@ -38,17 +38,48 @@ writes [Parquet shards](shards.py), and prints throughput and seat-mask cost.
 random play its loss should settle at the uniform-within-mask baseline it
 prints.
 
+## Train the strategist (t155)
+
+```sh
+uv run imitate.py --out /tmp/nc-ai/imitate.pt
+uv run ppo.py --init /tmp/nc-ai/imitate.pt --out /tmp/nc-ai/ppo
+uv run evaluate.py --policy /tmp/nc-ai/ppo/latest.pt --opponent executor
+```
+
+- [`policy.py`](policy.py): the strategist network, an entity
+  transformer with a head for each goal and a value head.
+- [`imitate.py`](imitate.py): online DAgger toward the executor's own goals.
+- [`ppo.py`](ppo.py): PPO against the tuned executor, Aggressor and frozen
+  snapshots. Its `log.jsonl` records each iteration.
+- [`evaluate.py`](evaluate.py): win share of one strategist seat against
+  three scripted seats, rotated across held-out maps 100000 onward. An
+  even seat wins 0.25. `--policy labels` plays the executor's own goals,
+  the reference to beat.
+
+Run long jobs under `caffeinate -i` so the mini does not sleep.
+
 ## The environment
 
 ```python
 import nc_ai_env
 
 env = nc_ai_env.Env(players=4, years=60, threads=0)  # 0: every core
-env.reset(map_seeds, campaign_seeds)  # campaign seeds default to map seeds
+env.reset(map_seeds, campaign_seeds, seats)  # seats: one lineup per game
 obs = env.observe()    # global, planets, fleets, contacts, starbases (+ *_valid)
 masks = env.masks()    # diplomacy, build, mission, target, roe, load
-step = env.step(actions)  # reward, done, production, worlds
+goal_masks = env.goal_masks()  # strike, colonize
+labels = env.goal_labels()     # the executor's own goals
+step = env.step(actions, goals)  # reward, done, production, worlds
 ```
+
+Each seat in a lineup is one of:
+
+- `learned`: takes `actions`, the whole turn;
+- `strategist`: takes `goals`, which the tuned executor carries out;
+- `executor`, `baseline`, `aggressor` or `autopilot`: scripted.
+
+Seats are all learned by default. `env.learned` and `env.strategist` flag
+the seats each kind of choice is read for.
 
 Every array is indexed `[game, seat, ...]`, padded to the largest map (`W`,
 `env.worlds`) and the most fleets any seat has (`F`, `env.fleets`). The
@@ -57,8 +88,24 @@ int64 arrays:
 
 - `tax` `[G, S]`
 - `diplomacy` `[G, S, S]`
-- `build` and `amount` `[G, S, W]`
+- `build` and `amount` `[G, S, W, BUILD_SLOTS]`: up to two builds per world
+  a year, sharing its budget
 - `mission`, `target`, `speed`, `roe` and `load` `[G, S, F]`
+
+`goals` is a dict of int64 arrays, shaped as `env.goal_labels()`:
+
+- `tax`, `posture`, `strike` and `colonize` `[G, S]`
+- `diplomacy` `[G, S, S]`
+
+The fields:
+
+- `posture`: balanced, expand, defend or attack build targets.
+- `strike`: 0 holds every strike. `k` makes world `k - 1` the target of
+  every home force strong enough to take it.
+- `colonize`: 0 lets ETACs choose. `k` sends the first free ETAC to world
+  `k - 1`.
+
+See `rust/nc-ai/src/goals.rs`.
 
 A choice outside the masks raises `ValueError` and leaves every game as it
 was. Rewards are paid when a game ends: the winner takes 1. Without a declared

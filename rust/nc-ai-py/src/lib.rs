@@ -3,7 +3,7 @@
 //! Rust buffers, without a copy. Choices go in as int64 arrays shaped as
 //! the masks describe. Games run with the GIL released.
 
-use nc_ai::{BatchActions, BatchEnv, Table, Tensor};
+use nc_ai::{BatchActions, BatchEnv, BatchGoals, Seat, SeatPolicy, Table, Tensor, Weights};
 use numpy::{Element, PyArray1, PyArrayMethods, PyReadonlyArrayDyn};
 use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -37,13 +37,18 @@ impl Env {
     }
 
     /// Start one fresh game per map seed. Campaign seeds default to the map
-    /// seeds.
-    #[pyo3(signature = (map_seeds, campaign_seeds = None))]
+    /// seeds. `seats` gives each game's lineup, one name per seat:
+    /// `learned`, `strategist` (goals carried out by the tuned executor),
+    /// `executor` (tuned weights), `baseline` (the executor's hand-set
+    /// weights), `aggressor` or `autopilot`. Every seat is learned by
+    /// default.
+    #[pyo3(signature = (map_seeds, campaign_seeds = None, seats = None))]
     fn reset(
         &mut self,
         py: Python<'_>,
         map_seeds: Vec<u64>,
         campaign_seeds: Option<Vec<u64>>,
+        seats: Option<Vec<Vec<String>>>,
     ) -> PyResult<()> {
         let campaign_seeds = campaign_seeds.unwrap_or_else(|| map_seeds.clone());
         if campaign_seeds.len() != map_seeds.len() {
@@ -51,10 +56,71 @@ impl Env {
                 "campaign_seeds must match map_seeds in length",
             ));
         }
+        let lineups = match seats {
+            None => vec![vec![Seat::Learned; usize::from(self.players)]; map_seeds.len()],
+            Some(seats) => seats
+                .iter()
+                .map(|lineup| lineup.iter().map(|name| seat(name)).collect())
+                .collect::<PyResult<Vec<Vec<_>>>>()?,
+        };
+        if lineups.len() != map_seeds.len()
+            || lineups
+                .iter()
+                .any(|lineup| lineup.len() != usize::from(self.players))
+        {
+            return Err(PyValueError::new_err(
+                "seats must hold one lineup per game and one name per seat",
+            ));
+        }
         let (players, years, threads) = (self.players, self.years, self.threads);
-        self.batch =
-            Some(py.detach(|| BatchEnv::new(players, &map_seeds, &campaign_seeds, years, threads)));
+        self.batch = Some(py.detach(|| {
+            BatchEnv::new(
+                players,
+                &map_seeds,
+                &campaign_seeds,
+                &lineups,
+                years,
+                threads,
+            )
+        }));
         Ok(())
+    }
+
+    /// `[games, seats]` bools: the seat is learned and takes `actions`.
+    #[getter]
+    fn learned<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        array(py, self.batch()?.learned())
+    }
+
+    /// `[games, seats]` bools: the seat is a strategist and takes `goals`.
+    #[getter]
+    fn strategist<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        array(py, self.batch()?.strategist())
+    }
+
+    /// Strategist goal masks: `strike` and `colonize`, `[games, seats,
+    /// 1 + W]` (index 0 is hold and auto). Diplomacy is in `masks()`.
+    fn goal_masks<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let batch = self.batch()?;
+        let masks = py.detach(|| batch.goal_masks());
+        let out = PyDict::new(py);
+        out.set_item("strike", array(py, masks.strike)?)?;
+        out.set_item("colonize", array(py, masks.colonize)?)?;
+        Ok(out)
+    }
+
+    /// The goals the executor would set itself for every strategist seat:
+    /// imitation labels shaped as `step`'s `goals`.
+    fn goal_labels<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
+        let batch = self.batch()?;
+        let labels = py.detach(|| batch.goal_labels());
+        let out = PyDict::new(py);
+        out.set_item("tax", array(py, labels.tax)?)?;
+        out.set_item("diplomacy", array(py, labels.diplomacy)?)?;
+        out.set_item("posture", array(py, labels.posture)?)?;
+        out.set_item("strike", array(py, labels.strike)?)?;
+        out.set_item("colonize", array(py, labels.colonize)?)?;
+        Ok(out)
     }
 
     /// Every seat's observation: `global`, then `planets`, `fleets`,
@@ -94,55 +160,66 @@ impl Env {
         Ok(out)
     }
 
-    /// Apply a dict of int64 choice arrays (`tax`, `diplomacy`, `build`,
-    /// `amount`, `mission`, `target`, `speed`, `roe`, `load`) and play a
-    /// year. Returns `reward`, `done`, `production` and `worlds`. A choice
-    /// outside the masks raises ValueError and changes nothing.
+    /// Play a year. `actions` is a dict of int64 arrays for learned seats
+    /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`, `speed`,
+    /// `roe`, `load`); `goals` one for strategist seats (`tax`, `diplomacy`,
+    /// `posture`, `strike`, `colonize`). Returns `reward`, `done`,
+    /// `production` and `worlds`. A choice outside the masks, or missing
+    /// choices, raise ValueError and change nothing.
+    #[pyo3(signature = (actions = None, goals = None))]
     fn step<'py>(
         &mut self,
         py: Python<'py>,
-        actions: &Bound<'py, PyDict>,
+        actions: Option<&Bound<'py, PyDict>>,
+        goals: Option<&Bound<'py, PyDict>>,
     ) -> PyResult<Bound<'py, PyDict>> {
-        let get = |name: &str| -> PyResult<PyReadonlyArrayDyn<'py, i64>> {
-            actions
-                .get_item(name)?
-                .ok_or_else(|| PyKeyError::new_err(name.to_owned()))?
-                .extract()
-                .map_err(|err| PyValueError::new_err(format!("{name}: {err}")))
-        };
-        let arrays = [
-            get("tax")?,
-            get("diplomacy")?,
-            get("build")?,
-            get("amount")?,
-            get("mission")?,
-            get("target")?,
-            get("speed")?,
-            get("roe")?,
-            get("load")?,
-        ];
-        let slices = arrays
-            .iter()
-            .map(|array| array.as_slice())
-            .collect::<Result<Vec<_>, _>>()
-            .map_err(|_| PyValueError::new_err("choice arrays must be contiguous"))?;
-        let actions = BatchActions {
-            tax: slices[0],
-            diplomacy: slices[1],
-            build: slices[2],
-            amount: slices[3],
-            mission: slices[4],
-            target: slices[5],
-            speed: slices[6],
-            roe: slices[7],
-            load: slices[8],
-        };
+        let action_arrays = actions
+            .map(|dict| {
+                arrays(
+                    dict,
+                    &[
+                        "tax",
+                        "diplomacy",
+                        "build",
+                        "amount",
+                        "mission",
+                        "target",
+                        "speed",
+                        "roe",
+                        "load",
+                    ],
+                )
+            })
+            .transpose()?;
+        let goal_arrays = goals
+            .map(|dict| arrays(dict, &["tax", "diplomacy", "posture", "strike", "colonize"]))
+            .transpose()?;
+        let action_slices = action_arrays.as_deref().map(slices).transpose()?;
+        let goal_slices = goal_arrays.as_deref().map(slices).transpose()?;
+        let actions = action_slices.map(|s| BatchActions {
+            tax: s[0],
+            diplomacy: s[1],
+            build: s[2],
+            amount: s[3],
+            mission: s[4],
+            target: s[5],
+            speed: s[6],
+            roe: s[7],
+            load: s[8],
+        });
+        let goals = goal_slices.map(|s| BatchGoals {
+            tax: s[0],
+            diplomacy: s[1],
+            posture: s[2],
+            strike: s[3],
+            colonize: s[4],
+        });
         let batch = self
             .batch
             .as_mut()
             .ok_or_else(|| PyRuntimeError::new_err("call reset first"))?;
         let result = py
-            .detach(|| batch.step(&actions))
+            .detach(|| batch.step(actions.as_ref(), goals.as_ref()))
             .map_err(PyValueError::new_err)?;
         let out = PyDict::new(py);
         out.set_item("reward", array(py, result.reward)?)?;
@@ -191,6 +268,42 @@ impl Env {
     }
 }
 
+fn seat(name: &str) -> PyResult<Seat> {
+    Ok(match name {
+        "learned" => Seat::Learned,
+        "strategist" => Seat::Strategist(Weights::TUNED),
+        "executor" => Seat::Scripted(SeatPolicy::Executor(Weights::TUNED)),
+        "baseline" => Seat::Scripted(SeatPolicy::Executor(Weights::BASELINE)),
+        "aggressor" => Seat::Scripted(SeatPolicy::Aggressor),
+        "autopilot" => Seat::Scripted(SeatPolicy::Autopilot),
+        _ => return Err(PyValueError::new_err(format!("unknown seat {name:?}"))),
+    })
+}
+
+/// The named int64 arrays from `dict`.
+fn arrays<'py>(
+    dict: &Bound<'py, PyDict>,
+    names: &[&str],
+) -> PyResult<Vec<PyReadonlyArrayDyn<'py, i64>>> {
+    names
+        .iter()
+        .map(|&name| {
+            dict.get_item(name)?
+                .ok_or_else(|| PyKeyError::new_err(name.to_owned()))?
+                .extract()
+                .map_err(|err| PyValueError::new_err(format!("{name}: {err}")))
+        })
+        .collect()
+}
+
+fn slices<'a>(arrays: &'a [PyReadonlyArrayDyn<'_, i64>]) -> PyResult<Vec<&'a [i64]>> {
+    arrays
+        .iter()
+        .map(|array| array.as_slice())
+        .collect::<Result<_, _>>()
+        .map_err(|_| PyValueError::new_err("choice arrays must be contiguous"))
+}
+
 /// Hand `tensor`'s buffer to numpy and give it its shape.
 fn array<'py, T: Element>(py: Python<'py>, tensor: Tensor<T>) -> PyResult<Bound<'py, PyAny>> {
     Ok(PyArray1::from_vec(py, tensor.data)
@@ -209,9 +322,11 @@ fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Env>()?;
     m.add("TAX_CHOICES", nc_ai::TAX_CHOICES)?;
     m.add("TAX_STEP", nc_ai::TAX_STEP)?;
+    m.add("POSTURES", nc_ai::POSTURES)?;
     m.add("DIPLOMACY_CHOICES", nc_ai::DIPLOMACY_CHOICES)?;
     m.add("BUILD_CHOICES", nc_ai::BUILD_CHOICES)?;
     m.add("BUILD_AMOUNT_CHOICES", nc_ai::BUILD_AMOUNT_CHOICES)?;
+    m.add("BUILD_SLOTS", nc_ai::BUILD_SLOTS)?;
     m.add("MISSION_CHOICES", nc_ai::MISSION_CHOICES)?;
     m.add("SPEED_CHOICES", nc_ai::SPEED_CHOICES)?;
     m.add("ROE_CHOICES", nc_ai::ROE_CHOICES)?;

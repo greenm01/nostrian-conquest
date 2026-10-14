@@ -1,0 +1,716 @@
+//! A batch of seeded games stepped together, with every seat's observation,
+//! masks and actions as padded arrays for a learner.
+//!
+//! Arrays are row-major and indexed `[game, seat, ...]`. World arrays have
+//! one row per world in planet-record order, padded to the largest map in
+//! the batch; fleet, contact and starbase arrays are padded to the most rows
+//! any seat has. Each padded table has a `valid` flag per row.
+//!
+//! Each seat is one of three kinds:
+//! - learned: the caller chooses its whole turn ([`BatchActions`]);
+//! - strategist: the caller chooses its [`Goals`] ([`BatchGoals`]) and the
+//!   executor carries them out; [`BatchEnv::goal_labels`] gives the goals
+//!   the executor would set itself;
+//! - scripted: the executor, Aggressor or Autopilot, played as
+//!   [`crate::play_match`] plays them, so a batch of scripted seats plays the
+//!   same games `play_match` does.
+//!
+//! Between steps every live game waits for its learned and strategist seats,
+//! with their finished ships already commissioned, so the observation and
+//! masks show the fleets the seats will order. Scripted seats commission at
+//! their own turn, as `play_match` has them do, and get masks with every row
+//! padding. Padding rows allow only "no build", "keep orders"
+//! and ROE 0, so sampling within the masks never meets an empty row.
+
+mod arrays;
+mod choices;
+
+use std::thread;
+use std::time::{Duration, Instant};
+
+pub use arrays::{Table, Tensor};
+use arrays::{falses, pad_table, par_for_each_mut, put};
+use choices::{seat_action, seat_goals};
+
+use nc_fuzz::Policy;
+
+use crate::action::{
+    BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, MISSION_CHOICES, ROE_CHOICES, SeatAction,
+    SeatMasks, commission_submission, decode_action, seat_masks,
+};
+use crate::arena::{
+    MatchResult, SeatPolicy, SplitMix, aggressor_choices, executor_turn, match_result, seated_game,
+};
+use crate::executor::{Weights, execute_goals, plan_goals};
+use crate::game::SeatedGame;
+use crate::goals::{GoalMasks, Goals, goal_masks};
+use crate::observe::{
+    CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH,
+};
+
+/// Every seat's observation; see [`crate::observe`] for the row layouts.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BatchObservation {
+    /// `[games, seats, GLOBAL_WIDTH]`.
+    pub global: Tensor<f32>,
+    pub planets: Table,
+    pub fleets: Table,
+    pub contacts: Table,
+    pub starbases: Table,
+}
+
+/// Every seat's masks. `W` is the padded world count and `F` the padded
+/// fleet count. Tax, build-amount and speed choices are always allowed.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BatchMasks {
+    /// `[games, seats, seats, DIPLOMACY_CHOICES]`.
+    pub diplomacy: Tensor<bool>,
+    /// `[games, seats, W, BUILD_CHOICES]`; a world the seat does not own
+    /// allows only "no build".
+    pub build: Tensor<bool>,
+    /// `[games, seats, F, MISSION_CHOICES]`.
+    pub mission: Tensor<bool>,
+    /// `[games, seats, F, MISSION_CHOICES, W]`.
+    pub target: Tensor<bool>,
+    /// `[games, seats, F, ROE_CHOICES]`.
+    pub roe: Tensor<bool>,
+    /// `[games, seats, F]`.
+    pub load: Tensor<bool>,
+}
+
+/// Every seat's choices, shaped as [`BatchMasks`] describes. Entries for
+/// finished games, scripted seats, padding rows and worlds a seat does not
+/// own are ignored.
+#[derive(Debug, Clone, Copy)]
+pub struct BatchActions<'a> {
+    /// `[games, seats]`.
+    pub tax: &'a [i64],
+    /// `[games, seats, seats]`.
+    pub diplomacy: &'a [i64],
+    /// `[games, seats, W, BUILD_SLOTS]`.
+    pub build: &'a [i64],
+    pub amount: &'a [i64],
+    /// `[games, seats, F]`.
+    pub mission: &'a [i64],
+    pub target: &'a [i64],
+    pub speed: &'a [i64],
+    pub roe: &'a [i64],
+    /// Nonzero to load armies.
+    pub load: &'a [i64],
+}
+
+/// Every strategist seat's goals, as [`Goals`] fields. `[games, seats]`
+/// except `diplomacy`, `[games, seats, seats]`. Entries for other seats
+/// and finished games are ignored.
+#[derive(Debug, Clone, Copy)]
+pub struct BatchGoals<'a> {
+    pub tax: &'a [i64],
+    pub diplomacy: &'a [i64],
+    pub posture: &'a [i64],
+    pub strike: &'a [i64],
+    pub colonize: &'a [i64],
+}
+
+/// [`BatchGoals`] as owned arrays.
+#[derive(Debug, Clone, PartialEq)]
+pub struct GoalArrays {
+    pub tax: Tensor<i64>,
+    pub diplomacy: Tensor<i64>,
+    pub posture: Tensor<i64>,
+    pub strike: Tensor<i64>,
+    pub colonize: Tensor<i64>,
+}
+
+impl GoalArrays {
+    pub fn view(&self) -> BatchGoals<'_> {
+        BatchGoals {
+            tax: &self.tax.data,
+            diplomacy: &self.diplomacy.data,
+            posture: &self.posture.data,
+            strike: &self.strike.data,
+            colonize: &self.colonize.data,
+        }
+    }
+}
+
+/// What strategist seats may choose as goals; diplomacy is in
+/// [`BatchMasks::diplomacy`], and tax and posture are always free.
+#[derive(Debug, Clone, PartialEq)]
+pub struct BatchGoalMasks {
+    /// `[games, seats, 1 + W]`: hold, then one flag per world.
+    pub strike: Tensor<bool>,
+    /// `[games, seats, 1 + W]`: auto, then one flag per world.
+    pub colonize: Tensor<bool>,
+}
+
+/// Who plays a seat.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum Seat {
+    /// The caller chooses the whole turn.
+    Learned,
+    /// The caller chooses goals; the executor with these weights carries
+    /// them out.
+    Strategist(Weights),
+    Scripted(SeatPolicy),
+}
+
+/// What one step did.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StepResult {
+    /// `[games, seats]`: the seat's win share when its game ends this step,
+    /// otherwise 0. See [`MatchResult::win_share`].
+    pub reward: Tensor<f32>,
+    /// `[games]`: the game has ended, now or before.
+    pub done: Tensor<bool>,
+    /// `[games, seats]`: present production of every world the seat owns.
+    pub production: Tensor<u32>,
+    /// `[games, seats]`: worlds the seat owns.
+    pub worlds: Tensor<u32>,
+}
+
+#[derive(Debug, Clone)]
+struct Slot {
+    game: SeatedGame,
+    lineup: Vec<Seat>,
+    start_year: u16,
+    choices: SplitMix,
+    years_played: u16,
+    /// The seats' masks for the coming year.
+    masks: Vec<SeatMasks>,
+    /// Strategist seats' goal masks for the coming year.
+    goal_masks: Vec<Option<GoalMasks>>,
+    result: Option<MatchResult>,
+    mask_time: Duration,
+    mask_count: u64,
+}
+
+/// Seeded games played in step.
+#[derive(Debug, Clone)]
+pub struct BatchEnv {
+    players: u8,
+    years: u16,
+    threads: usize,
+    slots: Vec<Slot>,
+}
+
+impl BatchEnv {
+    /// Fresh games, one per map seed, each run with its campaign seed for
+    /// up to `years` years. `lineups` holds one entry per seat for each game.
+    /// `threads` 0 uses every core.
+    pub fn new(
+        players: u8,
+        map_seeds: &[u64],
+        campaign_seeds: &[u64],
+        lineups: &[Vec<Seat>],
+        years: u16,
+        threads: usize,
+    ) -> Self {
+        assert_eq!(
+            map_seeds.len(),
+            campaign_seeds.len(),
+            "one campaign seed per map seed"
+        );
+        assert_eq!(map_seeds.len(), lineups.len(), "one lineup per map seed");
+        assert!(
+            lineups
+                .iter()
+                .all(|lineup| lineup.len() == usize::from(players)),
+            "one lineup entry per seat"
+        );
+        let threads = if threads == 0 {
+            thread::available_parallelism().map_or(1, |n| n.get())
+        } else {
+            threads
+        };
+        let mut slots: Vec<Option<Slot>> = map_seeds.iter().map(|_| None).collect();
+        par_for_each_mut(&mut slots, threads, |idx, slot| {
+            let lineup = lineups[idx].clone();
+            let policies = lineup
+                .iter()
+                .map(|seat| match seat {
+                    Seat::Scripted(SeatPolicy::Autopilot) => Policy::Autopilot,
+                    _ => Policy::Aggressor,
+                })
+                .collect();
+            let game = seated_game(map_seeds[idx], policies, campaign_seeds[idx], years);
+            let mut new = Slot {
+                start_year: game.play.built.game_data.conquest.game_year,
+                game,
+                lineup,
+                choices: aggressor_choices(map_seeds[idx]),
+                years_played: 0,
+                masks: Vec::new(),
+                goal_masks: Vec::new(),
+                result: None,
+                mask_time: Duration::ZERO,
+                mask_count: 0,
+            };
+            new.prepare();
+            *slot = Some(new);
+        });
+        Self {
+            players,
+            years,
+            threads,
+            slots: slots.into_iter().map(Option::unwrap).collect(),
+        }
+    }
+
+    pub fn games(&self) -> usize {
+        self.slots.len()
+    }
+
+    pub fn players(&self) -> u8 {
+        self.players
+    }
+
+    /// The padded world count, `W`.
+    pub fn worlds(&self) -> usize {
+        self.slots
+            .iter()
+            .map(|slot| slot.game.play.built.game_data.planets.len())
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// The padded fleet count, `F`: the most fleets any seat owns.
+    pub fn fleets(&self) -> usize {
+        self.slots
+            .iter()
+            .flat_map(|slot| {
+                let mut owned = vec![0; slot.lineup.len()];
+                for fleet in &slot.game.play.built.game_data.fleets {
+                    if let Some(count) = owned.get_mut(usize::from(fleet.owner.0).wrapping_sub(1)) {
+                        *count += 1;
+                    }
+                }
+                owned
+            })
+            .max()
+            .unwrap_or(0)
+    }
+
+    /// Total time spent in [`seat_masks`] and how many seat masks it built.
+    pub fn mask_cost(&self) -> (Duration, u64) {
+        self.slots.iter().fold((Duration::ZERO, 0), |sum, slot| {
+            (sum.0 + slot.mask_time, sum.1 + slot.mask_count)
+        })
+    }
+
+    /// `[games, seats]`: the seat is learned.
+    pub fn learned(&self) -> Tensor<bool> {
+        self.seats_where(|seat| *seat == Seat::Learned)
+    }
+
+    /// `[games, seats]`: the seat is a strategist.
+    pub fn strategist(&self) -> Tensor<bool> {
+        self.seats_where(|seat| matches!(seat, Seat::Strategist(_)))
+    }
+
+    fn seats_where(&self, pick: impl Fn(&Seat) -> bool) -> Tensor<bool> {
+        Tensor {
+            data: self
+                .slots
+                .iter()
+                .flat_map(|slot| slot.lineup.iter().map(&pick))
+                .collect(),
+            shape: vec![self.games(), usize::from(self.players)],
+        }
+    }
+
+    /// Strategist seats' goal masks; other seats allow only hold and auto.
+    pub fn goal_masks(&self) -> BatchGoalMasks {
+        let (games, seats, worlds) = (self.games(), usize::from(self.players), self.worlds());
+        let mut out = BatchGoalMasks {
+            strike: falses(&[games, seats, 1 + worlds]),
+            colonize: falses(&[games, seats, 1 + worlds]),
+        };
+        for (game, slot) in self.slots.iter().enumerate() {
+            for (seat, masks) in slot.goal_masks.iter().enumerate() {
+                let at = game * seats + seat;
+                match masks {
+                    Some(masks) => {
+                        put(&mut out.strike, at, &masks.strike);
+                        put(&mut out.colonize, at, &masks.colonize);
+                    }
+                    None => {
+                        out.strike.data[at * (1 + worlds)] = true;
+                        out.colonize.data[at * (1 + worlds)] = true;
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// The goals the executor would set itself, with each strategist seat's
+    /// weights, in every live game; zero for other seats. These are
+    /// imitation labels.
+    pub fn goal_labels(&self) -> GoalArrays {
+        let (games, seats) = (self.games(), usize::from(self.players));
+        let mut out = GoalArrays {
+            tax: Tensor {
+                data: vec![0; games * seats],
+                shape: vec![games, seats],
+            },
+            diplomacy: Tensor {
+                data: vec![0; games * seats * seats],
+                shape: vec![games, seats, seats],
+            },
+            posture: Tensor {
+                data: vec![0; games * seats],
+                shape: vec![games, seats],
+            },
+            strike: Tensor {
+                data: vec![0; games * seats],
+                shape: vec![games, seats],
+            },
+            colonize: Tensor {
+                data: vec![0; games * seats],
+                shape: vec![games, seats],
+            },
+        };
+        for (game, slot) in self.slots.iter().enumerate() {
+            if slot.result.is_some() {
+                continue;
+            }
+            for (seat, kind) in slot.lineup.iter().enumerate() {
+                let Seat::Strategist(weights) = kind else {
+                    continue;
+                };
+                let goals = plan_goals(
+                    &slot.game.play.built.game_data,
+                    &slot.game.seats[seat],
+                    &slot.masks[seat],
+                    weights,
+                    slot.start_year,
+                );
+                let at = game * seats + seat;
+                out.tax.data[at] = goals.tax as i64;
+                for (other, &choice) in goals.diplomacy.iter().enumerate() {
+                    out.diplomacy.data[at * seats + other] = choice as i64;
+                }
+                out.posture.data[at] = goals.posture as i64;
+                out.strike.data[at] = goals.strike as i64;
+                out.colonize.data[at] = goals.colonize as i64;
+            }
+        }
+        out
+    }
+
+    /// The game in slot `idx`, for tests and inspection.
+    pub fn game(&self, idx: usize) -> &SeatedGame {
+        &self.slots[idx].game
+    }
+
+    pub fn observe(&self) -> BatchObservation {
+        let seats = usize::from(self.players);
+        let views: Vec<Observation> = self
+            .slots
+            .iter()
+            .flat_map(|slot| (1..=self.players).map(|empire| slot.game.observe(empire)))
+            .collect();
+        let lead = [self.games(), seats];
+        let pad_rows = |pick: fn(&Observation) -> &Vec<f32>, width: usize, rows: usize| {
+            pad_table(
+                lead,
+                views.iter().map(|view| pick(view).as_slice()),
+                width,
+                rows,
+            )
+        };
+        let most = |pick: fn(&Observation) -> &Vec<f32>, width: usize| {
+            views
+                .iter()
+                .map(|view| pick(view).len() / width)
+                .max()
+                .unwrap_or(0)
+        };
+        BatchObservation {
+            global: Tensor {
+                data: views.iter().flat_map(|view| view.global.clone()).collect(),
+                shape: vec![self.games(), seats, GLOBAL_WIDTH],
+            },
+            planets: pad_rows(|v| &v.planets, PLANET_WIDTH, self.worlds()),
+            fleets: pad_rows(|v| &v.fleets, FLEET_WIDTH, self.fleets()),
+            contacts: pad_rows(
+                |v| &v.contacts,
+                CONTACT_WIDTH,
+                most(|v| &v.contacts, CONTACT_WIDTH),
+            ),
+            starbases: pad_rows(
+                |v| &v.starbases,
+                STARBASE_WIDTH,
+                most(|v| &v.starbases, STARBASE_WIDTH),
+            ),
+        }
+    }
+
+    pub fn masks(&self) -> BatchMasks {
+        let (games, seats) = (self.games(), usize::from(self.players));
+        let (worlds, fleets) = (self.worlds(), self.fleets());
+        let mut out = BatchMasks {
+            diplomacy: falses(&[games, seats, seats, DIPLOMACY_CHOICES]),
+            build: falses(&[games, seats, worlds, BUILD_CHOICES]),
+            mission: falses(&[games, seats, fleets, MISSION_CHOICES]),
+            target: falses(&[games, seats, fleets, MISSION_CHOICES, worlds]),
+            roe: falses(&[games, seats, fleets, ROE_CHOICES]),
+            load: falses(&[games, seats, fleets]),
+        };
+        for (game, slot) in self.slots.iter().enumerate() {
+            let real_worlds = slot.game.play.built.game_data.planets.len();
+            for (seat, masks) in slot.masks.iter().enumerate() {
+                let at = game * seats + seat;
+                for (other, row) in masks.diplomacy.iter().enumerate() {
+                    put(&mut out.diplomacy, at * seats + other, row);
+                }
+                for world in 0..worlds {
+                    out.build.data[(at * worlds + world) * BUILD_CHOICES] = true;
+                }
+                for planet in &masks.planets {
+                    put(
+                        &mut out.build,
+                        at * worlds + planet.record - 1,
+                        &planet.build,
+                    );
+                }
+                for row in 0..fleets {
+                    let fleet = at * fleets + row;
+                    match masks.fleets.get(row) {
+                        Some(mask) => {
+                            put(&mut out.mission, fleet, &mask.mission);
+                            for (mission, targets) in mask.targets.iter().enumerate() {
+                                put(&mut out.target, fleet * MISSION_CHOICES + mission, targets);
+                            }
+                            put(&mut out.roe, fleet, &mask.roe);
+                            out.load.data[fleet] = mask.load;
+                        }
+                        None => {
+                            out.mission.data[fleet * MISSION_CHOICES] = true;
+                            put(
+                                &mut out.target,
+                                fleet * MISSION_CHOICES,
+                                &vec![true; real_worlds],
+                            );
+                            out.roe.data[fleet * ROE_CHOICES] = true;
+                        }
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// Apply learned seats' `actions` and strategist seats' `goals`, play
+    /// every scripted seat, run a maintenance year in each live game, and
+    /// prepare the next year. Nothing changes when any choice falls outside
+    /// the masks, or the choices a seat needs are missing.
+    pub fn step(
+        &mut self,
+        actions: Option<&BatchActions>,
+        goals: Option<&BatchGoals>,
+    ) -> Result<StepResult, String> {
+        let (games, seats) = (self.games(), usize::from(self.players));
+        let (worlds, fleets) = (self.worlds(), self.fleets());
+        let mut expect = Vec::new();
+        if let Some(actions) = actions {
+            expect.extend([
+                ("tax", actions.tax.len(), games * seats),
+                ("diplomacy", actions.diplomacy.len(), games * seats * seats),
+                (
+                    "build",
+                    actions.build.len(),
+                    games * seats * worlds * BUILD_SLOTS,
+                ),
+                (
+                    "amount",
+                    actions.amount.len(),
+                    games * seats * worlds * BUILD_SLOTS,
+                ),
+                ("mission", actions.mission.len(), games * seats * fleets),
+                ("target", actions.target.len(), games * seats * fleets),
+                ("speed", actions.speed.len(), games * seats * fleets),
+                ("roe", actions.roe.len(), games * seats * fleets),
+                ("load", actions.load.len(), games * seats * fleets),
+            ]);
+        }
+        if let Some(goals) = goals {
+            expect.extend([
+                ("tax goal", goals.tax.len(), games * seats),
+                (
+                    "diplomacy goal",
+                    goals.diplomacy.len(),
+                    games * seats * seats,
+                ),
+                ("posture", goals.posture.len(), games * seats),
+                ("strike", goals.strike.len(), games * seats),
+                ("colonize", goals.colonize.len(), games * seats),
+            ]);
+        }
+        for (name, got, want) in expect {
+            if got != want {
+                return Err(format!("{name} has {got} entries, expected {want}"));
+            }
+        }
+        let mut chosen: Vec<Vec<Turn>> = Vec::with_capacity(games);
+        for (game, slot) in self.slots.iter().enumerate() {
+            let mut turns = Vec::new();
+            if slot.result.is_none() {
+                for (seat, masks) in slot.masks.iter().enumerate() {
+                    let at = game * seats + seat;
+                    let turn = match (slot.lineup[seat], actions, goals) {
+                        (Seat::Learned, Some(actions), _) => {
+                            seat_action(masks, actions, at, seats, worlds, fleets).map(Turn::Action)
+                        }
+                        (Seat::Strategist(_), _, Some(goals)) => {
+                            let goal_masks = slot.goal_masks[seat]
+                                .as_ref()
+                                .expect("a strategist seat has goal masks");
+                            seat_goals(goal_masks, goals, at, seats).map(Turn::Goals)
+                        }
+                        (Seat::Scripted(_), _, _) => Ok(Turn::Scripted),
+                        (Seat::Learned, None, _) => Err("learned seats need actions".into()),
+                        (Seat::Strategist(_), _, None) => Err("strategist seats need goals".into()),
+                    };
+                    turns.push(turn.map_err(|err| format!("game {game} seat {seat}: {err}"))?);
+                }
+            }
+            chosen.push(turns);
+        }
+
+        let years = self.years;
+        let mut rewards: Vec<Option<Vec<f32>>> = vec![None; games];
+        let mut pairs: Vec<(&mut Slot, &mut Option<Vec<f32>>)> =
+            self.slots.iter_mut().zip(rewards.iter_mut()).collect();
+        par_for_each_mut(&mut pairs, self.threads, |idx, (slot, reward)| {
+            if slot.result.is_some() {
+                return;
+            }
+            for (seat, turn) in chosen[idx].iter().enumerate() {
+                slot.play_seat(seat, turn);
+            }
+            slot.game.run_maintenance().expect("maintenance should run");
+            slot.years_played += 1;
+            let winner = slot.game.play.winner_state.winner_empire;
+            if winner.is_some() || slot.years_played >= years {
+                let result =
+                    match_result(&slot.game.play.built.game_data, winner, slot.years_played);
+                **reward = Some(
+                    (1..=slot.game.seats.len() as u8)
+                        .map(|empire| result.win_share(empire))
+                        .collect(),
+                );
+                slot.result = Some(result);
+            } else {
+                slot.prepare();
+            }
+        });
+
+        let standing = |slot: &Slot| {
+            slot.result.clone().unwrap_or_else(|| {
+                let game_data = &slot.game.play.built.game_data;
+                match_result(game_data, None, slot.years_played)
+            })
+        };
+        let results: Vec<MatchResult> = self.slots.iter().map(standing).collect();
+        Ok(StepResult {
+            reward: Tensor {
+                data: rewards
+                    .into_iter()
+                    .flat_map(|reward| reward.unwrap_or_else(|| vec![0.0; seats]))
+                    .collect(),
+                shape: vec![games, seats],
+            },
+            done: Tensor {
+                data: self
+                    .slots
+                    .iter()
+                    .map(|slot| slot.result.is_some())
+                    .collect(),
+                shape: vec![games],
+            },
+            production: Tensor {
+                data: results.iter().flat_map(|r| r.production.clone()).collect(),
+                shape: vec![games, seats],
+            },
+            worlds: Tensor {
+                data: results.iter().flat_map(|r| r.worlds.clone()).collect(),
+                shape: vec![games, seats],
+            },
+        })
+    }
+}
+
+/// One seat's choices for a step.
+enum Turn {
+    Action(SeatAction),
+    Goals(Goals),
+    Scripted,
+}
+
+impl Slot {
+    /// Commission every learned and strategist seat's finished ships and
+    /// build its masks.
+    fn prepare(&mut self) {
+        let players = self.lineup.len();
+        let mut masks = Vec::with_capacity(players);
+        let mut goal_mask_rows = Vec::with_capacity(players);
+        for (seat, kind) in self.lineup.iter().enumerate() {
+            let empire = seat as u8 + 1;
+            if let Seat::Scripted(_) = kind {
+                goal_mask_rows.push(None);
+                masks.push(SeatMasks {
+                    empire,
+                    diplomacy: vec![[true, false, false]; players],
+                    planets: Vec::new(),
+                    fleets: Vec::new(),
+                });
+                continue;
+            }
+            if let Some(commission) = commission_submission(&self.game.play.built.game_data, empire)
+            {
+                self.game
+                    .submit_turn(&commission)
+                    .expect("commissioning should submit");
+            }
+            let game_data = &self.game.play.built.game_data;
+            let started = Instant::now();
+            let seat_mask = seat_masks(game_data, empire);
+            self.mask_time += started.elapsed();
+            self.mask_count += 1;
+            goal_mask_rows.push(
+                matches!(kind, Seat::Strategist(_))
+                    .then(|| goal_masks(game_data, &self.game.seats[seat], &seat_mask)),
+            );
+            masks.push(seat_mask);
+        }
+        self.masks = masks;
+        self.goal_masks = goal_mask_rows;
+    }
+
+    /// Submit seat `seat`'s turn from its choices or its scripted policy.
+    fn play_seat(&mut self, seat: usize, turn: &Turn) {
+        let empire = seat as u8 + 1;
+        if let Seat::Scripted(SeatPolicy::Executor(weights)) = self.lineup[seat] {
+            return executor_turn(&mut self.game, empire, &weights, self.start_year);
+        }
+        let game_data = &self.game.play.built.game_data;
+        let submission = match (self.lineup[seat], turn) {
+            (_, Turn::Action(action)) => decode_action(game_data, empire, action).submission,
+            (Seat::Strategist(weights), Turn::Goals(goals)) => {
+                let memory = &self.game.seats[seat];
+                let action = execute_goals(game_data, memory, &self.masks[seat], &weights, goals);
+                decode_action(game_data, empire, &action).submission
+            }
+            (Seat::Scripted(SeatPolicy::Aggressor), _) => {
+                nc_fuzz::plan_turn(Policy::Aggressor, game_data, empire, &mut self.choices)
+                    .submission
+            }
+            (Seat::Scripted(SeatPolicy::Autopilot), _) => return,
+            _ => unreachable!("every seat's turn matches its kind"),
+        };
+        self.game
+            .submit_turn(&submission)
+            .expect("a seat's turn should submit");
+    }
+}

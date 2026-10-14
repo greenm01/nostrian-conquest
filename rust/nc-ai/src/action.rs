@@ -4,8 +4,10 @@
 //! A seat chooses, all at once:
 //! - a tax rate, in steps of [`TAX_STEP`];
 //! - for every other empire, to keep, make neutral or declare enemy;
-//! - for each world it owns, a unit to build (or none) and how much of the
-//!   world's remaining budget to spend on it;
+//! - for each world it owns, up to [`BUILD_SLOTS`] units to build (or none),
+//!   each with how much of the budget still left to spend on it. Units built
+//!   in one year commission into one fleet, so an ETAC and its escort can
+//!   sail together;
 //! - for each fleet it owns, whether to load armies from the world it is at,
 //!   a mission (or keep its orders), a target world, a speed and rules of
 //!   engagement. Loading and an invasion cannot share a year: orders are
@@ -39,12 +41,22 @@ pub const DIPLOMACY_CHOICES: usize = 3;
 pub const BUILD_CHOICES: usize = 1 + BUILD_UNITS.len();
 /// A quarter, half, three quarters or all of the world's remaining budget.
 pub const BUILD_AMOUNT_CHOICES: usize = 4;
+/// Builds a world may order in one year.
+pub const BUILD_SLOTS: usize = 2;
 /// Keep the fleet's orders, or one entry per [`MISSIONS`] row.
 pub const MISSION_CHOICES: usize = 1 + MISSIONS.len();
 /// Full, three-quarter, half or quarter speed, rounded up.
 pub const SPEED_CHOICES: usize = 4;
 /// Rules of engagement 0 to 10.
 pub const ROE_CHOICES: usize = 11;
+
+/// Units of cost `cost` that build amount choice `amount` buys from
+/// `points_left`, which must cover one unit.
+pub(crate) fn build_units(points_left: u32, cost: u32, amount: usize) -> u32 {
+    (points_left / cost * (amount as u32 + 1))
+        .div_ceil(BUILD_AMOUNT_CHOICES as u32)
+        .max(1)
+}
 
 /// The missions a seat can give, in mission-choice order.
 pub const MISSIONS: [Order; 14] = [
@@ -100,12 +112,14 @@ pub struct SeatMasks {
     pub fleets: Vec<FleetMask>,
 }
 
-/// One world's choice, by index into its [`PlanetMask`].
+/// One world's choice, by index into its [`PlanetMask`]. Both build slots
+/// draw on the mask; the second spends what the first leaves and is skipped
+/// when that cannot buy one unit.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlanetChoice {
     pub record: usize,
-    pub build: usize,
-    pub amount: usize,
+    pub build: [usize; BUILD_SLOTS],
+    pub amount: [usize; BUILD_SLOTS],
 }
 
 /// One fleet's choice, by index into its [`FleetMask`].
@@ -337,14 +351,21 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
 
     for choice in &action.planets {
         let mut actions = Vec::new();
-        if choice.build > 0 {
-            let unit = &BUILD_UNITS[choice.build - 1];
-            let points_left = game_data
-                .planet_build_points_left(choice.record)
-                .unwrap_or(0);
-            let units = (points_left / unit.cost * (choice.amount as u32 + 1)).div_ceil(4);
+        let mut points_left = game_data
+            .planet_build_points_left(choice.record)
+            .unwrap_or(0);
+        for (&build, &amount) in choice.build.iter().zip(&choice.amount) {
+            if build == 0 {
+                continue;
+            }
+            let unit = &BUILD_UNITS[build - 1];
+            if points_left < unit.cost {
+                continue;
+            }
+            let points = build_units(points_left, unit.cost, amount) * unit.cost;
+            points_left -= points;
             actions.push(PlanetTurnAction::Build {
-                points_remaining: units.max(1) * unit.cost,
+                points_remaining: points,
                 kind: production_item_kind_code(unit.kind),
             });
         }

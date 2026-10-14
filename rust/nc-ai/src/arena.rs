@@ -57,7 +57,8 @@ impl MatchResult {
 }
 
 /// Seeded splitmix64 choices for the aggressor policy.
-struct SplitMix(u64);
+#[derive(Debug, Clone)]
+pub(crate) struct SplitMix(pub(crate) u64);
 
 impl ChoiceSource for SplitMix {
     fn pick(&mut self, lo: u32, hi: u32) -> u32 {
@@ -89,7 +90,7 @@ pub fn play_match(map_seed: u64, policies: &[SeatPolicy], years: u16) -> MatchRe
         years,
     );
     let start_year = game.play.built.game_data.conquest.game_year;
-    let mut choices = SplitMix(map_seed ^ 0xA66E_5503);
+    let mut choices = aggressor_choices(map_seed);
     let mut played = 0;
     for _ in 0..years {
         for (idx, policy) in policies.iter().enumerate() {
@@ -122,6 +123,11 @@ pub fn play_match(map_seed: u64, policies: &[SeatPolicy], years: u16) -> MatchRe
         game.play.winner_state.winner_empire,
         played,
     )
+}
+
+/// The aggressor's choices for a match on `map_seed`.
+pub(crate) fn aggressor_choices(map_seed: u64) -> SplitMix {
+    SplitMix(map_seed ^ 0xA66E_5503)
 }
 
 /// One executor turn: commission, choose within the masks, submit.

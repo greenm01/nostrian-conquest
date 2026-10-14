@@ -52,8 +52,11 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
             .iter()
             .map(|mask| PlanetChoice {
                 record: mask.record,
-                build: rng.allowed(&mask.build),
-                amount: rng.below(BUILD_AMOUNT_CHOICES),
+                build: [rng.allowed(&mask.build), rng.allowed(&mask.build)],
+                amount: [
+                    rng.below(BUILD_AMOUNT_CHOICES),
+                    rng.below(BUILD_AMOUNT_CHOICES),
+                ],
             })
             .collect(),
         fleets: masks
@@ -116,7 +119,12 @@ fn play_random(game: &mut SeatedGame, years: u16, rng: &mut Rng, tally: &mut Tal
             }
             tally.dropped += decoded.dropped_fleet_orders.len();
             tally.fleet_orders += action.fleets.iter().filter(|c| c.mission > 0).count();
-            tally.builds += action.planets.iter().filter(|c| c.build > 0).count();
+            tally.builds += action
+                .planets
+                .iter()
+                .flat_map(|c| c.build)
+                .filter(|&build| build > 0)
+                .count();
             game.submit_turn(&decoded.submission).unwrap_or_else(|err| {
                 panic!(
                     "year {}, empire {empire}: {err}\n{:?}",

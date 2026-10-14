@@ -7,16 +7,24 @@
 //! Each year it:
 //! - sets tax from the weights;
 //! - declares every other empire an enemy once `war_year` years have passed;
-//! - at each world builds the first unmet need: armies, then batteries, then
-//!   at the home world ETACs, scouts, starbases and transports, then the
-//!   preferred hull it can afford;
-//! - sends ETAC fleets to colonize the most valuable world not known to be
-//!   owned, one fleet per world;
-//! - sends scouts to the nearest world it knows least about;
+//! - at each world orders up to two builds, most urgent first, and spends
+//!   what is left on the preferred hull. While worlds remain to colonize,
+//!   the home world builds ETACs first, each with a destroyer escort built
+//!   the same year so they commission into one fleet, then scouts, then its
+//!   armies and batteries, then starbases and transports. Other worlds build
+//!   their garrison;
+//! - sends ETAC fleets at ROE 0 to colonize the most valuable world not
+//!   known to be owned, one fleet per world;
+//! - sends scouts, and during the land grab lone destroyers as pickets, to
+//!   the world it knows least about;
 //! - gathers warships and transports at home by Rendezvous, loads armies
 //!   there, and strikes the best known enemy world once the home force is
 //!   `attack_ratio` times its estimated defense: Invade with enough armies
 //!   aboard, otherwise Bombard.
+//!
+//! A turn is the executor's [`Goals`] ([`plan_goals`]) carried out by
+//! [`execute_goals`], which a strategist network can drive with goals of its
+//! own.
 
 use nc_data::{
     CoreGameData, Fleet, IntelTier, Order, PlanetIntelSnapshot, ProductionItemKind,
@@ -25,9 +33,10 @@ use nc_data::{
 use nc_engine::BUILD_UNITS;
 
 use crate::action::{
-    BUILD_AMOUNT_CHOICES, FleetChoice, FleetMask, MISSIONS, PlanetChoice, SeatAction, SeatMasks,
-    TAX_STEP,
+    BUILD_AMOUNT_CHOICES, BUILD_SLOTS, FleetChoice, FleetMask, MISSIONS, PlanetChoice, SeatAction,
+    SeatMasks, TAX_STEP, build_units,
 };
+use crate::goals::{Goals, claimed_worlds, colonizable, posture_weights, world_at};
 use crate::memory::SeatMemory;
 
 /// Strategy weights. Counts are targets, not limits per year.
@@ -81,23 +90,23 @@ impl Weights {
         war_year: 5.0,
     };
 
-    /// Weights tuned by evolution against aggressor seats; see the
-    /// `tune_executor` example.
+    /// Weights tuned by evolution against the executor itself, with the
+    /// land-grab build order; see the `tune_executor` example.
     pub const TUNED: Weights = Weights {
-        tax: 64.4,
-        home_armies: 15.7,
-        colony_armies: 9.9,
-        batteries: 9.0,
-        etacs: 6.4,
-        scouts: 0.9,
-        starbases: 0.0,
-        transports: 15.8,
-        battleship: 0.92,
-        cruiser: 0.98,
-        destroyer: 0.43,
-        attack_ratio: 3.44,
-        roe: 4.2,
-        war_year: 10.5,
+        tax: 61.4,
+        home_armies: 17.7,
+        colony_armies: 9.6,
+        batteries: 5.2,
+        etacs: 4.9,
+        scouts: 2.6,
+        starbases: 1.7,
+        transports: 15.7,
+        battleship: 0.57,
+        cruiser: 0.94,
+        destroyer: 0.13,
+        attack_ratio: 2.93,
+        roe: 9.9,
+        war_year: 3.0,
     };
 
     /// The lowest and highest value of each weight, in field order.
@@ -173,37 +182,24 @@ pub fn plan_turn(
     weights: &Weights,
     start_year: u16,
 ) -> SeatAction {
+    let goals = plan_goals(game_data, memory, masks, weights, start_year);
+    execute_goals(game_data, memory, masks, weights, &goals)
+}
+
+/// The goals the executor sets itself this year.
+pub fn plan_goals(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    masks: &SeatMasks,
+    weights: &Weights,
+    start_year: u16,
+) -> Goals {
     let empire = memory.empire;
     let year = game_data.conquest.game_year;
     let at_war = f32::from(year.saturating_sub(start_year)) >= weights.war_year;
     let home = home_world(game_data, empire);
-    let stock = Stock::count(game_data, empire);
-
-    let planets = masks
-        .planets
-        .iter()
-        .map(|mask| {
-            let is_home = Some(mask.record) == home;
-            let (build, amount) = choose_build(
-                game_data,
-                mask.record,
-                &mask.build,
-                is_home,
-                &stock,
-                memory,
-                weights,
-            );
-            PlanetChoice {
-                record: mask.record,
-                build,
-                amount,
-            }
-        })
-        .collect();
-
-    let fleets = plan_fleets(game_data, memory, masks, weights, home);
-
-    SeatAction {
+    let (_, labels) = plan_fleets(game_data, memory, masks, weights, home, None);
+    Goals {
         tax: ((weights.tax / f32::from(TAX_STEP)).round() as usize)
             .min(100 / usize::from(TAX_STEP)),
         diplomacy: masks
@@ -224,6 +220,49 @@ pub fn plan_turn(
                 }
             })
             .collect(),
+        posture: 0,
+        strike: labels.strike,
+        colonize: labels.colonize,
+    }
+}
+
+/// Carry out `goals` within `masks`. The goals must respect
+/// [`crate::goal_masks`].
+pub fn execute_goals(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    masks: &SeatMasks,
+    weights: &Weights,
+    goals: &Goals,
+) -> SeatAction {
+    let home = home_world(game_data, memory.empire);
+    let stock = Stock::count(game_data, memory.empire);
+    let build_weights = posture_weights(weights, goals.posture);
+    let planets = masks
+        .planets
+        .iter()
+        .map(|mask| {
+            let is_home = Some(mask.record) == home;
+            let (build, amount) = choose_builds(
+                game_data,
+                mask.record,
+                &mask.build,
+                is_home,
+                &stock,
+                memory,
+                &build_weights,
+            );
+            PlanetChoice {
+                record: mask.record,
+                build,
+                amount,
+            }
+        })
+        .collect();
+    let (fleets, _) = plan_fleets(game_data, memory, masks, weights, home, Some(goals));
+    SeatAction {
+        tax: goals.tax,
+        diplomacy: goals.diplomacy.clone(),
         planets,
         fleets,
     }
@@ -304,23 +343,24 @@ fn build_choice(kind: ProductionItemKind) -> usize {
         .expect("every build kind is a build unit")
 }
 
-/// The smallest amount choice that buys `units` of `kind`, or all of the
-/// budget when it cannot.
-fn amount_for(
-    game_data: &CoreGameData,
-    record: usize,
-    kind: ProductionItemKind,
-    units: u32,
-) -> usize {
-    let cost = kind.build_cost().unwrap_or(1).max(1);
-    let most = game_data.planet_build_points_left(record).unwrap_or(0) / cost;
+/// The smallest amount choice that buys `units` of a unit costing `cost`
+/// from `points`, or all of them when it cannot.
+fn amount_for(points: u32, cost: u32, units: u32) -> usize {
     (0..BUILD_AMOUNT_CHOICES)
-        .find(|&amount| (most * (amount as u32 + 1)).div_ceil(4) >= units)
+        .find(|&amount| build_units(points, cost, amount) >= units)
         .unwrap_or(BUILD_AMOUNT_CHOICES - 1)
 }
 
+/// A world's builds for the year, most urgent first, in up to
+/// [`BUILD_SLOTS`] slots sharing its budget; any budget left then goes to
+/// the preferred hull.
+///
+/// While worlds remain to colonize, the home world builds ETACs first, each
+/// with one destroyer as escort (built the same year, so they commission
+/// into one fleet), then scouts, and only then its garrison. Expansion and
+/// intelligence win the early game.
 #[allow(clippy::too_many_arguments)]
-fn choose_build(
+fn choose_builds(
     game_data: &CoreGameData,
     record: usize,
     allowed: &[bool],
@@ -328,11 +368,11 @@ fn choose_build(
     stock: &Stock,
     memory: &SeatMemory,
     weights: &Weights,
-) -> (usize, usize) {
+) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
     let planet = &game_data.planets[record - 1];
     let short = |have: u32, want: f32| (want.round() as u32).saturating_sub(have);
-    let mut needs = vec![
-        (
+    let garrison = [
+        Need::Units(
             ProductionItemKind::Army,
             short(
                 planet.armies.into(),
@@ -343,53 +383,103 @@ fn choose_build(
                 },
             ),
         ),
-        (
+        Need::Units(
             ProductionItemKind::GroundBattery,
             short(planet.ground_batteries.into(), weights.batteries),
         ),
     ];
+    let mut needs = Vec::new();
     if is_home {
-        let open_worlds = memory
-            .planet_intel
-            .values()
-            .any(|intel| colonizable(intel, memory.empire));
-        if open_worlds {
-            needs.push((ProductionItemKind::Etac, short(stock.etacs, weights.etacs)));
+        if land_grab(memory) {
+            needs.push(Need::Units(
+                ProductionItemKind::Etac,
+                short(stock.etacs, weights.etacs),
+            ));
+            needs.push(Need::Escorts);
         }
-        needs.push((
+        needs.push(Need::Units(
             ProductionItemKind::Scout,
             short(stock.scouts, weights.scouts),
         ));
-        needs.push((
+        needs.extend(garrison);
+        needs.push(Need::Units(
             ProductionItemKind::Starbase,
             short(
                 planet.stardock.starbases + home_starbases(game_data, planet),
                 weights.starbases,
             ),
         ));
-        needs.push((
+        needs.push(Need::Units(
             ProductionItemKind::Transport,
             short(stock.transports, weights.transports),
         ));
+    } else {
+        needs.extend(garrison);
     }
-    for (kind, units) in needs {
+
+    let mut points = game_data.planet_build_points_left(record).unwrap_or(0);
+    let mut builds = [0; BUILD_SLOTS];
+    let mut amounts = [0; BUILD_SLOTS];
+    let mut slot = 0;
+    let mut etacs_bought = 0;
+    let mut order = |kind: ProductionItemKind, units: u32, points: &mut u32| {
         let choice = build_choice(kind);
-        if units > 0 && allowed[choice] {
-            return (choice, amount_for(game_data, record, kind, units));
+        let cost = kind.build_cost().unwrap_or(1).max(1);
+        if slot == BUILD_SLOTS || units == 0 || !allowed[choice] || *points < cost {
+            return 0;
+        }
+        let amount = amount_for(*points, cost, units);
+        let bought = build_units(*points, cost, amount);
+        *points -= bought * cost;
+        builds[slot] = choice;
+        amounts[slot] = amount;
+        slot += 1;
+        bought
+    };
+    for need in needs {
+        match need {
+            Need::Units(kind, units) => {
+                let bought = order(kind, units, &mut points);
+                if kind == ProductionItemKind::Etac {
+                    etacs_bought = bought;
+                }
+            }
+            Need::Escorts => {
+                order(ProductionItemKind::Destroyer, etacs_bought, &mut points);
+            }
         }
     }
-    let hulls = [
+    let hull = [
         (ProductionItemKind::Battleship, weights.battleship),
         (ProductionItemKind::Cruiser, weights.cruiser),
         (ProductionItemKind::Destroyer, weights.destroyer),
-    ];
-    hulls
-        .iter()
-        .filter(|(kind, weight)| *weight > 0.0 && allowed[build_choice(*kind)])
-        .max_by(|a, b| a.1.total_cmp(&b.1))
-        .map_or((0, 0), |(kind, _)| {
-            (build_choice(*kind), BUILD_AMOUNT_CHOICES - 1)
-        })
+    ]
+    .into_iter()
+    .filter(|(kind, weight)| {
+        *weight > 0.0
+            && allowed[build_choice(*kind)]
+            && points >= kind.build_cost().unwrap_or(1).max(1)
+    })
+    .max_by(|a, b| a.1.total_cmp(&b.1));
+    if let Some((kind, _)) = hull {
+        order(kind, u32::MAX, &mut points);
+    }
+    (builds, amounts)
+}
+
+/// One build need, most urgent first.
+enum Need {
+    Units(ProductionItemKind, u32),
+    /// One destroyer for each ETAC ordered this year.
+    Escorts,
+}
+
+/// Worlds remain that the seat may colonize.
+fn land_grab(memory: &SeatMemory) -> bool {
+    memory
+        .planet_intel
+        .values()
+        .any(|intel| colonizable(intel, memory.empire))
 }
 
 fn home_starbases(game_data: &CoreGameData, planet: &nc_data::Planet) -> u32 {
@@ -398,13 +488,6 @@ fn home_starbases(game_data: &CoreGameData, planet: &nc_data::Planet) -> u32 {
         .iter()
         .filter(|base| base.owner == planet.owner && base.sector == planet.sector)
         .count() as u32
-}
-
-/// A world worth sending an ETAC to: not known to be owned by anyone.
-fn colonizable(intel: &PlanetIntelSnapshot, empire: u8) -> bool {
-    intel.intel_tier != IntelTier::Owned
-        && intel.known_owner_empire_id.is_none_or(|owner| owner == 0)
-        && intel.known_owner_empire_id != Some(empire)
 }
 
 fn distance(a: [u8; 2], b: [u8; 2]) -> f32 {
@@ -435,31 +518,37 @@ fn defense(intel: &PlanetIntelSnapshot) -> f32 {
     armies + 4.0 * batteries + 10.0 * starbases
 }
 
+/// The strike and colonize goals the executor's own fleet plan implies.
+#[derive(Default)]
+struct Labels {
+    strike: usize,
+    colonize: usize,
+}
+
+/// Fleet orders, following `goals`' strike and colonize goals, or with
+/// `None` choosing freely and reporting those choices as [`Labels`]: the
+/// strike target of the strongest home force, and the world of the first
+/// ETAC fleet needing orders.
 fn plan_fleets(
     game_data: &CoreGameData,
     memory: &SeatMemory,
     masks: &SeatMasks,
     weights: &Weights,
     home: Option<usize>,
-) -> Vec<FleetChoice> {
+    goals: Option<&Goals>,
+) -> (Vec<FleetChoice>, Labels) {
     let empire = memory.empire;
     let home_sector = home.map(|record| game_data.planets[record - 1].sector.to_array());
     let roe = (weights.roe.round() as usize).min(10);
-    let mut claimed: Vec<usize> = Vec::new();
-    let mut scouted: Vec<usize> = Vec::new();
-
     // Worlds an ETAC already flies to are claimed before anything else.
-    for mask in &masks.fleets {
-        let fleet = &game_data.fleets[mask.record - 1];
-        if fleet.ships.etacs > 0
-            && fleet.order == Order::ColonizeWorld
-            && let Some(idx) = world_at(game_data, fleet.target.to_array())
-        {
-            claimed.push(idx);
-        }
-    }
+    let mut claimed = claimed_worlds(game_data, masks);
+    let mut scouted: Vec<usize> = Vec::new();
+    let mut labels = Labels::default();
+    let mut first_colonizer = true;
+    let grabbing = land_grab(memory);
+    let mut strongest = f32::NEG_INFINITY;
 
-    masks
+    let fleets = masks
         .fleets
         .iter()
         .map(|mask| {
@@ -482,22 +571,35 @@ fn plan_fleets(
             };
 
             if fleet.ships.etacs > 0 {
+                // A colony fleet's job is to arrive, not to fight.
+                let calm = |choice: FleetChoice| FleetChoice { roe: 0, ..choice };
                 if fleet.order == Order::ColonizeWorld {
-                    return keep;
+                    return calm(keep);
                 }
-                return best_world(game_data, memory, fleet, |idx, intel| {
-                    (!claimed.contains(&idx) && colonizable(intel, empire))
-                        .then(|| f32::from(intel.known_potential_production.unwrap_or(40)) + 1.0)
-                })
-                .and_then(|idx| {
-                    let choice = order(Order::ColonizeWorld, idx)?;
-                    claimed.push(idx);
-                    Some(choice)
-                })
-                .unwrap_or(keep);
+                let first = std::mem::replace(&mut first_colonizer, false);
+                let pick = match goals {
+                    Some(goals) if first && goals.colonize > 0 => Some(goals.colonize - 1),
+                    _ => best_world(game_data, memory, fleet, |idx, intel| {
+                        (!claimed.contains(&idx) && colonizable(intel, empire)).then(|| {
+                            f32::from(intel.known_potential_production.unwrap_or(40)) + 1.0
+                        })
+                    }),
+                };
+                if first && goals.is_none() {
+                    labels.colonize = pick.map_or(0, |idx| idx + 1);
+                }
+                return calm(
+                    pick.and_then(|idx| {
+                        let choice = order(Order::ColonizeWorld, idx)?;
+                        claimed.push(idx);
+                        Some(choice)
+                    })
+                    .unwrap_or(keep),
+                );
             }
 
-            if !has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0 {
+            let scout = !has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0;
+            if scout || (grabbing && picket(fleet)) {
                 if matches!(fleet.order, Order::ScoutSolarSystem | Order::ViewWorld)
                     && fleet.sector != fleet.target
                 {
@@ -513,7 +615,12 @@ fn plan_fleets(
                     (!scouted.contains(&idx) && stale >= 5.0).then_some(stale)
                 })
                 .and_then(|idx| {
-                    let choice = order(Order::ScoutSolarSystem, idx)?;
+                    let look = if scout {
+                        Order::ScoutSolarSystem
+                    } else {
+                        Order::ViewWorld
+                    };
+                    let choice = order(look, idx)?;
                     scouted.push(idx);
                     Some(choice)
                 })
@@ -540,7 +647,25 @@ fn plan_fleets(
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
             let load = mask.load && fleet.ships.empty_transports > 0;
-            if let Some(choice) = strike(game_data, memory, mask, fleet, weights, keep) {
+            let target = if !has_combat_ships(fleet) {
+                None
+            } else {
+                match goals.map(|goals| goals.strike) {
+                    Some(0) => None,
+                    Some(goal) if can_take(memory, fleet, weights, goal - 1) => Some(goal - 1),
+                    _ => {
+                        let pick = strike_target(game_data, memory, fleet, weights);
+                        if goals.is_none() && strength(fleet) > strongest {
+                            strongest = strength(fleet);
+                            labels.strike = pick.map_or(0, |idx| idx + 1);
+                        }
+                        pick
+                    }
+                }
+            };
+            if let Some(choice) =
+                target.and_then(|target| strike(memory, mask, fleet, target, keep))
+            {
                 return FleetChoice { load, ..choice };
             }
             let gather = if fleet.order == Order::RendezvousSector && fleet.target == fleet.sector {
@@ -550,18 +675,24 @@ fn plan_fleets(
             };
             FleetChoice { load, ..gather }
         })
-        .collect()
+        .collect();
+    (fleets, labels)
+}
+
+/// One or two lone destroyers: a picket that views worlds during the land
+/// grab, as the starting destroyers should.
+fn picket(fleet: &Fleet) -> bool {
+    let ships = &fleet.ships;
+    (1..=2).contains(&ships.destroyers)
+        && ships.battleships == 0
+        && ships.cruisers == 0
+        && ships.scouts == 0
+        && ships.etacs == 0
+        && troops(fleet) == 0
 }
 
 fn troops(fleet: &Fleet) -> u16 {
     fleet.ships.empty_transports + fleet.ships.loaded_transports
-}
-
-fn world_at(game_data: &CoreGameData, coords: [u8; 2]) -> Option<usize> {
-    game_data
-        .planets
-        .iter()
-        .position(|planet| planet.sector.to_array() == coords)
 }
 
 /// The world, by 0-based index, with the best `score` over distance.
@@ -588,26 +719,26 @@ fn best_world(
         .map(|(idx, _)| idx)
 }
 
-/// Strike the best known enemy world the home force can take or batter.
-fn strike(
+/// Whether `fleet` is `attack_ratio` times world `idx`'s estimated defense,
+/// a world known to be another empire's.
+fn can_take(memory: &SeatMemory, fleet: &Fleet, weights: &Weights, idx: usize) -> bool {
+    memory.planet_intel.get(&(idx + 1)).is_some_and(|intel| {
+        intel
+            .known_owner_empire_id
+            .is_some_and(|owner| owner != 0 && owner != memory.empire)
+            && strength(fleet) >= weights.attack_ratio * defense(intel)
+    })
+}
+
+/// The best known enemy world the home force can take or batter.
+fn strike_target(
     game_data: &CoreGameData,
     memory: &SeatMemory,
-    mask: &FleetMask,
     fleet: &Fleet,
     weights: &Weights,
-    keep: FleetChoice,
-) -> Option<FleetChoice> {
-    if !has_combat_ships(fleet) {
-        return None;
-    }
-    let empire = memory.empire;
-    let power = strength(fleet);
-    let target = best_world(game_data, memory, fleet, |_, intel| {
-        let owner = intel.known_owner_empire_id?;
-        if owner == 0 || owner == empire {
-            return None;
-        }
-        (power >= weights.attack_ratio * defense(intel)).then(|| {
+) -> Option<usize> {
+    best_world(game_data, memory, fleet, |idx, intel| {
+        can_take(memory, fleet, weights, idx).then(|| {
             f32::from(
                 intel
                     .known_current_production
@@ -616,7 +747,18 @@ fn strike(
                     .unwrap_or(20),
             ) + 1.0
         })
-    })?;
+    })
+}
+
+/// Strike world `target`: Invade with enough armies aboard, otherwise
+/// Bombard.
+fn strike(
+    memory: &SeatMemory,
+    mask: &FleetMask,
+    fleet: &Fleet,
+    target: usize,
+    keep: FleetChoice,
+) -> Option<FleetChoice> {
     let intel = &memory.planet_intel[&(target + 1)];
     let armies = intel.known_armies.map_or(UNKNOWN_ARMIES, f32::from);
     let invade = f32::from(fleet.ships.loaded_transports) >= 2.0 * armies + 1.0;

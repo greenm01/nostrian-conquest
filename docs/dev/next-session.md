@@ -56,9 +56,28 @@ Done on 2026-10-14, all in the `nc-ai` crate unless noted:
 
 Each task's result section in the plan holds its evidence.
 
-**Next is t155:** train the hierarchical agent. The batch needs scripted
-seats first, so imitation can read executor labels and PPO can play against
-executor and Aggressor seats.
+**In progress, t155** (uncommitted on `main` as of this handoff):
+
+- Done:
+  - scripted and strategist seats in the batch;
+  - the executor driven by goals;
+  - two builds per world per year;
+  - the land-grab executor, re-tuned;
+  - imitation, PPO and evaluation scripts in `tools/ai`.
+- The first PPO run won 0.568 against three tuned executors on 1,024
+  maps. The exit is 0.60.
+- A retrain on the land-grab executor is under way, writing to
+  `/tmp/nc-ai/landgrab/`. Checkpoints are copied to
+  `~/.local/state/nostrian-conquest/ai/`.
+- The t155 progress section in the plan holds the evidence and the
+  remaining steps.
+
+**Next after t155:** the executor doctrine tasks t159–t164, in the
+[doctrine follow-up plan](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md).
+Their sources are in
+[v6jegy7f](../notes/investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md).
+On the mini, `zk` and `todo.sh` come from Homebrew;
+`~/src/todo.txt-cli/todo.sh` links to the Homebrew copy.
 
 **Where the work runs:**
 - Training runs on the Mac mini (M4 Pro, 12 cores, 16-core GPU, 24 GB),

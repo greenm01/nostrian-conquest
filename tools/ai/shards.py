@@ -1,4 +1,5 @@
-"""Experience shards: one Parquet row per seat per year of a live game.
+"""Experience shards: one Parquet row per learned seat per year of a live
+game.
 
 Entity tables and their masks are stored unpadded, as flat lists with a row
 count, so a learner rebuilds each with ``rows(table, column, count, width)``.
@@ -14,8 +15,8 @@ Per row:
   ``mask_target`` (n_fleets x n_planets: targets allowed for the chosen
   mission), ``mask_roe`` (n_fleets x ROE_CHOICES), ``mask_load`` (n_fleets)
 - choices: ``tax``, ``diplomacy`` (seats), ``build`` and ``amount``
-  (n_planets), ``mission``, ``target``, ``speed``, ``roe``, ``load``
-  (n_fleets)
+  (n_planets x BUILD_SLOTS), ``mission``, ``target``, ``speed``, ``roe``,
+  ``load`` (n_fleets)
 - ``reward`` and ``done`` from the step those choices played
 """
 
@@ -38,12 +39,15 @@ def ragged(values: np.ndarray, valid: np.ndarray) -> pa.ListArray:
     return pa.ListArray.from_arrays(pa.array(offsets), pa.array(flat))
 
 
-def experience_batch(map_seeds, campaign_seeds, done_before, obs, masks, actions, step):
+def experience_batch(
+    map_seeds, campaign_seeds, learned, done_before, obs, masks, actions, step
+):
     """The rows for one step. ``obs`` and ``masks`` are what the seats saw,
-    ``actions`` what they chose and ``step`` what ``Env.step`` returned.
-    Seats of games ``done_before`` the step are left out."""
+    ``actions`` what they chose and ``step`` what ``Env.step`` returned. Only
+    ``learned`` seats (``Env.learned``) of games not ``done_before`` the step
+    are kept."""
     games, seats = obs["global"].shape[:2]
-    live = np.repeat(~done_before, seats)
+    live = np.repeat(~done_before, seats) & learned.reshape(-1)
     flat = lambda a: a.reshape(games * seats, *a.shape[2:])[live]
     planets = flat(obs["planets_valid"])
     fleets = flat(obs["fleets_valid"])

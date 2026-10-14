@@ -18,18 +18,23 @@ mod arena;
 mod batch;
 mod executor;
 mod game;
+mod goals;
 mod memory;
 mod observe;
 
 pub use action::{
-    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, DIPLOMACY_CHOICES, DecodedTurn, FleetChoice, FleetMask,
-    MISSION_CHOICES, MISSIONS, PlanetChoice, PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction,
-    SeatMasks, TAX_CHOICES, TAX_STEP, commission_submission, decode_action, seat_masks,
+    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, DecodedTurn, FleetChoice,
+    FleetMask, MISSION_CHOICES, MISSIONS, PlanetChoice, PlanetMask, ROE_CHOICES, SPEED_CHOICES,
+    SeatAction, SeatMasks, TAX_CHOICES, TAX_STEP, commission_submission, decode_action, seat_masks,
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
-pub use batch::{BatchActions, BatchEnv, BatchMasks, BatchObservation, StepResult, Table, Tensor};
-pub use executor::{Weights, plan_turn};
+pub use batch::{
+    BatchActions, BatchEnv, BatchGoalMasks, BatchGoals, BatchMasks, BatchObservation, GoalArrays,
+    Seat, StepResult, Table, Tensor,
+};
+pub use executor::{Weights, execute_goals, plan_goals, plan_turn};
 pub use game::SeatedGame;
+pub use goals::{GoalMasks, Goals, POSTURES, goal_masks, posture_weights};
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
 pub use observe::{
     CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH, observe,

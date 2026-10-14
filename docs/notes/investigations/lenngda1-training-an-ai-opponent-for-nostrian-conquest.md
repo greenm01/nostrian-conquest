@@ -42,6 +42,24 @@ training: it is deterministic, seeded, fast Rust with no rendering.
 | Vox Deorum (Dec 2025) | Civilization V | Hybrid: an LLM sets strategy and the game's scripted AI handles tactics. Over 2,327 games it tied the strong scripted AI on win rate, with distinct play styles. |
 | CivBench (2026) | Civilization V | Estimates each player's win probability from turn-level state, because final win or loss is too sparse in long, many-player games. |
 
+### Recent literature (web search on 2026-10-14, during t155)
+
+Nothing published trains a network to play a 4X game like this one. The
+nearest work is in card games, Stratego, Diplomacy and Pokémon. The search
+was brief, and several 2026 arXiv hits returned only reference lists; those
+are listed by title only.
+
+| Work | Finding | For us |
+| --- | --- | --- |
+| [Rudolph et al., ICLR 2026](https://arxiv.org/html/2502.08938v3) | Over 7,000 runs in five large games, CFR-, fictitious-play- and double-oracle-based deep RL did no better than generic policy gradients such as PPO. | Keep PPO. |
+| [Big 2 self-play, 2026](https://arxiv.org/abs/2605.28863) | Four-player hidden-card game: PPO beat value-based methods, and moderate entropy helped. | Same setting as ours. |
+| [GAE falls short in imperfect-information self-play, 2026](https://arxiv.org/pdf/2605.19235) | Title only; the search returned its references. | Read if PPO stalls. Compare Monte Carlo returns, which suit a final-result reward. |
+| [Ataraxos, Nature, Sept 2026](https://the-decoder.com/ai-beats-strategos-greatest-player-ending-one-of-the-last-human-strongholds-in-board-games/) | Beat Stratego's top player 15–1 with 4 draws. One week on 16 H100s, reportedly about 1/500th of DeepNash's compute. | Large hidden-information games no longer need large budgets. |
+| [Diplodocus, ICLR 2023](https://arxiv.org/pdf/2210.05492) | Rewards optimised under a piKL penalty toward an imitation policy. In a tournament against 62 humans it placed first and third. | The same idea as t157's fading KL penalty. It also gives difficulty levels: closer to the teacher plays more predictably. |
+| [Pokémon, RLJ 2025](https://rlj.cs.umass.edu/2025/papers/RLJ_RLC_2025_340.pdf) | Imitation, then offline RL, then self-play fine-tuning beat a heuristic search engine and an LLM agent. | The same path as t155. |
+| [Entity RL for cyber defence, 2024](https://arxiv.org/pdf/2410.17647); [multi-agent pointer transformer, 2025](https://arxiv.org/abs/2511.17435) | Entity tokens, a transformer, and pointer heads for very large action spaces. | Our strategist's shape. |
+| [SAGA (Freeciv), 2026](https://arxiv.org/html/2606.29932v1); [CivBench, 2026](https://arxiv.org/pdf/2609.02459) | Mostly LLM agents using tools; [CivRealm](https://arxiv.org/pdf/2401.10568)'s RL baseline trained about 2 million steps. | Self-play-trained networks for 4X games remain little explored. |
+
 ### Engine throughput (measured 2026-10-10, t025)
 
 Machine: AMD Ryzen 9 7950X3D, 16 cores and 32 threads, 61 GiB RAM, Linux

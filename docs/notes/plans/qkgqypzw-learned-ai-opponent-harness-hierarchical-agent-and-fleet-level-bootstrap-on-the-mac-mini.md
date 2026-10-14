@@ -441,6 +441,107 @@ network over the executor, with a value head.
 **Exit:** it wins at least 60% of seeded, seat-rotated 4-player games against
 the tuned executor and Aggressor.
 
+**Progress (2026-10-14, in progress):** the owner chose goals as the
+strategist's actions, and two builds per world per year for escorts.
+
+- **Scripted seats in the batch.** A lineup gives each seat a kind:
+  - learned (the whole turn);
+  - strategist (goals carried out by the executor);
+  - scripted: executor, baseline, Aggressor or Autopilot.
+
+  A batch of scripted seats plays exactly the games `play_match` plays.
+- **Goals** (`nc-ai/src/goals.rs`): tax, diplomacy, build posture, a strike
+  world (or hold) and a colony world (or auto).
+  - The executor's turn is now `execute_goals(plan_goals(..))`. Its
+    executed goals reproduce its turn by construction, so `plan_goals`
+    gives exact imitation labels.
+  - The refactor left 96 recorded `play_match` results unchanged.
+  - Goal masks read only the seat's memory. A test scrambles other
+    empires' records and checks the masks are unchanged.
+- **Commission order.** Strategist seats commission at the start of the
+  year, scripted executors at their own turn. Fleet record order differs as
+  a result, and maintenance follows it. The effect is negligible: the
+  executor's own goals, played as a strategist against three executors,
+  win 0.258 against an even 0.25. Against three baselines they win 0.730
+  (t154 measured 0.717).
+- **Training** (`tools/ai`):
+  - `policy.py`: an entity transformer, 3 layers of width 128, with pointer
+    heads for strike and colonize.
+  - `imitate.py`: online DAgger, 40 rounds of 128 games, about 9 minutes.
+    Final accuracy: tax and posture 1.00, diplomacy 0.93, strike 0.87,
+    colonize 0.92. Greedy, the student wins 0.230 against three executors.
+  - `ppo.py` and `evaluate.py`: PPO and evaluation.
+- **MPS shape cache.** MPS compiles a graph for every input shape. Varying
+  batch shapes filled 28 GB and crashed the first imitation run. Padding
+  batches to multiples of 128 seats and 16 rows holds memory at about
+  6 GiB.
+- **PPO from the imitation checkpoint** (200 iterations of 128 games, about
+  20 s each). Win share of one learner seat against three tuned executors,
+  on 256 held-out maps:
+
+  | Iteration | 10 | 40 | 70 | 90 | 110 | 130 | 140 | 150 |
+  | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | Win share | 0.230 | 0.383 | 0.514 | 0.535 | 0.533 | 0.578 | 0.559 | 0.525 |
+
+  - Against three Aggressors it won every game.
+  - It plateaued between 0.50 and 0.58, just short of the exit.
+  - Iteration 160 read 0.611 on 256 maps. On 1,024 maps its snapshot won
+    0.533 (halves 0.555 and 0.512) against the executor, and 1.000 against
+    Aggressor. Single 256-map readings swing by about ±0.05, so the exit
+    must be judged on 1,024 maps.
+  - The run ended at iteration 200 (readings 0.578, 0.516, 0.543 at
+    180–200). On 1,024 maps the final checkpoint won 0.568 against three
+    executors (0.546 on a second sampled run), and 1.000 against Aggressor.
+    That is more than twice an even seat, short of the 0.60 exit.
+  - The checkpoints and log are kept in
+    `~/.local/state/nostrian-conquest/ai/` on the mini, as the baseline for
+    the land-grab executor.
+  - Policy entropy rose after shaping ended (0.97 to 1.29), so the entropy
+    bonus should be lower.
+- **Land-grab executor.** The owner, the manuals and VBAM all say expansion
+  and intelligence come first. The executor now:
+  - builds ETACs with same-year escort destroyers, then scouts, before
+    garrisons;
+  - sends colony fleets at ROE 0;
+  - uses lone destroyers as pickets.
+
+  The doctrine and its sources are in
+  [v6jegy7f](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md).
+- **Two builds per world per year** (`BUILD_SLOTS`). The action arrays
+  gained a slot axis. t152's 1,000-game random test still passes:
+  - 30,000 game-years, 262,838 builds and 1,191,938 fleet orders;
+  - no rejected submission;
+  - 282 second colonizers dropped.
+- **Re-tuned weights.** `tune_executor` ran as in t154: 40 generations
+  of 32, about 7 minutes on the mini. The champion changed 36 times.
+  `Weights::TUNED`, on held-out maps 100000–100255:
+
+  | One seat vs three | Win rate | Production share |
+  | --- | ---: | ---: |
+  | Tuned vs baseline | 0.697 | 0.357 |
+  | Baseline vs tuned | 0.008 | 0.097 |
+  | Tuned vs Aggressor | 1.000 | 0.929 |
+  | Tuned vs Autopilot | 1.000 | 0.920 |
+
+  The new weights tax 61%, keep about 5 ETACs and 2.6 scouts, build a
+  home starbase, keep 5 batteries, strike at 2.9 times a target's defence
+  with ROE 10, and declare war at year 3. The old and new doctrines cannot
+  meet in one game, because the old build order is gone. The retrained
+  strategist is the comparison. Its executor's own goals win 0.250 against
+  three new executors on 1,024 maps.
+- **Remaining work toward the exit.** Judge every result on 1,024 maps.
+  In order:
+  1. Finish the land-grab retrain: imitation, then PPO with entropy 0.001.
+  2. If it stays below 0.60, try one change at a time:
+     - longer PPO from the best checkpoint;
+     - Monte Carlo returns in place of GAE, which suit a final-result
+       reward;
+     - a small KL penalty toward the imitation policy;
+     - two learner seats in more games.
+  3. Executor improvements come from the
+     [doctrine follow-up plan](kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md)
+     (t159–t164). Retrain the strategist on the final executor.
+
 ### t156
 
 Build the league and evaluation.

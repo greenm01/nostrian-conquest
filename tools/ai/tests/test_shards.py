@@ -33,7 +33,8 @@ class ShardRoundTrip(unittest.TestCase):
                 actions = random_actions(env, masks, rng)
                 step = env.step(actions)
                 writer.add(experience_batch(
-                    map_seeds, campaign_seeds, done, obs, masks, actions, step))
+                    map_seeds, campaign_seeds, env.learned, done, obs, masks,
+                    actions, step))
                 seen_fleets += int(obs["fleets_valid"][~done].sum())
                 seen_planets += int(obs["planets_valid"][~done].sum())
                 done = step["done"].copy()
@@ -47,13 +48,16 @@ class ShardRoundTrip(unittest.TestCase):
         self.assertEqual(n_fleets.sum(), seen_fleets)
         self.assertEqual(n_planets.sum(), seen_planets)
 
-        def check(choice, mask, count, width):
-            for chosen, allowed in zip(rows(table, choice, count, 1),
+        def check(choice, mask, count, width, slots=1):
+            for chosen, allowed in zip(rows(table, choice, count, slots),
                                        rows(table, mask, count, width)):
-                self.assertTrue(allowed[np.arange(len(chosen)), chosen[:, 0]].all(),
-                                f"{choice} outside {mask}")
+                for slot in range(slots):
+                    self.assertTrue(
+                        allowed[np.arange(len(chosen)), chosen[:, slot]].all(),
+                        f"{choice} outside {mask}")
 
-        check("build", "mask_build", n_planets, nc_ai_env.BUILD_CHOICES)
+        check("build", "mask_build", n_planets, nc_ai_env.BUILD_CHOICES,
+              nc_ai_env.BUILD_SLOTS)
         check("mission", "mask_mission", n_fleets, nc_ai_env.MISSION_CHOICES)
         check("roe", "mask_roe", n_fleets, nc_ai_env.ROE_CHOICES)
         # One target-mask row per fleet, as wide as the map.
@@ -70,6 +74,28 @@ class ShardRoundTrip(unittest.TestCase):
         years = np.array([row[0] for row in table.column("global").to_pylist()])
         self.assertEqual(sorted(set(years)), list(range(int(years.min()),
                                                          int(years.min()) + 6)))
+
+    def test_only_learned_seats_are_stored(self):
+        rng = np.random.default_rng(5)
+        map_seeds = np.array([44, 45], dtype=np.uint64)
+        env = nc_ai_env.Env(PLAYERS, 4, 2)
+        lineup = ["learned", "executor", "aggressor", "learned"]
+        env.reset(map_seeds.tolist(), seats=[lineup, lineup])
+        done = np.zeros(len(map_seeds), bool)
+        with tempfile.TemporaryDirectory() as out:
+            writer = ShardWriter(out)
+            while not done.all():
+                obs, masks = env.observe(), env.masks()
+                actions = random_actions(env, masks, rng)
+                step = env.step(actions)
+                writer.add(experience_batch(
+                    map_seeds, map_seeds, env.learned, done, obs, masks,
+                    actions, step))
+                done = step["done"].copy()
+            writer.close()
+            table = read_shards(out)
+        self.assertEqual(table.num_rows, 4 * len(map_seeds) * 2)
+        self.assertEqual(set(table.column("seat").to_pylist()), {0, 3})
 
 
 if __name__ == "__main__":
