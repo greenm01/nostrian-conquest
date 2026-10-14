@@ -64,6 +64,40 @@ of switches beside `Weights`, one per behaviour that t160–t164 add.
   those recorded before the change, as the goals refactor checked.
 - A test shows a switch changes play.
 
+**Result (2026-10-14):**
+
+- **The design.** `Doctrine` lives inside `Weights` as a set of switches.
+  Tuning ignores it: `from_array` sets `Doctrine::CURRENT`. So every
+  executor seat, scripted or strategist, carries one with no new
+  parameters.
+- **The first switch, `land_grab`.** Off, it restores t154's build order
+  (one build a year, garrison first), the warship ROE for colony fleets,
+  and no pickets. `Weights::CLASSIC` is t154's tuned weights with the
+  switch off.
+- **Fidelity.**
+  - With the switch off, all 96 `play_match` results recorded before the
+    goals refactor replay exactly.
+  - With it on, 48 results match the previous commit exactly.
+  - `the_classic_doctrine_replays_t154_exactly` keeps two of the recorded
+    results, and `the_land_grab_switch_changes_play` shows the switch
+    matters.
+- **The land-grab doctrine against the classic one.**
+  `executor_matches --weights tuned --opponent classic`, 1,024 maps from
+  100000, 60 years:
+
+  | One seat vs three | Win rate | Production share |
+  | --- | ---: | ---: |
+  | Land-grab vs classic | 0.282 | 0.260 |
+  | Classic vs land-grab | 0.250 | 0.247 |
+
+  The land-grab doctrine is ahead, but only just. It meets the 0.28 bar by
+  about two standard errors, and the classic seat holds even in reverse.
+  Each set of weights was tuned against copies of itself. The tuned
+  land-grab weights also declare war at year 3, so early ETACs compete
+  with early strikes for the same budget. The doctrine is kept. Remove the
+  switch and `Weights::CLASSIC` once t160–t164 no longer need the
+  comparison.
+
 ### t160
 
 Choose strike targets by value over estimated defence.

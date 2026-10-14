@@ -56,28 +56,22 @@ Done on 2026-10-14, all in the `nc-ai` crate unless noted:
 
 Each task's result section in the plan holds its evidence.
 
-**In progress, t155** (uncommitted on `main` as of this handoff):
+- t155: the strategist, closed at its plateau by the owner's decision. It
+  wins 0.539 against three land-grab executors on 1,024 maps.
+  Checkpoint: `~/.local/state/nostrian-conquest/ai/strategist-t155.pt`.
+- t159: `Doctrine` switches. The land-grab executor beats t154's in one
+  game, 0.282 against 0.250.
 
-- Done:
-  - scripted and strategist seats in the batch;
-  - the executor driven by goals;
-  - two builds per world per year;
-  - the land-grab executor, re-tuned;
-  - imitation, PPO and evaluation scripts in `tools/ai`.
-- The first PPO run won 0.568 against three tuned executors on 1,024
-  maps. The exit is 0.60.
-- A retrain on the land-grab executor is under way, writing to
-  `/tmp/nc-ai/landgrab/`. Checkpoints are copied to
-  `~/.local/state/nostrian-conquest/ai/`.
-- The t155 progress section in the plan holds the evidence and the
-  remaining steps.
+**Next:** t160–t164, the executor doctrine tasks, each measured head to
+head through a switch. Then t156, t157, t158, and t165 (real games, behind
+the owner's readiness gate) and t166. Plans:
+[doctrine follow-ups](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md),
+[AI opponent](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md).
 
-**Next after t155:** the executor doctrine tasks t159–t164, in the
-[doctrine follow-up plan](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md).
-Their sources are in
-[v6jegy7f](../notes/investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md).
-On the mini, `zk` and `todo.sh` come from Homebrew;
-`~/src/todo.txt-cli/todo.sh` links to the Homebrew copy.
+- Run one PPO experiment at a time on the mini: two at once swapped it
+  heavily.
+- `zk` and `todo.sh` come from Homebrew; `~/src/todo.txt-cli/todo.sh`
+  links to the Homebrew copy.
 
 **Where the work runs:**
 - Training runs on the Mac mini (M4 Pro, 12 cores, 16-core GPU, 24 GB),

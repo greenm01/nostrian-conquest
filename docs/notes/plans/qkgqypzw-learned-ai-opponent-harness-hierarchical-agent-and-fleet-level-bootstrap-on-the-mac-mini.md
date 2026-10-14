@@ -441,7 +441,21 @@ network over the executor, with a value head.
 **Exit:** it wins at least 60% of seeded, seat-rotated 4-player games against
 the tuned executor and Aggressor.
 
-**Progress (2026-10-14, in progress):** the owner chose goals as the
+**Result (2026-10-14): closed at the plateau, by the owner's decision.**
+
+- The strategist reached about twice an even seat against its own
+  executor, short of 0.60. Its best checkpoint (run B, iteration 140) wins
+  0.539 against three land-grab executors on 1,024 held-out maps, and
+  1.000 against Aggressor. It is kept on the mini as
+  `~/.local/state/nostrian-conquest/ai/strategist-t155.pt`.
+- Choosing only goals, it is limited by the executor that carries them
+  out. Longer PPO and Monte Carlo returns did not move it.
+- The owner approved moving on: first the executor doctrine tasks
+  (t159–t164), then t157's fleet-level agent. Only the fleet-level agent
+  goes into real games, so the 0.60 bar now belongs to the t165 readiness
+  gate.
+
+**Progress log:** the owner chose goals as the
 strategist's actions, and two builds per world per year for escorts.
 
 - **Scripted seats in the batch.** A lineup gives each seat a kind:
@@ -548,8 +562,24 @@ strategist's actions, and two builds per world per year for escorts.
   the old one, still short of 0.60. Checkpoints are kept in
   `~/.local/state/nostrian-conquest/ai/landgrab/` on the mini.
 
-  Two continuations from iteration 180 are running side by side. A keeps
-  the settings; B uses Monte Carlo returns (λ = 1, γ = 1).
+- **Continuations from iteration 180.** Both started with shaping off and
+  entropy 0.001.
+  - **A** kept the settings. It sat near 0.51 and was stopped at
+    iteration 47: two PPO runs at once pushed the mini into heavy swap,
+    using 13.6 GB of 14 GB, with each process waiting on memory.
+  - **B** used Monte Carlo returns (λ = 1, γ = 1). It held the plateau,
+    and its entropy rose to 1.6–1.8.
+
+  On 1,024 maps against three land-grab executors:
+
+  | Checkpoint | Win share | Production share |
+  | --- | ---: | ---: |
+  | B, iteration 80 | 0.503 | 0.346 |
+  | B, iteration 140 | 0.539 | 0.350 |
+  | B, iteration 200 | 0.532 | 0.354 |
+  | A, iteration 40 | 0.497 | 0.343 |
+
+  Run PPO experiments one at a time on the mini.
 - **Remaining work toward the exit.** Judge every result on 1,024 maps.
   In order:
   1. Finish the land-grab retrain: imitation, then PPO with entropy 0.001.

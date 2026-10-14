@@ -3,9 +3,13 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai --example executor_matches -- \
-//!     [--weights baseline|tuned] [--opponent aggressor|autopilot|baseline|tuned] \
+//!     [--weights baseline|tuned|classic] \
+//!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
 //!     [--games 64] [--years 60] [--first-map 0]
 //! ```
+//!
+//! `classic` is t154's tuned executor with its original build order, kept
+//! to measure the land-grab doctrine against (t159).
 //!
 //! Games run on every core. A win is the declared winner or, without one,
 //! the most production at the end (a tie shares the win).
@@ -26,6 +30,7 @@ fn main() {
     let weights = match arg("--weights").as_deref() {
         None | Some("tuned") => Weights::TUNED,
         Some("baseline") => Weights::BASELINE,
+        Some("classic") => Weights::CLASSIC,
         Some(other) => panic!("unknown weights {other}"),
     };
     let opponent = match arg("--opponent").as_deref() {
@@ -33,6 +38,7 @@ fn main() {
         Some("autopilot") => SeatPolicy::Autopilot,
         Some("baseline") => SeatPolicy::Executor(Weights::BASELINE),
         Some("tuned") => SeatPolicy::Executor(Weights::TUNED),
+        Some("classic") => SeatPolicy::Executor(Weights::CLASSIC),
         Some(other) => panic!("unknown opponent {other}"),
     };
     let games: u64 = arg("--games").map_or(64, |n| n.parse().expect("--games"));

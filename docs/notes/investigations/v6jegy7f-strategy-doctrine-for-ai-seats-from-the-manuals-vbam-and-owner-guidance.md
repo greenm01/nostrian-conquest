@@ -177,6 +177,13 @@ itself.
 
 ## Validation and remaining work
 
+- **The land-grab doctrine against t154's**, in one game through t159's
+  switch, on 1,024 maps: one land-grab seat against three classic seats
+  wins 0.282, and one classic seat against three land-grab seats wins
+  0.250. That is a small but real edge. The doctrine also makes a tougher
+  opponent for the learned strategist: the first strategist fell from
+  0.568 to 0.489 against it.
+
 - The `nc-ai` tests pass with the new executor.
 - **Next:** re-tune the weights by evolution, and check that the land-grab
   executor beats the old tuned one head to head. Then retrain imitation and

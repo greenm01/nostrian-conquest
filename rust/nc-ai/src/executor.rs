@@ -67,6 +67,24 @@ pub struct Weights {
     pub roe: f32,
     /// Years from the start before every other empire is declared an enemy.
     pub war_year: f32,
+    /// Behaviour switches under trial; not tuned.
+    pub doctrine: Doctrine,
+}
+
+/// Executor behaviours under trial, switched so that a changed executor can
+/// play its predecessor in one game (t159). A switch is removed once its
+/// change is accepted or rejected.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Doctrine {
+    /// The land-grab build order: up to two builds a year, ETACs with escorts
+    /// and scouts before garrisons; colony fleets at ROE 0; destroyer
+    /// pickets. Off, t154's order: one build a year, garrison first.
+    pub land_grab: bool,
+}
+
+impl Doctrine {
+    /// The accepted behaviours.
+    pub const CURRENT: Doctrine = Doctrine { land_grab: true };
 }
 
 impl Weights {
@@ -88,6 +106,7 @@ impl Weights {
         attack_ratio: 1.5,
         roe: 8.0,
         war_year: 5.0,
+        doctrine: Doctrine::CURRENT,
     };
 
     /// Weights tuned by evolution against the executor itself, with the
@@ -107,6 +126,27 @@ impl Weights {
         attack_ratio: 2.93,
         roe: 9.9,
         war_year: 3.0,
+        doctrine: Doctrine::CURRENT,
+    };
+
+    /// t154's tuned weights with t154's build order, kept to measure the
+    /// land-grab doctrine against.
+    pub const CLASSIC: Weights = Weights {
+        tax: 64.4,
+        home_armies: 15.7,
+        colony_armies: 9.9,
+        batteries: 9.0,
+        etacs: 6.4,
+        scouts: 0.9,
+        starbases: 0.0,
+        transports: 15.8,
+        battleship: 0.92,
+        cruiser: 0.98,
+        destroyer: 0.43,
+        attack_ratio: 3.44,
+        roe: 4.2,
+        war_year: 10.5,
+        doctrine: Doctrine { land_grab: false },
     };
 
     /// The lowest and highest value of each weight, in field order.
@@ -165,6 +205,7 @@ impl Weights {
             attack_ratio: v[11],
             roe: v[12],
             war_year: v[13],
+            doctrine: Doctrine::CURRENT,
         }
     }
 }
@@ -369,6 +410,9 @@ fn choose_builds(
     memory: &SeatMemory,
     weights: &Weights,
 ) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
+    if !weights.doctrine.land_grab {
+        return classic_builds(game_data, record, allowed, is_home, stock, memory, weights);
+    }
     let planet = &game_data.planets[record - 1];
     let short = |have: u32, want: f32| (want.round() as u32).saturating_sub(have);
     let garrison = [
@@ -465,6 +509,78 @@ fn choose_builds(
         order(kind, u32::MAX, &mut points);
     }
     (builds, amounts)
+}
+
+/// t154's builds: the first unmet need of armies, batteries, then at home
+/// ETACs, scouts, starbases and transports, in one slot; with every need
+/// met, the preferred hull with the whole budget.
+#[allow(clippy::too_many_arguments)]
+fn classic_builds(
+    game_data: &CoreGameData,
+    record: usize,
+    allowed: &[bool],
+    is_home: bool,
+    stock: &Stock,
+    memory: &SeatMemory,
+    weights: &Weights,
+) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
+    let planet = &game_data.planets[record - 1];
+    let short = |have: u32, want: f32| (want.round() as u32).saturating_sub(have);
+    let army_target = if is_home {
+        weights.home_armies
+    } else {
+        weights.colony_armies
+    };
+    let mut needs = vec![
+        (
+            ProductionItemKind::Army,
+            short(planet.armies.into(), army_target),
+        ),
+        (
+            ProductionItemKind::GroundBattery,
+            short(planet.ground_batteries.into(), weights.batteries),
+        ),
+    ];
+    if is_home {
+        if land_grab(memory) {
+            needs.push((ProductionItemKind::Etac, short(stock.etacs, weights.etacs)));
+        }
+        needs.push((
+            ProductionItemKind::Scout,
+            short(stock.scouts, weights.scouts),
+        ));
+        needs.push((
+            ProductionItemKind::Starbase,
+            short(
+                planet.stardock.starbases + home_starbases(game_data, planet),
+                weights.starbases,
+            ),
+        ));
+        needs.push((
+            ProductionItemKind::Transport,
+            short(stock.transports, weights.transports),
+        ));
+    }
+    let points = game_data.planet_build_points_left(record).unwrap_or(0);
+    let one = |choice: usize, amount: usize| ([choice, 0], [amount, 0]);
+    for (kind, units) in needs {
+        let choice = build_choice(kind);
+        if units > 0 && allowed[choice] {
+            let cost = kind.build_cost().unwrap_or(1).max(1);
+            return one(choice, amount_for(points, cost, units));
+        }
+    }
+    [
+        (ProductionItemKind::Battleship, weights.battleship),
+        (ProductionItemKind::Cruiser, weights.cruiser),
+        (ProductionItemKind::Destroyer, weights.destroyer),
+    ]
+    .iter()
+    .filter(|(kind, weight)| *weight > 0.0 && allowed[build_choice(*kind)])
+    .max_by(|a, b| a.1.total_cmp(&b.1))
+    .map_or(one(0, 0), |(kind, _)| {
+        one(build_choice(*kind), BUILD_AMOUNT_CHOICES - 1)
+    })
 }
 
 /// One build need, most urgent first.
@@ -572,7 +688,14 @@ fn plan_fleets(
 
             if fleet.ships.etacs > 0 {
                 // A colony fleet's job is to arrive, not to fight.
-                let calm = |choice: FleetChoice| FleetChoice { roe: 0, ..choice };
+                let land_grab_doctrine = weights.doctrine.land_grab;
+                let calm = |choice: FleetChoice| {
+                    if land_grab_doctrine {
+                        FleetChoice { roe: 0, ..choice }
+                    } else {
+                        choice
+                    }
+                };
                 if fleet.order == Order::ColonizeWorld {
                     return calm(keep);
                 }
@@ -599,7 +722,7 @@ fn plan_fleets(
             }
 
             let scout = !has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0;
-            if scout || (grabbing && picket(fleet)) {
+            if scout || (weights.doctrine.land_grab && grabbing && picket(fleet)) {
                 if matches!(fleet.order, Order::ScoutSolarSystem | Order::ViewWorld)
                     && fleet.sector != fleet.target
                 {

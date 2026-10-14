@@ -32,7 +32,7 @@ pub use batch::{
     BatchActions, BatchEnv, BatchGoalMasks, BatchGoals, BatchMasks, BatchObservation, GoalArrays,
     Seat, StepResult, Table, Tensor,
 };
-pub use executor::{Weights, execute_goals, plan_goals, plan_turn};
+pub use executor::{Doctrine, Weights, execute_goals, plan_goals, plan_turn};
 pub use game::SeatedGame;
 pub use goals::{GoalMasks, Goals, POSTURES, goal_masks, posture_weights};
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};

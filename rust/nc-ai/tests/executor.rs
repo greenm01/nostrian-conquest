@@ -1,11 +1,13 @@
 //! The scripted executor (t154) reads only its own seat, never needs an
-//! order dropped, and beats the autopilot and aggressor policies.
+//! order dropped, and beats the autopilot and aggressor policies. Its
+//! doctrine switches (t159) replay the old behaviour exactly.
 
 mod common;
 
 use common::{scramble_others, seated_game};
 use nc_ai::{
-    SeatPolicy, Weights, commission_submission, decode_action, plan_turn, play_match, seat_masks,
+    Doctrine, MatchResult, SeatPolicy, Weights, commission_submission, decode_action, plan_turn,
+    play_match, seat_masks,
 };
 
 const PLAYERS: u8 = 4;
@@ -72,4 +74,45 @@ fn the_executor_beats_the_autopilot() {
 #[test]
 fn the_executor_beats_the_aggressor() {
     assert!(win_rate(SeatPolicy::Aggressor) >= 0.5);
+}
+
+/// Results recorded with t154's executor before the land-grab doctrine:
+/// one tuned seat against three baseline seats, and two tuned seats beside
+/// an Aggressor and an Autopilot seat, on two held-out maps over 60 years.
+#[test]
+fn the_classic_doctrine_replays_t154_exactly() {
+    let classic = Doctrine { land_grab: false };
+    let tuned = SeatPolicy::Executor(Weights::CLASSIC);
+    let baseline = SeatPolicy::Executor(Weights {
+        doctrine: classic,
+        ..Weights::BASELINE
+    });
+    let mixed = [tuned, SeatPolicy::Aggressor, tuned, SeatPolicy::Autopilot];
+    let recorded = |production: [u32; 4], worlds: [u32; 4]| MatchResult {
+        years: 60,
+        winner: None,
+        production: production.to_vec(),
+        worlds: worlds.to_vec(),
+    };
+    assert_eq!(
+        play_match(100000, &[tuned, baseline, baseline, baseline], 60),
+        recorded([466, 253, 239, 307], [7, 4, 4, 5])
+    );
+    assert_eq!(
+        play_match(100001, &mixed, 60),
+        recorded([669, 0, 644, 34], [8, 0, 11, 1])
+    );
+}
+
+#[test]
+fn the_land_grab_switch_changes_play() {
+    let classic = Weights {
+        doctrine: Doctrine { land_grab: false },
+        ..Weights::TUNED
+    };
+    let lineup = |weights| [SeatPolicy::Executor(weights); 4];
+    assert_ne!(
+        play_match(100000, &lineup(Weights::TUNED), 40),
+        play_match(100000, &lineup(classic), 40)
+    );
 }
