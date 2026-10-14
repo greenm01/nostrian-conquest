@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 13),
+  date: datetime(year: 2026, month: 10, day: 14),
 )
 
 #set page(
@@ -70,11 +70,11 @@
   #v(1em)
   #text(size: 10pt, style: "italic")[A Rust recreation inspired by the classic 1990s BBS door game Esterian Conquest.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Find games on Discord. Play in your browser, on a BBS, or locally.]
+  #text(size: 10pt, fill: luma(120))[Play in your browser at play.nostrian-conquest.com, on a BBS, or locally.]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 13, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 14, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
 ]
@@ -130,11 +130,15 @@ In homage to the 1990s door-game pioneers and to the ancient dreamers, strategis
 
 == Choose How to Play
 
-*Discord and browser play* is the recommended way to join a community game.
-Find a game in Discord, claim an empire, and open the game in your browser.
-No game client needs to be installed. The browser terminal uses *xterm.js* to
-preserve the old-school BBS feel: ANSI colors, text menus, and keyboard commands
-in an 80×25 screen.
+*Browser play* is the recommended way to join a community game. Open the
+#link("https://play.nostrian-conquest.com")[game list] at
+`play.nostrian-conquest.com`, sign in with Discord, Nostr or Matrix, claim an
+empire, and play in your browser. No game client needs to be installed. The
+browser terminal uses *xterm.js* to preserve the old-school BBS feel: ANSI
+colors, text menus, and keyboard commands in an 80×25 screen.
+
+The home page, #link("https://nostrian-conquest.com")[`nostrian-conquest.com`],
+links to the game list, the manuals, screenshots and downloads.
 
 *Traditional BBS play* remains available. Connect to a bulletin board with a
 terminal client and launch NC from its doors menu. The sysop runs `nc-door`
@@ -147,58 +151,78 @@ Use it for solo play, hotseat testing, or trusted local sessions. See the
 
 #admonition("NOTE", [
   Decentralized play through *Nostr GameServer* is on the roadmap. It is not
-  available for players to join yet. Use Discord and browser play, a BBS, or a
-  local game today.
+  available for players to join yet. Use browser play, a BBS, or a local game
+  today.
 ])
 
-== Find a Game on Discord
+== Find Other Players
 
-Join the #link("https://discord.gg/eZMRpdQTu")[Nostrian Conquest Discord server]
-and read the pinned start-here post. Use `/games` to find games and their IDs.
-For an invite-only game, ask its host for a private code.
+Players gather in two places. Hosts announce new games there and hand out
+invite codes, and players trade news and strategy.
 
-1. Use `/join` with the game ID. If the game needs an invite, enter your code
-   too: `/join game:beta-1 code:YOURCODE`. Replace the example game ID and code
-   with the ones your host gave you.
-2. Use `/play` with that game ID. Open the link and sign in with the *same
-   Discord account* you used to claim your seat.
-3. Name your empire and issue your orders. Return through `/play` or the
-   #link("https://play.nostrian-conquest.com")[browser game list].
+- *Discord:* the
+  #link("https://discord.gg/eZMRpdQTu")[Nostrian Conquest Discord server]. Read
+  the pinned start-here post. The game bot runs here too.
+- *Matrix:* the
+  #link("https://matrix.to/#/#nostrian:matrix.org")[`#nostrian:matrix.org`]
+  space, the same community for players who don't use Discord.
+
+Whichever place you join, you can sign in to play with Discord, Nostr or
+Matrix. Ask a game's host for an invite code if the game needs one.
+
+== Find a Game in Your Browser
+
+1. Open the game list at `play.nostrian-conquest.com`.
+2. Sign in with Discord, Nostr or Matrix. The sections below explain each.
+3. Find a recruiting game. If it asks for an invite code, enter your code on
+   its card and choose *Join*.
+4. Choose *Play*, name your empire, and issue your orders.
+
+To return, open the game list, sign in the same way, and choose *Play*.
 
 Each invite code claims one seat. Keep it private. You only need it once;
-your Discord account owns the seat afterward. Your player handle comes from
-your public profile name when you claim the seat and stays fixed for that game;
-ask the host to change it. Your empire name is a separate name you choose.
+your Discord account, Nostr key or Matrix account owns the seat afterward.
+Players using any of the three share the same games. Your player handle comes
+from your public profile name when you claim the seat and stays fixed for that
+game; ask the host to change it. Your empire name is a separate name you
+choose.
 
-On hosts offering *Sign in with Nostr*, you can instead use a NIP-07 browser
-extension such as nos2x. Approve the login, enter your invite code on the game
-card, and choose *Play*. Return using the same Nostr key. Your player handle
-comes from your Nostr profile name, or `anon` plus a number if you have none.
-This option is separate from relay-based Nostr GameServer play.
+*Discord.* Choose *Sign in with Discord* and approve access. Your Discord
+display name becomes your player handle.
 
-On hosts offering *Sign in with Matrix*, choose it and sign in to your
-matrix.org account if asked. The game learns only your Matrix ID, not your
-messages or rooms. Your Matrix display name becomes your player handle. If your
-account is on another Matrix server, choose *Matrix account not on matrix.org?*
-instead and enter your Matrix ID, such as `@you:example.org`. The host's bot
-invites you to a private room and sends a sign-in link and a code that work
-once and expire after ten minutes. Return using the same Matrix account.
+*Nostr.* Install a NIP-07 browser extension such as nos2x and set up your key
+in it. Choose *Sign in with Nostr* and approve the request in the extension.
+Your private key stays in the extension. Your player handle comes from your
+Nostr profile name, or `anon` plus a number if you have none. This sign-in is
+separate from relay-based Nostr GameServer play.
 
-Discord, Nostr and Matrix players share the same games. Invite codes are
-single-use across all sign-in methods.
+*Matrix.* Choose *Sign in with Matrix* and sign in to your matrix.org account
+if asked. The game learns only your Matrix ID, not your messages or rooms. Your
+Matrix display name becomes your player handle. If your account is on another
+Matrix server, choose *Matrix account not on matrix.org?* instead and enter
+your Matrix ID, such as `@you:example.org`. The host's bot invites you to a
+private room and sends a sign-in link and a code that work once and expire
+after ten minutes.
 
 A recruiting game waits for its host to start it. Players can join and prepare
 orders while they wait. Filling all seats or opening *Play* does not start the
-game. The host sets the turn schedule; `/status` shows the next deadline once
-scheduled. You do not need to stay online when maintenance runs.
+game. The host sets the turn schedule. You do not need to stay online when
+maintenance runs.
 
 #pagebreak()
 
-== Useful Discord Commands
+== Play Through the Discord Bot
 
-Give the game ID when a command asks for one. Bot replies and empire downloads
-are private to you.
+Discord players can also join and play with the bot's slash commands. Give the
+game ID when a command asks for one. Bot replies and empire downloads are
+private to you.
 
+- `/games` — List games and their IDs.
+- `/join` — Claim a seat: `/join game:beta-1 code:YOURCODE`. Replace the
+  example game ID and code with the ones your host gave you. Leave out the code
+  if the game needs none.
+- `/play` — Get a link to the game. Sign in with the *same Discord account* you
+  used to claim your seat.
 - `/status` — Check the game year and next turn.
 - `/map` — Download your known map as a ZIP with text, CSV, ODS, and Excel files.
 - `/report` — Download your empire's reports. You can also read them in the game
@@ -213,7 +237,7 @@ Keep a printed map or spreadsheet beside your terminal to track your plans.
 For a BBS campaign, connect to the board normally and launch NC from its doors
 menu. Your sysop may reserve a seat for your BBS alias or leave seats open in
 the game's first-time join menu. A reserved alias takes you to its assigned
-empire. Discord invite codes are for community browser games, not BBS logins.
+empire. Invite codes are for community browser games, not BBS logins.
 
 For localhost play, your sysop tells you which machine and player slot to use.
 The normal direct launch is:

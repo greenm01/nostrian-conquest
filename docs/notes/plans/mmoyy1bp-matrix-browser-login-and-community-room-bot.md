@@ -11,7 +11,9 @@ tags: [plan, milestone]
 The owner approved Matrix as a third browser sign-in provider beside Discord
 and Nostr. A new `nc-matrix` process runs a dedicated bot account on
 matrix.org, as `nc-discord` runs the Discord bot. The community room is
-`#nostrian-conquest:matrix.org`; the owner's account is
+`#nostrian-play:matrix.org`, the *play* room in the space
+`#nostrian:matrix.org` (moved from `#nostrian-conquest:matrix.org` on
+2026-10-14; the bot's display name is `ncbot`). The owner's account is
 `@niltempus:matrix.org`. The bot must use its own account, never the owner's.
 The owner registers it; its credential lives only in the server env file.
 

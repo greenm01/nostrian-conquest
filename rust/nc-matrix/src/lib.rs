@@ -17,7 +17,7 @@ pub struct Config {
     /// Client-server API base URL, such as `https://matrix-client.matrix.org`.
     pub homeserver: String,
     pub access_token: String,
-    /// Community room alias or ID, such as `#nostrian-conquest:matrix.org`.
+    /// Community room alias or ID, such as `#nostrian-play:matrix.org`.
     pub room: String,
     pub games_root: PathBuf,
     /// Public games page origin, used in sign-in links.

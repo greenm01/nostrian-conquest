@@ -230,9 +230,11 @@ uses matrix.org's compatibility API and gives a token that does not expire;
 tokens copied from Element expire. Log the bot out of Element afterward if
 desired; that does not end this token's session. Set the homeserver to the
 client API base URL (`https://matrix-client.matrix.org` for matrix.org) and
-the room to the community room alias. The bot joins that room at start.
-The site links to the community space `#nostrian:matrix.org`, and the contact
-page lists the operator's Matrix ID.
+the room to the community room alias. The bot joins that room at start. Our
+bot joins `#nostrian-play:matrix.org`, the *play* room inside the community
+space `#nostrian:matrix.org`. Give the bot account a game name, such as
+`ncbot`, never an operator's real name. The site links to the space, and the
+contact page lists the operator's Matrix ID.
 
 ## Services and browser behavior
 
