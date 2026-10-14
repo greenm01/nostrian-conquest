@@ -721,6 +721,50 @@ The work:
 - **In real games:** a sysop chooses each AI seat's personality, beside its
   difficulty (t165). Seats can mix styles so a game has variety.
 
+**Lessons from EC4X.** The owner's earlier game `~/dev/ec4x` had 12 rule-based
+AI personalities. Its rule-based AI was deleted in December 2025, but its
+records survive in `docs/archive/`:
+
+- **Twelve traits.** Each personality was a vector of six traits from 0
+  to 1, e.g. aggression and expansion (`2025-12-04-ai-docs/PERSONALITIES.md`).
+  Traits shifted budgets set by the game's act, and gated behaviours by
+  thresholds (`2025-12-10/ai/ARCHITECTURE.md`).
+- **Only four were ever tested:** 292 twelve-player games
+  (`2025-12-10/ai/budget/12-strategy-balance-report.md`).
+  - Turtle and Economic competed (16.7% and 16.1% wins, against 8.3% by
+    chance); Aggressive (0.6%) and Balanced (0%) failed.
+  - The other eight, and the matchups the doc described, were never
+    measured.
+- **The Balanced bug.** Balanced built no ground batteries in 75% of games
+  despite a large treasury. No trait reached the defence budget
+  (`2025-12-10/ai/analysis/CRITICAL_BALANCED_STRATEGY_BUG.md`).
+- **Threshold cliffs.** An aggression ≥ 0.5 gate blocked most
+  personalities from invading at all.
+- **Scouts.** Winners built far fewer scouts, as NC's tuning found.
+
+**What follows for NC:**
+
+- **A personality is a named profile:** `Weights` and `Doctrine`
+  overrides, authored as typed KDL. There is no separate trait layer, the
+  indirection where EC4X's Balanced bug hid. Every profile must set every
+  weight; no knob may be left untouched.
+- **No midpoint "balanced" profile.** Each profile is a distinct plan.
+- **First profiles.**
+  - Land grab (default).
+  - Rusher: early war, few ETACs, strikes below a target's estimated
+    defence (attack ratio about 0.6).
+  - Turtle and economic as later candidates, since only they competed in
+    EC4X.
+- **No thresholds.** Prefer smooth, capped differences to switches that
+  turn a doctrine off for a whole profile.
+- **Tune within a profile.** Its identity weights stay fixed or bounded,
+  so a land-grab seat cannot drift into the rush.
+- **The strategist decides when to fight; the personality biases how.**
+  This follows EC4X's later move from traits to its planner.
+- **Measure every pairing with seats rotated** before claiming a matchup,
+  and lock win-rate bands into regression tests. Ship only profiles that
+  have been measured.
+
 **Exit:**
 
 - Each personality plays recognisably: its build mix, war timing and
