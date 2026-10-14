@@ -328,8 +328,8 @@ Destroyers, cruisers, battleships, scouts, transports, ETACs, and starbases
 enter the planet's stardock.
 - The player must commission them before use.
 - Uncommissioned units can be destroyed by bombardment.
-- If stardock is full, the build remains in queue. Rust avoids the classic
-  stardock corruption bug.
+- No stardock limit blocks a build: each kind's count saturates at 65,535, as
+  in classic, and Rust avoids the classic stardock corruption bug.
 
 ### Armies and Batteries (Planet Surface)
 Armies and ground batteries go directly to the planet surface. They do not
