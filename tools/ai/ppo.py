@@ -175,7 +175,7 @@ def main():
     parser.add_argument("--years", type=int, default=60)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--epochs", type=int, default=3)
-    parser.add_argument("--minibatch", type=int, default=1024)
+    parser.add_argument("--minibatch", type=int, default=512)
     parser.add_argument("--clip", type=float, default=0.2)
     parser.add_argument("--value-coef", type=float, default=0.5)
     parser.add_argument("--entropy-coef", type=float, default=0.003)
