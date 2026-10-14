@@ -189,6 +189,9 @@ reward, an evaluation metric, and a strength meter for AI seats.
 
 ## Connections
 
+The [learned AI opponent plan](../plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md)
+(t150–t158) carries this direction forward on the Mac mini.
+
 The fuzzer's policies and choice source are in the
 [fuzzer plan](../plans/lski78er-engine-fuzzer-with-shared-policies-and-invariants.md).
 LLM play rules are in [llm-player-guide.md](../../dev/llm-player-guide.md) and
