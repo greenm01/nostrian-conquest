@@ -41,6 +41,29 @@ Exit for each: manual builds, revision date current, statements checked against
 the appendices and code, PDF read; then an independent Codex review of the
 whole revision before publishing.
 
+## Result
+
+Published on 2026-10-13. Chapter 3 is "Your First Turns"; chapter 9 is a
+practical strategy chapter; chapter 7 keeps arrival rules and points to chapter
+6; spec passages in chapters 4, 5 and 7 moved to Appendices A, B and D, with
+Appendix D renamed Interface Reference. Disputed facts were checked against the
+code first (menus and keys, mission names, default ROE 6, unarmed guards,
+sighting factors, invasion odds, victory, rogue empires, debt, stardock and
+army/battery limits); the stale stardock-full claim was also removed from
+economics.md.
+
+An independent Codex review (astra) found six must-fix points: tax penalty
+versus long-run revenue, surprise needing a prior sighting, split-fire
+universals, ROE 10 and the Diplomacy exceptions, the lost blitz escort fact,
+and an overreaching stardock statement. All were fixed, along with its smaller
+items (first-visit transitions, menu keys, guard-merge and truncation warnings,
+mission names in the shared positioning table). A re-check found three
+remaining corrections (appendix damage targeting and execution costs, the
+colonizer-meets-guard exception, the tax timing phrase), which were applied;
+astra then had no remaining objection. The Player Manual (51 pages) and the
+Quick Start (5 pages, redated because it shares the positioning table) were
+rebuilt and published.
+
 ## Connections
 
 - [Combat chapter plan](ndk3brdh-player-manual-combat-chapter-for-players-with-rules-in-an-appendix.md)

@@ -444,7 +444,7 @@ Below 65%, growth is always positive --- lower is faster. Above 65%, a penalty k
 
 The tax rate is a choice between today and tomorrow. Your empire starts at
 50%. Keep it there, or lower, while your colonies grow, and raise it toward 65%
-as they near their Potential: held steady, 65% gives a mature world its highest revenue over the years. A higher rate raises cash for a year or two and costs production after. A
+as they near their Potential: held steady, 65% gives a mature world its highest revenue over the years. A higher rate can raise cash briefly, but starts reducing Production at the next maintenance. A
 starbase's growth bonus is full at 50% or below and gone at 65%, so the worlds
 with bases gain most from a modest rate.
 See @appendix-economy for the exact penalty and yearly update formulas.
@@ -816,7 +816,7 @@ them; fleets on any other mission are left alone. @autopilot gives the details.
 *Diplomacy (E)* sets each rival empire to Neutral or Enemy, and the choice
 decides where your fleets fight. Your fleets attack an Enemy's fleets wherever
 they meet them, as far as their ROE allows. A Neutral's fleets are left alone
-unless they enter one of your solar systems, come to attack or colonize a world you blockade, race your fleet to colonize the same unowned world, or guard a world your fleet has come to strike. His declaration
+unless they enter one of your solar systems, come to attack or colonize a world you blockade, race your fleet to colonize the same unowned world, or guard a world your fleet has come to attack or colonize. His declaration
 against you changes nothing about how your fleets behave. There are no allies:
 no other empire ever joins your battles, and a battle never changes anyone's
 diplomacy.
@@ -1023,8 +1023,7 @@ the build capacity and the defense. Build the base where you mean to keep it:
 it crawls one sector a year.
 
 *Raise taxes as worlds mature.* A world near its Potential has little growth
-left to lose. Move the rate toward 65% as most of your worlds get there; a
-held steady, 65% gives a mature world its best revenue over the years. Tax higher only in an emergency: you get cash now and smaller worlds later. One rate
+left to lose. Move the rate toward 65% as most of your worlds get there: held steady, 65% gives a mature world its best revenue over the years. Tax higher only in an emergency: you get cash now and smaller worlds later. One rate
 covers every world, so time the change for the empire as a whole.
 
 *Scout before you invade.* Never attack a world blind. Scout a Solar System
@@ -1275,7 +1274,7 @@ then applied. This keeps battle outcomes clear, severe, and consistent.
 
 Each round, both sides fire at the same instant, and nobody fires first. Each side rolls one ten-sided die, and the roll decides how much of its total *Attack Strength (AS)* lands on the enemy: a quarter on 0--2, half on 3--5, and all of it on 6--9. A bigger fleet wins by bringing more AS, not by rolling on a better table. Rounds repeat until one side is destroyed or breaks off.
 
-Damage reduces ships from "Nominal" to "Crippled" status before destroying them. Under suppression fire, all nominal ships must be crippled before any crippled ship is destroyed; execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Hits always target the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected as long as any combat-line ships remain, which means your non-combat vessels survive as long as your warships hold the line.
+Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed. Under suppression fire, all nominal ships in the current target group (the combat line first, auxiliaries afterward) must be crippled before any crippled ship in it is destroyed; execution fire and critical hits destroy ships directly (see Tactical Roles and Split Fire). A crippled ship fights at half strength and keeps its speed. Recovery is automatic at the end of the second maintenance turn after the damage turn, with no order, payment, or shipyard. It fights crippled during those two turns and is whole for the next. A fleet that rests in orbit of your world beside your starbase for a whole turn gets its older cripples back one turn sooner. The bonus does not apply to fresh damage or to fleets merely sharing the sector. The fleet screens show how many ships of each kind are crippled (see @ship-notation). Ordinary fleet fire targets the combat line first --- destroyers, cruisers, battleships, and starbases. Scouts, transports, and ETACs are protected from it as long as any combat-line ships remain, so your non-combat vessels survive as long as your warships hold the line, except against a critical hit.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
@@ -1421,7 +1420,7 @@ fleet takes to climb out of orbit.
 Combat is more than just a numbers game. Different ship classes perform specific tactical roles based on how they deliver fire. Hits generated by a task force are split into two pools:
 
 - *Suppression Fire (Cruisers and Battleships):* These heavy vessels provide volume and suppression. Their hits are dispersed across the enemy fleet, reducing nominal ships to a *crippled* state. This effectively knocks enemy guns offline and wins the immediate field, but it does not always result in permanent kills.
-- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying the full 2x DS cost to blow ships up one by one.
+- *Execution Fire (Destroyers and Starbases):* These units use *focus fire* to eliminate specific targets. Their hits bypass the crippled state and allocate directly to the *destroyed* pool, paying 2x DS for a healthy ship and 1x DS for a crippled one to blow ships up one by one.
 
 This creates a deadly pair. Heavy ships soften the line. Destroyers and
 starbases finish it. Each pool carries its own leftover hits: suppression hits
@@ -1757,8 +1756,7 @@ Planetary return fire is:
 ]
 
 Planetary return fire from batteries uses the *focus fire* rule. Hits bypass
-the crippled state and allocate directly to the destroyed pool by paying the
-full `2x DS` cost per ship.
+the crippled state and allocate directly to the destroyed pool, paying `2x DS` for a healthy ship and `1x DS` for a crippled one.
 
 Orbital hits on a world pay each target's DS on the same 10x scale:
 

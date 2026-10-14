@@ -178,7 +178,7 @@ way. Deep space and the system can have the same map coordinates.
 
 == Reaching a Starbase for Recovery
 
-Suppose your world and starbase are at `[21,21]`. *Move to Sector* gets a fleet
+Suppose your world and starbase are at `[21,21]`. *Move Fleet* gets a fleet
 to deep space at `[21,21]`; switching to Hold leaves it there, without the bonus.
 For a damaged fleet with warships, choose *Guard Starbase* (4) and select that
 base. Let the fleet reach it inside the system. Then keep both fleet and base
