@@ -33,6 +33,35 @@ All 90 TSV hashes match committed provenance. Experimental price worktrees
 and their cargo pools were removed after verifying their source backup.
 Do not restart the old `run_matrix.sh`: it deletes its output directory.
 
+## Current work: learned AI opponent (Mac mini)
+
+The owner approved the [AI opponent plan](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md)
+(t150–t158, `+parallel +ai`). Background and measurements are in
+[lenngda1](../notes/investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md).
+Done on 2026-10-14, all in the `nc-ai` crate unless noted:
+
+- t150: seedable, clonable games in nc-harness, with throughput measured on
+  the mini.
+- t151: fog-correct seat memory and observations.
+- t152: masked seat actions that decode straight to `TurnSubmission`.
+- t154: the scripted executor, with weights tuned by evolution against
+  itself.
+
+Each task's result section in the plan holds its evidence.
+
+**Next is t153:** a PyO3 crate built with maturin, Parquet shards, and a
+`tools/ai/` uv project with MLX or PyTorch MPS. These are the repo's first
+Python dependencies; keep them out of the default workspace build. Measure
+the per-seat cost of `seat_masks` there: random masked play cost 1.9 ms per
+4-seat game-year.
+
+**Where the work runs:**
+- Training runs on the Mac mini (M4 Pro, 12 cores, 16-core GPU, 24 GB),
+  repo `~/dev/nostrian-conquest`, Rust 1.95 stable.
+- bean-void (`ssh bean-void`) is spare CPU.
+- Crunch hosts another project's latency measurements, and AI work never
+  runs there.
+
 ## Current work: Discord community hosting
 
 **Owner launch hold:** Beta 1 must stay recruiting while the owner finds players.
@@ -126,6 +155,10 @@ one-click OAuth for matrix.org accounts, requesting only `openid`; the bot code
 form remains for other homeservers. Details and evidence are in the
 [Matrix plan](../notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md);
 Matrix room announcements are later task t141.
+
+On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
+inside the `#nostrian:matrix.org` space, and its display name became
+`ncbot`.
 
 ## Release context
 
