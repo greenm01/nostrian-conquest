@@ -358,8 +358,34 @@ Measure the two changes separately: they are separate switches.
   t154's 0.508, and t154's wins 0.051 in reverse.
 - Rejected: front-row scouting, blockades, contested-colony avoidance and
   scaled garrisons.
-- Still to do: retrain the strategist on the final executor and evaluate
-  it on 1,024 maps.
+- **The strategist retrained on the final executor.**
+  - The executor's own goals win 0.250 against three final executors on
+    1,024 maps.
+  - Imitation (40 rounds) ended at strike 0.78, colonize 0.94 and
+    diplomacy 0.95. Greedy, the student won 0.215.
+  - PPO with entropy 0.001 crashed at about iteration 230. MPS ran out of
+    memory, with 25 GiB of live tensors: late-game seats pad to long
+    contact lists. The fix: minibatches of 512, and the MPS cache released
+    after each update. A continuation from iteration 220 ran 200 more
+    iterations.
+  - On 1,024 maps against three final executors, sampled:
+
+    | Checkpoint | Win share | Production share |
+    | --- | ---: | ---: |
+    | Iteration 60 | 0.371 | |
+    | Iteration 100 | 0.436 | |
+    | Iteration 140 | 0.419 | |
+    | Iteration 180 | 0.472 | |
+    | Iteration 220 | 0.511 | |
+    | Continuation 80 (300 overall) | 0.496 | 0.388 |
+    | Continuation 140 | 0.481 | 0.383 |
+    | Continuation 200 (420 overall) | 0.504 | 0.389 |
+
+    Greedy play matched sampled play (0.499 at 220).
+  - The strategist levels off at about 0.50, twice an even seat, against
+    an executor that itself beats t154's 0.508. The final checkpoint wins
+    1.000 against Aggressor, with 0.996 of production. It is kept on the
+    mini as `~/.local/state/nostrian-conquest/ai/strategist-final.pt`.
 
 ## Connections
 

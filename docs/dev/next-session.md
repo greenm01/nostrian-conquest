@@ -62,9 +62,18 @@ Each task's result section in the plan holds its evidence.
 - t159: `Doctrine` switches. The land-grab executor beats t154's in one
   game, 0.282 against 0.250.
 
-**Next:** t160–t164, the executor doctrine tasks, each measured head to
-head through a switch. Then t156, t157, t158, and t165 (real games, behind
-the owner's readiness gate) and t166. Plans:
+- t160–t164: the executor doctrine tasks.
+  - Kept: striking where weakest, and bombarding then invading.
+  - Rejected: front-row scouting, blockades, contested colonies, scaled
+    garrisons.
+  - The executor now beats t154's 0.508.
+  - The strategist retrained on it levels off at about 0.50 against
+    three executors. Checkpoint:
+    `~/.local/state/nostrian-conquest/ai/strategist-final.pt`.
+
+**Next:** t156 (league and ratings), then t157, t158, t165 (real games,
+behind the owner's readiness gate), t167 (personalities: land grab default,
+rusher) and t166. Plans:
 [doctrine follow-ups](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md),
 [AI opponent](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md).
 

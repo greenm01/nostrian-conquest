@@ -160,6 +160,9 @@ def update(model, optimizer, steps, advs, args, dev):
             with torch.no_grad():
                 kl = (old_logp[idx].to(dev) - logp).mean().item()
             stats.append((policy_loss.item(), value_loss.item(), entropy.item(), kl))
+    # Late-game batches pad to long contact lists; hand the cached memory back.
+    if dev.type == "mps":
+        torch.mps.empty_cache()
     return np.mean(stats, axis=0), n
 
 
