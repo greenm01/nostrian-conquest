@@ -686,6 +686,49 @@ task's work:
 human seat. Every AI submission is accepted, and the AI's view of its
 world matches the in-memory view on the same seeds.
 
+### t167
+
+Give AI seats personalities.
+
+The owner (2026-10-14) wants the land grab as the default AI style, with
+other styles as personalities, starting with a rusher. Twice, tuning the
+executor against itself found a rush that beats the land-grab weights
+between executors:
+
+- **Rush 1** (t162 tuning, with front scouting): beats the land-grab
+  weights 0.266 and 0.295 with the switch off.
+
+  | Tax | Home armies | Colony armies | Batteries | ETACs | Scouts | Starbases | Transports | BB | CA | DD | Attack ratio | ROE | War year |
+  | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | 65.0 | 19.1 | 4.7 | 7.3 | 1.04 | 0 | 0 | 15.8 | 0.27 | 1.0 | 0.10 | 0.61 | 6.1 | 1.13 |
+
+- **Rush 2** (t164 tuning, with scaled garrisons): beats them 0.326 and
+  0.309 with the switch off.
+
+  | Tax | Home armies | Colony armies | Batteries | ETACs | Scouts | Starbases | Transports | BB | CA | DD | Attack ratio | ROE | War year |
+  | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+  | 59.8 | 19.6 | 7.5 | 6.8 | 2.97 | 0.06 | 0.14 | 16.0 | 0.21 | 0.84 | 0.81 | 0.67 | 5.7 | 1.88 |
+
+The work:
+
+- **Named executor styles:** land grab (the default, `Weights::TUNED`),
+  rusher, and others found by tuning within bounds (for example a turtle).
+  Each is tuned within its own bounds, so a style stays recognisable
+  instead of drifting to whatever beats its own kind.
+- **Learned seats keep the style.** A strategist drives an executor of
+  that style, and is trained or fine-tuned with it, so the network does
+  not undo the personality.
+- **In real games:** a sysop chooses each AI seat's personality, beside its
+  difficulty (t165). Seats can mix styles so a game has variety.
+
+**Exit:**
+
+- Each personality plays recognisably: its build mix, war timing and
+  expansion rate, measured over 1,024 games.
+- Each holds its own in a mixed league (t156): it never falls far below
+  the default.
+- The owner approves the styles in playtests.
+
 ### t166
 
 Learn from real games once AI seats play people.
