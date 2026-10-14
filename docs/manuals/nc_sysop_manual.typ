@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Sysop Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 11),
+  date: datetime(year: 2026, month: 10, day: 14),
 )
 
 #set page(
@@ -63,7 +63,7 @@
   #v(2em)
   #text(size: 11pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
   #v(0.5em)
-  #text(size: 11pt, fill: luma(120))[Revision date: October 11, 2026]
+  #text(size: 11pt, fill: luma(120))[Revision date: October 14, 2026]
 ]
 
 #pagebreak()
@@ -112,6 +112,11 @@ This manual is for the *sysop* --- the man who hosts the game. It covers:
 - managing players and yearly maintenance
 
 For player-facing rules and gameplay, see the *Player Manual*.
+
+To reach the author with questions, bug reports or ideas, message this Nostr
+public key. The #link("https://play.nostrian-conquest.com/contact")[contact page] also lists Discord and Matrix.
+
+#align(center)[`npub1cecl2g9z776jvpudpqxajsrsgwuvq4vp7w26q74tx2438zy3q9vq8st7pp`]
 
 This manual is the authoritative sysop manual for the Rust edition. The
 preserved `.DOC` files in `original/v1.5/` remain historical reference

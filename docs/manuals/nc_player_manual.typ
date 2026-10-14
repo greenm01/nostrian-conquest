@@ -170,6 +170,11 @@ invite codes, and players trade news and strategy.
 Whichever place you join, you can sign in to play with Discord, Nostr or
 Matrix. Ask a game's host for an invite code if the game needs one.
 
+To reach the author with questions, bug reports or ideas, message this Nostr
+public key. The #link("https://play.nostrian-conquest.com/contact")[contact page] also lists Discord and Matrix.
+
+#align(center)[`npub1cecl2g9z776jvpudpqxajsrsgwuvq4vp7w26q74tx2438zy3q9vq8st7pp`]
+
 == Find a Game in Your Browser
 
 1. Open the game list at `play.nostrian-conquest.com`.

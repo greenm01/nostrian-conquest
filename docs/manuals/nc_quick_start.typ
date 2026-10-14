@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Quick Start Guide",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 13),
+  date: datetime(year: 2026, month: 10, day: 14),
 )
 
 #set page(
@@ -66,7 +66,7 @@
   #text(font: "IBM Plex Sans", size: 13pt, style: "italic", fill: luma(60))[Quick Start Player's Guide] \
   #v(0.2em)
   #text(font: "IBM Plex Sans", size: 9pt, fill: luma(100))[
-    Version 1.0.0-beta.3 • Revision date: October 13, 2026
+    Version 1.0.0-beta.3 • Revision date: October 14, 2026
   ]
   #v(0.8em)
   #line(length: 100%, stroke: 0.5pt + luma(180))
@@ -257,5 +257,13 @@ For the full rules and tables, read *nc_player_manual.pdf*, shipped beside this 
   #v(0.5em)
   #text(size: 9pt, fill: luma(110))[
     License text: #link("https://creativecommons.org/licenses/by-nc-sa/4.0/")
+  ]
+  #v(3em)
+  #block(width: 80%)[
+    Questions, bug reports or ideas? Message the author on Nostr, or see the
+    #link("https://play.nostrian-conquest.com/contact")[contact page] for
+    Discord and Matrix.
+    #v(0.5em)
+    `npub1cecl2g9z776jvpudpqxajsrsgwuvq4vp7w26q74tx2438zy3q9vq8st7pp`
   ]
 ]
