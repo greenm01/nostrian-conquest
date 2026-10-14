@@ -261,6 +261,35 @@ aggression. Over the same 1,024 games, record the year of each seat's first
 strike and the share of strikes delayed for intel. The median first strike
 must be no later than without the change.
 
+**Result (2026-10-14): front-row scouting rejected; the stale-intel half
+not tried.**
+
+- **The switch tried.** `front_scouting` did three things:
+  - lone destroyers picket all game, not only during the land grab;
+  - worlds within 4 sectors of a known rival world count double as
+    scouting targets;
+  - the first free scout or picket views the next strike's target when
+    its intel is more than a year old. The strike never waits.
+- **With the current weights it lost:** 0.212 and 0.237 on two blocks of
+  1,024 maps. Pickets that used to join the strike force went scouting
+  instead.
+- **Fairer test, tuned with the switch on.** The tuner found a rush:
+  - about 1 ETAC, no scouts, no starbase;
+  - war at year 1;
+  - strikes at 0.61 times a target's estimated defence.
+
+  It beat the current executor, 0.290 and 0.289, with 0.221 and 0.228 in
+  reverse. The gain was not the switch's, though. With the rush weights,
+  the switch on against off won only 0.252 and 0.233. The rush weights
+  with the switch off still beat the current executor, 0.266 and 0.295.
+- **Removed,** per the Scope rule.
+- **The rush is not adopted (owner, 2026-10-14).** The executor keeps the
+  land grab: expand and scout first. The rush is recorded as a finding.
+  The strategist sets its own war timing and strike goals, so a learned
+  seat may still find a balance between expanding and rushing.
+- **The stale-intel half was not tried.** The tuned executors build no
+  scouts, so better intel has little to work with.
+
 ### t163
 
 Blockade worlds the strike force can hold but not yet take.
