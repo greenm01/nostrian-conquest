@@ -532,12 +532,34 @@ Scouts, transports, and ETACs never fight, so a fleet of only those ships is
 always ROE 0. A fleet that Detach creates starts at ROE 6, or at 0 without
 warships; change it with ROE (*C*).
 
-*What each fleet is made of.* Cruisers and battleships cripple enemy ships;
-destroyers and starbases finish them off. A fleet that mixes at least two of
+*What each fleet is made of.* The ships you send decide what a victory is
+worth (see Cripple or Destroy below). A fleet that mixes at least two of
 destroyers, cruisers, and battleships fights better than one that does not.
 Your warships shield your scouts, transports, and ETACs for as long as any of
 them stand. A fleet holds up to 3,000 ships and moves at the speed of its
 slowest one.
+
+== Cripple or Destroy
+
+Warships deal damage in two ways, and the mix in a fleet decides what its
+victories are worth.
+
+Cruisers and battleships spread their fire across the enemy line. They cripple
+every enemy ship before they destroy any, and a crippled ship fights at half
+strength. That wins the battle in front of you, but a crippled ship that gets
+away recovers on its own two turns later. A fleet of heavy ships alone can
+win a battle and still face the same enemy fleet again.
+
+Destroyers and starbases pick out ships and destroy them outright. Each kill
+costs twice the hits of a cripple, but what they destroy stays destroyed.
+Destroyers are also your fastest and most fragile warships; on their own they
+lose to heavier fleets.
+
+Together they do what neither does alone: the heavy ships break the enemy
+line, and the destroyers turn that damage into lost ships. Lean on cruisers
+and battleships to hold a system or win a skirmish; add destroyers when you
+mean to wipe out an enemy fleet. Ground batteries fire the way destroyers do,
+which is why ships attacking a fortified world are destroyed, not crippled.
 
 == What to Expect
 
@@ -938,7 +960,11 @@ familiar. If you are new to it, this manual gives you the rules straight.
 
 #set text(size: 10pt)
 
-= Appendix A: Economy Formula Reference <appendix-economy>
+// Appendices are lettered, and references to them read "Appendix A".
+#counter(heading).update(0)
+#set heading(numbering: "A.1.", supplement: [Appendix])
+
+= Economy Formula Reference <appendix-economy>
 
 This appendix collects the exact economy formulas in one place. In every formula, `tax_rate` is the same empire-wide setting for all owned planets.
 
@@ -1088,7 +1114,7 @@ Production is unchanged, and the planet's Revenue reads 0.
 
 // ─── Appendix B. Combat Rules and Tables ───────────────────
 
-= Appendix B: Combat Rules and Tables <appendix-combat>
+= Combat Rules and Tables <appendix-combat>
 
 Battles resolve automatically during maintenance. This appendix gives the exact
 rules and tables behind them.
@@ -1626,7 +1652,7 @@ ratio at every scale; overwhelming ratios still win every time.
 
 // ─── Appendix C. Preservation and Original Sources ─────────────────────
 
-= Appendix C: Preservation and Original Sources <appendix-preservation>
+= Preservation and Original Sources <appendix-preservation>
 
 This edition preserves the game in a playable modern form. The aim is simple:
 keep the campaign rules legible, playable, and documented.
@@ -1677,7 +1703,7 @@ list-screen codes.
 
 // ─── Appendix D. Table Filtering and Sorting ───────────────────────────
 
-= Appendix D: Table Filtering and Sorting <appendix-table-ui>
+= Table Filtering and Sorting <appendix-table-ui>
 
 The main list screens all use the same command-line filter system. This lets
 you cut a long table down to the exact rows you want instead of paging

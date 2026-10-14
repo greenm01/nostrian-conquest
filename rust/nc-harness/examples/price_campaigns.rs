@@ -51,7 +51,10 @@
 //!
 //! `--opening mixed` gives the four openings to the empires of each game,
 //! rotated by seed; `--doctrine mixed` seats `value` and `cruisers` empires
-//! alternately. `tools/price-campaigns/summarize.py` makes the tables.
+//! alternately. The `destroyers` doctrine buys only destroyers, and
+//! `--doctrine-mix destroyers,value,value,value` seats the listed doctrines
+//! in turn, rotated by seed (t146). `tools/price-campaigns/summarize.py`
+//! makes the tables.
 
 use std::thread;
 
@@ -137,6 +140,8 @@ enum Doctrine {
     Fixed,
     /// Buys cruisers, or destroyers when a cruiser is not affordable.
     Cruisers,
+    /// Buys only destroyers (t146).
+    Destroyers,
 }
 
 impl Doctrine {
@@ -145,6 +150,7 @@ impl Doctrine {
             "value" => Doctrine::Value,
             "fixed" => Doctrine::Fixed,
             "cruisers" => Doctrine::Cruisers,
+            "destroyers" => Doctrine::Destroyers,
             _ => return None,
         })
     }
@@ -154,6 +160,7 @@ impl Doctrine {
             Doctrine::Value => "value",
             Doctrine::Fixed => "fixed",
             Doctrine::Cruisers => "cruisers",
+            Doctrine::Destroyers => "destroyers",
         }
     }
 }
@@ -176,6 +183,8 @@ struct Config {
     opening: Option<Opening>,
     /// `None` is the mixed doctrine: `value` and `cruisers` seated in turn.
     doctrine: Option<Doctrine>,
+    /// When set, seats take these doctrines in turn, rotated by seed (t146).
+    doctrine_mix: Vec<Doctrine>,
     goods: u32,
     threads: usize,
 }
@@ -188,6 +197,7 @@ fn parse_args() -> Config {
         years: 40,
         opening: Some(Opening::Escort),
         doctrine: Some(Doctrine::Value),
+        doctrine_mix: Vec::new(),
         goods: 50,
         threads: thread::available_parallelism().map_or(1, |n| n.get()),
     };
@@ -214,8 +224,17 @@ fn parse_args() -> Config {
                 config.doctrine = if value == "mixed" {
                     None
                 } else {
-                    Some(Doctrine::parse(value).expect("--doctrine value|fixed|cruisers|mixed"))
+                    Some(
+                        Doctrine::parse(value)
+                            .expect("--doctrine value|fixed|cruisers|destroyers|mixed"),
+                    )
                 }
+            }
+            "--doctrine-mix" => {
+                config.doctrine_mix = value
+                    .split(',')
+                    .map(|name| Doctrine::parse(name).expect("--doctrine-mix doctrine,..."))
+                    .collect()
             }
             "--goods" => config.goods = value.parse().expect("--goods"),
             "--threads" => config.threads = value.parse().expect("--threads"),
@@ -226,6 +245,15 @@ fn parse_args() -> Config {
     config
 }
 
+fn doctrine_label(config: &Config) -> String {
+    if config.doctrine_mix.is_empty() {
+        config.doctrine.map_or("mixed", Doctrine::name).to_string()
+    } else {
+        let names: Vec<_> = config.doctrine_mix.iter().map(|d| d.name()).collect();
+        format!("mix:{}", names.join(","))
+    }
+}
+
 fn opening_for(config: &Config, seed: u64, empire: u8) -> Opening {
     config.opening.unwrap_or_else(|| {
         Opening::ALL[(seed as usize + usize::from(empire) - 1) % Opening::ALL.len()]
@@ -233,6 +261,10 @@ fn opening_for(config: &Config, seed: u64, empire: u8) -> Opening {
 }
 
 fn doctrine_for(config: &Config, seed: u64, empire: u8) -> Doctrine {
+    if !config.doctrine_mix.is_empty() {
+        let mix = &config.doctrine_mix;
+        return mix[(seed as usize + usize::from(empire) - 1) % mix.len()];
+    }
     config.doctrine.unwrap_or_else(|| {
         if (seed as usize + usize::from(empire)) % 2 == 0 {
             Doctrine::Value
@@ -854,6 +886,7 @@ impl Brain {
         let mut budget = Self::budget(phase, planet_idx);
         let fixed = at_home && self.doctrine == Doctrine::Fixed;
         let no_battleships = self.doctrine == Doctrine::Cruisers;
+        let only_destroyers = self.doctrine == Doctrine::Destroyers;
         loop {
             let kind = if fixed {
                 let wanted = FIXED_CYCLE[self.fixed_pos % FIXED_CYCLE.len()];
@@ -865,6 +898,11 @@ impl Brain {
                 }
                 self.fixed_pos += 1;
                 wanted
+            } else if only_destroyers {
+                if cost(ProductionItemKind::Destroyer) > budget {
+                    break;
+                }
+                ProductionItemKind::Destroyer
             } else {
                 let Some(kind) = best_value_hull(budget, no_battleships) else {
                     break;
@@ -1446,7 +1484,7 @@ fn game_rows(
         config.goods,
         config.players,
         opening,
-        config.doctrine.map_or("mixed", Doctrine::name),
+        doctrine_label(config),
         seed
     );
     out.push_str(&format!(
@@ -1524,7 +1562,7 @@ fn main() {
         config.seeds.end,
         config.years,
         config.opening.map_or("mixed", Opening::name),
-        config.doctrine.map_or("mixed", Doctrine::name)
+        doctrine_label(&config)
     );
     println!(
         "# G\tlabel\tprices\tgoods\tplayers\topening\tdoctrine\tseed\tyears\twinner\twinner_year\teliminations\tbattles\tbattle_reports\tassaults\tassaults_resolved\thome_assaults\tassault_failures\tcaptures\tbombards\tcolonies\tfirst_battle\tfirst_capture\tlost_dd\tlost_ca\tlost_bb\tlost_sc\tlost_tt\tlost_etac"
