@@ -183,6 +183,15 @@ room still receives a code. The listing smoke covers a rejected ID and a queued
 request; desktop and 390px screenshots were inspected. The bot now syncs with a
 five-second timeout so queued requests go out promptly.
 
+Signed release `06b3e868` is live on 2026-10-14; it changes the bridge, bot,
+CLI bundle and three static files. Signature and hashes verified on the host;
+the owner ran the switch, which restarted the web service and the bot. Game
+database dumps matched the pre-switch baseline and Beta 1 stayed recruiting at
+year 3000. Live pages match source, and the live route refuses a matrix.org ID
+with the pointer to the button and rejects a malformed ID. Delivery to a real
+account on another homeserver has not been tried; the owner's only Matrix
+account is on matrix.org.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed
