@@ -178,6 +178,55 @@ Change it so that:
 **Exit:** as in Scope, plus a test that no invasion starts while the
 seat's intel shows batteries.
 
+**Result (2026-10-14): accepted in a revised form.**
+
+- **As planned, it failed badly.** "Bombard until intel shows no
+  batteries, then invade" won 0.107 and 0.112 on two blocks of 1,024 maps.
+  A probe of six 60-year games found why. In 9,426 of about 10,200
+  bombarding fleet-years at a target, the seat's intel did not know the
+  target's batteries at all, so the fleet never left. One stayed 39 years.
+  This is the delay the owner warned of under t162.
+- **Revised: bombard on arrival, invade the next year.** A force that
+  arrives while the target's batteries may stand bombards for one year.
+  The next year it invades from the target if it carries enough armies,
+  otherwise it goes home. It invades straight from home only when the
+  seat knows the batteries are gone. A strategist's hold stops these
+  invasions too.
+  - Head to head, one seat with the revised switch against three without,
+    1,024 maps each: **0.493** (from 100000) and **0.528** (from 200000).
+    Production shares were 0.342 and 0.346.
+  - This is the largest gain so far. Before, a force bombarded once and
+    went home, or invaded straight into standing batteries. The manual
+    says bombardment wears batteries down, and round 3 reaches the armies
+    once they fall.
+  - `suppress_first_invades_only_after_bombarding` checks every invasion
+    follows a year of bombardment there, or known-gone batteries.
+- **Re-tuned:** 40 generations, 30 champion changes. The weights adapt to
+  bombarding first:
+  - strike at 0.75 times a target's estimated defence (was 2.1);
+  - colony garrisons of 3.3 armies, and 6.4 batteries;
+  - war at year 12;
+  - almost no scouts. Destroyer pickets do the early looking; t162
+    revisits scouting.
+
+  Head to head on 1,024 maps, one new-weights seat wins 0.270 against
+  three of the previous weights, which win 0.171 in reverse. They became
+  `Weights::TUNED`. On 256 held-out maps:
+
+  | One seat vs three | Win rate | Production share |
+  | --- | ---: | ---: |
+  | Tuned vs baseline | 0.770 | 0.505 |
+  | Baseline vs tuned | 0.008 | 0.061 |
+  | Tuned vs Aggressor | 1.000 | 0.958 |
+  | Tuned vs Autopilot | 1.000 | 0.963 |
+  | Tuned vs classic (t154) | 0.508 | 0.372 |
+  | Classic vs tuned | 0.051 | 0.136 |
+
+- **Open question for the seat view (t151).** The bombarding empire's
+  memory rarely learns the target's battery count from its own attacks.
+  Check whether a human player's bombardment reports show remaining
+  batteries. If they do, the seat memory is missing that intel.
+
 ### t162
 
 Scout toward rivals, and weigh stale intel when striking.

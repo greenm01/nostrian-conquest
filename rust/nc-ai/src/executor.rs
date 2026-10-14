@@ -84,6 +84,11 @@ pub struct Doctrine {
     /// cheapest conquests come first (t160, accepted). Off, by value alone,
     /// as t154 did.
     pub strike_weakest: bool,
+    /// Bombard a target on arrival while its batteries may stand, then
+    /// invade from there the next year with enough armies aboard (t161).
+    /// Off, a force invades straight away whenever it carries enough armies,
+    /// and goes home after one year at the target.
+    pub suppress_first: bool,
 }
 
 impl Doctrine {
@@ -91,6 +96,7 @@ impl Doctrine {
     pub const CURRENT: Doctrine = Doctrine {
         land_grab: true,
         strike_weakest: true,
+        suppress_first: true,
     };
 }
 
@@ -119,20 +125,20 @@ impl Weights {
     /// Weights tuned by evolution against the executor itself, with the
     /// current doctrine; see the `tune_executor` example.
     pub const TUNED: Weights = Weights {
-        tax: 64.4,
-        home_armies: 15.0,
-        colony_armies: 8.8,
-        batteries: 9.4,
-        etacs: 6.3,
-        scouts: 1.0,
-        starbases: 1.6,
+        tax: 60.8,
+        home_armies: 18.2,
+        colony_armies: 3.3,
+        batteries: 6.4,
+        etacs: 5.3,
+        scouts: 0.0,
+        starbases: 0.84,
         transports: 16.0,
-        battleship: 0.0,
-        cruiser: 0.92,
-        destroyer: 0.21,
-        attack_ratio: 2.11,
-        roe: 2.9,
-        war_year: 10.0,
+        battleship: 0.05,
+        cruiser: 0.84,
+        destroyer: 0.59,
+        attack_ratio: 0.75,
+        roe: 4.3,
+        war_year: 12.4,
         doctrine: Doctrine::CURRENT,
     };
 
@@ -156,6 +162,7 @@ impl Weights {
         doctrine: Doctrine {
             land_grab: false,
             strike_weakest: false,
+            suppress_first: false,
         },
     };
 
@@ -776,6 +783,26 @@ fn plan_fleets(
             {
                 return keep;
             }
+            // A strategist's hold stops new invasions here too.
+            let hold = goals.is_some_and(|goals| goals.strike == 0);
+            if weights.doctrine.suppress_first
+                && !hold
+                && fleet.order == Order::BombardWorld
+                && fleet.sector == fleet.target
+                && has_combat_ships(fleet)
+                && let Some(idx) = world_at(game_data, fleet.sector.to_array())
+                && let Some(intel) = memory.planet_intel.get(&(idx + 1))
+                && intel
+                    .known_owner_empire_id
+                    .is_some_and(|owner| owner != 0 && owner != empire)
+            {
+                // One year of bombardment softens the target; then land.
+                if enough_troops(fleet, intel)
+                    && let Some(choice) = order(Order::InvadeWorld, idx)
+                {
+                    return choice;
+                }
+            }
             if !at_home {
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
@@ -797,7 +824,7 @@ fn plan_fleets(
                 }
             };
             if let Some(choice) =
-                target.and_then(|target| strike(memory, mask, fleet, target, keep))
+                target.and_then(|target| strike(memory, mask, fleet, weights, target, keep))
             {
                 return FleetChoice { load, ..choice };
             }
@@ -810,6 +837,20 @@ fn plan_fleets(
         })
         .collect();
     (fleets, labels)
+}
+
+/// Loaded armies enough to invade a world with its known (or assumed)
+/// garrison: twice the defenders and one more.
+fn enough_troops(fleet: &Fleet, intel: &PlanetIntelSnapshot) -> bool {
+    let armies = intel.known_armies.map_or(UNKNOWN_ARMIES, f32::from);
+    f32::from(fleet.ships.loaded_transports) >= 2.0 * armies + 1.0
+}
+
+/// The world's batteries are known to stand, or not known to be gone.
+fn batteries_standing(intel: &PlanetIntelSnapshot) -> bool {
+    intel
+        .known_ground_batteries
+        .is_none_or(|batteries| batteries > 0)
 }
 
 /// One or two lone destroyers: a picket that views worlds during the land
@@ -891,17 +932,18 @@ fn strike_target(
 }
 
 /// Strike world `target`: Invade with enough armies aboard, otherwise
-/// Bombard.
+/// Bombard. With `suppress_first`, Bombard while its batteries may stand.
 fn strike(
     memory: &SeatMemory,
     mask: &FleetMask,
     fleet: &Fleet,
+    weights: &Weights,
     target: usize,
     keep: FleetChoice,
 ) -> Option<FleetChoice> {
     let intel = &memory.planet_intel[&(target + 1)];
-    let armies = intel.known_armies.map_or(UNKNOWN_ARMIES, f32::from);
-    let invade = f32::from(fleet.ships.loaded_transports) >= 2.0 * armies + 1.0;
+    let invade = enough_troops(fleet, intel)
+        && !(weights.doctrine.suppress_first && batteries_standing(intel));
     let mission = mission_choice(if invade {
         Order::InvadeWorld
     } else {

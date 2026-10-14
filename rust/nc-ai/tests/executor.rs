@@ -84,6 +84,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
     let classic = Doctrine {
         land_grab: false,
         strike_weakest: false,
+        suppress_first: false,
     };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
@@ -139,5 +140,63 @@ fn the_strike_weakest_switch_changes_play() {
     assert!(
         changed,
         "choosing targets by defence should change some game"
+    );
+}
+
+/// With `suppress_first`, a strike force invades only a world it has spent
+/// a year bombarding (it is there, under Bombard orders), or one whose
+/// batteries the seat knows are gone.
+#[test]
+fn suppress_first_invades_only_after_bombarding() {
+    let weights = Weights {
+        doctrine: Doctrine {
+            suppress_first: true,
+            ..Doctrine::CURRENT
+        },
+        ..Weights::TUNED
+    };
+    let invade = 1 + nc_ai::MISSIONS
+        .iter()
+        .position(|order| *order == nc_data::Order::InvadeWorld)
+        .expect("Invade is offered");
+    let mut invasions = 0;
+    for map_seed in 0..4 {
+        let mut game = seated_game(PLAYERS, map_seed);
+        let start_year = game.play.built.game_data.conquest.game_year;
+        for _ in 0..60 {
+            for empire in 1..=PLAYERS {
+                if let Some(commission) = commission_submission(&game.play.built.game_data, empire)
+                {
+                    game.submit_turn(&commission).expect("commissioning");
+                }
+                let game_data = &game.play.built.game_data;
+                let memory = &game.seats[usize::from(empire) - 1];
+                let masks = seat_masks(game_data, empire);
+                let action = plan_turn(game_data, memory, &masks, &weights, start_year);
+                for choice in action.fleets.iter().filter(|c| c.mission == invade) {
+                    let fleet = &game_data.fleets[choice.record - 1];
+                    let bombarded = fleet.order == nc_data::Order::BombardWorld
+                        && fleet.sector == game_data.planets[choice.target].sector;
+                    let batteries =
+                        memory.planet_intel[&(choice.target + 1)].known_ground_batteries;
+                    assert!(
+                        bombarded || batteries == Some(0),
+                        "invasion without bombardment into batteries {batteries:?}"
+                    );
+                    invasions += 1;
+                }
+                let decoded = decode_action(game_data, empire, &action);
+                game.submit_turn(&decoded.submission)
+                    .expect("executor turn should submit");
+            }
+            game.run_maintenance().expect("maintenance should run");
+            if game.play.winner_state.winner_empire.is_some() {
+                break;
+            }
+        }
+    }
+    assert!(
+        invasions > 0,
+        "some bombarding force should go on to invade"
     );
 }

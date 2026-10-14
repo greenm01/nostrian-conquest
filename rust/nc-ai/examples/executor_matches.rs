@@ -5,7 +5,7 @@
 //! cargo run --release -p nc-ai --example executor_matches -- \
 //!     [--weights baseline|tuned|classic] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
-//!     [--with strike_weakest|strike_by_value] \
+//!     [--with strike_weakest|strike_by_value|suppress_first] \
 //!     [--games 64] [--years 60] [--first-map 0]
 //! ```
 //!
@@ -49,6 +49,7 @@ fn main() {
         match switch {
             "strike_weakest" => weights.doctrine.strike_weakest = true,
             "strike_by_value" => weights.doctrine.strike_weakest = false,
+            "suppress_first" => weights.doctrine.suppress_first = true,
             other => panic!("unknown doctrine switch {other}"),
         }
     }
