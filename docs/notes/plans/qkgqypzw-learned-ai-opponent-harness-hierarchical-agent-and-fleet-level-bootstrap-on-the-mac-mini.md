@@ -197,6 +197,44 @@ rendering and re-parsing dominate the fuzzer's planning cost.
 **Exit:** every action the mask allows is accepted by `apply_to`, and 1,000
 seeded games of random masked play submit no rejected order.
 
+**Result (2026-10-14):** `nc-ai/src/action.rs` covers this.
+
+- **`SeatAction`**, by choice index:
+  - tax in steps of 5;
+  - keep, neutral or enemy toward each empire;
+  - per world: no build or one of the nine build units, and a quarter to all
+    of the remaining budget;
+  - per fleet: keep orders or one of fourteen missions, a target world,
+    speed in quarters of maximum, and ROE 0–10.
+- **`seat_masks`** draws mission and target legality from
+  `fleet_record_supports_mission_code` and `validate_fleet_order_payload`,
+  builds from each world's remaining budget, and ROE from `is_support_only`.
+  It reads only the empire's own records and public world positions.
+- **`decode_action`** builds the `TurnSubmission` directly. Two of the
+  empire's own fleets choosing the same colony world is the one conflict a
+  static mask cannot rule out. The later fleet's new orders are dropped, and
+  `DecodedTurn` lists it.
+- **`commission_submission`** commissions every finished ship before the seat
+  chooses, so the masks see the fleets that creates.
+- **Not offered yet:**
+  - Guard a Starbase and Join, which need a base or fleet target;
+  - targets in deep space;
+  - detach, transfer, and army loading.
+
+`nc-ai/tests/action.rs` plays random masked 4-player games. The ignored
+exit test ran 1,000 games of 30 years: 30,000 game-years, 944,270 fleet
+orders and 122,941 builds, with no rejected submission. 156 second colonizers
+were dropped, and the test asserts that a drop is never anything else.
+
+`masks_reveal_nothing_about_other_empires` scrambles other empires' records,
+including who owns every world the seat does not, and checks the masks are
+unchanged. A planted leak, letting the colonize mask see a world's true
+owner, made it fail.
+
+Random play cost 1.9 ms per game-year for four seats on one bean-void
+thread. Mask cost per seat should be measured in t153 once the batch API
+exists.
+
 ### t153
 
 Expose the environment to Python on the mini.

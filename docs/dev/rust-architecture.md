@@ -225,8 +225,14 @@ foreign forces named in reports addressed to it. `observe` turns that memory
 and the empire's own records into fixed-width rows of numbers. It never reads
 another empire's records, and its tests check that by changing them.
 `SeatedGame` wraps `nc-harness`'s `ScenarioPlay` and routes each empire
-around the hazards it knows of, as campaign maintenance does. The crate owns
-no rules.
+around the hazards it knows of, as campaign maintenance does.
+
+`seat_masks` and `decode_action` give a seat its orders as factored
+choices: tax, diplomacy, a build per world, and a mission, target world,
+speed and ROE per fleet. The masks come from the game's own validators,
+chiefly `validate_fleet_order_payload`, and are tested not to change when
+other empires' records do. `decode_action` builds the `TurnSubmission`
+directly, without turn KDL. The crate owns no rules.
 
 ## Current Structural Direction
 
