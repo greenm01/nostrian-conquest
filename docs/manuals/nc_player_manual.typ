@@ -1091,7 +1091,7 @@ Production is unchanged, and the planet's Revenue reads 0.
 = Appendix B: Combat Rules and Tables <appendix-combat>
 
 Battles resolve automatically during maintenance. This appendix gives the exact
-rules and tables behind them, for players who want to plan a fight in detail.
+rules and tables behind them.
 Battle reports are short, but the fighting is not random brawling. Combat is
 simultaneous and rule-driven. Both sides fire in the same round. Losses are
 then applied. This keeps battle outcomes clear, severe, and consistent.
