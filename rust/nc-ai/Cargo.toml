@@ -1,0 +1,16 @@
+[package]
+name = "nc-ai"
+version = "1.0.0-beta.3"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+nc-data = { path = "../nc-data" }
+nc-engine = { path = "../nc-engine" }
+nc-harness = { path = "../nc-harness" }
+
+[dev-dependencies]
+nc-fuzz = { path = "../nc-fuzz" }

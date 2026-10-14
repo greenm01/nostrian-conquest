@@ -149,6 +149,39 @@ known planet, own fleet, contact and starbase, plus global values.
 **Exit:** a test plays seeded games and shows that no seat's observation
 holds a planet, fleet or value its empire has not learned.
 
+**Result (2026-10-14):** the new `nc-ai` crate holds the view.
+
+- `SeatMemory` keeps an empire's planet intel, merged each year as campaign
+  maintenance merges it.
+- It also keeps foreign forces for five years, taken from the scout,
+  encounter, battle and starbase-sighting events addressed to that empire.
+- `observe` builds five tables of fixed-width rows:
+  - a global row: year, player count, tax, totals, and the empire's own enemy
+    declarations;
+  - one row per world: position is public, and the rest comes from intel
+    with known flags and the age of the intel;
+  - own fleets;
+  - remembered contacts;
+  - own starbases.
+- Rows are unpadded; t153 pads them into batches.
+- `SeatedGame` wraps `ScenarioPlay` and passes each empire's visible hazards
+  to maintenance, through the new
+  `ScenarioPlay::run_maintenance_with_visible_hazards`.
+
+`nc-ai/tests/observation.rs` plays 4-player aggressor games on three maps for
+40 years. Every year it:
+
+- scrambles every record a seat doesn't own (other empires' worlds, fleets,
+  starbases, tax and diplomacy) and checks the observation is unchanged;
+- scrambles every report addressed to other empires and checks the seat
+  learns the same.
+
+Two planted leaks made the tests fail as they should: reading every world's
+true armies, and learning other empires' scout reports.
+
+Not yet observed: the build queue and messages. Each still needs a row
+design.
+
 ### t152
 
 Encode actions as a factored choice:

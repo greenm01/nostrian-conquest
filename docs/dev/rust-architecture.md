@@ -216,6 +216,18 @@ checks invariants after every maintenance turn, and writes failures as
 supply choices. It owns no rules: invariants reuse `nc-engine` and `nc-data`
 helpers, and a rule it needs belongs in those crates.
 
+### `nc-ai`
+
+`nc-ai` holds the training-side views of a game for learned AI seats. A
+`SeatMemory` is what one empire knows: its planet intel, merged each year by
+the same `merge_player_intel_from_runtime` campaign maintenance uses, and the
+foreign forces named in reports addressed to it. `observe` turns that memory
+and the empire's own records into fixed-width rows of numbers. It never reads
+another empire's records, and its tests check that by changing them.
+`SeatedGame` wraps `nc-harness`'s `ScenarioPlay` and routes each empire
+around the hazards it knows of, as campaign maintenance does. The crate owns
+no rules.
+
 ## Current Structural Direction
 
 The phase-5 destination layout is:

@@ -9,7 +9,7 @@ use nc_data::{
     MaintenanceEvents, PlayerLifecycleState, TurnSubmission, TurnSubmissionReport, WinnerState,
     default_player_lifecycle_states,
 };
-use nc_engine::run_maintenance_turn_with_context_seed_and_lifecycle;
+use nc_engine::{VisibleHazardIntel, run_maintenance_turn_with_context_seed_and_lifecycle};
 
 use crate::build::BuiltScenario;
 use crate::error::HarnessError;
@@ -52,6 +52,15 @@ impl ScenarioPlay {
     /// Run one maintenance turn. Maintenance is frozen once a winner is
     /// declared, matching campaign maintenance.
     pub fn run_maintenance(&mut self) -> Result<MaintenanceEvents, HarnessError> {
+        self.run_maintenance_with_visible_hazards(&[])
+    }
+
+    /// `run_maintenance` with each empire's known hazards, which campaign
+    /// maintenance derives from the empires' planet intel for routing.
+    pub fn run_maintenance_with_visible_hazards(
+        &mut self,
+        visible_hazards_by_empire: &[VisibleHazardIntel],
+    ) -> Result<MaintenanceEvents, HarnessError> {
         if self.winner_state.winner_empire.is_some() {
             return Err(HarnessError::Validation(
                 "campaign winner has already been declared; maintenance is frozen".to_string(),
@@ -60,7 +69,7 @@ impl ScenarioPlay {
         run_maintenance_turn_with_context_seed_and_lifecycle(
             &mut self.built.game_data,
             self.campaign_seed,
-            &[],
+            visible_hazards_by_empire,
             &[],
             &mut self.player_lifecycle_states,
             &mut self.winner_state,

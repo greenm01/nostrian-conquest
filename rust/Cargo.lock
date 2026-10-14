@@ -3418,6 +3418,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nc-ai"
+version = "1.0.0-beta.3"
+dependencies = [
+ "nc-data",
+ "nc-engine",
+ "nc-fuzz",
+ "nc-harness",
+]
+
+[[package]]
 name = "nc-bridge"
 version = "1.0.0-beta.3"
 dependencies = [
