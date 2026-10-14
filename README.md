@@ -15,23 +15,26 @@ an empire. Victory is decided by industry, cunning, and will.
 
 ## Play
 
-**[Find a game on Discord](https://discord.gg/eZMRpdQTu)** and play in your
-browser. No game client needs to be installed. The browser terminal uses
-xterm.js to keep the ANSI colors, text menus, and keyboard commands of a BBS.
+**[Play in your browser](https://play.nostrian-conquest.com).** No game client
+needs to be installed. The browser terminal uses xterm.js to keep the ANSI
+colors, text menus, and keyboard commands of a BBS.
 
-1. Read the pinned start-here post and use `/games` to find a game.
-2. Claim a seat with `/join`. For an invite-only game, get a private code from
-   its host and enter it with the command.
-3. Use `/play`, open the link, and sign in with the same Discord account.
+1. Open the [game list](https://play.nostrian-conquest.com) and sign in with
+   Discord, Nostr (a NIP-07 extension such as nos2x) or Matrix.
+2. Find a recruiting game. For an invite-only game, get a private code from its
+   host and enter it on the game card.
+3. Choose *Play*. Return later by signing in the same way.
 
-Already joined? **[Open your game](https://play.nostrian-conquest.com).**
-New here? Read [How to play](https://play.nostrian-conquest.com/howto), or
-[contact the sysop](https://play.nostrian-conquest.com/contact) for an invite.
+Players using any of the three share the same games. A code works once across
+all sign-in methods.
 
-**[Sign in with Nostr](https://play.nostrian-conquest.com)** using a NIP-07
-extension such as nos2x, or choose Discord on the same page. Enter the host's
-invite code on the game card and play alongside Discord players. A code works
-once across both login methods; return with the same account or key.
+Meet other players, find new games and ask for invite codes in the
+[Discord server](https://discord.gg/eZMRpdQTu) or the
+[`#nostrian:matrix.org`](https://matrix.to/#/#nostrian:matrix.org) Matrix
+space. Discord players can also join and play with the bot's `/games`, `/join`
+and `/play` commands. New here? Read
+[How to play](https://play.nostrian-conquest.com/howto), or
+[contact the sysop](https://play.nostrian-conquest.com/contact).
 
 
 Each turn represents a year. Maintenance resolves everyone's orders on the
@@ -56,7 +59,7 @@ your browser. Their [sources and PDFs](docs/manuals/) are also in this repositor
 
 ## Host a game
 
-For **Discord and browser games**, use the
+For **browser games**, use the
 [community hosting guide](docs/dev/community-hosting.md). The Python
 [`nc-admin` CLI](tools/nc-admin/README.md) manages games, seats, invite codes,
 schedules, and backups over SSH. No dashboard is required. Hosts choose when
