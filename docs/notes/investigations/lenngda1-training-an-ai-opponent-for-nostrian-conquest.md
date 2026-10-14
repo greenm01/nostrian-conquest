@@ -130,6 +130,53 @@ about 9k games an hour per thread, so inference and the Python crossing set
 the budget, not maintenance. Even 25-player games cost about 8 ms of
 maintenance per 100 turns once setup is reused.
 
+### Self-play throughput on the Mac mini (measured 2026-10-14, t150)
+
+Machine: Apple M4 Pro Mac mini, 8 performance and 4 efficiency cores, 24 GB,
+macOS 27.0.1, rustc 1.95.0 stable, release profile. The desktop was idle apart
+from system services; the load average was 4.6 when the run began. Command,
+from `rust/`:
+
+```bash
+cargo run --release -p nc-fuzz --example selfplay_throughput
+```
+
+Every seat plays the fuzzer's aggressor policy, planning through turn KDL as
+in t025. Eight start states per player count are built once; each game clones
+one and sets its own campaign seed through `ScenarioPlay::with_campaign_seed`.
+"Built" games build their own map instead. Each thread plays eight 100-turn
+games, so small rows carry noise.
+
+| Config | Games | Turns/game | Turns/s | Games/h |
+| --- | ---: | ---: | ---: | ---: |
+| 2p 18x18, built, 1 thread | 8 | 67.6 | 3,619 | 193k |
+| 2p 18x18, cloned, 1 thread | 8 | 67.6 | 4,456 | 237k |
+| 2p 18x18, cloned, 2 threads | 16 | 66.0 | 8,315 | 454k |
+| 2p 18x18, cloned, 4 threads | 32 | 71.1 | 13,719 | 694k |
+| 2p 18x18, cloned, 8 threads | 64 | 69.6 | 26,055 | 1.35M |
+| 2p 18x18, cloned, 12 threads | 96 | 70.8 | 29,411 | 1.50M |
+| 4p 18x18, built, 1 thread | 8 | 100.0 | 1,677 | 60k |
+| 4p 18x18, cloned, 1 thread | 8 | 100.0 | 2,049 | 74k |
+| 4p 18x18, cloned, 2 threads | 16 | 100.0 | 3,886 | 140k |
+| 4p 18x18, cloned, 4 threads | 32 | 99.3 | 7,200 | 261k |
+| 4p 18x18, cloned, 8 threads | 64 | 99.3 | 13,142 | 476k |
+| 4p 18x18, cloned, 12 threads | 96 | 99.5 | 15,605 | 565k |
+
+What the numbers show:
+
+- **Cloning a start state saves about a fifth** of a small game's cost: 23%
+  more 2-player and 22% more 4-player games an hour on one thread.
+- **The performance cores scale nearly linearly.** Eight threads run 5.8 to
+  6.4 times one thread. The four efficiency cores add another 13 to 19%.
+- **The mini nearly matches the 7950X3D** on 4-player games: 565k an hour on
+  12 threads against 1.09M on 16 threads there (t025, the policy mix rather
+  than all aggressors).
+- **Campaign seeds matter.** On one map with the same choices, eight campaign
+  seeds gave eight distinct end states for both player counts.
+- **KDL planning still dominates.** As in t025, direct `TurnSubmission`
+  building (t152) is the next large saving, and a neural policy's inference
+  will set the real budget.
+
 ## Finding and resolution
 
 Not started; this is a design direction, not a result.

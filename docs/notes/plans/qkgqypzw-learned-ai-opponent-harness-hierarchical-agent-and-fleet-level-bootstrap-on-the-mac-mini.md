@@ -119,8 +119,17 @@ Make the game environment seedable and cheap to restart.
 - Benchmark on the Mac mini: games per hour and turns per second for 2- and
   4-player 18×18 maps, with Aggressor seats.
 
-**Exit:** the benchmark is recorded here, and the same map with different
+**Exit:** the benchmark is recorded, and the same map with different
 maintenance seeds gives different outcomes.
+
+**Result (2026-10-14):** `ScenarioPlay::with_campaign_seed` sets the seed for
+every maintenance turn; the default stays zero. The `selfplay_throughput`
+example clones prebuilt start states and runs games on parallel threads.
+`nc-fuzz/tests/campaign_seed.rs` shows one seed replays exactly and different
+seeds end games differently. On the mini, 12 threads play about 1.5 million
+2-player or 565 thousand 4-player 100-turn aggressor games an hour. The full
+table is in
+[Training an AI opponent](../investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md#self-play-throughput-on-the-mac-mini-measured-2026-10-14-t150).
 
 ### t151
 

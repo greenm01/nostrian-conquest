@@ -2,7 +2,8 @@
 //!
 //! Turns are submitted through the real turn-submission path, then one
 //! maintenance turn runs with player lifecycle and winner state carried
-//! across turns, as campaign maintenance does.
+//! across turns, as campaign maintenance does. The campaign seed drives
+//! combat rolls and rogue orders; it defaults to zero.
 
 use nc_data::{
     MaintenanceEvents, PlayerLifecycleState, TurnSubmission, TurnSubmissionReport, WinnerState,
@@ -18,6 +19,7 @@ pub struct ScenarioPlay {
     pub built: BuiltScenario,
     pub player_lifecycle_states: Vec<PlayerLifecycleState>,
     pub winner_state: WinnerState,
+    pub campaign_seed: u64,
 }
 
 impl ScenarioPlay {
@@ -28,7 +30,14 @@ impl ScenarioPlay {
             built,
             player_lifecycle_states,
             winner_state: WinnerState::default(),
+            campaign_seed: 0,
         }
+    }
+
+    /// Use `seed` for every maintenance turn, as a campaign's runtime seed.
+    pub fn with_campaign_seed(mut self, seed: u64) -> Self {
+        self.campaign_seed = seed;
+        self
     }
 
     pub fn submit_turn(
@@ -50,7 +59,7 @@ impl ScenarioPlay {
         }
         run_maintenance_turn_with_context_seed_and_lifecycle(
             &mut self.built.game_data,
-            0,
+            self.campaign_seed,
             &[],
             &[],
             &mut self.player_lifecycle_states,

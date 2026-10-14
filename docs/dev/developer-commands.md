@@ -72,6 +72,14 @@ players:
 cargo run --release -p nc-fuzz --example maint_throughput
 ```
 
+Measure self-play throughput for AI training: aggressor seats on start states
+built once and cloned, each game with its own campaign seed, on 1 to all
+threads:
+
+```sh
+cargo run --release -p nc-fuzz --example selfplay_throughput
+```
+
 The [combat models](../../tools/combat-model/README.md) compare candidate rules
 without building Rust. The `combat_odds` example runs engine trials so model
 results can be checked against actual combat. Read the
