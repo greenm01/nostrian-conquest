@@ -10,7 +10,7 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
     dest=Path(d)
     html=(root/'rust/nc-bridge/static/community.html').read_text()
     mock='''<script>
-    let logged=false, claimed=false, connected=false, accessError=false, provider='nostr';
+    let logged=false, claimed=false, connected=false, accessError=false, provider='nostr', requested=[];
     const game={game:'one',name:'One',state:'recruiting',open:2,players:4,year:3000,schedule:{mode:'manual'},invite_required:true};
     window.fetch=async (url,opts={}) => {
         let data={},status=200;
@@ -39,6 +39,12 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             if(Object.keys(body).length!==1 || opts.method!=='POST')throw Error('bad Matrix request');
             if(['K7MPQXA2','c'.repeat(64)].includes(body.code)){logged=true;provider='matrix';}
             else {status=401;data={error:'Sign-in code is incorrect, used or expired'};}
+        }
+        else if(url==='/auth/matrix/request'){
+            const body=JSON.parse(opts.body);
+            if(Object.keys(body).length!==1)throw Error('bad Matrix request body');
+            if(body.matrix_id==='@alice:example.org')requested.push(body.matrix_id);
+            else {status=400;data={error:'Enter your full Matrix ID, such as @you:example.org'};}
         }
         else if(url==='/auth/logout')logged=false;
         else throw Error('unexpected endpoint '+url);
@@ -109,6 +115,13 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             check(matrix.hidden,'Matrix code form starts hidden');
             document.getElementById('matrix-start').onclick();
             check(!matrix.hidden,'Matrix button shows code form');
+            const sendLink=document.getElementById('matrix-send');
+            document.getElementById('matrix-id').value='alice';
+            await sendLink.onclick({currentTarget:sendLink});
+            check(requested.length===0 && document.getElementById('notice').textContent.includes('full Matrix ID'),'bad Matrix ID');
+            document.getElementById('matrix-id').value=' @alice:example.org ';
+            await sendLink.onclick({currentTarget:sendLink});
+            check(requested.join()==='@alice:example.org' && document.getElementById('notice').textContent.includes('Check Matrix') && !sendLink.disabled,'Matrix link request');
             const matrixEvent={preventDefault(){},currentTarget:matrix};
             document.getElementById('matrix-code').value='WRONG234';
             await matrix.onsubmit(matrixEvent);
@@ -123,7 +136,7 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             for(let i=0;i<40 && !document.getElementById('identity').textContent.includes('Matrix');i++)await new Promise(r=>setTimeout(r,25));
             check(logged && location.hash==='' && document.getElementById('identity').textContent.includes('Matrix'),'Matrix link sign-in');
             await logout.onclick();
-            result.textContent='PASS: signed-out, sign-in, invite claim, joined, connected, reconnect, paused, maintenance, closed, full, lookup failure, logout, Matrix code and link';
+            result.textContent='PASS: signed-out, sign-in, invite claim, joined, connected, reconnect, paused, maintenance, closed, full, lookup failure, logout, Matrix ID request, code and link';
         }catch(error){result.textContent='FAIL: '+error.message;}
     });
     </script>'''

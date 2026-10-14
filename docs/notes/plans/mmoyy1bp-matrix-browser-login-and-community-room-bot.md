@@ -150,6 +150,39 @@ then signed in and out with each of the three providers and played the same
 seat. Beta 1 stayed recruiting at year 3000 with no deadline. Other players
 keep the single identity that claimed their seat unless the operator links more.
 
+### t143
+
+The owner expected the fallback for accounts on other homeservers to ask for the
+player's Matrix ID and have the bot message them, instead of asking the player
+to find the bot or room. Approved on 2026-10-14 with these limits:
+
+- The "not on matrix.org" form takes a Matrix ID and posts it to
+  `/auth/matrix/request`. IDs on the OAuth server (matrix.org) are refused with
+  a pointer to the one-click button.
+- The bridge only queues the request in the shared store; `nc-matrix` picks it
+  up within seconds, reuses or creates its private room with that user, and
+  sends the usual ten-minute link and code.
+- At most one site request per Matrix ID per ten minutes, and at most 20 new
+  private rooms per hour from site requests. Requests left unclaimed for five
+  minutes lapse.
+- The message says someone asked to sign in as that account and to ignore it
+  otherwise. Direct messages and `!login` keep working but are no longer
+  advertised.
+
+Exit: store, route and bot regressions, including the limits; updated listing
+smoke and docs; full workspace suite; deployment and an attended request.
+
+Built on 2026-10-14. The full workspace passed **3,303 tests, zero failures,
+11 ignored**; 13 Python tests pass. Store tests cover single delivery, the
+ten-minute cooldown, lapsing after five minutes and the hourly room cap. Bridge
+tests cover queuing, the cooldown reply, malformed IDs, foreign origins, unknown
+fields and refusal of the OAuth server's accounts. Bot tests run against a
+shared mock homeserver: a queued request opens one private room whose code
+signs in, and at the cap a stranger is skipped while a player with an existing
+room still receives a code. The listing smoke covers a rejected ID and a queued
+request; desktop and 390px screenshots were inspected. The bot now syncs with a
+five-second timeout so queued requests go out promptly.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed

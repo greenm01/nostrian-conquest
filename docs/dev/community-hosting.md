@@ -181,9 +181,20 @@ the only redirect URI is `<origin>/auth/matrix/callback`. Put its client ID in
 `sudo nc-community-credentials matrix-oauth`. Without both, the button's route
 returns 404 and players use the bot.
 
-Accounts on other homeservers choose **Matrix account not on matrix.org?**,
-which opens a code form. The player messages the bot, or sends
-`!login` in the community room. The bot reads only the sender's Matrix ID, which
+Accounts on other homeservers choose **Matrix account not on matrix.org?** and
+enter their Matrix ID. `POST /auth/matrix/request` takes
+`{ "matrix_id": "..." }`, refuses IDs on the OAuth server (matrix.org) with a
+pointer to the button, and only queues the request in `.web-sessions.db`. Its
+reply never reveals whether the ID exists. `nc-matrix` checks the queue after
+each sync, at most five seconds apart, and sends the link and code. Anyone can
+type any ID, so one site request per Matrix ID is allowed per ten minutes, and
+site requests may open at most 20 new private rooms per hour; a player who
+already has a room with the bot is not counted. Requests unclaimed for five
+minutes lapse. The message says someone asked to sign in as that account and
+to ignore it otherwise.
+
+Players can also message the bot or send `!login` in the community room; the
+page no longer advertises this. The bot reads only the sender's Matrix ID, which
 stays visible in encrypted rooms, and declines every invitation. It replies in
 an unencrypted private room it creates with that user. The reply holds a link
 whose secret is in the URL fragment, and an eight-character code. The games page

@@ -180,9 +180,9 @@ On hosts offering *Sign in with Matrix*, choose it and sign in to your
 matrix.org account if asked. The game learns only your Matrix ID, not your
 messages or rooms. Your Matrix display name becomes your player handle. If your
 account is on another Matrix server, choose *Matrix account not on matrix.org?*
-instead: send any message to the host's sign-in bot, or send `!login` in its
-community room. The bot replies privately with a sign-in link and a code that
-work once and expire after ten minutes. Return using the same Matrix account.
+instead and enter your Matrix ID, such as `@you:example.org`. The host's bot
+invites you to a private room and sends a sign-in link and a code that work
+once and expire after ten minutes. Return using the same Matrix account.
 
 Discord, Nostr and Matrix players share the same games. Invite codes are
 single-use across all sign-in methods.

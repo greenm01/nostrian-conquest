@@ -1,6 +1,7 @@
 #[path = "support/nostr.rs"]
 mod support;
 use axum::http::StatusCode;
+use nc_bridge::community::router;
 use nc_data::AccountIdentity;
 use nc_data::matrix_login::{FAILURE_LIMIT, Issue, Issued, issue};
 use serde_json::json;
@@ -116,4 +117,102 @@ async fn repeated_wrong_codes_throttle_sign_in() {
     }
     let (status, _, _) = send(&app, "/auth/matrix", "POST", "", "", ORIGIN, &body(&code)).await;
     assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
+}
+
+fn request(id: &str) -> String {
+    json!({"matrix_id":id}).to_string()
+}
+
+#[tokio::test]
+async fn site_request_queues_one_message_per_matrix_id() {
+    let (root, app) = fixture();
+    let path = "/auth/matrix/request";
+    let (status, _, _) = send(
+        &app,
+        path,
+        "POST",
+        "",
+        "",
+        ORIGIN,
+        &request(" @alice:example.org "),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
+    let (status, _, _) = send(
+        &app,
+        path,
+        "POST",
+        "",
+        "",
+        ORIGIN,
+        &request("@alice:example.org"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::TOO_MANY_REQUESTS);
+    let conn = rusqlite::Connection::open(root.path().join(".web-sessions.db")).unwrap();
+    let now = chrono::Utc::now().timestamp();
+    assert_eq!(
+        nc_data::matrix_login::take_requests(&conn, now).unwrap(),
+        [AccountIdentity::Matrix("@alice:example.org".into())]
+    );
+}
+
+#[tokio::test]
+async fn site_request_rejects_bad_ids_foreign_origins_and_oauth_accounts() {
+    let (_root, app) = fixture();
+    let path = "/auth/matrix/request";
+    for bad in ["alice", "@alice", "@:example.org", ""] {
+        let (status, _, _) = send(&app, path, "POST", "", "", ORIGIN, &request(bad)).await;
+        assert_eq!(status, StatusCode::BAD_REQUEST, "{bad}");
+    }
+    let (status, _, _) = send(
+        &app,
+        path,
+        "POST",
+        "",
+        "",
+        "https://evil.example",
+        &request("@a:b.org"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::FORBIDDEN);
+    let extra = json!({"matrix_id":"@a:b.org","code":"x"}).to_string();
+    let (status, _, _) = send(&app, path, "POST", "", "", ORIGIN, &extra).await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    // With one-click sign-in configured, its own server's accounts are sent there.
+    let root = tempfile::tempdir().unwrap();
+    let mut config = config(root.path());
+    config.matrix = Some(nc_bridge::community::MatrixOAuth::matrix_org(
+        "id".into(),
+        "secret".into(),
+    ));
+    let app = router(config).unwrap();
+    let (status, body, _) = send(
+        &app,
+        path,
+        "POST",
+        "",
+        "",
+        ORIGIN,
+        &request("@alice:Matrix.org"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::BAD_REQUEST);
+    assert!(
+        body["error"]
+            .as_str()
+            .unwrap()
+            .contains("Sign in with Matrix")
+    );
+    let (status, _, _) = send(
+        &app,
+        path,
+        "POST",
+        "",
+        "",
+        ORIGIN,
+        &request("@alice:example.org"),
+    )
+    .await;
+    assert_eq!(status, StatusCode::OK);
 }

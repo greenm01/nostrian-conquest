@@ -6,7 +6,7 @@ use super::*;
 use axum::response::Redirect;
 use base64::Engine;
 use nc_data::AccountIdentity;
-use nc_data::matrix_login::{self, Redeem};
+use nc_data::matrix_login::{self, Redeem, Request};
 use rusqlite::{OptionalExtension, params};
 use sha2::{Digest, Sha256};
 
@@ -60,6 +60,64 @@ pub(super) async fn login(
         Err(_) => error(
             StatusCode::SERVICE_UNAVAILABLE,
             "Session storage unavailable",
+        ),
+    }
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RequestBody {
+    matrix_id: String,
+}
+
+/// Queues a sign-in link for `nc-matrix` to send. The reply never reveals
+/// whether the Matrix ID exists.
+pub(super) async fn request(
+    State(state): State<Arc<Community>>,
+    headers: HeaderMap,
+    body: axum::body::Bytes,
+) -> Response {
+    if let Err(response) = check_origin(&state, &headers) {
+        return response;
+    }
+    let Ok(body) = serde_json::from_slice::<RequestBody>(&body) else {
+        return error(StatusCode::BAD_REQUEST, "Invalid request");
+    };
+    let id = body.matrix_id.trim().to_owned();
+    let account = AccountIdentity::Matrix(id.clone());
+    if account.validate().is_err() {
+        return error(
+            StatusCode::BAD_REQUEST,
+            "Enter your full Matrix ID, such as @you:example.org",
+        );
+    }
+    if let Some(oauth) = &state.config.matrix {
+        let server = id
+            .split_once(':')
+            .map(|(_, server)| server)
+            .unwrap_or_default();
+        if server.eq_ignore_ascii_case(&oauth.server_name) {
+            return error(
+                StatusCode::BAD_REQUEST,
+                &format!(
+                    "For {} accounts, use Sign in with Matrix above",
+                    oauth.server_name
+                ),
+            );
+        }
+    }
+    let now = chrono::Utc::now().timestamp();
+    let result =
+        auth::connection(&state).and_then(|conn| matrix_login::request(&conn, &account, now));
+    match result {
+        Ok(Request::Queued) => Json(json!({"ok":true})).into_response(),
+        Ok(Request::TooSoon) => error(
+            StatusCode::TOO_MANY_REQUESTS,
+            "A sign-in link was sent to this Matrix ID recently. Check Matrix, or try again in ten minutes",
+        ),
+        Ok(Request::Busy) | Err(_) => error(
+            StatusCode::SERVICE_UNAVAILABLE,
+            "Matrix sign-in is busy; try again shortly",
         ),
     }
 }

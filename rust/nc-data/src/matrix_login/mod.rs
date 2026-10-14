@@ -2,7 +2,12 @@
 //! verified sender of a request; `nc-bridge` redeems either one, inside the
 //! transaction that creates the browser session. Both use the bridge's
 //! `.web-sessions.db`, and only hashes are stored.
+mod requests;
+
 use crate::{AccountIdentity, access_code};
+pub use requests::{
+    INVITE_LIMIT, REQUEST_COOLDOWN_SECS, Request, may_invite, record_invite, request, take_requests,
+};
 use rusqlite::{Connection, OptionalExtension, params};
 
 pub const LIFETIME_SECS: i64 = 600;
@@ -44,7 +49,8 @@ pub fn ensure(conn: &Connection) -> rusqlite::Result<()> {
             display_name TEXT NOT NULL,code_hash TEXT NOT NULL UNIQUE,
             link_hash TEXT NOT NULL UNIQUE,issued INTEGER NOT NULL,expires INTEGER NOT NULL);
         CREATE TABLE IF NOT EXISTS matrix_login_failures(at INTEGER NOT NULL);",
-    )
+    )?;
+    requests::ensure(conn)
 }
 
 /// Replaces any earlier code for this user. `account` must be a Matrix identity.

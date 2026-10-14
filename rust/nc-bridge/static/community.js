@@ -137,12 +137,20 @@ async function matrixSignIn(code) {
 }
 document.getElementById('matrix-start').onclick = () => {
     document.getElementById('matrix-login').hidden = false;
-    document.getElementById('matrix-code').focus();
+    document.getElementById('matrix-id').focus();
 };
 document.getElementById('matrix-login').onsubmit = async event => {
     event.preventDefault();
-    const submit = event.currentTarget.querySelector('button'); submit.disabled = true;
+    const submit = event.currentTarget.querySelector('button[type=submit]'); submit.disabled = true;
     try {await matrixSignIn(document.getElementById('matrix-code').value.trim());} catch (error) {notice.textContent = error.message;} finally {submit.disabled = false;}
+};
+document.getElementById('matrix-send').onclick = async event => {
+    const send = event.currentTarget; send.disabled = true;
+    try {
+        await request('/auth/matrix/request', 'POST', JSON.stringify({matrix_id:document.getElementById('matrix-id').value.trim()}));
+        notice.textContent = 'Check Matrix. Accept the invitation from Nostrian Conquest if asked, then open the link or enter the code here.';
+        document.getElementById('matrix-code').focus();
+    } catch (error) {notice.textContent = error.message;} finally {send.disabled = false;}
 };
 document.getElementById('logout').onclick = async () => {try {await request('/auth/logout', 'POST'); await loadIdentity(); await loadGames(); notice.textContent = 'Signed out.';} catch (error) {notice.textContent = error.message;}};
 window.addEventListener('pageshow', () => {

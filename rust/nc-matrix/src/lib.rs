@@ -7,7 +7,7 @@ use nc_data::AccountIdentity;
 use nc_data::matrix_login::{self, Issue, Issued};
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use serde_json::{Value, json};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 use sync::{Action, Rooms};
 
@@ -102,7 +102,7 @@ impl Client {
             "account_data": {"not_types": ["*"]},
             "room": {"timeline": {"limit": 20}, "ephemeral": {"not_types": ["*"]}}
         });
-        let mut path = format!("/sync?timeout=30000&filter={}", encode(&filter.to_string()));
+        let mut path = format!("/sync?timeout=5000&filter={}", encode(&filter.to_string()));
         if let Some(since) = since {
             path.push_str(&format!("&since={}", encode(since)));
         }
@@ -204,47 +204,100 @@ pub async fn run(config: Config) -> Result<(), Error> {
             }
         }
         since = batch["next_batch"].as_str().map(Into::into);
+        let now = chrono::Utc::now().timestamp();
+        let requests = match with_db(&database, move |conn| {
+            Ok(matrix_login::take_requests(conn, now)?)
+        })
+        .await
+        {
+            Ok(requests) => requests,
+            Err(error) => {
+                tracing::warn!(%error, "Matrix site requests unavailable");
+                Vec::new()
+            }
+        };
+        for account in requests {
+            if let AccountIdentity::Matrix(user) = account {
+                let sent = send_code(&mut client, &mut rooms, &database, &origin, user, true).await;
+                if let Err(error) = sent {
+                    tracing::warn!(%error, "Matrix site request failed");
+                }
+            }
+        }
     }
 }
 
 async fn act(
     client: &mut Client,
     rooms: &mut Rooms,
-    database: &std::path::Path,
+    database: &Path,
     origin: &str,
     action: Action,
 ) -> Result<(), Error> {
     match action {
         Action::Reject(room) | Action::Leave(room) => client.leave(&room).await,
-        Action::Request(user) => {
-            let account = AccountIdentity::Matrix(user.clone());
-            account.validate()?;
-            let name = client
-                .display_name(&user)
-                .await
-                .unwrap_or_else(|| user.clone());
-            let database = database.to_owned();
-            let now = chrono::Utc::now().timestamp();
-            let issued = tokio::task::spawn_blocking(move || {
-                let conn = rusqlite::Connection::open(database).map_err(|e| e.to_string())?;
-                matrix_login::issue(&conn, &account, &name, now)
-            })
-            .await??;
-            let Issue::Issued(issued) = issued else {
-                return Ok(());
-            };
-            let room = match rooms.direct.get(&user) {
-                Some(room) => room.clone(),
-                None => {
-                    let room = client.create_direct(&user).await?;
-                    rooms.direct.insert(user, room.clone());
-                    room
-                }
-            };
-            let (body, html) = message(origin, &issued);
-            client.send(&room, body, html).await
-        }
+        Action::Request(user) => send_code(client, rooms, database, origin, user, false).await,
     }
+}
+
+/// Sends a sign-in link and code. A request typed on the games page may name
+/// anyone, so opening a new private room for one counts toward the hourly cap.
+async fn send_code(
+    client: &mut Client,
+    rooms: &mut Rooms,
+    database: &Path,
+    origin: &str,
+    user: String,
+    from_site: bool,
+) -> Result<(), Error> {
+    let account = AccountIdentity::Matrix(user.clone());
+    account.validate()?;
+    let now = chrono::Utc::now().timestamp();
+    if from_site
+        && !rooms.direct.contains_key(&user)
+        && !with_db(database, move |conn| {
+            Ok(matrix_login::may_invite(conn, now)?)
+        })
+        .await?
+    {
+        tracing::warn!(%user, "Matrix site request skipped: hourly new-room limit reached");
+        return Ok(());
+    }
+    let name = client
+        .display_name(&user)
+        .await
+        .unwrap_or_else(|| user.clone());
+    let issued = with_db(database, move |conn| {
+        Ok(matrix_login::issue(conn, &account, &name, now)?)
+    })
+    .await?;
+    let Issue::Issued(issued) = issued else {
+        return Ok(());
+    };
+    let room = match rooms.direct.get(&user) {
+        Some(room) => room.clone(),
+        None => {
+            let room = client.create_direct(&user).await?;
+            rooms.direct.insert(user, room.clone());
+            if from_site {
+                with_db(database, move |conn| {
+                    Ok(matrix_login::record_invite(conn, now)?)
+                })
+                .await?;
+            }
+            room
+        }
+    };
+    let (body, html) = message(origin, &issued);
+    client.send(&room, body, html).await
+}
+
+async fn with_db<T: Send + 'static>(
+    database: &Path,
+    f: impl FnOnce(&rusqlite::Connection) -> Result<T, Error> + Send + 'static,
+) -> Result<T, Error> {
+    let database = database.to_owned();
+    tokio::task::spawn_blocking(move || f(&rusqlite::Connection::open(database)?)).await?
 }
 
 pub fn message(origin: &str, issued: &Issued) -> (String, String) {
@@ -252,17 +305,19 @@ pub fn message(origin: &str, issued: &Issued) -> (String, String) {
     let minutes = matrix_login::LIFETIME_SECS / 60;
     (
         format!(
-            "Sign in to Nostrian Conquest: {link}\n\
+            "Someone asked to sign in to Nostrian Conquest as this Matrix account.\n\
+            If it was you, open {link}\n\
             Or enter code {} on the games page.\n\
             The link and code work once and expire in {minutes} minutes. \
-            If you didn't ask to sign in, ignore this message.",
+            If it wasn't you, ignore this message.",
             issued.code
         ),
         format!(
-            "<a href=\"{link}\">Sign in to Nostrian Conquest</a><br>\
-            Or enter code <code>{}</code> on the games page.<br>\
+            "Someone asked to sign in to Nostrian Conquest as this Matrix account.<br>\
+            If it was you, <a href=\"{link}\">sign in here</a>, \
+            or enter code <code>{}</code> on the games page.<br>\
             The link and code work once and expire in {minutes} minutes. \
-            If you didn't ask to sign in, ignore this message.",
+            If it wasn't you, ignore this message.",
             issued.code
         ),
     )

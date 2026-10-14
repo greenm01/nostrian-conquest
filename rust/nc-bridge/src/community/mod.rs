@@ -118,6 +118,7 @@ pub fn router(config: Config) -> Result<Router, String> {
         .route("/auth/nostr/challenge", post(auth_nostr::challenge))
         .route("/auth/nostr", post(auth_nostr::login))
         .route("/auth/matrix", post(auth_matrix::login))
+        .route("/auth/matrix/request", post(auth_matrix::request))
         .route("/auth/matrix/login", get(auth_matrix::oauth_login))
         .route("/auth/matrix/callback", get(auth_matrix::oauth_callback))
         .route("/api/games", get(games))
