@@ -144,6 +144,12 @@ sessions were unchanged. The live redirect carries only `scope=openid` with
 PKCE and a Secure, HttpOnly state cookie. The owner then signed in with one
 click as `@niltempus:matrix.org` (display name `niltempus`).
 
+At the owner's request, the operator linked `@niltempus:matrix.org` to Beta 1
+seat 1, which already held the owner's Discord and Nostr identities. The owner
+then signed in and out with each of the three providers and played the same
+seat. Beta 1 stayed recruiting at year 3000 with no deadline. Other players
+keep the single identity that claimed their seat unless the operator links more.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed
