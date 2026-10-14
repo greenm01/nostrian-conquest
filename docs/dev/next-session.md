@@ -121,7 +121,9 @@ were preserved.
 t140 is deployed in signed release `4d0fc4be`: Matrix sign-in through the new
 `nc-matrix` service and `@nostrian-conquest-bot:matrix.org`, plus Community
 Matrix links and the owner's Matrix contact. The owner signed in with a real
-Matrix client. Details and evidence are in the
+Matrix client. t142 (signed release `5d6407dc`) makes **Sign in with Matrix**
+one-click OAuth for matrix.org accounts, requesting only `openid`; the bot code
+form remains for other homeservers. Details and evidence are in the
 [Matrix plan](../notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md);
 Matrix room announcements are later task t141.
 

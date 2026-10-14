@@ -134,6 +134,16 @@ the Matrix ID; and an unconfigured bridge returns 404. The listing smoke checks
 the button's link and the fallback code form; desktop and 390px screenshots
 were inspected. The rebuilt player manual remains 49 pages.
 
+Signed release `5d6407dc` is live on 2026-10-14. Only the bridge, CLI bundle,
+credentials helper and three static files differ from `4d0fc4be`; the host,
+door, Discord and Matrix binaries are byte-identical, so only the web service
+restarted. Signature and all artifact hashes verified on the host. The client ID
+is in `web.env`; the owner entered the secret with the credentials helper, and
+the local copy from the probe was deleted. Game database dumps and the four
+sessions were unchanged. The live redirect carries only `scope=openid` with
+PKCE and a Secure, HttpOnly state cookie. The owner then signed in with one
+click as `@niltempus:matrix.org` (display name `niltempus`).
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed
