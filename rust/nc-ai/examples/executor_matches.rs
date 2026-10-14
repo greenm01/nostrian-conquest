@@ -5,11 +5,13 @@
 //! cargo run --release -p nc-ai --example executor_matches -- \
 //!     [--weights baseline|tuned|classic] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
+//!     [--with strike_weakest|strike_by_value] \
 //!     [--games 64] [--years 60] [--first-map 0]
 //! ```
 //!
 //! `classic` is t154's tuned executor with its original build order, kept
-//! to measure the land-grab doctrine against (t159).
+//! to measure the land-grab doctrine against (t159). `--with` sets
+//! doctrine switches for the candidate seat only.
 //!
 //! Games run on every core. A win is the declared winner or, without one,
 //! the most production at the end (a tie shares the win).
@@ -41,6 +43,15 @@ fn main() {
         Some("classic") => SeatPolicy::Executor(Weights::CLASSIC),
         Some(other) => panic!("unknown opponent {other}"),
     };
+    // Doctrine switches to turn on for the candidate seat only.
+    let mut weights = weights;
+    for switch in arg("--with").iter().flat_map(|names| names.split(',')) {
+        match switch {
+            "strike_weakest" => weights.doctrine.strike_weakest = true,
+            "strike_by_value" => weights.doctrine.strike_weakest = false,
+            other => panic!("unknown doctrine switch {other}"),
+        }
+    }
     let games: u64 = arg("--games").map_or(64, |n| n.parse().expect("--games"));
     let years: u16 = arg("--years").map_or(60, |n| n.parse().expect("--years"));
     let first: u64 = arg("--first-map").map_or(0, |n| n.parse().expect("--first-map"));

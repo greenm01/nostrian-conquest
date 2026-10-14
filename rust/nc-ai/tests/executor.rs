@@ -81,7 +81,10 @@ fn the_executor_beats_the_aggressor() {
 /// an Aggressor and an Autopilot seat, on two held-out maps over 60 years.
 #[test]
 fn the_classic_doctrine_replays_t154_exactly() {
-    let classic = Doctrine { land_grab: false };
+    let classic = Doctrine {
+        land_grab: false,
+        strike_weakest: false,
+    };
     let tuned = SeatPolicy::Executor(Weights::CLASSIC);
     let baseline = SeatPolicy::Executor(Weights {
         doctrine: classic,
@@ -107,12 +110,34 @@ fn the_classic_doctrine_replays_t154_exactly() {
 #[test]
 fn the_land_grab_switch_changes_play() {
     let classic = Weights {
-        doctrine: Doctrine { land_grab: false },
+        doctrine: Doctrine {
+            land_grab: false,
+            ..Doctrine::CURRENT
+        },
         ..Weights::TUNED
     };
     let lineup = |weights| [SeatPolicy::Executor(weights); 4];
     assert_ne!(
         play_match(100000, &lineup(Weights::TUNED), 40),
         play_match(100000, &lineup(classic), 40)
+    );
+}
+
+#[test]
+fn the_strike_weakest_switch_changes_play() {
+    let by_value = Weights {
+        doctrine: Doctrine {
+            strike_weakest: false,
+            ..Doctrine::CURRENT
+        },
+        ..Weights::TUNED
+    };
+    let lineup = |weights| [SeatPolicy::Executor(weights); 4];
+    let changed = (100000..100008).any(|map| {
+        play_match(map, &lineup(Weights::TUNED), 60) != play_match(map, &lineup(by_value), 60)
+    });
+    assert!(
+        changed,
+        "choosing targets by defence should change some game"
     );
 }

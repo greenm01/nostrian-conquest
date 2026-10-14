@@ -80,11 +80,18 @@ pub struct Doctrine {
     /// and scouts before garrisons; colony fleets at ROE 0; destroyer
     /// pickets. Off, t154's order: one build a year, garrison first.
     pub land_grab: bool,
+    /// Score strike targets by value over estimated defence, so the
+    /// cheapest conquests come first (t160, accepted). Off, by value alone,
+    /// as t154 did.
+    pub strike_weakest: bool,
 }
 
 impl Doctrine {
     /// The accepted behaviours.
-    pub const CURRENT: Doctrine = Doctrine { land_grab: true };
+    pub const CURRENT: Doctrine = Doctrine {
+        land_grab: true,
+        strike_weakest: true,
+    };
 }
 
 impl Weights {
@@ -110,22 +117,22 @@ impl Weights {
     };
 
     /// Weights tuned by evolution against the executor itself, with the
-    /// land-grab build order; see the `tune_executor` example.
+    /// current doctrine; see the `tune_executor` example.
     pub const TUNED: Weights = Weights {
-        tax: 61.4,
-        home_armies: 17.7,
-        colony_armies: 9.6,
-        batteries: 5.2,
-        etacs: 4.9,
-        scouts: 2.6,
-        starbases: 1.7,
-        transports: 15.7,
-        battleship: 0.57,
-        cruiser: 0.94,
-        destroyer: 0.13,
-        attack_ratio: 2.93,
-        roe: 9.9,
-        war_year: 3.0,
+        tax: 64.4,
+        home_armies: 15.0,
+        colony_armies: 8.8,
+        batteries: 9.4,
+        etacs: 6.3,
+        scouts: 1.0,
+        starbases: 1.6,
+        transports: 16.0,
+        battleship: 0.0,
+        cruiser: 0.92,
+        destroyer: 0.21,
+        attack_ratio: 2.11,
+        roe: 2.9,
+        war_year: 10.0,
         doctrine: Doctrine::CURRENT,
     };
 
@@ -146,7 +153,10 @@ impl Weights {
         attack_ratio: 3.44,
         roe: 4.2,
         war_year: 10.5,
-        doctrine: Doctrine { land_grab: false },
+        doctrine: Doctrine {
+            land_grab: false,
+            strike_weakest: false,
+        },
     };
 
     /// The lowest and highest value of each weight, in field order.
@@ -853,7 +863,9 @@ fn can_take(memory: &SeatMemory, fleet: &Fleet, weights: &Weights, idx: usize) -
     })
 }
 
-/// The best known enemy world the home force can take or batter.
+/// The best known enemy world the home force can take or batter: the most
+/// value, or with `strike_weakest` the most value per unit of estimated
+/// defence, discounted by distance.
 fn strike_target(
     game_data: &CoreGameData,
     memory: &SeatMemory,
@@ -862,13 +874,18 @@ fn strike_target(
 ) -> Option<usize> {
     best_world(game_data, memory, fleet, |idx, intel| {
         can_take(memory, fleet, weights, idx).then(|| {
-            f32::from(
+            let value = f32::from(
                 intel
                     .known_current_production
                     .map(u16::from)
                     .or(intel.known_potential_production)
                     .unwrap_or(20),
-            ) + 1.0
+            ) + 1.0;
+            if weights.doctrine.strike_weakest {
+                value / defense(intel).max(1.0)
+            } else {
+                value
+            }
         })
     })
 }

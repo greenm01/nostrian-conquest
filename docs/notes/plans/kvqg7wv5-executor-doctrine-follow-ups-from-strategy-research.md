@@ -110,6 +110,56 @@ conquests come first.
 
 **Exit:** as in Scope.
 
+**Result (2026-10-14): accepted.**
+
+- **The switch.** `Doctrine::strike_weakest` divides a target's value by
+  its estimated defence, at least 1. Feasibility still requires
+  `attack_ratio` times that defence.
+- **Labels stay exact.** Every home force scores from the same sector with
+  the same function, so the strongest force's pick still decides the
+  strike label.
+- **Head to head.** `executor_matches --weights tuned --with
+  strike_weakest --opponent tuned`, 60 years, one candidate seat against
+  three executors without the switch:
+
+  | Maps | Win rate | Production share |
+  | --- | ---: | ---: |
+  | 100000–101023 | 0.341 | 0.280 |
+  | 200000–201023 | 0.344 | 0.281 |
+
+  That is about nine points over an even seat on both blocks, far more
+  than the land-grab change's three.
+- **Now current.** `Doctrine::CURRENT` turns it on. `Weights::CLASSIC`
+  keeps it off, so t154 still replays exactly.
+  `the_strike_weakest_switch_changes_play` shows the switch matters.
+- **Re-tuned.** `tune_executor` ran 40 generations of 32, about 7 minutes,
+  with 29 champion changes. The new weights:
+  - strike at 2.1 times a target's defence (was 2.9);
+  - ROE 2.9 (was 9.9);
+  - declare war at year 10 (was 3);
+  - build no battleships, preferring cruisers;
+  - keep 9.4 batteries and 6.3 ETACs, and tax 64%.
+
+  They attack more often, but only where the target is cheap, and avoid
+  even fights.
+  - Head to head on 1,024 maps: one new-weights seat wins 0.289 against
+    three of the previous weights; one previous-weights seat wins 0.198
+    against three new.
+  - They became `Weights::TUNED`. On 256 held-out maps:
+
+  | One seat vs three | Win rate | Production share |
+  | --- | ---: | ---: |
+  | Tuned vs baseline | 0.717 | 0.371 |
+  | Baseline vs tuned | 0.000 | 0.064 |
+  | Tuned vs Aggressor | 1.000 | 0.914 |
+  | Tuned vs Autopilot | 1.000 | 0.892 |
+  | Tuned vs classic (t154) | 0.316 | 0.277 |
+  | Classic vs tuned | 0.184 | 0.222 |
+
+  The last two rows are the cumulative gain since t154. The strategist
+  (t155) was trained on the land-grab executor; retrain it when t161–t164
+  are done.
+
 ### t161
 
 Bombard a target's batteries down before invading.
