@@ -105,6 +105,7 @@ with tempfile.TemporaryDirectory(prefix='nc-nostr-ui-') as d:
             check(form.hidden && !logout.hidden && document.getElementById('identity').textContent.includes('Discord') && labels()==='Play,Download map ZIP','Discord member');
             await logout.onclick();
             const matrix=document.getElementById('matrix-login');
+            check(Array.from(form.querySelectorAll('a.login-link')).some(a=>a.textContent==='Sign in with Matrix' && a.getAttribute('href')==='/auth/matrix/login'),'Matrix OAuth link');
             check(matrix.hidden,'Matrix code form starts hidden');
             document.getElementById('matrix-start').onclick();
             check(!matrix.hidden,'Matrix button shows code form');

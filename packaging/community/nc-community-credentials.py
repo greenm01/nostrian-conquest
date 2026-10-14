@@ -11,6 +11,7 @@ FIELDS = {
     "bot": ("discord.env", "NC_DISCORD_BOT_TOKEN", "Discord bot token"),
     "oauth": ("web.env", "NC_DISCORD_CLIENT_SECRET", "Discord OAuth client secret"),
     "matrix": ("matrix.env", "NC_MATRIX_ACCESS_TOKEN", "Matrix bot access token"),
+    "matrix-oauth": ("web.env", "NC_MATRIX_OAUTH_CLIENT_SECRET", "Matrix OAuth client secret"),
 }
 
 

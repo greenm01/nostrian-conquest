@@ -20,6 +20,7 @@ pub fn config(root: &std::path::Path) -> Config {
         client_id: "123".into(),
         client_secret: "test-only".into(),
         max_sessions: 2,
+        matrix: None,
     }
 }
 pub fn fixture() -> (tempfile::TempDir, Router) {

@@ -19,6 +19,11 @@ struct Cli {
     discord_client_id: Option<String>,
     #[arg(long, env = "NC_DISCORD_CLIENT_SECRET", hide_env_values = true)]
     discord_client_secret: Option<String>,
+    /// OAuth client registered with matrix.org for one-click Matrix sign-in.
+    #[arg(long, env = "NC_MATRIX_OAUTH_CLIENT_ID")]
+    matrix_oauth_client_id: Option<String>,
+    #[arg(long, env = "NC_MATRIX_OAUTH_CLIENT_SECRET", hide_env_values = true)]
+    matrix_oauth_client_secret: Option<String>,
 
     /// Host interface to bind to
     #[arg(long, default_value = "127.0.0.1", env = "NC_BRIDGE_HOST")]
@@ -108,6 +113,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                 .discord_client_secret
                 .ok_or("Discord client secret is required")?,
             max_sessions: config.max_nodes,
+            matrix: match (cli.matrix_oauth_client_id, cli.matrix_oauth_client_secret) {
+                (Some(id), Some(secret)) => {
+                    Some(nc_bridge::community::MatrixOAuth::matrix_org(id, secret))
+                }
+                (None, None) => None,
+                _ => return Err("set both Matrix OAuth client ID and secret, or neither".into()),
+            },
         })
         .map_err(std::io::Error::other)?
     } else {

@@ -73,8 +73,8 @@ BBS/Nostr game roots and timers. Root-owned `/etc/nc-community/` holds mode-0600
 account. Copy the examples from [packaging/community](../../packaging/community).
 Never put secrets in git, command arguments, public notes or shell history.
 The optional `nc-community-credentials.py` helper can be installed as
-`/usr/local/sbin/nc-community-credentials`. Run it through sudo with `bot`,
-`oauth` or `matrix` in an attended terminal. It hides input and updates the corresponding
+`/usr/local/sbin/nc-community-credentials`. Run it through sudo with `bot`, `oauth`,
+`matrix` or `matrix-oauth` in an attended terminal. It hides input and updates the corresponding
 root-only environment file without printing the credential. Merge non-secret
 settings into these files; never overwrite entered credentials with an example.
 
@@ -164,7 +164,25 @@ message is sent by the website.
 
 ## Matrix sign-in
 
-**Sign in with Matrix** opens a code form. The player messages the bot, or sends
+**Sign in with Matrix** is one-click OAuth for matrix.org accounts.
+`/auth/matrix/login` redirects to `https://account.matrix.org/authorize` with
+only the `openid` scope, a five-minute single-use state bound to an HttpOnly
+cookie, and an S256 PKCE challenge. `/auth/matrix/callback` redeems the code,
+reads `username` from userinfo, and signs in `@username:matrix.org`. It takes
+the public display name as the player handle, falling back to the Matrix ID,
+then revokes the access token. No Matrix API scope is requested, so the site
+never gains access to messages, rooms or the account. matrix.org shows its
+normal sign-in page when needed and no separate consent screen.
+
+The OAuth client was registered once through matrix.org's dynamic registration
+endpoint as a confidential web client: `client_uri` is the public origin and
+the only redirect URI is `<origin>/auth/matrix/callback`. Put its client ID in
+`web.env` as `NC_MATRIX_OAUTH_CLIENT_ID` and enter its secret with
+`sudo nc-community-credentials matrix-oauth`. Without both, the button's route
+returns 404 and players use the bot.
+
+Accounts on other homeservers choose **Matrix account not on matrix.org?**,
+which opens a code form. The player messages the bot, or sends
 `!login` in the community room. The bot reads only the sender's Matrix ID, which
 stays visible in encrypted rooms, and declines every invitation. It replies in
 an unencrypted private room it creates with that user. The reply holds a link

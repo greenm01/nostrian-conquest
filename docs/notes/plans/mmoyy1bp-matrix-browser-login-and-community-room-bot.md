@@ -98,6 +98,42 @@ notes or chat. The owner then signed in from `@niltempus:matrix.org` in a real
 browser; the session and profile name `niltempus` were confirmed on the host.
 The Matrix identity is not linked to the owner's Beta 1 seat.
 
+### t142
+
+The owner found the bot flow awkward: find the room or bot, then type a request.
+matrix.org's authentication service supports a standard OAuth sign-in with only
+the `openid` scope. A live probe on 2026-10-14 registered a web client for
+`https://play.nostrian-conquest.com` (redirect `/auth/matrix/callback`), and the
+owner signed in. The granted scope was exactly `openid`; userinfo returned the
+account's `sub` and `username` (`niltempus`), and no consent screen followed the
+normal matrix.org sign-in. The token was revoked afterward. No Matrix API scope
+is requested, so the site never gains access to messages, rooms or the account.
+
+Make **Sign in with Matrix** this one-click flow for matrix.org accounts:
+`/auth/matrix/login` redirects with a single-use state and PKCE;
+`/auth/matrix/callback` redeems the code, maps `username` to
+`@username:matrix.org`, takes the public display name as the player handle,
+creates the session, and revokes the token. Keep the t140 bot code form as the
+"Not on matrix.org?" fallback. Both routes yield the same Matrix identity.
+The client ID lives in `web.env`; the secret is entered with the credentials
+helper. A player-entered Matrix ID flow, where the bot messages the player,
+waits until players on other homeservers need it.
+
+Exit: redirect, state/PKCE, replay and failure regressions against a mock
+authorization server; updated listing smoke and docs; full workspace suite;
+deployment and an attended sign-in.
+
+Built on 2026-10-14. The full workspace passed **3,295 tests, zero failures,
+11 ignored**; 13 Python tests pass. Five bridge tests run the flow against a
+mock authorization server and homeserver: the redirect carries only `openid`,
+the registered redirect URI and an S256 challenge matching the verifier later
+sent with Basic client authentication; state is single use and bound to its
+cookie; the access token is revoked even when userinfo lacks a username;
+cancellation and bad userinfo create no session; the display name falls back to
+the Matrix ID; and an unconfigured bridge returns 404. The listing smoke checks
+the button's link and the fallback code form; desktop and 390px screenshots
+were inspected. The rebuilt player manual remains 49 pages.
+
 ### t141
 
 Have `nc-matrix` post the host's game announcements (recruitment, completed

@@ -18,6 +18,7 @@ fn fixture() -> (tempfile::TempDir, Router) {
         client_id: "123".into(),
         client_secret: "test-only".into(),
         max_sessions: 2,
+        matrix: None,
     })
     .unwrap();
     for game in ["public", "draft"] {

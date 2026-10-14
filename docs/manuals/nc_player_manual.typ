@@ -176,12 +176,13 @@ name when signing in; a blank name keeps your saved name or uses a short key
 label initially. This option is separate from relay-based Nostr GameServer
 play.
 
-On hosts offering *Sign in with Matrix*, choose it on the game list, then send
-any message to the host's sign-in bot, or send `!login` in its community room.
-The bot replies privately with a sign-in link and a code. Open the link, or
-enter the code on the game list. Each works once and expires after ten minutes.
-Your Matrix display name becomes your player handle. Return using the same
-Matrix account.
+On hosts offering *Sign in with Matrix*, choose it and sign in to your
+matrix.org account if asked. The game learns only your Matrix ID, not your
+messages or rooms. Your Matrix display name becomes your player handle. If your
+account is on another Matrix server, choose *Matrix account not on matrix.org?*
+instead: send any message to the host's sign-in bot, or send `!login` in its
+community room. The bot replies privately with a sign-in link and a code that
+work once and expire after ten minutes. Return using the same Matrix account.
 
 Discord, Nostr and Matrix players share the same games. Invite codes are
 single-use across all sign-in methods.

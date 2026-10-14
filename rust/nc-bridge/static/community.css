@@ -36,6 +36,8 @@ article label{margin-right:.5rem}
 #notice,#copy-status{white-space:pre-wrap;color:#e0af68}
 #notice:empty,#copy-status:empty{display:none}
 #matrix-login p{overflow-wrap:anywhere}
+.text-button,.text-button:hover{padding:0;border:0;background:none;color:#7aa2f7;text-decoration:underline;text-underline-offset:.2em;text-align:left}
+.text-button:hover{color:#bb9af7}
 #matrix-login button{margin-top:.35rem}
 .contact-key{overflow-wrap:anywhere;padding:1rem;background:#1f2335;border-radius:.35rem;font-size:.9rem}
 .actions{margin-top:1rem}

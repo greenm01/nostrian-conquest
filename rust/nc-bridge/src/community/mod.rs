@@ -28,6 +28,31 @@ pub struct Config {
     pub client_id: String,
     pub client_secret: String,
     pub max_sessions: usize,
+    /// One-click Matrix sign-in; absent leaves only the bot code form.
+    pub matrix: Option<MatrixOAuth>,
+}
+/// An OAuth client registered with a homeserver's authentication service.
+#[derive(Clone)]
+pub struct MatrixOAuth {
+    pub client_id: String,
+    pub client_secret: String,
+    /// Authorization server base URL, such as `https://account.matrix.org`.
+    pub issuer: String,
+    /// Server name that completes `@username:` from the issuer's userinfo.
+    pub server_name: String,
+    /// Client API base URL, used only for public display names.
+    pub homeserver: String,
+}
+impl MatrixOAuth {
+    pub fn matrix_org(client_id: String, client_secret: String) -> Self {
+        Self {
+            client_id,
+            client_secret,
+            issuer: "https://account.matrix.org".into(),
+            server_name: "matrix.org".into(),
+            homeserver: "https://matrix-client.matrix.org".into(),
+        }
+    }
 }
 pub struct Community {
     _instance_lock: std::fs::File,
@@ -93,6 +118,8 @@ pub fn router(config: Config) -> Result<Router, String> {
         .route("/auth/nostr/challenge", post(auth_nostr::challenge))
         .route("/auth/nostr", post(auth_nostr::login))
         .route("/auth/matrix", post(auth_matrix::login))
+        .route("/auth/matrix/login", get(auth_matrix::oauth_login))
+        .route("/auth/matrix/callback", get(auth_matrix::oauth_callback))
         .route("/api/games", get(games))
         .route("/api/me", get(me))
         .route("/api/games/{game}/join", post(join))

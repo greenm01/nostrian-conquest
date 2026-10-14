@@ -21,8 +21,9 @@
 </header>
 <section aria-label="Your account" class="account">
 <form id="nostr-login" hidden>
-<div class="login-actions"><a class="login-link" href="/auth/login">Sign in with Discord</a><button type="submit">Sign in with Nostr</button><button id="matrix-start" type="button">Sign in with Matrix</button></div>
+<div class="login-actions"><a class="login-link" href="/auth/login">Sign in with Discord</a><button type="submit">Sign in with Nostr</button><a class="login-link" href="/auth/matrix/login">Sign in with Matrix</a></div>
 <p><label>Nostr player name (optional) <input id="nostr-name" maxlength="25" autocomplete="nickname"></label></p>
+<p><button id="matrix-start" class="text-button" type="button">Matrix account not on matrix.org? Get a sign-in code from our bot.</button></p>
 </form>
 <form id="matrix-login" hidden>
 <p>Message <a href="https://matrix.to/#/@nostrian-conquest-bot:matrix.org" target="_blank" rel="noopener noreferrer">@nostrian-conquest-bot:matrix.org</a>, or send <code>!login</code> in <a href="https://matrix.to/#/#nostrian-conquest:matrix.org" target="_blank" rel="noopener noreferrer">#nostrian-conquest</a>. The bot replies privately with a sign-in link and code. Open the link, or enter the code here.</p>
