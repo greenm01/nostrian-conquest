@@ -8,9 +8,13 @@
 //! after each maintenance year, as campaign maintenance does.
 //! [`seat_masks`] says which orders a seat may choose, from the game's own
 //! validators, and [`decode_action`] builds the [`nc_data::TurnSubmission`]
-//! for a choice without going through turn KDL.
+//! for a choice without going through turn KDL. The scripted executor
+//! ([`plan_turn`]) plays a seat from a few strategy [`Weights`], and
+//! [`play_match`] scores seat policies against each other.
 
 mod action;
+mod arena;
+mod executor;
 mod game;
 mod memory;
 mod observe;
@@ -20,6 +24,8 @@ pub use action::{
     MISSION_CHOICES, MISSIONS, PlanetChoice, PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction,
     SeatMasks, TAX_CHOICES, TAX_STEP, commission_submission, decode_action, seat_masks,
 };
+pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
+pub use executor::{Weights, plan_turn};
 pub use game::SeatedGame;
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
 pub use observe::{

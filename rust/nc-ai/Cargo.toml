@@ -11,6 +11,5 @@ path = "src/lib.rs"
 nc-data = { path = "../nc-data" }
 nc-engine = { path = "../nc-engine" }
 nc-harness = { path = "../nc-harness" }
-
-[dev-dependencies]
+# The aggressor policy is the executor's sparring partner.
 nc-fuzz = { path = "../nc-fuzz" }

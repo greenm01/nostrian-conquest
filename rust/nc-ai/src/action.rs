@@ -6,8 +6,11 @@
 //! - for every other empire, to keep, make neutral or declare enemy;
 //! - for each world it owns, a unit to build (or none) and how much of the
 //!   world's remaining budget to spend on it;
-//! - for each fleet it owns, a mission (or keep its orders), a target world,
-//!   a speed and rules of engagement.
+//! - for each fleet it owns, whether to load armies from the world it is at,
+//!   a mission (or keep its orders), a target world, a speed and rules of
+//!   engagement. Loading and an invasion cannot share a year: orders are
+//!   checked against the turn-start fleet, so a fleet invades the year after
+//!   it loads.
 //!
 //! Masks read only what the empire may know. Fleet missions and targets go
 //! through `validate_fleet_order_payload`, which checks the fleet's own ships
@@ -18,9 +21,12 @@
 //! A learned seat commissions every finished ship before it chooses, through
 //! [`commission_submission`], so its masks see the fleets that creates.
 
+use std::collections::BTreeMap;
+
 use nc_data::{
-    CoreGameData, DiplomaticRelation, FleetTurnAction, FleetTurnBlock, Order, PlanetTurnAction,
-    PlanetTurnBlock, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective, TurnSubmission, is_support_only,
+    CoreGameData, DiplomaticRelation, Fleet, FleetTurnAction, FleetTurnBlock, Order,
+    PlanetTurnAction, PlanetTurnBlock, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective, TurnSubmission,
+    has_combat_ships, is_support_only,
 };
 use nc_engine::{BUILD_UNITS, fleet_record_supports_mission_code, production_item_kind_code};
 
@@ -77,6 +83,9 @@ pub struct FleetMask {
     /// and the choice is ignored.
     pub targets: Vec<Vec<bool>>,
     pub roe: [bool; ROE_CHOICES],
+    /// The fleet is at one of the empire's worlds with an army to spare and
+    /// has an empty transport.
+    pub load: bool,
 }
 
 /// Everything one seat may choose this year. Tax, speed and build-amount
@@ -108,6 +117,9 @@ pub struct FleetChoice {
     pub target: usize,
     pub speed: usize,
     pub roe: usize,
+    /// Load as many armies as the empty transports hold, leaving the world
+    /// at least one.
+    pub load: bool,
 }
 
 /// One seat's whole turn as choice indexes.
@@ -172,10 +184,25 @@ pub fn seat_masks(game_data: &CoreGameData, empire: u8) -> SeatMasks {
         )
         .map(|record| planet_mask(game_data, record))
         .collect(),
-        fleets: owned_records(game_data.fleets.iter().map(|fleet| fleet.owner.0), empire)
-            .map(|record| fleet_mask(game_data, record))
-            .collect(),
+        fleets: {
+            let mut shared = BTreeMap::new();
+            owned_records(game_data.fleets.iter().map(|fleet| fleet.owner.0), empire)
+                .map(|record| fleet_mask(game_data, record, &mut shared))
+                .collect()
+        },
     }
+}
+
+/// What `validate_fleet_order_payload` reads of a fleet besides its owner.
+type ShipsKey = (bool, bool, bool, bool);
+
+fn ships_key(fleet: &Fleet) -> ShipsKey {
+    (
+        has_combat_ships(fleet),
+        fleet.ships.scouts > 0,
+        fleet.ships.etacs > 0,
+        fleet.ships.loaded_transports > 0,
+    )
 }
 
 fn owned_records(owners: impl Iterator<Item = u8>, empire: u8) -> impl Iterator<Item = usize> {
@@ -195,7 +222,15 @@ fn planet_mask(game_data: &CoreGameData, record: usize) -> PlanetMask {
     PlanetMask { record, build }
 }
 
-fn fleet_mask(game_data: &CoreGameData, record: usize) -> FleetMask {
+/// One fleet's mask. Target flags depend only on the mission and the
+/// fleet's kinds of ships, except Colonize, which also depends on which of
+/// the empire's other fleets claim a world; the rest are shared through
+/// `shared` between fleets of one seat.
+fn fleet_mask(
+    game_data: &CoreGameData,
+    record: usize,
+    shared: &mut BTreeMap<(usize, ShipsKey), Vec<bool>>,
+) -> FleetMask {
     let fleet = &game_data.fleets[record - 1];
     let worlds = game_data.planets.len();
     let mut mission = [false; MISSION_CHOICES];
@@ -211,21 +246,31 @@ fn fleet_mask(game_data: &CoreGameData, record: usize) -> FleetMask {
             Order::HoldPosition => true,
             Order::SeekHome => game_data.nearest_owned_world(record, false).is_some(),
             _ => {
-                targets[choice] = game_data
-                    .planets
-                    .iter()
-                    .map(|planet| {
-                        game_data
-                            .validate_fleet_order_payload(
-                                record,
-                                order.code(),
-                                planet.sector.to_array(),
-                                None,
-                                None,
-                            )
-                            .is_ok()
-                    })
-                    .collect();
+                let validate = || {
+                    game_data
+                        .planets
+                        .iter()
+                        .map(|planet| {
+                            game_data
+                                .validate_fleet_order_payload(
+                                    record,
+                                    order.code(),
+                                    planet.sector.to_array(),
+                                    None,
+                                    None,
+                                )
+                                .is_ok()
+                        })
+                        .collect::<Vec<_>>()
+                };
+                targets[choice] = if *order == Order::ColonizeWorld {
+                    validate()
+                } else {
+                    shared
+                        .entry((choice, ships_key(fleet)))
+                        .or_insert_with(validate)
+                        .clone()
+                };
                 targets[choice].contains(&true)
             }
         };
@@ -238,7 +283,26 @@ fn fleet_mask(game_data: &CoreGameData, record: usize) -> FleetMask {
         mission,
         targets,
         roe,
+        load: armies_to_load(game_data, fleet, 0).is_some(),
     }
+}
+
+/// The world a fleet is at and how many armies it may load there, if any,
+/// after `loaded` armies have already left that world this turn.
+fn armies_to_load(game_data: &CoreGameData, fleet: &Fleet, loaded: u16) -> Option<(usize, u16)> {
+    let (idx, planet) = game_data
+        .planets
+        .iter()
+        .enumerate()
+        .find(|(_, planet)| planet.sector == fleet.sector)?;
+    // The submission path counts at most 255 armies on a world.
+    let spare = planet
+        .armies
+        .min(u16::from(u8::MAX))
+        .saturating_sub(1)
+        .saturating_sub(loaded);
+    let qty = spare.min(fleet.ships.empty_transports);
+    (planet.owner.0 == fleet.owner.0 && qty > 0).then_some((idx + 1, qty))
 }
 
 /// Turn `action` into the submission it stands for. The action must respect
@@ -295,8 +359,25 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
     // submission path's preflight checks them.
     let mut working = game_data.clone();
     let mut dropped_fleet_orders = Vec::new();
+    // Armies already loaded from each world (0-based) this turn.
+    let mut loaded_from: BTreeMap<usize, u16> = BTreeMap::new();
     for choice in &action.fleets {
         let mut actions = Vec::new();
+        if choice.load {
+            let fleet = &game_data.fleets[choice.record - 1];
+            let world = game_data
+                .planets
+                .iter()
+                .position(|planet| planet.sector == fleet.sector);
+            let loaded = world.map_or(0, |idx| loaded_from.get(&idx).copied().unwrap_or(0));
+            if let Some((planet, qty)) = armies_to_load(game_data, fleet, loaded) {
+                *loaded_from.entry(planet - 1).or_insert(0) += qty;
+                actions.push(FleetTurnAction::LoadArmies {
+                    planet_record_index_1_based: planet,
+                    qty,
+                });
+            }
+        }
         if choice.mission > 0 {
             let order = fleet_order(game_data, choice);
             let FleetTurnAction::Order {

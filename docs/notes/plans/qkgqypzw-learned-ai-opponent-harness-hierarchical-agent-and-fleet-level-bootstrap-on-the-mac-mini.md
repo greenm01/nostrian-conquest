@@ -267,6 +267,86 @@ first usable seat-filler and the teacher for t155 and t157.
 **Exit:** the tuned executor beats Autopilot seats and wins at least half its
 games against Aggressor, over seeded 4-player games with seats rotated.
 
+**Result (2026-10-14):** `nc-ai/src/executor.rs` holds the executor. It
+chooses within `seat_masks` and builds a `SeatAction`, so a learned seat can
+imitate it choice for choice. Each year it:
+
+- sets tax;
+- declares war after `war_year` years;
+- builds each world's first unmet need: armies, batteries, and at home
+  ETACs, scouts, starbases and transports, then the preferred hull;
+- colonizes the most valuable world not known to be owned, one ETAC fleet
+  per world;
+- scouts the world it knows least about;
+- gathers warships and transports at home by Rendezvous, loads armies there,
+  and strikes the best known enemy world at `attack_ratio` times its
+  estimated defense.
+
+Two additions to t152's actions support it:
+
+- a per-fleet choice to load armies, decoded so two fleets never draw more
+  than a world holds;
+- target masks shared between fleets with the same kinds of ships.
+
+The 1,000-game random test still passes: 30,000 game-years, no rejected
+submission, and 171 second colonizers dropped.
+
+`nc-ai/tests/executor.rs` shows three things:
+
+- the executor's choices do not change when other empires' records are
+  scrambled, including who owns each world;
+- it never needs an order dropped;
+- it beats Autopilot and Aggressor seats.
+
+`play_match` in `nc-ai/src/arena.rs` scores seat policies by declared winner,
+or else by production at the end.
+
+**Baseline is already enough for the exit.** Even the hand-set weights win
+every game against three Autopilot or three Aggressor seats. They conquer
+every homeworld within 42–57 years, or hold most worlds at year 60. Neither
+policy is a real test. Aggressor makes six fuzz-style actions a year, and
+Autopilot never expands.
+
+**Tuning therefore ran against the executor itself.** The
+`tune_executor` example ran for 40 generations on bean-void, about 8 minutes.
+Each generation had 32 candidates, and each candidate played one seat
+against three seats of the current champion on 32 fresh maps over 60 years.
+A candidate became champion when its win share plus production share
+reached 0.6, where 0.5 is even. The champion changed 29 times. Picking the
+best of 32 noisy scores favours luck, so the final weights were checked on
+256 maps no candidate had played (maps 100000–100255):
+
+| One seat vs three | Win rate | Production share |
+| --- | ---: | ---: |
+| Tuned vs baseline | 0.717 | 0.394 |
+| Baseline vs tuned | 0.000 | 0.111 |
+| Tuned vs Aggressor | 1.000 | 0.943 |
+| Tuned vs Autopilot | 1.000 | 0.954 |
+
+An even seat would win 0.25. Compared with the baseline, `Weights::TUNED`:
+
+- taxes at 64%;
+- keeps 16 armies at home, 10 at each colony and 9 batteries everywhere;
+- keeps 6 ETACs and 16 transports;
+- builds no starbase;
+- favours cruisers and battleships;
+- strikes only at 3.4 times a target's estimated defense, with ROE 4;
+- declares war at year 10.
+
+On the Mac mini the same tuning run took the same wall time and found the
+same champion. The tuner is deterministic. The mini's cores are about twice
+as fast, but 16 candidates split unevenly over its 12 cores.
+
+Limits:
+
+- The executor never uses Guard a Starbase, Join, detach or deep-space
+  targets.
+- It sends every warship in one home strike force.
+- Its defense estimates are rough.
+
+The tuned weights may exploit the baseline's habits more than they play
+well in general; t156's league ratings are the broader check.
+
 ### t155
 
 Train the hierarchical agent. It is a small entity-transformer strategy

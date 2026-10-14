@@ -80,6 +80,14 @@ threads:
 cargo run --release -p nc-fuzz --example selfplay_throughput
 ```
 
+Score the scripted AI executor against other seat policies, and tune its
+strategy weights by evolution against its own champion:
+
+```sh
+cargo run --release -p nc-ai --example executor_matches -- --opponent baseline --games 256
+cargo run --release -p nc-ai --example tune_executor -- --generations 40 --population 32 --games 32
+```
+
 The [combat models](../../tools/combat-model/README.md) compare candidate rules
 without building Rust. The `combat_odds` example runs engine trials so model
 results can be checked against actual combat. Read the

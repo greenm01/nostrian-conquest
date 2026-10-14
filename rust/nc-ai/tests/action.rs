@@ -67,6 +67,7 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
                     target: rng.allowed(&mask.targets[mission]),
                     speed: rng.below(SPEED_CHOICES),
                     roe: rng.allowed(&mask.roe),
+                    load: mask.load && rng.below(2) == 0,
                 }
             })
             .collect(),

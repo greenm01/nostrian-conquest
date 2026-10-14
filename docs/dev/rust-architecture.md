@@ -232,7 +232,12 @@ choices: tax, diplomacy, a build per world, and a mission, target world,
 speed and ROE per fleet. The masks come from the game's own validators,
 chiefly `validate_fleet_order_payload`, and are tested not to change when
 other empires' records do. `decode_action` builds the `TurnSubmission`
-directly, without turn KDL. The crate owns no rules.
+directly, without turn KDL.
+
+The scripted executor (`plan_turn`) plays a seat through those same masks
+and actions from fourteen strategy `Weights`, reading only what an
+observation may read. `play_match` scores executor, aggressor and autopilot
+seats against each other. The crate owns no rules.
 
 ## Current Structural Direction
 
