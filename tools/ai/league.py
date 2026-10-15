@@ -3,13 +3,16 @@ registered agents, stored as replays, rated with OpenSkill.
 
     uv run league.py --db /tmp/nc-ai/league.db add-agent executor --scripted executor
     uv run league.py --db ... add-agent final --checkpoint strategist-final.pt
+    uv run league.py --db ... add-agent fleet --fleet fleet-final.pt
     uv run league.py --db ... play --games 256
     uv run league.py --db ... ratings
     uv run league.py --db ... verify
 
 An agent is a scripted policy (executor, baseline, classic, aggressor or
-autopilot) or a strategist checkpoint, whose goals the tuned executor
-carries out. Its play therefore also depends on the code: each match
+autopilot), a strategist checkpoint, whose goals the tuned executor
+carries out, or a fleet-level agent checkpoint (t157), which also orders
+the fleets of its handed-over families and plays greedy, as it would be
+deployed. Its play therefore also depends on the code: each match
 records the commit it was played at. Stored replays hold the actual
 orders, so they stay valid whatever the code does later.
 
@@ -38,6 +41,8 @@ import torch
 from openskill.models import PlackettLuce
 
 import nc_ai_env
+import fleet_policy
+from fleet_imitate import actions_for
 from policy import act, bucket, device, goals_for, load, seat_batch
 
 PLAYERS = 4
@@ -51,7 +56,7 @@ SCHEMA = """
 create table if not exists agents (
     id integer primary key,
     name text not null unique,
-    kind text not null check (kind in ('scripted', 'strategist')),
+    kind text not null check (kind in ('scripted', 'strategist', 'fleet')),
     spec text not null,          -- scripted policy, or checkpoint path
     sha256 text,                 -- checkpoint digest
     added text not null
@@ -99,16 +104,17 @@ def sha256(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def add_agent(db, name, scripted=None, checkpoint=None):
-    if (scripted is None) == (checkpoint is None):
-        raise SystemExit("give exactly one of --scripted and --checkpoint")
+def add_agent(db, name, scripted=None, checkpoint=None, fleet=None):
+    if sum(x is not None for x in (scripted, checkpoint, fleet)) != 1:
+        raise SystemExit("give exactly one of --scripted, --checkpoint and --fleet")
     if scripted is not None and scripted not in SCRIPTED:
         raise SystemExit(f"--scripted must be one of {', '.join(SCRIPTED)}")
-    kind, spec, digest = (
-        ("scripted", scripted, None)
-        if scripted
-        else ("strategist", str(Path(checkpoint).resolve()), sha256(checkpoint))
-    )
+    if scripted:
+        kind, spec, digest = "scripted", scripted, None
+    else:
+        path = checkpoint or fleet
+        kind = "strategist" if checkpoint else "fleet"
+        spec, digest = str(Path(path).resolve()), sha256(path)
     db.execute(
         "insert into agents (name, kind, spec, sha256, added) values (?, ?, ?, ?, ?)",
         (name, kind, spec, digest, now()),
@@ -149,12 +155,19 @@ def play(db, games, years, batch, seed):
     if len(agents) < 2:
         raise SystemExit("register at least two agents")
     dev = device()
-    models = {}
+    models, fleets, seat_names = {}, {}, {}
     for agent_id, name, kind, spec, digest in agents:
+        if kind != "scripted" and sha256(spec) != digest:
+            raise SystemExit(f"checkpoint for {name} changed since it was added")
         if kind == "strategist":
-            if sha256(spec) != digest:
-                raise SystemExit(f"checkpoint for {name} changed since it was added")
             models[agent_id] = load(spec, dev)
+            seat_names[agent_id] = "strategist"
+        elif kind == "fleet":
+            families = torch.load(spec, map_location="cpu", weights_only=False)["families"]
+            fleets[agent_id] = fleet_policy.load_fleet_agent(spec, dev)
+            seat_names[agent_id] = "hybrid:" + ",".join(families)
+        else:
+            seat_names[agent_id] = spec
     code = code_version()
     rng = np.random.default_rng(seed)
     torch.manual_seed(seed)
@@ -174,17 +187,32 @@ def play(db, games, years, batch, seed):
         env.reset(
             maps,
             campaigns,
-            seats=[["strategist" if a[2] == "strategist" else a[3] for a in lineup]
-                   for lineup in lineups],
+            seats=[[seat_names[a[0]] for a in lineup] for lineup in lineups],
         )
         owner = np.array([[a[0] for a in lineup] for lineup in lineups])
         done = np.zeros(count, bool)
         while not done.all():
-            goals = None
-            if models:
+            goals, actions = None, None
+            if models or fleets:
                 obs, masks, goal_masks = env.observe(), env.masks(), env.goal_masks()
                 goals = {name: np.zeros_like(value) for name, value in env.goal_labels().items()}
+                fleet_choices = {name: np.zeros((count, PLAYERS, env.fleets), np.int64)
+                                 for name in fleet_policy.FLEET_HEADS}
                 with torch.no_grad():
+                    for agent_id, model in fleets.items():
+                        select = (owner == agent_id) & ~done[:, None]
+                        if not select.any():
+                            continue
+                        batch_ = fleet_policy.bucket(
+                            fleet_policy.fleet_batch(obs, masks, goal_masks, select, dev))
+                        chosen_goals, chosen_fleets, *_ = model.act(batch_, greedy=True)
+                        chosen = goals_for(chosen_goals, select)
+                        for name in goals:
+                            goals[name][select] = chosen[name][select]
+                        placed = fleet_policy.fleet_arrays(chosen_fleets, select, env.fleets)
+                        for name in fleet_choices:
+                            fleet_choices[name][select] = placed[name][select]
+                    actions = actions_for(env, fleet_choices) if fleets else None
                     for agent_id, model in models.items():
                         select = (owner == agent_id) & ~done[:, None]
                         if not select.any():
@@ -194,7 +222,7 @@ def play(db, games, years, batch, seed):
                         chosen = goals_for(choices, select)
                         for name in goals:
                             goals[name][select] = chosen[name][select]
-            done = env.step(goals=goals)["done"].copy()
+            done = env.step(actions, goals)["done"].copy()
         for game in range(count):
             store_match(db, maps[game], campaigns[game], years, lineups[game],
                         env.result(game), env.turns(game), code)
@@ -306,6 +334,7 @@ def main():
     add.add_argument("name")
     add.add_argument("--scripted")
     add.add_argument("--checkpoint")
+    add.add_argument("--fleet", help="fleet-level agent checkpoint")
     run = sub.add_parser("play")
     run.add_argument("--games", type=int, default=256)
     run.add_argument("--years", type=int, default=60)
@@ -317,7 +346,7 @@ def main():
 
     db = connect(args.db)
     if args.command == "add-agent":
-        add_agent(db, args.name, args.scripted, args.checkpoint)
+        add_agent(db, args.name, args.scripted, args.checkpoint, args.fleet)
     elif args.command == "play":
         play(db, args.games, args.years, args.batch, args.seed)
         rate(db)

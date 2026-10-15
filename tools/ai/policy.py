@@ -197,9 +197,19 @@ def save(model, path, **extra):
 
 
 def load(path, dev=None):
+    """A strategist checkpoint. One trained before the allocation goal
+    (t175) gets a head that always chooses 0, striking with everything, as
+    it played."""
     checkpoint = torch.load(path, map_location=dev or device(), weights_only=False)
     model = Strategist(**checkpoint["config"]).to(dev or device())
-    model.load_state_dict(checkpoint["state"])
+    missing, unexpected = model.load_state_dict(checkpoint["state"], strict=False)
+    if unexpected or set(missing) - {"allocation.weight", "allocation.bias"}:
+        raise RuntimeError(f"{path} does not fit: {missing} {unexpected}")
+    if missing:
+        with torch.no_grad():
+            model.allocation.weight.zero_()
+            model.allocation.bias.fill_(-1e4)
+            model.allocation.bias[0] = 0.0
     return model.eval()
 
 

@@ -859,6 +859,42 @@ task's work:
 human seat. Every AI submission is accepted, and the AI's view of its
 world matches the in-memory view on the same seeds.
 
+**Progress (2026-10-15): gate parts 1 and 2.** The candidate is t157's
+final agent, `fleet-final.pt`. It plays greedy, with the strike family
+handed over and t175's strategist goals.
+
+- **Strength.**
+  - Against three tuned executors on 1,024 maps it won 0.674 (block
+    100000) and 0.672 (block 200000), above the 0.60 bar.
+  - Against Aggressor and Autopilot it won every game.
+  - In the league it rates first, after 2,048 more matches:
+
+    | Agent | Rating | Win share |
+    | --- | ---: | ---: |
+    | fleet (t157 final) | 43.47 | 0.708 |
+    | allocation (t175 strategist) | 38.28 | 0.505 |
+    | final (t155 strategist) | 38.23 | 0.536 |
+    | final-imitation | 30.31 | 0.287 |
+    | executor | 29.89 | 0.298 |
+    | t155 | 29.07 | 0.335 |
+
+    `league.py` gained a `fleet` agent kind for this. Strategist
+    checkpoints from before t175 load with an allocation head that always
+    chooses 0, as they played.
+- **Soundness.**
+  - Every evaluation and league game ran to its end. That is over 10,000
+    full games for this agent, with no rejected order and no crash: a
+    choice outside the masks or a rejected submission raises.
+  - The fog-of-war tests (mask and observation leak tests) pass.
+  - Exploits are left to the playtests.
+- **The league's old replays.** `league.py verify` failed on 237 of the
+  first 1,024 league matches. They were played at commit 9b9f8f0d, and
+  later engine rule changes now reject some of their stored orders (fleet
+  speeds, fleet ownership after record changes). Every match played from
+  this commit on replays exactly. So stored turn KDL stays valid only
+  within one engine version. A league that must verify across engine
+  changes needs to store that version, or prune old matches.
+
 ### t167
 
 Give AI seats personalities.
