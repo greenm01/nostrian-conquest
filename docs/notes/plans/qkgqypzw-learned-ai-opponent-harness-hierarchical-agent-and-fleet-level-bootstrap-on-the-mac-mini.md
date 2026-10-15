@@ -930,6 +930,50 @@ handed over and t175's strategist goals.
 - **Difficulty** can come from temperature: greedy for hard, 1 for normal
   (still above the executor), 2 for easy.
 
+**Progress (2026-10-15): AI seats in campaigns (gate part 4).**
+
+- **Setting seats.** `nc-sysop settings ai-seat --dir D --player N
+  --difficulty easy|normal|hard` and `remove-ai-seat` set them. They are
+  stored in `ncgame.db`'s `ai_seats` table. A reserved seat cannot be an
+  AI seat.
+- **Playing them.** Before each maintenance year, every AI seat that may
+  still play does the following:
+  - The first time it plays, it joins its empire as "AI Empire N". A new
+    game's seats wait in civil disorder on autopilot until joined.
+  - It commissions its ships.
+  - It submits the network's turn through `apply_to_runtime_state`, as a
+    player's turn is applied.
+
+  After the year it reads its reports. Its `SeatMemory` is saved as JSON
+  in `ai_seat_memory`. A memory saved for another year starts over from
+  the stored planet intel.
+- **Where it runs.** `nc-sysop maint` and `nc-host`'s Nostr and community
+  maintenance all play AI seats with the agent named by `NC_AI_MODEL`.
+  Community joins skip AI seats.
+- **Memory deviation.** The seat's memory is kept, not rebuilt from stored
+  records: contacts are not stored anywhere else, and the stored intel
+  lacks what the seat learns from its own attack reports (t178).
+- **The exit's view check.** `nc-ai-onnx/tests/campaign.rs` advances a
+  campaign whose seats are all AI, one stored maintenance run a year, for
+  20 years. Every year the campaign's game equals the in-memory
+  simulator's on the same seeds (report record ranges aside). Each seat's
+  restored memory equals the simulator's.
+- **A full campaign.** `nc-sysop new-game` with four seats, seats 2–4
+  hard AI and seat 1 never joined, ran from 3000 to the engine's year
+  limit, 3100. Every AI turn was accepted. Seat 1's homeworld fell by
+  3020. By 3100 the AI seats held 13, 6 and 1 worlds.
+  - A first run stalled, its world counts unchanged from 3030 to 3100. The
+    AI seats had never joined their empires, so the engine's autopilot
+    overrode their orders. Joining on first play fixed it.
+
+**Remaining:** gate part 3, the owner's playtests. The owner and a few
+testers play full games against AI seats; a short checklist records each
+game, and the owner signs off. To play: create a campaign with
+`nc-sysop new-game`, mark seats with `settings ai-seat`, play your own seat
+in `nc-game`, and run `NC_AI_MODEL=fleet-final.onnx nc-sysop maint`. The
+model is on the mini at `~/.local/state/nostrian-conquest/ai/fleet-final.onnx`;
+`export_onnx.py` rebuilds it from `fleet-final.pt`.
+
 ### t167
 
 Give AI seats personalities.

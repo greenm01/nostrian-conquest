@@ -68,6 +68,18 @@ fn ai_seats_play_in_maintenance_with_a_model_and_refuse_without_one() {
     let (year, memory) = store.load_ai_seat_memory(3).unwrap().expect("memory saved");
     assert_eq!(year, 3003);
     assert!(memory.contains("\"empire\":3"));
+    let player = &store
+        .load_latest_runtime_state()
+        .unwrap()
+        .unwrap()
+        .game_data
+        .players[2];
+    assert_eq!(
+        player.mode,
+        nc_data::PlayerMode::Human,
+        "the AI seat joined"
+    );
+    assert!(!player.autopilot, "the AI, not autopilot, plays the seat");
 
     let removed = run(
         &[

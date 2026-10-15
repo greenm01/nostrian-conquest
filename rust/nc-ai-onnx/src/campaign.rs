@@ -1,6 +1,7 @@
 //! AI seats in a campaign's maintenance (t165).
 //!
-//! A sysop marks seats as AI in the campaign settings. Each maintenance year
+//! A sysop marks seats as AI in the campaign settings. An AI seat joins its
+//! empire, as "AI Empire N", the first time it plays. Each maintenance year
 //! every AI seat that may still play commissions its finished ships and
 //! submits its turn, as a player would, before the year runs; after the
 //! year it reads its reports into its memory. Its memory is saved with the
@@ -106,6 +107,18 @@ impl CampaignAi {
             );
             if access != PlayerAccessMode::Normal {
                 continue;
+            }
+            // A new game's seats wait in civil disorder, on autopilot,
+            // until their player joins; an AI seat joins when it first
+            // plays.
+            if maintenance
+                .game_data
+                .player_slot_is_open_for_first_join(player)
+            {
+                maintenance
+                    .game_data
+                    .join_player(player, &format!("AI Empire {player}"))
+                    .map_err(|err| format!("AI seat {player} cannot join: {err}"))?;
             }
             if let Some(commission) = commission_submission(&maintenance.game_data, memory.empire) {
                 apply(maintenance, &commission)?;
