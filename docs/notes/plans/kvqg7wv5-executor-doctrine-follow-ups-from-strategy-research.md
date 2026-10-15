@@ -421,7 +421,7 @@ from the recorded turns of its evaluation games.
 **Exit:** as in Scope, plus the counts of each attack mission and the
 captures that follow, with and without the switch.
 
-### Fleet defence, blockades and hunting (t169–t173)
+### Fleet defence, blockades, hunting and pickets (t169–t174)
 
 The owner (2026-10-15) asked whether the AI defends its worlds with fleets
 and blockades enemy worlds. It does not yet:
@@ -545,6 +545,40 @@ The work:
 - The executor change is measured as in Scope.
 - Report the fleet battles fought and won, and the warships lost, with and
   without the switch.
+
+### t174
+
+A picket net: cheap destroyers patrolling empty sectors.
+
+The owner's own practice (2026-10-15): build cheap destroyers and station
+one in each empty sector around the seat's worlds and on the common routes
+between worlds, on Patrol a Sector, to detect enemy fleet movements.
+
+- **Why it works.** Patrol a Sector watches ten times as hard as an
+  ordinary fleet and reports everything it spots. Destroyers are cheap and
+  the fastest ships (speed 6), so they can escape heavy fleets.
+- **Early warning.** Sightings enter the seat's contacts memory years
+  before an attack lands. t169's guards and t173's hunters respond to
+  those contacts; t162 found extra scouting unrewarded, but that scouting
+  had no responders.
+
+The work, behind a switch:
+
+- **Picket sectors.** Choose empty sectors one or two steps around the
+  seat's worlds, weighted toward known rival worlds, plus sectors on the
+  straight routes between the seat's worlds and the nearest rival worlds.
+  They need t173's deep-space targets.
+- **Build and post pickets.** Lone destroyers keep each picket sector
+  filled. The home world adds a destroyer when a sector is unwatched, up
+  to a tunable number of pickets.
+- **Low ROE.** A picket reports and gets away; it does not fight.
+
+**Exit:**
+
+- As in Scope, with the hunters and guards present in both arms, so the
+  comparison isolates the net.
+- Report how many years ahead rival fleets are first seen before they
+  reach the seat's worlds, with and without the net.
 
 ## Connections
 
