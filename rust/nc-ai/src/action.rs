@@ -18,7 +18,8 @@
 //! through `validate_fleet_order_payload`, which checks the fleet's own ships
 //! and whether a world at the target is the fleet's own; whether a world
 //! exists at a sector is public. Every target is a world's sector. Guard a
-//! Starbase and Join need a starbase or fleet target and are not offered yet.
+//! Starbase targets the world where one of the seat's own starbases sits,
+//! and names that base. Join needs a fleet target and is not offered yet.
 //!
 //! A learned seat commissions every finished ship before it chooses, through
 //! [`commission_submission`], so its masks see the fleets that creates.
@@ -59,7 +60,7 @@ pub(crate) fn build_units(points_left: u32, cost: u32, amount: usize) -> u32 {
 }
 
 /// The missions a seat can give, in mission-choice order.
-pub const MISSIONS: [Order; 14] = [
+pub const MISSIONS: [Order; 15] = [
     Order::HoldPosition,
     Order::MoveOnly,
     Order::SeekHome,
@@ -74,6 +75,7 @@ pub const MISSIONS: [Order; 14] = [
     Order::ColonizeWorld,
     Order::RendezvousSector,
     Order::Salvage,
+    Order::GuardStarbase,
 ];
 
 /// What may be chosen for one world the seat owns.
@@ -265,13 +267,24 @@ fn fleet_mask(
                         .planets
                         .iter()
                         .map(|planet| {
+                            let aux1 = match order {
+                                // Guard a Starbase names the seat's own
+                                // starbase at the target world.
+                                Order::GuardStarbase => {
+                                    match own_base_at(game_data, fleet.owner.0, planet.sector) {
+                                        Some(base) => Some(base),
+                                        None => return false,
+                                    }
+                                }
+                                _ => None,
+                            };
                             game_data
                                 .validate_fleet_order_payload(
                                     record,
                                     order.code(),
                                     planet.sector.to_array(),
                                     None,
-                                    None,
+                                    aux1,
                                 )
                                 .is_ok()
                         })
@@ -405,7 +418,8 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
                 speed,
                 order_code,
                 target,
-                ..
+                aux0,
+                aux1,
             } = order
             else {
                 unreachable!("fleet_order builds an Order action");
@@ -413,7 +427,7 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
             let target = target.or_else(|| working.nearest_owned_world(choice.record, false));
             let accepted = target.is_some_and(|target| {
                 working
-                    .set_fleet_order(choice.record, speed, order_code, target, None, None)
+                    .set_fleet_order(choice.record, speed, order_code, target, aux0, aux1)
                     .is_ok()
             });
             if accepted {
@@ -446,11 +460,29 @@ fn fleet_order(game_data: &CoreGameData, choice: &FleetChoice) -> FleetTurnActio
         Order::HoldPosition => Some(fleet.sector.to_array()),
         _ => Some(game_data.planets[choice.target].sector.to_array()),
     };
+    let aux1 = (order == Order::GuardStarbase)
+        .then(|| {
+            own_base_at(
+                game_data,
+                fleet.owner.0,
+                game_data.planets[choice.target].sector,
+            )
+        })
+        .flatten();
     FleetTurnAction::Order {
         speed: speed as u8,
         order_code: order.code(),
         target,
         aux0: None,
-        aux1: None,
+        aux1,
     }
+}
+
+/// The number of `owner`'s starbase in `sector`, for Guard a Starbase.
+fn own_base_at(game_data: &CoreGameData, owner: u8, sector: nc_data::Coords) -> Option<u8> {
+    game_data
+        .bases
+        .iter()
+        .find(|base| base.owner.0 == owner && base.sector == sector)
+        .and_then(|base| u8::try_from(base.base_id.0).ok())
 }

@@ -573,6 +573,18 @@ for world targets.
 - The masks reveal nothing about other empires.
 - The executor change is measured as in Scope.
 
+**Result (2026-10-15): accepted.** Guard a Starbase is the fifteenth
+mission. Its target is a world sector, as for the other missions, and the
+mask allows only worlds where one of the seat's own starbases sits; the
+order names that base. No separate pointer over starbase rows was needed,
+because a starbase always sits at a world. The mask uses only the seat's
+own bases, and the mask leak test still passes. Over 1,000 random games
+(30,000 game-years), random play gave 1,176,041 fleet orders, 51,621 of
+them Guard a Starbase, and none was rejected. The executor change moves to
+t169's home guard. Mission choices go from 15 to 16, so fleet-agent
+checkpoints from before this change no longer load; t157 retrains on the
+final executor anyway.
+
 ### t171
 
 A dedicated blockader.

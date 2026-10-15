@@ -83,6 +83,7 @@ struct Tally {
     fleet_orders: usize,
     builds: usize,
     dropped: usize,
+    guard_starbase: usize,
 }
 
 /// Play `years` of random masked turns; every submission must be accepted
@@ -119,6 +120,11 @@ fn play_random(game: &mut SeatedGame, years: u16, rng: &mut Rng, tally: &mut Tal
             }
             tally.dropped += decoded.dropped_fleet_orders.len();
             tally.fleet_orders += action.fleets.iter().filter(|c| c.mission > 0).count();
+            tally.guard_starbase += action
+                .fleets
+                .iter()
+                .filter(|c| c.mission > 0 && MISSIONS[c.mission - 1] == Order::GuardStarbase)
+                .count();
             tally.builds += action
                 .planets
                 .iter()
@@ -162,8 +168,13 @@ fn random_masked_turns_are_always_accepted() {
 fn a_thousand_random_masked_games_are_always_accepted() {
     let tally = play_games(1000, 30);
     println!(
-        "{} game-years, {} fleet orders, {} builds, {} second colonizers dropped",
-        tally.years, tally.fleet_orders, tally.builds, tally.dropped
+        "{} game-years, {} fleet orders ({} Guard a Starbase), {} builds, \
+         {} second colonizers dropped",
+        tally.years, tally.fleet_orders, tally.guard_starbase, tally.builds, tally.dropped
+    );
+    assert!(
+        tally.guard_starbase > 0,
+        "random play should guard a starbase"
     );
 }
 
