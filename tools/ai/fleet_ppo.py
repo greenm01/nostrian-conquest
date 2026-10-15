@@ -90,13 +90,16 @@ def choose_lineups(rng, games, learner):
 
 def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
     """Choose every learner's and strategist's goals and the learners'
-    fleet orders, and step the batch. Returns the step result and, for
-    training, the learners' samples."""
+    fleet orders, and step the batch. Returns the step result, for training
+    the learners' samples, and the seconds spent in the games themselves
+    (observing and stepping), apart from the networks."""
     live = ~done[:, None]
     learner = (roles == 1) & live
     others = (roles == 2) & live
+    started = time.perf_counter()
     obs, masks, goal_masks = env.observe(), env.masks(), env.goal_masks()
     env_goals = {name: np.zeros_like(value) for name, value in env.goal_labels().items()}
+    env_s = time.perf_counter() - started
     sample = None
     with torch.no_grad():
         if learner.any():
@@ -126,8 +129,9 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
             theirs = frozen_goals(strategist, obs, masks, goal_masks, others, dev)
             for name in HEADS:
                 env_goals[name][others] = theirs[name][others]
+    started = time.perf_counter()
     step = env.step(actions_for(env, fleet_actions), env_goals)
-    return step, sample
+    return step, sample, env_s + time.perf_counter() - started
 
 
 def head_to_head(model, strategist, families, opponent, games, years, first_map, dev,
@@ -147,7 +151,8 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     done = np.zeros(games, bool)
     wins = np.zeros(games)
     while not done.all():
-        step, _ = play_year(env, model, strategist, roles, done, families, dev, greedy=greedy)
+        step, _, _ = play_year(env, model, strategist, roles, done, families, dev,
+                               greedy=greedy)
         wins += step["reward"][np.arange(games), np.arange(games) % PLAYERS]
         done = step["done"].copy()
     return wins.mean()
@@ -272,9 +277,10 @@ def main():
         env.reset(list(range(next_map, next_map + args.games)), seats=names)
         next_map += args.games
         model.eval()
-        steps, done = [], np.zeros(args.games, bool)
+        steps, done, env_s = [], np.zeros(args.games, bool), 0.0
         while not done.all():
-            step, sample = play_year(env, model, strategist, roles, done, families, dev)
+            step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev)
+            env_s += seconds
             if sample is not None:
                 sample["reward"] = step["reward"][sample["select"]]
                 sample["done"] = np.repeat(step["done"][:, None], PLAYERS, 1)[sample["select"]]
@@ -285,7 +291,7 @@ def main():
                                       advantages(steps, args.gamma, args.lam), kl_coef, args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
         row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef, policy_loss=pl,
-                   value_loss=vl, kl_ref=kl, entropy=ent, play_s=played,
+                   value_loss=vl, kl_ref=kl, entropy=ent, play_s=played, env_s=env_s,
                    total_s=time.perf_counter() - started)
         save(model, out / "latest.pt", iteration=it, kind="fleet", families=families)
         if it % args.eval_every == 0:

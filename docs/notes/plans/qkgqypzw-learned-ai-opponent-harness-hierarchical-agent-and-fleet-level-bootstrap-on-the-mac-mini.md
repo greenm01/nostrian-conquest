@@ -745,9 +745,39 @@ with the hand-over result logged for each mission family.
   - **The strike family passes the hand-over.** The network's strike
     orders beat the executor's, well above 0.28. Colonize and scout stay
     with the executor.
-  - **Still to do.** t157's final runs follow t170–t175, on the final
-    executor. Checkpoints are kept in
-    `~/.local/state/nostrian-conquest/ai/fleet/`.
+- **Final runs (2026-10-15)**, on the final executor after t170–t175
+  (blockader on; Guard a Starbase, Detach and deep-space waypoints in the
+  actions) and from t175's strategist with the allocation goal
+  (`strategist-alloc-final.pt`).
+  - **Imitation,** 40 rounds. Final agreement: mission 0.87, target 0.89,
+    waypoint 1.00, speed 1.00, ROE 1.00, load 0.996, detach 0.975. The
+    goal KL ended at 0.21.
+  - **Stage B PPO,** strike handed over, KL fading to a 0.02 floor, 200
+    iterations at about 28 s each. On 256 maps every 20 iterations, one
+    seat against three of the new strategists read 0.188, 0.277, 0.273,
+    0.281, 0.275, 0.285, 0.322, 0.307, 0.375 and 0.344. Against three
+    executors the readings rose from 0.40 to 0.63.
+  - **On 1,024 maps** (block 100000 unless noted):
+
+    | Snapshot | vs 3 strategists | vs 3 executors |
+    | --- | ---: | ---: |
+    | Iteration 160, sampled | 0.330 | 0.540 |
+    | Iteration 180, sampled | 0.334 | 0.541 |
+    | Iteration 200, sampled | 0.345 | 0.580 |
+    | Iteration 200, sampled, block 200000 | 0.356 | 0.558 |
+    | Iteration 200, greedy | 0.379 | 0.674 |
+    | Iteration 200, greedy, block 200000 | 0.381 | 0.672 |
+
+    The same network with no families handed over (goals only) won 0.264
+    against three strategists. Iteration 200 won every game against
+    Aggressor and Autopilot, sampled and greedy.
+  - **Kept:** iteration 200 as
+    `~/.local/state/nostrian-conquest/ai/fleet-final.pt`, played greedy
+    with the strike family handed over. Colonize and scout stay with the
+    executor (stage A's parity). Greedy, it clears the readiness gate's
+    strength bar against executors (0.60) on both blocks. The league
+    rating and the soundness checks are t165's.
+  - Checkpoints are in `~/.local/state/nostrian-conquest/ai/fleet-final/`.
 
 ### t158
 
@@ -763,6 +793,22 @@ rsync them to the mini, with a limit on how stale its policy may be.
 
 **Exit:** utilisation is measured, and the decision is recorded here either
 way.
+
+**Result (2026-10-15): bean-void does not join.** `fleet_ppo.py` now logs
+`env_s`, the seconds spent in the games themselves: observing, masking,
+labelling and stepping. Over t157's final stage B run (200 iterations,
+5,696 s, 28.5 s an iteration):
+
+- **Games:** 284 s, 5.0% of the run.
+- **Rollout:** 1,394 s, 24.5%. This is the games plus the networks
+  choosing moves.
+- **The rest:** 75%, the PPO update and evaluations on the GPU.
+
+So the GPU waits on games far less than half the time. A whole training
+run takes about 1.6 hours, not a day. Neither condition holds. A second
+actor on bean-void's CPU would speed up the 5% of the run spent in games,
+not the rest. The strategist's PPO run (t175) also spent 39% of its time
+in rollouts, network moves included.
 
 ### t165
 
