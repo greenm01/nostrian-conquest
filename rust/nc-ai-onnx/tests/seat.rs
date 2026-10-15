@@ -6,7 +6,7 @@
 
 use std::path::Path;
 
-use nc_ai::{Families, Weights, match_game};
+use nc_ai::{Families, match_game};
 use nc_ai_onnx::NetworkSeat;
 use nc_data::{PlanetTurnAction, TurnSubmission};
 
@@ -44,7 +44,7 @@ fn the_rust_seat_makes_the_recorded_turns() {
             strike: true,
             ..Families::NONE
         },
-        Weights::TUNED,
+        nc_ai::personality("land-grab").unwrap(),
     )
     .expect("the fixture network loads");
     let years = field("years") as u16;

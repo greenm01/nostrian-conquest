@@ -46,7 +46,7 @@ pub fn print_settings_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings unreserve --dir <game_dir> --player <N>"
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings ai-seat --dir <game_dir> --player <N> --difficulty <easy|normal|hard>"
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings ai-seat --dir <game_dir> --player <N> --difficulty <easy|normal|hard> [--personality <land-grab|rusher|turtle>]"
     );
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings remove-ai-seat --dir <game_dir> --player <N>"

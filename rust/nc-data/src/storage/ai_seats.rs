@@ -40,30 +40,40 @@ impl AiDifficulty {
 }
 
 /// A seat a learned agent plays.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AiSeat {
     pub player_record_index_1_based: usize,
     pub difficulty: AiDifficulty,
+    /// The seat's style (t167), one of `nc_ai::PERSONALITIES`.
+    pub personality: String,
 }
+
+/// The personality an AI seat plays unless the sysop names one.
+pub const DEFAULT_AI_PERSONALITY: &str = "land-grab";
 
 pub(super) fn load_ai_seats_conn(
     conn: &rusqlite::Connection,
 ) -> Result<Vec<AiSeat>, CampaignStoreError> {
     let mut stmt = conn.prepare(
-        "SELECT player_record_index, difficulty
+        "SELECT player_record_index, difficulty, personality
          FROM ai_seats
          ORDER BY player_record_index ASC",
     )?;
     let rows = stmt
         .query_map([], |row| {
-            Ok((row.get::<_, i64>(0)? as usize, row.get::<_, String>(1)?))
+            Ok((
+                row.get::<_, i64>(0)? as usize,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+            ))
         })?
         .collect::<Result<Vec<_>, _>>()?;
     rows.into_iter()
-        .map(|(player, difficulty)| {
+        .map(|(player, difficulty, personality)| {
             Ok(AiSeat {
                 player_record_index_1_based: player,
                 difficulty: AiDifficulty::parse(&difficulty)?,
+                personality,
             })
         })
         .collect()
@@ -76,10 +86,12 @@ pub(super) fn save_ai_seats_tx(
     tx.execute("DELETE FROM ai_seats", [])?;
     for seat in seats {
         tx.execute(
-            "INSERT INTO ai_seats(player_record_index, difficulty) VALUES (?1, ?2)",
+            "INSERT INTO ai_seats(player_record_index, difficulty, personality)
+             VALUES (?1, ?2, ?3)",
             params![
                 seat.player_record_index_1_based as i64,
-                seat.difficulty.as_str()
+                seat.difficulty.as_str(),
+                seat.personality
             ],
         )?;
     }

@@ -27,6 +27,7 @@ def main():
     parser.add_argument("--first-map", type=int, default=100000)
     parser.add_argument("--greedy", action="store_true",
                         help="take each head's most likely choice")
+    parser.add_argument("--style", help="the learner's executor personality (t167)")
     args = parser.parse_args()
 
     dev = device()
@@ -34,11 +35,17 @@ def main():
     strategist = policy.load(args.strategist, dev)
     families = [f for f in args.families.split(",") if f]
     started = time.perf_counter()
+    war_years = []
     wins = head_to_head(model, strategist, families, args.opponent, args.games, args.years,
-                        args.first_map, dev, greedy=args.greedy)
+                        args.first_map, dev, greedy=args.greedy, style=args.style,
+                        war_years=war_years)
     mode = "greedy" if args.greedy else "sampled"
-    print(f"{args.checkpoint} [{','.join(families)}] {mode} vs 3x {args.opponent}, {args.games} maps "
-          f"from {args.first_map}: win share {wins:.3f} ({time.perf_counter() - started:.0f}s)")
+    wars = [year for year in war_years if year is not None]
+    war = (f"first war goal in year {sum(wars) / len(wars):.1f} ({len(wars)} games)"
+           if wars else "no war goal")
+    print(f"{args.checkpoint} [{','.join(families)}{'@' + args.style if args.style else ''}] "
+          f"{mode} vs 3x {args.opponent}, {args.games} maps from {args.first_map}: "
+          f"win share {wins:.3f}, {war} ({time.perf_counter() - started:.0f}s)")
 
 
 if __name__ == "__main__":

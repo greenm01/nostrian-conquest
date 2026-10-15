@@ -9,14 +9,21 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai --example tune_executor -- \
-//!     [--generations 30] [--population 24] [--games 16] [--years 60] [--margin 0.1]
+//!     [--generations 30] [--population 24] [--games 16] [--years 60] [--margin 0.1] \
+//!     [--personality rusher] [--against-default]
 //! ```
+//!
+//! `--personality` tunes a style (t167) from its profile, within its
+//! bounds. `--against-default` scores candidates against three seats of the
+//! default style instead of the champion, and the generation's best becomes
+//! the champion: a style is tuned to hold its own in a mixed game, not to
+//! beat its own kind.
 //!
 //! It prints each generation's best and the champion as a `Weights` literal.
 
 use std::thread;
 
-use nc_ai::{SeatPolicy, Weights, play_match};
+use nc_ai::{Personality, SeatPolicy, Weights, personality, play_match};
 
 const PLAYERS: usize = 4;
 
@@ -40,13 +47,13 @@ impl Rng {
     }
 }
 
-fn mutate(parent: Weights, sigma: f32, rng: &mut Rng) -> Weights {
+fn mutate(parent: Weights, style: &Personality, sigma: f32, rng: &mut Rng) -> Weights {
     let mut values = parent.to_array();
     for (idx, value) in values.iter_mut().enumerate() {
-        let (lo, hi) = Weights::RANGES[idx];
+        let (lo, hi) = style.ranges[idx];
         *value += rng.normal() * sigma * (hi - lo);
     }
-    Weights::from_array(values)
+    style.weights_from_array(values)
 }
 
 /// Mean win share plus production share of `candidate` against three
@@ -102,20 +109,40 @@ fn main() {
     let years = arg("--years", 60.0) as u16;
     let margin = arg("--margin", 0.1);
     let elite_size = (population_size / 4).max(1);
+    let named = |flag: &str| {
+        args.iter()
+            .position(|arg| arg == flag)
+            .map(|idx| args[idx + 1].clone())
+    };
+    let style = named("--personality")
+        .map(|name| personality(&name).unwrap_or_else(|| panic!("unknown personality {name}")));
+    let against_default = args.iter().any(|arg| arg == "--against-default");
+    let default = personality("land-grab").expect("the default style is built in");
 
     let mut rng = Rng(0x7E5_EC0);
-    let mut champion = Weights::BASELINE;
+    let mut champion = style
+        .as_ref()
+        .map_or(Weights::BASELINE, |style| style.weights);
+    let style = style.unwrap_or(Personality {
+        ranges: Weights::RANGES,
+        ..default.clone()
+    });
     let mut elite = vec![champion];
     for generation in 0..generations {
         let sigma = 0.15 * (1.0 - generation as f32 / generations as f32).max(0.2);
         let mut population = elite.clone();
         while population.len() < population_size {
             let parent = elite[population.len() % elite.len()];
-            population.push(mutate(parent, sigma, &mut rng));
+            population.push(mutate(parent, &style, sigma, &mut rng));
         }
         let first = 1_000 + u64::from(generation) * games;
         let maps: Vec<u64> = (first..first + games).collect();
-        let scores = evaluate(&population, champion, &maps, years);
+        let opponent = if against_default {
+            default.weights
+        } else {
+            champion
+        };
+        let scores = evaluate(&population, opponent, &maps, years);
         let mut ranked: Vec<usize> = (0..population.len()).collect();
         ranked.sort_by(|&a, &b| scores[b].total_cmp(&scores[a]));
         elite = ranked[..elite_size]
@@ -123,7 +150,7 @@ fn main() {
             .map(|&idx| population[idx])
             .collect();
         let best = ranked[0];
-        let promoted = scores[best] >= 0.5 + margin;
+        let promoted = against_default || scores[best] >= 0.5 + margin;
         if promoted {
             champion = population[best];
         }

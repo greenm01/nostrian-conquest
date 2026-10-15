@@ -47,7 +47,10 @@ fn ai_seats_play_in_maintenance_with_a_model_and_refuse_without_one() {
         String::from_utf8_lossy(&set.stderr)
     );
     let shown = run(&["settings", "show", "--dir", target], None);
-    assert!(String::from_utf8_lossy(&shown.stdout).contains("ai_seat seat=3 difficulty=normal"));
+    assert!(
+        String::from_utf8_lossy(&shown.stdout)
+            .contains("ai_seat seat=3 difficulty=normal personality=land-grab")
+    );
     let settings = CampaignStore::open_default_in_dir(&dir)
         .unwrap()
         .load_campaign_settings()
@@ -80,6 +83,45 @@ fn ai_seats_play_in_maintenance_with_a_model_and_refuse_without_one() {
         "the AI seat joined"
     );
     assert!(!player.autopilot, "the AI, not autopilot, plays the seat");
+
+    let ai_seat = |player: &str, difficulty: &str, personality: &str| {
+        run(
+            &[
+                "settings",
+                "ai-seat",
+                "--dir",
+                target,
+                "--player",
+                player,
+                "--difficulty",
+                difficulty,
+                "--personality",
+                personality,
+            ],
+            None,
+        )
+    };
+    let unknown = ai_seat("4", "hard", "pacifist");
+    assert!(!unknown.status.success());
+    assert!(String::from_utf8_lossy(&unknown.stderr).contains("unknown personality"));
+    assert!(ai_seat("4", "easy", "rusher").status.success());
+    let shown = run(&["settings", "show", "--dir", target], None);
+    assert!(
+        String::from_utf8_lossy(&shown.stdout)
+            .contains("ai_seat seat=4 difficulty=easy personality=rusher")
+    );
+    assert!(
+        run(&["maint", target, "2"], Some(&model)).status.success(),
+        "a rusher seat plays beside a land-grab seat"
+    );
+    assert!(
+        run(
+            &["settings", "remove-ai-seat", "--dir", target, "--player", "4"],
+            None
+        )
+        .status
+        .success()
+    );
 
     let removed = run(
         &[

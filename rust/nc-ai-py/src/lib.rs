@@ -47,7 +47,9 @@ impl Env {
     /// of the comma-separated families `colonize`, `scout` and `strike`),
     /// `executor` (tuned weights), `baseline` (the executor's hand-set
     /// weights), `classic` (t154's executor), `aggressor` or `autopilot`. Every seat is learned by
-    /// default.
+    /// default. A personality (t167) names its style's executor, and
+    /// `strategist`, `hybrid:...` and `executor` take a style as
+    /// `@NAME`, e.g. `hybrid:strike@rusher`; the default is `land-grab`.
     #[pyo3(signature = (map_seeds, campaign_seeds = None, seats = None))]
     fn reset(
         &mut self,
@@ -408,6 +410,10 @@ fn result_dict<'py>(py: Python<'py>, result: &MatchResult) -> PyResult<Bound<'py
 }
 
 fn seat(name: &str) -> PyResult<Seat> {
+    let (name, weights) = match name.split_once('@') {
+        Some((name, style)) => (name, style_weights(style)?),
+        None => (name, Weights::TUNED),
+    };
     if let Some(families) = name.strip_prefix("hybrid:") {
         let mut handed = Families::NONE;
         for family in families.split(',').filter(|family| !family.is_empty()) {
@@ -420,18 +426,25 @@ fn seat(name: &str) -> PyResult<Seat> {
                 }
             }
         }
-        return Ok(Seat::Hybrid(Weights::TUNED, handed));
+        return Ok(Seat::Hybrid(weights, handed));
     }
     Ok(match name {
         "learned" => Seat::Learned,
-        "strategist" => Seat::Strategist(Weights::TUNED),
-        "executor" => Seat::Scripted(SeatPolicy::Executor(Weights::TUNED)),
+        "strategist" => Seat::Strategist(weights),
+        "executor" => Seat::Scripted(SeatPolicy::Executor(weights)),
         "baseline" => Seat::Scripted(SeatPolicy::Executor(Weights::BASELINE)),
         "classic" => Seat::Scripted(SeatPolicy::Executor(Weights::CLASSIC)),
         "aggressor" => Seat::Scripted(SeatPolicy::Aggressor),
         "autopilot" => Seat::Scripted(SeatPolicy::Autopilot),
-        _ => return Err(PyValueError::new_err(format!("unknown seat {name:?}"))),
+        style => Seat::Scripted(SeatPolicy::Executor(style_weights(style)?)),
     })
+}
+
+/// A personality's executor weights.
+fn style_weights(style: &str) -> PyResult<Weights> {
+    nc_ai::personality(style)
+        .map(|style| style.weights)
+        .ok_or_else(|| PyValueError::new_err(format!("unknown seat or personality {style:?}")))
 }
 
 /// The named int64 arrays from `dict`.

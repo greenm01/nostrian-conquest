@@ -1,0 +1,42 @@
+// The turtle (t167): strong garrisons, batteries and starbases, war late,
+// and strikes only at long odds. It holds back fleet for defence by threat
+// (t175's allocation rule).
+personality "turtle"
+weights {
+    tax 61.37
+    home-armies 20.0
+    colony-armies 10.0
+    batteries 9.18
+    etacs 6.89
+    scouts 0.66
+    starbases 3.0
+    transports 14.75
+    battleship 0.56
+    cruiser 0.99
+    destroyer 0.07
+    attack-ratio 3.41
+    roe 8.4
+    war-year 29.92
+}
+doctrine {
+    land-grab #true
+    strike-weakest #true
+    suppress-first #true
+    scaled-garrisons #true
+    blockader #true
+    allocate #true
+}
+// Tuning keeps the style: full garrisons and batteries, starbases, late war
+// and long odds.
+bounds {
+    colony-armies 8.0 10.0
+    batteries 8.0 10.0
+    starbases 2.0 3.0
+    attack-ratio 3.0 4.0
+    war-year 24.0 30.0
+}
+// A learned turtle always guards threatened worlds (t175's allocation 1 or
+// 2), whatever its network would choose.
+goals {
+    allocation 1 2
+}

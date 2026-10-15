@@ -5,7 +5,7 @@
 
 use std::path::{Path, PathBuf};
 
-use nc_ai::{Weights, commission_submission, match_game};
+use nc_ai::{commission_submission, match_game};
 use nc_ai_onnx::{AGENT_FAMILIES, CampaignAi, NetworkSeat};
 use nc_data::{AiDifficulty, AiSeat, CampaignSettings, CampaignStore};
 use nc_engine::CampaignMaintenance;
@@ -47,11 +47,17 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
         .map(|player| AiSeat {
             player_record_index_1_based: player,
             difficulty: AiDifficulty::Hard,
+            personality: "land-grab".to_string(),
         })
         .collect();
     store.save_campaign_settings(&settings).unwrap();
 
-    let seat = NetworkSeat::load(&model(), AGENT_FAMILIES, Weights::TUNED).unwrap();
+    let seat = NetworkSeat::load(
+        &model(),
+        AGENT_FAMILIES,
+        nc_ai::personality("land-grab").unwrap(),
+    )
+    .unwrap();
     for _ in 0..years {
         // The simulator: each seat commissions and plays in seat order.
         for empire in 1..=PLAYERS as u8 {

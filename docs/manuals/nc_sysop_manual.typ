@@ -313,8 +313,15 @@ A non-BBS campaign can seat the learned AI in place of a player:
 
 ```
 nc-sysop settings ai-seat --dir /srv/nc/games/friday-night --player 3 --difficulty hard
+nc-sysop settings ai-seat --dir /srv/nc/games/friday-night --player 4 --difficulty normal --personality rusher
 nc-sysop settings remove-ai-seat --dir /srv/nc/games/friday-night --player 3
 ```
+
+`--personality` picks the seat's style. The default is `land-grab`, which
+expands hard and early and strikes when it has the odds. `rusher` goes to war
+at once and attacks at long odds. `turtle` keeps strong garrisons and
+starbases, always guards threatened worlds, and attacks late. Seats can mix
+styles.
 
 Difficulty is `easy`, `normal` or `hard`. `hard` is the agent at full
 strength. On test maps it won about two games in three against three scripted

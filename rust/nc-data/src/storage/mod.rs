@@ -20,7 +20,7 @@ mod seat_bind_source;
 mod settings;
 mod snapshot_core;
 
-pub use ai_seats::{AiDifficulty, AiSeat};
+pub use ai_seats::{AiDifficulty, AiSeat, DEFAULT_AI_PERSONALITY};
 pub use player_activity::PlayerActivityState;
 pub use player_lifecycle::{PlayerLifecycleState, TerminalOutcome, WinnerState};
 pub use player_war_stats::PlayerWarStatsState;
@@ -351,7 +351,8 @@ impl CampaignStore {
              );
              CREATE TABLE IF NOT EXISTS ai_seats (
                  player_record_index INTEGER PRIMARY KEY,
-                 difficulty TEXT NOT NULL
+                 difficulty TEXT NOT NULL,
+                 personality TEXT NOT NULL DEFAULT 'land-grab'
              );
              CREATE TABLE IF NOT EXISTS ai_seat_memory (
                  player_record_index INTEGER PRIMARY KEY,
@@ -472,6 +473,12 @@ impl CampaignStore {
         ensure_column(&conn, "planet_intel", "known_docked_summary", "TEXT")?;
         ensure_column(&conn, "planet_intel", "known_orbit_summary", "TEXT")?;
         ensure_column(&conn, "planet_intel", "known_starbase_count", "INTEGER")?;
+        ensure_column(
+            &conn,
+            "ai_seats",
+            "personality",
+            "TEXT NOT NULL DEFAULT 'land-grab'",
+        )?;
         let mut conn = conn;
         let schema_version = metadata::load_runtime_schema_version(&mut conn)?;
         match schema_version {

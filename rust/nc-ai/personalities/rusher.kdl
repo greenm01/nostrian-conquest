@@ -1,0 +1,38 @@
+// The rusher (t167): war from the first years, few ETACs, and strikes below
+// a target's estimated defence. Starting weights are the rush t164's tuning
+// found.
+personality "rusher"
+weights {
+    tax 65.0
+    home-armies 17.77
+    colony-armies 9.62
+    batteries 7.69
+    etacs 2.8
+    scouts 1.31
+    starbases 0.0
+    transports 15.03
+    battleship 0.81
+    cruiser 0.9
+    destroyer 0.64
+    attack-ratio 0.69
+    roe 6.4
+    war-year 1.51
+}
+doctrine {
+    land-grab #true
+    strike-weakest #true
+    suppress-first #true
+    scaled-garrisons #true
+    blockader #true
+    allocate #false
+}
+// Tuning keeps the style: early war, low odds to attack, little expansion.
+bounds {
+    etacs 0.0 3.0
+    attack-ratio 0.5 1.0
+    war-year 0.0 3.0
+}
+// A learned rusher strikes with everything (t175's allocation 0).
+goals {
+    allocation 0 0
+}

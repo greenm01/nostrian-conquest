@@ -3,8 +3,8 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai --example executor_matches -- \
-//!     [--weights baseline|tuned|classic] \
-//!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
+//!     [--weights baseline|tuned|classic|PERSONALITY] \
+//!     [--opponent aggressor|autopilot|baseline|tuned|classic|PERSONALITY] \
 //!     [--with strike_weakest|strike_by_value|suppress_first|blockader] \
 //!     [--games 64] [--years 60] [--first-map 0] [--paired]
 //! ```
@@ -23,7 +23,7 @@
 
 use std::thread;
 
-use nc_ai::{SeatPolicy, Weights, play_match};
+use nc_ai::{SeatPolicy, Weights, personality, play_match};
 
 const PLAYERS: usize = 4;
 
@@ -38,7 +38,7 @@ fn main() {
         None | Some("tuned") => Weights::TUNED,
         Some("baseline") => Weights::BASELINE,
         Some("classic") => Weights::CLASSIC,
-        Some(other) => panic!("unknown weights {other}"),
+        Some(other) => style(other),
     };
     let opponent = match arg("--opponent").as_deref() {
         None | Some("aggressor") => SeatPolicy::Aggressor,
@@ -46,7 +46,7 @@ fn main() {
         Some("baseline") => SeatPolicy::Executor(Weights::BASELINE),
         Some("tuned") => SeatPolicy::Executor(Weights::TUNED),
         Some("classic") => SeatPolicy::Executor(Weights::CLASSIC),
-        Some(other) => panic!("unknown opponent {other}"),
+        Some(other) => SeatPolicy::Executor(style(other)),
     };
     // Doctrine switches to turn on for the candidate seat only.
     let without = weights;
@@ -101,6 +101,13 @@ fn main() {
         wins / n,
         share / n
     );
+}
+
+/// A personality's weights (t167).
+fn style(name: &str) -> Weights {
+    personality(name)
+        .unwrap_or_else(|| panic!("unknown weights or personality {name}"))
+        .weights
 }
 
 /// (map, win share, production share) for each game. With `NC_AI_VERBOSE`

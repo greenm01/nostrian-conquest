@@ -280,9 +280,10 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             }
             for seat in settings.ai_seats {
                 println!(
-                    "ai_seat seat={} difficulty={}",
+                    "ai_seat seat={} difficulty={} personality={}",
                     seat.player_record_index_1_based,
-                    seat.difficulty.as_str()
+                    seat.difficulty.as_str(),
+                    seat.personality
                 );
             }
             Ok(())

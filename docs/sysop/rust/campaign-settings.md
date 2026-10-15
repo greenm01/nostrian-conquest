@@ -34,7 +34,7 @@ maintenance_enabled=false
 maintenance_interval_minutes=1440
 maintenance_next_due_unix_seconds=
 reservation seat=1 alias=SYSOP
-ai_seat seat=3 difficulty=hard
+ai_seat seat=3 difficulty=hard personality=land-grab
 ```
 
 A fresh game starts with maintenance scheduling disabled. The next-due field
@@ -90,8 +90,18 @@ A non-BBS campaign can have seats played by the learned AI:
 
 ```sh
 nc-sysop settings ai-seat --dir /path/to/mygame --player 3 --difficulty hard
+nc-sysop settings ai-seat --dir /path/to/mygame --player 4 --difficulty normal --personality rusher
 nc-sysop settings remove-ai-seat --dir /path/to/mygame --player 3
 ```
+
+`--personality` picks the seat's style. The default is `land-grab`.
+
+- `land-grab` expands hard and early, and strikes when it has the odds.
+- `rusher` goes to war at once, with few colonists and long-odds attacks.
+- `turtle` keeps strong garrisons, batteries and starbases, always guards
+  threatened worlds, and attacks late.
+
+Seats can mix styles, so a game has variety.
 
 Difficulty is `easy`, `normal` or `hard`. Hard plays the agent at full
 strength. On held-out test maps it won about two games in three against

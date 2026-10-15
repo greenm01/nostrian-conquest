@@ -4,7 +4,7 @@
 //!
 //! A [`NetworkSeat`] plays one empire as the agent was trained to: the
 //! network sets the seat's goals and orders the fleets of its handed-over
-//! [`Families`], and the executor with the seat's [`Weights`] carries out
+//! [`Families`], and the executor of the seat's [`Personality`] carries out
 //! the goals for everything else, building included. The seat sees only
 //! what a [`SeatMemory`] and the empire's own records hold, through the
 //! same observation and masks the agent trained on.
@@ -20,7 +20,7 @@ use std::path::Path;
 
 use nc_ai::{
     DETACH_CHOICES, DIPLOMACY_CHOICES, Families, FleetChoice, GoalMasks, Goals, MISSION_CHOICES,
-    Observation, ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES, Weights,
+    Observation, Personality, ROE_CHOICES, SPEED_CHOICES, SeatMasks, SeatMemory, WAYPOINT_CHOICES,
     decode_action, execute_goals, fleet_family, goal_masks, observe, seat_masks,
 };
 use nc_data::{CoreGameData, TurnSubmission};
@@ -29,6 +29,7 @@ use tract_onnx::prelude::*;
 mod campaign;
 
 pub use campaign::{AGENT_FAMILIES, CampaignAi, MODEL_ENV, model_from_env, temperature};
+pub use nc_ai::PERSONALITIES;
 
 /// Goal head widths the exported graph was built with; the diplomacy,
 /// strike and colonize heads follow the game.
@@ -42,7 +43,7 @@ type Plan = SimplePlan<TypedFact, Box<dyn TypedOp>, Graph<TypedFact, Box<dyn Typ
 pub struct NetworkSeat {
     plan: Plan,
     families: Families,
-    weights: Weights,
+    style: Personality,
 }
 
 /// One seat's choices: its goals, and an order for each fleet row of its
@@ -54,9 +55,10 @@ pub struct NetworkChoices {
 }
 
 impl NetworkSeat {
-    /// Load an exported agent whose network orders `families`, with the
-    /// executor playing `weights` for the rest.
-    pub fn load(path: &Path, families: Families, weights: Weights) -> TractResult<Self> {
+    /// Load an exported agent whose network orders `families`. The seat
+    /// plays `style` (t167): its executor carries out the goals for the
+    /// rest, and its goal bounds hold the network's goals.
+    pub fn load(path: &Path, families: Families, style: Personality) -> TractResult<Self> {
         let plan = tract_onnx::onnx()
             .model_for_path(path)?
             .into_optimized()?
@@ -64,7 +66,7 @@ impl NetworkSeat {
         Ok(Self {
             plan,
             families,
-            weights,
+            style,
         })
     }
 
@@ -82,8 +84,15 @@ impl NetworkSeat {
         let masks = seat_masks(game_data, empire);
         let goal_mask = goal_masks(game_data, memory, &masks);
         let observation = observe(game_data, memory);
-        let chosen = self.choose(&observation, &masks, &goal_mask, temperature, seed)?;
-        let mut action = execute_goals(game_data, memory, &masks, &self.weights, &chosen.goals);
+        let mut chosen = self.choose(&observation, &masks, &goal_mask, temperature, seed)?;
+        self.style.bound_goals(&mut chosen.goals);
+        let mut action = execute_goals(
+            game_data,
+            memory,
+            &masks,
+            &self.style.weights,
+            &chosen.goals,
+        );
         for (choice, mine) in action.fleets.iter_mut().zip(&chosen.fleets) {
             let fleet = &game_data.fleets[choice.record - 1];
             if self.families.contains(fleet_family(fleet)) {

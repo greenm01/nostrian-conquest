@@ -134,12 +134,20 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
     return step, sample, env_s + time.perf_counter() - started
 
 
+def learner_name(families, style=None):
+    """The env seat name of a hybrid learner whose executor plays
+    ``style`` (a personality, t167), the default when ``None``."""
+    return "hybrid:" + ",".join(families) + (f"@{style}" if style else "")
+
+
 def head_to_head(model, strategist, families, opponent, games, years, first_map, dev,
-                 greedy=False):
+                 greedy=False, style=None, war_years=None):
     """Win share of one learner seat against three ``opponent`` seats
-    (``strategist`` or a scripted policy), the learner's seat rotated."""
+    (``strategist`` or a scripted policy), the learner's seat rotated. With
+    ``war_years`` (a list), each game's first year the learner set a war
+    goal, counted from the start, is appended, or ``None`` for never."""
     env = nc_ai_env.Env(PLAYERS, years)
-    learner = "hybrid:" + ",".join(families)
+    learner = learner_name(families, style)
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
     for game in range(games):
         lineup = [opponent] * PLAYERS
@@ -150,11 +158,22 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     env.reset(list(range(first_map, first_map + games)), seats=names)
     done = np.zeros(games, bool)
     wins = np.zeros(games)
+    first_war = [None] * games
+    year = 0
     while not done.all():
-        step, _, _ = play_year(env, model, strategist, roles, done, families, dev,
-                               greedy=greedy)
+        live = np.flatnonzero(~done)
+        step, sample, _ = play_year(env, model, strategist, roles, done, families, dev,
+                                    greedy=greedy)
+        if sample is not None:
+            war = (sample["goals"]["diplomacy"] == 2).any(-1).numpy()
+            for game, at_war in zip(live, war):
+                if at_war and first_war[game] is None:
+                    first_war[game] = year
         wins += step["reward"][np.arange(games), np.arange(games) % PLAYERS]
         done = step["done"].copy()
+        year += 1
+    if war_years is not None:
+        war_years.extend(first_war)
     return wins.mean()
 
 
@@ -253,6 +272,7 @@ def main():
     parser.add_argument("--eval-every", type=int, default=20)
     parser.add_argument("--eval-games", type=int, default=256)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--style", help="the learner's executor personality (t167)")
     args = parser.parse_args()
 
     families = [f for f in args.families.split(",") if f]
@@ -267,7 +287,7 @@ def main():
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years)
     log = open(out / "log.jsonl", "a")
-    learner = "hybrid:" + ",".join(families)
+    learner = learner_name(families, args.style)
     next_map = 3_000_000
 
     for it in range(1, args.iterations + 1):
@@ -301,7 +321,7 @@ def main():
             for opponent in ("strategist", "executor"):
                 row[f"eval_{opponent}"] = float(head_to_head(
                     model, strategist, families, opponent, args.eval_games, args.years,
-                    100000, dev))
+                    100000, dev, style=args.style))
         log.write(json.dumps(row) + "\n")
         log.flush()
         print(" ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}"

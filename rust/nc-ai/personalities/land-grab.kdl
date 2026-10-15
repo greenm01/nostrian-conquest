@@ -1,0 +1,33 @@
+// The default style (t167): ETACs with escorts and scouts before garrisons,
+// war late, and strikes at about two and a half times a target's estimated
+// defence. These are `Weights::TUNED`.
+personality "land-grab"
+weights {
+    tax 65.0
+    home-armies 20.0
+    colony-armies 10.0
+    batteries 9.67
+    etacs 3.93
+    scouts 0.14
+    starbases 1.67
+    transports 16.0
+    battleship 0.38
+    cruiser 0.59
+    destroyer 0.0
+    attack-ratio 2.43
+    roe 6.26
+    war-year 20.7
+}
+doctrine {
+    land-grab #true
+    strike-weakest #true
+    suppress-first #true
+    scaled-garrisons #true
+    blockader #true
+    allocate #false
+}
+// Tuning keeps the style: maximal early expansion and a long horizon.
+bounds {
+    etacs 2.5 8.0
+    war-year 12.0 30.0
+}

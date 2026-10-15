@@ -1085,6 +1085,64 @@ win.
   the default.
 - The owner approves the styles in playtests.
 
+**Progress (2026-10-15).**
+
+- **Profiles.** `nc-ai/personalities/{land-grab,rusher,turtle}.kdl`, parsed
+  by `nc_ai::personality`. Each sets every weight and doctrine switch once.
+  Each also sets bounds for its identity weights:
+  - land grab: ETACs 2.5–8, war year 12–30;
+  - rusher: ETACs 0–3, attack ratio 0.5–1, war year 0–3;
+  - turtle: colony armies and batteries 8–10, starbases 2–3, attack ratio
+    3–4, war year 24–30.
+
+  A test checks that `land-grab` equals `Weights::TUNED`, and that a
+  profile missing a knob, setting one twice, or leaving its bounds is
+  refused.
+- **Tuning within bounds.** `tune_executor --personality NAME
+  --against-default` tunes a style against three default seats, inside its
+  bounds: 40 generations of 32. On 1,024 maps, one seat against three land
+  grabs:
+  - the rusher went from 0.195 (t164's rush weights) to 0.212;
+  - the turtle went from 0.129 (hand-set) to 0.194.
+- **Each style plays recognisably** (`style_stats`, 1,024 games, one seat
+  against three land grabs):
+
+  | Style | Win share | First war | First attack | Build mix |
+  | --- | ---: | --- | ---: | --- |
+  | Land grab | 0.242 | year 21.0, in 584 games | year 14.5 | starbases 2%, batteries 20% |
+  | Rusher | 0.212 | year 2.0, every game | year 8.6 | destroyers 4%, batteries 16% |
+  | Turtle | 0.194 | year 30.0, in 149 games | year 13.9 | starbases 4%, ETACs 1%, armies 9% |
+
+  The turtle also holds fleet back through t175's allocation rule.
+  Expansion is about five worlds at years 10, 20 and 40 for every style,
+  because these are small 20-world maps.
+- **Mixed league** (2,048 more matches): the default executor rated 31.15,
+  the turtle 30.48 and the rusher 30.14. Neither falls far below the
+  default.
+- **Learned seats keep the style.** The fleet agent never sets a war goal:
+  it strikes without declaring war. So a learned seat's style comes from
+  its executor, and from goal bounds in the profile (`goals { allocation
+  LO HI }`), which `NetworkSeat` applies to the network's goals. The
+  rusher strikes with everything (allocation 0). The turtle always guards
+  (allocation 1–2). The Rust seat, one against three executors on 1,024
+  maps, greedy:
+
+  | Style | Win share | First attack | Worlds at year 20 | Defence share of builds |
+  | --- | ---: | ---: | ---: | ---: |
+  | Land grab | 0.674 | year 12.8 | 5.4 | 35% |
+  | Rusher | 0.616 | year 10.9 | 5.6 | 26% |
+  | Turtle | 0.604 | year 13.2 | 5.4 | 35% |
+
+  The network leaves the turtle closest to the default. Its difference is
+  that it always guards. No per-style fine-tune was run: PPO rewards
+  winning, not keeping a style, and the goal bounds keep the style
+  directly.
+- **In real games**, `nc-sysop settings ai-seat` takes `--personality`,
+  stored with each AI seat. `CampaignAi` loads one network seat per
+  personality in use, and seats can mix styles.
+
+**Remaining:** the owner approves the styles in playtests.
+
 ### t166
 
 Learn from real games once AI seats play people.

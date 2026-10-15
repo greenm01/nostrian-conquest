@@ -167,10 +167,10 @@ pub use starmap::{
 };
 pub use storage::{
     AiDifficulty, AiSeat, CampaignRuntimeState, CampaignSettings, CampaignStore,
-    CampaignStoreError, DEFAULT_CAMPAIGN_DB_NAME, DEFAULT_CAMPAIGN_THEME_KEY,
-    DEFAULT_MAINTENANCE_INTERVAL_MINUTES, IntelTier, PlanetIntelSnapshot, PlayerActivityState,
-    PlayerLifecycleState, PlayerWarStatsState, STALE_SESSION_MESSAGE, SeatBindSource,
-    TerminalOutcome, WinnerState,
+    CampaignStoreError, DEFAULT_AI_PERSONALITY, DEFAULT_CAMPAIGN_DB_NAME,
+    DEFAULT_CAMPAIGN_THEME_KEY, DEFAULT_MAINTENANCE_INTERVAL_MINUTES, IntelTier,
+    PlanetIntelSnapshot, PlayerActivityState, PlayerLifecycleState, PlayerWarStatsState,
+    STALE_SESSION_MESSAGE, SeatBindSource, TerminalOutcome, WinnerState,
 };
 pub use support::{ParseError, is_classic_text_char};
 pub use turns::{

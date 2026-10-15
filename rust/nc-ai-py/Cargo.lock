@@ -800,10 +800,13 @@ dependencies = [
 name = "nc-ai"
 version = "1.0.0-beta.3"
 dependencies = [
+ "kdl",
  "nc-data",
  "nc-engine",
  "nc-fuzz",
  "nc-harness",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

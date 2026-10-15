@@ -58,6 +58,7 @@ fn campaign_settings_round_trip_and_update_runtime_policy_bytes() {
         ai_seats: vec![AiSeat {
             player_record_index_1_based: 3,
             difficulty: AiDifficulty::Hard,
+            personality: "rusher".to_string(),
         }],
     };
     store
@@ -119,6 +120,7 @@ fn an_ai_seat_cannot_be_reserved_or_listed_twice() {
     let ai = |player| AiSeat {
         player_record_index_1_based: player,
         difficulty: AiDifficulty::Normal,
+        personality: nc_data::DEFAULT_AI_PERSONALITY.to_string(),
     };
     let mut settings = CampaignSettings::new("friday-night", "Friday Night EC");
     settings.reservations = vec![SeatReservation {

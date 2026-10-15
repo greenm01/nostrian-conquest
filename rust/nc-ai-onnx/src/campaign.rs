@@ -9,10 +9,11 @@
 //! than the campaign's (after a restore, say) is replaced by the stored
 //! planet intel, without remembered contacts.
 
+use std::collections::BTreeMap;
 use std::error::Error;
 use std::path::Path;
 
-use nc_ai::{Families, SeatMemory, Weights, commission_submission};
+use nc_ai::{Families, Personality, SeatMemory, commission_submission, personality};
 use nc_data::{
     AiDifficulty, AiSeat, CampaignStore, PlayerAccessMode, TurnSubmission, player_access_mode,
 };
@@ -46,9 +47,10 @@ pub const AGENT_FAMILIES: Families = Families {
     strike: true,
 };
 
-/// A campaign's AI seats during one maintenance run.
+/// A campaign's AI seats during one maintenance run: each seat with the
+/// network seat of its personality, and its memory.
 pub struct CampaignAi {
-    network: NetworkSeat,
+    networks: BTreeMap<String, NetworkSeat>,
     seats: Vec<(AiSeat, SeatMemory)>,
 }
 
@@ -69,13 +71,24 @@ impl CampaignAi {
         let model = model.ok_or(format!(
             "this campaign has AI seats; set {MODEL_ENV} to the agent's .onnx file"
         ))?;
-        let network = NetworkSeat::load(model, AGENT_FAMILIES, Weights::TUNED)
-            .map_err(|err| format!("AI model {}: {err}", model.display()))?;
+        let mut networks = BTreeMap::new();
+        for seat in &settings.ai_seats {
+            if networks.contains_key(&seat.personality) {
+                continue;
+            }
+            let style: Personality = personality(&seat.personality).ok_or(format!(
+                "AI seat {} has unknown personality {:?}",
+                seat.player_record_index_1_based, seat.personality
+            ))?;
+            let network = NetworkSeat::load(model, AGENT_FAMILIES, style)
+                .map_err(|err| format!("AI model {}: {err}", model.display()))?;
+            networks.insert(seat.personality.clone(), network);
+        }
         let year = maintenance.game_data.conquest.game_year;
         let seats = settings
             .ai_seats
-            .iter()
-            .map(|&seat| {
+            .into_iter()
+            .map(|seat| {
                 let player = seat.player_record_index_1_based;
                 let memory = match store.load_ai_seat_memory(player)? {
                     Some((saved, text)) if saved == year => serde_json::from_str(&text)?,
@@ -92,7 +105,7 @@ impl CampaignAi {
                 Ok((seat, memory))
             })
             .collect::<Result<_, Box<dyn Error>>>()?;
-        Ok(Some(Self { network, seats }))
+        Ok(Some(Self { networks, seats }))
     }
 
     /// Before a year runs: every AI seat that may play commissions its
@@ -124,7 +137,7 @@ impl CampaignAi {
                 apply(maintenance, &commission)?;
             }
             let year = maintenance.game_data.conquest.game_year;
-            let turn = self.network.turn(
+            let turn = self.networks[&seat.personality].turn(
                 &maintenance.game_data,
                 memory,
                 temperature(seat.difficulty),
