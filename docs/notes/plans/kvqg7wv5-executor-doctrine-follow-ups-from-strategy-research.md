@@ -41,6 +41,25 @@ Lessons about tax, war timing and which empires to fight are left to the
 strategist network, which chooses them itself. They are not written into
 the executor.
 
+**Principle (owner, 2026-10-15): risk, reward, return.** Each executor
+rule should weigh expected gain against expected cost, not a bare
+threshold:
+
+- **Strikes:** the chance of taking a world, from the manual's
+  ground-battle odds, times its value, against the warships, transports
+  and armies expected to be lost.
+- **Attack missions (t168):** time and the intact prize, against losses
+  under battery fire.
+- **Defence (t169, t175):** the losses expected from the threat seen,
+  against the conquest the held-back ships would buy.
+- **Ships posted for intelligence (t174):** what the picket costs against
+  the warning it gives.
+
+t160's value-per-defence targeting is the first such rule, and it was
+among the largest gains. The learned agents optimise the final return,
+winning, directly; this principle governs the hand-written rules they
+start from and carry out.
+
 ## Task details
 
 ### t159
