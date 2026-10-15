@@ -14,6 +14,12 @@ use crate::memory::SeatMemory;
 /// Build postures, each an adjustment of the weights' build targets:
 /// balanced (the weights as they are), expand, defend and attack.
 pub const POSTURES: usize = 4;
+/// Fleet allocations, from all offence to more defence: 0 strikes with
+/// everything; 1 also guards threatened worlds, a colony with one warship
+/// built for it and home with new warships once the strike force has
+/// sailed; 2 also keeps half of each striking home force's warships at
+/// home.
+pub const ALLOCATIONS: usize = 3;
 
 /// One seat's goals for a year.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -24,6 +30,8 @@ pub struct Goals {
     pub diplomacy: Vec<usize>,
     /// Build posture, below [`POSTURES`].
     pub posture: usize,
+    /// Fleet allocation, below [`ALLOCATIONS`].
+    pub allocation: usize,
     /// 0 holds every strike. `k` makes world `k - 1` (0-based) the target of
     /// every home force strong enough to take it; weaker forces pick their
     /// own targets.
@@ -33,7 +41,8 @@ pub struct Goals {
     pub colonize: usize,
 }
 
-/// What a seat may choose as goals. Tax and posture are always free.
+/// What a seat may choose as goals. Tax, posture and allocation are always
+/// free.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GoalMasks {
     pub diplomacy: Vec<[bool; DIPLOMACY_CHOICES]>,

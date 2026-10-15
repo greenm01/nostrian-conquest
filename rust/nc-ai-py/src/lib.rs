@@ -124,15 +124,23 @@ impl Env {
     ) -> PyResult<Bound<'py, PyDict>> {
         let goal_arrays = arrays(
             goals,
-            &["tax", "diplomacy", "posture", "strike", "colonize"],
+            &[
+                "tax",
+                "diplomacy",
+                "posture",
+                "allocation",
+                "strike",
+                "colonize",
+            ],
         )?;
         let s = slices(&goal_arrays)?;
         let goals = BatchGoals {
             tax: s[0],
             diplomacy: s[1],
             posture: s[2],
-            strike: s[3],
-            colonize: s[4],
+            allocation: s[3],
+            strike: s[4],
+            colonize: s[5],
         };
         let batch = self.batch()?;
         let labels = py
@@ -170,6 +178,7 @@ impl Env {
         out.set_item("tax", array(py, labels.tax)?)?;
         out.set_item("diplomacy", array(py, labels.diplomacy)?)?;
         out.set_item("posture", array(py, labels.posture)?)?;
+        out.set_item("allocation", array(py, labels.allocation)?)?;
         out.set_item("strike", array(py, labels.strike)?)?;
         out.set_item("colonize", array(py, labels.colonize)?)?;
         Ok(out)
@@ -217,7 +226,7 @@ impl Env {
     /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`,
     /// `waypoint`, `speed`,
     /// `roe`, `load`, `detach`); `goals` one for strategist seats (`tax`, `diplomacy`,
-    /// `posture`, `strike`, `colonize`). Returns `reward`, `done`,
+    /// `posture`, `allocation`, `strike`, `colonize`). Returns `reward`, `done`,
     /// `production` and `worlds`. A choice outside the masks, or missing
     /// choices, raise ValueError and change nothing.
     #[pyo3(signature = (actions = None, goals = None))]
@@ -248,7 +257,19 @@ impl Env {
             })
             .transpose()?;
         let goal_arrays = goals
-            .map(|dict| arrays(dict, &["tax", "diplomacy", "posture", "strike", "colonize"]))
+            .map(|dict| {
+                arrays(
+                    dict,
+                    &[
+                        "tax",
+                        "diplomacy",
+                        "posture",
+                        "allocation",
+                        "strike",
+                        "colonize",
+                    ],
+                )
+            })
             .transpose()?;
         let action_slices = action_arrays.as_deref().map(slices).transpose()?;
         let goal_slices = goal_arrays.as_deref().map(slices).transpose()?;
@@ -269,8 +290,9 @@ impl Env {
             tax: s[0],
             diplomacy: s[1],
             posture: s[2],
-            strike: s[3],
-            colonize: s[4],
+            allocation: s[3],
+            strike: s[4],
+            colonize: s[5],
         });
         let batch = self
             .batch
@@ -464,6 +486,7 @@ fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("SPEED_CHOICES", nc_ai::SPEED_CHOICES)?;
     m.add("ROE_CHOICES", nc_ai::ROE_CHOICES)?;
     m.add("DETACH_CHOICES", nc_ai::DETACH_CHOICES)?;
+    m.add("ALLOCATIONS", nc_ai::ALLOCATIONS)?;
     m.add("WAYPOINT_CHOICES", nc_ai::WAYPOINT_CHOICES)?;
     m.add("GLOBAL_WIDTH", nc_ai::GLOBAL_WIDTH)?;
     m.add("PLANET_WIDTH", nc_ai::PLANET_WIDTH)?;

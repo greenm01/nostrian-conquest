@@ -8,6 +8,11 @@ the student's sample, and ``beta`` falls from 1 to ``--beta-end``, so the
 student learns in the states its own play reaches.
 
     uv run imitate.py --out /tmp/nc-ai/imitate.pt
+
+``--init`` starts from a trained strategist that lacks some goal heads,
+and ``--heads`` trains only the named heads, the rest frozen and playing
+the student's own goals: a new goal joins a trained strategist without
+pulling its other goals back to the executor's.
 """
 
 import argparse
@@ -40,11 +45,11 @@ def random_lineups(rng, games):
     return out
 
 
-def imitation_loss(logits, batch, labels):
+def imitation_loss(logits, batch, labels, heads=HEADS):
     dists = distributions(logits, batch)
     loss = 0
     accuracy = {}
-    for name in HEADS:
+    for name in heads:
         target = labels[name]
         lp = dists[name].log_prob(target)
         loss = loss - (lp.sum(-1) if lp.ndim > 1 else lp).mean()
@@ -63,13 +68,24 @@ def main():
     parser.add_argument("--lr", type=float, default=3e-4)
     parser.add_argument("--eval-games", type=int, default=128)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--init", help="trained strategist to start from")
+    parser.add_argument("--heads", default=",".join(HEADS),
+                        help="the goal heads to train; the rest stay frozen")
     args = parser.parse_args()
 
     dev = device()
     rng = np.random.default_rng(args.seed)
     torch.manual_seed(args.seed)
+    heads = tuple(args.heads.split(","))
     model = Strategist(PLAYERS).to(dev)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
+    if args.init:
+        checkpoint = torch.load(args.init, map_location=dev, weights_only=False)
+        missing, unexpected = model.load_state_dict(checkpoint["state"], strict=False)
+        if unexpected or any(key.split(".")[0] not in heads for key in missing):
+            raise SystemExit(f"--init does not fit: {missing} {unexpected}")
+    params = (model.parameters() if heads == HEADS
+              else [p for name in heads for p in getattr(model, name).parameters()])
+    optimizer = torch.optim.AdamW(params, lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
     next_map = 1
@@ -90,7 +106,7 @@ def main():
 
             model.train()
             logits, _ = model(batch)
-            loss, accuracy = imitation_loss(logits, batch, labels)
+            loss, accuracy = imitation_loss(logits, batch, labels, heads)
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -104,11 +120,11 @@ def main():
                 student, _, _ = act(model, batch)
             goals = goals_for(student, select)
             teach = select & (rng.random(select.shape) < beta)
-            for name in HEADS:
+            for name in heads:
                 goals[name][teach] = labels_np[name][teach]
             done = env.step(goals=goals)["done"].copy()
 
-        mean_acc = {name: np.mean([a[name] for a in accuracies]) for name in HEADS}
+        mean_acc = {name: np.mean([a[name] for a in accuracies]) for name in heads}
         print(f"round {round_ + 1:3} beta {beta:.2f} loss {np.mean(losses):.3f} "
               f"samples {samples} {time.perf_counter() - started:.1f}s  "
               + " ".join(f"{name} {acc:.3f}" for name, acc in mean_acc.items())

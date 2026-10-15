@@ -127,12 +127,15 @@ int64 arrays:
 
 `goals` is a dict of int64 arrays, shaped as `env.goal_labels()`:
 
-- `tax`, `posture`, `strike` and `colonize` `[G, S]`
+- `tax`, `posture`, `allocation`, `strike` and `colonize` `[G, S]`
 - `diplomacy` `[G, S, S]`
 
 The fields:
 
 - `posture`: balanced, expand, defend or attack build targets.
+- `allocation`: 0 strikes with everything; 1 also guards threatened
+  worlds; 2 also keeps half of each striking home force at home. The label
+  is the executor's rule, by threat and opportunity.
 - `strike`: 0 holds every strike. `k` makes world `k - 1` the target of
   every home force strong enough to take it.
 - `colonize`: 0 lets ETACs choose. `k` sends the first free ETAC to world

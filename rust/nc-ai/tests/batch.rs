@@ -275,7 +275,8 @@ fn production(game_data: &nc_data::CoreGameData) -> Vec<u32> {
 /// Strategist seats commission at the start of the year, before any seat
 /// moves, and new fleets take record numbers in that order. The reference
 /// therefore commissions every seat first, then plays each with the
-/// executor.
+/// executor. The goal labels set the allocation by the executor's rule
+/// (t175), so the reference plays with that rule on.
 #[test]
 fn strategists_given_the_executors_goals_play_as_the_executor() {
     let weights = [
@@ -324,7 +325,9 @@ fn strategists_given_the_executors_goals_play_as_the_executor() {
                 let empire = seat as u8 + 1;
                 let game_data = &slot.play.built.game_data;
                 let masks = seat_masks(game_data, empire);
-                let action = plan_turn(game_data, &slot.seats[seat], &masks, weights, start_year);
+                let mut weights = *weights;
+                weights.doctrine.allocate = true;
+                let action = plan_turn(game_data, &slot.seats[seat], &masks, &weights, start_year);
                 let decoded = nc_ai::decode_action(game_data, empire, &action);
                 slot.submit_turn(&decoded.submission)
                     .expect("executor turn should submit");

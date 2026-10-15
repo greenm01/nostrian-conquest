@@ -7,8 +7,8 @@ mod common;
 
 use common::{scramble_others, seated_game};
 use nc_ai::{
-    Goals, MISSIONS, POSTURES, SeatedGame, TAX_CHOICES, Weights, commission_submission,
-    decode_action, execute_goals, goal_masks, plan_goals, seat_masks,
+    ALLOCATIONS, Goals, MISSIONS, POSTURES, SeatedGame, TAX_CHOICES, Weights,
+    commission_submission, decode_action, execute_goals, goal_masks, plan_goals, seat_masks,
 };
 use nc_data::Order;
 
@@ -64,6 +64,7 @@ fn play(
 fn allowed(goals: &Goals, masks: &nc_ai::GoalMasks) -> bool {
     goals.tax < TAX_CHOICES
         && goals.posture < POSTURES
+        && goals.allocation < ALLOCATIONS
         && goals
             .diplomacy
             .iter()
@@ -119,6 +120,7 @@ fn random_goals_within_the_masks_always_make_a_turn() {
                     .map(|row| rng.allowed(row))
                     .collect(),
                 posture: rng.below(POSTURES),
+                allocation: rng.below(ALLOCATIONS),
                 strike: rng.allowed(&goal_mask.strike),
                 colonize: rng.allowed(&goal_mask.colonize),
             }

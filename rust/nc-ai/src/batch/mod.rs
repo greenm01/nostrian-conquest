@@ -112,6 +112,7 @@ pub struct BatchGoals<'a> {
     pub tax: &'a [i64],
     pub diplomacy: &'a [i64],
     pub posture: &'a [i64],
+    pub allocation: &'a [i64],
     pub strike: &'a [i64],
     pub colonize: &'a [i64],
 }
@@ -122,6 +123,7 @@ pub struct GoalArrays {
     pub tax: Tensor<i64>,
     pub diplomacy: Tensor<i64>,
     pub posture: Tensor<i64>,
+    pub allocation: Tensor<i64>,
     pub strike: Tensor<i64>,
     pub colonize: Tensor<i64>,
 }
@@ -132,6 +134,7 @@ impl GoalArrays {
             tax: &self.tax.data,
             diplomacy: &self.diplomacy.data,
             posture: &self.posture.data,
+            allocation: &self.allocation.data,
             strike: &self.strike.data,
             colonize: &self.colonize.data,
         }
@@ -454,6 +457,10 @@ impl BatchEnv {
                 data: vec![0; games * seats],
                 shape: vec![games, seats],
             },
+            allocation: Tensor {
+                data: vec![0; games * seats],
+                shape: vec![games, seats],
+            },
             strike: Tensor {
                 data: vec![0; games * seats],
                 shape: vec![games, seats],
@@ -471,6 +478,10 @@ impl BatchEnv {
                 let Some(weights) = kind.goal_weights() else {
                     continue;
                 };
+                // The allocation label is the executor's rule (t175), which
+                // its own play leaves off.
+                let mut weights = weights;
+                weights.doctrine.allocate = true;
                 let goals = plan_goals(
                     &slot.game.play.built.game_data,
                     &slot.game.seats[seat],
@@ -484,6 +495,7 @@ impl BatchEnv {
                     out.diplomacy.data[at * seats + other] = choice as i64;
                 }
                 out.posture.data[at] = goals.posture as i64;
+                out.allocation.data[at] = goals.allocation as i64;
                 out.strike.data[at] = goals.strike as i64;
                 out.colonize.data[at] = goals.colonize as i64;
             }
@@ -647,6 +659,7 @@ impl BatchEnv {
                     games * seats * seats,
                 ),
                 ("posture", goals.posture.len(), games * seats),
+                ("allocation", goals.allocation.len(), games * seats),
                 ("strike", goals.strike.len(), games * seats),
                 ("colonize", goals.colonize.len(), games * seats),
             ]);

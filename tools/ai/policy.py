@@ -2,7 +2,8 @@
 observation, with a head for each goal and a value head.
 
 Every entity row (the seat's global row, worlds, own fleets, contacts and
-starbases) becomes a token. Tax, posture, diplomacy and value read the
+starbases) becomes a token. Tax, posture, allocation, diplomacy and value
+read the
 global token. Strike and colonize point at worlds: index 0 (hold, auto)
 scores from the global token and each world scores against a query from
 the global token.
@@ -22,7 +23,7 @@ TABLES = (
     ("contacts", nc_ai_env.CONTACT_WIDTH),
     ("starbases", nc_ai_env.STARBASE_WIDTH),
 )
-HEADS = ("tax", "posture", "diplomacy", "strike", "colonize")
+HEADS = ("tax", "posture", "allocation", "diplomacy", "strike", "colonize")
 START_YEAR = 3000.0
 # MPS compiles and keeps a graph for every input shape, so batches are padded
 # up to a few shapes: seats to a multiple of SEAT_BUCKET, table rows to a
@@ -94,6 +95,7 @@ class Strategist(nn.Module):
         self.norm = nn.LayerNorm(width)
         self.tax = nn.Linear(width, nc_ai_env.TAX_CHOICES)
         self.posture = nn.Linear(width, nc_ai_env.POSTURES)
+        self.allocation = nn.Linear(width, nc_ai_env.ALLOCATIONS)
         self.diplomacy = nn.Linear(width, players * nc_ai_env.DIPLOMACY_CHOICES)
         self.value = nn.Sequential(nn.Linear(width, width), nn.ReLU(), nn.Linear(width, 1))
         self.pointers = nn.ModuleDict({
@@ -125,6 +127,7 @@ class Strategist(nn.Module):
         logits = {
             "tax": self.tax(g),
             "posture": self.posture(g),
+            "allocation": self.allocation(g),
             "diplomacy": self.diplomacy(g).view(-1, self.players, nc_ai_env.DIPLOMACY_CHOICES),
         }
         for name, head in self.pointers.items():
@@ -180,6 +183,7 @@ def goals_for(choices, select):
         "tax": np.zeros((games, seats), np.int64),
         "diplomacy": np.zeros((games, seats, seats), np.int64),
         "posture": np.zeros((games, seats), np.int64),
+        "allocation": np.zeros((games, seats), np.int64),
         "strike": np.zeros((games, seats), np.int64),
         "colonize": np.zeros((games, seats), np.int64),
     }

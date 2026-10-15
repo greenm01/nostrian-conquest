@@ -80,6 +80,14 @@ pub enum Detach {
 /// The detach choices, in choice order after "keep whole".
 pub const DETACHES: [Detach; 3] = [Detach::HalfWarships, Detach::OneWarship, Detach::Transports];
 
+/// The choice index of `detach`.
+pub fn detach_choice(detach: Detach) -> usize {
+    1 + DETACHES
+        .iter()
+        .position(|row| *row == detach)
+        .expect("every detach is offered")
+}
+
 /// Units of cost `cost` that build amount choice `amount` buys from
 /// `points_left`, which must cover one unit.
 pub(crate) fn build_units(points_left: u32, cost: u32, amount: usize) -> u32 {

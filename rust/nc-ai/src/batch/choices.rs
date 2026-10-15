@@ -6,7 +6,7 @@ use crate::action::{
     SeatMasks, TAX_CHOICES, WAYPOINT_CHOICES,
 };
 
-use crate::goals::{GoalMasks, Goals, POSTURES};
+use crate::goals::{ALLOCATIONS, GoalMasks, Goals, POSTURES};
 
 use super::{BatchActions, BatchGoals};
 
@@ -84,6 +84,7 @@ pub(crate) fn seat_goals(
             })
             .collect::<Result<_, _>>()?,
         posture: choice("posture", goals.posture[at], &[true; POSTURES])?,
+        allocation: choice("allocation", goals.allocation[at], &[true; ALLOCATIONS])?,
         strike: choice("strike", goals.strike[at], &masks.strike)?,
         colonize: choice("colonize", goals.colonize[at], &masks.colonize)?,
     })

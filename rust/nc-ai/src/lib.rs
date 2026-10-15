@@ -28,7 +28,8 @@ pub use action::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DETACH_CHOICES, DETACHES, DIPLOMACY_CHOICES,
     DecodedTurn, Detach, FleetChoice, FleetMask, MISSION_CHOICES, MISSIONS, PlanetChoice,
     PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction, SeatMasks, TAX_CHOICES, TAX_STEP,
-    WAYPOINT_CHOICES, commission_submission, decode_action, seat_masks, sector_mission, waypoint,
+    WAYPOINT_CHOICES, commission_submission, decode_action, detach_choice, seat_masks,
+    sector_mission, waypoint,
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
 pub use batch::{
@@ -39,7 +40,7 @@ pub use executor::{
     Doctrine, Families, Family, Weights, execute_goals, fleet_family, plan_goals, plan_turn,
 };
 pub use game::SeatedGame;
-pub use goals::{GoalMasks, Goals, POSTURES, goal_masks, posture_weights};
+pub use goals::{ALLOCATIONS, GoalMasks, Goals, POSTURES, goal_masks, posture_weights};
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
 pub use observe::{
     CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH, observe,

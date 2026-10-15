@@ -35,8 +35,8 @@ use nc_data::{
 use nc_engine::BUILD_UNITS;
 
 use crate::action::{
-    BUILD_AMOUNT_CHOICES, BUILD_SLOTS, FleetChoice, FleetMask, MISSIONS, PlanetChoice, SeatAction,
-    SeatMasks, TAX_STEP, build_units,
+    BUILD_AMOUNT_CHOICES, BUILD_SLOTS, Detach, FleetChoice, FleetMask, MISSIONS, PlanetChoice,
+    SeatAction, SeatMasks, TAX_STEP, build_units, detach_choice,
 };
 use crate::goals::{Goals, claimed_worlds, colonizable, posture_weights, world_at};
 use crate::memory::SeatMemory;
@@ -102,6 +102,12 @@ pub struct Doctrine {
     /// enemy's or a declared enemy is reported near home. Off, it gathers
     /// with the strike force.
     pub blockader: bool,
+    /// Set the fleet allocation goal by threat and opportunity (t175):
+    /// 1 when a declared enemy's force was reported near one of the seat's
+    /// worlds in recent years, 2 when that force was near home and half the
+    /// home force could still take its strike target (or it has none).
+    /// Off, the executor always sets 0.
+    pub allocate: bool,
 }
 
 impl Doctrine {
@@ -112,6 +118,7 @@ impl Doctrine {
         suppress_first: true,
         scaled_garrisons: true,
         blockader: true,
+        allocate: false,
     };
 }
 
@@ -180,6 +187,7 @@ impl Weights {
             suppress_first: false,
             scaled_garrisons: false,
             blockader: false,
+            allocate: false,
         },
     };
 
@@ -252,6 +260,8 @@ const UNKNOWN_BATTERIES: f32 = 3.0;
 /// in the last [`THREAT_YEARS`] years, threatens it.
 const THREAT_RANGE: f32 = 4.0;
 const THREAT_YEARS: u16 = 2;
+/// The most a colony's guard may hold: one battleship's worth.
+const GUARD_STRENGTH: f32 = 9.0;
 
 /// The executor's turn for `memory`'s empire, within `masks`. `start_year`
 /// is the game's first year.
@@ -301,9 +311,44 @@ pub fn plan_goals(
             })
             .collect(),
         posture: 0,
+        allocation: if weights.doctrine.allocate {
+            allocation_rule(game_data, memory, home, weights, &labels)
+        } else {
+            0
+        },
         strike: labels.strike,
         colonize: labels.colonize,
     }
+}
+
+/// The executor's allocation: hold back enough to meet the threat seen,
+/// unless the strike target falls to the rest. See [`Doctrine::allocate`].
+fn allocation_rule(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    home: Option<usize>,
+    weights: &Weights,
+    labels: &Labels,
+) -> usize {
+    let threatened_world = game_data.planets.iter().any(|planet| {
+        planet.owner.0 == memory.empire && threatened(game_data, memory, planet.sector.to_array())
+    });
+    if !threatened_world {
+        return 0;
+    }
+    let home_threatened = home.is_some_and(|record| {
+        threatened(
+            game_data,
+            memory,
+            game_data.planets[record - 1].sector.to_array(),
+        )
+    });
+    let half_takes = labels.strike == 0
+        || memory
+            .planet_intel
+            .get(&labels.strike)
+            .is_some_and(|intel| labels.force / 2.0 >= weights.attack_ratio * defense(intel));
+    if home_threatened && half_takes { 2 } else { 1 }
 }
 
 /// Carry out `goals` within `masks`. The goals must respect
@@ -331,6 +376,7 @@ pub fn execute_goals(
                 &stock,
                 memory,
                 &build_weights,
+                goals.allocation,
             );
             PlanetChoice {
                 record: mask.record,
@@ -448,6 +494,7 @@ fn choose_builds(
     stock: &Stock,
     memory: &SeatMemory,
     weights: &Weights,
+    allocation: usize,
 ) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
     if !weights.doctrine.land_grab {
         return classic_builds(game_data, record, allowed, is_home, stock, memory, weights);
@@ -500,6 +547,13 @@ fn choose_builds(
             short(stock.transports, weights.transports),
         ));
     } else {
+        // A threatened colony builds its guard, alone.
+        if allocation >= 1
+            && threatened(game_data, memory, planet.sector.to_array())
+            && !guarded(game_data, memory.empire, planet.sector.to_array())
+        {
+            needs.push(Need::Warship);
+        }
         needs.extend(garrison);
     }
 
@@ -508,6 +562,7 @@ fn choose_builds(
     let mut amounts = [0; BUILD_SLOTS];
     let mut slot = 0;
     let mut etacs_bought = 0;
+    let mut guard_bought = 0;
     let mut order = |kind: ProductionItemKind, units: u32, points: &mut u32| {
         let choice = build_choice(kind);
         let cost = kind.build_cost().unwrap_or(1).max(1);
@@ -533,9 +588,25 @@ fn choose_builds(
             Need::Escorts => {
                 order(ProductionItemKind::Destroyer, etacs_bought, &mut points);
             }
+            Need::Warship => {
+                if let Some(kind) = preferred_hull(allowed, weights, points) {
+                    guard_bought = order(kind, 1, &mut points);
+                }
+            }
         }
     }
-    let hull = [
+    // A guard commissions alone, so the rest of the budget waits a year.
+    if guard_bought == 0
+        && let Some(kind) = preferred_hull(allowed, weights, points)
+    {
+        order(kind, u32::MAX, &mut points);
+    }
+    (builds, amounts)
+}
+
+/// The hull with the largest weight that `points` can buy.
+fn preferred_hull(allowed: &[bool], weights: &Weights, points: u32) -> Option<ProductionItemKind> {
+    [
         (ProductionItemKind::Battleship, weights.battleship),
         (ProductionItemKind::Cruiser, weights.cruiser),
         (ProductionItemKind::Destroyer, weights.destroyer),
@@ -546,11 +617,25 @@ fn choose_builds(
             && allowed[build_choice(*kind)]
             && points >= kind.build_cost().unwrap_or(1).max(1)
     })
-    .max_by(|a, b| a.1.total_cmp(&b.1));
-    if let Some((kind, _)) = hull {
-        order(kind, u32::MAX, &mut points);
-    }
-    (builds, amounts)
+    .max_by(|a, b| a.1.total_cmp(&b.1))
+    .map(|(kind, _)| kind)
+}
+
+/// One of `empire`'s warship fleets guards `sector`, or is on its way.
+fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
+    game_data.fleets.iter().any(|fleet| {
+        fleet.owner.0 == empire
+            && has_combat_ships(fleet)
+            && guarding(fleet)
+            && fleet.target.to_array() == sector
+    })
+}
+
+fn guarding(fleet: &Fleet) -> bool {
+    matches!(
+        fleet.order,
+        Order::GuardStarbase | Order::GuardBlockadeWorld
+    )
 }
 
 /// t154's builds: the first unmet need of armies, batteries, then at home
@@ -630,6 +715,8 @@ enum Need {
     Units(ProductionItemKind, u32),
     /// One destroyer for each ETAC ordered this year.
     Escorts,
+    /// One warship of the preferred hull, to guard the world.
+    Warship,
 }
 
 /// Worlds remain that the seat may colonize.
@@ -681,6 +768,8 @@ fn defense(intel: &PlanetIntelSnapshot) -> f32 {
 struct Labels {
     strike: usize,
     colonize: usize,
+    /// The strength of the home force the strike label is for.
+    force: f32,
 }
 
 /// Fleet orders, following `goals`' strike and colonize goals, or with
@@ -721,6 +810,17 @@ fn plan_fleets(
     };
     let mut blockaded = game_data.fleets.iter().any(blockading);
     let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
+    let allocation = goals.map_or(0, |goals| goals.allocation);
+    // Sectors given a guard this year, and whether a strike force is out.
+    let mut posted: Vec<[u8; 2]> = Vec::new();
+    let mut sailed = game_data.fleets.iter().any(|fleet| {
+        fleet.owner.0 == empire
+            && has_combat_ships(fleet)
+            && matches!(
+                fleet.order,
+                Order::InvadeWorld | Order::BombardWorld | Order::BlitzWorld
+            )
+    });
 
     let fleets = masks
         .fleets
@@ -826,6 +926,38 @@ fn plan_fleets(
             {
                 return keep;
             }
+            let sector = fleet.sector.to_array();
+            let own_world = |idx: usize| game_data.planets[idx].owner.0 == empire;
+            // Guards keep station while the allocation holds a share back.
+            if allocation >= 1
+                && has_combat_ships(fleet)
+                && guarding(fleet)
+                && world_at(game_data, fleet.target.to_array()).is_some_and(own_world)
+            {
+                return keep;
+            }
+            let mut post = |idx: usize, sector: [u8; 2]| {
+                if posted.contains(&sector) || guarded(game_data, empire, sector) {
+                    return None;
+                }
+                let choice = order(Order::GuardStarbase, idx)
+                    .or_else(|| order(Order::GuardBlockadeWorld, idx))?;
+                posted.push(sector);
+                Some(choice)
+            };
+            // A threatened colony's new guard takes its post.
+            if allocation >= 1
+                && !at_home
+                && fleet.order == Order::HoldPosition
+                && has_combat_ships(fleet)
+                && strength(fleet) <= GUARD_STRENGTH
+                && let Some(idx) = world_at(game_data, sector)
+                && own_world(idx)
+                && threatened(game_data, memory, sector)
+                && let Some(choice) = post(idx, sector)
+            {
+                return choice;
+            }
             if weights.doctrine.blockader
                 && has_combat_ships(fleet)
                 && fleet.order == Order::GuardBlockadeWorld
@@ -870,6 +1002,7 @@ fn plan_fleets(
                         if goals.is_none() && strength(fleet) > strongest {
                             strongest = strength(fleet);
                             labels.strike = pick.map_or(0, |idx| idx + 1);
+                            labels.force = strongest;
                         }
                         pick
                     }
@@ -878,7 +1011,29 @@ fn plan_fleets(
             if let Some(choice) =
                 target.and_then(|target| strike(memory, mask, fleet, weights, target, keep))
             {
-                return FleetChoice { load, ..choice };
+                sailed = true;
+                // Allocation 2 keeps half the warships at home.
+                let half = detach_choice(Detach::HalfWarships);
+                let detach = if allocation >= 2 && mask.detach[half] {
+                    half
+                } else {
+                    0
+                };
+                return FleetChoice {
+                    load,
+                    detach,
+                    ..choice
+                };
+            }
+            // Once the strike force is out, new warships guard home.
+            if allocation >= 1
+                && sailed
+                && fleet.order == Order::HoldPosition
+                && has_combat_ships(fleet)
+                && let Some(home_sector) = home_sector
+                && let Some(choice) = post(home_idx, home_sector)
+            {
+                return choice;
             }
             if weights.doctrine.blockader
                 && !blockaded

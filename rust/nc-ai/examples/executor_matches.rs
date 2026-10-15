@@ -58,6 +58,7 @@ fn main() {
             "suppress_first" => weights.doctrine.suppress_first = true,
             "scaled_garrisons" => weights.doctrine.scaled_garrisons = true,
             "flat_garrisons" => weights.doctrine.scaled_garrisons = false,
+            "allocate" => weights.doctrine.allocate = true,
             "blockader" => weights.doctrine.blockader = true,
             other => panic!("unknown doctrine switch {other}"),
         }
