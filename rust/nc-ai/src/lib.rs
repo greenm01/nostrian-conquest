@@ -31,10 +31,12 @@ pub use action::{
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
 pub use batch::{
-    BatchActions, BatchEnv, BatchGoalMasks, BatchGoals, BatchMasks, BatchObservation, GoalArrays,
-    Seat, StepResult, Table, Tensor,
+    BatchActions, BatchEnv, BatchGoalMasks, BatchGoals, BatchMasks, BatchObservation, FleetArrays,
+    GoalArrays, Seat, StepResult, Table, Tensor,
 };
-pub use executor::{Doctrine, Weights, execute_goals, plan_goals, plan_turn};
+pub use executor::{
+    Doctrine, Families, Family, Weights, execute_goals, fleet_family, plan_goals, plan_turn,
+};
 pub use game::SeatedGame;
 pub use goals::{GoalMasks, Goals, POSTURES, goal_masks, posture_weights};
 pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};

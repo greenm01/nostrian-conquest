@@ -853,6 +853,61 @@ fn batteries_standing(intel: &PlanetIntelSnapshot) -> bool {
         .is_none_or(|batteries| batteries > 0)
 }
 
+/// Who decides a fleet's orders in a hybrid seat (t157): fleets fall into
+/// the executor's mission families by what they carry.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Family {
+    /// Fleets with ETACs.
+    Colonize,
+    /// Scouts, and one or two lone destroyers acting as pickets.
+    Scout,
+    /// Every other fleet: warships and transports.
+    Strike,
+}
+
+/// The mission families a hybrid seat's network orders; the executor
+/// orders the rest.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Families {
+    pub colonize: bool,
+    pub scout: bool,
+    pub strike: bool,
+}
+
+impl Families {
+    pub const NONE: Families = Families {
+        colonize: false,
+        scout: false,
+        strike: false,
+    };
+    pub const ALL: Families = Families {
+        colonize: true,
+        scout: true,
+        strike: true,
+    };
+
+    pub fn contains(&self, family: Family) -> bool {
+        match family {
+            Family::Colonize => self.colonize,
+            Family::Scout => self.scout,
+            Family::Strike => self.strike,
+        }
+    }
+}
+
+/// The family `fleet` belongs to.
+pub fn fleet_family(fleet: &Fleet) -> Family {
+    if fleet.ships.etacs > 0 {
+        Family::Colonize
+    } else if picket(fleet)
+        || (!has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0)
+    {
+        Family::Scout
+    } else {
+        Family::Strike
+    }
+}
+
 /// One or two lone destroyers: a picket that views worlds during the land
 /// grab, as the starting destroyers should.
 fn picket(fleet: &Fleet) -> bool {

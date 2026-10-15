@@ -49,27 +49,7 @@ pub(crate) fn seat_action(
             })
         })
         .collect::<Result<_, String>>()?;
-    let fleets = masks
-        .fleets
-        .iter()
-        .enumerate()
-        .map(|(row, mask)| {
-            let fleet = at * fleets + row;
-            let mission = choice("mission", actions.mission[fleet], &mask.mission)?;
-            let load = actions.load[fleet] != 0;
-            if load && !mask.load {
-                return Err(format!("fleet row {row}: load is not allowed"));
-            }
-            Ok(FleetChoice {
-                record: mask.record,
-                mission,
-                target: choice("target", actions.target[fleet], &mask.targets[mission])?,
-                speed: choice("speed", actions.speed[fleet], &[true; SPEED_CHOICES])?,
-                roe: choice("roe", actions.roe[fleet], &mask.roe)?,
-                load,
-            })
-        })
-        .collect::<Result<_, String>>()?;
+    let fleets = fleet_choices(masks, actions, at, fleets)?;
     Ok(SeatAction {
         tax,
         diplomacy,
@@ -107,4 +87,35 @@ pub(crate) fn seat_goals(
         strike: choice("strike", goals.strike[at], &masks.strike)?,
         colonize: choice("colonize", goals.colonize[at], &masks.colonize)?,
     })
+}
+
+/// One seat's fleet choices from the batch arrays, checked against its
+/// masks. `at` is the flat `[game, seat]` index.
+pub(crate) fn fleet_choices(
+    masks: &SeatMasks,
+    actions: &BatchActions,
+    at: usize,
+    fleets: usize,
+) -> Result<Vec<FleetChoice>, String> {
+    masks
+        .fleets
+        .iter()
+        .enumerate()
+        .map(|(row, mask)| {
+            let fleet = at * fleets + row;
+            let mission = choice("mission", actions.mission[fleet], &mask.mission)?;
+            let load = actions.load[fleet] != 0;
+            if load && !mask.load {
+                return Err(format!("fleet row {row}: load is not allowed"));
+            }
+            Ok(FleetChoice {
+                record: mask.record,
+                mission,
+                target: choice("target", actions.target[fleet], &mask.targets[mission])?,
+                speed: choice("speed", actions.speed[fleet], &[true; SPEED_CHOICES])?,
+                roe: choice("roe", actions.roe[fleet], &mask.roe)?,
+                load,
+            })
+        })
+        .collect()
 }

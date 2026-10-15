@@ -4,7 +4,8 @@
 //! the masks describe. Games run with the GIL released.
 
 use nc_ai::{
-    BatchActions, BatchEnv, BatchGoals, MatchResult, Seat, SeatPolicy, Table, Tensor, Weights,
+    BatchActions, BatchEnv, BatchGoals, Families, MatchResult, Seat, SeatPolicy, Table, Tensor,
+    Weights,
 };
 use nc_data::TurnSubmission;
 use numpy::{Element, PyArray1, PyArrayMethods, PyReadonlyArrayDyn};
@@ -42,6 +43,8 @@ impl Env {
     /// Start one fresh game per map seed. Campaign seeds default to the map
     /// seeds. `seats` gives each game's lineup, one name per seat:
     /// `learned`, `strategist` (goals carried out by the tuned executor),
+    /// `hybrid:FAMILIES` (a strategist whose network also orders the fleets
+    /// of the comma-separated families `colonize`, `scout` and `strike`),
     /// `executor` (tuned weights), `baseline` (the executor's hand-set
     /// weights), `classic` (t154's executor), `aggressor` or `autopilot`. Every seat is learned by
     /// default.
@@ -95,10 +98,53 @@ impl Env {
         array(py, self.batch()?.learned())
     }
 
-    /// `[games, seats]` bools: the seat is a strategist and takes `goals`.
+    /// `[games, seats]` bools: the seat takes `goals` (a strategist or a
+    /// hybrid).
     #[getter]
     fn strategist<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         array(py, self.batch()?.strategist())
+    }
+
+    /// `[games, seats]` bools: the seat is a hybrid, also taking the fleet
+    /// fields of `actions` for its handed-over families.
+    #[getter]
+    fn hybrid<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
+        array(py, self.batch()?.hybrid())
+    }
+
+    /// The executor's fleet choices for every goal-taking seat if it
+    /// carried out `goals` this year: `mission`, `target`, `speed`, `roe`,
+    /// `load` and each row's `family` (0 colonize, 1 scout, 2 strike, -1
+    /// padding), all `[games, seats, F]` int64.
+    fn fleet_labels<'py>(
+        &self,
+        py: Python<'py>,
+        goals: &Bound<'py, PyDict>,
+    ) -> PyResult<Bound<'py, PyDict>> {
+        let goal_arrays = arrays(
+            goals,
+            &["tax", "diplomacy", "posture", "strike", "colonize"],
+        )?;
+        let s = slices(&goal_arrays)?;
+        let goals = BatchGoals {
+            tax: s[0],
+            diplomacy: s[1],
+            posture: s[2],
+            strike: s[3],
+            colonize: s[4],
+        };
+        let batch = self.batch()?;
+        let labels = py
+            .detach(|| batch.fleet_labels(&goals))
+            .map_err(PyValueError::new_err)?;
+        let out = PyDict::new(py);
+        out.set_item("mission", array(py, labels.mission)?)?;
+        out.set_item("target", array(py, labels.target)?)?;
+        out.set_item("speed", array(py, labels.speed)?)?;
+        out.set_item("roe", array(py, labels.roe)?)?;
+        out.set_item("load", array(py, labels.load)?)?;
+        out.set_item("family", array(py, labels.family)?)?;
+        Ok(out)
     }
 
     /// Strategist goal masks: `strike` and `colonize`, `[games, seats,
@@ -331,6 +377,20 @@ fn result_dict<'py>(py: Python<'py>, result: &MatchResult) -> PyResult<Bound<'py
 }
 
 fn seat(name: &str) -> PyResult<Seat> {
+    if let Some(families) = name.strip_prefix("hybrid:") {
+        let mut handed = Families::NONE;
+        for family in families.split(',').filter(|family| !family.is_empty()) {
+            match family {
+                "colonize" => handed.colonize = true,
+                "scout" => handed.scout = true,
+                "strike" => handed.strike = true,
+                other => {
+                    return Err(PyValueError::new_err(format!("unknown family {other:?}")));
+                }
+            }
+        }
+        return Ok(Seat::Hybrid(Weights::TUNED, handed));
+    }
     Ok(match name {
         "learned" => Seat::Learned,
         "strategist" => Seat::Strategist(Weights::TUNED),

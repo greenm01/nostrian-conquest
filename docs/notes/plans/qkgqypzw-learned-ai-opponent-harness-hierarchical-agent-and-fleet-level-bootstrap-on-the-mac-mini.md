@@ -665,6 +665,45 @@ Bootstrap the fleet-level agent from the hierarchical one.
 **Exit:** the fleet-level agent beats the hierarchical agent head to head,
 with the hand-over result logged for each mission family.
 
+**Progress (2026-10-14, in progress):**
+
+- **Hybrid seats.** `Seat::Hybrid(weights, families)` takes goals, plus
+  fleet orders from the network for the handed-over families. Families
+  follow the executor's branches: ETAC fleets are `Colonize`; scouts and
+  one or two lone destroyers are `Scout`; the rest are `Strike`. The
+  executor orders the other fleets and does all building.
+  `BatchEnv::fleet_labels(goals)` gives the executor's fleet orders for any
+  goals: labels in any state, which DAgger needs.
+  `nc-ai/tests/hybrid.rs` shows three things:
+  - a hybrid fed those labels plays exactly the strategist's game, every
+    step;
+  - out-of-mask fleet choices are refused;
+  - families not handed over stay with the executor.
+- **The model** (`tools/ai/fleet_policy.py`). The strategist network gains
+  per-fleet heads for mission, target, speed, ROE and load. The target
+  points at worlds, conditioned on the chosen mission and on the worlds the
+  seat's goals name. The agent starts from the final strategist's weights
+  (step 3).
+- **Imitation with DAgger** (`fleet_imitate.py`, steps 1–2). 40 rounds of
+  128 games, about 10 minutes. A KL term toward the frozen strategist
+  holds the goal heads; it ended at 0.16. Final accuracy: mission 0.89,
+  target 0.86, ROE and speed 1.00, load 0.997.
+- **Starting point,** one hybrid seat against three final strategists on
+  1,024 maps (an even seat is 0.25):
+
+  | Families handed to the network | Sampled | Greedy |
+  | --- | ---: | ---: |
+  | None (goals only) | 0.232 | 0.252 |
+  | Colonize and scout | 0.161 | 0.156 |
+  | All | 0.068 | 0.163 |
+
+  The goals survive imitation. Fleet orders at about 88% agreement with
+  the executor still cost a lot: misplaced ETACs compound over decades.
+- **PPO** (`fleet_ppo.py`, steps 4–5). The objective covers the goal heads
+  and the handed-over fleets' heads, with a KL penalty toward the imitation
+  policy that fades over 100 iterations. Stage A, with colonize and scout
+  handed over, is running.
+
 ### t158
 
 Measure whether the game players keep the GPU busy during t157's self-play.

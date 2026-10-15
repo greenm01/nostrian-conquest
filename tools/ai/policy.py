@@ -101,7 +101,9 @@ class Strategist(nn.Module):
             for name in ("strike", "colonize")
         })
 
-    def forward(self, batch):
+    def encode(self, batch):
+        """Encoded tokens: the global token ``[N, d]``, world tokens
+        ``[N, W, d]`` and own-fleet tokens ``[N, F, d]``."""
         glob = self.embed_global(batch["global"])[:, None]
         tokens = [glob]
         pads = [torch.zeros(glob.shape[:2], dtype=torch.bool, device=glob.device)]
@@ -110,8 +112,16 @@ class Strategist(nn.Module):
             pads.append(~batch[f"{name}_valid"])
         x = self.encoder(torch.cat(tokens, 1), src_key_padding_mask=torch.cat(pads, 1))
         x = self.norm(x)
-        g = x[:, 0]
-        worlds = x[:, 1 : 1 + batch["planets"].shape[1]]
+        worlds = batch["planets"].shape[1]
+        fleets = batch["fleets"].shape[1]
+        return x[:, 0], x[:, 1 : 1 + worlds], x[:, 1 + worlds : 1 + worlds + fleets]
+
+    def forward(self, batch):
+        g, worlds, _ = self.encode(batch)
+        return self.goal_heads(g, worlds, batch["n"])
+
+    def goal_heads(self, g, worlds, n):
+        """Goal logits and value for the first ``n`` (real) seats."""
         logits = {
             "tax": self.tax(g),
             "posture": self.posture(g),
@@ -121,9 +131,7 @@ class Strategist(nn.Module):
             query = head["query"](g)[:, :, None]
             per_world = (worlds @ query)[:, :, 0] / math.sqrt(g.shape[-1])
             logits[name] = torch.cat([head["none"](g), per_world], 1)
-        n = batch["n"]
         return {k: v[:n] for k, v in logits.items()}, self.value(g)[:n, 0]
-
 
 def masked(logits, batch):
     """Logits with disallowed choices at -inf."""

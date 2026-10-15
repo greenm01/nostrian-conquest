@@ -30,18 +30,18 @@ use std::time::{Duration, Instant};
 
 pub use arrays::{Table, Tensor};
 use arrays::{falses, pad_table, par_for_each_mut, put};
-use choices::{seat_action, seat_goals};
+use choices::{fleet_choices, seat_action, seat_goals};
 
 use nc_fuzz::Policy;
 
 use crate::action::{
-    BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, MISSION_CHOICES, ROE_CHOICES, SeatAction,
-    SeatMasks, commission_submission, decode_action, seat_masks,
+    BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, FleetChoice, MISSION_CHOICES, ROE_CHOICES,
+    SeatAction, SeatMasks, commission_submission, decode_action, seat_masks,
 };
 use crate::arena::{
     MatchResult, SeatPolicy, SplitMix, aggressor_choices, executor_turn, match_result, seated_game,
 };
-use crate::executor::{Weights, execute_goals, plan_goals};
+use crate::executor::{Families, Weights, execute_goals, fleet_family, plan_goals};
 use crate::game::SeatedGame;
 use crate::goals::{GoalMasks, Goals, goal_masks};
 use crate::observe::{
@@ -151,7 +151,33 @@ pub enum Seat {
     /// The caller chooses goals; the executor with these weights carries
     /// them out.
     Strategist(Weights),
+    /// A strategist whose network also orders the fleets of the given
+    /// families (t157); the executor orders the rest and does the building.
+    Hybrid(Weights, Families),
     Scripted(SeatPolicy),
+}
+
+impl Seat {
+    /// The executor weights of a seat that takes goals.
+    fn goal_weights(&self) -> Option<Weights> {
+        match self {
+            Seat::Strategist(weights) | Seat::Hybrid(weights, _) => Some(*weights),
+            _ => None,
+        }
+    }
+}
+
+/// Fleet choices by `[games, seats, F]`, shaped as [`BatchActions`]'s fleet
+/// fields, with each row's [`Family`]: 0 colonize, 1 scout, 2 strike, and
+/// -1 for padding.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FleetArrays {
+    pub mission: Tensor<i64>,
+    pub target: Tensor<i64>,
+    pub speed: Tensor<i64>,
+    pub roe: Tensor<i64>,
+    pub load: Tensor<i64>,
+    pub family: Tensor<i64>,
 }
 
 /// What one step did.
@@ -302,9 +328,65 @@ impl BatchEnv {
         self.seats_where(|seat| *seat == Seat::Learned)
     }
 
-    /// `[games, seats]`: the seat is a strategist.
+    /// `[games, seats]`: the seat takes goals (a strategist or a hybrid).
     pub fn strategist(&self) -> Tensor<bool> {
-        self.seats_where(|seat| matches!(seat, Seat::Strategist(_)))
+        self.seats_where(|seat| seat.goal_weights().is_some())
+    }
+
+    /// `[games, seats]`: the seat is a hybrid, also taking fleet choices.
+    pub fn hybrid(&self) -> Tensor<bool> {
+        self.seats_where(|seat| matches!(seat, Seat::Hybrid(..)))
+    }
+
+    /// The executor's fleet choices for every goal-taking seat of every live
+    /// game, if it carried out `goals` this year: imitation labels for the
+    /// fleet heads (t157). Other rows are 0. Fails when a goal falls outside
+    /// the goal masks.
+    pub fn fleet_labels(&self, goals: &BatchGoals) -> Result<FleetArrays, String> {
+        let (games, seats, fleets) = (self.games(), usize::from(self.players), self.fleets());
+        let zeros = |fill: i64| Tensor {
+            data: vec![fill; games * seats * fleets],
+            shape: vec![games, seats, fleets],
+        };
+        let mut out = FleetArrays {
+            mission: zeros(0),
+            target: zeros(0),
+            speed: zeros(0),
+            roe: zeros(0),
+            load: zeros(0),
+            family: zeros(-1),
+        };
+        for (game, slot) in self.slots.iter().enumerate() {
+            if slot.result.is_some() {
+                continue;
+            }
+            let game_data = &slot.game.play.built.game_data;
+            for (seat, kind) in slot.lineup.iter().enumerate() {
+                let Some(weights) = kind.goal_weights() else {
+                    continue;
+                };
+                let at = game * seats + seat;
+                let goal_masks = slot.goal_masks[seat]
+                    .as_ref()
+                    .expect("a goal-taking seat has goal masks");
+                let seat_goals = seat_goals(goal_masks, goals, at, seats)
+                    .map_err(|err| format!("game {game} seat {seat}: {err}"))?;
+                let memory = &slot.game.seats[seat];
+                let action =
+                    execute_goals(game_data, memory, &slot.masks[seat], &weights, &seat_goals);
+                for (row, choice) in action.fleets.iter().enumerate() {
+                    let idx = at * fleets + row;
+                    out.mission.data[idx] = choice.mission as i64;
+                    out.target.data[idx] = choice.target as i64;
+                    out.speed.data[idx] = choice.speed as i64;
+                    out.roe.data[idx] = choice.roe as i64;
+                    out.load.data[idx] = i64::from(choice.load);
+                    out.family.data[idx] =
+                        fleet_family(&game_data.fleets[choice.record - 1]) as i64;
+                }
+            }
+        }
+        Ok(out)
     }
 
     fn seats_where(&self, pick: impl Fn(&Seat) -> bool) -> Tensor<bool> {
@@ -375,14 +457,14 @@ impl BatchEnv {
                 continue;
             }
             for (seat, kind) in slot.lineup.iter().enumerate() {
-                let Seat::Strategist(weights) = kind else {
+                let Some(weights) = kind.goal_weights() else {
                     continue;
                 };
                 let goals = plan_goals(
                     &slot.game.play.built.game_data,
                     &slot.game.seats[seat],
                     &slot.masks[seat],
-                    weights,
+                    &weights,
                     slot.start_year,
                 );
                 let at = game * seats + seat;
@@ -574,9 +656,21 @@ impl BatchEnv {
                                 .expect("a strategist seat has goal masks");
                             seat_goals(goal_masks, goals, at, seats).map(Turn::Goals)
                         }
+                        (Seat::Hybrid(..), Some(actions), Some(goals)) => {
+                            let goal_masks = slot.goal_masks[seat]
+                                .as_ref()
+                                .expect("a hybrid seat has goal masks");
+                            seat_goals(goal_masks, goals, at, seats).and_then(|goals| {
+                                fleet_choices(masks, actions, at, fleets)
+                                    .map(|fleets| Turn::Hybrid(goals, fleets))
+                            })
+                        }
                         (Seat::Scripted(_), _, _) => Ok(Turn::Scripted),
                         (Seat::Learned, None, _) => Err("learned seats need actions".into()),
                         (Seat::Strategist(_), _, None) => Err("strategist seats need goals".into()),
+                        (Seat::Hybrid(..), _, _) => {
+                            Err("hybrid seats need goals and actions".into())
+                        }
                     };
                     turns.push(turn.map_err(|err| format!("game {game} seat {seat}: {err}"))?);
                 }
@@ -651,6 +745,8 @@ impl BatchEnv {
 enum Turn {
     Action(SeatAction),
     Goals(Goals),
+    /// Goals, and the network's choice for every fleet row.
+    Hybrid(Goals, Vec<FleetChoice>),
     Scripted,
 }
 
@@ -685,8 +781,8 @@ impl Slot {
             self.mask_time += started.elapsed();
             self.mask_count += 1;
             goal_mask_rows.push(
-                matches!(kind, Seat::Strategist(_))
-                    .then(|| goal_masks(game_data, &self.game.seats[seat], &seat_mask)),
+                kind.goal_weights()
+                    .map(|_| goal_masks(game_data, &self.game.seats[seat], &seat_mask)),
             );
             masks.push(seat_mask);
         }
@@ -706,6 +802,18 @@ impl Slot {
             (Seat::Strategist(weights), Turn::Goals(goals)) => {
                 let memory = &self.game.seats[seat];
                 let action = execute_goals(game_data, memory, &self.masks[seat], &weights, goals);
+                decode_action(game_data, empire, &action).submission
+            }
+            (Seat::Hybrid(weights, families), Turn::Hybrid(goals, network)) => {
+                let memory = &self.game.seats[seat];
+                let mut action =
+                    execute_goals(game_data, memory, &self.masks[seat], &weights, goals);
+                for (choice, mine) in action.fleets.iter_mut().zip(network) {
+                    let fleet = &game_data.fleets[choice.record - 1];
+                    if families.contains(fleet_family(fleet)) {
+                        *choice = *mine;
+                    }
+                }
                 decode_action(game_data, empire, &action).submission
             }
             (Seat::Scripted(SeatPolicy::Aggressor), _) => {
