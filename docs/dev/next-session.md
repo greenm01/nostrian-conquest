@@ -38,47 +38,31 @@ Do not restart the old `run_matrix.sh`: it deletes its output directory.
 The owner approved the [AI opponent plan](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md)
 (t150–t158, `+parallel +ai`). Background and measurements are in
 [lenngda1](../notes/investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md).
-Done on 2026-10-14, all in the `nc-ai` crate unless noted:
+Done through t175, t157, t158 and the work toward t165 and t167. The
+details are in the plans' result sections.
 
-- t150: seedable, clonable games in nc-harness, with throughput measured on
-  the mini.
-- t151: fog-correct seat memory and observations.
-- t152: masked seat actions that decode straight to `TurnSubmission`.
-- t154: the scripted executor, with weights tuned by evolution against
-  itself.
-- t153: `BatchEnv` in nc-ai, the `nc_ai_env` PyO3 module
-  (`rust/nc-ai-py`, outside the workspace) and the
-  [`tools/ai`](../../tools/ai/README.md) uv project with PyTorch MPS and
-  Parquet shards. About 2,700 random four-seat game-years a second end
-  to end; `seat_masks` costs 45 µs per seat. Xcode 27's `ld` can emit
-  dylibs that macOS 27 refuses to load. `macos-link.sh` works around it;
-  see the plan.
+- **The agent.** It is the fleet-level agent (t157), with the strike
+  family handed to the network, on t175's strategist with the allocation
+  goal. Greedy, it wins 0.674 and 0.672 against three executors on two
+  blocks of 1,024 maps, and tops the league at 43.47.
+  - Checkpoints: `~/.local/state/nostrian-conquest/ai/fleet-final.pt` and
+    `fleet-final.onnx`.
+  - The doctrine work after t164 kept only the blockader (t171). The
+    seat actions gained Guard a Starbase, Detach and deep-space waypoints.
+- **Real games (t165).** `nc-ai-onnx` runs the exported agent in Rust at
+  2 ms a turn and matches Python exactly. Sysops mark AI seats with
+  `nc-sysop settings ai-seat` (difficulty and personality). `nc-sysop maint`
+  and `nc-host` maintenance play them with `NC_AI_MODEL`.
+- **Personalities (t167).** Land grab, rusher and turtle are profiles in
+  `nc-ai/personalities/*.kdl`.
 
-Each task's result section in the plan holds its evidence.
+**Waiting on the owner:**
+- t165: playtest full games against AI seats and sign off the readiness
+  gate. The plan's t165 progress section has the steps.
+- t167: approve the styles in those playtests.
+- t166: then needs real human games, played with the players' consent.
 
-- t155: the strategist, closed at its plateau by the owner's decision. It
-  wins 0.539 against three land-grab executors on 1,024 maps.
-  Checkpoint: `~/.local/state/nostrian-conquest/ai/strategist-t155.pt`.
-- t159: `Doctrine` switches. The land-grab executor beats t154's in one
-  game, 0.282 against 0.250.
-
-- t160–t164: the executor doctrine tasks.
-  - Kept: striking where weakest, and bombarding then invading.
-  - Rejected: front-row scouting, blockades, contested colonies, scaled
-    garrisons.
-  - The executor now beats t154's 0.508.
-  - The strategist retrained on it levels off at about 0.50 against
-    three executors. Checkpoint:
-    `~/.local/state/nostrian-conquest/ai/strategist-final.pt`.
-
-- t156: the league (`tools/ai/league.py`). In 1,024 rated matches the
-  final strategist leads (mu − 3σ 41.8 against the executor's 30.9), and
-  `verify` rebuilds every match and the ratings from stored turns. League:
-  `~/.local/state/nostrian-conquest/ai/league.db`.
-
-**Next:** t157 (the fleet-level agent), then t158, t165 (real games,
-behind the owner's readiness gate), t167 (personalities: land grab
-default, rusher) and t166. Plans:
+Plans:
 [doctrine follow-ups](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md),
 [AI opponent](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md).
 
