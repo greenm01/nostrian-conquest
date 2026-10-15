@@ -646,6 +646,43 @@ masks and labels, so the strategist imitates that rule before PPO.
 
   Report the mean held share by level of threat and of opportunity.
 
+### t176
+
+Early reconnaissance: find rival homeworlds and survey the map.
+
+The owner (2026-10-15): early in the game it is a high priority to find
+the other players' homeworlds and to view as many worlds as possible, to
+learn their colonization status and production potential.
+
+- **Today** the two starting destroyers view whichever world the seat
+  knows least about, during the land grab only. Tuning has cut scouts to
+  about none.
+- **Probable cause.** As t162 found, scouting is unrewarded when nothing
+  acts on what it finds. This task gives early intel specific consumers.
+
+The work, behind a switch:
+
+- **Survey order.** Early in the game, scouts and pickets view every
+  unseen world, nearest first, in rings outward from home. A fixed
+  minimum of early scouts (or picket destroyers) does it, independent of
+  the tuned weights.
+- **Rival homeworlds.** Rank unseen worlds by how likely each is to be a
+  homeworld: far from the seat's own, and evenly spread across the map as
+  starting positions are. Visit the likeliest first. A world seen at
+  homeworld production marks a rival's home.
+- **Use what is found:**
+  - colony targets use known potential, not an assumed average;
+  - strike targets (t160) see rival colonies' value and defences;
+  - the defence balance (t175) points toward known rival homes;
+  - war declarations, which the strategist sets, can depend on which
+    rivals are near.
+
+**Exit:**
+
+- As in Scope.
+- Report the share of worlds viewed by years 5, 10 and 20, and the year
+  the first rival homeworld is found, with and without the switch.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):

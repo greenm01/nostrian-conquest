@@ -22,6 +22,19 @@ and which should it learn next?
 > batteries. Expansion and exploration (intelligence gathering) is key in
 > the early to mid game.
 
+More owner guidance (2026-10-15):
+
+- **Early reconnaissance.** Find the other players' homeworlds and view as
+  many worlds as possible early, to learn their colonization status and
+  production potential (t176).
+- **Pickets.** Station cheap destroyers on Patrol in empty sectors around
+  the seat's worlds and on routes between worlds, as an early-warning net
+  (t174).
+- **Fleets for offence and defence.** Balance them by the tactical
+  situation and the seat's goals, weighing risk, reward and return
+  (t175).
+- **Know when to blitz or invade** (t168).
+
 ### The player manual and quick start agree
 
 The [player manual](../../manuals/nc_player_manual.typ)'s Strategy chapter,
