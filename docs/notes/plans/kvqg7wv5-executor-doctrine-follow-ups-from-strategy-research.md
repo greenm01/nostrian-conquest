@@ -913,6 +913,80 @@ masks and labels, so the strategist imitates that rule before PPO.
 
   Report the mean held share by level of threat and of opportunity.
 
+**Result (2026-10-15): accepted.**
+
+**The goal.** `Goals::allocation` has three levels (`ALLOCATIONS`):
+
+- **0** strikes with everything.
+- **1** also guards threatened worlds. A threatened colony builds one
+  warship alone and keeps it on guard, and once the strike force has
+  sailed, new warships guard home.
+- **2** also keeps half of each striking home force's warships at home,
+  by Detach.
+
+The plan's 25/50/75% shares cannot be expressed exactly: the seat actions
+detach half a force or one ship. Guards keep their posts only while the
+allocation is above 0.
+
+**The executor's rule** (`Doctrine::allocate`) chooses 1 when a declared
+enemy's force was reported within 4 sectors of one of the seat's worlds
+in the last 2 years. It chooses 2 when that force was near home and half
+the home force could still take its strike target, or there was none.
+Over 48 games it chose 0, 1 and 2 in 44%, 27% and 28% of seat-years.
+Paired against the strike-everything executor, it scored +0.000 ± 0.008
+on block 100000 and −0.006 ± 0.008 on block 200000. The executor's own
+play therefore keeps the switch off. The rule only labels the goal
+(`BatchEnv::goal_labels`).
+
+**Training.**
+
+1. **Imitation.** `imitate.py --init strategist-final.pt --heads
+   allocation` trained only the new head on the frozen final strategist,
+   20 rounds. Allocation accuracy reached 0.58. With that head the
+   strategist won 0.368 against three current executors on 1,024 maps.
+   Forced to 0 it won 0.423, and following the rule it won 0.425.
+2. **PPO.** The whole network trained for 200 iterations from there
+   (entropy 0.001, no shaping). Its 256-map readings climbed from 0.42 to
+   0.55 at iteration 180, then fell to 0.46 at 200. The checkpoints are in
+   `~/.local/state/nostrian-conquest/ai/alloc-ppo/`. Iteration 180 is kept
+   as `strategist-alloc-final.pt`.
+
+**Head to head** (iteration 180, sampled, one seat against three
+executors, 1,024 maps). The same network plays each block three ways: its
+own allocation, allocation forced to 0, and the executor's rule.
+
+| Block | Learned | Forced 0 | Rule | Learned − rule | Learned − 0 |
+| --- | --- | --- | --- | --- | --- |
+| 100000 | 0.534 | 0.508 | 0.491 | +0.042 ± 0.020 | +0.026 ± 0.020 |
+| 200000 | 0.520 | 0.481 | 0.484 | +0.036 ± 0.020 | +0.039 ± 0.020 |
+
+Pooled, the learned allocation beats the rule by about +0.039 ± 0.014 and
+striking with everything by about +0.033 ± 0.014. Iteration 200 sat at
+parity (−0.005 and +0.006), so the gain depends on the checkpoint.
+
+**Mean held level by situation** (iteration 180, greedy, 256 games):
+
+- **Threat** is the strength of forces seen last year within 4 sectors
+  of the seat's worlds.
+- **Opportunity** is the chosen strike target's value over its estimated
+  defence.
+
+| Situation | Seat-years | Mean level | Share at 0 / 1 / 2 |
+| --- | --- | --- | --- |
+| No threat | 6,416 | 0.45 | 0.70 / 0.15 / 0.15 |
+| Low threat (strength ≤ 10) | 2,072 | 0.39 | 0.68 / 0.26 / 0.06 |
+| High threat | 6,872 | 1.12 | 0.29 / 0.30 / 0.41 |
+| No strike target | 1,024 | 0.09 | 0.91 / 0.08 / 0.01 |
+| Strong target (value/defence < 1) | 2,477 | 1.01 | 0.37 / 0.25 / 0.38 |
+| Weak target (value/defence ≥ 1) | 11,859 | 0.74 | 0.51 / 0.24 / 0.25 |
+
+The held share rises with a heavy threat, and falls when a cheap,
+valuable target is open. With no target it holds nothing back, since
+there is no strike force to split.
+
+The strategist checkpoints from before the new head no longer load
+strictly. `imitate.py --init` loads them with the new heads fresh.
+
 ### t176
 
 Early reconnaissance: find rival homeworlds and survey the map.
