@@ -895,6 +895,41 @@ handed over and t175's strategist goals.
   within one engine version. A league that must verify across engine
   changes needs to store that version, or prune old matches.
 
+**Progress (2026-10-15): the network in Rust.**
+
+- **Export.** `tools/ai/export_onnx.py` exports a fleet-level agent to
+  ONNX (opset 18, torch's dynamo exporter, with dynamic world, fleet,
+  contact and starbase counts). The graph takes one seat's raw
+  observation tables and masks, plus Gumbel noise per head. It returns
+  each head's choice; the fleet target is chosen after the mission, as in
+  training. ONNX Runtime matched PyTorch on 64 recorded seats, greedy and
+  sampled. `fleet-final.onnx` is 3 MB.
+- **Running it.** The `nc-ai-onnx` crate runs the graph through tract
+  0.22, which is pure Rust. tract 0.23 needs `rand_core` 0.10, which
+  conflicts with russh's pinned release candidate.
+  - `NetworkSeat::turn` builds the inputs from `observe`, `seat_masks` and
+    `goal_masks`. It hands the strike family's fleet orders to the
+    network, and has the executor carry out the goals for everything else.
+  - The test `nc-ai-onnx/tests/seat.rs` replays a game that a small seeded
+    network played in Python. Every year, the Rust seat's turn must equal
+    the recorded one.
+- **The real model in Rust**, one seat against three tuned executors,
+  1,024 maps from 100000:
+
+  | Temperature | Win share |
+  | --- | ---: |
+  | 0 (greedy) | 0.674 |
+  | 0.5 | 0.666 |
+  | 1 | 0.590 |
+  | 2 | 0.194 |
+
+  The greedy result equals the Python agent's 0.674 exactly. That needed
+  the batch environment's order: the network seat commissions at the start
+  of the year, and executors at their own turns.
+- **Speed.** A turn takes 2 ms on average and at most 37 ms.
+- **Difficulty** can come from temperature: greedy for hard, 1 for normal
+  (still above the executor), 2 for easy.
+
 ### t167
 
 Give AI seats personalities.

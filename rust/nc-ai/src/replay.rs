@@ -9,6 +9,24 @@ use nc_data::TurnSubmission;
 use nc_fuzz::Policy;
 
 use crate::arena::{MatchResult, match_result, seated_game};
+use crate::game::SeatedGame;
+
+/// A fresh game on `map_seed` with `campaign_seed`, set up as the batch
+/// environment and [`replay`] set it up: `autopilot` flags the seats the
+/// engine plays, for up to `years` years.
+pub fn match_game(map_seed: u64, campaign_seed: u64, autopilot: &[bool], years: u16) -> SeatedGame {
+    let policies = autopilot
+        .iter()
+        .map(|&auto| {
+            if auto {
+                Policy::Autopilot
+            } else {
+                Policy::Aggressor
+            }
+        })
+        .collect();
+    seated_game(map_seed, policies, campaign_seed, years)
+}
 
 /// Replay up to `years` years of a game on `map_seed` with `campaign_seed`.
 /// `autopilot` flags the seats the engine played, which setup must know;
@@ -22,17 +40,7 @@ pub fn replay(
     years: u16,
     turns: &[TurnSubmission],
 ) -> Result<MatchResult, String> {
-    let policies = autopilot
-        .iter()
-        .map(|&auto| {
-            if auto {
-                Policy::Autopilot
-            } else {
-                Policy::Aggressor
-            }
-        })
-        .collect();
-    let mut game = seated_game(map_seed, policies, campaign_seed, years);
+    let mut game = match_game(map_seed, campaign_seed, autopilot, years);
     let mut next = 0;
     let mut played = 0;
     while played < years {

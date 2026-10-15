@@ -90,8 +90,8 @@ class FleetAgent(Strategist):
         self.fleet_load = nn.Linear(width, 2)
         self.fleet_detach = nn.Linear(width, nc_ai_env.DETACH_CHOICES)
 
-    def fleet_dists(self, batch, fleets, worlds, goals, mission):
-        """Fleet-head distributions for the real seats; ``mission`` is the
+    def fleet_logits(self, batch, fleets, worlds, goals, mission):
+        """Masked fleet-head logits for the real seats; ``mission`` is the
         chosen mission per fleet row, which the target head conditions on."""
         n = batch["n"]
         fleets, worlds = fleets[:n], worlds[:n]
@@ -99,11 +99,11 @@ class FleetAgent(Strategist):
         query = self.target_query(fleets + self.mission_embed(mission))
         target_logits = (query @ worlds.transpose(1, 2)) / math.sqrt(fleets.shape[-1])
         # Flag the worlds the seat's own strike and colony goals name.
-        flags = torch.zeros(*worlds.shape[:2], 2, device=worlds.device)
-        for column, name in enumerate(("strike", "colonize")):
-            goal = goals[name]
-            named = goal > 0
-            flags[named, (goal[named] - 1).clamp(min=0), column] = 1.0
+        flags = torch.stack([
+            torch.nn.functional.one_hot((goals[name] - 1).clamp(min=0), worlds.shape[1])
+            * (goals[name] > 0)[:, None]
+            for name in ("strike", "colonize")
+        ], -1).to(worlds.dtype)
         target_logits = target_logits + self.goal_bias(flags)[:, None, :, 0]
         target_mask = torch.gather(
             batch["fleet_target"][:n],
@@ -112,19 +112,21 @@ class FleetAgent(Strategist):
         )[:, :, 0, :]
         masked = lambda logits, mask: logits.masked_fill(~mask, -torch.inf)
         return {
-            "mission": torch.distributions.Categorical(
-                logits=masked(mission_logits, batch["fleet_mission"][:n])),
-            "target": torch.distributions.Categorical(
-                logits=masked(target_logits, target_mask)),
-            "waypoint": torch.distributions.Categorical(logits=self.fleet_waypoint(fleets)),
-            "speed": torch.distributions.Categorical(logits=self.fleet_speed(fleets)),
-            "roe": torch.distributions.Categorical(
-                logits=masked(self.fleet_roe(fleets), batch["fleet_roe"][:n])),
-            "load": torch.distributions.Categorical(
-                logits=masked(self.fleet_load(fleets), batch["fleet_load"][:n])),
-            "detach": torch.distributions.Categorical(
-                logits=masked(self.fleet_detach(fleets), batch["fleet_detach"][:n])),
+            "mission": masked(mission_logits, batch["fleet_mission"][:n]),
+            "target": masked(target_logits, target_mask),
+            "waypoint": self.fleet_waypoint(fleets),
+            "speed": self.fleet_speed(fleets),
+            "roe": masked(self.fleet_roe(fleets), batch["fleet_roe"][:n]),
+            "load": masked(self.fleet_load(fleets), batch["fleet_load"][:n]),
+            "detach": masked(self.fleet_detach(fleets), batch["fleet_detach"][:n]),
         }
+
+    def fleet_dists(self, batch, fleets, worlds, goals, mission):
+        """Fleet-head distributions for the real seats, as
+        :meth:`fleet_logits`."""
+        return {name: torch.distributions.Categorical(logits=logits)
+                for name, logits in self.fleet_logits(batch, fleets, worlds, goals,
+                                                      mission).items()}
 
     def act(self, batch, greedy=False, fleet_choices=None, goal_choices=None):
         """Goals and fleet choices, sampled (or greedy) unless given; the goal

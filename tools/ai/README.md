@@ -3,8 +3,8 @@
 Python side of the [learned AI opponent plan](../../docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md).
 Rust plays the games through the `nc_ai_env` extension, built by maturin
 from [`rust/nc-ai-py`](../../rust/nc-ai-py). PyTorch learns on the GPU (MPS
-on the Mac mini). PyTorch, rather than MLX, can export a policy to ONNX for a
-CPU actor on another host (t158).
+on the Mac mini). PyTorch, rather than MLX, exports a trained agent to ONNX,
+which the game runs from Rust ([`rust/nc-ai-onnx`](../../rust/nc-ai-onnx)).
 
 These are the repository's only Python dependencies. The game's own build
 never needs them: `nc-ai-py` sits outside the `rust/` workspace.
@@ -86,6 +86,23 @@ registered agents:
 
 Map seeds from 5,000,000 keep league games apart from training and
 evaluation maps.
+
+## Export an agent for real games (t165)
+
+```sh
+uv run export_onnx.py fleet-final.pt --out fleet-final.onnx
+uv run export_onnx.py --fixture ../../rust/nc-ai-onnx/tests/fixtures
+```
+
+The first command exports a fleet-level agent for `nc_ai_onnx::NetworkSeat`.
+The graph plays one seat: raw observation and masks in, each head's choice
+out. It takes Gumbel noise per head, so the caller sets the temperature.
+The export is checked against PyTorch on recorded seats, greedy and
+sampled.
+
+The second command rewrites the Rust test fixture: a small seeded network
+and a game it played. Rerun it after changing the observation, the masks
+or the heads.
 
 ## The environment
 

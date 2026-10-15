@@ -16,3 +16,10 @@ package = false
 
 [tool.uv.sources]
 nc-ai-env = { path = "../../rust/nc-ai-py" }
+
+[dependency-groups]
+dev = [
+    "onnx>=1.23.2",
+    "onnxruntime>=1.31.0",
+    "onnxscript>=0.7.2",
+]

@@ -1,0 +1,17 @@
+[package]
+name = "nc-ai-onnx"
+version = "1.0.0-beta.3"
+edition = "2024"
+license-file = "../../LICENSE"
+
+[lib]
+path = "src/lib.rs"
+
+[dependencies]
+nc-ai = { path = "../nc-ai" }
+nc-data = { path = "../nc-data" }
+# Pure-Rust ONNX inference: hosts need no Python, GPU or native runtime.
+tract-onnx = "0.22"
+
+[dev-dependencies]
+serde_json = "1"
