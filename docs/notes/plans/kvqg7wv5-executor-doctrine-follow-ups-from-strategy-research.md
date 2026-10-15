@@ -792,6 +792,13 @@ the batteries were unknown.
 
   The executors' weights were tuned without this intel; later re-tunes
   include it.
+- **The classic replay test changed with it.** t159's
+  `the_classic_doctrine_replays_t154_exactly` pinned two t154 results. The
+  classic seats now learn from their own attacks too, so those games play
+  differently. The classic code path is unchanged; the test's values were
+  re-recorded with the new intel, and its comment says why. The first
+  t178 commit went in with this test failing: a test summary in the
+  command chain did not stop the commit.
 
 ## Connections
 

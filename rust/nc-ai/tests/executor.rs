@@ -76,9 +76,14 @@ fn the_executor_beats_the_aggressor() {
     assert!(win_rate(SeatPolicy::Aggressor) >= 0.5);
 }
 
-/// Results recorded with t154's executor before the land-grab doctrine:
-/// one tuned seat against three baseline seats, and two tuned seats beside
-/// an Aggressor and an Autopilot seat, on two held-out maps over 60 years.
+/// The classic doctrine runs t154's executor code. Recorded results lock it
+/// in: one tuned seat against three baseline seats, and two tuned seats
+/// beside an Aggressor and an Autopilot seat, on two held-out maps over 60
+/// years.
+///
+/// At t159 these matched t154's own results exactly. Since t178, every seat
+/// learns what its own attacks reveal, which changes these games. The
+/// values below are recorded with that intel.
 #[test]
 fn the_classic_doctrine_replays_t154_exactly() {
     let classic = Doctrine {
@@ -100,11 +105,11 @@ fn the_classic_doctrine_replays_t154_exactly() {
     };
     assert_eq!(
         play_match(100000, &[tuned, baseline, baseline, baseline], 60),
-        recorded([466, 253, 239, 307], [7, 4, 4, 5])
+        recorded([527, 181, 264, 151], [7, 5, 4, 4])
     );
     assert_eq!(
         play_match(100001, &mixed, 60),
-        recorded([669, 0, 644, 34], [8, 0, 11, 1])
+        recorded([277, 0, 1113, 100], [6, 0, 13, 1])
     );
 }
 
