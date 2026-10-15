@@ -733,6 +733,34 @@ following the risk-and-return principle.
 - Report colonies founded by years 10 and 20, and colonization trips lost
   to a rival arriving first, with and without the switch.
 
+### t178
+
+Learn what a seat's own attacks reveal.
+
+The AI must collect intelligence to make informed decisions (owner,
+2026-10-15), and should never know less than a human player in its seat.
+t161 found that a bombarding seat's memory almost never learns its
+target's battery count: in 9,426 of about 10,200 bombarding fleet-years
+the batteries were unknown.
+
+- **Check what humans see.** List what the attacking player's bombard,
+  invade, blitz and battle reports show about the target: batteries,
+  armies, starbases and production remaining. Check the player manual and
+  the report code.
+- **Add the gap to `SeatMemory`.** Whatever those reports give a human but
+  the seat's memory lacks is added: the intel grants the attacker
+  receives, or the facts the reports state.
+- **No more than a human knows.** t151's scramble tests are extended to
+  attack reports, so the seat learns nothing a human player would not.
+
+**Exit:**
+
+- A test bombards a world and checks the attacker's memory then holds what
+  its reports show.
+- t151's leak tests still pass.
+- Report how often a striking seat knows its target's batteries, before
+  and after.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):
