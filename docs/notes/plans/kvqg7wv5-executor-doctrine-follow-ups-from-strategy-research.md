@@ -421,6 +421,131 @@ from the recorded turns of its evaluation games.
 **Exit:** as in Scope, plus the counts of each attack mission and the
 captures that follow, with and without the switch.
 
+### Fleet defence, blockades and hunting (t169–t173)
+
+The owner (2026-10-15) asked whether the AI defends its worlds with fleets
+and blockades enemy worlds. It does not yet:
+
+- It defends with garrisons (armies and batteries), a home starbase, and
+  warships that happen to gather at home between strikes.
+- No fleet is ever posted on Guard/Blockade. The manual's blockade watches
+  five times as hard and attacks any fleet that comes to bombard, invade
+  or blitz.
+- Guard a Starbase is not in the action space: it needs a starbase target
+  (t152).
+- t163 rejected blockading with the whole strike force.
+- The action space has no Detach, so a force cannot be split.
+
+Each task below is a switch measured as in Scope. The fleet-level agent
+(t157) can already choose Guard/Blockade itself; t157's reports note
+whether it does.
+
+### t169
+
+Guard threatened worlds, and keep a home guard.
+
+- **Threatened colonies.** When the seat's contacts show a rival fleet
+  within a few sectors of a colony, that colony builds a warship and posts
+  it on Guard/Blockade there. Without Detach (t172), a guard fleet has to
+  be commissioned where it is needed.
+- **A home guard.** When the strike force leaves home, a guard stays
+  behind on Guard/Blockade. Until t172, that means warships built after the
+  strike force sailed.
+
+**Exit:** as in Scope. Also report how often a guarded world is attacked,
+and how often it falls, with and without the switch.
+
+### t170
+
+Offer Guard a Starbase.
+
+Add Guard a Starbase to the seat actions, with a starbase target: the
+seat's own starbases, from its own records. The masks follow
+`validate_fleet_order_payload`, and decoding builds the order directly, as
+for world targets.
+
+- **The executor:** a home guard (t169) guards the home starbase when it
+  has one.
+- **The network:** gets a pointer over the seat's own starbase rows.
+
+**Exit:**
+
+- t152's random-play test still submits no rejected order, with Guard a
+  Starbase among the choices.
+- The masks reveal nothing about other empires.
+- The executor change is measured as in Scope.
+
+### t171
+
+A dedicated blockader.
+
+t163 failed because the whole strike force sat on a blockade. Here a
+separate warship fleet blockades a rival world the strike force cannot yet
+take, chosen by value per estimated defence, while the strike force goes on
+reloading and striking. The blockader comes home when its target falls,
+or when the seat's home is threatened.
+
+**Exit:** as in Scope. Also report the production denied to the
+blockaded worlds.
+
+### t172
+
+Offer Detach.
+
+Add a per-fleet choice to detach part of a fleet, by kind and share: for
+example half its warships, or its transports. The masks follow the detach
+validators; decoding builds the detach and orders the new fleet in the
+same year where the rules allow, or the next. This changes the action
+arrays, so learned seats are retrained afterwards.
+
+- **The executor:** splits guards (t169) and a blockader (t171) off the
+  home force instead of building them.
+
+**Exit:**
+
+- t152's random-play test still submits no rejected order, with Detach
+  among the choices.
+- A replay test covers detached fleets.
+- The executor's use of Detach is measured as in Scope.
+
+### t173
+
+Hunt and intercept enemy fleets.
+
+The owner (2026-10-15) asked whether the AI attacks enemy fleets, not
+just worlds. Ships fight when they meet in a sector, each fleet's ROE
+deciding whether it engages. Per the manual:
+
+- Patrol a Sector watches ten times as hard as an ordinary fleet and
+  attacks what the rules allow, as far as its ROE permits.
+- A faster fleet always catches its target; destroyers suit interception.
+
+Today the executor never hunts fleets. Its warships gather at home and
+strike worlds. The action space targets only world sectors, so no
+patrol line or intercept point in deep space can be ordered. Contacts are
+remembered for five years, mostly as size classes; battle reports give
+ship types.
+
+The work:
+
+- **Deep-space targets.** Add them for Move and Patrol a Sector in the
+  seat actions, so the executor and the network can patrol between
+  worlds and intercept on routes. The masks follow
+  `validate_fleet_order_payload`.
+- **A hunter group.** Fast warships, detached (t172) or built for it,
+  patrol where rival fleets were seen recently, or the line to rival
+  worlds. ROE is set from the estimated odds against the contacts' size.
+- **Answer raiders.** When contacts show rival fleets near the seat's
+  worlds, hunters move to intercept rather than waiting for an attack.
+  This works alongside t169's guards.
+
+**Exit:**
+
+- t152's random-play test passes with deep-space targets.
+- The executor change is measured as in Scope.
+- Report the fleet battles fought and won, and the warships lost, with and
+  without the switch.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):
