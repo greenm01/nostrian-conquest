@@ -13,6 +13,8 @@
 //! plays greedy, the agent's strongest play. Gumbel noise times a
 //! temperature samples at that temperature, a weaker and less predictable
 //! opponent.
+//!
+//! [`CampaignAi`] plays a campaign's AI seats in its maintenance.
 
 use std::path::Path;
 
@@ -23,6 +25,10 @@ use nc_ai::{
 };
 use nc_data::{CoreGameData, TurnSubmission};
 use tract_onnx::prelude::*;
+
+mod campaign;
+
+pub use campaign::{AGENT_FAMILIES, CampaignAi, MODEL_ENV, model_from_env, temperature};
 
 /// Goal head widths the exported graph was built with; the diplomacy,
 /// strike and colonize heads follow the game.

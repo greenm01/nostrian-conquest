@@ -1,5 +1,6 @@
 use rusqlite::{OptionalExtension, params};
 
+use super::ai_seats::{AiSeat, load_ai_seats_conn, save_ai_seats_tx};
 use super::{CampaignStore, CampaignStoreError};
 use crate::bbs_config::validate_reservations as validate_shared_reservations;
 use crate::{DEFAULT_INACTIVITY_AUTOPILOT_AFTER_TURNS, SeatReservation};
@@ -22,6 +23,8 @@ pub struct CampaignSettings {
     pub maintenance_interval_minutes: u32,
     pub maintenance_next_due_unix_seconds: Option<u64>,
     pub reservations: Vec<SeatReservation>,
+    /// Seats a learned agent plays (t165).
+    pub ai_seats: Vec<AiSeat>,
 }
 
 impl CampaignSettings {
@@ -40,6 +43,7 @@ impl CampaignSettings {
             maintenance_interval_minutes: DEFAULT_MAINTENANCE_INTERVAL_MINUTES,
             maintenance_next_due_unix_seconds: None,
             reservations: Vec::new(),
+            ai_seats: Vec::new(),
         }
     }
 
@@ -84,6 +88,27 @@ impl CampaignSettings {
             ));
         }
         validate_reservations(&self.reservations)?;
+        for (idx, seat) in self.ai_seats.iter().enumerate() {
+            let player = seat.player_record_index_1_based;
+            if player == 0 {
+                return Err(CampaignStoreError::InvalidState(
+                    "AI seat player must be at least 1".to_string(),
+                ));
+            }
+            if self.ai_seats[..idx]
+                .iter()
+                .any(|other| other.player_record_index_1_based == player)
+            {
+                return Err(CampaignStoreError::InvalidState(format!(
+                    "seat {player} is listed as an AI seat twice"
+                )));
+            }
+            if self.reservation_for_player(player).is_some() {
+                return Err(CampaignStoreError::InvalidState(format!(
+                    "seat {player} is reserved for a player and cannot be an AI seat"
+                )));
+            }
+        }
         Ok(self)
     }
 
@@ -112,6 +137,14 @@ impl CampaignSettings {
                 return Err(CampaignStoreError::InvalidState(format!(
                     "reservation player {} exceeds player count {}",
                     reservation.player_record_index_1_based, player_count
+                )));
+            }
+        }
+        for seat in &self.ai_seats {
+            if seat.player_record_index_1_based > player_count {
+                return Err(CampaignStoreError::InvalidState(format!(
+                    "AI seat {} exceeds player count {}",
+                    seat.player_record_index_1_based, player_count
                 )));
             }
         }
@@ -164,6 +197,7 @@ impl CampaignStore {
                             .get::<_, Option<i64>>(11)?
                             .map(|value| value as u64),
                         reservations: Vec::new(),
+                        ai_seats: Vec::new(),
                     })
                 },
             )
@@ -172,6 +206,7 @@ impl CampaignStore {
             return Ok(None);
         };
         settings.reservations = load_reservations_conn(&conn)?;
+        settings.ai_seats = load_ai_seats_conn(&conn)?;
         Ok(Some(settings.validate()?))
     }
 
@@ -247,6 +282,7 @@ impl CampaignStore {
                 ],
             )?;
         }
+        save_ai_seats_tx(&tx, &settings.ai_seats)?;
         tx.commit()?;
         self.apply_runtime_policy_settings(&settings)?;
         Ok(())

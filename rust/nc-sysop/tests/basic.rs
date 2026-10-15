@@ -277,7 +277,7 @@ fn nc_sysop_help_lists_only_local_and_bbs_public_subcommands() {
     let stdout = String::from_utf8(output.stdout).expect("stdout should be utf-8");
     assert!(stdout.contains("new-game <target_dir>"));
     assert!(stdout.contains("maint <dir> [turns]"));
-    assert!(stdout.contains("settings <show|set|reserve|unreserve>"));
+    assert!(stdout.contains("settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat>"));
     assert!(!stdout.contains("maint-all"));
     assert!(!stdout.contains("host "));
     assert!(!stdout.contains("nostr "));

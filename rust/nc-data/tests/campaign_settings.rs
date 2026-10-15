@@ -3,7 +3,9 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use nc_data::{CampaignSettings, CampaignStore, CoreGameData, SeatReservation};
+use nc_data::{
+    AiDifficulty, AiSeat, CampaignSettings, CampaignStore, CoreGameData, SeatReservation,
+};
 use nc_engine::build_seeded_new_game;
 
 static TEMP_DIR_SEQ: AtomicU64 = AtomicU64::new(0);
@@ -53,6 +55,10 @@ fn campaign_settings_round_trip_and_update_runtime_policy_bytes() {
             player_record_index_1_based: 2,
             alias: "Sysop".to_string(),
         }],
+        ai_seats: vec![AiSeat {
+            player_record_index_1_based: 3,
+            difficulty: AiDifficulty::Hard,
+        }],
     };
     store
         .save_campaign_settings(&settings)
@@ -100,11 +106,52 @@ fn campaign_settings_validate_duplicate_reservations() {
                 alias: "Sysop".to_string(),
             },
         ],
+        ai_seats: Vec::new(),
     }
     .validate()
     .expect_err("duplicate aliases should be rejected");
 
     assert!(format!("{err}").contains("duplicate reservation alias"));
+}
+
+#[test]
+fn an_ai_seat_cannot_be_reserved_or_listed_twice() {
+    let ai = |player| AiSeat {
+        player_record_index_1_based: player,
+        difficulty: AiDifficulty::Normal,
+    };
+    let mut settings = CampaignSettings::new("friday-night", "Friday Night EC");
+    settings.reservations = vec![SeatReservation {
+        player_record_index_1_based: 2,
+        alias: "Sysop".to_string(),
+    }];
+    settings.ai_seats = vec![ai(2)];
+    let err = settings.clone().validate().expect_err("a reserved seat");
+    assert!(format!("{err}").contains("reserved"));
+    settings.ai_seats = vec![ai(3), ai(3)];
+    let err = settings
+        .clone()
+        .validate()
+        .expect_err("a seat listed twice");
+    assert!(format!("{err}").contains("twice"));
+    settings.ai_seats = vec![ai(5)];
+    let err = settings
+        .validate_reservations_for_player_count(4)
+        .expect_err("a seat beyond the player count");
+    assert!(format!("{err}").contains("exceeds player count"));
+}
+
+#[test]
+fn ai_seat_memory_round_trips_and_is_replaced() {
+    let (root, store, _) = seeded_store("nc-data-ai-memory");
+    assert_eq!(store.load_ai_seat_memory(3).expect("load"), None);
+    store.save_ai_seat_memory(3, 3001, "first").expect("save");
+    store.save_ai_seat_memory(3, 3002, "second").expect("save");
+    assert_eq!(
+        store.load_ai_seat_memory(3).expect("load"),
+        Some((3002, "second".to_string()))
+    );
+    let _ = fs::remove_dir_all(root);
 }
 
 #[test]

@@ -1,8 +1,10 @@
+mod ai_seats;
 mod usage;
 
 use std::env;
 use std::path::{Path, PathBuf};
 
+use nc_ai_onnx::{CampaignAi, model_from_env};
 use nc_data::{
     BbsGameConfig, CampaignSettings, CampaignStore, SeatReservation, generate_campaign_seed,
 };
@@ -276,6 +278,13 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
                     reservation.player_record_index_1_based, reservation.alias
                 );
             }
+            for seat in settings.ai_seats {
+                println!(
+                    "ai_seat seat={} difficulty={}",
+                    seat.player_record_index_1_based,
+                    seat.difficulty.as_str()
+                );
+            }
             Ok(())
         }
         "set" => {
@@ -380,6 +389,8 @@ fn run_settings(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
             println!("Reserved seat {} in {}", player, dir.display());
             Ok(())
         }
+        "ai-seat" => ai_seats::set_ai_seat(&args[1..]),
+        "remove-ai-seat" => ai_seats::remove_ai_seat(&args[1..]),
         "unreserve" => {
             let dir = parse_required_dir_flag(&args[1..])?;
             let player = parse_required_usize_flag(&args[1..], "--player")?;
@@ -427,9 +438,16 @@ fn run_maintenance_for_dir(
     let store = CampaignStore::open_default_in_dir(dir)?;
     let mut maintenance = CampaignMaintenance::load(&store)?;
     let start_year = maintenance.start_year();
+    let mut ai = CampaignAi::load(&store, &maintenance, model_from_env().as_deref())?;
 
     for turn in 1..=turns {
+        if let Some(ai) = &ai {
+            ai.play(&mut maintenance)?;
+        }
         maintenance.run_turn()?;
+        if let Some(ai) = &mut ai {
+            ai.learn(&maintenance);
+        }
         println!(
             "  Turn {}: year {}",
             turn, maintenance.game_data.conquest.game_year
@@ -438,6 +456,9 @@ fn run_maintenance_for_dir(
 
     let end_year = maintenance.game_data.conquest.game_year;
     maintenance.save(&store)?;
+    if let Some(ai) = &ai {
+        ai.save(&store, end_year)?;
+    }
 
     if update_schedule {
         let mut settings = store.load_campaign_settings()?;

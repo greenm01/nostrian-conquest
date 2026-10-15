@@ -4,6 +4,7 @@ use rusqlite::{Connection, OptionalExtension};
 
 use crate::{CoreGameData, QueuedPlayerMail, ReportBlockRow};
 
+mod ai_seats;
 mod hex;
 mod hosting;
 mod intel;
@@ -19,6 +20,7 @@ mod seat_bind_source;
 mod settings;
 mod snapshot_core;
 
+pub use ai_seats::{AiDifficulty, AiSeat};
 pub use player_activity::PlayerActivityState;
 pub use player_lifecycle::{PlayerLifecycleState, TerminalOutcome, WinnerState};
 pub use player_war_stats::PlayerWarStatsState;
@@ -70,7 +72,9 @@ pub enum CampaignStoreError {
     },
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, serde::Serialize, serde::Deserialize,
+)]
 pub enum IntelTier {
     Owned,
     Full,
@@ -123,7 +127,7 @@ impl IntelTier {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct PlanetIntelSnapshot {
     pub planet_record_index_1_based: usize,
     pub intel_tier: IntelTier,
@@ -344,6 +348,15 @@ impl CampaignStore {
              CREATE TABLE IF NOT EXISTS seat_reservations (
                  player_record_index INTEGER PRIMARY KEY,
                  alias TEXT NOT NULL UNIQUE
+             );
+             CREATE TABLE IF NOT EXISTS ai_seats (
+                 player_record_index INTEGER PRIMARY KEY,
+                 difficulty TEXT NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS ai_seat_memory (
+                 player_record_index INTEGER PRIMARY KEY,
+                 game_year INTEGER NOT NULL,
+                 memory TEXT NOT NULL
              );
              CREATE TABLE IF NOT EXISTS seat_bind_sources (
                  player_record_index INTEGER PRIMARY KEY,

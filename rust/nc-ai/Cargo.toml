@@ -13,3 +13,6 @@ nc-engine = { path = "../nc-engine" }
 nc-harness = { path = "../nc-harness" }
 # The aggressor policy is the executor's sparring partner.
 nc-fuzz = { path = "../nc-fuzz" }
+# A seat's memory persists between maintenance runs in real games (t165).
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

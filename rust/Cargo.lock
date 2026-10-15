@@ -3568,6 +3568,8 @@ dependencies = [
  "nc-engine",
  "nc-fuzz",
  "nc-harness",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
@@ -3576,6 +3578,7 @@ version = "1.0.0-beta.3"
 dependencies = [
  "nc-ai",
  "nc-data",
+ "nc-engine",
  "serde_json",
  "tract-onnx",
 ]
@@ -3917,6 +3920,7 @@ dependencies = [
 name = "nc-sysop"
 version = "1.0.0-beta.3"
 dependencies = [
+ "nc-ai-onnx",
  "nc-compat",
  "nc-data",
  "nc-engine",

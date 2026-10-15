@@ -38,6 +38,7 @@ pub struct CampaignMaintenance {
     planet_intel_by_viewer: Vec<BTreeMap<usize, PlanetIntelSnapshot>>,
     player_war_stats: Vec<PlayerWarStatsState>,
     events: MaintenanceEvents,
+    last_year_events: MaintenanceEvents,
 }
 
 impl CampaignMaintenance {
@@ -65,6 +66,7 @@ impl CampaignMaintenance {
             queued_mail: runtime_state.queued_mail,
             previous_report_block_rows: runtime_state.report_block_rows,
             events: MaintenanceEvents::default(),
+            last_year_events: MaintenanceEvents::default(),
         })
     }
 
@@ -76,6 +78,12 @@ impl CampaignMaintenance {
     /// Every year's events run so far, merged.
     pub fn events(&self) -> &MaintenanceEvents {
         &self.events
+    }
+
+    /// The events of the last year run, alone: what an AI seat learns from
+    /// before its next turn.
+    pub fn last_year_events(&self) -> &MaintenanceEvents {
+        &self.last_year_events
     }
 
     /// Advance one year: put inactive empires on autopilot, run the
@@ -120,6 +128,7 @@ impl CampaignMaintenance {
                 Some(&grants),
             );
         }
+        self.last_year_events = events.clone();
         self.events.extend(events);
         Ok(())
     }

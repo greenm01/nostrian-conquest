@@ -307,6 +307,29 @@ For the full non-BBS settings reference, including the raw `settings show`
 shape and the advanced carried-forward state fields, see
 `docs/sysop/rust/campaign-settings.md`.
 
+== AI Seats
+
+A non-BBS campaign can seat the learned AI in place of a player:
+
+```
+nc-sysop settings ai-seat --dir /srv/nc/games/friday-night --player 3 --difficulty hard
+nc-sysop settings remove-ai-seat --dir /srv/nc/games/friday-night --player 3
+```
+
+Difficulty is `easy`, `normal` or `hard`. `hard` is the agent at full
+strength. On test maps it won about two games in three against three scripted
+executor opponents. `normal` won about three in five, and `easy` about one in
+five.
+
+A reserved seat cannot be an AI seat. Each maintenance year, every AI seat
+commissions its ships and submits its turn before the year runs, as a player
+would. It sees only what a player of that seat could see. Its memory is kept
+in `ncgame.db` between runs.
+
+Maintenance needs the agent file. Set `NC_AI_MODEL` to the path of its
+`.onnx` file wherever `nc-sysop maint` runs. A campaign with AI seats refuses
+maintenance without it.
+
 == BBS `config.kdl`
 
 BBS campaigns use a minimal live per-game `config.kdl` instead of the non-BBS

@@ -34,6 +34,7 @@ maintenance_enabled=false
 maintenance_interval_minutes=1440
 maintenance_next_due_unix_seconds=
 reservation seat=1 alias=SYSOP
+ai_seat seat=3 difficulty=hard
 ```
 
 A fresh game starts with maintenance scheduling disabled. The next-due field
@@ -82,6 +83,29 @@ Treat these as niche routing state. They are useful for controlled alias-based
 seat binding. They are not part of the normal Nostr invite flow.
 
 For BBS campaigns, reservations live in `config.kdl` instead.
+
+## AI Seats
+
+A non-BBS campaign can have seats played by the learned AI:
+
+```sh
+nc-sysop settings ai-seat --dir /path/to/mygame --player 3 --difficulty hard
+nc-sysop settings remove-ai-seat --dir /path/to/mygame --player 3
+```
+
+Difficulty is `easy`, `normal` or `hard`. Hard plays the agent at full
+strength. On held-out test maps it won about two games in three against
+three scripted executor seats. Normal won about three in five; it still
+beats the executor, but is less predictable. Easy won about one in five.
+
+A reserved seat cannot be an AI seat. Before each maintenance year,
+`nc-sysop maint` has every AI seat commission its ships and submit its turn,
+as a player would. Each seat's memory of what it has seen is kept in
+`ncgame.db` between runs.
+
+`maint` needs the agent: set `NC_AI_MODEL` to its `.onnx` file. A campaign
+with AI seats refuses maintenance without it. Export the file with
+`tools/ai/export_onnx.py`.
 
 ## Advanced Carried-Forward State
 

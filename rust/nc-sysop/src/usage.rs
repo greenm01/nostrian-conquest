@@ -10,7 +10,7 @@ pub fn print_usage() {
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] maint <dir> [turns]"
     );
     println!(
-        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings <show|set|reserve|unreserve> ..."
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings <show|set|reserve|unreserve|ai-seat|remove-ai-seat> ..."
     );
 }
 
@@ -45,4 +45,11 @@ pub fn print_settings_usage() {
     println!(
         "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings unreserve --dir <game_dir> --player <N>"
     );
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings ai-seat --dir <game_dir> --player <N> --difficulty <easy|normal|hard>"
+    );
+    println!(
+        "  nc-sysop [--log-file <path>] [--log-level <error|warn|info|debug|trace>] settings remove-ai-seat --dir <game_dir> --player <N>"
+    );
+    println!("  maint plays AI seats with the agent named by NC_AI_MODEL (an .onnx file).");
 }

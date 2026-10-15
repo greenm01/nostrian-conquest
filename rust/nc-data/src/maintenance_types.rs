@@ -6,7 +6,7 @@ use crate::{
     PlayerDiplomacyValidationError,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, serde::Serialize, serde::Deserialize)]
 pub struct ShipLosses {
     pub destroyers: u32,
     pub cruisers: u32,
@@ -17,7 +17,7 @@ pub struct ShipLosses {
 }
 
 /// A bombardment event: one fleet executed BombardWorld against one planet.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct BombardEvent {
     /// Planet index (into PLANETS.DAT records) that was bombarded.
     pub planet_idx: usize,
@@ -797,7 +797,7 @@ pub struct ShipsRecoveredEvent {
 
 /// Events produced by a single maintenance turn, for use by callers
 /// (e.g. DATABASE.DAT regeneration in the CLI layer).
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct MaintenanceEvents {
     /// Bombardment events: each describes one fleet-vs-planet bombardment.
     pub bombard_events: Vec<BombardEvent>,

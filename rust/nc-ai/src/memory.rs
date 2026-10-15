@@ -11,7 +11,7 @@ use nc_data::{
 pub const CONTACT_MEMORY_YEARS: u16 = 5;
 
 /// Which report named a foreign force.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ContactSource {
     /// A fleet or starbase detected it without fighting.
     Scout,
@@ -24,7 +24,7 @@ pub enum ContactSource {
 }
 
 /// A foreign force one empire's reports named.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Contact {
     /// The game year the report arrived.
     pub year: u16,
@@ -43,7 +43,7 @@ pub struct Contact {
 
 /// What one empire knows: planet intel as the campaign store keeps it, and
 /// the foreign forces its reports named in recent years.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct SeatMemory {
     pub empire: u8,
     pub planet_intel: BTreeMap<usize, PlanetIntelSnapshot>,

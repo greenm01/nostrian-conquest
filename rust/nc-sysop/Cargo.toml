@@ -9,6 +9,7 @@ name = "nc-sysop"
 path = "src/main.rs"
 
 [dependencies]
+nc-ai-onnx = { path = "../nc-ai-onnx" }
 nc-data = { path = "../nc-data" }
 nc-engine = { path = "../nc-engine" }
 nc-log = { path = "../nc-log" }
