@@ -829,6 +829,49 @@ The work, behind a switch:
 - Report how many years ahead rival fleets are first seen before they
   reach the seat's worlds, with and without the net.
 
+**Result (2026-10-15): rejected.** Guards (t169) and hunters (t173) were
+both rejected, so the net was measured alone, and then with t173's hunter
+as its responder. The `pickets` switch worked as follows:
+
+- **Posts.** The halfway points from home to the three nearest worlds
+  known to be a rival's.
+- **Pickets.** Lone destroyers took empty posts on Patrol a Sector at
+  ROE 0. A picket whose post was no longer one moved on.
+- **Supply.** Home built a destroyer for each post no spare picket could
+  take, and while a post was empty, one home fleet a year detached a
+  destroyer (t172) to take it. A year's hulls commission as one fleet, so
+  a built destroyer is rarely alone.
+
+**Warning.** The measure was the share of attacks on the seat's worlds
+where the seat had seen the attacker's forces within 4 sectors of that
+world beforehand, and how many years earlier. Over 128 games:
+
+| | Attacks | Warned | Mean warning |
+| --- | --- | --- | --- |
+| Without the net | 4,181 | 46% | 3.07 years |
+| With the net | 4,051 | 56% | 3.31 years |
+
+About 2.4 pickets stood out per seat-year. A first version let pickets
+keep posts that were no longer posts. It kept about 4.8 out and warned
+64%, but cost more.
+
+**Paired results** against the tuned executor, block 100000 (4,096
+games):
+
+| Version | Difference |
+| --- | --- |
+| Net, first version | −0.023 ± 0.008 |
+| Net | −0.009 ± 0.008 |
+| Net with the hunter, forces within 4 sectors | −0.000 ± 0.009 |
+| Net with the hunter, forces at a world's sector | −0.000 ± 0.009 |
+
+The net sees more, and sooner. But no rule the executor has acts on
+sightings well enough to repay the destroyers: the hunter only cancels
+the net's cost. The code is removed. Whether to answer a sighting is a
+judgement of threat and opportunity, which t175's allocation goal and the
+learned fleet agent can make. The deep-space waypoints (t173) and Detach
+(t172) let the network man a net if that pays.
+
 ### t175
 
 Share the fleet between offence and defence.
