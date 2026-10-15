@@ -421,7 +421,7 @@ from the recorded turns of its evaluation games.
 **Exit:** as in Scope, plus the counts of each attack mission and the
 captures that follow, with and without the switch.
 
-### Fleet defence, blockades, hunting and pickets (t169–t174)
+### Fleet defence, blockades, hunting and pickets (t169–t175)
 
 The owner (2026-10-15) asked whether the AI defends its worlds with fleets
 and blockades enemy worlds. It does not yet:
@@ -439,6 +439,12 @@ and blockades enemy worlds. It does not yet:
 Each task below is a switch measured as in Scope. The fleet-level agent
 (t157) can already choose Guard/Blockade itself; t157's reports note
 whether it does.
+
+**Principle (owner, 2026-10-15): fleets serve both offence and defence.**
+The executor puts every warship in one strike force and defends with
+garrisons alone. t169–t174 give fleets defensive roles: guards, a home
+guard, pickets and hunters. t175 decides how warships are shared between
+those roles and the strike force, year by year.
 
 ### t169
 
@@ -579,6 +585,34 @@ The work, behind a switch:
   comparison isolates the net.
 - Report how many years ahead rival fleets are first seen before they
   reach the seat's worlds, with and without the net.
+
+### t175
+
+Share the fleet between offence and defence.
+
+Fleets should serve both offence and defence (owner, 2026-10-15). A new
+strategist goal, the fleet allocation, holds back 0%, 25%, 50% or 75% of
+the seat's warship strength for defence each year. The executor carries
+it out:
+
+- **The held share** guards threatened worlds and stays home as a guard
+  (t169), with pickets (t174) watching and hunters (t173) intercepting.
+- **The rest** forms the strike force.
+- **Splitting existing forces** needs Detach (t172); new warships go where
+  the share is short.
+
+Until the network learns the goal, the executor sets it itself from the
+threat: rival fleet strength seen near its worlds in its contacts, against
+its own warships. The goal joins the goal masks and labels, so the
+strategist imitates the executor's choice before PPO.
+
+**Exit:**
+
+- As in Scope, for the executor's threat-driven allocation against the
+  strike-everything executor.
+- After retraining, the strategist's chosen allocation follows the threat.
+  Report the mean held share in years with and without rival fleets near
+  the seat's worlds.
 
 ## Connections
 
