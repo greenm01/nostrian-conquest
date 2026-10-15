@@ -630,7 +630,7 @@ Build the league and evaluation.
   production.
 - **First league.** 1,024 matches of 60 years among eight agents, four per
   match. `verify` rebuilt all 1,024 and the rating table exactly in 2
-  minutes, from a 10.6 MB database. The matches are tagged `b138a381+dirty`:
+  minutes, from a 10.6 MB database. The matches are tagged `9b9f8f0d+dirty`:
   the league code was not yet committed when they ran.
 
   | Agent | mu − 3σ | mu | Win share |

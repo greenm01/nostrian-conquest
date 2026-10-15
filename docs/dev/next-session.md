@@ -71,9 +71,14 @@ Each task's result section in the plan holds its evidence.
     three executors. Checkpoint:
     `~/.local/state/nostrian-conquest/ai/strategist-final.pt`.
 
-**Next:** t156 (league and ratings), then t157, t158, t165 (real games,
-behind the owner's readiness gate), t167 (personalities: land grab default,
-rusher) and t166. Plans:
+- t156: the league (`tools/ai/league.py`). In 1,024 rated matches the
+  final strategist leads (mu − 3σ 41.8 against the executor's 30.9), and
+  `verify` rebuilds every match and the ratings from stored turns. League:
+  `~/.local/state/nostrian-conquest/ai/league.db`.
+
+**Next:** t157 (the fleet-level agent), then t158, t165 (real games,
+behind the owner's readiness gate), t167 (personalities: land grab
+default, rusher) and t166. Plans:
 [doctrine follow-ups](../notes/plans/kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md),
 [AI opponent](../notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md).
 
