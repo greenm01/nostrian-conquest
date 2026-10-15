@@ -107,6 +107,13 @@ as a player would. Each seat's memory of what it has seen is kept in
 with AI seats refuses maintenance without it. Export the file with
 `tools/ai/export_onnx.py`.
 
+Hosted games play AI seats too. `nc-host` maintenance does, for Nostr
+(`serve` and `maint`) and community (`admin`) games, so set `NC_AI_MODEL`
+in those services' environments. Mark a hosted game's seat with
+`nc-sysop settings ai-seat` on its game directory. Community joins skip AI
+seats. For a Nostr game, also close the seat to claims with
+`nc-host seats close`.
+
 ## Advanced Carried-Forward State
 
 These fields still appear in non-BBS `settings show` output because they are

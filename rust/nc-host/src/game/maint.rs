@@ -38,6 +38,11 @@ pub fn run_hosted_maintenance(
     let campaign_store = open_existing_campaign_store(game_dir)?;
     let mut maintenance = CampaignMaintenance::load(&campaign_store)?;
     let start_year = maintenance.start_year();
+    let mut ai = nc_ai_onnx::CampaignAi::load(
+        &campaign_store,
+        &maintenance,
+        nc_ai_onnx::model_from_env().as_deref(),
+    )?;
     let mut applied_submissions = 0;
     let mut rejected_submissions = 0;
 
@@ -59,7 +64,13 @@ pub fn run_hosted_maintenance(
             )?;
             rejected_submissions += 1;
         }
+        if let Some(ai) = &ai {
+            ai.play(&mut maintenance)?;
+        }
         maintenance.run_turn()?;
+        if let Some(ai) = &mut ai {
+            ai.learn(&maintenance);
+        }
         if settings.game_tier == GameTier::Sandbox {
             recycle_sandbox_seats(
                 &store,
@@ -73,6 +84,9 @@ pub fn run_hosted_maintenance(
 
     let end_year = maintenance.game_data.conquest.game_year;
     maintenance.save(&campaign_store)?;
+    if let Some(ai) = &ai {
+        ai.save(&campaign_store, end_year)?;
+    }
     hosted::set_game_clock(
         store.connection(),
         game_id,

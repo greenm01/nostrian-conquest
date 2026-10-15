@@ -50,6 +50,16 @@ pub(super) fn join(
             return authorize(root, game, id);
         }
     }
+    let ai_seats: Vec<u32> = nc_data::CampaignStore::open_default_in_dir(&game_dir(root, game)?)?
+        .campaign_settings()?
+        .map(|settings| {
+            settings
+                .ai_seats
+                .iter()
+                .map(|seat| seat.player_record_index_1_based as u32)
+                .collect()
+        })
+        .unwrap_or_default();
     let mut invite = None;
     let seat = if let Some(seat) = replacement {
         if !matches!(meta.status.as_str(), "running" | "paused" | "recruiting")
@@ -71,18 +81,22 @@ pub(super) fn join(
         } else {
             (1..=meta.players)
                 .find(|seat| {
-                    store
-                        .connection()
-                        .query_row(
-                            "SELECT NOT EXISTS(SELECT 1 FROM web_seats WHERE seat=?1)",
-                            [seat],
-                            |r| r.get::<_, bool>(0),
-                        )
-                        .unwrap_or(false)
+                    !ai_seats.contains(seat)
+                        && store
+                            .connection()
+                            .query_row(
+                                "SELECT NOT EXISTS(SELECT 1 FROM web_seats WHERE seat=?1)",
+                                [seat],
+                                |r| r.get::<_, bool>(0),
+                            )
+                            .unwrap_or(false)
                 })
                 .ok_or("this game is full")?
         }
     };
+    if ai_seats.contains(&seat) {
+        return Err(format!("seat {seat} is played by the AI").into());
+    }
     let tx = store.connection().unchecked_transaction()?;
     if replacement.is_some() {
         invites::revoke_seat(&tx, seat)?;

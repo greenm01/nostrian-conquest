@@ -129,10 +129,22 @@ pub(super) fn run(root: &Path, game: &str, expected_year: u16, request_id: &str)
         backup_blocked(root, game, &dir, &store, "turn")?;
         retain_backups(root, &store, "turn")?;
         let mut turn = nc_engine::CampaignMaintenance::load(&runtime).map_err(|e| e.to_string())?;
+        let mut ai =
+            nc_ai_onnx::CampaignAi::load(&runtime, &turn, nc_ai_onnx::model_from_env().as_deref())
+                .map_err(|e| e.to_string())?;
+        if let Some(ai) = &ai {
+            ai.play(&mut turn).map_err(|e| e.to_string())?;
+        }
         turn.run_turn().map_err(|e| e.to_string())?;
+        if let Some(ai) = &mut ai {
+            ai.learn(&turn);
+        }
         let end_year = turn.game_data.conquest.game_year;
         turn.save(&runtime.recording_maintenance(request_id, year)?)
             .map_err(|e| e.to_string())?;
+        if let Some(ai) = &ai {
+            ai.save(&runtime, end_year).map_err(|e| e.to_string())?;
+        }
         finalize(&store, game, request_id, end_year)?;
         runtime.set_hosting_write_blocked(false)?;
         Ok(json!({"game":game,"start_year":year,"end_year":end_year,"replayed":false}))

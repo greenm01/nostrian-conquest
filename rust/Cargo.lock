@@ -3824,6 +3824,7 @@ dependencies = [
  "csv",
  "hex",
  "kdl 4.7.1",
+ "nc-ai-onnx",
  "nc-data",
  "nc-engine",
  "nc-log",
