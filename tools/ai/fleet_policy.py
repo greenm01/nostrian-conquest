@@ -119,8 +119,9 @@ class FleetAgent(Strategist):
         }
 
     def act(self, batch, greedy=False, fleet_choices=None, goal_choices=None):
-        """Goals and fleet choices, sampled (or greedy) unless given, with
-        the goal and per-fleet-row log-probabilities and the value."""
+        """Goals and fleet choices, sampled (or greedy) unless given; the goal
+        and per-fleet-row log-probabilities; the fleet heads' entropy; the
+        value; and the goal and fleet distributions."""
         g, worlds, fleets = self.encode(batch)
         n = batch["n"]
         goal_logits, value = self.goal_heads(g, worlds, n)
@@ -142,7 +143,7 @@ class FleetAgent(Strategist):
             goal_logp = goal_logp + (lp.sum(-1) if lp.ndim > 1 else lp)
         fleet_logp = sum(dists[name].log_prob(fleet_choices[name]) for name in FLEET_HEADS)
         entropy = sum(dist.entropy() for dist in dists.values())
-        return goals, fleet_choices, goal_logp, fleet_logp, entropy, value, goal_dists
+        return goals, fleet_choices, goal_logp, fleet_logp, entropy, value, goal_dists, dists
 
 
 def from_strategist(path, dev):

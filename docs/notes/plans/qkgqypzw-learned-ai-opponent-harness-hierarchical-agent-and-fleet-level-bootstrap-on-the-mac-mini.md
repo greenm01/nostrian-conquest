@@ -701,8 +701,19 @@ with the hand-over result logged for each mission family.
   the executor still cost a lot: misplaced ETACs compound over decades.
 - **PPO** (`fleet_ppo.py`, steps 4–5). The objective covers the goal heads
   and the handed-over fleets' heads, with a KL penalty toward the imitation
-  policy that fades over 100 iterations. Stage A, with colonize and scout
-  handed over, is running.
+  policy that fades over 100 iterations.
+  - **First attempt collapsed** to zero wins by iteration 3. The penalty
+    used log p(now) − log p(imitation) on the actions already taken, which
+    is not a KL for actions the current policy did not sample. Driving
+    those actions' probability toward zero minimised it.
+  - **Fix:** the exact KL between each head's current and imitation
+    distributions on the same states. Masked logits are zeroed before
+    subtracting, since −∞ − −∞ gives NaN, and NaN poisons gradients even
+    through an untaken `torch.where` branch. The learning rate is
+    3 × 10⁻⁵.
+  - Stage A (colonize and scout handed over) restarted with it. One seat
+    against three final strategists won 0.184 at iteration 20 and 0.229 at
+    40.
 
 ### t158
 

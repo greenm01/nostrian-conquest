@@ -87,7 +87,7 @@ def choose_lineups(rng, games, learner):
     return names, roles
 
 
-def play_year(env, model, strategist, roles, done, families, dev, greedy=False, ref=None):
+def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
     """Choose every learner's and strategist's goals and the learners'
     fleet orders, and step the batch. Returns the step result and, for
     training, the learners' samples."""
@@ -100,7 +100,7 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
     with torch.no_grad():
         if learner.any():
             batch = bucket(fleet_batch(obs, masks, goal_masks, learner, dev))
-            goals, fleets, goal_lp, fleet_lp, _, value, _ = model.act(batch, greedy=greedy)
+            goals, fleets, goal_lp, fleet_lp, _, value, _, _ = model.act(batch, greedy=greedy)
             handed = torch.from_numpy(
                 handed_rows(obs, learner, families, batch["fleets"].shape[1])).to(dev)
             logp = goal_lp + (fleet_lp * handed).sum(-1)
@@ -108,12 +108,6 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
             for name in HEADS:
                 env_goals[name][learner] = chosen[name][learner]
             fleet_actions = fleet_arrays(fleets, learner, env.fleets)
-            if ref is not None:
-                _, _, ref_goal, ref_fleet, *_ = ref.act(batch, fleet_choices=fleets,
-                                                       goal_choices=goals)
-                ref_logp = ref_goal + (ref_fleet * handed).sum(-1)
-            else:
-                ref_logp = logp
             n = batch["n"]
             sample = {
                 "select": learner,
@@ -122,7 +116,6 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False, 
                 "fleets": {k: v.cpu() for k, v in fleets.items()},
                 "handed": handed.cpu(),
                 "logp": logp.cpu(),
-                "ref_logp": ref_logp.cpu(),
                 "value": value.cpu(),
             }
         else:
@@ -159,7 +152,30 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     return wins.mean()
 
 
-def update(model, optimizer, steps, advs, kl_coef, args, dev):
+def categorical_kl(p, q):
+    """KL(p || q) over the last axis, counting only choices p can take, so
+    masked (-inf) choices contribute nothing rather than NaN."""
+    can = p.probs > 0
+    zero = torch.zeros_like(p.logits)
+    # Zero the masked logits before subtracting: -inf - -inf would be NaN,
+    # and NaN in an untaken torch.where branch still poisons the gradient.
+    diff = torch.where(can, p.logits, zero) - torch.where(can, q.logits, zero)
+    return (p.probs * diff).sum(-1)
+
+
+def kl_to(new, old, handed):
+    """KL(new || old) per seat: the goal heads, plus the fleet heads of the
+    handed-over rows."""
+    total = 0
+    for name in HEADS:
+        kl = categorical_kl(new[0][name], old[0][name])
+        total = total + (kl.sum(-1) if kl.ndim > 1 else kl)
+    for name in FLEET_HEADS:
+        total = total + (categorical_kl(new[1][name], old[1][name]) * handed).sum(-1)
+    return total
+
+
+def update(model, ref, optimizer, steps, advs, kl_coef, args, dev):
     keys = steps[0]["batch"].keys()
     batch = {k: pad_cat([s["batch"][k] for s in steps]) for k in keys}
     rows = batch["fleets"].shape[1]
@@ -169,7 +185,6 @@ def update(model, optimizer, steps, advs, kl_coef, args, dev):
               for k in FLEET_HEADS}
     handed = torch.cat([pad_rows(s["handed"][:, :rows]) for s in steps])
     old_logp = torch.cat([s["logp"] for s in steps])
-    ref_logp = torch.cat([s["ref_logp"] for s in steps])
     old_value = torch.cat([s["value"] for s in steps])
     adv = torch.from_numpy(np.concatenate(advs))
     ret = adv + old_value
@@ -182,14 +197,19 @@ def update(model, optimizer, steps, advs, kl_coef, args, dev):
             mb_fleets = {k: torch.nn.functional.pad(v[idx], (0, mb["fleets"].shape[1] - rows))
                          .to(dev) for k, v in fleets.items()}
             mb_handed = torch.nn.functional.pad(handed[idx], (0, mb["fleets"].shape[1] - rows)).to(dev)
-            _, _, goal_lp, fleet_lp, entropy, value, goal_dists = model.act(
-                mb, fleet_choices=mb_fleets, goal_choices={k: v[idx].to(dev) for k, v in goals.items()})
+            mb_goals = {k: v[idx].to(dev) for k, v in goals.items()}
+            _, _, goal_lp, fleet_lp, entropy, value, goal_dists, fleet_dists = model.act(
+                mb, fleet_choices=mb_fleets, goal_choices=mb_goals)
+            with torch.no_grad():
+                *_, ref_goal_dists, ref_fleet_dists = ref.act(
+                    mb, fleet_choices=mb_fleets, goal_choices=mb_goals)
             logp = goal_lp + (fleet_lp * mb_handed).sum(-1)
             ratio = torch.exp(logp - old_logp[idx].to(dev))
             a = adv[idx].to(dev)
             policy_loss = -torch.min(ratio * a, ratio.clamp(1 - args.clip, 1 + args.clip) * a).mean()
             value_loss = (value - ret[idx].to(dev)).pow(2).mean()
-            kl_ref = (logp - ref_logp[idx].to(dev)).mean()
+            kl_ref = kl_to((goal_dists, fleet_dists), (ref_goal_dists, ref_fleet_dists),
+                           mb_handed).mean()
             ent = (entropy * mb_handed).sum(-1).mean() + policy.joint_entropy(goal_dists).mean()
             loss = (policy_loss + args.value_coef * value_loss + kl_coef * kl_ref
                     - args.entropy_coef * ent)
@@ -212,7 +232,7 @@ def main():
     parser.add_argument("--iterations", type=int, default=200)
     parser.add_argument("--games", type=int, default=128)
     parser.add_argument("--years", type=int, default=60)
-    parser.add_argument("--lr", type=float, default=1e-4)
+    parser.add_argument("--lr", type=float, default=3e-5)
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--minibatch", type=int, default=512)
     parser.add_argument("--clip", type=float, default=0.2)
@@ -251,14 +271,14 @@ def main():
         model.eval()
         steps, done = [], np.zeros(args.games, bool)
         while not done.all():
-            step, sample = play_year(env, model, strategist, roles, done, families, dev, ref=ref)
+            step, sample = play_year(env, model, strategist, roles, done, families, dev)
             if sample is not None:
                 sample["reward"] = step["reward"][sample["select"]]
                 sample["done"] = np.repeat(step["done"][:, None], PLAYERS, 1)[sample["select"]]
                 steps.append(sample)
             done = step["done"].copy()
         played = time.perf_counter() - started
-        (pl, vl, kl, ent), n = update(model, optimizer, steps,
+        (pl, vl, kl, ent), n = update(model, ref, optimizer, steps,
                                       advantages(steps, args.gamma, args.lam), kl_coef, args, dev)
         wins = sum(s["reward"].sum() for s in steps) / max((roles == 1).sum(), 1)
         row = dict(iteration=it, samples=n, win=float(wins), kl_coef=kl_coef, policy_loss=pl,
