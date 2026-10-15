@@ -10,10 +10,14 @@ use crate::observe::{Observation, observe};
 /// A [`ScenarioPlay`] with one [`SeatMemory`] per empire. Maintenance routes
 /// each empire's fleets around the hazards it knows of, then every seat
 /// learns the year's reports addressed to it, as campaign maintenance does.
+///
+/// Every submission applied is kept in `turns`, in order, so the game can
+/// be replayed from its seeds ([`crate::replay`]).
 #[derive(Debug, Clone)]
 pub struct SeatedGame {
     pub play: ScenarioPlay,
     pub seats: Vec<SeatMemory>,
+    pub turns: Vec<TurnSubmission>,
 }
 
 impl SeatedGame {
@@ -22,14 +26,20 @@ impl SeatedGame {
         let seats = (1..=game_data.conquest.player_count)
             .map(|empire| SeatMemory::new(game_data, empire))
             .collect();
-        Self { play, seats }
+        Self {
+            play,
+            seats,
+            turns: Vec::new(),
+        }
     }
 
     pub fn submit_turn(
         &mut self,
         submission: &TurnSubmission,
     ) -> Result<TurnSubmissionReport, HarnessError> {
-        self.play.submit_turn(submission)
+        let report = self.play.submit_turn(submission)?;
+        self.turns.push(submission.clone());
+        Ok(report)
     }
 
     /// Run one maintenance year and update every seat's memory.

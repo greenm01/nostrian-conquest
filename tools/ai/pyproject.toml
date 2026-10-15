@@ -6,6 +6,7 @@ requires-python = ">=3.11"
 dependencies = [
     "nc-ai-env",
     "numpy>=2",
+    "openskill>=6.2.0",
     "pyarrow>=18",
     "torch>=2.8",
 ]

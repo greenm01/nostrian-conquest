@@ -3,7 +3,10 @@
 //! Rust buffers, without a copy. Choices go in as int64 arrays shaped as
 //! the masks describe. Games run with the GIL released.
 
-use nc_ai::{BatchActions, BatchEnv, BatchGoals, Seat, SeatPolicy, Table, Tensor, Weights};
+use nc_ai::{
+    BatchActions, BatchEnv, BatchGoals, MatchResult, Seat, SeatPolicy, Table, Tensor, Weights,
+};
+use nc_data::TurnSubmission;
 use numpy::{Element, PyArray1, PyArrayMethods, PyReadonlyArrayDyn};
 use pyo3::exceptions::{PyKeyError, PyRuntimeError, PyValueError};
 use pyo3::prelude::*;
@@ -40,7 +43,7 @@ impl Env {
     /// seeds. `seats` gives each game's lineup, one name per seat:
     /// `learned`, `strategist` (goals carried out by the tuned executor),
     /// `executor` (tuned weights), `baseline` (the executor's hand-set
-    /// weights), `aggressor` or `autopilot`. Every seat is learned by
+    /// weights), `classic` (t154's executor), `aggressor` or `autopilot`. Every seat is learned by
     /// default.
     #[pyo3(signature = (map_seeds, campaign_seeds = None, seats = None))]
     fn reset(
@@ -229,6 +232,34 @@ impl Env {
         Ok(out)
     }
 
+    /// Every submission applied in game `game`, in order, as turn KDL: with
+    /// the game's seeds, enough for `replay` to rebuild it.
+    fn turns(&self, game: usize) -> PyResult<Vec<String>> {
+        let batch = self.batch()?;
+        if game >= batch.games() {
+            return Err(PyValueError::new_err("no such game"));
+        }
+        Ok(batch
+            .game(game)
+            .turns
+            .iter()
+            .map(TurnSubmission::to_kdl_string)
+            .collect())
+    }
+
+    /// Game `game`'s result once it has ended: `years`, `winner` (0 for
+    /// none), and `production` and `worlds` by seat. None while it runs.
+    fn result<'py>(&self, py: Python<'py>, game: usize) -> PyResult<Option<Bound<'py, PyDict>>> {
+        let batch = self.batch()?;
+        if game >= batch.games() {
+            return Err(PyValueError::new_err("no such game"));
+        }
+        batch
+            .result(game)
+            .map(|result| result_dict(py, result))
+            .transpose()
+    }
+
     #[getter]
     fn players(&self) -> u8 {
         self.players
@@ -268,12 +299,44 @@ impl Env {
     }
 }
 
+/// Rebuild a recorded game from its seeds, the seats the engine played on
+/// autopilot, and its turns as KDL; return its result, as `Env.result`.
+#[pyfunction]
+fn replay<'py>(
+    py: Python<'py>,
+    map_seed: u64,
+    campaign_seed: u64,
+    autopilot: Vec<bool>,
+    years: u16,
+    turns: Vec<String>,
+) -> PyResult<Bound<'py, PyDict>> {
+    let turns = turns
+        .iter()
+        .map(|kdl| TurnSubmission::parse_kdl_str(kdl))
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|err| PyValueError::new_err(format!("turn KDL: {err}")))?;
+    let result = py
+        .detach(|| nc_ai::replay(map_seed, campaign_seed, &autopilot, years, &turns))
+        .map_err(PyValueError::new_err)?;
+    result_dict(py, &result)
+}
+
+fn result_dict<'py>(py: Python<'py>, result: &MatchResult) -> PyResult<Bound<'py, PyDict>> {
+    let out = PyDict::new(py);
+    out.set_item("years", result.years)?;
+    out.set_item("winner", result.winner.unwrap_or(0))?;
+    out.set_item("production", result.production.clone())?;
+    out.set_item("worlds", result.worlds.clone())?;
+    Ok(out)
+}
+
 fn seat(name: &str) -> PyResult<Seat> {
     Ok(match name {
         "learned" => Seat::Learned,
         "strategist" => Seat::Strategist(Weights::TUNED),
         "executor" => Seat::Scripted(SeatPolicy::Executor(Weights::TUNED)),
         "baseline" => Seat::Scripted(SeatPolicy::Executor(Weights::BASELINE)),
+        "classic" => Seat::Scripted(SeatPolicy::Executor(Weights::CLASSIC)),
         "aggressor" => Seat::Scripted(SeatPolicy::Aggressor),
         "autopilot" => Seat::Scripted(SeatPolicy::Autopilot),
         _ => return Err(PyValueError::new_err(format!("unknown seat {name:?}"))),
@@ -320,6 +383,7 @@ fn put_table(out: &Bound<'_, PyDict>, name: &str, table: Table) -> PyResult<()> 
 #[pymodule]
 fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_class::<Env>()?;
+    m.add_function(wrap_pyfunction!(replay, m)?)?;
     m.add("TAX_CHOICES", nc_ai::TAX_CHOICES)?;
     m.add("TAX_STEP", nc_ai::TAX_STEP)?;
     m.add("POSTURES", nc_ai::POSTURES)?;

@@ -13,6 +13,7 @@ crate-type = ["cdylib"]
 
 [dependencies]
 nc-ai = { path = "../nc-ai" }
+nc-data = { path = "../nc-data" }
 numpy = "0.29"
 pyo3 = { version = "0.29", features = ["abi3-py311", "extension-module"] }
 

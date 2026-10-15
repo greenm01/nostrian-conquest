@@ -11,7 +11,8 @@
 //! for a choice without going through turn KDL. The scripted executor
 //! ([`plan_turn`]) plays a seat from a few strategy [`Weights`], and
 //! [`play_match`] scores seat policies against each other. [`BatchEnv`]
-//! steps many seeded games at once as padded arrays for a learner.
+//! steps many seeded games at once as padded arrays for a learner. Every
+//! game keeps its submissions, so [`replay`] can rebuild it from its seeds.
 
 mod action;
 mod arena;
@@ -21,6 +22,7 @@ mod game;
 mod goals;
 mod memory;
 mod observe;
+mod replay;
 
 pub use action::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, DecodedTurn, FleetChoice,
@@ -39,3 +41,4 @@ pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
 pub use observe::{
     CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH, observe,
 };
+pub use replay::replay;

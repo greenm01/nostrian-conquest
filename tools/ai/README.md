@@ -56,7 +56,36 @@ uv run evaluate.py --policy /tmp/nc-ai/ppo/latest.pt --opponent executor
   even seat wins 0.25. `--policy labels` plays the executor's own goals,
   the reference to beat.
 
-Run long jobs under `caffeinate -i` so the mini does not sleep.
+Run long jobs under `caffeinate -i` so the mini does not sleep, and run one
+PPO job at a time: two at once push the mini into heavy swap.
+
+## The league (t156)
+
+```sh
+uv run league.py --db league.db add-agent executor --scripted executor
+uv run league.py --db league.db add-agent final --checkpoint strategist-final.pt
+uv run league.py --db league.db play --games 1024
+uv run league.py --db league.db ratings
+uv run league.py --db league.db verify
+```
+
+[`league.py`](league.py) plays seat-rotated four-player matches between
+registered agents:
+
+- **Agents:** scripted policies (`executor`, `baseline`, `classic`,
+  `aggressor`, `autopilot`) or strategist checkpoints. A checkpoint's
+  SHA-256 is checked before every run.
+- **Stored per match:** in SQLite, its seeds, seats, result, the commit it
+  was played at, and every turn applied, as compressed turn KDL.
+- **Ratings:** OpenSkill's Plackett-Luce model ranks seats by win share,
+  then production. It works like TrueSkill, without TrueSkill's patent and
+  trademark. The table shows mu - 3 sigma.
+- **`verify`:** replays every match from its seeds and turns through
+  `nc_ai_env.replay`, checks each stored result, and rebuilds the rating
+  table from the replays.
+
+Map seeds from 5,000,000 keep league games apart from training and
+evaluation maps.
 
 ## The environment
 

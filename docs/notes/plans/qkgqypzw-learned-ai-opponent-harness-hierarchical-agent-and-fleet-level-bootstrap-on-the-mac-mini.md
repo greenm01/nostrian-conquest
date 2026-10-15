@@ -604,6 +604,49 @@ Build the league and evaluation.
 
 **Exit:** the rating table can be rebuilt from the stored seeds and orders.
 
+**Result (2026-10-14):**
+
+- **Recording.** `SeatedGame` keeps every submission it applies, from
+  learned, strategist and scripted seats alike. `nc_ai::replay` rebuilds a
+  game from its map and campaign seeds, its autopilot seats and those
+  turns.
+  - `nc-ai/tests/replay.rs` replays mixed batch games exactly, also after a
+    round trip through turn KDL.
+  - The same test shows that a stream missing one turn does not
+    reproduce the game.
+- **The league.** `tools/ai/league.py` keeps a SQLite store:
+  - agents, with a checkpoint's SHA-256;
+  - matches, with seeds, result, and the git commit they were played at;
+  - seats, with win share, production and rank;
+  - replays, as zlib-compressed turn KDL;
+  - ratings.
+
+  `play` runs seat-rotated matches on maps from 5,000,000. `verify`
+  replays every match, checks each stored result, and rebuilds the rating
+  table from the replays.
+- **OpenSkill, not TrueSkill.** Ratings use OpenSkill's Plackett-Luce
+  model, the same Bayesian approach for free-for-all games, without
+  TrueSkill's patent and trademark. Seats rank by win share, then
+  production.
+- **First league.** 1,024 matches of 60 years among eight agents, four per
+  match. `verify` rebuilt all 1,024 and the rating table exactly in 2
+  minutes, from a 10.6 MB database. The matches are tagged `b138a381+dirty`:
+  the league code was not yet committed when they ran.
+
+  | Agent | mu − 3σ | mu | Win share |
+  | --- | ---: | ---: | ---: |
+  | Final strategist | 41.80 | 47.85 | 0.729 |
+  | Executor (current) | 30.87 | 36.29 | 0.384 |
+  | Final strategist, imitation only | 28.38 | 33.83 | 0.354 |
+  | t155 strategist | 26.44 | 31.89 | 0.390 |
+  | Classic (t154 executor) | 22.08 | 27.54 | 0.133 |
+  | Baseline | 15.81 | 21.49 | 0.036 |
+  | Autopilot | −3.58 | 2.89 | 0.000 |
+  | Aggressor | −3.81 | 2.77 | 0.000 |
+
+  The league is kept on the mini at
+  `~/.local/state/nostrian-conquest/ai/league.db`.
+
 ### t157
 
 Bootstrap the fleet-level agent from the hierarchical one.

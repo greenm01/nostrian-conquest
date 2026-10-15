@@ -398,7 +398,13 @@ impl BatchEnv {
         out
     }
 
-    /// The game in slot `idx`, for tests and inspection.
+    /// The result of the game in slot `idx`, once it has ended.
+    pub fn result(&self, idx: usize) -> Option<&MatchResult> {
+        self.slots[idx].result.as_ref()
+    }
+
+    /// The game in slot `idx`, for tests and inspection. Its `turns` are
+    /// every submission applied, for [`crate::replay`].
     pub fn game(&self, idx: usize) -> &SeatedGame {
         &self.slots[idx].game
     }
