@@ -34,6 +34,9 @@ More owner guidance (2026-10-15):
   situation and the seat's goals, weighing risk, reward and return
   (t175).
 - **Know when to blitz or invade** (t168).
+- **Colonize for return.** Send ETACs to the most desirable worlds,
+  balanced against nearer, easier ones. Gauge rivals' proximity and who is
+  likelier to colonize a world first (t177).
 
 ### The player manual and quick start agree
 

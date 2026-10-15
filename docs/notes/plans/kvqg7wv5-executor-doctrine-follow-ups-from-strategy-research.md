@@ -683,6 +683,45 @@ The work, behind a switch:
 - Report the share of worlds viewed by years 5, 10 and 20, and the year
   the first rival homeworld is found, with and without the switch.
 
+### t177
+
+Colonize for expected return: value, arrival time, and the race against
+rivals.
+
+The owner (2026-10-15): manage ETACs to colonize the most desirable
+worlds, balanced against closer worlds that are easier to reach, while
+gauging rivals' proximity and judging who is likelier to colonize first.
+
+**Today.** Each free ETAC goes to the world with the best known potential
+over (1 + distance), skipping worlds the seat's own ETACs already claim.
+An unseen world counts as potential 40. Three things are missing:
+
+- arrival time is not valued: colonies grow from founding, and ETACs move
+  at speed 3;
+- rivals are ignored, so it may race for worlds it will lose (VBAM: both
+  convoys are lost);
+- chains are not planned, though ETACs are reusable.
+
+The work, behind a switch: score each candidate as an expected return,
+following the risk-and-return principle.
+
+- **Value.** Known production potential, discounted by the years until
+  founding (the ETAC's travel time).
+- **Chance of arriving first.** Compare the ETAC's travel time with the
+  nearest rival's likely one, from known rival homeworlds and colonies
+  (t176) and recent contacts near the world. Scale the value by that
+  chance.
+- **Risk.** Rival fleets seen near the world, and how far it is from the
+  seat's own worlds once founded.
+- **Chains.** Prefer a target that leaves the ETAC near its next good
+  target.
+
+**Exit:**
+
+- As in Scope.
+- Report colonies founded by years 10 and 20, and colonization trips lost
+  to a rival arriving first, with and without the switch.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):
