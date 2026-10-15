@@ -274,6 +274,21 @@ fn maintenance_rejects_structurally_invalid_state_before_simulation() {
     assert_eq!(game_data.conquest.game_year, start_year);
 }
 
+/// Games have no last year: original ECMAINT advanced a 4-player and a
+/// 25-player game from 3098 to 3102 without complaint, so maintenance runs
+/// past 3100 as well.
+#[test]
+fn maintenance_runs_past_year_3100() {
+    let mut game_data = load_fixture("ecmaint-post");
+    game_data.conquest.game_year = 3100;
+    assert!(validate_maintenance_state(&game_data).is_ok());
+    run_maintenance_turn(&mut game_data).expect("maintenance runs past 3100");
+    assert_eq!(game_data.conquest.game_year, 3101);
+
+    game_data.conquest.game_year = 2999;
+    assert!(validate_maintenance_state(&game_data).is_err());
+}
+
 #[test]
 fn seek_home_picks_nearest_world_across_distant_coordinates() {
     let mut game_data = GameStateBuilder::new()

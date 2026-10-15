@@ -974,6 +974,27 @@ in `nc-game`, and run `NC_AI_MODEL=fleet-final.onnx nc-sysop maint`. The
 model is on the mini at `~/.local/state/nostrian-conquest/ai/fleet-final.onnx`;
 `export_onnx.py` rebuilds it from `fleet-final.pt`.
 
+### t180
+
+Let games run past year 3100.
+
+The fleet agent sweeps the map in only 3 of 1,024 games when games stop at
+60 years. Given 100 years, it sweeps in 205 of 1,024, in year 87 on
+average. But Rust maintenance refused any year past 3100. That was a guess
+in `nc-data`'s preflight ("a reasonable range … based on game context"),
+not a rule; neither the manuals nor the original docs set a last year.
+
+**Result (2026-10-15): fixed.** The real ECMAINT was run in DOSBox-X on
+crunch. It advanced a 4-player game and a 25-player game, both brought to
+year 3098 by Rust maintenance, through 3099, 3100, 3101 and 3102. Every
+year wrote rankings, and no year wrote `ERRORS.TXT`. The preflight now
+refuses only years before 3000, and a test runs maintenance from 3100 to
+3101.
+
+A game whose year was edited by hand (3001 to 3099) is refused by ECMAINT
+before it writes anything. That is its consistency check, not a year
+limit: other records no longer match the year.
+
 ### t167
 
 Give AI seats personalities.

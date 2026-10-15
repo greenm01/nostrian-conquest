@@ -51,10 +51,11 @@ impl CoreGameData {
         let mut errors = Vec::new();
         let year = self.conquest.game_year;
 
-        // Year should be in a reasonable range (3000-3100 based on game context)
-        if year < 3000 || year > 3100 {
+        // Games start in 3000 and have no last year: original ECMAINT
+        // advanced a 4-player game from 3098 to 3102 without complaint.
+        if year < 3000 {
             errors.push(format!(
-                "CONQUEST.DAT.game_year {} out of expected range (3000-3100)",
+                "CONQUEST.DAT.game_year {} is before the first year, 3000",
                 year
             ));
         }
