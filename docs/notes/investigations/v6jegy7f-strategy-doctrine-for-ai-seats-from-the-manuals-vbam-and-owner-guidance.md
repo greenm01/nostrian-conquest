@@ -26,7 +26,8 @@ More owner guidance (2026-10-15):
 
 - **Early reconnaissance.** Find the other players' homeworlds and view as
   many worlds as possible early, to learn their colonization status and
-  production potential (t176).
+  production potential. Then keep scouts watching rival homeworlds and
+  rich, high-production enemy worlds (t176).
 - **Pickets.** Station cheap destroyers on Patrol in empty sectors around
   the seat's worlds and on routes between worlds, as an early-warning net
   (t174).

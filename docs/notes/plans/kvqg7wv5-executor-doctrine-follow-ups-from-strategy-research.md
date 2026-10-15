@@ -670,6 +670,15 @@ The work, behind a switch:
   homeworld: far from the seat's own, and evenly spread across the map as
   starting positions are. Visit the likeliest first. A world seen at
   homeworld production marks a rival's home.
+- **Standing surveillance** (owner, 2026-10-15). Once found, keep a scout
+  watching each known rival homeworld and the richest known enemy worlds:
+  the largest production, the most valuable targets. A lone scout is the
+  hardest fleet to see, and Scout a Solar System reports in detail.
+  Refresh a watch when its intel ages past a year or two. It keeps current:
+  - defences, for strike estimates and the attack mission (t160, t168);
+  - fleets gathering at a rival home, an early warning for the defence
+    balance (t175);
+  - production and growth, for picking the most valuable targets.
 - **Use what is found:**
   - colony targets use known potential, not an assumed average;
   - strike targets (t160) see rival colonies' value and defences;
@@ -682,6 +691,8 @@ The work, behind a switch:
 - As in Scope.
 - Report the share of worlds viewed by years 5, 10 and 20, and the year
   the first rival homeworld is found, with and without the switch.
+- Report the mean age of the seat's intel on rival homeworlds and on its
+  strike targets at the moment it strikes.
 
 ### t177
 
