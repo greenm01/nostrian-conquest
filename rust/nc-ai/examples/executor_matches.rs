@@ -6,12 +6,17 @@
 //!     [--weights baseline|tuned|classic] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
 //!     [--with strike_weakest|strike_by_value|suppress_first] \
-//!     [--games 64] [--years 60] [--first-map 0]
+//!     [--games 64] [--years 60] [--first-map 0] [--paired]
 //! ```
 //!
 //! `classic` is t154's tuned executor with its original build order, kept
 //! to measure the land-grab doctrine against (t159). `--with` sets
 //! doctrine switches for the candidate seat only.
+//!
+//! `--paired` plays every map twice, the candidate seat with and without
+//! the `--with` switches against the same opponents, and reports the mean
+//! difference in win share with its standard error. Map luck cancels, so
+//! this is the test for a doctrine change.
 //!
 //! Games run on every core. A win is the declared winner or, without one,
 //! the most production at the end (a tie shares the win).
@@ -44,12 +49,15 @@ fn main() {
         Some(other) => panic!("unknown opponent {other}"),
     };
     // Doctrine switches to turn on for the candidate seat only.
+    let without = weights;
     let mut weights = weights;
     for switch in arg("--with").iter().flat_map(|names| names.split(',')) {
         match switch {
             "strike_weakest" => weights.doctrine.strike_weakest = true,
             "strike_by_value" => weights.doctrine.strike_weakest = false,
             "suppress_first" => weights.doctrine.suppress_first = true,
+            "scaled_garrisons" => weights.doctrine.scaled_garrisons = true,
+            "flat_garrisons" => weights.doctrine.scaled_garrisons = false,
             other => panic!("unknown doctrine switch {other}"),
         }
     }
@@ -57,6 +65,31 @@ fn main() {
     let years: u16 = arg("--years").map_or(60, |n| n.parse().expect("--years"));
     let first: u64 = arg("--first-map").map_or(0, |n| n.parse().expect("--first-map"));
 
+    if args.iter().any(|arg| arg == "--paired") {
+        // The candidate seat plays each map twice, with and without the
+        // switches, against the same opponents in the same seat, so the
+        // map's luck cancels in the difference.
+        let with = run(first..first + games, years, weights, opponent);
+        let base = run(first..first + games, years, without, opponent);
+        let diffs: Vec<f64> = with
+            .iter()
+            .zip(&base)
+            .map(|(a, b)| f64::from(a.1 - b.1))
+            .collect();
+        let n = diffs.len() as f64;
+        let mean = diffs.iter().sum::<f64>() / n;
+        let var = diffs.iter().map(|d| (d - mean).powi(2)).sum::<f64>() / (n - 1.0);
+        let win = |r: &[(u64, f32, f32)]| r.iter().map(|x| f64::from(x.1)).sum::<f64>() / n;
+        println!(
+            "{games} paired games, {years} years: win rate with {:.3}, without {:.3}; \
+             difference {:+.3} ± {:.3} (standard error)",
+            win(&with),
+            win(&base),
+            mean,
+            (var / n).sqrt()
+        );
+        return;
+    }
     let results = run(first..first + games, years, weights, opponent);
     let wins: f32 = results.iter().map(|(_, win, _)| win).sum();
     let share: f32 = results.iter().map(|(_, _, share)| share).sum();

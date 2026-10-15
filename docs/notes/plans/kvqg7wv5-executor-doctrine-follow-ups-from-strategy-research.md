@@ -60,6 +60,25 @@ among the largest gains. The learned agents optimise the final return,
 winning, directly; this principle governs the hand-written rules they
 start from and carry out.
 
+**Correction to the evaluation method (2026-10-15).** Scope's test (one
+candidate seat against three executors on 1,024 maps, judged against an
+even 0.25) is too noisy for small effects:
+
+- **Calibration.** With no switch at all, identical executors score 0.215
+  and 0.246 on the two map blocks, so a block reading carries about ±0.03
+  of map luck.
+- **The paired test.** `executor_matches --paired` plays every map twice,
+  the candidate seat with and without the switch against the same
+  opponents, and reports the mean difference with its standard error. Map
+  luck cancels. On 4,096 maps the standard error is about 0.009, or less
+  when the switch rarely changes play.
+- **What changes.** A switch is kept when its paired difference is clearly
+  positive, about two standard errors or more, and confirmed on a second
+  block of maps.
+- **What stands.** The large results (t159's land grab, t160 and t161
+  gains, t163's loss) are far outside the noise. t164's scaled garrisons
+  was wrongly rejected and is now kept; see t164.
+
 ## Task details
 
 ### t159
@@ -370,6 +389,46 @@ Measure the two changes separately: they are separate switches.
   over long expansion.
 - Both switches' code is removed.
 
+**Revised (2026-10-15) by the paired test:** scaled garrisons is kept.
+
+| Switch | 4,096 paired maps from 100000 | Second block, 200000 |
+| --- | ---: | ---: |
+| Scaled garrisons on | +0.037 ± 0.009 | Flat garrisons cost −0.018 ± 0.009 |
+| Avoid contested colonies | −0.000 ± 0.004 | |
+
+Scaled garrisons is now in `Doctrine::CURRENT`. Avoid contested colonies
+stays rejected.
+
+**Re-tuned with scaled garrisons.** 40 generations. The champion:
+
+- taxes 65%;
+- keeps 20 armies at home, 10 per 25 production at colonies, and 9.7
+  batteries;
+- keeps about 4 ETACs and 1.7 starbases;
+- prefers cruisers and battleships;
+- strikes at 2.43 times defence, with ROE 6.3;
+- declares war at year 21.
+
+It is a steady land grab with strong defence, the owner's doctrine, and
+unlike the rushes earlier tunings found.
+
+- **Paired against the previous weights,** 4,096 maps per block: +0.168
+  ± 0.010 (from 100000) and +0.147 ± 0.010 (from 200000). One seat with
+  the new weights wins 0.42 where the old ones won 0.255. They became
+  `Weights::TUNED`.
+- **Standard checks,** 256 held-out maps:
+
+  | One seat vs three | Win rate | Production share |
+  | --- | ---: | ---: |
+  | Tuned vs baseline | 0.770 | 0.494 |
+  | Baseline vs tuned | 0.047 | 0.108 |
+  | Tuned vs Aggressor | 1.000 | 0.991 |
+  | Tuned vs Autopilot | 1.000 | 0.990 |
+  | Tuned vs classic (t154) | 0.852 | 0.535 |
+  | Classic vs tuned | 0.004 | 0.063 |
+
+  Today's executor wins 85% of its games against three of t154's.
+
 **Plan outcome.** Of t159–t164:
 
 - Kept: the land grab (t159), striking where weakest (t160), and
@@ -440,6 +499,20 @@ from the recorded turns of its evaluation games.
 **Exit:** as in Scope, plus the counts of each attack mission and the
 captures that follow, with and without the switch.
 
+**Result (2026-10-15): the executor rule is rejected.**
+
+- **The switch tried.** `blitz_light` blitzed at once when a target's
+  known batteries were at most two and the force carried a wide margin of
+  armies: three times the defenders plus two, then, as a looser variant,
+  the invasion margin plus one per battery.
+- **It almost never fires.** Over 128 executor games: about 35,600
+  bombard and 5,950 invade orders, but only 14 to 18 blitzes. 96% of
+  assaults (5,157 of 5,368) already capture their world, because the
+  executor bombards the batteries down first.
+- **No effect.** On 4,096 paired maps the difference is −0.000 ± 0.001.
+- **Choosing to blitz is left to the fleet-level agent,** which can order
+  Blitz itself. t157 reports how often it does.
+- The code is removed.
 ### Fleet defence, blockades, hunting and pickets (t169–t175)
 
 The owner (2026-10-15) asked whether the AI defends its worlds with fleets
@@ -694,6 +767,32 @@ The work, behind a switch:
 - Report the mean age of the seat's intel on rival homeworlds and on its
   strike targets at the moment it strikes.
 
+**Result (2026-10-15): rejected.**
+
+- **The switch tried.** `recon` kept at least two scouts. Scouts went
+  first to unseen worlds far from home, where rival homeworlds lie. Known
+  rich rival worlds (production at least 50, or potential at least 80)
+  were watched again once their intel was two years old.
+- **Measured over 128 executor games,** without and with the switch:
+
+  | | Without | With |
+  | --- | ---: | ---: |
+  | Worlds whose owner the seat knows, year 5 | 0.57 | 0.60 |
+  | Worlds whose owner the seat knows, year 10 | 1.00 | 1.00 |
+  | Year the first rival homeworld is identified | 4.9 | 4.6 |
+  | Intel age at the moment of a strike | 6.7 years | 3.7 years |
+
+  The starting pickets and the land grab already survey the map. Standing
+  surveillance halves the age of strike intel.
+- **No gain.** On 4,096 paired maps the difference is −0.018 ± 0.009.
+  Tuned with the switch on, the same weights with it on against off won
+  0.242 and 0.229. Even beside t177's colonization scoring, which uses
+  rival positions, it lost.
+- **Why.** As in t162, the executor's rules do not turn fresher intel into
+  better choices, and the scouts cost production. Intel may pay once a
+  learned strategist or fleet agent can use it; t157's agents see intel
+  age.
+- The code is removed.
 ### t177
 
 Colonize for expected return: value, arrival time, and the race against
@@ -733,6 +832,21 @@ following the risk-and-return principle.
 - Report colonies founded by years 10 and 20, and colonization trips lost
   to a rival arriving first, with and without the switch.
 
+**Result (2026-10-15): rejected.**
+
+- **The switch tried.** `colonize_return` scored each candidate world:
+  - its potential, discounted by 0.9 per year of the ETAC's travel;
+  - times the chance of arriving before the nearest known rival world
+    (logistic in the difference of travel times at speed 3);
+  - halved near rival fleets seen within two years;
+  - plus a quarter of the best nearby follow-on colony.
+- **No gain.** On 4,096 paired maps the difference is +0.011 ± 0.008; on
+  top of scaled garrisons, +0.003 ± 0.009. Tuned with it on, the switch
+  on against off won 0.234 and 0.239.
+- **Why.** The simple potential-over-distance rule already captures most
+  of the value. Expansion choices may matter more through the strategist's
+  colony goal than through the executor's scoring.
+- The code is removed.
 ### t178
 
 Learn what a seat's own attacks reveal.

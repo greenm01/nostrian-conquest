@@ -89,6 +89,10 @@ pub struct Doctrine {
     /// Off, a force invades straight away whenever it carries enough armies,
     /// and goes home after one year at the target.
     pub suppress_first: bool,
+    /// Scale each colony's army target to its production (t164):
+    /// `colony_armies` per 25 points, at least one. Off, a flat
+    /// `colony_armies` at every colony.
+    pub scaled_garrisons: bool,
 }
 
 impl Doctrine {
@@ -97,6 +101,7 @@ impl Doctrine {
         land_grab: true,
         strike_weakest: true,
         suppress_first: true,
+        scaled_garrisons: true,
     };
 }
 
@@ -125,20 +130,20 @@ impl Weights {
     /// Weights tuned by evolution against the executor itself, with the
     /// current doctrine; see the `tune_executor` example.
     pub const TUNED: Weights = Weights {
-        tax: 60.8,
-        home_armies: 18.2,
-        colony_armies: 3.3,
-        batteries: 6.4,
-        etacs: 5.3,
-        scouts: 0.0,
-        starbases: 0.84,
+        tax: 65.0,
+        home_armies: 20.0,
+        colony_armies: 10.0,
+        batteries: 9.67,
+        etacs: 3.93,
+        scouts: 0.14,
+        starbases: 1.67,
         transports: 16.0,
-        battleship: 0.05,
-        cruiser: 0.84,
-        destroyer: 0.59,
-        attack_ratio: 0.75,
-        roe: 4.3,
-        war_year: 12.4,
+        battleship: 0.38,
+        cruiser: 0.59,
+        destroyer: 0.0,
+        attack_ratio: 2.43,
+        roe: 6.26,
+        war_year: 20.7,
         doctrine: Doctrine::CURRENT,
     };
 
@@ -163,6 +168,7 @@ impl Weights {
             land_grab: false,
             strike_weakest: false,
             suppress_first: false,
+            scaled_garrisons: false,
         },
     };
 
@@ -439,6 +445,9 @@ fn choose_builds(
                 planet.armies.into(),
                 if is_home {
                     weights.home_armies
+                } else if weights.doctrine.scaled_garrisons {
+                    let production = f32::from(nc_data::present_production_points(planet));
+                    (weights.colony_armies * production / 25.0).max(1.0)
                 } else {
                     weights.colony_armies
                 },
