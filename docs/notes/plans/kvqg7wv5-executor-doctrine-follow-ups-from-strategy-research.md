@@ -601,18 +601,31 @@ it out:
 - **Splitting existing forces** needs Detach (t172); new warships go where
   the share is short.
 
-Until the network learns the goal, the executor sets it itself from the
-threat: rival fleet strength seen near its worlds in its contacts, against
-its own warships. The goal joins the goal masks and labels, so the
-strategist imitates the executor's choice before PPO.
+The balance must come from the tactical situation and the seat's goals
+(owner, 2026-10-15), not a fixed share. It weighs:
+
+- **Threat:** rival fleet strength seen near the seat's worlds, and how
+  recently.
+- **Opportunity:** how weak and how valuable the chosen strike target is.
+- **State:** at war or not, expanding or consolidating, and how exposed
+  the colonies are.
+
+The strategist sees all of these in its observation, and PPO teaches it
+which trade-offs win. Until it has learned the goal, the executor's rule
+weighs threat against opportunity: hold back enough to meet the threat
+seen, unless the strike target falls to the rest. The goal joins the goal
+masks and labels, so the strategist imitates that rule before PPO.
 
 **Exit:**
 
-- As in Scope, for the executor's threat-driven allocation against the
+- As in Scope, for the executor's allocation rule against the
   strike-everything executor.
-- After retraining, the strategist's chosen allocation follows the threat.
-  Report the mean held share in years with and without rival fleets near
-  the seat's worlds.
+- After retraining, the strategist's allocation follows the situation:
+  - the held share rises with nearby threat;
+  - it falls when a cheap, valuable target is open;
+  - it beats the executor's rule head to head.
+
+  Report the mean held share by level of threat and of opportunity.
 
 ## Connections
 
