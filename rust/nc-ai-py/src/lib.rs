@@ -113,7 +113,8 @@ impl Env {
     }
 
     /// The executor's fleet choices for every goal-taking seat if it
-    /// carried out `goals` this year: `mission`, `target`, `speed`, `roe`,
+    /// carried out `goals` this year: `mission`, `target`, `waypoint`,
+    /// `speed`, `roe`,
     /// `load`, `detach` and each row's `family` (0 colonize, 1 scout, 2 strike, -1
     /// padding), all `[games, seats, F]` int64.
     fn fleet_labels<'py>(
@@ -140,6 +141,7 @@ impl Env {
         let out = PyDict::new(py);
         out.set_item("mission", array(py, labels.mission)?)?;
         out.set_item("target", array(py, labels.target)?)?;
+        out.set_item("waypoint", array(py, labels.waypoint)?)?;
         out.set_item("speed", array(py, labels.speed)?)?;
         out.set_item("roe", array(py, labels.roe)?)?;
         out.set_item("load", array(py, labels.load)?)?;
@@ -212,7 +214,8 @@ impl Env {
     }
 
     /// Play a year. `actions` is a dict of int64 arrays for learned seats
-    /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`, `speed`,
+    /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`,
+    /// `waypoint`, `speed`,
     /// `roe`, `load`, `detach`); `goals` one for strategist seats (`tax`, `diplomacy`,
     /// `posture`, `strike`, `colonize`). Returns `reward`, `done`,
     /// `production` and `worlds`. A choice outside the masks, or missing
@@ -235,6 +238,7 @@ impl Env {
                         "amount",
                         "mission",
                         "target",
+                        "waypoint",
                         "speed",
                         "roe",
                         "load",
@@ -255,10 +259,11 @@ impl Env {
             amount: s[3],
             mission: s[4],
             target: s[5],
-            speed: s[6],
-            roe: s[7],
-            load: s[8],
-            detach: s[9],
+            waypoint: s[6],
+            speed: s[7],
+            roe: s[8],
+            load: s[9],
+            detach: s[10],
         });
         let goals = goal_slices.map(|s| BatchGoals {
             tax: s[0],
@@ -459,6 +464,7 @@ fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("SPEED_CHOICES", nc_ai::SPEED_CHOICES)?;
     m.add("ROE_CHOICES", nc_ai::ROE_CHOICES)?;
     m.add("DETACH_CHOICES", nc_ai::DETACH_CHOICES)?;
+    m.add("WAYPOINT_CHOICES", nc_ai::WAYPOINT_CHOICES)?;
     m.add("GLOBAL_WIDTH", nc_ai::GLOBAL_WIDTH)?;
     m.add("PLANET_WIDTH", nc_ai::PLANET_WIDTH)?;
     m.add("FLEET_WIDTH", nc_ai::FLEET_WIDTH)?;

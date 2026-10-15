@@ -34,6 +34,7 @@ impl Actions {
             amount: &self.zeros_world,
             mission: &self.fleets.mission.data,
             target: &self.fleets.target.data,
+            waypoint: &self.fleets.waypoint.data,
             speed: &self.fleets.speed.data,
             roe: &self.fleets.roe.data,
             load: &self.fleets.load.data,

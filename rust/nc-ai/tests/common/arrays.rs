@@ -5,6 +5,7 @@
 use nc_ai::{
     BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, BatchActions, BatchEnv, BatchMasks,
     DETACH_CHOICES, MISSION_CHOICES, ROE_CHOICES, SPEED_CHOICES, SeatAction, TAX_CHOICES,
+    WAYPOINT_CHOICES,
 };
 
 /// Owned action arrays, borrowed as [`BatchActions`].
@@ -16,6 +17,7 @@ pub struct Arrays {
     pub amount: Vec<i64>,
     pub mission: Vec<i64>,
     pub target: Vec<i64>,
+    pub waypoint: Vec<i64>,
     pub speed: Vec<i64>,
     pub roe: Vec<i64>,
     pub load: Vec<i64>,
@@ -33,6 +35,7 @@ impl Arrays {
             amount: vec![0; seats * env.worlds() * BUILD_SLOTS],
             mission: fleets.clone(),
             target: fleets.clone(),
+            waypoint: fleets.clone(),
             speed: fleets.clone(),
             roe: fleets.clone(),
             load: fleets.clone(),
@@ -48,6 +51,7 @@ impl Arrays {
             amount: &self.amount,
             mission: &self.mission,
             target: &self.target,
+            waypoint: &self.waypoint,
             speed: &self.speed,
             roe: &self.roe,
             load: &self.load,
@@ -73,6 +77,7 @@ impl Arrays {
             let idx = at * fleets + row;
             self.mission[idx] = fleet.mission as i64;
             self.target[idx] = fleet.target as i64;
+            self.waypoint[idx] = fleet.waypoint as i64;
             self.speed[idx] = fleet.speed as i64;
             self.roe[idx] = fleet.roe as i64;
             self.load[idx] = i64::from(fleet.load);
@@ -131,6 +136,7 @@ pub fn random_arrays(env: &BatchEnv, masks: &BatchMasks, rng: &mut Rng) -> Array
         let chosen = rng.allowed(row);
         arrays.mission[idx] = chosen;
         arrays.target[idx] = rng.allowed(&target[idx * MISSION_CHOICES + chosen as usize]);
+        arrays.waypoint[idx] = rng.below(WAYPOINT_CHOICES) as i64;
         arrays.speed[idx] = rng.below(SPEED_CHOICES) as i64;
         arrays.roe[idx] = rng.allowed(&roe[idx]);
         arrays.load[idx] = i64::from(masks.load.data[idx] && rng.below(2) == 0);

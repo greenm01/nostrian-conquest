@@ -9,8 +9,9 @@
 //!   in one year commission into one fleet, so an ETAC and its escort can
 //!   sail together;
 //! - for each fleet it owns, whether to load armies from the world it is at,
-//!   a mission (or keep its orders), a target world, a speed, rules of
-//!   engagement, and whether to detach part of it (see [`DETACHES`]).
+//!   a mission (or keep its orders), a target world, a waypoint, a speed,
+//!   rules of engagement, and whether to detach part of it (see
+//!   [`DETACHES`]).
 //!   Loading and an invasion cannot share a year: orders are checked against
 //!   the turn-start fleet, so a fleet invades the year after it loads.
 //!
@@ -22,7 +23,10 @@
 //! Masks read only what the empire may know. Fleet missions and targets go
 //! through `validate_fleet_order_payload`, which checks the fleet's own ships
 //! and whether a world at the target is the fleet's own; whether a world
-//! exists at a sector is public. Every target is a world's sector. Guard a
+//! exists at a sector is public. Every target is a world's sector, except
+//! that the sector missions (Move, Patrol a Sector, Scout a Sector and
+//! Rendezvous) may stop short of it in deep space, by [`WAYPOINT_CHOICES`].
+//! Those missions accept any sector, so the waypoint needs no mask. Guard a
 //! Starbase targets the world where one of the seat's own starbases sits,
 //! and names that base. Join needs a fleet target and is not offered yet.
 //!
@@ -55,6 +59,10 @@ pub const MISSION_CHOICES: usize = 1 + MISSIONS.len();
 pub const SPEED_CHOICES: usize = 4;
 /// Rules of engagement 0 to 10.
 pub const ROE_CHOICES: usize = 11;
+/// For a sector mission, how far toward the target world the target sector
+/// lies from the fleet: all the way, three quarters, half or a quarter,
+/// rounded to the nearest sector. Other missions ignore it.
+pub const WAYPOINT_CHOICES: usize = 4;
 /// Keep the fleet whole, or one entry per [`DETACHES`] row.
 pub const DETACH_CHOICES: usize = 1 + DETACHES.len();
 
@@ -125,8 +133,8 @@ pub struct FleetMask {
     pub detach: [bool; DETACH_CHOICES],
 }
 
-/// Everything one seat may choose this year. Tax, speed and build-amount
-/// choices are always all allowed.
+/// Everything one seat may choose this year. Tax, speed, waypoint and
+/// build-amount choices are always all allowed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SeatMasks {
     pub empire: u8,
@@ -154,6 +162,8 @@ pub struct FleetChoice {
     pub mission: usize,
     /// 0-based world index.
     pub target: usize,
+    /// See [`WAYPOINT_CHOICES`].
+    pub waypoint: usize,
     pub speed: usize,
     pub roe: usize,
     /// Load as many armies as the empty transports hold, leaving the world
@@ -561,6 +571,11 @@ fn fleet_order(game_data: &CoreGameData, choice: &FleetChoice) -> FleetTurnActio
     let target = match order {
         Order::SeekHome => None,
         Order::HoldPosition => Some(fleet.sector.to_array()),
+        _ if sector_mission(order) => Some(waypoint(
+            fleet.sector.to_array(),
+            game_data.planets[choice.target].sector.to_array(),
+            choice.waypoint,
+        )),
         _ => Some(game_data.planets[choice.target].sector.to_array()),
     };
     let aux1 = (order == Order::GuardStarbase)
@@ -579,6 +594,24 @@ fn fleet_order(game_data: &CoreGameData, choice: &FleetChoice) -> FleetTurnActio
         aux0: None,
         aux1,
     }
+}
+
+/// A mission whose target may be any sector.
+pub fn sector_mission(order: Order) -> bool {
+    matches!(
+        order,
+        Order::MoveOnly | Order::PatrolSector | Order::ScoutSector | Order::RendezvousSector
+    )
+}
+
+/// The sector waypoint choice `choice` names on the way from `from` to
+/// `to`.
+pub fn waypoint(from: [u8; 2], to: [u8; 2], choice: usize) -> [u8; 2] {
+    let share = (WAYPOINT_CHOICES - choice) as f32 / WAYPOINT_CHOICES as f32;
+    std::array::from_fn(|axis| {
+        let step = (f32::from(to[axis]) - f32::from(from[axis])) * share;
+        (f32::from(from[axis]) + step).round() as u8
+    })
 }
 
 /// The number of `owner`'s starbase in `sector`, for Guard a Starbase.

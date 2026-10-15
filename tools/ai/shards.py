@@ -16,8 +16,8 @@ Per row:
   mission), ``mask_roe`` (n_fleets x ROE_CHOICES), ``mask_load`` (n_fleets),
   ``mask_detach`` (n_fleets x DETACH_CHOICES)
 - choices: ``tax``, ``diplomacy`` (seats), ``build`` and ``amount``
-  (n_planets x BUILD_SLOTS), ``mission``, ``target``, ``speed``, ``roe``,
-  ``load``, ``detach`` (n_fleets)
+  (n_planets x BUILD_SLOTS), ``mission``, ``target``, ``waypoint``,
+  ``speed``, ``roe``, ``load``, ``detach`` (n_fleets)
 - ``reward`` and ``done`` from the step those choices played
 """
 
@@ -84,7 +84,7 @@ def experience_batch(
     }
     for name in ("build", "amount"):
         columns[name] = ragged(flat(actions[name]).astype(np.int8), planets)
-    for name in ("mission", "target", "speed", "roe", "load", "detach"):
+    for name in ("mission", "target", "waypoint", "speed", "roe", "load", "detach"):
         columns[name] = ragged(flat(actions[name]).astype(np.int16), fleets)
     return pa.record_batch(columns)
 

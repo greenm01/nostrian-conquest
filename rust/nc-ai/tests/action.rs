@@ -6,8 +6,8 @@ mod common;
 use common::{scramble_others, seated_game};
 use nc_ai::{
     BUILD_AMOUNT_CHOICES, DIPLOMACY_CHOICES, FleetChoice, MISSIONS, PlanetChoice, SPEED_CHOICES,
-    SeatAction, SeatMasks, SeatedGame, TAX_CHOICES, commission_submission, decode_action,
-    seat_masks,
+    SeatAction, SeatMasks, SeatedGame, TAX_CHOICES, WAYPOINT_CHOICES, commission_submission,
+    decode_action, seat_masks, sector_mission, waypoint,
 };
 use nc_data::Order;
 
@@ -30,6 +30,15 @@ impl Rng {
         let allowed: Vec<usize> = (0..mask.len()).filter(|&idx| mask[idx]).collect();
         allowed[self.below(allowed.len())]
     }
+}
+
+/// The sector a sector-mission choice sends its fleet to.
+fn decoded_target(game_data: &nc_data::CoreGameData, choice: &FleetChoice) -> [u8; 2] {
+    waypoint(
+        game_data.fleets[choice.record - 1].sector.to_array(),
+        game_data.planets[choice.target].sector.to_array(),
+        choice.waypoint,
+    )
 }
 
 fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
@@ -68,6 +77,7 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
                     record: mask.record,
                     mission,
                     target: rng.allowed(&mask.targets[mission]),
+                    waypoint: rng.below(WAYPOINT_CHOICES),
                     speed: rng.below(SPEED_CHOICES),
                     roe: rng.allowed(&mask.roe),
                     load: mask.load && rng.below(2) == 0,
@@ -90,6 +100,7 @@ struct Tally {
     dropped: usize,
     guard_starbase: usize,
     detaches: usize,
+    deep_space: usize,
 }
 
 /// Play `years` of random masked turns; every submission must be accepted
@@ -130,6 +141,18 @@ fn play_random(game: &mut SeatedGame, years: u16, rng: &mut Rng, tally: &mut Tal
                 .fleets
                 .iter()
                 .filter(|c| c.mission > 0 && MISSIONS[c.mission - 1] == Order::GuardStarbase)
+                .count();
+            tally.deep_space += action
+                .fleets
+                .iter()
+                .filter(|c| {
+                    c.mission > 0
+                        && sector_mission(MISSIONS[c.mission - 1])
+                        && !game_data
+                            .planets
+                            .iter()
+                            .any(|p| p.sector.to_array() == decoded_target(game_data, c))
+                })
                 .count();
             tally.detaches += action.fleets.iter().filter(|c| c.detach > 0).count();
             tally.builds += action
@@ -175,11 +198,12 @@ fn random_masked_turns_are_always_accepted() {
 fn a_thousand_random_masked_games_are_always_accepted() {
     let tally = play_games(1000, 30);
     println!(
-        "{} game-years, {} fleet orders ({} Guard a Starbase), {} detaches, {} builds, \
-         {} second colonizers dropped",
+        "{} game-years, {} fleet orders ({} Guard a Starbase, {} to deep space), \
+         {} detaches, {} builds, {} second colonizers dropped",
         tally.years,
         tally.fleet_orders,
         tally.guard_starbase,
+        tally.deep_space,
         tally.detaches,
         tally.builds,
         tally.dropped
@@ -189,6 +213,10 @@ fn a_thousand_random_masked_games_are_always_accepted() {
         "random play should guard a starbase"
     );
     assert!(tally.detaches > 0, "random play should detach");
+    assert!(
+        tally.deep_space > 0,
+        "random play should order fleets into deep space"
+    );
 }
 
 #[test]

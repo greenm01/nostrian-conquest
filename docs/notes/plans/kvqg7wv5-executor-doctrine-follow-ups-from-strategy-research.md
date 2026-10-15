@@ -748,6 +748,53 @@ The work:
 - Report the fleet battles fought and won, and the warships lost, with and
   without the switch.
 
+**Result (2026-10-15): deep-space targets accepted; the executor's hunting
+rejected.**
+
+**Deep-space targets.** Each fleet now has a waypoint choice. For the
+sector missions (Move, Patrol a Sector, Scout a Sector and Rendezvous),
+the target sector lies all the way, three quarters, half or a quarter of
+the way from the fleet to its target world, rounded to the nearest sector.
+Other missions ignore it.
+
+- **Why waypoints.** The network keeps pointing at world tokens and needs
+  no per-sector target array. Patrol lines and intercept points still lie
+  on the routes between worlds.
+- **No mask needed.** Those missions accept any sector, so the waypoint is
+  always allowed, like speed.
+- **Tests.** Over 1,000 random games (30,000 game-years), random play sent
+  313,174 orders to sectors without a world, and none was rejected.
+- **The fleet agent** has a waypoint head, so older fleet-agent
+  checkpoints no longer load.
+
+**The hunter.** The `hunt` switch sent a warship fleet at home that did
+not strike to patrol at the reachable sector nearest a declared enemy's
+force. That force had to be reported the previous year near one of the
+seat's worlds, and the fleet had to be `attack_ratio` times its estimated
+strength (a small vessel counted as a destroyer). The fleet came home the
+next year. Paired against the tuned executor (4,096 games a block):
+
+| Version | Block 100000 | Block 200000 |
+| --- | --- | --- |
+| Forces within 4 sectors of a world | +0.004 ± 0.006 | |
+| Forces within 1.5 sectors | +0.010 ± 0.006 | |
+| Forces at a world's own sector | +0.011 ± 0.006 | +0.004 ± 0.006 |
+
+Over 128 games, the seat's battles were these:
+
+| | Battles | Held the field | Warships lost | Enemy warships destroyed |
+| --- | --- | --- | --- | --- |
+| Without the switch | 2,722 | 1,337 | 8,994 | 8,116 |
+| With it (within 4 sectors) | 2,739 | 1,357 | 10,304 | 7,973 |
+| With it (at the world's sector) | 2,739 | 1,359 | 9,623 | 8,116 |
+
+Hunting added about 2.5 patrol fleet-years a game, but almost no battles.
+A raider reported last year has usually moved on by the time hunters
+arrive, and the hunters lost more ships on the way. Answering only forces
+in the seat's own systems came closest to a gain, but did not confirm. The
+code is removed. Early warning from t174's pickets is what would make
+interception pay, so t174 measures the net with hunting off.
+
 ### t174
 
 A picket net: cheap destroyers patrolling empty sectors.

@@ -40,6 +40,7 @@ def random_actions(env, masks, rng):
         ),
         "mission": mission,
         "target": sample(targets[:, :, :, 0, :], rng),
+        "waypoint": rng.integers(nc_ai_env.WAYPOINT_CHOICES, size=(games, seats, fleets)),
         "speed": rng.integers(nc_ai_env.SPEED_CHOICES, size=(games, seats, fleets)),
         "roe": sample(masks["roe"], rng),
         "load": (masks["load"] & (rng.random(masks["load"].shape) < 0.5)).astype(

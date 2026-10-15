@@ -3,7 +3,7 @@
 
 use crate::action::{
     BUILD_AMOUNT_CHOICES, BUILD_SLOTS, FleetChoice, PlanetChoice, SPEED_CHOICES, SeatAction,
-    SeatMasks, TAX_CHOICES,
+    SeatMasks, TAX_CHOICES, WAYPOINT_CHOICES,
 };
 
 use crate::goals::{GoalMasks, Goals, POSTURES};
@@ -112,6 +112,11 @@ pub(crate) fn fleet_choices(
                 record: mask.record,
                 mission,
                 target: choice("target", actions.target[fleet], &mask.targets[mission])?,
+                waypoint: choice(
+                    "waypoint",
+                    actions.waypoint[fleet],
+                    &[true; WAYPOINT_CHOICES],
+                )?,
                 speed: choice("speed", actions.speed[fleet], &[true; SPEED_CHOICES])?,
                 roe: choice("roe", actions.roe[fleet], &mask.roe)?,
                 load,

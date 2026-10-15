@@ -731,6 +731,7 @@ fn plan_fleets(
                 record: mask.record,
                 mission: 0,
                 target: 0,
+                waypoint: 0,
                 speed: 0,
                 roe: if mask.roe[roe] { roe } else { 0 },
                 load: false,

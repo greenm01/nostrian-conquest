@@ -60,7 +60,8 @@ pub struct BatchObservation {
 }
 
 /// Every seat's masks. `W` is the padded world count and `F` the padded
-/// fleet count. Tax, build-amount and speed choices are always allowed.
+/// fleet count. Tax, build-amount, speed and waypoint choices are always
+/// allowed.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BatchMasks {
     /// `[games, seats, seats, DIPLOMACY_CHOICES]`.
@@ -95,6 +96,7 @@ pub struct BatchActions<'a> {
     /// `[games, seats, F]`.
     pub mission: &'a [i64],
     pub target: &'a [i64],
+    pub waypoint: &'a [i64],
     pub speed: &'a [i64],
     pub roe: &'a [i64],
     /// Nonzero to load armies.
@@ -177,6 +179,7 @@ impl Seat {
 pub struct FleetArrays {
     pub mission: Tensor<i64>,
     pub target: Tensor<i64>,
+    pub waypoint: Tensor<i64>,
     pub speed: Tensor<i64>,
     pub roe: Tensor<i64>,
     pub load: Tensor<i64>,
@@ -355,6 +358,7 @@ impl BatchEnv {
         let mut out = FleetArrays {
             mission: zeros(0),
             target: zeros(0),
+            waypoint: zeros(0),
             speed: zeros(0),
             roe: zeros(0),
             load: zeros(0),
@@ -383,6 +387,7 @@ impl BatchEnv {
                     let idx = at * fleets + row;
                     out.mission.data[idx] = choice.mission as i64;
                     out.target.data[idx] = choice.target as i64;
+                    out.waypoint.data[idx] = choice.waypoint as i64;
                     out.speed.data[idx] = choice.speed as i64;
                     out.roe.data[idx] = choice.roe as i64;
                     out.load.data[idx] = i64::from(choice.load);
@@ -626,6 +631,7 @@ impl BatchEnv {
                 ),
                 ("mission", actions.mission.len(), games * seats * fleets),
                 ("target", actions.target.len(), games * seats * fleets),
+                ("waypoint", actions.waypoint.len(), games * seats * fleets),
                 ("speed", actions.speed.len(), games * seats * fleets),
                 ("roe", actions.roe.len(), games * seats * fleets),
                 ("load", actions.load.len(), games * seats * fleets),

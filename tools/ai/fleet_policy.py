@@ -3,7 +3,8 @@ heads that order the seat's own fleets.
 
 Each own-fleet token chooses a mission, then a target world (pointing at
 world tokens, conditioned on the chosen mission and on the worlds the seat's
-strike and colony goals name), a speed, rules of engagement, whether to
+strike and colony goals name), a waypoint short of it for the sector
+missions, a speed, rules of engagement, whether to
 load armies, and what part of the fleet to detach. In a hybrid seat only the fleets of handed-over families
 (colonize 0, scout 1, strike 2) take these choices; the executor orders the
 rest.
@@ -18,7 +19,7 @@ from torch import nn
 import nc_ai_env
 from policy import HEADS, Strategist, distributions, symlog, START_YEAR, TABLES
 
-FLEET_HEADS = ("mission", "target", "speed", "roe", "load", "detach")
+FLEET_HEADS = ("mission", "target", "waypoint", "speed", "roe", "load", "detach")
 SEAT_BUCKET = 128
 ROW_BUCKET = 16
 
@@ -83,6 +84,7 @@ class FleetAgent(Strategist):
         self.mission_embed = nn.Embedding(missions, width)
         self.target_query = nn.Linear(width, width)
         self.goal_bias = nn.Linear(2, 1, bias=False)
+        self.fleet_waypoint = nn.Linear(width, nc_ai_env.WAYPOINT_CHOICES)
         self.fleet_speed = nn.Linear(width, nc_ai_env.SPEED_CHOICES)
         self.fleet_roe = nn.Linear(width, nc_ai_env.ROE_CHOICES)
         self.fleet_load = nn.Linear(width, 2)
@@ -114,6 +116,7 @@ class FleetAgent(Strategist):
                 logits=masked(mission_logits, batch["fleet_mission"][:n])),
             "target": torch.distributions.Categorical(
                 logits=masked(target_logits, target_mask)),
+            "waypoint": torch.distributions.Categorical(logits=self.fleet_waypoint(fleets)),
             "speed": torch.distributions.Categorical(logits=self.fleet_speed(fleets)),
             "roe": torch.distributions.Categorical(
                 logits=masked(self.fleet_roe(fleets), batch["fleet_roe"][:n])),

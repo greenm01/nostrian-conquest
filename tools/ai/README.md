@@ -119,7 +119,9 @@ int64 arrays:
 - `diplomacy` `[G, S, S]`
 - `build` and `amount` `[G, S, W, BUILD_SLOTS]`: up to two builds per world
   a year, sharing its budget
-- `mission`, `target`, `speed`, `roe`, `load` and `detach` `[G, S, F]`;
+- `mission`, `target`, `waypoint`, `speed`, `roe`, `load` and `detach`
+  `[G, S, F]`; `waypoint` stops a Move, Patrol, Scout Sector or Rendezvous
+  short of its target world, in deep space;
   `detach` keeps the fleet whole (0) or splits off half its warships, one
   warship or its transports, which wait on Hold until the next year
 
