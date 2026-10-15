@@ -852,6 +852,30 @@ records survive in `docs/archive/`:
   personalities from invading at all.
 - **Scouts.** Winners built far fewer scouts, as NC's tuning found.
 
+**Personalities as risk-and-return preferences (owner, 2026-10-15).** Each
+executor rule weighs risk, reward and return (see the
+[doctrine plan](kvqg7wv5-executor-doctrine-follow-ups-from-strategy-research.md)).
+A personality is a coherent set of preferences over those same
+trade-offs:
+
+| Trade-off | Rusher | Land grab (default) | Turtle | Raider |
+| --- | --- | --- | --- | --- |
+| Risk tolerance (odds needed to attack) | High | Moderate | Low | High, against weak targets only |
+| Time horizon | Short | Long | Long | Short |
+| Fleet held for defence (t175) | Little | Balanced | Much | Little, with hunters out |
+| Attack mission (t168) | Blitz | Bombard, then invade | Invade after full suppression | Blitz; hit-and-run bombardment |
+| Intelligence (t174 pickets) | Few | Moderate | Dense net | To find targets |
+| Expansion | Minimal | Maximal early | Steady | Moderate |
+
+Learned seats keep their personality through training:
+
+- **The reward:** a cautious seat is penalised for losses; a rusher
+  discounts the future more.
+- **The executor:** its rules use the personality's preferences.
+
+So a learned seat plays its character well, rather than just playing to
+win.
+
 **What follows for NC:**
 
 - **A personality is a named profile:** `Weights` and `Doctrine`
