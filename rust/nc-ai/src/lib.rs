@@ -25,9 +25,10 @@ mod observe;
 mod replay;
 
 pub use action::{
-    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, DecodedTurn, FleetChoice,
-    FleetMask, MISSION_CHOICES, MISSIONS, PlanetChoice, PlanetMask, ROE_CHOICES, SPEED_CHOICES,
-    SeatAction, SeatMasks, TAX_CHOICES, TAX_STEP, commission_submission, decode_action, seat_masks,
+    BUILD_AMOUNT_CHOICES, BUILD_CHOICES, BUILD_SLOTS, DETACH_CHOICES, DETACHES, DIPLOMACY_CHOICES,
+    DecodedTurn, Detach, FleetChoice, FleetMask, MISSION_CHOICES, MISSIONS, PlanetChoice,
+    PlanetMask, ROE_CHOICES, SPEED_CHOICES, SeatAction, SeatMasks, TAX_CHOICES, TAX_STEP,
+    commission_submission, decode_action, seat_masks,
 };
 pub use arena::{MatchResult, SeatPolicy, executor_turn, play_match};
 pub use batch::{

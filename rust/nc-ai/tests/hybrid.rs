@@ -37,6 +37,7 @@ impl Actions {
             speed: &self.fleets.speed.data,
             roe: &self.fleets.roe.data,
             load: &self.fleets.load.data,
+            detach: &self.fleets.detach.data,
         }
     }
 }

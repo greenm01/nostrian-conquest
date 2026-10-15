@@ -95,7 +95,7 @@ import nc_ai_env
 env = nc_ai_env.Env(players=4, years=60, threads=0)  # 0: every core
 env.reset(map_seeds, campaign_seeds, seats)  # seats: one lineup per game
 obs = env.observe()    # global, planets, fleets, contacts, starbases (+ *_valid)
-masks = env.masks()    # diplomacy, build, mission, target, roe, load
+masks = env.masks()    # diplomacy, build, mission, target, roe, load, detach
 goal_masks = env.goal_masks()  # strike, colonize
 labels = env.goal_labels()     # the executor's own goals
 step = env.step(actions, goals)  # reward, done, production, worlds
@@ -119,7 +119,9 @@ int64 arrays:
 - `diplomacy` `[G, S, S]`
 - `build` and `amount` `[G, S, W, BUILD_SLOTS]`: up to two builds per world
   a year, sharing its budget
-- `mission`, `target`, `speed`, `roe` and `load` `[G, S, F]`
+- `mission`, `target`, `speed`, `roe`, `load` and `detach` `[G, S, F]`;
+  `detach` keeps the fleet whole (0) or splits off half its warships, one
+  warship or its transports, which wait on Hold until the next year
 
 `goals` is a dict of int64 arrays, shaped as `env.goal_labels()`:
 

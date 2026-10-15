@@ -114,7 +114,7 @@ impl Env {
 
     /// The executor's fleet choices for every goal-taking seat if it
     /// carried out `goals` this year: `mission`, `target`, `speed`, `roe`,
-    /// `load` and each row's `family` (0 colonize, 1 scout, 2 strike, -1
+    /// `load`, `detach` and each row's `family` (0 colonize, 1 scout, 2 strike, -1
     /// padding), all `[games, seats, F]` int64.
     fn fleet_labels<'py>(
         &self,
@@ -143,6 +143,7 @@ impl Env {
         out.set_item("speed", array(py, labels.speed)?)?;
         out.set_item("roe", array(py, labels.roe)?)?;
         out.set_item("load", array(py, labels.load)?)?;
+        out.set_item("detach", array(py, labels.detach)?)?;
         out.set_item("family", array(py, labels.family)?)?;
         Ok(out)
     }
@@ -191,7 +192,7 @@ impl Env {
     }
 
     /// Every seat's legal choices as bool arrays: `diplomacy`, `build`,
-    /// `mission`, `target`, `roe` and `load`.
+    /// `mission`, `target`, `roe`, `load` and `detach`.
     fn masks<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyDict>> {
         let batch = self.batch()?;
         let masks = py.detach(|| batch.masks());
@@ -203,6 +204,7 @@ impl Env {
             ("target", masks.target),
             ("roe", masks.roe),
             ("load", masks.load),
+            ("detach", masks.detach),
         ] {
             out.set_item(name, array(py, tensor)?)?;
         }
@@ -211,7 +213,7 @@ impl Env {
 
     /// Play a year. `actions` is a dict of int64 arrays for learned seats
     /// (`tax`, `diplomacy`, `build`, `amount`, `mission`, `target`, `speed`,
-    /// `roe`, `load`); `goals` one for strategist seats (`tax`, `diplomacy`,
+    /// `roe`, `load`, `detach`); `goals` one for strategist seats (`tax`, `diplomacy`,
     /// `posture`, `strike`, `colonize`). Returns `reward`, `done`,
     /// `production` and `worlds`. A choice outside the masks, or missing
     /// choices, raise ValueError and change nothing.
@@ -236,6 +238,7 @@ impl Env {
                         "speed",
                         "roe",
                         "load",
+                        "detach",
                     ],
                 )
             })
@@ -255,6 +258,7 @@ impl Env {
             speed: s[6],
             roe: s[7],
             load: s[8],
+            detach: s[9],
         });
         let goals = goal_slices.map(|s| BatchGoals {
             tax: s[0],
@@ -454,6 +458,7 @@ fn nc_ai_env(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("MISSION_CHOICES", nc_ai::MISSION_CHOICES)?;
     m.add("SPEED_CHOICES", nc_ai::SPEED_CHOICES)?;
     m.add("ROE_CHOICES", nc_ai::ROE_CHOICES)?;
+    m.add("DETACH_CHOICES", nc_ai::DETACH_CHOICES)?;
     m.add("GLOBAL_WIDTH", nc_ai::GLOBAL_WIDTH)?;
     m.add("PLANET_WIDTH", nc_ai::PLANET_WIDTH)?;
     m.add("FLEET_WIDTH", nc_ai::FLEET_WIDTH)?;

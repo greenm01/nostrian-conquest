@@ -649,6 +649,32 @@ arrays, so learned seats are retrained afterwards.
 - A replay test covers detached fleets.
 - The executor's use of Detach is measured as in Scope.
 
+**Result (2026-10-15): Detach accepted in the seat actions; the
+executor's split rejected.** Each fleet now has a detach choice: keep
+whole, half of each kind of warship (rounded down), one warship of the
+lightest kind, or every transport. The mask allows a part that exists and
+leaves the donor a ship. Detaches are decoded after every other fleet
+block, because a detach can re-sort the empire's fleet records, and each
+donor is found again by its fleet number. The detached ships wait on Hold,
+with the donor's rules of engagement, and take orders the next year. The
+donor's mission applies to the ships it keeps.
+
+- Over 1,000 random games (30,000 game-years), random play detached 39,283
+  times, and no order was rejected.
+- A new replay test plays random masked turns with detaches through the
+  batch environment and rebuilds both games exactly from their turn KDL.
+- The Python fleet agent has a detach head, so fleet-agent checkpoints
+  from before this change no longer load.
+
+The executor's guards were rejected in t169, so its use of Detach was
+tried as a split instead. When half the home force's warships still met
+`attack_ratio` against the target, the other half stayed home and struck
+on its own the next year. Paired against the tuned executor on block
+100000 (4,096 games), the split scored −0.010 ± 0.008. When the half left
+at home also skipped worlds another fleet already struck, it scored
+−0.035 ± 0.008. A concentrated force beats a split one here, so the
+executor does not detach.
+
 ### t173
 
 Hunt and intercept enemy fleets.

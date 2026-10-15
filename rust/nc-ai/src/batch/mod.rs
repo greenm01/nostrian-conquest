@@ -35,8 +35,8 @@ use choices::{fleet_choices, seat_action, seat_goals};
 use nc_fuzz::Policy;
 
 use crate::action::{
-    BUILD_CHOICES, BUILD_SLOTS, DIPLOMACY_CHOICES, FleetChoice, MISSION_CHOICES, ROE_CHOICES,
-    SeatAction, SeatMasks, commission_submission, decode_action, seat_masks,
+    BUILD_CHOICES, BUILD_SLOTS, DETACH_CHOICES, DIPLOMACY_CHOICES, FleetChoice, MISSION_CHOICES,
+    ROE_CHOICES, SeatAction, SeatMasks, commission_submission, decode_action, seat_masks,
 };
 use crate::arena::{
     MatchResult, SeatPolicy, SplitMix, aggressor_choices, executor_turn, match_result, seated_game,
@@ -76,6 +76,8 @@ pub struct BatchMasks {
     pub roe: Tensor<bool>,
     /// `[games, seats, F]`.
     pub load: Tensor<bool>,
+    /// `[games, seats, F, DETACH_CHOICES]`.
+    pub detach: Tensor<bool>,
 }
 
 /// Every seat's choices, shaped as [`BatchMasks`] describes. Entries for
@@ -97,6 +99,7 @@ pub struct BatchActions<'a> {
     pub roe: &'a [i64],
     /// Nonzero to load armies.
     pub load: &'a [i64],
+    pub detach: &'a [i64],
 }
 
 /// Every strategist seat's goals, as [`Goals`] fields. `[games, seats]`
@@ -177,6 +180,7 @@ pub struct FleetArrays {
     pub speed: Tensor<i64>,
     pub roe: Tensor<i64>,
     pub load: Tensor<i64>,
+    pub detach: Tensor<i64>,
     pub family: Tensor<i64>,
 }
 
@@ -354,6 +358,7 @@ impl BatchEnv {
             speed: zeros(0),
             roe: zeros(0),
             load: zeros(0),
+            detach: zeros(0),
             family: zeros(-1),
         };
         for (game, slot) in self.slots.iter().enumerate() {
@@ -381,6 +386,7 @@ impl BatchEnv {
                     out.speed.data[idx] = choice.speed as i64;
                     out.roe.data[idx] = choice.roe as i64;
                     out.load.data[idx] = i64::from(choice.load);
+                    out.detach.data[idx] = choice.detach as i64;
                     out.family.data[idx] =
                         fleet_family(&game_data.fleets[choice.record - 1]) as i64;
                 }
@@ -544,6 +550,7 @@ impl BatchEnv {
             target: falses(&[games, seats, fleets, MISSION_CHOICES, worlds]),
             roe: falses(&[games, seats, fleets, ROE_CHOICES]),
             load: falses(&[games, seats, fleets]),
+            detach: falses(&[games, seats, fleets, DETACH_CHOICES]),
         };
         for (game, slot) in self.slots.iter().enumerate() {
             let real_worlds = slot.game.play.built.game_data.planets.len();
@@ -572,6 +579,7 @@ impl BatchEnv {
                             }
                             put(&mut out.roe, fleet, &mask.roe);
                             out.load.data[fleet] = mask.load;
+                            put(&mut out.detach, fleet, &mask.detach);
                         }
                         None => {
                             out.mission.data[fleet * MISSION_CHOICES] = true;
@@ -581,6 +589,7 @@ impl BatchEnv {
                                 &vec![true; real_worlds],
                             );
                             out.roe.data[fleet * ROE_CHOICES] = true;
+                            out.detach.data[fleet * DETACH_CHOICES] = true;
                         }
                     }
                 }
@@ -620,6 +629,7 @@ impl BatchEnv {
                 ("speed", actions.speed.len(), games * seats * fleets),
                 ("roe", actions.roe.len(), games * seats * fleets),
                 ("load", actions.load.len(), games * seats * fleets),
+                ("detach", actions.detach.len(), games * seats * fleets),
             ]);
         }
         if let Some(goals) = goals {

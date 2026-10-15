@@ -3,8 +3,8 @@ heads that order the seat's own fleets.
 
 Each own-fleet token chooses a mission, then a target world (pointing at
 world tokens, conditioned on the chosen mission and on the worlds the seat's
-strike and colony goals name), a speed, rules of engagement and whether to
-load armies. In a hybrid seat only the fleets of handed-over families
+strike and colony goals name), a speed, rules of engagement, whether to
+load armies, and what part of the fleet to detach. In a hybrid seat only the fleets of handed-over families
 (colonize 0, scout 1, strike 2) take these choices; the executor orders the
 rest.
 """
@@ -18,7 +18,7 @@ from torch import nn
 import nc_ai_env
 from policy import HEADS, Strategist, distributions, symlog, START_YEAR, TABLES
 
-FLEET_HEADS = ("mission", "target", "speed", "roe", "load")
+FLEET_HEADS = ("mission", "target", "speed", "roe", "load", "detach")
 SEAT_BUCKET = 128
 ROW_BUCKET = 16
 
@@ -26,7 +26,8 @@ ROW_BUCKET = 16
 def fleet_batch(obs, masks, goal_masks, select, dev):
     """Seat tensors as ``policy.seat_batch``, plus each fleet row's masks:
     ``fleet_mission`` ``[N, F, MISSIONS]``, ``fleet_target`` ``[N, F,
-    MISSIONS, W]``, ``fleet_roe`` and ``fleet_load`` ``[N, F, 2]``."""
+    MISSIONS, W]``, ``fleet_roe``, ``fleet_load`` ``[N, F, 2]`` and
+    ``fleet_detach``."""
     take = lambda a: torch.from_numpy(np.ascontiguousarray(a[select])).to(dev)
     glob = take(obs["global"]).clone()
     glob[:, 0] -= START_YEAR
@@ -42,6 +43,7 @@ def fleet_batch(obs, masks, goal_masks, select, dev):
     batch["fleet_roe"] = take(masks["roe"])
     load = take(masks["load"])
     batch["fleet_load"] = torch.stack([torch.ones_like(load), load], -1)
+    batch["fleet_detach"] = take(masks["detach"])
     return batch
 
 
@@ -84,6 +86,7 @@ class FleetAgent(Strategist):
         self.fleet_speed = nn.Linear(width, nc_ai_env.SPEED_CHOICES)
         self.fleet_roe = nn.Linear(width, nc_ai_env.ROE_CHOICES)
         self.fleet_load = nn.Linear(width, 2)
+        self.fleet_detach = nn.Linear(width, nc_ai_env.DETACH_CHOICES)
 
     def fleet_dists(self, batch, fleets, worlds, goals, mission):
         """Fleet-head distributions for the real seats; ``mission`` is the
@@ -116,6 +119,8 @@ class FleetAgent(Strategist):
                 logits=masked(self.fleet_roe(fleets), batch["fleet_roe"][:n])),
             "load": torch.distributions.Categorical(
                 logits=masked(self.fleet_load(fleets), batch["fleet_load"][:n])),
+            "detach": torch.distributions.Categorical(
+                logits=masked(self.fleet_detach(fleets), batch["fleet_detach"][:n])),
         }
 
     def act(self, batch, greedy=False, fleet_choices=None, goal_choices=None):

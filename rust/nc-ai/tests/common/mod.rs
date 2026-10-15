@@ -1,5 +1,7 @@
 //! Helpers shared by the nc-ai tests.
 
+pub mod arrays;
+
 use nc_ai::SeatedGame;
 use nc_data::{CoreGameData, DiplomaticRelation};
 use nc_fuzz::{CaseSetup, Policy};

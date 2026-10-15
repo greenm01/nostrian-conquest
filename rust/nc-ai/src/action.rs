@@ -9,10 +9,15 @@
 //!   in one year commission into one fleet, so an ETAC and its escort can
 //!   sail together;
 //! - for each fleet it owns, whether to load armies from the world it is at,
-//!   a mission (or keep its orders), a target world, a speed and rules of
-//!   engagement. Loading and an invasion cannot share a year: orders are
-//!   checked against the turn-start fleet, so a fleet invades the year after
-//!   it loads.
+//!   a mission (or keep its orders), a target world, a speed, rules of
+//!   engagement, and whether to detach part of it (see [`DETACHES`]).
+//!   Loading and an invasion cannot share a year: orders are checked against
+//!   the turn-start fleet, so a fleet invades the year after it loads.
+//!
+//! Detached ships form a new fleet on Hold at the donor's sector, with the
+//! donor's rules of engagement, after every other order of the year, so the
+//! donor's mission applies to the ships it keeps. The new fleet takes orders
+//! the next year.
 //!
 //! Masks read only what the empire may know. Fleet missions and targets go
 //! through `validate_fleet_order_payload`, which checks the fleet's own ships
@@ -27,9 +32,9 @@
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CoreGameData, DiplomaticRelation, Fleet, FleetTurnAction, FleetTurnBlock, Order,
-    PlanetTurnAction, PlanetTurnBlock, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective, TurnSubmission,
-    has_combat_ships, is_support_only,
+    CoreGameData, DiplomaticRelation, Fleet, FleetDetachSelection, FleetTurnAction, FleetTurnBlock,
+    Order, PlanetTurnAction, PlanetTurnBlock, STARDOCK_SLOT_COUNT, TurnDiplomacyDirective,
+    TurnSubmission, has_combat_ships, is_support_only, starship_count,
 };
 use nc_engine::{BUILD_UNITS, fleet_record_supports_mission_code, production_item_kind_code};
 
@@ -50,6 +55,22 @@ pub const MISSION_CHOICES: usize = 1 + MISSIONS.len();
 pub const SPEED_CHOICES: usize = 4;
 /// Rules of engagement 0 to 10.
 pub const ROE_CHOICES: usize = 11;
+/// Keep the fleet whole, or one entry per [`DETACHES`] row.
+pub const DETACH_CHOICES: usize = 1 + DETACHES.len();
+
+/// What part of a fleet a seat may detach.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Detach {
+    /// Half of each kind of warship, rounded down.
+    HalfWarships,
+    /// One warship of the lightest kind aboard.
+    OneWarship,
+    /// Every troop transport, loaded or empty.
+    Transports,
+}
+
+/// The detach choices, in choice order after "keep whole".
+pub const DETACHES: [Detach; 3] = [Detach::HalfWarships, Detach::OneWarship, Detach::Transports];
 
 /// Units of cost `cost` that build amount choice `amount` buys from
 /// `points_left`, which must cover one unit.
@@ -100,6 +121,8 @@ pub struct FleetMask {
     /// The fleet is at one of the empire's worlds with an army to spare and
     /// has an empty transport.
     pub load: bool,
+    /// By detach choice: the part exists and leaves the donor a ship.
+    pub detach: [bool; DETACH_CHOICES],
 }
 
 /// Everything one seat may choose this year. Tax, speed and build-amount
@@ -136,6 +159,8 @@ pub struct FleetChoice {
     /// Load as many armies as the empty transports hold, leaving the world
     /// at least one.
     pub load: bool,
+    /// Keep whole (0), or detach the [`DETACHES`] row before it.
+    pub detach: usize,
 }
 
 /// One seat's whole turn as choice indexes.
@@ -311,7 +336,40 @@ fn fleet_mask(
         targets,
         roe,
         load: armies_to_load(game_data, fleet, 0).is_some(),
+        detach: std::array::from_fn(|choice| {
+            choice == 0 || detach_selection(fleet, choice).is_some()
+        }),
     }
+}
+
+/// The ships detach choice `choice` (nonzero) takes from `fleet`, if there
+/// are any and the fleet keeps at least one. Loading armies does not change
+/// the transport count, so the turn-start fleet decides the mask.
+fn detach_selection(fleet: &Fleet, choice: usize) -> Option<FleetDetachSelection> {
+    let ships = &fleet.ships;
+    let mut selection = FleetDetachSelection::default();
+    match DETACHES[choice - 1] {
+        Detach::HalfWarships => {
+            selection.battleships = ships.battleships / 2;
+            selection.cruisers = ships.cruisers / 2;
+            selection.destroyers = ships.destroyers / 2;
+        }
+        Detach::OneWarship => {
+            if ships.destroyers > 0 {
+                selection.destroyers = 1;
+            } else if ships.cruisers > 0 {
+                selection.cruisers = 1;
+            } else if ships.battleships > 0 {
+                selection.battleships = 1;
+            }
+        }
+        Detach::Transports => {
+            selection.full_transports = ships.loaded_transports;
+            selection.empty_transports = ships.empty_transports;
+        }
+    }
+    let moved = selection.total_ships();
+    (moved > 0 && moved < starship_count(fleet)).then_some(selection)
 }
 
 /// The world a fleet is at and how many armies it may load there, if any,
@@ -336,6 +394,9 @@ fn armies_to_load(game_data: &CoreGameData, fleet: &Fleet, loaded: u16) -> Optio
 /// `seat_masks(game_data, empire)`. A fleet's new orders are dropped, and the
 /// fleet keeps its old ones, only when a fleet decoded before it in the same
 /// turn already claims the world it would colonize.
+///
+/// Detaches follow every other fleet block. A detach can re-sort the
+/// empire's fleet records, so each donor is found again by fleet number.
 pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) -> DecodedTurn {
     let mut submission = TurnSubmission {
         player_record_index_1_based: usize::from(empire),
@@ -395,6 +456,7 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
     let mut dropped_fleet_orders = Vec::new();
     // Armies already loaded from each world (0-based) this turn.
     let mut loaded_from: BTreeMap<usize, u16> = BTreeMap::new();
+    let mut loads = Vec::new();
     for choice in &action.fleets {
         let mut actions = Vec::new();
         if choice.load {
@@ -410,6 +472,7 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
                     planet_record_index_1_based: planet,
                     qty,
                 });
+                loads.push((planet, choice.record, qty));
             }
         }
         if choice.mission > 0 {
@@ -442,6 +505,46 @@ pub fn decode_action(game_data: &CoreGameData, empire: u8, action: &SeatAction) 
         submission.fleets.push(FleetTurnBlock {
             fleet_record_index_1_based: choice.record,
             actions,
+        });
+    }
+    // Orders are checked against the turn-start fleet; detaches see the
+    // loads.
+    for (planet, record, qty) in loads {
+        working
+            .load_planet_armies_onto_fleet(usize::from(empire), planet, record, qty)
+            .expect("a masked load applies");
+    }
+    let donors: Vec<(u16, &FleetChoice)> = action
+        .fleets
+        .iter()
+        .filter(|choice| choice.detach > 0)
+        .map(|choice| (game_data.fleets[choice.record - 1].fleet_number.0, choice))
+        .collect();
+    for (number, choice) in donors {
+        let record = 1 + working
+            .fleets
+            .iter()
+            .position(|fleet| fleet.owner.0 == empire && fleet.fleet_number.0 == number)
+            .expect("a donor fleet stays in the empire's chain");
+        let selection = detach_selection(&working.fleets[record - 1], choice.detach)
+            .expect("a masked detach has ships to move");
+        let detach = FleetTurnAction::Detach {
+            selection,
+            donor_speed: None,
+            new_fleet_roe: choice.roe as u8,
+        };
+        working
+            .detach_ships_to_new_fleet(
+                usize::from(empire),
+                record,
+                selection,
+                None,
+                choice.roe as u8,
+            )
+            .expect("a masked detach applies");
+        submission.fleets.push(FleetTurnBlock {
+            fleet_record_index_1_based: record,
+            actions: vec![detach],
         });
     }
     DecodedTurn {

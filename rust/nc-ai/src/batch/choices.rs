@@ -115,6 +115,7 @@ pub(crate) fn fleet_choices(
                 speed: choice("speed", actions.speed[fleet], &[true; SPEED_CHOICES])?,
                 roe: choice("roe", actions.roe[fleet], &mask.roe)?,
                 load,
+                detach: choice("detach", actions.detach[fleet], &mask.detach)?,
             })
         })
         .collect()

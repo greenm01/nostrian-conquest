@@ -1,8 +1,12 @@
 //! Replays (t156): a game rebuilt from its seeds and recorded turns, kept
 //! as turn KDL, ends exactly as it was played.
 
+#[allow(dead_code)]
+mod common;
+
+use common::arrays::{Rng, random_arrays};
 use nc_ai::{BatchEnv, Seat, SeatPolicy, Weights, play_match, replay};
-use nc_data::TurnSubmission;
+use nc_data::{FleetTurnAction, TurnSubmission};
 
 const PLAYERS: u8 = 4;
 
@@ -52,6 +56,49 @@ fn a_batch_game_replays_from_its_seeds_and_turn_kdl() {
             .collect();
         assert_eq!(
             replay(maps[game], campaigns[game], &autopilot, years, &stored),
+            Ok(played),
+            "game {game} replays from turn KDL"
+        );
+    }
+}
+
+/// Random masked play that detaches fleets (t172) replays from its turn
+/// KDL.
+#[test]
+fn random_play_with_detached_fleets_replays_from_turn_kdl() {
+    let maps = [61, 62];
+    let years = 30;
+    let lineup = vec![Seat::Learned; usize::from(PLAYERS)];
+    let mut env = BatchEnv::new(PLAYERS, &maps, &maps, &vec![lineup; maps.len()], years, 0);
+    let mut rng = Rng(5);
+    loop {
+        let masks = env.masks();
+        let arrays = random_arrays(&env, &masks, &mut rng);
+        let step = env
+            .step(Some(&arrays.view()), None)
+            .expect("random choices within the masks are accepted");
+        if step.done.data.iter().all(|&done| done) {
+            break;
+        }
+    }
+    for (game, &map) in maps.iter().enumerate() {
+        let played = env.result(game).expect("every game ended").clone();
+        let turns = &env.game(game).turns;
+        let detaches = turns
+            .iter()
+            .flat_map(|turn| &turn.fleets)
+            .flat_map(|fleet| &fleet.actions)
+            .filter(|action| matches!(action, FleetTurnAction::Detach { .. }))
+            .count();
+        assert!(detaches > 0, "game {game} should detach");
+        let stored: Vec<TurnSubmission> = turns
+            .iter()
+            .map(|turn| {
+                TurnSubmission::parse_kdl_str(&turn.to_kdl_string()).expect("turn KDL parses")
+            })
+            .collect();
+        assert_eq!(
+            replay(map, map, &[false; 4], years, &stored),
             Ok(played),
             "game {game} replays from turn KDL"
         );

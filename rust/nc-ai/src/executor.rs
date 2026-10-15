@@ -702,6 +702,7 @@ fn plan_fleets(
                 speed: 0,
                 roe: if mask.roe[roe] { roe } else { 0 },
                 load: false,
+                detach: 0,
             };
             let order = |order: Order, target: usize| {
                 let mission = mission_choice(order);

@@ -45,6 +45,7 @@ def random_actions(env, masks, rng):
         "load": (masks["load"] & (rng.random(masks["load"].shape) < 0.5)).astype(
             np.int64
         ),
+        "detach": sample(masks["detach"], rng),
     }
 
 
