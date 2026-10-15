@@ -370,3 +370,24 @@ fn strategist_goals_outside_the_masks_or_missing_are_refused() {
     );
     assert_eq!(env.observe(), before);
 }
+
+/// A game that reaches its year limit without a declared winner pays its
+/// production leaders only the limit credit (t180).
+#[test]
+fn a_production_lead_at_the_year_limit_pays_the_limit_credit() {
+    let lineup = vec![Seat::Scripted(SeatPolicy::Executor(Weights::TUNED)); usize::from(PLAYERS)];
+    let total = |credit: f32| {
+        let mut env = BatchEnv::new(PLAYERS, &[5], &[5], &[lineup.clone()], 3, 0);
+        env.set_limit_credit(credit);
+        loop {
+            let step = env
+                .step(None, None)
+                .expect("scripted seats need no choices");
+            if step.done.data[0] {
+                return step.reward.data.iter().sum::<f32>();
+            }
+        }
+    };
+    assert_eq!(total(1.0), 1.0);
+    assert_eq!(total(0.25), 0.25);
+}

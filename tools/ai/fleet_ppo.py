@@ -273,6 +273,9 @@ def main():
     parser.add_argument("--eval-games", type=int, default=256)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--style", help="the learner's executor personality (t167)")
+    parser.add_argument("--limit-credit", type=float, default=1.0,
+                        help="reward for a production lead at the year limit, against 1 "
+                             "for sweeping the map")
     args = parser.parse_args()
 
     families = [f for f in args.families.split(",") if f]
@@ -285,7 +288,7 @@ def main():
     ref = load_fleet_agent(args.init, dev)
     strategist = policy.load(args.strategist, dev)
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    env = nc_ai_env.Env(PLAYERS, args.years)
+    env = nc_ai_env.Env(PLAYERS, args.years, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
     learner = learner_name(families, args.style)
     next_map = 3_000_000

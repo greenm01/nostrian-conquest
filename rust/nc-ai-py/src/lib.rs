@@ -19,16 +19,19 @@ struct Env {
     players: u8,
     years: u16,
     threads: usize,
+    limit_credit: f32,
     batch: Option<BatchEnv>,
 }
 
 #[pymethods]
 impl Env {
     /// `players` seats per game, each game ending after `years` years or a
-    /// declared winner. `threads` 0 uses every core.
+    /// declared winner. `threads` 0 uses every core. `limit_credit` is what
+    /// a production lead at the year limit pays, against 1 for sweeping
+    /// the map.
     #[new]
-    #[pyo3(signature = (players, years, threads = 0))]
-    fn new(players: u8, years: u16, threads: usize) -> PyResult<Self> {
+    #[pyo3(signature = (players, years, threads = 0, limit_credit = 1.0))]
+    fn new(players: u8, years: u16, threads: usize, limit_credit: f32) -> PyResult<Self> {
         if !(2..=25).contains(&players) {
             return Err(PyValueError::new_err("players must be 2 to 25"));
         }
@@ -36,6 +39,7 @@ impl Env {
             players,
             years,
             threads,
+            limit_credit,
             batch: None,
         })
     }
@@ -81,7 +85,7 @@ impl Env {
             ));
         }
         let (players, years, threads) = (self.players, self.years, self.threads);
-        self.batch = Some(py.detach(|| {
+        let mut batch = py.detach(|| {
             BatchEnv::new(
                 players,
                 &map_seeds,
@@ -90,7 +94,9 @@ impl Env {
                 years,
                 threads,
             )
-        }));
+        });
+        batch.set_limit_credit(self.limit_credit);
+        self.batch = Some(batch);
         Ok(())
     }
 

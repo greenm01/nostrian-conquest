@@ -194,7 +194,9 @@ pub struct FleetArrays {
 #[derive(Debug, Clone, PartialEq)]
 pub struct StepResult {
     /// `[games, seats]`: the seat's win share when its game ends this step,
-    /// otherwise 0. See [`MatchResult::win_share`].
+    /// otherwise 0. See [`MatchResult::win_share`]. A game that reaches its
+    /// year limit without a declared winner pays its production leaders
+    /// only [`BatchEnv::set_limit_credit`] of their share.
     pub reward: Tensor<f32>,
     /// `[games]`: the game has ended, now or before.
     pub done: Tensor<bool>,
@@ -227,6 +229,7 @@ pub struct BatchEnv {
     years: u16,
     threads: usize,
     slots: Vec<Slot>,
+    limit_credit: f32,
 }
 
 impl BatchEnv {
@@ -289,7 +292,15 @@ impl BatchEnv {
             years,
             threads,
             slots: slots.into_iter().map(Option::unwrap).collect(),
+            limit_credit: 1.0,
         }
+    }
+
+    /// What a production lead at the year limit is worth, against 1 for
+    /// sweeping the map (a declared winner). 1, the default, pays both the
+    /// same; less makes the sweep the goal.
+    pub fn set_limit_credit(&mut self, credit: f32) {
+        self.limit_credit = credit;
     }
 
     pub fn games(&self) -> usize {
@@ -707,7 +718,7 @@ impl BatchEnv {
             chosen.push(turns);
         }
 
-        let years = self.years;
+        let (years, limit_credit) = (self.years, self.limit_credit);
         let mut rewards: Vec<Option<Vec<f32>>> = vec![None; games];
         let mut pairs: Vec<(&mut Slot, &mut Option<Vec<f32>>)> =
             self.slots.iter_mut().zip(rewards.iter_mut()).collect();
@@ -724,9 +735,10 @@ impl BatchEnv {
             if winner.is_some() || slot.years_played >= years {
                 let result =
                     match_result(&slot.game.play.built.game_data, winner, slot.years_played);
+                let credit = if winner.is_some() { 1.0 } else { limit_credit };
                 **reward = Some(
                     (1..=slot.game.seats.len() as u8)
-                        .map(|empire| result.win_share(empire))
+                        .map(|empire| credit * result.win_share(empire))
                         .collect(),
                 );
                 slot.result = Some(result);
