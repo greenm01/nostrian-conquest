@@ -33,6 +33,9 @@ struct Played {
     slowest: f64,
     turns: u32,
     first_attack: Option<u16>,
+    /// The empire declared winner by sweeping the map, and the year.
+    sweep: Option<(u8, u16)>,
+    learner: u8,
     worlds_at_20: u32,
     defence_points: u64,
     build_points: u64,
@@ -91,6 +94,20 @@ fn main() {
         seconds / f64::from(turns),
         results.iter().map(|r| r.slowest).fold(0.0, f64::max),
     );
+    let sweeps: Vec<(u8, u16)> = results.iter().filter_map(|r| r.sweep).collect();
+    let own: Vec<u16> = results
+        .iter()
+        .filter_map(|r| r.sweep.filter(|(winner, _)| *winner == r.learner))
+        .map(|(_, year)| year)
+        .collect();
+    println!(
+        "  map swept in {} games ({} by the network seat, mean year {:.1}); \
+         decided on production at the year limit in {}",
+        sweeps.len(),
+        own.len(),
+        own.iter().map(|&y| f64::from(y)).sum::<f64>() / own.len().max(1) as f64,
+        results.len() - sweeps.len()
+    );
 }
 
 fn load(model: &Path, style: Personality) -> NetworkSeat {
@@ -111,6 +128,8 @@ fn play(seat: &NetworkSeat, map: u64, years: u16, temperature: f32) -> Played {
         slowest: 0.0,
         turns: 0,
         first_attack: None,
+        sweep: None,
+        learner,
         worlds_at_20: 0,
         defence_points: 0,
         build_points: 0,
@@ -186,7 +205,8 @@ fn play(seat: &NetworkSeat, map: u64, years: u16, temperature: f32) -> Played {
                 .filter(|planet| planet.owner.0 == learner)
                 .count() as u32;
         }
-        if game.play.winner_state.winner_empire.is_some() {
+        if let Some(winner) = game.play.winner_state.winner_empire {
+            played.sweep = Some((winner, year));
             break;
         }
     }

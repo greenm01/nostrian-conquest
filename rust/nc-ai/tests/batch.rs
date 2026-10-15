@@ -377,7 +377,7 @@ fn strategist_goals_outside_the_masks_or_missing_are_refused() {
 fn a_production_lead_at_the_year_limit_pays_the_limit_credit() {
     let lineup = vec![Seat::Scripted(SeatPolicy::Executor(Weights::TUNED)); usize::from(PLAYERS)];
     let total = |credit: f32| {
-        let mut env = BatchEnv::new(PLAYERS, &[5], &[5], &[lineup.clone()], 3, 0);
+        let mut env = BatchEnv::new(PLAYERS, &[5], &[5], std::slice::from_ref(&lineup), 3, 0);
         env.set_limit_credit(credit);
         loop {
             let step = env
