@@ -5,7 +5,7 @@
 //! cargo run --release -p nc-ai --example executor_matches -- \
 //!     [--weights baseline|tuned|classic] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic] \
-//!     [--with strike_weakest|strike_by_value|suppress_first] \
+//!     [--with strike_weakest|strike_by_value|suppress_first|blockader] \
 //!     [--games 64] [--years 60] [--first-map 0] [--paired]
 //! ```
 //!
@@ -58,6 +58,7 @@ fn main() {
             "suppress_first" => weights.doctrine.suppress_first = true,
             "scaled_garrisons" => weights.doctrine.scaled_garrisons = true,
             "flat_garrisons" => weights.doctrine.scaled_garrisons = false,
+            "blockader" => weights.doctrine.blockader = true,
             other => panic!("unknown doctrine switch {other}"),
         }
     }

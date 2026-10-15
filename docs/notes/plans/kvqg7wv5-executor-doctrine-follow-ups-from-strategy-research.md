@@ -629,6 +629,41 @@ or when the seat's home is threatened.
 **Exit:** as in Scope. Also report the production denied to the
 blockaded worlds.
 
+**Result (2026-10-15): accepted.** The `blockader` switch works as
+follows:
+
+- **Who blockades.** Once war is declared, a new warship fleet at home
+  (on Hold, without transports) that cannot strike anything takes the
+  post, if no fleet of the seat already blockades.
+- **The target.** It goes on Guard/Blockade to the enemy world with the
+  most value per unit of estimated defence, among worlds no fleet of the
+  seat strikes. The fleet must be `attack_ratio` times the world's
+  batteries and starbases.
+- **Coming home.** It comes home when the world is no longer a declared
+  enemy's, or when a declared enemy's force is reported within 4 sectors
+  of home in the last 2 years.
+
+Paired against the tuned executor (4,096 games a block), it scored
++0.016 ± 0.007 on block 100000 and +0.013 ± 0.006 on block 200000. It is
+now in `Doctrine::CURRENT`. A re-tune with the switch on found weights
+that lost to the current ones by −0.029 ± 0.009 and −0.030 ± 0.009 on the
+two blocks, so `Weights::TUNED` is unchanged.
+
+Over 96 games, a blockader formed in 73 and stood on station for 506
+fleet-years in all. A blockader averaged strength 9.9, about three
+cruisers. The blockaded worlds averaged 51.4 production a year.
+
+**Production denied: none directly.** In this engine a blockade does not
+cut a world's production (player manual, *Deny what you cannot take* and
+*Blockades*); only bombardment grinds it down. The blockade's gain comes
+from what it intercepts: fleets that come to attack or colonize the
+world, and a declared enemy's fleets as they arrive or climb out of
+orbit, including ships newly commissioned there.
+
+A dedicated raider that bombards instead was not tried. The executor
+cannot yet tell such a raider from a strike force bombarding without
+troops, which goes home after one year (t161).
+
 ### t172
 
 Offer Detach.

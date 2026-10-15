@@ -20,7 +20,9 @@
 //! - gathers warships and transports at home by Rendezvous, loads armies
 //!   there, and strikes the best known enemy world once the home force is
 //!   `attack_ratio` times its estimated defense: Invade with enough armies
-//!   aboard, otherwise Bombard.
+//!   aboard, otherwise Bombard;
+//! - once at war, posts one new warship fleet that cannot strike on
+//!   Guard/Blockade at an enemy world the strike force is not attacking.
 //!
 //! A turn is the executor's [`Goals`] ([`plan_goals`]) carried out by
 //! [`execute_goals`], which a strategist network can drive with goals of its
@@ -93,6 +95,13 @@ pub struct Doctrine {
     /// `colony_armies` per 25 points, at least one. Off, a flat
     /// `colony_armies` at every colony.
     pub scaled_garrisons: bool,
+    /// A dedicated blockader (t171, accepted): once war is declared, a new warship
+    /// fleet at home that cannot strike blockades the most valuable enemy
+    /// world per unit of defence that no fleet of the seat strikes, if
+    /// none blockades yet. It comes home when the world is no longer the
+    /// enemy's or a declared enemy is reported near home. Off, it gathers
+    /// with the strike force.
+    pub blockader: bool,
 }
 
 impl Doctrine {
@@ -102,6 +111,7 @@ impl Doctrine {
         strike_weakest: true,
         suppress_first: true,
         scaled_garrisons: true,
+        blockader: true,
     };
 }
 
@@ -169,6 +179,7 @@ impl Weights {
             strike_weakest: false,
             suppress_first: false,
             scaled_garrisons: false,
+            blockader: false,
         },
     };
 
@@ -236,6 +247,11 @@ impl Weights {
 /// Assumed defense facts for a world whose intel lacks them.
 const UNKNOWN_ARMIES: f32 = 6.0;
 const UNKNOWN_BATTERIES: f32 = 3.0;
+
+/// A declared enemy's force reported within this many sectors of a world,
+/// in the last [`THREAT_YEARS`] years, threatens it.
+const THREAT_RANGE: f32 = 4.0;
+const THREAT_YEARS: u16 = 2;
 
 /// The executor's turn for `memory`'s empire, within `masks`. `start_year`
 /// is the game's first year.
@@ -689,6 +705,22 @@ fn plan_fleets(
     let mut first_colonizer = true;
     let grabbing = land_grab(memory);
     let mut strongest = f32::NEG_INFINITY;
+    let enemy_world = |idx: usize| {
+        memory
+            .planet_intel
+            .get(&(idx + 1))
+            .and_then(|intel| intel.known_owner_empire_id)
+            .is_some_and(|owner| {
+                owner != 0 && owner != empire && at_war_with(game_data, empire, owner)
+            })
+    };
+    let blockading = |fleet: &Fleet| {
+        fleet.owner.0 == empire
+            && fleet.order == Order::GuardBlockadeWorld
+            && world_at(game_data, fleet.target.to_array()).is_some_and(enemy_world)
+    };
+    let mut blockaded = game_data.fleets.iter().any(blockading);
+    let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
 
     let fleets = masks
         .fleets
@@ -793,6 +825,15 @@ fn plan_fleets(
             {
                 return keep;
             }
+            if weights.doctrine.blockader
+                && has_combat_ships(fleet)
+                && fleet.order == Order::GuardBlockadeWorld
+            {
+                if blockading(fleet) && !home_threatened {
+                    return keep;
+                }
+                return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
+            }
             // A strategist's hold stops new invasions here too.
             let hold = goals.is_some_and(|goals| goals.strike == 0);
             if weights.doctrine.suppress_first
@@ -837,6 +878,19 @@ fn plan_fleets(
                 target.and_then(|target| strike(memory, mask, fleet, weights, target, keep))
             {
                 return FleetChoice { load, ..choice };
+            }
+            if weights.doctrine.blockader
+                && !blockaded
+                && !home_threatened
+                && fleet.order == Order::HoldPosition
+                && has_combat_ships(fleet)
+                && troops(fleet) == 0
+                && let Some(choice) =
+                    blockade_target(game_data, memory, fleet, weights, &enemy_world)
+                        .and_then(|idx| order(Order::GuardBlockadeWorld, idx))
+            {
+                blockaded = true;
+                return choice;
             }
             let gather = if fleet.order == Order::RendezvousSector && fleet.target == fleet.sector {
                 keep
@@ -993,6 +1047,67 @@ fn strike_target(
                 value
             }
         })
+    })
+}
+
+/// The enemy world `fleet` should blockade: no fleet of the seat strikes
+/// it, `fleet` is `attack_ratio` times its batteries and starbases, and it
+/// has the most value per unit of estimated defence.
+fn blockade_target(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    fleet: &Fleet,
+    weights: &Weights,
+    enemy_world: &dyn Fn(usize) -> bool,
+) -> Option<usize> {
+    let struck = |idx: usize| {
+        game_data.fleets.iter().any(|other| {
+            other.owner.0 == memory.empire
+                && matches!(
+                    other.order,
+                    Order::InvadeWorld | Order::BombardWorld | Order::BlitzWorld
+                )
+                && other.target == game_data.planets[idx].sector
+        })
+    };
+    best_world(game_data, memory, fleet, |idx, intel| {
+        let guns = 4.0
+            * intel
+                .known_ground_batteries
+                .map_or(UNKNOWN_BATTERIES, f32::from)
+            + 10.0 * intel.known_starbase_count.map_or(0.0, f32::from);
+        (enemy_world(idx) && !struck(idx) && strength(fleet) >= weights.attack_ratio * guns).then(
+            || {
+                let value = f32::from(
+                    intel
+                        .known_current_production
+                        .map(u16::from)
+                        .or(intel.known_potential_production)
+                        .unwrap_or(20),
+                ) + 1.0;
+                value / defense(intel).max(1.0)
+            },
+        )
+    })
+}
+
+/// `empire` has declared `other` an enemy.
+fn at_war_with(game_data: &CoreGameData, empire: u8, other: u8) -> bool {
+    game_data.players[usize::from(empire) - 1]
+        .diplomacy
+        .get(usize::from(other) - 1)
+        == Some(&nc_data::DiplomaticRelation::Enemy)
+}
+
+/// A declared enemy's force was reported near `sector` in recent years.
+fn threatened(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> bool {
+    let year = game_data.conquest.game_year;
+    memory.contacts.iter().any(|contact| {
+        contact.empire != 0
+            && contact.empire != memory.empire
+            && at_war_with(game_data, memory.empire, contact.empire)
+            && year.saturating_sub(contact.year) < THREAT_YEARS
+            && distance(contact.coords, sector) <= THREAT_RANGE
     })
 }
 
