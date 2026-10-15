@@ -711,9 +711,26 @@ with the hand-over result logged for each mission family.
     subtracting, since −∞ − −∞ gives NaN, and NaN poisons gradients even
     through an untaken `torch.where` branch. The learning rate is
     3 × 10⁻⁵.
-  - Stage A (colonize and scout handed over) restarted with it. One seat
-    against three final strategists won 0.184 at iteration 20 and 0.229 at
-    40.
+  - **Stage A** (colonize and scout handed over), 200 iterations. On 256
+    maps every 20 iterations, one seat against three final strategists
+    read 0.184, 0.229, 0.203, 0.227, 0.285, 0.203, 0.242, 0.225, 0.258
+    and 0.248. Against three executors it rose from 0.363 to 0.545 at
+    iteration 140. `kl_ref` grew past 1.2 once the penalty faded out at
+    iteration 100.
+  - **On 1,024 maps against three final strategists:**
+
+    | Snapshot | Sampled | Greedy |
+    | --- | ---: | ---: |
+    | Iteration 100 | 0.223 | |
+    | Iteration 140 | 0.254 | 0.187 |
+    | Iteration 180 | 0.255 | 0.230 |
+    | Iteration 200 | 0.240 | |
+
+  - **Parity, not a win.** PPO won back what imitation lost (0.16 up to
+    0.255), but the network's colonization and scouting only match the
+    executor's. They fall short of the 0.28 hand-over bar, so those
+    families stay with the executor for now. Checkpoints are kept in
+    `~/.local/state/nostrian-conquest/ai/fleet/`.
 
 ### t158
 
