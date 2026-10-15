@@ -761,6 +761,38 @@ the batteries were unknown.
 - Report how often a striking seat knows its target's batteries, before
   and after.
 
+**Result (2026-10-15):**
+
+- **What a human sees.** The attacker's bombardment report shows the
+  world's defences going in (batteries and armies) and the enemy's losses,
+  so a human player knows what is left. Assault reports, for invasions and
+  blitzes, carry the same. The planet database's intel sources (scouting,
+  View a World, colonization, civil disorder, assaults) never take battery
+  counts from bombardment, and a failed assault records only owner and
+  potential. The seat's memory had the same gap.
+- **The fix.** `SeatMemory::learn_year` now reads the seat's own
+  `bombard_events` and `assault_report_events`. It sets each target's
+  known batteries and armies to the initial values less the losses
+  inflicted (and invasion softening), dated to the year of the attack as
+  scouting intel is. Only reports where the seat was the attacker count,
+  and a world it captured is left to its owned view.
+- **Tests.**
+  - `nc-ai/tests/attack_intel.rs` checks, over four 60-year executor
+    games, that each attacker's memory holds exactly what its report
+    states.
+  - t151's leak test now also scrambles other empires' bombard and
+    assault reports, and still passes.
+- **Before and after,** six 60-year executor games, counting fleet-years
+  at a strike target:
+
+  | | Batteries known | Unknown | Share known |
+  | --- | ---: | ---: | ---: |
+  | Before | 553 | 743 | 43% |
+  | After | 1,254 | 178 | 88% |
+
+  The executors' weights were tuned without this intel; later re-tunes
+  include it.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):

@@ -49,7 +49,8 @@ fn play_years(map_seed: u64, mut check: impl FnMut(&SeatedGame, &mut Maintenance
     }
 }
 
-/// Change every contact report addressed to an empire other than `empire`.
+/// Change every contact and attack report addressed to an empire other than
+/// `empire`.
 fn scramble_reports_to_others(scrambled: &mut MaintenanceEvents, empire: u8) {
     for event in scrambled
         .scout_contact_events
@@ -92,6 +93,22 @@ fn scramble_reports_to_others(scrambled: &mut MaintenanceEvents, empire: u8) {
             } if *owner_empire != empire => enemy_initial.battleships += 50,
             _ => {}
         }
+    }
+    for event in scrambled
+        .bombard_events
+        .iter_mut()
+        .filter(|event| event.attacker_empire != empire)
+    {
+        event.defender_battery_losses = event.defender_battery_losses.wrapping_add(1);
+        event.defender_armies_initial = event.defender_armies_initial.wrapping_add(5);
+    }
+    for event in scrambled
+        .assault_report_events
+        .iter_mut()
+        .filter(|event| event.attacker_empire != empire)
+    {
+        event.defender_batteries_initial = event.defender_batteries_initial.wrapping_add(3);
+        event.defender_army_losses = event.defender_army_losses.wrapping_add(2);
     }
     scrambled
         .planet_intel_events

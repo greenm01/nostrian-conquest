@@ -3,8 +3,8 @@
 use std::collections::BTreeMap;
 
 use nc_data::{
-    CoreGameData, EncounterDispositionEvent, MaintenanceEvents, PlanetIntelSnapshot, ShipLosses,
-    latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
+    CoreGameData, EncounterDispositionEvent, IntelTier, MaintenanceEvents, PlanetIntelSnapshot,
+    ShipLosses, latest_planet_intel_grants_for_viewer, merge_player_intel_from_runtime,
 };
 
 /// How many years a fleet or starbase contact stays in memory.
@@ -73,10 +73,68 @@ impl SeatMemory {
             Some(&self.planet_intel),
             Some(&grants),
         );
+        self.learn_attack_reports(events, year);
         self.contacts
             .retain(|contact| year.saturating_sub(contact.year) < CONTACT_MEMORY_YEARS);
         self.contacts
             .extend(contacts_reported_to(events, self.empire, year));
+    }
+}
+
+impl SeatMemory {
+    /// What the empire's own attacks reported about their targets (t178):
+    /// the world's batteries and armies after the fight, as the attacker's
+    /// bombardment and assault reports state them. A human player reads the
+    /// defences going in and the losses inflicted, so knows what is left.
+    fn learn_attack_reports(&mut self, events: &MaintenanceEvents, year: u16) {
+        // The attacks happened in the year just played; scouting intel is
+        // dated the same way.
+        let seen = year.saturating_sub(1);
+        let empire = self.empire;
+        let mut learn = |planet_idx: usize, batteries: u8, armies: u8| {
+            let Some(intel) = self.planet_intel.get_mut(&(planet_idx + 1)) else {
+                return;
+            };
+            if intel.known_owner_empire_id == Some(empire) {
+                return;
+            }
+            intel.known_ground_batteries = Some(batteries);
+            intel.known_armies = Some(armies);
+            intel.last_intel_year = Some(seen);
+            intel.seen_year = Some(seen);
+            intel.intel_tier = IntelTier::Full;
+        };
+        for event in events
+            .bombard_events
+            .iter()
+            .filter(|event| event.attacker_empire == empire)
+        {
+            learn(
+                event.planet_idx,
+                event
+                    .defender_batteries_initial
+                    .saturating_sub(event.defender_battery_losses),
+                event
+                    .defender_armies_initial
+                    .saturating_sub(event.defender_army_losses),
+            );
+        }
+        for event in events
+            .assault_report_events
+            .iter()
+            .filter(|event| event.attacker_empire == empire)
+        {
+            learn(
+                event.planet_idx,
+                event
+                    .defender_batteries_initial
+                    .saturating_sub(event.defender_battery_losses),
+                event
+                    .defender_armies_initial
+                    .saturating_sub(event.defender_army_losses_softening)
+                    .saturating_sub(event.defender_army_losses),
+            );
+        }
     }
 }
 
