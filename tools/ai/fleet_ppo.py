@@ -5,8 +5,9 @@ of the handed-over families (``--families``); the executor orders the
 other fleets and builds. Each game seats one or two learners against the
 frozen final strategist, the executor and Aggressor. The objective covers
 the goal heads and the fleet heads of handed-over fleets. A KL penalty
-toward the imitation policy starts at ``--kl`` and fades to nothing over
-``--kl-iterations``.
+toward the imitation policy starts at ``--kl`` and fades over
+``--kl-iterations`` to ``--kl-floor``, so a floor keeps the policy from
+drifting far from imitation once the fade ends.
 
 Hand-over (step 5) runs one family set at a time:
 ``--families colonize,scout`` first, then ``colonize,scout,strike``. A set
@@ -240,6 +241,8 @@ def main():
     parser.add_argument("--entropy-coef", type=float, default=0.001)
     parser.add_argument("--kl", type=float, default=0.1)
     parser.add_argument("--kl-iterations", type=int, default=100)
+    parser.add_argument("--kl-floor", type=float, default=0.0,
+                        help="the penalty never fades below this")
     parser.add_argument("--gamma", type=float, default=0.995)
     parser.add_argument("--lam", type=float, default=0.95)
     parser.add_argument("--eval-every", type=int, default=20)
@@ -264,7 +267,7 @@ def main():
 
     for it in range(1, args.iterations + 1):
         started = time.perf_counter()
-        kl_coef = args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations)
+        kl_coef = max(args.kl_floor, args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations))
         names, roles = choose_lineups(rng, args.games, learner)
         env.reset(list(range(next_map, next_map + args.games)), seats=names)
         next_map += args.games

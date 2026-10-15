@@ -387,6 +387,40 @@ Measure the two changes separately: they are separate switches.
     1.000 against Aggressor, with 0.996 of production. It is kept on the
     mini as `~/.local/state/nostrian-conquest/ai/strategist-final.pt`.
 
+### t168
+
+Choose between bombarding, invading and blitzing by the target's defences.
+
+The owner (2026-10-15) wants the AI to know when to blitz and when to
+invade. The player manual's attack doctrine ("Match the attack to the
+prize"):
+
+- **Invade** takes a world intact, but only once its batteries are down;
+  if any survive the first round, no troops land.
+- **Blitz** lands at once under the surviving batteries' fire, which picks
+  off transports, but captures factories, goods and surviving batteries.
+  It is for lightly defended worlds, or when speed matters more than
+  losses.
+- **Bombard** breaks batteries, but destroys part of the prize.
+- **The ground battle:** equal armies is a poor bet, 1.5 times the
+  defenders is about even, and twice the defenders wins nine times in ten.
+
+Since t161 the executor only bombards, then invades. It loses a year on
+lightly defended worlds a blitz would take at once.
+
+The switch `blitz_light`: blitz when the target's known batteries are few
+enough for the escort to suppress, and the force carries a wider margin
+than an invasion needs, because transports are lost on the way down.
+Otherwise bombard, then invade, as now. The thresholds are tuning weights,
+or are measured at a few settings.
+
+The fleet-level agent (t157) may choose Blitz itself. Report how often its
+strike orders use Bombard, Invade and Blitz, and the captures that follow,
+from the recorded turns of its evaluation games.
+
+**Exit:** as in Scope, plus the counts of each attack mission and the
+captures that follow, with and without the switch.
+
 ## Connections
 
 - [Strategy doctrine for AI seats](../investigations/v6jegy7f-strategy-doctrine-for-ai-seats-from-the-manuals-vbam-and-owner-guidance.md):
