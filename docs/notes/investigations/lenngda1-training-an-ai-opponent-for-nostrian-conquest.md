@@ -60,6 +60,54 @@ are listed by title only.
 | [Entity RL for cyber defence, 2024](https://arxiv.org/pdf/2410.17647); [multi-agent pointer transformer, 2025](https://arxiv.org/abs/2511.17435) | Entity tokens, a transformer, and pointer heads for very large action spaces. | Our strategist's shape. |
 | [SAGA (Freeciv), 2026](https://arxiv.org/html/2606.29932v1); [CivBench, 2026](https://arxiv.org/pdf/2609.02459) | Mostly LLM agents using tools; [CivRealm](https://arxiv.org/pdf/2401.10568)'s RL baseline trained about 2 million steps. | Self-play-trained networks for 4X games remain little explored. |
 
+### Strategic and tactical layers in wargame AI (web search, 2026-10-15)
+
+The owner asked about neural agents for Risk-like games and wargames,
+strategic against tactical. Nothing was found for Empire of the Sun, Space
+Empires 4X or Twilight Struggle.
+
+| Work | Finding | For us |
+| --- | --- | --- |
+| [Black & Darken, NPS (2024)](https://arxiv.org/abs/2402.06075), [(2025)](https://arxiv.org/abs/2512.00249) | Hierarchical RL for combat simulation (commander, managers, units); the 2025 paper uses RL for strategy and scripted agents for tactics. Only the abstract was checked. | Our strategist and executor split. |
+| [TStarBots (2018)](https://arxiv.org/abs/1809.07193) | RL over macro actions with scripted execution beat a fully scripted bot every game. | The same result as t155. |
+| [Vox Deorum (2025)](https://arxiv.org/abs/2512.18564) | An LLM sets Civ V strategy; the game's AI plays tactics. Competitive over 2,327 games. | The closest 4X analogue. |
+| [Selmonaj et al. (2025)](https://arxiv.org/abs/2505.08995), [feudal RL (2021)](https://arxiv.org/abs/2105.11328) | Commanders issue orders; unit policies learn to follow. | A template for t157's fleet network. |
+| [Expert Iteration for Risk (2022)](https://www.lamsade.dauphine.fr/~cazenave/papers/RiskConferencePaper.pdf) | AlphaZero-style search with graph networks learned the draft; the main phases "remain a challenge". | Supports a layered design over flat search. |
+| [Palma et al. (2025)](https://arxiv.org/abs/2502.13918) | AlphaZero-style play on hex-and-counter wargames, generalising across maps. | Board-wargame evidence. |
+| [Gym-µRTS](https://github.com/Farama-Foundation/Gym-MicroRTS) | Masked PPO beat every tested competition bot in about 60 hours on one GPU. | Our scale. |
+| [CivRealm](https://github.com/bigai-ai/civrealm), [Terra Nova (2025)](https://arxiv.org/abs/2511.15378) | 4X benchmarks. Neither RL nor LLM agents made real progress in full Freeciv; Terra Nova targets hierarchical actions. | Benchmarks for comparison. |
+
+The field has converged on learned strategy over scripted or learned
+tactics. No strong learned player for a full 4X wargame has been
+published.
+
+**Black & Darken (2025), read in full** (arXiv 2512.00249, I/ITSEC 2025):
+
+- **Setup.** An RL manager controls three units by choosing an objective
+  area: one of 49 cells on a 7×7 grid over the map. Scripted subordinates
+  move there, then fight with a behaviour tree.
+- **Options.** The manager decides again only when all its units have
+  reached the area, the "options" framework.
+- **Input.** The map is abstracted to a fixed 17×7×7 tensor, so the same
+  network works on any map size.
+- **Training.** DQN with a residual CNN, 10 million steps, five seeds,
+  against the scripted agent. The reward combines score, force
+  preservation and a penalty for overlapping objectives.
+- **Results.** Mean scores over 100,000 games per seed: hybrid +490,
+  scripted −0.9, and flat per-unit RL −603. Flat per-unit RL failed on a
+  10×10 board. Learning curves had not plateaued.
+- **For us.** Their split ("RL for where and when, scripts for how") is
+  ours. Their per-unit failure is why t157 bootstraps fleet control by
+  imitation and hands it over family by family. Two ideas are worth
+  borrowing: event-driven strategic decisions, and map-size-invariant
+  observation.
+- **Code.** Darken's public repository
+  [cjdarken/atlatl-public](https://github.com/cjdarken/atlatl-public)
+  (MIT, Python, updated May 2026) holds the Atlatl wargame, its browser
+  front end, and agents: `hierarchy.py`, AlphaZero, MCTS, Gym wrappers,
+  scripted tactics and a few trained models. No repository by Black was
+  found.
+
 ### Engine throughput (measured 2026-10-10, t025)
 
 Machine: AMD Ryzen 9 7950X3D, 16 cores and 32 threads, 61 GiB RAM, Linux
