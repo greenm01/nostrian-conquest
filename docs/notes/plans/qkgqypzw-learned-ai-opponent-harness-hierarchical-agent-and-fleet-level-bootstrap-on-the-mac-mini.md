@@ -731,6 +731,23 @@ with the hand-over result logged for each mission family.
     executor's. They fall short of the 0.28 hand-over bar, so those
     families stay with the executor for now. Checkpoints are kept in
     `~/.local/state/nostrian-conquest/ai/fleet/`.
+  - **Stage B** (strike handed over), from the imitation checkpoint, KL
+    fading to a 0.02 floor, 200 iterations. On 256 maps every 20
+    iterations, one seat against three final strategists read 0.262,
+    0.266, 0.312, 0.344, 0.430, 0.449, 0.453, 0.484, 0.453 and 0.502.
+    Against three executors it peaked at 0.707.
+  - **The world changed during the run.** The executor gained t178's
+    intel, scaled garrisons and re-tuned weights. Every seat in a head to
+    head uses the current executor: the learner's builds and non-strike
+    fleets, and the strategist opponents throughout. On 1,024 maps against
+    three final strategists, with the current executor, the stage B
+    snapshots won 0.358 (iteration 160), 0.326 (180) and 0.383 (200).
+  - **The strike family passes the hand-over.** The network's strike
+    orders beat the executor's, well above 0.28. Colonize and scout stay
+    with the executor.
+  - **Still to do.** t157's final runs follow t170–t175, on the final
+    executor. Checkpoints are kept in
+    `~/.local/state/nostrian-conquest/ai/fleet/`.
 
 ### t158
 
