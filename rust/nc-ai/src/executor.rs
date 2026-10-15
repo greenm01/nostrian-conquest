@@ -108,6 +108,11 @@ pub struct Doctrine {
     /// home force could still take its strike target (or it has none).
     /// Off, the executor always sets 0.
     pub allocate: bool,
+    /// Count toward the transport target only transports at home or with
+    /// troops aboard, so the ones left empty far away are replaced (t179,
+    /// accepted). Off,
+    /// every transport the empire owns counts.
+    pub supply: bool,
 }
 
 impl Doctrine {
@@ -119,6 +124,7 @@ impl Doctrine {
         scaled_garrisons: true,
         blockader: true,
         allocate: false,
+        supply: true,
     };
 }
 
@@ -188,6 +194,7 @@ impl Weights {
             scaled_garrisons: false,
             blockader: false,
             allocate: false,
+            supply: false,
         },
     };
 
@@ -361,7 +368,12 @@ pub fn execute_goals(
     goals: &Goals,
 ) -> SeatAction {
     let home = home_world(game_data, memory.empire);
-    let stock = Stock::count(game_data, memory.empire);
+    let home_sector = weights
+        .doctrine
+        .supply
+        .then(|| home.map(|record| game_data.planets[record - 1].sector))
+        .flatten();
+    let stock = Stock::count(game_data, memory.empire, home_sector);
     let build_weights = posture_weights(weights, goals.posture);
     let planets = masks
         .planets
@@ -422,7 +434,9 @@ struct Stock {
 }
 
 impl Stock {
-    fn count(game_data: &CoreGameData, empire: u8) -> Self {
+    /// With `home`, fleet transports count only at home or with troops
+    /// aboard (`Doctrine::supply`).
+    fn count(game_data: &CoreGameData, empire: u8, home: Option<nc_data::Coords>) -> Self {
         let mut stock = Stock {
             etacs: 0,
             scouts: 0,
@@ -435,8 +449,10 @@ impl Stock {
         {
             stock.etacs += u32::from(fleet.ships.etacs);
             stock.scouts += u32::from(fleet.ships.scouts);
-            stock.transports +=
-                u32::from(fleet.ships.empty_transports) + u32::from(fleet.ships.loaded_transports);
+            if home.is_none_or(|home| fleet.sector == home || fleet.ships.loaded_transports > 0) {
+                stock.transports += u32::from(fleet.ships.empty_transports)
+                    + u32::from(fleet.ships.loaded_transports);
+            }
         }
         for planet in game_data
             .planets

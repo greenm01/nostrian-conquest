@@ -987,6 +987,58 @@ there is no strike force to split.
 The strategist checkpoints from before the new head no longer load
 strictly. `imitate.py --init` loads them with the new heads fresh.
 
+### t179
+
+Keep the transports coming (late game).
+
+A logged game (`nc-ai-onnx/examples/game_log.rs`) showed the fleet agent
+peak at 9 worlds by year 32, then stop invading. It bombarded one world
+almost every year until year 60 and lost its conquests one by one.
+`late_game.rs` measured the pattern over 512 games, one seat against three
+executors:
+
+| | Network | Executor alone |
+| --- | ---: | ---: |
+| Invasions before year 30 | 4.72 | 3.66 |
+| Invasions after year 30 | 7.84 | 5.24 |
+| Fleet-years on Bombard with no troops aboard | 81.0 | 56.7 |
+| Longest bombardment run on one world (years) | 7.6 | 4.3 |
+| Transports at year 30, total | 16.4 | 16.3 |
+| Transports at year 30, at home | 4.4 | 4.8 |
+| Worlds at peak | 9.4 | 7.1 |
+| Worlds at end | 8.5 | 5.0 |
+
+**The cause.** The executor tops transports up to `transports` (16),
+counting every transport the empire owns. Most of them sit empty with
+fleets far from home, so no more are built. Strike forces then sail
+without troops and can only bombard.
+
+**The switch.** `supply` counts toward the target only transports at home
+or with troops aboard.
+
+**Result (2026-10-15): accepted.** Paired against the tuned executor
+(4,096 games a block), it scored +0.072 ± 0.008 on block 100000 and
++0.083 ± 0.008 on block 200000. It is now in `Doctrine::CURRENT` and in
+every personality.
+
+The fleet agent was not retrained. With `supply` in its executor it won,
+greedy, against three executors without it:
+
+- 0.741 on block 100000 (was 0.674);
+- 0.742 on block 200000 (was 0.672).
+
+Its late game over 512 games:
+
+| | Without `supply` | With `supply` |
+| --- | ---: | ---: |
+| Invasions after year 30 | 7.84 | 9.65 |
+| Fleet-years bombarding with no troops aboard | 81.0 | 54.0 |
+| Longest bombardment run on one world (years) | 7.6 | 4.6 |
+| Transports at year 30 | 16.4 | 32.4 |
+| Transports at year 45 | 16.0 | 38.2 |
+| Worlds at peak | 9.4 | 10.4 |
+| Worlds at end | 8.5 | 9.7 |
+
 ### t176
 
 Early reconnaissance: find rival homeworlds and survey the map.

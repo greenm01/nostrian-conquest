@@ -41,13 +41,14 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "war-year",
 ];
 
-const DOCTRINE_NAMES: [&str; 6] = [
+const DOCTRINE_NAMES: [&str; 7] = [
     "land-grab",
     "strike-weakest",
     "suppress-first",
     "scaled-garrisons",
     "blockader",
     "allocate",
+    "supply",
 ];
 
 /// The built-in personalities, the default first.
@@ -135,6 +136,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
         scaled_garrisons,
         blockader,
         allocate,
+        supply,
     ] = settings(node("doctrine")?, &DOCTRINE_NAMES, |args| match args {
         [value] => value.as_bool(),
         _ => None,
@@ -197,6 +199,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 scaled_garrisons,
                 blockader,
                 allocate,
+                supply,
             },
             ..Weights::from_array(weights)
         },

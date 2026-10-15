@@ -25,6 +25,7 @@ doctrine {
     scaled-garrisons #true
     blockader #true
     allocate #false
+    supply #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {
