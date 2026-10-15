@@ -553,6 +553,37 @@ Guard threatened worlds, and keep a home guard.
 **Exit:** as in Scope. Also report how often a guarded world is attacked,
 and how often it falls, with and without the switch.
 
+**Result (2026-10-15): rejected.** A `guard` switch posted new warships on
+Guard a Starbase or Guard/Blockade: at a colony with a foreign contact
+within 4 sectors in the last 2 years, and at home once the strike force
+had sailed. Each version was measured by the paired test against the tuned
+executor (4,096 games a block unless noted).
+
+| Version | Block 100000 | Block 200000 |
+| --- | --- | --- |
+| First cut, any warship fleet takes a post | −0.150 ± 0.008 | |
+| Home guard only (2,048 games) | −0.003 ± 0.012 | |
+| Colony guards only (2,048 games) | −0.167 ± 0.010 | |
+| Colony guards, no guard build (2,048 games) | −0.144 ± 0.011 | |
+| Guards of one ship, built alone | −0.013 ± 0.008 | −0.020 ± 0.008 |
+| Same, threats only from declared enemies | −0.006 ± 0.008 | −0.022 ± 0.008 |
+
+The colony guard was the cost. A colony's hulls for a year commission as
+one fleet, and posting it as a guard kept about 23% of the seat's warship
+strength at home worlds. Losses fell only from 1,037 to 884 worlds over 128
+games, while the strike force shrank about 30%. Capping a guard at one
+battleship's worth, built alone, made the cost small but not a gain.
+
+Guards do protect their own world. Over 128 games, a one-ship guard's
+world fell in 28 of 794 attacks (3.5%), and an unguarded world fell in 991
+of 3,040 (33%). Yet total losses barely moved (1,019 against 1,037),
+because attackers turned to unguarded worlds. The executor's attackers
+judge a world by its ground defences and do not see guards. A guard pays
+only when it covers the worlds an enemy can actually reach. That
+judgement is t175's, by threat, opportunity and state, so the rule is not
+retried here. A home guard, once only new fleets of one ship qualified,
+rarely formed, because home commissions are large.
+
 ### t170
 
 Offer Guard a Starbase.
