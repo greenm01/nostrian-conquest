@@ -1040,6 +1040,21 @@ started from the target itself.
 - the weakness is then fixed, in the executor or by training the agent
   against the exploiter (t184).
 
+**Result (2026-10-16).** 100 iterations of 128 60-year games (20 on
+bean-void, then 80 on crunch's RX 7900 under ROCm, from the bean-void
+iteration-20 checkpoint), `--kl 0 --entropy-coef 0.003`. The exploiter's
+win share against three copies of `fleet-final`, 128 games per check:
+
+| Iteration | 10 | 20 | 30 | 40 | 50 | 60 | 70 | 80 | 90 | 100 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| Win share | 0.211 | 0.242 | 0.234 | 0.219 | 0.316 | 0.289 | 0.266 | 0.250 | 0.227 | 0.270 |
+
+An even seat is 0.25, and a 128-game check is uncertain by about ±0.04.
+The iteration-50 peak fell back and the rest sit at an even share, so the
+exploiter found no reliable weakness and there is none to name. This is
+a small exploiter: the KataGo adversaries trained far longer, so t184's
+league remains the guard against holes a larger search would find.
+
 ### t184
 
 Choose training opponents from the league by difficulty.
