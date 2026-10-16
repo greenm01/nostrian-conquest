@@ -182,8 +182,11 @@ seats in hosted maintenance. It was built and tested on bean-void (3,354
 tests) and signed on the Mac mini. A manual pre-upgrade backup of Beta 1 was
 taken, and its database dumps were unchanged across the switch. Beta 1 stayed
 recruiting at year 3000. `4456d589` remains for rollback: the new AI-seat
-tables are additive. The Nostr/BBS gate (`/usr/local/bin/nc-sysop`) was not
-updated.
+tables are additive. Older releases, the archived Browser Test game and the
+April Nostr-gate game were deleted at the owner's request. The Nostr gate
+(`nc-nostr.service`, `nc-maint-all.timer`) is disabled, because `nc-sysop`
+lost its `nostr` and `maint-all` commands in `cf664453`. Community Beta 1 is
+the only hosted game.
 
 ## Release context
 
