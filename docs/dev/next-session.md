@@ -176,7 +176,11 @@ On 2026-10-14 the bot moved to `#nostrian-play:matrix.org`, the *play* room
 inside the `#nostrian:matrix.org` space, and its display name became
 `ncbot`.
 
-Signed release `1c1de2a7` went live on 2026-10-16. It adds the t198/t200
+Signed release `08f44280` replaced it the same day, adding t202's
+planetary combat (two-step batteries, full-strength battery fire, classic
+capture damage); Beta 1 stayed recruiting at year 3000, a manual backup was
+taken first, and `1c1de2a7` is kept for rollback (`4456d589` removed). Before
+that, signed release `1c1de2a7` went live on 2026-10-16. It adds the t198/t200
 combat rules (no mixed-fleet bonus, punch-ladder hull stats) and t165's AI
 seats in hosted maintenance. It was built and tested on bean-void (3,354
 tests) and signed on the Mac mini. A manual pre-upgrade backup of Beta 1 was

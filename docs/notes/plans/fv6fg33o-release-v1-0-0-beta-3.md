@@ -171,6 +171,22 @@ The owner uploaded the four archives and the signed manifest to
 `release-artifacts` and refreshed its note. A fresh download of all six
 assets passed GPG and checksum verification.
 
+## Planetary combat refresh, 2026-10-16
+
+The four archives were rebuilt again from `08f44280` (t202: two-step
+batteries, full-strength battery fire, classic capture damage) with the
+rebuilt player manual and quick start; each passed a fresh game and two
+maintenance passes, and the Windows archives passed Defender scans. The
+manifest is signed with the release key on the Mac mini. The website's three
+manual PDFs match the committed ones.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `2acd78f99b8792db765c7cb297e43847ef7defbcb9c564891ae5e7a81b6096bb` |
+| `windows-x64.zip` | `6c156baafe2e984a2df3a51d09d0c7fadebedf2e18140b1343f27112ab0e8520` |
+| `windows-x86.zip` | `7882d4347989e3f7141ce6bef83c214a979638d58c2766b2603ab89d8ff27f4f` |
+| `windows7-x86.zip` | `52f1c51db6c355136674433e388d227eca3c285fa727629455290a4369f03854` |
+
 ## Connections
 
 Ships the work recorded in the
