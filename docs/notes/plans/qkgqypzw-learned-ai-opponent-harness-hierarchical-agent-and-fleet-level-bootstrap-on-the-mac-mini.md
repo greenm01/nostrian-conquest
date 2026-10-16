@@ -843,6 +843,11 @@ decides.
    - a sysop can assign AI seats and choose from at least two difficulty
      levels.
 
+The owner's playtests (part 3) are of the agent to be shipped. So t182
+(promote the sweep-trained agent if it passes) and t183 (a main
+exploiter's check for exploitable weaknesses, part of soundness) come
+first; t165 depends on both.
+
 Parts 1 and 2 come before any real-game work. Parts 3 and 4 are this
 task's work:
 
@@ -1077,6 +1082,15 @@ already estimates it.
 league games, and lists the years where it fell most, with the game
 state. Those positions feed t185 now and t166's loss mining later.
 
+**Against the critical path (2026-10-15).**
+
+- **None of t182–t186 gates the critical path.** That path is the
+  community hosting launch, t143–t121, and these stay `+parallel`.
+- **Before t165:** t182 and t183, so that the owner playtests the agent to
+  be shipped.
+- **After t165:** t184–t186. t186 feeds t166, which also waits for t121's
+  hosted pilot.
+
 Not yet a task: deciding strategy only on events (a target taken, a fleet
 lost, a new contact) instead of every year, from Black & Darken's options
 framework. It is speculative, so it waits for t182–t186.
@@ -1271,6 +1285,11 @@ replays do.
   league rating against bots.
 - **Consent.** Before any player's turns are used for training, the
   community rules must say so. This is the owner's decision.
+- **Prerequisites.**
+  - t165 must pass.
+  - The hosted community must be running: t121's private pilot, on the
+    critical path.
+  - t186's win-probability trace, which finds the losses to mine.
 
 **Exit:** one loop completed. Human games are collected with consent and
 the AI's losses mined. A retrained agent passes the t165 readiness gate
