@@ -1396,6 +1396,19 @@ keep the cruiser fleet.
 set, staging in deep space and building every hull, and the changed
 executor beats or matches its predecessor.
 
+**Owner decision (2026-10-16): variety is required.** The AI builds every
+hull, as roles, and the verdict on a variant waits for a retune. The
+mixed-hull and Join trials above ran on weights tuned for the old
+behaviour, so they stay provisional until `tune_executor` has run with the
+switch on and the tuned weights are compared with the tuned baseline. The
+order of work: (1) roles for the hulls, with battleships staged as a
+group, destroyers as raiders and pickets, and cruisers as the line;
+(2) Muse's combined-home-strength gate, which gives every home fleet one
+target and speed, in place of Join; (3) round positive scout and ETAC
+targets up, and keep picket stations after the land grab; (4) retune each
+with `tune_executor` and judge it against the tuned baseline at 60 and 100
+years, through the network seat as well as executor against executor.
+
 **Mixed hulls, first trial (2026-10-16): rejected as it stands.**
 `Doctrine::mixed_hulls` builds each hull toward its weight's share of the
 fleet by cost. Paired against the tuned executor, 512 60-year games each
