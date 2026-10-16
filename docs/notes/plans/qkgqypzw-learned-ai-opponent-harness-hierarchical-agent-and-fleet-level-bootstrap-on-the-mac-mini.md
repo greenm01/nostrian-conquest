@@ -1496,6 +1496,42 @@ promoted agent: win share 0.875 against 0.920 and maps swept 37% against
 escorts and spare scouts are enough to staff the stations, so the switch
 was removed rather than left off.
 
+**Why hulls stay cruisers: battleship speed (2026-10-16).** Two forced-hull
+styles were added (`armada`, battleships first; `raider`, destroyers first,
+04198f27), and tuned like the others against three default seats on 1,024
+fresh maps (an even seat is 0.25). At today's rules both are weak:
+
+| Style | 60 years | 100 years |
+| --- | ---: | ---: |
+| default (cruiser-led) | 0.271 (512 maps, style_stats) | |
+| armada, tuned | 0.187 | 0.146 |
+| raider, tuned | 0.172 | 0.160 |
+
+Scratch copies of the engine (not committed) then changed one rule at a
+time and retuned the armada for each:
+
+| Change | 60 years | 100 years |
+| --- | ---: | ---: |
+| battleship cost 35 | 0.198 | 0.166 |
+| cost 30 | 0.232 | 0.212 |
+| cost 25 | 0.237 | 0.209 |
+| cost 20 | 0.209 | 0.210 |
+| **battleship speed 5, cost 45** | **0.307** | **0.290** |
+
+Price alone never gets the armada past an even seat, even at under half
+cost. Speed does, with the price unchanged: the same style goes from 0.187
+and 0.146 to 0.307 and 0.290, ahead of the cruiser-led default. In a pure
+battle battleships are already the strongest hull per point (the crunch
+Claude's 20,000-battle test: 10 battleships beat 30 cruisers about 60% of
+the time), so the campaign cost of speed 4 is what keeps them out of the
+AI's fleets: a fleet moves at its slowest ship, and a battleship-led
+force with transports is held to 4 while a cruiser force moves at 5.
+Either the AI keeps cruisers because the rules make them better (speed),
+or the owner moves battleship speed to 5 (as Empire of the Sun does for
+all naval units) and the AI starts building battleships. This is a rules
+decision for the owner (combat-balance lane), not an AI change; the trial
+is in the scratch results only.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
