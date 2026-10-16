@@ -1039,6 +1039,65 @@ Its late game over 512 games:
 | Worlds at peak | 9.4 | 10.4 |
 | Worlds at end | 8.5 | 9.7 |
 
+### t181
+
+Defend by the strategic situation.
+
+A 100-year game log after t179 showed the fleet agent trading worlds back
+and forth: it took 31 and lost 20, and never finished its rivals.
+`behaviour_report` found that a seat lost about 17 worlds a game. Only
+about 1 of them was a fresh conquest still converting; the rest were
+established colonies, lost with 2.4 armies and 0.6 batteries on average.
+
+**What was tried first.**
+- **More armies at every colony** (a `hold` switch keyed on the ownership
+  status, which is capped at 2, so it applied everywhere): −0.001 and
+  −0.002 ± 0.008 over 60 years; +0.002 and −0.004 ± 0.009 over 100.
+- **Batteries before armies:** −0.006 and +0.010 ± 0.009 over 100 years.
+
+Both were rejected, and the code removed.
+
+**Why both failed.** The owner pointed out that armies and batteries do
+different jobs and need a balance, and that defence should follow the
+strategic situation across the empire. Every colony aimed at the same
+targets, armies first, so a small colony's budget rarely reached its
+batteries, and an exposed colony was defended no better than an interior
+one.
+
+**The `defend` switch.**
+- **Exposure.** A colony's exposure is 1 where a declared enemy's force
+  was seen within 4 sectors in the last 2 years. Otherwise it falls from
+  1 to 0 with distance to the nearest known rival world, over 8 sectors.
+- **Targets.** The army target is the scaled garrison times one plus
+  exposure. The battery target is the weight times exposure.
+- **Balance.** While a colony is short of both, armies take at most half
+  its budget.
+- **Interior worlds** spend the rest on warships.
+
+**Result (2026-10-15): accepted.** Paired against the tuned executor
+(4,096 games a block):
+
+| Game length | Block 100000 | Block 200000 |
+| --- | --- | --- |
+| 60 years | +0.041 ± 0.009 | +0.055 ± 0.009 |
+| 100 years | +0.047 ± 0.009 | +0.052 ± 0.009 |
+
+It is now in `Doctrine::CURRENT` and in every personality.
+
+**The fleet agent**, not retrained, with `defend` in its executor, over
+512 games of 100 years:
+
+| | Without `defend` | With `defend` |
+| --- | ---: | ---: |
+| Win share | 0.857 | 0.885 |
+| Maps swept | 19.3% | 22.7% |
+| Worlds at end | 13.3 | 14.0 |
+| Defence share of builds | 31% | 28% |
+| Worlds lost | 17.3 | 17.0 |
+
+It still loses about 17 worlds a game, almost all without batteries:
+worlds counted interior that raiders reached anyway.
+
 ### t176
 
 Early reconnaissance: find rival homeworlds and survey the map.

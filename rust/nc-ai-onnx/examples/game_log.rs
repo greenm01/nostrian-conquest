@@ -121,6 +121,14 @@ fn main() {
             }
             game.submit_turn(&turn).expect("the network's turn submits");
         }
+        let owners: Vec<u8> = game
+            .play
+            .built
+            .game_data
+            .planets
+            .iter()
+            .map(|planet| planet.owner.0)
+            .collect();
         let events = game.run_maintenance().expect("maintenance runs");
         let game_data = &game.play.built.game_data;
         let year = game_data.conquest.game_year - start;
@@ -139,23 +147,13 @@ fn main() {
         {
             notes.push(format!("assaults {}", name(e.planet_idx)));
         }
-        for e in events
-            .ownership_change_events
-            .iter()
-            .filter(|e| e.reporting_empire == seat)
-        {
-            if e.new_owner_empire == seat {
-                notes.push(format!(
-                    "takes {} from {}",
-                    name(e.planet_idx),
-                    owner(e.previous_owner_empire)
-                ));
-            } else if e.previous_owner_empire == seat {
-                notes.push(format!(
-                    "loses {} to {}",
-                    name(e.planet_idx),
-                    owner(e.new_owner_empire)
-                ));
+        // Captures and losses, from each world's owner before and after.
+        for (idx, (planet, &before)) in game_data.planets.iter().zip(&owners).enumerate() {
+            let after = planet.owner.0;
+            if after == seat && before != seat {
+                notes.push(format!("takes {} from {}", name(idx), owner(before)));
+            } else if before == seat && after != seat {
+                notes.push(format!("loses {} to {}", name(idx), owner(after)));
             }
         }
         let battles: Vec<_> = events

@@ -26,6 +26,7 @@ doctrine {
     blockader #true
     allocate #false
     supply #true
+    defend #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

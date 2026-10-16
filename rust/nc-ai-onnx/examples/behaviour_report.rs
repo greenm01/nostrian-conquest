@@ -39,6 +39,10 @@ struct Game {
     transports_built: u64,
     peak_worlds: u32,
     final_worlds: u32,
+    worlds_lost: u32,
+    lost_while_converting: u32,
+    armies_at_loss: u32,
+    batteries_at_loss: u32,
 }
 
 /// A report row: its label and the value for one model's games.
@@ -127,6 +131,22 @@ fn main() {
         }),
         ("worlds at end", |g| {
             format!("{:.1}", mean(g, |g| f64::from(g.final_worlds)))
+        }),
+        ("worlds lost", |g| {
+            format!("{:.1}", mean(g, |g| f64::from(g.worlds_lost)))
+        }),
+        ("  of them still converting", |g| {
+            format!("{:.1}", mean(g, |g| f64::from(g.lost_while_converting)))
+        }),
+        ("  mean armies when lost", |g| {
+            let lost: u32 = g.iter().map(|g| g.worlds_lost).sum();
+            let armies: u32 = g.iter().map(|g| g.armies_at_loss).sum();
+            format!("{:.1}", f64::from(armies) / f64::from(lost.max(1)))
+        }),
+        ("  mean batteries when lost", |g| {
+            let lost: u32 = g.iter().map(|g| g.worlds_lost).sum();
+            let batteries: u32 = g.iter().map(|g| g.batteries_at_loss).sum();
+            format!("{:.1}", f64::from(batteries) / f64::from(lost.max(1)))
         }),
     ];
 
@@ -283,9 +303,33 @@ fn play(network: &NetworkSeat, map: u64, years: u16) -> Game {
                 out.parked_fleet_years += 1;
             }
         }
+        // Each of the seat's worlds going into the year: its ownership
+        // status (under 2 while a captured world converts, earning little
+        // or nothing), and its garrison.
+        let before: Vec<Option<(u8, u16, u16)>> = game_data
+            .planets
+            .iter()
+            .map(|planet| {
+                (planet.owner.0 == seat).then_some((
+                    planet.years_under_owner,
+                    planet.armies,
+                    planet.ground_batteries,
+                ))
+            })
+            .collect();
         let events = game.run_maintenance().expect("maintenance runs");
         let game_data = &game.play.built.game_data;
         let year = game_data.conquest.game_year - start;
+        for (planet, held) in game_data.planets.iter().zip(&before) {
+            if let Some((years, armies, batteries)) = held
+                && planet.owner.0 != seat
+            {
+                out.worlds_lost += 1;
+                out.lost_while_converting += u32::from(*years < 2);
+                out.armies_at_loss += u32::from(*armies);
+                out.batteries_at_loss += u32::from(*batteries);
+            }
+        }
         let invasions = events
             .assault_report_events
             .iter()

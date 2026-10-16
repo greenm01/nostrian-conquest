@@ -113,6 +113,15 @@ pub struct Doctrine {
     /// accepted). Off,
     /// every transport the empire owns counts.
     pub supply: bool,
+    /// Defend by exposure (t181, accepted): a colony's defence follows its
+    /// strategic situation. Exposure is 1 where a declared enemy's force was seen
+    /// near it lately, and otherwise falls from 1 to 0 with distance to the
+    /// nearest known rival world over [`EXPOSURE_RANGE`]. Its army target is
+    /// its scaled garrison times one plus exposure, its battery target the
+    /// weight times exposure, and while it is short of both, armies take at
+    /// most half its budget. Interior worlds build warships instead. Off,
+    /// every colony aims for the same batteries, armies first.
+    pub defend: bool,
 }
 
 impl Doctrine {
@@ -125,6 +134,7 @@ impl Doctrine {
         blockader: true,
         allocate: false,
         supply: true,
+        defend: true,
     };
 }
 
@@ -195,6 +205,7 @@ impl Weights {
             blockader: false,
             allocate: false,
             supply: false,
+            defend: false,
         },
     };
 
@@ -267,6 +278,9 @@ const UNKNOWN_BATTERIES: f32 = 3.0;
 /// in the last [`THREAT_YEARS`] years, threatens it.
 const THREAT_RANGE: f32 = 4.0;
 const THREAT_YEARS: u16 = 2;
+/// Sectors over which a colony's exposure falls from 1 to 0 with distance
+/// to the nearest known rival world (`Doctrine::defend`).
+const EXPOSURE_RANGE: f32 = 8.0;
 /// The most a colony's guard may hold: one battleship's worth.
 const GUARD_STRENGTH: f32 = 9.0;
 
@@ -517,6 +531,21 @@ fn choose_builds(
     }
     let planet = &game_data.planets[record - 1];
     let short = |have: u32, want: f32| (want.round() as u32).saturating_sub(have);
+    if weights.doctrine.defend && !is_home {
+        let exposure = exposure(game_data, memory, planet.sector.to_array());
+        let production = f32::from(nc_data::present_production_points(planet));
+        let armies = (weights.colony_armies * production / 25.0).max(1.0) * (1.0 + exposure);
+        return defended_builds(
+            game_data,
+            record,
+            allowed,
+            memory,
+            weights,
+            allocation,
+            short(planet.armies.into(), armies),
+            short(planet.ground_batteries.into(), weights.batteries * exposure),
+        );
+    }
     let garrison = [
         Need::Units(
             ProductionItemKind::Army,
@@ -618,6 +647,84 @@ fn choose_builds(
         order(kind, u32::MAX, &mut points);
     }
     (builds, amounts)
+}
+
+/// A colony's builds under `Doctrine::defend`: its guard when threatened,
+/// then armies and batteries in balance, then the preferred hull.
+#[allow(clippy::too_many_arguments)]
+fn defended_builds(
+    game_data: &CoreGameData,
+    record: usize,
+    allowed: &[bool],
+    memory: &SeatMemory,
+    weights: &Weights,
+    allocation: usize,
+    armies: u32,
+    batteries: u32,
+) -> ([usize; BUILD_SLOTS], [usize; BUILD_SLOTS]) {
+    let planet = &game_data.planets[record - 1];
+    let mut points = game_data.planet_build_points_left(record).unwrap_or(0);
+    let mut builds = [0; BUILD_SLOTS];
+    let mut amounts = [0; BUILD_SLOTS];
+    let mut slot = 0;
+    let mut order = |kind: ProductionItemKind, units: u32, points: &mut u32| {
+        let choice = build_choice(kind);
+        let cost = kind.build_cost().unwrap_or(1).max(1);
+        if slot == BUILD_SLOTS || units == 0 || !allowed[choice] || *points < cost {
+            return 0;
+        }
+        let amount = amount_for(*points, cost, units);
+        let bought = build_units(*points, cost, amount);
+        *points -= bought * cost;
+        builds[slot] = choice;
+        amounts[slot] = amount;
+        slot += 1;
+        bought
+    };
+    if allocation >= 1
+        && threatened(game_data, memory, planet.sector.to_array())
+        && !guarded(game_data, memory.empire, planet.sector.to_array())
+        && let Some(kind) = preferred_hull(allowed, weights, points)
+        && order(kind, 1, &mut points) > 0
+    {
+        // A guard commissions alone, so the rest waits a year.
+        return (builds, amounts);
+    }
+    if armies > 0 && batteries > 0 {
+        let mut half = points / 2;
+        let budget = half;
+        order(ProductionItemKind::Army, armies, &mut half);
+        points -= budget - half;
+    } else {
+        order(ProductionItemKind::Army, armies, &mut points);
+    }
+    order(ProductionItemKind::GroundBattery, batteries, &mut points);
+    if let Some(kind) = preferred_hull(allowed, weights, points) {
+        order(kind, u32::MAX, &mut points);
+    }
+    (builds, amounts)
+}
+
+/// How exposed a world is, 0 to 1 (`Doctrine::defend`).
+fn exposure(game_data: &CoreGameData, memory: &SeatMemory, sector: [u8; 2]) -> f32 {
+    if threatened(game_data, memory, sector) {
+        return 1.0;
+    }
+    memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| {
+            intel
+                .known_owner_empire_id
+                .is_some_and(|owner| owner != 0 && owner != memory.empire)
+        })
+        .map(|(&record, _)| distance(game_data.planets[record - 1].sector.to_array(), sector))
+        .fold(None, |nearest: Option<f32>, d| {
+            Some(nearest.map_or(d, |n| n.min(d)))
+        })
+        .map_or(0.0, |nearest| {
+            (1.0 - nearest / EXPOSURE_RANGE).clamp(0.0, 1.0)
+        })
 }
 
 /// The hull with the largest weight that `points` can buy.
