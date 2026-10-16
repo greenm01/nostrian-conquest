@@ -130,9 +130,35 @@ pub struct Doctrine {
     /// replenish it as it moves (t189), instead of gathering at home for a
     /// second force. Off, they Rendezvous at home.
     pub reinforce: bool,
+    /// Judge a strike by the warship strength of every fleet gathered at
+    /// home together, not by each fleet alone, so one force sails with
+    /// the lot (t189). Off, each fleet at home strikes when it alone is
+    /// `attack_ratio` times the target's defence.
+    pub combined_gate: bool,
 }
 
 impl Doctrine {
+    /// Turn on the behaviour called `name` (`mixed_hulls`, `combined_gate`,
+    /// and so on), for trials.
+    pub fn enable(&mut self, name: &str) -> Result<(), String> {
+        let switch = match name {
+            "land_grab" => &mut self.land_grab,
+            "strike_weakest" => &mut self.strike_weakest,
+            "suppress_first" => &mut self.suppress_first,
+            "scaled_garrisons" => &mut self.scaled_garrisons,
+            "blockader" => &mut self.blockader,
+            "allocate" => &mut self.allocate,
+            "supply" => &mut self.supply,
+            "defend" => &mut self.defend,
+            "mixed_hulls" => &mut self.mixed_hulls,
+            "reinforce" => &mut self.reinforce,
+            "combined_gate" => &mut self.combined_gate,
+            other => return Err(format!("unknown doctrine switch {other}")),
+        };
+        *switch = true;
+        Ok(())
+    }
+
     /// The accepted behaviours.
     pub const CURRENT: Doctrine = Doctrine {
         land_grab: true,
@@ -145,6 +171,7 @@ impl Doctrine {
         defend: true,
         mixed_hulls: false,
         reinforce: false,
+        combined_gate: false,
     };
 }
 
@@ -218,6 +245,7 @@ impl Weights {
             defend: false,
             mixed_hulls: false,
             reinforce: false,
+            combined_gate: false,
         },
     };
 
@@ -1003,6 +1031,18 @@ fn plan_fleets(
     let mut blockaded = game_data.fleets.iter().any(blockading);
     let home_threatened = home_sector.is_some_and(|sector| threatened(game_data, memory, sector));
     let allocation = goals.map_or(0, |goals| goals.allocation);
+    // The warship strength gathered at home, waiting to sail.
+    let home_force: f32 = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| {
+            fleet.owner.0 == empire
+                && Some(fleet.sector.to_array()) == home_sector
+                && has_combat_ships(fleet)
+                && matches!(fleet.order, Order::HoldPosition | Order::RendezvousSector)
+        })
+        .map(strength)
+        .sum();
     // Sectors given a guard this year, and whether a strike force is out.
     let mut posted: Vec<[u8; 2]> = Vec::new();
     let mut sailed = game_data.fleets.iter().any(|fleet| {
@@ -1203,16 +1243,21 @@ fn plan_fleets(
                 return order(Order::RendezvousSector, home_idx).unwrap_or(keep);
             }
             let load = mask.load && fleet.ships.empty_transports > 0;
+            let force = if weights.doctrine.combined_gate {
+                home_force
+            } else {
+                strength(fleet)
+            };
             let target = if !has_combat_ships(fleet) {
                 None
             } else {
                 match goals.map(|goals| goals.strike) {
                     Some(0) => None,
-                    Some(goal) if can_take(memory, fleet, weights, goal - 1) => Some(goal - 1),
+                    Some(goal) if can_take(memory, force, weights, goal - 1) => Some(goal - 1),
                     _ => {
-                        let pick = strike_target(game_data, memory, fleet, weights);
-                        if goals.is_none() && strength(fleet) > strongest {
-                            strongest = strength(fleet);
+                        let pick = strike_target(game_data, memory, fleet, force, weights);
+                        if goals.is_none() && force > strongest {
+                            strongest = force;
                             labels.strike = pick.map_or(0, |idx| idx + 1);
                             labels.force = strongest;
                         }
@@ -1426,12 +1471,12 @@ fn best_world(
 
 /// Whether `fleet` is `attack_ratio` times world `idx`'s estimated defense,
 /// a world known to be another empire's.
-fn can_take(memory: &SeatMemory, fleet: &Fleet, weights: &Weights, idx: usize) -> bool {
+fn can_take(memory: &SeatMemory, force: f32, weights: &Weights, idx: usize) -> bool {
     memory.planet_intel.get(&(idx + 1)).is_some_and(|intel| {
         intel
             .known_owner_empire_id
             .is_some_and(|owner| owner != 0 && owner != memory.empire)
-            && strength(fleet) >= weights.attack_ratio * defense(intel)
+            && force >= weights.attack_ratio * defense(intel)
     })
 }
 
@@ -1442,10 +1487,11 @@ fn strike_target(
     game_data: &CoreGameData,
     memory: &SeatMemory,
     fleet: &Fleet,
+    force: f32,
     weights: &Weights,
 ) -> Option<usize> {
     best_world(game_data, memory, fleet, |idx, intel| {
-        can_take(memory, fleet, weights, idx).then(|| {
+        can_take(memory, force, weights, idx).then(|| {
             let value = f32::from(
                 intel
                     .known_current_production

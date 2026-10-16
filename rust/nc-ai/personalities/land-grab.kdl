@@ -29,6 +29,7 @@ doctrine {
     defend #true
     mixed-hulls #false
     reinforce #false
+    combined-gate #false
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

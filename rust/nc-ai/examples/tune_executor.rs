@@ -10,7 +10,7 @@
 //! ```text
 //! cargo run --release -p nc-ai --example tune_executor -- \
 //!     [--generations 30] [--population 24] [--games 16] [--years 60] [--margin 0.1] \
-//!     [--personality rusher] [--against-default]
+//!     [--personality rusher] [--against-default] [--with combined_gate,mixed_hulls] [--out tuned.kdl]
 //! ```
 //!
 //! `--personality` tunes a style (t167) from its profile, within its
@@ -19,11 +19,13 @@
 //! the champion: a style is tuned to hold its own in a mixed game, not to
 //! beat its own kind.
 //!
+//! `--with` turns doctrine switches on for the style being tuned only.
+//!
 //! It prints each generation's best and the champion as a `Weights` literal.
 
 use std::thread;
 
-use nc_ai::{Personality, SeatPolicy, Weights, personality, play_match};
+use nc_ai::{Personality, SeatPolicy, Weights, personality, personality_kdl, play_match};
 
 const PLAYERS: usize = 4;
 
@@ -123,10 +125,19 @@ fn main() {
     let mut champion = style
         .as_ref()
         .map_or(Weights::BASELINE, |style| style.weights);
-    let style = style.unwrap_or(Personality {
+    let mut style = style.unwrap_or(Personality {
         ranges: Weights::RANGES,
         ..default.clone()
     });
+    // Doctrine switches the tuned style runs with, as in executor_matches.
+    for switch in named("--with").iter().flat_map(|names| names.split(',')) {
+        style
+            .weights
+            .doctrine
+            .enable(switch)
+            .expect("a known doctrine switch");
+    }
+    champion.doctrine = style.weights.doctrine;
     let mut elite = vec![champion];
     for generation in 0..generations {
         let sigma = 0.15 * (1.0 - generation as f32 / generations as f32).max(0.2);
@@ -162,4 +173,7 @@ fn main() {
         );
     }
     println!("champion: {champion:?}");
+    if let Some(path) = named("--out") {
+        std::fs::write(&path, personality_kdl("tuned", &champion)).expect("--out is writable");
+    }
 }

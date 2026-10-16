@@ -1396,6 +1396,34 @@ keep the cruiser fleet.
 set, staging in deep space and building every hull, and the changed
 executor beats or matches its predecessor.
 
+**Combined home gate and a retune (2026-10-16).** `Doctrine::combined_gate`
+judges a strike by the strength of every warship fleet gathered at home,
+not by each fleet alone (Muse finding 3). Paired on the tuned weights it is
+neutral: +0.012 ± 0.024 at 60 years (512 games); at 100 years (384 games)
++0.025 ± 0.027 for land-grab, -0.073 ± 0.034 for the rusher and -0.005 ±
+0.032 for the turtle. `tune_executor` now takes `--with SWITCHES` and
+`--out FILE.kdl`, and `executor_matches --weights FILE.kdl` reads the
+result, so each variant can be retuned with the same budget (40
+generations of 24 candidates over 32 maps, 60 years, each generation's
+best becoming the champion against the default style) and scored on 1,024
+fresh maps against three default seats:
+
+| Style | 60 years | 100 years |
+| --- | ---: | ---: |
+| `TUNED` (control, an even seat) | 0.243 | 0.237 |
+| retuned, no switch | 0.229 | 0.374 |
+| retuned, `combined_gate` | 0.266 | 0.394 |
+
+Two findings. Retuning the current doctrine at all lifts the executor at
+100 years by 0.14 (the weights were fitted before `supply` and `defend`).
+It also moves the weights toward the variety asked for: scouts 0.14 to
+about 1 (so they are replaced), destroyers 0 to 0.1-0.2, war year 21 to
+29. And the combined gate on top of that is a small gain (+0.037 at 60
+years, +0.020 at 100; each standard error about 0.02), not yet distinct
+from noise. Neither retuned set is adopted yet: the tuner overfits each
+generation's 32 maps, so the next step is to retune on rotating maps and
+check the result through the network seat.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old

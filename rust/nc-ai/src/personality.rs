@@ -41,7 +41,7 @@ pub const WEIGHT_NAMES: [&str; Weights::COUNT] = [
     "war-year",
 ];
 
-const DOCTRINE_NAMES: [&str; 10] = [
+const DOCTRINE_NAMES: [&str; 11] = [
     "land-grab",
     "strike-weakest",
     "suppress-first",
@@ -52,6 +52,7 @@ const DOCTRINE_NAMES: [&str; 10] = [
     "defend",
     "mixed-hulls",
     "reinforce",
+    "combined-gate",
 ];
 
 /// The built-in personalities, the default first.
@@ -101,6 +102,35 @@ pub fn personality(name: &str) -> Option<Personality> {
         .map(|idx| parse_personality(SOURCES[idx]).expect("built-in personalities parse"))
 }
 
+/// A profile in KDL for `weights` under `name`, which [`parse_personality`]
+/// reads back (no `bounds` or `goals`).
+pub fn personality_kdl(name: &str, weights: &Weights) -> String {
+    let d = weights.doctrine;
+    let switches = [
+        d.land_grab,
+        d.strike_weakest,
+        d.suppress_first,
+        d.scaled_garrisons,
+        d.blockader,
+        d.allocate,
+        d.supply,
+        d.defend,
+        d.mixed_hulls,
+        d.reinforce,
+        d.combined_gate,
+    ];
+    let mut text = format!("personality \"{name}\"\nweights {{\n");
+    for (weight, value) in WEIGHT_NAMES.iter().zip(weights.to_array()) {
+        text.push_str(&format!("    {weight} {value:?}\n"));
+    }
+    text.push_str("}\ndoctrine {\n");
+    for (switch, value) in DOCTRINE_NAMES.iter().zip(switches) {
+        text.push_str(&format!("    {switch} #{value}\n"));
+    }
+    text.push_str("}\n");
+    text
+}
+
 /// Parse a personality profile.
 pub fn parse_personality(text: &str) -> Result<Personality, String> {
     let document: KdlDocument = text.parse().map_err(|err| format!("invalid KDL: {err}"))?;
@@ -143,6 +173,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
         defend,
         mixed_hulls,
         reinforce,
+        combined_gate,
     ] = settings(node("doctrine")?, &DOCTRINE_NAMES, |args| match args {
         [value] => value.as_bool(),
         _ => None,
@@ -209,6 +240,7 @@ pub fn parse_personality(text: &str) -> Result<Personality, String> {
                 defend,
                 mixed_hulls,
                 reinforce,
+                combined_gate,
             },
             ..Weights::from_array(weights)
         },

@@ -3,7 +3,7 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai --example executor_matches -- \
-//!     [--weights baseline|tuned|classic|PERSONALITY] \
+//!     [--weights baseline|tuned|classic|PERSONALITY|FILE.kdl] \
 //!     [--opponent aggressor|autopilot|baseline|tuned|classic|PERSONALITY] \
 //!     [--with strike_weakest|strike_by_value|suppress_first|blockader|mixed_hulls] \
 //!     [--games 64] [--years 60] [--first-map 0] [--paired]
@@ -23,7 +23,7 @@
 
 use std::thread;
 
-use nc_ai::{SeatPolicy, Weights, personality, play_match};
+use nc_ai::{SeatPolicy, Weights, parse_personality, personality, play_match};
 
 const PLAYERS: usize = 4;
 
@@ -58,13 +58,10 @@ fn main() {
             "suppress_first" => weights.doctrine.suppress_first = true,
             "scaled_garrisons" => weights.doctrine.scaled_garrisons = true,
             "flat_garrisons" => weights.doctrine.scaled_garrisons = false,
-            "supply" => weights.doctrine.supply = true,
-            "defend" => weights.doctrine.defend = true,
-            "mixed_hulls" => weights.doctrine.mixed_hulls = true,
-            "reinforce" => weights.doctrine.reinforce = true,
-            "allocate" => weights.doctrine.allocate = true,
-            "blockader" => weights.doctrine.blockader = true,
-            other => panic!("unknown doctrine switch {other}"),
+            other => weights
+                .doctrine
+                .enable(other)
+                .expect("a known doctrine switch"),
         }
     }
     let games: u64 = arg("--games").map_or(64, |n| n.parse().expect("--games"));
@@ -109,6 +106,12 @@ fn main() {
 
 /// A personality's weights (t167).
 fn style(name: &str) -> Weights {
+    if name.ends_with(".kdl") {
+        let text = std::fs::read_to_string(name).expect("the personality file reads");
+        return parse_personality(&text)
+            .expect("the personality file parses")
+            .weights;
+    }
     personality(name)
         .unwrap_or_else(|| panic!("unknown weights or personality {name}"))
         .weights

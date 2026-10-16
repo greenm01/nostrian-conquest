@@ -46,5 +46,7 @@ pub use memory::{CONTACT_MEMORY_YEARS, Contact, ContactSource, SeatMemory};
 pub use observe::{
     CONTACT_WIDTH, FLEET_WIDTH, GLOBAL_WIDTH, Observation, PLANET_WIDTH, STARBASE_WIDTH, observe,
 };
-pub use personality::{PERSONALITIES, Personality, WEIGHT_NAMES, parse_personality, personality};
+pub use personality::{
+    PERSONALITIES, Personality, WEIGHT_NAMES, parse_personality, personality, personality_kdl,
+};
 pub use replay::{match_game, replay};
