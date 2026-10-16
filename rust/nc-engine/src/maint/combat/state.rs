@@ -292,6 +292,20 @@ fn hull_attack_strength(as_value: u32, hulls: u32, crippled: u32) -> u32 {
     hulls.saturating_sub(crippled) * as_value + crippled * crippled_as(as_value)
 }
 
+/// The attack strength of a side's warships, each hull at its current AS.
+pub(super) fn warship_attack_as(state: &FleetCombatState) -> u32 {
+    [IDX_DD, IDX_CA, IDX_BB]
+        .into_iter()
+        .map(|idx| {
+            hull_attack_strength(
+                fleet_class_as(idx),
+                state.counts[idx],
+                state.crippled_count(idx),
+            )
+        })
+        .sum()
+}
+
 fn crippled_as(as_value: u32) -> u32 {
     as_value / 2
 }

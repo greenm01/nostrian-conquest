@@ -181,6 +181,7 @@ pub(super) fn run_year(
         events: FleetBattlePhaseEvents::default(),
         assault_events: AssaultEvents::default(),
         departed: Vec::new(),
+        bombarded: Vec::new(),
     };
     // The starbase's extra recovery turn is decided from what rests where
     // when the ticks begin, and each unit's turn can only strike entries off.

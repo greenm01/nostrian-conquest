@@ -466,6 +466,21 @@ pub fn run_maintenance_turn_with_context_seed_and_lifecycle(
     // Recovery (combat decision 3): once per pass, after the ticks, the
     // post-year merges, and colonization, and before the AI and the reports.
     let ship_recovery_events = ship_recovery::recover_ships(game_data, &assist_watch);
+    // Crippled batteries recover where nobody attacked the world this year
+    // (t202: no repair under siege).
+    ship_recovery::recover_batteries(
+        game_data,
+        assault_events
+            .bombard_events
+            .iter()
+            .map(|event| event.planet_idx)
+            .chain(
+                assault_events
+                    .assault_report_events
+                    .iter()
+                    .map(|event| event.planet_idx),
+            ),
+    );
 
     // Run autopilot / rogue AI planet economics.
     // Updates factories, armies, and raw[0x0E] for rogue and autopilot-on players.

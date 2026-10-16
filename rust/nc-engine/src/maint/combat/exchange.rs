@@ -7,7 +7,9 @@ use super::state::{
 };
 
 pub(super) const GROUND_AS_BATTERY: u32 = 90;
-pub(super) const GROUND_DS_BATTERY: u32 = 20;
+/// A battery takes two steps, like a ship: this many hits cripple it, and as
+/// many again destroy it (t202).
+pub(super) const GROUND_DS_BATTERY: u32 = 66;
 pub(super) const GROUND_AS_ARMY: u32 = 10;
 pub(super) const GROUND_DS_ARMY: u32 = 10;
 pub(super) const COMBAT_GUARDRAIL_MAX_ROUNDS: u32 = 64;
@@ -29,10 +31,13 @@ pub(super) const COMBAT_KIND_BLITZ_GROUND: u64 = 8;
 pub(super) const COMBAT_KIND_BLITZ_LANDING: u64 = 9;
 pub(super) const COMBAT_KIND_PURSUIT_CATCH: u64 = 10;
 pub(super) const COMBAT_KIND_ALLOCATION: u64 = 11;
+pub(super) const COMBAT_KIND_CAPTURE: u64 = 12;
 
-/// Planetary combat's ratio CRT, multipliers in quarters: one row per d10
-/// value and one column per force-ratio band.
-const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
+/// Planetary combat's ratio CRT: one row per d10 value and one column per
+/// force-ratio band, in quarters. Ships firing at dug-in ground targets read
+/// it in twelfths, a third of its strength; the batteries' fire at ships
+/// reads it in full (t202).
+const CRT_MULTIPLIER_X12: [[u8; 5]; 10] = [
     [0, 1, 2, 3, 4],
     [1, 2, 3, 4, 5],
     [1, 2, 4, 5, 6],
@@ -219,6 +224,7 @@ pub(super) fn seeded_combat_roll(
     rng.roll_d10()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn seeded_exchange_resolution(
     campaign_seed: u64,
     game_year: u16,
@@ -229,6 +235,7 @@ fn seeded_exchange_resolution(
     target_empire: u8,
     as_total: u32,
     column: usize,
+    divisor: u32,
 ) -> ExchangeResolution {
     let roll = seeded_combat_roll(
         campaign_seed,
@@ -239,11 +246,11 @@ fn seeded_exchange_resolution(
         acting_empire,
         target_empire,
     );
-    let multiplier_x4 = CRT_MULTIPLIER_X4[roll as usize][column];
+    let multiplier = CRT_MULTIPLIER_X12[roll as usize][column];
     ExchangeResolution {
         roll,
         critical: roll == 9 && as_total > 0,
-        hits: hits_from_multiplier(as_total, multiplier_x4),
+        hits: (as_total.saturating_mul(u32::from(multiplier))).div_ceil(divisor),
     }
 }
 
@@ -273,8 +280,66 @@ pub(super) fn landing_volley(roll: u8, armies: u32) -> u32 {
     armies * u32::from(FLEET_EFFECTIVENESS_X4[usize::from(roll)])
 }
 
-/// Planetary combat's ratio-CRT exchange for orbital fire: bombardment,
-/// invasion suppression and return fire, and blitz landing fire.
+/// The batteries' fire at ships in orbit: bombardment and invasion return
+/// fire, on the full ratio CRT (t202).
+#[allow(clippy::too_many_arguments)]
+pub(super) fn resolve_battery_exchange(
+    campaign_seed: u64,
+    game_year: u16,
+    coords: [u8; 2],
+    combat_kind: u64,
+    round: u32,
+    acting_empire: u8,
+    target_empire: u8,
+    battery_as: u32,
+    enemy_as: u32,
+) -> ExchangeResolution {
+    let column = base_combat_column(battery_as, enemy_as);
+    seeded_exchange_resolution(
+        campaign_seed,
+        game_year,
+        coords,
+        combat_kind,
+        round,
+        acting_empire,
+        target_empire,
+        battery_as,
+        column,
+        4,
+    )
+}
+
+/// The batteries' fire at descending transports in a blitz, at a third of
+/// the ratio CRT (t202): fleeting targets in the atmosphere are hard to hit.
+#[allow(clippy::too_many_arguments)]
+pub(super) fn resolve_landing_exchange(
+    campaign_seed: u64,
+    game_year: u16,
+    coords: [u8; 2],
+    combat_kind: u64,
+    round: u32,
+    acting_empire: u8,
+    target_empire: u8,
+    battery_as: u32,
+    enemy_as: u32,
+) -> ExchangeResolution {
+    let column = base_combat_column(battery_as, enemy_as);
+    seeded_exchange_resolution(
+        campaign_seed,
+        game_year,
+        coords,
+        combat_kind,
+        round,
+        acting_empire,
+        target_empire,
+        battery_as,
+        column,
+        12,
+    )
+}
+
+/// Planetary combat's ratio-CRT exchange for ships' orbital fire at the
+/// batteries: bombardment and invasion suppression, at a third (t202).
 pub(super) fn resolve_orbital_exchange(
     campaign_seed: u64,
     game_year: u16,
@@ -297,6 +362,7 @@ pub(super) fn resolve_orbital_exchange(
         target_empire,
         our_as,
         column,
+        12,
     )
 }
 
@@ -325,6 +391,7 @@ pub(super) fn resolve_ground_exchange(
         target_empire,
         our_as,
         column,
+        12,
     )
 }
 

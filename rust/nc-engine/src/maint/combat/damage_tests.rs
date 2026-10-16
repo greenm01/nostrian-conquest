@@ -504,9 +504,10 @@ fn bombardment_fire_keeps_its_crippled_rounding() {
     state.counts[IDX_DD] = 2;
     state.counts[IDX_CA] = 2;
     state.counts[IDX_BB] = 2;
-    assert_eq!(bombard_attack_as(&state), 2 * 6 + 2 * 33 + 2 * 135);
+    // Every warship bombards with its attack strength, no bonus (t202).
+    assert_eq!(bombard_attack_as(&state), 2 * 12 + 2 * 33 + 2 * 90);
     state.crippled[IDX_DD] = hulls(1, 0, 0);
     state.crippled[IDX_CA] = hulls(0, 1, 0);
     state.crippled[IDX_BB] = hulls(0, 0, 1);
-    assert_eq!(bombard_attack_as(&state), 6 + 3 + 33 + 16 + 135 + 67);
+    assert_eq!(bombard_attack_as(&state), 12 + 6 + 33 + 16 + 90 + 45);
 }

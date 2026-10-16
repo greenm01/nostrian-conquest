@@ -1,0 +1,628 @@
+{
+ "trials": 4000,
+ "seed": 20261016,
+ "rules": {
+  "today": {
+   "divisor": 4,
+   "back_divisor": 4,
+   "steps": 1,
+   "battery_ds": 20,
+   "bombard_as": 135,
+   "keep_crippled": false
+  },
+  "t202": {
+   "divisor": 12,
+   "back_divisor": 4,
+   "steps": 2,
+   "battery_ds": 66,
+   "bombard_as": 90,
+   "keep_crippled": true
+  }
+ },
+ "results": {
+  "today": [
+   {
+    "batteries": 2,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 1,
+    "reinforce_bb": 0,
+    "cleared": 0.95,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.56165625
+   },
+   {
+    "batteries": 2,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 2,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.32259375
+   },
+   {
+    "batteries": 2,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 3,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.11221874999999999
+   },
+   {
+    "batteries": 2,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 2,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.34284375
+   },
+   {
+    "batteries": 2,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 1,
+    "reinforce_bb": 1,
+    "cleared": 1.0,
+    "years": 1.04525,
+    "lost_vs_battery_cost": 0.56896875
+   },
+   {
+    "batteries": 4,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 3,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.56925
+   },
+   {
+    "batteries": 4,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 4,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.566859375
+   },
+   {
+    "batteries": 4,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 5,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.5782499999999999
+   },
+   {
+    "batteries": 4,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 4,
+    "reinforce_bb": 1,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.57375
+   },
+   {
+    "batteries": 4,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 2,
+    "reinforce_bb": 2,
+    "cleared": 1.0,
+    "years": 1.0495,
+    "lost_vs_battery_cost": 0.781453125
+   },
+   {
+    "batteries": 7,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 5,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.6415714285714286
+   },
+   {
+    "batteries": 7,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 6,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.6381160714285715
+   },
+   {
+    "batteries": 7,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 9,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.6521785714285715
+   },
+   {
+    "batteries": 7,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 6,
+    "reinforce_bb": 2,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.6463928571428572
+   },
+   {
+    "batteries": 7,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 3,
+    "reinforce_bb": 3,
+    "cleared": 1.0,
+    "years": 1.0715,
+    "lost_vs_battery_cost": 0.9053839285714286
+   },
+   {
+    "batteries": 10,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 7,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.78800625
+   },
+   {
+    "batteries": 10,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 9,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.7813687500000001
+   },
+   {
+    "batteries": 10,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 13,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.78631875
+   },
+   {
+    "batteries": 10,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 9,
+    "reinforce_bb": 2,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.7875
+   },
+   {
+    "batteries": 10,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 4,
+    "reinforce_bb": 4,
+    "cleared": 1.0,
+    "years": 1.0895,
+    "lost_vs_battery_cost": 0.899325
+   },
+   {
+    "batteries": 20,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 13,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 1.022175
+   },
+   {
+    "batteries": 20,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 18,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.779653125
+   },
+   {
+    "batteries": 20,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 27,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.5091749999999999
+   },
+   {
+    "batteries": 20,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 18,
+    "reinforce_bb": 4,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.773634375
+   },
+   {
+    "batteries": 20,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 9,
+    "reinforce_bb": 9,
+    "cleared": 1.0,
+    "years": 1.063,
+    "lost_vs_battery_cost": 0.905821875
+   },
+   {
+    "batteries": 50,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 33,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 1.0219725
+   },
+   {
+    "batteries": 50,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 44,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.7710525
+   },
+   {
+    "batteries": 50,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 67,
+    "reinforce_bb": 0,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.49806
+   },
+   {
+    "batteries": 50,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 44,
+    "reinforce_bb": 11,
+    "cleared": 1.0,
+    "years": 1.0,
+    "lost_vs_battery_cost": 0.76527
+   },
+   {
+    "batteries": 50,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 22,
+    "reinforce_bb": 22,
+    "cleared": 1.0,
+    "years": 1.0875,
+    "lost_vs_battery_cost": 0.96334875
+   }
+  ],
+  "t202": [
+   {
+    "batteries": 2,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 1,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.125
+   },
+   {
+    "batteries": 2,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 2,
+    "reinforce_bb": 0,
+    "cleared": 0.22775,
+    "years": 2.2403951701427003,
+    "lost_vs_battery_cost": 1.765125
+   },
+   {
+    "batteries": 2,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 3,
+    "reinforce_bb": 0,
+    "cleared": 0.86925,
+    "years": 1.090020132297958,
+    "lost_vs_battery_cost": 0.6778125
+   },
+   {
+    "batteries": 2,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 2,
+    "reinforce_bb": 0,
+    "cleared": 0.2385,
+    "years": 2.2264150943396226,
+    "lost_vs_battery_cost": 1.7414999999999998
+   },
+   {
+    "batteries": 2,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 1,
+    "reinforce_bb": 1,
+    "cleared": 0.05925,
+    "years": 9.046413502109704,
+    "lost_vs_battery_cost": 16.3029375
+   },
+   {
+    "batteries": 4,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 3,
+    "reinforce_bb": 0,
+    "cleared": 0.00275,
+    "years": 2.8181818181818183,
+    "lost_vs_battery_cost": 1.6841249999999999
+   },
+   {
+    "batteries": 4,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 4,
+    "reinforce_bb": 0,
+    "cleared": 0.1175,
+    "years": 2.1702127659574466,
+    "lost_vs_battery_cost": 2.066484375
+   },
+   {
+    "batteries": 4,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 5,
+    "reinforce_bb": 0,
+    "cleared": 0.70975,
+    "years": 1.7657625924621345,
+    "lost_vs_battery_cost": 1.3914843749999999
+   },
+   {
+    "batteries": 4,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 4,
+    "reinforce_bb": 1,
+    "cleared": 0.215,
+    "years": 2.636046511627907,
+    "lost_vs_battery_cost": 8.24371875
+   },
+   {
+    "batteries": 4,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 2,
+    "reinforce_bb": 2,
+    "cleared": 0.32,
+    "years": 12.05078125,
+    "lost_vs_battery_cost": 15.218578124999999
+   },
+   {
+    "batteries": 7,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 5,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.6071428571428572
+   },
+   {
+    "batteries": 7,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 6,
+    "reinforce_bb": 0,
+    "cleared": 0.00075,
+    "years": 2.6666666666666665,
+    "lost_vs_battery_cost": 1.9279285714285717
+   },
+   {
+    "batteries": 7,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 9,
+    "reinforce_bb": 0,
+    "cleared": 0.81275,
+    "years": 1.6748692709935404,
+    "lost_vs_battery_cost": 1.4090625
+   },
+   {
+    "batteries": 7,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 6,
+    "reinforce_bb": 2,
+    "cleared": 0.02175,
+    "years": 7.367816091954023,
+    "lost_vs_battery_cost": 10.795660714285713
+   },
+   {
+    "batteries": 7,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 3,
+    "reinforce_bb": 3,
+    "cleared": 0.66225,
+    "years": 12.449226123065309,
+    "lost_vs_battery_cost": 11.982857142857142
+   },
+   {
+    "batteries": 10,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 7,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.575
+   },
+   {
+    "batteries": 10,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 9,
+    "reinforce_bb": 0,
+    "cleared": 0.0005,
+    "years": 3.0,
+    "lost_vs_battery_cost": 2.0246062499999997
+   },
+   {
+    "batteries": 10,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 13,
+    "reinforce_bb": 0,
+    "cleared": 0.73825,
+    "years": 1.7832712495767016,
+    "lost_vs_battery_cost": 1.7316562500000001
+   },
+   {
+    "batteries": 10,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 9,
+    "reinforce_bb": 2,
+    "cleared": 0.00825,
+    "years": 6.03030303030303,
+    "lost_vs_battery_cost": 8.28354375
+   },
+   {
+    "batteries": 10,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 4,
+    "reinforce_bb": 4,
+    "cleared": 0.107,
+    "years": 14.051401869158878,
+    "lost_vs_battery_cost": 13.28563125
+   },
+   {
+    "batteries": 20,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 13,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.4625
+   },
+   {
+    "batteries": 20,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 18,
+    "reinforce_bb": 0,
+    "cleared": 0.00075,
+    "years": 2.6666666666666665,
+    "lost_vs_battery_cost": 2.02449375
+   },
+   {
+    "batteries": 20,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 27,
+    "reinforce_bb": 0,
+    "cleared": 0.8615,
+    "years": 1.6430644225188624,
+    "lost_vs_battery_cost": 1.5938999999999999
+   },
+   {
+    "batteries": 20,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 18,
+    "reinforce_bb": 4,
+    "cleared": 0.01475,
+    "years": 7.661016949152542,
+    "lost_vs_battery_cost": 8.26543125
+   },
+   {
+    "batteries": 20,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 9,
+    "reinforce_bb": 9,
+    "cleared": 1.0,
+    "years": 9.0955,
+    "lost_vs_battery_cost": 7.994615625
+   },
+   {
+    "batteries": 50,
+    "force": 1.5,
+    "reinforce": 0,
+    "start_bb": 33,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.485
+   },
+   {
+    "batteries": 50,
+    "force": 2.0,
+    "reinforce": 0,
+    "start_bb": 44,
+    "reinforce_bb": 0,
+    "cleared": 0.0,
+    "years": null,
+    "lost_vs_battery_cost": 1.98
+   },
+   {
+    "batteries": 50,
+    "force": 3.0,
+    "reinforce": 0,
+    "start_bb": 67,
+    "reinforce_bb": 0,
+    "cleared": 0.8515,
+    "years": 1.6450381679389312,
+    "lost_vs_battery_cost": 1.66192875
+   },
+   {
+    "batteries": 50,
+    "force": 2.0,
+    "reinforce": 0.5,
+    "start_bb": 44,
+    "reinforce_bb": 11,
+    "cleared": 0.104,
+    "years": 12.930288461538462,
+    "lost_vs_battery_cost": 8.7441075
+   },
+   {
+    "batteries": 50,
+    "force": 1.0,
+    "reinforce": 1.0,
+    "start_bb": 22,
+    "reinforce_bb": 22,
+    "cleared": 0.9995,
+    "years": 9.459729864932466,
+    "lost_vs_battery_cost": 8.249512500000002
+   }
+  ]
+ }
+}

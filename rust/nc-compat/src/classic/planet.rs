@@ -66,6 +66,8 @@ pub fn decode_planet(bytes: &[u8; PLANET_RECORD_SIZE]) -> Result<Planet, ParseEr
         years_under_owner: bytes[0x5C],
         owner: EmpireId(bytes[0x5D]),
         scorch_earth: bytes[0x60] != 0,
+        // PLANETS.DAT has no crippled batteries; a classic world has none.
+        crippled_batteries: 0,
     })
 }
 

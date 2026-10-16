@@ -113,7 +113,7 @@ The Rust engine uses a **10x internal scale** for combat values to ensure high-p
 
 | Unit | AS | DS | Notes |
 | ---- | -- | -- | ----- |
-| Ground Battery | 90 | 20 | Anti-orbital cannon (Execution) |
+| Ground Battery | 90 | 66 | Anti-orbital cannon (Execution); two steps, 45 AS crippled |
 | Army | 10 | 10 | Surface combatant |
 
 ## Contact and Engagement
@@ -382,9 +382,10 @@ fleet).
 
 **Strength sees damage.** The attack decision, the intercept's fallback, the
 orbital gate, and the in-battle ROE check weigh a crippled warship at half
-its AS and a crippled starbase at 50. Bombardment and assault fire keep
-their own weights (6, 33, 135 per hull) and their rounding for crippled
-hulls: 2, 15, and 67. A crippled starbase keeps the growth and capacity
+its AS and a crippled starbase at 50. Bombardment and assault fire use the
+same AS (12, 33, 90 per hull; 6, 16, 45 crippled): there is no bombard bonus
+([ry5u9rjj](../notes/decisions/ry5u9rjj-batteries-take-two-steps-and-sieges-grind-on-a-bombardment-table.md)).
+A crippled starbase keeps the growth and capacity
 bonuses of its world and the +1 a starbase adds to the die.
 
 ### Landing Battle
@@ -439,7 +440,11 @@ Overwhelming ratios still guarantee victory.
 ### Planetary Support Fire CRT
 
 Bombardment, invasion suppression and return fire, softening, and blitz cover
-and landing fire use the ratio CRT. The column comes from the force ratio:
+and landing fire use the ratio CRT. Ships' fire at ground targets and
+batteries' fire at descending transports read it in twelfths of the firing AS
+(`hits = ceil(AS x entry / 12)`), a third of its strength; batteries' return
+fire at ships in orbit reads it in quarters (`ceil(AS x entry / 4)`), full
+strength (t202). The column comes from the force ratio:
 - **Disadvantaged**: Ratio < 0.5
 - **Pressed**: Ratio 0.5 – 1.0
 - **Even**: Ratio 1.0 – 1.5
@@ -497,10 +502,15 @@ This creates a deadly synergy where heavy ships suppress the enemy line, while l
 Each bombardment turn resolves three sequential exchanges (rounds). Ground
 batteries act as the planet's shield wall --- while they stand, they draw
 orbital fire and shoot back, protecting the stardock, armies, production, and
-industry.
+industry. When an empire's fleet strikes a world with Bombard, every other
+fleet of that empire in orbit there under Bombard and ready to strike joins it
+as one force, sharing its losses as a battle side does, and does not strike
+again that year.
 
 **Batteries shield the stardock.** An exchange that begins with batteries
-standing hits batteries only, and the hits beyond what destroys them expire.
+standing hits batteries only: it cripples healthy batteries first, then, once
+every battery is crippled, destroys crippled ones, and the hits beyond what
+the batteries can take expire.
 Docked ships are exposed from the next exchange, the first one that begins
 with no batteries standing
 ([combat decision 5](../notes/decisions/mk1ie4e3-batteries-shield-the-stardock-and-failed-landings-hold-orbit.md)).
@@ -523,16 +533,19 @@ its defense strength:
 
 | Target | Hits per unit destroyed |
 | ------ | ----------------------- |
-| Ground battery | 20 |
+| Ground battery | 66 to cripple, 66 more to destroy |
 | Army | 10 |
-| Docked ship (stardock) | Its fleet DS (DD 7, CA 30, BB 110, SC 10, TT 10, ET 20, SB 130); docked batteries 20, armies 10 |
+| Docked ship (stardock) | Its fleet DS (DD 7, CA 30, BB 110, SC 10, TT 10, ET 20, SB 130); docked batteries 66, armies 10 |
 | Stored goods / factories | Remaining hits ÷ 10, then 25 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
 over between rounds. Once the stardock is exposed, hits too few to destroy the
 next docked item move on to the following stardock slot. Invasion suppression
 and blitz cover fire pay the same battery cost, and neither reaches the
-stardock.
+stardock. Batteries fire 90 AS each, 45 while crippled. Crippled batteries
+are stored on the planet (NC only; classic export writes the total) and stay
+crippled while the world is attacked; they recover at the end of a pass in
+which no fleet bombarded, invaded, or blitzed it.
 
 Blitz landing fire is one CRT exchange of surviving battery AS against the
 escorts' bombardment AS. It is focus fire aimed at the descending transports
@@ -540,13 +553,16 @@ first: each transport destroyed costs 20 hits (2x DS) and takes its army with
 it, and leftover hits fall on the escorts.
 
 The attacker must commit enough firepower over enough turns to grind through
-the battery shield before reaching anything valuable. A small raiding fleet
-may take several turns of three-round suppression before breaking through,
-while a heavy bombardment fleet can clear batteries and break through in the
-same turn.
+the battery shield before reaching anything valuable. A force of about three
+times the batteries' cost takes a fortress in a year or so; twice their cost,
+kept on station and reinforced, takes two to three years; a force no larger
+than their cost is destroyed (`tools/combat-model/siege_review.py`, checked by
+`nc-fuzz`'s `siege_odds` example).
 
 ### Invasion Priority
-1. **Orbital suppression:** Ships exchange fire with batteries (1 exchange).
+1. **Orbital suppression:** Ships exchange fire with batteries for up to
+   three exchanges, stopping when the last battery falls (t202). The hits
+   strike batteries only; the stardock and economy are never hit.
 2. **Softening fire:** If batteries cleared, orbital fire targets armies only.
    Factories and stored goods are not damaged during invasion --- the goal is
    to capture the planet with its production intact. The CRT column compares
@@ -561,10 +577,16 @@ Invade supplies its own softening once suppression has cleared the batteries,
 so a separate Bombard order is not required first.
 
 #### Capture
-A world that falls passes to the new owner with what the fight left standing:
-stored goods, production, docked ships, and queued build work. There is no
-capture bonus, no loss by mission, and no forgiven debt. An Invade capture
-leaves no batteries; a Blitz capture keeps the surviving ones. The status
+A world that falls is damaged by mission, as classic's capture step
+(`110a:6a9f`) does, with seeded draws (t202). An Invade capture keeps
+production x (0.2 + U[0, 0.2)), positive goods x (0.1 + U[0, 0.4)), each dock
+slot x r x (0.2 + U[0, 0.8)) for one r = U[0, 1), and no batteries. A Blitz
+capture, with f = min(1, sqrt(L / D0)) for the L attackers left and the D0
+armies the world began the assault with (f = 1 when D0 = 0), keeps production
+x f x (0.85 + U[0, 0.15)), positive goods x f x (0.55 + U[0, 0.45)), batteries
+round(b x f x (0.35 + U[0, 0.65))), and each dock slot x f x (0.2 + U[0, 0.8)).
+Production never falls below 1.0 on a world with potential, the build queue
+survives, and debt is never forgiven. The status
 resets to 0, the start of conversion.
 
 A world whose owner had set Scorch Earth is halved as it falls
@@ -577,9 +599,10 @@ The attacker's capture report lists the goods, docked ships, and queued work
 the world passed on, and says when the defenders had scorched it.
 
 #### Failure Is Not Defeat
-A fleet whose landing fails, or whose Invade is blocked because batteries
-survive suppression, keeps its survivors in orbit on Hold and files a failure
-report. A blocked Invade lands nothing and its armies stay aboard. The fleet
+A fleet whose landing fails keeps its survivors in orbit on Hold and files a
+failure report. An Invade whose year of suppression leaves batteries standing
+lands nothing, keeps its armies aboard, and keeps its order, so it suppresses
+again next year (t202). The fleet
 does not blockade the world automatically and is subject to ordinary
 encounters like any fleet in orbit. A fleet beaten in the orbital battle
 leaves under the ordinary withdrawal rules (see Simultaneous Arrival at a

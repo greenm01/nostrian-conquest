@@ -807,6 +807,7 @@ fn bombardment_reports_cover_attacker_and_defender() {
         defender_armies_initial: 0,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 0,
+        defender_batteries_crippled: 0,
         defender_army_losses: 0,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),

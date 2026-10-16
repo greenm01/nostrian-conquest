@@ -253,4 +253,9 @@ pub struct Planet {
     pub owner: EmpireId,
     /// 0x60: the Scorch-Earth order.
     pub scorch_earth: bool,
+    /// Of `ground_batteries`, those crippled by bombardment (t202). NC only:
+    /// PLANETS.DAT has no such field, so classic export writes the total and
+    /// classic import starts with none crippled. They recover at the end of
+    /// a year in which nobody bombards the world.
+    pub crippled_batteries: u16,
 }

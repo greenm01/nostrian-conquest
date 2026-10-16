@@ -431,8 +431,10 @@ fn landing_moves_the_crippled_transports_cohorts_to_the_empty_counter() {
 #[test]
 fn landing_fire_pays_transport_defense_strength_on_the_ten_times_scale() {
     // Twenty loaded transports blitz a world with one battery and no garrison.
-    // The battery fires 90 AS at the descending transports; on any CRT row
-    // that is 90..=225 hits, and each transport costs 2x its DS of 10.
+    // The battery fires 90 AS at the descending transports at a third of the
+    // ratio CRT (t202: fleeting targets in the atmosphere), Overwhelming
+    // column: 30..=75 hits, each transport costs 2x its DS of 10, and a
+    // critical sinks one more.
     let ships = Ships {
         tt: 20,
         armies: 20,
@@ -446,8 +448,8 @@ fn landing_fire_pays_transport_defense_strength_on_the_ten_times_scale() {
     assert_eq!(blitz.kind, Mission::BlitzWorld);
     let transport_losses = blitz.attacker_ship_losses.transports;
     assert!(
-        (4..=12).contains(&transport_losses),
-        "one battery should sink 4 to 12 transports, not one per battery: {transport_losses}"
+        (1..=4).contains(&transport_losses),
+        "one battery should sink 1 to 4 transports, not one per battery: {transport_losses}"
     );
     assert_eq!(blitz.transport_army_losses, transport_losses);
 }
@@ -755,11 +757,11 @@ fn a_transport_only_blitz_passes_only_an_empty_orbit() {
 }
 
 #[test]
-fn a_second_fleet_of_the_same_empire_strikes_without_refighting_the_defenders() {
+fn an_empires_bombarding_fleets_strike_together_after_one_gate_battle() {
     // Two bombardment fleets of empire 1 are at rest in orbit over the
     // starbase's world. Whichever the year's unit order runs first destroys
-    // the base at its gate; the other finds the orbit empty and bombards
-    // without a battle, in the same tick.
+    // the base at its gate, then bombards with the other as one force
+    // (t202), in the same tick; the other does not strike again.
     let mut game_data = assault_on_system(Order::BombardWorld, four_battleships(), 0, 0);
     place_fleet(
         &mut game_data,
@@ -787,7 +789,11 @@ fn a_second_fleet_of_the_same_empire_strikes_without_refighting_the_defenders() 
             1,
             "one battle with the base, seed {seed}"
         );
-        assert_eq!(events.bombard_events.len(), 2, "seed {seed}");
+        assert_eq!(events.bombard_events.len(), 1, "seed {seed}");
+        assert_eq!(
+            events.bombard_events[0].attacker_initial.battleships, 8,
+            "both fleets bombard, seed {seed}"
+        );
         assert!(
             events
                 .bombard_events

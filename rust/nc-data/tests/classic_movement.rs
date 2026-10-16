@@ -187,9 +187,19 @@ fn run_cases(cases: &[Case]) {
                         case.name
                     );
                     assert_eq!(fleet.speed, 0, "{} year {year} speed", case.name);
+                    // Bombard stands, and so does an Invade the batteries
+                    // blocked (t202); classic clears every other strike.
+                    let blocked = events.assault_report_events.iter().any(|event| {
+                        event.kind == nc_data::Mission::InvadeWorld
+                            && event.outcome == nc_data::MissionOutcome::Aborted
+                    });
                     assert_eq!(
                         fleet.order.code(),
-                        if mission == 6 { 6 } else { 0 },
+                        if mission == 6 || (mission == 7 && blocked) {
+                            mission
+                        } else {
+                            0
+                        },
                         "{} year {year} order",
                         case.name
                     );

@@ -7,6 +7,12 @@ tags: [adr, economy, conquest]
 ---
 # Captured worlds convert in two quiet years and keep what survives
 
+> **Partly superseded (2026-10-16)** by
+> [ry5u9rjj](ry5u9rjj-batteries-take-two-steps-and-sieges-grind-on-a-bombardment-table.md):
+> a capture now damages the world by mission, as classic does (an invasion
+> keeps 20-40% of production, a blitz keeps most of it). The two-year
+> conversion below still stands.
+
 ## Context
 
 A captured world's status steps 0, 1, 2 over two maintenance passes, as in

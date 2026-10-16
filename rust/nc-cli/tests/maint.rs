@@ -2007,8 +2007,10 @@ fn maint_rust_invade_success_exports_ecgame_accepted_owned_row_shape() {
         production: Real48::from_int(100),
         stored_goods: Real48::from_int(66),
         name: "TargetPrime".to_string(),
-        armies: 142,
-        ground_batteries: 15,
+        armies: 60,
+        // Five batteries, so the fleet's one suppression exchange clears
+        // them (2,700 AS, Overwhelming, at least 900 hits against 660).
+        ground_batteries: 5,
         years_under_owner: 0,
         owner: EmpireId(2),
         ..Planet::default()
@@ -2081,8 +2083,10 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
         production: Real48::from_int(100),
         stored_goods: Real48::from_int(66),
         name: "TargetPrime".to_string(),
-        armies: 142,
-        ground_batteries: 15,
+        armies: 60,
+        // Five batteries, so the fleet's one suppression exchange clears
+        // them (2,700 AS, Overwhelming, at least 900 hits against 660).
+        ground_batteries: 5,
         years_under_owner: 0,
         owner: EmpireId(2),
         ..Planet::default()
@@ -2110,19 +2114,19 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     let attacker_report =
         joined_report_containing(&results, "ALERT: Planetary invasion successful!");
     assert!(
-        attacker_report.contains("World defenses:   15 ground batteries and 142 armies"),
+        attacker_report.contains("World defenses:   5 ground batteries and 60 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy losses:     15 ground batteries and 142 armies"),
+        attacker_report.contains("Enemy losses:     5 ground batteries and 60 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy orbital softening losses: 71 armies"),
+        attacker_report.contains("Enemy orbital softening losses: 30 armies"),
         "{attacker_report}"
     );
     assert!(
-        attacker_report.contains("Enemy ground battle losses: 71 armies"),
+        attacker_report.contains("Enemy ground battle losses: 30 armies"),
         "{attacker_report}"
     );
 
@@ -2138,15 +2142,15 @@ fn maint_rust_invasion_success_reports_armies_for_attacker_and_defender() {
     );
     assert!(defender_report.contains("TT*120"), "{defender_report}");
     assert!(
-        defender_report.contains("Our defenses:     15 ground batteries and 142 armies"),
+        defender_report.contains("Our defenses:     5 ground batteries and 60 armies"),
         "{defender_report}"
     );
     assert!(
-        defender_report.contains("Our orbital softening losses: 71 armies"),
+        defender_report.contains("Our orbital softening losses: 30 armies"),
         "{defender_report}"
     );
     assert!(
-        defender_report.contains("Our ground battle losses: 71 armies"),
+        defender_report.contains("Our ground battle losses: 30 armies"),
         "{defender_report}"
     );
 
@@ -2276,8 +2280,9 @@ fn maint_rust_blitz_success_reports_armies_for_attacker_and_defender() {
     attacker.depth = Real48::HALF;
     attacker.rules_of_engagement = 10;
     attacker.ships.scouts = 0;
-    // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
-    attacker.ships.battleships = 1;
+    // Cover fire must pay the battery's two 66-hit steps in its one
+    // exchange: five battleships (450 AS, Overwhelming) always do.
+    attacker.ships.battleships = 5;
     attacker.ships.cruisers = 0;
     attacker.ships.destroyers = 1;
     set_troop_transports(attacker, 10);
@@ -2341,8 +2346,9 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
     attacker.depth = Real48::HALF;
     attacker.rules_of_engagement = 10;
     attacker.ships.scouts = 0;
-    // Cover fire must pay the battery's 20-hit DS; a lone destroyer cannot.
-    attacker.ships.battleships = 1;
+    // Cover fire must pay the battery's two 66-hit steps in its one
+    // exchange: five battleships (450 AS, Overwhelming) always do.
+    attacker.ships.battleships = 5;
     attacker.ships.cruisers = 0;
     attacker.ships.destroyers = 1;
     set_troop_transports(attacker, 10);
@@ -2382,9 +2388,9 @@ fn maint_rust_blitz_success_exports_ecgame_accepted_owned_row_shape() {
         u16::from_le_bytes([viewer_record.raw[0x1e], viewer_record.raw[0x1f]]),
         65
     );
-    // Seeded garrison: all 10 landed armies, the lone defender's first
-    // volley having killed none.
-    assert_eq!(viewer_record.raw[0x23], 10);
+    // Seeded garrison: 9 of the 10 landed armies, the lone defender's
+    // first volley having killed one.
+    assert_eq!(viewer_record.raw[0x23], 9);
     assert_eq!(viewer_record.raw[0x24], 0x00);
     assert_eq!(viewer_record.raw[0x25], 0);
     assert_eq!(viewer_record.raw[0x26], 0x00);

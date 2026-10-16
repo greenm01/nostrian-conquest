@@ -166,10 +166,11 @@ fn a_failed_landing_leaves_the_fleet_on_hold_in_orbit() {
 }
 
 #[test]
-fn an_invasion_the_batteries_block_leaves_the_fleet_on_hold_with_its_armies() {
-    // One battleship cannot clear eight batteries (at most 136 hits against
-    // 160 needed), and they sink it. A thousand scouts take the rest of the
-    // return fire, so the loaded transports survive, armies aboard.
+fn an_invasion_the_batteries_block_keeps_its_order_and_its_armies() {
+    // One battleship cannot clear eight two-step batteries in a year, and
+    // their full-strength fire sinks it. A thousand scouts take the rest of
+    // the return fire, so the loaded transports survive, armies aboard, and
+    // the fleet keeps its Invade order to suppress again next year (t202).
     let ships = Ships {
         bb: 1,
         sc: 1000,
@@ -185,8 +186,9 @@ fn an_invasion_the_batteries_block_leaves_the_fleet_on_hold_with_its_armies() {
         assert_eq!(assault.outcome, MissionOutcome::Aborted, "seed {seed}");
         assert_eq!(assault.attacker_army_losses, 0, "seed {seed}");
         assert!(events.ownership_change_events.is_empty(), "seed {seed}");
-        assert!(holds_in_orbit(&after), "seed {seed}");
         let fleet = &after.fleets[0];
+        assert_eq!(fleet.order, Order::InvadeWorld, "seed {seed}");
+        assert_eq!(fleet.sector.to_array(), SYSTEM, "seed {seed}");
         assert_eq!(fleet.ships.battleships, 0, "seed {seed}");
         assert_eq!(fleet.ships.loaded_transports, 10, "seed {seed}");
         let planet = &after.planets[SYSTEM_PLANET_IDX];
@@ -305,34 +307,33 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
     }
 }
 
-/// `tools/combat-model/collateral_t200.py` (`assault_collateral.py` under the
-/// t200 hulls), case `CA6-vs-B3-dockedBB` in its `delayed` order (the
-/// shield): the exact expected losses of one bombardment turn of six cruisers
-/// against three batteries, ten armies, and a docked battleship, in cost
-/// points (CA 15, BB 45), batteries, armies, and points of production.
+/// `tools/combat-model/collateral_t202.py` (`assault_collateral.py` under the
+/// t202 rules, the batteries firing at full strength), case `BB4-B2`: the
+/// exact expected losses of one bombardment turn of four battleships against
+/// two two-step batteries, ten armies, and
+/// a docked battleship, in cost points (BB 45), batteries destroyed, armies,
+/// and points of production.
 const SHIELD_MODEL: [(&str, f64); 5] = [
-    ("ship cost lost", 68.642),
-    ("dock cost lost", 19.0),
-    ("batteries lost", 2.956),
-    ("armies lost", 4.876),
-    ("production lost", 1.933),
+    ("ship cost lost", 19.156),
+    ("dock cost lost", 31.983),
+    ("batteries lost", 1.94),
+    ("armies lost", 5.467),
+    ("production lost", 1.063),
 ];
 
 #[test]
 fn a_bombardment_turn_costs_what_the_shield_model_says() {
     // Each trial is a year on its own campaign seed. A mean is within 4.5
-    // standard errors of the model's exact expectation. The old order, with
-    // the dock exposed beside the batteries, expects 72.9, 36.4, 2.7, 4.3,
-    // and 1.7.
+    // standard errors of the model's exact expectation.
     const TRIALS: u64 = 1000;
     let mut game_data = assault_on_system(
         Order::BombardWorld,
         Ships {
-            ca: 6,
+            bb: 4,
             ..Ships::default()
         },
         10,
-        3,
+        2,
     );
     let planet = &mut game_data.planets[SYSTEM_PLANET_IDX];
     planet.stored_goods = Real48::from_int(500);
@@ -344,7 +345,7 @@ fn a_bombardment_turn_costs_what_the_shield_model_says() {
         assert_eq!(events.bombard_events.len(), 1, "seed {seed}");
         let bombard = &events.bombard_events[0];
         let observed = [
-            15 * bombard.attacker_losses.cruisers,
+            45 * bombard.attacker_losses.battleships,
             45 * bombard.docked_losses.battleships,
             u32::from(bombard.defender_battery_losses),
             u32::from(bombard.defender_army_losses),
@@ -373,11 +374,11 @@ fn a_bombardment_turn_costs_what_the_shield_model_says() {
 fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
     // One ship bombards a world with nothing in orbit, no battery, and no
     // garrison: rounds 1 and 2 find nothing to hit and round 3 breaks
-    // through to the economy. On the overwhelming column the point count is
-    // `floor(hits / 10)`; exact enumeration over the ten rolls gives a
-    // cruiser (bombardment AS 33) 5.3 points and a battleship 22.9 (5,000
-    // goods, so the supply never caps the loss), and 25 goods a point makes
-    // a cruiser raid about 132 of 500 and a battleship raid 473.
+    // through to the economy. On the overwhelming column of the bombardment
+    // table (t202) the point count is `floor(hits / 10)`; exact enumeration
+    // over the ten rolls (`collateral_t202.py`) gives a cruiser (bombardment
+    // AS 33) 1.6 points and a battleship (90) 4.9, and 25 goods a point makes
+    // a cruiser raid about 40 goods and a battleship raid about 122.
     const TRIALS: u64 = 2000;
     for (name, ships, mean_points) in [
         (
@@ -386,7 +387,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 ca: 1,
                 ..Ships::default()
             },
-            5.3,
+            1.6,
         ),
         (
             "battleship",
@@ -394,7 +395,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 bb: 1,
                 ..Ships::default()
             },
-            22.9,
+            4.9,
         ),
     ] {
         let mut game_data = assault_on_system(Order::BombardWorld, ships, 0, 0);

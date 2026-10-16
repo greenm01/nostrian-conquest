@@ -475,6 +475,7 @@ fn build_bombard_preview(seed: u64, sample_index: usize) -> Result<PreviewScenar
         defender_armies_initial: defense_armies,
         attacker_losses,
         defender_battery_losses: battery_losses,
+        defender_batteries_crippled: 0,
         defender_army_losses: army_losses,
         breakthrough,
         docked_losses: nc_data::EmpireUnitSummary::default(),

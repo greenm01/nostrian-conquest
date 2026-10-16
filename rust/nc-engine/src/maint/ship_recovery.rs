@@ -157,6 +157,21 @@ impl AssistWatch {
     }
 }
 
+/// Battery recovery (t202): a world's crippled batteries are whole again at
+/// the end of a pass in which no fleet bombarded, invaded, or blitzed it.
+/// Under siege they stay crippled, so a siege kept up grinds a world down.
+pub(super) fn recover_batteries(
+    game_data: &mut CoreGameData,
+    attacked: impl IntoIterator<Item = usize>,
+) {
+    let attacked: std::collections::BTreeSet<usize> = attacked.into_iter().collect();
+    for (idx, planet) in game_data.planets.iter_mut().enumerate() {
+        if !attacked.contains(&idx) {
+            planet.crippled_batteries = 0;
+        }
+    }
+}
+
 /// The recovery step. Every fleet's and starbase's crippled counts drop by
 /// one turn (the assisted hulls by two), hulls that reach zero are whole,
 /// and this pass's newly crippled hulls enter at RT. Returns what recovered.

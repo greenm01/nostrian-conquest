@@ -29,6 +29,7 @@ pub(super) const SCHEMA: &str = "
         years_under_owner INTEGER NOT NULL,
         owner INTEGER NOT NULL,
         scorch_earth INTEGER NOT NULL,
+        crippled_batteries INTEGER NOT NULL DEFAULT 0,
         PRIMARY KEY(snapshot_id, record_index)
     );
     CREATE TABLE IF NOT EXISTS snapshot_planet_build_slots (
@@ -73,6 +74,7 @@ pub(super) fn write(
                 ":years_under_owner": planet.years_under_owner,
                 ":owner": planet.owner.0,
                 ":scorch_earth": planet.scorch_earth,
+                ":crippled_batteries": planet.crippled_batteries,
             },
         )?;
         for (slot, entry) in planet.build_queue.iter().enumerate() {
@@ -152,5 +154,6 @@ fn planet_from_row(row: &Row<'_>) -> rusqlite::Result<Planet> {
         years_under_owner: row.get("years_under_owner")?,
         owner: EmpireId(row.get("owner")?),
         scorch_earth: row.get("scorch_earth")?,
+        crippled_batteries: row.get("crippled_batteries")?,
     })
 }

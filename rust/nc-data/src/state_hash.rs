@@ -168,6 +168,7 @@ impl StateHash {
             years_under_owner,
             owner,
             scorch_earth,
+            crippled_batteries,
         } = planet;
         self.coords(*sector);
         self.u64(u64::from(*potential_production));
@@ -205,6 +206,11 @@ impl StateHash {
         self.u64(u64::from(*years_under_owner));
         self.u64(u64::from(owner.0));
         self.bool(*scorch_earth);
+        // Fed only when set, so every state without crippled batteries keeps
+        // the seed it had before the field existed (t202).
+        if *crippled_batteries > 0 {
+            self.u64(u64::from(*crippled_batteries));
+        }
     }
 
     fn fleet(&mut self, fleet: &Fleet) {

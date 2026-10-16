@@ -189,6 +189,7 @@ fn results_reports_battle_before_bombard_aftermath() {
         defender_armies_initial: 10,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 2,
+        defender_batteries_crippled: 0,
         defender_army_losses: 3,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),
@@ -299,6 +300,7 @@ fn bombardment_defender_report_uses_first_person_loss_wording() {
         defender_armies_initial: 9,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 0,
+        defender_batteries_crippled: 0,
         defender_army_losses: 3,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),
@@ -754,7 +756,9 @@ fn defender_receives_blocked_invasion_report() {
         .replace('\n', " ");
 
     assert!(invasion.contains("ALERT: Enemy invasion blocked!"));
-    assert!(invasion.contains("Our batteries prevented an enemy landing."));
+    assert!(
+        invasion.contains("Our batteries prevented an enemy landing; the invaders hold orbit.")
+    );
     assert!(invasion.contains("Defensive losses: 3 ground batteries."));
     assert!(invasion.contains("Enemy losses:"));
     assert!(invasion.contains("DD1 and 8 armies"));
@@ -905,6 +909,7 @@ fn bombardment_attacker_report_uses_first_person_fleet_and_undefended_wording() 
         defender_armies_initial: 0,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 0,
+        defender_batteries_crippled: 0,
         defender_army_losses: 0,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),
@@ -1036,6 +1041,7 @@ fn bombardment_defender_report_uses_no_defenses_for_zero_counts() {
         defender_armies_initial: 0,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 0,
+        defender_batteries_crippled: 0,
         defender_army_losses: 0,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),

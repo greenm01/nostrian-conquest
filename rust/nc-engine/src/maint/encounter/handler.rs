@@ -44,6 +44,8 @@ pub(super) struct Year<'a> {
     /// Where units stopped being since the last settling: their empire, and
     /// the sector and layer they were in.
     pub departed: Vec<Presence>,
+    /// Fleets that have bombarded this year, alone or with others (t202).
+    pub bombarded: Vec<usize>,
 }
 
 impl Year<'_> {
@@ -117,10 +119,13 @@ impl Year<'_> {
     /// batteries destroy leaves play, and a captured world's new owner is
     /// what later ticks see.
     fn strike(&mut self, game_data: &mut CoreGameData, unit: usize, tick: u8) {
+        let fleet_idx = self.units[unit].index;
+        if self.bombarded.contains(&fleet_idx) {
+            return;
+        }
         if !self.holds_orbit(game_data, unit, tick) {
             return;
         }
-        let fleet_idx = self.units[unit].index;
         let Unit {
             owner,
             sector,
@@ -132,13 +137,46 @@ impl Year<'_> {
         {
             self.note_combat(game_data, sector, layer, owner, world_owner);
         }
-        let mut events = resolve_strike(game_data, self.campaign_seed, fleet_idx);
+        // An empire's fleets bombarding the same world strike together.
+        let companions: Vec<usize> = if game_data.fleets[fleet_idx].order == Order::BombardWorld {
+            let target = game_data.fleets[fleet_idx].target;
+            (0..self.units.len())
+                .filter(|&other| {
+                    let u = &self.units[other];
+                    let fleet = &game_data.fleets[u.index];
+                    other != unit
+                        && u.active
+                        && u.kind == UnitKind::Fleet
+                        && u.owner == owner
+                        && fleet.order == Order::BombardWorld
+                        && fleet.target == target
+                        && fleet.sector == target
+                        && !self.bombarded.contains(&u.index)
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let companion_fleets: Vec<usize> = companions
+            .iter()
+            .map(|&other| self.units[other].index)
+            .collect();
+        let bombarding = game_data.fleets[fleet_idx].order == Order::BombardWorld;
+        let mut events =
+            resolve_strike(game_data, self.campaign_seed, fleet_idx, &companion_fleets);
         events.stamp(tick);
         self.assault_events.append(events);
-        self.movement.reload(fleet_idx);
-        self.units[unit].active = has_any_force(&game_data.fleets[fleet_idx]);
-        if !self.units[unit].active {
-            self.departed.push(Presence::of(&self.units[unit]));
+        if bombarding {
+            self.bombarded.push(fleet_idx);
+            self.bombarded.extend(&companion_fleets);
+        }
+        for member in std::iter::once(unit).chain(companions) {
+            let index = self.units[member].index;
+            self.movement.reload(index);
+            self.units[member].active = has_any_force(&game_data.fleets[index]);
+            if !self.units[member].active {
+                self.departed.push(Presence::of(&self.units[member]));
+            }
         }
     }
 

@@ -575,6 +575,11 @@ pub fn push_mission_entries(
                                     .unwrap_or_else(|| "unknown".to_string()),
                             },
                         ];
+                        if let Some(line) = bombard_event
+                            .and_then(|e| crippled_batteries_line(e.defender_batteries_crippled))
+                        {
+                            outcome_rows.push(StructuredBodyItem::Text(line));
+                        }
                         if let Some(bombard_event) = bombard_event.filter(|e| e.breakthrough) {
                             outcome_rows.extend(
                                 bombardment_collateral_damage_lines(

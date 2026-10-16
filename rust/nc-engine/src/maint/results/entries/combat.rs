@@ -63,6 +63,9 @@ pub fn push_combat_entries(
                 event.defender_army_losses,
             )));
         }
+        if let Some(line) = crippled_batteries_line(event.defender_batteries_crippled) {
+            outcome_rows.push(StructuredBodyItem::Text(line));
+        }
         outcome_rows.extend(
             bombardment_collateral_damage_lines(
                 event.stardock_items_destroyed,
@@ -398,7 +401,10 @@ pub fn push_combat_entries(
                 Some("The landing was repulsed.".to_string())
             }
             (Mission::InvadeWorld, MissionOutcome::Aborted) => {
-                Some("Enemy ground batteries prevented a landing.".to_string())
+                Some(
+                    "Enemy ground batteries prevented a landing this year; we hold orbit and continue the invasion."
+                        .to_string(),
+                )
             }
             (Mission::BlitzWorld, MissionOutcome::Succeeded) => Some(format!(
                 "We have seized planet \"{}\" in a fast assault.",
@@ -548,7 +554,7 @@ pub fn push_combat_entries(
                     "The invaders were thrown back.".to_string()
                 }
                 (Mission::InvadeWorld, MissionOutcome::Aborted) => {
-                    "Our batteries prevented an enemy landing.".to_string()
+                    "Our batteries prevented an enemy landing; the invaders hold orbit.".to_string()
                 }
                 (Mission::BlitzWorld, MissionOutcome::Failed) => {
                     "The blitz assault was repulsed.".to_string()

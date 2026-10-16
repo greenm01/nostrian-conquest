@@ -117,11 +117,11 @@ fn the_classic_doctrine_replays_t154_exactly() {
     };
     assert_eq!(
         play_match(100000, &[tuned, baseline, baseline, baseline], 60),
-        recorded([495, 192, 157, 355], [7, 4, 3, 6])
+        recorded([302, 270, 332, 277], [6, 4, 5, 5])
     );
     assert_eq!(
         play_match(100001, &mixed, 60),
-        recorded([349, 0, 1006, 100], [6, 0, 13, 1])
+        recorded([348, 77, 823, 100], [6, 1, 12, 1])
     );
 }
 

@@ -6,21 +6,21 @@ use crate::{
 
 use super::exchange::{
     COMBAT_KIND_BLITZ_COVER, COMBAT_KIND_BLITZ_GROUND, COMBAT_KIND_BLITZ_LANDING,
-    COMBAT_KIND_BOMBARD, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
+    COMBAT_KIND_BOMBARD, COMBAT_KIND_CAPTURE, COMBAT_KIND_GROUND, COMBAT_KIND_INVASION_SOFTEN,
     COMBAT_KIND_INVASION_SUPPRESSION, ExchangeResolution, GROUND_AS_ARMY, GROUND_AS_BATTERY,
     GROUND_DS_ARMY, GROUND_DS_BATTERY, apply_hits_to_fleet, apply_landing_fire_to_fleet,
-    landing_volley, resolve_ground_exchange, resolve_orbital_exchange, scalar_hits_with_critical,
-    seeded_combat_roll,
+    landing_volley, resolve_battery_exchange, resolve_ground_exchange, resolve_landing_exchange,
+    resolve_orbital_exchange, scalar_hits_with_critical, seeded_combat_roll,
 };
 use super::reporting::{preferred_reporting_fleet_number, push_planet_intel};
 use super::retreat::set_fleet_to_hold_current_position;
 use super::state::{
     FleetCombatState, IDX_BB, IDX_CA, IDX_DD, IDX_ET, IDX_SB, IDX_SC, IDX_TT, fleet_class_ds,
     fleet_state_from_records, planet_idx_at_coords, ship_counts_from_state,
-    ship_losses_from_states,
+    ship_losses_from_states, warship_attack_as,
 };
 use nc_data::{
-    InheritedAssets, Real48, has_any_force, present_production_points, set_armies_aboard,
+    GameRng, InheritedAssets, Real48, has_any_force, present_production_points, set_armies_aboard,
     stardock_slot_kind, stored_production_points,
 };
 
@@ -181,14 +181,31 @@ fn reduce_stardock(planet: &mut nc_data::Planet, mut hits: u32) -> u32 {
     hits
 }
 
-/// Each ground battery destroyed costs its DS (20 hits). Returns the hits
-/// left over.
-fn apply_battery_hits(planet: &mut nc_data::Planet, hits: u32) -> u32 {
-    let battery_loss = (hits / GROUND_DS_BATTERY)
-        .min(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX) as u32);
-    planet.ground_batteries =
-        u16::from(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX) - battery_loss as u8);
-    hits - battery_loss * GROUND_DS_BATTERY
+/// Batteries take two steps (t202): hits cripple healthy batteries for
+/// their DS each, and once every battery is crippled, destroy crippled ones
+/// for their DS each. Returns the hits left over.
+fn apply_battery_hits(planet: &mut nc_data::Planet, mut hits: u32) -> u32 {
+    let total = u32::from(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
+    let mut crippled = u32::from(planet.crippled_batteries).min(total);
+    let healthy = total - crippled;
+    let newly_crippled = (hits / GROUND_DS_BATTERY).min(healthy);
+    crippled += newly_crippled;
+    hits -= newly_crippled * GROUND_DS_BATTERY;
+    let mut destroyed = 0;
+    if newly_crippled == healthy {
+        destroyed = (hits / GROUND_DS_BATTERY).min(crippled);
+        hits -= destroyed * GROUND_DS_BATTERY;
+    }
+    planet.ground_batteries = (total - destroyed) as u16;
+    planet.crippled_batteries = (crippled - destroyed) as u16;
+    hits
+}
+
+/// The batteries' attack strength: 90 each, 45 while crippled.
+fn battery_attack_as(planet: &nc_data::Planet) -> u32 {
+    let total = u32::from(u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX));
+    let crippled = u32::from(planet.crippled_batteries).min(total);
+    (total - crippled) * GROUND_AS_BATTERY + crippled * (GROUND_AS_BATTERY / 2)
 }
 
 fn stardock_summary(planet: &nc_data::Planet) -> nc_data::EmpireUnitSummary {
@@ -309,6 +326,72 @@ fn apply_scorch_on_capture(planet: &mut nc_data::Planet) {
     planet.scorch_earth = false;
 }
 
+/// What a capture destroys, as classic's capture step does (`110a:6a9f`,
+/// t202), with draws keyed on the campaign, the year, and the world. An
+/// invasion keeps 20-40% of the production, 10-50% of positive goods, and a
+/// share of the dock; a blitz keeps them, and its batteries, in proportion to
+/// `f = min(1, sqrt(survivors / defenders))`, the attackers left against the
+/// world's armies when the assault began.
+fn apply_capture_damage(
+    planet: &mut nc_data::Planet,
+    kind: Mission,
+    survivors: u32,
+    defenders: u32,
+    rng: &mut GameRng,
+) {
+    let draw = |rng: &mut GameRng, n: u64| rng.below(n) as f64 / 1000.0;
+    let invade = kind == Mission::InvadeWorld;
+    let f = if defenders == 0 {
+        1.0
+    } else {
+        (f64::from(survivors) / f64::from(defenders))
+            .sqrt()
+            .min(1.0)
+    };
+    let (production_kept, goods_kept) = if invade {
+        (draw(rng, 200) + 0.2, draw(rng, 400) + 0.1)
+    } else {
+        (f * (draw(rng, 150) + 0.85), f * (draw(rng, 450) + 0.55))
+    };
+    let production = planet.production.to_f64() * production_kept;
+    planet.production = Real48::from_f64(if planet.potential_production > 0 {
+        production.max(1.0)
+    } else {
+        production
+    });
+    let goods = planet.stored_goods.to_f64();
+    if goods > 1.0 {
+        planet.stored_goods = Real48::from_f64(goods * goods_kept);
+    }
+    if !invade {
+        let batteries = f64::from(planet.ground_batteries) * f * (draw(rng, 650) + 0.35);
+        planet.ground_batteries = batteries.round() as u16;
+        planet.crippled_batteries = planet.crippled_batteries.min(planet.ground_batteries);
+    }
+    let dock_scale = if invade { rng.next_real() } else { f };
+    for slot in 0..STARDOCK_SLOT_COUNT {
+        let count = f64::from(planet.stardock[slot]);
+        if count > 0.0 {
+            let kept = dock_scale * (draw(rng, 800) + 0.2);
+            planet.stardock[slot] = (count * kept).round() as u32;
+        }
+    }
+}
+
+/// A capture's draws: the campaign, the year, and the world's sector.
+fn capture_rng(campaign_seed: u64, year: u16, coords: [u8; 2]) -> GameRng {
+    GameRng::from_context(
+        campaign_seed,
+        crate::RNG_TAG_COMBAT,
+        &[
+            COMBAT_KIND_CAPTURE,
+            u64::from(year),
+            u64::from(coords[0]),
+            u64::from(coords[1]),
+        ],
+    )
+}
+
 /// The world passes to `new_owner` with `garrison` armies and `batteries`.
 /// Everything else the fight left stands: goods, production, docked ships,
 /// and the build queue pass intact, with no capture bonus and no forgiven
@@ -327,6 +410,7 @@ fn capture_planet(
     planet.years_under_owner = 0;
     planet.armies = u16::from(garrison.min(255) as u8);
     planet.ground_batteries = batteries;
+    planet.crippled_batteries = planet.crippled_batteries.min(batteries);
     apply_scorch_on_capture(planet);
     InheritedAssets {
         stored_goods: stored_production_points(planet),
@@ -336,14 +420,10 @@ fn capture_planet(
     }
 }
 
+/// Every warship bombards with its attack strength, half while crippled
+/// (t202: no bombard bonus).
 pub(super) fn bombard_attack_as(state: &FleetCombatState) -> u32 {
-    let mut as_total = 0;
-    // Healthy ships (AS_DD: 12, AS_CA: 33, AS_BB: 90)
-    // Bombard modifiers (0.5x, 1.0x, 1.5x)
-    as_total += state.nominal_count(IDX_DD) * 6 + state.crippled_count(IDX_DD) * 3;
-    as_total += state.nominal_count(IDX_CA) * 33 + state.crippled_count(IDX_CA) * 16;
-    as_total += state.nominal_count(IDX_BB) * 135 + state.crippled_count(IDX_BB) * 67;
-    as_total
+    warship_attack_as(state)
 }
 
 fn blitz_cover_exchange(
@@ -388,13 +468,13 @@ fn apply_blitz_landing_fire(
     defender_empire: u8,
     attacker_empire: u8,
     fleet_indices: &[usize],
-    surviving_batteries: u8,
+    battery_as: u32,
 ) -> (u32, ShipLosses) {
-    if surviving_batteries == 0 {
+    if battery_as == 0 {
         return (0, ShipLosses::default());
     }
     let before = fleet_state_from_records(game_data, fleet_indices, &[]);
-    let landing_exchange = resolve_orbital_exchange(
+    let landing_exchange = resolve_landing_exchange(
         campaign_seed,
         game_year,
         coords,
@@ -402,7 +482,7 @@ fn apply_blitz_landing_fire(
         1,
         defender_empire,
         attacker_empire,
-        u32::from(surviving_batteries) * GROUND_AS_BATTERY,
+        battery_as,
         bombard_attack_as(&before).max(1),
     );
     let mut after = before.clone();
@@ -498,8 +578,10 @@ pub(super) fn resolve_seeded_landing(
 }
 
 /// Resolve the planetary attack of fleet `fleet_idx`, whose strike test
-/// passed this tick: one fleet against its target world, both as they stand
-/// now. The fleet is in orbit at depth 1.0 with speed 0. What the attack
+/// passed this tick: the fleet against its target world, both as they stand
+/// now. A Bombard strike takes in `companions`, the empire's other fleets in
+/// orbit there under Bombard that are still ready, as one force (t202);
+/// Invade and Blitz strike alone. The fleet is in orbit at depth 1.0 with speed 0. What the attack
 /// leaves on its order:
 /// - Bombard: the order stands, so the fleet bombards again each year until
 ///   the player changes it.
@@ -516,6 +598,7 @@ pub(crate) fn resolve_strike(
     game_data: &mut CoreGameData,
     campaign_seed: u64,
     fleet_idx: usize,
+    companions: &[usize],
 ) -> AssaultEvents {
     let mut events = AssaultEvents::default();
     let order = game_data.fleets[fleet_idx].order;
@@ -533,7 +616,15 @@ pub(crate) fn resolve_strike(
         return events;
     };
     let empire = game_data.fleets[fleet_idx].owner.0;
-    let fleets = [fleet_idx];
+    let mut fleets = vec![fleet_idx];
+    if kind == Mission::BombardWorld {
+        fleets.extend(
+            companions
+                .iter()
+                .copied()
+                .filter(|&idx| fleet_still_ready_for_assault(game_data, idx, order)),
+        );
+    }
     let mission_event = move |outcome, abort_reason| MissionEvent {
         fleet_idx,
         owner_empire: empire,
@@ -570,6 +661,12 @@ pub(crate) fn resolve_strike(
                 .sum();
             let mut fleet_state = before.clone();
             let mut breakthrough = false;
+            let mut losses_rng = GameRng::from_seed(
+                campaign_seed
+                    ^ (u64::from(battle_year) << 32)
+                    ^ (u64::from(coords[0]) << 8)
+                    ^ u64::from(coords[1]),
+            );
 
             // Three-round bombardment: rounds 1-2 suppression, round 3 breakthrough if batteries cleared.
             for round in 1..=3u32 {
@@ -584,7 +681,7 @@ pub(crate) fn resolve_strike(
                     breakthrough = true;
                 }
 
-                let defense_as = batteries_at_round_start as u32 * GROUND_AS_BATTERY;
+                let defense_as = battery_attack_as(&game_data.planets[planet_idx]);
                 let attacker_exchange = resolve_orbital_exchange(
                     campaign_seed,
                     battle_year,
@@ -599,7 +696,7 @@ pub(crate) fn resolve_strike(
 
                 // Batteries fire back each round they exist.
                 if defense_as > 0 {
-                    let defender_exchange = resolve_orbital_exchange(
+                    let defender_exchange = resolve_battery_exchange(
                         campaign_seed,
                         battle_year,
                         coords,
@@ -617,7 +714,12 @@ pub(crate) fn resolve_strike(
                         defender_exchange.hits,
                         u32::from(defender_exchange.critical),
                     );
-                    super::damage::write_back_strike(game_data, fleet_idx, &next_state);
+                    super::damage::write_back_strike_group(
+                        game_data,
+                        &fleets,
+                        &next_state,
+                        &mut losses_rng,
+                    );
                     fleet_state = fleet_state_from_records(game_data, &fleets, &[]);
                 }
 
@@ -644,6 +746,8 @@ pub(crate) fn resolve_strike(
                 attacker_losses: ship_losses_from_states(&before, &fleet_state),
                 defender_battery_losses: pre_batteries
                     .saturating_sub(u8::try_from(post_planet.ground_batteries).unwrap_or(u8::MAX)),
+                defender_batteries_crippled: u8::try_from(post_planet.crippled_batteries)
+                    .unwrap_or(u8::MAX),
                 defender_army_losses: pre_armies
                     .saturating_sub(u8::try_from(post_planet.armies).unwrap_or(u8::MAX)),
                 breakthrough,
@@ -682,7 +786,6 @@ pub(crate) fn resolve_strike(
         }
         Mission::InvadeWorld => {
             let state = fleet_state_from_records(game_data, &fleets, &[]);
-            let bombard_as = bombard_attack_as(&state);
             let initial_attacking_armies: u32 = fleets
                 .iter()
                 .map(|idx| game_data.fleets[*idx].ships.loaded_transports as u32)
@@ -691,45 +794,53 @@ pub(crate) fn resolve_strike(
             let planet = &game_data.planets[planet_idx];
             let pre_batteries = u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX);
             let pre_armies = u8::try_from(planet.armies).unwrap_or(u8::MAX);
-            let battery_as =
-                u8::try_from(planet.ground_batteries).unwrap_or(u8::MAX) as u32 * GROUND_AS_BATTERY;
-            let suppression_exchange = resolve_orbital_exchange(
-                campaign_seed,
-                battle_year,
-                coords,
-                COMBAT_KIND_INVASION_SUPPRESSION,
-                1,
-                empire,
-                previous_owner,
-                bombard_as,
-                battery_as.max(1),
-            );
-            let return_exchange = resolve_orbital_exchange(
-                campaign_seed,
-                battle_year,
-                coords,
-                COMBAT_KIND_INVASION_SUPPRESSION,
-                1,
-                previous_owner,
-                empire,
-                battery_as,
-                bombard_as.max(1),
-            );
 
+            // Suppression takes the year's three rounds, as a bombardment
+            // does, but strikes only the batteries (t202): the landing
+            // follows in the same year if they all fall.
             let before = state.clone();
             let mut after = state.clone();
-            apply_hits_to_fleet(
-                &mut after,
-                0,
-                return_exchange.hits,
-                u32::from(return_exchange.critical),
-            );
-            super::damage::write_back_strike(game_data, fleet_idx, &after);
-
-            apply_battery_hits(
-                &mut game_data.planets[planet_idx],
-                scalar_hits_with_critical(suppression_exchange),
-            );
+            for round in 1..=3u32 {
+                let battery_as = battery_attack_as(&game_data.planets[planet_idx]);
+                let bombard_as = bombard_attack_as(&after);
+                if battery_as == 0 || bombard_as == 0 {
+                    break;
+                }
+                let suppression_exchange = resolve_orbital_exchange(
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    COMBAT_KIND_INVASION_SUPPRESSION,
+                    round,
+                    empire,
+                    previous_owner,
+                    bombard_as,
+                    battery_as,
+                );
+                let return_exchange = resolve_battery_exchange(
+                    campaign_seed,
+                    battle_year,
+                    coords,
+                    COMBAT_KIND_INVASION_SUPPRESSION,
+                    round,
+                    previous_owner,
+                    empire,
+                    battery_as,
+                    bombard_as,
+                );
+                apply_hits_to_fleet(
+                    &mut after,
+                    0,
+                    return_exchange.hits,
+                    u32::from(return_exchange.critical),
+                );
+                super::damage::write_back_strike(game_data, fleet_idx, &after);
+                after = fleet_state_from_records(game_data, &fleets, &[]);
+                apply_battery_hits(
+                    &mut game_data.planets[planet_idx],
+                    scalar_hits_with_critical(suppression_exchange),
+                );
+            }
 
             let batteries_cleared = game_data.planets[planet_idx].ground_batteries == 0;
             if batteries_cleared {
@@ -779,6 +890,13 @@ pub(crate) fn resolve_strike(
                     set_armies_aboard(&mut game_data.fleets[idx], 0);
                 }
                 if attacker_survivors > 0 && defender_survivors == 0 {
+                    apply_capture_damage(
+                        &mut game_data.planets[planet_idx],
+                        Mission::InvadeWorld,
+                        attacker_survivors,
+                        u32::from(pre_armies),
+                        &mut capture_rng(campaign_seed, battle_year, coords),
+                    );
                     let inherited = capture_planet(
                         &mut game_data.planets[planet_idx],
                         empire,
@@ -875,11 +993,9 @@ pub(crate) fn resolve_strike(
                     }
                 }
             } else {
-                // The batteries held: no troops land and the fleets
-                // keep their armies.
-                events
-                    .mission_events
-                    .push(mission_event(MissionOutcome::Aborted, None));
+                // The batteries held: no troops land, and the fleets keep
+                // their armies and their order, to suppress again next
+                // year (t202).
                 events.assault_report_events.push(AssaultReportEvent {
                     kind: Mission::InvadeWorld,
                     attacker_fleet_number: preferred_reporting_fleet_number(game_data, &fleets),
@@ -929,7 +1045,9 @@ pub(crate) fn resolve_strike(
                 PlanetIntelSource::AssaultFailure
             };
 
-            clear_arrival_and_hold(game_data, &fleets);
+            if batteries_cleared {
+                clear_arrival_and_hold(game_data, &fleets);
+            }
             push_planet_intel(
                 &mut events.planet_intel_events,
                 planet_idx,
@@ -967,14 +1085,13 @@ pub(crate) fn resolve_strike(
                 empire,
                 previous_owner,
                 &cover_state,
-                pre_batteries as u32 * GROUND_AS_BATTERY,
+                battery_attack_as(&game_data.planets[planet_idx]),
             );
             apply_battery_hits(
                 &mut game_data.planets[planet_idx],
                 scalar_hits_with_critical(cover_exchange),
             );
-            let surviving_batteries =
-                u8::try_from(game_data.planets[planet_idx].ground_batteries).unwrap_or(u8::MAX);
+            let surviving_battery_as = battery_attack_as(&game_data.planets[planet_idx]);
             let (landing_army_losses, ship_losses) = apply_blitz_landing_fire(
                 game_data,
                 campaign_seed,
@@ -983,7 +1100,7 @@ pub(crate) fn resolve_strike(
                 previous_owner,
                 empire,
                 &fleets,
-                surviving_batteries,
+                surviving_battery_as,
             );
             let armies_after_landing = attacking_armies.saturating_sub(landing_army_losses);
             let defender_armies =
@@ -1007,6 +1124,13 @@ pub(crate) fn resolve_strike(
                 set_armies_aboard(&mut game_data.fleets[idx], 0);
             }
             if attacker_survivors > 0 && defender_survivors == 0 {
+                apply_capture_damage(
+                    &mut game_data.planets[planet_idx],
+                    Mission::BlitzWorld,
+                    attacker_survivors,
+                    u32::from(pre_armies),
+                    &mut capture_rng(campaign_seed, battle_year, coords),
+                );
                 let batteries = game_data.planets[planet_idx].ground_batteries;
                 let inherited = capture_planet(
                     &mut game_data.planets[planet_idx],

@@ -373,10 +373,29 @@ fn nc_sysop_maint_persists_bombardment_report_and_runtime_damage() {
             .iter()
             .any(|row| row.decoded_text.contains("World defenses:"))
     );
+    // The fixture's 3 cruisers and 5 destroyers (159 AS) cannot cripple
+    // one of the four batteries on the bombardment table (t202), but the
+    // batteries' return fire must cost them ships; world damage, crippled
+    // batteries included, also counts.
+    let warships = |data: &nc_data::CoreGameData| -> u32 {
+        data.fleets
+            .iter()
+            .filter(|fleet| {
+                fleet.order == Order::BombardWorld || fleet.sector.to_array() == target_coords
+            })
+            .map(|fleet| {
+                u32::from(fleet.ships.destroyers)
+                    + u32::from(fleet.ships.cruisers)
+                    + u32::from(fleet.ships.battleships)
+            })
+            .sum()
+    };
     assert!(
         u8::try_from(post_target.ground_batteries).unwrap_or(u8::MAX) < pre_batteries
-            || u8::try_from(post_target.armies).unwrap_or(u8::MAX) < pre_armies,
-        "bombardment should damage the target world"
+            || u8::try_from(post_target.armies).unwrap_or(u8::MAX) < pre_armies
+            || post_target.crippled_batteries > 0
+            || warships(&runtime.game_data) < warships(&pre),
+        "the bombardment exchange should cost one side"
     );
     assert_runtime_playability_invariants(&runtime);
 

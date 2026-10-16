@@ -365,7 +365,7 @@ You control five major force types: planets, ships, starbases, armies, and groun
     [*Transport*],  [05], [5], [M], [00], [10], [Unarmed. Carries one army. Essential for conquest.],
     [*ETAC*],       [20], [3], [L], [00], [20], [Colony ship. Reusable --- survives colonization.],
     [*Starbase*],   [50], [1], [L], [100], [130], [Orbital fortress. Defense and production boost.],
-    [*Ground Battery*], [20], [--], [L], [90], [20], [Planetary defense.],
+    [*Ground Battery*], [20], [--], [L], [90], [66], [Planetary defense. Two steps, like a ship: crippled, then destroyed.],
     [*Army*],       [02], [--], [S], [10], [10], [Surface defense and capture.],
   ),
 )
@@ -421,7 +421,7 @@ gives the exact condition.
 
 *Armies* (Cost: 2, AS: 10, DS: 10) defend your planets from invasion and are the only way to capture enemy worlds. Each troop transport carries one army, and a successful invasion requires landing enough armies to overwhelm the defending garrison.
 
-*Ground Batteries* (Cost: 20, AS: 90, DS: 20) are immobile land-based cannons that offer massive firepower per cost --- roughly equal to a battleship at less than half the price. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire directly on descending transports, inflicting heavy losses. If a planet is captured via blitz, any surviving batteries transfer intact to the new owner.
+*Ground Batteries* (Cost: 20, AS: 90, DS: 66) are immobile land-based cannons that offer massive firepower per cost --- roughly equal to a battleship at less than half the price. Like a ship, a battery takes two steps: 66 hits cripple it, and it then fires at half strength until 66 more destroy it. Crippled batteries are repaired at the end of any year in which no one attacked the world. During an invasion, all batteries must be destroyed before transports can land. During a blitz, surviving batteries fire directly on descending transports, inflicting heavy losses. If a planet is captured via blitz, any surviving batteries transfer intact to the new owner.
 
 #pagebreak()
 
@@ -605,14 +605,19 @@ and a fleet that loses is driven off (see @missions).
 three rounds. Its hits go to the ground batteries first; only when none are
 left do they reach docked ships, then armies, stored goods, and factories.
 Bombardment therefore destroys what you might later capture. Use it to break a
-world's defenses or to ruin a world you cannot hold. Battleships bombard best;
-a destroyer counts only half its strength.
+world's defenses or to ruin a world you cannot hold. All your fleets
+bombarding the same world fire together as one force. A siege kept up grinds
+a fortress down: the batteries you cripple stay crippled for as long as you
+keep bombarding, and recover only after a year without an attack.
+Battleships make the best bombardiers, because they live through the return
+fire.
 
-*Invade* takes a world intact. The fleet fires one round at the batteries, and
-if any survive, no troops land and the armies stay aboard; bombard first, or
-bring enough firepower to clear the batteries at once. With the batteries gone,
-your ships soften the defending armies, never more than half of them, and the
-transports land. Invasion never touches stored goods or factories.
+*Invade* takes a world intact. The fleet fires the year's three rounds at the
+batteries only, and if any survive, no troops land: the fleet keeps its armies
+aboard and its order, and suppresses again next year until the last battery
+falls. With the batteries gone, your ships soften the defending armies, never
+more than half of them, and the transports land. Invasion never bombards the
+economy, but a world taken by invasion keeps only part of its industry.
 
 *Blitz* lands at once. Your warships fire on the batteries first, and the stronger the escort, the fewer batteries are left; then your armies come down under the survivors' fire, which picks off transports before they reach the ground, but if you win, the world's
 factories, goods, and surviving batteries are yours. Use it against lightly
@@ -625,9 +630,9 @@ even chance, and twice as many wins nine times in ten. A world with no armies
 falls to the first army that lands. A failed assault
 leaves your survivors in orbit on Hold.
 
-*What a capture is worth.* A captured world passes to you with whatever the
-fight left standing: stored goods, production, docked ships, queued builds, and
-any debt. It pays no revenue for two years while its industry converts, then
+*What a capture is worth.* An invasion wrecks most of a world's industry, and
+a blitz that lands in strength takes it almost whole (see Captured Worlds in the
+combat appendix); queued builds and any debt pass on either way. It pays no revenue for two years while its industry converts, then
 full revenue. If its owner set Scorch Earth, its production and goods are
 halved and its stardock emptied when it falls (see @scorch-earth). In short,
 bombardment costs you part of the prize, invasion keeps the prize but needs the
@@ -638,8 +643,10 @@ transports.
 
 *Ground batteries* are your cheapest firepower: 20 points buys the attack of a
 battleship. They destroy ships outright, they must fall before an invader can
-land, and they fire on transports during a blitz. A world with many batteries
-costs an attacker years of bombardment.
+land, and they fire on transports during a blitz. An attacker needs about three
+times their cost in warships to take a fortress in a year; with less he must
+besiege it for years, and an undersized fleet is destroyed. Lift his siege for
+a year and your crippled batteries are repaired.
 
 *Armies* decide the landing. Your defenders fire first, so an attacker needs
 about twice your armies to be confident, and a world with none falls to a
@@ -1526,24 +1533,24 @@ his fleets there with warships fight it the week it reaches orbit, spotted or
 not, and your other fleets in that orbit join it under their own ROE. If its
 ROE will not take them on with the side it has, it turns for home without a
 shot; if it loses, it is driven off, and the batteries do not fire on it as it
-goes. Only a fleet that holds the orbit attacks, in that same week. Each fleet
-attacks on its own as it arrives, so two of your fleets at one world strike
-one after the other, and the second need not fight defenders the first has
-beaten. A fleet told to attack the world it already orbits attacks at the next
-maintenance. A fleet of loaded transports may attempt a blitz without
+goes. Only a fleet that holds the orbit attacks, in that same week. Your
+fleets in orbit there under Bombard join it and bombard as one force, once a
+year; an invading or blitzing fleet attacks on its own as it arrives, and a
+second one need not fight defenders the first has beaten. A fleet told to
+attack the world it already orbits attacks at the next maintenance. A fleet of loaded transports may attempt a blitz without
 warships, but then it brings no orbital fire of its own; the owner's ships
 without warships do not stop it, but his starbase or any fleet of his with
 warships in orbit does, and the transports turn for home.
 
 #admonition("WARNING")[Planetary defenses use *focus fire*. Hits from ground batteries bypass the crippled state and directly destroy ships, making them far more lethal than dispersed ship-to-ship fire. A commander who brings a large fleet to orbit a fortified world will find his ships being picked off one by one by concentrated ground fire.]
 
-Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only, and hits beyond what destroys them are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
+Each bombardment turn resolves three rounds of fire. In rounds 1 and 2, your ships trade fire with the planet's batteries. While batteries stand at the start of a round, your hits land on the batteries only: they cripple healthy batteries first, and only when every battery is crippled do they destroy crippled ones. Hits beyond what the batteries can take are wasted. Ships in the stardock are exposed from the next round, the first that begins with no batteries standing. Armies, stored goods, and factories are shielded in these rounds. In round 3, if all batteries have been destroyed, your remaining firepower breaks through to the stardock, then armies, stored goods, and factories. If batteries still stand, round 3 is another suppression exchange and the planet's vulnerable assets survive another turn.
 
-Planetary targets have defense strength just like ships. Destroying a ground battery takes 20 hits, an army 10 hits, and a ship in the stardock as many hits as its own DS. A lone cruiser cannot level a fortified world in a single volley.
+Planetary targets have defense strength just like ships. Crippling a ground battery takes 66 hits and destroying a crippled one 66 more; an army takes 10 hits, and a ship in the stardock as many hits as its own DS. Orbital fire is far less effective than ship-to-ship fire: ships firing at dug-in guns, and guns firing at ships in orbit, both read the bombardment table at a third of fleet strength. A lone cruiser cannot level a fortified world in a single volley.
 
-This means a well-defended planet takes sustained bombardment over multiple turns before you touch its production. Build batteries to buy time; bring heavy fleets to break through faster.
+Crippled batteries stay crippled from one year to the next while the world is under attack, and recover at the end of any year in which no fleet bombarded, invaded, or blitzed it. A siege kept up therefore grinds a fortress down. Roughly, a force of three times the batteries' cost in warships takes any fortress in a year or so; twice their cost, kept on station and reinforced, takes it in two or three years; and a force no larger than the batteries' cost is destroyed. Build batteries to buy time; bring heavy fleets to break through faster.
 
-@missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The exact bombardment weights, batteries-only return-fire rule, and combat tables follow below.
+@missions explains when a hostile fleet arrives and attacks, and @attacking-worlds what each attack is for. The bombardment table, the two-step battery rule, the batteries-only return-fire rule, and the other combat tables follow below.
 
 === The Landing Battle
 
@@ -1555,13 +1562,13 @@ Capture odds follow the ratio of landed armies to defending armies, roughly the 
 
 === Captured Worlds
 
-A world falls when its last defending army is destroyed, and your surviving armies become its garrison. It passes to you with what the fight left standing: its stored goods, production, docked ships, and queued build work. There is no capture bonus, no loss for the kind of attack, and no forgiveness of debt. Your capture report lists the goods, the docked ships, and the queued work you inherit.
+A world falls when its last defending army is destroyed, and your surviving armies become its garrison. The fight wrecks part of what it was worth, as in classic Esterian Conquest. An *invasion* leaves 20--40% of the world's production, 10--50% of its stored goods, and a share of its docked ships, and no batteries: the slow assault gives the defenders time to sabotage. A *blitz* keeps most of the world intact: production, goods, docked ships, and batteries are kept in proportion to how well the landing went, `f = min(1, sqrt(surviving attackers / starting defenders))` --- production `85--100% x f`, goods `55--100% x f`, batteries `35--100% x f`. A blitz that lands in strength takes a world almost whole. Each share is a seeded roll. Production never falls below 1.0 on a world with potential, the queued build work survives, and debt is never forgiven. Your capture report lists the goods, the docked ships, and the queued work you inherit.
 
 A defender can set Scorch Earth to deny a world to the invader. If the world falls with the order set, its production and positive goods are halved, its stardock is emptied, the order is lifted, and production is raised to at least 1.0. A world with no potential stays at 0, debt is untouched, and the build queue is not burned. The capture report says when the defenders had scorched the world. A failed assault leaves the order set.
 
 === Failed Assaults
 
-Failure is not defeat. A fleet whose landing fails, or whose Invade is blocked because batteries survived suppression, keeps its survivors in orbit on Hold and receives a failure report. A blocked Invade lands nothing and its armies stay aboard. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
+Failure is not defeat. A fleet whose landing fails keeps its survivors in orbit on Hold and receives a failure report. An Invade blocked because batteries survived its year lands nothing, keeps its armies aboard, and keeps its order: it suppresses again next year. The fleet does not blockade the world on its own, and like any fleet in orbit it is open to the ordinary encounter rules. A fleet beaten in the orbital battle before it can strike turns for home under the withdrawal rules above; the world's batteries fire on no fleet except one that strikes.
 
 
 == Starbase Recovery <starbase-recovery>
@@ -1633,7 +1640,7 @@ lets crippled light ships keep contributing fire.
     [Transport], [0],  [10], [Non-combat hull],
     [ETAC],      [0],  [20], [Colonization hull],
     [Starbase],  [100],[130],[Heavy orbital defender],
-    [Battery],   [90], [20], [Planetary defense],
+    [Battery],   [90], [66], [Planetary defense; two steps, 45 AS crippled],
     [Army],      [10], [10], [Ground combatant],
   ),
 )
@@ -1703,7 +1710,7 @@ outright, a crippled ship first.
 == Planetary Force Ratio to CRT Column
 
 Bombardment, invasion suppression and softening, and blitz cover and landing
-fire read the `d10` on the ratio CRT below. The landing battle between armies
+fire read the `d10` on the Bombardment Table below. The landing battle between armies
 does not; see Landing Battle.
 
 #figure(
@@ -1722,7 +1729,17 @@ does not; see Landing Battle.
   ),
 )
 
-== Planetary Combat CRT
+== Bombardment Table
+
+Every orbital exchange reads this table: bombardment and invasion suppression,
+invasion softening, blitz cover fire, the batteries' return fire, and blitz
+landing fire. Each entry is a share of the firing side's AS, in twelfths for
+fire that hits poorly and in quarters for fire that does not:
+
+- Ships firing at dug-in guns and armies, and batteries firing at descending
+  transports, read it in *twelfths*: a third of its strength.
+- Batteries firing at ships in orbit read it in *quarters*: full strength.
+  Big guns on the ground rarely miss large ships overhead.
 
 #figure(
   table(
@@ -1732,16 +1749,16 @@ does not; see Landing Battle.
     table.header(
       [d10], [Disadvantaged], [Pressed], [Even], [Advantaged], [Overwhelming],
     ),
-    [0], [0.00], [0.25], [0.50], [0.75], [1.00],
-    [1], [0.25], [0.50], [0.75], [1.00], [1.25],
-    [2], [0.25], [0.50], [1.00], [1.25], [1.50],
-    [3], [0.50], [0.75], [1.00], [1.25], [1.50],
-    [4], [0.50], [0.75], [1.00], [1.50], [1.75],
-    [5], [0.50], [1.00], [1.25], [1.50], [1.75],
-    [6], [0.75], [1.00], [1.25], [1.50], [2.00],
-    [7], [0.75], [1.00], [1.50], [1.75], [2.00],
-    [8], [1.00], [1.25], [1.50], [1.75], [2.00],
-    [9], [1.00], [1.50], [1.75], [2.00], [2.50],
+    [0], [0], [1], [2], [3], [4],
+    [1], [1], [2], [3], [4], [5],
+    [2], [1], [2], [4], [5], [6],
+    [3], [2], [3], [4], [5], [6],
+    [4], [2], [3], [4], [6], [7],
+    [5], [2], [4], [5], [6], [7],
+    [6], [3], [4], [5], [6], [8],
+    [7], [3], [4], [6], [7], [8],
+    [8], [4], [5], [6], [7], [8],
+    [9], [4], [6], [7], [8], [10],
   ),
 )
 
@@ -1753,7 +1770,8 @@ does not; see Landing Battle.
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[hits = ceil(total_AS \* CRT_multiplier)]],
+    [#text(font: "IBM Plex Mono")[hits = ceil(total_AS \* table_entry / 12)    (ships' fire, landing fire)]],
+    [#text(font: "IBM Plex Mono")[hits = ceil(total_AS \* table_entry / 4)     (battery return fire)]],
   )
 ]
 
@@ -1763,11 +1781,9 @@ loss allocation.
 == Bombardment and Planetary Fire
 
 Only destroyers, cruisers, and battleships contribute bombardment attack
-strength:
-
-- Destroyer bombardment AS: `0.5x`
-- Cruiser bombardment AS: `1.0x`
-- Battleship bombardment AS: `1.5x`
+strength, each with its own AS (destroyer 12, cruiser 33, battleship 90), half
+while crippled. All of an empire's fleets bombarding the same world in a year
+fire together as one force, and share its losses as a battle side does.
 
 Planetary return fire is:
 
@@ -1775,7 +1791,7 @@ Planetary return fire is:
   #stack(
     dir: ttb,
     spacing: 0.45em,
-    [#text(font: "IBM Plex Mono")[return_fire_AS = battery_AS]],
+    [#text(font: "IBM Plex Mono")[return_fire_AS = 90 \* healthy_batteries + 45 \* crippled_batteries]],
   )
 ]
 
@@ -1784,9 +1800,10 @@ the crippled state and allocate directly to the destroyed pool, paying `2x DS` f
 
 Orbital hits on a world pay each target's DS on the same 10x scale:
 
-- Ground battery: `20` hits
+- Ground battery: `66` hits to cripple, then `66` to destroy. Hits cripple
+  every healthy battery before they destroy a crippled one.
 - Army: `10` hits
-- Ship in the stardock: its own DS from the unit table (docked batteries `20`,
+- Ship in the stardock: its own DS from the unit table (docked batteries `66`,
   armies `10`)
 - Stored goods and factories: remaining hits are divided by `10`, and each
   point then destroys `25` stored goods and `1` factory
@@ -1795,6 +1812,10 @@ Hits below one unit's cost do not destroy it, and partial hits do not carry
 over to the next round. Once the stardock is exposed, hits too few for the next
 docked item pass on to the next stardock entry. Invasion suppression and blitz
 cover fire pay the same battery cost and never reach the stardock.
+
+Crippled batteries stay crippled from year to year while the world is attacked,
+and are repaired at the end of any year in which no fleet bombarded, invaded,
+or blitzed it.
 
 Blitz landing fire is one exchange of the surviving batteries' AS against the
 escorts' bombardment AS. It is focus fire aimed at the descending transports
@@ -1814,17 +1835,18 @@ exchange.
   and industry. If batteries still stand, round 3 is another suppression
   exchange.
 
-Invasion uses one suppression exchange against batteries. If batteries are
-cleared, the softening pass targets armies only --- industry and stored goods
+Invasion suppresses for up to three rounds, as a bombardment does, but its
+hits strike the batteries only and never the stardock, armies, or industry; it
+stops as soon as the last battery falls. If batteries are cleared, the softening pass targets armies only --- industry and stored goods
 are not damaged during invasion. Its CRT column compares bombardment AS
 against `armies x 10`. Orbital softening may destroy at most half of
 the defender's starting armies, ensuring a meaningful landing battle whenever a
 world began the assault with a garrison. Once armies land, the landing battle
 in invasion and blitz is fought as described next.
 
-A fleet whose landing fails, or whose Invade is blocked by surviving batteries,
-holds in orbit on Hold with a failure report. It does not blockade the world
-automatically.
+A fleet whose landing fails holds in orbit on Hold with a failure report. An
+Invade blocked by surviving batteries keeps its order and its armies, and tries
+again next year. Neither blockades the world automatically.
 
 == Landing Battle
 

@@ -1090,7 +1090,7 @@ fn starbase_only_planet_defender_cannot_concede_the_field() {
 }
 
 #[test]
-fn canonical_invade_against_standing_batteries_aborts_without_retry() {
+fn canonical_invade_against_standing_batteries_lands_nothing() {
     let mut game_data = configured_assault_state(7);
 
     {
@@ -1106,21 +1106,23 @@ fn canonical_invade_against_standing_batteries_aborts_without_retry() {
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Aborted);
+    // The batteries held, so no troops landed: the invasion is not over, so
+    // it reports no mission outcome (t202), and their return fire destroys
+    // this small force.
+    assert_eq!(
+        events.assault_report_events[0].outcome,
+        MissionOutcome::Aborted
+    );
     let attacker = &game_data.fleets[0];
     let target = &game_data.planets[13];
-    // The batteries held, so no troops landed, and their return fire
-    // destroys this small force. The invasion is over: the order is Hold.
     assert!(!has_any_force(attacker));
-    assert_eq!(attacker.order, Order::HoldPosition);
-    assert_eq!(attacker.speed, 0);
     assert_eq!(target.owner.0, 2);
     assert_eq!(target.years_under_owner, 2);
     assert_eq!(target.armies, 10);
-    // A lone destroyer's suppression fire cannot pay a battery's 20-hit DS.
+    // A lone destroyer's suppression fire cannot pay a battery's 66-hit step.
     assert_eq!(target.ground_batteries, 4);
 
-    // No retry the next year.
+    // Nothing is left to try again the next year.
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
     assert!(events.assault_report_events.is_empty());
 }
@@ -1138,13 +1140,14 @@ fn failed_invasion_holds_in_orbit_without_retry() {
     {
         let target = &mut game_data.planets[13];
         target.armies = 10;
-        target.ground_batteries = 5;
+        target.ground_batteries = 1;
     }
 
     let events = run_maintenance_turn(&mut game_data).expect("maintenance should succeed");
 
-    // The batteries fall, the two armies land and lose, and the surviving
-    // ships hold in orbit.
+    // The lone battery falls to the five battleships' one suppression
+    // exchange (450 AS, Overwhelming, at least 150 hits against its 132),
+    // the two armies land and lose, and the surviving ships hold in orbit.
     assert_mission_event(&events, 0, Mission::InvadeWorld, MissionOutcome::Failed);
     let attacker = &game_data.fleets[0];
     assert!(attacker.ships.battleships > 0);
@@ -1242,17 +1245,18 @@ fn canonical_blitz_success_transfers_surviving_batteries() {
     assert_eq!(target.owner.0, 1);
     // Just captured (ECMAINT 0xFA41 writes 0); the next pass steps it.
     assert_eq!(target.years_under_owner, 0);
-    // The lone destroyer's cover fire cannot pay a battery's 20-hit DS, so
-    // both batteries survive and fire 180 AS on the landing. Each transport
-    // costs 20 hits, so 15 sink; 25 armies land, win, and pass the batteries
-    // to the victor. The three defenders fire first on this seed and kill one
-    // attacker before the rest wipe them out.
+    // The lone destroyer's cover fire cannot pay a battery's 66-hit step, so
+    // both batteries survive and fire 180 AS on the landing, on the
+    // bombardment table (t202). Each transport costs 20 hits, so 5 sink on
+    // this seed; 35 armies land, win, and pass the batteries to the victor.
+    // The three defenders fire first and kill one attacker before the rest
+    // wipe them out.
     assert_eq!(target.ground_batteries, 2);
-    assert_eq!(target.armies, 24);
+    assert_eq!(target.armies, 34);
     assert_eq!(events.ownership_change_events.len(), 1);
     assert_eq!(events.assault_report_events.len(), 1);
     assert_eq!(events.assault_report_events[0].attacker_army_losses, 1);
-    assert_eq!(events.assault_report_events[0].transport_army_losses, 15);
+    assert_eq!(events.assault_report_events[0].transport_army_losses, 5);
     assert_eq!(events.assault_report_events[0].defender_battery_losses, 0);
     assert_eq!(events.assault_report_events[0].defender_army_losses, 3);
     assert_eq!(events.ownership_change_events[0].planet_idx, 13);

@@ -16,7 +16,8 @@ pub struct ShipLosses {
     pub etacs: u32,
 }
 
-/// A bombardment event: one fleet executed BombardWorld against one planet.
+/// A bombardment event: an empire's fleets executed BombardWorld against one
+/// planet, together (t202).
 #[derive(Debug, Clone)]
 pub struct BombardEvent {
     /// Planet index (into PLANETS.DAT records) that was bombarded.
@@ -39,6 +40,8 @@ pub struct BombardEvent {
     pub attacker_losses: ShipLosses,
     /// Observed defender ground battery losses.
     pub defender_battery_losses: u8,
+    /// The defender's batteries left crippled after the bombardment (t202).
+    pub defender_batteries_crippled: u8,
     /// Observed defender army losses.
     pub defender_army_losses: u8,
     /// Whether the bombardment broke through to armies/production (batteries cleared).

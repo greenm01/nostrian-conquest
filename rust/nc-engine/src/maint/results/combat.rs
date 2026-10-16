@@ -246,6 +246,16 @@ pub fn planetary_defense_outcome_line(
     }
 }
 
+/// A bombardment report's line for the batteries it left crippled (t202).
+pub fn crippled_batteries_line(crippled: u8) -> Option<String> {
+    (crippled > 0).then(|| {
+        format!(
+            "{crippled} ground {} left crippled; crippled batteries recover only after a year in which the world is not attacked.",
+            if crippled == 1 { "battery" } else { "batteries" }
+        )
+    })
+}
+
 pub fn blitz_cover_value(event: &nc_data::AssaultReportEvent) -> Option<String> {
     if event.defender_batteries_initial == 0 {
         None

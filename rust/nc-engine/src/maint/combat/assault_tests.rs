@@ -227,10 +227,11 @@ fn world(batteries: u16, armies: u16, destroyers: u32, battleships: u32) -> Plan
 fn standing_batteries_take_every_hit_and_the_excess_expires() {
     let mut planet = world(2, 10, 0, 1);
 
-    // 200 hits against two batteries: 40 destroy them, 160 expire, and the
-    // docked battleship (DS 100) would have died of the 160.
-    apply_planet_suppression_damage(&mut planet, 200);
+    // 400 hits against two batteries: 132 cripple both, 132 destroy them,
+    // 136 expire, and the docked battleship (DS 110) would have died of them.
+    apply_planet_suppression_damage(&mut planet, 400);
     assert_eq!(planet.ground_batteries, 0);
+    assert_eq!(planet.crippled_batteries, 0);
     assert_eq!(planet.stardock.battleships, 1);
     assert_eq!(planet.armies, 10);
 
@@ -245,11 +246,24 @@ fn standing_batteries_take_every_hit_and_the_excess_expires() {
 fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
     let mut planet = world(3, 0, 5, 0);
 
-    // 39 hits destroy one battery; the other 19 expire. Spilled onto the
-    // dock they would have destroyed three of the five docked destroyers.
-    apply_planet_suppression_damage(&mut planet, 39);
-    assert_eq!(planet.ground_batteries, 2);
+    // 131 hits cripple one battery; the other 65 expire. Spilled onto the
+    // dock they would have destroyed all five docked destroyers (DS 7).
+    apply_planet_suppression_damage(&mut planet, 131);
+    assert_eq!(planet.ground_batteries, 3);
+    assert_eq!(planet.crippled_batteries, 1);
     assert_eq!(planet.stardock.destroyers, 5);
+}
+
+#[test]
+fn batteries_are_all_crippled_before_any_is_destroyed() {
+    let mut planet = world(3, 0, 0, 0);
+
+    // 250 hits: 198 cripple all three, then 52 fall short of finishing one.
+    apply_planet_suppression_damage(&mut planet, 250);
+    assert_eq!((planet.ground_batteries, planet.crippled_batteries), (3, 3));
+    // Crippled batteries are finished for 66 hits each: two of three.
+    apply_planet_suppression_damage(&mut planet, 140);
+    assert_eq!((planet.ground_batteries, planet.crippled_batteries), (1, 1));
 }
 
 #[test]

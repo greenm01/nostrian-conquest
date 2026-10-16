@@ -475,6 +475,12 @@ impl CampaignStore {
         ensure_column(&conn, "planet_intel", "known_starbase_count", "INTEGER")?;
         ensure_column(
             &conn,
+            "snapshot_planets",
+            "crippled_batteries",
+            "INTEGER NOT NULL DEFAULT 0",
+        )?;
+        ensure_column(
+            &conn,
             "ai_seats",
             "personality",
             "TEXT NOT NULL DEFAULT 'land-grab'",

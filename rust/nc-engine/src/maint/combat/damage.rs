@@ -19,7 +19,8 @@ use nc_data::{
 };
 
 use super::state::{
-    FleetCombatState, IDX_SB, IDX_TT, TransportGroup, Transports, write_fleet_state,
+    FleetCombatState, IDX_SB, IDX_TT, TransportGroup, Transports, fleet_state_from_records,
+    write_fleet_state,
 };
 
 /// One record's hulls of a class, or one cargo subgroup of its transports:
@@ -240,6 +241,70 @@ pub(super) fn write_back_strike(
     );
     let transports = Transports::from_holders(&holders[0], &holders[1]);
     write_back_fleet(game_data, fleet_idx, after, &transports);
+}
+
+/// Put a joint strike's result on its fleets (t202: an empire's fleets
+/// bombard a world together): what the side lost, `after` against their
+/// records now, shared among them as a battle shares a side's losses, class
+/// by class and cohort by cohort, with `rng` breaking ties at the cutoff.
+pub(super) fn write_back_strike_group(
+    game_data: &mut CoreGameData,
+    fleets: &[usize],
+    after: &FleetCombatState,
+    rng: &mut GameRng,
+) {
+    if let [only] = fleets {
+        write_back_strike(game_data, *only, after);
+        return;
+    }
+    let before = fleet_state_from_records(game_data, fleets, &[]);
+    let mut members: Vec<(FleetCombatState, Transports)> = fleets
+        .iter()
+        .map(|&idx| {
+            (
+                fleet_state_from_records(game_data, &[idx], &[]),
+                Transports::from_record(&game_data.fleets[idx]),
+            )
+        })
+        .collect();
+    for idx in 0..7 {
+        let mut holders: Vec<Holder> = members
+            .iter()
+            .flat_map(|(state, transports)| {
+                if idx == IDX_TT {
+                    transports.holders().to_vec()
+                } else {
+                    vec![Holder {
+                        hulls: state.counts[idx],
+                        crippled: state.crippled[idx],
+                        loaded: false,
+                    }]
+                }
+            })
+            .collect();
+        apply_class_change(
+            &mut holders,
+            (before.counts[idx], &before.crippled[idx]),
+            (after.counts[idx], &after.crippled[idx]),
+            rng,
+        );
+        let mut holders = holders.iter();
+        for (state, transports) in &mut members {
+            if idx == IDX_TT {
+                let loaded = holders.next().expect("the loaded holder");
+                let empty = holders.next().expect("the empty holder");
+                *transports = Transports::from_holders(loaded, empty);
+                (state.counts[IDX_TT], state.crippled[IDX_TT]) = transports.total();
+            } else {
+                let holder = holders.next().expect("the class holder");
+                state.counts[idx] = holder.hulls;
+                state.crippled[idx] = holder.crippled;
+            }
+        }
+    }
+    for (&idx, (state, transports)) in fleets.iter().zip(&members) {
+        write_back_fleet(game_data, idx, state, transports);
+    }
 }
 
 /// Put the result of a battle on a starbase record: a base destroyed is

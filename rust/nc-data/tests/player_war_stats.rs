@@ -64,6 +64,7 @@ fn maintenance_events_accumulate_lifetime_war_stats() {
             ..ShipLosses::default()
         },
         defender_battery_losses: 2,
+        defender_batteries_crippled: 0,
         defender_army_losses: 3,
         breakthrough: true,
         docked_losses: EmpireUnitSummary {

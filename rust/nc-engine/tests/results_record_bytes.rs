@@ -46,6 +46,7 @@ fn defender_bombard_events() -> MaintenanceEvents {
         defender_armies_initial: 3,
         attacker_losses: ShipLosses::default(),
         defender_battery_losses: 0,
+        defender_batteries_crippled: 0,
         defender_army_losses: 3,
         breakthrough: true,
         docked_losses: nc_data::EmpireUnitSummary::default(),
