@@ -238,6 +238,7 @@ impl NetworkSeat {
                 load: load[row] != 0,
                 detach: detach[row],
                 join: 0,
+                station: None,
             })
             .collect();
         Ok(NetworkChoices { goals, fleets })

@@ -139,6 +139,11 @@ pub struct Doctrine {
     /// keeps a scout (t189, accepted). Off, it rounds like every other
     /// target and a small weight never replaces a lost scout.
     pub keep_scouts: bool,
+    /// After the land grab, pickets and spare scouts stand watch in the
+    /// approaches between the seat's exposed worlds and the nearest rival
+    /// world, for early warning (t189). Off, pickets join the strike force
+    /// and scouts revisit stale worlds.
+    pub watch: bool,
 }
 
 impl Doctrine {
@@ -158,6 +163,7 @@ impl Doctrine {
             "reinforce" => &mut self.reinforce,
             "combined_gate" => &mut self.combined_gate,
             "keep_scouts" => &mut self.keep_scouts,
+            "watch" => &mut self.watch,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -178,6 +184,7 @@ impl Doctrine {
         reinforce: false,
         combined_gate: false,
         keep_scouts: true,
+        watch: false,
     };
 }
 
@@ -253,6 +260,7 @@ impl Weights {
             reinforce: false,
             combined_gate: false,
             keep_scouts: false,
+            watch: false,
         },
     };
 
@@ -853,6 +861,50 @@ fn preferred_hull(
         .map(|(kind, _)| kind)
 }
 
+/// The sector between the seat's most exposed world and the nearest rival
+/// world that no fleet watches, with that rival's world index: within
+/// [`EXPOSURE_RANGE`], the closest pair first.
+fn approach(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    watched: &[[u8; 2]],
+) -> Option<([u8; 2], usize)> {
+    let rivals: Vec<usize> = memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| {
+            intel
+                .known_owner_empire_id
+                .is_some_and(|owner| owner != 0 && owner != memory.empire)
+        })
+        .map(|(&record, _)| record - 1)
+        .collect();
+    game_data
+        .planets
+        .iter()
+        .filter(|planet| planet.owner.0 == memory.empire)
+        .filter_map(|planet| {
+            let here = planet.sector.to_array();
+            let (rival, gap) = rivals
+                .iter()
+                .map(|&idx| {
+                    (
+                        idx,
+                        distance(game_data.planets[idx].sector.to_array(), here),
+                    )
+                })
+                .min_by(|a, b| a.1.total_cmp(&b.1))?;
+            let there = game_data.planets[rival].sector.to_array();
+            let middle = std::array::from_fn(|axis| {
+                ((f32::from(here[axis]) + f32::from(there[axis])) / 2.0).round() as u8
+            });
+            (gap <= EXPOSURE_RANGE && !watched.iter().any(|&w| distance(w, middle) < 1.5))
+                .then_some((gap, middle, rival))
+        })
+        .min_by(|a, b| a.0.total_cmp(&b.0))
+        .map(|(_, middle, rival)| (middle, rival))
+}
+
 /// One of `empire`'s warship fleets guards `sector`, or is on its way.
 fn guarded(game_data: &CoreGameData, empire: u8, sector: [u8; 2]) -> bool {
     game_data.fleets.iter().any(|fleet| {
@@ -1055,6 +1107,16 @@ fn plan_fleets(
         })
         .map(strength)
         .sum();
+    // Sectors where a fleet of the seat already stands watch.
+    let mut watched: Vec<[u8; 2]> = game_data
+        .fleets
+        .iter()
+        .filter(|fleet| {
+            fleet.owner.0 == empire
+                && matches!(fleet.order, Order::ScoutSector | Order::PatrolSector)
+        })
+        .map(|fleet| fleet.target.to_array())
+        .collect();
     // Sectors given a guard this year, and whether a strike force is out.
     let mut posted: Vec<[u8; 2]> = Vec::new();
     let mut sailed = game_data.fleets.iter().any(|fleet| {
@@ -1081,6 +1143,7 @@ fn plan_fleets(
                 load: false,
                 detach: 0,
                 join: 0,
+                station: None,
             };
             let order = |order: Order, target: usize| {
                 let mission = mission_choice(order);
@@ -1127,6 +1190,26 @@ fn plan_fleets(
             }
 
             let scout = !has_combat_ships(fleet) && fleet.ships.scouts > 0 && troops(fleet) == 0;
+            if weights.doctrine.watch && !grabbing && (scout || picket(fleet)) {
+                let watching = matches!(fleet.order, Order::ScoutSector | Order::PatrolSector);
+                if watching && watched.contains(&fleet.target.to_array()) {
+                    return keep;
+                }
+                if let Some((sector, rival)) = approach(game_data, memory, &watched) {
+                    let look = if scout {
+                        Order::ScoutSector
+                    } else {
+                        Order::PatrolSector
+                    };
+                    if let Some(choice) = order(look, rival) {
+                        watched.push(sector);
+                        return FleetChoice {
+                            station: Some(sector),
+                            ..choice
+                        };
+                    }
+                }
+            }
             if scout || (weights.doctrine.land_grab && grabbing && picket(fleet)) {
                 if matches!(fleet.order, Order::ScoutSolarSystem | Order::ViewWorld)
                     && fleet.sector != fleet.target

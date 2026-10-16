@@ -183,6 +183,10 @@ pub struct FleetChoice {
     /// With a join, the mission is 0 and the other choices only matter for
     /// the fleet's rules of engagement and load.
     pub join: usize,
+    /// For a sector mission, the sector to go to, in place of the waypoint
+    /// toward the target world (t189's early-warning stations). The network
+    /// never sets it.
+    pub station: Option<[u8; 2]>,
 }
 
 /// One seat's whole turn as choice indexes.
@@ -594,11 +598,13 @@ fn fleet_order(game_data: &CoreGameData, choice: &FleetChoice) -> FleetTurnActio
     let target = match order {
         Order::SeekHome => None,
         Order::HoldPosition => Some(fleet.sector.to_array()),
-        _ if sector_mission(order) => Some(waypoint(
-            fleet.sector.to_array(),
-            game_data.planets[choice.target].sector.to_array(),
-            choice.waypoint,
-        )),
+        _ if sector_mission(order) => Some(choice.station.unwrap_or_else(|| {
+            waypoint(
+                fleet.sector.to_array(),
+                game_data.planets[choice.target].sector.to_array(),
+                choice.waypoint,
+            )
+        })),
         _ => Some(game_data.planets[choice.target].sector.to_array()),
     };
     let aux1 = (order == Order::GuardStarbase)

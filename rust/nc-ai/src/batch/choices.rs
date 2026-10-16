@@ -123,6 +123,7 @@ pub(crate) fn fleet_choices(
                 load,
                 detach: choice("detach", actions.detach[fleet], &mask.detach)?,
                 join: 0,
+                station: None,
             })
         })
         .collect()

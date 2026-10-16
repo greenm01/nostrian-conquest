@@ -87,6 +87,7 @@ fn random_action(masks: &SeatMasks, rng: &mut Rng) -> SeatAction {
                         0
                     },
                     join: 0,
+                    station: None,
                 }
             })
             .collect(),
@@ -238,4 +239,81 @@ fn masks_reveal_nothing_about_other_empires() {
             play_random(&mut game, 1, &mut rng, &mut Tally::default());
         }
     }
+}
+
+/// Join and a named station (t189) decode into orders the game accepts.
+#[test]
+fn a_join_and_a_station_decode_into_legal_orders() {
+    let mut game = seated_game(PLAYERS, 9);
+    let game_data = &game.play.built.game_data;
+    let masks = seat_masks(game_data, 1);
+    let warships: Vec<usize> = game_data
+        .fleets
+        .iter()
+        .enumerate()
+        .filter(|(_, fleet)| fleet.owner.0 == 1 && nc_data::has_combat_ships(fleet))
+        .map(|(idx, _)| idx + 1)
+        .collect();
+    assert!(
+        warships.len() >= 2,
+        "the empire starts with two warship fleets"
+    );
+    let (joiner, host) = (warships[0], warships[1]);
+    let patrol = MISSIONS
+        .iter()
+        .position(|order| *order == Order::PatrolSector)
+        .unwrap()
+        + 1;
+    let station = [3u8, 5u8];
+    let fleets = masks
+        .fleets
+        .iter()
+        .map(|mask| FleetChoice {
+            record: mask.record,
+            mission: if mask.record == host { patrol } else { 0 },
+            target: 0,
+            waypoint: 0,
+            speed: 0,
+            roe: 0,
+            load: false,
+            detach: 0,
+            join: if mask.record == joiner { host } else { 0 },
+            station: (mask.record == host).then_some(station),
+        })
+        .collect();
+    let action = SeatAction {
+        tax: 12,
+        diplomacy: vec![0; masks.diplomacy.len()],
+        planets: masks
+            .planets
+            .iter()
+            .map(|mask| PlanetChoice {
+                record: mask.record,
+                build: [0, 0],
+                amount: [0, 0],
+            })
+            .collect(),
+        fleets,
+    };
+    let decoded = decode_action(game_data, 1, &action);
+    assert!(decoded.dropped_fleet_orders.is_empty());
+    let actions = |record: usize| -> &Vec<nc_data::FleetTurnAction> {
+        &decoded
+            .submission
+            .fleets
+            .iter()
+            .find(|block| block.fleet_record_index_1_based == record)
+            .expect("the fleet has a block")
+            .actions
+    };
+    assert!(actions(joiner).contains(&nc_data::FleetTurnAction::Join {
+        host_fleet_record_index_1_based: host,
+    }));
+    assert!(actions(host).iter().any(|action| matches!(
+        action,
+        nc_data::FleetTurnAction::Order { order_code, target: Some(target), .. }
+            if *order_code == Order::PatrolSector.code() && *target == station
+    )));
+    game.submit_turn(&decoded.submission)
+        .expect("the game accepts the turn");
 }
