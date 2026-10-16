@@ -16,10 +16,15 @@ use std::thread;
 
 use nc_ai::{Families, Weights, commission_submission, executor_turn, match_game, personality};
 use nc_ai_onnx::NetworkSeat;
-use nc_data::{CoreGameData, DiplomaticRelation, Order, PlanetTurnAction, ProductionItemKind};
+use nc_data::{
+    CoreGameData, DiplomaticRelation, Fleet, FleetTurnAction, Order, PlanetTurnAction,
+    ProductionItemKind,
+};
 use nc_engine::production_item_kind_code;
 
 const PLAYERS: u8 = 4;
+/// Mission codes 0 to 15, as the player manual numbers them.
+const MISSION_CODES: usize = 16;
 
 /// One game's measurements for the network seat.
 #[derive(Default, Clone, Copy)]
@@ -43,6 +48,22 @@ struct Game {
     lost_while_converting: u32,
     armies_at_loss: u32,
     batteries_at_loss: u32,
+    /// Fleet orders given, by mission code.
+    missions: [u32; MISSION_CODES],
+    joins: u32,
+    transfers: u32,
+    unloads: u32,
+    /// Rendezvous orders to a sector with no world: staging in deep space.
+    deep_rendezvous: u32,
+    /// Worlds under attack in a year, the fleets attacking them, and their
+    /// share of the seat's warship strength, summed over those worlds.
+    strike_targets: u32,
+    strike_fleets: u32,
+    strike_share: f32,
+    /// The largest fleet's share of the seat's warship strength, summed
+    /// over the years it had warships.
+    largest_share: f32,
+    armed_years: u32,
 }
 
 /// A report row: its label and the value for one model's games.
@@ -148,6 +169,44 @@ fn main() {
             let batteries: u32 = g.iter().map(|g| g.batteries_at_loss).sum();
             format!("{:.1}", f64::from(batteries) / f64::from(lost.max(1)))
         }),
+        ("missions used, of 16", |g| {
+            let used = |g: &Game| g.missions.iter().filter(|&&n| n > 0).count() as f64;
+            format!("{:.1}", mean(g, used))
+        }),
+        ("rendezvous in deep space", |g| {
+            let rendezvous: u32 = g
+                .iter()
+                .map(|g| g.missions[Order::RendezvousSector.code() as usize])
+                .sum();
+            let deep: u32 = g.iter().map(|g| g.deep_rendezvous).sum();
+            format!(
+                "{:.1}%",
+                100.0 * f64::from(deep) / f64::from(rendezvous.max(1))
+            )
+        }),
+        ("fleets per attacked world", |g| {
+            let targets: u32 = g.iter().map(|g| g.strike_targets).sum();
+            let fleets: u32 = g.iter().map(|g| g.strike_fleets).sum();
+            format!("{:.2}", f64::from(fleets) / f64::from(targets.max(1)))
+        }),
+        ("  their share of warship strength", |g| {
+            let targets: u32 = g.iter().map(|g| g.strike_targets).sum();
+            let share: f32 = g.iter().map(|g| g.strike_share).sum();
+            format!("{:.0}%", 100.0 * share / targets.max(1) as f32)
+        }),
+        ("largest fleet's share of strength", |g| {
+            let years: u32 = g.iter().map(|g| g.armed_years).sum();
+            let share: f32 = g.iter().map(|g| g.largest_share).sum();
+            format!("{:.0}%", 100.0 * share / years.max(1) as f32)
+        }),
+        ("joins, transfers, unloads", |g| {
+            format!(
+                "{:.0}/{:.0}/{:.0}",
+                mean(g, |g| f64::from(g.joins)),
+                mean(g, |g| f64::from(g.transfers)),
+                mean(g, |g| f64::from(g.unloads))
+            )
+        }),
     ];
 
     let results: Vec<Vec<Game>> = models
@@ -164,6 +223,17 @@ fn main() {
         print!("{label:<36}");
         for games in &results {
             print!("{:>16}", value(games));
+        }
+        println!();
+    }
+    println!("\nfleet orders per game, by mission");
+    for code in 0..MISSION_CODES {
+        print!(
+            "{:<36}",
+            format!("  {code:02} {:?}", Order::from_code(code as u8))
+        );
+        for games in &results {
+            print!("{:>16.1}", mean(games, |g| f64::from(g.missions[code])));
         }
         println!();
     }
@@ -284,9 +354,60 @@ fn play(network: &NetworkSeat, map: u64, years: u16) -> Game {
                     }
                 }
             }
+            for action in turn.fleets.iter().flat_map(|block| &block.actions) {
+                match action {
+                    FleetTurnAction::Order {
+                        order_code, target, ..
+                    } => {
+                        if let Some(n) = out.missions.get_mut(usize::from(*order_code)) {
+                            *n += 1;
+                        }
+                        let deep = target.is_some_and(|sector| {
+                            !game_data
+                                .planets
+                                .iter()
+                                .any(|planet| planet.sector.to_array() == sector)
+                        });
+                        if Order::from_code(*order_code) == Order::RendezvousSector && deep {
+                            out.deep_rendezvous += 1;
+                        }
+                    }
+                    FleetTurnAction::Join { .. } => out.joins += 1,
+                    FleetTurnAction::Transfer { .. } => out.transfers += 1,
+                    FleetTurnAction::UnloadArmies { .. } => out.unloads += 1,
+                    _ => {}
+                }
+            }
             game.submit_turn(&turn).expect("the network's turn submits");
         }
         let game_data = &game.play.built.game_data;
+        let own: Vec<&Fleet> = game_data
+            .fleets
+            .iter()
+            .filter(|fleet| fleet.owner.0 == seat)
+            .collect();
+        let total: u32 = own.iter().map(|fleet| strength(fleet)).sum();
+        if total > 0 {
+            let largest = own.iter().map(|fleet| strength(fleet)).max().unwrap_or(0);
+            out.largest_share += largest as f32 / total as f32;
+            out.armed_years += 1;
+            let mut attacks: BTreeMap<[u8; 2], (u32, u32)> = BTreeMap::new();
+            for fleet in own.iter().filter(|fleet| {
+                matches!(
+                    fleet.order,
+                    Order::BombardWorld | Order::InvadeWorld | Order::BlitzWorld
+                )
+            }) {
+                let attack = attacks.entry(fleet.target.to_array()).or_default();
+                attack.0 += 1;
+                attack.1 += strength(fleet);
+            }
+            for (fleets, attack_strength) in attacks.into_values() {
+                out.strike_targets += 1;
+                out.strike_fleets += fleets;
+                out.strike_share += attack_strength as f32 / total as f32;
+            }
+        }
         for fleet in game_data
             .fleets
             .iter()
@@ -368,6 +489,13 @@ fn play(network: &NetworkSeat, map: u64, years: u16) -> Game {
         seat,
     );
     out
+}
+
+/// Warship strength: destroyers 1, cruisers 3, battleships 9.
+fn strength(fleet: &Fleet) -> u32 {
+    u32::from(fleet.ships.destroyers)
+        + 3 * u32::from(fleet.ships.cruisers)
+        + 9 * u32::from(fleet.ships.battleships)
 }
 
 fn worlds_of(game_data: &CoreGameData, empire: u8) -> u32 {

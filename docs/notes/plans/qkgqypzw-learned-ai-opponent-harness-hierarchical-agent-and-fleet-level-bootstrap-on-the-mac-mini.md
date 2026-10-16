@@ -1311,6 +1311,77 @@ the AI's losses mined. A retrained agent passes the t165 readiness gate
 again, and wins more often against the human-style model than the agent it
 replaces.
 
+### t189
+
+Use the full order set and a mixed fleet in the executor.
+
+The owner's review (2026-10-16): the AI must use every ship order a player
+has, and build battleships, destroyers and scouts, not only cruisers. The
+behaviour report's new order rows show, over 128 100-year games, that both
+`fleet-final` and the sweep snapshot use about 5 of the 16 missions:
+Rendezvous (about 1,000 a game, all at its own worlds, none in deep space),
+Bombard, Invade, View and Colonize, with Guard/Blockade about once. No
+Join, Transfer or Unload Armies. About 2 fleets attack a world, holding
+30% of the seat's warship strength, and the largest fleet holds 45%.
+
+`preferred_hull` builds only the affordable hull with the largest weight,
+so the tuned weights (cruiser 0.59, battleship 0.38, destroyer 0) buy
+cruisers and nothing else, and the personalities' different hull weights
+make no difference. The executor builds for the network seat too, so a
+change here reaches the deployed agent at once.
+
+The owner's doctrine for massing:
+- **Rendezvous** is for a planned assault: several large fleets meet at a
+  staging sector, in deep space short of the target, and strike together
+  once the assembled force is `attack_ratio` times the target's defence.
+- **Join Another Fleet** is for a force already on the move: new ships and
+  rear fleets join it to replenish or consolidate it.
+
+The changes, each a `Doctrine` switch measured head to head as t159 does,
+kept only if it doesn't lose:
+1. **Mixed hulls.** Build each hull toward its weight's share of the
+   fleet, so every personality's mix shows. Scouts and lone destroyers
+   as pickets on Patrol or Scout a Sector between the seat's worlds and its
+   nearest rivals, feeding t181's exposure.
+2. **Staged assaults and reinforcement.** Rendezvous in deep space short
+   of the target, strike together; Join for new and rear fleets.
+3. **The rest of the order set** where it applies: Blitz when a world's
+   batteries are down, Guard a Starbase, Seek Home and Salvage for wrecked
+   fleets, Transfer and Unload Armies to move garrisons.
+
+If a mixed fleet plays measurably worse than cruisers alone, that is a
+balance finding about ship prices and goes to the owner, not a reason to
+keep the cruiser fleet.
+
+**Exit:** the behaviour report shows the executor using most of the order
+set, staging in deep space and building every hull, and the changed
+executor beats or matches its predecessor.
+
+### t190
+
+Give the network the whole order set.
+
+The network cannot order Join Another Fleet (mission 13), or the turn
+actions Join, Transfer and Unload Armies, because they need a fleet target
+and none is offered (`nc-ai/src/action.rs`). Add a target that points at
+the seat's own fleets, with masks from the game's validators, to the
+model, the ONNX export and the Rust decoder.
+
+**Exit:** a test shows each new order chosen, masked and submitted
+legally, and the exported model plays with them.
+
+### t191
+
+Retrain the agent on the new executor.
+
+The network learned its fleet orders by imitating the executor (t157). It
+learns t189's doctrine and t190's orders the same way: imitation with
+DAgger from the current weights, then PPO on 100-year games (t182), on
+crunch when Codex has no quiet hold.
+
+**Exit:** the retrained agent beats the deployed one on 1,024 maps, and
+its behaviour report shows the wider order set and the mixed fleet.
+
 ### t187
 
 Stretch goal: AI empires send in-character dispatches.
