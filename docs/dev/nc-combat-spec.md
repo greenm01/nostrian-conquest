@@ -525,7 +525,7 @@ its defense strength:
 | ------ | ----------------------- |
 | Ground battery | 20 |
 | Army | 10 |
-| Docked ship (stardock) | Its fleet DS (DD 8, CA 30, BB 100, SC 10, TT 10, ET 20, SB 120); docked batteries 20, armies 10 |
+| Docked ship (stardock) | Its fleet DS (DD 7, CA 30, BB 110, SC 10, TT 10, ET 20, SB 130); docked batteries 20, armies 10 |
 | Stored goods / factories | Remaining hits ÷ 10, then 25 goods and 1 factory per point |
 
 Hits below one unit's cost do not destroy it, and partial hits do not carry
