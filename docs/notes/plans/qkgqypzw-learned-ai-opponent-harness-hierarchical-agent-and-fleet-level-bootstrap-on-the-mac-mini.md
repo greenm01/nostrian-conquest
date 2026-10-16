@@ -1571,6 +1571,43 @@ the newest default bots the promoted agent scores 0.696 at 60 years and
 +0.160 ± 0.028 and +0.166 ± 0.024). The armada and raider need a retune
 under the new doctrine before they are judged.
 
+**Re-baseline under the t198/t200 combat rules (2026-10-16).** The figures
+above were measured before t198 removed the mixed-fleet bonus and t200 set
+the punch ladder (DD 12/7, CA 33/30, BB 90/110, SB DS 130). The Python
+binding and examples were rebuilt at `5e3b236c`. The executor's
+`strength` (1/3/9) still matches the new stats on attack x defence (DD : CA
+: BB about 1 : 3.4 : 10.8, against 1 : 3.4 : 10.6 before), so it was left as
+is; the network observes raw ship counts.
+
+Agent (`behaviour_report`, 512 maps, against the default bots, same command
+as before):
+
+| Agent | 60 years | 100 years |
+| --- | ---: | ---: |
+| `fleet-final`, before / after | 0.696 / 0.686 | 0.862 / 0.875 |
+| previous agent, before / after | 0.536 / 0.568 | 0.696 / 0.724 |
+| paired gain, after | +0.117 ± 0.027 | +0.151 ± 0.023 |
+
+Styles against three default seats (`style_stats`, 1,024 maps, the same
+maps under both rule sets; before = `63dec4e1`, after = `5e3b236c`):
+
+| Style | 60 years, before / after | 100 years, before / after | Main hull |
+| --- | ---: | ---: | --- |
+| land-grab | 0.278 / 0.253 | 0.277 / 0.255 | cruisers 59-65% |
+| rusher | 0.191 / 0.199 | 0.198 / 0.184 | cruisers 61-65% |
+| turtle | 0.200 / 0.181 | 0.174 / 0.161 | cruisers 57-62% |
+| armada | 0.187 / 0.178 | 0.153 / 0.142 | battleships 48-54% |
+| raider | 0.143 / 0.107 | 0.125 / 0.116 | destroyers 59-64% |
+
+The rules change moved neither the AI's builds nor the order of the styles:
+the default still builds cruisers almost only, and the battleship- and
+destroyer-led styles stay well behind it (raider fell most, 0.036 at 60
+years). The agent is as strong as before, so no early retrain is needed.
+In a pure battle the engine now has cruisers and battleships about even per
+point, so the missing variety is an AI problem: one preferred hull and
+weights tuned under the old rules. Next: hull roles and a retune under the
+new rules (t189), then the order set (t190), then one retrain (t191).
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
