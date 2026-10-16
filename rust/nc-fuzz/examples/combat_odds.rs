@@ -47,7 +47,7 @@ struct Force {
 }
 
 struct Case {
-    name: &'static str,
+    name: String,
     left: Force,
     right: Force,
     roe: (u8, u8),
@@ -67,8 +67,8 @@ fn cases() -> Vec<Case> {
         bb: n,
         ..Force::default()
     };
-    let case = |name, left, right| Case {
-        name,
+    let case = |name: &str, left, right| Case {
+        name: name.to_string(),
         left,
         right,
         roe: (10, 10),
@@ -91,12 +91,44 @@ fn cases() -> Vec<Case> {
             ca(30),
         ),
         Case {
-            name: "10 CA ROE 6 vs 15 CA",
+            name: "10 CA ROE 6 vs 15 CA".to_string(),
             left: ca(10),
             right: ca(15),
             roe: (6, 10),
         },
     ]
+    .into_iter()
+    .chain(roe6_mixes())
+    .collect()
+}
+
+/// The 450-point hull mixes of `tools/combat-model/hull_mix.py`, every
+/// pairing at ROE 6 on both sides, named "<left> vs <right> ROE 6".
+fn roe6_mixes() -> Vec<Case> {
+    let mix = |dd, ca, bb| Force { dd, ca, bb };
+    let mixes = [
+        ("90DD", mix(90, 0, 0)),
+        ("30CA", mix(0, 30, 0)),
+        ("10BB", mix(0, 0, 10)),
+        ("27CA+9DD", mix(9, 27, 0)),
+        ("24CA+18DD", mix(18, 24, 0)),
+        ("9BB+9DD", mix(9, 0, 9)),
+        ("8BB+18DD", mix(18, 0, 8)),
+        ("5BB+15CA", mix(0, 15, 5)),
+        ("4BB+15CA+9DD", mix(9, 15, 4)),
+    ];
+    let mut cases = Vec::new();
+    for (i, (left_name, left)) in mixes.iter().enumerate() {
+        for (right_name, right) in &mixes[i + 1..] {
+            cases.push(Case {
+                name: format!("{left_name} vs {right_name} ROE 6"),
+                left: *left,
+                right: *right,
+                roe: (6, 6),
+            });
+        }
+    }
+    cases
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -414,7 +446,7 @@ fn main() {
     json.push_str("  \"cases\": [\n");
     let mut first = true;
     for case in cases() {
-        if !selected.is_empty() && !selected.iter().any(|name| name == case.name) {
+        if !selected.is_empty() && !selected.iter().any(|name| *name == case.name) {
             continue;
         }
         let base = build_case(&case, records, coords);
