@@ -122,7 +122,7 @@ fn discovered_game(
 fn no_game_found_error(relay_url: &str, event_count: usize) -> String {
     if is_local_dev_relay(relay_url) {
         format!(
-            "could not find this hosted game on the local relay at {}; make sure your local relay and nc-sysop nostr serve are running for this game, then try again",
+            "could not find this hosted game on the local relay at {}; make sure your local relay and nc-host serve are running for this game, then try again",
             relay_url
         )
     } else {

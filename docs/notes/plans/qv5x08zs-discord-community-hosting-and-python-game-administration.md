@@ -226,3 +226,15 @@ created a disposable four-player campaign and maintenance advanced it from
 3000 to 3001. The nc-game binary built and its help confirmed the player and
 scripted-turn options; this was not an interactive terminal test. The sweep
 CLI help confirmed the comparison flags. No live campaign was changed.
+
+### t201
+
+`scripts/install_vps.sh`, [scripts.md](../../dev/scripts.md) and the
+[Nostr gate guide](../../nostr/ec-gate.md) still install or describe
+`nc-sysop nostr serve` and an `nc-maint-all` timer. Both commands were removed
+from `nc-sysop` in `cf664453` (2026-04-11). The Nostr daemon is now
+`nc-host serve`, and community games are scheduled by
+`nc-admin maintenance due`. On 2026-10-16 the archvps gate units
+(`nc-nostr.service`, `nc-maint-all.timer`) were disabled after a redeploy showed
+the gap. Exit: either port the installer and guides to `nc-host`, or retire the
+standalone Nostr VPS path in favour of the community stack.

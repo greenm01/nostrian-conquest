@@ -64,9 +64,9 @@ reservation seat=2 alias=NightShade
   localhost and manual SSH `nc-game` sessions do not currently get a separate
   timeout path from this field alone.
 - `maintenance_enabled`
-  Controls whether hosted `maint-all` treats the game as scheduled.
+  Controls whether hosted maintenance treats the game as scheduled.
 - `maintenance_interval_minutes`
-  Hosted `maint-all` interval in minutes. Default: `1440`.
+  Hosted maintenance interval in minutes. Default: `1440`.
 - `maintenance_next_due_unix_seconds`
   Next scheduled run as a Unix timestamp. Blank means no due time has been set
   yet.
@@ -152,7 +152,7 @@ them as first-class operator controls for every deployment mode.
 
 ## Maintenance Note
 
-Treat maintenance schedule fields as hosted `maint-all` metadata. They do not
+Treat maintenance schedule fields as hosted maintenance metadata. They do not
 create their own timer. They are not BBS `config.kdl` fields. For a direct
 localhost or manual SSH game, schedule `nc-sysop maint /path/to/mygame`
 yourself with host tooling.

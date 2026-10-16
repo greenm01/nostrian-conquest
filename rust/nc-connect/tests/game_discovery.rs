@@ -141,7 +141,7 @@ fn discovery_reports_local_hosted_stack_hint_when_local_relay_has_no_match() {
     .expect_err("no matching event");
 
     assert!(err.contains("local relay"));
-    assert!(err.contains("nc-sysop nostr serve"));
+    assert!(err.contains("nc-host serve"));
     assert!(err.contains("ws://localhost:8080"));
 }
 

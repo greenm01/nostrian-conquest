@@ -67,6 +67,6 @@ WWIV Windows package ended with Defender quarantining the downloaded binary,
 and the tested `bbs.exe` then crashed before login.
 
 Treat original DOS `ECGAME` hosting as a compatibility bridge, not the main
-Rust operating model. Schedule `nc-sysop maint` or `nc-sysop maint-all` with
+Rust operating model. Schedule `nc-sysop maint` with
 real host tooling such as `systemd`, `cron`, Task Scheduler, or BBS event
 hooks rather than trying to schedule maintenance inside the campaign itself.

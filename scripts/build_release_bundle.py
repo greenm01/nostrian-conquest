@@ -430,11 +430,9 @@ When reporting a player-client issue, include:
     game_binary = "nc-game.exe" if spec.is_windows else "./bin/nc-game"
     door_binary = "nc-door.exe" if spec.is_windows else "./bin/nc-door"
     sysop_binary = "nc-sysop.exe" if spec.is_windows else "./bin/nc-sysop"
-    connect_binary = "nc-connect.exe" if spec.is_windows else "./bin/nc-connect"
     player_manual_path = "nc_player_manual.pdf" if spec.is_windows else "docs/nc_player_manual.pdf"
     sysop_manual_path = "nc_sysop_manual.pdf" if spec.is_windows else "docs/nc_sysop_manual.pdf"
     sample_game_dir = "C:\\nc\\games\\friday-night" if spec.is_windows else "/srv/ec/games/friday-night"
-    sample_gate_config = "C:\\nc\\config\\gate-config.kdl" if spec.is_windows else "/etc/nc-gate/config.kdl"
     sample_local_dir = "C:\\nc\\games\\local-test" if spec.is_windows else "/tmp/nc-game"
 
     return f"""# Nostrian Conquest {spec.platform.display_name} Public Beta Bundle
@@ -457,27 +455,13 @@ archives. VPS hosting remains a tagged-source workflow.
 {sysop_binary} new-game {sample_game_dir} --name "Friday Night NC" --players 4 --seed 1515
 ```
 
-2. Initialize and run the Nostr hosting daemon:
+2. Run maintenance:
 
 ```text
-{sysop_binary} nostr init
-{sysop_binary} nostr serve
+{sysop_binary} maint {sample_game_dir}
 ```
 
-3. Join as a hosted player with `nc-connect`:
-
-```text
-{connect_binary}
-```
-Then press `N` in the app and paste `amber-river@relay.example.com`.
-
-4. Run maintenance:
-
-```text
-{sysop_binary} maint-all --config {sample_gate_config}
-```
-
-5. For localhost or hotseat play, launch the direct game client:
+3. For localhost or hotseat play, launch the direct game client:
 
 ```text
 {game_binary} --dir {sample_local_dir} --player 1

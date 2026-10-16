@@ -63,7 +63,7 @@ pub fn select_discovered_game_from_events<'a>(
 fn relay_transport_error(target: &ResolvedTarget, context: &str, detail: &str) -> String {
     if is_local_dev_relay(&target.relay_url) {
         format!(
-            "{context} at {}: make sure your local relay and nc-sysop nostr serve are running for this game ({detail})",
+            "{context} at {}: make sure your local relay and nc-host serve are running for this game ({detail})",
             target.relay_url
         )
     } else {

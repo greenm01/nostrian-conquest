@@ -37,7 +37,7 @@ Fog-of-war policy:
 
 When a player joins a game through `nc-connect` with an invite code,
 `nc-connect` automatically requests the static map bundle from the daemon
-behind `nc-sysop nostr serve` before it opens SSH into `nc-game`.
+behind `nc-host serve` before it opens SSH into `nc-game`.
 
 Current behavior:
 
