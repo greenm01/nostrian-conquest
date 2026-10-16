@@ -1445,6 +1445,47 @@ were against scoutless bots. The recorded-game fixture
 (`tools/ai/export_onnx.py --fixture`) was regenerated. The agent has not
 been trained against the stronger bots (t191).
 
+**Retuned trials, with scouts on (2026-10-16).** Three retunes of 40
+generations over 64 maps at 80 years (best of each generation becoming the
+champion against the default style), scored on 1,024 fresh maps against
+three default seats (an even seat is 0.25):
+
+| Style | 60 years | 100 years |
+| --- | ---: | ---: |
+| default weights | 0.247 | 0.244 |
+| retuned | 0.307 | 0.310 |
+| retuned with `combined_gate` | 0.318 | 0.280 |
+| retuned with `mixed_hulls` | 0.235 | 0.158 |
+
+Retuning lifts the executor about 0.06 at either horizon. The combined gate
+is no better than retuning alone (ahead at 60 years, behind at 100; each
+standard error about 0.014), and mixed hulls lose even after a retune, the
+worst of the four at 100 years. So `mixed_hulls` is rejected for good (the
+switch goes with t197) and `combined_gate` stays off unless the staging
+trials change that. The route to variety is hull roles, not a mixed pool.
+
+**Early-warning stations (`Doctrine::watch`, accepted 2026-10-16).** After
+the land grab, a lone picket (one or two destroyers) or a spare scout
+stands in the approach sector between the seat's nearest exposed world and
+its nearest rival's world, up to one watcher per approach, using the new
+`FleetChoice.station` (the network never sets it). Paired over 1,024 maps
+at 60 and 100 years, every personality gains:
+
+| Personality | 60 years | 100 years |
+| --- | ---: | ---: |
+| default | +0.023 ± 0.017 | +0.051 ± 0.018 |
+| rusher | +0.010 ± 0.016 | +0.029 ± 0.015 |
+| turtle | +0.066 ± 0.016 | +0.031 ± 0.016 |
+
+It is on for every personality. With scouts and stations in, the promoted
+agent scores 0.773 at 60 years and 0.920 at 100 against the new default
+bots (the previous agent 0.603 and 0.811; paired difference +0.171 ±
+0.026 and +0.109 ± 0.020, 512 maps). One limit: a station has no array
+form, so a network cannot order one, and tests that pass executor orders
+through arrays use `tests/common::tuned_without_stations`. If the network
+is ever handed the scout family (`Families::ALL`), stations need an action
+(t190).
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old

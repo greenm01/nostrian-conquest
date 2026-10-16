@@ -2,6 +2,10 @@
 //! of handed-over families. Given the executor's own fleet choices it plays
 //! exactly as a strategist; fleet choices outside the masks are refused.
 
+#[allow(dead_code)]
+mod common;
+
+use common::tuned_without_stations;
 use nc_ai::{BatchActions, BatchEnv, Families, FleetArrays, Seat, Weights};
 
 const PLAYERS: u8 = 4;
@@ -46,7 +50,7 @@ impl Actions {
 fn lineup(seat: Seat) -> Vec<Seat> {
     vec![
         seat,
-        Seat::Strategist(Weights::TUNED),
+        Seat::Strategist(tuned_without_stations()),
         Seat::Scripted(nc_ai::SeatPolicy::Executor(Weights::TUNED)),
         Seat::Scripted(nc_ai::SeatPolicy::Aggressor),
     ]
@@ -61,8 +65,8 @@ fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
         &maps,
         &maps,
         &[
-            lineup(Seat::Hybrid(Weights::TUNED, Families::ALL)),
-            lineup(Seat::Hybrid(Weights::TUNED, Families::ALL)),
+            lineup(Seat::Hybrid(tuned_without_stations(), Families::ALL)),
+            lineup(Seat::Hybrid(tuned_without_stations(), Families::ALL)),
         ],
         years,
         0,
@@ -72,8 +76,8 @@ fn a_hybrid_given_the_executors_fleet_orders_plays_as_a_strategist() {
         &maps,
         &maps,
         &[
-            lineup(Seat::Strategist(Weights::TUNED)),
-            lineup(Seat::Strategist(Weights::TUNED)),
+            lineup(Seat::Strategist(tuned_without_stations())),
+            lineup(Seat::Strategist(tuned_without_stations())),
         ],
         years,
         0,

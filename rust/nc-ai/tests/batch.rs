@@ -8,7 +8,7 @@
 mod common;
 
 use common::arrays::{Arrays, Rng, random_arrays};
-use common::seated_game;
+use common::{seated_game, tuned_without_stations};
 use nc_ai::{
     BatchEnv, MISSION_CHOICES, Seat, SeatPolicy, Weights, commission_submission, executor_turn,
     plan_turn, play_match, seat_masks,
@@ -28,7 +28,7 @@ fn batch_arrays_play_the_same_game_as_seats_played_by_hand() {
     let mut env = BatchEnv::new(PLAYERS, &maps, &maps, &learned(maps.len()), years, 0);
     let mut by_hand: Vec<_> = maps.iter().map(|&map| seated_game(PLAYERS, map)).collect();
     let start_year = by_hand[0].play.built.game_data.conquest.game_year;
-    let weights = Weights::TUNED;
+    let weights = tuned_without_stations();
     for _ in 0..years {
         let mut arrays = Arrays::zeros(&env);
         for (game, slot) in by_hand.iter_mut().enumerate() {

@@ -141,8 +141,8 @@ pub struct Doctrine {
     pub keep_scouts: bool,
     /// After the land grab, pickets and spare scouts stand watch in the
     /// approaches between the seat's exposed worlds and the nearest rival
-    /// world, for early warning (t189). Off, pickets join the strike force
-    /// and scouts revisit stale worlds.
+    /// world, for early warning (t189, accepted). Off, pickets join the
+    /// strike force and scouts revisit stale worlds.
     pub watch: bool,
 }
 
@@ -184,7 +184,7 @@ impl Doctrine {
         reinforce: false,
         combined_gate: false,
         keep_scouts: true,
-        watch: false,
+        watch: true,
     };
 }
 
