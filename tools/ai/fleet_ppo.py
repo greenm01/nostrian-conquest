@@ -161,13 +161,13 @@ def learner_name(families, style=None):
 
 
 def head_to_head(model, strategist, families, opponent, games, years, first_map, dev,
-                 greedy=False, style=None, war_years=None, target=None):
+                 greedy=False, style=None, war_years=None, target=None, threads=0):
     """Win share of one learner seat against three ``opponent`` seats
     (``strategist``, ``target`` for the frozen ``target`` agent, or a
     scripted policy), the learner's seat rotated. With
     ``war_years`` (a list), each game's first year the learner set a war
     goal, counted from the start, is appended, or ``None`` for never."""
-    env = nc_ai_env.Env(PLAYERS, years)
+    env = nc_ai_env.Env(PLAYERS, years, threads)
     learner = learner_name(families, style)
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
     other = learner_name(families) if opponent == "target" else opponent
@@ -295,6 +295,8 @@ def main():
     parser.add_argument("--eval-games", type=int, default=256)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--style", help="the learner's executor personality (t167)")
+    parser.add_argument("--threads", type=int, default=0,
+                        help="CPU threads for the games; 0 uses every core")
     parser.add_argument("--exploit", help="train a main exploiter against this frozen "
                                           "fleet agent: every game is the learner against "
                                           "three copies of it")
@@ -302,6 +304,8 @@ def main():
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
     args = parser.parse_args()
+    if args.threads:
+        torch.set_num_threads(args.threads)
 
     families = [f for f in args.families.split(",") if f]
     dev = device()
@@ -315,7 +319,7 @@ def main():
     # An exploiter trains against a frozen agent only (main exploiter).
     target = load_fleet_agent(args.exploit, dev) if args.exploit else None
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
-    env = nc_ai_env.Env(PLAYERS, args.years, limit_credit=args.limit_credit)
+    env = nc_ai_env.Env(PLAYERS, args.years, args.threads, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
     learner = learner_name(families, args.style)
     next_map = 3_000_000
@@ -353,7 +357,7 @@ def main():
             for opponent in ("strategist", "executor") + (("target",) if target else ()):
                 row[f"eval_{opponent}"] = float(head_to_head(
                     model, strategist, families, opponent, args.eval_games, args.years,
-                    100000, dev, style=args.style, target=target))
+                    100000, dev, style=args.style, target=target, threads=args.threads))
         log.write(json.dumps(row) + "\n")
         log.flush()
         print(" ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}"
