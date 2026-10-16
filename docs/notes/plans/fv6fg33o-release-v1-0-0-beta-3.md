@@ -149,6 +149,24 @@ verification.
 Live entry points: [downloads](https://nostrian-conquest.com/downloads.html)
 and [release assets](https://github.com/greenm01/nostrian-conquest/releases/tag/release-artifacts).
 
+## Combat refresh, 2026-10-16
+
+All four archives were rebuilt from `1c1de2a7`, which carries the t198/t200
+combat rules and the rebuilt player manual. Linux was built on bean-void
+(Rust 1.98). Windows x64 used stable 1.99 and both x86 targets nightly 1.101,
+all built on bean. Every archive passed a fresh game and two maintenance
+passes, and the Windows archives passed explicit Defender scans. The door was
+checked with `--help` only; no loopback session was run. The checksum
+manifest was signed on the Mac mini with the release key. The website's
+player manual PDF matches the committed one.
+
+| Archive suffix | SHA-256 |
+| --- | --- |
+| `linux-x64.tar.gz` | `b68b26336d7cfecfabfd4db661ae8ded2af57c4c301ec97dc908dc98d3feda2b` |
+| `windows-x64.zip` | `a9aab34e4e8228aafe77ab96f5ced3a2e029d54c889a8a8700edca8136f64b2e` |
+| `windows-x86.zip` | `7ceda2d945d5a6b1784fe8160c4cab910b94c9150c6a2ac0e2d155be8a2e6574` |
+| `windows7-x86.zip` | `55cfb736fdb27c612435d051909d83940a2fe1556ac0a55e36651e388121b2e8` |
+
 ## Connections
 
 Ships the work recorded in the
