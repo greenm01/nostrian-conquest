@@ -187,6 +187,10 @@ manual PDFs match the committed ones.
 | `windows-x86.zip` | `7882d4347989e3f7141ce6bef83c214a979638d58c2766b2603ab89d8ff27f4f` |
 | `windows7-x86.zip` | `52f1c51db6c355136674433e388d227eca3c285fa727629455290a4369f03854` |
 
+The owner uploaded them and the signed manifest to `release-artifacts` and
+refreshed its note; a fresh download of all six assets passed GPG and
+checksum verification.
+
 ## Connections
 
 Ships the work recorded in the
