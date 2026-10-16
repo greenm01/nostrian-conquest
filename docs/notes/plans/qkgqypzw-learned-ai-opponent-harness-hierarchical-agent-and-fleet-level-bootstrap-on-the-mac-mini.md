@@ -1021,6 +1021,24 @@ It shows no new pathologies so far.
 and 100 years. Its behaviour report shows no regression, and it holds its
 own against t183's exploiter. It is then exported as `fleet-final.onnx`.
 
+**Result (2026-10-16): promoted snapshot 140.** On 1,024 maps against
+the previous agent, with three executors in the other seats:
+
+| Model | 60 years | Maps swept (60) | 100 years | Maps swept (100) |
+| --- | ---: | ---: | ---: | ---: |
+| Previous `fleet-final` | 0.657 | 1 | 0.868 | 182 |
+| Snapshot 140 | 0.774 | 20 | 0.927 | 613 |
+
+The 256-game behaviour report shows no new pathology: the same tax,
+no declared wars, fewer worlds lost (15.4 against 17.2), more worlds at
+the end (17.5 against 13.8), and fewer transports built (85 against 115).
+Against t183's exploiter it scores 0.260 where its own control scores
+0.237 (1,024 games, 60 years), so the hole the exploiter finds in the
+previous agent is not there (t192 checks it properly). The previous agent
+is kept beside it as `fleet-final-pre-sweep.pt` and `.onnx`, and
+`fleet-final.pt` and `.onnx` are now snapshot 140. `cargo test -p nc-ai
+-p nc-ai-onnx` passes.
+
 ### t183
 
 Train a main exploiter against the deployed agent.
@@ -1054,6 +1072,27 @@ The iteration-50 peak fell back and the rest sit at an even share, so the
 exploiter found no reliable weakness and there is none to name. This is
 a small exploiter: the KataGo adversaries trained far longer, so t184's
 league remains the guard against holes a larger search would find.
+
+**Correction (2026-10-16): the exploiter did find a weakness.** The
+table above scored the exploiter by sampling its choices during training,
+which understates it. Scored greedy, as the target is deployed, on 1,024
+60-year games against three copies of the target (the control is the
+target itself in the learner's seat):
+
+| Learner | Target | Win share |
+| --- | --- | ---: |
+| exploiter, iteration 80 of the crunch run | `fleet-final` | 0.377 |
+| `fleet-final` (control) | `fleet-final` | 0.237 |
+| exploiter, iteration 80 | sweep snapshot 140 | 0.260 |
+| sweep snapshot 140 (control) | sweep snapshot 140 | 0.237 |
+
+At 256 games the three saved exploiter snapshots scored 0.309, 0.336 and
+0.371 against `fleet-final`, rising with training. So `fleet-final` has a
+real hole (0.38 against an even 0.25), and the sweep-trained snapshot 140,
+which the exploiter never met in training, does not show it (0.26 against
+a 0.24 control, within noise). That favours promoting snapshot 140, but an
+exploiter trained against snapshot 140 itself is the proper test (t184).
+t192 names the weakness.
 
 ### t184
 
@@ -1427,6 +1466,53 @@ crunch when Codex has no quiet hold.
 **Exit:** the retrained agent beats the deployed one on 1,024 maps, and
 its behaviour report shows the wider order set and the mixed fleet.
 
+### t192
+
+Name the weakness the exploiter found.
+
+t183's correction above: the exploiter beats `fleet-final` 0.377 to 0.237.
+Play its games against the target and read them (`game_log` with the
+exploiter and the target in the network seats, or `behaviour_report` rows
+for the exploiter against the executors), then name what it does that the
+target does not answer: an opening, a timing, a world it takes. Check
+whether sweep snapshot 140 answers it, and train a fresh exploiter against
+snapshot 140 (the same `--exploit` run, about 10-15 s an iteration on the
+RX 7900).
+
+**Exit:** the weakness is named and shown to be fixed or absent in the
+agent to be promoted, or fixed by training against the exploiter (t184).
+
+### t193
+
+Correct the evaluation flaws the Muse review found.
+
+Fix before citing new strength numbers:
+- the league plays fleet agents greedy but strategists sampled
+  (`league.py:209` against `:222`), which flatters the fleet agent;
+- PPO evaluation reuses maps 100000-100255 every 20 iterations, and the
+  final 1,024-map confirmations include them; rotate evaluation blocks and
+  keep one untouched;
+- `behaviour_report` prints no paired difference or interval between
+  models;
+- imitation accuracy is teacher-forced (`fleet_imitate.py:127`).
+
+**Exit:** the league is re-rated with both greedy, evaluation maps are held
+out, and the report prints paired differences with their standard errors.
+
+### t194
+
+Save AI seat memory with the campaign, and check hazard intel.
+
+`nc-sysop` saves AI seat memory in a store call after `maintenance.save`
+(`main.rs:458-462`); a crash between them silently resets the memory
+through the year-mismatch fallback (`campaign.rs:87-107`). Save them
+together, or log the fallback. Also check that the campaign's hazard
+routing, which uses stored intel, and the simulator, which uses
+`SeatMemory` with attack intel, agree after attacks.
+
+**Exit:** a test crashes between the two saves and the seat's memory
+survives or the fallback is logged; the two paths agree after an attack.
+
 ### t187
 
 Stretch goal: AI empires send in-character dispatches.
@@ -1470,6 +1556,28 @@ is the large part of this task.
 **Exit:** in playtests, a player can propose peace or an alliance to an AI
 empire, get a reply that matches its later conduct, and the agent's
 strength against the bots doesn't drop.
+
+## Cold-eye review (Muse Code, 2026-10-16)
+
+Muse reviewed the AI work read-only on crunch (full report in
+`~/muse-review-findings.md` there). It found no fog-of-war leak; the
+observation, masks, goal masks, contacts and attack intel all trace to
+player-visible sources, the exact-KL PPO fix and GAE are correct, and
+Python and Rust classify families the same way. Its findings, with what
+this plan does about each:
+
+| # | Finding | Disposition |
+| --- | --- | --- |
+| 1 | AI seats break maintenance in a non-4-player campaign (the graph's diplomacy inputs are fixed at four) | Fixed: `CampaignAi::load` and `settings ai-seat` refuse such campaigns |
+| 2 | No Join, Transfer or Unload in the action space | t190, covering all three, not Join alone |
+| 3 | Strikes are piecemeal: yearly commissioning makes separate fleets and `can_take` judges each alone | t189: gate on the combined home strength and give every home fleet the same target and speed (replaces the rejected Join trial) |
+| 4 | Cruiser-only builds; a scout weight of 0.14 rounds to 0, so scouts are never replaced | t189: roles for hulls, and round positive scout and ETAC targets up |
+| 5 | Pickets recalled when the land grab ends | t189: keep Patrol and View stations |
+| 6 | Diplomacy has no learning signal | t188; until then the head is inert |
+| 7 | PPO ratio, KL and entropy include heads the decoder ignores | t191: a per-(mission, head) relevance mask |
+| 8-9, 12 | League greedy against sampled; reused evaluation maps; thin evaluation | t193 |
+| 10 | Memory saved in a separate call | t194 |
+| 11, 13 | Rejected switches left in `Doctrine`; duplicated example loops; legacy t153 path | After t189 decides: remove the dead switches and merge the example loops |
 
 ## Risks
 

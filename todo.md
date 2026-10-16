@@ -5,21 +5,17 @@
 (A) 2026-10-11 Add multi-game Discord discovery and real turn announcements. +critical +hosting @development id:t120 order:360 depends:t119 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t120)
 (A) 2026-10-11 Package hosting services and verify a private two-game pilot and recovery. +critical +hosting @development id:t121 order:370 depends:t120 [details](docs/notes/plans/qv5x08zs-discord-community-hosting-and-python-game-administration.md#t121)
 (B) 2026-10-13 Post game announcements and answer commands in the Matrix community room. +parallel +hosting @development id:t141 order:380 depends:t140,t120 [details](docs/notes/plans/mmoyy1bp-matrix-browser-login-and-community-room-bot.md#t141)
-(B) 2026-10-15 Promote the 100-year sweep-trained agent. +parallel +ai @development id:t182 order:476 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t182)
-
+(B) 2026-10-16 Correct the evaluation flaws the Muse review found. +parallel +ai @development id:t193 order:474 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t193)
+(B) 2026-10-16 Name the weakness the exploiter found. +parallel +ai @development id:t192 order:475 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t192)
 (B) 2026-10-16 Use the full order set and a mixed fleet in the executor. +parallel +ai @development id:t189 order:477 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t189)
-
 (B) 2026-10-16 Give the network the whole order set. +parallel +ai @development id:t190 order:478 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t190)
-
 (B) 2026-10-16 Retrain the agent on the new executor. +parallel +ai @development id:t191 order:479 depends:t189,t190 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t191)
-
-(B) 2026-10-14 Put the finished AI into real games as sysop-assigned seats. +parallel +ai @development id:t165 order:480 depends:t157,t182,t191 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t165)
+(B) 2026-10-14 Put the finished AI into real games as sysop-assigned seats. +parallel +ai @development id:t165 order:480 depends:t157,t182,t191,t193 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t165)
 (B) 2026-10-14 Give AI seats personalities, with the land grab as the default and a rusher. +parallel +ai @development id:t167 order:485 depends:t156 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t167)
 (B) 2026-10-15 Choose training opponents from the league by difficulty. +parallel +ai @development id:t184 order:486 depends:t183 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t184)
 (B) 2026-10-15 Start some training games from saved mid-game positions. +parallel +ai @development id:t185 order:487 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t185)
 (B) 2026-10-15 Track the win-probability estimate through games. +parallel +ai @development id:t186 order:488 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t186)
 (B) 2026-10-14 Learn from real games once AI seats play people. +parallel +ai @development id:t166 order:490 depends:t165,t121,t186 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t166)
-
+(B) 2026-10-16 Save AI seat memory with the campaign, and check hazard intel. +parallel +ai @development id:t194 order:489 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t194)
 2026-10-16 Stretch goal: AI empires send in-character dispatches. +deferred +ai @development id:t187 order:500 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t187)
-
 2026-10-16 Stretch goal: AI empires that can be negotiated with. +deferred +ai @development id:t188 order:510 depends:t187 [details](docs/notes/plans/qkgqypzw-learned-ai-opponent-harness-hierarchical-agent-and-fleet-level-bootstrap-on-the-mac-mini.md#t188)
