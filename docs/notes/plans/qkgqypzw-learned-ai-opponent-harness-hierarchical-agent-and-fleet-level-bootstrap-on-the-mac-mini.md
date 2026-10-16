@@ -1486,6 +1486,16 @@ through arrays use `tests/common::tuned_without_stations`. If the network
 is ever handed the scout family (`Families::ALL`), stations need an action
 (t190).
 
+**Built pickets, rejected (2026-10-16).** A trial switch had the home
+world keep one destroyer for each approach a watch station covers (up to
+three) so the stations are staffed. Paired over 512 maps at 100 years it
+is neutral for the executor (default +0.012 ± 0.024, rusher 0.000 ±
+0.011, turtle -0.012 ± 0.015), and through the network seat it costs the
+promoted agent: win share 0.875 against 0.920 and maps swept 37% against
+48% (512 maps at 100 years, standard error about 0.012). The opening
+escorts and spare scouts are enough to staff the stations, so the switch
+was removed rather than left off.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old
