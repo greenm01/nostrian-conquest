@@ -21,6 +21,10 @@ use nc_engine::CampaignMaintenance;
 
 use crate::NetworkSeat;
 
+/// The players the exported agent's graph is built for: its diplomacy
+/// inputs are fixed at four empires.
+pub const AGENT_PLAYERS: usize = 4;
+
 /// The environment variable that names the agent a host's AI seats play.
 pub const MODEL_ENV: &str = "NC_AI_MODEL";
 
@@ -67,6 +71,13 @@ impl CampaignAi {
         };
         if settings.ai_seats.is_empty() {
             return Ok(None);
+        }
+        let players = maintenance.game_data.players.len();
+        if players != AGENT_PLAYERS {
+            return Err(format!(
+                "AI seats play {AGENT_PLAYERS}-player campaigns only; this one has {players} players"
+            )
+            .into());
         }
         let model = model.ok_or(format!(
             "this campaign has AI seats; set {MODEL_ENV} to the agent's .onnx file"

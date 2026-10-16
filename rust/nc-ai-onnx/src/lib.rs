@@ -28,7 +28,9 @@ use tract_onnx::prelude::*;
 
 mod campaign;
 
-pub use campaign::{AGENT_FAMILIES, CampaignAi, MODEL_ENV, model_from_env, temperature};
+pub use campaign::{
+    AGENT_FAMILIES, AGENT_PLAYERS, CampaignAi, MODEL_ENV, model_from_env, temperature,
+};
 pub use nc_ai::PERSONALITIES;
 
 /// Goal head widths the exported graph was built with; the diplomacy,

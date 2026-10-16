@@ -119,3 +119,42 @@ fn a_campaign_of_ai_seats_plays_the_simulators_game() {
     }
     let _ = std::fs::remove_dir_all(&dir);
 }
+
+#[test]
+fn ai_seats_refuse_a_campaign_that_is_not_four_players() {
+    let (map, years) = (61, 20);
+    let game = match_game(map, map, &[false; 3], years);
+    let dir = std::env::temp_dir().join(format!("nc-ai-campaign-3p-{}", std::process::id()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    let store = CampaignStore::open_default_in_dir(&dir).unwrap();
+    let start = &game.play.built.game_data;
+    let intel: Vec<_> = game
+        .seats
+        .iter()
+        .map(|seat| seat.planet_intel.clone())
+        .collect();
+    store
+        .save_runtime_state_structured_with_intel_and_seed(
+            start.conquest.game_year,
+            start,
+            &[],
+            &game.play.built.queued_mail,
+            &intel,
+            Some(map),
+        )
+        .unwrap();
+    let mut settings = CampaignSettings::new("ai-3p", "AI three players");
+    settings.ai_seats = vec![AiSeat {
+        player_record_index_1_based: 1,
+        difficulty: AiDifficulty::Hard,
+        personality: "land-grab".to_string(),
+    }];
+    store.save_campaign_settings(&settings).unwrap();
+
+    let maintenance = CampaignMaintenance::load(&store).unwrap();
+    let error = CampaignAi::load(&store, &maintenance, Some(&model()))
+        .err()
+        .expect("a 3-player campaign is refused");
+    assert!(error.to_string().contains("4-player"), "{error}");
+}

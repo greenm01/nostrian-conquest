@@ -2,7 +2,7 @@
 //! agent plays in a Rust campaign, each with a difficulty and a personality
 //! (t167). `maint` plays them with the agent named by `NC_AI_MODEL`.
 
-use nc_ai_onnx::PERSONALITIES;
+use nc_ai_onnx::{AGENT_PLAYERS, PERSONALITIES};
 use nc_data::{AiDifficulty, AiSeat, CampaignStore, DEFAULT_AI_PERSONALITY};
 
 use crate::{
@@ -29,6 +29,18 @@ pub fn set_ai_seat(args: &[String]) -> Result<(), Box<dyn std::error::Error>> {
         .into());
     }
     let store = open_rust_campaign(&dir)?;
+    let players = store
+        .load_latest_runtime_state()?
+        .ok_or("campaign store has no snapshots; initialize the campaign with nc-sysop first")?
+        .game_data
+        .players
+        .len();
+    if players != AGENT_PLAYERS {
+        return Err(format!(
+            "AI seats play {AGENT_PLAYERS}-player campaigns only; this one has {players} players"
+        )
+        .into());
+    }
     let mut settings = store.load_campaign_settings()?;
     settings
         .ai_seats

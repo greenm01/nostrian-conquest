@@ -116,7 +116,14 @@ fn ai_seats_play_in_maintenance_with_a_model_and_refuse_without_one() {
     );
     assert!(
         run(
-            &["settings", "remove-ai-seat", "--dir", target, "--player", "4"],
+            &[
+                "settings",
+                "remove-ai-seat",
+                "--dir",
+                target,
+                "--player",
+                "4"
+            ],
             None
         )
         .status
