@@ -145,6 +145,9 @@ RULESETS['engine-t065'] = variant(
     ship_speeds=dict(DD=6, CA=5, BB=4, SC=6, TT=5, ET=3),
 )
 
+# t198: the engine without the mixed-fleet bonus, in any theater.
+RULESETS['engine-t198'] = variant(RULESETS['engine-t065'], 'engine-t198', mixed_shift=0)
+
 # Hull variants: unit-table overrides by name.
 UNIT_VARIANTS = {
     'baseline': {},

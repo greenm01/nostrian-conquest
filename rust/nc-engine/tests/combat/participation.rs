@@ -166,8 +166,8 @@ fn two_six_cruiser_fleets_against_ten_fight_together() {
     assert!((lost - 62.7).abs() < 15.0, "lost {lost:.1}");
 }
 
-/// Two fleets of 5 DD and 5 CA against 12 CA: 70.6% joined (88.2) against
-/// 23.0% one at a time (182.1).
+/// Two fleets of 5 DD and 5 CA against 12 CA: 60.9% joined (106.2) against
+/// 15.2% one at a time (188.6), with no mixed-fleet bonus.
 #[test]
 fn two_mixed_fleets_against_twelve_cruisers_fight_together() {
     let half = Ships {
@@ -181,18 +181,18 @@ fn two_mixed_fleets_against_twelve_cruisers_fight_together() {
     };
     let (win, lost, fought) = joined_odds(half, twelve, 0..600);
     eprintln!(
-        "two (5 DD + 5 CA) vs 12 CA: win {win:.3}, lost {lost:.1} over {fought} battles (model joined 0.706, 88.2; sequential 0.230, 182.1)"
+        "two (5 DD + 5 CA) vs 12 CA: win {win:.3}, lost {lost:.1} over {fought} battles (model joined 0.609, 106.2; sequential 0.152, 188.6)"
     );
     assert!(fought >= 500, "{fought} battles");
     assert_rate(
         "two mixed vs 12 CA",
         (win * fought as f64) as usize,
         fought,
-        0.7062,
+        0.609,
         4.0,
     );
-    assert!(win > 0.5, "far from the one-at-a-time 23%");
-    assert!((lost - 88.2).abs() < 15.0, "lost {lost:.1}");
+    assert!(win > 0.4, "far from the one-at-a-time 15%");
+    assert!((lost - 106.2).abs() < 15.0, "lost {lost:.1}");
 }
 
 /// A cautious fleet no longer attacks a stronger enemy because it

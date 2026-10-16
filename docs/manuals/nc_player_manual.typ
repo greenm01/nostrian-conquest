@@ -4,7 +4,7 @@
 #set document(
   title: "Nostrian Conquest — Player Manual",
   author: "Mason A. Green",
-  date: datetime(year: 2026, month: 10, day: 14),
+  date: datetime(year: 2026, month: 10, day: 16),
 )
 
 #set page(
@@ -74,7 +74,7 @@
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[All code, UI, and assets in this edition are original. Not affiliated with any original release.]
   #v(0.5em)
-  #text(size: 10pt, fill: luma(120))[Revision date: October 14, 2026]
+  #text(size: 10pt, fill: luma(120))[Revision date: October 16, 2026]
   #v(0.5em)
   #text(size: 10pt, fill: luma(120))[Version 1.0.0-beta.3 — Beta]
 ]
@@ -556,8 +556,7 @@ fleet of only those ships is always ROE 0. Such a fleet cannot guard a world or
 a starbase: if a detach or transfer strips a guard fleet of its warships, maintenance sends it home, unless autopilot is running.
 
 *What each fleet is made of.* The ships you send decide what a victory is
-worth (see Cripple or Destroy below). A fleet that mixes at least two of
-destroyers, cruisers, and battleships fights better than one that does not.
+worth (see Cripple or Destroy below).
 Your warships screen your scouts, transports, and ETACs from ordinary fire while any of them stand, though a lucky hit can get through. A fleet holds up to 3,000 ships and moves at the speed of its
 slowest one.
 
@@ -1076,11 +1075,13 @@ and keep the rest Neutral until you are ready.
 Once the raw worlds are gone, the only way to grow is to take worlds from
 others.
 
-*Mix your fleets.* A fleet with at least two of destroyers, cruisers, and
-battleships adds one to its die. Cruisers and battleships cripple the enemy
-line; destroyers destroy what is crippled. Every warship buys the same
-firepower per point, but the heavier ships last longer, and an empire that builds nothing but destroyers tends to fall behind rivals with heavier, mixed fleets. Build destroyers for speed and for the kill, not as your whole navy
-(see @cripple-or-destroy).
+*Match the fleet to the job.* Cruisers and battleships cripple the enemy
+line and hold the field; destroyers destroy what is crippled, and what they
+destroy stays destroyed. Every warship buys the same firepower per point, but
+the heavier ships last longer. Battleships bombard best; cruisers are faster.
+An empire that builds nothing but destroyers tends to fall behind rivals with
+heavier fleets. Build destroyers for speed, scouting, and the kill, not as
+your whole navy (see @cripple-or-destroy).
 
 *Match the attack to the prize.* Bombard a world you mean to ruin or whose
 batteries you must break; it destroys what you might capture. Invade a world
@@ -1307,13 +1308,10 @@ Ships take damage in two steps, from "Nominal" to "Crippled" and then destroyed.
 
 Each damage step costs the target's full *Defense Strength (DS)*: once to cripple a ship and again to finish it. Hits too few for the next step are not wasted. They carry over to the next round of the same battle, so even a small force wears down a big ship if it stays in the fight. Leftover hits last only as long as the battle. When it ends, whether by destruction, withdrawal, or the round limit, they are lost, and the next battle starts from zero, even against the same enemy fleet. A fleet that breaks off forfeits the hits it has built up against the enemy.
 
-Three bonuses add to your die roll. A fleet that mixes at least two of
-destroyers, cruisers, and battleships gets a *combined arms bonus* of +1, so
-mix your composition when you can. A starbase fighting on your side adds
-another +1. An attack that catches the enemy unprepared adds a third +1 to
-the attacker's first round (see *Surprise* under Who Fights Whom). The
-bonuses never add more than +2, and a roll pushed past 9
-counts as 9. An unmodified 9 is a critical hit that destroys one more enemy
+Two bonuses add to your die roll. A starbase fighting on your side adds +1.
+An attack that catches the enemy unprepared adds +1 to the attacker's first
+round (see *Surprise* under Who Fights Whom). A roll pushed past 9 counts
+as 9. An unmodified 9 is a critical hit that destroys one more enemy
 ship outright. In a draw, the defender wins. The exact ROE thresholds, combat values,
 effectiveness table, and assault formulas follow later in this appendix.
 
@@ -1663,11 +1661,10 @@ attack strength, a starbase counting 100.
 
 == Fleet Battle Die Modifiers and Hit Formula
 
-- Mixed fleet (at least two of destroyers, cruisers, and battleships): `+1`
 - Starbase on your side: `+1`
 - Surprise (the defending empire had not spotted the attacker in that sector
   and layer): `+1` to the attacker, in the first exchange only
-- Total modifier: at most `+2`; a modified roll above `9` counts as `9`
+- A modified roll above `9` counts as `9`
 - Pursuit exchange: the same modifiers, except surprise, which it never gets
 
 #align(left)[
@@ -1748,11 +1745,9 @@ does not; see Landing Battle.
   ),
 )
 
-== Planetary Column Shifts and Hit Formula
+== Planetary Columns and Hit Formula
 
-- Mixed `DD/CA/BB` fleet in bombardment or invasion suppression: `+1` CRT
-  column
-- Final columns are clamped to the table bounds
+- The force ratio alone picks the column; nothing shifts it
 
 #align(left)[
   #stack(

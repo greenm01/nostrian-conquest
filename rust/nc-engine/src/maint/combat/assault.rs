@@ -404,7 +404,6 @@ fn apply_blitz_landing_fire(
         attacker_empire,
         u32::from(surviving_batteries) * GROUND_AS_BATTERY,
         bombard_attack_as(&before).max(1),
-        false,
     );
     let mut after = before.clone();
     apply_landing_fire_to_fleet(&mut after, landing_exchange.hits, landing_exchange.critical);
@@ -596,7 +595,6 @@ pub(crate) fn resolve_strike(
                     defender_empire,
                     attack_as,
                     defense_as.max(1),
-                    fleet_state.is_mixed(),
                 );
 
                 // Batteries fire back each round they exist.
@@ -611,7 +609,6 @@ pub(crate) fn resolve_strike(
                         empire,
                         defense_as,
                         attack_as.max(1),
-                        false,
                     );
                     let mut next_state = fleet_state.clone();
                     apply_hits_to_fleet(
@@ -706,7 +703,6 @@ pub(crate) fn resolve_strike(
                 previous_owner,
                 bombard_as,
                 battery_as.max(1),
-                state.is_mixed(),
             );
             let return_exchange = resolve_orbital_exchange(
                 campaign_seed,
@@ -718,7 +714,6 @@ pub(crate) fn resolve_strike(
                 empire,
                 battery_as,
                 bombard_as.max(1),
-                false,
             );
 
             let before = state.clone();

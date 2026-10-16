@@ -82,8 +82,9 @@ fn the_executor_beats_the_aggressor() {
 /// years.
 ///
 /// At t159 these matched t154's own results exactly. Since t178, every seat
-/// learns what its own attacks reveal, which changes these games. The
-/// values below are recorded with that intel.
+/// learns what its own attacks reveal, which changes these games, and since
+/// t198 no mixed fleet gets a combat bonus. The values below are recorded
+/// with both.
 #[test]
 fn the_classic_doctrine_replays_t154_exactly() {
     let classic = Doctrine {
@@ -116,7 +117,7 @@ fn the_classic_doctrine_replays_t154_exactly() {
     };
     assert_eq!(
         play_match(100000, &[tuned, baseline, baseline, baseline], 60),
-        recorded([527, 181, 264, 151], [7, 5, 4, 4])
+        recorded([459, 266, 142, 303], [7, 6, 2, 5])
     );
     assert_eq!(
         play_match(100001, &mixed, 60),

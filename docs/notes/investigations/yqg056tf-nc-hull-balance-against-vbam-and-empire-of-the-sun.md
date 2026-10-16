@@ -329,6 +329,30 @@ Ground batteries (20, AS 90, DS 20, execution) and armies (2, AS 10,
 DS 10) are unchanged. Scout, transport, ETAC, and starbase values were not
 tested here; scout price against a destroyer picket is worth a later look.
 
+## Proposed punch ladder (t200)
+
+Equal AS per point leaves cruisers and battleships close in a fleet battle
+(battleship +7% per point) and distinct only by role. The owner proposed
+giving smaller hulls more punch per point, and approved testing two
+ladders on 2026-10-16; battleships stay 45 / 4 / 90 / 100:
+
+| Ladder | DD | CA | AS per point, DD / CA / BB | Line power proxy, CA = 1 |
+| --- | --- | --- | --- | --- |
+| A | 11 / 8 | 33 / 30 | 2.2 / 2.2 / 2.0 | 0.80 / 1.00 / 1.01 |
+| B (preferred) | 12 / 8 | 33 / 30 | 2.4 / 2.2 / 2.0 | 0.87 / 1.00 / 1.01 |
+
+Durability per point rises with size (1.6 / 2.0 / 2.22), so punch falls and
+staying power rises from destroyer to battleship. The proxy is
+`AS x DS / cost^2`; it overstated the measured break-evens slightly (BB +11%
+proxy against +7% measured).
+
+Tests, with the bonus off and ROE 6, on the model and then the engine: the
+nine-fleet round robin, break-even counts, and attrition ratios. Ladder B
+passes if an all-destroyer fleet does not beat cruiser or battleship fleets
+on field wins and its attrition ratio stays near today's (1.4-1.7);
+otherwise ladder A. Cruisers and battleships should come out roughly even
+per point in battle.
+
 ## Connections
 
 - [ebrogywq](ebrogywq-nc-combat-design-review-against-its-sources.md): the

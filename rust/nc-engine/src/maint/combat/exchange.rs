@@ -48,7 +48,6 @@ const CRT_MULTIPLIER_X4: [[u8; 5]; 10] = [
 /// Fleet battles' effectiveness in quarters of the side's AS, indexed by the
 /// modified d10: 0-2 give 25%, 3-5 give 50%, 6-9 give 100%.
 const FLEET_EFFECTIVENESS_X4: [u8; 10] = [1, 1, 1, 2, 2, 2, 4, 4, 4, 4];
-const FLEET_DIE_MODIFIER_CAP: u8 = 2;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(super) struct ExchangeResolution {
@@ -113,10 +112,6 @@ fn base_combat_column(our_as: u32, enemy_as: u32) -> usize {
     } else {
         COLUMN_ADVANTAGED
     }
-}
-
-fn shifted_combat_column(base_column: usize, shift: i32) -> usize {
-    (base_column as i32 + shift).clamp(0, COLUMN_OVERWHELMING as i32) as usize
 }
 
 fn hits_from_multiplier(as_total: u32, multiplier_x4: u8) -> u32 {
@@ -264,12 +259,10 @@ pub(super) fn fleet_volley(roll: u8, die_modifier: u8, as_total: u32) -> Exchang
     }
 }
 
-/// A fleet battle side's die modifier: +1 for a mixed fleet, +1 for a
-/// starbase, and +1 for a surprise first exchange, at most +2.
+/// A fleet battle side's die modifier: +1 for a starbase and +1 for a
+/// surprise first exchange.
 pub(super) fn fleet_die_modifier(state: &FleetCombatState, surprise: bool) -> u8 {
-    let modifier =
-        u8::from(state.is_mixed()) + u8::from(state.counts[IDX_SB] > 0) + u8::from(surprise);
-    modifier.min(FLEET_DIE_MODIFIER_CAP)
+    u8::from(state.counts[IDX_SB] > 0) + u8::from(surprise)
 }
 
 /// One side's volley in the landing battle: its armies fire on the shared
@@ -292,13 +285,8 @@ pub(super) fn resolve_orbital_exchange(
     target_empire: u8,
     our_as: u32,
     enemy_as: u32,
-    mixed: bool,
 ) -> ExchangeResolution {
-    let mut shift = 0i32;
-    if mixed {
-        shift += 1;
-    }
-    let column = shifted_combat_column(base_combat_column(our_as, enemy_as), shift);
+    let column = base_combat_column(our_as, enemy_as);
     seeded_exchange_resolution(
         campaign_seed,
         game_year,

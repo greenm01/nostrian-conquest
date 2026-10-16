@@ -486,3 +486,13 @@ See [t091's review](../../docs/notes/investigations/l5usd3l3-engine-t065-pursuit
 for numbers, hashes, reproduction, casualty-tolerance limits and the harness
 issue with matching disposition events to a particular battle. Older CRT
 and t060 files are unchanged.
+
+## t198: no mixed-fleet bonus
+
+`engine-t198` is `engine-t065` with `mixed_shift=0`: the engine after the
+mixed-fleet bonus was removed
+([r4hd41gi](../../docs/notes/decisions/r4hd41gi-mixed-fleets-get-no-combat-bonus.md)).
+The hull comparisons of the
+[hull balance investigation](../../docs/notes/investigations/yqg056tf-nc-hull-balance-against-vbam-and-empire-of-the-sun.md)
+use `hull_mix.py`, `hull_breakeven.py`, and `hull_speed.py`, with results in
+the `nc_hull_*.json` files and `nc_engine_odds_roe6_mix.json`.

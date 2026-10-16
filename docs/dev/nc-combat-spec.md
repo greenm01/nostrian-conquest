@@ -87,9 +87,11 @@ defender's whole advantage: there is no defender modifier, no homeworld
 bonus, and no tie rule, because the attackers fire only with what survives
 and both sides cannot be destroyed.
 
-### 5. Combined Arms
-The model rewards mixed fleets (**DD/CA/BB**) with a small effectiveness bonus
-over mono-type swarms.
+### 5. Hull Roles, Not Composition Bonuses
+No rule rewards a fleet for mixing hulls. Each hull earns its place through
+speed, durability, fire type, and bombardment: cruisers and battleships hold
+the field, destroyers make losses stick (see
+[r4hd41gi](../notes/decisions/r4hd41gi-mixed-fleets-get-no-combat-bonus.md)).
 
 ## Combat Actors
 
@@ -276,13 +278,11 @@ A volley deals `hits = ceil(AS × effectiveness)`, where AS is the firing
 side's total attack strength. The force ratio plays no part.
 
 Die modifiers add to the roll:
-- **+1** for a mixed fleet: at least two of destroyers, cruisers, and
-  battleships.
 - **+1** for a side with a starbase.
 - **+1** for the attacking side's first exchange when it surprises the
   defending empire (see Surprise).
 
-The total is at most **+2**, and a modified roll above 9 reads as 9. The
+A modified roll above 9 reads as 9. The
 pursuit exchange is an ordinary exchange and takes the same modifiers
 except surprise, which it never gets. An unmodified **9** is a critical
 hit: it destroys one more unit outright, a crippled one first.
@@ -446,8 +446,7 @@ and landing fire use the ratio CRT. The column comes from the force ratio:
 - **Advantaged**: Ratio 1.5 – 3.0
 - **Overwhelming**: Ratio >= 3.0
 
-A mixed fleet in bombardment and invasion suppression shifts the column by
-**+1**. An unmodified **9** is a critical hit, forcing at least one real loss.
+The force ratio alone picks the column. An unmodified **9** is a critical hit, forcing at least one real loss.
 Planetary support hits do not carry (see Planetary Hit Costs).
 
 ## Hit Allocation

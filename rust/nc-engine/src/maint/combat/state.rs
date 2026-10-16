@@ -219,20 +219,6 @@ impl FleetCombatState {
             .sum()
     }
 
-    pub(super) fn is_mixed(&self) -> bool {
-        let mut kinds = 0;
-        if self.counts[IDX_DD] > 0 {
-            kinds += 1;
-        }
-        if self.counts[IDX_CA] > 0 {
-            kinds += 1;
-        }
-        if self.counts[IDX_BB] > 0 {
-            kinds += 1;
-        }
-        kinds >= 2
-    }
-
     pub(super) fn has_units(&self) -> bool {
         self.counts.iter().any(|&c| c > 0)
     }

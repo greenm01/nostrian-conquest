@@ -233,7 +233,7 @@ fn a_destroyer_costs_eight_hits_a_step() {
 }
 
 #[test]
-fn mixed_fleets_and_starbases_each_add_one_to_the_die() {
+fn starbases_add_one_to_the_die_and_mixed_fleets_add_nothing() {
     let modifier = |classes: &[usize]| {
         let mut state = FleetCombatState::default();
         for &idx in classes {
@@ -242,9 +242,10 @@ fn mixed_fleets_and_starbases_each_add_one_to_the_die() {
         fleet_die_modifier(&state, false)
     };
     assert_eq!(modifier(&[IDX_CA]), 0);
-    assert_eq!(modifier(&[IDX_DD, IDX_CA]), 1);
+    assert_eq!(modifier(&[IDX_DD, IDX_CA]), 0);
+    assert_eq!(modifier(&[IDX_DD, IDX_CA, IDX_BB]), 0);
     assert_eq!(modifier(&[IDX_SB]), 1);
-    assert_eq!(modifier(&[IDX_DD, IDX_CA, IDX_BB, IDX_SB]), 2);
+    assert_eq!(modifier(&[IDX_DD, IDX_CA, IDX_BB, IDX_SB]), 1);
 }
 
 #[test]
@@ -802,10 +803,10 @@ fn a_surprise_adds_one_to_the_attackers_first_exchange_only() {
     assert_ne!(by_surprise.fleets[4], unaided.fleets[4]);
 }
 
-/// The surprise counts within the +2 cap on a side's die modifier, and does
-/// not make an unmodified natural 9 anything else.
+/// A surprise adds one to a side's die modifier, alongside a starbase, and
+/// does not make an unmodified natural 9 anything else.
 #[test]
-fn a_surprise_counts_within_the_modifier_cap_and_leaves_criticals_alone() {
+fn a_surprise_adds_one_and_leaves_criticals_alone() {
     let modifier = |classes: &[usize], surprise: bool| {
         let mut state = FleetCombatState::default();
         for &idx in classes {
@@ -814,16 +815,11 @@ fn a_surprise_counts_within_the_modifier_cap_and_leaves_criticals_alone() {
         fleet_die_modifier(&state, surprise)
     };
     assert_eq!(modifier(&[IDX_CA], true), 1);
-    assert_eq!(modifier(&[IDX_DD, IDX_CA], true), 2, "mixed and surprise");
+    assert_eq!(modifier(&[IDX_DD, IDX_CA], true), 1, "a mixed fleet adds nothing");
     assert_eq!(
         modifier(&[IDX_CA, IDX_SB], true),
         2,
         "starbase and surprise"
-    );
-    assert_eq!(
-        modifier(&[IDX_DD, IDX_CA, IDX_SB], true),
-        modifier(&[IDX_DD, IDX_CA, IDX_SB], false),
-        "mixed, starbase, and surprise stop at the cap"
     );
 
     let lone = modifier(&[IDX_CA], true);
