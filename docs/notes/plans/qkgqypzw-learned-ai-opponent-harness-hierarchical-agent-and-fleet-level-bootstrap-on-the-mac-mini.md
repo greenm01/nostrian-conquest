@@ -1424,6 +1424,27 @@ from noise. Neither retuned set is adopted yet: the tuner overfits each
 generation's 32 maps, so the next step is to retune on rotating maps and
 check the result through the network seat.
 
+**Scouts replaced (`Doctrine::keep_scouts`, accepted 2026-10-16).** Muse
+found that the default style's scout weight of 0.14 rounds to zero, so a
+lost scout is never rebuilt. Rounding a positive scout target up lifts the
+default style paired by +0.039 ± 0.019 at 60 years and +0.150 ± 0.020 at
+100 (1,024 maps each; +0.169 ± 0.027 on a first 512). The rusher (1.31) and
+turtle (0.66) already rounded to one, so they are unchanged. It is on for
+every personality and `Doctrine::CURRENT`. Because every executor now keeps
+its scouts, the bots the agents meet are much stronger, and the agents'
+margins shrink to what they are against real opposition (512 maps, paired
+difference of the promoted agent from the one it replaced in brackets):
+
+| Agent | 60 years | 100 years |
+| --- | ---: | ---: |
+| Previous `fleet-final` | 0.402 | 0.516 |
+| Snapshot 140 (promoted) | 0.527 (+0.125 ± 0.026) | 0.708 (+0.192 ± 0.027) |
+
+The earlier figures (0.657 and 0.774 at 60 years, 0.868 and 0.927 at 100)
+were against scoutless bots. The recorded-game fixture
+(`tools/ai/export_onnx.py --fixture`) was regenerated. The agent has not
+been trained against the stronger bots (t191).
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old

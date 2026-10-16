@@ -30,6 +30,7 @@ doctrine {
     mixed-hulls #false
     reinforce #false
     combined-gate #false
+    keep-scouts #true
 }
 // Tuning keeps the style: early war, low odds to attack, little expansion.
 bounds {

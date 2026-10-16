@@ -30,6 +30,7 @@ doctrine {
     mixed-hulls #false
     reinforce #false
     combined-gate #false
+    keep-scouts #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {

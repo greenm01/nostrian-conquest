@@ -135,6 +135,10 @@ pub struct Doctrine {
     /// the lot (t189). Off, each fleet at home strikes when it alone is
     /// `attack_ratio` times the target's defence.
     pub combined_gate: bool,
+    /// Round a positive scout target up, so a weight under one half still
+    /// keeps a scout (t189, accepted). Off, it rounds like every other
+    /// target and a small weight never replaces a lost scout.
+    pub keep_scouts: bool,
 }
 
 impl Doctrine {
@@ -153,6 +157,7 @@ impl Doctrine {
             "mixed_hulls" => &mut self.mixed_hulls,
             "reinforce" => &mut self.reinforce,
             "combined_gate" => &mut self.combined_gate,
+            "keep_scouts" => &mut self.keep_scouts,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -172,6 +177,7 @@ impl Doctrine {
         mixed_hulls: false,
         reinforce: false,
         combined_gate: false,
+        keep_scouts: true,
     };
 }
 
@@ -246,6 +252,7 @@ impl Weights {
             mixed_hulls: false,
             reinforce: false,
             combined_gate: false,
+            keep_scouts: false,
         },
     };
 
@@ -606,6 +613,11 @@ fn choose_builds(
     }
     let planet = &game_data.planets[record - 1];
     let short = |have: u32, want: f32| (want.round() as u32).saturating_sub(have);
+    let scout_target = if weights.doctrine.keep_scouts && weights.scouts > 0.0 {
+        weights.scouts.ceil()
+    } else {
+        weights.scouts
+    };
     if weights.doctrine.defend && !is_home {
         let exposure = exposure(game_data, memory, planet.sector.to_array());
         let production = f32::from(nc_data::present_production_points(planet));
@@ -653,7 +665,7 @@ fn choose_builds(
         }
         needs.push(Need::Units(
             ProductionItemKind::Scout,
-            short(stock.scouts, weights.scouts),
+            short(stock.scouts, scout_target),
         ));
         needs.extend(garrison);
         needs.push(Need::Units(
