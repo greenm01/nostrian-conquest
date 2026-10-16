@@ -204,10 +204,10 @@ A fleet that is attacked must fight one exchange. After each exchange, its ROE d
 *Prepare before assaulting.* Troop transports are built empty. Use Fleet Command `L` at your world to load armies; each transport carries one. Scout the target and bring escorts. Defending forces in orbit can stop a planetary strike before it reaches the surface. Then choose the mission:
 
 - *Bombard (6):* repeated attacks that can destroy batteries, docked ships, armies, goods, and production. It continues each year until you change orders.
-- *Invade (7):* requires warships and loaded transports. Suppress batteries, soften the garrison, then land armies. Surviving batteries block the landing.
-- *Blitz (8):* requires loaded transports. Escorting warships provide brief cover fire, then surviving batteries fire on your landing transports. Surviving batteries become yours if you capture the world.
+- *Invade (7):* requires warships and loaded transports. Suppress batteries for the year, soften the garrison, then land armies. If batteries survive, no one lands and the fleet keeps its order to try again next year. A world taken by invasion keeps only 20--40% of its production.
+- *Blitz (8):* requires loaded transports. Escorting warships provide brief cover fire, then surviving batteries fire on your landing transports. A blitz that lands in strength takes the world almost whole, batteries included.
 
-Invade and Blitz do not damage industry or goods, but a defender’s Scorch Earth order can destroy assets before and during capture. Defending armies fire first in each ground round. Equal numbers are a poor gamble; bring a margin. Fleets that keep orbit after an assault finish on Hold, win or lose; those beaten in space withdraw. A captured world earns no revenue for the next two maintenance turns.
+Batteries are deadly: plan on about three times their cost in warships to break a fortified world, and expect to lose ships doing it. A defender’s Scorch Earth order can destroy assets before and during capture. Defending armies fire first in each ground round. Equal numbers are a poor gamble; bring a margin. Fleets that keep orbit after an assault finish on Hold, win or lose; those beaten in space withdraw. A captured world earns no revenue for the next two maintenance turns.
 
 == Find the Right Menu
 
