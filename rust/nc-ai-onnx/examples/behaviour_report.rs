@@ -4,7 +4,7 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai-onnx --example behaviour_report -- A.onnx [B.onnx ...] \
-//!     [--games 256] [--years 100] [--first-map 100000] [--threads 4] [--style land-grab]
+//!     [--games 256] [--years 100] [--first-map 100000] [--threads 4] [--style land-grab|FILE.kdl]
 //! ```
 //!
 //! Each model plays one seat against three tuned executors on the same
@@ -14,7 +14,9 @@ use std::collections::BTreeMap;
 use std::path::PathBuf;
 use std::thread;
 
-use nc_ai::{Families, Weights, commission_submission, executor_turn, match_game, personality};
+use nc_ai::{
+    Families, Weights, commission_submission, executor_turn, match_game, personality_or_file,
+};
 use nc_ai_onnx::NetworkSeat;
 use nc_data::{
     CoreGameData, DiplomaticRelation, Fleet, FleetTurnAction, Order, PlanetTurnAction,
@@ -226,6 +228,25 @@ fn main() {
         }
         println!();
     }
+    if results.len() > 1 {
+        println!(
+            "\npaired difference from {}, same maps and seats (± standard error)",
+            short(&models[0])
+        );
+        let measures: [(&str, fn(&Game) -> f64); 3] = [
+            ("win share", |g| f64::from(g.win)),
+            ("worlds at end", |g| f64::from(g.final_worlds)),
+            ("worlds lost", |g| f64::from(g.worlds_lost)),
+        ];
+        for (label, value) in measures {
+            print!("{label:<36}{:>16}", "");
+            for games in &results[1..] {
+                let (diff, error) = paired(&results[0], games, value);
+                print!("{:>16}", format!("{diff:+.3} ± {error:.3}"));
+            }
+            println!();
+        }
+    }
     println!("\nfleet orders per game, by mission");
     for code in 0..MISSION_CODES {
         print!(
@@ -253,6 +274,20 @@ fn short(model: &std::path::Path) -> String {
         .collect()
 }
 
+/// The mean of `value` over `other`'s games less `base`'s on the same maps,
+/// with its standard error. Both lists hold the games in the same map order.
+fn paired(base: &[Game], other: &[Game], value: impl Fn(&Game) -> f64) -> (f64, f64) {
+    let diffs: Vec<f64> = base
+        .iter()
+        .zip(other)
+        .map(|(base, other)| value(other) - value(base))
+        .collect();
+    let n = diffs.len().max(1) as f64;
+    let mean = diffs.iter().sum::<f64>() / n;
+    let variance = diffs.iter().map(|d| (d - mean).powi(2)).sum::<f64>() / (n - 1.0).max(1.0);
+    (mean, (variance / n).sqrt())
+}
+
 fn mean(games: &[Game], value: impl Fn(&Game) -> f64) -> f64 {
     games.iter().map(value).sum::<f64>() / games.len().max(1) as f64
 }
@@ -265,7 +300,7 @@ fn run(
     first: u64,
     threads: u64,
 ) -> Vec<Game> {
-    let style = personality(style).expect("a known personality");
+    let style = personality_or_file(style).unwrap_or_else(|err| panic!("{err}"));
     thread::scope(|scope| {
         let workers: Vec<_> = (0..threads)
             .map(|worker| {

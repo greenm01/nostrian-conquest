@@ -48,5 +48,6 @@ pub use observe::{
 };
 pub use personality::{
     PERSONALITIES, Personality, WEIGHT_NAMES, parse_personality, personality, personality_kdl,
+    personality_or_file,
 };
 pub use replay::{match_game, replay};

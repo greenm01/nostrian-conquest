@@ -3,13 +3,15 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai-onnx --example game_log -- MODEL.onnx \
-//!     [--map 100000] [--seat 1] [--years 60] [--style land-grab]
+//!     [--map 100000] [--seat 1] [--years 60] [--style land-grab|FILE.kdl]
 //! ```
 
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
-use nc_ai::{Families, Weights, commission_submission, executor_turn, match_game, personality};
+use nc_ai::{
+    Families, Weights, commission_submission, executor_turn, match_game, personality_or_file,
+};
 use nc_ai_onnx::NetworkSeat;
 use nc_data::{DiplomaticRelation, FleetTurnAction, Order, PlanetTurnAction};
 use nc_engine::BUILD_UNITS;
@@ -34,7 +36,7 @@ fn main() {
             strike: true,
             ..Families::NONE
         },
-        personality(&style).expect("a known personality"),
+        personality_or_file(&style).unwrap_or_else(|err| panic!("{err}")),
     )
     .expect("the model loads");
 

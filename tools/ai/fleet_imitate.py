@@ -95,6 +95,7 @@ def main():
         started = time.perf_counter()
         done = np.zeros(args.games, bool)
         losses, hits, rows = [], {name: 0 for name in FLEET_HEADS}, 0
+        exact_rows = 0
         while not done.all():
             live = ~done[:, None]
             hybrid = env.hybrid & live
@@ -148,6 +149,15 @@ def main():
                     hit = (dists[name].probs.argmax(-1) == labels[name]) & valid
                     hits[name] += int(hit.sum())
                 rows += int(valid.sum())
+                # Free-running: the heads conditioned on the student's own
+                # mission, not the executor's, and a row right only when
+                # every head matches (t193).
+                own = model.fleet_dists(batch, fleet_tokens, worlds, goals,
+                                        dists["mission"].probs.argmax(-1))
+                exact = valid.clone()
+                for name in FLEET_HEADS:
+                    exact &= own[name].probs.argmax(-1) == labels[name]
+                exact_rows += int(exact.sum())
 
             # DAgger: each hybrid seat's fleets follow the executor with
             # probability beta, otherwise the student.
@@ -161,6 +171,7 @@ def main():
         print(f"round {round_ + 1:3} beta {beta:.2f} fleet loss {fleet_loss:.3f} "
               f"goal kl {goal_kl:.4f} rows {rows} {time.perf_counter() - started:.1f}s  "
               + " ".join(f"{name} {hits[name] / max(rows, 1):.3f}" for name in FLEET_HEADS)
+              + f"  free-running exact {exact_rows / max(rows, 1):.3f}"
               + (f"  mps {torch.mps.driver_allocated_memory() / 2**30:.1f}GiB"
                  if dev.type == "mps" else ""),
               flush=True)

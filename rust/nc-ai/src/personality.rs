@@ -131,6 +131,16 @@ pub fn personality_kdl(name: &str, weights: &Weights) -> String {
     text
 }
 
+/// The built-in personality called `spec`, or the profile in the KDL file
+/// `spec` names (a path ending in `.kdl`, as the tuner's `--out` writes).
+pub fn personality_or_file(spec: &str) -> Result<Personality, String> {
+    if spec.ends_with(".kdl") {
+        let text = std::fs::read_to_string(spec).map_err(|err| format!("{spec}: {err}"))?;
+        return parse_personality(&text);
+    }
+    personality(spec).ok_or(format!("unknown personality {spec}"))
+}
+
 /// Parse a personality profile.
 pub fn parse_personality(text: &str) -> Result<Personality, String> {
     let document: KdlDocument = text.parse().map_err(|err| format!("invalid KDL: {err}"))?;

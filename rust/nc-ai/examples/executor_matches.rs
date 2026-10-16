@@ -23,7 +23,7 @@
 
 use std::thread;
 
-use nc_ai::{SeatPolicy, Weights, parse_personality, personality, play_match};
+use nc_ai::{SeatPolicy, Weights, personality_or_file, play_match};
 
 const PLAYERS: usize = 4;
 
@@ -106,14 +106,8 @@ fn main() {
 
 /// A personality's weights (t167).
 fn style(name: &str) -> Weights {
-    if name.ends_with(".kdl") {
-        let text = std::fs::read_to_string(name).expect("the personality file reads");
-        return parse_personality(&text)
-            .expect("the personality file parses")
-            .weights;
-    }
-    personality(name)
-        .unwrap_or_else(|| panic!("unknown weights or personality {name}"))
+    personality_or_file(name)
+        .unwrap_or_else(|err| panic!("{err}"))
         .weights
 }
 

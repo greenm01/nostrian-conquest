@@ -160,6 +160,11 @@ def learner_name(families, style=None):
     return "hybrid:" + ",".join(families) + (f"@{style}" if style else "")
 
 
+# Evaluation maps during training. Final confirmations use 100000 and up, so
+# no checkpoint is picked on the maps it is confirmed on.
+EVAL_MAPS = 5_000_000
+
+
 def head_to_head(model, strategist, families, opponent, games, years, first_map, dev,
                  greedy=False, style=None, war_years=None, target=None, threads=0):
     """Win share of one learner seat against three ``opponent`` seats
@@ -354,10 +359,15 @@ def main():
             save(model, out / f"snapshot-{it:04d}.pt", iteration=it, kind="fleet",
                  families=families)
             model.eval()
+            # Each evaluation plays a fresh block of maps, well away from
+            # 100000 and up, where final confirmations are played (t193).
+            first_eval = EVAL_MAPS + (it // args.eval_every - 1) * args.eval_games
             for opponent in ("strategist", "executor") + (("target",) if target else ()):
-                row[f"eval_{opponent}"] = float(head_to_head(
+                share = float(head_to_head(
                     model, strategist, families, opponent, args.eval_games, args.years,
-                    100000, dev, style=args.style, target=target, threads=args.threads))
+                    first_eval, dev, style=args.style, target=target, threads=args.threads))
+                row[f"eval_{opponent}"] = share
+                row[f"eval_{opponent}_se"] = (share * (1 - share) / args.eval_games) ** 0.5
         log.write(json.dumps(row) + "\n")
         log.flush()
         print(" ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}"

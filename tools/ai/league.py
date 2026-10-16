@@ -12,8 +12,9 @@ An agent is a scripted policy (executor, baseline, classic, aggressor,
 autopilot, or a personality such as rusher or turtle), a strategist
 checkpoint, whose goals the tuned executor
 carries out, or a fleet-level agent checkpoint (t157), which also orders
-the fleets of its handed-over families and plays greedy, as it would be
-deployed. Its play therefore also depends on the code: each match
+the fleets of its handed-over families. Both play greedy, as a deployed
+seat does (t193: strategists were sampled before, which flattered the
+fleet agents' margin; matches stored earlier were played that way). Its play therefore also depends on the code: each match
 records the commit it was played at. Stored replays hold the actual
 orders, so they stay valid whatever the code does later.
 
@@ -219,7 +220,7 @@ def play(db, games, years, batch, seed):
                         if not select.any():
                             continue
                         batch_ = bucket(seat_batch(obs, masks, goal_masks, select, dev))
-                        choices, _, _ = act(model, batch_)
+                        choices, _, _ = act(model, batch_, greedy=True)
                         chosen = goals_for(choices, select)
                         for name in goals:
                             goals[name][select] = chosen[name][select]

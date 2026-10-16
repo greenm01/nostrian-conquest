@@ -1537,6 +1537,17 @@ Fix before citing new strength numbers:
   models;
 - imitation accuracy is teacher-forced (`fleet_imitate.py:127`).
 
+**Progress (2026-10-16).** Done: the league plays strategists greedy
+(`league.py`); PPO evaluation plays a fresh block of maps from 5,000,000 at
+each check and prints a standard error, so nothing is picked on the maps
+used for final confirmations (`fleet_ppo.py`); `behaviour_report` prints
+each model's paired difference from the first, with its standard error;
+imitation prints free-running exact-row accuracy beside the teacher-forced
+figures (`fleet_imitate.py`); `seat_matches`, `behaviour_report`,
+`game_log` and `executor_matches` take `--style FILE.kdl` through
+`personality_or_file`. Left: play a fresh league with both greedy to
+re-rate.
+
 **Exit:** the league is re-rated with both greedy, evaluation maps are held
 out, and the report prints paired differences with their standard errors.
 

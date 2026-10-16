@@ -3,7 +3,7 @@
 //!
 //! ```text
 //! cargo run --release -p nc-ai-onnx --example seat_matches -- MODEL.onnx \
-//!     [--temperature 0] [--style land-grab] [--games 64] [--years 60] [--first-map 100000]
+//!     [--temperature 0] [--style land-grab|FILE.kdl] [--games 64] [--years 60] [--first-map 100000]
 //! ```
 //!
 //! `--style` sets the personality of the network seat's executor (t167).
@@ -17,7 +17,8 @@ use std::thread;
 use std::time::Instant;
 
 use nc_ai::{
-    Families, Personality, Weights, commission_submission, executor_turn, match_game, personality,
+    Families, Personality, Weights, commission_submission, executor_turn, match_game,
+    personality_or_file,
 };
 use nc_ai_onnx::NetworkSeat;
 use nc_data::{PlanetTurnAction, ProductionItemKind};
@@ -54,8 +55,7 @@ fn main() {
     let years: u16 = arg("--years").map_or(60, |n| n.parse().expect("--years"));
     let first: u64 = arg("--first-map").map_or(100000, |n| n.parse().expect("--first-map"));
     let style = arg("--style").unwrap_or_else(|| "land-grab".to_string());
-    let style_profile =
-        personality(&style).unwrap_or_else(|| panic!("unknown personality {style}"));
+    let style_profile = personality_or_file(&style).unwrap_or_else(|err| panic!("{err}"));
     let threads = thread::available_parallelism().map_or(1, |n| n.get()) as u64;
     let results: Vec<Played> = thread::scope(|scope| {
         let workers: Vec<_> = (0..threads)
