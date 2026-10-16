@@ -1532,6 +1532,45 @@ all naval units) and the AI starts building battleships. This is a rules
 decision for the owner (combat-balance lane), not an AI change; the trial
 is in the scratch results only.
 
+**Correction: it is largely the AI, not the rules (2026-10-16).** The
+owner pointed out that 6/5/4 is classic EC's speed ladder, so the speed
+finding above does not make speed 4 wrong. A diagnostic (a scratch
+example, 256 maps at 100 years) played the same tuned armada weights at
+battleship speed 4 and 5, so only the engine differs:
+
+| Weights | Speed | Worlds taken | Worlds at end |
+| --- | ---: | ---: | ---: |
+| armada | 4 | 16.0 | 3.6 |
+| armada | 5 | 20.8 | 5.3 |
+| armada tuned at speed 5 | 4 | 16.6 | 3.6 |
+| armada tuned at speed 5 | 5 | 20.1 | 5.1 |
+
+A slow stack costs the same AI about a fifth of its conquests, and the AI
+never adapts: after each strike its warships and transports sail back to
+the home world to regroup, so a speed-4 force pays a long round trip every
+cycle. `Doctrine::forward_muster` (accepted) makes warships and
+transports gather at the seat's world nearest a known rival world, so a
+force that has taken a world launches its next strike from the front. It
+is the staging the owner described. Paired over 512 maps:
+
+| Style | 60 years | 100 years |
+| --- | ---: | ---: |
+| default | +0.085 ± 0.027 | +0.156 ± 0.027 |
+| rusher | +0.091 ± 0.025 | +0.101 ± 0.027 |
+| turtle | +0.046 ± 0.025 | +0.025 ± 0.025 |
+| armada at today's speed 4 | +0.051 ± 0.024 | +0.111 ± 0.024 |
+
+The battleship-led armada, which scored 0.207 and 0.143 against the
+default, now scores 0.258 and 0.254: an even seat at the real speed. So the
+rules were not the cause; battleships were held back by an AI that did not
+stage forward. It is on for every personality and `Doctrine::CURRENT`.
+The deployed agent's strike orders come from the network, so it gains only
+through retraining (t191: imitate the improved executor, then PPO). Against
+the newest default bots the promoted agent scores 0.696 at 60 years and
+0.862 at 100, and the previous agent 0.536 and 0.696 (paired difference
++0.160 ± 0.028 and +0.166 ± 0.024). The armada and raider need a retune
+under the new doctrine before they are judged.
+
 **Owner decision (2026-10-16): variety is required.** The AI builds every
 hull, as roles, and the verdict on a variant waits for a retune. The
 mixed-hull and Join trials above ran on weights tuned for the old

@@ -32,6 +32,7 @@ doctrine {
     combined-gate #false
     keep-scouts #true
     watch #true
+    forward-muster #true
 }
 // Tuning keeps the style: early war, low odds to attack, little expansion.
 bounds {

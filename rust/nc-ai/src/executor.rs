@@ -144,6 +144,12 @@ pub struct Doctrine {
     /// world, for early warning (t189, accepted). Off, pickets join the
     /// strike force and scouts revisit stale worlds.
     pub watch: bool,
+    /// Warships and transports gather at the seat's world nearest a known
+    /// rival world, not always at the home world, so a strike force that
+    /// has taken a world launches its next strike from the front (t189,
+    /// accepted). Off, every fleet returns home between strikes, which
+    /// costs a slow force a long round trip each time.
+    pub forward_muster: bool,
 }
 
 impl Doctrine {
@@ -164,6 +170,7 @@ impl Doctrine {
             "combined_gate" => &mut self.combined_gate,
             "keep_scouts" => &mut self.keep_scouts,
             "watch" => &mut self.watch,
+            "forward_muster" => &mut self.forward_muster,
             other => return Err(format!("unknown doctrine switch {other}")),
         };
         *switch = true;
@@ -185,6 +192,7 @@ impl Doctrine {
         combined_gate: false,
         keep_scouts: true,
         watch: true,
+        forward_muster: true,
     };
 }
 
@@ -261,6 +269,7 @@ impl Weights {
             combined_gate: false,
             keep_scouts: false,
             watch: false,
+            forward_muster: false,
         },
     };
 
@@ -861,6 +870,47 @@ fn preferred_hull(
         .map(|(kind, _)| kind)
 }
 
+/// The seat's world nearest a known rival world, ties going to `home`: the
+/// forward base its warships gather at (`Doctrine::forward_muster`).
+fn muster_world(
+    game_data: &CoreGameData,
+    memory: &SeatMemory,
+    home: Option<usize>,
+) -> Option<usize> {
+    let rivals: Vec<[u8; 2]> = memory
+        .planet_intel
+        .iter()
+        .filter(|(_, intel)| {
+            intel
+                .known_owner_empire_id
+                .is_some_and(|owner| owner != 0 && owner != memory.empire)
+        })
+        .map(|(&record, _)| game_data.planets[record - 1].sector.to_array())
+        .collect();
+    if rivals.is_empty() {
+        return home;
+    }
+    game_data
+        .planets
+        .iter()
+        .enumerate()
+        .filter(|(_, planet)| planet.owner.0 == memory.empire)
+        .map(|(idx, planet)| {
+            let here = planet.sector.to_array();
+            let gap = rivals
+                .iter()
+                .map(|&rival| distance(rival, here))
+                .fold(f32::MAX, f32::min);
+            (
+                idx + 1,
+                gap + if Some(idx + 1) == home { 0.0 } else { 0.01 },
+            )
+        })
+        .min_by(|a, b| a.1.total_cmp(&b.1))
+        .map(|(record, _)| record)
+        .or(home)
+}
+
 /// The sector between the seat's most exposed world and the nearest rival
 /// world that no fleet watches, with that rival's world index: within
 /// [`EXPOSURE_RANGE`], the closest pair first.
@@ -1069,6 +1119,12 @@ fn plan_fleets(
     goals: Option<&Goals>,
 ) -> (Vec<FleetChoice>, Labels) {
     let empire = memory.empire;
+    // Here "home" is where warships and transports gather.
+    let home = if weights.doctrine.forward_muster {
+        muster_world(game_data, memory, home)
+    } else {
+        home
+    };
     let home_sector = home.map(|record| game_data.planets[record - 1].sector.to_array());
     let roe = (weights.roe.round() as usize).min(10);
     // Worlds an ETAC already flies to are claimed before anything else.

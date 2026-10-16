@@ -32,6 +32,7 @@ doctrine {
     combined-gate #false
     keep-scouts #true
     watch #true
+    forward-muster #true
 }
 // Tuning keeps the style: maximal early expansion and a long horizon.
 bounds {
