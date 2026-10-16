@@ -62,9 +62,18 @@ def handed_rows(obs, select, families, rows):
     return np.pad(handed, ((0, 0), (0, rows - handed.shape[1])))
 
 
-def choose_lineups(rng, games, learner):
-    names, roles = [], np.zeros((games, PLAYERS), np.int8)  # 1 learner, 2 strategist
+def choose_lineups(rng, games, learner, target=None):
+    """Training lineups. Roles: 1 learner, 2 strategist, 3 the frozen target
+    agent an exploiter trains against (``target`` its seat name), 0
+    scripted. An exploiter meets only the target."""
+    names, roles = [], np.zeros((games, PLAYERS), np.int8)
     for _ in range(games):
+        if target is not None:
+            order = rng.permutation(PLAYERS)
+            lineup, role = [learner] + [target] * 3, [1, 3, 3, 3]
+            names.append([lineup[i] for i in order])
+            roles[len(names) - 1] = np.array(role)[order]
+            continue
         learners = 1 + (rng.random() < 0.3)
         lineup, role = [], []
         for seat in range(PLAYERS):
@@ -88,14 +97,16 @@ def choose_lineups(rng, games, learner):
     return names, roles
 
 
-def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
+def play_year(env, model, strategist, roles, done, families, dev, greedy=False, target=None):
     """Choose every learner's and strategist's goals and the learners'
-    fleet orders, and step the batch. Returns the step result, for training
-    the learners' samples, and the seconds spent in the games themselves
-    (observing and stepping), apart from the networks."""
+    fleet orders, and the frozen ``target`` agent's (greedy, as deployed)
+    for its seats, and step the batch. Returns the step result, for
+    training the learners' samples, and the seconds spent in the games
+    themselves (observing and stepping), apart from the networks."""
     live = ~done[:, None]
     learner = (roles == 1) & live
     others = (roles == 2) & live
+    targets = (roles == 3) & live
     started = time.perf_counter()
     obs, masks, goal_masks = env.observe(), env.masks(), env.goal_masks()
     env_goals = {name: np.zeros_like(value) for name, value in env.goal_labels().items()}
@@ -129,6 +140,15 @@ def play_year(env, model, strategist, roles, done, families, dev, greedy=False):
             theirs = frozen_goals(strategist, obs, masks, goal_masks, others, dev)
             for name in HEADS:
                 env_goals[name][others] = theirs[name][others]
+        if targets.any():
+            batch = bucket(fleet_batch(obs, masks, goal_masks, targets, dev))
+            goals, fleets, *_ = target.act(batch, greedy=True)
+            chosen = goals_for(goals, targets)
+            for name in HEADS:
+                env_goals[name][targets] = chosen[name][targets]
+            placed = fleet_arrays(fleets, targets, env.fleets)
+            for name in FLEET_HEADS:
+                fleet_actions[name][targets] = placed[name][targets]
     started = time.perf_counter()
     step = env.step(actions_for(env, fleet_actions), env_goals)
     return step, sample, env_s + time.perf_counter() - started
@@ -141,20 +161,22 @@ def learner_name(families, style=None):
 
 
 def head_to_head(model, strategist, families, opponent, games, years, first_map, dev,
-                 greedy=False, style=None, war_years=None):
+                 greedy=False, style=None, war_years=None, target=None):
     """Win share of one learner seat against three ``opponent`` seats
-    (``strategist`` or a scripted policy), the learner's seat rotated. With
+    (``strategist``, ``target`` for the frozen ``target`` agent, or a
+    scripted policy), the learner's seat rotated. With
     ``war_years`` (a list), each game's first year the learner set a war
     goal, counted from the start, is appended, or ``None`` for never."""
     env = nc_ai_env.Env(PLAYERS, years)
     learner = learner_name(families, style)
     names, roles = [], np.zeros((games, PLAYERS), np.int8)
+    other = learner_name(families) if opponent == "target" else opponent
+    other_role = {"strategist": 2, "target": 3}.get(opponent, 0)
     for game in range(games):
-        lineup = [opponent] * PLAYERS
+        lineup = [other] * PLAYERS
         lineup[game % PLAYERS] = learner
         names.append(lineup)
-        roles[game] = [1 if seat == learner else (2 if seat == "strategist" else 0)
-                       for seat in lineup]
+        roles[game] = [1 if seat == game % PLAYERS else other_role for seat in range(PLAYERS)]
     env.reset(list(range(first_map, first_map + games)), seats=names)
     done = np.zeros(games, bool)
     wins = np.zeros(games)
@@ -163,7 +185,7 @@ def head_to_head(model, strategist, families, opponent, games, years, first_map,
     while not done.all():
         live = np.flatnonzero(~done)
         step, sample, _ = play_year(env, model, strategist, roles, done, families, dev,
-                                    greedy=greedy)
+                                    greedy=greedy, target=target)
         if sample is not None:
             war = (sample["goals"]["diplomacy"] == 2).any(-1).numpy()
             for game, at_war in zip(live, war):
@@ -273,6 +295,9 @@ def main():
     parser.add_argument("--eval-games", type=int, default=256)
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--style", help="the learner's executor personality (t167)")
+    parser.add_argument("--exploit", help="train a main exploiter against this frozen "
+                                          "fleet agent: every game is the learner against "
+                                          "three copies of it")
     parser.add_argument("--limit-credit", type=float, default=1.0,
                         help="reward for a production lead at the year limit, against 1 "
                              "for sweeping the map")
@@ -287,6 +312,8 @@ def main():
     model = load_fleet_agent(args.init, dev)
     ref = load_fleet_agent(args.init, dev)
     strategist = policy.load(args.strategist, dev)
+    # An exploiter trains against a frozen agent only (main exploiter).
+    target = load_fleet_agent(args.exploit, dev) if args.exploit else None
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     env = nc_ai_env.Env(PLAYERS, args.years, limit_credit=args.limit_credit)
     log = open(out / "log.jsonl", "a")
@@ -296,13 +323,15 @@ def main():
     for it in range(1, args.iterations + 1):
         started = time.perf_counter()
         kl_coef = max(args.kl_floor, args.kl * max(0.0, 1 - (it - 1) / args.kl_iterations))
-        names, roles = choose_lineups(rng, args.games, learner)
+        names, roles = choose_lineups(rng, args.games, learner,
+                                      learner_name(families) if target else None)
         env.reset(list(range(next_map, next_map + args.games)), seats=names)
         next_map += args.games
         model.eval()
         steps, done, env_s = [], np.zeros(args.games, bool), 0.0
         while not done.all():
-            step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev)
+            step, sample, seconds = play_year(env, model, strategist, roles, done, families, dev,
+                                              target=target)
             env_s += seconds
             if sample is not None:
                 sample["reward"] = step["reward"][sample["select"]]
@@ -321,10 +350,10 @@ def main():
             save(model, out / f"snapshot-{it:04d}.pt", iteration=it, kind="fleet",
                  families=families)
             model.eval()
-            for opponent in ("strategist", "executor"):
+            for opponent in ("strategist", "executor") + (("target",) if target else ()):
                 row[f"eval_{opponent}"] = float(head_to_head(
                     model, strategist, families, opponent, args.eval_games, args.years,
-                    100000, dev, style=args.style))
+                    100000, dev, style=args.style, target=target))
         log.write(json.dumps(row) + "\n")
         log.flush()
         print(" ".join(f"{k} {v:.3f}" if isinstance(v, float) else f"{k} {v}"

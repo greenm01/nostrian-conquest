@@ -995,6 +995,92 @@ A game whose year was edited by hand (3001 to 3099) is refused by ECMAINT
 before it writes anything. That is its consistency check, not a year
 limit: other records no longer match the year.
 
+### t182
+
+Promote the 100-year sweep-trained agent.
+
+A fine-tune of `fleet-final.pt` on 100-year games, where sweeping the map
+pays 1 and a production lead at the limit pays 0.5 (t180), running in
+`~/.local/state/nostrian-conquest/ai/fleet-sweep/`. The behaviour report
+on its snapshots, against the current agent (100-year games):
+
+| Snapshot | Maps swept | Win share |
+| --- | ---: | ---: |
+| Current agent | 22% | 0.88 |
+| 80 | 50% | 0.945 |
+| 100 | 63% | 0.926 |
+
+It shows no new pathologies so far.
+
+**Exit:** the best snapshot beats the current agent on 1,024 maps, at 60
+and 100 years. Its behaviour report shows no regression, and it holds its
+own against t183's exploiter. It is then exported as `fleet-final.onnx`.
+
+### t183
+
+Train a main exploiter against the deployed agent.
+
+Adversaries trained against KataGo with under 5% of its compute won most
+games by inducing blunders, and patched defences fell to new adversaries
+(see [lenngda1](../investigations/lenngda1-training-an-ai-opponent-for-nostrian-conquest.md)).
+Win share against our bots cannot show such holes.
+
+**The method.** `fleet_ppo.py --exploit PATH` trains an agent that meets
+only three frozen, greedy copies of the target, with no KL leash. It
+started from the target itself.
+
+**Exit:**
+- the exploiter's win share against the target is measured;
+- if it clearly beats 0.25, its games are read and the weakness named;
+- the weakness is then fixed, in the executor or by training the agent
+  against the exploiter (t184).
+
+### t184
+
+Choose training opponents from the league by difficulty.
+
+AlphaStar's prioritized fictitious self-play samples opponents in
+proportion to how often they beat the learner. Training today draws from
+a fixed mix: strategist, executor and aggressor.
+
+**Exit:** `fleet_ppo.py` draws opponents from the league, weighted toward
+those the learner loses to. The pool includes t183's exploiter and past
+snapshots. A run trained this way beats one trained on the fixed mix,
+both in league ratings and against the exploiter.
+
+### t185
+
+Start some training games from saved mid-game positions.
+
+DAGS (2026) and SACL start self-play episodes from intermediate states,
+which speeds learning in imperfect-information games. DAGS warns this
+biases the result unless normal starts are mixed in. Our late-game
+weaknesses (t179, t181: about 17 worlds lost per 100-year game) appear
+only in states the training rarely reaches.
+
+**Exit:**
+- `BatchEnv` can start a game from a stored position, such as a league
+  replay at year 25–40, with each seat's memory rebuilt;
+- training mixes such starts with normal ones;
+- the late-game measures in the behaviour report improve without
+  hurting the early game.
+
+### t186
+
+Track the win-probability estimate through games.
+
+CivBench estimates each player's chance of winning from turn-level state,
+because the final result is too sparse in long games. Our value head
+already estimates it.
+
+**Exit:** a tool plots the value estimate year by year for evaluation and
+league games, and lists the years where it fell most, with the game
+state. Those positions feed t185 now and t166's loss mining later.
+
+Not yet a task: deciding strategy only on events (a target taken, a fleet
+lost, a new contact) instead of every year, from Black & Darken's options
+framework. It is speculative, so it waits for t182–t186.
+
 ### t167
 
 Give AI seats personalities.
