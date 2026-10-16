@@ -1,0 +1,43 @@
+// The armada (t189): slow capital ships first. The home world builds
+// battleships whenever its budget buys one (colonies build cruisers), and the
+// fleet gathers before it strikes. Everything else is the default style.
+personality "armada"
+weights {
+    tax 65.0
+    home-armies 20.0
+    colony-armies 10.0
+    batteries 9.67
+    etacs 3.93
+    scouts 0.14
+    starbases 1.67
+    transports 16.0
+    battleship 0.95
+    cruiser 0.40
+    destroyer 0.0
+    attack-ratio 2.43
+    roe 6.26
+    war-year 20.7
+}
+doctrine {
+    land-grab #true
+    strike-weakest #true
+    suppress-first #true
+    scaled-garrisons #true
+    blockader #true
+    allocate #false
+    supply #true
+    defend #true
+    mixed-hulls #false
+    reinforce #false
+    combined-gate #false
+    keep-scouts #true
+    watch #true
+}
+// Tuning keeps the style: battleships preferred, expansion unchanged.
+bounds {
+    battleship 0.85 1.0
+    cruiser 0.0 0.6
+    destroyer 0.0 0.2
+    etacs 2.5 8.0
+    war-year 12.0 30.0
+}

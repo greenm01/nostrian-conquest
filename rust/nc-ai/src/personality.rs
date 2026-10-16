@@ -58,12 +58,14 @@ const DOCTRINE_NAMES: [&str; 13] = [
 ];
 
 /// The built-in personalities, the default first.
-pub const PERSONALITIES: [&str; 3] = ["land-grab", "rusher", "turtle"];
+pub const PERSONALITIES: [&str; 5] = ["land-grab", "rusher", "turtle", "armada", "raider"];
 
-const SOURCES: [&str; 3] = [
+const SOURCES: [&str; 5] = [
     include_str!("../personalities/land-grab.kdl"),
     include_str!("../personalities/rusher.kdl"),
     include_str!("../personalities/turtle.kdl"),
+    include_str!("../personalities/armada.kdl"),
+    include_str!("../personalities/raider.kdl"),
 ];
 
 /// A named style: its weights and the ranges tuning keeps it within.

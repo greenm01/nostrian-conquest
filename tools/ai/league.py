@@ -9,7 +9,7 @@ registered agents, stored as replays, rated with OpenSkill.
     uv run league.py --db ... verify
 
 An agent is a scripted policy (executor, baseline, classic, aggressor,
-autopilot, or a personality such as rusher or turtle), a strategist
+autopilot, or a personality such as rusher, turtle, armada or raider), a strategist
 checkpoint, whose goals the tuned executor
 carries out, or a fleet-level agent checkpoint (t157), which also orders
 the fleets of its handed-over families. Both play greedy, as a deployed
@@ -48,7 +48,8 @@ from fleet_imitate import actions_for
 from policy import act, bucket, device, goals_for, load, seat_batch
 
 PLAYERS = 4
-SCRIPTED = ("executor", "baseline", "classic", "aggressor", "autopilot", "rusher", "turtle")
+SCRIPTED = ("executor", "baseline", "classic", "aggressor", "autopilot", "rusher", "turtle",
+            "armada", "raider")
 # League maps start here, clear of training (1+, 1,000,000+) and evaluation
 # (100000+, 200000+) maps.
 FIRST_MAP = 5_000_000

@@ -1,0 +1,42 @@
+// The raider (t189): cheap, fast destroyers first, striking at short odds.
+// Colonies and the home world build destroyers; the fleet moves at speed 6.
+personality "raider"
+weights {
+    tax 65.0
+    home-armies 20.0
+    colony-armies 10.0
+    batteries 9.67
+    etacs 3.93
+    scouts 0.14
+    starbases 1.67
+    transports 16.0
+    battleship 0.0
+    cruiser 0.40
+    destroyer 0.95
+    attack-ratio 1.6
+    roe 6.26
+    war-year 14.0
+}
+doctrine {
+    land-grab #true
+    strike-weakest #true
+    suppress-first #true
+    scaled-garrisons #true
+    blockader #true
+    allocate #false
+    supply #true
+    defend #true
+    mixed-hulls #false
+    reinforce #false
+    combined-gate #false
+    keep-scouts #true
+    watch #true
+}
+// Tuning keeps the style: destroyers preferred, short odds, early-ish war.
+bounds {
+    battleship 0.0 0.3
+    cruiser 0.0 0.6
+    destroyer 0.85 1.0
+    attack-ratio 1.0 2.0
+    war-year 6.0 22.0
+}
