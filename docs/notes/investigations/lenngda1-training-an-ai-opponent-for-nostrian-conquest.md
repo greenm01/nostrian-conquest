@@ -108,6 +108,20 @@ published.
   scripted tactics and a few trained models. No repository by Black was
   found.
 
+### Exploiters, start states and difficulty (web search, 2026-10-15)
+
+Searched while the 100-year sweep training ran, for what to do next.
+Results are summaries from the search; only the abstracts were seen.
+
+| Work | Finding | For us |
+| --- | --- | --- |
+| [Adversarial policies against KataGo (ICML 2023)](https://proceedings.mlr.press/v202/wang23g); [defences (AAAI 2025)](https://mlanthology.org/aaai/2025/tseng2025aaai-go/); [FAR.AI](https://far.ai/news/beyond-the-board-exploring-ai-robustness-through-go) | An adversary trained against a superhuman Go AI, with under 5% of its compute, won over 99% of games without search by tricking it into blunders, yet lost to amateurs. Patched defences fell to new adaptive adversaries. | Win share against our bots does not show what a deliberate opponent can exploit. Train an exploiter against the frozen agent before human play. |
+| [Self-play survey (2024)](https://arxiv.org/pdf/2408.01072); [Minimax Exploiter (2023)](https://arxiv.org/pdf/2311.17190); [AAMAS 2024](https://ifaamas.org/Proceedings/aamas2024/pdfs/p114.pdf) | AlphaStar's league has main agents, main exploiters (one target) and league exploiters, and samples opponents by prioritized fictitious self-play (PFSP): those the learner loses to most. Full leagues are costly; the Minimax Exploiter is a data-efficient exploiter. | Sample training opponents from our league by PFSP, and add one main exploiter. Both fit the Mac mini. |
+| [DAGS (2026)](https://arxiv.org/pdf/2605.14379); [SACL (2023)](https://arxiv.org/html/2310.04796v3) | Starting self-play episodes from intermediate states, sampled from offline (human) games or past visits, speeds learning in imperfect-information games. DAGS warns the start distribution can bias the result, and mixes in normal starts. | Start some training games from stored mid-game positions (league replays now, human games under t166), mixed with fresh starts. Targets the late game directly. |
+| [Action Guidance (2020)](https://ar5iv.labs.arxiv.org/html/2010.03956) | Shaped rewards make agents optimise the shaping, not the objective; it keeps the true sparse objective while borrowing shaping's sample efficiency. | Keep the reward the game result, as now. |
+| [Diversity-based difficulty (2022)](https://arxiv.org/pdf/2211.02759); [imitation meets RL for DDA (2024)](https://arxiv.org/pdf/2408.06818); [AlphaDDA (2022)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC9575865/) | Human-like opponents need several distinct styles at each difficulty. One agent imitates the player and a second is trained against the imitator. Strength can be tuned without retraining. | Our personalities times difficulty levels. A model of a player's own style could tune an opponent to them, after t166. |
+| [CivRealm](https://github.com/bigai-ai/civrealm); [SAGA (2026)](https://www.alphaxiv.org/abs/2606.29932) | Recent 4X work is mostly LLM agents; no strong learned RL player for a full 4X game was found. | Our agent is ahead of what is published for 4X. |
+
 ### Engine throughput (measured 2026-10-10, t025)
 
 Machine: AMD Ryzen 9 7950X3D, 16 cores and 32 threads, 61 GiB RAM, Linux
