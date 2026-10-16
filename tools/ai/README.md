@@ -104,6 +104,21 @@ The second command rewrites the Rust test fixture: a small seeded network
 and a game it played. Rerun it after changing the observation, the masks
 or the heads.
 
+## Splitting executor tests across machines (t189)
+
+`split_matches.py` runs an `executor_matches` test on this machine and one
+remote together, half the games each by map range, and prints the combined
+result (the mean of the halves, and the standard error as
+`sqrt(se1^2 + se2^2) / 2`). Both machines need the same commit and the
+examples built; the engine is deterministic, so a half gives the same
+numbers on either. Printed means are the halves' rounded values averaged,
+so the third decimal can differ from one run by 0.001.
+
+```sh
+python3 split_matches.py --remote bean-void -- --weights tuned --opponent tuned \
+    --with watch --games 1024 --years 100 --first-map 1200000 --paired
+```
+
 ## The environment
 
 ```python
