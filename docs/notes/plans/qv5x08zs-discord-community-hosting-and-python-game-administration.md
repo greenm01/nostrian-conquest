@@ -236,5 +236,11 @@ from `nc-sysop` in `cf664453` (2026-04-11). The Nostr daemon is now
 `nc-host serve`, and community games are scheduled by
 `nc-admin maintenance due`. On 2026-10-16 the archvps gate units
 (`nc-nostr.service`, `nc-maint-all.timer`) were disabled after a redeploy showed
-the gap. Exit: either port the installer and guides to `nc-host`, or retire the
-standalone Nostr VPS path in favour of the community stack.
+the gap.
+
+Owner decision (2026-10-16): the Nostr host and server are still in
+development and are not ready for production or public promotion. The
+browser (xterm.js) community stack and traditional BBS doors are the only
+supported ways to play. Exit: when the Nostr host work resumes, update the
+installer and guides to `nc-host`, and keep them marked development-only
+until the owner approves a public Nostr path.
