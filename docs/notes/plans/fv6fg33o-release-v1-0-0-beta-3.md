@@ -167,6 +167,10 @@ player manual PDF matches the committed one.
 | `windows-x86.zip` | `7ceda2d945d5a6b1784fe8160c4cab910b94c9150c6a2ac0e2d155be8a2e6574` |
 | `windows7-x86.zip` | `55cfb736fdb27c612435d051909d83940a2fe1556ac0a55e36651e388121b2e8` |
 
+The owner uploaded the four archives and the signed manifest to
+`release-artifacts` and refreshed its note. A fresh download of all six
+assets passed GPG and checksum verification.
+
 ## Connections
 
 Ships the work recorded in the
