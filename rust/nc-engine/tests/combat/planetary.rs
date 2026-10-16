@@ -305,25 +305,25 @@ fn the_dock_is_exposed_once_the_batteries_are_gone() {
     }
 }
 
-/// `tools/combat-model/assault_collateral.py`, case `CA6-vs-B3-dockedBB` in
-/// its `delayed` order (the shield): the exact expected losses of one
-/// bombardment turn of six cruisers against three batteries, ten armies, and
-/// a docked battleship, in cost points (CA 15, BB 45), batteries, armies, and
-/// points of production.
+/// `tools/combat-model/collateral_t200.py` (`assault_collateral.py` under the
+/// t200 hulls), case `CA6-vs-B3-dockedBB` in its `delayed` order (the
+/// shield): the exact expected losses of one bombardment turn of six cruisers
+/// against three batteries, ten armies, and a docked battleship, in cost
+/// points (CA 15, BB 45), batteries, armies, and points of production.
 const SHIELD_MODEL: [(&str, f64); 5] = [
-    ("ship cost lost", 80.241),
-    ("dock cost lost", 7.614),
-    ("batteries lost", 2.927),
-    ("armies lost", 2.439),
-    ("production lost", 0.491),
+    ("ship cost lost", 68.642),
+    ("dock cost lost", 19.0),
+    ("batteries lost", 2.956),
+    ("armies lost", 4.876),
+    ("production lost", 1.933),
 ];
 
 #[test]
 fn a_bombardment_turn_costs_what_the_shield_model_says() {
     // Each trial is a year on its own campaign seed. A mean is within 4.5
     // standard errors of the model's exact expectation. The old order, with
-    // the dock exposed beside the batteries, expects 82.4, 33.5, 2.6, 2.0,
-    // and 0.43.
+    // the dock exposed beside the batteries, expects 72.9, 36.4, 2.7, 4.3,
+    // and 1.7.
     const TRIALS: u64 = 1000;
     let mut game_data = assault_on_system(
         Order::BombardWorld,
@@ -375,9 +375,9 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
     // garrison: rounds 1 and 2 find nothing to hit and round 3 breaks
     // through to the economy. On the overwhelming column the point count is
     // `floor(hits / 10)`; exact enumeration over the ten rolls gives a
-    // cruiser 4.9 points and a battleship 22.9 (5,000 goods, so the supply
-    // never caps the loss), and 25 goods a point makes the ADR's "about 123
-    // of 500" cruiser raid and 473 battleship raid.
+    // cruiser (bombardment AS 33) 5.3 points and a battleship 22.9 (5,000
+    // goods, so the supply never caps the loss), and 25 goods a point makes
+    // a cruiser raid about 132 of 500 and a battleship raid 473.
     const TRIALS: u64 = 2000;
     for (name, ships, mean_points) in [
         (
@@ -386,7 +386,7 @@ fn an_unopposed_bombardment_destroys_25_goods_and_one_factory_per_point() {
                 ca: 1,
                 ..Ships::default()
             },
-            4.9,
+            5.3,
         ),
         (
             "battleship",

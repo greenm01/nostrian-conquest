@@ -1,0 +1,2402 @@
+[
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.18335,
+   "B": 0.81485,
+   "mutual": 0.0018,
+   "stalemate": 0.0
+  },
+  "loss_left": 341.98575,
+  "loss_right": 139.9995
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.14575,
+   "B": 0.85425,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.92925,
+  "loss_right": 21.726
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2828,
+   "B": 0.71475,
+   "mutual": 0.00245,
+   "stalemate": 0.0
+  },
+  "loss_left": 336.17025,
+  "loss_right": 189.7785
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32735,
+   "B": 0.67265,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 70.48875,
+  "loss_right": 36.378
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.40255,
+   "B": 0.59485,
+   "mutual": 0.0026,
+   "stalemate": 0.0
+  },
+  "loss_left": 318.61425,
+  "loss_right": 241.79625
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33955,
+   "B": 0.66045,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 55.38,
+  "loss_right": 50.53275
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5186,
+   "B": 0.47865,
+   "mutual": 0.00275,
+   "stalemate": 0.0
+  },
+  "loss_left": 296.8845,
+  "loss_right": 286.8975
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6519,
+   "B": 0.3481,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 56.70075,
+  "loss_right": 77.33925
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6292,
+   "B": 0.36815,
+   "mutual": 0.00265,
+   "stalemate": 0.0
+  },
+  "loss_left": 262.4295,
+  "loss_right": 328.2705
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6682,
+   "B": 0.3318,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 39.051,
+  "loss_right": 100.14525
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.71325,
+   "B": 0.2853,
+   "mutual": 0.00145,
+   "stalemate": 0.0
+  },
+  "loss_left": 230.28525,
+  "loss_right": 356.841
+ },
+ {
+  "ladder": "now",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76055,
+   "B": 0.23945,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 32.346,
+  "loss_right": 123.03
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1737,
+   "B": 0.8252,
+   "mutual": 0.0011,
+   "stalemate": 0.0
+  },
+  "loss_left": 354.13525,
+  "loss_right": 252.40575
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.24295,
+   "B": 0.75705,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 142.24825,
+  "loss_right": 169.37175
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.312,
+   "B": 0.68715,
+   "mutual": 0.00085,
+   "stalemate": 0.0
+  },
+  "loss_left": 348.06125,
+  "loss_right": 303.19725
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3328,
+   "B": 0.6672,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 115.378,
+  "loss_right": 199.17975
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.48255,
+   "B": 0.5154,
+   "mutual": 0.00205,
+   "stalemate": 0.0
+  },
+  "loss_left": 321.01875,
+  "loss_right": 348.618
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6694,
+   "B": 0.3306,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 106.86425,
+  "loss_right": 240.822
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6471,
+   "B": 0.3517,
+   "mutual": 0.0012,
+   "stalemate": 0.0
+  },
+  "loss_left": 274.71125,
+  "loss_right": 383.89125
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7589,
+   "B": 0.2411,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 76.51975,
+  "loss_right": 272.535
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7598,
+   "B": 0.2395,
+   "mutual": 0.0007,
+   "stalemate": 0.0
+  },
+  "loss_left": 223.069,
+  "loss_right": 409.61025
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8792,
+   "B": 0.1208,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 60.06775,
+  "loss_right": 299.355
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8549,
+   "B": 0.14465,
+   "mutual": 0.00045,
+   "stalemate": 0.0
+  },
+  "loss_left": 170.9625,
+  "loss_right": 427.575
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88585,
+   "B": 0.11415,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 39.212,
+  "loss_right": 322.104
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.9224,
+   "B": 0.0769,
+   "mutual": 0.0007,
+   "stalemate": 0.0
+  },
+  "loss_left": 125.9605,
+  "loss_right": 439.19775
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 34.59725,
+  "loss_right": 346.04175
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.12005,
+   "B": 0.8746,
+   "mutual": 0.00535,
+   "stalemate": 0.0
+  },
+  "loss_left": 370.55875,
+  "loss_right": 223.02
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.14865,
+   "B": 0.85135,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 125.723,
+  "loss_right": 143.58375
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.23725,
+   "B": 0.758,
+   "mutual": 0.00475,
+   "stalemate": 0.0
+  },
+  "loss_left": 377.8985,
+  "loss_right": 269.27775
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3272,
+   "B": 0.6728,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 110.472,
+  "loss_right": 170.06175
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3902,
+   "B": 0.604,
+   "mutual": 0.0058,
+   "stalemate": 0.0
+  },
+  "loss_left": 360.3295,
+  "loss_right": 318.22425
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.4887,
+   "B": 0.5113,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 101.639,
+  "loss_right": 206.937
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.54705,
+   "B": 0.44805,
+   "mutual": 0.0049,
+   "stalemate": 0.0
+  },
+  "loss_left": 326.54975,
+  "loss_right": 358.30125
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7643,
+   "B": 0.2357,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 81.69175,
+  "loss_right": 234.24975
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.693,
+   "B": 0.3026,
+   "mutual": 0.0044,
+   "stalemate": 0.0
+  },
+  "loss_left": 268.21125,
+  "loss_right": 391.518
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.87705,
+   "B": 0.12295,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 64.97825,
+  "loss_right": 266.2245
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7881,
+   "B": 0.20775,
+   "mutual": 0.00415,
+   "stalemate": 0.0
+  },
+  "loss_left": 225.0595,
+  "loss_right": 413.469
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88025,
+   "B": 0.11975,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 46.13825,
+  "loss_right": 287.24175
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8608,
+   "B": 0.13685,
+   "mutual": 0.00235,
+   "stalemate": 0.0
+  },
+  "loss_left": 174.66375,
+  "loss_right": 428.03775
+ },
+ {
+  "ladder": "now",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.477,
+  "loss_right": 315.27
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2425,
+   "B": 0.7556,
+   "mutual": 0.0019,
+   "stalemate": 0.0
+  },
+  "loss_left": 324.58875,
+  "loss_right": 169.64775
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3283,
+   "B": 0.6717,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 83.9865,
+  "loss_right": 35.39925
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3598,
+   "B": 0.63725,
+   "mutual": 0.00295,
+   "stalemate": 0.0
+  },
+  "loss_left": 310.01175,
+  "loss_right": 226.3725
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33515,
+   "B": 0.66485,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 66.05025,
+  "loss_right": 53.361
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.46455,
+   "B": 0.5326,
+   "mutual": 0.00285,
+   "stalemate": 0.0
+  },
+  "loss_left": 295.698,
+  "loss_right": 268.5645
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.55235,
+   "B": 0.44765,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 58.93125,
+  "loss_right": 77.65875
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5947,
+   "B": 0.403,
+   "mutual": 0.0023,
+   "stalemate": 0.0
+  },
+  "loss_left": 261.2985,
+  "loss_right": 315.02925
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6703,
+   "B": 0.3297,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.98375,
+  "loss_right": 105.48
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.68355,
+   "B": 0.315,
+   "mutual": 0.00145,
+   "stalemate": 0.0
+  },
+  "loss_left": 232.7685,
+  "loss_right": 344.84175
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76255,
+   "B": 0.23745,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 39.114,
+  "loss_right": 129.03525
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.75815,
+   "B": 0.24045,
+   "mutual": 0.0014,
+   "stalemate": 0.0
+  },
+  "loss_left": 201.96975,
+  "loss_right": 373.9185
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.85095,
+   "B": 0.14905,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 36.48825,
+  "loss_right": 153.69075
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.16195,
+   "B": 0.8366,
+   "mutual": 0.00145,
+   "stalemate": 0.0
+  },
+  "loss_left": 358.33175,
+  "loss_right": 248.9085
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.14805,
+   "B": 0.85195,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 165.49925,
+  "loss_right": 175.44225
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.29875,
+   "B": 0.7001,
+   "mutual": 0.00115,
+   "stalemate": 0.0
+  },
+  "loss_left": 351.97925,
+  "loss_right": 298.17975
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3287,
+   "B": 0.6713,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 143.24625,
+  "loss_right": 212.196
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.44725,
+   "B": 0.55135,
+   "mutual": 0.0014,
+   "stalemate": 0.0
+  },
+  "loss_left": 332.54875,
+  "loss_right": 341.92725
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5414,
+   "B": 0.4586,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 126.87025,
+  "loss_right": 248.7945
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.62775,
+   "B": 0.37075,
+   "mutual": 0.0015,
+   "stalemate": 0.0
+  },
+  "loss_left": 282.4605,
+  "loss_right": 377.74125
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.75925,
+   "B": 0.24075,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 108.07125,
+  "loss_right": 289.02825
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.73045,
+   "B": 0.26875,
+   "mutual": 0.0008,
+   "stalemate": 0.0
+  },
+  "loss_left": 237.864,
+  "loss_right": 402.8445
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76205,
+   "B": 0.23795,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 73.453,
+  "loss_right": 309.36525
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.81775,
+   "B": 0.1815,
+   "mutual": 0.00075,
+   "stalemate": 0.0
+  },
+  "loss_left": 198.0185,
+  "loss_right": 420.80475
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.882,
+   "B": 0.118,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 62.598,
+  "loss_right": 336.2925
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8922,
+   "B": 0.10765,
+   "mutual": 0.00015,
+   "stalemate": 0.0
+  },
+  "loss_left": 146.64575,
+  "loss_right": 434.544
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.3555,
+  "loss_right": 360.58425
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1483,
+   "B": 0.8472,
+   "mutual": 0.0045,
+   "stalemate": 0.0
+  },
+  "loss_left": 362.7065,
+  "loss_right": 234.387
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.23795,
+   "B": 0.76205,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 131.524,
+  "loss_right": 152.6895
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.27185,
+   "B": 0.72235,
+   "mutual": 0.0058,
+   "stalemate": 0.0
+  },
+  "loss_left": 364.61725,
+  "loss_right": 284.2875
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.41795,
+   "B": 0.58205,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 115.79375,
+  "loss_right": 185.94
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.44165,
+   "B": 0.55225,
+   "mutual": 0.0061,
+   "stalemate": 0.0
+  },
+  "loss_left": 339.31225,
+  "loss_right": 331.68825
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5437,
+   "B": 0.4563,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 92.5145,
+  "loss_right": 216.12375
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6091,
+   "B": 0.38625,
+   "mutual": 0.00465,
+   "stalemate": 0.0
+  },
+  "loss_left": 292.698,
+  "loss_right": 372.40425
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7585,
+   "B": 0.2415,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 70.227,
+  "loss_right": 253.72125
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7237,
+   "B": 0.2725,
+   "mutual": 0.0038,
+   "stalemate": 0.0
+  },
+  "loss_left": 247.37375,
+  "loss_right": 399.36375
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8773,
+   "B": 0.1227,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 65.66725,
+  "loss_right": 284.49
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.81505,
+   "B": 0.18225,
+   "mutual": 0.0027,
+   "stalemate": 0.0
+  },
+  "loss_left": 197.8925,
+  "loss_right": 418.39425
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88035,
+   "B": 0.11965,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 40.699,
+  "loss_right": 306.68175
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.88285,
+   "B": 0.1148,
+   "mutual": 0.00235,
+   "stalemate": 0.0
+  },
+  "loss_left": 158.63775,
+  "loss_right": 432.144
+ },
+ {
+  "ladder": "A-dd11-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.70025,
+  "loss_right": 332.3295
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.24395,
+   "B": 0.75395,
+   "mutual": 0.0021,
+   "stalemate": 0.0
+  },
+  "loss_left": 324.1635,
+  "loss_right": 171.1215
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33375,
+   "B": 0.66625,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 83.61525,
+  "loss_right": 36.7695
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3541,
+   "B": 0.64315,
+   "mutual": 0.00275,
+   "stalemate": 0.0
+  },
+  "loss_left": 312.29925,
+  "loss_right": 222.948
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33115,
+   "B": 0.66885,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 66.96525,
+  "loss_right": 52.30575
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.4654,
+   "B": 0.53135,
+   "mutual": 0.00325,
+   "stalemate": 0.0
+  },
+  "loss_left": 294.15525,
+  "loss_right": 266.75325
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.55075,
+   "B": 0.44925,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 57.92025,
+  "loss_right": 78.34725
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5948,
+   "B": 0.4035,
+   "mutual": 0.0017,
+   "stalemate": 0.0
+  },
+  "loss_left": 261.25275,
+  "loss_right": 313.569
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.66815,
+   "B": 0.33185,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.30875,
+  "loss_right": 106.80075
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6808,
+   "B": 0.31765,
+   "mutual": 0.00155,
+   "stalemate": 0.0
+  },
+  "loss_left": 232.09725,
+  "loss_right": 345.06225
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76,
+   "B": 0.24,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 38.061,
+  "loss_right": 129.57975
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.76395,
+   "B": 0.23475,
+   "mutual": 0.0013,
+   "stalemate": 0.0
+  },
+  "loss_left": 200.7975,
+  "loss_right": 374.9265
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.84955,
+   "B": 0.15045,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 35.27025,
+  "loss_right": 154.04625
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.241,
+   "B": 0.75765,
+   "mutual": 0.00135,
+   "stalemate": 0.0
+  },
+  "loss_left": 334.41775,
+  "loss_right": 275.076
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3316,
+   "B": 0.6684,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 165.209,
+  "loss_right": 204.93525
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3811,
+   "B": 0.61775,
+   "mutual": 0.00115,
+   "stalemate": 0.0
+  },
+  "loss_left": 321.907,
+  "loss_right": 324.55725
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5131,
+   "B": 0.4869,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 147.42425,
+  "loss_right": 244.194
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5661,
+   "B": 0.4321,
+   "mutual": 0.0018,
+   "stalemate": 0.0
+  },
+  "loss_left": 291.48075,
+  "loss_right": 365.2725
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7593,
+   "B": 0.2407,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 131.4345,
+  "loss_right": 280.83525
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6955,
+   "B": 0.30395,
+   "mutual": 0.00055,
+   "stalemate": 0.0
+  },
+  "loss_left": 248.213,
+  "loss_right": 394.39575
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76055,
+   "B": 0.23945,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 98.09775,
+  "loss_right": 309.0
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7939,
+   "B": 0.2052,
+   "mutual": 0.0009,
+   "stalemate": 0.0
+  },
+  "loss_left": 202.62125,
+  "loss_right": 417.1245
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88145,
+   "B": 0.11855,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 79.747,
+  "loss_right": 337.26075
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8715,
+   "B": 0.12775,
+   "mutual": 0.00075,
+   "stalemate": 0.0
+  },
+  "loss_left": 155.4865,
+  "loss_right": 431.613
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 66.0615,
+  "loss_right": 361.07175
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.9413,
+   "B": 0.05825,
+   "mutual": 0.00045,
+   "stalemate": 0.0
+  },
+  "loss_left": 112.2455,
+  "loss_right": 442.07325
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 43.6125,
+  "loss_right": 375.4335
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.20955,
+   "B": 0.7849,
+   "mutual": 0.00555,
+   "stalemate": 0.0
+  },
+  "loss_left": 345.3275,
+  "loss_right": 259.89525
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32455,
+   "B": 0.67545,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 135.02025,
+  "loss_right": 170.07975
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3591,
+   "B": 0.633,
+   "mutual": 0.0079,
+   "stalemate": 0.0
+  },
+  "loss_left": 333.48975,
+  "loss_right": 311.139
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5545,
+   "B": 0.4455,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 119.146,
+  "loss_right": 212.78025
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.55625,
+   "B": 0.4381,
+   "mutual": 0.00565,
+   "stalemate": 0.0
+  },
+  "loss_left": 292.81275,
+  "loss_right": 360.6975
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7625,
+   "B": 0.2375,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 96.96675,
+  "loss_right": 255.798
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6814,
+   "B": 0.314,
+   "mutual": 0.0046,
+   "stalemate": 0.0
+  },
+  "loss_left": 257.35675,
+  "loss_right": 388.83825
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8798,
+   "B": 0.1202,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 89.08475,
+  "loss_right": 285.354
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.78185,
+   "B": 0.2144,
+   "mutual": 0.00375,
+   "stalemate": 0.0
+  },
+  "loss_left": 207.45075,
+  "loss_right": 411.0705
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8806,
+   "B": 0.1194,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 59.63625,
+  "loss_right": 305.8695
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.86195,
+   "B": 0.1355,
+   "mutual": 0.00255,
+   "stalemate": 0.0
+  },
+  "loss_left": 167.143,
+  "loss_right": 428.094
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 56.79675,
+  "loss_right": 340.479
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.93935,
+   "B": 0.05915,
+   "mutual": 0.0015,
+   "stalemate": 0.0
+  },
+  "loss_left": 112.50375,
+  "loss_right": 441.12375
+ },
+ {
+  "ladder": "B-dd12-ca33",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 29.133,
+  "loss_right": 354.429
+ }
+]

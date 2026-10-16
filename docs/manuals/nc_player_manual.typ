@@ -358,13 +358,13 @@ You control five major force types: planets, ships, starbases, armies, and groun
     table.header(
       [Unit], [Cost], [Speed], [Size], [AS], [DS], [Role],
     ),
-    [*Destroyer*],  [05], [6], [S], [10], [08], [Fast raider and line support. Escapes heavy fleets. Good for fast response and interception.],
-    [*Cruiser*],    [15], [5], [M], [30], [30], [Balanced fighter. About 3x the power of a destroyer.],
-    [*Battleship*], [45], [4], [L], [90], [100], [Heavy firepower anchor. About 3x the power of a cruiser. Slow but durable.],
+    [*Destroyer*],  [05], [6], [S], [12], [07], [Glass cannon: the most firepower per point, the least armor. Fast raider, picket, and finisher. Escapes heavy fleets.],
+    [*Cruiser*],    [15], [5], [M], [33], [30], [Balanced fighter and the faster battle line. About 3x the power of a destroyer.],
+    [*Battleship*], [45], [4], [L], [90], [110], [Heavy anchor and siege ship. About 3x the power of a cruiser. Slow, the toughest hull, and the best bombardier.],
     [*Scout*],      [15], [6], [S], [00], [10], [Stealthy spy. A lone scout is hardest to detect.],
     [*Transport*],  [05], [5], [M], [00], [10], [Unarmed. Carries one army. Essential for conquest.],
     [*ETAC*],       [20], [3], [L], [00], [20], [Colony ship. Reusable --- survives colonization.],
-    [*Starbase*],   [50], [1], [L], [100], [120], [Orbital fortress. Defense and production boost.],
+    [*Starbase*],   [50], [1], [L], [100], [130], [Orbital fortress. Defense and production boost.],
     [*Ground Battery*], [20], [--], [L], [90], [20], [Planetary defense.],
     [*Army*],       [02], [--], [S], [10], [10], [Surface defense and capture.],
   ),
@@ -389,7 +389,7 @@ crippled ships and `*` loaded transports. In the Fleet List, a fleet too long fo
 
 == Starbases
 
-Starbases are large space fortresses (Cost: 50, AS: 100, DS: 120). In orbit,
+Starbases are large space fortresses (Cost: 50, AS: 100, DS: 130). In orbit,
 they strengthen a world's defense and economy. They help weak colonies grow at
 sensible tax rates, and they let a planet spend up to *5x* its Production in
 one turn when enough points have been saved (see @economy). They are not a
@@ -1626,13 +1626,13 @@ lets crippled light ships keep contributing fire.
     table.header(
       [Unit], [AS], [DS], [Notes],
     ),
-    [Destroyer], [10], [8],  [Fast raider and line support],
-    [Cruiser],   [30], [30], [Balanced brawler],
-    [Battleship],[90], [100],[Primary battle line],
+    [Destroyer], [12], [7],  [Glass cannon, raider, and finisher],
+    [Cruiser],   [33], [30], [Balanced brawler],
+    [Battleship],[90], [110],[Primary battle line and siege ship],
     [Scout],     [0],  [10], [Non-combat hull],
     [Transport], [0],  [10], [Non-combat hull],
     [ETAC],      [0],  [20], [Colonization hull],
-    [Starbase],  [100],[120],[Heavy orbital defender],
+    [Starbase],  [100],[130],[Heavy orbital defender],
     [Battery],   [90], [20], [Planetary defense],
     [Army],      [10], [10], [Ground combatant],
   ),

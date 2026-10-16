@@ -483,13 +483,13 @@ fn a_destroyed_base_is_the_crippled_one_and_a_survivor_keeps_its_state() {
 #[test]
 fn a_crippled_hull_counts_at_its_crippled_attack_strength() {
     let mut crippled = nc_data::CrippledShips::default();
-    assert_eq!(warship_attack_strength(2, 2, 1, &crippled), 20 + 60 + 90);
+    assert_eq!(warship_attack_strength(2, 2, 1, &crippled), 24 + 66 + 90);
     crippled.destroyers = hulls(0, 0, 1);
     crippled.cruisers = hulls(1, 1, 0);
     crippled.battleships = hulls(0, 1, 0);
     assert_eq!(
         warship_attack_strength(2, 2, 1, &crippled),
-        10 + 5 + 15 + 15 + 45
+        12 + 6 + 16 + 16 + 45
     );
 
     let mut record = Starbase::default();
@@ -504,9 +504,9 @@ fn bombardment_fire_keeps_its_crippled_rounding() {
     state.counts[IDX_DD] = 2;
     state.counts[IDX_CA] = 2;
     state.counts[IDX_BB] = 2;
-    assert_eq!(bombard_attack_as(&state), 2 * 5 + 2 * 30 + 2 * 135);
+    assert_eq!(bombard_attack_as(&state), 2 * 6 + 2 * 33 + 2 * 135);
     state.crippled[IDX_DD] = hulls(1, 0, 0);
     state.crippled[IDX_CA] = hulls(0, 1, 0);
     state.crippled[IDX_BB] = hulls(0, 0, 1);
-    assert_eq!(bombard_attack_as(&state), 5 + 2 + 30 + 15 + 135 + 67);
+    assert_eq!(bombard_attack_as(&state), 6 + 3 + 33 + 16 + 135 + 67);
 }

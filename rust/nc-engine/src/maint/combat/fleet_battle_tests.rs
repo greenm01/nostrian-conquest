@@ -196,7 +196,7 @@ fn fleet_volley_reads_the_flat_table() {
     assert_eq!(hits(2, 1), 50);
     assert_eq!(hits(4, 2), 100);
     assert_eq!(hits(8, 2), 100);
-    // Hits round up: a lone destroyer's quarter of 10 AS is 3.
+    // Hits round up: a quarter of 10 AS is 3.
     assert_eq!(fleet_volley(0, 0, 10).hits, 3);
     // Only an unmodified 9 is a critical.
     assert!(fleet_volley(9, 0, 100).critical);
@@ -204,30 +204,30 @@ fn fleet_volley_reads_the_flat_table() {
     assert!(!fleet_volley(9, 0, 0).critical);
 }
 
-/// Decision 7: a destroyer's DS is 8, so each of its damage steps costs 8
-/// and execution fire pays 16 to destroy a nominal one.
+/// The punch ladder (6vqrcldx): a destroyer's DS is 7, so each of its
+/// damage steps costs 7 and execution fire pays 14 to destroy a nominal one.
 #[test]
-fn a_destroyer_costs_eight_hits_a_step() {
+fn a_destroyer_costs_seven_hits_a_step() {
     let mut state = FleetCombatState::default();
     state.counts[IDX_DD] = 2;
-    let carried = apply_hits_to_fleet(&mut state, 15, 0, 0);
+    let carried = apply_hits_to_fleet(&mut state, 13, 0, 0);
     assert_eq!(
         state.crippled_count(IDX_DD),
         1,
-        "15 suppression hits cripple one"
+        "13 suppression hits cripple one"
     );
-    assert_eq!(carried.suppression, 7);
-    let carried = apply_hits_to_fleet(&mut state, 0, 16, 0);
+    assert_eq!(carried.suppression, 6);
+    let carried = apply_hits_to_fleet(&mut state, 0, 14, 0);
     assert_eq!(
         (state.counts[IDX_DD], state.crippled_count(IDX_DD)),
         (1, 0),
-        "execution fire finishes the crippled one for 8 and cannot afford the nominal one"
+        "execution fire finishes the crippled one for 7 and cannot afford the nominal one"
     );
-    assert_eq!(carried.execution, 8);
-    let carried = apply_hits_to_fleet(&mut state, 0, 16, 0);
+    assert_eq!(carried.execution, 7);
+    let carried = apply_hits_to_fleet(&mut state, 0, 14, 0);
     assert_eq!(
         state.counts[IDX_DD], 0,
-        "16 execution hits destroy a nominal destroyer"
+        "14 execution hits destroy a nominal destroyer"
     );
     assert_eq!(carried.execution, 0);
 }
@@ -646,7 +646,7 @@ fn pursuit_is_per_fleeing_fleet_once_the_whole_side_breaks_off() {
     );
     assert_eq!(game_data.fleets[0].ships.cruisers, 1);
     assert_eq!(game_data.fleets[1].ships.cruisers, 1);
-    assert_eq!(game_data.fleets[4].ships.cruisers, 3);
+    assert_eq!(game_data.fleets[4].ships.cruisers, 2);
     assert!(
         game_data.fleets[0]
             .escape
@@ -732,8 +732,8 @@ fn a_departing_fleet_leaves_the_carried_hits_with_its_side() {
 
 /// Combat decision 6: a surprise adds 1 to the attacking side's die in its
 /// first exchange, and only that. Ten destroyers a side, all rolling 2: an
-/// unmodified 2 is a quarter of the 100 AS (25 hits, which destroy one
-/// destroyer at 16 apiece) and a 3 is half (50 hits, three destroyed).
+/// unmodified 2 is a quarter of the 120 AS (30 hits, which destroy two
+/// destroyers at 14 apiece) and a 3 is half (60 hits, four destroyed).
 #[test]
 fn a_surprise_adds_one_to_the_attackers_first_exchange_only() {
     let battle = |attacker: usize, defender: usize, surprise: bool, round_cap: u32| {
@@ -756,12 +756,12 @@ fn a_surprise_adds_one_to_the_attackers_first_exchange_only() {
         game_data
     };
     let plain = battle(0, 4, false, 1);
-    assert_eq!(plain.fleets[4].ships.destroyers, 9);
-    assert_eq!(plain.fleets[0].ships.destroyers, 9);
+    assert_eq!(plain.fleets[4].ships.destroyers, 8);
+    assert_eq!(plain.fleets[0].ships.destroyers, 8);
     let surprised = battle(0, 4, true, 1);
-    assert_eq!(surprised.fleets[4].ships.destroyers, 7);
+    assert_eq!(surprised.fleets[4].ships.destroyers, 6);
     assert_eq!(
-        surprised.fleets[0].ships.destroyers, 9,
+        surprised.fleets[0].ships.destroyers, 8,
         "the defender gets nothing"
     );
 
@@ -775,8 +775,8 @@ fn a_surprise_adds_one_to_the_attackers_first_exchange_only() {
         pursuit: &|_, _, _| ESCAPED,
     };
     fight_sides_by_surprise(&mut game_data, &dice, 1, 1, &[4], &[0], true);
-    assert_eq!(game_data.fleets[0].ships.destroyers, 7);
-    assert_eq!(game_data.fleets[4].ships.destroyers, 9);
+    assert_eq!(game_data.fleets[0].ships.destroyers, 6);
+    assert_eq!(game_data.fleets[4].ships.destroyers, 8);
 
     // Two exchanges: a surprise 2 then an ordinary 2 is what an ordinary 3
     // then an ordinary 2 would have been, so the second exchange had none.

@@ -129,8 +129,8 @@ fn first_contact_obeys_roe() {
 }
 
 /// The decision weighs the sides as they would fight: two cruiser pairs
-/// (60 each) at ROE 6 would each decline four cruisers (120) alone, and
-/// take them on assembled (120 against 120). A fleet without warships
+/// (66 each) at ROE 6 would each decline four cruisers (132) alone, and
+/// take them on assembled (132 against 132). A fleet without warships
 /// never volunteers, whatever its ROE.
 #[test]
 fn the_decision_weighs_the_assembled_sides() {
@@ -141,7 +141,7 @@ fn the_decision_weighs_the_assembled_sides() {
     enemy.cruisers = 4;
     assert_eq!(verdict(observer, enemy, None, true), Verdict::Avoided);
     let mut assembled = situation(&observer, &enemy, None, true);
-    assembled.own_strength = 120;
+    assembled.own_strength = 132;
     assert_eq!(
         decide_vs_fleet(&mut GameRng::from_seed(1), &observer, &enemy, assembled),
         Verdict::Engaged
@@ -323,9 +323,9 @@ fn strength_is_attack_strength() {
     fleet.scouts = 5;
     fleet.transports = 4;
     fleet.etacs = 1;
-    assert_eq!(strength(&fleet), 90 + 60 + 30);
+    assert_eq!(strength(&fleet), 90 + 66 + 36);
     fleet.order = order::GUARD_STARBASE;
-    assert_eq!(strength(&fleet), 180);
+    assert_eq!(strength(&fleet), 192);
     assert_eq!(BASE_STRENGTH, 100);
 }
 
@@ -337,7 +337,7 @@ fn a_crippled_warship_counts_at_half_its_attack_strength() {
     fleet.battleships = 2;
     fleet.cruisers = 2;
     fleet.destroyers = 3;
-    assert_eq!(strength(&fleet), 180 + 60 + 30);
+    assert_eq!(strength(&fleet), 180 + 66 + 36);
     let hurt = |turns_2: u32| CrippledHulls {
         turns: [0, turns_2],
         fresh: 0,
@@ -348,12 +348,12 @@ fn a_crippled_warship_counts_at_half_its_attack_strength() {
         turns: [1, 0],
         fresh: 1,
     };
-    // Battleships 90 + 45, cruisers 2 x 15, destroyers 10 + 2 x 5.
-    assert_eq!(strength(&fleet), 135 + 30 + 20);
+    // Battleships 90 + 45, cruisers 2 x 16, destroyers 12 + 2 x 6.
+    assert_eq!(strength(&fleet), 135 + 32 + 24);
 }
 
-/// Three cruisers (90) take on three cruisers at ROE 6; with two of the
-/// observer's crippled (60) they decline.
+/// Three cruisers (99) take on three cruisers at ROE 6; with two of the
+/// observer's crippled (65) they decline.
 #[test]
 fn a_crippled_fleet_declines_the_fight_its_whole_strength_would_take() {
     let mut observer = at_world(1, order::HOLD).roe_set(6);
@@ -369,8 +369,8 @@ fn a_crippled_fleet_declines_the_fight_its_whole_strength_would_take() {
 }
 
 /// Where the yardstick changes who agrees to fight: three destroyers meet
-/// a cruiser at ROE 6 (30 against 30; classic's weights gave 6 against 7),
-/// and four cruisers take on a lone starbase (120 against 100; classic gave
+/// a cruiser at ROE 6 (36 against 33; classic's weights gave 6 against 7),
+/// and four cruisers take on a lone starbase (132 against 100; classic gave
 /// 28 against 30).
 #[test]
 fn the_yardstick_lets_three_destroyers_fight_a_cruiser_and_four_cruisers_a_base() {

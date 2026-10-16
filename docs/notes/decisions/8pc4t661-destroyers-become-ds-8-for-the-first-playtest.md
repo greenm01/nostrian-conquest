@@ -2,7 +2,7 @@
 id: 8pc4t661
 date: 2026-10-10
 kind: adr
-status: accepted
+status: superseded
 tags: [adr, combat, hulls, balance]
 ---
 # Destroyers become DS 8 for the first playtest
@@ -76,3 +76,5 @@ and Codex's controls in
 and `tools/combat-model/hull_review.py`. Source synthesis:
 [ebrogywq](../investigations/ebrogywq-nc-combat-design-review-against-its-sources.md).
 Refines [NC combat stays](b5u6lekb-rust-keeps-its-own-combat-system.md).
+
+Superseded on 2026-10-16 by [6vqrcldx](6vqrcldx-hulls-follow-a-punch-ladder.md): destroyers become AS 12 / DS 7.

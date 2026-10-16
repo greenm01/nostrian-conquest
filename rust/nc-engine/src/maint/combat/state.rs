@@ -12,8 +12,8 @@ pub(super) const IDX_SC: usize = 4;
 pub(super) const IDX_TT: usize = 5;
 pub(super) const IDX_ET: usize = 6;
 
-const AS_DD: u32 = 10;
-const AS_CA: u32 = 30;
+const AS_DD: u32 = 12;
+const AS_CA: u32 = 33;
 const AS_BB: u32 = 90;
 const AS_SB: u32 = 100;
 const AS_SC: u32 = 0;
@@ -24,10 +24,10 @@ const AS_ET: u32 = 0;
 /// decision to fight.
 pub(crate) const STARBASE_ATTACK_STRENGTH: u32 = AS_SB;
 
-const DS_DD: u32 = 8;
+const DS_DD: u32 = 7;
 const DS_CA: u32 = 30;
-const DS_BB: u32 = 100;
-const DS_SB: u32 = 120;
+const DS_BB: u32 = 110;
+const DS_SB: u32 = 130;
 const DS_SC: u32 = 10;
 const DS_TT: u32 = 10;
 const DS_ET: u32 = 20;

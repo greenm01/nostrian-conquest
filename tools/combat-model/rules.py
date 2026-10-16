@@ -146,12 +146,15 @@ RULESETS['engine-t065'] = variant(
 )
 
 # t198: the engine without the mixed-fleet bonus, in any theater.
-RULESETS['engine-t198'] = variant(RULESETS['engine-t065'], 'engine-t198', mixed_shift=0)
+# t200: the punch ladder (DD 12/7, CA 33/30, BB 90/110) and SB DS 130.
+RULESETS['engine-t198'] = variant(RULESETS['engine-t065'], 'engine-t198', mixed_shift=0,
+                                  default_units='t200')
 
 # Hull variants: unit-table overrides by name.
 UNIT_VARIANTS = {
     'baseline': {},
     'dd-10-8-5': {'DD': dict(DS=8)},
+    't200': {'DD': dict(AS=12, DS=7), 'CA': dict(AS=33), 'BB': dict(DS=110), 'SB': dict(DS=130)},
 }
 
 

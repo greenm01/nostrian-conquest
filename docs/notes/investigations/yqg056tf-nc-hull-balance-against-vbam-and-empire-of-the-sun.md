@@ -312,22 +312,23 @@ classic ([mga5ezbw](../decisions/mga5ezbw-battleships-move-at-speed-5.md)).
 
 ## Approved ship table
 
-The owner approved this table on 2026-10-16. Every stat stays as it is;
-the only rule change is the removal of the mixed-fleet bonus (t198).
+The owner approved these values on 2026-10-16
+([6vqrcldx](../decisions/6vqrcldx-hulls-follow-a-punch-ladder.md)), with the
+mixed-fleet bonus removed (t198). Prices and speeds are unchanged.
 
 | Ship | Cost | Speed | AS | DS | Fire | Bombard |
 | --- | --- | --- | --- | --- | --- | --- |
-| Destroyer | 5 | 6 | 10 | 8 | execution | 0.5x |
-| Cruiser | 15 | 5 | 30 | 30 | suppression | 1x |
-| Battleship | 45 | 4 | 90 | 100 | suppression | 1.5x |
+| Destroyer | 5 | 6 | 12 (was 10) | 7 (was 8) | execution | 0.5x |
+| Cruiser | 15 | 5 | 33 (was 30) | 30 | suppression | 1x |
+| Battleship | 45 | 4 | 90 | 110 (was 100) | suppression | 1.5x |
 | Scout | 15 | 6 | 0 | 10 | none | none |
 | Transport | 5 | 5 | 0 | 10 | none | none |
 | ETAC | 20 | 3 | 0 | 20 | none | none |
-| Starbase | 50 | 1 | 100 | 120 | execution | none |
+| Starbase | 50 | 1 | 100 | 130 (was 120) | execution | none |
 
 Ground batteries (20, AS 90, DS 20, execution) and armies (2, AS 10,
-DS 10) are unchanged. Scout, transport, ETAC, and starbase values were not
-tested here; scout price against a destroyer picket is worth a later look.
+DS 10) are unchanged. Scout price against a destroyer picket is worth a
+later look.
 
 ## Proposed punch ladder (t200)
 
@@ -346,12 +347,50 @@ staying power rises from destroyer to battleship. The proxy is
 `AS x DS / cost^2`; it overstated the measured break-evens slightly (BB +11%
 proxy against +7% measured).
 
+**Results** (model, bonus off, 20,000 trials; `hull_ladder.py`,
+`hull_ladder2.py`, `ladder_breakeven.py`, `ladder_breakeven2.py`,
+`sb_check.py` and their `nc_*` outputs). DD 12/8 failed: an all-destroyer
+fleet beat 30 CA (0.51) and 10 BB (0.56) at equal cost. DD 11/8 passed but
+left battleships behind cruisers (0.56 against 0.65). The owner chose the
+glass cannon, DD 12/7, with BB DS 110: at ROE 6, 30 CA 0.58, 10 BB 0.59,
+90 DD 0.45 (attrition 1.24), destroyers losing 0.42 head to head to both;
+32.0 cruisers match 10 battleships at ROE 10. Starbase DS 130 keeps a base
+ahead of the battleship and beatable by 1.2 times its cost in cruisers
+(0.52). See [6vqrcldx](../decisions/6vqrcldx-hulls-follow-a-punch-ladder.md).
+
 Tests, with the bonus off and ROE 6, on the model and then the engine: the
 nine-fleet round robin, break-even counts, and attrition ratios. Ladder B
 passes if an all-destroyer fleet does not beat cruiser or battleship fleets
 on field wins and its attrition ratio stays near today's (1.4-1.7);
 otherwise ladder A. Cruisers and battleships should come out roughly even
 per point in battle.
+
+**Engine check** (2026-10-16, branch `t198-no-mixed-bonus` at `aa0f723f`,
+`combat_odds --trials 4000` on bean-void, output
+`tools/combat-model/nc_engine_odds_t200.json`). The engine matches the
+model within 0.036 on every one of the 36 ROE 6 pairings (mean 0.020).
+Mutual destruction never happens, and at most 2.2% of battles stall.
+Mean field-win share over each fleet's eight pairings:
+
+| Fleet | Model | Engine | Engine before t198/t200 |
+| --- | --- | --- | --- |
+| 90 DD | 0.453 | 0.473 | 0.271 |
+| 30 CA | 0.584 | 0.588 | 0.427 |
+| 10 BB | 0.589 | 0.566 | 0.615 |
+| 27 CA + 9 DD | 0.520 | 0.525 | 0.430 |
+| 24 CA + 18 DD | 0.456 | 0.470 | 0.362 |
+| 9 BB + 9 DD | 0.496 | 0.479 | 0.630 |
+| 8 BB + 18 DD | 0.458 | 0.442 | 0.554 |
+| 5 BB + 15 CA | 0.492 | 0.473 | 0.595 |
+| 4 BB + 15 CA + 9 DD | 0.452 | 0.443 | 0.537 |
+
+Head to head, 90 DD win 0.443 against 30 CA (model 0.417) and 0.438
+against 10 BB (model 0.422); 30 CA beat 10 BB 0.565 (model 0.551). The
+engine leans slightly away from battleships compared with the model, but
+destroyers still lose to both, so the ladder holds. The previous column is
+`tools/combat-model/nc_engine_odds_roe6_mix.json` (classic stats, bonus on).
+`combat_odds` has no starbase forces, so the starbase figures
+(`sb_check.py`) are model-only.
 
 ## Connections
 

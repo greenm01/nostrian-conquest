@@ -256,11 +256,11 @@ fn hits_short_of_the_last_battery_do_not_spill_onto_the_dock() {
 fn an_unshielded_dock_takes_the_hits_before_the_armies_behind_it() {
     let mut planet = world(0, 20, 0, 1);
 
-    // The round-3 breakthrough: 120 hits, 100 for the docked battleship and
-    // 20 for two armies.
+    // The round-3 breakthrough: 120 hits, 110 for the docked battleship and
+    // 10 for one army.
     apply_planet_bombardment_damage(&mut planet, 120);
     assert_eq!(planet.stardock.battleships, 0);
-    assert_eq!(planet.armies, 18);
+    assert_eq!(planet.armies, 19);
 }
 
 #[test]

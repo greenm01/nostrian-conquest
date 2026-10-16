@@ -338,10 +338,10 @@ fn capture_planet(
 
 pub(super) fn bombard_attack_as(state: &FleetCombatState) -> u32 {
     let mut as_total = 0;
-    // Healthy ships (AS_DD: 10, AS_CA: 30, AS_BB: 90)
+    // Healthy ships (AS_DD: 12, AS_CA: 33, AS_BB: 90)
     // Bombard modifiers (0.5x, 1.0x, 1.5x)
-    as_total += state.nominal_count(IDX_DD) * 5 + state.crippled_count(IDX_DD) * 2;
-    as_total += state.nominal_count(IDX_CA) * 30 + state.crippled_count(IDX_CA) * 15;
+    as_total += state.nominal_count(IDX_DD) * 6 + state.crippled_count(IDX_DD) * 3;
+    as_total += state.nominal_count(IDX_CA) * 33 + state.crippled_count(IDX_CA) * 16;
     as_total += state.nominal_count(IDX_BB) * 135 + state.crippled_count(IDX_BB) * 67;
     as_total
 }

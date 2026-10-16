@@ -1,0 +1,3202 @@
+[
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2505,
+   "B": 0.74715,
+   "mutual": 0.00235,
+   "stalemate": 0.0
+  },
+  "loss_left": 322.0875,
+  "loss_right": 174.033
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33025,
+   "B": 0.66975,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 83.80575,
+  "loss_right": 35.6085
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3572,
+   "B": 0.6399,
+   "mutual": 0.0029,
+   "stalemate": 0.0
+  },
+  "loss_left": 310.89975,
+  "loss_right": 223.8885
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3313,
+   "B": 0.6687,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 67.28475,
+  "loss_right": 52.137
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.46755,
+   "B": 0.52995,
+   "mutual": 0.0025,
+   "stalemate": 0.0
+  },
+  "loss_left": 294.8895,
+  "loss_right": 268.94475
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.55015,
+   "B": 0.44985,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 57.59925,
+  "loss_right": 77.87475
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.58955,
+   "B": 0.4081,
+   "mutual": 0.00235,
+   "stalemate": 0.0
+  },
+  "loss_left": 262.16925,
+  "loss_right": 312.28875
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6689,
+   "B": 0.3311,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.43925,
+  "loss_right": 105.5745
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6824,
+   "B": 0.31535,
+   "mutual": 0.00225,
+   "stalemate": 0.0
+  },
+  "loss_left": 234.4485,
+  "loss_right": 345.26475
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7629,
+   "B": 0.2371,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 38.66475,
+  "loss_right": 129.492
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.76245,
+   "B": 0.2357,
+   "mutual": 0.00185,
+   "stalemate": 0.0
+  },
+  "loss_left": 201.27975,
+  "loss_right": 374.9175
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8487,
+   "B": 0.1513,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 34.90875,
+  "loss_right": 154.62
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1639,
+   "B": 0.835,
+   "mutual": 0.0011,
+   "stalemate": 0.0
+  },
+  "loss_left": 357.2555,
+  "loss_right": 249.966
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.14915,
+   "B": 0.85085,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 164.87275,
+  "loss_right": 175.66875
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.30265,
+   "B": 0.69625,
+   "mutual": 0.0011,
+   "stalemate": 0.0
+  },
+  "loss_left": 349.32675,
+  "loss_right": 299.02125
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32845,
+   "B": 0.67155,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 144.97975,
+  "loss_right": 212.39175
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.4594,
+   "B": 0.5393,
+   "mutual": 0.0013,
+   "stalemate": 0.0
+  },
+  "loss_left": 326.769,
+  "loss_right": 343.2645
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5497,
+   "B": 0.4503,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 125.62925,
+  "loss_right": 249.73875
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6332,
+   "B": 0.366,
+   "mutual": 0.0008,
+   "stalemate": 0.0
+  },
+  "loss_left": 281.89625,
+  "loss_right": 379.074
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.759,
+   "B": 0.241,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 104.53975,
+  "loss_right": 288.909
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.73205,
+   "B": 0.267,
+   "mutual": 0.00095,
+   "stalemate": 0.0
+  },
+  "loss_left": 239.26575,
+  "loss_right": 403.04775
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7522,
+   "B": 0.2478,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 73.97,
+  "loss_right": 307.5045
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.81555,
+   "B": 0.1835,
+   "mutual": 0.00095,
+   "stalemate": 0.0
+  },
+  "loss_left": 197.029,
+  "loss_right": 420.53775
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88035,
+   "B": 0.11965,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 62.4985,
+  "loss_right": 334.84425
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.89375,
+   "B": 0.10575,
+   "mutual": 0.0005,
+   "stalemate": 0.0
+  },
+  "loss_left": 147.0815,
+  "loss_right": 435.17325
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 50.016,
+  "loss_right": 357.978
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.14835,
+   "B": 0.8473,
+   "mutual": 0.00435,
+   "stalemate": 0.0
+  },
+  "loss_left": 362.2285,
+  "loss_right": 234.711
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.2404,
+   "B": 0.7596,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 131.45,
+  "loss_right": 154.098
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2743,
+   "B": 0.7196,
+   "mutual": 0.0061,
+   "stalemate": 0.0
+  },
+  "loss_left": 363.39525,
+  "loss_right": 285.435
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.4166,
+   "B": 0.5834,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 113.90525,
+  "loss_right": 185.47875
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.43945,
+   "B": 0.55445,
+   "mutual": 0.0061,
+   "stalemate": 0.0
+  },
+  "loss_left": 339.3585,
+  "loss_right": 330.11325
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5436,
+   "B": 0.4564,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 91.127,
+  "loss_right": 216.15525
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6123,
+   "B": 0.38175,
+   "mutual": 0.00595,
+   "stalemate": 0.0
+  },
+  "loss_left": 290.105,
+  "loss_right": 373.014
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7564,
+   "B": 0.2436,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 71.2845,
+  "loss_right": 255.08025
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7174,
+   "B": 0.27925,
+   "mutual": 0.00335,
+   "stalemate": 0.0
+  },
+  "loss_left": 250.4495,
+  "loss_right": 396.936
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.87965,
+   "B": 0.12035,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 65.691,
+  "loss_right": 285.7725
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8145,
+   "B": 0.18325,
+   "mutual": 0.00225,
+   "stalemate": 0.0
+  },
+  "loss_left": 195.28825,
+  "loss_right": 417.84975
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88255,
+   "B": 0.11745,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 40.68825,
+  "loss_right": 307.8765
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8851,
+   "B": 0.11285,
+   "mutual": 0.00205,
+   "stalemate": 0.0
+  },
+  "loss_left": 156.70575,
+  "loss_right": 431.91225
+ },
+ {
+  "ladder": "A-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.77925,
+  "loss_right": 333.74025
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1823,
+   "B": 0.81615,
+   "mutual": 0.00155,
+   "stalemate": 0.0
+  },
+  "loss_left": 342.909,
+  "loss_right": 139.0275
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.24255,
+   "B": 0.75745,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 87.83025,
+  "loss_right": 25.48575
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2784,
+   "B": 0.7192,
+   "mutual": 0.0024,
+   "stalemate": 0.0
+  },
+  "loss_left": 337.63425,
+  "loss_right": 187.17975
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33345,
+   "B": 0.66655,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 69.7695,
+  "loss_right": 36.24975
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3829,
+   "B": 0.615,
+   "mutual": 0.0021,
+   "stalemate": 0.0
+  },
+  "loss_left": 324.70725,
+  "loss_right": 235.0755
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.54915,
+   "B": 0.45085,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 57.45975,
+  "loss_right": 50.0355
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5048,
+   "B": 0.49335,
+   "mutual": 0.00185,
+   "stalemate": 0.0
+  },
+  "loss_left": 298.7175,
+  "loss_right": 282.564
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.67095,
+   "B": 0.32905,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 53.559,
+  "loss_right": 76.78575
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6165,
+   "B": 0.3817,
+   "mutual": 0.0018,
+   "stalemate": 0.0
+  },
+  "loss_left": 266.436,
+  "loss_right": 322.425
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76015,
+   "B": 0.23985,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.3895,
+  "loss_right": 96.57675
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.70575,
+   "B": 0.29255,
+   "mutual": 0.0017,
+   "stalemate": 0.0
+  },
+  "loss_left": 234.117,
+  "loss_right": 354.49425
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8501,
+   "B": 0.1499,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 38.70975,
+  "loss_right": 120.66975
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.16905,
+   "B": 0.8302,
+   "mutual": 0.00075,
+   "stalemate": 0.0
+  },
+  "loss_left": 355.85475,
+  "loss_right": 250.32675
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.15185,
+   "B": 0.84815,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 163.433,
+  "loss_right": 175.25025
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3038,
+   "B": 0.69525,
+   "mutual": 0.00095,
+   "stalemate": 0.0
+  },
+  "loss_left": 348.98775,
+  "loss_right": 300.39
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32685,
+   "B": 0.67315,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 144.9685,
+  "loss_right": 212.2185
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.46045,
+   "B": 0.53775,
+   "mutual": 0.0018,
+   "stalemate": 0.0
+  },
+  "loss_left": 327.464,
+  "loss_right": 344.355
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.54765,
+   "B": 0.45235,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 126.79525,
+  "loss_right": 250.2705
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6336,
+   "B": 0.3654,
+   "mutual": 0.001,
+   "stalemate": 0.0
+  },
+  "loss_left": 280.51325,
+  "loss_right": 379.69725
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7597,
+   "B": 0.2403,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 104.63525,
+  "loss_right": 287.63025
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7264,
+   "B": 0.2728,
+   "mutual": 0.0008,
+   "stalemate": 0.0
+  },
+  "loss_left": 241.6565,
+  "loss_right": 401.772
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.75645,
+   "B": 0.24355,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 74.6625,
+  "loss_right": 307.002
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8162,
+   "B": 0.18295,
+   "mutual": 0.00085,
+   "stalemate": 0.0
+  },
+  "loss_left": 197.2885,
+  "loss_right": 420.4905
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88075,
+   "B": 0.11925,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 61.4275,
+  "loss_right": 333.993
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8977,
+   "B": 0.10205,
+   "mutual": 0.00025,
+   "stalemate": 0.0
+  },
+  "loss_left": 144.12975,
+  "loss_right": 435.60975
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.95225,
+  "loss_right": 358.65825
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1071,
+   "B": 0.88925,
+   "mutual": 0.00365,
+   "stalemate": 0.0
+  },
+  "loss_left": 373.77675,
+  "loss_right": 216.6165
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.2417,
+   "B": 0.7583,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 131.1005,
+  "loss_right": 146.15325
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.21305,
+   "B": 0.7806,
+   "mutual": 0.00635,
+   "stalemate": 0.0
+  },
+  "loss_left": 385.096,
+  "loss_right": 263.13525
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.42255,
+   "B": 0.57745,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 113.91125,
+  "loss_right": 171.41625
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.36485,
+   "B": 0.6299,
+   "mutual": 0.00525,
+   "stalemate": 0.0
+  },
+  "loss_left": 367.2415,
+  "loss_right": 311.6475
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5504,
+   "B": 0.4496,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 92.34025,
+  "loss_right": 201.384
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5226,
+   "B": 0.46995,
+   "mutual": 0.00745,
+   "stalemate": 0.0
+  },
+  "loss_left": 337.3735,
+  "loss_right": 352.27575
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76515,
+   "B": 0.23485,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 81.52025,
+  "loss_right": 229.635
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.67055,
+   "B": 0.32435,
+   "mutual": 0.0051,
+   "stalemate": 0.0
+  },
+  "loss_left": 280.22675,
+  "loss_right": 386.75925
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8775,
+   "B": 0.1225,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 66.43025,
+  "loss_right": 259.01325
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.766,
+   "B": 0.23115,
+   "mutual": 0.00285,
+   "stalemate": 0.0
+  },
+  "loss_left": 237.23175,
+  "loss_right": 408.14325
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8811,
+   "B": 0.1189,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 45.5235,
+  "loss_right": 281.034
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8496,
+   "B": 0.148,
+   "mutual": 0.0024,
+   "stalemate": 0.0
+  },
+  "loss_left": 187.22875,
+  "loss_right": 425.05425
+ },
+ {
+  "ladder": "A-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.32725,
+  "loss_right": 308.68425
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2395,
+   "B": 0.7585,
+   "mutual": 0.002,
+   "stalemate": 0.0
+  },
+  "loss_left": 325.3425,
+  "loss_right": 168.849
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.3325,
+   "B": 0.6675,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.1545,
+  "loss_right": 36.144
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.35085,
+   "B": 0.64665,
+   "mutual": 0.0025,
+   "stalemate": 0.0
+  },
+  "loss_left": 312.9765,
+  "loss_right": 220.815
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32855,
+   "B": 0.67145,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 66.93825,
+  "loss_right": 52.434
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.46765,
+   "B": 0.52925,
+   "mutual": 0.0031,
+   "stalemate": 0.0
+  },
+  "loss_left": 294.549,
+  "loss_right": 269.23275
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.55195,
+   "B": 0.44805,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 56.5155,
+  "loss_right": 79.44525
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5882,
+   "B": 0.40975,
+   "mutual": 0.00205,
+   "stalemate": 0.0
+  },
+  "loss_left": 263.06025,
+  "loss_right": 312.54525
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.66995,
+   "B": 0.33005,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 49.24275,
+  "loss_right": 104.87475
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6843,
+   "B": 0.3139,
+   "mutual": 0.0018,
+   "stalemate": 0.0
+  },
+  "loss_left": 232.46475,
+  "loss_right": 345.25575
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7578,
+   "B": 0.2422,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 39.1485,
+  "loss_right": 128.7945
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7632,
+   "B": 0.23545,
+   "mutual": 0.00135,
+   "stalemate": 0.0
+  },
+  "loss_left": 199.93125,
+  "loss_right": 374.87925
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8516,
+   "B": 0.1484,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 35.41425,
+  "loss_right": 154.4355
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.17775,
+   "B": 0.82075,
+   "mutual": 0.0015,
+   "stalemate": 0.0
+  },
+  "loss_left": 354.96625,
+  "loss_right": 251.235
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33125,
+   "B": 0.66875,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 208.562,
+  "loss_right": 199.932
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.30385,
+   "B": 0.69465,
+   "mutual": 0.0015,
+   "stalemate": 0.0
+  },
+  "loss_left": 349.44675,
+  "loss_right": 296.99925
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.42665,
+   "B": 0.57335,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 189.66775,
+  "loss_right": 235.4325
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.43395,
+   "B": 0.56395,
+   "mutual": 0.0021,
+   "stalemate": 0.0
+  },
+  "loss_left": 335.70725,
+  "loss_right": 338.81325
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.66455,
+   "B": 0.33545,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 180.3485,
+  "loss_right": 269.30475
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.61415,
+   "B": 0.3843,
+   "mutual": 0.00155,
+   "stalemate": 0.0
+  },
+  "loss_left": 299.01925,
+  "loss_right": 373.677
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7613,
+   "B": 0.2387,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 152.967,
+  "loss_right": 302.68275
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7167,
+   "B": 0.2823,
+   "mutual": 0.001,
+   "stalemate": 0.0
+  },
+  "loss_left": 256.537,
+  "loss_right": 399.141
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7899,
+   "B": 0.2101,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 135.53475,
+  "loss_right": 333.79875
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.799,
+   "B": 0.1997,
+   "mutual": 0.0013,
+   "stalemate": 0.0
+  },
+  "loss_left": 216.46,
+  "loss_right": 418.25925
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.87925,
+   "B": 0.12075,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 101.91925,
+  "loss_right": 348.681
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8736,
+   "B": 0.1255,
+   "mutual": 0.0009,
+   "stalemate": 0.0
+  },
+  "loss_left": 167.6555,
+  "loss_right": 431.9565
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.37925,
+  "loss_right": 370.71825
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.14285,
+   "B": 0.85265,
+   "mutual": 0.0045,
+   "stalemate": 0.0
+  },
+  "loss_left": 365.53475,
+  "loss_right": 235.79325
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32655,
+   "B": 0.67345,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 179.50325,
+  "loss_right": 169.60275
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.28135,
+   "B": 0.71225,
+   "mutual": 0.0064,
+   "stalemate": 0.0
+  },
+  "loss_left": 361.254,
+  "loss_right": 284.40675
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.42055,
+   "B": 0.57945,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 155.93675,
+  "loss_right": 199.2195
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.4432,
+   "B": 0.54895,
+   "mutual": 0.00785,
+   "stalemate": 0.0
+  },
+  "loss_left": 336.11625,
+  "loss_right": 332.99325
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76215,
+   "B": 0.23785,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 151.05975,
+  "loss_right": 253.5255
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.5852,
+   "B": 0.4083,
+   "mutual": 0.0065,
+   "stalemate": 0.0
+  },
+  "loss_left": 312.2015,
+  "loss_right": 368.28225
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7647,
+   "B": 0.2353,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 122.12025,
+  "loss_right": 271.15425
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.69515,
+   "B": 0.2996,
+   "mutual": 0.00525,
+   "stalemate": 0.0
+  },
+  "loss_left": 270.96575,
+  "loss_right": 392.7555
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.88265,
+   "B": 0.11735,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 108.7395,
+  "loss_right": 300.65175
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7791,
+   "B": 0.21605,
+   "mutual": 0.00485,
+   "stalemate": 0.0
+  },
+  "loss_left": 237.26525,
+  "loss_right": 412.533
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8795,
+   "B": 0.1205,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.6415,
+  "loss_right": 316.29825
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.87375,
+   "B": 0.12315,
+   "mutual": 0.0031,
+   "stalemate": 0.0
+  },
+  "loss_left": 169.928,
+  "loss_right": 430.84575
+ },
+ {
+  "ladder": "C-bb100",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 63.209,
+  "loss_right": 349.82775
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1766,
+   "B": 0.8215,
+   "mutual": 0.0019,
+   "stalemate": 0.0
+  },
+  "loss_left": 344.03325,
+  "loss_right": 136.74825
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 26,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.23935,
+   "B": 0.76065,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 87.49425,
+  "loss_right": 25.45425
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.2781,
+   "B": 0.72025,
+   "mutual": 0.00165,
+   "stalemate": 0.0
+  },
+  "loss_left": 338.15925,
+  "loss_right": 187.4385
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 28,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.33255,
+   "B": 0.66745,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 68.92425,
+  "loss_right": 37.0125
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3866,
+   "B": 0.6108,
+   "mutual": 0.0026,
+   "stalemate": 0.0
+  },
+  "loss_left": 323.997,
+  "loss_right": 235.692
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 30,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.5525,
+   "B": 0.4475,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 56.53275,
+  "loss_right": 50.74425
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.49725,
+   "B": 0.50035,
+   "mutual": 0.0024,
+   "stalemate": 0.0
+  },
+  "loss_left": 302.2515,
+  "loss_right": 278.0415
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 32,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6717,
+   "B": 0.3283,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 53.77725,
+  "loss_right": 75.30075
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6114,
+   "B": 0.3861,
+   "mutual": 0.0025,
+   "stalemate": 0.0
+  },
+  "loss_left": 268.026,
+  "loss_right": 321.066
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 34,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.76175,
+   "B": 0.23825,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 41.376,
+  "loss_right": 96.3315
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.69995,
+   "B": 0.29805,
+   "mutual": 0.002,
+   "stalemate": 0.0
+  },
+  "loss_left": 237.63675,
+  "loss_right": 352.395
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "CA",
+  "n": 36,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.85095,
+   "B": 0.14905,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 37.383,
+  "loss_right": 121.62375
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.1801,
+   "B": 0.8185,
+   "mutual": 0.0014,
+   "stalemate": 0.0
+  },
+  "loss_left": 353.80325,
+  "loss_right": 252.6105
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.32845,
+   "B": 0.67155,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 210.081,
+  "loss_right": 199.51725
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.30295,
+   "B": 0.69575,
+   "mutual": 0.0013,
+   "stalemate": 0.0
+  },
+  "loss_left": 350.26225,
+  "loss_right": 297.015
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.41565,
+   "B": 0.58435,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 190.62025,
+  "loss_right": 234.45375
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.43565,
+   "B": 0.56215,
+   "mutual": 0.0022,
+   "stalemate": 0.0
+  },
+  "loss_left": 334.5875,
+  "loss_right": 340.26825
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.67275,
+   "B": 0.32725,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 178.1645,
+  "loss_right": 271.5405
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.62235,
+   "B": 0.37605,
+   "mutual": 0.0016,
+   "stalemate": 0.0
+  },
+  "loss_left": 297.7335,
+  "loss_right": 375.74475
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.763,
+   "B": 0.237,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 152.07925,
+  "loss_right": 304.41825
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.71345,
+   "B": 0.2855,
+   "mutual": 0.00105,
+   "stalemate": 0.0
+  },
+  "loss_left": 256.97425,
+  "loss_right": 398.97075
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.78435,
+   "B": 0.21565,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 138.85425,
+  "loss_right": 331.72125
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.79765,
+   "B": 0.20115,
+   "mutual": 0.0012,
+   "stalemate": 0.0
+  },
+  "loss_left": 218.91075,
+  "loss_right": 417.68775
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8805,
+   "B": 0.1195,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 101.32675,
+  "loss_right": 349.347
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.8776,
+   "B": 0.12155,
+   "mutual": 0.00085,
+   "stalemate": 0.0
+  },
+  "loss_left": 165.48375,
+  "loss_right": 432.5865
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "CA": 30
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 83.632,
+  "loss_right": 371.9685
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.10315,
+   "B": 0.8927,
+   "mutual": 0.00415,
+   "stalemate": 0.0
+  },
+  "loss_left": 375.82925,
+  "loss_right": 214.4205
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 80,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.335,
+   "B": 0.665,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 180.30925,
+  "loss_right": 155.54025
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.20695,
+   "B": 0.78745,
+   "mutual": 0.0056,
+   "stalemate": 0.0
+  },
+  "loss_left": 389.50325,
+  "loss_right": 258.96825
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 90,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.41515,
+   "B": 0.58485,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 165.1815,
+  "loss_right": 179.48475
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.3548,
+   "B": 0.63875,
+   "mutual": 0.00645,
+   "stalemate": 0.0
+  },
+  "loss_left": 371.7905,
+  "loss_right": 309.50325
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 100,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.6315,
+   "B": 0.3685,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 155.19525,
+  "loss_right": 219.55275
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.519,
+   "B": 0.4749,
+   "mutual": 0.0061,
+   "stalemate": 0.0
+  },
+  "loss_left": 338.33125,
+  "loss_right": 351.43425
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 110,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.7634,
+   "B": 0.2366,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 123.41325,
+  "loss_right": 255.26025
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.6446,
+   "B": 0.3508,
+   "mutual": 0.0046,
+   "stalemate": 0.0
+  },
+  "loss_left": 305.403,
+  "loss_right": 380.82825
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 120,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8843,
+   "B": 0.1157,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 116.93125,
+  "loss_right": 280.5075
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.7389,
+   "B": 0.25695,
+   "mutual": 0.00415,
+   "stalemate": 0.0
+  },
+  "loss_left": 259.04,
+  "loss_right": 402.498
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 130,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 0.8794,
+   "B": 0.1206,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.33125,
+  "loss_right": 298.89
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   10,
+   10
+  ],
+  "p": {
+   "A": 0.82125,
+   "B": 0.17615,
+   "mutual": 0.0026,
+   "stalemate": 0.0
+  },
+  "loss_left": 218.04175,
+  "loss_right": 420.102
+ },
+ {
+  "ladder": "C-bb110",
+  "hull": "DD",
+  "n": 140,
+  "right": {
+   "BB": 10
+  },
+  "roe": [
+   6,
+   6
+  ],
+  "p": {
+   "A": 1.0,
+   "B": 0.0,
+   "mutual": 0.0,
+   "stalemate": 0.0
+  },
+  "loss_left": 84.2675,
+  "loss_right": 325.86075
+ }
+]

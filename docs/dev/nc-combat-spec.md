@@ -101,13 +101,13 @@ The Rust engine uses a **10x internal scale** for combat values to ensure high-p
 
 | Unit | AS (Attack) | DS (Defense) | Notes |
 | ---- | -- | -- | ----- |
-| Destroyer | 10 | 8 | Fast raider and line support (Execution) |
-| Cruiser | 30 | 30 | Balanced brawler (Suppression) |
-| Battleship | 90 | 100 | Fleet anchor (Suppression) |
+| Destroyer | 12 | 7 | Glass cannon: fast raider and finisher (Execution) |
+| Cruiser | 33 | 30 | Balanced brawler (Suppression) |
+| Battleship | 90 | 110 | Fleet anchor and siege ship (Suppression) |
 | Scout | 0 | 10 | Non-combatant |
 | Troop Transport | 0 | 10 | Vulnerable landing craft |
 | ETAC | 0 | 20 | Colony ship |
-| Starbase | 100 | 120 | Orbital fortress (Execution) |
+| Starbase | 100 | 130 | Orbital fortress (Execution) |
 
 ### Ground and Planetary Defenses
 
@@ -383,7 +383,7 @@ fleet).
 **Strength sees damage.** The attack decision, the intercept's fallback, the
 orbital gate, and the in-battle ROE check weigh a crippled warship at half
 its AS and a crippled starbase at 50. Bombardment and assault fire keep
-their own weights (5, 30, 135 per hull) and their rounding for crippled
+their own weights (6, 33, 135 per hull) and their rounding for crippled
 hulls: 2, 15, and 67. A crippled starbase keeps the growth and capacity
 bonuses of its world and the +1 a starbase adds to the die.
 
